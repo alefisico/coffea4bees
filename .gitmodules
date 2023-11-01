@@ -1,0 +1,3 @@
+[submodule "decaf"]
+	path = decaf
+	url = git@github.com:mcremone/decaf.git
