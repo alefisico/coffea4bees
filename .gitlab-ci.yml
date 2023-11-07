@@ -81,7 +81,7 @@ unit-test-job:   # This job runs in the test stage.
     - k8s-cvmfs
     #image: coffeateam/coffea-dask:0.7.13-fastjet-3.3.4.0rc9-g5b8998d
   script:
-    - ls /cvmfs/sft.cern.ch/lcg/views/LCG_103/x86_64-centos7-gcc11-opt/
+    - set +e && source /cvmfs/sft.cern.ch/lcg/views/LCG_103/x86_64-centos7-gcc11-opt/setup.sh; set -e
     - echo "Running unit tests... This will take about 60 seconds."
     - python analysis/coffea_analysis.py
     - echo "Code coverage is 90%"
