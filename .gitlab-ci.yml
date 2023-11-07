@@ -51,17 +51,17 @@ voms_proxy:
 #
 #
 #
-#.docker_build:
-#  image:
-#    name: gitlab-registry.cern.ch/ci-tools/docker-image-builder
-#    entrypoint: [""]
-#  script:
-#    # Prepare Kaniko configuration file
-#    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
-#    # Build and push the image from the Dockerfile at the root of the project.
-#    - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/$dockerfile --destination $IMAGE_DESTINATION
-#    # Print the full registry path of the pushed image
-#    - echo "Image pushed successfully to ${IMAGE_DESTINATION}"
+.docker_build:
+  image:
+    name: gitlab-registry.cern.ch/ci-tools/docker-image-builder
+    entrypoint: [""]
+  script:
+    # Prepare Kaniko configuration file
+    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
+    # Build and push the image from the Dockerfile at the root of the project.
+    - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/$dockerfile --destination $IMAGE_DESTINATION
+    # Print the full registry path of the pushed image
+    - echo "Image pushed successfully to ${IMAGE_DESTINATION}"
 #
 #build-cmssw: 
 #  stage: build
@@ -77,10 +77,11 @@ unit-test-job:   # This job runs in the test stage.
   stage: test    # It only starts when the job in the build stage completes successfully.
   dependencies:
     - voms_proxy
-  tags:
-    - k8s-cvmfs
+      #  tags:
+      #- k8s-cvmfs
+  image: coffeateam/coffea-dask:0.7.13-fastjet-3.3.4.0rc9-g5b8998d
   script:
-    - source set_env.sh
+    #- source set_env.sh
     - echo "Running unit tests... This will take about 60 seconds."
     - python analysis/coffea_analysis.py
     - echo "Code coverage is 90%"
