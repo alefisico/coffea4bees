@@ -78,7 +78,7 @@ unit-test-job:   # This job runs in the test stage.
   dependencies:
     - voms_proxy
   tags:
-    - cvmfs
+    - k8s-cvmfs
   script:
     - source set_env.sh
     - echo "Running unit tests... This will take about 60 seconds."
