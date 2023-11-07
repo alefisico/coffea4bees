@@ -54,7 +54,7 @@ build_cmssw:
   script:
     - shopt -s expand_aliases
     - set +u && source ${CMS_PATH}/cmsset_default.sh; set -u
-    - cmsrel ${CMSSW_RELEASE}
+    - scramv1 project CMSSW ${CMSSW_RELEASE}
     - cd ${CMSSW_RELEASE}/src
     - cmsenv
     # If within CERN, we can speed up interaction with CMSSW:
