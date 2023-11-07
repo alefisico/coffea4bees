@@ -27,11 +27,26 @@ stages:          # List of stages for jobs, and their order of execution
   - test
   - deploy
 
-build-job:       # This job runs in the build stage, which runs first.
-  stage: build
+.docker_build:
+  image:
+    name: gitlab-registry.cern.ch/ci-tools/docker-image-builder
+    entrypoint: [""]
   script:
-    - echo "Compiling the code.."
-    - echo "Compile complete."
+    # Prepare Kaniko configuration file
+    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
+    # Build and push the image from the Dockerfile at the root of the project.
+    - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/$dockerfile --destination $IMAGE_DESTINATION
+    # Print the full registry path of the pushed image
+    - echo "Image pushed successfully to ${IMAGE_DESTINATION}"
+
+
+build-cmssw: 
+  stage: build
+  extends: .docker_build
+  variables:
+    IMAGE_DESTINATION: $CI_REGISTRY_IMAGE:cmssw
+    dockerfile: Dockerfile
+
 
 unit-test-job:   # This job runs in the test stage.
   stage: test    # It only starts when the job in the build stage completes successfully.
