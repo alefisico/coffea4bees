@@ -44,6 +44,29 @@ stages:          # List of stages for jobs, and their order of execution
 #    - mkdir proxy
 #    - cp ${VOMSPROXY} proxy/x509_proxy
 
+cmssw_addpkg:
+  stage: build
+  tags:
+    - cvmfs
+  variables:
+    CMS_PATH: /cvmfs/cms.cern.ch
+    CMSSW_RELEASE: CMSSW_11_1_1
+  script:
+    - shopt -s expand_aliases
+    - set +u && source ${CMS_PATH}/cmsset_default.sh; set -u
+    - cmsrel ${CMSSW_RELEASE}
+    - cd ${CMSSW_RELEASE}/src
+    - cmsenv
+    # If within CERN, we can speed up interaction with CMSSW:
+    - export CMSSW_MIRROR=https://:@git.cern.ch/kerberos/CMSSW.git
+    # This is another trick to speed things up independent of your location:
+    - export CMSSW_GIT_REFERENCE=/cvmfs/cms.cern.ch/cmssw.git.daily
+    # Important: run git cms-init with --upstream-only flag to not run into
+    # problems with git config
+    - git cms-init --upstream-only
+    - source set_env.sh
+
+
 
 .docker_build:
   image:

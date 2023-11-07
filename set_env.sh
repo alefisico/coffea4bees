@@ -23,3 +23,4 @@ git clone https://github.com/patrickbryant/ZZ4b.git
 
 git clone https://github.com/cms-nanoAOD/nanoAOD-tools.git PhysicsTools/NanoAODTools
 
+scram b -j 7
