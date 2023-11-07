@@ -53,7 +53,7 @@ build_cmssw:
     CMSSW_RELEASE: CMSSW_11_1_1
   script:
     - shopt -s expand_aliases
-    - set +u && source ${CMS_PATH}/cmsset_default.sh; set -u
+    - set +u && source /cvmfs/cms.cern.ch/cmsset_default.sh; set -u
     - /cvmfs/cms.cern.ch/common/scramv1 project CMSSW ${CMSSW_RELEASE}
     - cd ${CMSSW_RELEASE}/src
     - cmsenv
