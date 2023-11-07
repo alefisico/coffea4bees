@@ -23,6 +23,8 @@ stages:          # List of stages for jobs, and their order of execution
 
 build-job:       # This job runs in the build stage, which runs first.
   stage: build
+  rules:
+    - if: '$CI_PROJECT_NAMESPACE == "app" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
   script:
     - echo "Compiling the code.."
     - echo "Compile complete."
