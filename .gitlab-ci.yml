@@ -43,6 +43,8 @@ stages:          # List of stages for jobs, and their order of execution
 build-cmssw: 
   stage: build
   extends: .docker_build
+  tags:
+    - cvmfs
   variables:
     IMAGE_DESTINATION: $CI_REGISTRY_IMAGE:cmssw
     dockerfile: Dockerfile
