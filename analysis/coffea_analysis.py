@@ -116,34 +116,34 @@ def juncWS_file(era='UL18', condor=False):
     # got .tar.gz of weight sets from twiki: https://twiki.cern.ch/twiki/bin/view/CMS/JECDataMC
     # Only the UncertaintySources files are needed to get the JES variations
     calibration_steps = ['L1FastJet', 'L2Relative', 'L2L3Residual', 'L3Absolute']
-    weight_sets = {'UL16_preVFP' : [f'* * ../../CMSSW_11_1_0_pre5/src/nTupleAnalysis/baseClasses/data/Summer19UL16APV_V7_MC/Summer19UL16APV_V7_MC_{step}_AK4PFchs.txt' for step in calibration_steps]
-                                 + [ '* * ../../CMSSW_11_1_0_pre5/src/nTupleAnalysis/baseClasses/data/Summer19UL16APV_V7_MC/RegroupedV2_Summer19UL16APV_V7_MC_UncertaintySources_AK4PFchs.junc.txt']
-                                 + [ '* * ../../CMSSW_11_1_0_pre5/src/nTupleAnalysis/baseClasses/data/Summer20UL16APV_JRV3_MC/Summer20UL16APV_JRV3_MC_PtResolution_AK4PFchs.jr.txt',
-                                     '* * ../../CMSSW_11_1_0_pre5/src/nTupleAnalysis/baseClasses/data/Summer20UL16APV_JRV3_MC/Summer20UL16APV_JRV3_MC_SF_AK4PFchs.jersf.txt'],
-                   'UL16_postVFP': [f'* * ../../CMSSW_11_1_0_pre5/src/nTupleAnalysis/baseClasses/data/Summer19UL16_V7_MC/Summer19UL16_V7_MC_{step}_AK4PFchs.txt' for step in calibration_steps]
-                                 + [ '* * ../../CMSSW_11_1_0_pre5/src/nTupleAnalysis/baseClasses/data/Summer19UL16_V7_MC/RegroupedV2_Summer19UL16_V7_MC_UncertaintySources_AK4PFchs.junc.txt']
-                                 + [ '* * ../../CMSSW_11_1_0_pre5/src/nTupleAnalysis/baseClasses/data/Summer20UL16_JRV3_MC/Summer20UL16_JRV3_MC_PtResolution_AK4PFchs.jr.txt',
-                                     '* * ../../CMSSW_11_1_0_pre5/src/nTupleAnalysis/baseClasses/data/Summer20UL16_JRV3_MC/Summer20UL16_JRV3_MC_SF_AK4PFchs.jersf.txt'],
-                   'UL17'        : [f'* * ../../CMSSW_11_1_0_pre5/src/nTupleAnalysis/baseClasses/data/Summer19UL17_V5_MC/Summer19UL17_V5_MC_{step}_AK4PFchs.txt' for step in calibration_steps]
-                                 + [ '* * ../../CMSSW_11_1_0_pre5/src/nTupleAnalysis/baseClasses/data/Summer19UL17_V5_MC/RegroupedV2_Summer19UL17_V5_MC_UncertaintySources_AK4PFchs.junc.txt']
-                                 + [ '* * ../../CMSSW_11_1_0_pre5/src/nTupleAnalysis/baseClasses/data/Summer19UL17_JRV2_MC/Summer19UL17_JRV2_MC_PtResolution_AK4PFchs.jr.txt',
-                                     '* * ../../CMSSW_11_1_0_pre5/src/nTupleAnalysis/baseClasses/data/Summer19UL17_JRV2_MC/Summer19UL17_JRV2_MC_SF_AK4PFchs.jersf.txt'],
-                   'UL18'        : [f'* * ../../CMSSW_11_1_0_pre5/src/nTupleAnalysis/baseClasses/data/Summer19UL18_V5_MC/Summer19UL18_V5_MC_{step}_AK4PFchs.txt' for step in calibration_steps]
-                                 + [ '* * ../../CMSSW_11_1_0_pre5/src/nTupleAnalysis/baseClasses/data/Summer19UL18_V5_MC/RegroupedV2_Summer19UL18_V5_MC_UncertaintySources_AK4PFchs.junc.txt']
-                                 + [ '* * ../../CMSSW_11_1_0_pre5/src/nTupleAnalysis/baseClasses/data/Summer19UL18_JRV2_MC/Summer19UL18_JRV2_MC_PtResolution_AK4PFchs.jr.txt',
-                                     '* * ../../CMSSW_11_1_0_pre5/src/nTupleAnalysis/baseClasses/data/Summer19UL18_JRV2_MC/Summer19UL18_JRV2_MC_SF_AK4PFchs.jersf.txt'],
-                   '2016'        : [f'* * ../../CMSSW_11_1_0_pre5/src/nTupleAnalysis/baseClasses/data/Summer16_07Aug2017_V11_MC/Summer16_07Aug2017_V11_MC_{step}_AK4PFchs.txt' for step in calibration_steps]
-                                 + [ '* * ../../CMSSW_11_1_0_pre5/src/nTupleAnalysis/baseClasses/data/Summer16_07Aug2017_V11_MC/RegroupedV2_Summer16_07Aug2017_V11_MC_UncertaintySources_AK4PFchs.junc.txt']
-                                 + [ '* * ../../CMSSW_11_1_0_pre5/src/nTupleAnalysis/baseClasses/data/Summer16_25nsV1b_MC/Summer16_25nsV1b_MC_PtResolution_AK4PFchs.jr.txt',
-                                     '* * ../../CMSSW_11_1_0_pre5/src/nTupleAnalysis/baseClasses/data/Summer16_25nsV1b_MC/Summer16_25nsV1b_MC_SF_AK4PFchs.jersf.txt'],
-                   '2017'        : [f'* * ../../CMSSW_11_1_0_pre5/src/nTupleAnalysis/baseClasses/data/Fall17_17Nov2017_V32_MC/Fall17_17Nov2017_V32_MC_{step}_AK4PFchs.txt' for step in calibration_steps]
-                                 + [ '* * ../../CMSSW_11_1_0_pre5/src/nTupleAnalysis/baseClasses/data/Fall17_17Nov2017_V32_MC/RegroupedV2_Fall17_17Nov2017_V32_MC_UncertaintySources_AK4PFchs.junc.txt']
-                                 + [ '* * ../../CMSSW_11_1_0_pre5/src/nTupleAnalysis/baseClasses/data/Fall17_V3b_MC/Fall17_V3b_MC_PtResolution_AK4PFchs.jr.txt',
-                                     '* * ../../CMSSW_11_1_0_pre5/src/nTupleAnalysis/baseClasses/data/Fall17_V3b_MC/Fall17_V3b_MC_SF_AK4PFchs.jersf.txt'],
-                   '2018'        : [f'* * ../../CMSSW_11_1_0_pre5/src/nTupleAnalysis/baseClasses/data/Autumn18_V19_MC/Autumn18_V19_MC_{step}_AK4PFchs.txt' for step in calibration_steps]
-                                 + [ '* * ../../CMSSW_11_1_0_pre5/src/nTupleAnalysis/baseClasses/data/Autumn18_V19_MC/RegroupedV2_Autumn18_V19_MC_UncertaintySources_AK4PFchs.junc.txt']
-                                 + [ '* * ../../CMSSW_11_1_0_pre5/src/nTupleAnalysis/baseClasses/data/Autumn18_V7b_MC/Autumn18_V7b_MC_PtResolution_AK4PFchs.jr.txt',
-                                     '* * ../../CMSSW_11_1_0_pre5/src/nTupleAnalysis/baseClasses/data/Autumn18_V7b_MC/Autumn18_V7b_MC_SF_AK4PFchs.jersf.txt'],
+    weight_sets = {'UL16_preVFP' : [f'* * data/Summer19UL16APV_V7_MC/Summer19UL16APV_V7_MC_{step}_AK4PFchs.txt' for step in calibration_steps]
+                                 + [ '* * data/Summer19UL16APV_V7_MC/RegroupedV2_Summer19UL16APV_V7_MC_UncertaintySources_AK4PFchs.junc.txt']
+                                 + [ '* * data/Summer20UL16APV_JRV3_MC/Summer20UL16APV_JRV3_MC_PtResolution_AK4PFchs.jr.txt',
+                                     '* * data/Summer20UL16APV_JRV3_MC/Summer20UL16APV_JRV3_MC_SF_AK4PFchs.jersf.txt'],
+                   'UL16_postVFP': [f'* * data/Summer19UL16_V7_MC/Summer19UL16_V7_MC_{step}_AK4PFchs.txt' for step in calibration_steps]
+                                 + [ '* * data/Summer19UL16_V7_MC/RegroupedV2_Summer19UL16_V7_MC_UncertaintySources_AK4PFchs.junc.txt']
+                                 + [ '* * data/Summer20UL16_JRV3_MC/Summer20UL16_JRV3_MC_PtResolution_AK4PFchs.jr.txt',
+                                     '* * data/Summer20UL16_JRV3_MC/Summer20UL16_JRV3_MC_SF_AK4PFchs.jersf.txt'],
+                   'UL17'        : [f'* * data/Summer19UL17_V5_MC/Summer19UL17_V5_MC_{step}_AK4PFchs.txt' for step in calibration_steps]
+                                 + [ '* * data/Summer19UL17_V5_MC/RegroupedV2_Summer19UL17_V5_MC_UncertaintySources_AK4PFchs.junc.txt']
+                                 + [ '* * data/Summer19UL17_JRV2_MC/Summer19UL17_JRV2_MC_PtResolution_AK4PFchs.jr.txt',
+                                     '* * data/Summer19UL17_JRV2_MC/Summer19UL17_JRV2_MC_SF_AK4PFchs.jersf.txt'],
+                   'UL18'        : [f'* * data/Summer19UL18_V5_MC/Summer19UL18_V5_MC_{step}_AK4PFchs.txt' for step in calibration_steps]
+                                 + [ '* * data/Summer19UL18_V5_MC/RegroupedV2_Summer19UL18_V5_MC_UncertaintySources_AK4PFchs.junc.txt']
+                                 + [ '* * data/Summer19UL18_JRV2_MC/Summer19UL18_JRV2_MC_PtResolution_AK4PFchs.jr.txt',
+                                     '* * data/Summer19UL18_JRV2_MC/Summer19UL18_JRV2_MC_SF_AK4PFchs.jersf.txt'],
+                   '2016'        : [f'* * data/Summer16_07Aug2017_V11_MC/Summer16_07Aug2017_V11_MC_{step}_AK4PFchs.txt' for step in calibration_steps]
+                                 + [ '* * data/Summer16_07Aug2017_V11_MC/RegroupedV2_Summer16_07Aug2017_V11_MC_UncertaintySources_AK4PFchs.junc.txt']
+                                 + [ '* * data/Summer16_25nsV1b_MC/Summer16_25nsV1b_MC_PtResolution_AK4PFchs.jr.txt',
+                                     '* * data/Summer16_25nsV1b_MC/Summer16_25nsV1b_MC_SF_AK4PFchs.jersf.txt'],
+                   '2017'        : [f'* * data/Fall17_17Nov2017_V32_MC/Fall17_17Nov2017_V32_MC_{step}_AK4PFchs.txt' for step in calibration_steps]
+                                 + [ '* * data/Fall17_17Nov2017_V32_MC/RegroupedV2_Fall17_17Nov2017_V32_MC_UncertaintySources_AK4PFchs.junc.txt']
+                                 + [ '* * data/Fall17_V3b_MC/Fall17_V3b_MC_PtResolution_AK4PFchs.jr.txt',
+                                     '* * data/Fall17_V3b_MC/Fall17_V3b_MC_SF_AK4PFchs.jersf.txt'],
+                   '2018'        : [f'* * data/Autumn18_V19_MC/Autumn18_V19_MC_{step}_AK4PFchs.txt' for step in calibration_steps]
+                                 + [ '* * data/Autumn18_V19_MC/RegroupedV2_Autumn18_V19_MC_UncertaintySources_AK4PFchs.junc.txt']
+                                 + [ '* * data/Autumn18_V7b_MC/Autumn18_V7b_MC_PtResolution_AK4PFchs.jr.txt',
+                                     '* * data/Autumn18_V7b_MC/Autumn18_V7b_MC_SF_AK4PFchs.jersf.txt'],
                }
     if condor:
         weight_sets[era] = ['* * '+ws.split('/')[-1] for ws in weight_sets[era]]
@@ -1055,9 +1055,9 @@ def btagSF_file(era='UL18', condor=False):
               'UL16_postVFP': '/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/2016postVFP_UL/btagging.json.gz',
               'UL17'        : '/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/2017_UL/btagging.json.gz',
               'UL18'        : '/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/2018_UL/btagging.json.gz',
-              '2016'        : '../../CMSSW_11_1_0_pre5/src/nTupleAnalysis/baseClasses/data/BTagSF2016/btagging_legacy16_deepJet_itFit.json.gz', # legacy for non UL HH4b sample
-              '2017'        : '../../CMSSW_11_1_0_pre5/src/nTupleAnalysis/baseClasses/data/BTagSF2017/btagging_legacy17_deepJet.json.gz',
-              '2018'        : '../../CMSSW_11_1_0_pre5/src/nTupleAnalysis/baseClasses/data/BTagSF2018/btagging_legacy18_deepJet.json.gz'}
+              '2016'        : 'data/BTagSF2016/btagging_legacy16_deepJet_itFit.json.gz', # legacy for non UL HH4b sample
+              '2017'        : 'data/BTagSF2017/btagging_legacy17_deepJet.json.gz',
+              '2018'        : 'data/BTagSF2018/btagging_legacy18_deepJet.json.gz'}
     if condor:
         btagSF['2016'] = 'btagging_legacy16_deepJet_itFit.json.gz' # legacy for non UL HH4b sample
         btagSF['2017'] = 'btagging_legacy17_deepJet.json.gz'
@@ -1070,9 +1070,9 @@ def puWeight_file(era='UL18', condor=False):
            'UL16_postVFP': '/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/LUM/2016postVFP_UL/puWeights.json.gz',
            'UL17'        : '/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/LUM/2017_UL/puWeights.json.gz',
            'UL18'        : '/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/LUM/2018_UL/puWeights.json.gz',
-           '2016'        : '../../CMSSW_11_1_0_pre5/src/nTupleAnalysis/baseClasses/data/PUWeight/puWeights_legacy16.json.gz', # legacy for non UL HH4b sample
-           '2017'        : '../../CMSSW_11_1_0_pre5/src/nTupleAnalysis/baseClasses/data/PUWeight/puWeights_legacy17.json.gz',
-           '2018'        : '../../CMSSW_11_1_0_pre5/src/nTupleAnalysis/baseClasses/data/PUWeight/puWeights_legacy18.json.gz'}
+           '2016'        : 'data/PUWeight/puWeights_legacy16.json.gz', # legacy for non UL HH4b sample
+           '2017'        : 'data/PUWeight/puWeights_legacy17.json.gz',
+           '2018'        : 'data/PUWeight/puWeights_legacy18.json.gz'}
     if condor:
         puWeight['2016'] = 'puWeights_legacy16.json.gz' # legacy for non UL HH4b sample
         puWeight['2017'] = 'puWeights_legacy17.json.gz'
@@ -1132,7 +1132,7 @@ if __name__ == '__main__':
     eos_base = 'root://cmseos.fnal.gov//store/user/pbryant/condor'
     nfs_base =  '.' #'/uscms/home/bryantp/nobackup/ZZ4b'
     eos = True
-    test = True
+    test = False
 
     input_path  = f'{eos_base if eos else nfs_base}'
     output_path = f'{nfs_base}'
@@ -1177,7 +1177,7 @@ if __name__ == '__main__':
 
 
     analysis_args = {'debug': False,
-                     'JCM': '../../CMSSW_11_1_0_pre5/src/ZZ4b/nTupleAnalysis/weights/dataRunII/jetCombinatoricModel_SB_00-00-02.txt',
+                     'JCM': 'weights/dataRunII/jetCombinatoricModel_SB_00-00-02.txt',
                      'btagVariations': btagVariations(systematics=True),
                      'juncVariations': juncVariations(systematics=False),
                      'threeTag': False,
@@ -1195,7 +1195,7 @@ if __name__ == '__main__':
         executor=processor.futures_executor,
         executor_args={'schema': NanoAODSchema, 'workers': 6},
         chunksize=100 if test else 100_000,
-        maxchunks=1 if test else None,
+        maxchunks=1, # if test else None,
     )
     elapsed = time.time() - tstart
     nEvent = sum([output['nEvent'][dataset] for dataset in output['nEvent'].keys()])
