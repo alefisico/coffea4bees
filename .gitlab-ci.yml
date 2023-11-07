@@ -16,33 +16,33 @@
 # This specific template is located at:
 # https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Getting-Started.gitlab-ci.yml
 
-workflow:
-  rules:
-    - if: $CI_COMMIT_TAG
-      when: never
-    - if: '$CI_PROJECT_NAMESPACE == "cms-cmu" && $CI_COMMIT_BRANCH == "master"'
+#workflow:
+#  rules:
+#    - if: $CI_COMMIT_TAG
+#      when: never
+#    - if: '$CI_PROJECT_NAMESPACE == "cms-cmu" && $CI_COMMIT_BRANCH == "master"'
 
 stages:          # List of stages for jobs, and their order of execution
   - build
   - test
   - deploy
 
-voms_proxy:
-  stage: buildimages 
-  image: gitlab-registry.cern.ch/clange/grid-proxy-test:master
-  artifacts:
-    paths:
-      - proxy
-  script:
-    - mkdir -p ${HOME}/.globus
-    - printf "${GRID_USERCERT}" | base64 -d > ${HOME}/.globus/usercert.pem
-    - printf "${GRID_USERKEY}" | base64 -d > ${HOME}/.globus/userkey.pem
-    - chmod 400 ${HOME}/.globus/userkey.pem
-    - printf "${GRID_PASSWORD}" | base64 -d | voms-proxy-init --voms cms --pwstdin
-    - voms-proxy-info --all
-    - export VOMSPROXY=$(voms-proxy-info -path)
-    - mkdir proxy
-    - cp ${VOMSPROXY} proxy/x509_proxy
+#voms_proxy:
+#  stage: buildimages 
+#  image: gitlab-registry.cern.ch/clange/grid-proxy-test:master
+#  artifacts:
+#    paths:
+#      - proxy
+#  script:
+#    - mkdir -p ${HOME}/.globus
+#    - printf "${GRID_USERCERT}" | base64 -d > ${HOME}/.globus/usercert.pem
+#    - printf "${GRID_USERKEY}" | base64 -d > ${HOME}/.globus/userkey.pem
+#    - chmod 400 ${HOME}/.globus/userkey.pem
+#    - printf "${GRID_PASSWORD}" | base64 -d | voms-proxy-init --voms cms --pwstdin
+#    - voms-proxy-info --all
+#    - export VOMSPROXY=$(voms-proxy-info -path)
+#    - mkdir proxy
+#    - cp ${VOMSPROXY} proxy/x509_proxy
 
 
 .docker_build:

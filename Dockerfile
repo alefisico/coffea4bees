@@ -5,7 +5,7 @@ COPY set_env.sh /home/cmsusr/CMSSW_11_2_5/src/set_env.sh
 RUN bash /opt/cms/entrypoint.sh && \
     cd /home/cmsusr/CMSSW_11_2_5/src/ && \
     eval `/cvmfs/cms.cern.ch/common/scramv1 runtime -sh` && \
-    git cms-addpkg PhysicsTools/ONNXRuntime && \
+    #git cms-addpkg PhysicsTools/ONNXRuntime && \
     #source set_env.sh && \
     /cvmfs/cms.cern.ch/common/scramv1 b clean && \
     /cvmfs/cms.cern.ch/common/scramv1 b   && \

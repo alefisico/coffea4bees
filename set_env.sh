@@ -13,6 +13,7 @@ else
     echo "$cmssw_version already set."
 fi
 
+echo "Cloning the packages needed for the analysis"
 git cms-addpkg PhysicsTools/ONNXRuntime
 git cms-merge-topic patrickbryant:MakePyBind11ParameterSetsIncludingCommandLineArguments
 git clone https://github.com/patrickbryant/nTupleAnalysis.git
