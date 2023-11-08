@@ -38,6 +38,7 @@ from networks import HCREnsemble
 
 
 
+
 @dataclass
 class variable:
     def __init__(self, name, bins, label='Events'):
