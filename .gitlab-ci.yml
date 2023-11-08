@@ -78,7 +78,7 @@ coffea-test-job:   # This job runs in the test stage.
   dependencies:
     - voms_proxy
   tags:
-    - k8s-cvmfs
+    - cvmfs
   image: gitlab-registry.cern.ch/cms-cloud/cmssw-docker/cc7-cms 
   script:
     - set +e && source /cvmfs/sft.cern.ch/lcg/views/LCG_103/x86_64-centos7-gcc11-opt/setup.sh; set -e
