@@ -1,1 +1,1 @@
-python coffea_analysis.py
+python coffea_analysis.py -t
