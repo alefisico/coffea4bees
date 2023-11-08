@@ -11,7 +11,7 @@ stages:          # List of stages for jobs, and their order of execution
 
 voms_proxy:
   stage: build
-  image: gitlab-registry.cern.ch/clange/grid-proxy-test:master
+  image: gitlab-registry.cern.ch/cms-cloud/cmssw-docker/cc7-cms 
   artifacts:
     paths:
       - proxy
