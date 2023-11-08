@@ -75,7 +75,6 @@ voms_proxy:
 
 coffea-test-job:   # This job runs in the test stage.
   stage: test    # It only starts when the job in the build stage completes successfully.
-  extends: .docker_build
   dependencies:
     - voms_proxy
   tags:
@@ -84,6 +83,7 @@ coffea-test-job:   # This job runs in the test stage.
   script:
     - set +e && source /cvmfs/sft.cern.ch/lcg/views/LCG_103/x86_64-centos7-gcc11-opt/setup.sh; set -e
     - echo "Running unit tests... This will take about 60 seconds."
+    - xrootd -v
     - export X509_USER_PROXY=${PWD}/proxy/x509_proxy
     - xrdcp root://cmseos.fnal.gov//store/user/pbryant/condor/HH4b2018/picoAOD.root ./picoAOD.root
     - cd analysis/
