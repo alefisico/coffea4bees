@@ -40,8 +40,8 @@ Once you are happy with your changes, you can make a merge request in the gitlab
 
 ## Information for continuos integration (CI)
 
-By default only the **master branch** of the **main repository** (cms-cmu user) runs the gitlab CI workflow. 
+By default only the **master branch** runs the gitlab CI workflow. If you want to push incomplete or buggy code, create a new branch. 
 
-If you want to run the gitlab CI workflow in your private fork, you need first to create some variables to set up your voms-proxy. You can follow [these steps](https://awesome-workshop.github.io/gitlab-cms/03-vomsproxy/index.html) (except the last part, Using the grid proxy).
+The CI runs on remote files and therefore it needs your grid certificate. If you want to run the gitlab CI workflow in your private fork, you need first to create some variables to set up your voms-proxy. You can follow [these steps](https://awesome-workshop.github.io/gitlab-cms/03-vomsproxy/index.html) (except the last part, Using the grid proxy).
 
-After you need to run the pipeline manually.
+If you did this step correctly, then you can check in your pipelines and see that the stage `build`, job `voms-proxy` ran succesfully.
