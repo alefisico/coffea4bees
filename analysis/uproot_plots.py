@@ -19,7 +19,7 @@ if __name__ == '__main__':
     year = '2018'
     dataset = f'ZZ4b{year}'
     input_path = f'{eos_base if eos else nfs_base}/{dataset}'
-    output_path = '.' #f'{nfs_base}/{dataset}'
+    output_path = '' #f'{nfs_base}/{dataset}'
 
     with open(f'{output_path}/{args.inputFile}', 'rb') as hfile:
         hists = pickle.load(hfile)
