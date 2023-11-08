@@ -40,11 +40,12 @@ coffea-test-job:
     - voms-proxy-info
     - cd analysis/
     - source runTestJob.sh
-    - ls 
+    - cd .. && mkdir output && cp analysis/test.pkl output/
+    - ls -lR
   artifacts: 
     expire_in: 1 day
     paths:
-      - analysis/test.pkl
+      - output
 
 
 plot-job:    
@@ -57,7 +58,7 @@ plot-job:
   script:
     - set +e && source /cvmfs/sft.cern.ch/lcg/views/LCG_103/x86_64-centos7-gcc11-opt/setup.sh; set -e
     - ls 
-    - python ${PWD}/analysis/uproot_plots.py -i ${PWD}/analysis/test.pkl
+    - python analysis/uproot_plots.py -i ${PWD}/output/test.pkl
     - mkdir plots
     - cp *pdf plots/
   artifacts:
