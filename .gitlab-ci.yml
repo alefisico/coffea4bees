@@ -4,7 +4,7 @@
 #      when: never
 #    - if: '$CI_PROJECT_NAMESPACE == "cms-cmu" && $CI_COMMIT_BRANCH == "master"'
 
-stages:          # List of stages for jobs, and their order of execution
+stages:          
   - build
   - test
   - plot
@@ -26,19 +26,16 @@ voms_proxy:
     - mkdir proxy
     - cp ${VOMSPROXY} proxy/x509_proxy
 
-.load_coffea:
-  image: gitlab-registry.cern.ch/cms-cloud/cmssw-docker/cc7-cms 
-  tags:
-    - cvmfs
-  script:
-    - set +e && source /cvmfs/sft.cern.ch/lcg/views/LCG_103/x86_64-centos7-gcc11-opt/setup.sh; set -e
 
 coffea-test-job:   
   stage: test   
-  extends: .load_coffea
   dependencies:
     - voms_proxy
+  image: gitlab-registry.cern.ch/cms-cloud/cmssw-docker/cc7-cms 
+  tags:
+    - k8s-cvmfs
   script:
+    - set +e && source /cvmfs/sft.cern.ch/lcg/views/LCG_103/x86_64-centos7-gcc11-opt/setup.sh; set -e
     - export X509_USER_PROXY=${PWD}/proxy/x509_proxy
     - voms-proxy-info
     - cd analysis/
@@ -53,10 +50,13 @@ coffea-test-job:
 
 plot-job:    
   stage: plot 
-  extends: .load_coffea
   dependencies: 
     - coffea-test-job
+  image: gitlab-registry.cern.ch/cms-cloud/cmssw-docker/cc7-cms 
+  tags:
+    - k8s-cvmfs
   script:
+    - set +e && source /cvmfs/sft.cern.ch/lcg/views/LCG_103/x86_64-centos7-gcc11-opt/setup.sh; set -e
     - cd analysis/
     - python uproot_plots.py -i test.pkl
     - mkdir plots
