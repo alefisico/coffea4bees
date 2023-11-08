@@ -85,6 +85,7 @@ coffea-test-job:   # This job runs in the test stage.
     - echo "Running unit tests... This will take about 60 seconds."
     - xrootd -v
     - export X509_USER_PROXY=${PWD}/proxy/x509_proxy
+    - voms-proxy-info
     - xrdcp root://cmseos.fnal.gov//store/user/pbryant/condor/HH4b2018/picoAOD.root ./picoAOD.root
     - cd analysis/
     - source runTestJob.sh
