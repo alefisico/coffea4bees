@@ -44,7 +44,7 @@ coffea-test-job:
   artifacts: 
     expire_in: 1 day
     paths:
-      - test.pkl
+      - analysis/test.pkl
 
 
 plot-job:    
@@ -57,8 +57,7 @@ plot-job:
   script:
     - set +e && source /cvmfs/sft.cern.ch/lcg/views/LCG_103/x86_64-centos7-gcc11-opt/setup.sh; set -e
     - ls 
-    - cd analysis/
-    - python uproot_plots.py -i test.pkl
+    - python ${PWD}/analysis/uproot_plots.py -i ${PWD}/analysis/test.pkl
     - mkdir plots
     - cp *pdf plots/
   artifacts:
