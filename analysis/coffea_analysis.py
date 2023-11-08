@@ -1,6 +1,6 @@
 # unset PYTHONPATH
 # source /cvmfs/sft.cern.ch/lcg/views/LCG_102/x86_64-centos7-gcc8-opt/setup.sh
-import pickle, os, time, gc
+import pickle, os, time, gc, argparse
 from copy import deepcopy
 from dataclasses import dataclass
 import awkward as ak
@@ -1130,14 +1130,20 @@ def juncVariations(systematics=False, years = ['YEAR']):
     return juncVariations
 
 if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser(description='coffea_analysis')
+    parser.add_argument('-t','--test', dest="test", action="store_true", default=False, help='Run as a test with few files')
+    args = parser.parse_args()
+
+
     eos_base = 'root://cmseos.fnal.gov//store/user/pbryant/condor'
     nfs_base =  '.' #'/uscms/home/bryantp/nobackup/ZZ4b'
     eos = True
-    test = False
+    test = args.test
 
     input_path  = f'{eos_base if eos else nfs_base}'
     output_path = f'{nfs_base}'
-    output_file = 'hists.pkl' if not test else 'test.pkl'
+    output_file = 'hists.pkl' if not args.test else 'test.pkl'
 
     metadata = {}
     fileset = {}
@@ -1156,7 +1162,7 @@ if __name__ == '__main__':
         # datasets = [f'ZZ4b{year}']
         # datasets = [f'HH4b{year}']
 
-    if test: datasets = ['HH4b2018']
+    if args.test: datasets = ['HH4b2018']
 
     for dataset in datasets:
         year = dataset[dataset.find('2'):dataset.find('2')+4]
@@ -1195,8 +1201,8 @@ if __name__ == '__main__':
         processor_instance=analysis(**analysis_args),
         executor=processor.futures_executor,
         executor_args={'schema': NanoAODSchema, 'workers': 6},
-        chunksize=100 if test else 100_000,
-        maxchunks=1, # if test else None,
+        chunksize=100 if args.test else 100_000,
+        maxchunks=1 if args.test else None,
     )
     elapsed = time.time() - tstart
     nEvent = sum([output['nEvent'][dataset] for dataset in output['nEvent'].keys()])
