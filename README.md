@@ -3,6 +3,8 @@
 This is the repository for the 4b analyses at CMU based in coffea. 
 This repository in based on the coffea implementation of the ZZ/ZH to 4b analysis for Run2. More information about that repository [here](https://github.com/patrickbryant/ZZ4b).
 
+Information about the analysis steps can be found in the [README](analysis/README.md) of the analysis folder.
+
 ## Installation
 
 This repository assumes that you are running in a machine that has access to [cvmfs](https://cernvm.cern.ch/fs/). Then you can clone this repository as:
@@ -40,7 +42,9 @@ Once you are happy with your changes, you can make a merge request in the gitlab
 
 ## Information for continuos integration (CI)
 
-By default only the **master branch** runs the gitlab CI workflow. If you want to push incomplete or buggy code, create a new branch. 
+By default only the **master branch** runs the gitlab CI workflow. If you want to push incomplete or buggy code, without running the CI workflow, create a new branch. 
+
+The workflow for the CI can be found in the [gitlab-ci.yml](.gitlab-ci.yml) file.
 
 The CI runs on remote files and therefore it needs your grid certificate. If you want to run the gitlab CI workflow in your private fork, you need first to create some variables to set up your voms-proxy. You can follow [these steps](https://awesome-workshop.github.io/gitlab-cms/03-vomsproxy/index.html) (except the last part, Using the grid proxy).
 
