@@ -20,12 +20,13 @@ voms_proxy:
     paths:
       - proxy
   script:
+    - env
     - mkdir -p ${HOME}/.globus
     - printf "${GRID_USERCERT}" | base64 -d > ${HOME}/.globus/usercert.pem
-    - echo $GRID_USERCERT
     - printf "${GRID_USERKEY}" | base64 -d > ${HOME}/.globus/userkey.pem
     - chmod 400 ${HOME}/.globus/userkey.pem
     - printf "${GRID_PASSWORD}" | base64 -d | voms-proxy-init --voms cms --pwstdin
+    - env
     - voms-proxy-info --all
     - export VOMSPROXY=$(voms-proxy-info -path)
     - mkdir proxy
