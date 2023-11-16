@@ -29,16 +29,28 @@ voms_proxy:
     - mkdir proxy
     - cp ${VOMSPROXY} proxy/x509_proxy
 
+coffea_container:
+  stage: build
+  image: gitlab-registry.cern.ch/cms-cloud/cmssw-docker/cc7-cms 
+  artifacts:
+    paths:
+      - shell
+  script:
+    - curl -OL https://raw.githubusercontent.com/CoffeaTeam/lpcjobqueue/main/bootstrap.sh
+    - bash bootstrap.sh
+
 
 coffea-test-job:   
   stage: test   
   dependencies:
     - voms_proxy
+    - coffea_container 
   image: gitlab-registry.cern.ch/cms-cloud/cmssw-docker/cc7-cms 
   tags:
     - k8s-cvmfs
   script:
-    - set +e && source /cvmfs/sft.cern.ch/lcg/views/LCG_103/x86_64-centos7-gcc11-opt/setup.sh; set -e
+    #- set +e && source /cvmfs/sft.cern.ch/lcg/views/LCG_103/x86_64-centos7-gcc11-opt/setup.sh; set -e
+    - ./shell
     - export X509_USER_PROXY=${PWD}/proxy/x509_proxy
     - voms-proxy-info
     - cd analysis/
@@ -47,7 +59,7 @@ coffea-test-job:
   artifacts: 
     expire_in: 1 day
     paths:
-      - analysis/test.pkl
+      - analysis/hists/test.pkl
 
 
 plot-job:    
@@ -60,9 +72,7 @@ plot-job:
   script:
     - set +e && source /cvmfs/sft.cern.ch/lcg/views/LCG_103/x86_64-centos7-gcc11-opt/setup.sh; set -e
     - ls 
-    - python ${PWD}/analysis/uproot_plots.py -i ${PWD}/analysis/test.pkl
-    - mkdir plots
-    - mv *pdf plots/
+    - python ${PWD}/analysis/uproot_plots.py -i ${PWD}/analysis/hists/test.pkl
   artifacts:
     expire_in: 1 year
     paths:
