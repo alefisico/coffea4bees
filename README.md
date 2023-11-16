@@ -13,18 +13,18 @@ This repository assumes that you are running in a machine that has access to [cv
 git clone ssh://git@gitlab.cern.ch:7999/cms-cmu/coffea4bees.git
 ```
 
-Then you can set the environment for the package to work:
+This code has been tested at the cmslpc, and to simplify the setup, it can be used with the container needed to run on lpc condor computers. To set this container:
 ```
-cd coffea4bees/
-source set_env.sh
+curl -OL https://raw.githubusercontent.com/CoffeaTeam/lpcjobqueue/main/bootstrap.sh
+bash bootstrap.sh
 ```
+This creates two new files in this directory: `shell` and `.bashrc`. The `./shell` executable can then be used to start a singularity shell with a coffea environment. More information about this container [here](https://github.com/CoffeaTeam/lpcjobqueue).
 
-Remember to run this command (aka set your environment) *every time you want to run something*. In addition, dont forget to run your voms-proxy to have access to remote files:
+Remember to run this command `./shell` (aka set your environment) *every time you want to run something*. In addition, dont forget to run your voms-proxy to have access to remote files:
 
 ```
 voms-proxy-init -rfc -voms cms --valid 168:00
 ```
-
 ## How to contribute 
 
 If you want to submit your changes to the code to the **main repository** (aka cms-cmu gitlab user) it is highly recommended to first fork this repository to your user. 

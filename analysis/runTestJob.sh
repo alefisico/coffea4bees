@@ -1,1 +1,1 @@
-python coffea_analysis.py -t
+python coffea_analysis.py -t -o test.pkl -d HH4b

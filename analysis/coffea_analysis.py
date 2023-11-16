@@ -8,6 +8,7 @@ import warnings
 warnings.filterwarnings("ignore")
 from coffea import processor
 import cachetools
+import logging
 
 from helpers.MultiClassifierSchema import MultiClassifierSchema
 from functools import partial
@@ -33,10 +34,15 @@ if __name__ == '__main__':
     parser.add_argument('-op','--outputPath', dest="output_path", default="hists/", help='Output path, if you want to save file somewhere else. Default: hists/')
     parser.add_argument('-y', '--year', nargs='+', dest='years', default=['2018'], choices=['2016', '2017', '2018', 'RunII'], help="Year of data to run. Example if more than one: --year 2016 2017")
     parser.add_argument('-d', '--datasets', nargs='+', dest='datasets', default=['HH4b', 'ZZ4b', 'ZH4b'], choices=fullmetadata.keys(), help="Name of dataset to run. Example if more than one: -d HH4b ZZ4b")
-    parser.add_argument('--debug', dest="debug", action="store_true", default=False, help='Run in debug mode')
     parser.add_argument('--condor', dest="condor", action="store_true", default=False, help='Run in condor')
+    parser.add_argument( '--debug', help="Print lots of debugging statements", action="store_true", dest="debug", default=False)
     args = parser.parse_args()
-    print("Running with these parameters:", args)
+    logging.basicConfig(level= logging.DEBUG if args.debug else logging.INFO )
+
+    if args.test:
+        args.datasets=['HH4b']
+        args.output_file='test.pkl'
+    logging.info(f"\nRunning with these parameters: {args}")
 
     #### Metadata
     metadata = {}
@@ -47,8 +53,8 @@ if __name__ == '__main__':
             era = f'{20 if "HH4b" in dataset else "UL"}{year[2:]+VFP}'
             jercCorrections = [ correctionsMetadata[era]["JERC"][0].replace('STEP', istep) for istep in ['L1FastJet', 'L2Relative', 'L2L3Residual', 'L3Absolute'] ] + correctionsMetadata[era]["JERC"][1:]
 
-            metadata[dataset] = {'isMC'  : True,
-                                 'xs'    : eval(fullmetadata[dataset]['xs']),
+            metadata[dataset] = {'isMC'  : False if 'data' in dataset else True,
+                                 'xs'    : fullmetadata[dataset]['xs'] if isinstance(fullmetadata[dataset]['xs'], float) else eval(fullmetadata[dataset]['xs']),
                                  'lumi'  : float(fullmetadata['data'][year]['lumi']),
                                  'year'  : year,
                                  'btagSF': correctionsMetadata[era]['btagSF'],
@@ -59,7 +65,7 @@ if __name__ == '__main__':
             fileset[dataset] = {'files': [ f'root://cmseos.fnal.gov/{fullmetadata[dataset][year]["picoAOD"]}' ],
                                 'metadata': metadata[dataset]}
 
-            print(f'Dataset {dataset} with {len(fileset[dataset]["files"])} files')
+            logging.info(f'\nDataset {dataset} with {len(fileset[dataset]["files"])} files')
 
 
     #### analysis arguments
@@ -87,13 +93,14 @@ if __name__ == '__main__':
                         'cores': 2,
                         'memory': '4GB',
                         'ship_env': False}
+        logging.info("\nCluster arguments: ", cluster_args)
 
         cluster = LPCCondorCluster(**cluster_args)
         cluster.adapt(minimum=1, maximum=200)
         client = Client(cluster)
         # client = Client()
 
-        print('Waiting for at least one worker...')
+        logging.info('\nWaiting for at least one worker...')
         client.wait_for_workers(1)
 
 
@@ -104,11 +111,12 @@ if __name__ == '__main__':
             'align_clusters': False,
         }
     else:
-        executor_args = {'schema': NanoAODSchema, 'workers': 6}
+        executor_args = {'schema': NanoAODSchema, 'workers': 6, 'savemetrics':True}
+    logging.info( f"i\nExecutor arguments: {executor_args}")
 
     #### Run processor
     tstart = time.time()
-    output = processor.run_uproot_job(
+    output, metrics = processor.run_uproot_job(
         fileset,
         treename = 'Events',
         processor_instance = analysis(**analysis_args),
@@ -118,11 +126,17 @@ if __name__ == '__main__':
         maxchunks = 1 if args.test else None,
     )
     elapsed = time.time() - tstart
-    nEvent = sum([output['nEvent'][dataset] for dataset in output['nEvent'].keys()])
-    print(f'{nEvent/elapsed:,.0f} events/s total ({nEvent}/{elapsed})')
+    if args.condor:
+        nEvent = metrics['entries']
+        processtime = metrics['processtime']
+        logging.info(f'\n{nEvent/elapsed:,.0f} events/s total ({nEvent}/{elapsed}, processtime {processtime})')
+    else:
+        nEvent = sum([output['nEvent'][dataset] for dataset in output['nEvent'].keys()])
+        logging.info(f'\n{nEvent/elapsed:,.0f} events/s total ({nEvent}/{elapsed})')
 
+    ##### Saving file
     if not os.path.exists(args.output_path): os.makedirs(args.output_path)
     with open(f'{args.output_path}/{args.output_file}', 'wb') as hfile:
-        print(f'pickle.dump(output, {args.output_path}/{args.output_file})')
+        logging.info(f'\npickle.dump(output, {args.output_path}/{args.output_file})')
         pickle.dump(output, hfile)
 

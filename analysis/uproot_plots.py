@@ -21,7 +21,7 @@ if __name__ == '__main__':
     input_path = f'{eos_base if eos else nfs_base}/{dataset}'
     output_path = '' #f'{nfs_base}/{dataset}'
 
-    with open(f'{output_path}/{args.inputFile}', 'rb') as hfile:
+    with open(f'{args.inputFile}', 'rb') as hfile:
         hists = pickle.load(hfile)
         print(hists['hists']['JES_Central']['passPreSel']['fourTag']['SR'].keys())
 #        for bb in ['zz','zh','hh']:
