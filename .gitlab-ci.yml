@@ -29,28 +29,28 @@ voms_proxy:
     - mkdir proxy
     - cp ${VOMSPROXY} proxy/x509_proxy
 
-coffea_container:
-  stage: build
-  image: gitlab-registry.cern.ch/cms-cloud/cmssw-docker/cc7-cms 
-  artifacts:
-    paths:
-      - shell
-  script:
-    - curl -OL https://raw.githubusercontent.com/CoffeaTeam/lpcjobqueue/main/bootstrap.sh
-    - bash bootstrap.sh
+#coffea_container:
+#  stage: build
+#  image: gitlab-registry.cern.ch/cms-cloud/cmssw-docker/cc7-cms 
+#  artifacts:
+#    paths:
+#      - shell
+#      - .bashrc
+#  script:
+#    - curl -OL https://raw.githubusercontent.com/CoffeaTeam/lpcjobqueue/main/bootstrap.sh
+#    - bash bootstrap.sh
 
 
 coffea-test-job:   
   stage: test   
   dependencies:
     - voms_proxy
-    - coffea_container 
-  image: gitlab-registry.cern.ch/cms-cloud/cmssw-docker/cc7-cms 
+      #image: gitlab-registry.cern.ch/cms-cloud/cmssw-docker/cc7-cms 
+  image: coffeateam/coffea-dask:latest
   tags:
     - k8s-cvmfs
   script:
     #- set +e && source /cvmfs/sft.cern.ch/lcg/views/LCG_103/x86_64-centos7-gcc11-opt/setup.sh; set -e
-    - ./shell
     - export X509_USER_PROXY=${PWD}/proxy/x509_proxy
     - voms-proxy-info
     - cd analysis/
