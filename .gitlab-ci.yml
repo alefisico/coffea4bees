@@ -45,16 +45,14 @@ coffea-test-job:
   stage: test   
   dependencies:
     - voms_proxy
-      #image: gitlab-registry.cern.ch/cms-cloud/cmssw-docker/cc7-cms 
   image: coffeateam/coffea-dask:latest
   tags:
     - k8s-cvmfs
   script:
-    #- set +e && source /cvmfs/sft.cern.ch/lcg/views/LCG_103/x86_64-centos7-gcc11-opt/setup.sh; set -e
     - export X509_USER_PROXY=${PWD}/proxy/x509_proxy
     - voms-proxy-info
     - cd analysis/
-    - source runTestJob.sh
+    - python coffea_analysis.py 
     - ls 
   artifacts: 
     expire_in: 1 day
@@ -66,11 +64,10 @@ plot-job:
   stage: plot 
   dependencies: 
     - coffea-test-job
-  image: gitlab-registry.cern.ch/cms-cloud/cmssw-docker/cc7-cms 
+  image: coffeateam/coffea-dask:latest
   tags:
     - k8s-cvmfs
   script:
-    - set +e && source /cvmfs/sft.cern.ch/lcg/views/LCG_103/x86_64-centos7-gcc11-opt/setup.sh; set -e
     - ls 
     - python ${PWD}/analysis/uproot_plots.py -i ${PWD}/analysis/hists/test.pkl
   artifacts:
