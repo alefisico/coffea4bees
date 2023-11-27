@@ -52,7 +52,7 @@ coffea-test-job:
     - export X509_USER_PROXY=${PWD}/proxy/x509_proxy
     - voms-proxy-info
     - cd analysis/
-    - python coffea_analysis.py 
+    - python coffea_analysis.py -t -d HH4b ZH4b
     - ls 
   artifacts: 
     expire_in: 1 day
