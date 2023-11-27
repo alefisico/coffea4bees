@@ -17,7 +17,6 @@ from helpers.networks import HCREnsemble
 from helpers.jetCombinatoricModel import jetCombinatoricModel
 import yaml
 
-from processors.processor_HH4b import analysis
 from helpers.correctionFunctions import btagSF_norm, btagVariations, juncVariations
 
 
@@ -31,6 +30,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='coffea_analysis')
     parser.add_argument('-t','--test', dest="test", action="store_true", default=False, help='Run as a test with few files')
     parser.add_argument('-o','--output', dest="output_file", default="hists.pkl", help='Output file. Default: hists.pkl')
+    parser.add_argument('-p','--processor', dest="processor", default="processors/processor_HH4b.py", help='Processor file. Default: processors/processor_HH4b.py')
     parser.add_argument('-op','--outputPath', dest="output_path", default="hists/", help='Output path, if you want to save file somewhere else. Default: hists/')
     parser.add_argument('-y', '--year', nargs='+', dest='years', default=['2018'], choices=['2016', '2017', '2018', 'RunII'], help="Year of data to run. Example if more than one: --year 2016 2017")
     parser.add_argument('-d', '--datasets', nargs='+', dest='datasets', default=['HH4b', 'ZZ4b', 'ZH4b'], choices=fullmetadata.keys(), help="Name of dataset to run. Example if more than one: -d HH4b ZZ4b")
@@ -54,7 +54,7 @@ if __name__ == '__main__':
             jercCorrections = [ correctionsMetadata[era]["JERC"][0].replace('STEP', istep) for istep in ['L1FastJet', 'L2Relative', 'L2L3Residual', 'L3Absolute'] ] + correctionsMetadata[era]["JERC"][1:]
 
             metadata[dataset] = {'isMC'  : False if 'data' in dataset else True,
-                                 'xs'    : fullmetadata[dataset]['xs'] if isinstance(fullmetadata[dataset]['xs'], float) else eval(fullmetadata[dataset]['xs']),
+                                 'xs'    : 1. if 'data' else (fullmetadata[dataset]['xs'] if isinstance(fullmetadata[dataset]['xs'], float) else eval(fullmetadata[dataset]['xs']) ),
                                  'lumi'  : float(fullmetadata['data'][year]['lumi']),
                                  'year'  : year,
                                  'btagSF': correctionsMetadata[era]['btagSF'],
@@ -73,7 +73,7 @@ if __name__ == '__main__':
                      'JCM': 'weights/dataRunII/jetCombinatoricModel_SB_00-00-02.txt',
                      'btagVariations': btagVariations(systematics=True),
                      'juncVariations': juncVariations(systematics=False),
-                     'threeTag': False,
+                     'threeTag': True,
                      'apply_puWeight':True,
                      'apply_prefire' :True,
                      # 'SvB'   : 'ZZ4b/nTupleAnalysis/pytorchModels/SvB_HCR_8_np753_seed0_lr0.01_epochs20_offset*_epoch20.pkl',
@@ -115,6 +115,9 @@ if __name__ == '__main__':
     logging.info( f"i\nExecutor arguments: {executor_args}")
 
     #### Run processor
+    if 'HH4b' in args.processor: from processors.processor_HH4b import analysis
+    else: logging.error("No processor included. Remember to call the processor class as: analysis")
+
     tstart = time.time()
     output, metrics = processor.run_uproot_job(
         fileset,

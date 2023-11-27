@@ -1,22 +1,22 @@
 data:
   '2016':
     lumi: 59.8e3
-    picoAOD: test.root
+    picoAOD: '/store/user/algomez/XX4b/20231115/data2016/picoAOD.root'
   '2016_preVFP':
     lumi: 19.5e3
-    picoAOD: test.root
+    picoAOD: '/store/user/algomez/XX4b/20231115/data2016/picoAOD.root'
   '2016_postVFP':
     lumi: 16.5e3
-    picoAOD: test.root
+    picoAOD: '/store/user/algomez/XX4b/20231115/data2016/picoAOD.root'
   '2017':
     lumi: 36.7e3
-    picoAOD: test.root
+    picoAOD: '/store/user/algomez/XX4b/20231115/data2017/picoAOD.root'
   '2018':
     lumi: 59.8e3
-    picoAOD: test.root
+    picoAOD: '/store/user/algomez/XX4b/20231115/data2018/picoAOD.root'
   'RunII':
     lumi: 132.8e3
-    picoAOD: test.root
+    picoAOD: '/store/user/algomez/XX4b/20231115/dataRunII/picoAOD.root'
 
 ggZH4b :
   xs: 0.1227*0.5824*0.1512, #0.0432 from GenXsecAnalyzer, does not include BR for H, does include BR(Z->hadrons) = 0.69911. 0.0432/0.69911 = 0.0618, almost exactly half the LHCxsWG value... NNLO = 2x NLO??

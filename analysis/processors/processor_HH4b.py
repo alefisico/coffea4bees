@@ -247,8 +247,8 @@ class analysis(processor.ProcessorABC):
         if self.debug: print(f'{chunk}Process {nEvent} Events')
 
         path = fname.replace(fname.split('/')[-1],'')
-        event['SvB']    = NanoEventsFactory.from_root(f'{path}SvB.root',    entry_start=estart, entry_stop=estop, schemaclass=MultiClassifierSchema).events().SvB
-        event['SvB_MA'] = NanoEventsFactory.from_root(f'{path}SvB_MA.root', entry_start=estart, entry_stop=estop, schemaclass=MultiClassifierSchema).events().SvB_MA
+        event['SvB']    = NanoEventsFactory.from_root(f'{path}{"SvB_newSBDef.root" if "mix" in dataset else "SvB.root"}',    entry_start=estart, entry_stop=estop, schemaclass=MultiClassifierSchema).events().SvB
+        event['SvB_MA'] = NanoEventsFactory.from_root(f'{path}{"SvB_MA_newSBDef.root" if "mix" in dataset else "SvB_MA.root"}', entry_start=estart, entry_stop=estop, schemaclass=MultiClassifierSchema).events().SvB_MA
 
         if not ak.all(event.SvB.event == event.event):
             print('ERROR: SvB events do not match events ttree')
@@ -295,15 +295,15 @@ class analysis(processor.ProcessorABC):
         #
         # METFilter
         #
-        passMETFilter =                 event.Flag.goodVertices                       & event.Flag.globalSuperTightHalo2016Filter & event.Flag.HBHENoiseFilter   & event.Flag.HBHENoiseIsoFilter
-        passMETFilter = passMETFilter & event.Flag.EcalDeadCellTriggerPrimitiveFilter & event.Flag.BadPFMuonFilter                & event.Flag.eeBadScFilter
+        passMETFilter = np.ones(len(event)) if 'mix' in dataset else ( event.Flag.goodVertices & event.Flag.globalSuperTightHalo2016Filter & event.Flag.HBHENoiseFilter   & event.Flag.HBHENoiseIsoFilter & event.Flag.EcalDeadCellTriggerPrimitiveFilter & event.Flag.BadPFMuonFilter & event.Flag.eeBadScFilter)
         # passMETFilter *= event.Flag.EcalDeadCellTriggerPrimitiveFilter & event.Flag.BadPFMuonFilter                & event.Flag.BadPFMuonDzFilter & event.Flag.hfNoisyHitsFilter & event.Flag.eeBadScFilter
-        if 'BadPFMuonDzFilter' in event.Flag.fields:
-            passMETFilter = passMETFilter & event.Flag.BadPFMuonDzFilter
-        if 'hfNoisyHitsFilter' in event.Flag.fields:
-            passMETFilter = passMETFilter & event.Flag.hfNoisyHitsFilter
-        if year == '2017' or year == '2018':
-            passMETFilter = passMETFilter & event.Flag.ecalBadCalibFilter # in UL the name does not have "V2"
+        if 'mix' not in dataset:
+            if 'BadPFMuonDzFilter' in event.Flag.fields:
+                passMETFilter = passMETFilter & event.Flag.BadPFMuonDzFilter
+            if 'hfNoisyHitsFilter' in event.Flag.fields:
+                passMETFilter = passMETFilter & event.Flag.hfNoisyHitsFilter
+            if year == '2017' or year == '2018':
+                passMETFilter = passMETFilter & event.Flag.ecalBadCalibFilter # in UL the name does not have "V2"
         event['passMETFilter'] = passMETFilter
         event = event[event.passMETFilter]
         self.cutflow(output, dataset, event, 'passMETFilter', allTag = True)
@@ -339,7 +339,7 @@ class analysis(processor.ProcessorABC):
                 # del event['Jet']
                 event['Jet'] = jet_variations[variation, direction]
 
-            event['Jet', 'calibration'] = event.Jet.pt/event.Jet.pt_raw
+            event['Jet', 'calibration'] = event.Jet.pt/( 1 if 'mix' in dataset else event.Jet.pt_raw )  ### AGE: I include the mix condition, I think it is wrong, to check later
             # if junc=='JES_Central':
             #     print(f'calibration nominal: \n{ak.mean(event.Jet.calibration)}')
             # else:
