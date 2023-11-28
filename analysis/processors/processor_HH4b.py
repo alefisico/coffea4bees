@@ -69,10 +69,9 @@ def count_nested_dict(nested_dict, c=0):
     return c
 
 class analysis(processor.ProcessorABC):
-    def __init__(self, debug = False, JCM = '', btagVariations=None, juncVariations=None, SvB=None, SvB_MA=None, threeTag = True, apply_puWeight = False, apply_prefire = False, apply_trigWeight = True):
-        self.debug = debug
+    def __init__(self, JCM = '', btagVariations=None, juncVariations=None, SvB=None, SvB_MA=None, threeTag = True, apply_puWeight = False, apply_prefire = False, apply_trigWeight = True):
         self.blind = True
-        print('Initialize Analysis Processor')
+        logging.debug('\nInitialize Analysis Processor')
         self.cuts = ['passPreSel']
         self.threeTag = threeTag
         self.tags = ['threeTag','fourTag'] if threeTag else ['fourTag']
@@ -116,16 +115,16 @@ class analysis(processor.ProcessorABC):
                                                         'hists'  : processor.dict_accumulator()})
 
         for junc in self.juncVar:
-            print(f'Making hists for {junc}')
+            logging.info(f'Making hists for {junc}')
             self._accumulator['hists'][junc] = processor.dict_accumulator()
             for cut in self.cuts:
-                print(f'    {cut}')
+                logging.info(f'    {cut}')
                 self._accumulator['hists'][junc][cut] = processor.dict_accumulator()
                 for tag in self.tags:
-                    print(f'        {tag}')
+                    logging.info(f'        {tag}')
                     self._accumulator['hists'][junc][cut][tag] = processor.dict_accumulator()
                     for region in self.regions:
-                        print(f'            {region}')
+                        logging.info(f'            {region}')
                         self._accumulator['hists'][junc][cut][tag][region] = processor.dict_accumulator()
                         for var in self.variables:
                             self._accumulator['hists'][junc][cut][tag][region][var.name] = hist.Hist(var.label, hist.Cat('dataset', 'Dataset'), var.bins)
@@ -158,7 +157,7 @@ class analysis(processor.ProcessorABC):
                         self._accumulator['hists'][junc]['passPreSel']['fourTag']['SR'][f'prefire_{syst}'][var.name] = hist.Hist(var.label, hist.Cat('dataset', 'Dataset'), var.bins)
 
         self.nHists = count_nested_dict(self._accumulator['hists'])
-        print(f'{self.nHists} total histograms')
+        logging.info(f'{self.nHists} total histograms')
 
     @property
     def accumulator(self):
@@ -243,18 +242,18 @@ class analysis(processor.ProcessorABC):
         #                                                       nJet_selected_axis,
         #                                                       storage='weight', label='Events')
 
-        if self.debug: print(fname)
-        if self.debug: print(f'{chunk}Process {nEvent} Events')
+        logging.debug(fname)
+        logging.debug(f'{chunk}Process {nEvent} Events')
 
         path = fname.replace(fname.split('/')[-1],'')
         event['SvB']    = NanoEventsFactory.from_root(f'{path}{"SvB_newSBDef.root" if "mix" in dataset else "SvB.root"}',    entry_start=estart, entry_stop=estop, schemaclass=MultiClassifierSchema).events().SvB
         event['SvB_MA'] = NanoEventsFactory.from_root(f'{path}{"SvB_MA_newSBDef.root" if "mix" in dataset else "SvB_MA.root"}', entry_start=estart, entry_stop=estop, schemaclass=MultiClassifierSchema).events().SvB_MA
 
         if not ak.all(event.SvB.event == event.event):
-            print('ERROR: SvB events do not match events ttree')
+            logging.error('ERROR: SvB events do not match events ttree')
             return
         if not ak.all(event.SvB_MA.event == event.event):
-            print('ERROR: SvB_MA events do not match events ttree')
+            logging.error('ERROR: SvB_MA events do not match events ttree')
             return
 
         event['SvB', 'passMinPs'] = (event.SvB.pzz>0.01) | (event.SvB.pzh>0.01) | (event.SvB.phh>0.01)
@@ -289,8 +288,7 @@ class analysis(processor.ProcessorABC):
 
         if isMC:
             event['weight'] = event.genWeight * (lumi * xs * kFactor / genEventSumw)
-            if self.debug:
-                print(f"event['weight'] = event.genWeight * (lumi * xs * kFactor / genEventSumw) = {event.genWeight[0]} * ({lumi} * {xs} * {kFactor} / {genEventSumw}) = {event.weight[0]}")
+            logging.debug(f"event['weight'] = event.genWeight * (lumi * xs * kFactor / genEventSumw) = {event.genWeight[0]} * ({lumi} * {xs} * {kFactor} / {genEventSumw}) = {event.weight[0]}")
 
         #
         # METFilter
@@ -313,7 +311,7 @@ class analysis(processor.ProcessorABC):
         # Calculate and apply Jet Energy Calibration
         #
         if isMC and juncWS is not None:
-            jet_factory = init_jet_factory(juncWS, debug=self.debug)
+            jet_factory = init_jet_factory(juncWS)
 
             event['Jet', 'pt_raw']    = (1 - event.Jet.rawFactor) * event.Jet.pt
             event['Jet', 'mass_raw']  = (1 - event.Jet.rawFactor) * event.Jet.mass
@@ -326,13 +324,12 @@ class analysis(processor.ProcessorABC):
             jec_cache = cachetools.Cache(np.inf)
             jet_variations = jet_factory.build(nominal_jet, lazy_cache=jec_cache)
 
-
         #
         # Loop over jet energy uncertainty variations running event selection, filling hists/cuflows independently for each jet calibration
         #
         for junc in self.juncVar:
             if junc != 'JES_Central':
-                if self.debug: print(f'{chunk} running selection for {junc}')
+                logging.debug(f'{chunk} running selection for {junc}')
                 variation = '_'.join(junc.split('_')[:-1]).replace('YEAR', year)
                 if 'JER' in junc: variation = variation.replace(f'_{year}','')
                 direction = junc.split('_')[-1]
@@ -366,13 +363,13 @@ class analysis(processor.ProcessorABC):
             if junc == 'JES_Central':
                 selev['issue'] = (threeTag!=selev.threeTag)|(fourTag!=selev.fourTag)
                 if ak.any(selev.issue):
-                    print(f'{chunk}WARNING: selected jets or fourtag calc not equal to picoAOD values')
-                    print('nSelJets')
-                    print(selev[selev.issue].nSelJets)
-                    print(selev[selev.issue].nJet_selected)
-                    print('fourTag')
-                    print(selev.fourTag[selev.issue])
-                    print(fourTag[selev.issue])
+                    logging.warning(f'{chunk}WARNING: selected jets or fourtag calc not equal to picoAOD values')
+                    logging.warning('nSelJets')
+                    logging.warning(selev[selev.issue].nSelJets)
+                    logging.warning(selev[selev.issue].nJet_selected)
+                    logging.warning('fourTag')
+                    logging.warning(selev.fourTag[selev.issue])
+                    logging.warning(fourTag[selev.issue])
 
             selev[ 'fourTag']   =  fourTag
             selev['threeTag']   = threeTag * self.threeTag
@@ -507,8 +504,8 @@ class analysis(processor.ProcessorABC):
                 if junc == 'JES_Central':
                     selev.issue = (abs(selev.pseudoTagWeight - pseudoTagWeight)/selev.pseudoTagWeight > 0.0001) & (selev.pseudoTagWeight!=1)
                     if ak.any(selev.issue):
-                        print(f'{chunk}WARNING: python pseudotag calc not equal to c++ calc')
-                        print(f'{chunk}Issues:',ak.sum(selev.issue),'of',ak.sum(selev.threeTag))
+                        logging.warning(f'{chunk}WARNING: python pseudotag calc not equal to c++ calc')
+                        logging.warning(f'{chunk}Issues:',ak.sum(selev.issue),'of',ak.sum(selev.threeTag))
 
                 # add pseudoTagWeight to event
                 selev['pseudoTagWeight'] = pseudoTagWeight
@@ -644,7 +641,7 @@ class analysis(processor.ProcessorABC):
 
         # Done
         elapsed = time.time() - tstart
-        if self.debug: print(f'{chunk}{nEvent/elapsed:,.0f} events/s')
+        logging.debug(f'{chunk}{nEvent/elapsed:,.0f} events/s')
         return output
 
 
@@ -702,13 +699,13 @@ class analysis(processor.ProcessorABC):
                     delta = np.abs(event[classifier].ps - SvB.ps)
                     worst = np.max(delta) == delta #np.argmax(np.abs(delta))
                     worst_event = event[worst][0]
-                    print(f'WARNING: Calculated {classifier} does not agree within tolerance for some events ({np.sum(error)}/{len(error)})', delta[worst])
-                    print('----------')
+                    logging.warning(f'WARNING: Calculated {classifier} does not agree within tolerance for some events ({np.sum(error)}/{len(error)})', delta[worst])
+                    logging.warning('----------')
                     for field in event[classifier].fields:
-                          print(field, worst_event[classifier][field])
-                    print('----------')
+                          logging.warning(field, worst_event[classifier][field])
+                    logging.warning('----------')
                     for field in SvB.fields:
-                        print(field, SvB[worst][field])
+                        logging.warning( f'{field}, {SvB[worst][field]}')
 
             # del event[classifier]
             event[classifier] = SvB

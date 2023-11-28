@@ -12,9 +12,10 @@ from coffea import processor, util
 import correctionlib
 import correctionlib._core as core
 import cachetools
+import logging
 
 # following example here: https://github.com/CoffeaTeam/coffea/blob/master/tests/test_jetmet_tools.py#L529
-def init_jet_factory(weight_sets, debug=False):
+def init_jet_factory(weight_sets):
     from coffea.lookup_tools import extractor
     extract = extractor()
     extract.add_weight_sets(weight_sets)
@@ -49,11 +50,10 @@ def init_jet_factory(weight_sets, debug=False):
     jet_factory = CorrectedJetsFactory(name_map, jec_stack)
     uncertainties = jet_factory.uncertainties()
     if uncertainties:
-        if debug:
-            for unc in uncertainties:
-                print(unc)
+        for unc in uncertainties:
+            logging.debug(unc)
     else:
-        print('WARNING: No uncertainties were loaded in the jet factory')
+        logging.warning('WARNING: No uncertainties were loaded in the jet factory')
 
     return jet_factory
 

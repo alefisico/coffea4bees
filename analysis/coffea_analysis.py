@@ -70,7 +70,7 @@ if __name__ == '__main__':
 
 
     #### analysis arguments
-    analysis_args = {'debug': args.debug,
+    analysis_args = {
                      'JCM': 'weights/dataRunII/jetCombinatoricModel_SB_00-00-02.txt',
                      'btagVariations': btagVariations(systematics=True),
                      'juncVariations': juncVariations(systematics=False),
@@ -113,7 +113,7 @@ if __name__ == '__main__':
         }
     else:
         executor_args = {'schema': NanoAODSchema, 'workers': 6, 'savemetrics':True}
-    logging.info( f"i\nExecutor arguments: {executor_args}")
+    logging.info( f"\nExecutor arguments: {executor_args}")
 
     #### Run processor
     if 'HH4b' in args.processor: from processors.processor_HH4b import analysis
