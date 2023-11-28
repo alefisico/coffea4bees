@@ -57,7 +57,7 @@ coffea-test-job:
   artifacts: 
     expire_in: 1 day
     paths:
-      - analysis/hists/test.pkl
+      - analysis/hists/test.coffea
 
 
 plot-job:    
@@ -69,7 +69,7 @@ plot-job:
     - k8s-cvmfs
   script:
     - ls 
-    - python ${PWD}/analysis/uproot_plots.py -i ${PWD}/analysis/hists/test.pkl
+    - python ${PWD}/analysis/uproot_plots.py -i ${PWD}/analysis/hists/test.coffea
   artifacts:
     expire_in: 1 year
     paths:

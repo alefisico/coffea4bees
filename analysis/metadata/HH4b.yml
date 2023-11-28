@@ -1,7 +1,4 @@
 data:
-  '2016':
-    lumi: 59.8e3
-    picoAOD: '/store/user/algomez/XX4b/20231115/data2016/picoAOD.root'
   '2016_preVFP':
     lumi: 19.5e3
     picoAOD: '/store/user/algomez/XX4b/20231115/data2016/picoAOD.root'
@@ -14,15 +11,9 @@ data:
   '2018':
     lumi: 59.8e3
     picoAOD: '/store/user/algomez/XX4b/20231115/data2018/picoAOD.root'
-  'RunII':
-    lumi: 132.8e3
-    picoAOD: '/store/user/algomez/XX4b/20231115/dataRunII/picoAOD.root'
 
 ggZH4b :
   xs: 0.1227*0.5824*0.1512, #0.0432 from GenXsecAnalyzer, does not include BR for H, does include BR(Z->hadrons) = 0.69911. 0.0432/0.69911 = 0.0618, almost exactly half the LHCxsWG value... NNLO = 2x NLO??
-  '2016': 
-    nanoAOD: '/dataset/dataset/NANOAODSIM'
-    picoAOD: '/store/user/algomez/XX4b/20231115/ggZH4b2016/picoAOD.root'
   '2016_postVFP': 
     nanoAOD: '/dataset/dataset/NANOAODSIM'
     picoAOD: '/store/user/algomez/XX4b/20231115/ggZH4b2016_postVFP/picoAOD.root'
@@ -35,15 +26,9 @@ ggZH4b :
   '2018': 
     nanoAOD: '/dataset/dataset/NANOAODSIM'
     picoAOD: '/store/user/algomez/XX4b/20231115/ggZH4b2018/picoAOD.root'
-  'RunII': 
-    nanoAOD: '/dataset/dataset/NANOAODSIM'
-    picoAOD: '/store/user/algomez/XX4b/20231115/ggZH4bRunII/picoAOD.root'
 
 HH4b:
   xs: 0.03105*0.5824**2 # (0.0457 2018, doesn't include BR, 0.009788 2016, does include BR...) https://twiki.cern.ch/twiki/bin/view/LHCPhysics/LHCHWGHH recommends 31.05fb*BR^2=10.53fb
-  '2016': 
-    nanoAOD: '/dataset/dataset/NANOAODSIM'
-    picoAOD: '/store/user/algomez/XX4b/20231115/HH4b2016/picoAOD.root'
   '2016_postVFP': 
     nanoAOD: '/dataset/dataset/NANOAODSIM'
     picoAOD: '/store/user/algomez/XX4b/20231115/HH4b2016_postVFP/picoAOD.root'
@@ -56,15 +41,9 @@ HH4b:
   '2018': 
     nanoAOD: '/dataset/dataset/NANOAODSIM'
     picoAOD: '/store/user/algomez/XX4b/20231115/HH4b2018/picoAOD.root'
-  'RunII': 
-    nanoAOD: '/dataset/dataset/NANOAODSIM'
-    picoAOD: '/store/user/algomez/XX4b/20231115/HH4bRunII/picoAOD.root'
 
 ZH4b:
   xs: 0.7612*0.5824*0.1512, #0.5540 from GenXsecAnalyzer, does not include BR for H, does include BR(Z->hadrons) = 0.69911. 0.5540/0.69911 = 0.7924, 4% larger than the LHCxsWG value.
-  '2016': 
-    nanoAOD: '/dataset/dataset/NANOAODSIM'
-    picoAOD: '/store/user/algomez/XX4b/20231115/ZH4b2016/picoAOD.root'
   '2016_postVFP': 
     nanoAOD: '/dataset/dataset/NANOAODSIM'
     picoAOD: '/store/user/algomez/XX4b/20231115/ZH4b2016_postVFP/picoAOD.root'
@@ -77,15 +56,9 @@ ZH4b:
   '2018': 
     nanoAOD: '/dataset/dataset/NANOAODSIM'
     picoAOD: '/store/user/algomez/XX4b/20231115/ZH4b2018/picoAOD.root'
-  'RunII': 
-    nanoAOD: '/dataset/dataset/NANOAODSIM'
-    picoAOD: '/store/user/algomez/XX4b/20231115/ZH4bRunII/picoAOD.root'
 
 bothZH4b:
   xs: (0.1227+0.7612)*0.5824*0.1512,
-  '2016': 
-    nanoAOD: '/dataset/dataset/NANOAODSIM'
-    picoAOD: '/store/user/algomez/XX4b/20231115/bothZH4b2016/picoAOD.root'
   '2016_postVFP': 
     nanoAOD: '/dataset/dataset/NANOAODSIM'
     picoAOD: '/store/user/algomez/XX4b/20231115/bothZH4b2016_postVFP/picoAOD.root'
@@ -98,15 +71,9 @@ bothZH4b:
   '2018': 
     nanoAOD: '/dataset/dataset/NANOAODSIM'
     picoAOD: '/store/user/algomez/XX4b/20231115/bothZH4b2018/picoAOD.root'
-  'RunII': 
-    nanoAOD: '/dataset/dataset/NANOAODSIM'
-    picoAOD: '/store/user/algomez/XX4b/20231115/bothZH4bRunII/picoAOD.root'
 
 ZZ4b:
   xs: 15.5   *0.1512*0.1512  #0.3688 from GenXsecAnalyzer gives 16.13 dividing by BR^2. mcEventSumw/mcEventCount * FxFx Jet Matching eff. = 542638/951791 * 0.647 = 0.3688696216. Jet matching not included in genWeight!
-  '2016': 
-    nanoAOD: '/dataset/dataset/NANOAODSIM'
-    picoAOD: '/store/user/algomez/XX4b/20231115/ZZ4b2016/picoAOD.root'
   '2016_postVFP': 
     nanoAOD: '/dataset/dataset/NANOAODSIM'
     picoAOD: '/store/user/algomez/XX4b/20231115/ZZ4b2016_postVFP/picoAOD.root'
@@ -119,15 +86,9 @@ ZZ4b:
   '2018': 
     nanoAOD: '/dataset/dataset/NANOAODSIM'
     picoAOD: '/store/user/algomez/XX4b/20231115/ZZ4b2018/picoAOD.root'
-  'RunII': 
-    nanoAOD: '/dataset/dataset/NANOAODSIM'
-    picoAOD: '/store/user/algomez/XX4b/20231115/ZZ4bRunII/picoAOD.root'
 
 TTJets:
   xs: 831.76 #749.5 get xs from GenXsecAnalyzer, McM is just wrong... TTJets_TuneCP5_13TeV-amcatnloFXFX-pythia8. Apply 4b scale k-factor 5.5/3.6=1.53 https://cds.cern.ch/record/2687373/files/TOP-18-011-paper-v15.pdf
-  '2016': 
-    nanoAOD: '/dataset/dataset/NANOAODSIM'
-    picoAOD: '/store/user/algomez/XX4b/20231115/TTJets2016/picoAOD.root'
   '2016_postVFP': 
     nanoAOD: '/dataset/dataset/NANOAODSIM'
     picoAOD: '/store/user/algomez/XX4b/20231115/TTJets2016_postVFP/picoAOD.root'
@@ -140,15 +101,9 @@ TTJets:
   '2018': 
     nanoAOD: '/dataset/dataset/NANOAODSIM'
     picoAOD: '/store/user/algomez/XX4b/20231115/TTJets2018/picoAOD.root'
-  'RunII': 
-    nanoAOD: '/dataset/dataset/NANOAODSIM'
-    picoAOD: '/store/user/algomez/XX4b/20231115/TTJetsRunII/picoAOD.root'
 
 TTToHadronic:
   xs: 377.9607353256, #313.9 from McM. NNLO tt xs = 831.76, W hadronic BR = 0.6741 => NNLO = 831.76*0.6741^2 = 377.9607353256
-  '2016': 
-    nanoAOD: '/dataset/dataset/NANOAODSIM'
-    picoAOD: '/store/user/algomez/XX4b/20231115/TTToHadronic2016/picoAOD.root'
   '2016_postVFP': 
     nanoAOD: '/dataset/dataset/NANOAODSIM'
     picoAOD: '/store/user/algomez/XX4b/20231115/TTToHadronic2016_postVFP/picoAOD.root'
@@ -161,15 +116,9 @@ TTToHadronic:
   '2018': 
     nanoAOD: '/dataset/dataset/NANOAODSIM'
     picoAOD: '/store/user/algomez/XX4b/20231115/TTToHadronic2018/picoAOD.root'
-  'RunII': 
-    nanoAOD: '/dataset/dataset/NANOAODSIM'
-    picoAOD: '/store/user/algomez/XX4b/20231115/TTToHadronicRunII/picoAOD.root'
 
 TTToSemiLeptonic:
   xs: 365.7826460496, #300.9 from McM. NNLO = 831.76*2*(1-0.6741)*0.6747 = 365.7826460496
-  '2016': 
-    nanoAOD: '/dataset/dataset/NANOAODSIM'
-    picoAOD: '/store/user/algomez/XX4b/20231115/TTToSemiLeptonic2016/picoAOD.root'
   '2016_postVFP': 
     nanoAOD: '/dataset/dataset/NANOAODSIM'
     picoAOD: '/store/user/algomez/XX4b/20231115/TTToSemiLeptonic2016_postVFP/picoAOD.root'
@@ -182,15 +131,9 @@ TTToSemiLeptonic:
   '2018': 
     nanoAOD: '/dataset/dataset/NANOAODSIM'
     picoAOD: '/store/user/algomez/XX4b/20231115/TTToSemiLeptonic2018/picoAOD.root'
-  'RunII': 
-    nanoAOD: '/dataset/dataset/NANOAODSIM'
-    picoAOD: '/store/user/algomez/XX4b/20231115/TTToSemiLeptonicRunII/picoAOD.root'
 
 TTTo2L2Nu:
   xs: 88.3419033256 #72.1 from McM. NNLO = 831.76*(1-0.6741)^2 = 88.3419033256
-  '2016': 
-    nanoAOD: '/dataset/dataset/NANOAODSIM'
-    picoAOD: '/store/user/algomez/XX4b/20231115/TTTo2L2Nu2016/picoAOD.root'
   '2016_postVFP': 
     nanoAOD: '/dataset/dataset/NANOAODSIM'
     picoAOD: '/store/user/algomez/XX4b/20231115/TTTo2L2Nu2016_postVFP/picoAOD.root'
@@ -203,9 +146,6 @@ TTTo2L2Nu:
   '2018': 
     nanoAOD: '/dataset/dataset/NANOAODSIM'
     picoAOD: '/store/user/algomez/XX4b/20231115/TTTo2L2Nu2018/picoAOD.root'
-  'RunII': 
-    nanoAOD: '/dataset/dataset/NANOAODSIM'
-    picoAOD: '/store/user/algomez/XX4b/20231115/TTTo2L2NuRunII/picoAOD.root'
 
 mixeddata:
   xs: 1.0

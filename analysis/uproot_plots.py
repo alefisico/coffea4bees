@@ -2,6 +2,7 @@
 # source /cvmfs/sft.cern.ch/lcg/nightlies/dev4/Wed/coffea/0.7.13/x86_64-centos7-gcc10-opt/coffea-env.sh
 import pickle, os, time
 from coffea import hist, processor
+from coffea.util import load
 import argparse
 
 
@@ -13,35 +14,30 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if not os.path.exists(args.output_path): os.makedirs(args.output_path)
-    with open(f'{args.inputFile}', 'rb') as hfile:
-        hists = pickle.load(hfile)
-        print(hists['hists']['JES_Central']['passPreSel']['threeTag']['SR'].keys())
-#        for bb in ['zz','zh','hh']:
-#            ax = hist.plot1d(hists['hists']['JES_Central']['passPreSel']['threeTag']['SR']['trigWeight'][f'SvB_ps_{bb}'], overlay='trigWeight')
-#            fig = ax.get_figure()
-#            fig.savefig(f'SvB_ps_{bb}.pdf')
-#            fig.clear()
+    hfile = f'{args.inputFile}'
+    hists = load(hfile)
+    print(hists['hists']['JES_Central']['passPreSel']['threeTag']['SR'].keys())
 
-        ax = hist.plot1d(hists['hists']['JES_Central']['passPreSel']['threeTag']['SR']['canJet.pt'], overlay='dataset')
-        fig = ax.get_figure()
-        fig.savefig(f'{args.output_path}canJet_pt.pdf')
-        fig.clear()
+    ax = hist.plot1d(hists['hists']['JES_Central']['passPreSel']['threeTag']['SR']['canJet.pt'], overlay='dataset')
+    fig = ax.get_figure()
+    fig.savefig(f'{args.output_path}canJet_pt.pdf')
+    fig.clear()
 
-        ax = hist.plot1d(hists['hists']['JES_Central']['passPreSel']['threeTag']['SR']['quadJet_selected.lead.mass'], overlay='dataset')
-        fig = ax.get_figure()
-        fig.savefig(f'{args.output_path}quadjet_selected_lead_mass.pdf')
-        fig.clear()
+    ax = hist.plot1d(hists['hists']['JES_Central']['passPreSel']['threeTag']['SR']['quadJet_selected.lead.mass'], overlay='dataset')
+    fig = ax.get_figure()
+    fig.savefig(f'{args.output_path}quadjet_selected_lead_mass.pdf')
+    fig.clear()
 
-        ax = hist.plot1d(hists['hists']['JES_Central']['passPreSel']['threeTag']['SR']['quadJet_selected.lead.dr'], overlay='dataset')
-        fig = ax.get_figure()
-        fig.savefig(f'{args.output_path}quadjet_selected_lead_dr.pdf')
-        fig.clear()
+    ax = hist.plot1d(hists['hists']['JES_Central']['passPreSel']['threeTag']['SR']['quadJet_selected.lead.dr'], overlay='dataset')
+    fig = ax.get_figure()
+    fig.savefig(f'{args.output_path}quadjet_selected_lead_dr.pdf')
+    fig.clear()
 
 
-        ax = hist.plot1d(hists['hists']['JES_Central']['passPreSel']['threeTag']['SR']['v4j.mass'], overlay='dataset')
-        fig = ax.get_figure()
-        fig.savefig(f'{args.output_path}v4j_mass.pdf')
-        fig.clear()
+    ax = hist.plot1d(hists['hists']['JES_Central']['passPreSel']['threeTag']['SR']['v4j.mass'], overlay='dataset')
+    fig = ax.get_figure()
+    fig.savefig(f'{args.output_path}v4j_mass.pdf')
+    fig.clear()
 
 
 
