@@ -33,7 +33,7 @@ if __name__ == '__main__':
     parser.add_argument('-o','--output', dest="output_file", default="hists.coffea", help='Output file.')
     parser.add_argument('-p','--processor', dest="processor", default="processors/processor_HH4b.py", help='Processor file.')
     parser.add_argument('-op','--outputPath', dest="output_path", default="hists/", help='Output path, if you want to save file somewhere else.')
-    parser.add_argument('-y', '--year', nargs='+', dest='years', default=['2018'], choices=['2016', '2017', '2018', 'RunII'], help="Year of data to run. Example if more than one: --year 2016 2017")
+    parser.add_argument('-y', '--year', nargs='+', dest='years', default=['2018'], choices=['2016_postVFP', '2016_preVFP', '2017', '2018'], help="Year of data to run. Example if more than one: --year 2016 2017")
     parser.add_argument('-d', '--datasets', nargs='+', dest='datasets', default=['HH4b', 'ZZ4b', 'ZH4b'], choices=fullmetadata.keys(), help="Name of dataset to run. Example if more than one: -d HH4b ZZ4b")
     parser.add_argument('--condor', dest="condor", action="store_true", default=False, help='Run in condor')
     parser.add_argument( '--debug', help="Print lots of debugging statements", action="store_true", dest="debug", default=False)
@@ -77,8 +77,8 @@ if __name__ == '__main__':
                      'threeTag': True,
                      'apply_puWeight':True,
                      'apply_prefire' :True,
-                     # 'SvB'   : 'ZZ4b/nTupleAnalysis/pytorchModels/SvB_HCR_8_np753_seed0_lr0.01_epochs20_offset*_epoch20.pkl',
-                     # 'SvB_MA': 'ZZ4b/nTupleAnalysis/pytorchModels/SvB_MA_HCR+attention_8_np1061_seed0_lr0.01_epochs20_offset*_epoch20.pkl',
+                     #'SvB'   : 'pytorchModels/SvB_HCR_8_np753_seed0_lr0.01_epochs20_offset*_epoch20.pkl',
+                     #'SvB_MA': 'pytorchModels/SvB_MA_HCR+attention_8_np1061_seed0_lr0.01_epochs20_offset*_epoch20.pkl',
     }
 
     #### IF run in condor

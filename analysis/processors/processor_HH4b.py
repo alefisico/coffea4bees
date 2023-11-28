@@ -76,7 +76,7 @@ class analysis(processor.ProcessorABC):
         self.threeTag = threeTag
         self.tags = ['threeTag','fourTag'] if threeTag else ['fourTag']
         self.regions = ['inclusive','SBSR','SB','SR']
-        self.regions = ['SR']
+        self.regions = ['SR']  ### why is double
         self.signals = ['zz','zh','hh']
         self.JCM = jetCombinatoricModel(JCM)
         self.btagVar = btagVariations
@@ -245,6 +245,9 @@ class analysis(processor.ProcessorABC):
         logging.debug(fname)
         logging.debug(f'{chunk}Process {nEvent} Events')
 
+        #
+        # Reading SvB friend trees
+        #
         path = fname.replace(fname.split('/')[-1],'')
         event['SvB']    = NanoEventsFactory.from_root(f'{path}{"SvB_newSBDef.root" if "mix" in dataset else "SvB.root"}',    entry_start=estart, entry_stop=estop, schemaclass=MultiClassifierSchema).events().SvB
         event['SvB_MA'] = NanoEventsFactory.from_root(f'{path}{"SvB_MA_newSBDef.root" if "mix" in dataset else "SvB_MA.root"}', entry_start=estart, entry_stop=estop, schemaclass=MultiClassifierSchema).events().SvB_MA
@@ -256,6 +259,9 @@ class analysis(processor.ProcessorABC):
             logging.error('ERROR: SvB_MA events do not match events ttree')
             return
 
+        #
+        # defining SvB for different SR
+        #
         event['SvB', 'passMinPs'] = (event.SvB.pzz>0.01) | (event.SvB.pzh>0.01) | (event.SvB.phh>0.01)
         event['SvB', 'zz'] = (event.SvB.pzz >  event.SvB.pzh) & (event.SvB.pzz >  event.SvB.phh)
         event['SvB', 'zh'] = (event.SvB.pzh >  event.SvB.pzz) & (event.SvB.pzh >  event.SvB.phh)
@@ -274,8 +280,9 @@ class analysis(processor.ProcessorABC):
         else:
             self.cutflow(output, dataset, event, 'all', allTag = True)
 
-
+        #
         # Get trigger decisions
+        #
         if year == '2016':
             event['passHLT'] = event.HLT.QuadJet45_TripleBTagCSV_p087 | event.HLT.DoubleJet90_Double30_TripleBTagCSV_p087 | event.HLT.DoubleJetsC100_DoubleBTagCSV_p014_DoublePFJetsC100MaxDeta1p6
         if year == '2017':
@@ -283,7 +290,7 @@ class analysis(processor.ProcessorABC):
         if year == '2018':
             event['passHLT'] = event.HLT.DoublePFJets116MaxDeta1p6_DoubleCaloBTagDeepCSV_p71 | event.HLT.PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepCSV_4p5
 
-        if not isMC: # for data, apply trigger cut first thing, for MC, keep all events and apply trigger in cutflow and for plotting
+        if not isMC and not 'mix' in dataset: # for data, apply trigger cut first thing, for MC, keep all events and apply trigger in cutflow and for plotting
             event = event[event.passHLT]
 
         if isMC:
@@ -293,7 +300,7 @@ class analysis(processor.ProcessorABC):
         #
         # METFilter
         #
-        passMETFilter = np.ones(len(event)) if 'mix' in dataset else ( event.Flag.goodVertices & event.Flag.globalSuperTightHalo2016Filter & event.Flag.HBHENoiseFilter   & event.Flag.HBHENoiseIsoFilter & event.Flag.EcalDeadCellTriggerPrimitiveFilter & event.Flag.BadPFMuonFilter & event.Flag.eeBadScFilter)
+        passMETFilter = np.ones(len(event), dtype=bool) if 'mix' in dataset else ( event.Flag.goodVertices & event.Flag.globalSuperTightHalo2016Filter & event.Flag.HBHENoiseFilter   & event.Flag.HBHENoiseIsoFilter & event.Flag.EcalDeadCellTriggerPrimitiveFilter & event.Flag.BadPFMuonFilter & event.Flag.eeBadScFilter)
         # passMETFilter *= event.Flag.EcalDeadCellTriggerPrimitiveFilter & event.Flag.BadPFMuonFilter                & event.Flag.BadPFMuonDzFilter & event.Flag.hfNoisyHitsFilter & event.Flag.eeBadScFilter
         if 'mix' not in dataset:
             if 'BadPFMuonDzFilter' in event.Flag.fields:
