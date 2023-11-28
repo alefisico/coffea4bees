@@ -7,6 +7,7 @@ NanoAODSchema.warn_missing_crossrefs = False
 import warnings
 warnings.filterwarnings("ignore")
 from coffea import processor
+from coffea.util import save
 import cachetools
 import logging
 
@@ -27,11 +28,11 @@ if __name__ == '__main__':
     correctionsMetadata = yaml.safe_load(open('metadata/corrections.yml', 'r'))
 
     ###### input parameters
-    parser = argparse.ArgumentParser(description='coffea_analysis')
+    parser = argparse.ArgumentParser(description='coffea_analysis', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-t','--test', dest="test", action="store_true", default=False, help='Run as a test with few files')
-    parser.add_argument('-o','--output', dest="output_file", default="hists.pkl", help='Output file. Default: hists.pkl')
-    parser.add_argument('-p','--processor', dest="processor", default="processors/processor_HH4b.py", help='Processor file. Default: processors/processor_HH4b.py')
-    parser.add_argument('-op','--outputPath', dest="output_path", default="hists/", help='Output path, if you want to save file somewhere else. Default: hists/')
+    parser.add_argument('-o','--output', dest="output_file", default="hists.coffea", help='Output file.')
+    parser.add_argument('-p','--processor', dest="processor", default="processors/processor_HH4b.py", help='Processor file.')
+    parser.add_argument('-op','--outputPath', dest="output_path", default="hists/", help='Output path, if you want to save file somewhere else.')
     parser.add_argument('-y', '--year', nargs='+', dest='years', default=['2018'], choices=['2016', '2017', '2018', 'RunII'], help="Year of data to run. Example if more than one: --year 2016 2017")
     parser.add_argument('-d', '--datasets', nargs='+', dest='datasets', default=['HH4b', 'ZZ4b', 'ZH4b'], choices=fullmetadata.keys(), help="Name of dataset to run. Example if more than one: -d HH4b ZZ4b")
     parser.add_argument('--condor', dest="condor", action="store_true", default=False, help='Run in condor')
@@ -40,8 +41,8 @@ if __name__ == '__main__':
     logging.basicConfig(level= logging.DEBUG if args.debug else logging.INFO )
 
     if args.test:
-        args.datasets=['HH4b']
-        args.output_file='test.pkl'
+        #args.datasets=['HH4b']
+        args.output_file='test.coffea'
     logging.info(f"\nRunning with these parameters: {args}")
 
     #### Metadata
@@ -139,7 +140,7 @@ if __name__ == '__main__':
 
     ##### Saving file
     if not os.path.exists(args.output_path): os.makedirs(args.output_path)
-    with open(f'{args.output_path}/{args.output_file}', 'wb') as hfile:
-        logging.info(f'\npickle.dump(output, {args.output_path}/{args.output_file})')
-        pickle.dump(output, hfile)
+    hfile = f'{args.output_path}/{args.output_file}'
+    logging.info(f'\nSaving file {hfile}')
+    save(output, hfile)
 
