@@ -11,12 +11,9 @@ from coffea.util import save
 import cachetools
 import importlib
 import logging
-
 from functools import partial
 from multiprocessing import Pool
 import yaml
-
-from analysis.helpers.correctionFunctions import btagSF_norm  ### needs to be removed
 
 
 if __name__ == '__main__':
@@ -25,9 +22,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run coffea processor', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-t','--test', dest="test", action="store_true", default=False, help='Run as a test with few files')
     parser.add_argument('-o','--output', dest="output_file", default="hists.coffea", help='Output file.')
-    parser.add_argument('-p','--processor', dest="processor", default="processors/processor_HH4b.py", help='Processor file.')
+    parser.add_argument('-p','--processor', dest="processor", default="analysis/processors/processor_HH4b.py", help='Processor file.')
+    parser.add_argument('-m','--metadata', dest="metadata", default="analysis/metadata/HH4b.yml", help='Metadata file.')
     parser.add_argument('-op','--outputPath', dest="output_path", default="hists/", help='Output path, if you want to save file somewhere else.')
-    parser.add_argument('-y', '--year', nargs='+', dest='years', default=['2018'], choices=['2016_postVFP', '2016_preVFP', '2017', '2018'], help="Year of data to run. Example if more than one: --year 2016 2017")
+    parser.add_argument('-y', '--year', nargs='+', dest='years', default=['UL18'], choices=['UL16_postVFP', 'UL16_preVFP', 'UL17', 'UL18'], help="Year of data to run. Example if more than one: --year UL17 UL18")
     parser.add_argument('-d', '--datasets', nargs='+', dest='datasets', default=['HH4b', 'ZZ4b', 'ZH4b'], help="Name of dataset to run. Example if more than one: -d HH4b ZZ4b")
     parser.add_argument('--condor', dest="condor", action="store_true", default=False, help='Run in condor')
     parser.add_argument( '--debug', help="Print lots of debugging statements", action="store_true", dest="debug", default=False)
@@ -39,33 +37,24 @@ if __name__ == '__main__':
         args.output_file='test.coffea'
     logging.info(f"\nRunning with these parameters: {args}")
 
-    ##### Loading metadata
-    fullmetadata = yaml.safe_load(open('analysis/metadata/HH4b.yml', 'r'))   #### AGE: to be modified
-    correctionsMetadata = yaml.safe_load(open('analysis/metadata/corrections.yml', 'r'))
-
     #### Metadata
-    metadata = {}
+    metadata = yaml.safe_load(open(args.metadata, 'r'))   #### AGE: to be modified
+    metadata['config']['year'] = args.years[0]  ### check later for more years
+
+    metadata_dataset = {}
     fileset = {}
     for year in args.years:
         for dataset in args.datasets:
-            if dataset not in fullmetadata['datasets'].keys():
+            if dataset not in metadata['datasets'].keys():
                 logging.error(f"{dataset} name not in metadatafile")
                 sys.exit(0)
-            VFP = '_'+dataset.split('_')[-1] if 'VFP' in dataset else ''   #### AGE: I dont think we need it, maybe remove later
-            era = f'{20 if "HH4b" in dataset else "UL"}{year[2:]+VFP}'
-            jercCorrections = [ correctionsMetadata[era]["JERC"][0].replace('STEP', istep) for istep in ['L1FastJet', 'L2Relative', 'L2L3Residual', 'L3Absolute'] ] + correctionsMetadata[era]["JERC"][1:]
 
-            metadata[dataset] = {
-                                 'xs'    : 1. if 'data' else (fullmetadata['datasets'][dataset]['xs'] if isinstance(fullmetadata[dataset]['xs'], float) else eval(fullmetadata[dataset]['xs']) ),
-                                 'lumi'  : float(fullmetadata['datasets']['data'][year]['lumi']),
-                                 'year'  : year,
-                                 'btagSF': correctionsMetadata[era]['btagSF'],
-                                 'btagSF_norm': btagSF_norm(dataset),
-                                 'juncWS': jercCorrections,
-                                 'puWeight': correctionsMetadata[era]['PU'],
+            metadata_dataset[dataset] = {
+                'xs'    : 1. if 'data' else (metadata['datasets'][dataset]['xs'] if isinstance(metadata[dataset]['xs'], float) else eval(metadata[dataset]['xs']) ),    #### AGE: we might need to change this
+                'lumi'  : float(metadata['datasets']['data'][year]['lumi']),
             }
-            fileset[dataset] = {'files': [ f'root://cmseos.fnal.gov/{fullmetadata["datasets"][dataset][year]["picoAOD"]}' ],
-                                'metadata': metadata[dataset]}
+            fileset[dataset] = {'files': [ f'root://cmseos.fnal.gov/{metadata["datasets"][dataset][year]["picoAOD"]}' ],
+                                'metadata': metadata_dataset[dataset]}
 
             logging.info(f'\nDataset {dataset} with {len(fileset[dataset]["files"])} files')
 
@@ -117,7 +106,7 @@ if __name__ == '__main__':
     output, metrics = processor.run_uproot_job(
         fileset,
         treename = 'Events',
-        processor_instance = analysis(**fullmetadata['config']),
+        processor_instance = analysis(**metadata['config']),
         executor = processor.dask_executor if args.condor else processor.futures_executor,
         executor_args = executor_args,
         chunksize = 1000 if args.test else 100_000,
