@@ -41,7 +41,7 @@ analysis-test-job:
     - export X509_USER_PROXY=${PWD}/proxy/x509_proxy
     - voms-proxy-info
     - cd python/
-    - python runner.py -t -d HH4b ZH4b -p analysis/processor/processor_HH4b.py 
+    - python runner.py -t -o test.coffea -d HH4b ZH4b -p analysis/processors/processor_HH4b.py
     - ls 
   artifacts: 
     expire_in: 1 day
