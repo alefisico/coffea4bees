@@ -17,20 +17,22 @@ from coffea import processor, hist, util
 import correctionlib
 import correctionlib._core as core
 import cachetools
+import yaml
 
-from helpers.MultiClassifierSchema import MultiClassifierSchema
+from analysis.helpers.MultiClassifierSchema import MultiClassifierSchema
+from analysis.helpers.correctionFunctions import btagVariations, juncVariations
 from functools import partial
 from multiprocessing import Pool
 
 import torch
 import torch.nn.functional as F
-from helpers.networks import HCREnsemble
+from analysis.helpers.networks import HCREnsemble
 # torch.set_num_threads(1)
 # torch.set_num_interop_threads(1)
 # print(torch.__config__.parallel_info())
 
-from helpers.jetCombinatoricModel import jetCombinatoricModel
-from helpers.common import init_jet_factory
+from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
+from analysis.helpers.common import init_jet_factory
 import logging
 
 
@@ -69,23 +71,23 @@ def count_nested_dict(nested_dict, c=0):
     return c
 
 class analysis(processor.ProcessorABC):
-    def __init__(self, JCM = '', btagVariations=None, juncVariations=None, SvB=None, SvB_MA=None, threeTag = True, apply_puWeight = False, apply_prefire = False, apply_trigWeight = True):
-        self.blind = True
+    def __init__(self, JCM = '', addbtagVariations=None, addjuncVariations=None, SvB=None, SvB_MA=None, threeTag = True, apply_puWeight = False, apply_prefire = False, apply_trigWeight = True, regions=['SR']):
         logging.debug('\nInitialize Analysis Processor')
+        self.blind = True
         self.cuts = ['passPreSel']
         self.threeTag = threeTag
         self.tags = ['threeTag','fourTag'] if threeTag else ['fourTag']
-        self.regions = ['inclusive','SBSR','SB','SR']
-        self.regions = ['SR']  ### why is double
+        self.regions = regions
         self.signals = ['zz','zh','hh']
         self.JCM = jetCombinatoricModel(JCM)
-        self.btagVar = btagVariations
-        self.juncVar = juncVariations
+        self.btagVar = btagVariations(systematics=addbtagVariations)  #### AGE: these two need to be review later
+        self.juncVar = juncVariations(systematics=addjuncVariations)
         self.classifier_SvB = HCREnsemble(SvB) if SvB else None
         self.classifier_SvB_MA = HCREnsemble(SvB_MA) if SvB_MA else None
         self.apply_puWeight = apply_puWeight
         self.apply_prefire  = apply_prefire
         self.apply_trigWeight = apply_trigWeight
+        correctionsMetadata = yaml.safe_load(open('analysis/metadata/corrections.yml', 'r'))
 
         self.variables = []
         self.variables += [variable(f'SvB_ps_{bb}', hist.Bin('x', f'SvB Regressed P(Signal) $|$ P({bb.upper()}) is largest', 100, 0, 1)) for bb in self.signals]
@@ -197,7 +199,7 @@ class analysis(processor.ProcessorABC):
         estop   = event.metadata['entrystop']
         chunk   = f'{dataset}::{estart:6d}:{estop:6d} >>> '
         year    = event.metadata['year']
-        isMC    = event.metadata.get('isMC',  False)
+        isMC    = True if event.run[0] == 1 else False
         lumi    = event.metadata.get('lumi',    1.0)
         xs      = event.metadata.get('xs',      1.0)
         kFactor = event.metadata.get('kFactor', 1.0)

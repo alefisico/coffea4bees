@@ -30,7 +30,7 @@ voms_proxy:
     - cp ${VOMSPROXY} proxy/x509_proxy
 
 
-coffea-test-job:   
+analysis-test-job:   
   stage: test   
   dependencies:
     - voms_proxy
@@ -41,7 +41,7 @@ coffea-test-job:
     - export X509_USER_PROXY=${PWD}/proxy/x509_proxy
     - voms-proxy-info
     - cd python/analysis/
-    - python coffea_analysis.py -t -d HH4b ZH4b
+    - python ../runner.py -t -d HH4b ZH4b -p processor/processor_HH4b.py 
     - ls 
   artifacts: 
     expire_in: 1 day
@@ -49,7 +49,7 @@ coffea-test-job:
       - python/analysis/hists/test.coffea
 
 
-plot-job:    
+analysis-plot-job:    
   stage: plot 
   dependencies: 
     - coffea-test-job
