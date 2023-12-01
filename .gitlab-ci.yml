@@ -52,7 +52,7 @@ analysis-test-job:
 analysis-plot-job:    
   stage: plot 
   dependencies: 
-    - coffea-test-job
+    - analysis-test-job
   image: coffeateam/coffea-dask:latest
   tags:
     - k8s-cvmfs
