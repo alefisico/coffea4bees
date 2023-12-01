@@ -3,9 +3,13 @@
 This is the repository for the 4b analyses at CMU based in coffea. 
 This repository in based on the coffea implementation of the ZZ/ZH to 4b analysis for Run2. More information about that repository [here](https://github.com/patrickbryant/ZZ4b).
 
-Information about the analysis steps can be found in the [README](analysis/README.md) of the analysis folder.
+The package has a python component, where most of the analysis is made, and a c++ component meant to be run inside CMSSW.
+
+Information about the analysis steps can be found in the [README](python/analysis/README.md) of the analysis folder.
 
 ## Installation
+
+### How to run the python files
 
 This repository assumes that you are running in a machine that has access to [cvmfs](https://cernvm.cern.ch/fs/). Then you can clone this repository as:
 
@@ -25,6 +29,12 @@ Remember to run this command `./shell` (aka set your environment) *every time yo
 ```
 voms-proxy-init -rfc -voms cms --valid 168:00
 ```
+
+### How to run the src files
+
+To be used inside CMSSW. More info later.
+
+
 ## How to contribute 
 
 If you want to submit your changes to the code to the **main repository** (aka cms-cmu gitlab user) it is highly recommended to first fork this repository to your user. 
