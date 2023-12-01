@@ -76,7 +76,7 @@ if __name__ == '__main__':
         from distributed import Client
         from lpcjobqueue import LPCCondorCluster
 
-        transfer_input_files = ['helpers/', 'metadata/', 'processors/', 'data/', 'pytorchModels/' ]
+        transfer_input_files = [ 'analysis/', 'base_class/', 'data/', 'skimmer/' ]
 
         cluster_args = {'transfer_input_files': transfer_input_files,
                         'shared_temp_directory': '/tmp',
@@ -120,8 +120,8 @@ if __name__ == '__main__':
         processor_instance = analysis(**fullmetadata['config']),
         executor = processor.dask_executor if args.condor else processor.futures_executor,
         executor_args = executor_args,
-        chunksize = 100 if args.test else 100_000,
-        maxchunks = 1 if args.test else None,
+        chunksize = 1000 if args.test else 100_000,
+        maxchunks = 10 if args.test else None,
     )
     elapsed = time.time() - tstart
     if args.condor:
