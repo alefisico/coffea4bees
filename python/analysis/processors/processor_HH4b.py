@@ -17,20 +17,23 @@ from coffea import processor, hist, util
 import correctionlib
 import correctionlib._core as core
 import cachetools
+import yaml
 
-from helpers.MultiClassifierSchema import MultiClassifierSchema
+from analysis.helpers.MultiClassifierSchema import MultiClassifierSchema
+from analysis.helpers.correctionFunctions import btagVariations, juncVariations
+from analysis.helpers.correctionFunctions import btagSF_norm as btagSF_norm_file
 from functools import partial
 from multiprocessing import Pool
 
 import torch
 import torch.nn.functional as F
-from helpers.networks import HCREnsemble
+from analysis.helpers.networks import HCREnsemble
 # torch.set_num_threads(1)
 # torch.set_num_interop_threads(1)
 # print(torch.__config__.parallel_info())
 
-from helpers.jetCombinatoricModel import jetCombinatoricModel
-from helpers.common import init_jet_factory
+from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
+from analysis.helpers.common import init_jet_factory
 import logging
 
 
@@ -69,23 +72,25 @@ def count_nested_dict(nested_dict, c=0):
     return c
 
 class analysis(processor.ProcessorABC):
-    def __init__(self, JCM = '', btagVariations=None, juncVariations=None, SvB=None, SvB_MA=None, threeTag = True, apply_puWeight = False, apply_prefire = False, apply_trigWeight = True):
-        self.blind = True
+    def __init__(self, JCM = '', addbtagVariations=None, addjuncVariations=None, SvB=None, SvB_MA=None, threeTag = True, apply_puWeight = False, apply_prefire = False, apply_trigWeight = True, regions=['SR'], corrections_metadata='analysis/metadata/corrections.yml', year='UL18', btagSF=True):
         logging.debug('\nInitialize Analysis Processor')
+        self.blind = True
+        self.year = year
         self.cuts = ['passPreSel']
         self.threeTag = threeTag
         self.tags = ['threeTag','fourTag'] if threeTag else ['fourTag']
-        self.regions = ['inclusive','SBSR','SB','SR']
-        self.regions = ['SR']  ### why is double
+        self.regions = regions
         self.signals = ['zz','zh','hh']
         self.JCM = jetCombinatoricModel(JCM)
-        self.btagVar = btagVariations
-        self.juncVar = juncVariations
+        self.btagVar = btagVariations(systematics=addbtagVariations)  #### AGE: these two need to be review later
+        self.juncVar = juncVariations(systematics=addjuncVariations)
         self.classifier_SvB = HCREnsemble(SvB) if SvB else None
         self.classifier_SvB_MA = HCREnsemble(SvB_MA) if SvB_MA else None
         self.apply_puWeight = apply_puWeight
         self.apply_prefire  = apply_prefire
         self.apply_trigWeight = apply_trigWeight
+        self.corrections_metadata = yaml.safe_load(open(corrections_metadata, 'r'))
+        self.btagSF  = btagSF
 
         self.variables = []
         self.variables += [variable(f'SvB_ps_{bb}', hist.Bin('x', f'SvB Regressed P(Signal) $|$ P({bb.upper()}) is largest', 100, 0, 1)) for bb in self.signals]
@@ -196,18 +201,17 @@ class analysis(processor.ProcessorABC):
         estart  = event.metadata['entrystart']
         estop   = event.metadata['entrystop']
         chunk   = f'{dataset}::{estart:6d}:{estop:6d} >>> '
-        year    = event.metadata['year']
-        isMC    = event.metadata.get('isMC',  False)
+        year    = self.year
+        isMC    = True if event.run[0] == 1 else False
         lumi    = event.metadata.get('lumi',    1.0)
         xs      = event.metadata.get('xs',      1.0)
         kFactor = event.metadata.get('kFactor', 1.0)
-        btagSF  = event.metadata.get('btagSF', None)
-        juncWS  = event.metadata.get('juncWS', None)
-        puWeight= event.metadata.get('puWeight', None)
-        btagSF_norm = event.metadata.get('btagSF_norm', 1.0)
+        btagSF_norm = btagSF_norm_file(dataset)
         nEvent = len(event)
         np.random.seed(0)
         output['nEvent'][dataset] += nEvent
+        puWeight= self.corrections_metadata[year]['PU']
+        juncWS = [ self.corrections_metadata[year]["JERC"][0].replace('STEP', istep) for istep in ['L1FastJet', 'L2Relative', 'L2L3Residual', 'L3Absolute'] ] + self.corrections_metadata[year]["JERC"][1:]
 
         self.apply_puWeight   = (self.apply_puWeight  ) and isMC and (puWeight is not None)
         self.apply_prefire    = (self.apply_prefire   ) and isMC and ('L1PreFiringWeight' in event.fields) and (year!='2018')
@@ -218,8 +222,8 @@ class analysis(processor.ProcessorABC):
                 Runs = rfile['Runs']
                 genEventSumw = np.sum(Runs['genEventSumw'])
 
-            if btagSF is not None:
-                btagSF = correctionlib.CorrectionSet.from_file(btagSF)['deepJet_shape']
+            if self.btagSF is not None:
+                btagSF = correctionlib.CorrectionSet.from_file(self.corrections_metadata[self.year]['btagSF'])['deepJet_shape']
 
             if self.apply_puWeight:
                 puWeight = list(correctionlib.CorrectionSet.from_file(puWeight).values())[0]
