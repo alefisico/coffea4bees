@@ -44,11 +44,102 @@ def getHist(var='selJets.pt'):
     
     return hists['hists'][var]
 
+
+
+
+def _plot_ratio(hData, hBkg, *kwargs):
+    print(kwargs)
+    fig = plt.figure(figsize=(10, 8))
+    main_ax_artists, ratio_ax_arists = hData.plot_ratio(
+        hBkg[0],
+        rp_ylabel=r'Four/Three',
+        rp_num_label='FourTag',
+        rp_denom_label='ThreeTag',
+        rp_uncert_draw_type='line', # line or bar
+    )
+    axes = fig.get_axes()
+    axes[1].set_ylim([0,2])
+    return fig
+
+
+def _plot(hData, hBkg, **kwargs):
+    opts = {"norm"   : False,
+            "debug"  : False,
+            "xlabel" : None,
+            "ylabel" : None,
+            "yscale" : None,
+            "xscale" : None,
+            "legend" : False,
+            'ylim'   : None,
+            'xlim'   : None,
+               }
+
+    for key, value in opts.items():
+        opts[key] = kwargs.get(key,  value)
+
+    if opts["debug"]: print(f'\t opts = {opts}')
+    print(f'\t opts = {opts}')
+    
+    fig = plt.figure(figsize=(8, 6))
+    hData  .plot(density=opts["norm"], label="Data",     color="k", histtype="errorbar", markersize=7)
+
+    # colors: https://xkcd.com/color/rgb/
+    # hist options: https://mplhep.readthedocs.io/en/latest/api.html
+    hBkg[0].plot(density=opts["norm"], color="k", histtype="step", yerr=False)
+    hBkg[0].plot(density=opts["norm"], label="Multijet", color="xkcd:bright yellow", histtype="fill")
+
+
+    #
+    #  xlabel
+    #
+    if opts["xlabel"]: plt.xlabel(opts["xlabel"])
+    plt.xlabel(plt.gca().get_xlabel(), fontsize=14, loc='right')
+
+
+    
+    #
+    #  ylabel
+    #
+    if opts["ylabel"]: plt.ylabel(opts["ylabel"])
+    if opts["norm"]:         plt.ylabel(plt.gca().get_ylabel() + " (normalized)")
+    font_properties = {'family': 'sans', 'weight': 'normal', 'size': 14, 'fontname':'Helvetica'}
+    plt.ylabel(plt.gca().get_ylabel(), fontdict=font_properties, loc='top')
+
+        
+    if opts['yscale']: plt.yscale(opts['yscale'])
+    if opts['xscale']: plt.xscale(opts['xscale'])
+        
+
+    if opts['legend']:
+        plt.legend(
+            #loc='best',      # Position of the legend
+            #fontsize='medium',      # Font size of the legend text
+            frameon=False,           # Display frame around legend
+            #framealpha=0.0,         # Opacity of the frame (1.0 is opaque)
+            #edgecolor='black',      # Color of the legend frame
+            #title='Trigonometric Functions',  # Title for the legend
+            #title_fontsize='large',  # Font size of the legend title
+            #bbox_to_anchor=(1, 1),   # Specify the position of the legend using bbox_to_anchor
+            #borderaxespad=0.0       # Padding between the axes and the legend border
+            reverse = True,
+        )
+        #plt.legend()
+        
+    if opts['ylim']:  plt.ylim(opts['ylim'][0],opts['ylim'][1])
+    if opts['xlim']:  plt.xlim(opts['xlim'][0],opts['xlim'][1])        
+        
+        
+
+    return fig
     
 
 
-def plot(var='selJets.pt',year="2017",cut="passPreSel",tag="fourTag",region="SR", doratio=True, norm=False):
+def plot(var='selJets.pt',year="2017",cut="passPreSel",tag="fourTag",region="SR", **kwargs):
+    debug   = kwargs.get('debug', False)
+    doratio = kwargs.get('doratio', False)
+    if debug: print(f'kwargs = {kwargs}')
 
+    
     if var.find("*") != -1:
         ls(match=var.replace("*",""))
         return 
@@ -61,25 +152,26 @@ def plot(var='selJets.pt',year="2017",cut="passPreSel",tag="fourTag",region="SR"
     for c in cutList:
         cutDict[c] = sum
     cutDict[cut] = True
-    
-    hZH = h["mixeddata",  year, hist.loc(codeDicts["tag"][tag]), hist.loc(codeDicts["region"][region]), cutDict[cutList[0]],  cutDict[cutList[1]], cutDict[cutList[2]], :]
-    hHH = h["mixeddata",  "UL17", hist.loc(codeDicts["tag"][tag]), hist.loc(codeDicts["region"][region]), cutDict[cutList[0]],  cutDict[cutList[1]], cutDict[cutList[2]], :]
 
+
+    #
+    #  Get Hists
+    #
+    hData = h["mixeddata",  year, hist.loc(codeDicts["tag"][tag]), hist.loc(codeDicts["region"][region]), cutDict[cutList[0]],  cutDict[cutList[1]], cutDict[cutList[2]], :]
+    hBkg  = h["mixeddata",  "UL17", hist.loc(codeDicts["tag"][tag]), hist.loc(codeDicts["region"][region]), cutDict[cutList[0]],  cutDict[cutList[1]], cutDict[cutList[2]], :]
+
+#    if doratio:
+#        plot_ratio(hData,[hBkg],rp_ylabel=r'Four/Three',
+#                   rp_num_label='FourTag',
+#                   rp_denom_label='ThreeTag',
+#                   rp_uncert_draw_type='line', # line or bar
+#                   )
+#            
+    
     if doratio:
-        fig = plt.figure(figsize=(10, 8))
-        main_ax_artists, ratio_ax_arists = hZH.plot_ratio(
-            hHH,
-            rp_ylabel=r'Four/Three',
-            rp_num_label='FourTag',
-            rp_denom_label='ThreeTag',
-            rp_uncert_draw_type='line', # line or bar
-        )
-        axes = fig.get_axes()
-        axes[1].set_ylim([0,2])
+        fig = _plot_ratio(hData,[hBkg])
     else:
-        fig = plt.figure(figsize=(8, 6))
-        hZH.plot(density=norm)
-        hHH.plot(density=norm)
+        fig = _plot(hData,[hBkg],**kwargs)
 
     fileName = "test.pdf"
     fig.savefig(fileName)
