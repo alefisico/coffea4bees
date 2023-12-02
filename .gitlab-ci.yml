@@ -29,19 +29,8 @@ voms_proxy:
     - mkdir proxy
     - cp ${VOMSPROXY} proxy/x509_proxy
 
-#coffea_container:
-#  stage: build
-#  image: gitlab-registry.cern.ch/cms-cloud/cmssw-docker/cc7-cms 
-#  artifacts:
-#    paths:
-#      - shell
-#      - .bashrc
-#  script:
-#    - curl -OL https://raw.githubusercontent.com/CoffeaTeam/lpcjobqueue/main/bootstrap.sh
-#    - bash bootstrap.sh
 
-
-coffea-test-job:   
+analysis-test-job:   
   stage: test   
   dependencies:
     - voms_proxy
@@ -51,25 +40,25 @@ coffea-test-job:
   script:
     - export X509_USER_PROXY=${PWD}/proxy/x509_proxy
     - voms-proxy-info
-    - cd analysis/
-    - python coffea_analysis.py -t -d HH4b ZH4b
+    - cd python/
+    - python runner.py -t -o test.coffea -d HH4b ZH4b -p analysis/processors/processor_HH4b.py
     - ls 
   artifacts: 
     expire_in: 1 day
     paths:
-      - analysis/hists/test.pkl
+      - python/hists/test.coffea
 
 
-plot-job:    
+analysis-plot-job:    
   stage: plot 
   dependencies: 
-    - coffea-test-job
+    - analysis-test-job
   image: coffeateam/coffea-dask:latest
   tags:
     - k8s-cvmfs
   script:
     - ls 
-    - python ${PWD}/analysis/uproot_plots.py -i ${PWD}/analysis/hists/test.pkl
+    - python ${PWD}/python/analysis/uproot_plots.py -i ${PWD}/python/hists/test.coffea
   artifacts:
     expire_in: 1 year
     paths:
