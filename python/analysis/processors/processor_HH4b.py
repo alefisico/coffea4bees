@@ -15,11 +15,9 @@ from coffea import processor, hist, util
 # import hist as shh # https://hist.readthedocs.io/en/latest/
 # import hist
 
-# https://github.com/chuyuanliu/heptools/tree/master
-sys.path.insert(0, '../../heptools/') #https://github.com/patrickbryant/nTupleAnalysis
-from heptools.hist import Collection, Fill
-from heptools.aktools import where
-from heptools.physics.object import LorentzVector
+from base_class.hist import Collection, Fill
+from base_class.aktools import where
+from base_class.physics.object import LorentzVector
 
 
 import correctionlib
@@ -215,7 +213,7 @@ class analysis(processor.ProcessorABC):
         estart  = event.metadata['entrystart']
         estop   = event.metadata['entrystop']
         chunk   = f'{dataset}::{estart:6d}:{estop:6d} >>> '
-        year    = self.year
+        year    = event.metadata['year']
         dataset = dataset.replace("_"+year,"")
         isMC    = True if event.run[0] == 1 else False
         lumi    = event.metadata.get('lumi',    1.0)
@@ -228,13 +226,19 @@ class analysis(processor.ProcessorABC):
         puWeight= self.corrections_metadata[year]['PU']
         juncWS = [ self.corrections_metadata[year]["JERC"][0].replace('STEP', istep) for istep in ['L1FastJet', 'L2Relative', 'L2L3Residual', 'L3Absolute'] ] + self.corrections_metadata[year]["JERC"][1:]
 
+        #
+        #  Turn blinding off for mixing
+        #
+        if dataset.find("mixed") != -1:
+            self.blind = False
+
 
         #
         # Hists
         #
         fill = Fill(process = dataset, year = year, weight = 'weight')
         hist = Collection(process = [],
-                          year    = ["2017","2018"], # FIX ME
+                          year    = [], # FIX ME
                           tag     = [3,4],
                           region  = [2,1,0], # SR / SB / Other
                           **dict((s, ...) for s in self.cuts))
@@ -684,8 +688,9 @@ class analysis(processor.ProcessorABC):
             #         print(f'{chunk}c++ values:',issue.passDijetMass, issue.leadStM,issue.sublStM)
             #         print(f'{chunk}py  values:',issue.quadJet_selected.passDiJetMass, issue.quadJet_selected.lead.mass, issue.quadJet_selected.subl.mass)
 
-
+            #
             # Blind data in fourTag SR
+            #
             if not isMC and self.blind:
                 selev = selev[~(selev.SR & selev.fourTag)]
 
