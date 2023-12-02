@@ -1,4 +1,4 @@
-import pickle, os, time, gc, argparse
+import pickle, os, time, gc, argparse, sys
 from copy import deepcopy
 from dataclasses import dataclass
 import awkward as ak
@@ -14,6 +14,14 @@ ak.behavior.update(vector.behavior)
 from coffea import processor, hist, util
 # import hist as shh # https://hist.readthedocs.io/en/latest/
 # import hist
+
+# https://github.com/chuyuanliu/heptools/tree/master
+sys.path.insert(0, '../../heptools/') #https://github.com/patrickbryant/nTupleAnalysis
+from heptools.hist import Collection, Fill
+from heptools.aktools import where
+from heptools.physics.object import LorentzVector
+
+
 import correctionlib
 import correctionlib._core as core
 import cachetools
@@ -73,7 +81,7 @@ class analysis(processor.ProcessorABC):
         self.debug = debug
         self.blind = True
         print('Initialize Analysis Processor')
-        self.cuts = ['passPreSel']
+        self.cuts = ['passPreSel','passSvB','failSvB']
         self.threeTag = threeTag
         self.tags = ['threeTag','fourTag'] if threeTag else ['fourTag']
         self.regions = ['inclusive','SBSR','SB','SR']
@@ -88,15 +96,17 @@ class analysis(processor.ProcessorABC):
         self.apply_prefire  = apply_prefire
         self.apply_trigWeight = apply_trigWeight
 
+
+
         self.variables = []
         self.variables += [variable(f'SvB_ps_{bb}', hist.Bin('x', f'SvB Regressed P(Signal) $|$ P({bb.upper()}) is largest', 100, 0, 1)) for bb in self.signals]
-        self.variables += [variable(f'SvB_ps_all',  hist.Bin('x', f'SvB Regressed P(Signal)',                                100, 0, 1))]
+        #self.variables += [variable(f'SvB_ps_all',  hist.Bin('x', f'SvB Regressed P(Signal)',                                100, 0, 1))]
         self.variables += [variable(f'SvB_MA_ps_{bb}', hist.Bin('x', f'SvB MA Regressed P(Signal) $|$ P({bb.upper()}) is largest', 100, 0, 1)) for bb in self.signals]
-        self.variables += [variable(f'SvB_MA_ps_all',  hist.Bin('x', f'SvB MA Regressed P(Signal)',                                100, 0, 1))]
+        #self.variables += [variable(f'SvB_MA_ps_all',  hist.Bin('x', f'SvB MA Regressed P(Signal)',                                100, 0, 1))]
         self.variables_systematics = self.variables[0:8]
-        self.variables += [variable('nJet_selected', hist.Bin('x', 'Number of Selected Jets', 16, -0.5, 15.5))]
+        #self.variables += [variable('nJet_selected', hist.Bin('x', 'Number of Selected Jets', 16, -0.5, 15.5))]
         jet_extras = [variable('calibration', hist.Bin('x','Calibration Factor', 20, 0, 2))]
-        self.variables += fourvectorhists('canJet', 'Boson Candidate Jets', mass=(50, 0, 50), label='Jets', extras=jet_extras)
+        #self.variables += fourvectorhists('canJet', 'Boson Candidate Jets', mass=(50, 0, 50), label='Jets', extras=jet_extras)
         self.variables += fourvectorhists('v4j', 'Diboson Candidate', mass=(120, 0, 1200))
 
         diJet_extras = [variable('dr', hist.Bin('x', '$\\Delta$R(j,j)', 50, 0, 5)),
@@ -113,7 +123,10 @@ class analysis(processor.ProcessorABC):
                                                                                                              )
                                                                                                          ),
                                                         'nEvent' : processor.defaultdict_accumulator(int),
-                                                        'hists'  : processor.dict_accumulator()})
+                                                        'hists'  : processor.dict_accumulator(),
+                                                        'newHists'  : processor.dict_accumulator(),
+                                                        'categories'  : processor.dict_accumulator()
+                                                    })
 
         for junc in self.juncVar:
             print(f'Making hists for {junc}')
@@ -198,6 +211,7 @@ class analysis(processor.ProcessorABC):
         estop   = event.metadata['entrystop']
         chunk   = f'{dataset}::{estart:6d}:{estop:6d} >>> '
         year    = event.metadata['year']
+        dataset = dataset.replace("_"+year,"")
         isMC    = event.metadata.get('isMC',  False)
         lumi    = event.metadata.get('lumi',    1.0)
         xs      = event.metadata.get('xs',      1.0)
@@ -209,6 +223,37 @@ class analysis(processor.ProcessorABC):
         nEvent = len(event)
         np.random.seed(0)
         output['nEvent'][dataset] += nEvent
+
+
+        #
+        # Hists
+        #
+        fill = Fill(process = dataset, year = year, weight = 'weight')
+        hist = Collection(process = [],
+                          year    = ["2017","2018"], # FIX ME
+                          tag     = [3,4],
+                          region  = [2,1,0], # SR / SB / Other
+                          **dict((s, ...) for s in self.cuts))
+
+        
+#        newcutflow = fill + hist.add('cutflow')
+        fill += hist.add('SvB_MA_ps', (100, 0, 1, ('SvB_MA.ps', 'SvB_MA Regressed P(Signal)')))
+        fill += hist.add('SvB_ps', (100, 0, 1, ('SvB.ps', 'SvB Regressed P(Signal)')))
+
+        #
+        # Jets
+        #
+        fill += LorentzVector.plot(('selJets', 'Selected Jets'), 'selJet', count = True)
+        fill += LorentzVector.plot(('canJets', 'Higgs Candidate Jets'), 'canJet')
+        fill += LorentzVector.plot(('othJets', 'Other Jets'), 'notCanJet_coffea', count = True)
+
+        #
+        #  v4j
+        #
+        #fill += LorentzVector.plot_pair(('v4j', R'$HH_{4b}$'), 'v4j')
+        #fill += LorentzVector.plot_pair(('p2jOth', R'Other Dijets'), 'p2jOth')
+        #fill += LorentzVector.plot_pair(('p2j', R'Vector Boson Candidate Dijets'), 'p2jV')
+
 
         self.apply_puWeight   = (self.apply_puWeight  ) and isMC and (puWeight is not None)
         self.apply_prefire    = (self.apply_prefire   ) and isMC and ('L1PreFiringWeight' in event.fields) and (year!='2018')
@@ -249,6 +294,8 @@ class analysis(processor.ProcessorABC):
         path = fname.replace(fname.split('/')[-1],'')
         event['SvB']    = NanoEventsFactory.from_root(f'{path}{"SvB_newSBDef.root" if "mix" in dataset else "SvB.root"}',    entry_start=estart, entry_stop=estop, schemaclass=MultiClassifierSchema).events().SvB
         event['SvB_MA'] = NanoEventsFactory.from_root(f'{path}{"SvB_MA_newSBDef.root" if "mix" in dataset else "SvB_MA.root"}', entry_start=estart, entry_stop=estop, schemaclass=MultiClassifierSchema).events().SvB_MA
+
+        #print(event.SvB_MA.ps)
 
         if not ak.all(event.SvB.event == event.event):
             print('ERROR: SvB events do not match events ttree')
@@ -377,6 +424,10 @@ class analysis(processor.ProcessorABC):
             selev[ 'fourTag']   =  fourTag
             selev['threeTag']   = threeTag * self.threeTag
             selev['passPreSel'] = selev.threeTag | selev.fourTag
+            selev['tag'] = 0 
+            selev['tag'] = where(selev.passPreSel, (selev.fourTag, 4), (selev.threeTag, 3))
+
+
 
             #
             # Calculate and apply pileup weight, L1 prefiring weight
@@ -474,6 +525,8 @@ class analysis(processor.ProcessorABC):
             canJet = canJet[ak.argsort(canJet.pt, axis=1, ascending=False)]
             selev['canJet'] = canJet
             selev['v4j'] = canJet.sum(axis=1)
+            #selev['v4j', 'n'] = 1
+            #print(selev.v4j.n)
             # selev['Jet', 'canJet'] = False
             # selev.Jet.canJet.Fill(canJet_idx, True)
             notCanJet = selev.Jet[notCanJet_idx]
@@ -599,6 +652,11 @@ class analysis(processor.ProcessorABC):
             selev['quadJet'] = quadJet
             selev['quadJet_selected'] = quadJet[quadJet.selected][:,0]
 
+
+            selev['region'] = selev['quadJet_selected'].SR * 0b10 + selev['quadJet_selected'].SB * 0b01
+            selev['passSvB'] = (selev['SvB_MA'].ps > 0.95) 
+            selev['failSvB'] = (selev['SvB_MA'].ps < 0.05)  
+
             # selev.issue = (selev.leadStM<0) | (selev.sublStM<0)
             # if ak.any(selev.issue):
             #     print(f'{chunk}WARNING: Negative diJet masses in picoAOD variables generated by the c++')
@@ -622,6 +680,8 @@ class analysis(processor.ProcessorABC):
             if not isMC and self.blind:
                 selev = selev[~(selev.SR & selev.fourTag)]
 
+
+
             self.cutflow(output, dataset, selev[selev['quadJet_selected'].passDiJetMass], 'passDiJetMass', junc=junc)
             self.cutflow(output, dataset, selev[selev['quadJet_selected'].SR], 'SR', junc=junc)
 
@@ -634,7 +694,7 @@ class analysis(processor.ProcessorABC):
             #
             self.fill(selev, output, junc=junc)
 
-
+            fill(selev)
 
             if isMC:
                 self.fill_systematics(selev, output, junc=junc)
@@ -643,9 +703,13 @@ class analysis(processor.ProcessorABC):
 
 
         # Done
+        #output['newHists'] = hist.output["hists"]
+        #output['categories'] = hist.output["categories"]
         elapsed = time.time() - tstart
         if self.debug: print(f'{chunk}{nEvent/elapsed:,.0f} events/s')
-        return output
+        #return output
+        return hist.output
+        
 
 
     def compute_SvB(self, event, junc='JES_Central'):
@@ -696,6 +760,7 @@ class analysis(processor.ProcessorABC):
             SvB['zh'] = (SvB.pzh >  SvB.pzz) & (SvB.pzh >  SvB.phh)
             SvB['hh'] = (SvB.phh >= SvB.pzz) & (SvB.phh >= SvB.pzh)
 
+
             if junc == 'JES_Central':
                 error = ~np.isclose(event[classifier].ps, SvB.ps, atol=1e-5, rtol=1e-3)
                 if np.any(error):
@@ -724,7 +789,7 @@ class analysis(processor.ProcessorABC):
 
             mask = event[classifier]['zz'] | event[classifier]['zh'] | event[classifier]['hh']
             x, w = event[mask][classifier].ps, weight[mask]
-            hist[f'{classifier}_ps_all'].fill(dataset=dataset, x=x, weight=w)
+            #hist[f'{classifier}_ps_all'].fill(dataset=dataset, x=x, weight=w)
 
 
     def fill_fourvectorhists(self, name, hist, event, weight):
@@ -781,7 +846,7 @@ class analysis(processor.ProcessorABC):
                         weight = weight * hist_event.trigWeight.Data
 
                     hist = output['hists'][junc][cut][tag][region]
-                    hist['nJet_selected'].fill(dataset=dataset, x=hist_event.nJet_selected, weight=weight)
+                    #hist['nJet_selected'].fill(dataset=dataset, x=hist_event.nJet_selected, weight=weight)
                     #hist['canJet_pt'].fill(dataset=dataset, x=hist_event.canJet.pt, weight=weight)
                     self.fill_fourvectorhists('canJet', hist, hist_event, weight)
                     self.fill_fourvectorhists('v4j', hist, hist_event, weight)
