@@ -25,7 +25,7 @@ _epsilon = 0.001
 # TO Add
 #     Variable Binning
 #  - labels
-#  output dir and file names
+
 
 def ls(option="var", match=None):
     for k in axisLabels[option]:
@@ -182,7 +182,7 @@ def _plot_ratio(hData, hBkg, **kwargs):
 
     plt.xlabel(kwargs.get("xlabel",top_xlabel),fontsize=14, loc='right')
 
-    if kwargs.get('rlim',None):  plt.ylim(*kwargs.get('rlim'))
+    plt.ylim(*kwargs.get('rlim',[0,2]))
     
     return fig
 
@@ -206,10 +206,9 @@ def _plot(hData, hBkg, **kwargs):
     
 
     return fig
-    
 
 
-def plot(var='selJets.pt',year="2017",cut="passPreSel",tag="fourTag",region="SR", **kwargs):
+def makePlot(var='selJets.pt',year="2017",cut="passPreSel",tag="fourTag",region="SR", **kwargs):
     r"""
     Takes Options:
 
@@ -225,12 +224,6 @@ def plot(var='selJets.pt',year="2017",cut="passPreSel",tag="fourTag",region="SR"
         'rebin'    : int (1),
     """
 
-    if kwargs.get("debug",False): print(f'kwargs = {kwargs}')
-
-    
-    if var.find("*") != -1:
-        ls(match=var.replace("*",""))
-        return 
     
     h = hists['hists'][var]
     
@@ -253,6 +246,40 @@ def plot(var='selJets.pt',year="2017",cut="passPreSel",tag="fourTag",region="SR"
     else:
         fig = _plot(hData,[hBkg],**kwargs)
 
+    if kwargs.get("outputFolder",None):
+        outputPath = kwargs.get("outputFolder")+"/"+"/".join([year,cut,tag,region])
+        if not os.path.exists(outputPath): os.makedirs(outputPath)
+        fig.savefig(outputPath+"/"+var+".pdf")        
+        
+    return fig
+
+    
+
+def plot(var='selJets.pt',year="2017",cut="passPreSel",tag="fourTag",region="SR", **kwargs):
+    r"""
+    Takes Options:
+
+       debug    : False,
+       var      : 'selJets.pt',
+       year     : "2017",
+       cut      : "passPreSel",
+       tag      : "fourTag",
+       region   : "SR",
+    
+       plotting opts
+        'doRatio'  : bool (False)
+        'rebin'    : int (1),
+    """
+
+    if kwargs.get("debug",False): print(f'kwargs = {kwargs}')
+    
+    if var.find("*") != -1:
+        ls(match=var.replace("*",""))
+        return 
+
+    fig = makePlot(var=var, year=year, cut=cut, tag=tag, region=region, outputFolder=args.outputFolder, **kwargs)
+
+
     fileName = "test.pdf"
     fig.savefig(fileName)
     plt.close()
@@ -263,10 +290,13 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='uproot_plots')
     parser.add_argument('-i','--inputFile', dest="inputFile", default='hists.pkl', help='Input File. Default: hists.pkl')
-    parser.add_argument('-o','--outputFolder', dest="output_path", default='plots/', help='Folder for output folder. Default: plots/')
+    parser.add_argument('-o','--outputFolder', default=None, help='Folder for output folder. Default: plots/')
     args = parser.parse_args()
 
-    if not os.path.exists(args.output_path): os.makedirs(args.output_path)
+    if args.outputFolder:
+        if not os.path.exists(args.outputFolder): os.makedirs(args.outputFolder)
+    
+
     with open(f'{args.inputFile}', 'rb') as hfile:
         hists = load(hfile)
 
