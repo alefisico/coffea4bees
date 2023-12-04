@@ -31,6 +31,8 @@ def _draw_plot(hData, hBkg, **kwargs):
           'xlim'   : [min, max]
     """
     
+    if kwargs.get("debug",False): print(f'\t in _draw_plot ... kwargs = {kwargs}')
+    
     norm = kwargs.get("norm",False)
     hData  .plot(density=norm, label="Data",     color="k", histtype="errorbar", markersize=7)
 
@@ -51,7 +53,9 @@ def _draw_plot(hData, hBkg, **kwargs):
     #
     #  ylabel
     #
-    if kwargs.get("ylabel",None): plt.ylabel(kwargs.get("ylabel"))
+    if kwargs.get("ylabel",None):
+        print("ylabel is ",kwargs.get("ylabel"))
+        plt.ylabel(kwargs.get("ylabel"))
     if norm:   plt.ylabel(plt.gca().get_ylabel() + " (normalized)")
     font_properties = {'family': 'sans', 'weight': 'normal', 'size': 14, 'fontname':'Helvetica'}
     plt.ylabel(plt.gca().get_ylabel(), fontdict=font_properties, loc='top')
@@ -85,17 +89,16 @@ def _draw_plot(hData, hBkg, **kwargs):
 
 def _plot(hData, hBkg, **kwargs):
 
-    if kwargs.get("debug",False): print(f'\t kwargs = {kwargs}')
+    if kwargs.get("debug",False): print(f'\t in plot ... kwargs = {kwargs}')
 
     size = 7
     fig = plt.figure(figsize=(size,size/_phi))
 
     fig.add_axes((0.1, 0.15, 0.85, 0.8))
-
     
     _draw_plot(hData, hBkg, **kwargs)
 
-    ax = fig.gca()
+    #ax = fig.gca()
     #ax.spines["top"]  .set_visible(False)
     #ax.spines["right"].set_visible(False)
     #ax.spines["left"] .set_visible(False)
