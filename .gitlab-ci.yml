@@ -58,7 +58,8 @@ analysis-plot-job:
     - k8s-cvmfs
   script:
     - ls 
-    - python ${PWD}/python/analysis/iPlot.py -i ${PWD}/python/hists/test.coffea
+    - cd python/
+    - python analysis/iPlot.py -i hists/test.coffea
   artifacts:
     expire_in: 1 year
     paths:
