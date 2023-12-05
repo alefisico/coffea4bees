@@ -1,68 +1,81 @@
-import os, sys
+import os, time, sys
 import hist
 import argparse
+#import matplotlib
 #matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from coffea.util import load
-from hist.intervals import ratio_uncertainty
+import numpy as np
 
 #sys.path.insert(0, '../') 
 sys.path.insert(0,os.getcwd())
 from base_class.plots import makePlot
+
 
 #
 # Move following to a config file?
 #
 axes = ["var","process","year","tag","region","cut"]
 codeDicts = {}
-codeDicts["tag"] = {"threeTag":3, "fourTag":4, 3:"threeTag", 4:"fourTag", "other":0, 0:"other"}
+codeDicts["tag"] = {"threeTag":3, "fourTag":4, 3:"threeTag", 4:"fourTag"}
 codeDicts["region"]  = {"SR":2, "SB":1, 2:"SR", 1:"SB", 0:"other","other":0}
 
 
+variables = {
+    "SvB_MA_ps"      : {},
+    "SvB_ps"         : {},
 
-#
-# TO Add
-#     Variable Binning
-#  - labels
+    "selJets.energy" : {},
+    "selJets.eta" : {},
+    "selJets.mass" : {"xlim":[0,100]},
+    "selJets.n" : {},
+    "selJets.phi" : {},
+    "selJets.pt" : {'yscale':'log', 'xlim':[40,400],},
+    "selJets.pz" : {},
+
+    "canJets.energy" : {},
+    "canJets.eta"  : {"xlim":[-3,3]},
+    "canJets.mass" : {"xlim":[0,100]},
+    "canJets.n" : {},
+    "canJets.phi" : {},
+    "canJets.pt" : {},
+    "canJets.pz" : {},
+
+    "othJets.energy" : {},
+    "othJets.eta" : {},
+    "othJets.mass" : {"xlim":[0,100]},
+    "othJets.n" : {"xlim":[0,15]},
+    "othJets.phi" : {},
+    "othJets.pt" : {},
+    "othJets.pz" : {},
+}
 
 
-def ls(option="var", match=None):
-    for k in axisLabels[option]:
-        if match:
-            if k.find(match) != -1: print(k)
-        else:
-            print(k)
+
+def doPlots():
+    for v, vDict in variables.items():
+        print(v)
+
         
+        year ="UL18"
+        cut  = "passPreSel"
+        tag  ="fourTag"
 
-def plot(var='selJets.pt',year="2017",cut="passPreSel",tag="fourTag",region="SR", **kwargs):
-    r"""
-    Takes Options:
 
-       debug    : False,
-       var      : 'selJets.pt',
-       year     : "2017",
-       cut      : "passPreSel",
-       tag      : "fourTag",
-       region   : "SR",
+        vDict["ylabel"]  = "Entries"
+        vDict["doRatio"] = True
+        vDict["legend"]  = True
+
+        #vDict["debug"] = True
+
+        #vDict["norm"] = True
+        #print(v,vDict)
+
+        #,ylabel="Entries",,rebin=1,xlim=[40,400],rlim=[0.5,2])
+
+        for region in ["SR","SB"]:
+            fig = makePlot(hists, cutList, codeDicts, var=v, year=year, cut=cut, tag=tag, region=region, outputFolder=args.outputFolder, **vDict)
     
-       plotting opts
-        'doRatio'  : bool (False)
-        'rebin'    : int (1),
-    """
-
-    if kwargs.get("debug",False): print(f'kwargs = {kwargs}')
-    
-    if var.find("*") != -1:
-        ls(match=var.replace("*",""))
-        return 
-
-    fig = makePlot(hists, cutList, codeDicts, var=var, year=year, cut=cut, tag=tag, region=region, outputFolder=args.outputFolder, **kwargs)
-
-
-    fileName = "test.pdf"
-    fig.savefig(fileName)
-    plt.close()
-    os.system("open "+fileName)
     
         
 if __name__ == '__main__':
@@ -110,3 +123,4 @@ if __name__ == '__main__':
 
                 
 
+        doPlots()

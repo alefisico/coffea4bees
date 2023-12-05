@@ -31,6 +31,8 @@ def _draw_plot(hData, hBkg, **kwargs):
           'xlim'   : [min, max]
     """
     
+    if kwargs.get("debug",False): print(f'\t in _draw_plot ... kwargs = {kwargs}')
+    
     norm = kwargs.get("norm",False)
     hData  .plot(density=norm, label="Data",     color="k", histtype="errorbar", markersize=7)
 
@@ -85,17 +87,16 @@ def _draw_plot(hData, hBkg, **kwargs):
 
 def _plot(hData, hBkg, **kwargs):
 
-    if kwargs.get("debug",False): print(f'\t kwargs = {kwargs}')
+    if kwargs.get("debug",False): print(f'\t in plot ... kwargs = {kwargs}')
 
     size = 7
     fig = plt.figure(figsize=(size,size/_phi))
 
     fig.add_axes((0.1, 0.15, 0.85, 0.8))
-
     
     _draw_plot(hData, hBkg, **kwargs)
 
-    ax = fig.gca()
+    #ax = fig.gca()
     #ax.spines["top"]  .set_visible(False)
     #ax.spines["right"].set_visible(False)
     #ax.spines["left"] .set_visible(False)
@@ -201,7 +202,7 @@ def makePlot(hists, cutList, codeDicts, var='selJets.pt',year="2017",cut="passPr
 
     
     h = hists['hists'][var]
-    
+    varName = hists['hists'][var].axes[-1].name
     #print(h)
 
     cutDict = {}
@@ -209,12 +210,20 @@ def makePlot(hists, cutList, codeDicts, var='selJets.pt',year="2017",cut="passPr
         cutDict[c] = sum
     cutDict[cut] = True
 
+
     #
     #  Get Hists
     #
     rebin = kwargs.get("rebin",1)
-    hData = h["mixeddata",  year,   hist.loc(codeDicts["tag"][tag]), hist.loc(codeDicts["region"][region]), cutDict[cutList[0]],  cutDict[cutList[1]], cutDict[cutList[2]],   hist.rebin(rebin)]
-    hBkg  = h["mixeddata",  "UL17", hist.loc(codeDicts["tag"][tag]), hist.loc(codeDicts["region"][region]), cutDict[cutList[0]],  cutDict[cutList[1]], cutDict[cutList[2]], hist.rebin(rebin)]
+    hDataDict = {"process":"mixeddata", "year":year,   "tag":hist.loc(codeDicts["tag"][tag]), "region":hist.loc(codeDicts["region"][region]), varName:hist.rebin(rebin)}
+    hBkgDict  = {"process":"mixeddata", "year":"UL18", "tag":hist.loc(codeDicts["tag"][tag]), "region":hist.loc(codeDicts["region"][region]), varName:hist.rebin(rebin)}
+    for c in cutList:
+        hDataDict = hDataDict | {c:cutDict[c]}
+        hBkgDict  = hBkgDict | {c:cutDict[c]}
+
+    hData = h[hDataDict]
+    hBkg  = h[hBkgDict]
+              
     
     if kwargs.get("doRatio",False):
         fig = _plot_ratio(hData,[hBkg], **kwargs)
