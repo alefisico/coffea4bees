@@ -53,9 +53,7 @@ def _draw_plot(hData, hBkg, **kwargs):
     #
     #  ylabel
     #
-    if kwargs.get("ylabel",None):
-        print("ylabel is ",kwargs.get("ylabel"))
-        plt.ylabel(kwargs.get("ylabel"))
+    if kwargs.get("ylabel",None): plt.ylabel(kwargs.get("ylabel"))
     if norm:   plt.ylabel(plt.gca().get_ylabel() + " (normalized)")
     font_properties = {'family': 'sans', 'weight': 'normal', 'size': 14, 'fontname':'Helvetica'}
     plt.ylabel(plt.gca().get_ylabel(), fontdict=font_properties, loc='top')
@@ -204,7 +202,7 @@ def makePlot(hists, cutList, codeDicts, var='selJets.pt',year="2017",cut="passPr
 
     
     h = hists['hists'][var]
-    
+    varName = hists['hists'][var].axes[-1].name
     #print(h)
 
     cutDict = {}
@@ -212,12 +210,20 @@ def makePlot(hists, cutList, codeDicts, var='selJets.pt',year="2017",cut="passPr
         cutDict[c] = sum
     cutDict[cut] = True
 
+
     #
     #  Get Hists
     #
     rebin = kwargs.get("rebin",1)
-    hData = h["mixeddata",  year,   hist.loc(codeDicts["tag"][tag]), hist.loc(codeDicts["region"][region]), cutDict[cutList[0]],  cutDict[cutList[1]], cutDict[cutList[2]],   hist.rebin(rebin)]
-    hBkg  = h["mixeddata",  "UL17", hist.loc(codeDicts["tag"][tag]), hist.loc(codeDicts["region"][region]), cutDict[cutList[0]],  cutDict[cutList[1]], cutDict[cutList[2]], hist.rebin(rebin)]
+    hDataDict = {"process":"mixeddata", "year":year,   "tag":hist.loc(codeDicts["tag"][tag]), "region":hist.loc(codeDicts["region"][region]), varName:hist.rebin(rebin)}
+    hBkgDict  = {"process":"mixeddata", "year":"UL18", "tag":hist.loc(codeDicts["tag"][tag]), "region":hist.loc(codeDicts["region"][region]), varName:hist.rebin(rebin)}
+    for c in cutList:
+        hDataDict = hDataDict | {c:cutDict[c]}
+        hBkgDict  = hBkgDict | {c:cutDict[c]}
+
+    hData = h[hDataDict]
+    hBkg  = h[hBkgDict]
+              
     
     if kwargs.get("doRatio",False):
         fig = _plot_ratio(hData,[hBkg], **kwargs)

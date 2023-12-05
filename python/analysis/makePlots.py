@@ -30,7 +30,7 @@ variables = {
     "selJets.mass" : {"xlim":[0,100]},
     "selJets.n" : {},
     "selJets.phi" : {},
-    "selJets.pt" : {},
+    "selJets.pt" : {'yscale':'log', 'xlim':[40,400],},
     "selJets.pz" : {},
 
     "canJets.energy" : {},
@@ -60,7 +60,6 @@ def doPlots():
         year ="UL18"
         cut  = "passPreSel"
         tag  ="fourTag"
-        region="SR"
 
 
         vDict["ylabel"]  = "Entries"
@@ -70,11 +69,12 @@ def doPlots():
         #vDict["debug"] = True
 
         #vDict["norm"] = True
-        print(v,vDict)
+        #print(v,vDict)
 
         #,ylabel="Entries",,rebin=1,xlim=[40,400],rlim=[0.5,2])
-        
-        fig = makePlot(hists, cutList, codeDicts, var=v, year=year, cut=cut, tag=tag, region=region, outputFolder=args.outputFolder, **vDict)
+
+        for region in ["SR","SB"]:
+            fig = makePlot(hists, cutList, codeDicts, var=v, year=year, cut=cut, tag=tag, region=region, outputFolder=args.outputFolder, **vDict)
     
     
         

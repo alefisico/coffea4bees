@@ -15,7 +15,7 @@ from base_class.plots import makePlot
 #
 axes = ["var","process","year","tag","region","cut"]
 codeDicts = {}
-codeDicts["tag"] = {"threeTag":3, "fourTag":4, 3:"threeTag", 4:"fourTag"}
+codeDicts["tag"] = {"threeTag":3, "fourTag":4, 3:"threeTag", 4:"fourTag", "other":0, 0:"other"}
 codeDicts["region"]  = {"SR":2, "SB":1, 2:"SR", 1:"SB", 0:"other","other":0}
 
 
