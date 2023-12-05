@@ -33,7 +33,7 @@ from analysis.helpers.networks import HCREnsemble
 # print(torch.__config__.parallel_info())
 
 from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
-from analysis.helpers.common import init_jet_factory
+from analysis.helpers.common import init_jet_factory, jet_corrections
 import logging
 
 
@@ -181,7 +181,7 @@ class analysis(processor.ProcessorABC):
         output['cutflow'][junc]['threeTag'][cut][dataset] += sumw_3
         output['cutflow'][junc][ 'fourTag'][cut][dataset] += sumw_4
 
-        if event.metadata.get('isMC', False) and not allTag:
+        if event.metadata.get('isMC', False) and not allTag:   ##### AGE: why isMC to False?
             output['cutflow'][junc]['threeTag'][cut+'_HLT_Bool'][dataset] += np.sum(e3.weight*e3.passHLT)
             output['cutflow'][junc][ 'fourTag'][cut+'_HLT_Bool'][dataset] += np.sum(e4.weight*e4.passHLT)
 
@@ -211,7 +211,8 @@ class analysis(processor.ProcessorABC):
         np.random.seed(0)
         output['nEvent'][dataset] += nEvent
         puWeight= self.corrections_metadata[year]['PU']
-        juncWS = [ self.corrections_metadata[year]["JERC"][0].replace('STEP', istep) for istep in ['L1FastJet', 'L2Relative', 'L2L3Residual', 'L3Absolute'] ] + self.corrections_metadata[year]["JERC"][1:]
+        juncWS = [ self.corrections_metadata[year]["JERC"][0].replace('STEP', istep) for istep in ['L1FastJet', 'L2Relative', 'L2L3Residual', 'L3Absolute'] ]  ###### AGE: to be reviewed for data, but should be remove with jsonpog
+        if isMC: juncWS += self.corrections_metadata[year]["JERC"][1:]
 
         self.apply_puWeight   = (self.apply_puWeight  ) and isMC and (puWeight is not None)
         self.apply_prefire    = (self.apply_prefire   ) and isMC and ('L1PreFiringWeight' in event.fields) and (year!='2018')
@@ -319,7 +320,7 @@ class analysis(processor.ProcessorABC):
 
 
         #
-        # Calculate and apply Jet Energy Calibration
+        # Calculate and apply Jet Energy Calibration   ## AGE: currently not applying to data and mixeddata
         #
         if isMC and juncWS is not None:
             jet_factory = init_jet_factory(juncWS)
@@ -329,11 +330,12 @@ class analysis(processor.ProcessorABC):
             nominal_jet = event.Jet
             # nominal_jet['pt_raw']   = (1 - nominal_jet.rawFactor) * nominal_jet.pt
             # nominal_jet['mass_raw'] = (1 - nominal_jet.rawFactor) * nominal_jet.mass
-            nominal_jet['pt_gen']   = ak.values_astype(ak.fill_none(nominal_jet.matched_gen.pt, 0), np.float32)
+            if isMC: nominal_jet['pt_gen']   = ak.values_astype(ak.fill_none(nominal_jet.matched_gen.pt, 0), np.float32)
             nominal_jet['rho']      = ak.broadcast_arrays(event.fixedGridRhoFastjetAll, nominal_jet.pt)[0]
 
             jec_cache = cachetools.Cache(np.inf)
             jet_variations = jet_factory.build(nominal_jet, lazy_cache=jec_cache)
+            jet_tmp = jet_corrections( event.Jet, event.fixedGridRhoFastjetAll, jec_type=['L1L2L3Res'] )   ##### AGE: jsonpog+correctionlib but not final, that is why it is not used yet
 
         #
         # Loop over jet energy uncertainty variations running event selection, filling hists/cuflows independently for each jet calibration
@@ -347,7 +349,7 @@ class analysis(processor.ProcessorABC):
                 # del event['Jet']
                 event['Jet'] = jet_variations[variation, direction]
 
-            event['Jet', 'calibration'] = event.Jet.pt/( 1 if 'mix' in dataset else event.Jet.pt_raw )  ### AGE: I include the mix condition, I think it is wrong, to check later
+            event['Jet', 'calibration'] = event.Jet.pt/( 1 if 'data' in dataset else event.Jet.pt_raw )  ### AGE: I include the mix condition, I think it is wrong, to check later
             # if junc=='JES_Central':
             #     print(f'calibration nominal: \n{ak.mean(event.Jet.calibration)}')
             # else:
@@ -627,7 +629,7 @@ class analysis(processor.ProcessorABC):
 
 
             # Blind data in fourTag SR
-            if not isMC and self.blind:
+            if not (isMC or 'mixed' in dataset) and self.blind:
                 selev = selev[~(selev.SR & selev.fourTag)]
 
             self.cutflow(output, dataset, selev[selev['quadJet_selected'].passDiJetMass], 'passDiJetMass', junc=junc)
@@ -769,7 +771,6 @@ class analysis(processor.ProcessorABC):
 
     def fill(self, event, output, junc='JES_Central'):
         dataset = event.metadata.get('dataset','')
-        isMC    = event.metadata.get('isMC', False)
         for cut in self.cuts:
             for tag in self.tags:
                 mask_cut_tag = event[tag] & event[cut]

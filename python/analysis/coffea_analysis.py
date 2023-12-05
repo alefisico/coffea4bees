@@ -1,4 +1,4 @@
-import pickle, os, time, gc, argparse
+import pickle, os, time, gc, argparse, sys
 import numpy as np
 import uproot
 uproot.open.defaults["xrootd_handler"] = uproot.source.xrootd.MultithreadedXRootDSource
@@ -9,6 +9,7 @@ warnings.filterwarnings("ignore")
 from coffea import processor
 from coffea.util import save
 import cachetools
+import importlib
 import logging
 
 from helpers.MultiClassifierSchema import MultiClassifierSchema
@@ -18,14 +19,13 @@ from helpers.networks import HCREnsemble
 from helpers.jetCombinatoricModel import jetCombinatoricModel
 import yaml
 
-from helpers.correctionFunctions import btagSF_norm, btagVariations, juncVariations
+from helpers.correctionFunctions import btagSF_norm
 
 
 if __name__ == '__main__':
 
     ##### Loading metadata
     fullmetadata = yaml.safe_load(open('metadata/HH4b.yml', 'r'))
-    correctionsMetadata = yaml.safe_load(open('metadata/corrections.yml', 'r'))
 
     ###### input parameters
     parser = argparse.ArgumentParser(description='coffea_analysis', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -34,7 +34,7 @@ if __name__ == '__main__':
     parser.add_argument('-p','--processor', dest="processor", default="processors/processor_HH4b.py", help='Processor file.')
     parser.add_argument('-op','--outputPath', dest="output_path", default="hists/", help='Output path, if you want to save file somewhere else.')
     parser.add_argument('-y', '--year', nargs='+', dest='years', default=['2018'], choices=['2016_postVFP', '2016_preVFP', '2017', '2018'], help="Year of data to run. Example if more than one: --year 2016 2017")
-    parser.add_argument('-d', '--datasets', nargs='+', dest='datasets', default=['HH4b', 'ZZ4b', 'ZH4b'], choices=fullmetadata.keys(), help="Name of dataset to run. Example if more than one: -d HH4b ZZ4b")
+    parser.add_argument('-d', '--datasets', nargs='+', dest='datasets', default=['HH4b', 'ZZ4b', 'ZH4b'], choices=fullmetadata['datasets'].keys(), help="Name of dataset to run. Example if more than one: -d HH4b ZZ4b")
     parser.add_argument('--condor', dest="condor", action="store_true", default=False, help='Run in condor')
     parser.add_argument( '--debug', help="Print lots of debugging statements", action="store_true", dest="debug", default=False)
     args = parser.parse_args()
@@ -54,32 +54,20 @@ if __name__ == '__main__':
             era = f'{20 if "HH4b" in dataset else "UL"}{year[2:]+VFP}'
             jercCorrections = [ correctionsMetadata[era]["JERC"][0].replace('STEP', istep) for istep in ['L1FastJet', 'L2Relative', 'L2L3Residual', 'L3Absolute'] ] + correctionsMetadata[era]["JERC"][1:]
 
-            metadata[dataset] = {'isMC'  : False if 'data' in dataset else True,
-                                 'xs'    : 1. if 'data' else (fullmetadata[dataset]['xs'] if isinstance(fullmetadata[dataset]['xs'], float) else eval(fullmetadata[dataset]['xs']) ),
-                                 'lumi'  : float(fullmetadata['data'][year]['lumi']),
+            metadata[dataset] = {
+                                 'xs'    : 1. if 'data' else (fullmetadata['datasets'][dataset]['xs'] if isinstance(fullmetadata[dataset]['xs'], float) else eval(fullmetadata[dataset]['xs']) ),
+                                 'lumi'  : float(fullmetadata['datasets']['data'][year]['lumi']),
                                  'year'  : year,
                                  'btagSF': correctionsMetadata[era]['btagSF'],
                                  'btagSF_norm': btagSF_norm(dataset),
                                  'juncWS': jercCorrections,
                                  'puWeight': correctionsMetadata[era]['PU'],
             }
-            fileset[dataset] = {'files': [ f'root://cmseos.fnal.gov/{fullmetadata[dataset][year]["picoAOD"]}' ],
+            fileset[dataset] = {'files': [ f'root://cmseos.fnal.gov/{fullmetadata["datasets"][dataset][year]["picoAOD"]}' ],
                                 'metadata': metadata[dataset]}
 
             logging.info(f'\nDataset {dataset} with {len(fileset[dataset]["files"])} files')
 
-
-    #### analysis arguments
-    analysis_args = {
-                     'JCM': 'weights/dataRunII/jetCombinatoricModel_SB_00-00-02.txt',
-                     'btagVariations': btagVariations(systematics=True),
-                     'juncVariations': juncVariations(systematics=False),
-                     'threeTag': True,
-                     'apply_puWeight':True,
-                     'apply_prefire' :True,
-                     #'SvB'   : 'pytorchModels/SvB_HCR_8_np753_seed0_lr0.01_epochs20_offset*_epoch20.pkl',
-                     #'SvB_MA': 'pytorchModels/SvB_MA_HCR+attention_8_np1061_seed0_lr0.01_epochs20_offset*_epoch20.pkl',
-    }
 
     #### IF run in condor
     if args.condor:
@@ -116,17 +104,19 @@ if __name__ == '__main__':
     logging.info( f"\nExecutor arguments: {executor_args}")
 
     #### Run processor
-    if 'HH4b' in args.processor: from processors.processor_HH4b import analysis
-    else: logging.error("No processor included. Remember to call the processor class as: analysis")
+    try:  analysis = getattr( importlib.import_module(args.processor.split('.')[0].replace("/",'.')), 'analysis' )
+    except (ModuleNotFoundError, NameError) as e:
+        logging.error("No processor included. Check the --processor options and remember to call the processor class as: analysis")
+        sys.exit(0)
 
     tstart = time.time()
     output, metrics = processor.run_uproot_job(
         fileset,
         treename = 'Events',
-        processor_instance = analysis(**analysis_args),
+        processor_instance = analysis(**fullmetadata['config']),
         executor = processor.dask_executor if args.condor else processor.futures_executor,
         executor_args = executor_args,
-        chunksize = 100 if args.test else 10_000,
+        chunksize = 100 if args.test else 100_000,
         maxchunks = 1 if args.test else None,
     )
     elapsed = time.time() - tstart

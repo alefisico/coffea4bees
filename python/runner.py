@@ -53,10 +53,22 @@ if __name__ == '__main__':
                 'xs'    : 1. if 'data' else (metadata['datasets'][dataset]['xs'] if isinstance(metadata[dataset]['xs'], float) else eval(metadata[dataset]['xs']) ),    #### AGE: we might need to change this
                 'lumi'  : float(metadata['datasets']['data'][year]['lumi']),
             }
-            fileset[dataset] = {'files': [ f'root://cmseos.fnal.gov/{metadata["datasets"][dataset][year]["picoAOD"]}' ],
-                                'metadata': metadata_dataset[dataset]}
 
-            logging.info(f'\nDataset {dataset} with {len(fileset[dataset]["files"])} files')
+            if isinstance( metadata['datasets'][dataset][year]["picoAOD"], dict):
+
+                for iera, ifile in metadata['datasets'][dataset][year]["picoAOD"].items():
+                    idataset = f'{dataset}{year}{iera}'
+                    metadata_dataset[idataset] = metadata_dataset[dataset]
+                    metadata_dataset[idataset]['era'] = iera
+                    fileset[idataset] = {'files': [ f'root://cmseos.fnal.gov/{ifile}' ],
+                                        'metadata': metadata_dataset[idataset]}
+                    logging.info(f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
+
+            else:
+                fileset[dataset] = {'files': [ f'root://cmseos.fnal.gov/{metadata["datasets"][dataset][year]["picoAOD"]}' ],
+                                    'metadata': metadata_dataset[dataset]}
+
+                logging.info(f'\nDataset {dataset} with {len(fileset[dataset]["files"])} files')
 
 
     #### IF run in condor
