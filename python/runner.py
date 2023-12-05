@@ -122,9 +122,8 @@ if __name__ == '__main__':
         processtime = metrics['processtime']
         logging.info(f'\n{nEvent/elapsed:,.0f} events/s total ({nEvent}/{elapsed}, processtime {processtime})')
     else:
-        pass  # HACK FIXME
-        #nEvent = sum([output['nEvent'][dataset] for dataset in output['nEvent'].keys()])
-        #logging.info(f'\n{nEvent/elapsed:,.0f} events/s total ({nEvent}/{elapsed})')
+        nEvent = sum([output['nEvent'][dataset] for dataset in output['nEvent'].keys()])
+        logging.info(f'\n{nEvent/elapsed:,.0f} events/s total ({nEvent}/{elapsed})')
 
     ##### Saving file
     if not os.path.exists(args.output_path): os.makedirs(args.output_path)
