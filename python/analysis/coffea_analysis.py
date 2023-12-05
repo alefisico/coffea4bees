@@ -49,6 +49,7 @@ if __name__ == '__main__':
     metadata = {}
     fileset = {}
     for year in args.years:
+        print("config year",year)
         for dataset in args.datasets:
             VFP = '_'+dataset.split('_')[-1] if 'VFP' in dataset else ''   #### AGE: I dont think we need it, maybe remove later
             era = f'{20 if "HH4b" in dataset else "UL"}{year[2:]+VFP}'
@@ -63,10 +64,10 @@ if __name__ == '__main__':
                                  'juncWS': jercCorrections,
                                  'puWeight': correctionsMetadata[era]['PU'],
             }
-            fileset[dataset] = {'files': [ f'root://cmseos.fnal.gov/{fullmetadata["datasets"][dataset][year]["picoAOD"]}' ],
-                                'metadata': metadata[dataset]}
+            fileset[dataset+"_"+year] = {'files': [ f'root://cmseos.fnal.gov/{fullmetadata[dataset][year]["picoAOD"]}' ],
+                                         'metadata': metadata[dataset]}
 
-            logging.info(f'\nDataset {dataset} with {len(fileset[dataset]["files"])} files')
+            logging.info(f'\nDataset {dataset} with {len(fileset[dataset+"_"+year]["files"])} files')
 
 
     #### IF run in condor
@@ -109,6 +110,7 @@ if __name__ == '__main__':
         logging.error("No processor included. Check the --processor options and remember to call the processor class as: analysis")
         sys.exit(0)
 
+
     tstart = time.time()
     output, metrics = processor.run_uproot_job(
         fileset,
@@ -125,8 +127,9 @@ if __name__ == '__main__':
         processtime = metrics['processtime']
         logging.info(f'\n{nEvent/elapsed:,.0f} events/s total ({nEvent}/{elapsed}, processtime {processtime})')
     else:
-        nEvent = sum([output['nEvent'][dataset] for dataset in output['nEvent'].keys()])
-        logging.info(f'\n{nEvent/elapsed:,.0f} events/s total ({nEvent}/{elapsed})')
+        pass
+        #nEvent = sum([output['nEvent'][dataset] for dataset in output['nEvent'].keys()])
+        #logging.info(f'\n{nEvent/elapsed:,.0f} events/s total ({nEvent}/{elapsed})')
 
     ##### Saving file
     if not os.path.exists(args.output_path): os.makedirs(args.output_path)

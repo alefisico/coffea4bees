@@ -44,7 +44,9 @@ if __name__ == '__main__':
     metadata_dataset = {}
     fileset = {}
     for year in args.years:
+        logging.info(f"\nconfig year: {year}")
         for dataset in args.datasets:
+            logging.info(f"\nconfig dataset: {dataset}")
             if dataset not in metadata['datasets'].keys():
                 logging.error(f"{dataset} name not in metadatafile")
                 sys.exit(0)
@@ -52,6 +54,7 @@ if __name__ == '__main__':
             metadata_dataset[dataset] = {
                 'xs'    : 1. if 'data' else (metadata['datasets'][dataset]['xs'] if isinstance(metadata[dataset]['xs'], float) else eval(metadata[dataset]['xs']) ),    #### AGE: we might need to change this
                 'lumi'  : float(metadata['datasets']['data'][year]['lumi']),
+                'year'  : year,
             }
 
             if isinstance( metadata['datasets'][dataset][year]["picoAOD"], dict):
@@ -115,6 +118,7 @@ if __name__ == '__main__':
         sys.exit(0)
 
     tstart = time.time()
+    print(f"fileset is {fileset}")
     output, metrics = processor.run_uproot_job(
         fileset,
         treename = 'Events',
