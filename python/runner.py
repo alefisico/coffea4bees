@@ -63,15 +63,15 @@ if __name__ == '__main__':
                     idataset = f'{dataset}{year}{iera}'
                     metadata_dataset[idataset] = metadata_dataset[dataset]
                     metadata_dataset[idataset]['era'] = iera
-                    fileset[idataset] = {'files': [ f'root://cmseos.fnal.gov/{ifile}' ],
-                                        'metadata': metadata_dataset[idataset]}
-                    logging.info(f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
+                    fileset[idataset+"_"+year] = {'files': [ f'root://cmseos.fnal.gov/{ifile}' ],
+                                                  'metadata': metadata_dataset[idataset]}
+                    logging.info(f'\nDataset {idataset+"_"+year} with {len(fileset[idataset]["files"])} files')
 
             else:
-                fileset[dataset] = {'files': [ f'root://cmseos.fnal.gov/{metadata["datasets"][dataset][year]["picoAOD"]}' ],
-                                    'metadata': metadata_dataset[dataset]}
+                fileset[dataset+"_"+year] = {'files': [ f'root://cmseos.fnal.gov/{metadata["datasets"][dataset][year]["picoAOD"]}' ],
+                                             'metadata': metadata_dataset[dataset]}
 
-                logging.info(f'\nDataset {dataset} with {len(fileset[dataset]["files"])} files')
+                logging.info(f'\nDataset {dataset+"_"+year} with {len(fileset[dataset+"_"+year]["files"])} files')
 
 
     #### IF run in condor
