@@ -1,6 +1,6 @@
 # Coffea4bees analysis
 
-To run the analysis, remember first to set the coffea environment and your grid certificate. If you are on this folder:
+To run the analysis, remember first to set the coffea environment and your grid certificate. If you followed the instructions in the [README.md](../../README.md), the `shell` file must be located right after the 
 ```
 voms-proxy-init -rfc -voms cms --valid 168:00
 source ../shell
@@ -34,7 +34,7 @@ for convenience this command is stored in `runTestJob.sh`, you can just run it w
 
 ## To produce some plots
 
-Assuming that the file with your histograms is called `hists/test.pkl`, you can run:
+Assuming that the file with your histograms is called `hists/test.coffea`, you can run:
 ```
-python uproot_plots.py -i hists/test.pkl
+python iPlot.py -i hists/test.pkl
 ```
