@@ -15,16 +15,33 @@ datasets:
   data:
     'UL16_preVFP':
       lumi: 19.5e3
-      picoAOD: '/store/user/algomez/XX4b/20231115/data2016/picoAOD.root'
+      picoAOD: 
+        B: '/store/user/algomez/XX4b/20231115/data2016B/picoAOD.root'
+        C: '/store/user/algomez/XX4b/20231115/data2016C/picoAOD.root'
+        D: '/store/user/algomez/XX4b/20231115/data2016D/picoAOD.root'
+        E: '/store/user/algomez/XX4b/20231115/data2016E/picoAOD.root'
+        F: '/store/user/algomez/XX4b/20231115/data2016F/picoAOD.root'    #### AGE: it is wrong, should be checked later
     'UL16_postVFP':
       lumi: 16.5e3
-      picoAOD: '/store/user/algomez/XX4b/20231115/data2016/picoAOD.root'
+      picoAOD: 
+        F: '/store/user/algomez/XX4b/20231115/data2016F/picoAOD.root'    #### AGE: it is wrong, should be checked later
+        G: '/store/user/algomez/XX4b/20231115/data2016G/picoAOD.root'
+        H: '/store/user/algomez/XX4b/20231115/data2016H/picoAOD.root'
     'UL17':
       lumi: 36.7e3
-      picoAOD: '/store/user/algomez/XX4b/20231115/data2017/picoAOD.root'
+      picoAOD: 
+        B: '/store/user/algomez/XX4b/20231115/data2017B/picoAOD.root'
+        C: '/store/user/algomez/XX4b/20231115/data2017C/picoAOD.root'
+        D: '/store/user/algomez/XX4b/20231115/data2017D/picoAOD.root'
+        E: '/store/user/algomez/XX4b/20231115/data2017E/picoAOD.root'
+        F: '/store/user/algomez/XX4b/20231115/data2017F/picoAOD.root'
     'UL18':
       lumi: 59.8e3
-      picoAOD: '/store/user/algomez/XX4b/20231115/data2018/picoAOD.root'
+      picoAOD: 
+        A: '/store/user/algomez/XX4b/20231115/data2018A/picoAOD.root'
+        B: '/store/user/algomez/XX4b/20231115/data2018B/picoAOD.root'
+        C: '/store/user/algomez/XX4b/20231115/data2018C/picoAOD.root'
+        D: '/store/user/algomez/XX4b/20231115/data2018D/picoAOD.root'
 
   ggZH4b :
     xs: 0.1227*0.5824*0.1512, #0.0432 from GenXsecAnalyzer, does not include BR for H, does include BR(Z->hadrons) = 0.69911. 0.0432/0.69911 = 0.0618, almost exactly half the LHCxsWG value... NNLO = 2x NLO??
