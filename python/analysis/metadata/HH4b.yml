@@ -24,7 +24,6 @@ datasets:
     'UL16_postVFP':
       lumi: 16.5e3
       picoAOD: 
-        F: '/store/user/algomez/XX4b/20231115/data2016F/picoAOD.root'    #### AGE: it is wrong, should be checked later
         G: '/store/user/algomez/XX4b/20231115/data2016G/picoAOD.root'
         H: '/store/user/algomez/XX4b/20231115/data2016H/picoAOD.root'
     'UL17':
@@ -180,7 +179,7 @@ datasets:
 
   mixeddata:
     xs: 1.0
-    '2016':
+    'UL16_preVFP':
       picoAOD: '/store/user/jda102/condor/ZH4b/ULTrig/mixed2016_3bDvTMix4bDvT_v0/picoAOD_3bDvTMix4bDvT_4b_wJCM_v0_newSBDef.root'
     'UL17':
       picoAOD: '/store/user/jda102/condor/ZH4b/ULTrig/mixed2017_3bDvTMix4bDvT_v0/picoAOD_3bDvTMix4bDvT_4b_wJCM_v0_newSBDef.root'
