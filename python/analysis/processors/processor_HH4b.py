@@ -39,7 +39,7 @@ from analysis.helpers.networks import HCREnsemble
 # print(torch.__config__.parallel_info())
 
 from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
-from analysis.helpers.common import init_jet_factory
+from analysis.helpers.common import init_jet_factory, jet_corrections
 import logging
 
 
@@ -51,22 +51,64 @@ class variable:
         self.label = label
 
 
-def fourvectorhists(name, title, pt=(100, 0, 500), mass=(100, 0, 500), label='Events', extras=[]):
-    variables = []
-    variables += [variable(f'{name}.pt',   hist.Bin('x', f'{title} p$_{{\\mathrm{{T}}}}$ [GeV]', pt[0], pt[1], pt[2]), label)]
-    variables += [variable(f'{name}.eta',  hist.Bin('x', f'{title} $\\eta$', 100, -5, 5), label)]
-    variables += [variable(f'{name}.phi',  hist.Bin('x', f'{title} $\\phi$',  60, -np.pi, np.pi), label)]
-    variables += [variable(f'{name}.mass', hist.Bin('x', f'{title} Mass [GeV]',  mass[0], mass[1], mass[2]), label)]
+class cutFlow:
 
-    variables += [variable(f'{name}.pz',     hist.Bin('x', f'{title} p$_{{\\mathrm{{z}}}}$ [GeV]', 150, 0, 1500), label)]
-    variables += [variable(f'{name}.energy', hist.Bin('x', f'{title} Energy [GeV]', 100, 0, 500), label)]
+    def __init__(self, cuts):
+        self._cutFlowThreeTag = {}
+        self._cutFlowFourTag  = {}
+        
+        for c in cuts:
+            self._cutFlowThreeTag[c] = (0, 0) # weighted, raw
+            self._cutFlowFourTag [c] = (0, 0) # weighted, raw
 
-    for var in extras:
-        bins = deepcopy(var.bins)
-        bins.label = f'{title} {var.bins.label}'
-        variables += [variable(f'{name}.{var.name}', bins, label)]
 
-    return variables
+    def fill(self, cut, event, allTag=False, wOverride=None):
+
+        if allTag:
+            
+            if wOverride: 
+                sumw = wOverride
+            else:         
+                sumw = np.sum(event.weight)            
+
+            sumn_3, sumn_4 = len(event), len(event)
+            sumw_3, sumw_4 = sumw, sumw
+        else:
+            e3, e4 = event[event.threeTag], event[event.fourTag]
+
+            sumw_3 = np.sum(e3.weight)
+            sumn_3 = len(e3.weight)
+
+            sumw_4 = np.sum(e4.weight)
+            sumn_4 = len(e4.weight)
+
+        self._cutFlowThreeTag[cut] = (sumw_3, sumn_3) # weighted, raw
+        self._cutFlowFourTag [cut] = (sumw_4, sumn_4) # weighted, raw
+
+
+    def addOutput(self, o, dataset):
+
+        o["cutFlowFourTag"] = {}
+        o["cutFlowFourTagUnitWeight"] = {}
+        o["cutFlowFourTag"][dataset] = {}
+        o["cutFlowFourTagUnitWeight"][dataset] = {}
+        for k,v in  self._cutFlowFourTag.items():
+            o["cutFlowFourTag"][dataset][k] = v[0]
+            o["cutFlowFourTagUnitWeight"][dataset][k] = v[1]
+
+        o["cutFlowThreeTag"] = {}
+        o["cutFlowThreeTagUnitWeight"] = {}
+        o["cutFlowThreeTag"][dataset] = {}
+        o["cutFlowThreeTagUnitWeight"][dataset] = {}
+        for k,v in  self._cutFlowThreeTag.items():
+            o["cutFlowThreeTag"][dataset][k] = v[0]
+            o["cutFlowThreeTagUnitWeight"][dataset][k] = v[1]
+
+        return
+
+
+
+
 
 
 def count_nested_dict(nested_dict, c=0):
@@ -82,6 +124,7 @@ class analysis(processor.ProcessorABC):
         logging.debug('\nInitialize Analysis Processor')
         self.blind = True
         print('Initialize Analysis Processor')
+        self.newcuts = ["all","passHLT","passMETFilter","passJetMult","passJetMult_btagSF","passPreSel","passDiJetMass",'passSvB','failSvB']
         self.cuts = ['passPreSel','passSvB','failSvB']
         self.year = year
         self.threeTag = threeTag
@@ -100,113 +143,17 @@ class analysis(processor.ProcessorABC):
         self.btagSF  = btagSF
 
 
-
         self.variables = []
-        self.variables += [variable(f'SvB_ps_{bb}', hist.Bin('x', f'SvB Regressed P(Signal) $|$ P({bb.upper()}) is largest', 100, 0, 1)) for bb in self.signals]
-        #self.variables += [variable(f'SvB_ps_all',  hist.Bin('x', f'SvB Regressed P(Signal)',                                100, 0, 1))]
-        self.variables += [variable(f'SvB_MA_ps_{bb}', hist.Bin('x', f'SvB MA Regressed P(Signal) $|$ P({bb.upper()}) is largest', 100, 0, 1)) for bb in self.signals]
-        #self.variables += [variable(f'SvB_MA_ps_all',  hist.Bin('x', f'SvB MA Regressed P(Signal)',                                100, 0, 1))]
         self.variables_systematics = self.variables[0:8]
-        #self.variables += [variable('nJet_selected', hist.Bin('x', 'Number of Selected Jets', 16, -0.5, 15.5))]
         jet_extras = [variable('calibration', hist.Bin('x','Calibration Factor', 20, 0, 2))]
         #self.variables += fourvectorhists('canJet', 'Boson Candidate Jets', mass=(50, 0, 50), label='Jets', extras=jet_extras)
-        self.variables += fourvectorhists('v4j', 'Diboson Candidate', mass=(120, 0, 1200))
 
-        diJet_extras = [variable('dr', hist.Bin('x', '$\\Delta$R(j,j)', 50, 0, 5)),
-                        variable('st', hist.Bin('x', 's$_{{\\mathrm{{T}}}}$ [GeV]', 100, 0, 1000))]
-        self.variables += fourvectorhists('quadJet_selected.lead', 'Leading Boson Candidate', extras=diJet_extras)
-        self.variables += fourvectorhists('quadJet_selected.subl', 'Subleading Boson Candidate', extras=diJet_extras)
-        self.variables += [variable('quadJet_selected.dr', hist.Bin('x', 'Selected Diboson Candidate $\\Delta$R(d,d)', 50, 0, 5))]
-        self.variables += [variable(f'quadJet_selected.x{bb.upper()}', hist.Bin('x', f'Selected Diboson Candidate X$_{{\\mathrm{bb.upper()}}}$', 100, 0, 10)) for bb in self.signals]
 
-        self._accumulator = processor.dict_accumulator({'cutflow': processor.defaultdict_accumulator(partial(processor.defaultdict_accumulator,
-                                                                                                             partial(processor.defaultdict_accumulator,
-                                                                                                                     partial(processor.defaultdict_accumulator, float)
-                                                                                                                 )
-                                                                                                             )
-                                                                                                         ),
-                                                        'nEvent' : processor.defaultdict_accumulator(int),
-                                                        'hists'  : processor.dict_accumulator(),
-                                                        'newHists'  : processor.dict_accumulator(),
-                                                        'categories'  : processor.dict_accumulator()
-                                                    })
-
-        for junc in self.juncVar:
-            logging.info(f'Making hists for {junc}')
-            self._accumulator['hists'][junc] = processor.dict_accumulator()
-            for cut in self.cuts:
-                logging.info(f'    {cut}')
-                self._accumulator['hists'][junc][cut] = processor.dict_accumulator()
-                for tag in self.tags:
-                    logging.info(f'        {tag}')
-                    self._accumulator['hists'][junc][cut][tag] = processor.dict_accumulator()
-                    for region in self.regions:
-                        logging.info(f'            {region}')
-                        self._accumulator['hists'][junc][cut][tag][region] = processor.dict_accumulator()
-                        for var in self.variables:
-                            self._accumulator['hists'][junc][cut][tag][region][var.name] = hist.Hist(var.label, hist.Cat('dataset', 'Dataset'), var.bins)
-
-            self._accumulator['hists'][junc]['passPreSel']['fourTag']['SR']['trigWeight_Bool'] = processor.dict_accumulator()
-            self._accumulator['hists'][junc]['passPreSel']['fourTag']['SR']['trigWeight_Data'] = processor.dict_accumulator()
-            self._accumulator['hists'][junc]['passPreSel']['fourTag']['SR']['trigWeight_MC']   = processor.dict_accumulator()
-            for syst in self.btagVar:
-                self._accumulator['hists'][junc]['passPreSel']['fourTag']['SR'][f'btagSF_{syst}'] = processor.dict_accumulator()
-            for syst in self.juncVar:
-                self._accumulator['hists'][junc]['passPreSel']['fourTag']['SR'][       f'{syst}'] = processor.dict_accumulator()
-            for syst in ['unit', 'up', 'down', 'central']:
-                if self.apply_puWeight:
-                    self._accumulator['hists'][junc]['passPreSel']['fourTag']['SR'][f'puWeight_{syst}'] = processor.dict_accumulator()
-                if self.apply_prefire:
-                    self._accumulator['hists'][junc]['passPreSel']['fourTag']['SR'][f'prefire_{syst}'] = processor.dict_accumulator()
-
-            for var in self.variables_systematics:
-                self._accumulator['hists'][junc]['passPreSel']['fourTag']['SR']['trigWeight_Bool'][var.name] = hist.Hist(var.label, hist.Cat('dataset', 'Dataset'), var.bins)
-                self._accumulator['hists'][junc]['passPreSel']['fourTag']['SR']['trigWeight_Data'][var.name] = hist.Hist(var.label, hist.Cat('dataset', 'Dataset'), var.bins)
-                self._accumulator['hists'][junc]['passPreSel']['fourTag']['SR']['trigWeight_MC'  ][var.name] = hist.Hist(var.label, hist.Cat('dataset', 'Dataset'), var.bins)
-                for syst in self.btagVar:
-                    self._accumulator['hists'][junc]['passPreSel']['fourTag']['SR'][f'btagSF_{syst}'][var.name] = hist.Hist(var.label, hist.Cat('dataset', 'Dataset'), var.bins)
-                # for syst in self.juncVar:
-                #     self._accumulator['hists'][junc]['passPreSel']['fourTag']['SR'][       f'{syst}'][var.name] = hist.Hist(var.label, hist.Cat('dataset', 'Dataset'), var.bins)
-                for syst in ['unit', 'up', 'down', 'central']:
-                    if self.apply_puWeight:
-                        self._accumulator['hists'][junc]['passPreSel']['fourTag']['SR'][f'puWeight_{syst}'][var.name] = hist.Hist(var.label, hist.Cat('dataset', 'Dataset'), var.bins)
-                    if self.apply_prefire:
-                        self._accumulator['hists'][junc]['passPreSel']['fourTag']['SR'][f'prefire_{syst}'][var.name] = hist.Hist(var.label, hist.Cat('dataset', 'Dataset'), var.bins)
-
-        self.nHists = count_nested_dict(self._accumulator['hists'])
-        logging.info(f'{self.nHists} total histograms')
-
-    @property
-    def accumulator(self):
-        return self._accumulator
-
-    def cutflow(self, output, dataset, event, cut, allTag=False, junc='JES_Central'):
-        if allTag:
-            w = event.weight
-            sumw = np.sum(w)
-            sumw_3, sumw_4 = sumw, sumw
-        else:
-            e3, e4 = event[event.threeTag], event[event.fourTag]
-            sumw_3 = np.sum(e3.weight)
-            sumw_4 = np.sum(e4.weight)
-
-        output['cutflow'][junc]['threeTag'][cut][dataset] += sumw_3
-        output['cutflow'][junc][ 'fourTag'][cut][dataset] += sumw_4
-
-        if event.metadata.get('isMC', False) and not allTag:
-            output['cutflow'][junc]['threeTag'][cut+'_HLT_Bool'][dataset] += np.sum(e3.weight*e3.passHLT)
-            output['cutflow'][junc][ 'fourTag'][cut+'_HLT_Bool'][dataset] += np.sum(e4.weight*e4.passHLT)
-
-            output['cutflow'][junc]['threeTag'][cut+'_HLT_MC'  ][dataset] += np.sum(e3.weight*e3.trigWeight.MC)
-            output['cutflow'][junc][ 'fourTag'][cut+'_HLT_MC'  ][dataset] += np.sum(e4.weight*e4.trigWeight.MC)
-
-            output['cutflow'][junc]['threeTag'][cut+'_HLT_Data'][dataset] += np.sum(e3.weight*e3.trigWeight.Data)
-            output['cutflow'][junc][ 'fourTag'][cut+'_HLT_Data'][dataset] += np.sum(e4.weight*e4.trigWeight.Data)
 
 
     def process(self, event):
         tstart = time.time()
-        output = self.accumulator.identity()
+        #output = self.accumulator.identity()
 
         fname   = event.metadata['filename']
         dataset = event.metadata['dataset']
@@ -222,9 +169,19 @@ class analysis(processor.ProcessorABC):
         btagSF_norm = btagSF_norm_file(dataset)
         nEvent = len(event)
         np.random.seed(0)
-        output['nEvent'][dataset] += nEvent
+
+        newOutput = {}
+        newOutput['nEvent'] = {}
+        newOutput['nEvent'][event.metadata['dataset']] = nEvent
+        
+        #
+        #  Cut Flows
+        #
+        self._cutFlow            = cutFlow(self.newcuts)
+
         puWeight= self.corrections_metadata[year]['PU']
-        juncWS = [ self.corrections_metadata[year]["JERC"][0].replace('STEP', istep) for istep in ['L1FastJet', 'L2Relative', 'L2L3Residual', 'L3Absolute'] ] + self.corrections_metadata[year]["JERC"][1:]
+        juncWS = [ self.corrections_metadata[year]["JERC"][0].replace('STEP', istep) for istep in ['L1FastJet', 'L2Relative', 'L2L3Residual', 'L3Absolute'] ]  ###### AGE: to be reviewed for data, but should be remove with jsonpog
+        if isMC: juncWS += self.corrections_metadata[year]["JERC"][1:]
 
         #
         #  Turn blinding off for mixing
@@ -232,36 +189,41 @@ class analysis(processor.ProcessorABC):
         if dataset.find("mixed") != -1:
             self.blind = False
 
-
         #
         # Hists
         #
         fill = Fill(process = dataset, year = year, weight = 'weight')
-        hist = Collection(process = [],
-                          year    = [], # FIX ME
-                          tag     = [3,4],
+
+        hist = Collection(process = [dataset],
+                          year    = [year],
+                          tag     = [3,4,0], # 3 / 4/ Other
                           region  = [2,1,0], # SR / SB / Other
                           **dict((s, ...) for s in self.cuts))
 
-        
-#        newcutflow = fill + hist.add('cutflow')
+
         fill += hist.add('SvB_MA_ps', (100, 0, 1, ('SvB_MA.ps', 'SvB_MA Regressed P(Signal)')))
         fill += hist.add('SvB_ps', (100, 0, 1, ('SvB.ps', 'SvB Regressed P(Signal)')))
+        fill += hist.add('quadJet_selected_dr', (50, 0, 5, ("quadJet_selected.dr",'Selected Diboson Candidate $\\Delta$R(d,d)')))
+
+        for bb in self.signals:
+            fill += hist.add(f'quadJet_selected_x{bb.upper()}', (100, 0, 10, (f"quadJet_selected.x{bb.upper()}", f'Selected Diboson Candidate X$_{bb.upper()}$')))
+            fill += hist.add(f'SvB_ps_{bb}',    (100, 0, 1, (f'SvB.ps_{bb}', f"SvB Regressed P(Signal) $|$ P({bb.upper()}) is largest")))
+            fill += hist.add(f'SvB_MA_ps_{bb}', (100, 0, 1, (f'SvB_MA.ps_{bb}', f"SvB MA Regressed P(Signal) $|$ P({bb.upper()}) is largest")))
 
         #
         # Jets
         #
-        fill += LorentzVector.plot(('selJets', 'Selected Jets'), 'selJet', count = True)
+        fill += LorentzVector.plot(('selJets', 'Selected Jets'), 'selJet')
         fill += LorentzVector.plot(('canJets', 'Higgs Candidate Jets'), 'canJet')
-        fill += LorentzVector.plot(('othJets', 'Other Jets'), 'notCanJet_coffea', count = True)
+        fill += LorentzVector.plot(('othJets', 'Other Jets'), 'notCanJet_coffea')
 
         #
         #  v4j
         #
-        #fill += LorentzVector.plot_pair(('v4j', R'$HH_{4b}$'), 'v4j')
-        #fill += LorentzVector.plot_pair(('p2jOth', R'Other Dijets'), 'p2jOth')
+        fill += LorentzVector.plot_pair(('v4j', R'$HH_{4b}$'), 'v4j', skip=['n','dr','dphi'], bins = {'mass': (120, 0, 1200)})
+        fill += LorentzVector.plot_pair(('leadSt', R'Lead Boson Candidate'), 'quadJet_selected_lead', skip=['n'])
+        fill += LorentzVector.plot_pair(('sublSt', R'Subleading Boson Candidate'), 'quadJet_selected_subl', skip=['n'])
         #fill += LorentzVector.plot_pair(('p2j', R'Vector Boson Candidate Dijets'), 'p2jV')
-
 
         self.apply_puWeight   = (self.apply_puWeight  ) and isMC and (puWeight is not None)
         self.apply_prefire    = (self.apply_prefire   ) and isMC and ('L1PreFiringWeight' in event.fields) and (year!='2018')
@@ -278,23 +240,7 @@ class analysis(processor.ProcessorABC):
             if self.apply_puWeight:
                 puWeight = list(correctionlib.CorrectionSet.from_file(puWeight).values())[0]
 
-        # dataset_axis = shh.axis.StrCategory([], growth=True, name='dataset', label='Dataset')
-        # cut_axis     = shh.axis.StrCategory([], growth=True, name='cut',     label='Cut')
-        # tag_axis     = shh.axis.StrCategory(['threeTag', 'fourTag'], name='tag', label='b-tag Category')
-        # region_axis  = shh.axis.StrCategory([], growth=True, name='region',  label='Region')
-
         largest_name = np.array(['None', 'ZZ', 'ZH', 'HH'])
-        # SvB_largest_axis   = shh.axis.StrCategory(largest_name, name='SvB_largest', label='Highest probability signal class')
-        # SvB_ps_axis        = shh.axis.Regular(100, 0, 1, name='SvB', label='SvB Regressed P(Signal)')
-        # nJet_selected_axis = shh.axis.Integer(0, 15, name='nJet_selected', label='Number of selected jets')
-        # output['hists']['SvB_ps_zz_nJet_selected'] = shh.Hist(dataset_axis,
-        #                                                       cut_axis,
-        #                                                       tag_axis,
-        #                                                       region_axis,
-        #                                                       SvB_largest_axis,
-        #                                                       SvB_ps_axis,
-        #                                                       nJet_selected_axis,
-        #                                                       storage='weight', label='Events')
 
         logging.debug(fname)
         logging.debug(f'{chunk}Process {nEvent} Events')
@@ -305,8 +251,6 @@ class analysis(processor.ProcessorABC):
         path = fname.replace(fname.split('/')[-1],'')
         event['SvB']    = NanoEventsFactory.from_root(f'{path}{"SvB_newSBDef.root" if "mix" in dataset else "SvB.root"}',    entry_start=estart, entry_stop=estop, schemaclass=MultiClassifierSchema).events().SvB
         event['SvB_MA'] = NanoEventsFactory.from_root(f'{path}{"SvB_MA_newSBDef.root" if "mix" in dataset else "SvB_MA.root"}', entry_start=estart, entry_stop=estop, schemaclass=MultiClassifierSchema).events().SvB_MA
-
-        #print(event.SvB_MA.ps)
 
         if not ak.all(event.SvB.event == event.event):
             logging.error('ERROR: SvB events do not match events ttree')
@@ -324,17 +268,37 @@ class analysis(processor.ProcessorABC):
         event['SvB', 'hh'] = (event.SvB.phh >= event.SvB.pzz) & (event.SvB.phh >= event.SvB.pzh)
         event['SvB', 'largest'] = largest_name[ event.SvB.passMinPs*(1*event.SvB.zz + 2*event.SvB.zh + 3*event.SvB.hh) ]
 
+        event['SvB', 'ps_zz'] = where(~event.SvB.passMinPs, (~event.SvB.passMinPs, -4))
+        event['SvB', 'ps_zh'] = where(~event.SvB.passMinPs, (~event.SvB.passMinPs, -4))
+        event['SvB', 'ps_hh'] = where(~event.SvB.passMinPs, (~event.SvB.passMinPs, -4))
+
+        event['SvB', 'ps_zz'] = where((event.SvB.passMinPs) , (event.SvB.zz, event.SvB.pzz), (event.SvB.zh, -2),            (event.SvB.hh, -3))
+        event['SvB', 'ps_zh'] = where((event.SvB.passMinPs) , (event.SvB.zz, -1),            (event.SvB.zh, event.SvB.pzh), (event.SvB.hh, -3))
+        event['SvB', 'ps_hh'] = where((event.SvB.passMinPs) , (event.SvB.zz, -1),            (event.SvB.zh, -2),            (event.SvB.hh, event.SvB.phh))
+
+
         event['SvB_MA', 'passMinPs'] = (event.SvB_MA.pzz>0.01) | (event.SvB_MA.pzh>0.01) | (event.SvB_MA.phh>0.01)
         event['SvB_MA', 'zz'] = (event.SvB_MA.pzz >  event.SvB_MA.pzh) & (event.SvB_MA.pzz >  event.SvB_MA.phh)
         event['SvB_MA', 'zh'] = (event.SvB_MA.pzh >  event.SvB_MA.pzz) & (event.SvB_MA.pzh >  event.SvB_MA.phh)
         event['SvB_MA', 'hh'] = (event.SvB_MA.phh >= event.SvB_MA.pzz) & (event.SvB_MA.phh >= event.SvB_MA.pzh)
 
+        event['SvB_MA', 'ps_zz'] = where(~event.SvB_MA.passMinPs,  (~event.SvB_MA.passMinPs, -4))
+        event['SvB_MA', 'ps_zh'] = where(~event.SvB_MA.passMinPs,  (~event.SvB_MA.passMinPs, -4))
+        event['SvB_MA', 'ps_hh'] = where(~event.SvB_MA.passMinPs,  (~event.SvB_MA.passMinPs, -4))
+
+        event['SvB_MA', 'ps_zz'] = where((event.SvB_MA.passMinPs) , (event.SvB_MA.zz, event.SvB_MA.pzz), (event.SvB_MA.zh, -2),               (event.SvB_MA.hh, -3))
+        event['SvB_MA', 'ps_zh'] = where((event.SvB_MA.passMinPs) , (event.SvB_MA.zz, -1),               (event.SvB_MA.zh, event.SvB_MA.pzh), (event.SvB_MA.hh, -3))
+        event['SvB_MA', 'ps_hh'] = where((event.SvB_MA.passMinPs) , (event.SvB_MA.zz, -1),               (event.SvB_MA.zh, -2),               (event.SvB_MA.hh, event.SvB_MA.phh))
+
+
         if isMC:
-            for junc in self.juncVar:
-                output['cutflow'][junc]['threeTag']['all'][dataset] = lumi * xs * kFactor
-                output['cutflow'][junc][ 'fourTag']['all'][dataset] = lumi * xs * kFactor
+            self._cutFlow.fill("all",  event, allTag=True, wOverride = (lumi * xs * kFactor))
+            #for junc in self.juncVar:
+            #    output['cutflow'][junc]['threeTag']['all'][dataset] = lumi * xs * kFactor
+            #    output['cutflow'][junc][ 'fourTag']['all'][dataset] = lumi * xs * kFactor
         else:
-            self.cutflow(output, dataset, event, 'all', allTag = True)
+            self._cutFlow.fill("all",  event, allTag=True)
+
 
         #
         # Get trigger decisions
@@ -349,9 +313,14 @@ class analysis(processor.ProcessorABC):
         if not isMC and not 'mix' in dataset: # for data, apply trigger cut first thing, for MC, keep all events and apply trigger in cutflow and for plotting
             event = event[event.passHLT]
 
+
         if isMC:
             event['weight'] = event.genWeight * (lumi * xs * kFactor / genEventSumw)
             logging.debug(f"event['weight'] = event.genWeight * (lumi * xs * kFactor / genEventSumw) = {event.genWeight[0]} * ({lumi} * {xs} * {kFactor} / {genEventSumw}) = {event.weight[0]}")
+
+
+        self._cutFlow.fill("passHLT",  event, allTag=True)
+
 
         #
         # METFilter
@@ -366,12 +335,14 @@ class analysis(processor.ProcessorABC):
             if year == '2017' or year == '2018':
                 passMETFilter = passMETFilter & event.Flag.ecalBadCalibFilter # in UL the name does not have "V2"
         event['passMETFilter'] = passMETFilter
+
+
         event = event[event.passMETFilter]
-        self.cutflow(output, dataset, event, 'passMETFilter', allTag = True)
+        self._cutFlow.fill("passMETFilter",  event, allTag=True)
 
 
         #
-        # Calculate and apply Jet Energy Calibration
+        # Calculate and apply Jet Energy Calibration   ## AGE: currently not applying to data and mixeddata
         #
         if isMC and juncWS is not None:
             jet_factory = init_jet_factory(juncWS)
@@ -381,11 +352,12 @@ class analysis(processor.ProcessorABC):
             nominal_jet = event.Jet
             # nominal_jet['pt_raw']   = (1 - nominal_jet.rawFactor) * nominal_jet.pt
             # nominal_jet['mass_raw'] = (1 - nominal_jet.rawFactor) * nominal_jet.mass
-            nominal_jet['pt_gen']   = ak.values_astype(ak.fill_none(nominal_jet.matched_gen.pt, 0), np.float32)
+            if isMC: nominal_jet['pt_gen']   = ak.values_astype(ak.fill_none(nominal_jet.matched_gen.pt, 0), np.float32)
             nominal_jet['rho']      = ak.broadcast_arrays(event.fixedGridRhoFastjetAll, nominal_jet.pt)[0]
 
             jec_cache = cachetools.Cache(np.inf)
             jet_variations = jet_factory.build(nominal_jet, lazy_cache=jec_cache)
+            jet_tmp = jet_corrections( event.Jet, event.fixedGridRhoFastjetAll, jec_type=['L1L2L3Res'] )   ##### AGE: jsonpog+correctionlib but not final, that is why it is not used yet
 
         #
         # Loop over jet energy uncertainty variations running event selection, filling hists/cuflows independently for each jet calibration
@@ -399,7 +371,7 @@ class analysis(processor.ProcessorABC):
                 # del event['Jet']
                 event['Jet'] = jet_variations[variation, direction]
 
-            event['Jet', 'calibration'] = event.Jet.pt/( 1 if 'mix' in dataset else event.Jet.pt_raw )  ### AGE: I include the mix condition, I think it is wrong, to check later
+            event['Jet', 'calibration'] = event.Jet.pt/( 1 if 'data' in dataset else event.Jet.pt_raw )  ### AGE: I include the mix condition, I think it is wrong, to check later
             # if junc=='JES_Central':
             #     print(f'calibration nominal: \n{ak.mean(event.Jet.calibration)}')
             # else:
@@ -411,8 +383,9 @@ class analysis(processor.ProcessorABC):
             event['nJet_selected'] = ak.sum(event.Jet.selected, axis=1)
             event['selJet'] = event.Jet[event.Jet.selected]
 
+
             selev = event[event.nJet_selected >= 4]
-            self.cutflow(output, dataset, selev, 'passJetMult', allTag = True, junc=junc)
+            self._cutFlow.fill("passJetMult",  selev, allTag=True)
 
             selev['Jet', 'tagged']       = selev.Jet.selected & (selev.Jet.btagDeepFlavB>=0.6)
             selev['Jet', 'tagged_loose'] = selev.Jet.selected & (selev.Jet.btagDeepFlavB>=0.3)
@@ -436,10 +409,12 @@ class analysis(processor.ProcessorABC):
 
             selev[ 'fourTag']   =  fourTag
             selev['threeTag']   = threeTag * self.threeTag
-            selev['passPreSel'] = selev.threeTag | selev.fourTag
-            selev['tag'] = 0 
-            selev['tag'] = where(selev.passPreSel, (selev.fourTag, 4), (selev.threeTag, 3))
 
+
+            #selev['tag'] = ak.Array({'threeTag':selev.threeTag, 'fourTag':selev.fourTag})
+            selev['passPreSel'] = selev.threeTag | selev.fourTag
+            selev['tag'] = 0
+            selev['tag'] = where(selev.passPreSel, (selev.fourTag, 4), (selev.threeTag, 3))
 
 
             #
@@ -449,6 +424,7 @@ class analysis(processor.ProcessorABC):
                 for var in ['nominal', 'up', 'down']:
                     selev[f'PU_weight_{var}'] = puWeight.evaluate(selev.Pileup.nTrueInt.to_numpy(), var)
                 selev['weight'] = selev.weight * selev.PU_weight_nominal
+
             if self.apply_prefire:
                 selev['weight'] = selev.weight * selev.L1PreFiringWeight.Nom
 
@@ -508,16 +484,18 @@ class analysis(processor.ProcessorABC):
                     selev[f'weight_btagSF_{sf}'] = selev.weight * SF * btagSF_norm
 
                 selev['weight'] = selev[f'weight_btagSF_{"central" if use_central else btag_jes[0]}']
-                self.cutflow(output, dataset, selev, 'passJetMult_btagSF', allTag = True, junc=junc)
+                self._cutFlow.fill("passJetMult_btagSF",  selev, allTag=True)
 
 
             # for i in range(len(selev)):
             #     print(selev.event[i], selev.btagSF_central[i])
 
+
             #
             # Preselection: keep only three or four tag events
             #
             selev = selev[selev.passPreSel]
+
 
             #
             # Build and select boson candidate jets with bRegCorr applied
@@ -583,8 +561,10 @@ class analysis(processor.ProcessorABC):
                 e3 = selev[selev.threeTag]
                 selev[selev.threeTag]['weight'] = e3.weight * e3.pseudoTagWeight
 
-            # presel cutflow with pseudotag weight included
-            self.cutflow(output, dataset, selev, 'passPreSel', junc=junc)
+            #
+            # CutFlow
+            #
+            self._cutFlow.fill("passPreSel",  selev)
 
 
             #
@@ -596,6 +576,7 @@ class analysis(processor.ProcessorABC):
             diJet       = canJet[:,pairing[0]]     +   canJet[:,pairing[1]]
             diJet['st'] = canJet[:,pairing[0]].pt  +   canJet[:,pairing[1]].pt
             diJet['dr'] = canJet[:,pairing[0]].delta_r(canJet[:,pairing[1]])
+            diJet['dphi'] = canJet[:,pairing[0]].delta_phi(canJet[:,pairing[1]])
             diJet['lead'] = canJet[:,pairing[0]]
             diJet['subl'] = canJet[:,pairing[1]]
             # Sort diJets within views to be lead st, subl st
@@ -665,10 +646,14 @@ class analysis(processor.ProcessorABC):
             selev['quadJet'] = quadJet
             selev['quadJet_selected'] = quadJet[quadJet.selected][:,0]
 
+            # FIX ME  (Better way to do this
+            selev['quadJet_selected_lead'] = selev['quadJet_selected'].lead
+            selev['quadJet_selected_subl'] = selev['quadJet_selected'].subl
+
 
             selev['region'] = selev['quadJet_selected'].SR * 0b10 + selev['quadJet_selected'].SB * 0b01
-            selev['passSvB'] = (selev['SvB_MA'].ps > 0.95) 
-            selev['failSvB'] = (selev['SvB_MA'].ps < 0.05)  
+            selev['passSvB'] = (selev['SvB_MA'].ps > 0.95)
+            selev['failSvB'] = (selev['SvB_MA'].ps < 0.05)
 
             # selev.issue = (selev.leadStM<0) | (selev.sublStM<0)
             # if ak.any(selev.issue):
@@ -691,13 +676,13 @@ class analysis(processor.ProcessorABC):
             #
             # Blind data in fourTag SR
             #
-            if not isMC and self.blind:
+            if not (isMC or 'mixed' in dataset) and self.blind:
                 selev = selev[~(selev.SR & selev.fourTag)]
 
 
 
-            self.cutflow(output, dataset, selev[selev['quadJet_selected'].passDiJetMass], 'passDiJetMass', junc=junc)
-            self.cutflow(output, dataset, selev[selev['quadJet_selected'].SR], 'SR', junc=junc)
+            #self.cutflow(output, dataset, selev[selev['quadJet_selected'].passDiJetMass], 'passDiJetMass', junc=junc)
+            #self.cutflow(output, dataset, selev[selev['quadJet_selected'].SR], 'SR', junc=junc)
 
             if self.classifier_SvB is not None:
                 self.compute_SvB(selev, junc=junc)
@@ -706,23 +691,29 @@ class analysis(processor.ProcessorABC):
             #
             # fill histograms
             #
-            self.fill(selev, output, junc=junc)
+            self._cutFlow.fill("passDiJetMass",  selev[selev['quadJet_selected'].passDiJetMass])
+            self._cutFlow.fill("passSvB",  selev[selev.passSvB])
+            self._cutFlow.fill("failSvB",  selev[selev.failSvB])
 
+            #fill.cache(selev)
             fill(selev)
 
-            if isMC:
-                self.fill_systematics(selev, output, junc=junc)
+            #if isMC:
+            #   self.fill_systematics(selev, output, junc=junc)
             garbage = gc.collect()
             # print('Garbage:',garbage)
 
-
+            
         # Done
         #output['newHists'] = hist.output["hists"]
         #output['categories'] = hist.output["categories"]
         elapsed = time.time() - tstart
         logging.debug(f'{chunk}{nEvent/elapsed:,.0f} events/s')
         #return output
-        return hist.output
+
+        self._cutFlow.addOutput(newOutput, event.metadata['dataset'])
+
+        return hist.output | newOutput
 
 
     def compute_SvB(self, event, junc='JES_Central'):
@@ -798,48 +789,17 @@ class analysis(processor.ProcessorABC):
             for bb in self.signals:
                 mask = event[classifier][bb]
                 x, w = event[mask][classifier].ps, weight[mask]
-                hist[f'{classifier}_ps_{bb}'].fill(dataset=dataset, x=x, weight=w)
+                #hist[f'{classifier}_ps_{bb}'].fill(dataset=dataset, x=x, weight=w)
 
             mask = event[classifier]['zz'] | event[classifier]['zh'] | event[classifier]['hh']
             x, w = event[mask][classifier].ps, weight[mask]
             #hist[f'{classifier}_ps_all'].fill(dataset=dataset, x=x, weight=w)
 
 
-    def fill_fourvectorhists(self, name, hist, event, weight):
-        dataset = event.metadata.get('dataset','')
-        namepath = tuple(name.split('.'))
-
-        obj = event
-        for p in namepath:
-            obj = obj[p]
-        _, w = ak.broadcast_arrays(obj.pt, weight)#, depth_limit=1) # duplicate event weights so that we can fill with multiple objects per event
-        try:
-            w = ak.flatten(w) # flatten arrays for filling, allows for multiple objects per event
-        except ValueError:
-            pass
-
-        for var in ['pt','eta','phi','mass', 'pz','energy','dr','st']:
-            try:
-                v = getattr(obj,var)
-            except AttributeError:
-                # print('AttributeError',name,var)
-                continue # var attribute was not initialized
-            try:
-                v = ak.flatten(v)
-            except ValueError:
-                # print('flatten error',v)
-                pass # already flat?
-
-            try:
-                hist[f'{name}.{var}'].fill(dataset=dataset, x=v, weight=w)
-            except KeyError:
-                # print('KeyError', f'{name}.{var}')
-                pass # histogram for this attribute was not initialized
 
 
     def fill(self, event, output, junc='JES_Central'):
         dataset = event.metadata.get('dataset','')
-        isMC    = event.metadata.get('isMC', False)
         for cut in self.cuts:
             for tag in self.tags:
                 mask_cut_tag = event[tag] & event[cut]
@@ -858,64 +818,65 @@ class analysis(processor.ProcessorABC):
                     if self.apply_trigWeight:
                         weight = weight * hist_event.trigWeight.Data
 
-                    hist = output['hists'][junc][cut][tag][region]
+                    #hist = output['hists'][junc][cut][tag][region]
                     #hist['nJet_selected'].fill(dataset=dataset, x=hist_event.nJet_selected, weight=weight)
                     #hist['canJet_pt'].fill(dataset=dataset, x=hist_event.canJet.pt, weight=weight)
-                    self.fill_fourvectorhists('canJet', hist, hist_event, weight)
-                    self.fill_fourvectorhists('v4j', hist, hist_event, weight)
-                    self.fill_fourvectorhists('quadJet_selected.lead', hist, hist_event, weight)
-                    self.fill_fourvectorhists('quadJet_selected.subl', hist, hist_event, weight)
-                    hist['quadJet_selected.dr'].fill(dataset=dataset, x=hist_event['quadJet_selected'].dr, weight=weight)
-                    for bb in self.signals: hist[f'quadJet_selected.x{bb.upper()}'].fill(dataset=dataset, x=hist_event['quadJet_selected'][f'x{bb.upper()}'], weight=weight)
-                    self.fill_SvB(hist, hist_event, weight)
+                    #self.fill_fourvectorhists('canJet', hist, hist_event, weight)
+                    #self.fill_fourvectorhists('v4j', hist, hist_event, weight)
+                    #self.fill_fourvectorhists('quadJet_selected.lead', hist, hist_event, weight)
+                    #self.fill_fourvectorhists('quadJet_selected.subl', hist, hist_event, weight)
+                    #hist['quadJet_selected.dr'].fill(dataset=dataset, x=hist_event['quadJet_selected'].dr, weight=weight)
+                    #for bb in self.signals: hist[f'quadJet_selected.x{bb.upper()}'].fill(dataset=dataset, x=hist_event['quadJet_selected'][f'x{bb.upper()}'], weight=weight)
+                    #self.fill_SvB(hist, hist_event, weight)
 
     # def fill_shh(self, output, event, dataset='', cut='', tag='', region=''):
     #     output['hists']['SvB_ps_zz_nJet_selected'].fill(
     #         dataset=dataset, cut=cut, tag=tag, region=region, SvB_largest=event.SvB.largest,
     #         SvB_ps=event.SvB.ps, nJet_selected=event.nJet_selected, weight=event.weight)
 
-    def fill_systematics(self, event, output, junc='JES_Central'):
-        mask = event['fourTag']
-        mask = mask & event['quadJet_selected'].SR
-        event = event[mask]
-
-        for trig in ['Bool', 'MC', 'Data']:
-            hist = output['hists'][junc]['passPreSel']['fourTag']['SR'][f'trigWeight_{trig}']
-            weight = event.weight * event.passHLT if trig == 'Bool' else event.weight * event.trigWeight[trig]
-            self.fill_SvB(hist, event, weight)
-
-        for sf in self.btagVar:
-            hist = output['hists'][junc]['passPreSel']['fourTag']['SR'][f'btagSF_{sf}']
-            weight = event[f'weight_btagSF_{sf}']
-            if self.apply_trigWeight:
-                weight = weight * event.trigWeight.Data
-            self.fill_SvB(hist, event, weight)
-
-        if self.apply_puWeight:
-            hist = output['hists'][junc]['passPreSel']['fourTag']['SR']['puWeight_unit']
-            unit_weight = event.weight#/event.PU_weight_nominal # this will break if any nominal pilup weights are zero
-            if self.apply_trigWeight:
-                unit_weight = unit_weight * event.trigWeight.Data
-            self.fill_SvB(hist, event, unit_weight)
-            branch = {'up': 'up', 'down':'down', 'central': 'nominal'}
-            for var in branch:
-                hist = output['hists'][junc]['passPreSel']['fourTag']['SR'][f'puWeight_{var}']
-                weight = unit_weight * event[f'PU_weight_{branch[var]}']
-                self.fill_SvB(hist, event, weight)
-
-        if self.apply_prefire:
-            hist = output['hists'][junc]['passPreSel']['fourTag']['SR']['prefire_unit']
-            unit_weight = event.weight#/event.L1PreFiringWeight.Nom # this will break if any nominal prefire weights are zero
-            if self.apply_trigWeight:
-                unit_weight = unit_weight * event.trigWeight.Data
-            self.fill_SvB(hist, event, unit_weight)
-            branch = {'up': 'Up', 'down':'Dn', 'central': 'Nom'}
-            for var in branch:
-                hist = output['hists'][junc]['passPreSel']['fourTag']['SR'][f'prefire_{var}']
-                weight = unit_weight * event.L1PreFiringWeight[branch[var]]
-                self.fill_SvB(hist, event, weight)
+#    def fill_systematics(self, event, output, junc='JES_Central'):
+#        mask = event['fourTag']
+#        mask = mask & event['quadJet_selected'].SR
+#        event = event[mask]
+#
+#        for trig in ['Bool', 'MC', 'Data']:
+#            hist = output['hists'][junc]['passPreSel']['fourTag']['SR'][f'trigWeight_{trig}']
+#            weight = event.weight * event.passHLT if trig == 'Bool' else event.weight * event.trigWeight[trig]
+#            #self.fill_SvB(hist, event, weight)
+#
+#        for sf in self.btagVar:
+#            hist = output['hists'][junc]['passPreSel']['fourTag']['SR'][f'btagSF_{sf}']
+#            weight = event[f'weight_btagSF_{sf}']
+#            if self.apply_trigWeight:
+#                weight = weight * event.trigWeight.Data
+#            #self.fill_SvB(hist, event, weight)
+#
+#        if self.apply_puWeight:
+#            hist = output['hists'][junc]['passPreSel']['fourTag']['SR']['puWeight_unit']
+#            unit_weight = event.weight#/event.PU_weight_nominal # this will break if any nominal pilup weights are zero
+#            if self.apply_trigWeight:
+#                unit_weight = unit_weight * event.trigWeight.Data
+#            self.fill_SvB(hist, event, unit_weight)
+#            branch = {'up': 'up', 'down':'down', 'central': 'nominal'}
+#            for var in branch:
+#                hist = output['hists'][junc]['passPreSel']['fourTag']['SR'][f'puWeight_{var}']
+#                weight = unit_weight * event[f'PU_weight_{branch[var]}']
+#                self.fill_SvB(hist, event, weight)
+#
+#        if self.apply_prefire:
+#            hist = output['hists'][junc]['passPreSel']['fourTag']['SR']['prefire_unit']
+#            unit_weight = event.weight#/event.L1PreFiringWeight.Nom # this will break if any nominal prefire weights are zero
+#            if self.apply_trigWeight:
+#                unit_weight = unit_weight * event.trigWeight.Data
+#            self.fill_SvB(hist, event, unit_weight)
+#            branch = {'up': 'Up', 'down':'Dn', 'central': 'Nom'}
+#            for var in branch:
+#                hist = output['hists'][junc]['passPreSel']['fourTag']['SR'][f'prefire_{var}']
+#                weight = unit_weight * event.L1PreFiringWeight[branch[var]]
+#                self.fill_SvB(hist, event, weight)
 
 
     def postprocess(self, accumulator):
-        return accumulator
+        #return accumulator
+        ...
 

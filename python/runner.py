@@ -56,10 +56,22 @@ if __name__ == '__main__':
                 'lumi'  : float(metadata['datasets']['data'][year]['lumi']),
                 'year'  : year,
             }
-            fileset[dataset+"_"+year] = {'files': [ f'root://cmseos.fnal.gov/{metadata["datasets"][dataset][year]["picoAOD"]}' ],
-                                         'metadata': metadata_dataset[dataset]}
 
-            logging.info(f'\nDataset {dataset} with {len(fileset[dataset+"_"+year]["files"])} files')
+            if isinstance( metadata['datasets'][dataset][year]["picoAOD"], dict):
+
+                for iera, ifile in metadata['datasets'][dataset][year]["picoAOD"].items():
+                    idataset = f'{dataset}{year}{iera}'
+                    metadata_dataset[idataset] = metadata_dataset[dataset]
+                    metadata_dataset[idataset]['era'] = iera
+                    fileset[idataset+"_"+year] = {'files': [ f'root://cmseos.fnal.gov/{ifile}' ],
+                                                  'metadata': metadata_dataset[idataset]}
+                    logging.info(f'\nDataset {idataset+"_"+year} with {len(fileset[idataset]["files"])} files')
+
+            else:
+                fileset[dataset+"_"+year] = {'files': [ f'root://cmseos.fnal.gov/{metadata["datasets"][dataset][year]["picoAOD"]}' ],
+                                             'metadata': metadata_dataset[dataset]}
+
+                logging.info(f'\nDataset {dataset+"_"+year} with {len(fileset[dataset+"_"+year]["files"])} files')
 
 
     #### IF run in condor
@@ -122,9 +134,8 @@ if __name__ == '__main__':
         processtime = metrics['processtime']
         logging.info(f'\n{nEvent/elapsed:,.0f} events/s total ({nEvent}/{elapsed}, processtime {processtime})')
     else:
-        pass  # HACK FIXME
-        #nEvent = sum([output['nEvent'][dataset] for dataset in output['nEvent'].keys()])
-        #logging.info(f'\n{nEvent/elapsed:,.0f} events/s total ({nEvent}/{elapsed})')
+        nEvent = sum([output['nEvent'][dataset] for dataset in output['nEvent'].keys()])
+        logging.info(f'\n{nEvent/elapsed:,.0f} events/s total ({nEvent}/{elapsed})')
 
     ##### Saving file
     if not os.path.exists(args.output_path): os.makedirs(args.output_path)

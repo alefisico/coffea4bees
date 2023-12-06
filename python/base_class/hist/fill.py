@@ -51,17 +51,20 @@ class Fill:
             hists  = hs.Collection.current
         fill_args = self._kwargs | fill_args
         mask_categories = []
+
         for category in hists._categories:
             if category not in fill_args:
                 if isinstance(hists._axes[category], StrCategory):
                     mask_categories.append(category)
                 else:
                     fill_args[category] = hs._default_field(category)
+
         for category_args in hists._generate_category_combinations(mask_categories):
             mask   = and_fields(events, *category_args.items())
             masked = events if mask is None else events[mask]
             if len(masked) == 0:
                 continue
+
             for k, v in fill_args.items():
                 if (isinstance(v, str) and k in hists._categories) or isinstance(v, (bool, RealNumber)):
                     category_args[k] = v
@@ -76,6 +79,7 @@ class Fill:
                         raise FillError(f'Error filling "{k}" with "{v}"')
                 else:
                     raise FillError(f'cannot fill "{k}" with "{v}"')
+
             jagged_args = {}
             counts_args  = []
             for k, v in category_args.items():
@@ -91,6 +95,7 @@ class Fill:
                             counts_args.append(count)
                     except:
                         continue
+
             for name in self._fills:
                 fills = {k: f'{name}:{k}' if f'{name}:{k}' in category_args else k for k in self._fills[name]}
                 shape = {jagged_args[k] for k in fills.values() if k in jagged_args}
@@ -107,6 +112,7 @@ class Fill:
                         if v not in jagged_args and check_type(fill, AnyArray):
                             fill = np.repeat(fill, shape)
                     hist_args[k] = fill
+
                 # https://github.com/scikit-hep/boost-histogram/issues/452 #
                 if all([check_type(axis, StrCategory) for axis in hists._hists[name].axes]):
                     try:
@@ -125,5 +131,10 @@ class Fill:
                                 hist_args[tobroadcast] = np.full(len(weight), hist_args[tobroadcast])
                     except:
                         continue
+
                 ############################################################
+                #print("Filling",*hist_args)
+                #for key, val in hist_args.items():
+                #    print(key,val)
+                    
                 hists._hists[name].fill(**hist_args, threads = self.threads)
