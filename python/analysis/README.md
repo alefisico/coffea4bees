@@ -16,25 +16,30 @@ Each folder contains:
  - processors: python files with the processors for each analysis.
  - pytorchModels: training models
  - weights: JCM txt files with weights
- - hists (optional): if you run the `coffea_analysis.py` without a name of the output folder, this folder will be created to store the pickle files.
+ - hists (optional): if you run the `runner.py` without a name of the output folder, this folder will be created to store the pickle files.
 
-Then, the run-all script is called `coffea_analysis.py`. This script will run local or condor depending on the flag used. To learn all the options of the script, just run:
+Then, the run-all script is called `runner.py` and it is one directory below (in [analysis/](../analysis/)). This script will run local or condor depending on the flag used. To learn all the options of the script, just run:
 ```
-python coffea_analysis.py --help
+# (inside /coffea4bees/python/)
+python run.py --help
 ```
 
 ## To run the analysis
 
-Then, to run a local job:
+For example, to run a processor you can do:
 ```
-python coffea_analysis.py -t     
+#  (inside /coffea4bees/python/)
+python runner.py -t -o test.coffea -d HH4b mixeddata -op analysis/hists/ -p analysis/processors/processor_HH4b.py
 ```
-for convenience this command is stored in `runTestJob.sh`, you can just run it with `source runTestJob.sh`.
+
+The output file of this process will be `test.coffea` (a coffea output file), which contains many histograms and cutflows. 
+
+For convenience this command is stored in `runTestJob.sh`, you can just run it with `source runTestJob.sh`.
 
 
 ## To produce some plots
 
 Assuming that the file with your histograms is called `hists/test.coffea`, you can run:
 ```
-python iPlot.py -i hists/test.pkl
+python iPlot.py -i hists/test.coffea
 ```
