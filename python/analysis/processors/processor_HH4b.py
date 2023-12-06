@@ -51,8 +51,55 @@ class variable:
         self.label = label
 
 
+class cutFlow:
 
-#def cutflow(self,
+    def __init__(self, cuts):
+        self._cutFlowThreeTag = {}
+        self._cutFlowFourTag  = {}
+        
+        for c in cuts:
+            self._cutFlowThreeTag[c] = (0, 0) # weighted, raw
+            self._cutFlowFourTag [c] = (0, 0) # weighted, raw
+
+
+    def fill(self, cut, event, allTag=False, wOverride=None):
+
+        if allTag:
+            
+            if wOverride: 
+                sumw = wOverride
+            else:         
+                sumw = np.sum(event.weight)            
+
+            sumn_3, sumn_4 = len(event), len(event)
+            sumw_3, sumw_4 = sumw, sumw
+        else:
+            e3, e4 = event[event.threeTag], event[event.fourTag]
+
+            sumw_3 = np.sum(e3.weight)
+            sumn_3 = len(e3.weight)
+            sumw_4 = np.sum(e4.weight)
+            sumn_4 = len(e4.weight)
+
+        self._cutFlowThreeTag[cut] = (sumw_3, sumn_3) # weighted, raw
+        self._cutFlowFourTag [cut] = (sumw_4, sumn_4) # weighted, raw
+
+
+    def addOutput(self, o, dataset):
+        o["cutFlowFourTag"] = {}
+        o["cutFlowFourTagUnitWeight"] = {}
+        o["cutFlowFourTag"][dataset] = {}
+        o["cutFlowFourTagUnitWeight"][dataset] = {}
+        for k,v in  self._cutFlowFourTag.items():
+            o["cutFlowFourTag"][dataset][k] = v[0]
+            o["cutFlowFourTagUnitWeight"][dataset][k] = v[1]
+
+
+        return
+
+
+
+
 
 
 def count_nested_dict(nested_dict, c=0):
@@ -68,7 +115,7 @@ class analysis(processor.ProcessorABC):
         logging.debug('\nInitialize Analysis Processor')
         self.blind = True
         print('Initialize Analysis Processor')
-        self.newcuts = ["all","passMETFilter","passJetMult","passPreSel","passDiJetMass",'passPreSel','passSvB','failSvB']
+        self.newcuts = ["all","passHLT","passMETFilter","passJetMult","passJetMult_btagSF","passPreSel","passDiJetMass",'passSvB','failSvB']
         self.cuts = ['passPreSel','passSvB','failSvB']
         self.year = year
         self.threeTag = threeTag
@@ -93,49 +140,49 @@ class analysis(processor.ProcessorABC):
         #self.variables += fourvectorhists('canJet', 'Boson Candidate Jets', mass=(50, 0, 50), label='Jets', extras=jet_extras)
 
 
-        self._accumulator = processor.dict_accumulator({'cutflow': processor.defaultdict_accumulator(partial(processor.defaultdict_accumulator,
-                                                                                                             partial(processor.defaultdict_accumulator,
-                                                                                                                     partial(processor.defaultdict_accumulator, float)
-                                                                                                                 )
-                                                                                                             )
-                                                                                                         ),
-                                                        'nEvent' : processor.defaultdict_accumulator(int),
-                                                       })
+#        self._accumulator = processor.dict_accumulator({'cutflow': processor.defaultdict_accumulator(partial(processor.defaultdict_accumulator,
+#                                                                                                             partial(processor.defaultdict_accumulator,
+#                                                                                                                     partial(processor.defaultdict_accumulator, float)
+#                                                                                                                 )
+#                                                                                                             )
+#                                                                                                         ),
+#                                                        'nEvent' : processor.defaultdict_accumulator(int),
+#                                                       })
 
 
-    @property
-    def accumulator(self):
-        return self._accumulator
+#    @property
+#    def accumulator(self):
+#        return self._accumulator
 
-    def cutflow(self, output, dataset, event, cut, allTag=False, junc='JES_Central'):
-        if allTag:
-            w = event.weight
-            sumw = np.sum(w)
-            sumw_3, sumw_4 = sumw, sumw
-        else:
-            e3, e4 = event[event.threeTag], event[event.fourTag]
-            sumw_3 = np.sum(e3.weight)
-            sumw_4 = np.sum(e4.weight)
-
-        output['cutflow'][junc]['threeTag'][cut][dataset] += sumw_3
-        output['cutflow'][junc][ 'fourTag'][cut][dataset] += sumw_4
-
-        if event.metadata.get('isMC', False) and not allTag:   ##### AGE: why isMC to False?
-            output['cutflow'][junc]['threeTag'][cut+'_HLT_Bool'][dataset] += np.sum(e3.weight*e3.passHLT)
-            output['cutflow'][junc][ 'fourTag'][cut+'_HLT_Bool'][dataset] += np.sum(e4.weight*e4.passHLT)
-
-            output['cutflow'][junc]['threeTag'][cut+'_HLT_MC'  ][dataset] += np.sum(e3.weight*e3.trigWeight.MC)
-            output['cutflow'][junc][ 'fourTag'][cut+'_HLT_MC'  ][dataset] += np.sum(e4.weight*e4.trigWeight.MC)
-
-            output['cutflow'][junc]['threeTag'][cut+'_HLT_Data'][dataset] += np.sum(e3.weight*e3.trigWeight.Data)
-            output['cutflow'][junc][ 'fourTag'][cut+'_HLT_Data'][dataset] += np.sum(e4.weight*e4.trigWeight.Data)
+#    def cutflow(self, output, dataset, event, cut, allTag=False, junc='JES_Central'):
+#        if allTag:
+#            w = event.weight
+#            sumw = np.sum(w)
+#            sumw_3, sumw_4 = sumw, sumw
+#        else:
+#            e3, e4 = event[event.threeTag], event[event.fourTag]
+#            sumw_3 = np.sum(e3.weight)
+#            sumw_4 = np.sum(e4.weight)
+#
+#        output['cutflow'][junc]['threeTag'][cut][dataset] += sumw_3
+#        output['cutflow'][junc][ 'fourTag'][cut][dataset] += sumw_4
+#
+#        if event.metadata.get('isMC', False) and not allTag:   ##### AGE: why isMC to False?
+#            output['cutflow'][junc]['threeTag'][cut+'_HLT_Bool'][dataset] += np.sum(e3.weight*e3.passHLT)
+#            output['cutflow'][junc][ 'fourTag'][cut+'_HLT_Bool'][dataset] += np.sum(e4.weight*e4.passHLT)
+#
+#            output['cutflow'][junc]['threeTag'][cut+'_HLT_MC'  ][dataset] += np.sum(e3.weight*e3.trigWeight.MC)
+#            output['cutflow'][junc][ 'fourTag'][cut+'_HLT_MC'  ][dataset] += np.sum(e4.weight*e4.trigWeight.MC)
+#
+#            output['cutflow'][junc]['threeTag'][cut+'_HLT_Data'][dataset] += np.sum(e3.weight*e3.trigWeight.Data)
+#            output['cutflow'][junc][ 'fourTag'][cut+'_HLT_Data'][dataset] += np.sum(e4.weight*e4.trigWeight.Data)
 
 
 
 
     def process(self, event):
         tstart = time.time()
-        output = self.accumulator.identity()
+        #output = self.accumulator.identity()
 
         fname   = event.metadata['filename']
         dataset = event.metadata['dataset']
@@ -155,15 +202,11 @@ class analysis(processor.ProcessorABC):
         newOutput = {}
         newOutput['nEvent'] = {}
         newOutput['nEvent'][event.metadata['dataset']] = nEvent
-
-        #self._cutFlow =
-        newOutput['cutflow'] = {}
-        newOutput['cutflow'][event.metadata['dataset']] = {}
-        newOutput['cutflow'][event.metadata['dataset']]["all"] = 0
-
-        newOutput['cutflow_unitWeight'] = {}
-        newOutput['cutflow_unitWeight'][event.metadata['dataset']] = {}
-        newOutput['cutflow_unitWeight'][event.metadata['dataset']]["all"] = 0
+        
+        #
+        #  Cut Flows
+        #
+        self._cutFlow            = cutFlow(self.newcuts)
 
         puWeight= self.corrections_metadata[year]['PU']
         juncWS = [ self.corrections_metadata[year]["JERC"][0].replace('STEP', istep) for istep in ['L1FastJet', 'L2Relative', 'L2L3Residual', 'L3Absolute'] ]  ###### AGE: to be reviewed for data, but should be remove with jsonpog
@@ -174,7 +217,6 @@ class analysis(processor.ProcessorABC):
         #
         if dataset.find("mixed") != -1:
             self.blind = False
-
 
         #
         # Hists
@@ -203,8 +245,6 @@ class analysis(processor.ProcessorABC):
         # Jets
         #
         fill += LorentzVector.plot(('selJets', 'Selected Jets'), 'selJet')
-
-
         fill += LorentzVector.plot(('canJets', 'Higgs Candidate Jets'), 'canJet')
         fill += LorentzVector.plot(('othJets', 'Other Jets'), 'notCanJet_coffea')
 
@@ -303,11 +343,13 @@ class analysis(processor.ProcessorABC):
 
 
         if isMC:
-            for junc in self.juncVar:
-                output['cutflow'][junc]['threeTag']['all'][dataset] = lumi * xs * kFactor
-                output['cutflow'][junc][ 'fourTag']['all'][dataset] = lumi * xs * kFactor
+            self._cutFlow.fill("all",  event, allTag=True, wOverride = (lumi * xs * kFactor))
+            #for junc in self.juncVar:
+            #    output['cutflow'][junc]['threeTag']['all'][dataset] = lumi * xs * kFactor
+            #    output['cutflow'][junc][ 'fourTag']['all'][dataset] = lumi * xs * kFactor
         else:
-            self.cutflow(output, dataset, event, 'all', allTag = True)
+            self._cutFlow.fill("all",  event, allTag=True)
+            
 
 
         #
@@ -323,9 +365,12 @@ class analysis(processor.ProcessorABC):
         if not isMC and not 'mix' in dataset: # for data, apply trigger cut first thing, for MC, keep all events and apply trigger in cutflow and for plotting
             event = event[event.passHLT]
 
+        self._cutFlow.fill("passHLT",  event, allTag=True)
+
         if isMC:
             event['weight'] = event.genWeight * (lumi * xs * kFactor / genEventSumw)
             logging.debug(f"event['weight'] = event.genWeight * (lumi * xs * kFactor / genEventSumw) = {event.genWeight[0]} * ({lumi} * {xs} * {kFactor} / {genEventSumw}) = {event.weight[0]}")
+
 
         #
         # METFilter
@@ -341,12 +386,9 @@ class analysis(processor.ProcessorABC):
                 passMETFilter = passMETFilter & event.Flag.ecalBadCalibFilter # in UL the name does not have "V2"
         event['passMETFilter'] = passMETFilter
 
-        newOutput['cutflow'][event.metadata['dataset']]["all"] = np.sum(event.weight)
-        newOutput['cutflow_unitWeight'][event.metadata['dataset']]["all"] = len(event)
-        #newcutflow(event[~event.passMETFilter], weight = 1, **{"all":True, 'region':0b00, 'passPreSel':0, 'passSvB':0, 'failSvB':0, 'passMETFilter':0, 'passJetMult':0, 'passJetMult_btagSF':0, 'passDiJetMass':0})
-        #newcutflowUnitWeight(event[~event.passMETFilter], weight = 1, **{"all":True, 'region':0b00, 'passPreSel':0, 'passSvB':0, 'failSvB':0, 'passMETFilter':0, 'passJetMult':0, 'passJetMult_btagSF':0, 'passDiJetMass':0})
+
         event = event[event.passMETFilter]
-        self.cutflow(output, dataset, event, 'passMETFilter', allTag = True)
+        self._cutFlow.fill("passMETFilter",  event, allTag=True)
 
 
         #
@@ -394,12 +436,7 @@ class analysis(processor.ProcessorABC):
 
             selev = event[event.nJet_selected >= 4]
 
-            # failed events
-            #  FIX ME wieght
-            #newcutflow(event[event.nJet_selected <4], weight = 1,  **{"all":1, 'region':0b00, 'passPreSel':0, 'passSvB':0, 'failSvB':0, 'passMETFilter':1, 'passJetMult':1, 'passDiJetMass':0})
-            #newcutflowUnitWeight(event[event.nJet_selected <4], weight = 1,  **{"all":1, 'region':0b00, 'passPreSel':0, 'passSvB':0, 'failSvB':0, 'passMETFilter':1, 'passJetMult':1, 'passDiJetMass':0})
-
-            self.cutflow(output, dataset, selev, 'passJetMult', allTag = True, junc=junc)
+            self._cutFlow.fill("passJetMult",  event, allTag=True)
 
             selev['Jet', 'tagged']       = selev.Jet.selected & (selev.Jet.btagDeepFlavB>=0.6)
             selev['Jet', 'tagged_loose'] = selev.Jet.selected & (selev.Jet.btagDeepFlavB>=0.3)
@@ -497,16 +534,12 @@ class analysis(processor.ProcessorABC):
                     selev[f'weight_btagSF_{sf}'] = selev.weight * SF * btagSF_norm
 
                 selev['weight'] = selev[f'weight_btagSF_{"central" if use_central else btag_jes[0]}']
-                self.cutflow(output, dataset, selev, 'passJetMult_btagSF', allTag = True, junc=junc)
+                #self.cutflow(output, dataset, selev, 'passJetMult_btagSF', allTag = True, junc=junc)
+                self._cutFlow.fill("passJetMult_btagSF",  selev)
 
 
             # for i in range(len(selev)):
             #     print(selev.event[i], selev.btagSF_central[i])
-
-            #  FIX ME wieght
-            #newcutflow(selev[~selev.passPreSel], weight = 1,  **{"all":1, 'region':0b00, 'passPreSel':0, 'passSvB':0, 'failSvB':0, 'passMETFilter':1, 'passJetMult':1, 'passDiJetMass':0})
-            #newcutflowUnitWeight(selev[~selev.passPreSel], weight = 1,  **{"all":1, 'region':0b00, 'passPreSel':0, 'passSvB':0, 'failSvB':0, 'passMETFilter':1, 'passJetMult':1, 'passDiJetMass':0})
-
 
 
             #
@@ -579,7 +612,7 @@ class analysis(processor.ProcessorABC):
                 selev[selev.threeTag]['weight'] = e3.weight * e3.pseudoTagWeight
 
             # presel cutflow with pseudotag weight included
-            self.cutflow(output, dataset, selev, 'passPreSel', junc=junc)
+            self._cutFlow.fill("passPreSel",  selev)
 
 
             #
@@ -696,8 +729,8 @@ class analysis(processor.ProcessorABC):
 
 
 
-            self.cutflow(output, dataset, selev[selev['quadJet_selected'].passDiJetMass], 'passDiJetMass', junc=junc)
-            self.cutflow(output, dataset, selev[selev['quadJet_selected'].SR], 'SR', junc=junc)
+            #self.cutflow(output, dataset, selev[selev['quadJet_selected'].passDiJetMass], 'passDiJetMass', junc=junc)
+            #self.cutflow(output, dataset, selev[selev['quadJet_selected'].SR], 'SR', junc=junc)
 
             if self.classifier_SvB is not None:
                 self.compute_SvB(selev, junc=junc)
@@ -706,27 +739,46 @@ class analysis(processor.ProcessorABC):
             #
             # fill histograms
             #
-            self.fill(selev, output, junc=junc)
-
-            selev["passDiJetMass"] = selev['quadJet_selected'].passDiJetMass
-            #newcutflow(selev, all=1, passJetMult=1)
-            #newcutflowUnitWeight(selev, all=1, passJetMult=1, weight=1)
+            self._cutFlow.fill("passDiJetMass",  selev[selev['quadJet_selected'].passDiJetMass])
+            self._cutFlow.fill("passSvB",  selev[selev.passSvB])
+            self._cutFlow.fill("failSvB",  selev[selev.failSvB])
 
             #fill.cache(selev)
-            fill(selev, all=1, passJetMult=1)
+            fill(selev)
 
             #if isMC:
             #   self.fill_systematics(selev, output, junc=junc)
             garbage = gc.collect()
             # print('Garbage:',garbage)
 
-
+            
         # Done
         #output['newHists'] = hist.output["hists"]
         #output['categories'] = hist.output["categories"]
         elapsed = time.time() - tstart
         logging.debug(f'{chunk}{nEvent/elapsed:,.0f} events/s')
         #return output
+
+        self._cutFlow.addOutput(newOutput, event.metadata['dataset'])
+#        newOutput["cutFlowFourTag"] = {}
+#        newOutput["cutFlowFourTagUnitWeight"] = {}
+#        newOutput["cutFlowFourTag"][event.metadata['dataset']] = {}
+#        newOutput["cutFlowFourTagUnitWeight"][event.metadata['dataset']] = {}
+#        for k,v in  self._cutFlow._cutFlowFourTag.items():
+#            newOutput["cutFlowFourTag"][event.metadata['dataset']][k] = v[0]
+#            newOutput["cutFlowFourTagUnitWeight"][event.metadata['dataset']][k] = v[1]
+#
+#        newOutput["cutFlowFourTag"] = {}
+#        newOutput["cutFlowFourTagUnitWeight"] = {}
+#        newOutput["cutFlowFourTag"][event.metadata['dataset']] = {}
+#        newOutput["cutFlowFourTagUnitWeight"][event.metadata['dataset']] = {}
+#        for k,v in  self._cutFlow._cutFlowFourTag.items():
+#            newOutput["cutFlowFourTag"][event.metadata['dataset']][k] = v[0]
+#            newOutput["cutFlowFourTagUnitWeight"][event.metadata['dataset']][k] = v[1]
+#
+
+#        print(newOutput["cutFlowFourTag"][event.metadata['dataset']])
+#        newOutput["cutFlowThreeTag"] = {event.metadata['dataset'] : self._cutFlow._cutFlowThreeTag}
         return hist.output | newOutput
 
 
