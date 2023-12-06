@@ -184,7 +184,7 @@ def _plot_ratio(hData, hBkg, **kwargs):
 
 
 
-def makePlot(hists, cutList, codeDicts, var='selJets.pt',year="2017",cut="passPreSel",tag="fourTag",region="SR", **kwargs):
+def makePlot(hists, cutList, plotConfig, var='selJets.pt',cut="passPreSel",region="SR", **kwargs):
     r"""
     Takes Options:
 
@@ -203,23 +203,29 @@ def makePlot(hists, cutList, codeDicts, var='selJets.pt',year="2017",cut="passPr
     
     h = hists['hists'][var]
     varName = hists['hists'][var].axes[-1].name
-    #print(h)
 
     cutDict = {}
     for c in cutList:
         cutDict[c] = sum
     cutDict[cut] = True
 
+    proc1 = plotConfig["plot1"]["process"]
+    year1 = sum if plotConfig["plot1"]["year"] == "RunII" else plotConfig["plot1"]["year"]
+    tag1  = plotConfig["codes"]["tag"][plotConfig["plot1"]["tag"]]
+
+    proc2 = plotConfig["plot2"]["process"]
+    year2 = sum if plotConfig["plot2"]["year"] == "RunII" else plotConfig["plot2"]["year"]
+    tag2  = plotConfig["codes"]["tag"][plotConfig["plot2"]["tag"]]
 
     #
     #  Get Hists
     #
     rebin = kwargs.get("rebin",1)
-    hDataDict = {"process":"mixeddata", "year":year,   "tag":hist.loc(codeDicts["tag"][tag]), "region":hist.loc(codeDicts["region"][region]), varName:hist.rebin(rebin)}
-    hBkgDict  = {"process":"mixeddata", "year":"UL18", "tag":hist.loc(codeDicts["tag"][tag]), "region":hist.loc(codeDicts["region"][region]), varName:hist.rebin(rebin)}
+    hDataDict = {"process":proc1,  "year":year1,   "tag":hist.loc(tag1), "region":hist.loc(plotConfig["codes"]["region"][region]), varName:hist.rebin(rebin)}
+    hBkgDict  = {"process":proc2,  "year":year2,   "tag":hist.loc(tag2), "region":hist.loc(plotConfig["codes"]["region"][region]), varName:hist.rebin(rebin)}
     for c in cutList:
         hDataDict = hDataDict | {c:cutDict[c]}
-        hBkgDict  = hBkgDict | {c:cutDict[c]}
+        hBkgDict  = hBkgDict  | {c:cutDict[c]}
 
     hData = h[hDataDict]
     hBkg  = h[hBkgDict]
@@ -231,7 +237,9 @@ def makePlot(hists, cutList, codeDicts, var='selJets.pt',year="2017",cut="passPr
         fig = _plot(hData,[hBkg],**kwargs)
 
     if kwargs.get("outputFolder",None):
-        outputPath = kwargs.get("outputFolder")+"/"+"/".join([year,cut,tag,region])
+        yearName = plotConfig["plot1"]["year"]
+        tagName  = plotConfig["plot1"]["tag"]
+        outputPath = kwargs.get("outputFolder")+"/"+"/".join([yearName,cut,tagName,region])
         if not os.path.exists(outputPath): os.makedirs(outputPath)
         fig.savefig(outputPath+"/"+var+".pdf")        
         

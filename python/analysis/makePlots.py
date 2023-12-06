@@ -1,4 +1,5 @@
 import os, time, sys
+import yaml
 import hist
 import argparse
 #import matplotlib
@@ -12,50 +13,13 @@ sys.path.insert(0,os.getcwd())
 from base_class.plots import makePlot
 
 
-#
-# Move following to a config file?
-#
-axes = ["var","process","year","tag","region","cut"]
-codeDicts = {}
-codeDicts["tag"] = {"threeTag":3, "fourTag":4, 3:"threeTag", 4:"fourTag"}
-codeDicts["region"]  = {"SR":2, "SB":1, 2:"SR", 1:"SB", 0:"other","other":0}
-
-
-variables = {
-    "SvB_MA_ps"      : {},
-    "SvB_ps"         : {},
-
-    "selJets.energy" : {},
-    "selJets.eta" : {},
-    "selJets.mass" : {"xlim":[0,100]},
-    "selJets.n" : {},
-    "selJets.phi" : {},
-    "selJets.pt" : {'yscale':'log', 'xlim':[40,400],},
-    "selJets.pz" : {},
-
-    "canJets.energy" : {},
-    "canJets.eta"  : {"xlim":[-3,3]},
-    "canJets.mass" : {"xlim":[0,100]},
-    "canJets.n" : {},
-    "canJets.phi" : {},
-    "canJets.pt" : {},
-    "canJets.pz" : {},
-
-    "othJets.energy" : {},
-    "othJets.eta" : {},
-    "othJets.mass" : {"xlim":[0,100]},
-    "othJets.n" : {"xlim":[0,15]},
-    "othJets.phi" : {},
-    "othJets.pt" : {},
-    "othJets.pz" : {},
-}
-
-
-
 def doPlots():
-    for v, vDict in variables.items():
+
+    
+    for v in varList:
         print(v)
 
+        vDict = plotModifiers.get(v, {})
         
         year ="UL18"
         cut  = "passPreSel"
@@ -66,16 +30,9 @@ def doPlots():
         vDict["doRatio"] = True
         vDict["legend"]  = True
 
-        #vDict["debug"] = True
-
-        #vDict["norm"] = True
-        #print(v,vDict)
-
-        #,ylabel="Entries",,rebin=1,xlim=[40,400],rlim=[0.5,2])
-
         for region in ["SR","SB"]:
-            fig = makePlot(hists, cutList, codeDicts, var=v, year=year, cut=cut, tag=tag, region=region, outputFolder=args.outputFolder, **vDict)
-    
+            fig = makePlot(hists, cutList, plotConfig, var=v, year=year, cut=cut, tag=tag, region=region, outputFolder=args.outputFolder, **vDict)
+            plt.close()
     
         
 if __name__ == '__main__':
@@ -83,7 +40,17 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='uproot_plots')
     parser.add_argument('-i','--inputFile', dest="inputFile", default='hists.pkl', help='Input File. Default: hists.pkl')
     parser.add_argument('-o','--outputFolder', default=None, help='Folder for output folder. Default: plots/')
+    parser.add_argument('-m','--metadata', dest="metadata", default="analysis/metadata/plotsNominal.yml", help='Metadata file.')
+    parser.add_argument(    '--modifiers', dest="modifiers", default="analysis/metadata/plotModifiers.yml", help='Metadata file.')
     args = parser.parse_args()
+
+    plotConfig = yaml.safe_load(open(args.metadata, 'r'))
+    for k, v in plotConfig["codes"]["tag"].copy().items():
+        plotConfig["codes"]["tag"][v] = k
+    for k, v in plotConfig["codes"]["region"].copy().items():
+        plotConfig["codes"]["region"][v] = k
+    
+    plotModifiers = yaml.safe_load(open(args.modifiers, 'r'))   
 
     if args.outputFolder:
         if not os.path.exists(args.outputFolder): os.makedirs(args.outputFolder)
@@ -97,6 +64,8 @@ if __name__ == '__main__':
         axisLabels["var"] = hists['hists'].keys()
         var1 = list(hists['hists'].keys())[0]
 
+        varList = list(hists['hists'].keys())
+        print(varList)
         cutList = []
         
         for a in hists["hists"][var1].axes:
@@ -112,8 +81,8 @@ if __name__ == '__main__':
             axisLabels[axisName] = []
             print(axisName)
             for iBin in range(a.extent):
-                if axisName in codeDicts:
-                    value = codeDicts[axisName][a.value(iBin)]
+                if axisName in plotConfig["codes"]:
+                    value = plotConfig["codes"][axisName][a.value(iBin)]
 
                 else:
                     value = a.value(iBin)
