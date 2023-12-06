@@ -78,6 +78,7 @@ class cutFlow:
 
             sumw_3 = np.sum(e3.weight)
             sumn_3 = len(e3.weight)
+
             sumw_4 = np.sum(e4.weight)
             sumn_4 = len(e4.weight)
 
@@ -86,6 +87,7 @@ class cutFlow:
 
 
     def addOutput(self, o, dataset):
+
         o["cutFlowFourTag"] = {}
         o["cutFlowFourTagUnitWeight"] = {}
         o["cutFlowFourTag"][dataset] = {}
@@ -94,6 +96,13 @@ class cutFlow:
             o["cutFlowFourTag"][dataset][k] = v[0]
             o["cutFlowFourTagUnitWeight"][dataset][k] = v[1]
 
+        o["cutFlowThreeTag"] = {}
+        o["cutFlowThreeTagUnitWeight"] = {}
+        o["cutFlowThreeTag"][dataset] = {}
+        o["cutFlowThreeTagUnitWeight"][dataset] = {}
+        for k,v in  self._cutFlowThreeTag.items():
+            o["cutFlowThreeTag"][dataset][k] = v[0]
+            o["cutFlowThreeTagUnitWeight"][dataset][k] = v[1]
 
         return
 
@@ -365,11 +374,13 @@ class analysis(processor.ProcessorABC):
         if not isMC and not 'mix' in dataset: # for data, apply trigger cut first thing, for MC, keep all events and apply trigger in cutflow and for plotting
             event = event[event.passHLT]
 
-        self._cutFlow.fill("passHLT",  event, allTag=True)
 
         if isMC:
             event['weight'] = event.genWeight * (lumi * xs * kFactor / genEventSumw)
             logging.debug(f"event['weight'] = event.genWeight * (lumi * xs * kFactor / genEventSumw) = {event.genWeight[0]} * ({lumi} * {xs} * {kFactor} / {genEventSumw}) = {event.weight[0]}")
+
+
+        self._cutFlow.fill("passHLT",  event, allTag=True)
 
 
         #
@@ -435,8 +446,7 @@ class analysis(processor.ProcessorABC):
 
 
             selev = event[event.nJet_selected >= 4]
-
-            self._cutFlow.fill("passJetMult",  event, allTag=True)
+            self._cutFlow.fill("passJetMult",  selev, allTag=True)
 
             selev['Jet', 'tagged']       = selev.Jet.selected & (selev.Jet.btagDeepFlavB>=0.6)
             selev['Jet', 'tagged_loose'] = selev.Jet.selected & (selev.Jet.btagDeepFlavB>=0.3)
@@ -475,6 +485,7 @@ class analysis(processor.ProcessorABC):
                 for var in ['nominal', 'up', 'down']:
                     selev[f'PU_weight_{var}'] = puWeight.evaluate(selev.Pileup.nTrueInt.to_numpy(), var)
                 selev['weight'] = selev.weight * selev.PU_weight_nominal
+
             if self.apply_prefire:
                 selev['weight'] = selev.weight * selev.L1PreFiringWeight.Nom
 
@@ -534,8 +545,7 @@ class analysis(processor.ProcessorABC):
                     selev[f'weight_btagSF_{sf}'] = selev.weight * SF * btagSF_norm
 
                 selev['weight'] = selev[f'weight_btagSF_{"central" if use_central else btag_jes[0]}']
-                #self.cutflow(output, dataset, selev, 'passJetMult_btagSF', allTag = True, junc=junc)
-                self._cutFlow.fill("passJetMult_btagSF",  selev)
+                self._cutFlow.fill("passJetMult_btagSF",  selev, allTag=True)
 
 
             # for i in range(len(selev)):
@@ -546,6 +556,7 @@ class analysis(processor.ProcessorABC):
             # Preselection: keep only three or four tag events
             #
             selev = selev[selev.passPreSel]
+
 
             #
             # Build and select boson candidate jets with bRegCorr applied
@@ -611,7 +622,9 @@ class analysis(processor.ProcessorABC):
                 e3 = selev[selev.threeTag]
                 selev[selev.threeTag]['weight'] = e3.weight * e3.pseudoTagWeight
 
-            # presel cutflow with pseudotag weight included
+            #
+            # CutFlow
+            #
             self._cutFlow.fill("passPreSel",  selev)
 
 
@@ -760,25 +773,7 @@ class analysis(processor.ProcessorABC):
         #return output
 
         self._cutFlow.addOutput(newOutput, event.metadata['dataset'])
-#        newOutput["cutFlowFourTag"] = {}
-#        newOutput["cutFlowFourTagUnitWeight"] = {}
-#        newOutput["cutFlowFourTag"][event.metadata['dataset']] = {}
-#        newOutput["cutFlowFourTagUnitWeight"][event.metadata['dataset']] = {}
-#        for k,v in  self._cutFlow._cutFlowFourTag.items():
-#            newOutput["cutFlowFourTag"][event.metadata['dataset']][k] = v[0]
-#            newOutput["cutFlowFourTagUnitWeight"][event.metadata['dataset']][k] = v[1]
-#
-#        newOutput["cutFlowFourTag"] = {}
-#        newOutput["cutFlowFourTagUnitWeight"] = {}
-#        newOutput["cutFlowFourTag"][event.metadata['dataset']] = {}
-#        newOutput["cutFlowFourTagUnitWeight"][event.metadata['dataset']] = {}
-#        for k,v in  self._cutFlow._cutFlowFourTag.items():
-#            newOutput["cutFlowFourTag"][event.metadata['dataset']][k] = v[0]
-#            newOutput["cutFlowFourTagUnitWeight"][event.metadata['dataset']][k] = v[1]
-#
 
-#        print(newOutput["cutFlowFourTag"][event.metadata['dataset']])
-#        newOutput["cutFlowThreeTag"] = {event.metadata['dataset'] : self._cutFlow._cutFlowThreeTag}
         return hist.output | newOutput
 
 
