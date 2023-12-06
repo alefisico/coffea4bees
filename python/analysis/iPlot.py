@@ -1,4 +1,5 @@
 import os, sys
+import yaml
 import hist
 import argparse
 #matplotlib.use('Agg')
@@ -9,15 +10,6 @@ from hist.intervals import ratio_uncertainty
 #sys.path.insert(0, '../') 
 sys.path.insert(0,os.getcwd())
 from base_class.plots import makePlot
-
-#
-# Move following to a config file?
-#
-axes = ["var","process","year","tag","region","cut"]
-codeDicts = {}
-codeDicts["tag"] = {"threeTag":3, "fourTag":4, 3:"threeTag", 4:"fourTag", "other":0, 0:"other"}
-codeDicts["region"]  = {"SR":2, "SB":1, 2:"SR", 1:"SB", 0:"other","other":0}
-
 
 
 #
@@ -56,7 +48,7 @@ def plot(var='selJets.pt',year="2017",cut="passPreSel",tag="fourTag",region="SR"
         ls(match=var.replace("*",""))
         return 
 
-    fig = makePlot(hists, cutList, codeDicts, var=var, year=year, cut=cut, tag=tag, region=region, outputFolder=args.outputFolder, **kwargs)
+    fig = makePlot(hists, cutList, plotConfig, var=var, year=year, cut=cut, tag=tag, region=region, outputFolder=args.outputFolder, **kwargs)
 
 
     fileName = "test.pdf"
@@ -70,8 +62,15 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='uproot_plots')
     parser.add_argument('-i','--inputFile', dest="inputFile", default='hists.pkl', help='Input File. Default: hists.pkl')
     parser.add_argument('-o','--outputFolder', default=None, help='Folder for output folder. Default: plots/')
+    parser.add_argument('-m','--metadata', dest="metadata", default="analysis/metadata/plotsNominal.yml", help='Metadata file.')
     args = parser.parse_args()
 
+    plotConfig = yaml.safe_load(open(args.metadata, 'r'))  
+    for k, v in plotConfig["codes"]["tag"].copy().items():
+        plotConfig["codes"]["tag"][v] = k
+    for k, v in plotConfig["codes"]["region"].copy().items():
+        plotConfig["codes"]["region"][v] = k
+    
     if args.outputFolder:
         if not os.path.exists(args.outputFolder): os.makedirs(args.outputFolder)
     
@@ -99,12 +98,12 @@ if __name__ == '__main__':
             axisLabels[axisName] = []
             print(axisName)
             for iBin in range(a.extent):
-                if axisName in codeDicts:
-                    value = codeDicts[axisName][a.value(iBin)]
+                if axisName in plotConfig["codes"]:
+                    value = plotConfig["codes"][axisName][a.value(iBin)]
 
                 else:
                     value = a.value(iBin)
-                    
+
                 print(f"\t{value}")
                 axisLabels[axisName].append(value)
 
