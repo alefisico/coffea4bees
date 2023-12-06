@@ -67,7 +67,6 @@ class analysis(processor.ProcessorABC):
     def __init__(self, JCM = '', addbtagVariations=None, addjuncVariations=None, SvB=None, SvB_MA=None, threeTag = True, apply_puWeight = False, apply_prefire = False, apply_trigWeight = True, regions=['SR'], corrections_metadata='analysis/metadata/corrections.yml', year='UL18', btagSF=True):
         logging.debug('\nInitialize Analysis Processor')
         self.blind = True
-        print('Initialize Analysis Processor')
         self.newcuts = ["all","passMETFilter","passJetMult","passPreSel","passDiJetMass",'passPreSel','passSvB','failSvB']
         self.cuts = ['passPreSel','passSvB','failSvB']
         self.year = year
@@ -217,7 +216,7 @@ class analysis(processor.ProcessorABC):
         #fill += LorentzVector.plot_pair(('p2j', R'Vector Boson Candidate Dijets'), 'p2jV')
 
         self.apply_puWeight   = (self.apply_puWeight  ) and isMC and (puWeight is not None)
-        self.apply_prefire    = (self.apply_prefire   ) and isMC and ('L1PreFiringWeight' in event.fields) and (year!='2018')
+        self.apply_prefire    = (self.apply_prefire   ) and isMC and ('L1PreFiringWeight' in event.fields) and (year!='UL18')
         self.apply_trigWeight = (self.apply_trigWeight) and isMC and ('trigWeight' in event.fields)
 
         if isMC:
@@ -313,11 +312,11 @@ class analysis(processor.ProcessorABC):
         #
         # Get trigger decisions
         #
-        if year == '2016':
+        if year == 'UL16':
             event['passHLT'] = event.HLT.QuadJet45_TripleBTagCSV_p087 | event.HLT.DoubleJet90_Double30_TripleBTagCSV_p087 | event.HLT.DoubleJetsC100_DoubleBTagCSV_p014_DoublePFJetsC100MaxDeta1p6
-        if year == '2017':
+        if year == 'UL17':
             event['passHLT'] = event.HLT.PFHT300PT30_QuadPFJet_75_60_45_40_TriplePFBTagCSV_3p0 | event.HLT.DoublePFJets100MaxDeta1p6_DoubleCaloBTagCSV_p33
-        if year == '2018':
+        if year == 'UL18':
             event['passHLT'] = event.HLT.DoublePFJets116MaxDeta1p6_DoubleCaloBTagDeepCSV_p71 | event.HLT.PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepCSV_4p5
 
         if not isMC and not 'mix' in dataset: # for data, apply trigger cut first thing, for MC, keep all events and apply trigger in cutflow and for plotting
@@ -337,7 +336,7 @@ class analysis(processor.ProcessorABC):
                 passMETFilter = passMETFilter & event.Flag.BadPFMuonDzFilter
             if 'hfNoisyHitsFilter' in event.Flag.fields:
                 passMETFilter = passMETFilter & event.Flag.hfNoisyHitsFilter
-            if year == '2017' or year == '2018':
+            if year == 'UL17' or year == 'UL18':
                 passMETFilter = passMETFilter & event.Flag.ecalBadCalibFilter # in UL the name does not have "V2"
         event['passMETFilter'] = passMETFilter
 
