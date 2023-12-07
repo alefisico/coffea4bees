@@ -4,4 +4,7 @@ canJets.eta  : {"xlim":[-3,3]}
 canJets.mass : {"xlim":[0,100]}
 othJets.mass : {"xlim":[0,100]}
 othJets.n    : {"xlim":[0,15]}
+SvB_MA_ps_zh : {"rebin":5}
+SvB_MA_ps_zz : {"rebin":4}
+SvB_MA_ps_hh : {"rebin":10}
 

@@ -19,7 +19,7 @@ def getHist(var='selJets.pt'):
 
 
 
-def _draw_plot(hData, hBkg, **kwargs):
+def _draw_plot(hPlot1, hBkg, plotConfig, **kwargs):
     r"""
     Takes options:
           "norm"   : bool
@@ -36,13 +36,35 @@ def _draw_plot(hData, hBkg, **kwargs):
     if kwargs.get("debug",False): print(f'\t in _draw_plot ... kwargs = {kwargs}')
 
     norm = kwargs.get("norm",False)
-    hData  .plot(density=norm, label="Data",     color="k", histtype="errorbar", markersize=7)
+    hPlot1Opts = {"density":norm,
+                  "label":plotConfig["plot1"].get("label","Data"),
+                  "color":plotConfig["plot1"].get("color","k"),
+                  "histtype":plotConfig["plot1"].get("histtype","errorbar"),
+                  "yerr": False,
+                  }
+    if plotConfig["plot1"].get("histtype","errorbar") in ["errorbar"]:
+        hPlot1Opts["markersize"] = 7
+        hPlot1Opts["yerr"] = True
+
+    hPlot1  .plot(**hPlot1Opts)
 
 
     # colors: https://xkcd.com/color/rgb/
     # hist options: https://mplhep.readthedocs.io/en/latest/api.html
-    hBkg[0].plot(density=norm, color="k", histtype="step", yerr=False)
-    hBkg[0].plot(density=norm, label="Multijet", color="xkcd:bright yellow", histtype="fill")
+    hPlot2Opts = {"density":norm,
+                  "label":plotConfig["plot2"].get("label","Bkg"),
+                  "color":plotConfig["plot2"].get("color","xkcd:bright yellow"),
+                  "histtype":plotConfig["plot2"].get("histtype","fill"),
+                  "yerr":False,
+                  }
+    if plotConfig["plot2"].get("histtype","fill") in ["errorbar"]:
+        hPlot2Opts["markersize"] = 7
+
+    hBkg[0] .plot(**hPlot2Opts)
+
+    if plotConfig["plot2"].get("drawEdge",True):
+        hBkg[0].plot(density=norm, color="k", histtype="step", yerr=False)
+    #hBkg[0].plot(density=norm, label="Multijet", color="xkcd:bright yellow", histtype="fill")
 
 
     #
@@ -86,7 +108,7 @@ def _draw_plot(hData, hBkg, **kwargs):
 
 
 
-def _plot(hData, hBkg, **kwargs):
+def _plot(hData, hBkg, plotConfig, **kwargs):
 
     if kwargs.get("debug",False): print(f'\t in plot ... kwargs = {kwargs}')
 
@@ -95,7 +117,7 @@ def _plot(hData, hBkg, **kwargs):
 
     fig.add_axes((0.1, 0.15, 0.85, 0.8))
 
-    _draw_plot(hData, hBkg, **kwargs)
+    _draw_plot(hData, hBkg, plotConfig, **kwargs)
 
     ax = fig.gca()
     hep.cms.label("Preliminary", data=True, year=kwargs['year'].replace("UL", "20"), loc=0, ax=ax)
@@ -108,7 +130,7 @@ def _plot(hData, hBkg, **kwargs):
 
 
 
-def _plot_ratio(hData, hBkg, **kwargs):
+def _plot_ratio(hData, hBkg, plotConfig, **kwargs):
     r"""
     Takes options:
         "norm"              : bool (False),
@@ -126,7 +148,7 @@ def _plot_ratio(hData, hBkg, **kwargs):
     main_ax    = fig.add_subplot(grid[0])
     hep.cms.label("Preliminary", data=True, year=kwargs['year'].replace("UL", "20"), loc=0, ax=main_ax)
 
-    _draw_plot(hData, hBkg, **kwargs)
+    _draw_plot(hData, hBkg, plotConfig, **kwargs)
 
     top_xlabel = plt.gca().get_xlabel()
     plt.xlabel("")
@@ -219,6 +241,11 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',cut="passPreSel",regio
     year2 = sum if plotConfig["plot2"]["year"] == "RunII" else plotConfig["plot2"]["year"]
     tag2  = plotConfig["codes"]["tag"][plotConfig["plot2"]["tag"]]
 
+    if kwargs.get("debug",False):
+        print("Drawing")
+        print(f" plot1 process={proc1}, tag={tag1}, year={year1}")
+        print(f" plot2 process={proc2}, tag={tag2}, year={year2}")
+
     #
     #  Get Hists
     #
@@ -234,9 +261,9 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',cut="passPreSel",regio
 
 
     if kwargs.get("doRatio",False):
-        fig = _plot_ratio(hData,[hBkg], **kwargs)
+        fig = _plot_ratio(hData,[hBkg], plotConfig, **kwargs)
     else:
-        fig = _plot(hData,[hBkg],**kwargs)
+        fig = _plot(hData,[hBkg], plotConfig, **kwargs)
 
     if kwargs.get("outputFolder",None):
         yearName = plotConfig["plot1"]["year"]

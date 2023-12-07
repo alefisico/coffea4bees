@@ -13,8 +13,12 @@ sys.path.insert(0,os.getcwd())
 from base_class.plots import makePlot
 
 
-def doPlots():
+def doPlots(varList, cutList):
 
+    if args.doTest:
+        varList = ["SvB_MA_ps_zz","SvB_MA_ps_zh","SvB_MA_ps_hh"]
+        
+    
     
     for v in varList:
         print(v)
@@ -27,7 +31,7 @@ def doPlots():
 
 
         vDict["ylabel"]  = "Entries"
-        vDict["doRatio"] = True
+        vDict["doRatio"] = plotConfig.get("rebin","True")
         vDict["legend"]  = True
 
         for region in ["SR","SB"]:
@@ -42,6 +46,7 @@ if __name__ == '__main__':
     parser.add_argument('-o','--outputFolder', default=None, help='Folder for output folder. Default: plots/')
     parser.add_argument('-m','--metadata', dest="metadata", default="analysis/metadata/plotsNominal.yml", help='Metadata file.')
     parser.add_argument(    '--modifiers', dest="modifiers", default="analysis/metadata/plotModifiers.yml", help='Metadata file.')
+    parser.add_argument(    '--doTest', action="store_true", help='Metadata file.')
     args = parser.parse_args()
 
     plotConfig = yaml.safe_load(open(args.metadata, 'r'))
@@ -65,7 +70,6 @@ if __name__ == '__main__':
         var1 = list(hists['hists'].keys())[0]
 
         varList = list(hists['hists'].keys())
-        print(varList)
         cutList = []
         
         for a in hists["hists"][var1].axes:
@@ -92,4 +96,4 @@ if __name__ == '__main__':
 
                 
 
-        doPlots()
+        doPlots(varList, cutList)
