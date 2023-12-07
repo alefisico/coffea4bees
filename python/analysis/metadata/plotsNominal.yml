@@ -2,11 +2,13 @@ plot1:
    process: data
    tag: fourTag
    year: RunII
+   label: Data
 
 plot2:
    process: data
    tag: threeTag
    year: RunII
+   color: xkcd:bright yellow
 
 codes:
    region:

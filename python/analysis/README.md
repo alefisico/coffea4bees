@@ -39,7 +39,17 @@ For convenience this command is stored in `runTestJob.sh`, you can just run it w
 
 ## To produce some plots
 
-Assuming that the file with your histograms is called `hists/test.coffea`, you can run:
+Assuming that the file with your histograms is called `hists/hists.coffea`, you can run:
 ```
-python iPlot.py -i hists/test.coffea
+python analysis/makePlots.py -i hists/hists.coffea  -o testPlotsNew 
+
+```
+
+## To produce some plots interactively
+
+```
+py -i analysis/iPlot.py      -i hists/hists.coffea  -o testPlotsNew
+
+>>> plot("SvB_MA_ps_zh",cut="passPreSel",region="SB",doRatio=True,debug=True,ylabel="Entries",norm=False,legend=True,rebin=5,yscale='log')
+
 ```
