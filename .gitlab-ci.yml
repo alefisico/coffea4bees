@@ -59,7 +59,7 @@ analysis-plot-job:
   script:
     - ls 
     - cd python/
-    - py analysis/makePlots.py -i hists/test.coffea  -o testCoffeaPlots -m analysis/metadata/plotTest.yml
+    - python analysis/makePlots.py -i hists/test.coffea  -o testCoffeaPlots -m analysis/metadata/plotTest.yml
   artifacts:
     expire_in: 1 year
     paths:
