@@ -1,0 +1,29 @@
+plot1:
+   process: ZH4b
+   tag: fourTag
+   year: RunII
+   color: r
+   histtype: step
+   label: ZH4b
+   
+plot2:
+   process: HH4b
+   tag: threeTag
+   year: RunII
+   histtype: step
+   color: b
+   label: HH4b
+   drawEdge: False
+   
+codes:
+   region:
+      SR: 2
+      SB: 1
+      other: 0
+   tag:
+      threeTag: 3
+      fourTag: 4
+      other: 0
+
+rebin:
+    0
