@@ -33,13 +33,17 @@ if __name__ == '__main__':
     logging.basicConfig(level= logging.DEBUG if args.debug else logging.INFO )
 
     if args.test:
-        #args.datasets=['HH4b']
         args.output_file='test.coffea'
     logging.info(f"\nRunning with these parameters: {args}")
+
 
     #### Metadata
     metadata = yaml.safe_load(open(args.metadata, 'r'))   #### AGE: to be modified
     metadata['config']['year'] = args.years[0]  ### check later for more years
+
+    if 'all' in args.datasets:
+        metadata['datasets'].pop("mixeddata") ### AGE: this is temporary
+        args.datasets = metadata['datasets'].keys()
 
     metadata_dataset = {}
     fileset = {}
@@ -49,10 +53,10 @@ if __name__ == '__main__':
             logging.info(f"\nconfig dataset: {dataset}")
             if dataset not in metadata['datasets'].keys():
                 logging.error(f"{dataset} name not in metadatafile")
-                sys.exit(0)
+                continue
 
-                
-            if not year in metadata['datasets'][dataset]: 
+
+            if not year in metadata['datasets'][dataset]:
                 logging.warning(f"{year} name not in metadatafile for {dataset}")
                 continue
 
