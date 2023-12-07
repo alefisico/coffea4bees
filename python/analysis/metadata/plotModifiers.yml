@@ -1,0 +1,7 @@
+selJets.mass : {"xlim":[0,100]}
+selJets.pt   : {'yscale':'log', 'xlim':[40,400],}
+canJets.eta  : {"xlim":[-3,3]}
+canJets.mass : {"xlim":[0,100]}
+othJets.mass : {"xlim":[0,100]}
+othJets.n    : {"xlim":[0,15]}
+
