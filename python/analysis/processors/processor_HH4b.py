@@ -56,7 +56,7 @@ class cutFlow:
     def __init__(self, cuts):
         self._cutFlowThreeTag = {}
         self._cutFlowFourTag  = {}
-        
+
         for c in cuts:
             self._cutFlowThreeTag[c] = (0, 0) # weighted, raw
             self._cutFlowFourTag [c] = (0, 0) # weighted, raw
@@ -65,11 +65,11 @@ class cutFlow:
     def fill(self, cut, event, allTag=False, wOverride=None):
 
         if allTag:
-            
-            if wOverride: 
+
+            if wOverride:
                 sumw = wOverride
-            else:         
-                sumw = np.sum(event.weight)            
+            else:
+                sumw = np.sum(event.weight)
 
             sumn_3, sumn_4 = len(event), len(event)
             sumw_3, sumw_4 = sumw, sumw
@@ -132,6 +132,7 @@ class analysis(processor.ProcessorABC):
         self.regions = regions
         self.signals = ['zz','zh','hh']
         self.JCM = jetCombinatoricModel(JCM)
+        self.doReweight = True 
         self.btagVar = btagVariations(systematics=addbtagVariations)  #### AGE: these two need to be review later
         self.juncVar = juncVariations(systematics=addjuncVariations)
         self.classifier_SvB = HCREnsemble(SvB) if SvB else None
@@ -173,7 +174,7 @@ class analysis(processor.ProcessorABC):
         newOutput = {}
         newOutput['nEvent'] = {}
         newOutput['nEvent'][event.metadata['dataset']] = nEvent
-        
+
         #
         #  Cut Flows
         #
@@ -200,7 +201,7 @@ class analysis(processor.ProcessorABC):
                           region  = [2,1,0], # SR / SB / Other
                           **dict((s, ...) for s in self.cuts))
 
-
+        fill += hist.add('FvT',       (100, 0, 5, ('FvT.FvT', 'FvT reweight')))
         fill += hist.add('SvB_MA_ps', (100, 0, 1, ('SvB_MA.ps', 'SvB_MA Regressed P(Signal)')))
         fill += hist.add('SvB_ps', (100, 0, 1, ('SvB.ps', 'SvB Regressed P(Signal)')))
         fill += hist.add('quadJet_selected_dr', (50, 0, 5, ("quadJet_selected.dr",'Selected Diboson Candidate $\\Delta$R(d,d)')))
@@ -226,7 +227,7 @@ class analysis(processor.ProcessorABC):
         #fill += LorentzVector.plot_pair(('p2j', R'Vector Boson Candidate Dijets'), 'p2jV')
 
         self.apply_puWeight   = (self.apply_puWeight  ) and isMC and (puWeight is not None)
-        self.apply_prefire    = (self.apply_prefire   ) and isMC and ('L1PreFiringWeight' in event.fields) and (year!='2018')
+        self.apply_prefire    = (self.apply_prefire   ) and isMC and ('L1PreFiringWeight' in event.fields) and (year!='UL18')
         self.apply_trigWeight = (self.apply_trigWeight) and isMC and ('trigWeight' in event.fields)
 
         if isMC:
@@ -249,15 +250,22 @@ class analysis(processor.ProcessorABC):
         # Reading SvB friend trees
         #
         path = fname.replace(fname.split('/')[-1],'')
+        event['FvT']    = NanoEventsFactory.from_root(f'{path}{"FvT_newSBDef.root" if "mix" in dataset else "FvT.root"}',    entry_start=estart, entry_stop=estop, schemaclass=MultiClassifierSchema).events().FvT
         event['SvB']    = NanoEventsFactory.from_root(f'{path}{"SvB_newSBDef.root" if "mix" in dataset else "SvB.root"}',    entry_start=estart, entry_stop=estop, schemaclass=MultiClassifierSchema).events().SvB
         event['SvB_MA'] = NanoEventsFactory.from_root(f'{path}{"SvB_MA_newSBDef.root" if "mix" in dataset else "SvB_MA.root"}', entry_start=estart, entry_stop=estop, schemaclass=MultiClassifierSchema).events().SvB_MA
 
         if not ak.all(event.SvB.event == event.event):
             logging.error('ERROR: SvB events do not match events ttree')
             return
+
         if not ak.all(event.SvB_MA.event == event.event):
             logging.error('ERROR: SvB_MA events do not match events ttree')
             return
+
+        if not ak.all(event.FvT.event == event.event):
+            logging.error('ERROR: SvB_MA events do not match events ttree')
+            return
+
 
         #
         # defining SvB for different SR
@@ -303,11 +311,11 @@ class analysis(processor.ProcessorABC):
         #
         # Get trigger decisions
         #
-        if year == '2016':
+        if year == 'UL16':
             event['passHLT'] = event.HLT.QuadJet45_TripleBTagCSV_p087 | event.HLT.DoubleJet90_Double30_TripleBTagCSV_p087 | event.HLT.DoubleJetsC100_DoubleBTagCSV_p014_DoublePFJetsC100MaxDeta1p6
-        if year == '2017':
+        if year == 'UL17':
             event['passHLT'] = event.HLT.PFHT300PT30_QuadPFJet_75_60_45_40_TriplePFBTagCSV_3p0 | event.HLT.DoublePFJets100MaxDeta1p6_DoubleCaloBTagCSV_p33
-        if year == '2018':
+        if year == 'UL18':
             event['passHLT'] = event.HLT.DoublePFJets116MaxDeta1p6_DoubleCaloBTagDeepCSV_p71 | event.HLT.PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepCSV_4p5
 
         if not isMC and not 'mix' in dataset: # for data, apply trigger cut first thing, for MC, keep all events and apply trigger in cutflow and for plotting
@@ -318,6 +326,9 @@ class analysis(processor.ProcessorABC):
             event['weight'] = event.genWeight * (lumi * xs * kFactor / genEventSumw)
             logging.debug(f"event['weight'] = event.genWeight * (lumi * xs * kFactor / genEventSumw) = {event.genWeight[0]} * ({lumi} * {xs} * {kFactor} / {genEventSumw}) = {event.weight[0]}")
 
+        else:
+            event['weight'] = 1
+            #logging.info(f"event['weight'] = {event.weight}")
 
         self._cutFlow.fill("passHLT",  event, allTag=True)
 
@@ -332,7 +343,7 @@ class analysis(processor.ProcessorABC):
                 passMETFilter = passMETFilter & event.Flag.BadPFMuonDzFilter
             if 'hfNoisyHitsFilter' in event.Flag.fields:
                 passMETFilter = passMETFilter & event.Flag.hfNoisyHitsFilter
-            if year == '2017' or year == '2018':
+            if year == 'UL17' or year == 'UL18':
                 passMETFilter = passMETFilter & event.Flag.ecalBadCalibFilter # in UL the name does not have "V2"
         event['passMETFilter'] = passMETFilter
 
@@ -557,9 +568,27 @@ class analysis(processor.ProcessorABC):
                 # add pseudoTagWeight to event
                 selev['pseudoTagWeight'] = pseudoTagWeight
 
+                #logging.info(f'pseudoTagWeight: {selev.pseudoTagWeight}')
+
                 # apply pseudoTagWeight to threeTag events
-                e3 = selev[selev.threeTag]
-                selev[selev.threeTag]['weight'] = e3.weight * e3.pseudoTagWeight
+                #e3 = selev[selev.threeTag]
+                #if self.doReweight:
+                #logging.info(f'\tweight before pseudoTagWeight (3tag) : {selev[selev.threeTag].weight}')
+                #logging.info(f'\tweight before pseudoTagWeight (4tag) : {selev[selev.fourTag].weight}')
+
+                if self.doReweight:
+                    selev['weight'] = where(selev.passPreSel, (selev.threeTag, selev.weight * selev.pseudoTagWeight * selev.FvT.FvT), (selev.fourTag, selev.weight))
+                else:
+                    selev['weight'] = where(selev.passPreSel, (selev.threeTag, selev.weight * selev.pseudoTagWeight), (selev.fourTag, selev.weight))
+                #selev[selev.threeTag]['weight_new'] = e3.weight * e3.pseudoTagWeight * e3.FvT.FvT
+                #print(selev[selev.threeTag]['weight_new'])
+                #logging.info(f'weight:  {selev[selev.threeTag]["weight"]} new: {selev[selev.threeTag]["weight_old"]}')
+                #logging.info(f'\tweight after pseudoTagWeight (3tag) : {selev[selev.threeTag].weight}')
+                #logging.info(f'\tweight after pseudoTagWeight (4tag) : {selev[selev.fourTag].weight}')
+                    
+
+
+            
 
             #
             # CutFlow
@@ -703,7 +732,7 @@ class analysis(processor.ProcessorABC):
             garbage = gc.collect()
             # print('Garbage:',garbage)
 
-            
+
         # Done
         #output['newHists'] = hist.output["hists"]
         #output['categories'] = hist.output["categories"]

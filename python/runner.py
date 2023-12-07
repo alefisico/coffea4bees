@@ -51,6 +51,11 @@ if __name__ == '__main__':
                 logging.error(f"{dataset} name not in metadatafile")
                 sys.exit(0)
 
+                
+            if not year in metadata['datasets'][dataset]: 
+                logging.warning(f"{year} name not in metadatafile for {dataset}")
+                continue
+
             metadata_dataset[dataset] = {
                 'xs'    : 1. if 'data' else (metadata['datasets'][dataset]['xs'] if isinstance(metadata[dataset]['xs'], float) else eval(metadata[dataset]['xs']) ),    #### AGE: we might need to change this
                 'lumi'  : float(metadata['datasets']['data'][year]['lumi']),
@@ -63,9 +68,9 @@ if __name__ == '__main__':
                     idataset = f'{dataset}{year}{iera}'
                     metadata_dataset[idataset] = metadata_dataset[dataset]
                     metadata_dataset[idataset]['era'] = iera
-                    fileset[idataset+"_"+year] = {'files': [ f'root://cmseos.fnal.gov/{ifile}' ],
+                    fileset[dataset+"_"+year] = {'files': [ f'root://cmseos.fnal.gov/{ifile}' ],
                                                   'metadata': metadata_dataset[idataset]}
-                    logging.info(f'\nDataset {idataset+"_"+year} with {len(fileset[idataset]["files"])} files')
+                    logging.info(f'\nDataset {dataset+"_"+year} with {len(fileset[dataset+"_"+year]["files"])} files')
 
             else:
                 fileset[dataset+"_"+year] = {'files': [ f'root://cmseos.fnal.gov/{metadata["datasets"][dataset][year]["picoAOD"]}' ],
@@ -106,6 +111,7 @@ if __name__ == '__main__':
         }
     else:
         executor_args = {'schema': NanoAODSchema, 'workers': 6, 'savemetrics':True}
+
     logging.info( f"\nExecutor arguments: {executor_args}")
 
     #### Run processor
