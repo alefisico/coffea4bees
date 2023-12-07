@@ -132,6 +132,7 @@ class analysis(processor.ProcessorABC):
         self.regions = regions
         self.signals = ['zz','zh','hh']
         self.JCM = jetCombinatoricModel(JCM)
+        self.doReweight = True 
         self.btagVar = btagVariations(systematics=addbtagVariations)  #### AGE: these two need to be review later
         self.juncVar = juncVariations(systematics=addjuncVariations)
         self.classifier_SvB = HCREnsemble(SvB) if SvB else None
@@ -200,7 +201,7 @@ class analysis(processor.ProcessorABC):
                           region  = [2,1,0], # SR / SB / Other
                           **dict((s, ...) for s in self.cuts))
 
-
+        fill += hist.add('FvT',       (100, 0, 5, ('FvT.FvT', 'FvT reweight')))
         fill += hist.add('SvB_MA_ps', (100, 0, 1, ('SvB_MA.ps', 'SvB_MA Regressed P(Signal)')))
         fill += hist.add('SvB_ps', (100, 0, 1, ('SvB.ps', 'SvB Regressed P(Signal)')))
         fill += hist.add('quadJet_selected_dr', (50, 0, 5, ("quadJet_selected.dr",'Selected Diboson Candidate $\\Delta$R(d,d)')))
@@ -249,15 +250,22 @@ class analysis(processor.ProcessorABC):
         # Reading SvB friend trees
         #
         path = fname.replace(fname.split('/')[-1],'')
+        event['FvT']    = NanoEventsFactory.from_root(f'{path}{"FvT_newSBDef.root" if "mix" in dataset else "FvT.root"}',    entry_start=estart, entry_stop=estop, schemaclass=MultiClassifierSchema).events().FvT
         event['SvB']    = NanoEventsFactory.from_root(f'{path}{"SvB_newSBDef.root" if "mix" in dataset else "SvB.root"}',    entry_start=estart, entry_stop=estop, schemaclass=MultiClassifierSchema).events().SvB
         event['SvB_MA'] = NanoEventsFactory.from_root(f'{path}{"SvB_MA_newSBDef.root" if "mix" in dataset else "SvB_MA.root"}', entry_start=estart, entry_stop=estop, schemaclass=MultiClassifierSchema).events().SvB_MA
 
         if not ak.all(event.SvB.event == event.event):
             logging.error('ERROR: SvB events do not match events ttree')
             return
+
         if not ak.all(event.SvB_MA.event == event.event):
             logging.error('ERROR: SvB_MA events do not match events ttree')
             return
+
+        if not ak.all(event.FvT.event == event.event):
+            logging.error('ERROR: SvB_MA events do not match events ttree')
+            return
+
 
         #
         # defining SvB for different SR
@@ -318,6 +326,9 @@ class analysis(processor.ProcessorABC):
             event['weight'] = event.genWeight * (lumi * xs * kFactor / genEventSumw)
             logging.debug(f"event['weight'] = event.genWeight * (lumi * xs * kFactor / genEventSumw) = {event.genWeight[0]} * ({lumi} * {xs} * {kFactor} / {genEventSumw}) = {event.weight[0]}")
 
+        else:
+            event['weight'] = 1
+            #logging.info(f"event['weight'] = {event.weight}")
 
         self._cutFlow.fill("passHLT",  event, allTag=True)
 
@@ -557,9 +568,27 @@ class analysis(processor.ProcessorABC):
                 # add pseudoTagWeight to event
                 selev['pseudoTagWeight'] = pseudoTagWeight
 
+                #logging.info(f'pseudoTagWeight: {selev.pseudoTagWeight}')
+
                 # apply pseudoTagWeight to threeTag events
-                e3 = selev[selev.threeTag]
-                selev[selev.threeTag]['weight'] = e3.weight * e3.pseudoTagWeight
+                #e3 = selev[selev.threeTag]
+                #if self.doReweight:
+                #logging.info(f'\tweight before pseudoTagWeight (3tag) : {selev[selev.threeTag].weight}')
+                #logging.info(f'\tweight before pseudoTagWeight (4tag) : {selev[selev.fourTag].weight}')
+
+                if self.doReweight:
+                    selev['weight'] = where(selev.passPreSel, (selev.threeTag, selev.weight * selev.pseudoTagWeight * selev.FvT.FvT), (selev.fourTag, selev.weight))
+                else:
+                    selev['weight'] = where(selev.passPreSel, (selev.threeTag, selev.weight * selev.pseudoTagWeight), (selev.fourTag, selev.weight))
+                #selev[selev.threeTag]['weight_new'] = e3.weight * e3.pseudoTagWeight * e3.FvT.FvT
+                #print(selev[selev.threeTag]['weight_new'])
+                #logging.info(f'weight:  {selev[selev.threeTag]["weight"]} new: {selev[selev.threeTag]["weight_old"]}')
+                #logging.info(f'\tweight after pseudoTagWeight (3tag) : {selev[selev.threeTag].weight}')
+                #logging.info(f'\tweight after pseudoTagWeight (4tag) : {selev[selev.fourTag].weight}')
+                    
+
+
+            
 
             #
             # CutFlow
