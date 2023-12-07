@@ -24,12 +24,25 @@ class MultiClassifierSchema(BaseSchema):
 
         # simple collection
         output = {}
+        
+
+        #
+        #  Gets the branches with names "name_*"
+        #
+        _tmpDict = {
+            k[len(name) + 1 :] : branch_forms[k]
+            for k in branch_forms
+            if k.startswith(name + "_")
+        }
+
+        #
+        #  Add the branches with name "name"
+        #
+        if name in branch_forms:
+            _tmpDict[ name ] = branch_forms[name]
+
         output[name] = zip_forms(
-            {
-                k[len(name) + 1 :]: branch_forms[k]
-                for k in branch_forms
-                if k.startswith(name + "_")
-            },
+            _tmpDict,
             name,
             record_name=mixin,
         )

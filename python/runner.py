@@ -111,6 +111,7 @@ if __name__ == '__main__':
         }
     else:
         executor_args = {'schema': NanoAODSchema, 'workers': 6, 'savemetrics':True}
+
     logging.info( f"\nExecutor arguments: {executor_args}")
 
     #### Run processor
