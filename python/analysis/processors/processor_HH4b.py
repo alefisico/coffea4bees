@@ -132,7 +132,7 @@ class analysis(processor.ProcessorABC):
         self.regions = regions
         self.signals = ['zz','zh','hh']
         self.JCM = jetCombinatoricModel(JCM)
-        self.doReweight = True 
+        self.doReweight = True
         self.btagVar = btagVariations(systematics=addbtagVariations)  #### AGE: these two need to be review later
         self.juncVar = juncVariations(systematics=addjuncVariations)
         self.classifier_SvB = HCREnsemble(SvB) if SvB else None
@@ -250,7 +250,7 @@ class analysis(processor.ProcessorABC):
         # Reading SvB friend trees
         #
         path = fname.replace(fname.split('/')[-1],'')
-        event['FvT']    = NanoEventsFactory.from_root(f'{path}{"FvT_newSBDef.root" if "mix" in dataset else "FvT.root"}',    entry_start=estart, entry_stop=estop, schemaclass=MultiClassifierSchema).events().FvT
+        event['FvT']    = NanoEventsFactory.from_root(f'{path}{"FvT_3bDvTMix4bDvT_v0_newSB.root" if "mix" in dataset else "FvT.root"}',    entry_start=estart, entry_stop=estop, schemaclass=MultiClassifierSchema).events().FvT
         event['SvB']    = NanoEventsFactory.from_root(f'{path}{"SvB_newSBDef.root" if "mix" in dataset else "SvB.root"}',    entry_start=estart, entry_stop=estop, schemaclass=MultiClassifierSchema).events().SvB
         event['SvB_MA'] = NanoEventsFactory.from_root(f'{path}{"SvB_MA_newSBDef.root" if "mix" in dataset else "SvB_MA.root"}', entry_start=estart, entry_stop=estop, schemaclass=MultiClassifierSchema).events().SvB_MA
 
@@ -263,7 +263,7 @@ class analysis(processor.ProcessorABC):
             return
 
         if not ak.all(event.FvT.event == event.event):
-            logging.error('ERROR: SvB_MA events do not match events ttree')
+            logging.error('ERROR: FvT events do not match events ttree')
             return
 
 
@@ -585,10 +585,10 @@ class analysis(processor.ProcessorABC):
                 #logging.info(f'weight:  {selev[selev.threeTag]["weight"]} new: {selev[selev.threeTag]["weight_old"]}')
                 #logging.info(f'\tweight after pseudoTagWeight (3tag) : {selev[selev.threeTag].weight}')
                 #logging.info(f'\tweight after pseudoTagWeight (4tag) : {selev[selev.fourTag].weight}')
-                    
 
 
-            
+
+
 
             #
             # CutFlow

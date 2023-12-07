@@ -60,10 +60,11 @@ analysis-plot-job:
     - ls 
     - cd python/
     - python analysis/makePlots.py -i hists/test.coffea  -o testCoffeaPlots -m analysis/metadata/plotTest.yml
+    - ls testCoffeaPlots/RunII/passPreSel/fourTag/SB/SvB_ps.pdf
   artifacts:
     expire_in: 1 year
     paths:
-      - plots
+      - python/testCoffeaPlots/RunII/
 
 
 ##### To build cmssw - but not needed now

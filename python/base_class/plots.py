@@ -3,6 +3,8 @@ import hist
 from hist.intervals import ratio_uncertainty
 import matplotlib.pyplot as plt
 import numpy as np
+import mplhep as hep  # HEP (CMS) extensions/styling on top of mpl
+plt.style.use([hep.style.CMS, {'font.size': 16}])
 
 _phi = ( 1 + np.sqrt(5) ) / 2
 _epsilon = 0.001
@@ -12,7 +14,7 @@ def getHist(var='selJets.pt'):
     if var.find("*") != -1:
         ls(match=var.replace("*",""))
         return
-    
+
     return hists['hists'][var]
 
 
@@ -30,9 +32,9 @@ def _draw_plot(hPlot1, hBkg, plotConfig, **kwargs):
           'ylim'   : [min, max]
           'xlim'   : [min, max]
     """
-    
+
     if kwargs.get("debug",False): print(f'\t in _draw_plot ... kwargs = {kwargs}')
-    
+
     norm = kwargs.get("norm",False)
     hPlot1Opts = {"density":norm,
                   "label":plotConfig["plot1"].get("label","Data"),
@@ -46,7 +48,7 @@ def _draw_plot(hPlot1, hBkg, plotConfig, **kwargs):
 
     hPlot1  .plot(**hPlot1Opts)
 
-    
+
     # colors: https://xkcd.com/color/rgb/
     # hist options: https://mplhep.readthedocs.io/en/latest/api.html
     hPlot2Opts = {"density":norm,
@@ -69,21 +71,20 @@ def _draw_plot(hPlot1, hBkg, plotConfig, **kwargs):
     #  xlabel
     #
     if kwargs.get("xlabel",None): plt.xlabel(kwargs.get("xlabel"))
-    plt.xlabel(plt.gca().get_xlabel(), fontsize=14, loc='right')
+    plt.xlabel(plt.gca().get_xlabel(), loc='right')
 
-    
+
     #
     #  ylabel
     #
     if kwargs.get("ylabel",None): plt.ylabel(kwargs.get("ylabel"))
     if norm:   plt.ylabel(plt.gca().get_ylabel() + " (normalized)")
-    font_properties = {'family': 'sans', 'weight': 'normal', 'size': 14, 'fontname':'Helvetica'}
-    plt.ylabel(plt.gca().get_ylabel(), fontdict=font_properties, loc='top')
+    plt.ylabel(plt.gca().get_ylabel(), loc='top')
 
-        
+
     if kwargs.get("yscale",None): plt.yscale(kwargs.get('yscale'))
     if kwargs.get("xscale",None): plt.xscale(kwargs.get('xscale'))
-        
+
 
     if kwargs.get('legend',False):
         plt.legend(
@@ -98,11 +99,11 @@ def _draw_plot(hPlot1, hBkg, plotConfig, **kwargs):
             #borderaxespad=0.0       # Padding between the axes and the legend border
             reverse = True,
         )
-        
+
     if kwargs.get('ylim',False):  plt.ylim(*kwargs.get('ylim'))
     if kwargs.get('xlim',False):  plt.xlim(*kwargs.get('xlim'))
 
-    
+
     return
 
 
@@ -112,17 +113,18 @@ def _plot(hData, hBkg, plotConfig, **kwargs):
     if kwargs.get("debug",False): print(f'\t in plot ... kwargs = {kwargs}')
 
     size = 7
-    fig = plt.figure(figsize=(size,size/_phi))
+    fig = plt.figure() ##figsize=(size,size/_phi))
 
     fig.add_axes((0.1, 0.15, 0.85, 0.8))
-    
+
     _draw_plot(hData, hBkg, plotConfig, **kwargs)
 
-    #ax = fig.gca()
+    ax = fig.gca()
+    hep.cms.label("Preliminary", data=True, year=kwargs['year'].replace("UL", "20"), loc=0, ax=ax)
     #ax.spines["top"]  .set_visible(False)
     #ax.spines["right"].set_visible(False)
     #ax.spines["left"] .set_visible(False)
-    
+
 
     return fig
 
@@ -140,29 +142,30 @@ def _plot_ratio(hData, hBkg, plotConfig, **kwargs):
 
 
     size = 7
-    fig = plt.figure(figsize=(size, size/_phi*4/3))
+    fig = plt.figure() #figsize=(size, size/_phi*4/3))
     grid = fig.add_gridspec(2, 1, hspace=0.06, height_ratios=[3, 1], left=0.1, right=0.95, top=0.95, bottom=0.1 )
 
     main_ax    = fig.add_subplot(grid[0])
+    hep.cms.label("Preliminary", data=True, year=kwargs['year'].replace("UL", "20"), loc=0, ax=main_ax)
 
     _draw_plot(hData, hBkg, plotConfig, **kwargs)
 
     top_xlabel = plt.gca().get_xlabel()
     plt.xlabel("")
-    
+
     subplot_ax = fig.add_subplot(grid[1], sharex=main_ax)
-    plt.setp(main_ax.get_xticklabels(), visible=False)    
+    plt.setp(main_ax.get_xticklabels(), visible=False)
 
     numValues = hData.values()
     denValues = hBkg[0].values()
     denValues[denValues == 0] = _epsilon
     ratios = numValues / denValues
-    
+
     if kwargs.get("norm",  False):
         numSF = np.sum(hData.values(), axis=0)
         denSF = np.sum(hBkg[0].values(), axis=0)
         ratios *= denSF/numSF
-    
+
     # Set 0 and inf to nan to hide during plotting
     ratios[ratios == 0] = np.nan
     ratios[np.isinf(ratios)] = np.nan
@@ -170,14 +173,14 @@ def _plot_ratio(hData, hBkg, plotConfig, **kwargs):
     central_value_artist = subplot_ax.axhline(
         kwargs.get("ratio_line_value",1.0), color="black", linestyle="dashed", linewidth=1.0
     )
-    
+
     # https://github.com/scikit-hep/hist/blob/main/src/hist/intervals.py
     ratio_uncert = ratio_uncertainty(
         num=numValues,
         denom=denValues,
         uncertainty_type=kwargs.get("uncertainty_type","poisson"),
     )
-    
+
     x_values = hData.axes[0].centers
 
     subplot_ax.errorbar(
@@ -194,14 +197,13 @@ def _plot_ratio(hData, hBkg, plotConfig, **kwargs):
     #  ylabel
     #
     plt.ylabel(kwargs.get("rlabel","Ratio"))
-    font_properties = {'family': 'sans', 'weight': 'normal', 'size': 14, 'fontname':'Helvetica'}
-    plt.ylabel(plt.gca().get_ylabel(), fontdict=font_properties, loc='center')
+    plt.ylabel(plt.gca().get_ylabel(), loc='center')
 
 
-    plt.xlabel(kwargs.get("xlabel",top_xlabel),fontsize=14, loc='right')
+    plt.xlabel(kwargs.get("xlabel",top_xlabel),loc='right')
 
     plt.ylim(*kwargs.get('rlim',[0,2]))
-    
+
     return fig
 
 
@@ -216,13 +218,13 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',cut="passPreSel",regio
        cut      : "passPreSel",
        tag      : "fourTag",
        region   : "SR",
-    
+
        plotting opts
         'doRatio'  : bool (False)
         'rebin'    : int (1),
     """
 
-    
+
     h = hists['hists'][var]
     varName = hists['hists'][var].axes[-1].name
 
@@ -243,7 +245,7 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',cut="passPreSel",regio
         print("Drawing")
         print(f" plot1 process={proc1}, tag={tag1}, year={year1}")
         print(f" plot2 process={proc2}, tag={tag2}, year={year2}")
-    
+
     #
     #  Get Hists
     #
@@ -256,8 +258,8 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',cut="passPreSel",regio
 
     hData = h[hDataDict]
     hBkg  = h[hBkgDict]
-              
-    
+
+
     if kwargs.get("doRatio",False):
         fig = _plot_ratio(hData,[hBkg], plotConfig, **kwargs)
     else:
@@ -268,6 +270,6 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',cut="passPreSel",regio
         tagName  = plotConfig["plot1"]["tag"]
         outputPath = kwargs.get("outputFolder")+"/"+"/".join([yearName,cut,tagName,region])
         if not os.path.exists(outputPath): os.makedirs(outputPath)
-        fig.savefig(outputPath+"/"+var+".pdf")        
-        
+        fig.savefig(outputPath+"/"+var.replace(".",'_')+".pdf")
+
     return fig
