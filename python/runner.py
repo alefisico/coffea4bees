@@ -15,6 +15,8 @@ from functools import partial
 from multiprocessing import Pool
 import yaml
 
+from base_class.addhash import get_git_revision_short_hash, get_git_diff_master
+
 
 if __name__ == '__main__':
 
@@ -147,6 +149,13 @@ if __name__ == '__main__':
     else:
         nEvent = sum([output['nEvent'][dataset] for dataset in output['nEvent'].keys()])
         logging.info(f'\n{nEvent/elapsed:,.0f} events/s total ({nEvent}/{elapsed})')
+
+    ##### Adding reproducible info
+    output['reproducible'] = {
+        'hash' : get_git_revision_short_hash(),
+        'args' : args,
+        'diff' : get_git_diff_master(),
+    }
 
     ##### Saving file
     if not os.path.exists(args.output_path): os.makedirs(args.output_path)
