@@ -64,7 +64,7 @@ analysis-plot-job:
   artifacts:
     expire_in: 1 year
     paths:
-      - testCoffeaPlots/RunII/
+      - python/testCoffeaPlots/RunII/
 
 
 ##### To build cmssw - but not needed now
