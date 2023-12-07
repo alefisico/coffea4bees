@@ -13,9 +13,10 @@ sys.path.insert(0,os.getcwd())
 from base_class.plots import makePlot
 
 
-def doPlots():
+def doPlots(varList, cutList):
 
-    if args.doTest: varList = ["SvB_MA_ps_zz","SvB_MA_ps_zh","SvB_MA_ps_hh"]
+    if args.doTest:
+        varList = ["SvB_MA_ps_zz","SvB_MA_ps_zh","SvB_MA_ps_hh"]
         
     
     
@@ -69,7 +70,6 @@ if __name__ == '__main__':
         var1 = list(hists['hists'].keys())[0]
 
         varList = list(hists['hists'].keys())
-        print(varList)
         cutList = []
         
         for a in hists["hists"][var1].axes:
@@ -96,4 +96,4 @@ if __name__ == '__main__':
 
                 
 
-        doPlots()
+        doPlots(varList, cutList)
