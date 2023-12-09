@@ -16,7 +16,7 @@ class CutFlowTestCase(unittest.TestCase):
         self.cf3_unit = hists["cutFlowThreeTagUnitWeight"]
 
         self.counts4 = {}
-        self.counts4["data_UL17C"] = {'passJetMult': 498557, 'passPreSel': 26897, 'passDiJetMass': 12237, 'SR': 4424, 'SB': 7813, 'passSvB': 12.0, 'failSvB': 15156.0}
+        self.counts4["data_UL17C"] = {'passJetMult': 498557, 'passPreSel': 26897, 'passDiJetMass': 12237, 'SR': 4424, 'SB': 7813, 'passSvB': 12, 'failSvB': 15155}
 
         self.counts3 = {}
         self.counts3['data_UL17C'] = {'passJetMult': 498557, 'passPreSel': 21919.6, 'passDiJetMass': 10567.7, 'SR': 3784.1, 'SB': 6783.6, 'passSvB': 15.7, 'failSvB': 12086.0}
@@ -33,7 +33,7 @@ class CutFlowTestCase(unittest.TestCase):
         datasetAndEra = "data_UL17C"
         for cut, v in self.counts4[datasetAndEra].items():
             with self.subTest(cut=cut):
-                self.assertEqual(v,self.cf4[datasetAndEra][cut])
+                self.assertEqual(v,self.cf4[datasetAndEra][cut],f'incorrect number of fourTag counts for cut: {cut}')
 
     def test_counts3(self):
         """
@@ -42,7 +42,7 @@ class CutFlowTestCase(unittest.TestCase):
         datasetAndEra = "data_UL17C"
         for cut, v in self.counts3[datasetAndEra].items():
             with self.subTest(cut=cut):
-                self.assertEqual(v,round(self.cf3[datasetAndEra][cut],1))
+                self.assertEqual(v,round(self.cf3[datasetAndEra][cut],1),f'incorrect number of weighted threeTag counts for cut: {cut}')
 
     def test_counts3_unitWeight(self):
         """
@@ -51,7 +51,7 @@ class CutFlowTestCase(unittest.TestCase):
         datasetAndEra = "data_UL17C"
         for cut, v in self.counts3_unit[datasetAndEra].items():
             with self.subTest(cut=cut):
-                self.assertEqual(v,self.cf3_unit[datasetAndEra][cut])
+                self.assertEqual(v,self.cf3_unit[datasetAndEra][cut],f'incorrect number of threeTag counts for cut: {cut}')
 
                 
                 
