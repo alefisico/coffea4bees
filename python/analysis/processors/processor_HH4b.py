@@ -122,9 +122,9 @@ def count_nested_dict(nested_dict, c=0):
 class analysis(processor.ProcessorABC):
     def __init__(self, JCM = '', addbtagVariations=None, addjuncVariations=None, SvB=None, SvB_MA=None, threeTag = True, apply_puWeight = False, apply_prefire = False, apply_trigWeight = True, regions=['SR'], corrections_metadata='analysis/metadata/corrections.yml', year='UL18', btagSF=True):
         logging.debug('\nInitialize Analysis Processor')
-        self.blind = True
+        self.blind = False
         print('Initialize Analysis Processor')
-        self.newcuts = ["all","passHLT","passMETFilter","passJetMult","passJetMult_btagSF","passPreSel","passDiJetMass",'passSvB','failSvB']
+        self.newcuts = ["all","passHLT","passMETFilter","passJetMult","passJetMult_btagSF","passPreSel","passDiJetMass",'SR','SB','passSvB','failSvB']
         self.cuts = ['passPreSel','passSvB','failSvB']
         self.year = year
         self.threeTag = threeTag
@@ -162,7 +162,8 @@ class analysis(processor.ProcessorABC):
         estop   = event.metadata['entrystop']
         chunk   = f'{dataset}::{estart:6d}:{estop:6d} >>> '
         year    = event.metadata['year']
-        dataset = dataset.replace("_"+year,"")
+        era     = event.metadata.get('era','')
+        processName = event.metadata['processName']
         isMC    = True if event.run[0] == 1 else False
         lumi    = event.metadata.get('lumi',    1.0)
         xs      = event.metadata.get('xs',      1.0)
@@ -193,9 +194,9 @@ class analysis(processor.ProcessorABC):
         #
         # Hists
         #
-        fill = Fill(process = dataset, year = year, weight = 'weight')
+        fill = Fill(process = processName, year = year, weight = 'weight')
 
-        hist = Collection(process = [dataset],
+        hist = Collection(process = [processName],
                           year    = [year],
                           tag     = [3,4,0], # 3 / 4/ Other
                           region  = [2,1,0], # SR / SB / Other
@@ -221,7 +222,7 @@ class analysis(processor.ProcessorABC):
         #
         #  v4j
         #
-        fill += LorentzVector.plot_pair(('v4j', R'$HH_{4b}$'), 'v4j', skip=['n','dr','dphi'], bins = {'mass': (120, 0, 1200)})
+        fill += LorentzVector.plot_pair(('v4j', R'$HH_{4b}$'), 'v4j', skip=['n','dr','dphi','st'], bins = {'mass': (120, 0, 1200)})
         fill += LorentzVector.plot_pair(('leadSt', R'Lead Boson Candidate'), 'quadJet_selected_lead', skip=['n'])
         fill += LorentzVector.plot_pair(('sublSt', R'Subleading Boson Candidate'), 'quadJet_selected_subl', skip=['n'])
         #fill += LorentzVector.plot_pair(('p2j', R'Vector Boson Candidate Dijets'), 'p2jV')
@@ -345,10 +346,10 @@ class analysis(processor.ProcessorABC):
                 passMETFilter = passMETFilter & event.Flag.hfNoisyHitsFilter
             if year == 'UL17' or year == 'UL18':
                 passMETFilter = passMETFilter & event.Flag.ecalBadCalibFilter # in UL the name does not have "V2"
-        event['passMETFilter'] = passMETFilter
+        #event['passMETFilter'] = passMETFilter
 
 
-        event = event[event.passMETFilter]
+        #event = event[event.passMETFilter] # HACK
         self._cutFlow.fill("passMETFilter",  event, allTag=True)
 
 
@@ -560,14 +561,14 @@ class analysis(processor.ProcessorABC):
 
                 # check that pseudoTagWeight calculation agrees with c++
                 if junc == 'JES_Central':
-                    selev.issue = (abs(selev.pseudoTagWeight - pseudoTagWeight)/selev.pseudoTagWeight > 0.0001) & (selev.pseudoTagWeight!=1)
+                    selev.issue = (abs(selev.pseudoTagWeight - pseudoTagWeight)/selev.pseudoTagWeight > 0.0001) & (pseudoTagWeight!=1)
                     if ak.any(selev.issue):
                         logging.warning(f'{chunk}WARNING: python pseudotag calc not equal to c++ calc')
                         logging.warning(f'{chunk}Issues:',ak.sum(selev.issue),'of',ak.sum(selev.threeTag))
 
                 # add pseudoTagWeight to event
                 selev['pseudoTagWeight'] = pseudoTagWeight
-
+                
                 #logging.info(f'pseudoTagWeight: {selev.pseudoTagWeight}')
 
                 # apply pseudoTagWeight to threeTag events
@@ -604,12 +605,13 @@ class analysis(processor.ProcessorABC):
                        ([1,3],[2,3],[3,2])]
             diJet       = canJet[:,pairing[0]]     +   canJet[:,pairing[1]]
             diJet['st'] = canJet[:,pairing[0]].pt  +   canJet[:,pairing[1]].pt
+            diJet['stSafe'] = canJet[:,pairing[0]].pt  +   canJet[:,pairing[1]].pt
             diJet['dr'] = canJet[:,pairing[0]].delta_r(canJet[:,pairing[1]])
             diJet['dphi'] = canJet[:,pairing[0]].delta_phi(canJet[:,pairing[1]])
             diJet['lead'] = canJet[:,pairing[0]]
             diJet['subl'] = canJet[:,pairing[1]]
             # Sort diJets within views to be lead st, subl st
-            diJet = diJet[ak.argsort(diJet.st, axis=2, ascending=False)]
+            diJet = diJet[ak.argsort(diJet.stSafe, axis=2, ascending=False)]
             # Now indexed by diJet[event,pairing,lead/subl st]
 
             # Compute diJetMass cut with independent min/max for lead/subl
@@ -674,6 +676,7 @@ class analysis(processor.ProcessorABC):
             selev[  'diJet'] =   diJet
             selev['quadJet'] = quadJet
             selev['quadJet_selected'] = quadJet[quadJet.selected][:,0]
+            selev["passDiJetMass"] = ak.any(quadJet.passDiJetMass,axis=1)
 
             # FIX ME  (Better way to do this
             selev['quadJet_selected_lead'] = selev['quadJet_selected'].lead
@@ -707,7 +710,7 @@ class analysis(processor.ProcessorABC):
             #
             if not (isMC or 'mixed' in dataset) and self.blind:
                 selev = selev[~(selev.SR & selev.fourTag)]
-
+                #selev = selev[~(selev['quadJet_selected'].SR & selev.fourTag)]
 
 
             #self.cutflow(output, dataset, selev[selev['quadJet_selected'].passDiJetMass], 'passDiJetMass', junc=junc)
@@ -716,11 +719,87 @@ class analysis(processor.ProcessorABC):
             if self.classifier_SvB is not None:
                 self.compute_SvB(selev, junc=junc)
 
+            #
+            # Debugging
+            #
+            selev.issue = ((selev.SR) & (~selev['quadJet_selected'].SR) |  (~selev.SR) & (selev['quadJet_selected'].SR) )
+            if False and ak.any(selev.issue):
+                 print(f'{chunk}WARNING: Mis match of  SR masses in picoAOD variables generated by the c++')
+                 issue = selev[selev.issue]
+
+                 print(pairing[0])
+                 print(pairing[1])
+                 #print(f'canJet Pt 0 {issue.canJet[:,pairing[0]].pt}')
+                 #print(f'canJet Pt 1 {issue.canJet[:,pairing[1]].pt}')
+                 print(f'canJet Pt 0 {issue.canJet[0,pairing[0]].pt}')
+                 print(f'canJet Pt 1 {issue.canJet[0,pairing[1]].pt}')
+                 print(f'diJet mass      {(issue.canJet[0,pairing[0]]     +   issue.canJet[0,pairing[1]]).mass}')
+                 print(f'diJet st    {issue.canJet[0,pairing[0]].pt  +   issue.canJet[0,pairing[1]].pt}')
+
+
+                 #event['nJet_selected'] = ak.sum(event.Jet.selected, axis=1)
+                 print(f'diJet st 2nd    {issue.canJet[:,pairing[0]].pt  +   issue.canJet[:,pairing[1]].pt}')
+                 print(f'diJet st 3rd    {(issue.canJet[:,pairing[0]].pt  +   issue.canJet[:,pairing[1]].pt)[0]}')                 
+
+                 issue['diJet_presort']    = issue.canJet[:,pairing[0]]     +   issue.canJet[:,pairing[1]]
+                 issue['diJet_presort', 'st']    = issue.canJet[:,pairing[0]].pt     +   issue.canJet[:,pairing[1]].pt
+                 issue['diJet_presort', 'stSafe'] = issue.canJet[:,pairing[0]].pt  +   issue.canJet[:,pairing[1]].pt
+
+                 print(f'diJet mass (preSort)      {issue.diJet_presort[0].mass}')
+                 print(f'diJet st (preSort)      {issue.diJet_presort[0].st}')
+                 print(f'diJet st (preSort 2nd)      {issue.diJet_presort[0]["st"]}')
+                 print(f'diJet stSafe (preSort)      {issue.diJet_presort[0].stSafe}')
+
+                 issue['diJet_sorted'] = issue.diJet_presort[ak.argsort(issue.diJet_presort.st, axis=2, ascending=False)]
+                 print(f'diJet mass (sort)      {issue.diJet_sorted[0].mass}')
+                 print(f'diJet st (sort)      {issue.diJet_sorted[0].st}')
+
+                 print(f'canJet Pt 0 {issue.canJet[0,0].pt}')
+                 print(f'canJet Pt 1 {issue.canJet[0,1].pt}')
+                 print(f'canJet Pt 2 {issue.canJet[0,2].pt}')
+                 print(f'canJet Pt 3 {issue.canJet[0,3].pt}')
+                 print(f'canJet Pt pairing 0 {len(issue.canJet[0,pairing[0]])}')
+                 print(f'canJet Pt pairing 1 {len(issue.canJet[0,pairing[1]])}')
+                 #print(f'Dijet {diJet.st}')
+            
+
+
+
+
+
+                 print(f'{chunk}{len(issue)} events with issues')
+                 print(f'{chunk}c++ SR: {issue.SR}  ')
+                 print(f'{chunk}py SR: {issue["quadJet_selected"].SR}')
+                 print(f'{chunk}c++ dijetSt Mass values: lead {issue.leadStM} subl {issue.sublStM}')
+                 print(f'{chunk}py  dijetSt Mass values: lead {issue.quadJet_selected.lead.mass} subl {issue.quadJet_selected.subl.mass}')
+                 print(f'{chunk}py  all quadJets Mass: lead {issue.quadJet.lead.mass} subl {issue.quadJet.subl.mass}')
+                 print(f'{chunk}py  all quadJets st: lead {issue.quadJet.lead.st} subl {issue.quadJet.subl.st}')
+                 print(f'{chunk}py  all quadJets dijet: lead {issue.quadJet.lead} subl {issue.quadJet.subl}')
+                  #print(f'{chunk}py  dijet st: {diJet.st}')
+                 print(f'{chunk}py  evnet {issue.event}')
+                 
+                 for v in ["pt"]:#,"eta","phi","m"]:
+                     print(f'{chunk}c++ values (canJet0:) {v}',issue.canJet0[:][v] )#, issue.canJet1, issue.canJet2, issue.canJet3)
+                     print(f'{chunk}py  values (canJet0:) {v}',issue["canJet"][:,0][v.replace("m","mass")])
+
+                     print(f'{chunk}c++ values (canJet1:) {v}',issue.canJet1[:][v] )#, issue.canJet1, issue.canJet2, issue.canJet3)
+                     print(f'{chunk}py  values (canJet1:) {v}',issue["canJet"][:,1][v.replace("m","mass")])
+
+                     print(f'{chunk}c++ values (canJet2:) {v}',issue.canJet2[:][v] )#, issue.canJet1, issue.canJet2, issue.canJet3)
+                     print(f'{chunk}py  values (canJet2:) {v}',issue["canJet"][:,2][v.replace("m","mass")])
+
+                     print(f'{chunk}c++ values (canJet3:) {v}',issue.canJet3[:][v] )#, issue.canJet1, issue.canJet2, issue.canJet3)
+                     print(f'{chunk}py  values (canJet3:) {v}',issue["canJet"][:,3][v.replace("m","mass")])
+
+                 print("\n")
+                 print("\n")
 
             #
             # fill histograms
             #
-            self._cutFlow.fill("passDiJetMass",  selev[selev['quadJet_selected'].passDiJetMass])
+            self._cutFlow.fill("passDiJetMass",  selev[selev.passDiJetMass])
+            self._cutFlow.fill("SR",  selev[(selev.passDiJetMass & selev['quadJet_selected'].SR)])
+            self._cutFlow.fill("SB",  selev[(selev.passDiJetMass & selev['quadJet_selected'].SB)])
             self._cutFlow.fill("passSvB",  selev[selev.passSvB])
             self._cutFlow.fill("failSvB",  selev[selev.failSvB])
 
@@ -812,51 +891,51 @@ class analysis(processor.ProcessorABC):
             event[classifier] = SvB
 
 
-    def fill_SvB(self, hist, event, weight):
-        dataset = event.metadata.get('dataset','')
-        for classifier in ['SvB', 'SvB_MA']:
-            for bb in self.signals:
-                mask = event[classifier][bb]
-                x, w = event[mask][classifier].ps, weight[mask]
-                #hist[f'{classifier}_ps_{bb}'].fill(dataset=dataset, x=x, weight=w)
-
-            mask = event[classifier]['zz'] | event[classifier]['zh'] | event[classifier]['hh']
-            x, w = event[mask][classifier].ps, weight[mask]
-            #hist[f'{classifier}_ps_all'].fill(dataset=dataset, x=x, weight=w)
-
-
+##    def fill_SvB(self, hist, event, weight):
+##        dataset = event.metadata.get('dataset','')
+##        for classifier in ['SvB', 'SvB_MA']:
+##            for bb in self.signals:
+##                mask = event[classifier][bb]
+##                x, w = event[mask][classifier].ps, weight[mask]
+##                #hist[f'{classifier}_ps_{bb}'].fill(dataset=dataset, x=x, weight=w)
+##
+##            mask = event[classifier]['zz'] | event[classifier]['zh'] | event[classifier]['hh']
+##            x, w = event[mask][classifier].ps, weight[mask]
+##            #hist[f'{classifier}_ps_all'].fill(dataset=dataset, x=x, weight=w)
 
 
-    def fill(self, event, output, junc='JES_Central'):
-        dataset = event.metadata.get('dataset','')
-        for cut in self.cuts:
-            for tag in self.tags:
-                mask_cut_tag = event[tag] & event[cut]
-                for region in self.regions:
-                    if   region == 'SBSR':
-                        mask = mask_cut_tag & (event['quadJet_selected'].SB | event['quadJet_selected'].SR)
-                    elif region == 'SB':
-                        mask = mask_cut_tag & event['quadJet_selected'].SB
-                    elif region == 'SR':
-                        mask = mask_cut_tag & event['quadJet_selected'].SR
-                    elif region == 'inclusive':
-                        mask = mask_cut_tag
 
-                    hist_event = event[mask]
-                    weight = hist_event.weight
-                    if self.apply_trigWeight:
-                        weight = weight * hist_event.trigWeight.Data
 
-                    #hist = output['hists'][junc][cut][tag][region]
-                    #hist['nJet_selected'].fill(dataset=dataset, x=hist_event.nJet_selected, weight=weight)
-                    #hist['canJet_pt'].fill(dataset=dataset, x=hist_event.canJet.pt, weight=weight)
-                    #self.fill_fourvectorhists('canJet', hist, hist_event, weight)
-                    #self.fill_fourvectorhists('v4j', hist, hist_event, weight)
-                    #self.fill_fourvectorhists('quadJet_selected.lead', hist, hist_event, weight)
-                    #self.fill_fourvectorhists('quadJet_selected.subl', hist, hist_event, weight)
-                    #hist['quadJet_selected.dr'].fill(dataset=dataset, x=hist_event['quadJet_selected'].dr, weight=weight)
-                    #for bb in self.signals: hist[f'quadJet_selected.x{bb.upper()}'].fill(dataset=dataset, x=hist_event['quadJet_selected'][f'x{bb.upper()}'], weight=weight)
-                    #self.fill_SvB(hist, hist_event, weight)
+##    def fill(self, event, output, junc='JES_Central'):
+##        dataset = event.metadata.get('dataset','')
+##        for cut in self.cuts:
+##            for tag in self.tags:
+##                mask_cut_tag = event[tag] & event[cut]
+##                for region in self.regions:
+##                    if   region == 'SBSR':
+##                        mask = mask_cut_tag & (event['quadJet_selected'].SB | event['quadJet_selected'].SR)
+##                    elif region == 'SB':
+##                        mask = mask_cut_tag & event['quadJet_selected'].SB
+##                    elif region == 'SR':
+##                        mask = mask_cut_tag & event['quadJet_selected'].SR
+##                    elif region == 'inclusive':
+##                        mask = mask_cut_tag
+##
+##                    hist_event = event[mask]
+##                    weight = hist_event.weight
+##                    if self.apply_trigWeight:
+##                        weight = weight * hist_event.trigWeight.Data
+##
+##                    #hist = output['hists'][junc][cut][tag][region]
+##                    #hist['nJet_selected'].fill(dataset=dataset, x=hist_event.nJet_selected, weight=weight)
+##                    #hist['canJet_pt'].fill(dataset=dataset, x=hist_event.canJet.pt, weight=weight)
+##                    #self.fill_fourvectorhists('canJet', hist, hist_event, weight)
+##                    #self.fill_fourvectorhists('v4j', hist, hist_event, weight)
+##                    #self.fill_fourvectorhists('quadJet_selected.lead', hist, hist_event, weight)
+##                    #self.fill_fourvectorhists('quadJet_selected.subl', hist, hist_event, weight)
+##                    #hist['quadJet_selected.dr'].fill(dataset=dataset, x=hist_event['quadJet_selected'].dr, weight=weight)
+##                    #for bb in self.signals: hist[f'quadJet_selected.x{bb.upper()}'].fill(dataset=dataset, x=hist_event['quadJet_selected'][f'x{bb.upper()}'], weight=weight)
+##                    #self.fill_SvB(hist, hist_event, weight)
 
     # def fill_shh(self, output, event, dataset='', cut='', tag='', region=''):
     #     output['hists']['SvB_ps_zz_nJet_selected'].fill(

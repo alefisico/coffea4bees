@@ -62,7 +62,7 @@ class _PlotLorentzVector(Template):
 class _PlotDiLorentzVector(_PlotLorentzVector):
     dr      = H((100, 0, 5, ('dr', R'$\Delta R$')))
     dphi    = H((60, -np.pi, np.pi, ('dphi', R'$\Delta\phi$')))
-    ht      = H((100, 0, 1000, ('ht', R'$H_{\mathrm{T}}$ [GeV]')))
+    st      = H((100, 0, 1000, ('st', R'$S_{\mathrm{T}}$ [GeV]')))
 
 
 class LorentzVector:
