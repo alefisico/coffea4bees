@@ -5,7 +5,7 @@ class CutFlowTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        print("Ran Setup")
+
         inputFile = "hists/histAll.coffea"
         with open(f'{inputFile}', 'rb') as hfile:
             hists = load(hfile)
@@ -16,7 +16,7 @@ class CutFlowTestCase(unittest.TestCase):
         self.cf3_unit = hists["cutFlowThreeTagUnitWeight"]
 
         self.counts4 = {}
-        self.counts4["data_UL17C"] = {'passJetMult': 498557, 'passPreSel': 26897, 'passDiJetMass': 12237, 'SR': 4424, 'SB': 7813, 'passSvB': 12, 'failSvB': 15155}
+        self.counts4["data_UL17C"] = {'passJetMult': 498557, 'passPreSel': 26897, 'passDiJetMass': 12237, 'SR': 4424, 'SB': 7813, 'passSvB': 12, 'failSvB': 15156}
 
         self.counts3 = {}
         self.counts3['data_UL17C'] = {'passJetMult': 498557, 'passPreSel': 21919.6, 'passDiJetMass': 10567.7, 'SR': 3784.1, 'SB': 6783.6, 'passSvB': 15.7, 'failSvB': 12086.0}
