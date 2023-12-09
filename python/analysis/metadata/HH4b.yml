@@ -29,7 +29,7 @@ datasets:
     'UL17':
       lumi: 36.7e3
       picoAOD: 
-        B: '/store/user/algomez/XX4b/20231115/data2017B/picoAOD.root'
+#        B: '/store/user/algomez/XX4b/20231115/data2017B/picoAOD.root' # Dont think we need/want this
         C: '/store/user/algomez/XX4b/20231115/data2017C/picoAOD.root'
         D: '/store/user/algomez/XX4b/20231115/data2017D/picoAOD.root'
         E: '/store/user/algomez/XX4b/20231115/data2017E/picoAOD.root'
