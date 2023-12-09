@@ -31,7 +31,11 @@ def printCF(procKey, cf4, cf4_unit, cf3, cf3_unit):
     print("\n")
 
     
+def add(thisKey):
+    print(f"\tadding {thisKey}")
+    
 
+    
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='uproot_plots')
@@ -52,16 +56,40 @@ if __name__ == '__main__':
     cf3      = hists["cutFlowThreeTag"]
     cf3_unit = hists["cutFlowThreeTagUnitWeight"]
 
-        #process = "data"
+    #process = "data"
     #era = "UL17F"
 
     eras = args.eras
-    eraString = " ".join(eras)
+    eraString = "_".join(eras)
     print(eras)
     print(eraString)
-
-    for e in eras:
-        key = args.process+"_"+e
+    key = args.process+"_"+eraString
     
-        #cutList = hists["cutFlowThreeTagUnitWeight"][key].keys()
-        printCF(key, cf4[key], cf4_unit[key], cf3[key], cf3_unit[key])
+    if key not in cf4:
+        print(f"summing {key}...")
+
+        cf4      [key] = {}
+        cf4_unit [key] = {}
+        cf3      [key] = {}
+        cf3_unit [key] = {}
+
+        
+        for e in eras:
+
+            for cut, v in cf4[args.process+"_"+e].items():
+                if cut not in cf4[key]: cf4[key][cut] = 0
+                if cut not in cf4_unit[key]: cf4_unit[key][cut] = 0
+                if cut not in cf3[key]: cf3[key][cut] = 0
+                if cut not in cf3_unit[key]: cf3_unit[key][cut] = 0
+
+                
+                cf4[key][cut]      += cf4[args.process+"_"+e][cut]
+                cf4_unit[key][cut] += cf4_unit[args.process+"_"+e][cut]
+                cf3[key][cut]      += cf3[args.process+"_"+e][cut]
+                cf3_unit[key][cut] += cf3_unit[args.process+"_"+e][cut]
+
+        
+
+
+    #cutList = hists["cutFlowThreeTagUnitWeight"][key].keys()
+    printCF(key, cf4[key], cf4_unit[key], cf3[key], cf3_unit[key])
