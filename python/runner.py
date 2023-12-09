@@ -64,20 +64,21 @@ if __name__ == '__main__':
 
 
             metadata_dataset[dataset] = {
-                'xs'    : 1. if dataset in ['data','mixeddata'] else (metadata['datasets'][dataset]['xs'] if isinstance(metadata['datasets'][dataset]['xs'], float) else eval(metadata['datasets'][dataset]['xs']) ),
-                'lumi'  : float(metadata['datasets']['data'][year]['lumi']),
-                'year'  : year,
+                'xs'          : 1. if dataset in ['data','mixeddata'] else (metadata['datasets'][dataset]['xs'] if isinstance(metadata['datasets'][dataset]['xs'], float) else eval(metadata['datasets'][dataset]['xs']) ),
+                'lumi'        : float(metadata['datasets']['data'][year]['lumi']),
+                'year'        : year,
+                'processName' : dataset,
             }
 
             if isinstance( metadata['datasets'][dataset][year]["picoAOD"], dict):
-
+                
                 for iera, ifile in metadata['datasets'][dataset][year]["picoAOD"].items():
-                    idataset = f'{dataset}{year}{iera}'
+                    idataset = f'{dataset}_{year}{iera}'
                     metadata_dataset[idataset] = metadata_dataset[dataset]
                     metadata_dataset[idataset]['era'] = iera
-                    fileset[dataset+"_"+year] = {'files': [ f'root://cmseos.fnal.gov/{ifile}' ],
+                    fileset[idataset] = {'files': [ f'root://cmseos.fnal.gov/{ifile}' ],
                                                   'metadata': metadata_dataset[idataset]}
-                    logging.info(f'\nDataset {dataset+"_"+year} with {len(fileset[dataset+"_"+year]["files"])} files')
+                    logging.info(f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
 
             else:
                 fileset[dataset+"_"+year] = {'files': [ f'root://cmseos.fnal.gov/{metadata["datasets"][dataset][year]["picoAOD"]}' ],
@@ -119,7 +120,10 @@ if __name__ == '__main__':
     else:
         executor_args = {'schema': NanoAODSchema, 'workers': 6, 'savemetrics':True}
 
+
     logging.info( f"\nExecutor arguments: {executor_args}")
+
+
 
     #### Run processor
     processorName = args.processor.split('.')[0].replace("/",'.')
@@ -132,14 +136,15 @@ if __name__ == '__main__':
 
     tstart = time.time()
     print(f"fileset is {fileset}")
+
     output, metrics = processor.run_uproot_job(
         fileset,
         treename = 'Events',
         processor_instance = analysis(**metadata['config']),
         executor = processor.dask_executor if args.condor else processor.futures_executor,
         executor_args = executor_args,
-        chunksize = 1000 if args.test else 100_000,
-        maxchunks = 10 if args.test else None,
+        chunksize = 1_000 if args.test else 100_000,
+        maxchunks = 1 if args.test else None,
     )
     elapsed = time.time() - tstart
     if args.condor:
