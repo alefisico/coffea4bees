@@ -15,7 +15,7 @@ from functools import partial
 from multiprocessing import Pool
 import yaml
 
-from base_class.addhash import get_git_revision_short_hash, get_git_diff_master
+from base_class.addhash import get_git_revision_hash, get_git_diff
 
 
 if __name__ == '__main__':
@@ -157,9 +157,9 @@ if __name__ == '__main__':
 
     ##### Adding reproducible info
     output['reproducible'] = {
-        'hash' : get_git_revision_short_hash(),
+        'hash' : get_git_revision_hash(),
         'args' : args,
-        'diff' : get_git_diff_master(),
+        'diff' : get_git_diff(),
     }
 
     ##### Saving file
