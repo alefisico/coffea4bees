@@ -11,4 +11,4 @@ def get_git_diff_master() -> str:
     return subprocess.check_output(['git', 'diff', 'origin/master', 'HEAD']).decode('ascii')
 
 def get_git_diff() -> str:
-    return subprocess.check_output(['git', 'diff']).decode('ascii')
+    return subprocess.check_output(['git', 'diff', 'HEAD']).decode('ascii')
