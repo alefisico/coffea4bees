@@ -41,7 +41,8 @@ analysis-test-job:
     - export X509_USER_PROXY=${PWD}/proxy/x509_proxy
     - voms-proxy-info
     - cd python/
-    - python runner.py -t -o test.coffea -d HH4b ZH4b -p analysis/processors/processor_HH4b.py
+    - python runner.py -t -o test.coffea -d data TTToHadronic TTToSemiLeptonic TTTo2L2Nu  HH4b ZH4b -p analysis/processors/processor_HH4b.py
+    - python analysis/tests/cutflow_test.py
     - ls 
   artifacts: 
     expire_in: 1 day
@@ -67,24 +68,24 @@ analysis-plot-job:
       - python/testCoffeaPlots/RunII/
 
 
-analysis-cutflow-job:   
-  stage: test   
-  dependencies:
-    - voms_proxy
-  image: coffeateam/coffea-dask:latest
-  tags:
-    - k8s-cvmfs
-  script:
-    - export X509_USER_PROXY=${PWD}/proxy/x509_proxy
-    - voms-proxy-info
-    - cd python/
-    - python runner.py -d data        -p analysis/processors/processor_HH4b.py  -y UL16_preVFP UL16_postVFP UL17 UL18 -o histAll.coffea
-    - python analysis/tests/cutflow_test.py
-  artifacts: 
-    expire_in: 1 day
-    paths:
-      - python/hists/histAll.coffea
-
+#analysis-cutflow-job:   
+#  stage: test   
+#  dependencies:
+#    - voms_proxy
+#  image: coffeateam/coffea-dask:latest
+#  tags:
+#    - k8s-cvmfs
+#  script:
+#    - export X509_USER_PROXY=${PWD}/proxy/x509_proxy
+#    - voms-proxy-info
+#    - cd python/
+#    - python runner.py -d data        -p analysis/processors/processor_HH4b.py  -y UL16_preVFP UL16_postVFP UL17 UL18 -o histAll.coffea
+#    - python analysis/tests/cutflow_testAll.py
+#  artifacts: 
+#    expire_in: 1 day
+#    paths:
+#      - python/hists/histAll.coffea
+#
 
 
 ##### To build cmssw - but not needed now
