@@ -6,6 +6,8 @@ config:
   threeTag: true
   apply_puWeight: true
   apply_prefire: true
+  apply_trigWeight: true
+  apply_btagSF: true
   addbtagVariations: true
   addjuncVariations: false
   #SvB   : 'pytorchModels/SvB_HCR_8_np753_seed0_lr0.01_epochs20_offset*_epoch20.pkl',
