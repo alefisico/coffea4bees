@@ -94,14 +94,3 @@ if __name__ == '__main__':
     #cutList = hists["cutFlowThreeTagUnitWeight"][key].keys()
     printCF(key, cf4[key], cf4_unit[key], cf3[key], cf3_unit[key])
 
-#
-#    for e in eras:
-#        print(f"self.counts4['data_{e}'] = {'{'}",end='')
-#        for cut in ['passJetMult', 'passPreSel', 'passDiJetMass', 'SR', 'SB', 'passSvB', 'failSvB']:
-#            print(f"'{cut}' : {cf4['data_'+e][cut]}, ",end='')
-#        print(f"{'}'}")
-#         
-         
-         
-         
-         
