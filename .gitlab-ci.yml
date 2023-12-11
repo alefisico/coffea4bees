@@ -42,7 +42,6 @@ analysis-test-job:
     - voms-proxy-info
     - cd python/
     - python runner.py -t -o test.coffea -d data TTToHadronic TTToSemiLeptonic TTTo2L2Nu  HH4b ZH4b -p analysis/processors/processor_HH4b.py
-    - python analysis/tests/cutflow_test.py
     - ls 
   artifacts: 
     expire_in: 1 day
@@ -60,12 +59,26 @@ analysis-plot-job:
   script:
     - ls 
     - cd python/
-    - python analysis/makePlots.py -i hists/test.coffea  -o testCoffeaPlots -m analysis/metadata/plotTest.yml
+    - python analysis/makePlots.py --doTest -i hists/test.coffea  -o testCoffeaPlots -m analysis/metadata/plotTest.yml
     - ls testCoffeaPlots/RunII/passPreSel/fourTag/SB/SvB_ps.pdf
   artifacts:
     expire_in: 1 year
     paths:
       - python/testCoffeaPlots/RunII/
+
+analysis-cutflow-job:    
+  stage: plot 
+  dependencies: 
+    - analysis-test-job
+  image: coffeateam/coffea-dask:latest
+  tags:
+    - k8s-cvmfs
+  script:
+    - ls 
+    - cd python/
+    - python analysis/tests/cutflow_test.py
+
+
 
 
 #analysis-cutflow-job:   
