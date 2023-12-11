@@ -120,7 +120,7 @@ def count_nested_dict(nested_dict, c=0):
     return c
 
 class analysis(processor.ProcessorABC):
-    def __init__(self, JCM = '', addbtagVariations=None, addjuncVariations=None, SvB=None, SvB_MA=None, threeTag = True, apply_puWeight = False, apply_prefire = False, apply_trigWeight = True, regions=['SR'], corrections_metadata='analysis/metadata/corrections.yml', year='UL18', btagSF=True):
+    def __init__(self, *, JCM = '', addbtagVariations=None, addjuncVariations=None, SvB=None, SvB_MA=None, threeTag = True, apply_puWeight = False, apply_prefire = False, apply_trigWeight = True, apply_btagSF = True, regions=['SR'], corrections_metadata='analysis/metadata/corrections.yml', year='UL18', btagSF=True):
         logging.debug('\nInitialize Analysis Processor')
         self.blind = False
         print('Initialize Analysis Processor')
@@ -140,6 +140,7 @@ class analysis(processor.ProcessorABC):
         self.apply_puWeight = apply_puWeight
         self.apply_prefire  = apply_prefire
         self.apply_trigWeight = apply_trigWeight
+        self.apply_btagSF = apply_btagSF
         self.corrections_metadata = yaml.safe_load(open(corrections_metadata, 'r'))
         self.btagSF  = btagSF
 
@@ -202,6 +203,7 @@ class analysis(processor.ProcessorABC):
                           region  = [2,1,0], # SR / SB / Other
                           **dict((s, ...) for s in self.cuts))
 
+
         fill += hist.add('FvT',       (100, 0, 5, ('FvT.FvT', 'FvT reweight')))
         fill += hist.add('SvB_MA_ps', (100, 0, 1, ('SvB_MA.ps', 'SvB_MA Regressed P(Signal)')))
         fill += hist.add('SvB_ps', (100, 0, 1, ('SvB.ps', 'SvB Regressed P(Signal)')))
@@ -230,6 +232,7 @@ class analysis(processor.ProcessorABC):
         self.apply_puWeight   = (self.apply_puWeight  ) and isMC and (puWeight is not None)
         self.apply_prefire    = (self.apply_prefire   ) and isMC and ('L1PreFiringWeight' in event.fields) and (year!='UL18')
         self.apply_trigWeight = (self.apply_trigWeight) and isMC and ('trigWeight' in event.fields)
+        self.apply_btagSF     = (self.apply_btagSF)     and isMC and (self.btagSF is not None)
 
         if isMC:
             with uproot.open(fname) as rfile:
@@ -322,7 +325,9 @@ class analysis(processor.ProcessorABC):
 
         if isMC:
             event['weight'] = event.genWeight * (lumi * xs * kFactor / genEventSumw)
-            logging.debug(f"event['weight'] = event.genWeight * (lumi * xs * kFactor / genEventSumw) = {event.genWeight[0]} * ({lumi} * {xs} * {kFactor} / {genEventSumw}) = {event.weight[0]}")
+            logging.debug(f"event['weight'] = event.genWeight * (lumi * xs * kFactor / genEventSumw) = {event.genWeight[0]} * ({lumi} * {xs} * {kFactor} / {genEventSumw}) = {event.weight[0]}\n")
+            if self.apply_trigWeight: 
+                event['weight'] = event.weight * event.trigWeight.Data
 
         else:
             event['weight'] = 1
@@ -441,6 +446,7 @@ class analysis(processor.ProcessorABC):
             # Calculate and apply btag scale factors
             #
             if isMC and btagSF is not None:
+
                 #central = 'central'
                 use_central = True
                 btag_jes = []
@@ -471,6 +477,7 @@ class analysis(processor.ProcessorABC):
                     if sf == 'central':
                         SF = btagSF.evaluate('central', hf, eta, pt, tag)
                         SF = ak.unflatten(SF, nj)
+
                         # hf = ak.unflatten(hf, nj)
                         # pt = ak.unflatten(pt, nj)
                         # eta = ak.unflatten(eta, nj)
@@ -480,6 +487,7 @@ class analysis(processor.ProcessorABC):
                         #         print(f'jetPt/jetEta/jetTagScore/jetHadronFlavour/SF = {pt[i][j]}/{eta[i][j]}/{tag[i][j]}/{hf[i][j]}/{SF[i][j]}')
                         #     print(np.prod(SF[i]))
                         SF = np.prod(SF, axis=1)
+
                     if '_cf' in sf:
                         SF = btagSF.evaluate(sf, hf_c, eta_c, pt_c, tag_c)
                         SF = ak.unflatten(SF, nj_c)
@@ -489,10 +497,16 @@ class analysis(processor.ProcessorABC):
                         SF = ak.unflatten(SF, nj_bl)
                         SF = SF_c * np.prod(SF, axis=1) # use central value for charm jets
 
+
                     selev[f'btagSF_{sf}'] = SF * btagSF_norm
                     selev[f'weight_btagSF_{sf}'] = selev.weight * SF * btagSF_norm
 
-                selev['weight'] = selev[f'weight_btagSF_{"central" if use_central else btag_jes[0]}']
+                #
+                #  Apply btag SF
+                #
+                if self.apply_btagSF:
+                    selev['weight'] = selev[f'weight_btagSF_{"central" if use_central else btag_jes[0]}']
+
                 self._cutFlow.fill("passJetMult_btagSF",  selev, allTag=True)
 
 
