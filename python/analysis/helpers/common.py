@@ -101,21 +101,25 @@ def jet_corrections( uncorrJets,
     return correctJets
 
 
-def mask_event_decision(event, branch='HLT', list_to_mask=[''], list_to_skip=['']):
+def mask_event_decision(event, decision='OR', branch='HLT', list_to_mask=[''], list_to_skip=['']):
     '''
     Takes event.branch and passes an boolean array mask with the decisions of all the list_to_mask
     '''
 
-    decision = np.ones(len(event), dtype='bool')
+    tmp_list = []
     if branch in event.fields:
         for i in list_to_mask:
             if i in event[branch].fields:
-                decision = decision & event[branch][i]
+                tmp_list.append( event[branch][i] )
             elif i in list_to_skip: continue
             else: logging.warning(f'\n{i} branch not in {branch} for event.')
     else: logging.warning(f'\n{branch} branch not in event.')
+    tmp_array = np.array( tmp_list )
 
-    return decision
+    if decision.lower().startswith('or'): decision_array = np.any( tmp_array, axis=0 )
+    else: decision_array = np.all( tmp_array, axis=0 )
+
+    return decision_array
 
 def apply_btag_sf( junc='JES_Central'):
     '''
