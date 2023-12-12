@@ -14,6 +14,7 @@ import logging
 from functools import partial
 from multiprocessing import Pool
 import yaml
+from datetime import datetime
 
 from base_class.addhash import get_git_revision_hash, get_git_diff
 
@@ -31,6 +32,7 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--datasets', nargs='+', dest='datasets', default=['HH4b', 'ZZ4b', 'ZH4b'], help="Name of dataset to run. Example if more than one: -d HH4b ZZ4b")
     parser.add_argument('--condor', dest="condor", action="store_true", default=False, help='Run in condor')
     parser.add_argument( '--debug', help="Print lots of debugging statements", action="store_true", dest="debug", default=False)
+    parser.add_argument('--picoOrnano', dest="picoOrnano", default="picoAOD", help='picoAOD or nanoAOD. Example: --picoOrnano picoAOD')
     args = parser.parse_args()
     logging.basicConfig(level= logging.DEBUG if args.debug else logging.INFO )
 
@@ -40,8 +42,7 @@ if __name__ == '__main__':
 
 
     #### Metadata
-    metadata = yaml.safe_load(open(args.metadata, 'r'))   #### AGE: to be modified
-    metadata['config']['year'] = args.years[0]  ### check later for more years
+    metadata = yaml.safe_load(open(args.metadata, 'r'))
 
     if 'all' in args.datasets:
         metadata['datasets'].pop("mixeddata") ### AGE: this is temporary
@@ -68,11 +69,12 @@ if __name__ == '__main__':
                 'lumi'        : float(metadata['datasets']['data'][year]['lumi']),
                 'year'        : year,
                 'processName' : dataset,
+                'trigger'     : metadata['datasets']['data'][year]['trigger']
             }
 
-            if isinstance( metadata['datasets'][dataset][year]["picoAOD"], dict):
-                
-                for iera, ifile in metadata['datasets'][dataset][year]["picoAOD"].items():
+            if isinstance( metadata['datasets'][dataset][year][args.picoOrnano], dict):
+
+                for iera, ifile in metadata['datasets'][dataset][year][args.picoOrnano].items():
                     idataset = f'{dataset}_{year}{iera}'
                     metadata_dataset[idataset] = metadata_dataset[dataset]
                     metadata_dataset[idataset]['era'] = iera
@@ -81,7 +83,11 @@ if __name__ == '__main__':
                     logging.info(f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
 
             else:
-                fileset[dataset+"_"+year] = {'files': [ f'root://cmseos.fnal.gov/{metadata["datasets"][dataset][year]["picoAOD"]}' ],
+                if isinstance( metadata["datasets"][dataset][year][args.picoOrnano], list ):
+                    file_list = [ f'root://cmseos.fnal.gov/{ifile}' for ifile in metadata["datasets"][dataset][year][args.picoOrnano] ]
+                else:
+                    file_list = [f'root://cmseos.fnal.gov/{metadata["datasets"][dataset][year][args.picoOrnano]}']
+                fileset[dataset+"_"+year] = {'files': file_list,
                                              'metadata': metadata_dataset[dataset]}
 
                 logging.info(f'\nDataset {dataset+"_"+year} with {len(fileset[dataset+"_"+year]["files"])} files')
@@ -135,7 +141,7 @@ if __name__ == '__main__':
         sys.exit(0)
 
     tstart = time.time()
-    print(f"fileset is {fileset}")
+    logging.info(f"fileset is {fileset}")
 
     output, metrics = processor.run_uproot_job(
         fileset,
@@ -153,10 +159,12 @@ if __name__ == '__main__':
         logging.info(f'\n{nEvent/elapsed:,.0f} events/s total ({nEvent}/{elapsed}, processtime {processtime})')
     else:
         nEvent = sum([output['nEvent'][dataset] for dataset in output['nEvent'].keys()])
+        processtime = metrics['processtime']
         logging.info(f'\n{nEvent/elapsed:,.0f} events/s total ({nEvent}/{elapsed})')
 
     ##### Adding reproducible info
     output['reproducible'] = {
+        'date' : datetime.today().strftime('%Y-%m-%d %H:%M:%S'),
         'hash' : get_git_revision_hash(),
         'args' : args,
         'diff' : get_git_diff(),
