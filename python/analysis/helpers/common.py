@@ -7,8 +7,6 @@ warnings.filterwarnings("ignore")
 from coffea.nanoevents.methods import vector
 ak.behavior.update(vector.behavior)
 from coffea import processor, util
-# import hist as shh # https://hist.readthedocs.io/en/latest/
-# import hist
 import correctionlib
 import cachetools
 import logging
@@ -96,8 +94,83 @@ def jet_corrections( uncorrJets,
 
     #correctP4Jets = uncorrJets * jec
     correctJets = copy.deepcopy(uncorrJets)
+    correctJets['jet_energy_correction'] = jec
     correctJets['pt'] = correctJets.pt_raw * jec
     correctJets['mass'] = correctJets.mass_raw * jec
 
     return correctJets
 
+
+def mask_event_decision(event, branch='HLT', list_to_mask=[''], list_to_skip=['']):
+    '''
+    Takes event.branch and passes an boolean array mask with the decisions of all the list_to_mask
+    '''
+
+    decision = np.ones(len(event), dtype='bool')
+    if branch in event.fields:
+        for i in list_to_mask:
+            if i in event[branch].fields:
+                decision = decision & event[branch][i]
+            elif i in list_to_skip: continue
+            else: logging.warning(f'\n{i} branch not in {branch} for event.')
+    else: logging.warning(f'\n{branch} branch not in event.')
+
+    return decision
+
+def apply_btag_sf( junc='JES_Central'):
+    '''
+    This nees a work to make it more generic
+    '''
+
+    #central = 'central'
+    use_central = True
+    btag_jes = []
+    if junc != 'JES_Central':# and 'JER' not in junc:# and 'JES_Total' not in junc:
+        use_central = False
+        jes_or_jer = 'jer' if 'JER' in junc else 'jes'
+        btag_jes = [f'{direction}_{jes_or_jer}{variation.replace("JES_","").replace("Total","")}']
+    cj, nj = ak.flatten(selev.selJet), ak.num(selev.selJet)
+    hf, eta, pt, tag = np.array(cj.hadronFlavour), np.array(abs(cj.eta)), np.array(cj.pt), np.array(cj.btagDeepFlavB)
+
+    cj_bl = selev.selJet[selev.selJet.hadronFlavour!=4]
+    nj_bl = ak.num(cj_bl)
+    cj_bl = ak.flatten(cj_bl)
+    hf_bl, eta_bl, pt_bl, tag_bl = np.array(cj_bl.hadronFlavour), np.array(abs(cj_bl.eta)), np.array(cj_bl.pt), np.array(cj_bl.btagDeepFlavB)
+    SF_bl= btagSF.evaluate('central', hf_bl, eta_bl, pt_bl, tag_bl)
+    SF_bl = ak.unflatten(SF_bl, nj_bl)
+    SF_bl = np.prod(SF_bl, axis=1)
+
+    cj_c = selev.selJet[selev.selJet.hadronFlavour==4]
+    nj_c = ak.num(cj_c)
+    cj_c = ak.flatten(cj_c)
+    hf_c, eta_c, pt_c, tag_c = np.array(cj_c.hadronFlavour), np.array(abs(cj_c.eta)), np.array(cj_c.pt), np.array(cj_c.btagDeepFlavB)
+    SF_c= btagSF.evaluate('central', hf_c, eta_c, pt_c, tag_c)
+    SF_c = ak.unflatten(SF_c, nj_c)
+    SF_c = np.prod(SF_c, axis=1)
+
+    for sf in self.btagVar+btag_jes:
+        if sf == 'central':
+            SF = btagSF.evaluate('central', hf, eta, pt, tag)
+            SF = ak.unflatten(SF, nj)
+            # hf = ak.unflatten(hf, nj)
+            # pt = ak.unflatten(pt, nj)
+            # eta = ak.unflatten(eta, nj)
+            # tag = ak.unflatten(tag, nj)
+            # for i in range(len(selev)):
+            #     for j in range(nj[i]):
+            #         print(f'jetPt/jetEta/jetTagScore/jetHadronFlavour/SF = {pt[i][j]}/{eta[i][j]}/{tag[i][j]}/{hf[i][j]}/{SF[i][j]}')
+            #     print(np.prod(SF[i]))
+            SF = np.prod(SF, axis=1)
+        if '_cf' in sf:
+            SF = btagSF.evaluate(sf, hf_c, eta_c, pt_c, tag_c)
+            SF = ak.unflatten(SF, nj_c)
+            SF = SF_bl * np.prod(SF, axis=1) # use central value for b,l jets
+        if '_hf' in sf or '_lf' in sf or '_jes' in sf:
+            SF = btagSF.evaluate(sf, hf_bl, eta_bl, pt_bl, tag_bl)
+            SF = ak.unflatten(SF, nj_bl)
+            SF = SF_c * np.prod(SF, axis=1) # use central value for charm jets
+
+        selev[f'btagSF_{sf}'] = SF * btagSF_norm
+        selev[f'weight_btagSF_{sf}'] = selev.weight * SF * btagSF_norm
+
+    selev['weight'] = selev[f'weight_btagSF_{"central" if use_central else btag_jes[0]}']
