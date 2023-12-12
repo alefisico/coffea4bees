@@ -75,12 +75,9 @@ datasets:
 
   HH4b:
     xs: 0.03105*0.5824**2 # (0.0457 2018, doesn't include BR, 0.009788 2016, does include BR...) https://twiki.cern.ch/twiki/bin/view/LHCPhysics/LHCHWGHH recommends 31.05fb*BR^2=10.53fb
-    'UL16_postVFP': 
-      nanoAOD: '/dataset/dataset/NANOAODSIM'
-      picoAOD: '/store/user/algomez/XX4b/20231115/HH4b2016_postVFP/picoAOD.root'
     'UL16_preVFP': 
       nanoAOD: '/dataset/dataset/NANOAODSIM'
-      picoAOD: '/store/user/algomez/XX4b/20231115/HH4b2016_preVFP/picoAOD.root'
+      picoAOD: '/store/user/algomez/XX4b/20231115/HH4b2016/picoAOD.root'
     'UL17': 
       nanoAOD: '/dataset/dataset/NANOAODSIM'
       picoAOD: '/store/user/algomez/XX4b/20231115/HH4b2017/picoAOD.root'
