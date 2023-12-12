@@ -38,11 +38,7 @@ analysis-test-job:
   tags:
     - k8s-cvmfs
   script:
-    - export X509_USER_PROXY=${PWD}/proxy/x509_proxy
-    - voms-proxy-info
-    - cd python/
-    - python runner.py -t -o test.coffea -d data TTToHadronic TTToSemiLeptonic TTTo2L2Nu  HH4b ZH4b -p analysis/processors/processor_HH4b.py
-    - ls 
+    - source .ci-workflows/analysis-test-job.sh
   artifacts: 
     expire_in: 1 day
     paths:
@@ -57,14 +53,9 @@ analysis-plot-job:
   tags:
     - k8s-cvmfs
   script:
-    - ls 
-    - cd python/
-    - python analysis/makePlots.py --doTest -i hists/test.coffea  -o testCoffeaPlots -m analysis/metadata/plotTest.yml
-    - ls testCoffeaPlots/RunII/passPreSel/fourTag/SR/SvB_MA_ps_zz.pdf
-    - ls testCoffeaPlots/RunII/passPreSel/fourTag/SR/SvB_MA_ps_zh.pdf
-    - ls testCoffeaPlots/RunII/passPreSel/fourTag/SR/SvB_MA_ps_hh.pdf
+    - source .ci-workflows/analysis-plot-job.sh
   artifacts:
-    expire_in: 1 year
+    expire_in: 1 day
     paths:
       - python/testCoffeaPlots/RunII/
 
@@ -76,9 +67,7 @@ analysis-cutflow-job:
   tags:
     - k8s-cvmfs
   script:
-    - ls 
-    - cd python/
-    - python analysis/tests/cutflow_test.py
+    - source .ci-workflows/analysis-cutflow-job.sh
 
 
 
