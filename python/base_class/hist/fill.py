@@ -40,7 +40,12 @@ class Fill:
         return self._kwargs[key]
 
     def cache(self, events: ak.Array):
-        for v in self._kwargs.values():
+        if hs.Collection.current is None:
+            raise FillError('no histogram collection is specified')
+        for k, v in self._kwargs.items():
+            if (isinstance(v, str)
+                and isinstance(hs.Collection.current._axes.get(k), StrCategory)):
+                continue
             if check_type(v, FieldLike) and has_record(events, v) != v:
                 set_field(events, v, get_field(events, v))
 
