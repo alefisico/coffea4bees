@@ -19,7 +19,7 @@ def getHist(var='selJets.pt'):
 
 
 
-def _draw_plot(hPlot1, hBkg, plotConfig, **kwargs):
+def _draw_plot(hist_list, stack_dict,  **kwargs):
     r"""
     Takes options:
           "norm"   : bool
@@ -34,39 +34,39 @@ def _draw_plot(hPlot1, hBkg, plotConfig, **kwargs):
     """
 
     if kwargs.get("debug",False): print(f'\t in _draw_plot ... kwargs = {kwargs}')
-
     norm = kwargs.get("norm",False)
-    hPlot1Opts = {"density":norm,
-                  "label":plotConfig["plot1"].get("label","Data"),
-                  "color":plotConfig["plot1"].get("color","k"),
-                  "histtype":plotConfig["plot1"].get("histtype","errorbar"),
-                  "yerr": False,
-                  }
-    if plotConfig["plot1"].get("histtype","errorbar") in ["errorbar"]:
-        hPlot1Opts["markersize"] = 7
-        hPlot1Opts["yerr"] = True
+    
 
-    hPlot1  .plot(**hPlot1Opts)
+    #
+    #  Draw the stack
+    #
+    if len(stack_dict):
+        s = hist.Stack.from_dict(stack_dict)
+        s.plot(stack=True,histtype="fill",color=kwargs.get("stack_colors_fill"),density=norm)
+        s.plot(stack=True,histtype="step",color=kwargs.get("stack_colors_edge"),density=norm)
 
 
-    # colors: https://xkcd.com/color/rgb/
-    # hist options: https://mplhep.readthedocs.io/en/latest/api.html
-    hPlot2Opts = {"density":norm,
-                  "label":plotConfig["plot2"].get("label","Bkg"),
-                  "color":plotConfig["plot2"].get("color","xkcd:bright yellow"),
-                  "histtype":plotConfig["plot2"].get("histtype","fill"),
-                  "yerr":False,
-                  }
-    if plotConfig["plot2"].get("histtype","fill") in ["errorbar"]:
-        hPlot2Opts["markersize"] = 7
+    #
+    #  Draw the hists
+    #
+    hist_labels      = kwargs.get("hist_labels")
+    hist_fill_colors = kwargs.get("hist_fill_colors")
+    hist_edge_colors = kwargs.get("hist_edge_colors")
+    hist_types       = kwargs.get("hist_types")
+    for ih, h in enumerate(hist_list):
+        this_plot_options = {"density":norm,
+                             "label": hist_labels[ih],
+                             "color": hist_fill_colors[ih],
+                             "histtype":hist_types[ih],
+                             "yerr": False,
+                             }
+        if hist_types[ih] in ["errorbar"]:
+            this_plot_options["markersize"] = 7
+            this_plot_options["yerr"] = True
 
-    hBkg[0] .plot(**hPlot2Opts)
+        h  .plot(**this_plot_options)
 
-    if plotConfig["plot2"].get("drawEdge",True):
-        hBkg[0].plot(density=norm, color="k", histtype="step", yerr=False)
-    #hBkg[0].plot(density=norm, label="Multijet", color="xkcd:bright yellow", histtype="fill")
-
-
+    
     #
     #  xlabel
     #
@@ -108,7 +108,7 @@ def _draw_plot(hPlot1, hBkg, plotConfig, **kwargs):
 
 
 
-def _plot(hData, hBkg, plotConfig, **kwargs):
+def _plot(hist_list, stack_dict, plotConfig, **kwargs):
 
     if kwargs.get("debug",False): print(f'\t in plot ... kwargs = {kwargs}')
 
@@ -117,20 +117,19 @@ def _plot(hData, hBkg, plotConfig, **kwargs):
 
     fig.add_axes((0.1, 0.15, 0.85, 0.8))
 
-    _draw_plot(hData, hBkg, plotConfig, **kwargs)
+    _draw_plot(hist_list, stack_dict, **kwargs)
 
     ax = fig.gca()
-    hep.cms.label("Preliminary", data=True, year=kwargs['year'].replace("UL", "20"), loc=0, ax=ax)
+    hep.cms.label("Internal", data=True, year=kwargs['year'].replace("UL", "20"), loc=0, ax=ax)
     #ax.spines["top"]  .set_visible(False)
     #ax.spines["right"].set_visible(False)
     #ax.spines["left"] .set_visible(False)
-
 
     return fig
 
 
 
-def _plot_ratio(hData, hBkg, plotConfig, **kwargs):
+def _plot_ratio(hist_list, stack_dict, plotConfig, **kwargs):
     r"""
     Takes options:
         "norm"              : bool (False),
@@ -140,15 +139,14 @@ def _plot_ratio(hData, hBkg, plotConfig, **kwargs):
     }
     """
 
-
     size = 7
-    fig = plt.figure() #figsize=(size, size/_phi*4/3))
+    fig = plt.figure() 
     grid = fig.add_gridspec(2, 1, hspace=0.06, height_ratios=[3, 1], left=0.1, right=0.95, top=0.95, bottom=0.1 )
 
     main_ax    = fig.add_subplot(grid[0])
-    hep.cms.label("Preliminary", data=True, year=kwargs['year'].replace("UL", "20"), loc=0, ax=main_ax)
+    hep.cms.label("Internal", data=True, year=kwargs['year'].replace("UL", "20"), loc=0, ax=main_ax)
 
-    _draw_plot(hData, hBkg, plotConfig, **kwargs)
+    _draw_plot(hist_list, stack_dict,  **kwargs)
 
     top_xlabel = plt.gca().get_xlabel()
     plt.xlabel("")
@@ -156,14 +154,17 @@ def _plot_ratio(hData, hBkg, plotConfig, **kwargs):
     subplot_ax = fig.add_subplot(grid[1], sharex=main_ax)
     plt.setp(main_ax.get_xticklabels(), visible=False)
 
-    numValues = hData.values()
-    denValues = hBkg[0].values()
+    numValues = hist_list[0].values()
+    hStackHists = list(stack_dict.values())
+    denValues = [h.values() for h in hStackHists]
+    denValues = np.sum(denValues,axis=0)
+    
     denValues[denValues == 0] = _epsilon
     ratios = numValues / denValues
 
     if kwargs.get("norm",  False):
-        numSF = np.sum(hData.values(), axis=0)
-        denSF = np.sum(hBkg[0].values(), axis=0)
+        numSF = np.sum(hist_list[0].values(), axis=0)
+        denSF = np.sum(denValues, axis=0)
         ratios *= denSF/numSF
 
     # Set 0 and inf to nan to hide during plotting
@@ -181,7 +182,7 @@ def _plot_ratio(hData, hBkg, plotConfig, **kwargs):
         uncertainty_type=kwargs.get("uncertainty_type","poisson"),
     )
 
-    x_values = hData.axes[0].centers
+    x_values = hist_list[0].axes[0].centers
 
     subplot_ax.errorbar(
         x_values,
@@ -199,7 +200,6 @@ def _plot_ratio(hData, hBkg, plotConfig, **kwargs):
     plt.ylabel(kwargs.get("rlabel","Ratio"))
     plt.ylabel(plt.gca().get_ylabel(), loc='center')
 
-
     plt.xlabel(kwargs.get("xlabel",top_xlabel),loc='right')
 
     plt.ylim(*kwargs.get('rlim',[0,2]))
@@ -216,7 +216,6 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',cut="passPreSel",regio
        var      : 'selJets.pt',
        year     : "2017",
        cut      : "passPreSel",
-       tag      : "fourTag",
        region   : "SR",
 
        plotting opts
@@ -227,47 +226,115 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',cut="passPreSel",regio
 
     h = hists['hists'][var]
     varName = hists['hists'][var].axes[-1].name
-
+    rebin = kwargs.get("rebin",1)
+    
     cutDict = {}
     for c in cutList:
         cutDict[c] = sum
     cutDict[cut] = True
 
-    proc1 = plotConfig["plot1"]["process"]
-    year1 = sum if plotConfig["plot1"]["year"] == "RunII" else plotConfig["plot1"]["year"]
-    tag1  = plotConfig["codes"]["tag"][plotConfig["plot1"]["tag"]]
-
-    proc2 = plotConfig["plot2"]["process"]
-    year2 = sum if plotConfig["plot2"]["year"] == "RunII" else plotConfig["plot2"]["year"]
-    tag2  = plotConfig["codes"]["tag"][plotConfig["plot2"]["tag"]]
-
-    if kwargs.get("debug",False):
-        print("Drawing")
-        print(f" plot1 process={proc1}, tag={tag1}, year={year1}")
-        print(f" plot2 process={proc2}, tag={tag2}, year={year2}")
-
     #
-    #  Get Hists
-    #
-    rebin = kwargs.get("rebin",1)
-    hDataDict = {"process":proc1,  "year":year1,   "tag":hist.loc(tag1), "region":hist.loc(plotConfig["codes"]["region"][region]), varName:hist.rebin(rebin)}
-    hBkgDict  = {"process":proc2,  "year":year2,   "tag":hist.loc(tag2), "region":hist.loc(plotConfig["codes"]["region"][region]), varName:hist.rebin(rebin)}
-    for c in cutList:
-        hDataDict = hDataDict | {c:cutDict[c]}
-        hBkgDict  = hBkgDict  | {c:cutDict[c]}
+    #  Get the year
+    #    (Got to be a better way to do this....)
+    #   
+    year = "RunII"
+    tagName = "fourTag"
+    if len(plotConfig["hists"]):
+        for k,v in plotConfig["hists"].items():
+            if k == "year": year = v
+            if k == "tag":  tagName = v
 
-    hData = h[hDataDict]
-    hBkg  = h[hBkgDict]
-
-
-    if kwargs.get("doRatio",False):
-        fig = _plot_ratio(hData,[hBkg], plotConfig, **kwargs)
     else:
-        fig = _plot(hData,[hBkg], plotConfig, **kwargs)
+        for k,v in plotConfig["stack"].items():
+            if k == "year": year = v
+            if k == "tag":  tagName = v
+
+
+    print(f"year is {year}")
+            
+    #kwargs["year"] = plotConfig["hists"]
+    #["plot1"]["year"]
+    
+    #
+    #  Unstack hists
+    #
+    hists = []
+    hist_config = plotConfig["hists"]
+    hist_colors_fill = []
+    hist_colors_edge = []
+    hist_labels = []
+    hist_types  = []
+
+    for k,v in hist_config.items():
+        this_process = v["process"]
+        this_year = sum if v["year"] == "RunII" else v["year"]
+        this_tag  = plotConfig["codes"]["tag"][v["tag"]]
+        hist_colors_fill.append(v.get('fillcolor'))
+        hist_colors_edge.append(v.get('edgecolor'))
+        hist_labels.append(v.get("label"))
+        hist_types. append(v.get("histtype","errorbar"))
+                             
+        if kwargs.get("debug",False):
+            print(f" hist process={this_process}, tag={this_tag}, year={this_year}")
+
+        this_hist_dict = {"process":this_process,  "year":this_year,   "tag":hist.loc(this_tag), "region":hist.loc(plotConfig["codes"]["region"][region]), varName:hist.rebin(rebin)}        
+        for c in cutList:
+            this_hist_dict = this_hist_dict | {c:cutDict[c]}
+
+            
+        hists.append(h[this_hist_dict])
+        hists[-1] *= v.get("scalefactor", 1.0)
+
+        
+    #
+    # Add args
+    #
+    kwargs["year"] = year
+    kwargs["hist_fill_colors"] = hist_colors_fill
+    kwargs["hist_edge_colors"] = hist_colors_edge
+    kwargs["hist_labels"]      = hist_labels
+    kwargs["hist_types"]       = hist_types
+
+    #
+    #  The stack
+    #
+    stack_dict = {}
+    stack_config = plotConfig.get("stack",{})
+    stack_colors_fill = []
+    stack_colors_edge = []
+
+    for k,v in stack_config.items():
+        this_year2 = sum if v["year"] == "RunII" else v["year"]
+        this_tag2  = plotConfig["codes"]["tag"][v["tag"]]
+        this_process = v['process']
+        this_label   = v.get('label')
+        stack_colors_fill.append(v.get('fillcolor'))
+        stack_colors_edge.append(v.get('edgecolor'))
+        
+        if kwargs.get("debug",False):
+            print("Drawing")
+            print(f" stack_config process={this_process}, tag={this_tag2}, year={this_year2}")
+
+
+        hBkgDict  = {"process":this_process,  "year":this_year2,   "tag":hist.loc(this_tag2), "region":hist.loc(plotConfig["codes"]["region"][region]), varName:hist.rebin(rebin)}
+        for c in cutList:
+            hBkgDict  = hBkgDict  | {c:cutDict[c]}
+
+        stack_dict[this_label] = h[hBkgDict]
+
+    #
+    # Pass colors 
+    #
+    kwargs["stack_colors_fill"] = stack_colors_fill
+    kwargs["stack_colors_edge"] = stack_colors_edge
+    
+    if kwargs.get("doRatio",False):
+        fig = _plot_ratio(hists,stack_dict, plotConfig, **kwargs)
+    else:
+        fig = _plot(hists,stack_dict, plotConfig,  **kwargs)
 
     if kwargs.get("outputFolder",None):
-        yearName = plotConfig["plot1"]["year"]
-        tagName  = plotConfig["plot1"]["tag"]
+        yearName = year
         outputPath = kwargs.get("outputFolder")+"/"+"/".join([yearName,cut,tagName,region])
         if not os.path.exists(outputPath): os.makedirs(outputPath)
         fig.savefig(outputPath+"/"+var.replace(".",'_')+".pdf")

@@ -26,15 +26,16 @@ def ls(option="var", match=None):
             print(k)
         
 
-def plot(var='selJets.pt',year="2017",cut="passPreSel",tag="fourTag",region="SR", **kwargs):
+def plot(var='selJets.pt', *, cut="passPreSel",region="SR", **kwargs):
     r"""
+    Plot
+
+
     Takes Options:
 
        debug    : False,
        var      : 'selJets.pt',
-       year     : "2017",
        cut      : "passPreSel",
-       tag      : "fourTag",
        region   : "SR",
     
        plotting opts
@@ -48,7 +49,7 @@ def plot(var='selJets.pt',year="2017",cut="passPreSel",tag="fourTag",region="SR"
         ls(match=var.replace("*",""))
         return 
 
-    fig = makePlot(hists, cutList, plotConfig, var=var, year=year, cut=cut, tag=tag, region=region, outputFolder=args.outputFolder, **kwargs)
+    fig = makePlot(hists, cutList, plotConfig, var=var, cut=cut, region=region, outputFolder=args.outputFolder, **kwargs)
 
 
     fileName = "test.pdf"

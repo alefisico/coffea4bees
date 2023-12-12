@@ -1,0 +1,88 @@
+hists:
+        process1:
+                process: data
+                tag: fourTag
+                year: RunII
+                label: Data
+                edgecolor: k
+                fillcolor: k            
+
+        HH4b:
+                process: HH4b
+                tag: fourTag
+                year: RunII
+                label: HH4b
+                edgecolor: r
+                fillcolor: r            
+                histtype: step
+                scalefactor: 100
+                
+        ZH4b:
+                process: ZH4b
+                tag: fourTag
+                year: RunII
+                label: ZH4b
+                edgecolor: b
+                fillcolor: b            
+                histtype: step
+                scalefactor: 100
+                
+        ZZ4b:
+                process: ZZ4b
+                tag: fourTag
+                year: RunII
+                label: ZZ4b
+                edgecolor: g
+                fillcolor: g            
+                histtype: step
+                scalefactor: 100
+
+
+stack:
+        process1:
+                process: TTTo2L2Nu
+                tag: fourTag
+                year: RunII
+                fillcolor: xkcd:light blue
+                edgecolor: xkcd:light blue
+                label: TT 2L
+
+        process2:
+                process: TTToSemiLeptonic
+                tag: fourTag
+                year: RunII
+                fillcolor: xkcd:light blue
+                edgecolor: xkcd:light blue
+                label: TT Semi-lep
+
+        process3:
+                process: TTToHadronic
+                tag: fourTag
+                year: RunII
+                fillcolor: xkcd:light blue
+                edgecolor: xkcd:blue
+                label: TT Had
+
+
+        process4:
+                process: data
+                tag: threeTag
+                year: RunII
+                fillcolor: xkcd:bright yellow
+                edgecolor: k
+                label: Multijet
+
+
+
+codes:
+   region:
+      SR: 2
+      SB: 1
+      other: 0
+   tag:
+      threeTag: 3
+      fourTag: 4
+      other: 0
+
+rebin:
+    0
