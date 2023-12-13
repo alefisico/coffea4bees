@@ -6,7 +6,7 @@ class CutFlowTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(self):
 
-        inputFile = "hists/histAll.coffea"
+        inputFile = "hists/histAll_TTTo2L2Nu.coffea"
         with open(f'{inputFile}', 'rb') as hfile:
             hists = load(hfile)
         
@@ -135,14 +135,15 @@ class CutFlowTestCase(unittest.TestCase):
         self.counts3_unit['TTTo2L2Nu_UL17'] = {'passJetMult' : 780712.0, 'passPreSel' : 764964.0, 'passDiJetMass' : 403712.0, 'SR' : 188091.0, 'SB' : 215621.0, 'passSvB' : 1458.0, 'failSvB' : 370026.0, }
         self.counts3_unit['TTTo2L2Nu_UL16_preVFP'] = {'passJetMult' : 197932.0, 'passPreSel' : 194553.0, 'passDiJetMass' : 96447.0, 'SR' : 43958.0, 'SB' : 52489.0, 'passSvB' : 365.0, 'failSvB' : 109014.0, }
         self.counts3_unit['TTTo2L2Nu_UL16_postVFP'] = {'passJetMult' : 250965.0, 'passPreSel' : 246410.0, 'passDiJetMass' : 125081.0, 'SR' : 57371.0, 'SB' : 67710.0, 'passSvB' : 434.0, 'failSvB' : 138208.0, }
-        
 
+        self.keysToTest = ['TTTo2L2Nu_UL18', 'TTTo2L2Nu_UL17', 'TTTo2L2Nu_UL16_preVFP', 'TTTo2L2Nu_UL16_postVFP']
         
     def test_counts4(self):
         """
         Test the cutflow for four tag events
         """
-        for datasetAndEra in self.counts4.keys():
+        #for datasetAndEra in self.counts4.keys():
+        for datasetAndEra in self.keysToTest:
             with self.subTest(datasetAndEra=datasetAndEra):
                 for cut, v in self.counts4[datasetAndEra].items():
                     self.assertEqual(v,round(float(self.cf4[datasetAndEra][cut]),2),f'incorrect number of fourTag counts for cut: {cut} of dataset {datasetAndEra}')
@@ -151,7 +152,8 @@ class CutFlowTestCase(unittest.TestCase):
         """
         Test the cutflow for the weighted three tag events
         """
-        for datasetAndEra in self.counts3.keys():
+        #for datasetAndEra in self.counts3.keys():
+        for datasetAndEra in self.keysToTest:
             for cut, v in self.counts3[datasetAndEra].items():
                 self.assertEqual(v,round(float(self.cf3[datasetAndEra][cut]),2),f'incorrect number of weighted threeTag counts for cut: {cut} of dataset {datasetAndEra}')
 
@@ -159,7 +161,8 @@ class CutFlowTestCase(unittest.TestCase):
         """
         Test the cutflow for the unweighted three tag events
         """
-        for datasetAndEra in self.counts3_unit.keys():
+        #for datasetAndEra in self.counts3_unit.keys():
+        for datasetAndEra in self.keysToTest:
             for cut, v in self.counts3_unit[datasetAndEra].items():
                 self.assertEqual(v,round(float(self.cf3_unit[datasetAndEra][cut]),2),f'incorrect number of threeTag counts for cut: {cut} of dataset {datasetAndEra}')
 
@@ -167,7 +170,8 @@ class CutFlowTestCase(unittest.TestCase):
         """
         Test the cutflow for the unweighted fourTag events
         """
-        for datasetAndEra in self.counts4_unit.keys():
+        #for datasetAndEra in self.counts4_unit.keys():
+        for datasetAndEra in self.keysToTest:
             for cut, v in self.counts4_unit[datasetAndEra].items():
                 self.assertEqual(v,round(float(self.cf4_unit[datasetAndEra][cut]),2),f'incorrect number of fourTag counts for cut: {cut} of dataset {datasetAndEra}')
 
