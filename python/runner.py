@@ -36,8 +36,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
     logging.basicConfig(level= logging.DEBUG if args.debug else logging.INFO )
 
-    if args.test:
-        args.output_file='test.coffea'
     logging.info(f"\nRunning with these parameters: {args}")
 
 
@@ -85,7 +83,7 @@ if __name__ == '__main__':
 
             else:
                 if isinstance( metadata["datasets"][dataset][year][args.picoOrnano], list ):
-                    file_list = [ f'{xrootd_url}{ifile}' for ifile in metadata["datasets"][dataset][year][args.picoOrnano] ]
+                    file_list = [ f'{xrootd_url}{ifile}' for ifile in metadata["datasets"][dataset][year][args.picoOrnano] ][:(2 if args.test else -1)]
                 else:
                     file_list = [f'{xrootd_url}{metadata["datasets"][dataset][year][args.picoOrnano]}']
                 fileset[dataset+"_"+year] = {'files': file_list,
