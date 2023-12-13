@@ -79,6 +79,7 @@
     - BadPFMuonDzFilter
     - hfNoisyHitsFilter
     - ecalBadCalibFilter
+  rochesterCorrections: data/roccor/RoccoR2018UL.txt
 
 '2022':
   goldenJSON: 'data/goldenJSON/Cert_Collisions2022_355100_362760_Golden.json'

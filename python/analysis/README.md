@@ -10,18 +10,18 @@ source ../shell
 
 Here you find the code to run the analysis from `picoAODs` and to make some plots. (The skimming part is still not here, Nov 2023) 
 Each folder contains:
- - data: files needed for corrections (to be eliminated in favor or jsonpog)
  - helpers: python files with funcions/classes generic to the analyses
  - metadata: yml files with the metadata for each analysis. In these files you can find input files, datasets, cross sections, etc. 
  - processors: python files with the processors for each analysis.
  - pytorchModels: training models
  - weights: JCM txt files with weights
+ - tests: python scripts for testing the code.
  - hists (optional): if you run the `runner.py` without a name of the output folder, this folder will be created to store the pickle files.
 
 Then, the run-all script is called `runner.py` and it is one directory below (in [analysis/](../analysis/)). This script will run local or condor depending on the flag used. To learn all the options of the script, just run:
 ```
 # (inside /coffea4bees/python/)
-python run.py --help
+python runner.py --help
 ```
 
 ## To run the analysis
@@ -48,8 +48,20 @@ python analysis/makePlots.py -i hists/hists.coffea  -o testPlotsNew
 ## To produce some plots interactively
 
 ```
-py -i analysis/iPlot.py      -i hists/hists.coffea  -o testPlotsNew
+python -i analysis/iPlot.py      -i hists/hists.coffea  -o testPlotsNew
 
 >>> plot("SvB_MA_ps_zh",cut="passPreSel",region="SB",doRatio=True,debug=True,ylabel="Entries",norm=False,legend=True,rebin=5,yscale='log')
 
 ```
+
+## To debug the code
+
+If you want to debug small portions of the code, you can run it interactively using some commands like:
+```
+python
+>>> from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
+>>> fname = "root://xrootd-cms.infn.it//store/mc/RunIISummer20UL18NanoAODv9/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8/NANOAODSIM/20UL18JMENano_106X_upgrade2018_realistic_v16_L1v1-v1/230000/9EEE27FD-7337-424F-9D7C-A5427A991D07.root"   #### or any nanoaod file
+>>> events = NanoEventsFactory.from_root( fname, schemaclass=NanoAODSchema.v6).events()
+```
+
+
