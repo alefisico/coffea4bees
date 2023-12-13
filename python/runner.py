@@ -72,21 +72,22 @@ if __name__ == '__main__':
                 'trigger'     : metadata['datasets']['data'][year]['trigger']
             }
 
+            xrootd_url = 'root://cmseos.fnal.gov/' if args.picoOrnano.startswith('pico') else 'root://xrootd-cms.infn.it/'
             if isinstance( metadata['datasets'][dataset][year][args.picoOrnano], dict):
 
                 for iera, ifile in metadata['datasets'][dataset][year][args.picoOrnano].items():
                     idataset = f'{dataset}_{year}{iera}'
                     metadata_dataset[idataset] = metadata_dataset[dataset]
                     metadata_dataset[idataset]['era'] = iera
-                    fileset[idataset] = {'files': [ f'root://cmseos.fnal.gov/{ifile}' ],
+                    fileset[idataset] = {'files': [ f'{xrootd_url}{ifile}' ],
                                                   'metadata': metadata_dataset[idataset]}
                     logging.info(f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
 
             else:
                 if isinstance( metadata["datasets"][dataset][year][args.picoOrnano], list ):
-                    file_list = [ f'root://cmseos.fnal.gov/{ifile}' for ifile in metadata["datasets"][dataset][year][args.picoOrnano] ]
+                    file_list = [ f'{xrootd_url}{ifile}' for ifile in metadata["datasets"][dataset][year][args.picoOrnano] ]
                 else:
-                    file_list = [f'root://cmseos.fnal.gov/{metadata["datasets"][dataset][year][args.picoOrnano]}']
+                    file_list = [f'{xrootd_url}{metadata["datasets"][dataset][year][args.picoOrnano]}']
                 fileset[dataset+"_"+year] = {'files': file_list,
                                              'metadata': metadata_dataset[dataset]}
 
