@@ -25,7 +25,7 @@ from coffea import processor, util
 
 from base_class.hist import Collection, Fill
 from base_class.aktools import where
-from base_class.physics.object import LorentzVector
+from base_class.physics.object import LorentzVector, Jet
 
 from analysis.helpers.MultiClassifierSchema import MultiClassifierSchema
 from analysis.helpers.correctionFunctions import btagVariations, juncVariations
@@ -238,72 +238,43 @@ class analysis(processor.ProcessorABC):
                           **dict((s, ...) for s in self.histCuts))
 
 
-#    nSelJetsUnweighted = dir.make<TH1F>("nSelJetsUnweighted", (name+"/nSelJetsUnweighted; Number of Selected Jets (Unweighted); Entries").c_str(),  16,-0.5,15.5);
-#    nTagJets = dir.make<TH1F>("nTagJets", (name+"/nTagJets; Number of Tagged Jets; Entries").c_str(),  16,-0.5,15.5);
-#    nTagJetsUnweighted = dir.make<TH1F>("nTagJetsUnweighted", (name+"/nTagJets; Number of Tagged Jets; Entries").c_str(),  16,-0.5,15.5);
-#    nPSTJets = dir.make<TH1F>("nPSTJets", (name+"/nPSTJets; Number of Tagged + Pseudo-Tagged Jets; Entries").c_str(),  16,-0.5,15.5);
-#    tagJets = new jetHists(name+"/tagJets", fs, "Tagged Jets");
 
-#    nAllMuons = dir.make<TH1F>("nAllMuons", (name+"/nAllMuons; Number of Muons (no selection); Entries").c_str(),  6,-0.5,5.5);
-#    nIsoMed25Muons = dir.make<TH1F>("nIsoMed25Muons", (name+"/nIsoMed25Muons; Number of Prompt Muons; Entries").c_str(),  6,-0.5,5.5);
-#    nIsoMed40Muons = dir.make<TH1F>("nIsoMed40Muons", (name+"/nIsoMed40Muons; Number of Prompt Muons; Entries").c_str(),  6,-0.5,5.5);
-#    allMuons        = new muonHists(name+"/allMuons", fs, "All Muons");
-#    muons_isoMed25  = new muonHists(name+"/muon_isoMed25", fs, "iso Medium 25 Muons");
-#    muons_isoMed40  = new muonHists(name+"/muon_isoMed40", fs, "iso Medium 40 Muons");
+        #
+        # To Add
+        #
+        #    nSelJetsUnweighted = dir.make<TH1F>("nSelJetsUnweighted", (name+"/nSelJetsUnweighted; Number of Selected Jets (Unweighted); Entries").c_str(),  16,-0.5,15.5);
+        #    nTagJets = dir.make<TH1F>("nTagJets", (name+"/nTagJets; Number of Tagged Jets; Entries").c_str(),  16,-0.5,15.5);
+        #    nTagJetsUnweighted = dir.make<TH1F>("nTagJetsUnweighted", (name+"/nTagJets; Number of Tagged Jets; Entries").c_str(),  16,-0.5,15.5);
+        #    nPSTJets = dir.make<TH1F>("nPSTJets", (name+"/nPSTJets; Number of Tagged + Pseudo-Tagged Jets; Entries").c_str(),  16,-0.5,15.5);
+        #    tagJets = new jetHists(name+"/tagJets", fs, "Tagged Jets");
+        
+        #    nAllMuons = dir.make<TH1F>("nAllMuons", (name+"/nAllMuons; Number of Muons (no selection); Entries").c_str(),  6,-0.5,5.5);
+        #    nIsoMed25Muons = dir.make<TH1F>("nIsoMed25Muons", (name+"/nIsoMed25Muons; Number of Prompt Muons; Entries").c_str(),  6,-0.5,5.5);
+        #    nIsoMed40Muons = dir.make<TH1F>("nIsoMed40Muons", (name+"/nIsoMed40Muons; Number of Prompt Muons; Entries").c_str(),  6,-0.5,5.5);
+        #    allMuons        = new muonHists(name+"/allMuons", fs, "All Muons");
+        #    muons_isoMed25  = new muonHists(name+"/muon_isoMed25", fs, "iso Medium 25 Muons");
+        #    muons_isoMed40  = new muonHists(name+"/muon_isoMed40", fs, "iso Medium 40 Muons");
+        
+        
+        #    nAllElecs = dir.make<TH1F>("nAllElecs", (name+"/nAllElecs; Number of Elecs (no selection); Entries").c_str(),  16,-0.5,15.5);
+        #    nIsoMed25Elecs = dir.make<TH1F>("nIsoMed25Elecs", (name+"/nIsoMed25Elecs; Number of Prompt Elecs; Entries").c_str(),  6,-0.5,5.5);
+        #    nIsoMed40Elecs = dir.make<TH1F>("nIsoMed40Elecs", (name+"/nIsoMed40Elecs; Number of Prompt Elecs; Entries").c_str(),  6,-0.5,5.5);
+        #    allElecs        = new elecHists(name+"/allElecs", fs, "All Elecs");
+        #    elecs_isoMed25  = new elecHists(name+"/elec_isoMed25", fs, "iso Medium 25 Elecs");
+        #    elecs_isoMed40  = new elecHists(name+"/elec_isoMed40", fs, "iso Medium 40 Elecs");
+        #  
+        
+        #    leadSt_m_vs_sublSt_m = dir.make<TH2F>("leadSt_m_vs_sublSt_m", (name+"/leadSt_m_vs_sublSt_m; S_{T} leading boson candidate Mass [GeV]; S_{T} subleading boson candidate Mass [GeV]; Entries").c_str(), 50,0,250, 50,0,250);
+        #    m4j_vs_leadSt_dR = dir.make<TH2F>("m4j_vs_leadSt_dR", (name+"/m4j_vs_leadSt_dR; m_{4j} [GeV]; S_{T} leading boson candidate #DeltaR(j,j); Entries").c_str(), 40,100,1100, 25,0,5);
+        #    m4j_vs_sublSt_dR = dir.make<TH2F>("m4j_vs_sublSt_dR", (name+"/m4j_vs_sublSt_dR; m_{4j} [GeV]; S_{T} subleading boson candidate #DeltaR(j,j); Entries").c_str(), 40,100,1100, 25,0,5);
+
+        #    close  = new dijetHists(name+"/close",  fs,               "Minimum #DeltaR(j,j) Dijet");
+        #    other  = new dijetHists(name+"/other",  fs, "Complement of Minimum #DeltaR(j,j) Dijet");
+        #    close_m_vs_other_m = dir.make<TH2F>("close_m_vs_other_m", (name+"/close_m_vs_other_m; Minimum #DeltaR(j,j) Dijet Mass [GeV]; Complement of Minimum #DeltaR(j,j) Dijet Mass [GeV]; Entries").c_str(), 50,0,250, 50,0,250);
+
+        #    st = dir.make<TH1F>("st", (name+"/st; Scalar sum of jet p_{T}'s [GeV]; Entries").c_str(), 130, 200, 1500);
 
 
-#    nAllElecs = dir.make<TH1F>("nAllElecs", (name+"/nAllElecs; Number of Elecs (no selection); Entries").c_str(),  16,-0.5,15.5);
-#    nIsoMed25Elecs = dir.make<TH1F>("nIsoMed25Elecs", (name+"/nIsoMed25Elecs; Number of Prompt Elecs; Entries").c_str(),  6,-0.5,5.5);
-#    nIsoMed40Elecs = dir.make<TH1F>("nIsoMed40Elecs", (name+"/nIsoMed40Elecs; Number of Prompt Elecs; Entries").c_str(),  6,-0.5,5.5);
-#    allElecs        = new elecHists(name+"/allElecs", fs, "All Elecs");
-#    elecs_isoMed25  = new elecHists(name+"/elec_isoMed25", fs, "iso Medium 25 Elecs");
-#    elecs_isoMed40  = new elecHists(name+"/elec_isoMed40", fs, "iso Medium 40 Elecs");
-#  
-
-#    leadSt_m_vs_sublSt_m = dir.make<TH2F>("leadSt_m_vs_sublSt_m", (name+"/leadSt_m_vs_sublSt_m; S_{T} leading boson candidate Mass [GeV]; S_{T} subleading boson candidate Mass [GeV]; Entries").c_str(), 50,0,250, 50,0,250);
-#    m4j_vs_leadSt_dR = dir.make<TH2F>("m4j_vs_leadSt_dR", (name+"/m4j_vs_leadSt_dR; m_{4j} [GeV]; S_{T} leading boson candidate #DeltaR(j,j); Entries").c_str(), 40,100,1100, 25,0,5);
-#    m4j_vs_sublSt_dR = dir.make<TH2F>("m4j_vs_sublSt_dR", (name+"/m4j_vs_sublSt_dR; m_{4j} [GeV]; S_{T} subleading boson candidate #DeltaR(j,j); Entries").c_str(), 40,100,1100, 25,0,5);
-
-
-# Jet level deepJet
-
-#  //
-#    // Object Level
-#    //
-
-#  
-#  
-#    close  = new dijetHists(name+"/close",  fs,               "Minimum #DeltaR(j,j) Dijet");
-#    other  = new dijetHists(name+"/other",  fs, "Complement of Minimum #DeltaR(j,j) Dijet");
-#    close_m_vs_other_m = dir.make<TH2F>("close_m_vs_other_m", (name+"/close_m_vs_other_m; Minimum #DeltaR(j,j) Dijet Mass [GeV]; Complement of Minimum #DeltaR(j,j) Dijet Mass [GeV]; Entries").c_str(), 50,0,250, 50,0,250);
-#      
-#    //
-#    // Event  Level
-#    //
-#    nPVs = dir.make<TH1F>("nPVs", (name+"/nPVs; Number of Primary Vertices; Entries").c_str(), 101, -0.5, 100.5);
-#    nPVsGood = dir.make<TH1F>("nPVsGood", (name+"/nPVs; Number of Good (!isFake && ndof > 4 && abs(z) <= 24 && position.Rho <= 2) Primary Vertices; Entries").c_str(), 101, -0.5, 100.5);
-#    st = dir.make<TH1F>("st", (name+"/st; Scalar sum of jet p_{T}'s [GeV]; Entries").c_str(), 130, 200, 1500);
-#    stNotCan = dir.make<TH1F>("stNotCan", (name+"/stNotCan; Scalar sum all other jet p_{T}'s [GeV]; Entries").c_str(), 150, 0, 1500);
-#    v4j = new fourVectorHists(name+"/v4j", fs, "4j");
-#    s4j = dir.make<TH1F>("s4j", (name+"/s4j; Scalar sum of boson candidate jet p_{T}'s [GeV]; Entries").c_str(), 90, 100, 1000);
-#    r4j = dir.make<TH1F>("r4j", (name+"/r4j; Quadjet system p_{T} / s_{T}; Entries").c_str(), 50, 0, 1);
-#    // m123 = dir.make<TH1F>("m123", (name+"/m123; m_{1,2,3}; Entries").c_str(), 100, 0, 1000);
-#    // m023 = dir.make<TH1F>("m023", (name+"/m023; m_{0,2,3}; Entries").c_str(), 100, 0, 1000);
-#    // m013 = dir.make<TH1F>("m013", (name+"/m013; m_{0,1,3}; Entries").c_str(), 100, 0, 1000);
-#    // m012 = dir.make<TH1F>("m012", (name+"/m012; m_{0,1,2}; Entries").c_str(), 100, 0, 1000);
-#    dBB = dir.make<TH1F>("dBB", (name+"/dBB; D_{BB}; Entries").c_str(), 40, 0, 200);
-#    dEtaBB = dir.make<TH1F>("dEtaBB", (name+"/dEtaBB; #Delta#eta_{BB}; Entries").c_str(), 100, -5, 5);
-#    dPhiBB = dir.make<TH1F>("dPhiBB", (name+"/dPhiBB; #Delta#phi_{BB}; Entries").c_str(), 100, -3.2, 3.2);
-#    dRBB = dir.make<TH1F>("dRBB", (name+"/dRBB; #Delta#R_{BB}; Entries").c_str(), 50, 0, 5);
-#  
-#    xZZ = dir.make<TH1F>("xZZ", (name+"/xZZ; X_{ZZ}; Entries").c_str(), 100, 0, 10);
-#    Double_t bins_mZZ[] = {100, 182, 200, 220, 242, 266, 292, 321, 353, 388, 426, 468, 514, 565, 621, 683, 751, 826, 908, 998, 1097, 1206, 1326, 1500};
-#    mZZ = dir.make<TH1F>("mZZ", (name+"/mZZ; m_{ZZ} [GeV]; Entries").c_str(), 23, bins_mZZ);
-#  
-#    xZH = dir.make<TH1F>("xZH", (name+"/xZH; X_{ZH}; Entries").c_str(), 100, 0, 10);  
-#    Double_t bins_mZH[] = {100, 216, 237, 260, 286, 314, 345, 379, 416, 457, 502, 552, 607, 667, 733, 806, 886, 974, 1071, 1178, 1295, 1500};
-#    mZH = dir.make<TH1F>("mZH", (name+"/mZH; m_{ZH} [GeV]; Entries").c_str(), 21, bins_mZH);
-#  
 #    xWt0 = dir.make<TH1F>("xWt0", (name+"/xWt0; X_{Wt,0}; Entries").c_str(), 60, 0, 12);
 #    xWt1 = dir.make<TH1F>("xWt1", (name+"/xWt1; X_{Wt,1}; Entries").c_str(), 60, 0, 12);
 #    //xWt2 = dir.make<TH1F>("xWt2", (name+"/xWt2; X_{Wt,2}; Entries").c_str(), 60, 0, 12);
@@ -313,6 +284,8 @@ class analysis(processor.ProcessorABC):
 #    //t2 = new trijetHists(name+"/t2",  fs, "Top Candidate (#geq2 non-candidate jets)");
 #    t = new trijetHists(name+"/t",  fs, "Top Candidate");
 #  
+
+
 #    FvT = dir.make<TH1F>("FvT", (name+"/FvT; Kinematic Reweight; Entries").c_str(), 100, 0, 5);
 #    FvTUnweighted = dir.make<TH1F>("FvTUnweighted", (name+"/FvTUnweighted; Kinematic Reweight; Entries").c_str(), 100, 0, 5);
 #    FvT_pd4 = dir.make<TH1F>("FvT_pd4", (name+"/FvT_pd4; FvT Regressed P(Four-tag Data) ; Entries").c_str(), 100, 0, 1);
@@ -324,7 +297,9 @@ class analysis(processor.ProcessorABC):
 #    FvT_pt  = dir.make<TH1F>("FvT_pt",  (name+"/FvT_pt;  FvT Regressed P(t#bar{t}) ; Entries").c_str(), 100, 0, 1);
 #    FvT_std = dir.make<TH1F>("FvT_std",  (name+"/FvT_pt;  FvT Standard Deviation ; Entries").c_str(), 100, 0, 5);
 #    FvT_ferr = dir.make<TH1F>("FvT_ferr",  (name+"/FvT_ferr;  FvT std/FvT ; Entries").c_str(), 100, 0, 5);
-#  
+
+
+#  SvB and SvB MA
 #    SvB_ps  = dir.make<TH1F>("SvB_ps",  (name+"/SvB_ps;  SvB Regressed P(ZZ)+P(ZH); Entries").c_str(), 100, 0, 1);
 #    SvB_pzz = dir.make<TH1F>("SvB_pzz", (name+"/SvB_pzz; SvB Regressed P(ZZ); Entries").c_str(), 100, 0, 1);
 #    SvB_pzh = dir.make<TH1F>("SvB_pzh", (name+"/SvB_pzh; SvB Regressed P(ZH); Entries").c_str(), 100, 0, 1);
@@ -333,122 +308,26 @@ class analysis(processor.ProcessorABC):
 #    SvB_ps_hh = dir.make<TH1F>("SvB_ps_hh",  (name+"/SvB_ps_hh;  SvB Regressed P(Signal), P(HH) is largest; Entries").c_str(), 100, 0, 1);
 #    SvB_ps_zh = dir.make<TH1F>("SvB_ps_zh",  (name+"/SvB_ps_zh;  SvB Regressed P(Signal), P(ZH) is largest; Entries").c_str(), 100, 0, 1);
 #    SvB_ps_zz = dir.make<TH1F>("SvB_ps_zz",  (name+"/SvB_ps_zz;  SvB Regressed P(Signal), P(ZZ) is largest; Entries").c_str(), 100, 0, 1);
-#    if(event){
-#      bTagSysts = true;
-#      SvB_ps_hh_bTagSysts = new systHists(SvB_ps_hh, event->treeJets->m_btagVariations);
-#      SvB_ps_zh_bTagSysts = new systHists(SvB_ps_zh, event->treeJets->m_btagVariations);
-#      SvB_ps_zz_bTagSysts = new systHists(SvB_ps_zz, event->treeJets->m_btagVariations);
-#    }
-#  
-#    SvB_MA_ps  = dir.make<TH1F>("SvB_MA_ps",  (name+"/SvB_MA_ps;  SvB_MA Regressed P(Signal); Entries").c_str(), 100, 0, 1);
-#    SvB_MA_pzz = dir.make<TH1F>("SvB_MA_pzz", (name+"/SvB_MA_pzz; SvB_MA Regressed P(ZZ); Entries").c_str(), 100, 0, 1);
-#    SvB_MA_pzh = dir.make<TH1F>("SvB_MA_pzh", (name+"/SvB_MA_pzh; SvB_MA Regressed P(ZH); Entries").c_str(), 100, 0, 1);
-#    SvB_MA_phh = dir.make<TH1F>("SvB_MA_phh", (name+"/SvB_MA_phh; SvB_MA Regressed P(HH); Entries").c_str(), 100, 0, 1);
-#    SvB_MA_ptt = dir.make<TH1F>("SvB_MA_ptt", (name+"/SvB_MA_ptt; SvB_MA Regressed P(t#bar{t}); Entries").c_str(), 100, 0, 1);
-#    SvB_MA_ps_hh = dir.make<TH1F>("SvB_MA_ps_hh",  (name+"/SvB_MA_ps_hh;  SvB_MA Regressed P(Signal), P(HH) is largest; Entries").c_str(), 100, 0, 1);
-#    SvB_MA_ps_zh = dir.make<TH1F>("SvB_MA_ps_zh",  (name+"/SvB_MA_ps_zh;  SvB_MA Regressed P(Signal), P(ZH) is largest; Entries").c_str(), 100, 0, 1);
-#    SvB_MA_ps_zz = dir.make<TH1F>("SvB_MA_ps_zz",  (name+"/SvB_MA_ps_zz;  SvB_MA Regressed P(Signal), P(ZZ) is largest; Entries").c_str(), 100, 0, 1);
-#    if(event){
-#      SvB_MA_ps_hh_bTagSysts = new systHists(SvB_MA_ps_hh, event->treeJets->m_btagVariations);
-#      SvB_MA_ps_zh_bTagSysts = new systHists(SvB_MA_ps_zh, event->treeJets->m_btagVariations);
-#      SvB_MA_ps_zz_bTagSysts = new systHists(SvB_MA_ps_zz, event->treeJets->m_btagVariations);
-#    }
-#  
-#    SvB_ps_hh_vs_nJet    = dir.make<TH2F>("SvB_ps_hh_vs_nJet",     (name+"/SvB_ps_hh_vs_nJet;  SvB Regressed P(Signal), P(HH) is largest; nSelJet").c_str(), 100, 0, 1, 16, -0.5, 15.5);
-#    SvB_ps_zh_vs_nJet    = dir.make<TH2F>("SvB_ps_zh_vs_nJet",     (name+"/SvB_ps_zh_vs_nJet;  SvB Regressed P(Signal), P(ZH) is largest; nSelJet").c_str(), 100, 0, 1, 16, -0.5, 15.5);
-#    SvB_ps_zz_vs_nJet    = dir.make<TH2F>("SvB_ps_zz_vs_nJet",     (name+"/SvB_ps_zz_vs_nJet;  SvB Regressed P(Signal), P(ZZ) is largest; nSelJet").c_str(), 100, 0, 1, 16, -0.5, 15.5);
-#    SvB_MA_ps_hh_vs_nJet = dir.make<TH2F>("SvB_MA_ps_hh_vs_nJet",  (name+"/SvB_ps_hh_vs_nJet;  SvB Regressed P(Signal), P(HH) is largest; nSelJet").c_str(), 100, 0, 1, 16, -0.5, 15.5);
-#    SvB_MA_ps_zh_vs_nJet = dir.make<TH2F>("SvB_MA_ps_zh_vs_nJet",  (name+"/SvB_ps_zh_vs_nJet;  SvB Regressed P(Signal), P(ZH) is largest; nSelJet").c_str(), 100, 0, 1, 16, -0.5, 15.5);
-#    SvB_MA_ps_zz_vs_nJet = dir.make<TH2F>("SvB_MA_ps_zz_vs_nJet",  (name+"/SvB_ps_zz_vs_nJet;  SvB Regressed P(Signal), P(ZZ) is largest; nSelJet").c_str(), 100, 0, 1, 16, -0.5, 15.5);
-#  
-#  
-#  
-#  
+
 #    FvT_q_score = dir.make<TH1F>("FvT_q_score", (name+"/FvT_q_score; FvT q_score (main pairing); Entries").c_str(), 100, 0, 1);
 #    FvT_q_score_dR_min = dir.make<TH1F>("FvT_q_score_dR_min", (name+"/FvT_q_score; FvT q_score (min #DeltaR(j,j) pairing); Entries").c_str(), 100, 0, 1);
 #    FvT_q_score_SvB_q_score_max = dir.make<TH1F>("FvT_q_score_SvB_q_score_max", (name+"/FvT_q_score; FvT q_score (max SvB q_score pairing); Entries").c_str(), 100, 0, 1);
 #    SvB_q_score = dir.make<TH1F>("SvB_q_score", (name+"/SvB_q_score; SvB q_score; Entries").c_str(), 100, 0, 1);
 #    SvB_q_score_FvT_q_score_max = dir.make<TH1F>("SvB_q_score_FvT_q_score_max", (name+"/SvB_q_score; SvB q_score (max FvT q_score pairing); Entries").c_str(), 100, 0, 1);
 #    SvB_MA_q_score = dir.make<TH1F>("SvB_MA_q_score", (name+"/SvB_MA_q_score; SvB_MA q_score; Entries").c_str(), 100, 0, 1);
-#  
-#    FvT_SvB_q_score_max_same = dir.make<TH1F>("FvT_SvB_q_score_max_same", (name+"/FvT_SvB_q_score_max_same; FvT max q_score pairing == SvB max q_score pairing").c_str(), 2, -0.5, 1.5);
-#    //Simplified template cross section binning https://cds.cern.ch/record/2669925/files/1906.02754.pdf
-#    SvB_ps_zh_0_75 = dir.make<TH1F>("SvB_ps_zh_0_75",  (name+"/SvB_ps_zh_0_75;  SvB Regressed P(ZZ)+P(ZH), P(ZH)$ #geq P(ZZ), 0<p_{T,Z}<75; Entries").c_str(), 100, 0, 1);
-#    SvB_ps_zh_75_150 = dir.make<TH1F>("SvB_ps_zh_75_150",  (name+"/SvB_ps_zh_75_150;  SvB Regressed P(ZZ)+P(ZH), P(ZH)$ #geq P(ZZ), 75<p_{T,Z}<150; Entries").c_str(), 100, 0, 1);
-#    SvB_ps_zh_150_250 = dir.make<TH1F>("SvB_ps_zh_150_250",  (name+"/SvB_ps_zh_150_250;  SvB Regressed P(ZZ)+P(ZH), P(ZH)$ #geq P(ZZ), 150<p_{T,Z}<250; Entries").c_str(), 100, 0, 1);
-#    SvB_ps_zh_250_400 = dir.make<TH1F>("SvB_ps_zh_250_400",  (name+"/SvB_ps_zh_250_400;  SvB Regressed P(ZZ)+P(ZH), P(ZH)$ #geq P(ZZ), 250<p_{T,Z}<400; Entries").c_str(), 100, 0, 1);
-#    SvB_ps_zh_400_inf = dir.make<TH1F>("SvB_ps_zh_400_inf",  (name+"/SvB_ps_zh_400_inf;  SvB Regressed P(ZZ)+P(ZH), P(ZH)$ #geq P(ZZ), 400<p_{T,Z}<inf; Entries").c_str(), 100, 0, 1);
-#  
-#    SvB_ps_zz_0_75 = dir.make<TH1F>("SvB_ps_zz_0_75",  (name+"/SvB_ps_zz_0_75;  SvB Regressed P(ZZ)+P(ZH), P(ZZ)$ > P(ZH), 0<p_{T,Z}<75; Entries").c_str(), 100, 0, 1);
-#    SvB_ps_zz_75_150 = dir.make<TH1F>("SvB_ps_zz_75_150",  (name+"/SvB_ps_zz_75_150;  SvB Regressed P(ZZ)+P(ZH), P(ZZ)$ > P(ZH), 75<p_{T,Z}<150; Entries").c_str(), 100, 0, 1);
-#    SvB_ps_zz_150_250 = dir.make<TH1F>("SvB_ps_zz_150_250",  (name+"/SvB_ps_zz_150_250;  SvB Regressed P(ZZ)+P(ZH), P(ZZ)$ > P(ZH), 150<p_{T,Z}<250; Entries").c_str(), 100, 0, 1);
-#    SvB_ps_zz_250_400 = dir.make<TH1F>("SvB_ps_zz_250_400",  (name+"/SvB_ps_zz_250_400;  SvB Regressed P(ZZ)+P(ZH), P(ZZ)$ > P(ZH), 250<p_{T,Z}<400; Entries").c_str(), 100, 0, 1);
-#    SvB_ps_zz_400_inf = dir.make<TH1F>("SvB_ps_zz_400_inf",  (name+"/SvB_ps_zz_400_inf;  SvB Regressed P(ZZ)+P(ZH), P(ZZ)$ > P(ZH), 400<p_{T,Z}<inf; Entries").c_str(), 100, 0, 1);
-#  
-#    otherWeight = dir.make<TH1F>("otherWeight", (name+"/otherWeight; Other Reweight; Entries").c_str(), 100, 0, 5);
-#  
-#    xHH = dir.make<TH1F>("xHH", (name+"/xHH; X_{HH}; Entries").c_str(), 100, 0, 10);  
-#    Double_t bins_mHH[] = {100, 216, 237, 260, 286, 314, 345, 379, 416, 457, 502, 552, 607, 667, 733, 806, 886, 974, 1071, 1178, 1295, 1500};
-#    //mHH = dir.make<TH1F>("mHH", (name+"/mHH; m_{HH} [GeV]; Entries").c_str(), 100, 150,1500);
-#    mHH = dir.make<TH1F>("mHH", (name+"/mHH; m_{HH} [GeV]; Entries").c_str(), 21, bins_mHH);
-#  
+
 #    hT   = dir.make<TH1F>("hT", (name+"/hT; hT [GeV]; Entries").c_str(),  100,0,1000);
-#    hT30 = dir.make<TH1F>("hT30", (name+"/hT30; hT [GeV] (jet Pt > 30 GeV); Entries").c_str(),  100,0,1000);
-#    L1hT   = dir.make<TH1F>("L1hT", (name+"/L1hT; hT [GeV]; Entries").c_str(),  100,0,1000);
-#    L1hT30 = dir.make<TH1F>("L1hT30", (name+"/L1hT30; hT [GeV] (L1 jet Pt > 30 GeV); Entries").c_str(),  100,0,1000);
-#    HLThT   = dir.make<TH1F>("HLThT", (name+"/HLThT; hT [GeV]; Entries").c_str(),  100,0,1000);
-#    HLThT30 = dir.make<TH1F>("HLThT30", (name+"/HLThT30; hT [GeV] (HLT jet Pt > 30 GeV); Entries").c_str(),  100,0,1000);
-#    m4j_vs_nViews_eq = dir.make<TH2F>("m4j_vs_nViews_eq", (name+"/m4j_vs_nViews_eq; m_{4j} [GeV]; Number of Event Views; Entries").c_str(), 40,100,1100, 4,-0.5,3.5);
-#    m4j_vs_nViews_00 = dir.make<TH2F>("m4j_vs_nViews_00", (name+"/m4j_vs_nViews_00; m_{4j} [GeV]; Number of Event Views; Entries").c_str(), 40,100,1100, 4,-0.5,3.5);
-#    m4j_vs_nViews_01 = dir.make<TH2F>("m4j_vs_nViews_01", (name+"/m4j_vs_nViews_01; m_{4j} [GeV]; Number of Event Views; Entries").c_str(), 40,100,1100, 4,-0.5,3.5);
-#    m4j_vs_nViews_02 = dir.make<TH2F>("m4j_vs_nViews_02", (name+"/m4j_vs_nViews_02; m_{4j} [GeV]; Number of Event Views; Entries").c_str(), 40,100,1100, 4,-0.5,3.5);
-#    m4j_vs_nViews_10 = dir.make<TH2F>("m4j_vs_nViews_10", (name+"/m4j_vs_nViews_10; m_{4j} [GeV]; Number of Event Views; Entries").c_str(), 40,100,1100, 4,-0.5,3.5);
-#    m4j_vs_nViews_11 = dir.make<TH2F>("m4j_vs_nViews_11", (name+"/m4j_vs_nViews_11; m_{4j} [GeV]; Number of Event Views; Entries").c_str(), 40,100,1100, 4,-0.5,3.5);
-#    m4j_vs_nViews_12 = dir.make<TH2F>("m4j_vs_nViews_12", (name+"/m4j_vs_nViews_12; m_{4j} [GeV]; Number of Event Views; Entries").c_str(), 40,100,1100, 4,-0.5,3.5);
-#  
-#    if(isMC){
-#      Double_t bins_m4b[] = {100, 112, 126, 142, 160, 181, 205, 232, 263, 299, 340, 388, 443, 507, 582, 669, 770, 888, 1027, 1190, 1381, 1607, 2000};
-#      truthM4b = dir.make<TH1F>("truthM4b", (name+"/truthM4b; True m_{4b} [GeV]; Entries").c_str(), 21, bins_mZH);
-#      truthM4b_vs_mZH = dir.make<TH2F>("truthM4b_vs_mZH", (name+"/truthM4b_vs_mZH; True m_{4b} [GeV]; Reconstructed m_{ZH} [GeV];Entries").c_str(), 22, bins_m4b, 22, bins_m4b);
-#      nTrueBJets = dir.make<TH1F>("nTrueBJets", (name+"/nTrueBJets; Number of true b-jets; Entries").c_str(),  16,-0.5,15.5);
-#    }
-#  
-#    if(nTupleAnalysis::findSubStr(histDetailLevel,"weightStudy")){
-#      weightStudy_v0v1  = new weightStudyHists(name+"/FvTStudy_v0v1",  fs, "weight_FvT_3bMix4b_rWbW2_v0_e25_os012", "weight_FvT_3bMix4b_rWbW2_v1_e25_os012", debug);
-#      weightStudy_v0v9  = new weightStudyHists(name+"/FvTStudy_v0v9",  fs, "weight_FvT_3bMix4b_rWbW2_v0_e25_os012", "weight_FvT_3bMix4b_rWbW2_v9_e25_os012", debug);
-#      weightStudy_os012 = new weightStudyHists(name+"/FvTStudy_os012", fs, "weight_FvT_3bMix4b_rWbW2_v0_e25",       "weight_FvT_3bMix4b_rWbW2_v0_e25_os012", debug);
-#      weightStudy_e20   = new weightStudyHists(name+"/FvTStudy_e20",   fs, "weight_FvT_3bMix4b_rWbW2_v0_os012",     "weight_FvT_3bMix4b_rWbW2_v0_e25_os012",       debug);
-#      //weightStudy_v0v1 = new weightStudyHists(name+"/FvTStudy_v0v1", fs, debug);
-#    }
-#  
-#    if(nTupleAnalysis::findSubStr(histDetailLevel,"DvT")){
-#      DvT_pt   = dir.make<TH1F>("DvT_pt",   (name+"/DvT_pt; TTbar Prob; Entries").c_str(),   100, -0.1, 2);
-#      DvT_pt_l = dir.make<TH1F>("DvT_pt_l", (name+"/DvT_pt_l; TTbar Prob; Entries").c_str(), 100, -0.1, 10);
-#      
-#      DvT_pm   = dir.make<TH1F>("DvT_pm",   (name+"/DvT_pm; Multijet Prob; Entries").c_str(),   100, -2, 2);
-#      DvT_pm_l = dir.make<TH1F>("DvT_pm_l", (name+"/DvT_pm_l; Multijet Prob; Entries").c_str(), 100, -10, 10);
-#      
-#      DvT_raw = dir.make<TH1F>("DvT_raw", (name+"/DvT_raw; TTbar Prob raw; Entries").c_str(), 100, -0.1, 2);
-#    }
-#  
-#    if(nTupleAnalysis::findSubStr(histDetailLevel,"bdtStudy")){
-#      bdtScore = dir.make<TH1F>("bdtScore", (name+"/bdtScore; #kappa_{#lambda} BDT Output; Entries").c_str(), 32, -1 , 1); 
-#  
-#      //SvB_MA_VHH_pskl = dir.make<TH1F>("SvB_MA_VHH_pskl",  (name+"/SvB_MA_VHH_pskl;  SvB_VHH_MA Regressed P(Signal), pskl; Entries").c_str(), 100, 0, 1);
-#      //SvB_MA_VHH_plkl = dir.make<TH1F>("SvB_MA_VHH_plkl",  (name+"/SvB_MA_VHH_plkl;  SvB_VHH_MA Regressed P(Signal), plkl; Entries").c_str(), 100, 0, 1);
-#      SvB_MA_VHH_ps   = dir.make<TH1F>("SvB_MA_VHH_ps",    (name+"/SvB_MA_VHH_ps;  SvB_VHH_MA Regressed P(Signal), ps; Entries").c_str(), 100, 0, 1);
-#      SvB_MA_VHH_ps_sbdt   = dir.make<TH1F>("SvB_MA_VHH_ps_sbdt",    (name+"/SvB_MA_VHH_ps_sbdt;  SvB_VHH_MA Regressed P(Signal), ps large bdt; Entries").c_str(), 100, 0, 1);
-#      SvB_MA_VHH_ps_lbdt   = dir.make<TH1F>("SvB_MA_VHH_ps_lbdt",    (name+"/SvB_MA_VHH_ps_lbdt;  SvB_VHH_MA Regressed P(Signal), ps small bdt; Entries").c_str(), 100, 0, 1);
-#    }
-  
 
 
-
+        fill += hist.add('nPVs', (101, -0.5, 100.5, ('PV.npvs', 'Number of Primary Vertices')))
+        fill += hist.add('nPVsGood', (101, -0.5, 100.5, ('PV.npvsGood', 'Number of Good Primary Vertices')))
 
         fill += hist.add('FvT', (100, 0, 5, ('FvT.FvT', 'FvT reweight')))
         fill += hist.add('SvB_MA_ps', (100, 0, 1, ('SvB_MA.ps', 'SvB_MA Regressed P(Signal)')))
         fill += hist.add('SvB_ps', (100, 0, 1, ('SvB.ps', 'SvB Regressed P(Signal)')))
         fill += hist.add('quadJet_selected_dr', (50, 0, 5, ("quadJet_selected.dr",'Selected Diboson Candidate $\\Delta$R(d,d)')))
+        fill += hist.add('quadJet_selected_dphi', (100, -3.2, 3.2, ("quadJet_selected.dphi",'Selected Diboson Candidate $\\Delta$R(d,d)')))
+        fill += hist.add('quadJet_selected_deta', (100, -5, 5, ("quadJet_selected.deta",'Selected Diboson Candidate $\\Delta$R(d,d)')))
 
         for bb in self.signals:
             fill += hist.add(f'quadJet_selected_x{bb.upper()}', (100, 0, 10, (f"quadJet_selected.x{bb.upper()}", f'Selected Diboson Candidate X$_{bb.upper()}$')))
@@ -458,12 +337,12 @@ class analysis(processor.ProcessorABC):
         #
         # Jets
         #
-        fill += LorentzVector.plot(('selJets', 'Selected Jets'), 'selJet')
-        fill += LorentzVector.plot(('canJets', 'Higgs Candidate Jets'), 'canJet')
-        fill += LorentzVector.plot(('othJets', 'Other Jets'), 'notCanJet_coffea')
+        fill += Jet.plot(('selJets', 'Selected Jets'), 'selJet',skip=['deepjet_c'])
+        fill += Jet.plot(('canJets', 'Higgs Candidate Jets'), 'canJet',skip=['deepjet_c'])
+        fill += Jet.plot(('othJets', 'Other Jets'), 'notCanJet_coffea', skip=['deepjet_c'])
         
         for iJ in range(4):
-            fill += LorentzVector.plot((f'canJet{iJ}', f'Higgs Candidate Jets {iJ}'), f'canJet{iJ}', skip=['n'])
+            fill += Jet.plot((f'canJet{iJ}', f'Higgs Candidate Jets {iJ}'), f'canJet{iJ}', skip=['n','deepjet_c'])
 
         #
         #  v4j
@@ -519,6 +398,7 @@ class analysis(processor.ProcessorABC):
         #
         setSvBVars("SvB", event)
         setSvBVars("SvB_MA", event)
+
 
         if isMC:
             self._cutFlow.fill("all",  event, allTag=True, wOverride = (lumi * xs * kFactor))
@@ -743,6 +623,8 @@ class analysis(processor.ProcessorABC):
             canJet = canJet * canJet.bRegCorr
             canJet['bRegCorr'] = selev.Jet.bRegCorr[canJet_idx]
             canJet['btagDeepFlavB'] = selev.Jet.btagDeepFlavB[canJet_idx]
+            canJet['puId'] = selev.Jet.puId[canJet_idx]
+            canJet['jetId'] = selev.Jet.puId[canJet_idx]
             if isMC:
                 canJet['hadronFlavour'] = selev.Jet.hadronFlavour[canJet_idx]
             canJet['calibration'] = selev.Jet.calibration[canJet_idx]
@@ -750,6 +632,10 @@ class analysis(processor.ProcessorABC):
             # pt sort canJets
             canJet = canJet[ak.argsort(canJet.pt, axis=1, ascending=False)]
             selev['canJet'] = canJet
+
+            #
+            #  Should be a better way to do this...
+            # 
             selev['canJet0'] = canJet[:,0]
             selev['canJet1'] = canJet[:,1]
             selev['canJet2'] = canJet[:,2]
@@ -859,7 +745,9 @@ class analysis(processor.ProcessorABC):
                               'passDiJetMass': ak.all(diJet.passDiJetMass, axis=2),
                               'random': np.random.uniform(low=0.1, high=0.9, size=(diJet.__len__(), 3))
                           })#, with_name='quadJet')
-            quadJet['dr'] = quadJet['lead'].delta_r(quadJet['subl'])
+            quadJet['dr']   = quadJet['lead'].delta_r(quadJet['subl'])
+            quadJet['dphi'] = quadJet['lead'].delta_phi(quadJet['subl'])
+            quadJet['deta'] = quadJet['lead'].eta - quadJet['subl'].eta
             quadJet['SvB_q_score'] = np.concatenate((np.reshape(np.array(selev.SvB.q_1234), (-1,1)),
                                                      np.reshape(np.array(selev.SvB.q_1324), (-1,1)),
                                                      np.reshape(np.array(selev.SvB.q_1423), (-1,1))), axis=1)
