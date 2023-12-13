@@ -59,3 +59,18 @@ The workflow for the CI can be found in the [gitlab-ci.yml](.gitlab-ci.yml) file
 The CI runs on remote files and therefore it needs your grid certificate. If you want to run the gitlab CI workflow in your private fork, you need first to create some variables to set up your voms-proxy. You can follow [these steps](https://awesome-workshop.github.io/gitlab-cms/03-vomsproxy/index.html) (except the last part, Using the grid proxy).
 
 If you did this step correctly, then you can check in your pipelines and see that the stage `build`, job `voms-proxy` ran succesfully.
+
+
+### Python sytle tips:
+
+PEP8
+
+https://peps.python.org/pep-0008/
+https://pypi.org/project/pycodestyle/
+
+
+```
+> pycodestyle  --show-source base_class/plots.py
+
+> pycodestyle --show-pep8 --show-source base_class/plots.py 
+```
