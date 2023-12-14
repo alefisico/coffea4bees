@@ -1,29 +1,31 @@
-import pickle, os, time, gc, argparse, sys
+import pickle
+import os
+import time
+import gc
+import argparse
+import sys
 from copy import deepcopy
 from dataclasses import dataclass
 import awkward as ak
 import numpy as np
 import uproot
-uproot.open.defaults["xrootd_handler"] = uproot.source.xrootd.MultithreadedXRootDSource
-from coffea.nanoevents import NanoEventsFactory, NanoAODSchema, BaseSchema
-NanoAODSchema.warn_missing_crossrefs = False
-import warnings
-warnings.filterwarnings("ignore")
-from coffea.nanoevents.methods import vector
-ak.behavior.update(vector.behavior)
-from coffea import processor, hist, util
-# import hist as shh # https://hist.readthedocs.io/en/latest/
-# import hist
-
-from base_class.hist import Collection, Fill
-from base_class.aktools import where
-from base_class.physics.object import LorentzVector
-
-
 import correctionlib
 import correctionlib._core as core
 import cachetools
 import yaml
+import warnings
+import torch
+import torch.nn.functional as F
+
+from analysis.helpers.networks import HCREnsemble
+
+from coffea.nanoevents import NanoEventsFactory, NanoAODSchema, BaseSchema
+from coffea.nanoevents.methods import vector
+from coffea import processor, util
+
+from base_class.hist import Collection, Fill
+from base_class.aktools import where
+from base_class.physics.object import LorentzVector, Jet
 
 from analysis.helpers.MultiClassifierSchema import MultiClassifierSchema
 from analysis.helpers.correctionFunctions import btagVariations, juncVariations
@@ -31,9 +33,6 @@ from analysis.helpers.correctionFunctions import btagSF_norm as btagSF_norm_file
 from functools import partial
 from multiprocessing import Pool
 
-import torch
-import torch.nn.functional as F
-from analysis.helpers.networks import HCREnsemble
 # torch.set_num_threads(1)
 # torch.set_num_interop_threads(1)
 # print(torch.__config__.parallel_info())
@@ -43,12 +42,52 @@ from analysis.helpers.common import init_jet_factory, jet_corrections
 import logging
 
 
-@dataclass
-class variable:
-    def __init__(self, name, bins, label='Events'):
-        self.name = name
-        self.bins = bins
-        self.label = label
+#
+# Setup
+#
+uproot.open.defaults["xrootd_handler"] = uproot.source.xrootd.MultithreadedXRootDSource
+NanoAODSchema.warn_missing_crossrefs = False
+warnings.filterwarnings("ignore")
+ak.behavior.update(vector.behavior)
+
+from base_class.hist import H, Template
+
+class SvBHists(Template):
+    ps      = H((100, 0, 1, ('ps', "Regressed P(Signal)")))
+    ptt     = H((100, 0, 1, ('ptt', "Regressed P(tT)")))
+
+    ps_zz   = H((100, 0, 1, ('ps_zz', "Regressed P(Signal) $|$ P(ZZ) is largest ")))
+    ps_zh   = H((100, 0, 1, ('ps_zh', "Regressed P(Signal) $|$ P(ZH) is largest ")))
+    ps_hh   = H((100, 0, 1, ('ps_hh', "Regressed P(Signal) $|$ P(HH) is largest ")))
+
+
+class FvTHists(Template):
+    FvT  = H((100, 0, 5, ('FvT', 'FvT reweight')))
+    pd4  = H((100, 0, 1, ("pd4",   'FvT Regressed P(Four-tag Data)')))
+    pd3  = H((100, 0, 1, ("pd3",   'FvT Regressed P(Three-tag Data)')))
+    pt4  = H((100, 0, 1, ("pt4",   'FvT Regressed P(Four-tag t#bar{t})')))
+    pt3  = H((100, 0, 1, ("pt3",   'FvT Regressed P(Three-tag t#bar{t})')))
+    pm4  = H((100, 0, 1, ("pm4",   'FvT Regressed P(Four-tag Multijet)')))
+    pm3  = H((100, 0, 1, ("pm3",   'FvT Regressed P(Three-tag Multijet)')))
+    pt   = H((100, 0, 1, ("pt",    'FvT Regressed P(t#bar{t})')))
+    std  = H((100, 0, 3, ("std",   'FvT Standard Deviation')))
+    frac_err = H((100, 0, 5, ("frac_err",  'FvT std/FvT')))
+    #'q_1234', 'q_1324', 'q_1423',
+
+
+class QuadJetHists(Template):
+    dr              = H((50,     0, 5, ("dr",'Diboson Candidate $\\Delta$R(d,d)')))
+    dphi            = H((100, -3.2, 3.2, ("dphi",'Diboson Candidate $\\Delta$R(d,d)')))
+    deta            = H((100,   -5, 5, ("deta",'Diboson Candidate $\\Delta$R(d,d)')))
+    FvT_score       = H((100, 0, 1, ("FvT_q_score",'Diboson FvT q score')))
+    SvB_q_score     = H((100, 0, 1, ("SvB_q_score",'Diboson SvB q score')))
+    SvB_MA_q_score  = H((100, 0, 1, ("SvB_q_score",'Diboson SvB MA q score')))
+    xZZ             = H((100, 0, 10, ("xZZ", 'Diboson Candidate zZZ')))
+    xZH             = H((100, 0, 10, ("xZH", 'Diboson Candidate zZH')))
+    xHH             = H((100, 0, 10, ("xHH", 'Diboson Candidate zHH')))
+
+
+
 
 
 class cutFlow:
@@ -60,7 +99,6 @@ class cutFlow:
         for c in cuts:
             self._cutFlowThreeTag[c] = (0, 0) # weighted, raw
             self._cutFlowFourTag [c] = (0, 0) # weighted, raw
-
 
     def fill(self, cut, event, allTag=False, wOverride=None):
 
@@ -109,25 +147,47 @@ class cutFlow:
 
 
 
+def setSvBVars(SvBName, event):
+    largest_name = np.array(['None', 'ZZ', 'ZH', 'HH'])
+
+    event[SvBName, 'passMinPs'] = (getattr(event, SvBName).pzz>0.01) | (getattr(event, SvBName).pzh>0.01) | (getattr(event, SvBName).phh>0.01)
+    event[SvBName, 'zz'] = (getattr(event, SvBName).pzz >  getattr(event, SvBName).pzh) & (getattr(event, SvBName).pzz >  getattr(event, SvBName).phh)
+    event[SvBName, 'zh'] = (getattr(event, SvBName).pzh >  getattr(event, SvBName).pzz) & (getattr(event, SvBName).pzh >  getattr(event, SvBName).phh)
+    event[SvBName, 'hh'] = (getattr(event, SvBName).phh >= getattr(event, SvBName).pzz) & (getattr(event, SvBName).phh >= getattr(event, SvBName).pzh)
+    event[SvBName, 'largest'] = largest_name[ getattr(event, SvBName).passMinPs*(1*getattr(event, SvBName).zz + 2*getattr(event, SvBName).zh + 3*getattr(event, SvBName).hh) ]
+
+    #
+    #  Set ps_{bb}
+    #
+    event[SvBName, 'ps_zz'] = where(~getattr(event, SvBName).passMinPs, (~getattr(event, SvBName).passMinPs, -4))
+    event[SvBName, 'ps_zh'] = where(~getattr(event, SvBName).passMinPs, (~getattr(event, SvBName).passMinPs, -4))
+    event[SvBName, 'ps_hh'] = where(~getattr(event, SvBName).passMinPs, (~getattr(event, SvBName).passMinPs, -4))
+
+    event[SvBName, 'ps_zz'] = where((getattr(event, SvBName).passMinPs),
+                                    (getattr(event, SvBName).zz, getattr(event, SvBName).pzz),
+                                    (getattr(event, SvBName).zh, -2),
+                                    (getattr(event, SvBName).hh, -3))
+
+    event[SvBName, 'ps_zh'] = where((getattr(event, SvBName).passMinPs),
+                                    (getattr(event, SvBName).zz, -1),
+                                    (getattr(event, SvBName).zh, getattr(event, SvBName).pzh),
+                                    (getattr(event, SvBName).hh, -3))
+
+    event[SvBName, 'ps_hh'] = where((getattr(event, SvBName).passMinPs),
+                                    (getattr(event, SvBName).zz, -1),
+                                    (getattr(event, SvBName).zh, -2),
+                                    (getattr(event, SvBName).hh, getattr(event, SvBName).phh))
 
 
-def count_nested_dict(nested_dict, c=0):
-    for key in nested_dict:
-        if isinstance(nested_dict[key], dict):
-            c = count_nested_dict(nested_dict[key], c)
-        else:
-            c += 1
-    return c
 
 class analysis(processor.ProcessorABC):
-    def __init__(self, *, JCM = '', addbtagVariations=None, addjuncVariations=None, SvB=None, SvB_MA=None, threeTag = True, apply_puWeight = False, apply_prefire = False, apply_trigWeight = True, apply_btagSF = True, regions=['SR'], corrections_metadata='analysis/metadata/corrections.yml', year='UL18', btagSF=True):
+    def __init__(self, *, JCM = '', addbtagVariations=None, addjuncVariations=None, SvB=None, SvB_MA=None, threeTag = True, apply_puWeight = False, apply_prefire = False, apply_trigWeight = True, apply_btagSF = True, regions=['SR'], corrections_metadata='analysis/metadata/corrections.yml',  btagSF=True):
         logging.debug('\nInitialize Analysis Processor')
         self.blind = False
         print('Initialize Analysis Processor')
-        self.newcuts = ["all","passHLT","passMETFilter","passJetMult","passJetMult_btagSF","passPreSel","passDiJetMass",'SR','SB','passSvB','failSvB']
-        self.cuts = ['passPreSel','passSvB','failSvB']
-        self.year = year
-        self.threeTag = threeTag
+        self.cutFlowCuts = ["all","passHLT","passMETFilter","passJetMult","passJetMult_btagSF","passPreSel","passDiJetMass",'SR','SB','passSvB','failSvB']
+        self.histCuts = ['passPreSel','passSvB','failSvB']
+        self.doThreeTag = threeTag
         self.tags = ['threeTag','fourTag'] if threeTag else ['fourTag']
         self.regions = regions
         self.signals = ['zz','zh','hh']
@@ -145,17 +205,16 @@ class analysis(processor.ProcessorABC):
         self.btagSF  = btagSF
 
 
-        self.variables = []
-        self.variables_systematics = self.variables[0:8]
-        jet_extras = [variable('calibration', hist.Bin('x','Calibration Factor', 20, 0, 2))]
-        #self.variables += fourvectorhists('canJet', 'Boson Candidate Jets', mass=(50, 0, 50), label='Jets', extras=jet_extras)
+        # self.variables = []
+        # self.variables_systematics = self.variables[0:8]
+        # #jet_extras = [variable('calibration', hist.Bin('x','Calibration Factor', 20, 0, 2))]
+        # #self.variables += fourvectorhists('canJet', 'Boson Candidate Jets', mass=(50, 0, 50), label='Jets', extras=jet_extras)
 
 
 
 
     def process(self, event):
         tstart = time.time()
-        #output = self.accumulator.identity()
 
         fname   = event.metadata['filename']
         dataset = event.metadata['dataset']
@@ -173,17 +232,18 @@ class analysis(processor.ProcessorABC):
         nEvent = len(event)
         np.random.seed(0)
 
-        newOutput = {}
-        newOutput['nEvent'] = {}
-        newOutput['nEvent'][event.metadata['dataset']] = nEvent
+        processOutput = {}
+        processOutput['nEvent'] = {}
+        processOutput['nEvent'][event.metadata['dataset']] = nEvent
 
         #
         #  Cut Flows
         #
-        self._cutFlow            = cutFlow(self.newcuts)
+        self._cutFlow            = cutFlow(self.cutFlowCuts)
 
         puWeight= self.corrections_metadata[year]['PU']
-        juncWS = [ self.corrections_metadata[year]["JERC"][0].replace('STEP', istep) for istep in ['L1FastJet', 'L2Relative', 'L2L3Residual', 'L3Absolute'] ]  ###### AGE: to be reviewed for data, but should be remove with jsonpog
+        juncWS = [ self.corrections_metadata[year]["JERC"][0].replace('STEP', istep) 
+                   for istep in ['L1FastJet', 'L2Relative', 'L2L3Residual', 'L3Absolute'] ]  ###### AGE: to be reviewed for data, but should be remove with jsonpog
         if isMC: juncWS += self.corrections_metadata[year]["JERC"][1:]
 
         #
@@ -195,31 +255,104 @@ class analysis(processor.ProcessorABC):
         #
         # Hists
         #
+        #fillNoJCMNoFvT = Fill(process = processName, year = year, weight = 'weightNoJCMNoFvT')
+        #fillNoFvT = Fill(process = processName, year = year, weight = 'weightNoFvT')
+        #fillNoFvT += hist.add('FvT', (100, 0, 5, ('FvT.FvT', 'FvT reweight')))
+
+
         fill = Fill(process = processName, year = year, weight = 'weight')
+
 
         hist = Collection(process = [processName],
                           year    = [year],
                           tag     = [3,4,0], # 3 / 4/ Other
                           region  = [2,1,0], # SR / SB / Other
-                          **dict((s, ...) for s in self.cuts))
+                          **dict((s, ...) for s in self.histCuts))
 
 
-        fill += hist.add('FvT',       (100, 0, 5, ('FvT.FvT', 'FvT reweight')))
-        fill += hist.add('SvB_MA_ps', (100, 0, 1, ('SvB_MA.ps', 'SvB_MA Regressed P(Signal)')))
-        fill += hist.add('SvB_ps', (100, 0, 1, ('SvB.ps', 'SvB Regressed P(Signal)')))
-        fill += hist.add('quadJet_selected_dr', (50, 0, 5, ("quadJet_selected.dr",'Selected Diboson Candidate $\\Delta$R(d,d)')))
 
-        for bb in self.signals:
-            fill += hist.add(f'quadJet_selected_x{bb.upper()}', (100, 0, 10, (f"quadJet_selected.x{bb.upper()}", f'Selected Diboson Candidate X$_{bb.upper()}$')))
-            fill += hist.add(f'SvB_ps_{bb}',    (100, 0, 1, (f'SvB.ps_{bb}', f"SvB Regressed P(Signal) $|$ P({bb.upper()}) is largest")))
-            fill += hist.add(f'SvB_MA_ps_{bb}', (100, 0, 1, (f'SvB_MA.ps_{bb}', f"SvB MA Regressed P(Signal) $|$ P({bb.upper()}) is largest")))
+        #
+        # To Add
+        #
+        #    nSelJetsUnweighted = dir.make<TH1F>("nSelJetsUnweighted", (name+"/nSelJetsUnweighted; Number of Selected Jets (Unweighted); Entries").c_str(),  16,-0.5,15.5);
+        #    nTagJets = dir.make<TH1F>("nTagJets", (name+"/nTagJets; Number of Tagged Jets; Entries").c_str(),  16,-0.5,15.5);
+        #    nTagJetsUnweighted = dir.make<TH1F>("nTagJetsUnweighted", (name+"/nTagJets; Number of Tagged Jets; Entries").c_str(),  16,-0.5,15.5);
+        #    nPSTJets = dir.make<TH1F>("nPSTJets", (name+"/nPSTJets; Number of Tagged + Pseudo-Tagged Jets; Entries").c_str(),  16,-0.5,15.5);
+        #    tagJets = new jetHists(name+"/tagJets", fs, "Tagged Jets");
+        #    FvTUnweighted = dir.make<TH1F>("FvTUnweighted", (name+"/FvTUnweighted; Kinematic Reweight; Entries").c_str(), 100, 0, 5);
+        
+        #    nAllMuons = dir.make<TH1F>("nAllMuons", (name+"/nAllMuons; Number of Muons (no selection); Entries").c_str(),  6,-0.5,5.5);
+        #    nIsoMed25Muons = dir.make<TH1F>("nIsoMed25Muons", (name+"/nIsoMed25Muons; Number of Prompt Muons; Entries").c_str(),  6,-0.5,5.5);
+        #    nIsoMed40Muons = dir.make<TH1F>("nIsoMed40Muons", (name+"/nIsoMed40Muons; Number of Prompt Muons; Entries").c_str(),  6,-0.5,5.5);
+        #    allMuons        = new muonHists(name+"/allMuons", fs, "All Muons");
+        #    muons_isoMed25  = new muonHists(name+"/muon_isoMed25", fs, "iso Medium 25 Muons");
+        #    muons_isoMed40  = new muonHists(name+"/muon_isoMed40", fs, "iso Medium 40 Muons");
+        
+        
+        #    nAllElecs = dir.make<TH1F>("nAllElecs", (name+"/nAllElecs; Number of Elecs (no selection); Entries").c_str(),  16,-0.5,15.5);
+        #    nIsoMed25Elecs = dir.make<TH1F>("nIsoMed25Elecs", (name+"/nIsoMed25Elecs; Number of Prompt Elecs; Entries").c_str(),  6,-0.5,5.5);
+        #    nIsoMed40Elecs = dir.make<TH1F>("nIsoMed40Elecs", (name+"/nIsoMed40Elecs; Number of Prompt Elecs; Entries").c_str(),  6,-0.5,5.5);
+        #    allElecs        = new elecHists(name+"/allElecs", fs, "All Elecs");
+        #    elecs_isoMed25  = new elecHists(name+"/elec_isoMed25", fs, "iso Medium 25 Elecs");
+        #    elecs_isoMed40  = new elecHists(name+"/elec_isoMed40", fs, "iso Medium 40 Elecs");
+        #  
+        
+        #    leadSt_m_vs_sublSt_m = dir.make<TH2F>("leadSt_m_vs_sublSt_m", (name+"/leadSt_m_vs_sublSt_m; S_{T} leading boson candidate Mass [GeV]; S_{T} subleading boson candidate Mass [GeV]; Entries").c_str(), 50,0,250, 50,0,250);
+        #    m4j_vs_leadSt_dR = dir.make<TH2F>("m4j_vs_leadSt_dR", (name+"/m4j_vs_leadSt_dR; m_{4j} [GeV]; S_{T} leading boson candidate #DeltaR(j,j); Entries").c_str(), 40,100,1100, 25,0,5);
+        #    m4j_vs_sublSt_dR = dir.make<TH2F>("m4j_vs_sublSt_dR", (name+"/m4j_vs_sublSt_dR; m_{4j} [GeV]; S_{T} subleading boson candidate #DeltaR(j,j); Entries").c_str(), 40,100,1100, 25,0,5);
+
+        #    close  = new dijetHists(name+"/close",  fs,               "Minimum #DeltaR(j,j) Dijet");
+        #    other  = new dijetHists(name+"/other",  fs, "Complement of Minimum #DeltaR(j,j) Dijet");
+        #    close_m_vs_other_m = dir.make<TH2F>("close_m_vs_other_m", (name+"/close_m_vs_other_m; Minimum #DeltaR(j,j) Dijet Mass [GeV]; Complement of Minimum #DeltaR(j,j) Dijet Mass [GeV]; Entries").c_str(), 50,0,250, 50,0,250);
+
+        #    st = dir.make<TH1F>("st", (name+"/st; Scalar sum of jet p_{T}'s [GeV]; Entries").c_str(), 130, 200, 1500);
+
+
+#    xWt0 = dir.make<TH1F>("xWt0", (name+"/xWt0; X_{Wt,0}; Entries").c_str(), 60, 0, 12);
+#    xWt1 = dir.make<TH1F>("xWt1", (name+"/xWt1; X_{Wt,1}; Entries").c_str(), 60, 0, 12);
+#    //xWt2 = dir.make<TH1F>("xWt2", (name+"/xWt2; X_{Wt,2}; Entries").c_str(), 60, 0, 12);
+#    xWt  = dir.make<TH1F>("xWt",  (name+"/xWt;  X_{Wt};   Entries").c_str(), 60, 0, 12);
+#    t0 = new trijetHists(name+"/t0",  fs, "Top Candidate (#geq0 non-candidate jets)");
+#    t1 = new trijetHists(name+"/t1",  fs, "Top Candidate (#geq1 non-candidate jets)");
+#    //t2 = new trijetHists(name+"/t2",  fs, "Top Candidate (#geq2 non-candidate jets)");
+#    t = new trijetHists(name+"/t",  fs, "Top Candidate");
+#  
+
+#    hT   = dir.make<TH1F>("hT", (name+"/hT; hT [GeV]; Entries").c_str(),  100,0,1000);
+
+
+        fill += hist.add('nPVs', (101, -0.5, 100.5, ('PV.npvs', 'Number of Primary Vertices')))
+        fill += hist.add('nPVsGood', (101, -0.5, 100.5, ('PV.npvsGood', 'Number of Good Primary Vertices')))
+
+        #
+        #  Make quad jet hists
+        #
+        fill += QuadJetHists(('quadJet_selected', 'Selected Quad Jet'), 'quadJet_selected')
+
+#
+#  quadJet minDr
+#
+#    FvT_q_score_dR_min = dir.make<TH1F>("FvT_q_score_dR_min", (name+"/FvT_q_score; FvT q_score (min #DeltaR(j,j) pairing); Entries").c_str(), 100, 0, 1);
+
+
+        #
+        #  Make classifier hists
+        #
+        fill += FvTHists(('FvT', 'FvT Classifier'), 'FvT')
+
+        fill += SvBHists(('SvB', 'SvB Classifier'), 'SvB')
+        fill += SvBHists(('SvB_MA', 'SvB MA Classifier'), 'SvB_MA')
+
 
         #
         # Jets
         #
-        fill += LorentzVector.plot(('selJets', 'Selected Jets'), 'selJet')
-        fill += LorentzVector.plot(('canJets', 'Higgs Candidate Jets'), 'canJet')
-        fill += LorentzVector.plot(('othJets', 'Other Jets'), 'notCanJet_coffea')
+        fill += Jet.plot(('selJets', 'Selected Jets'), 'selJet',skip=['deepjet_c'])
+        fill += Jet.plot(('canJets', 'Higgs Candidate Jets'), 'canJet',skip=['deepjet_c'])
+        fill += Jet.plot(('othJets', 'Other Jets'), 'notCanJet_coffea', skip=['deepjet_c'])
+        
+        for iJ in range(4):
+            fill += Jet.plot((f'canJet{iJ}', f'Higgs Candidate Jets {iJ}'), f'canJet{iJ}', skip=['n','deepjet_c'])
 
         #
         #  v4j
@@ -240,12 +373,12 @@ class analysis(processor.ProcessorABC):
                 genEventSumw = np.sum(Runs['genEventSumw'])
 
             if self.btagSF is not None:
-                btagSF = correctionlib.CorrectionSet.from_file(self.corrections_metadata[self.year]['btagSF'])['deepJet_shape']
+                btagSF = correctionlib.CorrectionSet.from_file(self.corrections_metadata[year]['btagSF'])['deepJet_shape']
 
             if self.apply_puWeight:
                 puWeight = list(correctionlib.CorrectionSet.from_file(puWeight).values())[0]
 
-        largest_name = np.array(['None', 'ZZ', 'ZH', 'HH'])
+
 
         logging.debug(fname)
         logging.debug(f'{chunk}Process {nEvent} Events')
@@ -258,6 +391,8 @@ class analysis(processor.ProcessorABC):
         event['SvB']    = NanoEventsFactory.from_root(f'{path}{"SvB_newSBDef.root" if "mix" in dataset else "SvB.root"}',    entry_start=estart, entry_stop=estop, schemaclass=MultiClassifierSchema).events().SvB
         event['SvB_MA'] = NanoEventsFactory.from_root(f'{path}{"SvB_MA_newSBDef.root" if "mix" in dataset else "SvB_MA.root"}', entry_start=estart, entry_stop=estop, schemaclass=MultiClassifierSchema).events().SvB_MA
 
+        event['FvT', 'frac_err'] = event['FvT'].std / event['FvT'].FvT 
+        
         if not ak.all(event.SvB.event == event.event):
             logging.error('ERROR: SvB events do not match events ttree')
             return
@@ -270,44 +405,17 @@ class analysis(processor.ProcessorABC):
             logging.error('ERROR: FvT events do not match events ttree')
             return
 
-
         #
         # defining SvB for different SR
         #
-        event['SvB', 'passMinPs'] = (event.SvB.pzz>0.01) | (event.SvB.pzh>0.01) | (event.SvB.phh>0.01)
-        event['SvB', 'zz'] = (event.SvB.pzz >  event.SvB.pzh) & (event.SvB.pzz >  event.SvB.phh)
-        event['SvB', 'zh'] = (event.SvB.pzh >  event.SvB.pzz) & (event.SvB.pzh >  event.SvB.phh)
-        event['SvB', 'hh'] = (event.SvB.phh >= event.SvB.pzz) & (event.SvB.phh >= event.SvB.pzh)
-        event['SvB', 'largest'] = largest_name[ event.SvB.passMinPs*(1*event.SvB.zz + 2*event.SvB.zh + 3*event.SvB.hh) ]
-
-        event['SvB', 'ps_zz'] = where(~event.SvB.passMinPs, (~event.SvB.passMinPs, -4))
-        event['SvB', 'ps_zh'] = where(~event.SvB.passMinPs, (~event.SvB.passMinPs, -4))
-        event['SvB', 'ps_hh'] = where(~event.SvB.passMinPs, (~event.SvB.passMinPs, -4))
-
-        event['SvB', 'ps_zz'] = where((event.SvB.passMinPs) , (event.SvB.zz, event.SvB.pzz), (event.SvB.zh, -2),            (event.SvB.hh, -3))
-        event['SvB', 'ps_zh'] = where((event.SvB.passMinPs) , (event.SvB.zz, -1),            (event.SvB.zh, event.SvB.pzh), (event.SvB.hh, -3))
-        event['SvB', 'ps_hh'] = where((event.SvB.passMinPs) , (event.SvB.zz, -1),            (event.SvB.zh, -2),            (event.SvB.hh, event.SvB.phh))
-
-
-        event['SvB_MA', 'passMinPs'] = (event.SvB_MA.pzz>0.01) | (event.SvB_MA.pzh>0.01) | (event.SvB_MA.phh>0.01)
-        event['SvB_MA', 'zz'] = (event.SvB_MA.pzz >  event.SvB_MA.pzh) & (event.SvB_MA.pzz >  event.SvB_MA.phh)
-        event['SvB_MA', 'zh'] = (event.SvB_MA.pzh >  event.SvB_MA.pzz) & (event.SvB_MA.pzh >  event.SvB_MA.phh)
-        event['SvB_MA', 'hh'] = (event.SvB_MA.phh >= event.SvB_MA.pzz) & (event.SvB_MA.phh >= event.SvB_MA.pzh)
-
-        event['SvB_MA', 'ps_zz'] = where(~event.SvB_MA.passMinPs,  (~event.SvB_MA.passMinPs, -4))
-        event['SvB_MA', 'ps_zh'] = where(~event.SvB_MA.passMinPs,  (~event.SvB_MA.passMinPs, -4))
-        event['SvB_MA', 'ps_hh'] = where(~event.SvB_MA.passMinPs,  (~event.SvB_MA.passMinPs, -4))
-
-        event['SvB_MA', 'ps_zz'] = where((event.SvB_MA.passMinPs) , (event.SvB_MA.zz, event.SvB_MA.pzz), (event.SvB_MA.zh, -2),               (event.SvB_MA.hh, -3))
-        event['SvB_MA', 'ps_zh'] = where((event.SvB_MA.passMinPs) , (event.SvB_MA.zz, -1),               (event.SvB_MA.zh, event.SvB_MA.pzh), (event.SvB_MA.hh, -3))
-        event['SvB_MA', 'ps_hh'] = where((event.SvB_MA.passMinPs) , (event.SvB_MA.zz, -1),               (event.SvB_MA.zh, -2),               (event.SvB_MA.hh, event.SvB_MA.phh))
+        setSvBVars("SvB", event)
+        setSvBVars("SvB_MA", event)
 
 
         if isMC:
             self._cutFlow.fill("all",  event, allTag=True, wOverride = (lumi * xs * kFactor))
         else:
             self._cutFlow.fill("all",  event, allTag=True)
-
 
         #
         # Get trigger decisions
@@ -322,13 +430,11 @@ class analysis(processor.ProcessorABC):
         if not isMC and not 'mix' in dataset: # for data, apply trigger cut first thing, for MC, keep all events and apply trigger in cutflow and for plotting
             event = event[event.passHLT]
 
-
         if isMC:
             event['weight'] = event.genWeight * (lumi * xs * kFactor / genEventSumw)
             logging.debug(f"event['weight'] = event.genWeight * (lumi * xs * kFactor / genEventSumw) = {event.genWeight[0]} * ({lumi} * {xs} * {kFactor} / {genEventSumw}) = {event.weight[0]}\n")
             if self.apply_trigWeight: 
                 event['weight'] = event.weight * event.trigWeight.Data
-
         else:
             event['weight'] = 1
             #logging.info(f"event['weight'] = {event.weight}")
@@ -422,14 +528,12 @@ class analysis(processor.ProcessorABC):
                     logging.warning(fourTag[selev.issue])
 
             selev[ 'fourTag']   =  fourTag
-            selev['threeTag']   = threeTag * self.threeTag
-
+            selev['threeTag']   = threeTag * self.doThreeTag
 
             #selev['tag'] = ak.Array({'threeTag':selev.threeTag, 'fourTag':selev.fourTag})
             selev['passPreSel'] = selev.threeTag | selev.fourTag
             selev['tag'] = 0
             selev['tag'] = where(selev.passPreSel, (selev.fourTag, 4), (selev.threeTag, 3))
-
 
             #
             # Calculate and apply pileup weight, L1 prefiring weight
@@ -531,6 +635,8 @@ class analysis(processor.ProcessorABC):
             canJet = canJet * canJet.bRegCorr
             canJet['bRegCorr'] = selev.Jet.bRegCorr[canJet_idx]
             canJet['btagDeepFlavB'] = selev.Jet.btagDeepFlavB[canJet_idx]
+            canJet['puId'] = selev.Jet.puId[canJet_idx]
+            canJet['jetId'] = selev.Jet.puId[canJet_idx]
             if isMC:
                 canJet['hadronFlavour'] = selev.Jet.hadronFlavour[canJet_idx]
             canJet['calibration'] = selev.Jet.calibration[canJet_idx]
@@ -538,6 +644,15 @@ class analysis(processor.ProcessorABC):
             # pt sort canJets
             canJet = canJet[ak.argsort(canJet.pt, axis=1, ascending=False)]
             selev['canJet'] = canJet
+
+            #
+            #  Should be a better way to do this...
+            # 
+            selev['canJet0'] = canJet[:,0]
+            selev['canJet1'] = canJet[:,1]
+            selev['canJet2'] = canJet[:,2]
+            selev['canJet3'] = canJet[:,3]
+            
             selev['v4j'] = canJet.sum(axis=1)
             #selev['v4j', 'n'] = 1
             #print(selev.v4j.n)
@@ -559,8 +674,7 @@ class analysis(processor.ProcessorABC):
             # print(selev[0].Jet[canJet_idx[0]].bRegCorr)
             # print(selev[0].Jet[canJet_idx[0]].calibration)
 
-
-            if self.threeTag:
+            if self.doThreeTag:
                 #
                 # calculate pseudoTagWeight for threeTag events
                 #
@@ -590,15 +704,10 @@ class analysis(processor.ProcessorABC):
                 else:
                     selev['weight'] = where(selev.passPreSel, (selev.threeTag, selev.weight * selev.pseudoTagWeight), (selev.fourTag, selev.weight))
 
-
-
-
-
             #
             # CutFlow
             #
             self._cutFlow.fill("passPreSel",  selev)
-
 
             #
             # Build diJets, indexed by diJet[event,pairing,0/1]
@@ -608,13 +717,12 @@ class analysis(processor.ProcessorABC):
                        ([1,3],[2,3],[3,2])]
             diJet       = canJet[:,pairing[0]]     +   canJet[:,pairing[1]]
             diJet['st'] = canJet[:,pairing[0]].pt  +   canJet[:,pairing[1]].pt
-            diJet['stSafe'] = canJet[:,pairing[0]].pt  +   canJet[:,pairing[1]].pt
             diJet['dr'] = canJet[:,pairing[0]].delta_r(canJet[:,pairing[1]])
             diJet['dphi'] = canJet[:,pairing[0]].delta_phi(canJet[:,pairing[1]])
             diJet['lead'] = canJet[:,pairing[0]]
             diJet['subl'] = canJet[:,pairing[1]]
             # Sort diJets within views to be lead st, subl st
-            diJet = diJet[ak.argsort(diJet.stSafe, axis=2, ascending=False)]
+            diJet = diJet[ak.argsort(diJet.st, axis=2, ascending=False)]
             # Now indexed by diJet[event,pairing,lead/subl st]
 
             # Compute diJetMass cut with independent min/max for lead/subl
@@ -641,7 +749,6 @@ class analysis(processor.ProcessorABC):
             diJet['xZ'] = (diJet.mass - cZ)/(0.1*diJet.mass)
             diJet['xH'] = (diJet.mass - cH)/(0.1*diJet.mass)
 
-
             #
             # Build quadJets
             #
@@ -650,10 +757,19 @@ class analysis(processor.ProcessorABC):
                               'passDiJetMass': ak.all(diJet.passDiJetMass, axis=2),
                               'random': np.random.uniform(low=0.1, high=0.9, size=(diJet.__len__(), 3))
                           })#, with_name='quadJet')
-            quadJet['dr'] = quadJet['lead'].delta_r(quadJet['subl'])
+            quadJet['dr']   = quadJet['lead'].delta_r(quadJet['subl'])
+            quadJet['dphi'] = quadJet['lead'].delta_phi(quadJet['subl'])
+            quadJet['deta'] = quadJet['lead'].eta - quadJet['subl'].eta
+
+            quadJet['FvT_q_score'] = np.concatenate((np.reshape(np.array(selev.FvT.q_1234), (-1,1)),
+                                                     np.reshape(np.array(selev.FvT.q_1324), (-1,1)),
+                                                     np.reshape(np.array(selev.FvT.q_1423), (-1,1))), axis=1)
+
             quadJet['SvB_q_score'] = np.concatenate((np.reshape(np.array(selev.SvB.q_1234), (-1,1)),
                                                      np.reshape(np.array(selev.SvB.q_1324), (-1,1)),
                                                      np.reshape(np.array(selev.SvB.q_1423), (-1,1))), axis=1)
+
+
             quadJet['SvB_MA_q_score'] = np.concatenate((np.reshape(np.array(selev.SvB_MA.q_1234), (-1,1)),
                                                         np.reshape(np.array(selev.SvB_MA.q_1324), (-1,1)),
                                                         np.reshape(np.array(selev.SvB_MA.q_1423), (-1,1))), axis=1)
@@ -685,7 +801,6 @@ class analysis(processor.ProcessorABC):
             selev['quadJet_selected_lead'] = selev['quadJet_selected'].lead
             selev['quadJet_selected_subl'] = selev['quadJet_selected'].subl
 
-
             selev['region'] = selev['quadJet_selected'].SR * 0b10 + selev['quadJet_selected'].SB * 0b01
             selev['passSvB'] = (selev['SvB_MA'].ps > 0.95)
             selev['failSvB'] = (selev['SvB_MA'].ps < 0.05)
@@ -712,82 +827,10 @@ class analysis(processor.ProcessorABC):
             # Blind data in fourTag SR
             #
             if not (isMC or 'mixed' in dataset) and self.blind:
-                selev = selev[~(selev.SR & selev.fourTag)]
-                #selev = selev[~(selev['quadJet_selected'].SR & selev.fourTag)]
-
+                selev = selev[~(selev['quadJet_selected'].SR & selev.fourTag)]
 
             if self.classifier_SvB is not None:
                 self.compute_SvB(selev, junc=junc)
-
-            #
-            # Debugging
-            #
-            selev.issue = ((selev.SR) & (~selev['quadJet_selected'].SR) |  (~selev.SR) & (selev['quadJet_selected'].SR) )
-            if False and ak.any(selev.issue):
-                 print(f'{chunk}WARNING: Mis match of  SR masses in picoAOD variables generated by the c++')
-                 issue = selev[selev.issue]
-
-                 print(pairing[0])
-                 print(pairing[1])
-                 #print(f'canJet Pt 0 {issue.canJet[:,pairing[0]].pt}')
-                 #print(f'canJet Pt 1 {issue.canJet[:,pairing[1]].pt}')
-                 print(f'canJet Pt 0 {issue.canJet[0,pairing[0]].pt}')
-                 print(f'canJet Pt 1 {issue.canJet[0,pairing[1]].pt}')
-                 print(f'diJet mass      {(issue.canJet[0,pairing[0]]     +   issue.canJet[0,pairing[1]]).mass}')
-                 print(f'diJet st    {issue.canJet[0,pairing[0]].pt  +   issue.canJet[0,pairing[1]].pt}')
-
-
-                 #event['nJet_selected'] = ak.sum(event.Jet.selected, axis=1)
-                 print(f'diJet st 2nd    {issue.canJet[:,pairing[0]].pt  +   issue.canJet[:,pairing[1]].pt}')
-                 print(f'diJet st 3rd    {(issue.canJet[:,pairing[0]].pt  +   issue.canJet[:,pairing[1]].pt)[0]}')                 
-
-                 issue['diJet_presort']    = issue.canJet[:,pairing[0]]     +   issue.canJet[:,pairing[1]]
-                 issue['diJet_presort', 'st']    = issue.canJet[:,pairing[0]].pt     +   issue.canJet[:,pairing[1]].pt
-                 issue['diJet_presort', 'stSafe'] = issue.canJet[:,pairing[0]].pt  +   issue.canJet[:,pairing[1]].pt
-
-                 print(f'diJet mass (preSort)      {issue.diJet_presort[0].mass}')
-                 print(f'diJet st (preSort)      {issue.diJet_presort[0].st}')
-                 print(f'diJet st (preSort 2nd)      {issue.diJet_presort[0]["st"]}')
-                 print(f'diJet stSafe (preSort)      {issue.diJet_presort[0].stSafe}')
-
-                 issue['diJet_sorted'] = issue.diJet_presort[ak.argsort(issue.diJet_presort.st, axis=2, ascending=False)]
-                 print(f'diJet mass (sort)      {issue.diJet_sorted[0].mass}')
-                 print(f'diJet st (sort)      {issue.diJet_sorted[0].st}')
-
-                 print(f'canJet Pt 0 {issue.canJet[0,0].pt}')
-                 print(f'canJet Pt 1 {issue.canJet[0,1].pt}')
-                 print(f'canJet Pt 2 {issue.canJet[0,2].pt}')
-                 print(f'canJet Pt 3 {issue.canJet[0,3].pt}')
-                 print(f'canJet Pt pairing 0 {len(issue.canJet[0,pairing[0]])}')
-                 print(f'canJet Pt pairing 1 {len(issue.canJet[0,pairing[1]])}')
-                 #print(f'Dijet {diJet.st}')
-
-                 print(f'{chunk}{len(issue)} events with issues')
-                 print(f'{chunk}c++ SR: {issue.SR}  ')
-                 print(f'{chunk}py SR: {issue["quadJet_selected"].SR}')
-                 print(f'{chunk}c++ dijetSt Mass values: lead {issue.leadStM} subl {issue.sublStM}')
-                 print(f'{chunk}py  dijetSt Mass values: lead {issue.quadJet_selected.lead.mass} subl {issue.quadJet_selected.subl.mass}')
-                 print(f'{chunk}py  all quadJets Mass: lead {issue.quadJet.lead.mass} subl {issue.quadJet.subl.mass}')
-                 print(f'{chunk}py  all quadJets st: lead {issue.quadJet.lead.st} subl {issue.quadJet.subl.st}')
-                 print(f'{chunk}py  all quadJets dijet: lead {issue.quadJet.lead} subl {issue.quadJet.subl}')
-                  #print(f'{chunk}py  dijet st: {diJet.st}')
-                 print(f'{chunk}py  evnet {issue.event}')
-                 
-                 for v in ["pt"]:#,"eta","phi","m"]:
-                     print(f'{chunk}c++ values (canJet0:) {v}',issue.canJet0[:][v] )#, issue.canJet1, issue.canJet2, issue.canJet3)
-                     print(f'{chunk}py  values (canJet0:) {v}',issue["canJet"][:,0][v.replace("m","mass")])
-
-                     print(f'{chunk}c++ values (canJet1:) {v}',issue.canJet1[:][v] )#, issue.canJet1, issue.canJet2, issue.canJet3)
-                     print(f'{chunk}py  values (canJet1:) {v}',issue["canJet"][:,1][v.replace("m","mass")])
-
-                     print(f'{chunk}c++ values (canJet2:) {v}',issue.canJet2[:][v] )#, issue.canJet1, issue.canJet2, issue.canJet3)
-                     print(f'{chunk}py  values (canJet2:) {v}',issue["canJet"][:,2][v.replace("m","mass")])
-
-                     print(f'{chunk}c++ values (canJet3:) {v}',issue.canJet3[:][v] )#, issue.canJet1, issue.canJet2, issue.canJet3)
-                     print(f'{chunk}py  values (canJet3:) {v}',issue["canJet"][:,3][v.replace("m","mass")])
-
-                 print("\n")
-                 print("\n")
 
             #
             # fill histograms
@@ -809,9 +852,10 @@ class analysis(processor.ProcessorABC):
         elapsed = time.time() - tstart
         logging.debug(f'{chunk}{nEvent/elapsed:,.0f} events/s')
 
-        self._cutFlow.addOutput(newOutput, event.metadata['dataset'])
+        self._cutFlow.addOutput(processOutput, event.metadata['dataset'])
 
-        return hist.output | newOutput
+        return hist.output | processOutput
+
 
 
     def compute_SvB(self, event, junc='JES_Central'):
