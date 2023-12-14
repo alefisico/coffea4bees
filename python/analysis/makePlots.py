@@ -15,7 +15,7 @@ from base_class.plots import makePlot
 def doPlots(varList, cutList):
 
     if args.doTest:
-        varList = ["SvB_MA_ps_zz", "SvB_MA_ps_zh", "SvB_MA_ps_hh"]
+        varList = ["SvB_MA.ps_zz", "SvB_MA.ps_zh", "SvB_MA.ps_hh"]
 
     for v in varList:
         print(v)

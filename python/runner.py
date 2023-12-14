@@ -72,8 +72,15 @@ if __name__ == '__main__':
                 logging.warning(f"{year} name not in metadatafile for {dataset}")
                 continue
 
+            if dataset in ['data', 'mixeddata']:
+                xsec = 1.
+            elif isinstance(metadata['datasets'][dataset]['xs'], float):
+                xsec = metadata['datasets'][dataset]['xs'] 
+            else:
+                xsec = eval(metadata['datasets'][dataset]['xs'])
+
             metadata_dataset[dataset] = {
-                'xs': 1. if dataset in ['data', 'mixeddata'] else (metadata['datasets'][dataset]['xs'] if isinstance(metadata['datasets'][dataset]['xs'], float) else eval(metadata['datasets'][dataset]['xs'])),
+                'xs': xsec,
                 'lumi': float(metadata['datasets']['data'][year]['lumi']),
                 'year': year,
                 'processName': dataset,
