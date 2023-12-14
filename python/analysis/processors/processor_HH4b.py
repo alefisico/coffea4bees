@@ -357,8 +357,11 @@ class analysis(processor.ProcessorABC):
         #  v4j
         #
         fill += LorentzVector.plot_pair(('v4j', R'$HH_{4b}$'), 'v4j', skip=['n','dr','dphi','st'], bins = {'mass': (120, 0, 1200)})
-        fill += LorentzVector.plot_pair(('leadSt', R'Lead Boson Candidate'), 'quadJet_selected_lead', skip=['n'])
-        fill += LorentzVector.plot_pair(('sublSt', R'Subleading Boson Candidate'), 'quadJet_selected_subl', skip=['n'])
+        fill += LorentzVector.plot_pair(('quadJet_selected_lead', R'Lead Boson Candidate'), ('quadJet_selected','lead'), skip=['n'])
+        fill += LorentzVector.plot_pair(('quadJet_selected_subl', R'Subleading Boson Candidate'), ('quadJet_selected','subl'), skip=['n'])
+        fill += LorentzVector.plot_pair(('quadJet_min_dr_lead', R'Lead Boson Candidate'),       ('quadJet_min_dr','lead'), skip=['n'])
+        fill += LorentzVector.plot_pair(('quadJet_min_dr_subl', R'Subleading Boson Candidate'), ('quadJet_min_dr','subl'), skip=['n'])
+
         #fill += LorentzVector.plot_pair(('p2j', R'Vector Boson Candidate Dijets'), 'p2jV')
 
         self.apply_puWeight   = (self.apply_puWeight  ) and isMC and (puWeight is not None)
@@ -835,12 +838,6 @@ class analysis(processor.ProcessorABC):
             #  logging.info(f"selected {selev['quadJet_selected'][0]}")
             #  logging.info(f"mindr {selev['quadJet_min_dr'][0]}")
             #  logging.info("\n")
-
-            #
-            # FIX ME  (Better way to do this
-            #
-            selev['quadJet_selected_lead'] = selev['quadJet_selected'].lead
-            selev['quadJet_selected_subl'] = selev['quadJet_selected'].subl
 
             selev['region'] = selev['quadJet_selected'].SR * 0b10 + selev['quadJet_selected'].SB * 0b01
             selev['passSvB'] = (selev['SvB_MA'].ps > 0.95)
