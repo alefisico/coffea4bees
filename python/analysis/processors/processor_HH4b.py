@@ -155,13 +155,12 @@ def setSvBVars(SvBName, event):
 #     return c
 
 class analysis(processor.ProcessorABC):
-    def __init__(self, *, JCM = '', addbtagVariations=None, addjuncVariations=None, SvB=None, SvB_MA=None, threeTag = True, apply_puWeight = False, apply_prefire = False, apply_trigWeight = True, apply_btagSF = True, regions=['SR'], corrections_metadata='analysis/metadata/corrections.yml', year='UL18', btagSF=True):
+    def __init__(self, *, JCM = '', addbtagVariations=None, addjuncVariations=None, SvB=None, SvB_MA=None, threeTag = True, apply_puWeight = False, apply_prefire = False, apply_trigWeight = True, apply_btagSF = True, regions=['SR'], corrections_metadata='analysis/metadata/corrections.yml',  btagSF=True):
         logging.debug('\nInitialize Analysis Processor')
         self.blind = False
         print('Initialize Analysis Processor')
         self.cutFlowCuts = ["all","passHLT","passMETFilter","passJetMult","passJetMult_btagSF","passPreSel","passDiJetMass",'SR','SB','passSvB','failSvB']
         self.histCuts = ['passPreSel','passSvB','failSvB']
-        self.year = year
         self.threeTag = threeTag
         self.tags = ['threeTag','fourTag'] if threeTag else ['fourTag']
         self.regions = regions
@@ -363,7 +362,7 @@ class analysis(processor.ProcessorABC):
                 genEventSumw = np.sum(Runs['genEventSumw'])
 
             if self.btagSF is not None:
-                btagSF = correctionlib.CorrectionSet.from_file(self.corrections_metadata[self.year]['btagSF'])['deepJet_shape']
+                btagSF = correctionlib.CorrectionSet.from_file(self.corrections_metadata[year]['btagSF'])['deepJet_shape']
 
             if self.apply_puWeight:
                 puWeight = list(correctionlib.CorrectionSet.from_file(puWeight).values())[0]
