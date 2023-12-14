@@ -38,7 +38,7 @@ from multiprocessing import Pool
 # print(torch.__config__.parallel_info())
 
 from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
-from analysis.helpers.common import init_jet_factory, jet_corrections
+from analysis.helpers.common import init_jet_factory, jet_corrections, apply_btag_sf
 import logging
 
 
@@ -242,7 +242,7 @@ class analysis(processor.ProcessorABC):
         self._cutFlow            = cutFlow(self.cutFlowCuts)
 
         puWeight= self.corrections_metadata[year]['PU']
-        juncWS = [ self.corrections_metadata[year]["JERC"][0].replace('STEP', istep) 
+        juncWS = [ self.corrections_metadata[year]["JERC"][0].replace('STEP', istep)
                    for istep in ['L1FastJet', 'L2Relative', 'L2L3Residual', 'L3Absolute'] ]  ###### AGE: to be reviewed for data, but should be remove with jsonpog
         if isMC: juncWS += self.corrections_metadata[year]["JERC"][1:]
 
@@ -280,23 +280,23 @@ class analysis(processor.ProcessorABC):
         #    nPSTJets = dir.make<TH1F>("nPSTJets", (name+"/nPSTJets; Number of Tagged + Pseudo-Tagged Jets; Entries").c_str(),  16,-0.5,15.5);
         #    tagJets = new jetHists(name+"/tagJets", fs, "Tagged Jets");
         #    FvTUnweighted = dir.make<TH1F>("FvTUnweighted", (name+"/FvTUnweighted; Kinematic Reweight; Entries").c_str(), 100, 0, 5);
-        
+
         #    nAllMuons = dir.make<TH1F>("nAllMuons", (name+"/nAllMuons; Number of Muons (no selection); Entries").c_str(),  6,-0.5,5.5);
         #    nIsoMed25Muons = dir.make<TH1F>("nIsoMed25Muons", (name+"/nIsoMed25Muons; Number of Prompt Muons; Entries").c_str(),  6,-0.5,5.5);
         #    nIsoMed40Muons = dir.make<TH1F>("nIsoMed40Muons", (name+"/nIsoMed40Muons; Number of Prompt Muons; Entries").c_str(),  6,-0.5,5.5);
         #    allMuons        = new muonHists(name+"/allMuons", fs, "All Muons");
         #    muons_isoMed25  = new muonHists(name+"/muon_isoMed25", fs, "iso Medium 25 Muons");
         #    muons_isoMed40  = new muonHists(name+"/muon_isoMed40", fs, "iso Medium 40 Muons");
-        
-        
+
+
         #    nAllElecs = dir.make<TH1F>("nAllElecs", (name+"/nAllElecs; Number of Elecs (no selection); Entries").c_str(),  16,-0.5,15.5);
         #    nIsoMed25Elecs = dir.make<TH1F>("nIsoMed25Elecs", (name+"/nIsoMed25Elecs; Number of Prompt Elecs; Entries").c_str(),  6,-0.5,5.5);
         #    nIsoMed40Elecs = dir.make<TH1F>("nIsoMed40Elecs", (name+"/nIsoMed40Elecs; Number of Prompt Elecs; Entries").c_str(),  6,-0.5,5.5);
         #    allElecs        = new elecHists(name+"/allElecs", fs, "All Elecs");
         #    elecs_isoMed25  = new elecHists(name+"/elec_isoMed25", fs, "iso Medium 25 Elecs");
         #    elecs_isoMed40  = new elecHists(name+"/elec_isoMed40", fs, "iso Medium 40 Elecs");
-        #  
-        
+        #
+
         #    leadSt_m_vs_sublSt_m = dir.make<TH2F>("leadSt_m_vs_sublSt_m", (name+"/leadSt_m_vs_sublSt_m; S_{T} leading boson candidate Mass [GeV]; S_{T} subleading boson candidate Mass [GeV]; Entries").c_str(), 50,0,250, 50,0,250);
         #    m4j_vs_leadSt_dR = dir.make<TH2F>("m4j_vs_leadSt_dR", (name+"/m4j_vs_leadSt_dR; m_{4j} [GeV]; S_{T} leading boson candidate #DeltaR(j,j); Entries").c_str(), 40,100,1100, 25,0,5);
         #    m4j_vs_sublSt_dR = dir.make<TH2F>("m4j_vs_sublSt_dR", (name+"/m4j_vs_sublSt_dR; m_{4j} [GeV]; S_{T} subleading boson candidate #DeltaR(j,j); Entries").c_str(), 40,100,1100, 25,0,5);
@@ -316,7 +316,7 @@ class analysis(processor.ProcessorABC):
 #    t1 = new trijetHists(name+"/t1",  fs, "Top Candidate (#geq1 non-candidate jets)");
 #    //t2 = new trijetHists(name+"/t2",  fs, "Top Candidate (#geq2 non-candidate jets)");
 #    t = new trijetHists(name+"/t",  fs, "Top Candidate");
-#  
+#
 
 #    hT   = dir.make<TH1F>("hT", (name+"/hT; hT [GeV]; Entries").c_str(),  100,0,1000);
 
@@ -350,7 +350,7 @@ class analysis(processor.ProcessorABC):
         fill += Jet.plot(('selJets', 'Selected Jets'), 'selJet',skip=['deepjet_c'])
         fill += Jet.plot(('canJets', 'Higgs Candidate Jets'), 'canJet',skip=['deepjet_c'])
         fill += Jet.plot(('othJets', 'Other Jets'), 'notCanJet_coffea', skip=['deepjet_c'])
-        
+
         for iJ in range(4):
             fill += Jet.plot((f'canJet{iJ}', f'Higgs Candidate Jets {iJ}'), f'canJet{iJ}', skip=['n','deepjet_c'])
 
@@ -391,8 +391,8 @@ class analysis(processor.ProcessorABC):
         event['SvB']    = NanoEventsFactory.from_root(f'{path}{"SvB_newSBDef.root" if "mix" in dataset else "SvB.root"}',    entry_start=estart, entry_stop=estop, schemaclass=MultiClassifierSchema).events().SvB
         event['SvB_MA'] = NanoEventsFactory.from_root(f'{path}{"SvB_MA_newSBDef.root" if "mix" in dataset else "SvB_MA.root"}', entry_start=estart, entry_stop=estop, schemaclass=MultiClassifierSchema).events().SvB_MA
 
-        event['FvT', 'frac_err'] = event['FvT'].std / event['FvT'].FvT 
-        
+        event['FvT', 'frac_err'] = event['FvT'].std / event['FvT'].FvT
+
         if not ak.all(event.SvB.event == event.event):
             logging.error('ERROR: SvB events do not match events ttree')
             return
@@ -433,7 +433,7 @@ class analysis(processor.ProcessorABC):
         if isMC:
             event['weight'] = event.genWeight * (lumi * xs * kFactor / genEventSumw)
             logging.debug(f"event['weight'] = event.genWeight * (lumi * xs * kFactor / genEventSumw) = {event.genWeight[0]} * ({lumi} * {xs} * {kFactor} / {genEventSumw}) = {event.weight[0]}\n")
-            if self.apply_trigWeight: 
+            if self.apply_trigWeight:
                 event['weight'] = event.weight * event.trigWeight.Data
         else:
             event['weight'] = 1
@@ -609,7 +609,9 @@ class analysis(processor.ProcessorABC):
                 #  Apply btag SF
                 #
                 if self.apply_btagSF:
+                    selev['weighttest'] = apply_btag_sf( selev, selev.selJet, correction_file=self.corrections_metadata[year]['btagSF'], btag_var=self.btagVar, btagSF_norm=btagSF_norm, weight=selev.weight )
                     selev['weight'] = selev[f'weight_btagSF_{"central" if use_central else btag_jes[0]}']
+                    print((ak.to_numpy(selev['weighttest']) == ak.to_numpy(selev['weight'])).all())
 
                 self._cutFlow.fill("passJetMult_btagSF",  selev, allTag=True)
 
@@ -647,12 +649,12 @@ class analysis(processor.ProcessorABC):
 
             #
             #  Should be a better way to do this...
-            # 
+            #
             selev['canJet0'] = canJet[:,0]
             selev['canJet1'] = canJet[:,1]
             selev['canJet2'] = canJet[:,2]
             selev['canJet3'] = canJet[:,3]
-            
+
             selev['v4j'] = canJet.sum(axis=1)
             #selev['v4j', 'n'] = 1
             #print(selev.v4j.n)
@@ -693,7 +695,7 @@ class analysis(processor.ProcessorABC):
 
                 # add pseudoTagWeight to event
                 selev['pseudoTagWeight'] = pseudoTagWeight
-                
+
                 #logging.info(f'pseudoTagWeight: {selev.pseudoTagWeight}')
 
                 #
