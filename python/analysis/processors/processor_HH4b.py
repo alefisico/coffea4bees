@@ -522,7 +522,7 @@ class analysis(processor.ProcessorABC):
                     logging.warning(fourTag[selev.issue])
 
             selev[ 'fourTag']   =  fourTag
-            selev['threeTag']   = threeTag * self.doThreeTag
+            selev['threeTag']   = threeTag
 
             # selev['tag'] = ak.Array({'threeTag':selev.threeTag, 'fourTag':selev.fourTag})
             selev['passPreSel'] = selev.threeTag | selev.fourTag
@@ -691,10 +691,19 @@ class analysis(processor.ProcessorABC):
                 #
                 # apply pseudoTagWeight and FvT to threeTag events
                 #
+                weight_noJCM_noFvT = selev.weight
+                selev['weight_noJCM_noFvT'] = weight_noJCM_noFvT
+                
+                weight_noFvT = np.array(selev.weight.to_numpy(), dtype=float)
+                weight_noFvT[selev.threeTag] = selev.weight[selev.threeTag] * selev.pseudoTagWeight[selev.threeTag]
+                selev['weight_noFvT'] = weight_noFvT
+
                 if self.doReweight:
-                    selev['weight'] = where(selev.passPreSel, (selev.threeTag, selev.weight * selev.pseudoTagWeight * selev.FvT.FvT), (selev.fourTag, selev.weight))
+                    weight= np.array(selev.weight.to_numpy(),dtype=float)
+                    weight[selev.threeTag] = selev.weight[selev.threeTag] * pseudoTagWeight[selev.threeTag] * selev.FvT.FvT[selev.threeTag]
+                    selev['weight'] = weight
                 else:
-                    selev['weight'] = where(selev.passPreSel, (selev.threeTag, selev.weight * selev.pseudoTagWeight), (selev.fourTag, selev.weight))
+                    selev['weight'] = weight_noFvT
 
             #
             # CutFlow
