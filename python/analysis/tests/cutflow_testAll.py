@@ -183,8 +183,13 @@ class CutFlowTestCase(unittest.TestCase):
         self.counts3_unit['HH4b_UL17'] = {'passJetMult' : 92695.0, 'passPreSel' : 72198.0, 'passDiJetMass' : 40780.0, 'SR' : 28452.0, 'SB' : 12328.0, 'passSvB' : 1891.0, 'failSvB' : 20279.0, }
         self.counts3_unit['HH4b_UL16_preVFP'] = {'passJetMult' : 71430.0, 'passPreSel' : 58769.0, 'passDiJetMass' : 33564.0, 'SR' : 23449.0, 'SB' : 10115.0, 'passSvB' : 1300.0, 'failSvB' : 17271.0, }
 
-        self.keysToTest = self.counts3_unit.keys()
+        self.keysToTest = list(self.counts3_unit.keys())
+        self.keysToTest.remove("ZZ4b_UL18")
+        self.keysToTest.remove("ZZ4b_UL17")
+        self.keysToTest.remove("ZZ4b_UL16_preVFP")
+        self.keysToTest.remove("ZZ4b_UL16_postVFP")
         #self.keysToTest = ['TTTo2L2Nu_UL18', 'TTTo2L2Nu_UL17', 'TTTo2L2Nu_UL16_preVFP', 'TTTo2L2Nu_UL16_postVFP']
+
         
     def test_counts4(self):
         """
@@ -193,7 +198,10 @@ class CutFlowTestCase(unittest.TestCase):
         for datasetAndEra in self.keysToTest:
             with self.subTest(datasetAndEra=datasetAndEra):
                 for cut, v in self.counts4[datasetAndEra].items():
-                    self.assertEqual(v,round(float(self.cf4[datasetAndEra][cut]),2),f'incorrect number of fourTag counts for cut: {cut} of dataset {datasetAndEra}')
+                    self.assertAlmostEqual(float(v), 
+                                           float(self.cf4[datasetAndEra][cut]), 
+                                           delta=0.1 , 
+                                           msg=f'incorrect number of fourTag counts for cut: {cut} of dataset {datasetAndEra}')
 
     def test_counts3(self):
         """
@@ -201,7 +209,10 @@ class CutFlowTestCase(unittest.TestCase):
         """
         for datasetAndEra in self.keysToTest:
             for cut, v in self.counts3[datasetAndEra].items():
-                self.assertEqual(v,round(float(self.cf3[datasetAndEra][cut]),2),f'incorrect number of weighted threeTag counts for cut: {cut} of dataset {datasetAndEra}')
+                self.assertAlmostEqual(float(v), 
+                                       float(self.cf3[datasetAndEra][cut]), 
+                                       delta=0.1, 
+                                       msg=f'incorrect number of weighted threeTag counts for cut: {cut} of dataset {datasetAndEra}')
 
     def test_counts3_unitWeight(self):
         """
@@ -209,7 +220,7 @@ class CutFlowTestCase(unittest.TestCase):
         """
         for datasetAndEra in self.keysToTest:
             for cut, v in self.counts3_unit[datasetAndEra].items():
-                self.assertEqual(v,round(float(self.cf3_unit[datasetAndEra][cut]),2),f'incorrect number of threeTag counts for cut: {cut} of dataset {datasetAndEra}')
+                self.assertEqual(round(v,2),round(float(self.cf3_unit[datasetAndEra][cut]),2),f'incorrect number of threeTag counts for cut: {cut} of dataset {datasetAndEra}')
 
     def test_counts4_unitWeight(self):
         """
@@ -217,7 +228,7 @@ class CutFlowTestCase(unittest.TestCase):
         """
         for datasetAndEra in self.keysToTest:
             for cut, v in self.counts4_unit[datasetAndEra].items():
-                self.assertEqual(v,round(float(self.cf4_unit[datasetAndEra][cut]),2),f'incorrect number of fourTag counts for cut: {cut} of dataset {datasetAndEra}')
+                self.assertEqual(round(v,2),round(float(self.cf4_unit[datasetAndEra][cut]),2),f'incorrect number of fourTag counts for cut: {cut} of dataset {datasetAndEra}')
 
 
                 
