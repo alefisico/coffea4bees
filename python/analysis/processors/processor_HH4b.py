@@ -157,24 +157,17 @@ def setSvBVars(SvBName, event):
     #
     #  Set ps_{bb}
     #
-    event[SvBName, 'ps_zz'] = where(~getattr(event, SvBName).passMinPs, (~getattr(event, SvBName).passMinPs, -4))
-    event[SvBName, 'ps_zh'] = where(~getattr(event, SvBName).passMinPs, (~getattr(event, SvBName).passMinPs, -4))
-    event[SvBName, 'ps_hh'] = where(~getattr(event, SvBName).passMinPs, (~getattr(event, SvBName).passMinPs, -4))
+    this_ps_zz = np.full(len(event), -1, dtype=float)
+    this_ps_zz[getattr(event, SvBName).zz] = getattr(event, SvBName).pzz[getattr(event, SvBName).zz]
+    event[SvBName, 'ps_zz'] = this_ps_zz
 
-    event[SvBName, 'ps_zz'] = where((getattr(event, SvBName).passMinPs),
-                                    (getattr(event, SvBName).zz, getattr(event, SvBName).pzz),
-                                    (getattr(event, SvBName).zh, -2),
-                                    (getattr(event, SvBName).hh, -3))
+    this_ps_zh = np.full(len(event), -1, dtype=float)
+    this_ps_zh[getattr(event, SvBName).zh] = getattr(event, SvBName).pzh[getattr(event, SvBName).zh]
+    event[SvBName, 'ps_zh'] = this_ps_zh
 
-    event[SvBName, 'ps_zh'] = where((getattr(event, SvBName).passMinPs),
-                                    (getattr(event, SvBName).zz, -1),
-                                    (getattr(event, SvBName).zh, getattr(event, SvBName).pzh),
-                                    (getattr(event, SvBName).hh, -3))
-
-    event[SvBName, 'ps_hh'] = where((getattr(event, SvBName).passMinPs),
-                                    (getattr(event, SvBName).zz, -1),
-                                    (getattr(event, SvBName).zh, -2),
-                                    (getattr(event, SvBName).hh, getattr(event, SvBName).phh))
+    this_ps_hh = np.full(len(event), -1, dtype=float)
+    this_ps_hh[getattr(event, SvBName).hh] = getattr(event, SvBName).phh[getattr(event, SvBName).hh]
+    event[SvBName, 'ps_hh'] = this_ps_hh
 
 
 
@@ -357,8 +350,11 @@ class analysis(processor.ProcessorABC):
         #  v4j
         #
         fill += LorentzVector.plot_pair(('v4j', R'$HH_{4b}$'), 'v4j', skip=['n','dr','dphi','st'], bins = {'mass': (120, 0, 1200)})
-        fill += LorentzVector.plot_pair(('leadSt', R'Lead Boson Candidate'), 'quadJet_selected_lead', skip=['n'])
-        fill += LorentzVector.plot_pair(('sublSt', R'Subleading Boson Candidate'), 'quadJet_selected_subl', skip=['n'])
+        fill += LorentzVector.plot_pair(('quadJet_selected_lead', R'Lead Boson Candidate'), ('quadJet_selected','lead'), skip=['n'])
+        fill += LorentzVector.plot_pair(('quadJet_selected_subl', R'Subleading Boson Candidate'), ('quadJet_selected','subl'), skip=['n'])
+        fill += LorentzVector.plot_pair(('quadJet_min_dr_lead', R'Lead Boson Candidate'),       ('quadJet_min_dr','lead'), skip=['n'])
+        fill += LorentzVector.plot_pair(('quadJet_min_dr_subl', R'Subleading Boson Candidate'), ('quadJet_min_dr','subl'), skip=['n'])
+
         #fill += LorentzVector.plot_pair(('p2j', R'Vector Boson Candidate Dijets'), 'p2jV')
 
         self.apply_puWeight   = (self.apply_puWeight  ) and isMC and (puWeight is not None)
@@ -426,17 +422,17 @@ class analysis(processor.ProcessorABC):
         if year == 'UL18':
             event['passHLT'] = event.HLT.DoublePFJets116MaxDeta1p6_DoubleCaloBTagDeepCSV_p71 | event.HLT.PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepCSV_4p5
 
-        if not isMC and not 'mix' in dataset: # for data, apply trigger cut first thing, for MC, keep all events and apply trigger in cutflow and for plotting
+        if not isMC and not 'mix' in dataset:      # for data, apply trigger cut first thing, for MC, keep all events and apply trigger in cutflow and for plotting
             event = event[event.passHLT]
 
         if isMC:
             event['weight'] = event.genWeight * (lumi * xs * kFactor / genEventSumw)
             logging.debug(f"event['weight'] = event.genWeight * (lumi * xs * kFactor / genEventSumw) = {event.genWeight[0]} * ({lumi} * {xs} * {kFactor} / {genEventSumw}) = {event.weight[0]}\n")
-            if self.apply_trigWeight: 
+            if self.apply_trigWeight:
                 event['weight'] = event.weight * event.trigWeight.Data
         else:
             event['weight'] = 1
-            #logging.info(f"event['weight'] = {event.weight}")
+            # logging.info(f"event['weight'] = {event.weight}")
 
         self._cutFlow.fill("passHLT",  event, allTag=True)
 
@@ -453,12 +449,10 @@ class analysis(processor.ProcessorABC):
                 passMETFilter = passMETFilter & event.Flag.hfNoisyHitsFilter
             if year == 'UL17' or year == 'UL18':
                 passMETFilter = passMETFilter & event.Flag.ecalBadCalibFilter # in UL the name does not have "V2"
-        #event['passMETFilter'] = passMETFilter
+        # event['passMETFilter'] = passMETFilter
 
-
-        #event = event[event.passMETFilter] # HACK
+        # event = event[event.passMETFilter] # HACK
         self._cutFlow.fill("passMETFilter",  event, allTag=True)
-
 
         #
         # Calculate and apply Jet Energy Calibration   ## AGE: currently not applying to data and mixeddata
@@ -471,7 +465,8 @@ class analysis(processor.ProcessorABC):
             nominal_jet = event.Jet
             # nominal_jet['pt_raw']   = (1 - nominal_jet.rawFactor) * nominal_jet.pt
             # nominal_jet['mass_raw'] = (1 - nominal_jet.rawFactor) * nominal_jet.mass
-            if isMC: nominal_jet['pt_gen']   = ak.values_astype(ak.fill_none(nominal_jet.matched_gen.pt, 0), np.float32)
+            if isMC: 
+                nominal_jet['pt_gen'] = ak.values_astype(ak.fill_none(nominal_jet.matched_gen.pt, 0), np.float32)
             nominal_jet['rho']      = ak.broadcast_arrays(event.fixedGridRhoFastjetAll, nominal_jet.pt)[0]
 
             jec_cache = cachetools.Cache(np.inf)
@@ -485,12 +480,13 @@ class analysis(processor.ProcessorABC):
             if junc != 'JES_Central':
                 logging.debug(f'{chunk} running selection for {junc}')
                 variation = '_'.join(junc.split('_')[:-1]).replace('YEAR', year)
-                if 'JER' in junc: variation = variation.replace(f'_{year}', '')
+                if 'JER' in junc: 
+                    variation = variation.replace(f'_{year}', '')
                 direction = junc.split('_')[-1]
                 # del event['Jet']
                 event['Jet'] = jet_variations[variation, direction]
 
-            event['Jet', 'calibration'] = event.Jet.pt/( 1 if 'data' in dataset else event.Jet.pt_raw )    # AGE: I include the mix condition, I think it is wrong, to check later
+            event['Jet', 'calibration'] = event.Jet.pt / ( 1 if 'data' in dataset else event.Jet.pt_raw )    # AGE: I include the mix condition, I think it is wrong, to check later
             # if junc=='JES_Central':
             #     print(f'calibration nominal: \n{ak.mean(event.Jet.calibration)}')
             # else:
@@ -526,12 +522,15 @@ class analysis(processor.ProcessorABC):
                     logging.warning(fourTag[selev.issue])
 
             selev[ 'fourTag']   =  fourTag
-            selev['threeTag']   = threeTag * self.doThreeTag
+            selev['threeTag']   = threeTag
 
             # selev['tag'] = ak.Array({'threeTag':selev.threeTag, 'fourTag':selev.fourTag})
             selev['passPreSel'] = selev.threeTag | selev.fourTag
-            selev['tag'] = 0
-            selev['tag'] = where(selev.passPreSel, (selev.fourTag, 4), (selev.threeTag, 3))
+            
+            tagCode = np.full(len(selev), 0, dtype=int)
+            tagCode[selev.fourTag]  = 4
+            tagCode[selev.threeTag] = 3
+            selev['tag'] = tagCode
 
             #
             # Calculate and apply pileup weight, L1 prefiring weight
@@ -692,10 +691,19 @@ class analysis(processor.ProcessorABC):
                 #
                 # apply pseudoTagWeight and FvT to threeTag events
                 #
+                weight_noJCM_noFvT = selev.weight
+                selev['weight_noJCM_noFvT'] = weight_noJCM_noFvT
+                
+                weight_noFvT = np.array(selev.weight.to_numpy(), dtype=float)
+                weight_noFvT[selev.threeTag] = selev.weight[selev.threeTag] * selev.pseudoTagWeight[selev.threeTag]
+                selev['weight_noFvT'] = weight_noFvT
+
                 if self.doReweight:
-                    selev['weight'] = where(selev.passPreSel, (selev.threeTag, selev.weight * selev.pseudoTagWeight * selev.FvT.FvT), (selev.fourTag, selev.weight))
+                    weight= np.array(selev.weight.to_numpy(),dtype=float)
+                    weight[selev.threeTag] = selev.weight[selev.threeTag] * pseudoTagWeight[selev.threeTag] * selev.FvT.FvT[selev.threeTag]
+                    selev['weight'] = weight
                 else:
-                    selev['weight'] = where(selev.passPreSel, (selev.threeTag, selev.weight * selev.pseudoTagWeight), (selev.fourTag, selev.weight))
+                    selev['weight'] = weight_noFvT
 
             #
             # CutFlow
@@ -835,12 +843,6 @@ class analysis(processor.ProcessorABC):
             #  logging.info(f"selected {selev['quadJet_selected'][0]}")
             #  logging.info(f"mindr {selev['quadJet_min_dr'][0]}")
             #  logging.info("\n")
-
-            #
-            # FIX ME  (Better way to do this
-            #
-            selev['quadJet_selected_lead'] = selev['quadJet_selected'].lead
-            selev['quadJet_selected_subl'] = selev['quadJet_selected'].subl
 
             selev['region'] = selev['quadJet_selected'].SR * 0b10 + selev['quadJet_selected'].SB * 0b01
             selev['passSvB'] = (selev['SvB_MA'].ps > 0.95)
