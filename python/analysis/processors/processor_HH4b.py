@@ -24,7 +24,6 @@ from coffea.nanoevents.methods import vector
 from coffea import processor, util
 
 from base_class.hist import Collection, Fill
-from base_class.aktools import where
 from base_class.physics.object import LorentzVector, Jet
 
 from analysis.helpers.MultiClassifierSchema import MultiClassifierSchema
@@ -352,8 +351,8 @@ class analysis(processor.ProcessorABC):
         fill += LorentzVector.plot_pair(('v4j', R'$HH_{4b}$'), 'v4j', skip=['n','dr','dphi','st'], bins = {'mass': (120, 0, 1200)})
         fill += LorentzVector.plot_pair(('quadJet_selected_lead', R'Lead Boson Candidate'), ('quadJet_selected','lead'), skip=['n'])
         fill += LorentzVector.plot_pair(('quadJet_selected_subl', R'Subleading Boson Candidate'), ('quadJet_selected','subl'), skip=['n'])
-        fill += LorentzVector.plot_pair(('quadJet_min_dr_lead', R'Lead Boson Candidate'),       ('quadJet_min_dr','lead'), skip=['n'])
-        fill += LorentzVector.plot_pair(('quadJet_min_dr_subl', R'Subleading Boson Candidate'), ('quadJet_min_dr','subl'), skip=['n'])
+        fill += LorentzVector.plot_pair(('quadJet_min_dr_close', R'Close Boson Candidate'),       ('quadJet_min_dr','close'), skip=['n'])
+        fill += LorentzVector.plot_pair(('quadJet_min_dr_other', R'Other Boson Candidate'), ('quadJet_min_dr','other'), skip=['n'])
 
         #fill += LorentzVector.plot_pair(('p2j', R'Vector Boson Candidate Dijets'), 'p2jV')
 
@@ -373,21 +372,19 @@ class analysis(processor.ProcessorABC):
             if self.apply_puWeight:
                 puWeight = list(correctionlib.CorrectionSet.from_file(puWeight).values())[0]
 
-
-
         logging.debug(fname)
         logging.debug(f'{chunk}Process {nEvent} Events')
 
         #
         # Reading SvB friend trees
         #
-        path = fname.replace(fname.split('/')[-1],'')
+        path = fname.replace(fname.split('/')[-1], '')
         event['FvT']    = NanoEventsFactory.from_root(f'{path}{"FvT_3bDvTMix4bDvT_v0_newSB.root" if "mix" in dataset else "FvT.root"}',    entry_start=estart, entry_stop=estop, schemaclass=MultiClassifierSchema).events().FvT
         event['SvB']    = NanoEventsFactory.from_root(f'{path}{"SvB_newSBDef.root" if "mix" in dataset else "SvB.root"}',    entry_start=estart, entry_stop=estop, schemaclass=MultiClassifierSchema).events().SvB
         event['SvB_MA'] = NanoEventsFactory.from_root(f'{path}{"SvB_MA_newSBDef.root" if "mix" in dataset else "SvB_MA.root"}', entry_start=estart, entry_stop=estop, schemaclass=MultiClassifierSchema).events().SvB_MA
 
-        event['FvT', 'frac_err'] = event['FvT'].std / event['FvT'].FvT 
-        
+        event['FvT', 'frac_err'] = event['FvT'].std / event['FvT'].FvT
+
         if not ak.all(event.SvB.event == event.event):
             logging.error('ERROR: SvB events do not match events ttree')
             return
@@ -406,9 +403,8 @@ class analysis(processor.ProcessorABC):
         setSvBVars("SvB", event)
         setSvBVars("SvB_MA", event)
 
-
         if isMC:
-            self._cutFlow.fill("all",  event, allTag=True, wOverride = (lumi * xs * kFactor))
+            self._cutFlow.fill("all",  event, allTag=True, wOverride=(lumi * xs * kFactor))
         else:
             self._cutFlow.fill("all",  event, allTag=True)
 
@@ -422,7 +418,7 @@ class analysis(processor.ProcessorABC):
         if year == 'UL18':
             event['passHLT'] = event.HLT.DoublePFJets116MaxDeta1p6_DoubleCaloBTagDeepCSV_p71 | event.HLT.PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepCSV_4p5
 
-        if not isMC and not 'mix' in dataset:      # for data, apply trigger cut first thing, for MC, keep all events and apply trigger in cutflow and for plotting
+        if not isMC and 'mix' not in dataset:      # for data, apply trigger cut first thing, for MC, keep all events and apply trigger in cutflow and for plotting
             event = event[event.passHLT]
 
         if isMC:
@@ -436,7 +432,6 @@ class analysis(processor.ProcessorABC):
 
         self._cutFlow.fill("passHLT",  event, allTag=True)
 
-
         #
         # METFilter
         #
@@ -448,7 +443,7 @@ class analysis(processor.ProcessorABC):
             if 'hfNoisyHitsFilter' in event.Flag.fields:
                 passMETFilter = passMETFilter & event.Flag.hfNoisyHitsFilter
             if year == 'UL17' or year == 'UL18':
-                passMETFilter = passMETFilter & event.Flag.ecalBadCalibFilter # in UL the name does not have "V2"
+                passMETFilter = passMETFilter & event.Flag.ecalBadCalibFilter    # in UL the name does not have "V2"
         # event['passMETFilter'] = passMETFilter
 
         # event = event[event.passMETFilter] # HACK
@@ -465,7 +460,7 @@ class analysis(processor.ProcessorABC):
             nominal_jet = event.Jet
             # nominal_jet['pt_raw']   = (1 - nominal_jet.rawFactor) * nominal_jet.pt
             # nominal_jet['mass_raw'] = (1 - nominal_jet.rawFactor) * nominal_jet.mass
-            if isMC: 
+            if isMC:
                 nominal_jet['pt_gen'] = ak.values_astype(ak.fill_none(nominal_jet.matched_gen.pt, 0), np.float32)
             nominal_jet['rho']      = ak.broadcast_arrays(event.fixedGridRhoFastjetAll, nominal_jet.pt)[0]
 
@@ -480,7 +475,7 @@ class analysis(processor.ProcessorABC):
             if junc != 'JES_Central':
                 logging.debug(f'{chunk} running selection for {junc}')
                 variation = '_'.join(junc.split('_')[:-1]).replace('YEAR', year)
-                if 'JER' in junc: 
+                if 'JER' in junc:
                     variation = variation.replace(f'_{year}', '')
                 direction = junc.split('_')[-1]
                 # del event['Jet']
@@ -526,7 +521,7 @@ class analysis(processor.ProcessorABC):
 
             # selev['tag'] = ak.Array({'threeTag':selev.threeTag, 'fourTag':selev.fourTag})
             selev['passPreSel'] = selev.threeTag | selev.fourTag
-            
+
             tagCode = np.full(len(selev), 0, dtype=int)
             tagCode[selev.fourTag]  = 4
             tagCode[selev.threeTag] = 3
@@ -693,13 +688,13 @@ class analysis(processor.ProcessorABC):
                 #
                 weight_noJCM_noFvT = selev.weight
                 selev['weight_noJCM_noFvT'] = weight_noJCM_noFvT
-                
+
                 weight_noFvT = np.array(selev.weight.to_numpy(), dtype=float)
                 weight_noFvT[selev.threeTag] = selev.weight[selev.threeTag] * selev.pseudoTagWeight[selev.threeTag]
                 selev['weight_noFvT'] = weight_noFvT
 
                 if self.doReweight:
-                    weight= np.array(selev.weight.to_numpy(),dtype=float)
+                    weight = np.array(selev.weight.to_numpy(), dtype=float)
                     weight[selev.threeTag] = selev.weight[selev.threeTag] * pseudoTagWeight[selev.threeTag] * selev.FvT.FvT[selev.threeTag]
                     selev['weight'] = weight
                 else:
@@ -723,7 +718,8 @@ class analysis(processor.ProcessorABC):
             diJet['lead'] = canJet[:, pairing[0]]
             diJet['subl'] = canJet[:, pairing[1]]
             # Sort diJets within views to be lead st, subl st
-            diJet = diJet[ak.argsort(diJet.st, axis=2, ascending=False)]
+            diJet   = diJet[ak.argsort(diJet.st, axis=2, ascending=False)]
+            diJetDr = diJet[ak.argsort(diJet.dr, axis=2, ascending=True)]
             # Now indexed by diJet[event,pairing,lead/subl st]
 
             # Compute diJetMass cut with independent min/max for lead/subl
@@ -757,6 +753,8 @@ class analysis(processor.ProcessorABC):
             #
             quadJet = ak.zip({'lead': diJet[:, :, 0],
                               'subl': diJet[:, :, 1],
+                              'close': diJetDr[:, :, 0],
+                              'other': diJetDr[:, :, 1],
                               'passDiJetMass': ak.all(diJet.passDiJetMass, axis=2),
                               'random': np.random.uniform(low=0.1, high=0.9, size=(diJet.__len__(), 3))})
 
@@ -775,8 +773,9 @@ class analysis(processor.ProcessorABC):
             quadJet['SvB_MA_q_score'] = np.concatenate((np.reshape(np.array(selev.SvB_MA.q_1234), (-1, 1)),
                                                         np.reshape(np.array(selev.SvB_MA.q_1324), (-1, 1)),
                                                         np.reshape(np.array(selev.SvB_MA.q_1423), (-1, 1))), axis=1)
-
+            #
             # Compute Signal Regions
+            #
             quadJet['xZZ'] = np.sqrt(quadJet.lead.xZ**2 + quadJet.subl.xZ**2)
             quadJet['xHH'] = np.sqrt(quadJet.lead.xH**2 + quadJet.subl.xH**2)
             quadJet['xZH'] = np.sqrt(np.minimum(quadJet.lead.xH**2 + quadJet.subl.xZ**2,
@@ -790,44 +789,18 @@ class analysis(processor.ProcessorABC):
             quadJet['SR'] = quadJet.ZZSR | quadJet.ZHSR | quadJet.HHSR
             quadJet['SB'] = quadJet.passDiJetMass & ~quadJet.SR
 
-            # print("Quadjets are")
-            # testIndex = 0
-            # print(quadJet[testIndex])
-            # logging.info("Quadjets are")
             #
-            # logging.info(quadJet[testIndex])
-            # logging.info(type(quadJet[testIndex]))
-            # logging.info(f' quadJet fields: {quadJet.fields}')
-            # logging.info(f' dijet fields: {quadJet.lead.fields}')
-            # logging.info(f' lead dr {quadJet[testIndex].lead.dr}')
-            # logging.info(f' subl dr {quadJet[testIndex].subl.dr}')
-            # logging.info(f' min lead dr {np.min(quadJet[testIndex].lead.dr)}')
-            # logging.info(f' min subl dr {np.min(quadJet[testIndex].subl.dr)}')
-            # logging.info(f' arg min lead dr {np.argmin(quadJet[testIndex].lead.dr)}')
-            # logging.info(f' arg min subl dr {np.argmin(quadJet[testIndex].subl.dr)}')
+            #  Build the close dR and other quadjets
+            #    (There is Probably a better way to do this ...
+            #
             min_subl_dr = np.min(quadJet.subl.dr, axis=1)
             min_lead_dr = np.min(quadJet.lead.dr, axis=1)
             arg_min_subl_dr = np.argmin(quadJet.subl.dr, axis=1)
             arg_min_lead_dr = np.argmin(quadJet.lead.dr, axis=1)
             subl_smaller = min_subl_dr < min_lead_dr
-            subl_smaller_int = where(0, (subl_smaller, 1))
-            #  quadJet_min_dr_index = arg_min_subl_dr
-            quadJet_min_dr_index = where(arg_min_lead_dr, (subl_smaller, arg_min_subl_dr))
-
-            #  quadJet['min_subl_dr'] = np.min(quadJet.subl.dr, axis = 1)
-            #  quadJet['min_lead_dr'] = np.min(quadJet.lead.dr, axis = 1)
-            #  logging.info(f' lead dr {quadJet.lead.dr}')
-            #  logging.info(f' subl dr {quadJet.subl.dr}')
-            #  logging.info(f' min lead dr {min_lead_dr}')
-            #  logging.info(f' min subl dr {min_subl_dr}')
-            #  logging.info(f' subl smaller          {subl_smaller}')
-            #  logging.info(f' subl smaller int      {subl_smaller_int}')
-            #  logging.info(f' arg_min lead dr       {arg_min_lead_dr}')
-            #  logging.info(f' arg_min subl dr       {arg_min_subl_dr}')
-            #  logging.info(f' quadJet_min_dr_index  {quadJet_min_dr_index}')
-            #  logging.info(f' {quadJet[quadJet_min_dr_index][0]}')
-            #  logging.info(f" {quadJet[quadJet_min_dr_index][0,0]}")
-            selev['quadJet_min_dr'] = quadJet[quadJet_min_dr_index][:, 0]
+            quadJet_min_dr_index = arg_min_lead_dr.to_numpy()
+            quadJet_min_dr_index[subl_smaller] = arg_min_subl_dr[subl_smaller]
+            selev['quadJet_min_dr'] = quadJet[np.array(range(len(quadJet))), quadJet_min_dr_index]
 
             #
             # pick quadJet at random giving preference to ones which passDiJetMass and MDRs
