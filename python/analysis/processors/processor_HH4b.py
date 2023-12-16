@@ -240,10 +240,6 @@ class analysis(processor.ProcessorABC):
         #
         # Hists
         #
-        #fill_noJCM_noFvT = Fill(process = processName, year = year, weight = 'weight_noJCM_noFvT')
-        #fill_noFvT = Fill(process = processName, year = year, weight = 'weight_noFvT')
-        #fill_noFvT += hist.add('FvT_noFvT', (100, 0, 5, ('FvT.FvT', 'FvT reweight')))
-
         fill = Fill(process=processName, year=year, weight='weight')
 
         hist = Collection(process = [processName],
@@ -253,8 +249,6 @@ class analysis(processor.ProcessorABC):
                           **dict((s, ...) for s in self.histCuts))
 
 
-        fill += Jet.plot(('selJets_noJCM', 'Selected Jets'),        'selJet',           skip=['deepjet_c'], weight="weight_noJCM_noFvT")
-        fill += hist.add('FvT_noFvT', (100, 0, 5, ('FvT.FvT', 'FvT reweight')), weight="weight_noFvT")
 
         #
         # To Add
@@ -312,6 +306,7 @@ class analysis(processor.ProcessorABC):
         #  Make classifier hists
         #
         fill += FvTHists(('FvT', 'FvT Classifier'), 'FvT')
+        fill += hist.add('FvT_noFvT', (100, 0, 5, ('FvT.FvT', 'FvT reweight')), weight="weight_noFvT")
 
         fill += SvBHists(('SvB', 'SvB Classifier'), 'SvB')
         fill += SvBHists(('SvB_MA', 'SvB MA Classifier'), 'SvB_MA')
@@ -322,6 +317,9 @@ class analysis(processor.ProcessorABC):
         fill += Jet.plot(('selJets', 'Selected Jets'),        'selJet',           skip=['deepjet_c'])
         fill += Jet.plot(('canJets', 'Higgs Candidate Jets'), 'canJet',           skip=['deepjet_c'])
         fill += Jet.plot(('othJets', 'Other Jets'),           'notCanJet_coffea', skip=['deepjet_c'])
+        fill += Jet.plot(('selJets_noJCM', 'Selected Jets'),  'selJet',           weight="weight_noJCM_noFvT",
+                         skip=['deepjet_b', 'energy', 'eta', 'id_jet', 'id_pileup', 'mass', 'phi', 'pt', 'pz', 'deepjet_c'])
+
 
         for iJ in range(4):
             fill += Jet.plot((f'canJet{iJ}', f'Higgs Candidate Jets {iJ}'), f'canJet{iJ}', skip=['n', 'deepjet_c'])
@@ -772,14 +770,9 @@ class analysis(processor.ProcessorABC):
             #  Build the close dR and other quadjets
             #    (There is Probably a better way to do this ...
             #
-            min_subl_dr = np.min(quadJet.subl.dr, axis=1)
-            min_lead_dr = np.min(quadJet.lead.dr, axis=1)
-            arg_min_subl_dr = np.argmin(quadJet.subl.dr, axis=1)
-            arg_min_lead_dr = np.argmin(quadJet.lead.dr, axis=1)
-            subl_smaller = min_subl_dr < min_lead_dr
-            quadJet_min_dr_index = arg_min_lead_dr.to_numpy()
-            quadJet_min_dr_index[subl_smaller] = arg_min_subl_dr[subl_smaller]
-            selev['quadJet_min_dr'] = quadJet[np.array(range(len(quadJet))), quadJet_min_dr_index]
+            arg_min_close_dr = np.argmin(quadJet.close.dr, axis=1)
+            arg_min_close_dr = arg_min_close_dr.to_numpy()
+            selev['quadJet_min_dr'] = quadJet[np.array(range(len(quadJet))), arg_min_close_dr]
 
             #
             # pick quadJet at random giving preference to ones which passDiJetMass and MDRs
