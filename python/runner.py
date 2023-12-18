@@ -45,8 +45,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
 
-    if args.test:
-        args.output_file = 'test.coffea'
     logging.info(f"\nRunning with these parameters: {args}")
 
     #
@@ -75,7 +73,7 @@ if __name__ == '__main__':
             if dataset in ['data', 'mixeddata']:
                 xsec = 1.
             elif isinstance(metadata['datasets'][dataset]['xs'], float):
-                xsec = metadata['datasets'][dataset]['xs'] 
+                xsec = metadata['datasets'][dataset]['xs']
             else:
                 xsec = eval(metadata['datasets'][dataset]['xs'])
 
@@ -163,7 +161,8 @@ if __name__ == '__main__':
         sys.exit(0)
 
     tstart = time.time()
-    logging.info(f"fileset is {fileset}")
+    logging.info(f"fileset keys are {fileset.keys()}")
+    logging.debug(f"fileset is {fileset}")
 
     output, metrics = processor.run_uproot_job(
         fileset,
