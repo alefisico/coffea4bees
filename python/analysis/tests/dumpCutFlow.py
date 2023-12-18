@@ -1,7 +1,7 @@
 import argparse
 from coffea.util import load
 
-def printCounts(counts, name):
+def print_counts(counts, name):
 
     print(f"self.{name} = {'{}'}")
     for k in sorted(counts.keys(),reverse=True):
@@ -12,17 +12,28 @@ def printCounts(counts, name):
         print(f"{'}'}")
     print("\n\n")
 
+def print_counts_yaml(counts, name):
+
+    outputFile.write(f"{name}:\n")
+    for k in sorted(counts.keys(),reverse=True):
+
+        outputFile.write(f"    {k}:\n")
+        for cut in ['passJetMult', 'passPreSel', 'passDiJetMass', 'SR', 'SB', 'passSvB', 'failSvB']:
+            outputFile.write(f"        {cut}: {round(float(counts[k][cut]),2)}\n")
+        outputFile.write("\n")
+    outputFile.write("\n\n")
+
+    
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='uproot_plots')
     parser.add_argument('-i','--inputFile', default='hists.pkl', help='Input File. Default: hists.pkl')
-    parser.add_argument('-p','--process',   default='data', help='Input process. Default: hists.pkl')
-    parser.add_argument('-e','--era',   nargs='+', dest='eras', default=['UL17C'], help='Input process. Default: hists.pkl')
+    parser.add_argument('-o','--outputFile', default='knownCounts.yml', help='Input File. Default: hists.pkl')
     #parser.add_argument('-d', '--datasets', nargs='+', dest='datasets', , help="Name of dataset to run. Example if more than one: -d HH4b ZZ4b")
     #parser.add_argument('-p','--process',   default='data', help='Input process. Default: hists.pkl')
     args = parser.parse_args()
 
-    
+    outputFile = open(f'{args.outputFile}', 'w')
 
     with open(f'{args.inputFile}', 'rb') as hfile:
         hists = load(hfile)
@@ -34,17 +45,11 @@ if __name__ == '__main__':
 
 
 
-    printCounts(cf4, "counts4")
-    printCounts(cf3, "counts3")
-    printCounts(cf4_unit, "counts4_unit")
-    printCounts(cf3_unit, "counts3_unit")
+    print_counts_yaml(cf4, "counts4")
+    print_counts_yaml(cf3, "counts3")
+    print_counts_yaml(cf4_unit, "counts4_unit")
+    print_counts_yaml(cf3_unit, "counts3_unit")
 
 
-#        print("counts3_unit:")
-#        for proc, cutDict in self.counts3_unit.items():
-#            print("\t",proc,":")
-#            for cut, values in cutDict.items():
-#                print("\t\t",cut,":",values)
-#
 
     
