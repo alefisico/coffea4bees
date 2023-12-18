@@ -28,5 +28,5 @@ codes:
       fourTag: 4
       other: 0
 
-rebin:
+doRatio:
     0

@@ -26,7 +26,7 @@ def doPlots(varList, cutList):
         tag = "fourTag"
 
         vDict["ylabel"] = "Entries"
-        vDict["doRatio"] = plotConfig.get("rebin", "True")
+        vDict["doRatio"] = plotConfig.get("doRatio", True)
         vDict["legend"] = True
 
         for region in ["SR", "SB"]:
