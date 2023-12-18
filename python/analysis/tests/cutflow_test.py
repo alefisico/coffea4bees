@@ -23,7 +23,8 @@ class CutFlowTestCase(unittest.TestCase):
         self.cf3_unit = hists["cutFlowThreeTagUnitWeight"]
 
         #  Make these numbers with:
-        #  >  python     analysis/tests/dumpCutFlow.py  -i hists/test.coffea  
+        #  >  python     analysis/tests/dumpCutFlow.py --input [inputFileName] -o [outputFielName]
+        #       (python analysis/tests/dumpCutFlow.py --input hists/histAll.coffea -o analysis/tests/histAllCounts.yml )
         #
         knownCountFile = wrapper.args["knownCounts"] 
         self.knownCounts = yaml.safe_load(open(knownCountFile, 'r'))
