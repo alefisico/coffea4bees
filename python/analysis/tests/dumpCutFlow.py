@@ -39,4 +39,12 @@ if __name__ == '__main__':
     printCounts(cf4_unit, "counts4_unit")
     printCounts(cf3_unit, "counts3_unit")
 
+
+#        print("counts3_unit:")
+#        for proc, cutDict in self.counts3_unit.items():
+#            print("\t",proc,":")
+#            for cut, values in cutDict.items():
+#                print("\t\t",cut,":",values)
+#
+
     
