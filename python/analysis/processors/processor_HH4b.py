@@ -22,6 +22,7 @@ from analysis.helpers.networks import HCREnsemble
 from coffea.nanoevents import NanoEventsFactory, NanoAODSchema, BaseSchema
 from coffea.nanoevents.methods import vector
 from coffea import processor, util
+from coffea.lumi_tools import LumiMask
 
 from base_class.hist import Collection, Fill
 from base_class.physics.object import LorentzVector, Jet
@@ -37,7 +38,7 @@ from multiprocessing import Pool
 # print(torch.__config__.parallel_info())
 
 from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
-from analysis.helpers.common import init_jet_factory, jet_corrections
+from analysis.helpers.common import init_jet_factory, jet_corrections, mask_event_decision, apply_btag_sf
 import logging
 
 
@@ -226,7 +227,7 @@ class analysis(processor.ProcessorABC):
         self._cutFlow = cutFlow(self.cutFlowCuts)
 
         puWeight = self.corrections_metadata[year]['PU']
-        juncWS = [ self.corrections_metadata[year]["JERC"][0].replace('STEP', istep) 
+        juncWS = [ self.corrections_metadata[year]["JERC"][0].replace('STEP', istep)
                    for istep in ['L1FastJet', 'L2Relative', 'L2L3Residual', 'L3Absolute'] ]      ###### AGE: to be reviewed for data, but should be remove with jsonpog
         if isMC:
             juncWS += self.corrections_metadata[year]["JERC"][1:]
@@ -383,17 +384,15 @@ class analysis(processor.ProcessorABC):
         if isMC:
             self._cutFlow.fill("all",  event, allTag=True, wOverride=(lumi * xs * kFactor))
         else:
+            lumimask = LumiMask(self.corrections_metadata[year]['goldenJSON'])
+            jsonFilter = np.array( lumimask(event.run, event.luminosityBlock) )
+            event = event[jsonFilter]
             self._cutFlow.fill("all",  event, allTag=True)
 
         #
         # Get trigger decisions
         #
-        if year == 'UL16':
-            event['passHLT'] = event.HLT.QuadJet45_TripleBTagCSV_p087 | event.HLT.DoubleJet90_Double30_TripleBTagCSV_p087 | event.HLT.DoubleJetsC100_DoubleBTagCSV_p014_DoublePFJetsC100MaxDeta1p6
-        if year == 'UL17':
-            event['passHLT'] = event.HLT.PFHT300PT30_QuadPFJet_75_60_45_40_TriplePFBTagCSV_3p0 | event.HLT.DoublePFJets100MaxDeta1p6_DoubleCaloBTagCSV_p33
-        if year == 'UL18':
-            event['passHLT'] = event.HLT.DoublePFJets116MaxDeta1p6_DoubleCaloBTagDeepCSV_p71 | event.HLT.PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepCSV_4p5
+        event['passHLT'] = mask_event_decision( event, decision="OR", branch="HLT", list_to_mask=event.metadata['trigger']  )
 
         if not isMC and 'mix' not in dataset:      # for data, apply trigger cut first thing, for MC, keep all events and apply trigger in cutflow and for plotting
             event = event[event.passHLT]
@@ -412,16 +411,10 @@ class analysis(processor.ProcessorABC):
         #
         # METFilter
         #
-        passMETFilter = np.ones(len(event), dtype=bool) if 'mix' in dataset else ( event.Flag.goodVertices & event.Flag.globalSuperTightHalo2016Filter & event.Flag.HBHENoiseFilter   & event.Flag.HBHENoiseIsoFilter & event.Flag.EcalDeadCellTriggerPrimitiveFilter & event.Flag.BadPFMuonFilter & event.Flag.eeBadScFilter)
-        # passMETFilter *= event.Flag.EcalDeadCellTriggerPrimitiveFilter & event.Flag.BadPFMuonFilter                & event.Flag.BadPFMuonDzFilter & event.Flag.hfNoisyHitsFilter & event.Flag.eeBadScFilter
-        if 'mix' not in dataset:
-            if 'BadPFMuonDzFilter' in event.Flag.fields:
-                passMETFilter = passMETFilter & event.Flag.BadPFMuonDzFilter
-            if 'hfNoisyHitsFilter' in event.Flag.fields:
-                passMETFilter = passMETFilter & event.Flag.hfNoisyHitsFilter
-            if year == 'UL17' or year == 'UL18':
-                passMETFilter = passMETFilter & event.Flag.ecalBadCalibFilter    # in UL the name does not have "V2"
-        # event['passMETFilter'] = passMETFilter
+        passMETFilter = mask_event_decision( event, decision="AND", branch="Flag",
+                                            list_to_mask=self.corrections_metadata[year]['METFilter'],
+                                            list_to_skip=['BadPFMuonDzFilter', 'hfNoisyHitsFilter']  )
+        #event['passMETFilter'] = passMETFilter
 
         # event = event[event.passMETFilter] # HACK
         self._cutFlow.fill("passMETFilter",  event, allTag=True)
@@ -520,64 +513,11 @@ class analysis(processor.ProcessorABC):
             #
             if isMC and btagSF is not None:
 
-                #  central = 'central'
-                use_central = True
-                btag_jes = []
-                if junc != 'JES_Central':   # and 'JER' not in junc:# and 'JES_Total' not in junc:
-                    use_central = False
-                    jes_or_jer = 'jer' if 'JER' in junc else 'jes'
-                    btag_jes = [f'{direction}_{jes_or_jer}{variation.replace("JES_","").replace("Total","")}']
-                cj, nj = ak.flatten(selev.selJet), ak.num(selev.selJet)
-                hf, eta, pt, tag = np.array(cj.hadronFlavour), np.array(abs(cj.eta)), np.array(cj.pt), np.array(cj.btagDeepFlavB)
-
-                cj_bl = selev.selJet[selev.selJet.hadronFlavour != 4]
-                nj_bl = ak.num(cj_bl)
-                cj_bl = ak.flatten(cj_bl)
-                hf_bl, eta_bl, pt_bl, tag_bl = np.array(cj_bl.hadronFlavour), np.array(abs(cj_bl.eta)), np.array(cj_bl.pt), np.array(cj_bl.btagDeepFlavB)
-                SF_bl = btagSF.evaluate('central', hf_bl, eta_bl, pt_bl, tag_bl)
-                SF_bl = ak.unflatten(SF_bl, nj_bl)
-                SF_bl = np.prod(SF_bl, axis=1)
-
-                cj_c = selev.selJet[selev.selJet.hadronFlavour == 4]
-                nj_c = ak.num(cj_c)
-                cj_c = ak.flatten(cj_c)
-                hf_c, eta_c, pt_c, tag_c = np.array(cj_c.hadronFlavour), np.array(abs(cj_c.eta)), np.array(cj_c.pt), np.array(cj_c.btagDeepFlavB)
-                SF_c = btagSF.evaluate('central', hf_c, eta_c, pt_c, tag_c)
-                SF_c = ak.unflatten(SF_c, nj_c)
-                SF_c = np.prod(SF_c, axis=1)
-
-                for sf in self.btagVar + btag_jes:
-                    if sf == 'central':
-                        SF = btagSF.evaluate('central', hf, eta, pt, tag)
-                        SF = ak.unflatten(SF, nj)
-
-                        # hf = ak.unflatten(hf, nj)
-                        # pt = ak.unflatten(pt, nj)
-                        # eta = ak.unflatten(eta, nj)
-                        # tag = ak.unflatten(tag, nj)
-                        # for i in range(len(selev)):
-                        #     for j in range(nj[i]):
-                        #         print(f'jetPt/jetEta/jetTagScore/jetHadronFlavour/SF = {pt[i][j]}/{eta[i][j]}/{tag[i][j]}/{hf[i][j]}/{SF[i][j]}')
-                        #     print(np.prod(SF[i]))
-                        SF = np.prod(SF, axis=1)
-
-                    if '_cf' in sf:
-                        SF = btagSF.evaluate(sf, hf_c, eta_c, pt_c, tag_c)
-                        SF = ak.unflatten(SF, nj_c)
-                        SF = SF_bl * np.prod(SF, axis=1)    # use central value for b,l jets
-                    if '_hf' in sf or '_lf' in sf or '_jes' in sf:
-                        SF = btagSF.evaluate(sf, hf_bl, eta_bl, pt_bl, tag_bl)
-                        SF = ak.unflatten(SF, nj_bl)
-                        SF = SF_c * np.prod(SF, axis=1)    # use central value for charm jets
-
-                    selev[f'btagSF_{sf}'] = SF * btagSF_norm
-                    selev[f'weight_btagSF_{sf}'] = selev.weight * SF * btagSF_norm
-
                 #
                 #  Apply btag SF
                 #
                 if self.apply_btagSF:
-                    selev['weight'] = selev[f'weight_btagSF_{"central" if use_central else btag_jes[0]}']
+                    selev['weight'] = apply_btag_sf( selev, selev.selJet, correction_file=self.corrections_metadata[year]['btagSF'], btag_var=self.btagVar, btagSF_norm=btagSF_norm, weight=selev.weight )
 
                 self._cutFlow.fill("passJetMult_btagSF",  selev, allTag=True)
 
