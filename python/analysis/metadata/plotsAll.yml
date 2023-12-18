@@ -3,7 +3,7 @@ hists:
                 process: data
                 tag: fourTag
                 year: RunII
-                label: Data
+                label: Four-tag Data
                 edgecolor: k
                 fillcolor: k            
 
@@ -11,7 +11,7 @@ hists:
                 process: HH4b
                 tag: fourTag
                 year: RunII
-                label: HH4b
+                label: HH4b (x100)
                 edgecolor: r
                 fillcolor: r            
                 histtype: step
@@ -21,7 +21,7 @@ hists:
                 process: ZH4b
                 tag: fourTag
                 year: RunII
-                label: ZH4b
+                label: ZH4b (x100)
                 edgecolor: b
                 fillcolor: b            
                 histtype: step
@@ -31,7 +31,7 @@ hists:
                 process: ZZ4b
                 tag: fourTag
                 year: RunII
-                label: ZZ4b
+                label: ZZ4b (x100)
                 edgecolor: g
                 fillcolor: g            
                 histtype: step
@@ -45,7 +45,7 @@ stack:
                 year: RunII
                 fillcolor: xkcd:light blue
                 edgecolor: xkcd:light blue
-                label: TT 2L
+                label: None
 
         process2:
                 process: TTToSemiLeptonic
@@ -53,7 +53,7 @@ stack:
                 year: RunII
                 fillcolor: xkcd:light blue
                 edgecolor: xkcd:light blue
-                label: TT Semi-lep
+                label: None
 
         process3:
                 process: TTToHadronic
@@ -61,7 +61,7 @@ stack:
                 year: RunII
                 fillcolor: xkcd:light blue
                 edgecolor: xkcd:blue
-                label: TT Had
+                label: TTbar
 
 
         process4:
@@ -84,5 +84,5 @@ codes:
       fourTag: 4
       other: 0
 
-rebin:
-    0
+doRatio:
+    1

@@ -2,6 +2,7 @@ import os
 import hist
 from hist.intervals import ratio_uncertainty
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 import numpy as np
 import mplhep as hep  # HEP (CMS) extensions/styling on top of mpl
 plt.style.use([hep.style.CMS, {'font.size': 16}])
@@ -54,11 +55,21 @@ def _draw_plot(hist_list, stack_dict,  **kwargs):
 
         s.plot(stack=True, histtype="fill",
                color=kwargs.get("stack_colors_fill"),
+               label = None,
                density=norm)
 
         s.plot(stack=True, histtype="step",
                color=kwargs.get("stack_colors_edge"),
+               label = None,
                density=norm)
+
+    stack_patches = []
+    for ik, k in enumerate(kwargs.get("stack_labels")):
+        if k in ["None"]:
+            continue
+        stack_patches.append(mpatches.Patch(facecolor=kwargs.get("stack_colors_fill")[ik],
+                                            edgecolor=kwargs.get("stack_colors_edge")[ik],
+                                            label=k))
 
     #
     #  Draw the hists
@@ -67,6 +78,7 @@ def _draw_plot(hist_list, stack_dict,  **kwargs):
     hist_fill_colors = kwargs.get("hist_fill_colors")
     hist_edge_colors = kwargs.get("hist_edge_colors")
     hist_types = kwargs.get("hist_types")
+    hist_artists = []
     for ih, h in enumerate(hist_list):
         this_plot_options = {"density": norm,
                              "label": hist_labels[ih],
@@ -75,10 +87,10 @@ def _draw_plot(hist_list, stack_dict,  **kwargs):
                              "yerr": False,
                              }
         if hist_types[ih] in ["errorbar"]:
-            this_plot_options["markersize"] = 7
+            this_plot_options["markersize"] = 12
             this_plot_options["yerr"] = True
 
-        h  .plot(**this_plot_options)
+        hist_artists.append(h.plot(**this_plot_options)[0])
 
     #
     #  xlabel
@@ -102,8 +114,16 @@ def _draw_plot(hist_list, stack_dict,  **kwargs):
         plt.xscale(kwargs.get('xscale'))
 
     if kwargs.get('legend', False):
+        handles, labels = plt.gca().get_legend_handles_labels()
+
+        for s in stack_patches:
+            handles.append(s)
+            labels.append(s.get_label())
+
         plt.legend(
-            # loc='best',      # Position of the legend
+            handles=handles,
+            labels=labels,
+            loc='best',      # Position of the legend
             # fontsize='medium',      # Font size of the legend text
             frameon=False,           # Display frame around legend
             # framealpha=0.0,         # Opacity of frame (1.0 is opaque)
@@ -269,10 +289,8 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
         year = getFromNestedDict(plotConfig["stack"], "year", "RunII")
         tag = getFromNestedDict(plotConfig["stack"], "tag",  "fourTag")
 
-    print(f"year is {year}")
-
     #
-    #  Unstack hists
+    #  Unstacked hists
     #
     hists = []
     hist_config = plotConfig["hists"]
@@ -321,12 +339,13 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
     stack_config = plotConfig.get("stack", {})
     stack_colors_fill = []
     stack_colors_edge = []
+    stack_labels = []
 
     for k, v in stack_config.items():
         this_year2 = sum if v["year"] == "RunII" else v["year"]
         this_tag2 = plotConfig["codes"]["tag"][v["tag"]]
         this_process = v['process']
-        this_label = v.get('label')
+        stack_labels.append(v.get('label'))
         stack_colors_fill.append(v.get('fillcolor'))
         stack_colors_edge.append(v.get('edgecolor'))
 
@@ -342,13 +361,14 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
         for c in cutList:
             this_hist_opts = this_hist_opts | {c: cutDict[c]}
 
-        stack_dict[this_label] = h[this_hist_opts]
+        stack_dict[k] = h[this_hist_opts]
 
     #
     # Pass colors
     #
     kwargs["stack_colors_fill"] = stack_colors_fill
     kwargs["stack_colors_edge"] = stack_colors_edge
+    kwargs["stack_labels"]      = stack_labels
 
     if kwargs.get("doRatio", False):
         fig = _plot_ratio(hists, stack_dict, plotConfig, **kwargs)
