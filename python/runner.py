@@ -161,7 +161,8 @@ if __name__ == '__main__':
         sys.exit(0)
 
     tstart = time.time()
-    logging.info(f"fileset is {fileset}")
+    logging.info(f"fileset keys are {fileset.keys()}")
+    logging.debug(f"fileset is {fileset}")
 
     output, metrics = processor.run_uproot_job(
         fileset,
