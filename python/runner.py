@@ -45,8 +45,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
 
-    if args.test:
-        args.output_file = 'test.coffea'
     logging.info(f"\nRunning with these parameters: {args}")
 
     #
@@ -72,8 +70,15 @@ if __name__ == '__main__':
                 logging.warning(f"{year} name not in metadatafile for {dataset}")
                 continue
 
+            if dataset in ['data', 'mixeddata']:
+                xsec = 1.
+            elif isinstance(metadata['datasets'][dataset]['xs'], float):
+                xsec = metadata['datasets'][dataset]['xs']
+            else:
+                xsec = eval(metadata['datasets'][dataset]['xs'])
+
             metadata_dataset[dataset] = {
-                'xs': 1. if dataset in ['data', 'mixeddata'] else (metadata['datasets'][dataset]['xs'] if isinstance(metadata['datasets'][dataset]['xs'], float) else eval(metadata['datasets'][dataset]['xs'])),
+                'xs': xsec,
                 'lumi': float(metadata['datasets']['data'][year]['lumi']),
                 'year': year,
                 'processName': dataset,
@@ -156,7 +161,8 @@ if __name__ == '__main__':
         sys.exit(0)
 
     tstart = time.time()
-    logging.info(f"fileset is {fileset}")
+    logging.info(f"fileset keys are {fileset.keys()}")
+    logging.debug(f"fileset is {fileset}")
 
     output, metrics = processor.run_uproot_job(
         fileset,

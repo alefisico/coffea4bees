@@ -121,22 +121,27 @@ def mask_event_decision(event, decision='OR', branch='HLT', list_to_mask=[''], l
 
     return decision_array
 
-def apply_btag_sf( junc='JES_Central'):
+def apply_btag_sf( events, jets,
+                  correction_file='data/JEC/BTagSF2016/btagging_legacy16_deepJet_itFit.json.gz',
+                  correction_type="deepJet_shape",
+                  btag_var=['central'],
+                  btagSF_norm=1.,
+                  weight=1.,
+                  ):
     '''
     This nees a work to make it more generic
     '''
 
+    btagSF = correctionlib.CorrectionSet.from_file(correction_file)[correction_type]
+
+    selev = {}
     #central = 'central'
     use_central = True
     btag_jes = []
-    if junc != 'JES_Central':# and 'JER' not in junc:# and 'JES_Total' not in junc:
-        use_central = False
-        jes_or_jer = 'jer' if 'JER' in junc else 'jes'
-        btag_jes = [f'{direction}_{jes_or_jer}{variation.replace("JES_","").replace("Total","")}']
-    cj, nj = ak.flatten(selev.selJet), ak.num(selev.selJet)
+    cj, nj = ak.flatten(jets), ak.num(jets)
     hf, eta, pt, tag = np.array(cj.hadronFlavour), np.array(abs(cj.eta)), np.array(cj.pt), np.array(cj.btagDeepFlavB)
 
-    cj_bl = selev.selJet[selev.selJet.hadronFlavour!=4]
+    cj_bl = jets[jets.hadronFlavour!=4]
     nj_bl = ak.num(cj_bl)
     cj_bl = ak.flatten(cj_bl)
     hf_bl, eta_bl, pt_bl, tag_bl = np.array(cj_bl.hadronFlavour), np.array(abs(cj_bl.eta)), np.array(cj_bl.pt), np.array(cj_bl.btagDeepFlavB)
@@ -144,7 +149,7 @@ def apply_btag_sf( junc='JES_Central'):
     SF_bl = ak.unflatten(SF_bl, nj_bl)
     SF_bl = np.prod(SF_bl, axis=1)
 
-    cj_c = selev.selJet[selev.selJet.hadronFlavour==4]
+    cj_c = jets[jets.hadronFlavour==4]
     nj_c = ak.num(cj_c)
     cj_c = ak.flatten(cj_c)
     hf_c, eta_c, pt_c, tag_c = np.array(cj_c.hadronFlavour), np.array(abs(cj_c.eta)), np.array(cj_c.pt), np.array(cj_c.btagDeepFlavB)
@@ -152,7 +157,7 @@ def apply_btag_sf( junc='JES_Central'):
     SF_c = ak.unflatten(SF_c, nj_c)
     SF_c = np.prod(SF_c, axis=1)
 
-    for sf in self.btagVar+btag_jes:
+    for sf in btag_var+btag_jes:
         if sf == 'central':
             SF = btagSF.evaluate('central', hf, eta, pt, tag)
             SF = ak.unflatten(SF, nj)
@@ -175,6 +180,24 @@ def apply_btag_sf( junc='JES_Central'):
             SF = SF_c * np.prod(SF, axis=1) # use central value for charm jets
 
         selev[f'btagSF_{sf}'] = SF * btagSF_norm
-        selev[f'weight_btagSF_{sf}'] = selev.weight * SF * btagSF_norm
+        selev[f'weight_btagSF_{sf}'] = weight * SF * btagSF_norm
 
-    selev['weight'] = selev[f'weight_btagSF_{"central" if use_central else btag_jes[0]}']
+    return selev[f'weight_btagSF_{"central" if use_central else btag_jes[0]}']
+
+
+def drClean(coll1,coll2,cone=0.4):
+
+    from coffea.nanoevents.methods import vector
+    j_eta = coll1.eta
+    j_phi = coll1.phi
+    l_eta = coll2.eta
+    l_phi = coll2.phi
+
+    j_eta, l_eta = ak.unzip(ak.cartesian([j_eta, l_eta], nested=True))
+    j_phi, l_phi = ak.unzip(ak.cartesian([j_phi, l_phi], nested=True))
+    delta_eta = j_eta - l_eta
+    delta_phi = vector._deltaphi_kernel(j_phi,l_phi)
+    dr = np.hypot(delta_eta, delta_phi)
+    jets_noleptons = coll1[~ak.any(dr < cone, axis=2)]
+    return jets_noleptons
+

@@ -11,23 +11,28 @@ from ..aktools import (AnyArray, FieldLike, RealNumber, and_fields, get_field,
 from ..typetools import check_type
 from . import hist as hs
 
-LazyFill  = FieldLike | Callable
-FillLike  = LazyFill | AnyArray | RealNumber | bool
+LazyFill = FieldLike | Callable
+FillLike = LazyFill | AnyArray | RealNumber | bool
+
 
 class FillError(Exception):
     __module__ = Exception.__module__
 
+
 class Fill:
     threads = 1
-    def __init__(self, fills: dict[str, list[str]] = None, weight = 'weight', **fill_args: FillLike):
-        self._fills  = {} if fills is None else fills
+
+    def __init__(self, fills: dict[str, list[str]] = None, weight='weight', **fill_args: FillLike):
+        self._fills = {} if fills is None else fills
         self._kwargs = fill_args | {'weight': weight}
 
-    def __add__(self, other: Fill) -> Fill:
+    def __add__(self, other: Fill | hs.Template) -> Fill:
         if isinstance(other, Fill):
-            fills  = other._fills  | self._fills
+            fills = other._fills | self._fills
             kwargs = other._kwargs | self._kwargs
             return Fill(fills, **kwargs)
+        elif isinstance(other, hs.Template):
+            return self + other.new()
         return NotImplemented
 
     def __call__(self, events: ak.Array, hists: hs.Collection = ..., **fill_args: FillLike):
@@ -44,7 +49,7 @@ class Fill:
             raise FillError('no histogram collection is specified')
         for k, v in self._kwargs.items():
             if (isinstance(v, str)
-                and isinstance(hs.Collection.current._axes.get(k), StrCategory)):
+                    and isinstance(hs.Collection.current._axes.get(k), StrCategory)):
                 continue
             if check_type(v, FieldLike) and has_record(events, v) != v:
                 set_field(events, v, get_field(events, v))
@@ -52,24 +57,21 @@ class Fill:
     def fill(self, events: ak.Array, hists: hs.Collection = ..., **fill_args: FillLike):
         if hists is ...:
             if hs.Collection.current is None:
-                raise FillError('no histogram set is specified')
-            hists  = hs.Collection.current
+                raise FillError('no histogram collection is specified')
+            hists = hs.Collection.current
         fill_args = self._kwargs | fill_args
         mask_categories = []
-
         for category in hists._categories:
             if category not in fill_args:
                 if isinstance(hists._axes[category], StrCategory):
                     mask_categories.append(category)
                 else:
                     fill_args[category] = hs._default_field(category)
-
         for category_args in hists._generate_category_combinations(mask_categories):
-            mask   = and_fields(events, *category_args.items())
+            mask = and_fields(events, *category_args.items())
             masked = events if mask is None else events[mask]
             if len(masked) == 0:
                 continue
-
             for k, v in fill_args.items():
                 if (isinstance(v, str) and k in hists._categories) or isinstance(v, (bool, RealNumber)):
                     category_args[k] = v
@@ -84,9 +86,8 @@ class Fill:
                         raise FillError(f'Error filling "{k}" with "{v}"')
                 else:
                     raise FillError(f'cannot fill "{k}" with "{v}"')
-
             jagged_args = {}
-            counts_args  = []
+            counts_args = []
             for k, v in category_args.items():
                 if isinstance(v, ak.Array):
                     try:
@@ -100,16 +101,18 @@ class Fill:
                             counts_args.append(count)
                     except:
                         continue
-
             for name in self._fills:
-                fills = {k: f'{name}:{k}' if f'{name}:{k}' in category_args else k for k in self._fills[name]}
-                shape = {jagged_args[k] for k in fills.values() if k in jagged_args}
+                fills = {
+                    k: f'{name}:{k}' if f'{name}:{k}' in category_args else k for k in self._fills[name]}
+                shape = {jagged_args[k]
+                         for k in fills.values() if k in jagged_args}
                 if len(shape) == 0:
                     shape = None
                 elif len(shape) == 1:
                     shape = counts_args[next(iter(shape))]
                 else:
-                    raise FillError(f'cannot fill hist "{name}" with unmatched jagged arrays {jagged_args}')
+                    raise FillError(
+                        f'cannot fill hist "{name}" with unmatched jagged arrays {jagged_args}')
                 hist_args = {}
                 for k, v in fills.items():
                     fill = category_args[v]
@@ -117,7 +120,6 @@ class Fill:
                         if v not in jagged_args and check_type(fill, AnyArray):
                             fill = np.repeat(fill, shape)
                     hist_args[k] = fill
-
                 # https://github.com/scikit-hep/boost-histogram/issues/452 #
                 if all([check_type(axis, StrCategory) for axis in hists._hists[name].axes]):
                     try:
@@ -133,13 +135,9 @@ class Fill:
                                     else:
                                         tobroadcast = k
                             if not broadcasted and tobroadcast is not None:
-                                hist_args[tobroadcast] = np.full(len(weight), hist_args[tobroadcast])
+                                hist_args[tobroadcast] = np.full(
+                                    len(weight), hist_args[tobroadcast])
                     except:
                         continue
-
                 ############################################################
-                #print("Filling",*hist_args)
-                #for key, val in hist_args.items():
-                #    print(key,val)
-                    
-                hists._hists[name].fill(**hist_args, threads = self.threads)
+                hists._hists[name].fill(**hist_args, threads=self.threads)
