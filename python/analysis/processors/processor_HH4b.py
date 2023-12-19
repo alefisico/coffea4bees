@@ -74,20 +74,20 @@ class FvTHists(Template):
     #'q_1234', 'q_1324', 'q_1423',
 
 class QuadJetHists(Template):
-    dr              = H((50,     0, 5, ("dr",'Diboson Candidate $\\Delta$R(d,d)')))
+    dr              = H((50,     0, 5,   ("dr",'Diboson Candidate $\\Delta$R(d,d)')))
     dphi            = H((100, -3.2, 3.2, ("dphi",'Diboson Candidate $\\Delta$R(d,d)')))
-    deta            = H((100,   -5, 5, ("deta",'Diboson Candidate $\\Delta$R(d,d)')))
-    FvT_score       = H((100, 0, 1, ("FvT_q_score",'Diboson FvT q score')))
-    SvB_q_score     = H((100, 0, 1, ("SvB_q_score",'Diboson SvB q score')))
-    SvB_MA_q_score  = H((100, 0, 1, ("SvB_q_score",'Diboson SvB MA q score')))
-    xZZ             = H((100, 0, 10, ("xZZ", 'Diboson Candidate zZZ')))
-    xZH             = H((100, 0, 10, ("xZH", 'Diboson Candidate zZH')))
-    xHH             = H((100, 0, 10, ("xHH", 'Diboson Candidate zHH')))
+    deta            = H((100,   -5, 5,   ("deta",'Diboson Candidate $\\Delta$R(d,d)')))
+    FvT_score       = H((100, 0, 1,      ("FvT_q_score",'Diboson FvT q score')))
+    SvB_q_score     = H((100, 0, 1,      ("SvB_q_score",'Diboson SvB q score')))
+    SvB_MA_q_score  = H((100, 0, 1,      ("SvB_q_score",'Diboson SvB MA q score')))
+    xZZ             = H((100, 0, 10,     ("xZZ", 'Diboson Candidate zZZ')))
+    xZH             = H((100, 0, 10,     ("xZH", 'Diboson Candidate zZH')))
+    xHH             = H((100, 0, 10,     ("xHH", 'Diboson Candidate zHH')))
 
-    #lead            = LorentzVector.plot_pair(('leadSt', R'Lead Boson Candidate'), 'lead', skip=['n'])
-    #subl            = LorentzVector.plot_pair(('leadSt', R'Lead Boson Candidate'), 'lead', skip=['n'])
-    #close           = LorentzVector.plot_pair(('leadSt', R'Lead Boson Candidate'), 'lead', skip=['n'])
-    #other           = LorentzVector.plot_pair(('leadSt', R'Lead Boson Candidate'), 'lead', skip=['n'])
+    lead            = LorentzVector.plot_pair(('...', R'Lead ST Boson Candidate'), 'lead',  skip=['n'])
+    subl            = LorentzVector.plot_pair(('...', R'Subl Boson Candidate'),    'subl',  skip=['n'])
+    close           = LorentzVector.plot_pair(('...', R'Close Boson Candidate'),   'close', skip=['n'])
+    other           = LorentzVector.plot_pair(('...', R'Other Boson Candidate'),   'other', skip=['n'])
 
 
 class cutFlow:
@@ -251,12 +251,6 @@ class analysis(processor.ProcessorABC):
         #
         # To Add
         #
-        #    nSelJetsUnweighted = dir.make<TH1F>("nSelJetsUnweighted", (name+"/nSelJetsUnweighted; Number of Selected Jets (Unweighted); Entries").c_str(),  16,-0.5,15.5);
-        #    nTagJets = dir.make<TH1F>("nTagJets", (name+"/nTagJets; Number of Tagged Jets; Entries").c_str(),  16,-0.5,15.5);
-        #    nTagJetsUnweighted = dir.make<TH1F>("nTagJetsUnweighted", (name+"/nTagJets; Number of Tagged Jets; Entries").c_str(),  16,-0.5,15.5);
-        #    nPSTJets = dir.make<TH1F>("nPSTJets", (name+"/nPSTJets; Number of Tagged + Pseudo-Tagged Jets; Entries").c_str(),  16,-0.5,15.5);
-        #    tagJets = new jetHists(name+"/tagJets", fs, "Tagged Jets");
-        #    FvTUnweighted = dir.make<TH1F>("FvTUnweighted", (name+"/FvTUnweighted; Kinematic Reweight; Entries").c_str(), 100, 0, 5);
 
         #    nAllMuons = dir.make<TH1F>("nAllMuons", (name+"/nAllMuons; Number of Muons (no selection); Entries").c_str(),  6,-0.5,5.5);
         #    nIsoMed25Muons = dir.make<TH1F>("nIsoMed25Muons", (name+"/nIsoMed25Muons; Number of Prompt Muons; Entries").c_str(),  6,-0.5,5.5);
@@ -279,26 +273,26 @@ class analysis(processor.ProcessorABC):
 
         #    close_m_vs_other_m = dir.make<TH2F>("close_m_vs_other_m", (name+"/close_m_vs_other_m; Minimum #DeltaR(j,j) Dijet Mass [GeV]; Complement of Minimum #DeltaR(j,j) Dijet Mass [GeV]; Entries").c_str(), 50,0,250, 50,0,250);
 
-#    xWt0 = dir.make<TH1F>("xWt0", (name+"/xWt0; X_{Wt,0}; Entries").c_str(), 60, 0, 12);
-#    xWt1 = dir.make<TH1F>("xWt1", (name+"/xWt1; X_{Wt,1}; Entries").c_str(), 60, 0, 12);
-#    //xWt2 = dir.make<TH1F>("xWt2", (name+"/xWt2; X_{Wt,2}; Entries").c_str(), 60, 0, 12);
-#    xWt  = dir.make<TH1F>("xWt",  (name+"/xWt;  X_{Wt};   Entries").c_str(), 60, 0, 12);
-#    t0 = new trijetHists(name+"/t0",  fs, "Top Candidate (#geq0 non-candidate jets)");
-#    t1 = new trijetHists(name+"/t1",  fs, "Top Candidate (#geq1 non-candidate jets)");
-#    //t2 = new trijetHists(name+"/t2",  fs, "Top Candidate (#geq2 non-candidate jets)");
-#    t = new trijetHists(name+"/t",  fs, "Top Candidate");
+        #    xWt0 = dir.make<TH1F>("xWt0", (name+"/xWt0; X_{Wt,0}; Entries").c_str(), 60, 0, 12);
+        #    xWt1 = dir.make<TH1F>("xWt1", (name+"/xWt1; X_{Wt,1}; Entries").c_str(), 60, 0, 12);
+        #    //xWt2 = dir.make<TH1F>("xWt2", (name+"/xWt2; X_{Wt,2}; Entries").c_str(), 60, 0, 12);
+        #    xWt  = dir.make<TH1F>("xWt",  (name+"/xWt;  X_{Wt};   Entries").c_str(), 60, 0, 12);
+        #    t0 = new trijetHists(name+"/t0",  fs, "Top Candidate (#geq0 non-candidate jets)");
+        #    t1 = new trijetHists(name+"/t1",  fs, "Top Candidate (#geq1 non-candidate jets)");
+        #    //t2 = new trijetHists(name+"/t2",  fs, "Top Candidate (#geq2 non-candidate jets)");
+        #    t = new trijetHists(name+"/t",  fs, "Top Candidate");
 
         #    st = dir.make<TH1F>("st", (name+"/st; Scalar sum of jet p_{T}'s [GeV]; Entries").c_str(), 130, 200, 1500);
         #    hT   = dir.make<TH1F>("hT", (name+"/hT; hT [GeV]; Entries").c_str(),  100,0,1000);
 
-        fill += hist.add('nPVs', (101, -0.5, 100.5, ('PV.npvs', 'Number of Primary Vertices')))
+        fill += hist.add('nPVs', (101, -0.5, 100.5,     ('PV.npvs', 'Number of Primary Vertices')))
         fill += hist.add('nPVsGood', (101, -0.5, 100.5, ('PV.npvsGood', 'Number of Good Primary Vertices')))
 
         #
         #  Make quad jet hists
         #
         fill += QuadJetHists(('quadJet_selected', 'Selected Quad Jet'), 'quadJet_selected')
-        fill += QuadJetHists(('quadJet_min_dr', 'Min dR Quad Jet'), 'quadJet_min_dr')
+        fill += QuadJetHists(('quadJet_min_dr',   'Min dR Quad Jet'),   'quadJet_min_dr')
 
         #
         #  Make classifier hists
@@ -315,8 +309,12 @@ class analysis(processor.ProcessorABC):
         fill += Jet.plot(('selJets', 'Selected Jets'),        'selJet',           skip=['deepjet_c'])
         fill += Jet.plot(('canJets', 'Higgs Candidate Jets'), 'canJet',           skip=['deepjet_c'])
         fill += Jet.plot(('othJets', 'Other Jets'),           'notCanJet_coffea', skip=['deepjet_c'])
-        fill += Jet.plot(('selJets_noJCM', 'Selected Jets'),  'selJet',           weight="weight_noJCM_noFvT",
-                         skip=['deepjet_b', 'energy', 'eta', 'id_jet', 'id_pileup', 'mass', 'phi', 'pt', 'pz', 'deepjet_c'])
+        fill += Jet.plot(('tagJets', 'Tag Jets'),             'tagJet',           skip=['deepjet_c'])
+
+        skip_all_but_n = ['deepjet_b', 'energy', 'eta', 'id_jet', 'id_pileup', 'mass', 'phi', 'pt', 'pz', 'deepjet_c']
+        fill += Jet.plot(('selJets_noJCM', 'Selected Jets'), 'selJet', weight="weight_noJCM_noFvT", skip=skip_all_but_n)
+        fill += Jet.plot(('tagJets_noJCM', 'Tag Jets'),      'tagJet', weight="weight_noJCM_noFvT", skip=skip_all_but_n)
+
 
 
         for iJ in range(4):
@@ -326,10 +324,6 @@ class analysis(processor.ProcessorABC):
         #  v4j
         #
         fill += LorentzVector.plot_pair(('v4j', R'$HH_{4b}$'), 'v4j', skip=['n', 'dr', 'dphi', 'st'], bins={'mass': (120, 0, 1200)})
-        fill += LorentzVector.plot_pair(('quadJet_selected_lead', R'Lead Boson Candidate'),       ('quadJet_selected', 'lead'),  skip=['n'])
-        fill += LorentzVector.plot_pair(('quadJet_selected_subl', R'Subleading Boson Candidate'), ('quadJet_selected', 'subl'),  skip=['n'])
-        fill += LorentzVector.plot_pair(('quadJet_min_dr_close',  R'Close Boson Candidate'),      ('quadJet_min_dr',   'close'), skip=['n'])
-        fill += LorentzVector.plot_pair(('quadJet_min_dr_other',  R'Other Boson Candidate'),      ('quadJet_min_dr',   'other'), skip=['n'])
 
         self.apply_puWeight   = (self.apply_puWeight  ) and isMC
         self.apply_prefire    = (self.apply_prefire   ) and isMC and ('L1PreFiringWeight' in event.fields) and (year != 'UL18')
