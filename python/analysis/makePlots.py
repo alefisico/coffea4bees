@@ -30,9 +30,12 @@ def doPlots(varList, cutList):
         vDict["legend"] = True
 
         for region in ["SR", "SB"]:
-            fig = makePlot(hists, cutList, plotConfig, var=v,
-                           cut=cut, region=region,
-                           outputFolder=args.outputFolder, **vDict)
+            if vDict.get("2d",False):
+                pass
+            else:
+                fig = makePlot(hists, cutList, plotConfig, var=v,
+                               cut=cut, region=region,
+                               outputFolder=args.outputFolder, **vDict)
             plt.close()
 
 
