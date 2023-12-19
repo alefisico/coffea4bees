@@ -22,8 +22,8 @@ class CutFlowTestCase(unittest.TestCase):
         self.cf3      = hists["cutFlowThreeTag"]
         self.cf3_unit = hists["cutFlowThreeTagUnitWeight"]
         self.obs_counts = [self.cf4, self.cf3, self.cf4_unit, self.cf3_unit]
-        
-        
+
+
         #  Make these numbers with:
         #  >  python     analysis/tests/dumpCutFlow.py --input [inputFileName] -o [outputFielName]
         #       (python analysis/tests/dumpCutFlow.py --input hists/histAll.coffea -o analysis/tests/histAllCounts.yml )
@@ -34,7 +34,7 @@ class CutFlowTestCase(unittest.TestCase):
 
     def get_failures(self, expected, observed):
         failures = []
-        for datasetAndEra in expected.keys():        
+        for datasetAndEra in expected.keys():
             for cut, count in expected[datasetAndEra].items():
                 exp = round(float(observed[datasetAndEra][cut]), 2)
                 if abs(count - exp) > 0.1:
@@ -53,7 +53,7 @@ class CutFlowTestCase(unittest.TestCase):
                     print(f"\t{datasetAndEra} {round(percentFail,4)} {cut} {count} {exp}")
         print()
         print()
-    
+
     def test_counts(self):
         """
         Test the cutflow for all events
@@ -63,7 +63,7 @@ class CutFlowTestCase(unittest.TestCase):
             failures[name] = self.get_failures(self.knownCounts[name], count)
 
         self.print_test_results(failures)
-            
+
         #
         # Pass/Fail test
         #
