@@ -13,7 +13,16 @@ import logging
 import copy
 
 # following example here: https://github.com/CoffeaTeam/coffea/blob/master/tests/test_jetmet_tools.py#L529
-def init_jet_factory(weight_sets):
+def init_jet_factory(weight_sets, event):   #### AGE: this is temporary, it should be updated with correctionlib
+
+    event['Jet', 'pt_raw']    = (1 - event.Jet.rawFactor) * event.Jet.pt
+    event['Jet', 'mass_raw']  = (1 - event.Jet.rawFactor) * event.Jet.mass
+    nominal_jet = event.Jet
+    # nominal_jet['pt_raw']   = (1 - nominal_jet.rawFactor) * nominal_jet.pt
+    # nominal_jet['mass_raw'] = (1 - nominal_jet.rawFactor) * nominal_jet.mass
+    nominal_jet['pt_gen'] = ak.values_astype(ak.fill_none(nominal_jet.matched_gen.pt, 0), np.float32)
+    nominal_jet['rho']      = ak.broadcast_arrays(event.fixedGridRhoFastjetAll, nominal_jet.pt)[0]
+
     from coffea.lookup_tools import extractor
     extract = extractor()
     extract.add_weight_sets(weight_sets)
@@ -53,7 +62,10 @@ def init_jet_factory(weight_sets):
     else:
         logging.warning('WARNING: No uncertainties were loaded in the jet factory')
 
-    return jet_factory
+    jec_cache = cachetools.Cache(np.inf)
+    jet_variations = jet_factory.build(nominal_jet, lazy_cache=jec_cache)
+
+    return jet_variations
 
 ##### JER needs to be included
 def jet_corrections( uncorrJets,

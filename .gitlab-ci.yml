@@ -75,7 +75,20 @@ analysis-cutflow-job:
     - k8s-cvmfs
   script:
     - source .ci-workflows/analysis-cutflow-job.sh
+  rules:
+    - if: '$CI_PIPELINE_SOURCE != "merge_request_event"'
 
+analysis-testAll-job:   
+  stage: test   
+  dependencies:
+    - voms_proxy
+  image: coffeateam/coffea-dask:latest
+  tags:
+    - k8s-cvmfs
+  script:
+    - source .ci-workflows/analysis-testAll-job.sh
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
 
 
