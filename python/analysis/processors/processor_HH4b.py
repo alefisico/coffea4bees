@@ -11,7 +11,6 @@ import numpy as np
 import uproot
 import correctionlib
 import correctionlib._core as core
-import cachetools
 import yaml
 import warnings
 import torch
@@ -28,7 +27,7 @@ from base_class.hist import Collection, Fill
 from base_class.physics.object import LorentzVector, Jet
 
 from analysis.helpers.MultiClassifierSchema import MultiClassifierSchema
-from analysis.helpers.correctionFunctions import btagVariations, juncVariations
+from analysis.helpers.correctionFunctions import btagVariations
 from analysis.helpers.correctionFunctions import btagSF_norm as btagSF_norm_file
 from functools import partial
 from multiprocessing import Pool
@@ -175,7 +174,7 @@ def setSvBVars(SvBName, event):
 
 
 class analysis(processor.ProcessorABC):
-    def __init__(self, *, JCM = '', addbtagVariations=None, addjuncVariations=None, SvB=None, SvB_MA=None, threeTag = True, apply_puWeight = False, apply_prefire = False, apply_trigWeight = True, apply_btagSF = True, regions=['SR'], corrections_metadata='analysis/metadata/corrections.yml',  btagSF=True):
+    def __init__(self, *, JCM = '', addbtagVariations=None, SvB=None, SvB_MA=None, threeTag = True, apply_puWeight = False, apply_prefire = False, apply_trigWeight = True, apply_btagSF = True, regions=['SR'], corrections_metadata='analysis/metadata/corrections.yml',  btagSF=True):
         logging.debug('\nInitialize Analysis Processor')
         self.blind = False
         print('Initialize Analysis Processor')
@@ -188,7 +187,6 @@ class analysis(processor.ProcessorABC):
         self.JCM = jetCombinatoricModel(JCM)
         self.doReweight = True
         self.btagVar = btagVariations(systematics=addbtagVariations)  #### AGE: these two need to be review later
-        self.juncVar = juncVariations(systematics=addjuncVariations)
         self.classifier_SvB = HCREnsemble(SvB) if SvB else None
         self.classifier_SvB_MA = HCREnsemble(SvB_MA) if SvB_MA else None
         self.apply_puWeight = apply_puWeight
@@ -226,7 +224,6 @@ class analysis(processor.ProcessorABC):
         #
         self._cutFlow = cutFlow(self.cutFlowCuts)
 
-        puWeight = self.corrections_metadata[year]['PU']
         juncWS = [ self.corrections_metadata[year]["JERC"][0].replace('STEP', istep)
                    for istep in ['L1FastJet', 'L2Relative', 'L2L3Residual', 'L3Absolute'] ]      ###### AGE: to be reviewed for data, but should be remove with jsonpog
         if isMC:
@@ -334,21 +331,10 @@ class analysis(processor.ProcessorABC):
         fill += LorentzVector.plot_pair(('quadJet_min_dr_close',  R'Close Boson Candidate'),      ('quadJet_min_dr',   'close'), skip=['n'])
         fill += LorentzVector.plot_pair(('quadJet_min_dr_other',  R'Other Boson Candidate'),      ('quadJet_min_dr',   'other'), skip=['n'])
 
-        self.apply_puWeight   = (self.apply_puWeight  ) and isMC and (puWeight is not None)
+        self.apply_puWeight   = (self.apply_puWeight  ) and isMC
         self.apply_prefire    = (self.apply_prefire   ) and isMC and ('L1PreFiringWeight' in event.fields) and (year != 'UL18')
         self.apply_trigWeight = (self.apply_trigWeight) and isMC and ('trigWeight' in event.fields)
         self.apply_btagSF     = (self.apply_btagSF)     and isMC and (self.btagSF is not None)
-
-        if isMC:
-            with uproot.open(fname) as rfile:
-                Runs = rfile['Runs']
-                genEventSumw = np.sum(Runs['genEventSumw'])
-
-            if self.btagSF is not None:
-                btagSF = correctionlib.CorrectionSet.from_file(self.corrections_metadata[year]['btagSF'])['deepJet_shape']
-
-            if self.apply_puWeight:
-                puWeight = list(correctionlib.CorrectionSet.from_file(puWeight).values())[0]
 
         logging.debug(fname)
         logging.debug(f'{chunk}Process {nEvent} Events')
@@ -397,7 +383,14 @@ class analysis(processor.ProcessorABC):
         if not isMC and 'mix' not in dataset:      # for data, apply trigger cut first thing, for MC, keep all events and apply trigger in cutflow and for plotting
             event = event[event.passHLT]
 
+        #
+        # weights
+        #
         if isMC:
+            with uproot.open(fname) as rfile:
+                Runs = rfile['Runs']
+                genEventSumw = np.sum(Runs['genEventSumw'])
+
             event['weight'] = event.genWeight * (lumi * xs * kFactor / genEventSumw)
             logging.debug(f"event['weight'] = event.genWeight * (lumi * xs * kFactor / genEventSumw) = {event.genWeight[0]} * ({lumi} * {xs} * {kFactor} / {genEventSumw}) = {event.weight[0]}\n")
             if self.apply_trigWeight:
@@ -414,366 +407,345 @@ class analysis(processor.ProcessorABC):
         passMETFilter = mask_event_decision( event, decision="AND", branch="Flag",
                                             list_to_mask=self.corrections_metadata[year]['METFilter'],
                                             list_to_skip=['BadPFMuonDzFilter', 'hfNoisyHitsFilter']  )
-        #event['passMETFilter'] = passMETFilter
+        event['passMETFilter'] = passMETFilter
 
-        # event = event[event.passMETFilter] # HACK
+        #event = event[event.passMETFilter] # HACK
         self._cutFlow.fill("passMETFilter",  event, allTag=True)
+
+        #
+        # Adding muons (loose muon id definition)
+        # https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonIdRun2
+        #
+        event['Muon', 'selected'] = (event.Muon.pt > 10) & (abs(event.Muon.eta) < 2.4) & (event.Muon.pfRelIso04_all < 0.25) & (event.Muon.looseId)
+        event['nMuon_selected'] = ak.sum(event.Muon.selected, axis=1)
+        event['selMuon'] = event.Muon[ event.Muon.selected ]
+
+        #
+        # Adding electrons (loose electron id)
+        # https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedElectronIdentificationRun2
+        #
+        event['Electron', 'selected'] = (event.Electron.pt > 10) & (abs(event.Electron.eta) < 2.5 ) & (event.Electron.cutBased >= 2)
+        event['nElectron_selected'] = ak.sum(event.Electron.selected, axis=1)
+        event['selElectron'] = event.Electron[ event.Electron.selected ]
 
         #
         # Calculate and apply Jet Energy Calibration   ## AGE: currently not applying to data and mixeddata
         #
         if isMC and juncWS is not None:
-            jet_factory = init_jet_factory(juncWS)
+            jet_variations = init_jet_factory(juncWS, event)  #### currently creates the pt_raw branch
+#            jet_tmp = jet_corrections( event.Jet, event.fixedGridRhoFastjetAll, jec_type=['L1L2L3Res'])   # AGE: jsonpog+correctionlib but not final, that is why it is not used yet
 
-            event['Jet', 'pt_raw']    = (1 - event.Jet.rawFactor) * event.Jet.pt
-            event['Jet', 'mass_raw']  = (1 - event.Jet.rawFactor) * event.Jet.mass
-            nominal_jet = event.Jet
-            # nominal_jet['pt_raw']   = (1 - nominal_jet.rawFactor) * nominal_jet.pt
-            # nominal_jet['mass_raw'] = (1 - nominal_jet.rawFactor) * nominal_jet.mass
-            if isMC:
-                nominal_jet['pt_gen'] = ak.values_astype(ak.fill_none(nominal_jet.matched_gen.pt, 0), np.float32)
-            nominal_jet['rho']      = ak.broadcast_arrays(event.fixedGridRhoFastjetAll, nominal_jet.pt)[0]
+        event['Jet', 'calibration'] = event.Jet.pt / ( 1 if 'data' in dataset else event.Jet.pt_raw )    # AGE: I include the mix condition, I think it is wrong, to check later
+        # print(f'calibration nominal: \n{ak.mean(event.Jet.calibration)}')
 
-            jec_cache = cachetools.Cache(np.inf)
-            jet_variations = jet_factory.build(nominal_jet, lazy_cache=jec_cache)
-            jet_tmp = jet_corrections( event.Jet, event.fixedGridRhoFastjetAll, jec_type=['L1L2L3Res'])   # AGE: jsonpog+correctionlib but not final, that is why it is not used yet
+        event['Jet', 'pileup'] = ((event.Jet.puId < 0b110) & (event.Jet.pt < 50)) | ((np.abs(event.Jet.eta) > 2.4) & (event.Jet.pt < 40))
+        event['Jet', 'selected_loose'] = (event.Jet.pt >= 20) & ~event.Jet.pileup
+        event['Jet', 'selected'] = (event.Jet.pt >= 40) & (np.abs(event.Jet.eta) <= 2.4) & ~event.Jet.pileup
+        event['nJet_selected'] = ak.sum(event.Jet.selected, axis=1)
+        event['selJet'] = event.Jet[event.Jet.selected]
+
+        selev = event[event.nJet_selected >= 4]
+        self._cutFlow.fill("passJetMult",  selev, allTag=True)
+
+        selev['Jet', 'tagged']       = selev.Jet.selected & (selev.Jet.btagDeepFlavB >= 0.6)
+        selev['Jet', 'tagged_loose'] = selev.Jet.selected & (selev.Jet.btagDeepFlavB >= 0.3)
+        selev['nJet_tagged']         = ak.num(selev.Jet[selev.Jet.tagged])
+        selev['nJet_tagged_loose']   = ak.num(selev.Jet[selev.Jet.tagged_loose])
+
+        fourTag  = (selev['nJet_tagged']       >= 4)
+        threeTag = (selev['nJet_tagged_loose'] == 3) & (selev['nJet_selected'] >= 4)
+
+        # check that coffea jet selection agrees with c++
+        selev['issue'] = (threeTag != selev.threeTag) | (fourTag != selev.fourTag)
+        if ak.any(selev.issue):
+            logging.warning(f'{chunk}WARNING: selected jets or fourtag calc not equal to picoAOD values')
+            logging.warning('nSelJets')
+            logging.warning(selev[selev.issue].nSelJets)
+            logging.warning(selev[selev.issue].nJet_selected)
+            logging.warning('fourTag')
+            logging.warning(selev.fourTag[selev.issue])
+            logging.warning(fourTag[selev.issue])
+
+        selev[ 'fourTag']   =  fourTag
+        selev['threeTag']   = threeTag
+
+        # selev['tag'] = ak.Array({'threeTag':selev.threeTag, 'fourTag':selev.fourTag})
+        selev['passPreSel'] = selev.threeTag | selev.fourTag
+
+        tagCode = np.full(len(selev), 0, dtype=int)
+        tagCode[selev.fourTag]  = 4
+        tagCode[selev.threeTag] = 3
+        selev['tag'] = tagCode
 
         #
-        # Loop over jet energy uncertainty variations running event selection, filling hists/cuflows independently for each jet calibration
+        # Calculate and apply pileup weight, L1 prefiring weight
         #
-        for junc in self.juncVar:
-            if junc != 'JES_Central':
-                logging.debug(f'{chunk} running selection for {junc}')
-                variation = '_'.join(junc.split('_')[:-1]).replace('YEAR', year)
-                if 'JER' in junc:
-                    variation = variation.replace(f'_{year}', '')
-                direction = junc.split('_')[-1]
-                # del event['Jet']
-                event['Jet'] = jet_variations[variation, direction]
+        if self.apply_puWeight:
+            puWeight = list(correctionlib.CorrectionSet.from_file(self.corrections_metadata[year]['PU']).values())[0]
+            for var in ['nominal', 'up', 'down']:
+                selev[f'PU_weight_{var}'] = puWeight.evaluate(selev.Pileup.nTrueInt.to_numpy(), var)
+            selev['weight'] = selev.weight * selev.PU_weight_nominal
 
-            event['Jet', 'calibration'] = event.Jet.pt / ( 1 if 'data' in dataset else event.Jet.pt_raw )    # AGE: I include the mix condition, I think it is wrong, to check later
-            # if junc=='JES_Central':
-            #     print(f'calibration nominal: \n{ak.mean(event.Jet.calibration)}')
-            # else:
-            #     print(f'calibration {variation} {direction}: \n{ak.mean(event.Jet.calibration)}')
+        if self.apply_prefire:
+            selev['weight'] = selev.weight * selev.L1PreFiringWeight.Nom
 
-            event['Jet', 'pileup'] = ((event.Jet.puId < 0b110) & (event.Jet.pt < 50)) | ((np.abs(event.Jet.eta) > 2.4) & (event.Jet.pt < 40))
-            event['Jet', 'selected_loose'] = (event.Jet.pt >= 20) & ~event.Jet.pileup
-            event['Jet', 'selected'] = (event.Jet.pt >= 40) & (np.abs(event.Jet.eta) <= 2.4) & ~event.Jet.pileup
-            event['nJet_selected'] = ak.sum(event.Jet.selected, axis=1)
-            event['selJet'] = event.Jet[event.Jet.selected]
+        #
+        # Calculate and apply btag scale factors
+        #
+        if self.apply_btagSF:
+            btagSF = correctionlib.CorrectionSet.from_file(self.corrections_metadata[year]['btagSF'])['deepJet_shape']
+            selev['weight'] = apply_btag_sf( selev, selev.selJet, correction_file=self.corrections_metadata[year]['btagSF'], btag_var=self.btagVar, btagSF_norm=btagSF_norm, weight=selev.weight )
 
-            selev = event[event.nJet_selected >= 4]
-            self._cutFlow.fill("passJetMult",  selev, allTag=True)
+            self._cutFlow.fill("passJetMult_btagSF",  selev, allTag=True)
 
-            selev['Jet', 'tagged']       = selev.Jet.selected & (selev.Jet.btagDeepFlavB >= 0.6)
-            selev['Jet', 'tagged_loose'] = selev.Jet.selected & (selev.Jet.btagDeepFlavB >= 0.3)
-            selev['nJet_tagged']         = ak.num(selev.Jet[selev.Jet.tagged])
-            selev['nJet_tagged_loose']   = ak.num(selev.Jet[selev.Jet.tagged_loose])
+        # for i in range(len(selev)):
+        #     print(selev.event[i], selev.btagSF_central[i])
 
-            fourTag  = (selev['nJet_tagged']       >= 4)
-            threeTag = (selev['nJet_tagged_loose'] == 3) & (selev['nJet_selected'] >= 4)
+        #
+        # Preselection: keep only three or four tag events
+        #
+        selev = selev[selev.passPreSel]
 
-            # check that coffea jet selection agrees with c++
-            if junc == 'JES_Central':
-                selev['issue'] = (threeTag != selev.threeTag) | (fourTag != selev.fourTag)
-                if ak.any(selev.issue):
-                    logging.warning(f'{chunk}WARNING: selected jets or fourtag calc not equal to picoAOD values')
-                    logging.warning('nSelJets')
-                    logging.warning(selev[selev.issue].nSelJets)
-                    logging.warning(selev[selev.issue].nJet_selected)
-                    logging.warning('fourTag')
-                    logging.warning(selev.fourTag[selev.issue])
-                    logging.warning(fourTag[selev.issue])
+        #
+        # Build and select boson candidate jets with bRegCorr applied
+        #
+        sorted_idx = ak.argsort(selev.Jet.btagDeepFlavB * selev.Jet.selected, axis=1, ascending=False)
+        canJet_idx = sorted_idx[:, 0:4]
+        notCanJet_idx = sorted_idx[:, 4:]
+        canJet = selev.Jet[canJet_idx]
+        # apply bJES to canJets
+        canJet = canJet * canJet.bRegCorr
+        canJet['bRegCorr'] = selev.Jet.bRegCorr[canJet_idx]
+        canJet['btagDeepFlavB'] = selev.Jet.btagDeepFlavB[canJet_idx]
+        canJet['puId'] = selev.Jet.puId[canJet_idx]
+        canJet['jetId'] = selev.Jet.puId[canJet_idx]
+        if isMC:
+            canJet['hadronFlavour'] = selev.Jet.hadronFlavour[canJet_idx]
+        canJet['calibration'] = selev.Jet.calibration[canJet_idx]
 
-            selev[ 'fourTag']   =  fourTag
-            selev['threeTag']   = threeTag
+        # pt sort canJets
+        canJet = canJet[ak.argsort(canJet.pt, axis=1, ascending=False)]
+        selev['canJet'] = canJet
 
-            # selev['tag'] = ak.Array({'threeTag':selev.threeTag, 'fourTag':selev.fourTag})
-            selev['passPreSel'] = selev.threeTag | selev.fourTag
+        #
+        #  Should be a better way to do this...
+        #
+        selev['canJet0'] = canJet[:, 0]
+        selev['canJet1'] = canJet[:, 1]
+        selev['canJet2'] = canJet[:, 2]
+        selev['canJet3'] = canJet[:, 3]
 
-            tagCode = np.full(len(selev), 0, dtype=int)
-            tagCode[selev.fourTag]  = 4
-            tagCode[selev.threeTag] = 3
-            selev['tag'] = tagCode
+        selev['v4j'] = canJet.sum(axis=1)
+        # selev['v4j', 'n'] = 1
+        # print(selev.v4j.n)
+        # selev['Jet', 'canJet'] = False
+        # selev.Jet.canJet.Fill(canJet_idx, True)
+        notCanJet = selev.Jet[notCanJet_idx]
+        notCanJet = notCanJet[notCanJet.selected_loose]
+        notCanJet = notCanJet[ak.argsort(notCanJet.pt, axis=1, ascending=False)]
+
+        notCanJet['isSelJet'] = 1 * ((notCanJet.pt > 40) & (np.abs(notCanJet.eta) < 2.4))     # should have been defined as notCanJet.pt>=40, too late to fix this now...
+        selev['notCanJet_coffea'] = notCanJet
+        selev['nNotCanJet'] = ak.num(selev.notCanJet_coffea)
+
+        # print(f'{ak.mean(canJet.calibration)} (canJets)')
+        # print(canJet_idx[0])
+        # print(selev[0].Jet[canJet_idx[0]].pt)
+        # print(selev[0].Jet[canJet_idx[0]].bRegCorr)
+        # print(selev[0].Jet[canJet_idx[0]].calibration)
+
+        if self.doThreeTag:
+            #
+            # calculate pseudoTagWeight for threeTag events
+            #
+            selev['Jet_untagged_loose'] = selev.Jet[selev.Jet.selected & ~selev.Jet.tagged_loose]
+            nJet_pseudotagged = np.zeros(len(selev), dtype=int)
+            pseudoTagWeight = np.ones(len(selev))
+            pseudoTagWeight[selev.threeTag], nJet_pseudotagged[selev.threeTag] = self.JCM(selev[selev.threeTag]['Jet_untagged_loose'])
+            selev['nJet_pseudotagged'] = nJet_pseudotagged
+
+            # check that pseudoTagWeight calculation agrees with c++
+            selev.issue = (abs(selev.pseudoTagWeight - pseudoTagWeight) / selev.pseudoTagWeight > 0.0001) & (pseudoTagWeight != 1)
+            if ak.any(selev.issue):
+                logging.warning(f'{chunk}WARNING: python pseudotag calc not equal to c++ calc')
+                logging.warning(f'{chunk}Issues:', ak.sum(selev.issue), 'of', ak.sum(selev.threeTag))
+
+            # add pseudoTagWeight to event
+            selev['pseudoTagWeight'] = pseudoTagWeight
 
             #
-            # Calculate and apply pileup weight, L1 prefiring weight
+            # apply pseudoTagWeight and FvT to threeTag events
             #
-            if self.apply_puWeight:
-                for var in ['nominal', 'up', 'down']:
-                    selev[f'PU_weight_{var}'] = puWeight.evaluate(selev.Pileup.nTrueInt.to_numpy(), var)
-                selev['weight'] = selev.weight * selev.PU_weight_nominal
+            weight_noJCM_noFvT = selev.weight
+            selev['weight_noJCM_noFvT'] = weight_noJCM_noFvT
 
-            if self.apply_prefire:
-                selev['weight'] = selev.weight * selev.L1PreFiringWeight.Nom
+            weight_noFvT = np.array(selev.weight.to_numpy(), dtype=float)
+            weight_noFvT[selev.threeTag] = selev.weight[selev.threeTag] * selev.pseudoTagWeight[selev.threeTag]
+            selev['weight_noFvT'] = weight_noFvT
 
-            #
-            # Calculate and apply btag scale factors
-            #
-            if isMC and btagSF is not None:
+            if self.doReweight:
+                weight = np.array(selev.weight.to_numpy(), dtype=float)
+                weight[selev.threeTag] = selev.weight[selev.threeTag] * pseudoTagWeight[selev.threeTag] * selev.FvT.FvT[selev.threeTag]
+                selev['weight'] = weight
+            else:
+                selev['weight'] = weight_noFvT
 
-                #
-                #  Apply btag SF
-                #
-                if self.apply_btagSF:
-                    selev['weight'] = apply_btag_sf( selev, selev.selJet, correction_file=self.corrections_metadata[year]['btagSF'], btag_var=self.btagVar, btagSF_norm=btagSF_norm, weight=selev.weight )
+        #
+        # CutFlow
+        #
+        self._cutFlow.fill("passPreSel", selev)
 
-                self._cutFlow.fill("passJetMult_btagSF",  selev, allTag=True)
+        #
+        # Build diJets, indexed by diJet[event,pairing,0/1]
+        #
+        canJet = selev['canJet']
+        pairing = [([0, 2], [0, 1], [0, 1]),
+                   ([1, 3], [2, 3], [3, 2])]
+        diJet       = canJet[:, pairing[0]]     +   canJet[:, pairing[1]]
+        diJet['st'] = canJet[:, pairing[0]].pt  +   canJet[:, pairing[1]].pt
+        diJet['dr'] = canJet[:, pairing[0]].delta_r(canJet[:, pairing[1]])
+        diJet['dphi'] = canJet[:, pairing[0]].delta_phi(canJet[:, pairing[1]])
+        diJet['lead'] = canJet[:, pairing[0]]
+        diJet['subl'] = canJet[:, pairing[1]]
+        # Sort diJets within views to be lead st, subl st
+        diJet   = diJet[ak.argsort(diJet.st, axis=2, ascending=False)]
+        diJetDr = diJet[ak.argsort(diJet.dr, axis=2, ascending=True)]
+        # Now indexed by diJet[event,pairing,lead/subl st]
 
-            # for i in range(len(selev)):
-            #     print(selev.event[i], selev.btagSF_central[i])
+        # Compute diJetMass cut with independent min/max for lead/subl
+        minDiJetMass = np.array([[[ 52,  50]]])
+        maxDiJetMass = np.array([[[180, 173]]])
+        diJet['passDiJetMass'] = (minDiJetMass < diJet.mass) & (diJet.mass < maxDiJetMass)
 
-            #
-            # Preselection: keep only three or four tag events
-            #
-            selev = selev[selev.passPreSel]
+        # Compute MDRs
+        min_m4j_scale = np.array([[ 360, 235]])
+        min_dr_offset = np.array([[-0.5, 0.0]])
+        max_m4j_scale = np.array([[ 650, 650]])
+        max_dr_offset = np.array([[ 0.5, 0.7]])
+        max_dr        = np.array([[ 1.5, 1.5]])
+        m4j = np.repeat(np.reshape(np.array(selev['v4j'].mass), (-1, 1, 1)), 2, axis=2)
+        diJet['passMDR'] = (min_m4j_scale / m4j + min_dr_offset < diJet.dr) & (diJet.dr < np.maximum(max_m4j_scale / m4j + max_dr_offset, max_dr))
 
-            #
-            # Build and select boson candidate jets with bRegCorr applied
-            #
-            sorted_idx = ak.argsort(selev.Jet.btagDeepFlavB * selev.Jet.selected, axis=1, ascending=False)
-            canJet_idx = sorted_idx[:, 0:4]
-            notCanJet_idx = sorted_idx[:, 4:]
-            canJet = selev.Jet[canJet_idx]
-            # apply bJES to canJets
-            canJet = canJet * canJet.bRegCorr
-            canJet['bRegCorr'] = selev.Jet.bRegCorr[canJet_idx]
-            canJet['btagDeepFlavB'] = selev.Jet.btagDeepFlavB[canJet_idx]
-            canJet['puId'] = selev.Jet.puId[canJet_idx]
-            canJet['jetId'] = selev.Jet.puId[canJet_idx]
-            if isMC:
-                canJet['hadronFlavour'] = selev.Jet.hadronFlavour[canJet_idx]
-            canJet['calibration'] = selev.Jet.calibration[canJet_idx]
+        #
+        # Compute consistency of diJet masses with boson masses
+        #
+        mZ =  91.0
+        mH = 125.0
+        st_bias = np.array([[[1.02, 0.98]]])
+        cZ = mZ * st_bias
+        cH = mH * st_bias
 
-            # pt sort canJets
-            canJet = canJet[ak.argsort(canJet.pt, axis=1, ascending=False)]
-            selev['canJet'] = canJet
+        diJet['xZ'] = (diJet.mass - cZ) / (0.1 * diJet.mass)
+        diJet['xH'] = (diJet.mass - cH) / (0.1 * diJet.mass)
 
-            #
-            #  Should be a better way to do this...
-            #
-            selev['canJet0'] = canJet[:, 0]
-            selev['canJet1'] = canJet[:, 1]
-            selev['canJet2'] = canJet[:, 2]
-            selev['canJet3'] = canJet[:, 3]
+        #
+        # Build quadJets
+        #
+        quadJet = ak.zip({'lead': diJet[:, :, 0],
+                          'subl': diJet[:, :, 1],
+                          'close': diJetDr[:, :, 0],
+                          'other': diJetDr[:, :, 1],
+                          'passDiJetMass': ak.all(diJet.passDiJetMass, axis=2),
+                          'random': np.random.uniform(low=0.1, high=0.9, size=(diJet.__len__(), 3))})
 
-            selev['v4j'] = canJet.sum(axis=1)
-            # selev['v4j', 'n'] = 1
-            # print(selev.v4j.n)
-            # selev['Jet', 'canJet'] = False
-            # selev.Jet.canJet.Fill(canJet_idx, True)
-            notCanJet = selev.Jet[notCanJet_idx]
-            notCanJet = notCanJet[notCanJet.selected_loose]
-            notCanJet = notCanJet[ak.argsort(notCanJet.pt, axis=1, ascending=False)]
+        quadJet['dr']   = quadJet['lead'].delta_r(quadJet['subl'])
+        quadJet['dphi'] = quadJet['lead'].delta_phi(quadJet['subl'])
+        quadJet['deta'] = quadJet['lead'].eta - quadJet['subl'].eta
 
-            notCanJet['isSelJet'] = 1 * ((notCanJet.pt > 40) & (np.abs(notCanJet.eta) < 2.4))     # should have been defined as notCanJet.pt>=40, too late to fix this now...
-            selev['notCanJet_coffea'] = notCanJet
-            selev['nNotCanJet'] = ak.num(selev.notCanJet_coffea)
+        quadJet['FvT_q_score'] = np.concatenate((np.reshape(np.array(selev.FvT.q_1234), (-1, 1)),
+                                                 np.reshape(np.array(selev.FvT.q_1324), (-1, 1)),
+                                                 np.reshape(np.array(selev.FvT.q_1423), (-1, 1))), axis=1)
 
-            # if junc=='JES_Central':
-            #     print(f'{ak.mean(canJet.calibration)} (canJets)')
-            # else:
-            #     print(f'{ak.mean(canJet.calibration)} (canJets)')
-            # print(canJet_idx[0])
-            # print(selev[0].Jet[canJet_idx[0]].pt)
-            # print(selev[0].Jet[canJet_idx[0]].bRegCorr)
-            # print(selev[0].Jet[canJet_idx[0]].calibration)
+        quadJet['SvB_q_score'] = np.concatenate((np.reshape(np.array(selev.SvB.q_1234), (-1, 1)),
+                                                 np.reshape(np.array(selev.SvB.q_1324), (-1, 1)),
+                                                 np.reshape(np.array(selev.SvB.q_1423), (-1, 1))), axis=1)
 
-            if self.doThreeTag:
-                #
-                # calculate pseudoTagWeight for threeTag events
-                #
-                selev['Jet_untagged_loose'] = selev.Jet[selev.Jet.selected & ~selev.Jet.tagged_loose]
-                nJet_pseudotagged = np.zeros(len(selev), dtype=int)
-                pseudoTagWeight = np.ones(len(selev))
-                pseudoTagWeight[selev.threeTag], nJet_pseudotagged[selev.threeTag] = self.JCM(selev[selev.threeTag]['Jet_untagged_loose'])
-                selev['nJet_pseudotagged'] = nJet_pseudotagged
+        quadJet['SvB_MA_q_score'] = np.concatenate((np.reshape(np.array(selev.SvB_MA.q_1234), (-1, 1)),
+                                                    np.reshape(np.array(selev.SvB_MA.q_1324), (-1, 1)),
+                                                    np.reshape(np.array(selev.SvB_MA.q_1423), (-1, 1))), axis=1)
+        #
+        # Compute Signal Regions
+        #
+        quadJet['xZZ'] = np.sqrt(quadJet.lead.xZ**2 + quadJet.subl.xZ**2)
+        quadJet['xHH'] = np.sqrt(quadJet.lead.xH**2 + quadJet.subl.xH**2)
+        quadJet['xZH'] = np.sqrt(np.minimum(quadJet.lead.xH**2 + quadJet.subl.xZ**2,
+                                            quadJet.lead.xZ**2 + quadJet.subl.xH**2))
+        max_xZZ = 2.6
+        max_xZH = 1.9
+        max_xHH = 1.9
+        quadJet['ZZSR'] = quadJet.xZZ < max_xZZ
+        quadJet['ZHSR'] = quadJet.xZH < max_xZH
+        quadJet['HHSR'] = quadJet.xHH < max_xHH
+        quadJet['SR'] = quadJet.ZZSR | quadJet.ZHSR | quadJet.HHSR
+        quadJet['SB'] = quadJet.passDiJetMass & ~quadJet.SR
 
-                # check that pseudoTagWeight calculation agrees with c++
-                if junc == 'JES_Central':
-                    selev.issue = (abs(selev.pseudoTagWeight - pseudoTagWeight) / selev.pseudoTagWeight > 0.0001) & (pseudoTagWeight != 1)
-                    if ak.any(selev.issue):
-                        logging.warning(f'{chunk}WARNING: python pseudotag calc not equal to c++ calc')
-                        logging.warning(f'{chunk}Issues:', ak.sum(selev.issue), 'of', ak.sum(selev.threeTag))
+        #
+        #  Build the close dR and other quadjets
+        #    (There is Probably a better way to do this ...
+        #
+        arg_min_close_dr = np.argmin(quadJet.close.dr, axis=1)
+        arg_min_close_dr = arg_min_close_dr.to_numpy()
+        selev['quadJet_min_dr'] = quadJet[np.array(range(len(quadJet))), arg_min_close_dr]
 
-                # add pseudoTagWeight to event
-                selev['pseudoTagWeight'] = pseudoTagWeight
+        #
+        # pick quadJet at random giving preference to ones which passDiJetMass and MDRs
+        #
+        quadJet['rank'] = 10 * quadJet.passDiJetMass + quadJet.lead.passMDR + quadJet.subl.passMDR + quadJet.random
+        quadJet['selected'] = quadJet.rank == np.max(quadJet.rank, axis=1)
 
-                #
-                # apply pseudoTagWeight and FvT to threeTag events
-                #
-                weight_noJCM_noFvT = selev.weight
-                selev['weight_noJCM_noFvT'] = weight_noJCM_noFvT
+        selev['diJet'] = diJet
+        selev['quadJet'] = quadJet
+        selev['quadJet_selected'] = quadJet[quadJet.selected][:, 0]
+        selev["passDiJetMass"] = ak.any(quadJet.passDiJetMass, axis=1)
 
-                weight_noFvT = np.array(selev.weight.to_numpy(), dtype=float)
-                weight_noFvT[selev.threeTag] = selev.weight[selev.threeTag] * selev.pseudoTagWeight[selev.threeTag]
-                selev['weight_noFvT'] = weight_noFvT
+        #  logging.info(f"selected {selev['quadJet_selected'][0]}")
+        #  logging.info(f"mindr {selev['quadJet_min_dr'][0]}")
+        #  logging.info("\n")
 
-                if self.doReweight:
-                    weight = np.array(selev.weight.to_numpy(), dtype=float)
-                    weight[selev.threeTag] = selev.weight[selev.threeTag] * pseudoTagWeight[selev.threeTag] * selev.FvT.FvT[selev.threeTag]
-                    selev['weight'] = weight
-                else:
-                    selev['weight'] = weight_noFvT
+        selev['region'] = selev['quadJet_selected'].SR * 0b10 + selev['quadJet_selected'].SB * 0b01
+        selev['passSvB'] = (selev['SvB_MA'].ps > 0.95)
+        selev['failSvB'] = (selev['SvB_MA'].ps < 0.05)
 
-            #
-            # CutFlow
-            #
-            self._cutFlow.fill("passPreSel", selev)
+        # selev.issue = (selev.leadStM<0) | (selev.sublStM<0)
+        # if ak.any(selev.issue):
+        #     print(f'{chunk}WARNING: Negative diJet masses in picoAOD variables generated by the c++')
+        #     issue = selev[selev.issue]
+        #     print(f'{chunk}{len(issue)} events with issues')
+        #     print(f'{chunk}c++ values:',issue.passDiJetMass, issue.leadStM,issue.sublStM)
+        #     print(f'{chunk}py  values:',issue.quadJet_selected.passDiJetMass, issue.quadJet_selected.lead.mass, issue.quadJet_selected.subl.mass)
 
-            #
-            # Build diJets, indexed by diJet[event,pairing,0/1]
-            #
-            canJet = selev['canJet']
-            pairing = [([0, 2], [0, 1], [0, 1]),
-                       ([1, 3], [2, 3], [3, 2])]
-            diJet       = canJet[:, pairing[0]]     +   canJet[:, pairing[1]]
-            diJet['st'] = canJet[:, pairing[0]].pt  +   canJet[:, pairing[1]].pt
-            diJet['dr'] = canJet[:, pairing[0]].delta_r(canJet[:, pairing[1]])
-            diJet['dphi'] = canJet[:, pairing[0]].delta_phi(canJet[:, pairing[1]])
-            diJet['lead'] = canJet[:, pairing[0]]
-            diJet['subl'] = canJet[:, pairing[1]]
-            # Sort diJets within views to be lead st, subl st
-            diJet   = diJet[ak.argsort(diJet.st, axis=2, ascending=False)]
-            diJetDr = diJet[ak.argsort(diJet.dr, axis=2, ascending=True)]
-            # Now indexed by diJet[event,pairing,lead/subl st]
+        # selev.issue = selev.passDijetMass != selev['quadJet_selected'].passDiJetMass
+        # selev.issue = selev.issue & ~((selev.leadStM<0) | (selev.sublStM<0))
+        # if ak.any(selev.issue):
+        #     print(f'{chunk}WARNING: passDiJetMass calc not equal to picoAOD value')
+        #     issue = selev[selev.issue]
+        #     print(f'{chunk}{len(issue)} events with issues')
+        #     print(f'{chunk}c++ values:',issue.passDijetMass, issue.leadStM,issue.sublStM)
+        #     print(f'{chunk}py  values:',issue.quadJet_selected.passDiJetMass, issue.quadJet_selected.lead.mass, issue.quadJet_selected.subl.mass)
 
-            # Compute diJetMass cut with independent min/max for lead/subl
-            minDiJetMass = np.array([[[ 52,  50]]])
-            maxDiJetMass = np.array([[[180, 173]]])
-            diJet['passDiJetMass'] = (minDiJetMass < diJet.mass) & (diJet.mass < maxDiJetMass)
+        #
+        # Blind data in fourTag SR
+        #
+        if not (isMC or 'mixed' in dataset) and self.blind:
+            selev = selev[~(selev['quadJet_selected'].SR & selev.fourTag)]
 
-            # Compute MDRs
-            min_m4j_scale = np.array([[ 360, 235]])
-            min_dr_offset = np.array([[-0.5, 0.0]])
-            max_m4j_scale = np.array([[ 650, 650]])
-            max_dr_offset = np.array([[ 0.5, 0.7]])
-            max_dr        = np.array([[ 1.5, 1.5]])
-            m4j = np.repeat(np.reshape(np.array(selev['v4j'].mass), (-1, 1, 1)), 2, axis=2)
-            diJet['passMDR'] = (min_m4j_scale / m4j + min_dr_offset < diJet.dr) & (diJet.dr < np.maximum(max_m4j_scale / m4j + max_dr_offset, max_dr))
+        if self.classifier_SvB is not None:
+            self.compute_SvB(selev)
 
-            #
-            # Compute consistency of diJet masses with boson masses
-            #
-            mZ =  91.0
-            mH = 125.0
-            st_bias = np.array([[[1.02, 0.98]]])
-            cZ = mZ * st_bias
-            cH = mH * st_bias
+        #
+        # fill histograms
+        #
+        self._cutFlow.fill("passDiJetMass",  selev[selev.passDiJetMass])
+        self._cutFlow.fill("SR",  selev[(selev.passDiJetMass & selev['quadJet_selected'].SR)])
+        self._cutFlow.fill("SB",  selev[(selev.passDiJetMass & selev['quadJet_selected'].SB)])
+        self._cutFlow.fill("passSvB",  selev[selev.passSvB])
+        self._cutFlow.fill("failSvB",  selev[selev.failSvB])
 
-            diJet['xZ'] = (diJet.mass - cZ) / (0.1 * diJet.mass)
-            diJet['xH'] = (diJet.mass - cH) / (0.1 * diJet.mass)
+        # fill.cache(selev)
+        fill(selev)
 
-            #
-            # Build quadJets
-            #
-            quadJet = ak.zip({'lead': diJet[:, :, 0],
-                              'subl': diJet[:, :, 1],
-                              'close': diJetDr[:, :, 0],
-                              'other': diJetDr[:, :, 1],
-                              'passDiJetMass': ak.all(diJet.passDiJetMass, axis=2),
-                              'random': np.random.uniform(low=0.1, high=0.9, size=(diJet.__len__(), 3))})
-
-            quadJet['dr']   = quadJet['lead'].delta_r(quadJet['subl'])
-            quadJet['dphi'] = quadJet['lead'].delta_phi(quadJet['subl'])
-            quadJet['deta'] = quadJet['lead'].eta - quadJet['subl'].eta
-
-            quadJet['FvT_q_score'] = np.concatenate((np.reshape(np.array(selev.FvT.q_1234), (-1, 1)),
-                                                     np.reshape(np.array(selev.FvT.q_1324), (-1, 1)),
-                                                     np.reshape(np.array(selev.FvT.q_1423), (-1, 1))), axis=1)
-
-            quadJet['SvB_q_score'] = np.concatenate((np.reshape(np.array(selev.SvB.q_1234), (-1, 1)),
-                                                     np.reshape(np.array(selev.SvB.q_1324), (-1, 1)),
-                                                     np.reshape(np.array(selev.SvB.q_1423), (-1, 1))), axis=1)
-
-            quadJet['SvB_MA_q_score'] = np.concatenate((np.reshape(np.array(selev.SvB_MA.q_1234), (-1, 1)),
-                                                        np.reshape(np.array(selev.SvB_MA.q_1324), (-1, 1)),
-                                                        np.reshape(np.array(selev.SvB_MA.q_1423), (-1, 1))), axis=1)
-            #
-            # Compute Signal Regions
-            #
-            quadJet['xZZ'] = np.sqrt(quadJet.lead.xZ**2 + quadJet.subl.xZ**2)
-            quadJet['xHH'] = np.sqrt(quadJet.lead.xH**2 + quadJet.subl.xH**2)
-            quadJet['xZH'] = np.sqrt(np.minimum(quadJet.lead.xH**2 + quadJet.subl.xZ**2,
-                                                quadJet.lead.xZ**2 + quadJet.subl.xH**2))
-            max_xZZ = 2.6
-            max_xZH = 1.9
-            max_xHH = 1.9
-            quadJet['ZZSR'] = quadJet.xZZ < max_xZZ
-            quadJet['ZHSR'] = quadJet.xZH < max_xZH
-            quadJet['HHSR'] = quadJet.xHH < max_xHH
-            quadJet['SR'] = quadJet.ZZSR | quadJet.ZHSR | quadJet.HHSR
-            quadJet['SB'] = quadJet.passDiJetMass & ~quadJet.SR
-
-            #
-            #  Build the close dR and other quadjets
-            #    (There is Probably a better way to do this ...
-            #
-            arg_min_close_dr = np.argmin(quadJet.close.dr, axis=1)
-            arg_min_close_dr = arg_min_close_dr.to_numpy()
-            selev['quadJet_min_dr'] = quadJet[np.array(range(len(quadJet))), arg_min_close_dr]
-
-            #
-            # pick quadJet at random giving preference to ones which passDiJetMass and MDRs
-            #
-            quadJet['rank'] = 10 * quadJet.passDiJetMass + quadJet.lead.passMDR + quadJet.subl.passMDR + quadJet.random
-            quadJet['selected'] = quadJet.rank == np.max(quadJet.rank, axis=1)
-
-            selev['diJet'] = diJet
-            selev['quadJet'] = quadJet
-            selev['quadJet_selected'] = quadJet[quadJet.selected][:, 0]
-            selev["passDiJetMass"] = ak.any(quadJet.passDiJetMass, axis=1)
-
-            #  logging.info(f"selected {selev['quadJet_selected'][0]}")
-            #  logging.info(f"mindr {selev['quadJet_min_dr'][0]}")
-            #  logging.info("\n")
-
-            selev['region'] = selev['quadJet_selected'].SR * 0b10 + selev['quadJet_selected'].SB * 0b01
-            selev['passSvB'] = (selev['SvB_MA'].ps > 0.95)
-            selev['failSvB'] = (selev['SvB_MA'].ps < 0.05)
-
-            # selev.issue = (selev.leadStM<0) | (selev.sublStM<0)
-            # if ak.any(selev.issue):
-            #     print(f'{chunk}WARNING: Negative diJet masses in picoAOD variables generated by the c++')
-            #     issue = selev[selev.issue]
-            #     print(f'{chunk}{len(issue)} events with issues')
-            #     print(f'{chunk}c++ values:',issue.passDiJetMass, issue.leadStM,issue.sublStM)
-            #     print(f'{chunk}py  values:',issue.quadJet_selected.passDiJetMass, issue.quadJet_selected.lead.mass, issue.quadJet_selected.subl.mass)
-
-            # if junc == 'JES_Central':
-            #     selev.issue = selev.passDijetMass != selev['quadJet_selected'].passDiJetMass
-            #     selev.issue = selev.issue & ~((selev.leadStM<0) | (selev.sublStM<0))
-            #     if ak.any(selev.issue):
-            #         print(f'{chunk}WARNING: passDiJetMass calc not equal to picoAOD value')
-            #         issue = selev[selev.issue]
-            #         print(f'{chunk}{len(issue)} events with issues')
-            #         print(f'{chunk}c++ values:',issue.passDijetMass, issue.leadStM,issue.sublStM)
-            #         print(f'{chunk}py  values:',issue.quadJet_selected.passDiJetMass, issue.quadJet_selected.lead.mass, issue.quadJet_selected.subl.mass)
-
-            #
-            # Blind data in fourTag SR
-            #
-            if not (isMC or 'mixed' in dataset) and self.blind:
-                selev = selev[~(selev['quadJet_selected'].SR & selev.fourTag)]
-
-            if self.classifier_SvB is not None:
-                self.compute_SvB(selev, junc=junc)
-
-            #
-            # fill histograms
-            #
-            self._cutFlow.fill("passDiJetMass",  selev[selev.passDiJetMass])
-            self._cutFlow.fill("SR",  selev[(selev.passDiJetMass & selev['quadJet_selected'].SR)])
-            self._cutFlow.fill("SB",  selev[(selev.passDiJetMass & selev['quadJet_selected'].SB)])
-            self._cutFlow.fill("passSvB",  selev[selev.passSvB])
-            self._cutFlow.fill("failSvB",  selev[selev.failSvB])
-
-            # fill.cache(selev)
-            fill(selev)
-
-            garbage = gc.collect()
-            # print('Garbage:',garbage)
+        garbage = gc.collect()
+        # print('Garbage:',garbage)
 
         #
         # Done
@@ -785,7 +757,7 @@ class analysis(processor.ProcessorABC):
 
         return hist.output | processOutput
 
-    def compute_SvB(self, event, junc='JES_Central'):
+    def compute_SvB(self, event):
         n = len(event)
 
         j = torch.zeros(n, 4, 4)
@@ -834,20 +806,19 @@ class analysis(processor.ProcessorABC):
             SvB['zh'] = (SvB.pzh > SvB.pzz) & (SvB.pzh > SvB.phh)
             SvB['hh'] = (SvB.phh > SvB.pzz) & (SvB.phh > SvB.pzh)
 
-            if junc == 'JES_Central':
-                error = ~np.isclose(event[classifier].ps, SvB.ps, atol=1e-5, rtol=1e-3)
-                if np.any(error):
-                    delta = np.abs(event[classifier].ps - SvB.ps)
-                    worst = np.max(delta) == delta
-                    worst_event = event[worst][0]
-                    logging.warning(f'WARNING: Calculated {classifier} does not agree '
-                                    f'within tolerance for some events ({np.sum(error)}/{len(error)})', delta[worst])
-                    logging.warning('----------')
-                    for field in event[classifier].fields:
-                        logging.warning(field, worst_event[classifier][field])
-                    logging.warning('----------')
-                    for field in SvB.fields:
-                        logging.warning(f'{field}, {SvB[worst][field]}')
+            error = ~np.isclose(event[classifier].ps, SvB.ps, atol=1e-5, rtol=1e-3)
+            if np.any(error):
+                delta = np.abs(event[classifier].ps - SvB.ps)
+                worst = np.max(delta) == delta
+                worst_event = event[worst][0]
+                logging.warning(f'WARNING: Calculated {classifier} does not agree '
+                                f'within tolerance for some events ({np.sum(error)}/{len(error)})', delta[worst])
+                logging.warning('----------')
+                for field in event[classifier].fields:
+                    logging.warning(field, worst_event[classifier][field])
+                logging.warning('----------')
+                for field in SvB.fields:
+                    logging.warning(f'{field}, {SvB[worst][field]}')
 
             # del event[classifier]
             event[classifier] = SvB
