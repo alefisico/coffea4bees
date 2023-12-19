@@ -445,6 +445,7 @@ class analysis(processor.ProcessorABC):
         selev['Jet', 'tagged_loose'] = selev.Jet.selected & (selev.Jet.btagDeepFlavB >= 0.3)
         selev['nJet_tagged']         = ak.num(selev.Jet[selev.Jet.tagged])
         selev['nJet_tagged_loose']   = ak.num(selev.Jet[selev.Jet.tagged_loose])
+        selev['tagJet']              = selev.Jet[selev.Jet.tagged]
 
         fourTag  = (selev['nJet_tagged']       >= 4)
         threeTag = (selev['nJet_tagged_loose'] == 3) & (selev['nJet_selected'] >= 4)
