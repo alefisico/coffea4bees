@@ -166,6 +166,49 @@ def _plot(hist_list, stack_dict, plotConfig, **kwargs):
     return fig
 
 
+def _plot2d(hist, plotConfig, **kwargs):
+
+    if kwargs.get("debug", False):
+        print(f'\t in plot ... kwargs = {kwargs}')
+
+    
+    if kwargs.get("full", False):
+        #size = 7
+        fig = plt.figure()   # figsize=(size,size/_phi))
+
+        hist.plot2d_full(
+            main_cmap="cividis",
+            top_ls="--",
+            top_color="orange",
+            top_lw=2,
+            side_ls=":",
+            side_lw=2,
+            side_color="steelblue",
+        )
+
+        
+    else:
+        size = 7
+        fig = plt.figure()   # figsize=(size,size/_phi))
+
+        fig.add_axes((0.1, 0.15, 0.85, 0.8))
+
+        hist.plot2d()
+
+    #_draw_plot(hist_list, stack_dict, **kwargs)
+
+    ax = fig.gca()
+    hep.cms.label("Internal", data=True,
+                  year=kwargs['year'].replace("UL", "20"), loc=0, ax=ax)
+
+    # ax.spines["top"]  .set_visible(False)
+    # ax.spines["right"].set_visible(False)
+    # ax.spines["left"] .set_visible(False)
+
+    return fig
+
+
+
 def _plot_ratio(hist_list, stack_dict, plotConfig, **kwargs):
     r"""
     Takes options:
@@ -374,6 +417,100 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
         fig = _plot_ratio(hists, stack_dict, plotConfig, **kwargs)
     else:
         fig = _plot(hists, stack_dict, plotConfig,  **kwargs)
+
+    if kwargs.get("outputFolder", None):
+        yearName = year
+        outputPath = kwargs.get("outputFolder")+"/"
+        outputPath += "/".join([yearName, cut, tagName, region])
+
+        if not os.path.exists(outputPath):
+            os.makedirs(outputPath)
+        fig.savefig(outputPath+"/"+var.replace(".", '_')+".pdf")
+
+    return fig
+
+
+
+
+
+def make2DPlot(hists, process, cutList, plotConfig, var='selJets.pt',
+               cut="passPreSel", region="SR", **kwargs):
+    r"""
+    Takes Options:
+
+       debug    : False,
+       var      : 'selJets.pt',
+       year     : "2017",
+       cut      : "passPreSel",
+       region   : "SR",
+
+       plotting opts
+        'doRatio'  : bool (False)
+        'rebin'    : int (1),
+    """
+
+    h = hists['hists'][var]
+    varName = hists['hists'][var].axes[-1].name
+    rebin = kwargs.get("rebin", 1)
+    codes = plotConfig["codes"]
+
+    cutDict = {}
+    for c in cutList:
+        cutDict[c] = sum
+    cutDict[cut] = True
+
+    #
+    #  Get the year
+    #    (Got to be a better way to do this....)
+    #
+    yearStr = "RunII"
+    tagName = "fourTag"
+    if len(plotConfig["hists"]):
+        year = getFromNestedDict(plotConfig["hists"], "year", "RunII")
+        tag = getFromNestedDict(plotConfig["hists"], "tag",  "fourTag")
+    else:
+        year = getFromNestedDict(plotConfig["stack"], "year", "RunII")
+        tag = getFromNestedDict(plotConfig["stack"], "tag",  "fourTag")
+
+    #
+    #  Unstacked hists
+    #
+    hist_config = plotConfig["hists"]
+    #hist_labels = []
+    #hist_types = []
+
+    year = sum if yearStr == "RunII" else yearStr
+    tag = kwargs.get("tag","fourTag")
+    tag = plotConfig["codes"]["tag"][tag]
+    #labels.append(v.get("label"))
+    #    hist_types. append(v.get("histtype", "errorbar"))
+
+    region = sum if region in ["sum",sum] else hist.loc(codes["region"][region])
+    
+    if kwargs.get("debug", False):
+        print(f" hist process={process}, "
+              f"tag={tag}, year={year}")
+
+    hist_dict = {"process": process,  "year": year,
+                 "tag":    hist.loc(tag),
+                 "region": region,
+                 varName: hist.rebin(rebin)}
+
+    for c in cutList:
+        hist_dict = hist_dict | {c: cutDict[c]}
+    print(hist_dict)
+    _hist = h[hist_dict]
+    #hists[-1] *= v.get("scalefactor", 1.0)
+
+    #
+    # Add args
+    #
+    kwargs["year"] = yearStr
+    #kwargs["hist_labels"] = hist_labels
+    #kwargs["hist_types"] = hist_types
+
+
+    fig = _plot2d(_hist, plotConfig,  **kwargs)
 
     if kwargs.get("outputFolder", None):
         yearName = year

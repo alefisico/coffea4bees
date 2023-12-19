@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from coffea.util import load
 from hist.intervals import ratio_uncertainty
 sys.path.insert(0, os.getcwd())
-from base_class.plots import makePlot
+from base_class.plots import makePlot, make2DPlot
 
 #
 # TO Add
@@ -56,6 +56,45 @@ def plot(var='selJets.pt', *, cut="passPreSel", region="SR", **kwargs):
     plt.close()
     os.system("open "+fileName)
 
+
+def plot2d(var='quadJet_selected.lead_vs_subl_m', process="HH4b", *, cut="passPreSel", region="SR", **kwargs):
+    r"""
+    Plot 2d
+
+    Call with:
+       plot2d("quadJet_selected.lead_vs_subl_m",process="data",region="SB",cut="passPreSel",tag="threeTag")
+       plot2d("quadJet_selected.lead_vs_subl_m",process="HH4b",region="SR",cut="passPreSel",tag="threeTag")
+
+    
+    Takes Options:
+
+       debug    : False,
+       var      : 'quadJet_selected.lead_vs_subl_m',
+       process  : 'HH4b',
+       cut      : "passPreSel",
+       region   : "SR",
+
+       plotting opts
+        'doRatio'  : bool (False)
+        'rebin'    : int (1),
+    """
+
+    if kwargs.get("debug", False):
+        print(f'kwargs = {kwargs}')
+
+    if var.find("*") != -1:
+        ls(match=var.replace("*", ""))
+        return
+
+    fig = make2DPlot(hists, process, cutList, plotConfig, var=var, cut=cut, region=region,
+                     outputFolder=args.outputFolder, **kwargs)
+
+    fileName = "test.pdf"
+    fig.savefig(fileName)
+    plt.close()
+    os.system("open "+fileName)
+
+    
 
 if __name__ == '__main__':
 
