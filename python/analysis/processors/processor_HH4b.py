@@ -415,7 +415,7 @@ class analysis(processor.ProcessorABC):
                                             list_to_skip=['BadPFMuonDzFilter', 'hfNoisyHitsFilter']  )
         event['passMETFilter'] = passMETFilter
 
-        #event = event[event.passMETFilter] # HACK
+        event = event[event.passMETFilter] # HACK
         self._cutFlow.fill("passMETFilter",  event, allTag=True)
 
         #
@@ -502,10 +502,10 @@ class analysis(processor.ProcessorABC):
         #
         if self.apply_btagSF:
             btagSF = correctionlib.CorrectionSet.from_file(self.corrections_metadata[year]['btagSF'])['deepJet_shape']
-            selev['weight'] = apply_btag_sf(selev, selev.selJet, 
-                                            correction_file=self.corrections_metadata[year]['btagSF'], 
-                                            btag_var=self.btagVar, 
-                                            btagSF_norm=btagSF_norm, 
+            selev['weight'] = apply_btag_sf(selev, selev.selJet,
+                                            correction_file=self.corrections_metadata[year]['btagSF'],
+                                            btag_var=self.btagVar,
+                                            btagSF_norm=btagSF_norm,
                                             weight=selev.weight )
 
             self._cutFlow.fill("passJetMult_btagSF",  selev, allTag=True)
