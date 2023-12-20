@@ -23,12 +23,11 @@ class _PlotCommon:
     mvaId             = H((10,  -0.5,     9.5    , ("mvaId",           'mvaId')))
     pfIsoId           = H((10, -0.5,      9.5    , ("pfIsoId",         'pfIsoId')))
     tkIsoId           = H((10, -0.5,      9.5    , ("tkIsoId",         'tkIsoId')))
-    #genPartFlav       = H((25, -0.5,     24.5    , ("genPartFlav",     'genPartFlav')))
     jetIdx            = H((20, -1.5,     18.5    , ("jetIdx",          'jetIdx')))
-    #[   'ptErr',  'selected'
+    genPartFlav       = H((25, -0.5,     24.5    , ("genPartFlav",     'genPartFlav')))
+
+    # Other Vars:   'ptErr',  'selected'
     
-    # to add to electrons
-    # elec: ['dr03EcalRecHitSumEt', 'dr03HcalDepth1TowerSumEt', 'dr03TkSumPt', 'eCorr', 'eInvMinusPInv', 'eta', 'hoe', 'mass', 'miniPFRelIso_all', 'miniPFRelIso_chg', 'mvaFall17V1Iso', 'mvaFall17V1noIso', 'mvaFall17V2Iso', 'mvaFall17V2noIso', 'pfRelIso03_all', 'pfRelIso03_chg', 'phi', 'pt', 'r9', 'scEtOverPt', 'sieie', 'cutBased', 'cutBased_Fall17_V1', 'pdgId', 'convVeto', 'mvaFall17V2Iso_WP80', 'mvaFall17V2Iso_WP90', 'mvaFall17V2Iso_WPL', 'selected']
 
 
 class _PlotMuon(_PlotCommon, _PlotLepton):
