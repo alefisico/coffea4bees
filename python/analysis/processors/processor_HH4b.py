@@ -24,7 +24,7 @@ from coffea import processor, util
 from coffea.lumi_tools import LumiMask
 
 from base_class.hist import Collection, Fill
-from base_class.physics.object import LorentzVector, Jet
+from base_class.physics.object import LorentzVector, Jet, Muon, Lepton
 
 from analysis.helpers.MultiClassifierSchema import MultiClassifierSchema
 from analysis.helpers.correctionFunctions import btagVariations
@@ -324,6 +324,12 @@ class analysis(processor.ProcessorABC):
             fill += Jet.plot((f'canJet{iJ}', f'Higgs Candidate Jets {iJ}'), f'canJet{iJ}', skip=['n', 'deepjet_c'])
 
         #
+        #  Leptons
+        #
+        fill += Muon.plot  (('selMuons', 'Selected Muons'),        'selMuon', skip=['charge'])
+        #fill += Lepton.plot(('selElecs', 'Selected Elecs'),        'selElec')
+
+        #
         #  Config weights
         #
         self.apply_puWeight   = (self.apply_puWeight  ) and isMC
@@ -418,15 +424,16 @@ class analysis(processor.ProcessorABC):
         #
         event['Muon', 'selected'] = (event.Muon.pt > 10) & (abs(event.Muon.eta) < 2.4) & (event.Muon.pfRelIso04_all < 0.25) & (event.Muon.looseId)
         event['nMuon_selected'] = ak.sum(event.Muon.selected, axis=1)
-        event['selMuon'] = event.Muon[ event.Muon.selected ]
+        event['selMuon'] = event.Muon[event.Muon.selected]
 
         #
         # Adding electrons (loose electron id)
         # https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedElectronIdentificationRun2
         #
-        event['Electron', 'selected'] = (event.Electron.pt > 10) & (abs(event.Electron.eta) < 2.5 ) & (event.Electron.cutBased >= 2)
+        event['Electron', 'selected'] = (event.Electron.pt > 10) & (abs(event.Electron.eta) < 2.5) & (event.Electron.cutBased >= 2)
         event['nElectron_selected'] = ak.sum(event.Electron.selected, axis=1)
-        event['selElectron'] = event.Electron[ event.Electron.selected ]
+        event['selElec'] = event.Electron[event.Electron.selected]
+
 
         #
         # Calculate and apply Jet Energy Calibration   ## AGE: currently not applying to data and mixeddata
