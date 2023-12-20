@@ -75,20 +75,28 @@ class FvTHists(Template):
     #'q_1234', 'q_1324', 'q_1423',
 
 class QuadJetHists(Template):
-    dr              = H((50,     0, 5,   ("dr",'Diboson Candidate $\\Delta$R(d,d)')))
-    dphi            = H((100, -3.2, 3.2, ("dphi",'Diboson Candidate $\\Delta$R(d,d)')))
-    deta            = H((100,   -5, 5,   ("deta",'Diboson Candidate $\\Delta$R(d,d)')))
-    FvT_score       = H((100, 0, 1,      ("FvT_q_score",'Diboson FvT q score')))
-    SvB_q_score     = H((100, 0, 1,      ("SvB_q_score",'Diboson SvB q score')))
-    SvB_MA_q_score  = H((100, 0, 1,      ("SvB_q_score",'Diboson SvB MA q score')))
-    xZZ             = H((100, 0, 10,     ("xZZ", 'Diboson Candidate zZZ')))
-    xZH             = H((100, 0, 10,     ("xZH", 'Diboson Candidate zZH')))
-    xHH             = H((100, 0, 10,     ("xHH", 'Diboson Candidate zHH')))
+    dr              = H((50,     0, 5,   ("dr",          'Diboson Candidate $\\Delta$R(d,d)')))
+    dphi            = H((100, -3.2, 3.2, ("dphi",        'Diboson Candidate $\\Delta$R(d,d)')))
+    deta            = H((100,   -5, 5,   ("deta",        'Diboson Candidate $\\Delta$R(d,d)')))
+    FvT_score       = H((100, 0, 1,      ("FvT_q_score", 'Diboson FvT q score')))
+    SvB_q_score     = H((100, 0, 1,      ("SvB_q_score", 'Diboson SvB q score')))
+    SvB_MA_q_score  = H((100, 0, 1,      ("SvB_q_score", 'Diboson SvB MA q score')))
+    xZZ             = H((100, 0, 10,     ("xZZ",         'Diboson Candidate zZZ')))
+    xZH             = H((100, 0, 10,     ("xZH",         'Diboson Candidate zZH')))
+    xHH             = H((100, 0, 10,     ("xHH",         'Diboson Candidate zHH')))
 
-    lead            = LorentzVector.plot_pair(('...', R'Lead ST Boson Candidate'), 'lead',  skip=['n'])
-    subl            = LorentzVector.plot_pair(('...', R'Subl Boson Candidate'),    'subl',  skip=['n'])
-    close           = LorentzVector.plot_pair(('...', R'Close Boson Candidate'),   'close', skip=['n'])
-    other           = LorentzVector.plot_pair(('...', R'Other Boson Candidate'),   'other', skip=['n'])
+    lead_vs_subl_m   = H((50, 0, 250, ('lead.mass', 'Lead Boson Candidate Mass')),
+                         (50, 0, 250, ('subl.mass', 'Subl Boson Candidate Mass')))
+
+    close_vs_other_m = H((50, 0, 250, ('close.mass', 'Close Boson Candidate Mass')),
+                         (50, 0, 250, ('other.mass', 'Other Boson Candidate Mass')))
+
+    lead            = LorentzVector.plot_pair(('...', R'Lead Boson Candidate'),  'lead',  skip=['n'])
+    subl            = LorentzVector.plot_pair(('...', R'Subl Boson Candidate'),  'subl',  skip=['n'])
+    close           = LorentzVector.plot_pair(('...', R'Close Boson Candidate'), 'close', skip=['n'])
+    other           = LorentzVector.plot_pair(('...', R'Other Boson Candidate'), 'other', skip=['n'])
+
+
 
 
 class cutFlow:
@@ -270,11 +278,9 @@ class analysis(processor.ProcessorABC):
         #    elecs_isoMed40  = new elecHists(name+"/elec_isoMed40", fs, "iso Medium 40 Elecs");
         #
 
-        #    leadSt_m_vs_sublSt_m = dir.make<TH2F>("leadSt_m_vs_sublSt_m", (name+"/leadSt_m_vs_sublSt_m; S_{T} leading boson candidate Mass [GeV]; S_{T} subleading boson candidate Mass [GeV]; Entries").c_str(), 50,0,250, 50,0,250);
         #    m4j_vs_leadSt_dR = dir.make<TH2F>("m4j_vs_leadSt_dR", (name+"/m4j_vs_leadSt_dR; m_{4j} [GeV]; S_{T} leading boson candidate #DeltaR(j,j); Entries").c_str(), 40,100,1100, 25,0,5);
         #    m4j_vs_sublSt_dR = dir.make<TH2F>("m4j_vs_sublSt_dR", (name+"/m4j_vs_sublSt_dR; m_{4j} [GeV]; S_{T} subleading boson candidate #DeltaR(j,j); Entries").c_str(), 40,100,1100, 25,0,5);
 
-        #    close_m_vs_other_m = dir.make<TH2F>("close_m_vs_other_m", (name+"/close_m_vs_other_m; Minimum #DeltaR(j,j) Dijet Mass [GeV]; Complement of Minimum #DeltaR(j,j) Dijet Mass [GeV]; Entries").c_str(), 50,0,250, 50,0,250);
 
         #    xWt0 = dir.make<TH1F>("xWt0", (name+"/xWt0; X_{Wt,0}; Entries").c_str(), 60, 0, 12);
         #    xWt1 = dir.make<TH1F>("xWt1", (name+"/xWt1; X_{Wt,1}; Entries").c_str(), 60, 0, 12);
