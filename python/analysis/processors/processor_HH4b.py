@@ -24,7 +24,7 @@ from coffea import processor, util
 from coffea.lumi_tools import LumiMask
 
 from base_class.hist import Collection, Fill
-from base_class.physics.object import LorentzVector, Jet
+from base_class.physics.object import LorentzVector, Jet, Muon, Lepton
 
 from analysis.helpers.MultiClassifierSchema import MultiClassifierSchema
 from analysis.helpers.correctionFunctions import btagVariations
@@ -74,20 +74,28 @@ class FvTHists(Template):
     #'q_1234', 'q_1324', 'q_1423',
 
 class QuadJetHists(Template):
-    dr              = H((50,     0, 5,   ("dr",'Diboson Candidate $\\Delta$R(d,d)')))
-    dphi            = H((100, -3.2, 3.2, ("dphi",'Diboson Candidate $\\Delta$R(d,d)')))
-    deta            = H((100,   -5, 5,   ("deta",'Diboson Candidate $\\Delta$R(d,d)')))
-    FvT_score       = H((100, 0, 1,      ("FvT_q_score",'Diboson FvT q score')))
-    SvB_q_score     = H((100, 0, 1,      ("SvB_q_score",'Diboson SvB q score')))
-    SvB_MA_q_score  = H((100, 0, 1,      ("SvB_q_score",'Diboson SvB MA q score')))
-    xZZ             = H((100, 0, 10,     ("xZZ", 'Diboson Candidate zZZ')))
-    xZH             = H((100, 0, 10,     ("xZH", 'Diboson Candidate zZH')))
-    xHH             = H((100, 0, 10,     ("xHH", 'Diboson Candidate zHH')))
+    dr              = H((50,     0, 5,   ("dr",          'Diboson Candidate $\\Delta$R(d,d)')))
+    dphi            = H((100, -3.2, 3.2, ("dphi",        'Diboson Candidate $\\Delta$R(d,d)')))
+    deta            = H((100,   -5, 5,   ("deta",        'Diboson Candidate $\\Delta$R(d,d)')))
+    FvT_score       = H((100, 0, 1,      ("FvT_q_score", 'Diboson FvT q score')))
+    SvB_q_score     = H((100, 0, 1,      ("SvB_q_score", 'Diboson SvB q score')))
+    SvB_MA_q_score  = H((100, 0, 1,      ("SvB_q_score", 'Diboson SvB MA q score')))
+    xZZ             = H((100, 0, 10,     ("xZZ",         'Diboson Candidate zZZ')))
+    xZH             = H((100, 0, 10,     ("xZH",         'Diboson Candidate zZH')))
+    xHH             = H((100, 0, 10,     ("xHH",         'Diboson Candidate zHH')))
 
-    lead            = LorentzVector.plot_pair(('...', R'Lead ST Boson Candidate'), 'lead',  skip=['n'])
-    subl            = LorentzVector.plot_pair(('...', R'Subl Boson Candidate'),    'subl',  skip=['n'])
-    close           = LorentzVector.plot_pair(('...', R'Close Boson Candidate'),   'close', skip=['n'])
-    other           = LorentzVector.plot_pair(('...', R'Other Boson Candidate'),   'other', skip=['n'])
+    lead_vs_subl_m   = H((50, 0, 250, ('lead.mass', 'Lead Boson Candidate Mass')),
+                         (50, 0, 250, ('subl.mass', 'Subl Boson Candidate Mass')))
+
+    close_vs_other_m = H((50, 0, 250, ('close.mass', 'Close Boson Candidate Mass')),
+                         (50, 0, 250, ('other.mass', 'Other Boson Candidate Mass')))
+
+    lead            = LorentzVector.plot_pair(('...', R'Lead Boson Candidate'),  'lead',  skip=['n'])
+    subl            = LorentzVector.plot_pair(('...', R'Subl Boson Candidate'),  'subl',  skip=['n'])
+    close           = LorentzVector.plot_pair(('...', R'Close Boson Candidate'), 'close', skip=['n'])
+    other           = LorentzVector.plot_pair(('...', R'Other Boson Candidate'), 'other', skip=['n'])
+
+
 
 
 class cutFlow:
@@ -246,8 +254,6 @@ class analysis(processor.ProcessorABC):
                           region  = [2, 1, 0],    # SR / SB / Other
                           **dict((s, ...) for s in self.histCuts))
 
-
-
         #
         # To Add
         #
@@ -267,11 +273,9 @@ class analysis(processor.ProcessorABC):
         #    elecs_isoMed40  = new elecHists(name+"/elec_isoMed40", fs, "iso Medium 40 Elecs");
         #
 
-        #    leadSt_m_vs_sublSt_m = dir.make<TH2F>("leadSt_m_vs_sublSt_m", (name+"/leadSt_m_vs_sublSt_m; S_{T} leading boson candidate Mass [GeV]; S_{T} subleading boson candidate Mass [GeV]; Entries").c_str(), 50,0,250, 50,0,250);
         #    m4j_vs_leadSt_dR = dir.make<TH2F>("m4j_vs_leadSt_dR", (name+"/m4j_vs_leadSt_dR; m_{4j} [GeV]; S_{T} leading boson candidate #DeltaR(j,j); Entries").c_str(), 40,100,1100, 25,0,5);
         #    m4j_vs_sublSt_dR = dir.make<TH2F>("m4j_vs_sublSt_dR", (name+"/m4j_vs_sublSt_dR; m_{4j} [GeV]; S_{T} subleading boson candidate #DeltaR(j,j); Entries").c_str(), 40,100,1100, 25,0,5);
 
-        #    close_m_vs_other_m = dir.make<TH2F>("close_m_vs_other_m", (name+"/close_m_vs_other_m; Minimum #DeltaR(j,j) Dijet Mass [GeV]; Complement of Minimum #DeltaR(j,j) Dijet Mass [GeV]; Entries").c_str(), 50,0,250, 50,0,250);
 
         #    xWt0 = dir.make<TH1F>("xWt0", (name+"/xWt0; X_{Wt,0}; Entries").c_str(), 60, 0, 12);
         #    xWt1 = dir.make<TH1F>("xWt1", (name+"/xWt1; X_{Wt,1}; Entries").c_str(), 60, 0, 12);
@@ -285,12 +289,13 @@ class analysis(processor.ProcessorABC):
         #    st = dir.make<TH1F>("st", (name+"/st; Scalar sum of jet p_{T}'s [GeV]; Entries").c_str(), 130, 200, 1500);
         #    hT   = dir.make<TH1F>("hT", (name+"/hT; hT [GeV]; Entries").c_str(),  100,0,1000);
 
-        fill += hist.add('nPVs', (101, -0.5, 100.5,     ('PV.npvs', 'Number of Primary Vertices')))
+        fill += hist.add('nPVs',     (101, -0.5, 100.5, ('PV.npvs', 'Number of Primary Vertices')))
         fill += hist.add('nPVsGood', (101, -0.5, 100.5, ('PV.npvsGood', 'Number of Good Primary Vertices')))
 
         #
         #  Make quad jet hists
         #
+        fill += LorentzVector.plot_pair(('v4j', R'$HH_{4b}$'), 'v4j', skip=['n', 'dr', 'dphi', 'st'], bins={'mass': (120, 0, 1200)})
         fill += QuadJetHists(('quadJet_selected', 'Selected Quad Jet'), 'quadJet_selected')
         fill += QuadJetHists(('quadJet_min_dr',   'Min dR Quad Jet'),   'quadJet_min_dr')
 
@@ -315,16 +320,18 @@ class analysis(processor.ProcessorABC):
         fill += Jet.plot(('selJets_noJCM', 'Selected Jets'), 'selJet', weight="weight_noJCM_noFvT", skip=skip_all_but_n)
         fill += Jet.plot(('tagJets_noJCM', 'Tag Jets'),      'tagJet', weight="weight_noJCM_noFvT", skip=skip_all_but_n)
 
-
-
         for iJ in range(4):
             fill += Jet.plot((f'canJet{iJ}', f'Higgs Candidate Jets {iJ}'), f'canJet{iJ}', skip=['n', 'deepjet_c'])
 
         #
-        #  v4j
+        #  Leptons
         #
-        fill += LorentzVector.plot_pair(('v4j', R'$HH_{4b}$'), 'v4j', skip=['n', 'dr', 'dphi', 'st'], bins={'mass': (120, 0, 1200)})
+        fill += Muon.plot  (('selMuons', 'Selected Muons'),        'selMuon', skip=['charge'])
+        #fill += Lepton.plot(('selElecs', 'Selected Elecs'),        'selElec')
 
+        #
+        #  Config weights
+        #
         self.apply_puWeight   = (self.apply_puWeight  ) and isMC
         self.apply_prefire    = (self.apply_prefire   ) and isMC and ('L1PreFiringWeight' in event.fields) and (year != 'UL18')
         self.apply_trigWeight = (self.apply_trigWeight) and isMC and ('trigWeight' in event.fields)
@@ -337,11 +344,16 @@ class analysis(processor.ProcessorABC):
         # Reading SvB friend trees
         #
         path = fname.replace(fname.split('/')[-1], '')
-        event['FvT']    = NanoEventsFactory.from_root(f'{path}{"FvT_3bDvTMix4bDvT_v0_newSB.root" if "mix" in dataset else "FvT.root"}',    entry_start=estart, entry_stop=estop, schemaclass=MultiClassifierSchema).events().FvT
-        event['SvB']    = NanoEventsFactory.from_root(f'{path}{"SvB_newSBDef.root" if "mix" in dataset else "SvB.root"}',    entry_start=estart, entry_stop=estop, schemaclass=MultiClassifierSchema).events().SvB
-        event['SvB_MA'] = NanoEventsFactory.from_root(f'{path}{"SvB_MA_newSBDef.root" if "mix" in dataset else "SvB_MA.root"}', entry_start=estart, entry_stop=estop, schemaclass=MultiClassifierSchema).events().SvB_MA
-
+        event['FvT']    = NanoEventsFactory.from_root(f'{path}{"FvT_3bDvTMix4bDvT_v0_newSB.root" if "mix" in dataset else "FvT.root"}',
+                                                      entry_start=estart, entry_stop=estop, schemaclass=MultiClassifierSchema).events().FvT
         event['FvT', 'frac_err'] = event['FvT'].std / event['FvT'].FvT
+
+        event['SvB']    = NanoEventsFactory.from_root(f'{path}{"SvB_newSBDef.root" if "mix" in dataset else "SvB.root"}',
+                                                      entry_start=estart, entry_stop=estop, schemaclass=MultiClassifierSchema).events().SvB
+
+        event['SvB_MA'] = NanoEventsFactory.from_root(f'{path}{"SvB_MA_newSBDef.root" if "mix" in dataset else "SvB_MA.root"}',
+                                                      entry_start=estart, entry_stop=estop, schemaclass=MultiClassifierSchema).events().SvB_MA
+
 
         if not ak.all(event.SvB.event == event.event):
             logging.error('ERROR: SvB events do not match events ttree')
@@ -358,7 +370,7 @@ class analysis(processor.ProcessorABC):
         #
         # defining SvB for different SR
         #
-        setSvBVars("SvB", event)
+        setSvBVars("SvB",    event)
         setSvBVars("SvB_MA", event)
 
         if isMC:
@@ -412,15 +424,16 @@ class analysis(processor.ProcessorABC):
         #
         event['Muon', 'selected'] = (event.Muon.pt > 10) & (abs(event.Muon.eta) < 2.4) & (event.Muon.pfRelIso04_all < 0.25) & (event.Muon.looseId)
         event['nMuon_selected'] = ak.sum(event.Muon.selected, axis=1)
-        event['selMuon'] = event.Muon[ event.Muon.selected ]
+        event['selMuon'] = event.Muon[event.Muon.selected]
 
         #
         # Adding electrons (loose electron id)
         # https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedElectronIdentificationRun2
         #
-        event['Electron', 'selected'] = (event.Electron.pt > 10) & (abs(event.Electron.eta) < 2.5 ) & (event.Electron.cutBased >= 2)
+        event['Electron', 'selected'] = (event.Electron.pt > 10) & (abs(event.Electron.eta) < 2.5) & (event.Electron.cutBased >= 2)
         event['nElectron_selected'] = ak.sum(event.Electron.selected, axis=1)
-        event['selElectron'] = event.Electron[ event.Electron.selected ]
+        event['selElec'] = event.Electron[event.Electron.selected]
+
 
         #
         # Calculate and apply Jet Energy Calibration   ## AGE: currently not applying to data and mixeddata
@@ -489,12 +502,13 @@ class analysis(processor.ProcessorABC):
         #
         if self.apply_btagSF:
             btagSF = correctionlib.CorrectionSet.from_file(self.corrections_metadata[year]['btagSF'])['deepJet_shape']
-            selev['weight'] = apply_btag_sf( selev, selev.selJet, correction_file=self.corrections_metadata[year]['btagSF'], btag_var=self.btagVar, btagSF_norm=btagSF_norm, weight=selev.weight )
+            selev['weight'] = apply_btag_sf(selev, selev.selJet, 
+                                            correction_file=self.corrections_metadata[year]['btagSF'], 
+                                            btag_var=self.btagVar, 
+                                            btagSF_norm=btagSF_norm, 
+                                            weight=selev.weight )
 
             self._cutFlow.fill("passJetMult_btagSF",  selev, allTag=True)
-
-        # for i in range(len(selev)):
-        #     print(selev.event[i], selev.btagSF_central[i])
 
         #
         # Preselection: keep only three or four tag events
@@ -505,9 +519,10 @@ class analysis(processor.ProcessorABC):
         # Build and select boson candidate jets with bRegCorr applied
         #
         sorted_idx = ak.argsort(selev.Jet.btagDeepFlavB * selev.Jet.selected, axis=1, ascending=False)
-        canJet_idx = sorted_idx[:, 0:4]
+        canJet_idx    = sorted_idx[:, 0:4]
         notCanJet_idx = sorted_idx[:, 4:]
         canJet = selev.Jet[canJet_idx]
+
         # apply bJES to canJets
         canJet = canJet * canJet.bRegCorr
         canJet['bRegCorr'] = selev.Jet.bRegCorr[canJet_idx]
@@ -518,7 +533,9 @@ class analysis(processor.ProcessorABC):
             canJet['hadronFlavour'] = selev.Jet.hadronFlavour[canJet_idx]
         canJet['calibration'] = selev.Jet.calibration[canJet_idx]
 
+        #
         # pt sort canJets
+        #
         canJet = canJet[ak.argsort(canJet.pt, axis=1, ascending=False)]
         selev['canJet'] = canJet
 
@@ -534,7 +551,6 @@ class analysis(processor.ProcessorABC):
         # selev['v4j', 'n'] = 1
         # print(selev.v4j.n)
         # selev['Jet', 'canJet'] = False
-        # selev.Jet.canJet.Fill(canJet_idx, True)
         notCanJet = selev.Jet[notCanJet_idx]
         notCanJet = notCanJet[notCanJet.selected_loose]
         notCanJet = notCanJet[ak.argsort(notCanJet.pt, axis=1, ascending=False)]
@@ -550,6 +566,7 @@ class analysis(processor.ProcessorABC):
         # print(selev[0].Jet[canJet_idx[0]].calibration)
 
         if self.doThreeTag:
+
             #
             # calculate pseudoTagWeight for threeTag events
             #
@@ -658,6 +675,7 @@ class analysis(processor.ProcessorABC):
         quadJet['SvB_MA_q_score'] = np.concatenate((np.reshape(np.array(selev.SvB_MA.q_1234), (-1, 1)),
                                                     np.reshape(np.array(selev.SvB_MA.q_1324), (-1, 1)),
                                                     np.reshape(np.array(selev.SvB_MA.q_1423), (-1, 1))), axis=1)
+
         #
         # Compute Signal Regions
         #
@@ -665,6 +683,7 @@ class analysis(processor.ProcessorABC):
         quadJet['xHH'] = np.sqrt(quadJet.lead.xH**2 + quadJet.subl.xH**2)
         quadJet['xZH'] = np.sqrt(np.minimum(quadJet.lead.xH**2 + quadJet.subl.xZ**2,
                                             quadJet.lead.xZ**2 + quadJet.subl.xH**2))
+
         max_xZZ = 2.6
         max_xZH = 1.9
         max_xHH = 1.9
@@ -693,30 +712,9 @@ class analysis(processor.ProcessorABC):
         selev['quadJet_selected'] = quadJet[quadJet.selected][:, 0]
         selev["passDiJetMass"] = ak.any(quadJet.passDiJetMass, axis=1)
 
-        #  logging.info(f"selected {selev['quadJet_selected'][0]}")
-        #  logging.info(f"mindr {selev['quadJet_min_dr'][0]}")
-        #  logging.info("\n")
-
         selev['region'] = selev['quadJet_selected'].SR * 0b10 + selev['quadJet_selected'].SB * 0b01
         selev['passSvB'] = (selev['SvB_MA'].ps > 0.95)
         selev['failSvB'] = (selev['SvB_MA'].ps < 0.05)
-
-        # selev.issue = (selev.leadStM<0) | (selev.sublStM<0)
-        # if ak.any(selev.issue):
-        #     print(f'{chunk}WARNING: Negative diJet masses in picoAOD variables generated by the c++')
-        #     issue = selev[selev.issue]
-        #     print(f'{chunk}{len(issue)} events with issues')
-        #     print(f'{chunk}c++ values:',issue.passDiJetMass, issue.leadStM,issue.sublStM)
-        #     print(f'{chunk}py  values:',issue.quadJet_selected.passDiJetMass, issue.quadJet_selected.lead.mass, issue.quadJet_selected.subl.mass)
-
-        # selev.issue = selev.passDijetMass != selev['quadJet_selected'].passDiJetMass
-        # selev.issue = selev.issue & ~((selev.leadStM<0) | (selev.sublStM<0))
-        # if ak.any(selev.issue):
-        #     print(f'{chunk}WARNING: passDiJetMass calc not equal to picoAOD value')
-        #     issue = selev[selev.issue]
-        #     print(f'{chunk}{len(issue)} events with issues')
-        #     print(f'{chunk}c++ values:',issue.passDijetMass, issue.leadStM,issue.sublStM)
-        #     print(f'{chunk}py  values:',issue.quadJet_selected.passDiJetMass, issue.quadJet_selected.lead.mass, issue.quadJet_selected.subl.mass)
 
         #
         # Blind data in fourTag SR
@@ -730,11 +728,11 @@ class analysis(processor.ProcessorABC):
         #
         # fill histograms
         #
-        self._cutFlow.fill("passDiJetMass",  selev[selev.passDiJetMass])
-        self._cutFlow.fill("SR",  selev[(selev.passDiJetMass & selev['quadJet_selected'].SR)])
-        self._cutFlow.fill("SB",  selev[(selev.passDiJetMass & selev['quadJet_selected'].SB)])
-        self._cutFlow.fill("passSvB",  selev[selev.passSvB])
-        self._cutFlow.fill("failSvB",  selev[selev.failSvB])
+        self._cutFlow.fill("passDiJetMass", selev[selev.passDiJetMass])
+        self._cutFlow.fill("SR",            selev[(selev.passDiJetMass & selev['quadJet_selected'].SR)])
+        self._cutFlow.fill("SB",            selev[(selev.passDiJetMass & selev['quadJet_selected'].SB)])
+        self._cutFlow.fill("passSvB",       selev[selev.passSvB])
+        self._cutFlow.fill("failSvB",       selev[selev.failSvB])
 
         # fill.cache(selev)
         fill(selev)
@@ -751,6 +749,7 @@ class analysis(processor.ProcessorABC):
         self._cutFlow.addOutput(processOutput, event.metadata['dataset'])
 
         return hist.output | processOutput
+
 
     def compute_SvB(self, event):
         n = len(event)
