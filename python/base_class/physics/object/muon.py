@@ -2,6 +2,7 @@ from ...hist import H
 from .lepton import _PlotDiLepton, _PlotLepton
 
 
+
 class _PlotCommon:
     ip3d              = H((50,    0,      2      , ("ip3d",            'ip3d')))
     ip3d_l            = H((50,    0,     20      , ("ip3d",            'ip3d')))
@@ -26,6 +27,8 @@ class _PlotCommon:
     jetIdx            = H((20, -1.5,     18.5    , ("jetIdx",          'jetIdx')))
     genPartFlav       = H((25, -0.5,     24.5    , ("genPartFlav",     'genPartFlav')))
 
+
+
     # Other Vars:   'ptErr',  'selected'
     
 
@@ -41,3 +44,9 @@ class _PlotDiMuon(_PlotCommon, _PlotDiLepton):
 class Muon:
     plot = _PlotMuon
     plot_pair = _PlotDiMuon
+    skip_detailed_plots = ['ip3d', 'ip3d_l', 'sip3d', 'sip3d_l', 
+                           'pfRelIso04_all',  'dxy', 'dxyErr', 
+                           'tkRelIso', 'pdgId', 'looseId', 
+                           'mediumId', 'tightId', 'softId', 'highPtId', 
+                           'mediumPromptId', 'mvaId', 'pfIsoId', 'tkIsoId', 
+                           'jetIdx', 'genPartFlav']
