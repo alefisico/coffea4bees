@@ -326,12 +326,11 @@ class analysis(processor.ProcessorABC):
         #
         #  Leptons
         #
-        skip_muons = ['charge']
+        skip_muons = ['charge'] + Muon.skip_detailed_plots
         if not isMC: skip_muons += ['genPartFlav']
-
         fill += Muon.plot(('selMuons', 'Selected Muons'),        'selMuon', skip=skip_muons)
 
-        skip_elecs = ['charge']
+        skip_elecs = ['charge'] + Elec.skip_detailed_plots
         if not isMC: skip_elecs += ['genPartFlav']
         fill += Elec.plot(('selElecs', 'Selected Elecs'),        'selElec', skip=skip_elecs)
 

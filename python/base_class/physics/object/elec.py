@@ -34,3 +34,7 @@ class _PlotDiElec(_PlotCommon, _PlotDiLepton):
 class Elec:
     plot = _PlotElec
     plot_pair = _PlotDiElec
+    skip_detailed_plots = ['pdgId', 'dr03HcalDepth1TowerSumEt', 'dr03TkSumPt', 
+                           'hoe', 'eInvMinusPInv', 'miniPFRelIso_all', 'miniPFRelIso_chg', 
+                           'r9', 'scEtOverPt', 'sieie',  'cutBased', 'convVeto', 
+                           'mvaFall17V2Iso', 'mvaFall17V2noIso', 'genPartFlav']
