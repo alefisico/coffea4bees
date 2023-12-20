@@ -8,3 +8,10 @@ SvB_MA_ps_zh : {"rebin":5}
 SvB_MA_ps_zz : {"rebin":4}
 SvB_MA_ps_hh : {"rebin":10}
 
+
+quadJet_selected.lead_vs_subl_m : {"2d":True}
+quadJet_selected.close_vs_other_m : {"2d":True}
+
+
+quadJet_min_dr.lead_vs_subl_m : {"2d":True}
+quadJet_min_dr.close_vs_other_m : {"2d":True}
