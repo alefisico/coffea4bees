@@ -99,7 +99,8 @@ analysis-cutflow-job:
   script:
     - source .ci-workflows/analysis-cutflow-job.sh
   rules:
-    - if: $CI_PIPELINE_SOURCE !~ 'merge_request_event'
+    - if: $CI_MERGE_REQUEST_IID
+      when: never
 
 analysis-testAll-job:   
   stage: test   
@@ -110,8 +111,8 @@ analysis-testAll-job:
     - k8s-cvmfs
   script:
     - source .ci-workflows/analysis-testAll-job.sh
-  only:
-    - merge_requests
+  rules:
+    - if: $CI_MERGE_REQUEST_IID
 
 
 
