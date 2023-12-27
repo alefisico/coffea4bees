@@ -179,7 +179,7 @@ if __name__ == '__main__':
         executor=processor.dask_executor if args.condor else processor.futures_executor,
         executor_args=executor_args,
         chunksize=1_000 if args.test else 100_000,
-        maxchunks=5 if args.test else None,
+        maxchunks=1 if args.test else None,
     )
     elapsed = time.time() - tstart
     if args.condor:
