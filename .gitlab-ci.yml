@@ -72,7 +72,7 @@ analysis-test-job:
   artifacts: 
     expire_in: 1 day
     paths:
-      - python/hists/test.coffea
+      - python/analysis/hists/test.coffea
 
 
 analysis-plot-job:    
@@ -87,7 +87,7 @@ analysis-plot-job:
   artifacts:
     expire_in: 1 day
     paths:
-      - python/testCoffeaPlots/RunII/
+      - python/analysis/testCoffeaPlots/RunII/
 
 analysis-cutflow-job:    
   stage: plot 
@@ -111,8 +111,7 @@ analysis-testAll-job:
   script:
     - source .ci-workflows/analysis-testAll-job.sh
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"'
-      when: always
+    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"
 
 
 #analysis-cutflow-job:   
