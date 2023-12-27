@@ -24,6 +24,20 @@ from multiprocessing import Pool
 from datetime import datetime
 
 from base_class.addhash import get_git_revision_hash, get_git_diff
+from base_class.dataset_tools import rucio_utils  ### can be modified when move to coffea2023
+
+
+def list_of_files( ifile, test=False ):
+    '''Check if ifile is root file or dataset to check in rucio'''
+
+    if not ifile.endswith('.root'):
+        rucio_client = rucio_utils.get_rucio_client()
+        outfiles, outsite, sites_counts = rucio_utils.get_dataset_files_replicas( ifile, client=rucio_client, mode="first" )
+        return outfiles[:(5 if test else -1)]
+    else:
+        file_list = [f'root://cmseos.fnal.gov/{ifile}']
+        return file_list
+
 
 
 if __name__ == '__main__':
@@ -85,27 +99,21 @@ if __name__ == '__main__':
                 'trigger': metadata['datasets']['data'][year]['trigger']
             }
 
-            xrootd_url = 'root://cmseos.fnal.gov/' if args.picoOrnano.startswith('pico') else 'root://xrootd-cms.infn.it/'
             if isinstance(metadata['datasets'][dataset][year][args.picoOrnano], dict):
 
                 for iera, ifile in metadata['datasets'][dataset][year][args.picoOrnano].items():
                     idataset = f'{dataset}_{year}{iera}'
                     metadata_dataset[idataset] = metadata_dataset[dataset]
                     metadata_dataset[idataset]['era'] = iera
-                    fileset[idataset] = {'files': [f'{xrootd_url}{ifile}'],
+                    fileset[idataset] = {'files': list_of_files( ifile, args.test ),
                                          'metadata': metadata_dataset[idataset]}
                     logging.info(f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
 
             else:
-                if isinstance(metadata["datasets"][dataset][year][args.picoOrnano], list):
-                    file_list = [f'{xrootd_url}{ifile}'
-                                 for ifile in metadata["datasets"][dataset][year][args.picoOrnano]]
-                else:
-                    file_list = [f'{xrootd_url}{metadata["datasets"][dataset][year][args.picoOrnano]}']
-                fileset[dataset + "_" + year] = {'files': file_list,
+                fileset[dataset + "_" + year] = {'files': list_of_files(metadata['datasets'][dataset][year][args.picoOrnano], args.test),
                                                  'metadata': metadata_dataset[dataset]}
 
-                logging.info(f'\nDataset {dataset+"_"+year} with'
+                logging.info(f'\nDataset {dataset+"_"+year} with '
                              f'{len(fileset[dataset+"_"+year]["files"])} files')
 
     #
@@ -171,7 +179,7 @@ if __name__ == '__main__':
         executor=processor.dask_executor if args.condor else processor.futures_executor,
         executor_args=executor_args,
         chunksize=1_000 if args.test else 100_000,
-        maxchunks=1 if args.test else None,
+        maxchunks=5 if args.test else None,
     )
     elapsed = time.time() - tstart
     if args.condor:
