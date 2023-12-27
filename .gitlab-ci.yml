@@ -99,8 +99,7 @@ analysis-cutflow-job:
   script:
     - source .ci-workflows/analysis-cutflow-job.sh
   rules:
-    - if: $CI_MERGE_REQUEST_IID
-      when: never
+    - if: '$CI_PIPELINE_SOURCE !~ "merge_request_event"'
 
 analysis-testAll-job:   
   stage: test   
@@ -112,8 +111,7 @@ analysis-testAll-job:
   script:
     - source .ci-workflows/analysis-testAll-job.sh
   rules:
-    - if: $CI_MERGE_REQUEST_IID
-
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"'
 
 
 #analysis-cutflow-job:   
