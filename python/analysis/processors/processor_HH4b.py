@@ -24,7 +24,7 @@ from coffea import processor, util
 from coffea.lumi_tools import LumiMask
 
 from base_class.hist import Collection, Fill
-from base_class.physics.object import LorentzVector, Jet, Muon, Lepton
+from base_class.physics.object import LorentzVector, Jet, Muon, Elec
 
 from analysis.helpers.MultiClassifierSchema import MultiClassifierSchema
 from analysis.helpers.correctionFunctions import btagVariations
@@ -326,8 +326,13 @@ class analysis(processor.ProcessorABC):
         #
         #  Leptons
         #
-        fill += Muon.plot  (('selMuons', 'Selected Muons'),        'selMuon', skip=['charge'])
-        #fill += Lepton.plot(('selElecs', 'Selected Elecs'),        'selElec')
+        skip_muons = ['charge'] + Muon.skip_detailed_plots
+        if not isMC: skip_muons += ['genPartFlav']
+        fill += Muon.plot(('selMuons', 'Selected Muons'),        'selMuon', skip=skip_muons)
+
+        skip_elecs = ['charge'] + Elec.skip_detailed_plots
+        if not isMC: skip_elecs += ['genPartFlav']
+        fill += Elec.plot(('selElecs', 'Selected Elecs'),        'selElec', skip=skip_elecs)
 
         #
         #  Config weights
@@ -433,7 +438,6 @@ class analysis(processor.ProcessorABC):
         event['Electron', 'selected'] = (event.Electron.pt > 10) & (abs(event.Electron.eta) < 2.5) & (event.Electron.cutBased >= 2)
         event['nElectron_selected'] = ak.sum(event.Electron.selected, axis=1)
         event['selElec'] = event.Electron[event.Electron.selected]
-
 
         #
         # Calculate and apply Jet Energy Calibration   ## AGE: currently not applying to data and mixeddata
