@@ -17,12 +17,12 @@ This repository assumes that you are running in a machine that has access to [cv
 git clone ssh://git@gitlab.cern.ch:7999/cms-cmu/coffea4bees.git
 ```
 
-This code has been tested at the cmslpc, and to simplify the setup, it can be used with the container needed to run on lpc condor computers. To set this container:
+This code has been tested at the cmslpc, and to simplify the setup, it can be used running a container based on the [lpcjobqueue](https://github.com/CoffeaTeam/lpcjobqueue) recipe. To set up the container:
 ```
-curl -OL https://raw.githubusercontent.com/CoffeaTeam/lpcjobqueue/main/bootstrap.sh
+cd coffea4bees/
 bash bootstrap.sh
 ```
-This creates two new files in this directory: `shell` and `.bashrc`. The `./shell` executable can then be used to start a singularity shell with a coffea environment. More information about this container [here](https://github.com/CoffeaTeam/lpcjobqueue).
+This creates two new files in this directory: `shell` and `.bashrc`. The `./shell` executable can then be used to start a singularity shell with a coffea environment. 
 
 Remember to run this command `./shell` (aka set your environment) *every time you want to run something*. In addition, dont forget to run your voms-proxy to have access to remote files:
 
