@@ -1,4 +1,4 @@
 FROM coffeateam/coffea-dask:latest
-#FROM coffeateam/coffea-dask:0.7.22-py3.9-g7f049
+#### latest is ecaebc20c1d
 
 RUN pip install rucio-clients pycodestyle
