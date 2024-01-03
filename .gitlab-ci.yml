@@ -37,11 +37,34 @@ voms_proxy:
     - cp ${VOMSPROXY} proxy/x509_proxy
 
 
+#### from https://gitlab.cern.ch/gitlabci-examples/build_docker_image/-/blob/master/.gitlab-ci.yml?ref_type=heads
+build_kaniko_command:
+    stage: build
+    variables:
+      # To push to a specific docker tag other than latest(the default), amend the --destination parameter, e.g. --destination $CI_REGISTRY_IMAGE:$CI_BUILD_REF_NAME
+      # See https://docs.gitlab.com/ee/ci/variables/predefined_variables.html#variables-reference for available variables
+      IMAGE_DESTINATION_LATEST: ${CI_REGISTRY_IMAGE}:latest
+      IMAGE_DESTINATION: ${CI_REGISTRY_IMAGE}:$CI_COMMIT_SHORT_SHA
+    image: 
+        # The kaniko debug image is recommended because it has a shell, and a shell is required for an image to be used with GitLab CI/CD.
+        name: gcr.io/kaniko-project/executor:debug
+        entrypoint: [""]
+    script:
+        # Prepare Kaniko configuration file
+        - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
+        # Build and push the image from the Dockerfile at the root of the project.
+        - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/Dockerfile --destination $IMAGE_DESTINATION --destination $IMAGE_DESTINATION_LATEST
+        # Print the full registry path of the pushed image
+        - echo "Image pushed successfully to ${IMAGE_DESTINATION}"
+    only:
+      changes:
+        - Dockerfile
+
 analysis-test-job:   
   stage: test   
   dependencies:
     - voms_proxy
-  image: coffeateam/coffea-dask:latest
+  image: ${CI_REGISTRY_IMAGE}:latest ##coffeateam/coffea-dask:latest
   tags:
     - k8s-cvmfs
   script:
@@ -49,14 +72,14 @@ analysis-test-job:
   artifacts: 
     expire_in: 1 day
     paths:
-      - python/hists/test.coffea
+      - python/analysis/hists/test.coffea
 
 
 analysis-plot-job:    
   stage: plot 
   dependencies: 
     - analysis-test-job
-  image: coffeateam/coffea-dask:latest
+  image: ${CI_REGISTRY_IMAGE}:latest ##coffeateam/coffea-dask:latest
   tags:
     - k8s-cvmfs
   script:
@@ -64,32 +87,32 @@ analysis-plot-job:
   artifacts:
     expire_in: 1 day
     paths:
-      - python/testCoffeaPlots/RunII/
+      - python/analysis/testCoffeaPlots/RunII/
 
 analysis-cutflow-job:    
   stage: plot 
   dependencies: 
     - analysis-test-job
-  image: coffeateam/coffea-dask:latest
+  image: ${CI_REGISTRY_IMAGE}:latest ##coffeateam/coffea-dask:latest
   tags:
     - k8s-cvmfs
   script:
     - source .ci-workflows/analysis-cutflow-job.sh
   rules:
-    - if: '$CI_PIPELINE_SOURCE != "merge_request_event"'
+    - if: '$CI_PIPELINE_SOURCE == "push"'
 
 analysis-testAll-job:   
   stage: test   
   dependencies:
     - voms_proxy
-  image: coffeateam/coffea-dask:latest
+  image: ${CI_REGISTRY_IMAGE}:latest ##coffeateam/coffea-dask:latest
   tags:
     - k8s-cvmfs
   script:
     - source .ci-workflows/analysis-testAll-job.sh
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-
+    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"
+      when: manual
 
 
 #analysis-cutflow-job:   
