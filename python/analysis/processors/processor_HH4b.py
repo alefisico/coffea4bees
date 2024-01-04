@@ -725,7 +725,7 @@ class analysis(processor.ProcessorABC):
         selev["passDiJetMass"] = ak.any(quadJet.passDiJetMass, axis=1)
 
         selev['region'] = selev['quadJet_selected'].SR * 0b10 + selev['quadJet_selected'].SB * 0b01
-        selev['passSvB'] = (selev['SvB_MA'].ps > 0.95)
+        selev['passSvB'] = (selev['SvB_MA'].ps > 0.80)
         selev['failSvB'] = (selev['SvB_MA'].ps < 0.05)
 
         #
