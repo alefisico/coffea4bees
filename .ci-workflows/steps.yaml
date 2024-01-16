@@ -15,4 +15,4 @@ runcode:
   publisher:
     publisher_type: interpolated-pub
     publish: 
-    output_coffea: analysis/hists/histAll.coffea 
+      output_coffea: analysis/hists/histAll.coffea 
