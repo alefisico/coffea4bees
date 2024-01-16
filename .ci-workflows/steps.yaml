@@ -1,4 +1,4 @@
-run_code:
+runcode:
   process:
     process_type: 'interpolated-script-cmd'
     interpreter: bash
