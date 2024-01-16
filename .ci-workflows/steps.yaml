@@ -3,7 +3,7 @@ runcode:
     process_type: 'interpolated-script-cmd'
     interpreter: bash
     script: |
-      ls $REANA_WORKSPACE
+      cd {workingdir}
       voms-proxy-info
       cd python/
       python runner.py -d data TTToHadronic TTToSemiLeptonic TTTo2L2Nu ZZ4b ZH4b HH4b   -p analysis/processors/processor_HH4b.py  -y UL17 UL18 UL16_preVFP UL16_postVFP -o histAll.coffea -op analysis/hists/

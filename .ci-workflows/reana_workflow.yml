@@ -4,5 +4,5 @@ stages:
     scheduler:
       scheduler_type: 'singlestep-stage'
       parameters:
-        workingdir: '$REANA_WORKSPACE'
+        workingdir: {step: init, output: workdir, unwrap: true}
       step: {$ref: '.ci-workflows/steps.yaml#/runcode'}
