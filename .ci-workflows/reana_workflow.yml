@@ -1,0 +1,6 @@
+stages:
+- name: run_code
+  dependencies: [init]
+  scheduler:
+    scheduler_type: 'singlestep-stage'
+    step: {$ref: '.ci-workflows/steps.yaml#/run_code'}
