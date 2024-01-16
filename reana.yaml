@@ -7,5 +7,5 @@ workflow:
   file: .ci-workflows/reana_workflow.yml
 outputs:
   files:
-    - plots.tar
+    - analysis/hists/histAll.coffea 
 
