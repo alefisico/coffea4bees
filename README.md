@@ -22,9 +22,17 @@ This code has been tested at the cmslpc, and to simplify the setup, it can be us
 curl -OL https://raw.githubusercontent.com/CoffeaTeam/lpcjobqueue/main/bootstrap.sh
 bash bootstrap.sh
 ```
-This creates two new files in this directory: `shell` and `.bashrc`. The `./shell` executable can then be used to start a singularity shell with a coffea environment. More information about this container [here](https://github.com/CoffeaTeam/lpcjobqueue).
+This creates two new files in this directory: `shell` and `.bashrc`. _Additionally, this package contains a `set_shell.sh file`_ which runs the `./shell` executable with the coffea4bees container. This container is based on the `coffeateam/coffea-dask:latest` container including some additional python packages. 
+```
+source set_shell.sh
+```
 
-Remember to run this command `./shell` (aka set your environment) *every time you want to run something*. In addition, dont forget to run your voms-proxy to have access to remote files:
+Remember to run this previous command (aka set your environment) *every time you want to run something*.
+
+To know more about the container, you can see the [Dockerfile](Dockerfile). To know more information about the lpcjobqueue package click [here](https://github.com/CoffeaTeam/lpcjobqueue).
+
+
+In addition, dont forget to run your voms-proxy to have access to remote files:
 
 ```
 voms-proxy-init -rfc -voms cms --valid 168:00

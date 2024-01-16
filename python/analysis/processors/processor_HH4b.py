@@ -258,17 +258,13 @@ class analysis(processor.ProcessorABC):
         # To Add
         #
 
-        #    nAllMuons = dir.make<TH1F>("nAllMuons", (name+"/nAllMuons; Number of Muons (no selection); Entries").c_str(),  6,-0.5,5.5);
         #    nIsoMed25Muons = dir.make<TH1F>("nIsoMed25Muons", (name+"/nIsoMed25Muons; Number of Prompt Muons; Entries").c_str(),  6,-0.5,5.5);
         #    nIsoMed40Muons = dir.make<TH1F>("nIsoMed40Muons", (name+"/nIsoMed40Muons; Number of Prompt Muons; Entries").c_str(),  6,-0.5,5.5);
-        #    allMuons        = new muonHists(name+"/allMuons", fs, "All Muons");
         #    muons_isoMed25  = new muonHists(name+"/muon_isoMed25", fs, "iso Medium 25 Muons");
         #    muons_isoMed40  = new muonHists(name+"/muon_isoMed40", fs, "iso Medium 40 Muons");
 
-        #    nAllElecs = dir.make<TH1F>("nAllElecs", (name+"/nAllElecs; Number of Elecs (no selection); Entries").c_str(),  16,-0.5,15.5);
         #    nIsoMed25Elecs = dir.make<TH1F>("nIsoMed25Elecs", (name+"/nIsoMed25Elecs; Number of Prompt Elecs; Entries").c_str(),  6,-0.5,5.5);
         #    nIsoMed40Elecs = dir.make<TH1F>("nIsoMed40Elecs", (name+"/nIsoMed40Elecs; Number of Prompt Elecs; Entries").c_str(),  6,-0.5,5.5);
-        #    allElecs        = new elecHists(name+"/allElecs", fs, "All Elecs");
         #    elecs_isoMed25  = new elecHists(name+"/elec_isoMed25", fs, "iso Medium 25 Elecs");
         #    elecs_isoMed40  = new elecHists(name+"/elec_isoMed40", fs, "iso Medium 40 Elecs");
         #
@@ -286,11 +282,12 @@ class analysis(processor.ProcessorABC):
         #    //t2 = new trijetHists(name+"/t2",  fs, "Top Candidate (#geq2 non-candidate jets)");
         #    t = new trijetHists(name+"/t",  fs, "Top Candidate");
 
-        #    st = dir.make<TH1F>("st", (name+"/st; Scalar sum of jet p_{T}'s [GeV]; Entries").c_str(), 130, 200, 1500);
-        #    hT   = dir.make<TH1F>("hT", (name+"/hT; hT [GeV]; Entries").c_str(),  100,0,1000);
 
-        fill += hist.add('nPVs',     (101, -0.5, 100.5, ('PV.npvs', 'Number of Primary Vertices')))
+        fill += hist.add('nPVs',     (101, -0.5, 100.5, ('PV.npvs',     'Number of Primary Vertices')))
         fill += hist.add('nPVsGood', (101, -0.5, 100.5, ('PV.npvsGood', 'Number of Good Primary Vertices')))
+
+        fill += hist.add('hT',          (100,  0,   1000,  ('hT',          'H_{T} [GeV}')))
+        fill += hist.add('hT_selected', (100,  0,   1000,  ('hT_selected', 'H_{T} (selected jets) [GeV}')))
 
         #
         #  Make quad jet hists
@@ -424,13 +421,17 @@ class analysis(processor.ProcessorABC):
         self._cutFlow.fill("passMETFilter",  event, allTag=True)
 
         #
+        # Lepton Selction
+        #
+
+        #
         # Adding muons (loose muon id definition)
         # https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonIdRun2
         #
         event['Muon', 'selected'] = (event.Muon.pt > 10) & (abs(event.Muon.eta) < 2.4) & (event.Muon.pfRelIso04_all < 0.25) & (event.Muon.looseId)
         event['nMuon_selected'] = ak.sum(event.Muon.selected, axis=1)
         event['selMuon'] = event.Muon[event.Muon.selected]
-
+        
         #
         # Adding electrons (loose electron id)
         # https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedElectronIdentificationRun2
@@ -454,6 +455,7 @@ class analysis(processor.ProcessorABC):
         event['Jet', 'selected'] = (event.Jet.pt >= 40) & (np.abs(event.Jet.eta) <= 2.4) & ~event.Jet.pileup
         event['nJet_selected'] = ak.sum(event.Jet.selected, axis=1)
         event['selJet'] = event.Jet[event.Jet.selected]
+
 
         selev = event[event.nJet_selected >= 4]
         self._cutFlow.fill("passJetMult",  selev, allTag=True)
@@ -518,6 +520,12 @@ class analysis(processor.ProcessorABC):
         # Preselection: keep only three or four tag events
         #
         selev = selev[selev.passPreSel]
+
+        #
+        #  Calculate hT
+        #
+        selev['hT']          = ak.sum(selev.Jet[selev.Jet.selected_loose].pt, axis=1)
+        selev['hT_selected'] = ak.sum(selev.Jet[selev.Jet.selected      ].pt, axis=1)
 
         #
         # Build and select boson candidate jets with bRegCorr applied
@@ -717,7 +725,7 @@ class analysis(processor.ProcessorABC):
         selev["passDiJetMass"] = ak.any(quadJet.passDiJetMass, axis=1)
 
         selev['region'] = selev['quadJet_selected'].SR * 0b10 + selev['quadJet_selected'].SB * 0b01
-        selev['passSvB'] = (selev['SvB_MA'].ps > 0.95)
+        selev['passSvB'] = (selev['SvB_MA'].ps > 0.80)
         selev['failSvB'] = (selev['SvB_MA'].ps < 0.05)
 
         #

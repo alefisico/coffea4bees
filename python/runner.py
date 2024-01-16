@@ -24,6 +24,20 @@ from multiprocessing import Pool
 from datetime import datetime
 
 from base_class.addhash import get_git_revision_hash, get_git_diff
+from base_class.dataset_tools import rucio_utils  ### can be modified when move to coffea2023
+
+
+def list_of_files( ifile, allowlist_sites=['T3_US_FNALLPC'], test=False, test_files=5 ):
+    '''Check if ifile is root file or dataset to check in rucio'''
+
+    if not ifile.endswith('.root'):
+        rucio_client = rucio_utils.get_rucio_client()
+        outfiles, outsite, sites_counts = rucio_utils.get_dataset_files_replicas( ifile, client=rucio_client, mode="first", allowlist_sites=allowlist_sites )
+        return outfiles[:(test_files if test else -1)]
+    else:
+        file_list = [f'root://cmseos.fnal.gov/{ifile}']
+        return file_list
+
 
 
 if __name__ == '__main__':
@@ -51,6 +65,16 @@ if __name__ == '__main__':
     # Metadata
     #
     metadata = yaml.safe_load(open(args.metadata, 'r'))
+
+    configs = metadata['runner'] if 'runner' in metadata.keys() else {}
+    configs.setdefault( 'chunksize', (1_000 if args.test else 100_000 ) )
+    configs.setdefault( 'maxchunks', (1 if args.test else None ) )
+    configs.setdefault( 'schema', NanoAODSchema )
+    configs.setdefault( 'test_files', 5 )
+    configs.setdefault( 'allowlist_sites', ['T3_US_FNALLPC'] )
+    configs.setdefault( 'class_name', 'analysis' )
+    configs.setdefault( 'condor_cores', 2 )
+    configs.setdefault( 'condor_memory', '4GB' )
 
     if 'all' in args.datasets:
         metadata['datasets'].pop("mixeddata")   # AGE: this is temporary
@@ -85,27 +109,21 @@ if __name__ == '__main__':
                 'trigger': metadata['datasets']['data'][year]['trigger']
             }
 
-            xrootd_url = 'root://cmseos.fnal.gov/' if args.picoOrnano.startswith('pico') else 'root://xrootd-cms.infn.it/'
             if isinstance(metadata['datasets'][dataset][year][args.picoOrnano], dict):
 
                 for iera, ifile in metadata['datasets'][dataset][year][args.picoOrnano].items():
                     idataset = f'{dataset}_{year}{iera}'
                     metadata_dataset[idataset] = metadata_dataset[dataset]
                     metadata_dataset[idataset]['era'] = iera
-                    fileset[idataset] = {'files': [f'{xrootd_url}{ifile}'],
+                    fileset[idataset] = {'files': list_of_files( ifile, test=args.test, test_files=configs['test_files'], allowlist_sites=configs['allowlist_sites'] ),
                                          'metadata': metadata_dataset[idataset]}
                     logging.info(f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
 
             else:
-                if isinstance(metadata["datasets"][dataset][year][args.picoOrnano], list):
-                    file_list = [f'{xrootd_url}{ifile}'
-                                 for ifile in metadata["datasets"][dataset][year][args.picoOrnano]]
-                else:
-                    file_list = [f'{xrootd_url}{metadata["datasets"][dataset][year][args.picoOrnano]}']
-                fileset[dataset + "_" + year] = {'files': file_list,
+                fileset[dataset + "_" + year] = {'files': list_of_files(metadata['datasets'][dataset][year][args.picoOrnano], test=args.test, test_files=configs['test_files'], allowlist_sites=configs['allowlist_sites']),
                                                  'metadata': metadata_dataset[dataset]}
 
-                logging.info(f'\nDataset {dataset+"_"+year} with'
+                logging.info(f'\nDataset {dataset+"_"+year} with '
                              f'{len(fileset[dataset+"_"+year]["files"])} files')
 
     #
@@ -121,8 +139,8 @@ if __name__ == '__main__':
 
         cluster_args = {'transfer_input_files': transfer_input_files,
                         'shared_temp_directory': '/tmp',
-                        'cores': 2,
-                        'memory': '4GB',
+                        'cores': configs['condor_cores'],
+                        'memory': configs['condor_memory'],
                         'ship_env': False}
         logging.info("\nCluster arguments: ", cluster_args)
 
@@ -137,11 +155,11 @@ if __name__ == '__main__':
         executor_args = {
             'client': client,
             'savemetrics': True,
-            'schema': NanoAODSchema,
+            'schema': configs['schema'],
             'align_clusters': False,
         }
     else:
-        executor_args = {'schema': NanoAODSchema,
+        executor_args = {'schema': configs['schema'],
                          'workers': 6,
                          'savemetrics': True}
 
@@ -152,12 +170,11 @@ if __name__ == '__main__':
     #
     processorName = args.processor.split('.')[0].replace("/", '.')
     try:
-        analysis = getattr(importlib.import_module(processorName), 'analysis')
+        analysis = getattr(importlib.import_module(processorName), configs['class_name'])
         logging.info(f"\nRunning processsor: {processorName}")
     except (ModuleNotFoundError, NameError) as e:
         logging.error(f"{args.processor} No processor included. Check the "
-                      f"--processor options and remember to call the processor"
-                      f" class as: analysis")
+                      f"--processor options. The default class name is {configs['class_name']}")
         sys.exit(0)
 
     tstart = time.time()
@@ -170,8 +187,8 @@ if __name__ == '__main__':
         processor_instance=analysis(**metadata['config']),
         executor=processor.dask_executor if args.condor else processor.futures_executor,
         executor_args=executor_args,
-        chunksize=1_000 if args.test else 100_000,
-        maxchunks=1 if args.test else None,
+        chunksize=configs['chunksize'],
+        maxchunks=configs['maxchunks'],
     )
     elapsed = time.time() - tstart
     if args.condor:
