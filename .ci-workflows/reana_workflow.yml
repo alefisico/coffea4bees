@@ -1,6 +1,8 @@
 stages:
-- name: runcode
-  dependencies: [init]
-  scheduler:
-    scheduler_type: 'singlestep-stage'
-    step: {$ref: '.ci-workflows/steps.yaml#/runcode'}
+  - name: runcode
+    dependencies: [init]
+    scheduler:
+      scheduler_type: 'singlestep-stage'
+      parameters:
+        workingdir: '$REANA_WORKSPACE'
+      step: {$ref: '.ci-workflows/steps.yaml#/runcode'}
