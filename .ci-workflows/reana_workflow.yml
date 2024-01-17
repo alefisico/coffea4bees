@@ -5,4 +5,13 @@ stages:
       scheduler_type: 'singlestep-stage'
       parameters:
         workingdir: {step: init, output: workdir, unwrap: true}
+        output_file: histAll.coffea
       step: {$ref: '.ci-workflows/steps.yaml#/runcode'}
+
+  - name: runplots
+    dependencies: [runcode]
+    scheduler:
+      scheduler_type: 'singlestep-stage'
+      parameters:
+        workingdir: {step: init, output: workdir, unwrap: true}
+      step: {$ref: '.ci-workflows/steps.yaml#/runplots'}

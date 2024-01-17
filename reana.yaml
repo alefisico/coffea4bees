@@ -7,8 +7,11 @@ inputs:
     workdir: '$REANA_WORKSPACE'
 workflow:
   type: yadage
+  resources:
+    cvmfs:
+      - cms.cern.ch
   file: .ci-workflows/reana_workflow.yml
 outputs:
   files:
-    - analysis/hists/histAll.coffea 
+    - python/analysis/testCoffeaPlots
 
