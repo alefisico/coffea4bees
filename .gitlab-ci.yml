@@ -56,11 +56,10 @@ build_kaniko_command:
         - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/Dockerfile --destination $IMAGE_DESTINATION --destination $IMAGE_DESTINATION_LATEST
         # Print the full registry path of the pushed image
         - echo "Image pushed successfully to ${IMAGE_DESTINATION}"
-    only:
-      changes:
-        - Dockerfile
     rules:
       - if: $CI_COMMIT_BRANCH == /container_/
+        changes: 
+          - Dockerfile
 
 analysis-test-job:   
   stage: test   
