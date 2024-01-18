@@ -59,6 +59,8 @@ build_kaniko_command:
     only:
       changes:
         - Dockerfile
+    rules:
+      - if: $CI_COMMIT_BRANCH == /container_/
 
 analysis-test-job:   
   stage: test   
@@ -79,7 +81,7 @@ analysis-plot-job:
   stage: plot 
   dependencies: 
     - analysis-test-job
-  image: ${CI_REGISTRY_IMAGE}:latest ##coffeateam/coffea-dask:latest
+  image: ${CI_REGISTRY_IMAGE}:latest 
   tags:
     - k8s-cvmfs
   script:
@@ -93,7 +95,7 @@ analysis-cutflow-job:
   stage: plot 
   dependencies: 
     - analysis-test-job
-  image: ${CI_REGISTRY_IMAGE}:latest ##coffeateam/coffea-dask:latest
+  image: ${CI_REGISTRY_IMAGE}:latest
   tags:
     - k8s-cvmfs
   script:
@@ -105,7 +107,7 @@ analysis-testAll-job:
   stage: test   
   dependencies:
     - voms_proxy
-  image: ${CI_REGISTRY_IMAGE}:latest ##coffeateam/coffea-dask:latest
+  image: ${CI_REGISTRY_IMAGE}:latest
   tags:
     - k8s-cvmfs
   script:
