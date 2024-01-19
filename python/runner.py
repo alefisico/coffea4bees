@@ -55,7 +55,6 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--datasets', nargs='+', dest='datasets', default=['HH4b', 'ZZ4b', 'ZH4b'], help="Name of dataset to run. Example if more than one: -d HH4b ZZ4b")
     parser.add_argument('--condor', dest="condor", action="store_true", default=False, help='Run in condor')
     parser.add_argument('--debug', help="Print lots of debugging statements", action="store_true", dest="debug", default=False)
-    parser.add_argument('--picoOrnano', dest="picoOrnano", default="picoAOD", help='picoAOD or nanoAOD. Example: --picoOrnano picoAOD')
     args = parser.parse_args()
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
 
@@ -67,6 +66,7 @@ if __name__ == '__main__':
     metadata = yaml.safe_load(open(args.metadata, 'r'))
 
     configs = metadata['runner'] if 'runner' in metadata.keys() else {}
+    configs.setdefault( 'data_tier', 'picoAOD' )
     configs.setdefault( 'chunksize', (1_000 if args.test else 100_000 ) )
     configs.setdefault( 'maxchunks', (1 if args.test else None ) )
     configs.setdefault( 'schema', NanoAODSchema )
@@ -109,9 +109,9 @@ if __name__ == '__main__':
                 'trigger': metadata['datasets']['data'][year]['trigger']
             }
 
-            if isinstance(metadata['datasets'][dataset][year][args.picoOrnano], dict):
+            if isinstance(metadata['datasets'][dataset][year][configs['data_tier']], dict):
 
-                for iera, ifile in metadata['datasets'][dataset][year][args.picoOrnano].items():
+                for iera, ifile in metadata['datasets'][dataset][year][configs['data_tier']].items():
                     idataset = f'{dataset}_{year}{iera}'
                     metadata_dataset[idataset] = metadata_dataset[dataset]
                     metadata_dataset[idataset]['era'] = iera
@@ -120,7 +120,7 @@ if __name__ == '__main__':
                     logging.info(f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
 
             else:
-                fileset[dataset + "_" + year] = {'files': list_of_files(metadata['datasets'][dataset][year][args.picoOrnano], test=args.test, test_files=configs['test_files'], allowlist_sites=configs['allowlist_sites']),
+                fileset[dataset + "_" + year] = {'files': list_of_files(metadata['datasets'][dataset][year][configs['data_tier']], test=args.test, test_files=configs['test_files'], allowlist_sites=configs['allowlist_sites']),
                                                  'metadata': metadata_dataset[dataset]}
 
                 logging.info(f'\nDataset {dataset+"_"+year} with '
