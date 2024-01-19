@@ -113,7 +113,7 @@ def _draw_plot(hist_list, stack_dict, **kwargs):
     if kwargs.get("xscale", None):
         plt.xscale(kwargs.get('xscale'))
 
-    if kwargs.get('legend', False):
+    if kwargs.get('legend', True):
         handles, labels = plt.gca().get_legend_handles_labels()
 
         for s in stack_patches:
@@ -172,9 +172,8 @@ def _plot2d(hist, plotConfig, **kwargs):
         print(f'\t in plot ... kwargs = {kwargs}')
 
     if kwargs.get("full", False):
-        # size = 7
         fig = plt.figure()   # figsize=(size,size/_phi))
-
+        #fig.add_axes((0.1, 0.15, 0.85, 0.8))
         hist.plot2d_full(
             main_cmap="cividis",
             top_ls="--",
@@ -185,7 +184,6 @@ def _plot2d(hist, plotConfig, **kwargs):
             side_color="steelblue",
         )
     else:
-        size = 7
         fig = plt.figure()   # figsize=(size,size/_phi))
 
         fig.add_axes((0.1, 0.15, 0.85, 0.8))
@@ -195,6 +193,7 @@ def _plot2d(hist, plotConfig, **kwargs):
     # _draw_plot(hist_list, stack_dict, **kwargs)
 
     ax = fig.gca()
+
     hep.cms.label("Internal", data=True,
                   year=kwargs['year'].replace("UL", "20"), loc=0, ax=ax)
 

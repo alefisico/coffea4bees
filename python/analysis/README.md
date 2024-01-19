@@ -51,7 +51,9 @@ python analysis/makePlots.py -i hists/hists.coffea  -o testPlotsNew
 python -i analysis/iPlot.py      -i hists/hists.coffea  -o testPlotsNew
 
 >>> plot("SvB_MA_ps_zh",cut="passPreSel",region="SB",doRatio=True,debug=True,ylabel="Entries",norm=False,legend=True,rebin=5,yscale='log')
-
+>>> plot2d("quadJet_min_dr.lead_vs_subl_m",process="TTToHadronic",region=sum,cut="passPreSel")
+>>> plot2d("quadJet_min_dr.lead_vs_subl_m",process="TTToHadronic",region=sum,cut="passPreSel",full=3)
+>>> plot2d("quadJet_min_dr.lead_vs_subl_m",process="TTToHadronic",region=sum,cut="passPreSel",full=3)
 ```
 
 ## To debug the code
