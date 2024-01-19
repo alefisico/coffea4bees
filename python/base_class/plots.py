@@ -28,6 +28,11 @@ def getFromNestedDict(nested_dict, target_key, default=None):
 
     return default
 
+def getFromConfig(input_dict, target_key, default=None):
+    if len(input_dict["hists"]):
+        return getFromNestedDict(plotConfig["hists"], target_key, default)
+    return getFromNestedDict(plotConfig["stack"], target_key, default)
+        
 def _savefig(fig, var, *args):
     print(args)
 
@@ -425,8 +430,8 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
     #  Get the year
     #    (Got to be a better way to do this....)
     #
-    year = "RunII"
-    tagName = "fourTag"
+    year = getFromConfig(plotConfig, "year", default="RunII")
+    tag = getFromConfig(plotConfig,  "tag", default="RunII")
     if len(plotConfig["hists"]):
         year = getFromNestedDict(plotConfig["hists"], "year", "RunII")
         tag = getFromNestedDict(plotConfig["hists"], "tag",  "fourTag")
@@ -527,7 +532,7 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
     # Save Fig
     #
     if kwargs.get("outputFolder", None):
-        _savefig(fig, var, kwargs.get("outputFolder"), year, cut, tagName, region)
+        _savefig(fig, var, kwargs.get("outputFolder"), year, cut, tag, region)
 
     return fig
 
@@ -582,7 +587,7 @@ def make2DPlot(hists, process, cutList, plotConfig, var='selJets.pt',
     tag = kwargs.get("tag", "fourTag")
     tag = plotConfig["codes"]["tag"][tag]
     # labels.append(v.get("label"))
-    #     hist_types. append(v.get("histtype", "errorbar"))
+    # hist_types. append(v.get("histtype", "errorbar"))
 
     region_selection = sum if region in ["sum", sum] else hist.loc(codes["region"][region])
 
@@ -607,8 +612,14 @@ def make2DPlot(hists, process, cutList, plotConfig, var='selJets.pt',
     #
     kwargs["year"] = yearStr
 
+    #
+    # Make the plot
+    #
     fig = _plot2d(_hist, plotConfig, **kwargs)
 
+    #
+    # Save Fig
+    #
     if kwargs.get("outputFolder", None):
         _savefig(fig, var, kwargs.get("outputFolder"), yearStr, cut, tagName, region)
 
