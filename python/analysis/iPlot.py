@@ -12,7 +12,8 @@ from base_class.plots import makePlot, make2DPlot
 #
 # TO Add
 #     Variable Binning
-#  - labels
+#     Plot from two differnt files
+#     Plot from two differnt regions
 
 
 def ls(option="var", match=None):
