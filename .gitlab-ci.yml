@@ -59,6 +59,7 @@ build_kaniko_command:
         - echo "Image pushed successfully to ${IMAGE_DESTINATION}"
     rules:
       - if: $CI_COMMIT_BRANCH == /container_/
+        when: always
 
 analysis-test-job:   
   stage: test   
