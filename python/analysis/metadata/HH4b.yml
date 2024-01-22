@@ -19,7 +19,6 @@ datasets:
       trigger: 
         - QuadJet45_TripleBTagCSV_p087 
         - DoubleJet90_Double30_TripleBTagCSV_p087 
-        - DoubleJetsC100_DoubleBTagCSV_p014_DoublePFJetsC100MaxDeta1p6
       picoAOD: 
         B: '/store/user/algomez/XX4b/20231115/data2016B/picoAOD.root'
         C: '/store/user/algomez/XX4b/20231115/data2016C/picoAOD.root'
@@ -30,7 +29,6 @@ datasets:
       trigger: 
         - QuadJet45_TripleBTagCSV_p087 
         - DoubleJet90_Double30_TripleBTagCSV_p087 
-        - DoubleJetsC100_DoubleBTagCSV_p014_DoublePFJetsC100MaxDeta1p6
       picoAOD: 
         F: '/store/user/algomez/XX4b/20231115/data2016F/picoAOD.root'
         G: '/store/user/algomez/XX4b/20231115/data2016G/picoAOD.root'
@@ -39,7 +37,6 @@ datasets:
       lumi: 36.7e3
       trigger:
         - PFHT300PT30_QuadPFJet_75_60_45_40_TriplePFBTagCSV_3p0
-        - DoublePFJets100MaxDeta1p6_DoubleCaloBTagCSV_p33
       picoAOD: 
 #        B: '/store/user/algomez/XX4b/20231115/data2017B/picoAOD.root' # Dont think we need/want this
         C: '/store/user/algomez/XX4b/20231115/data2017C/picoAOD.root'
@@ -49,7 +46,6 @@ datasets:
     'UL18':
       lumi: 59.8e3
       trigger:
-        - DoublePFJets116MaxDeta1p6_DoubleCaloBTagDeepCSV_p71
         - PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepCSV_4p5
       picoAOD: 
         A: '/store/user/algomez/XX4b/20231115/data2018A/picoAOD.root'
