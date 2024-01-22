@@ -54,19 +54,17 @@ build_kaniko_command:
         # Prepare Kaniko configuration file
         - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
         # Build and push the image from the Dockerfile at the root of the project.
-        - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/Dockerfile --destination $IMAGE_DESTINATION --destination $IMAGE_DESTINATION_LATEST
+        - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/.dockerfiles/Dockerfile_analysis --destination $IMAGE_DESTINATION --destination $IMAGE_DESTINATION_LATEST
         # Print the full registry path of the pushed image
         - echo "Image pushed successfully to ${IMAGE_DESTINATION}"
     rules:
-      - if: $CI_COMMIT_BRANCH == /container_/
-        changes: 
-          - Dockerfile
+      - if: $CI_COMMIT_BRANCH =~ /^container.*/
 
 analysis-test-job:   
   stage: test   
   dependencies:
     - voms_proxy
-  image: ${CI_REGISTRY_IMAGE}:latest ##coffeateam/coffea-dask:latest
+  image: ${CI_REGISTRY_IMAGE}:latest
   tags:
     - k8s-cvmfs
   script:
