@@ -58,8 +58,7 @@ build_kaniko_command:
         # Print the full registry path of the pushed image
         - echo "Image pushed successfully to ${IMAGE_DESTINATION}"
     rules:
-      - if: $CI_COMMIT_BRANCH == /container_/
-        when: always
+      if: $CI_COMMIT_BRANCH =~ /^container.*/
 
 analysis-test-job:   
   stage: test   
