@@ -59,7 +59,7 @@ build_kaniko_command:
         - echo "Image pushed successfully to ${IMAGE_DESTINATION}"
     rules:
       - if: $CI_COMMIT_BRANCH =~ /^container.*/ 
-      - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"'
+        #      - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"'
 
 analysis-test-job:   
   stage: test   
