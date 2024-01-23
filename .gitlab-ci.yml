@@ -101,8 +101,6 @@ analysis-cutflow-job:
     - k8s-cvmfs
   script:
     - source .ci-workflows/analysis-cutflow-job.sh
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "push"'
 
 #analysis-testAll-job:   
 #  stage: test   
