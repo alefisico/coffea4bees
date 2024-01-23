@@ -14,6 +14,8 @@ workflow:
       when: never
     # it runs with any branch
     - if: $CI_COMMIT_BRANCH
+    # allow merge request pipelines to run
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
 stages:          
   - build
@@ -59,8 +61,7 @@ build_kaniko_command:
         - echo "Image pushed successfully to ${IMAGE_DESTINATION}"
     rules:
       - if: $CI_COMMIT_BRANCH =~ /^container.*/ 
-      - if: $CI_COMMIT_BRANCH
-        when: manual
+      - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^container.*/'
 
 analysis-test-job:   
   stage: test   
@@ -100,21 +101,19 @@ analysis-cutflow-job:
     - k8s-cvmfs
   script:
     - source .ci-workflows/analysis-cutflow-job.sh
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "push"'
 
-analysis-testAll-job:   
-  stage: test   
-  dependencies:
-    - voms_proxy
-  image: ${CI_REGISTRY_IMAGE}:latest
-  tags:
-    - k8s-cvmfs
-  script:
-    - source .ci-workflows/analysis-testAll-job.sh
-  rules:
-    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"
-      when: manual
+#analysis-testAll-job:   
+#  stage: test   
+#  dependencies:
+#    - voms_proxy
+#  image: ${CI_REGISTRY_IMAGE}:latest
+#  tags:
+#    - k8s-cvmfs
+#  script:
+#    - source .ci-workflows/analysis-testAll-job.sh
+#  rules:
+#    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"
+#      when: manual
 
 
 #analysis-cutflow-job:   

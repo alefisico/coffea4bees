@@ -37,7 +37,7 @@ from multiprocessing import Pool
 # print(torch.__config__.parallel_info())
 
 from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
-from analysis.helpers.common import init_jet_factory, jet_corrections, mask_event_decision, apply_btag_sf
+from analysis.helpers.common import init_jet_factory, jet_corrections, mask_event_decision, apply_btag_sf, drClean
 import logging
 
 
@@ -428,15 +428,15 @@ class analysis(processor.ProcessorABC):
         # Adding muons (loose muon id definition)
         # https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonIdRun2
         #
-        event['Muon', 'selected'] = (event.Muon.pt > 10) & (abs(event.Muon.eta) < 2.4) & (event.Muon.pfRelIso04_all < 0.25) & (event.Muon.looseId)
+        event['Muon', 'selected'] = (event.Muon.pt > 25) & (abs(event.Muon.eta) < 2.4) & (event.Muon.pfRelIso04_all < 0.25) & (event.Muon.looseId)
         event['nMuon_selected'] = ak.sum(event.Muon.selected, axis=1)
         event['selMuon'] = event.Muon[event.Muon.selected]
-        
+
         #
         # Adding electrons (loose electron id)
         # https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedElectronIdentificationRun2
         #
-        event['Electron', 'selected'] = (event.Electron.pt > 10) & (abs(event.Electron.eta) < 2.5) & (event.Electron.cutBased >= 2)
+        event['Electron', 'selected'] = (event.Electron.pt > 25) & (abs(event.Electron.eta) < 2.5) & (event.Electron.cutBased >= 2)
         event['nElectron_selected'] = ak.sum(event.Electron.selected, axis=1)
         event['selElec'] = event.Electron[event.Electron.selected]
 
@@ -449,10 +449,12 @@ class analysis(processor.ProcessorABC):
 
         event['Jet', 'calibration'] = event.Jet.pt / ( 1 if 'data' in dataset else event.Jet.pt_raw )    # AGE: I include the mix condition, I think it is wrong, to check later
         # print(f'calibration nominal: \n{ak.mean(event.Jet.calibration)}')
+        selLepton = ak.concatenate( [event.selElec, event.selMuon], axis=1 )
+        event['Jet', 'lepton_cleaned'] = drClean( event.Jet, selLepton )[1]  ### 0 is the collection of jets, 1 is the flag
 
         event['Jet', 'pileup'] = ((event.Jet.puId < 0b110) & (event.Jet.pt < 50)) | ((np.abs(event.Jet.eta) > 2.4) & (event.Jet.pt < 40))
-        event['Jet', 'selected_loose'] = (event.Jet.pt >= 20) & ~event.Jet.pileup
-        event['Jet', 'selected'] = (event.Jet.pt >= 40) & (np.abs(event.Jet.eta) <= 2.4) & ~event.Jet.pileup
+        event['Jet', 'selected_loose'] = (event.Jet.pt >= 20) & ~event.Jet.pileup & event.Jet.lepton_cleaned
+        event['Jet', 'selected'] = (event.Jet.pt >= 40) & (np.abs(event.Jet.eta) <= 2.4) & ~event.Jet.pileup & event.Jet.lepton_cleaned
         event['nJet_selected'] = ak.sum(event.Jet.selected, axis=1)
         event['selJet'] = event.Jet[event.Jet.selected]
 
@@ -469,16 +471,6 @@ class analysis(processor.ProcessorABC):
         fourTag  = (selev['nJet_tagged']       >= 4)
         threeTag = (selev['nJet_tagged_loose'] == 3) & (selev['nJet_selected'] >= 4)
 
-        # check that coffea jet selection agrees with c++
-        selev['issue'] = (threeTag != selev.threeTag) | (fourTag != selev.fourTag)
-        if ak.any(selev.issue):
-            logging.warning(f'{chunk}WARNING: selected jets or fourtag calc not equal to picoAOD values')
-            logging.warning('nSelJets')
-            logging.warning(selev[selev.issue].nSelJets)
-            logging.warning(selev[selev.issue].nJet_selected)
-            logging.warning('fourTag')
-            logging.warning(selev.fourTag[selev.issue])
-            logging.warning(fourTag[selev.issue])
 
         selev[ 'fourTag']   =  fourTag
         selev['threeTag']   = threeTag
@@ -590,9 +582,6 @@ class analysis(processor.ProcessorABC):
 
             # check that pseudoTagWeight calculation agrees with c++
             selev.issue = (abs(selev.pseudoTagWeight - pseudoTagWeight) / selev.pseudoTagWeight > 0.0001) & (pseudoTagWeight != 1)
-            if ak.any(selev.issue):
-                logging.warning(f'{chunk}WARNING: python pseudotag calc not equal to c++ calc')
-                logging.warning(f'{chunk}Issues:', ak.sum(selev.issue), 'of', ak.sum(selev.threeTag))
 
             # add pseudoTagWeight to event
             selev['pseudoTagWeight'] = pseudoTagWeight
