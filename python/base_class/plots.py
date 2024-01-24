@@ -375,7 +375,7 @@ def _makeHistsFromList(hists, cutList, plotConfig, var, cut, region, process, **
             hist_colors_fill.append(_colors[ic])
             label = process if process_config.get("label").lower() == "none" else process_config.get("label")
             hist_labels.append(label + " " + _cut)
-            hist_types. append(process_config.get("histtype", "errorbar"))
+            hist_types. append("errorbar")
                 
             cutDict = {}
             for c in cutList:
@@ -411,7 +411,7 @@ def _makeHistsFromList(hists, cutList, plotConfig, var, cut, region, process, **
             hist_colors_fill.append(_colors[ir])
             label = process if process_config.get("label").lower() == "none" else process_config.get("label")
             hist_labels.append(label + " " + _reg)
-            hist_types. append(process_config.get("histtype", "errorbar"))
+            hist_types. append("errorbar")
                 
             cutDict = {}
             for c in cutList:
@@ -447,7 +447,7 @@ def _makeHistsFromList(hists, cutList, plotConfig, var, cut, region, process, **
         fig = _plot(hists, {}, plotConfig, **kwargs)
 
     if kwargs.get("outputFolder", None):
-        _savefig(fig, var, kwargs.get("outputFolder"), yearStr, cutName, this_tagName, regionName)
+        _savefig(fig, var, kwargs.get("outputFolder"), yearStr, cutName, this_tagName, regionName, process)
 
     return fig
 
