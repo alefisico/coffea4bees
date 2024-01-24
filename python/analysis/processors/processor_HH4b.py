@@ -705,7 +705,8 @@ class analysis(processor.ProcessorABC):
         #
         # pick quadJet at random giving preference to ones which passDiJetMass and MDRs
         #
-        quadJet['rank'] = 10 * quadJet.passDiJetMass + quadJet.lead.passMDR + quadJet.subl.passMDR + quadJet.random
+        quadJet_random = np.random.uniform(low=0.1, high=0.9, size=( len(selev), 3 ) )
+        quadJet['rank'] = 10 * quadJet.passDiJetMass + quadJet.lead.passMDR + quadJet.subl.passMDR + quadJet_random #quadJet.random
         quadJet['selected'] = quadJet.rank == np.max(quadJet.rank, axis=1)
 
         selev['diJet'] = diJet
