@@ -1,5 +1,5 @@
 hists:
-        process1:
+        data:
                 process: data
                 tag: fourTag
                 year: RunII
@@ -39,7 +39,7 @@ hists:
 
 
 stack:
-        process1:
+        TTTo2L2Nu:
                 process: TTTo2L2Nu
                 tag: fourTag
                 year: RunII
@@ -47,7 +47,7 @@ stack:
                 edgecolor: xkcd:light blue
                 label: None
 
-        process2:
+        TTToSemiLeptonic:
                 process: TTToSemiLeptonic
                 tag: fourTag
                 year: RunII
@@ -55,7 +55,7 @@ stack:
                 edgecolor: xkcd:light blue
                 label: None
 
-        process3:
+        TTToHadronic:
                 process: TTToHadronic
                 tag: fourTag
                 year: RunII
@@ -64,7 +64,7 @@ stack:
                 label: TTbar
 
 
-        process4:
+        Multijet:
                 process: data
                 tag: threeTag
                 year: RunII
