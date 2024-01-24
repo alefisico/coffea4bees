@@ -623,12 +623,12 @@ def make2DPlot(hists, process, cutList, plotConfig, var='selJets.pt',
     #
     #  Unstacked hists
     #
-    hist_config = plotConfig["hists"]
+    process_config = getDictNested(plotConfig, process)
     # hist_labels = []
     # hist_types = []
 
-    tagName = kwargs.get("tag", "fourTag")
-    tag = plotConfig["codes"]["tag"][tag]
+    tagName = process_config.get("tag","fourTag")
+    tag = plotConfig["codes"]["tag"][tagName]
     # labels.append(v.get("label"))
     # hist_types. append(v.get("histtype", "errorbar"))
 
@@ -638,7 +638,7 @@ def make2DPlot(hists, process, cutList, plotConfig, var='selJets.pt',
         print(f" hist process={process}, "
               f"tag={tag}, year={year}")
 
-    hist_dict = {"process": process,  
+    hist_dict = {"process": process_config["process"],  
                  "year":    year,
                  "tag":     hist.loc(tag),
                  "region":  region_selection,
