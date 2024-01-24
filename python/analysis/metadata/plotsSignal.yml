@@ -16,7 +16,6 @@ hists:
                 fillcolor: r
                 edgecolor: r
                 label: HH4b
-                drawEdge: False
    
 codes:
    region:
