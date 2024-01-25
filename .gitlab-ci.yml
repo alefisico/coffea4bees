@@ -109,8 +109,6 @@ baseclass-test-job:
     - k8s-cvmfs
   script:
     - source .ci-workflows/baseclass-test-job.sh
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "push"'
 
 #analysis-testAll-job:   
 #  stage: test   
