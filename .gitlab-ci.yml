@@ -103,6 +103,16 @@ analysis-cutflow-job:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push"'
 
+baseclass-test-job:   
+  stage: build
+  image: ${CI_REGISTRY_IMAGE}:latest
+  tags:
+    - k8s-cvmfs
+  script:
+    - source .ci-workflows/baseclass-test-job.sh
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+
 analysis-testAll-job:   
   stage: test   
   dependencies:
@@ -112,19 +122,6 @@ analysis-testAll-job:
     - k8s-cvmfs
   script:
     - source .ci-workflows/analysis-testAll-job.sh
-  rules:
-    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"
-      when: manual
-
-baseclass-test-job:   
-  stage: test
-  dependencies:
-    - voms_proxy
-  image: ${CI_REGISTRY_IMAGE}:latest
-  tags:
-    - k8s-cvmfs
-  script:
-    - source .ci-workflows/baseclass-test-job.sh
   rules:
     - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"
       when: manual
