@@ -103,7 +103,7 @@ analysis-cutflow-job:
     - source .ci-workflows/analysis-cutflow-job.sh
 
 baseclass-test-job:   
-  stage: build
+  stage: test
   image: ${CI_REGISTRY_IMAGE}:latest
   tags:
     - k8s-cvmfs
