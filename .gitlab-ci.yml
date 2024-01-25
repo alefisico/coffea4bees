@@ -117,13 +117,14 @@ analysis-testAll-job:
       when: manual
 
 baseclass-test-job:   
-  stage: test   
+  stage: test
   dependencies:
+    - voms_proxy
   image: ${CI_REGISTRY_IMAGE}:latest
   tags:
     - k8s-cvmfs
   script:
-    - source .ci-workflows/baseclass-testAll-job.sh
+    - source .ci-workflows/baseclass-test-job.sh
   rules:
     - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"
       when: manual

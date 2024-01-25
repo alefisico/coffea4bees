@@ -493,13 +493,7 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
         cutDict[c] = sum
     cutDict[cut] = True
 
-        
-    #
-    #  Get the year
-    #    (Got to be a better way to do this....)
-    #
-    year = get_value_nested_dict(plotConfig, "year", default="RunII")
-    tag  = get_value_nested_dict(plotConfig,  "tag", default="fourTag")
+    tagNames = []
 
     #
     #  Unstacked hists
@@ -510,16 +504,17 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
     hist_colors_edge = []
     hist_labels = []
     hist_types = []
-
+    
     for k, v in hist_config.items():
         this_process = v["process"]
         this_year = sum if v["year"] == "RunII" else v["year"]
+        tagNames.append(v["tag"])
         this_tag = plotConfig["codes"]["tag"][v["tag"]]
         hist_colors_fill.append(v.get('fillcolor'))
         hist_colors_edge.append(v.get('edgecolor'))
         hist_labels.append(v.get("label"))
         hist_types. append(v.get("histtype", "errorbar"))
-
+        
         if kwargs.get("debug", False):
             print(f" hist process={this_process}, "
                   f"tag={this_tag}, year={this_year}")
@@ -539,7 +534,8 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
     #
     # Add args
     #
-    kwargs["year"] = year
+    yearName  = get_value_nested_dict(plotConfig,  "year", default="RunII")
+    kwargs["year"] = yearName
     kwargs["hist_fill_colors"] = hist_colors_fill
     kwargs["hist_edge_colors"] = hist_colors_edge
     kwargs["hist_labels"] = hist_labels
@@ -557,6 +553,7 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
     for k, v in stack_config.items():
         this_year2 = sum if v["year"] == "RunII" else v["year"]
         this_tag2 = plotConfig["codes"]["tag"][v["tag"]]
+        tagNames.append(v["tag"])
         this_process = v['process']
         stack_labels.append(v.get('label'))
         stack_colors_fill.append(v.get('fillcolor'))
@@ -594,7 +591,8 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
     # Save Fig
     #
     if kwargs.get("outputFolder", None):
-        _savefig(fig, var, kwargs.get("outputFolder"), year, cut, tag, region)
+        tagName = "fourTag" if "fourTag" in tagNames else "threeTag"
+        _savefig(fig, var, kwargs.get("outputFolder"), yearName, cut, tagName, region)
 
     return fig
 
@@ -673,7 +671,7 @@ def make2DPlot(hists, process, cutList, plotConfig, var='selJets.pt',
     # Save Fig
     #
     if kwargs.get("outputFolder", None):
-        _savefig(fig, var, kwargs.get("outputFolder"), yearStr, cut, tagName, region)
+        _savefig(fig, var, kwargs.get("outputFolder"), yearStr, cut, tagName, region, process)
 
         
     return fig
