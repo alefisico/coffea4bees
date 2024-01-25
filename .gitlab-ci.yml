@@ -116,6 +116,19 @@ analysis-testAll-job:
     - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"
       when: manual
 
+baseclass-test-job:   
+  stage: test   
+  dependencies:
+  image: ${CI_REGISTRY_IMAGE}:latest
+  tags:
+    - k8s-cvmfs
+  script:
+    - source .ci-workflows/baseclass-testAll-job.sh
+  rules:
+    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"
+      when: manual
+
+
 
 #analysis-cutflow-job:   
 #  stage: test   
