@@ -7,7 +7,7 @@
     - '* * data/JEC/Summer20UL16APV_JRV3_MC/Summer20UL16APV_JRV3_MC_PtResolution_AK4PFchs.jr.txt'
     - '* * data/JEC/Summer20UL16APV_JRV3_MC/Summer20UL16APV_JRV3_MC_SF_AK4PFchs.jersf.txt'
   btagSF: '/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/2016preVFP_UL/btagging.json.gz'
-  METFilter:
+  NoiseFilter:
     - goodVertices
     - globalSuperTightHalo2016Filter
     - HBHENoiseFilter
@@ -27,7 +27,7 @@
     - '* * data/JEC/Summer20UL16_JRV3_MC/Summer20UL16_JRV3_MC_PtResolution_AK4PFchs.jr.txt'
     - '* * data/JEC/Summer20UL16_JRV3_MC/Summer20UL16_JRV3_MC_SF_AK4PFchs.jersf.txt'
   btagSF: '/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/2016postVFP_UL/btagging.json.gz'
-  METFilter:
+  NoiseFilter:
     - goodVertices
     - globalSuperTightHalo2016Filter
     - HBHENoiseFilter
@@ -47,7 +47,7 @@
     - '* * data/JEC/Summer19UL17_JRV2_MC/Summer19UL17_JRV2_MC_PtResolution_AK4PFchs.jr.txt'
     - '* * data/JEC/Summer19UL17_JRV2_MC/Summer19UL17_JRV2_MC_SF_AK4PFchs.jersf.txt'
   btagSF: '/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/2017_UL/btagging.json.gz'
-  METFilter:
+  NoiseFilter:
     - goodVertices
     - globalSuperTightHalo2016Filter
     - HBHENoiseFilter
@@ -68,7 +68,7 @@
     - '* * data/JEC/Summer19UL18_JRV2_MC/Summer19UL18_JRV2_MC_PtResolution_AK4PFchs.jr.txt'
     - '* * data/JEC/Summer19UL18_JRV2_MC/Summer19UL18_JRV2_MC_SF_AK4PFchs.jersf.txt'
   btagSF: '/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/2018_UL/btagging.json.gz'
-  METFilter:
+  NoiseFilter:
     - goodVertices
     - globalSuperTightHalo2016Filter
     - HBHENoiseFilter
@@ -98,7 +98,7 @@
     - '* * data/JEC/Summer16_25nsV1b_MC/Summer16_25nsV1b_MC_PtResolution_AK4PFchs.jr.txt'
     - '* * data/JEC/Summer16_25nsV1b_MC/Summer16_25nsV1b_MC_SF_AK4PFchs.jersf.txt'
   btagSF: 'data/JEC/BTagSF2016/btagging_legacy16_deepJet_itFit.json.gz' 
-  METFilter:
+  NoiseFilter:
     - goodVertices
     - globalSuperTightHalo2016Filter
     - HBHENoiseFilter
@@ -117,7 +117,7 @@
     - '* * data/JEC/Fall17_V3b_MC/Fall17_V3b_MC_PtResolution_AK4PFchs.jr.txt'
     - '* * data/JEC/Fall17_V3b_MC/Fall17_V3b_MC_SF_AK4PFchs.jersf.txt'
   btagSF: 'data/JEC/BTagSF2017/btagging_legacy17_deepJet.json.gz'
-  METFilter:
+  NoiseFilter:
     - goodVertices
     - globalSuperTightHalo2016Filter
     - HBHENoiseFilter
@@ -137,7 +137,7 @@
     - '* * data/JEC/Autumn18_V7b_MC/Autumn18_V7b_MC_PtResolution_AK4PFchs.jr.txt'
     - '* * data/JEC/Autumn18_V7b_MC/Autumn18_V7b_MC_SF_AK4PFchs.jersf.txt'
   btagSF: 'data/JEC/BTagSF2018/btagging_legacy18_deepJet.json.gz'
-  METFilter:
+  NoiseFilter:
     - goodVertices
     - globalSuperTightHalo2016Filter
     - HBHENoiseFilter

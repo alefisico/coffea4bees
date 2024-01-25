@@ -1,13 +1,13 @@
+runner:
+  condor_cores: 4
+  condor_memory: 8GB
+
 config:
   regions: 
     - SR
     - inclusive
   JCM: 'analysis/weights/dataRunII/jetCombinatoricModel_SB_00-00-02.txt'
   threeTag: true
-  apply_puWeight: true
-  apply_prefire: true
-  apply_trigWeight: true
-  apply_btagSF: true
   addbtagVariations: true
   #SvB   : 'pytorchModels/SvB_HCR_8_np753_seed0_lr0.01_epochs20_offset*_epoch20.pkl',
   #SvB_MA': 'pytorchModels/SvB_MA_HCR+attention_8_np1061_seed0_lr0.01_epochs20_offset*_epoch20.pkl',
