@@ -121,7 +121,7 @@ def doPlots(varList, cutList):
                                outputFolder=args.outputFolder,
                                **vDict
                                )
-    
+
                 plt.close()
                     
                     

@@ -102,6 +102,16 @@ analysis-cutflow-job:
   script:
     - source .ci-workflows/analysis-cutflow-job.sh
 
+baseclass-test-job:   
+  stage: build
+  image: ${CI_REGISTRY_IMAGE}:latest
+  tags:
+    - k8s-cvmfs
+  script:
+    - source .ci-workflows/baseclass-test-job.sh
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+
 #analysis-testAll-job:   
 #  stage: test   
 #  dependencies:
