@@ -210,6 +210,7 @@ def drClean(coll1,coll2,cone=0.4):
     delta_eta = j_eta - l_eta
     delta_phi = vector._deltaphi_kernel(j_phi,l_phi)
     dr = np.hypot(delta_eta, delta_phi)
-    jets_noleptons = coll1[~ak.any(dr < cone, axis=2)]
-    return jets_noleptons
+    nolepton_mask = ~ak.any(dr < cone, axis=2)
+    jets_noleptons = coll1[nolepton_mask]
+    return [jets_noleptons, nolepton_mask]
 
