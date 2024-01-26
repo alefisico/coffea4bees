@@ -488,6 +488,9 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
     rebin = kwargs.get("rebin", 1)
     codes = plotConfig["codes"]
 
+    if cut not in cutList:
+        raise AttributeError(f"{cut} not in cutList {cutList}")
+    
     cutDict = {}
     for c in cutList:
         cutDict[c] = sum
