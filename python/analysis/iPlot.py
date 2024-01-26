@@ -8,23 +8,31 @@ from coffea.util import load
 from hist.intervals import ratio_uncertainty
 sys.path.insert(0, os.getcwd())
 from base_class.plots import makePlot, make2DPlot
+import analysis.iPlot_config as cfg
 
 #
 # TO Add
 #     Variable Binning
-#     Plot from two differnt files
-#     Plot from two differnt regions
 
 
 def ls(option="var", match=None):
-    for k in axisLabels[option]:
+    for k in cfg.axisLabels[option]:
         if match:
             if k.find(match) != -1:
                 print(k)
         else:
             print(k)
 
+def examples():
+    print("examples:")
+    #>>> plot("*",doRatio=1, region="SR",cut="passPreSel",rlim=[0,2],norm=0, process="Multijet")
+    #
+    #>>> plot("selElecs.pt",doRatio=1, region="SR",cut="passPreSel",rlim=[0,2],norm=0, process="Multijet")
+    #
+    #>>> plot("v4j.mass",doRatio=1, region="SR",cut=["passPreSel","failSvB","passSvB"],rebin=4,rlim=[0,2],norm=0, process="Multijet",debug=True,yscale="log")
+    #>>> plot2d("quadJet_min_dr.close_vs_other_m",process="HH4b",region="SR",cut="passPreSel")
 
+            
 def plot(var='selJets.pt', *, cut="passPreSel", region="SR", **kwargs):
     r"""
     Plot
@@ -49,12 +57,12 @@ def plot(var='selJets.pt', *, cut="passPreSel", region="SR", **kwargs):
         ls(match=var.replace("*", ""))
         return
 
-    if len(hists) > 1:
-        fig = makePlot(hists, cutList, plotConfig, var=var, cut=cut, region=region,
-                       outputFolder=args.outputFolder, fileLabels=args.fileLabels, **kwargs)
+    if len(cfg.hists) > 1:
+        fig = makePlot(cfg.hists, cfg.cutList, cfg.plotConfig, var=var, cut=cut, region=region,
+                       outputFolder=cfg.outputFolder, fileLabels=args.fileLabels, **kwargs)
     else:
-        fig = makePlot(hists[0], cutList, plotConfig, var=var, cut=cut, region=region,
-                       outputFolder=args.outputFolder, **kwargs)
+        fig = makePlot(cfg.hists[0], cfg.cutList, cfg.plotConfig, var=var, cut=cut, region=region,
+                       outputFolder=cfg.outputFolder, **kwargs)
     #breakpoint()
     fileName = "test.pdf"
     fig.savefig(fileName)
@@ -92,8 +100,8 @@ def plot2d(var='quadJet_selected.lead_vs_subl_m', process="HH4b",
         ls(match=var.replace("*", ""))
         return
 
-    fig = make2DPlot(hists, process, cutList, plotConfig, var=var, cut=cut,
-                     region=region, outputFolder=args.outputFolder, **kwargs)
+    fig = make2DPlot(cfg.hists[0], process, cfg.cutList, cfg.plotConfig, var=var, cut=cut,
+                     region=region, outputFolder=cfg.outputFolder, **kwargs)
 
     fileName = "test.pdf"
     fig.savefig(fileName)
@@ -101,8 +109,8 @@ def plot2d(var='quadJet_selected.lead_vs_subl_m', process="HH4b",
     os.system("open "+fileName)
 
 
-if __name__ == '__main__':
-
+def parse_args():
+    
     parser = argparse.ArgumentParser(description='uproot_plots')
 
     parser.add_argument('-i', '--inputFile', dest="inputFile",
@@ -122,27 +130,42 @@ if __name__ == '__main__':
                         help='Metadata file.')
 
     args = parser.parse_args()
+    return args
 
-    plotConfig = yaml.safe_load(open(args.metadata, 'r'))
+
+def load_config(metadata):
+    """  Load meta data
+    """
+    plotConfig = yaml.safe_load(open(metadata, 'r'))
+
+    #
+    #  Make two way code mapping:
+    #    ie: 3 mapts to  "threeTag" and "threeTag" maps to 3
     for k, v in plotConfig["codes"]["tag"].copy().items():
         plotConfig["codes"]["tag"][v] = k
+
     for k, v in plotConfig["codes"]["region"].copy().items():
         plotConfig["codes"]["region"][v] = k
 
-    if args.outputFolder:
-        if not os.path.exists(args.outputFolder):
-            os.makedirs(args.outputFolder)
+    return plotConfig
 
+
+def load_hists(input_hists):
     hists = []
-    for _inFile in args.inputFile:
+    for _inFile in input_hists:
         with open(_inFile, 'rb') as hfile:
             hists.append(load(hfile))
 
+    return hists
+
+
+def read_axes_and_cuts(hists, plotConfig):
+
     axisLabels = {}
+    cutList = []
+    
     axisLabels["var"] = hists[0]['hists'].keys()
     var1 = list(hists[0]['hists'].keys())[0]
-
-    cutList = []
 
     for a in hists[0]["hists"][var1].axes:
         axisName = a.name
@@ -168,3 +191,23 @@ if __name__ == '__main__':
 
             print(f"\t{value}")
             axisLabels[axisName].append(value)
+
+    return axisLabels, cutList
+
+
+if __name__ == '__main__':
+
+    args = parse_args()
+    
+    cfg.plotConfig = load_config(args.metadata)
+    cfg.outputFolder = args.outputFolder
+    
+    if cfg.outputFolder:
+        if not os.path.exists(cfg.outputFolder):
+            os.makedirs(cfg.outputFolder)
+
+    cfg.hists = load_hists(args.inputFile)
+
+    cfg.axisLabels, cfg.cutList = read_axes_and_cuts(cfg.hists, cfg.plotConfig)
+
+    
