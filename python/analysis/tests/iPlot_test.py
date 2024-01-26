@@ -21,7 +21,7 @@ class iPlotTestCase(unittest.TestCase):
         metadata = "analysis/metadata/plotsAll.yml"
         cfg.plotConfig = load_config(metadata)
 
-        input_files = ["hists/histsAllNew.coffea"]
+        input_files = [wrapper.args["inputFile"]]
         cfg.hists = load_hists(input_files)
             
 
@@ -81,5 +81,6 @@ class iPlotTestCase(unittest.TestCase):
         
         
 if __name__ == '__main__':
+    wrapper.parse_args()
     unittest.main(argv=sys.argv)
 
