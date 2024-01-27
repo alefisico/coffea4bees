@@ -59,7 +59,7 @@ def plot(var='selJets.pt', *, cut="passPreSel", region="SR", **kwargs):
 
     if len(cfg.hists) > 1:
         fig = makePlot(cfg.hists, cfg.cutList, cfg.plotConfig, var=var, cut=cut, region=region,
-                       outputFolder=cfg.outputFolder, fileLabels=args.fileLabels, **kwargs)
+                       outputFolder=cfg.outputFolder, fileLabels=cfg.fileLabels, **kwargs)
     else:
         fig = makePlot(cfg.hists[0], cfg.cutList, cfg.plotConfig, var=var, cut=cut, region=region,
                        outputFolder=cfg.outputFolder, **kwargs)
@@ -126,7 +126,7 @@ def parse_args():
                         help='Folder for output folder. Default: plots/')
 
     parser.add_argument('-m', '--metadata', dest="metadata",
-                        default="analysis/metadata/plotsNominal.yml",
+                        default="analysis/metadata/plotsAll.yml",
                         help='Metadata file.')
 
     args = parser.parse_args()
@@ -207,7 +207,7 @@ if __name__ == '__main__':
             os.makedirs(cfg.outputFolder)
 
     cfg.hists = load_hists(args.inputFile)
-
+    cfg.fileLabels = args.fileLabels
     cfg.axisLabels, cfg.cutList = read_axes_and_cuts(cfg.hists, cfg.plotConfig)
 
     

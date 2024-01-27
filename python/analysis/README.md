@@ -63,16 +63,26 @@ python -i analysis/iPlot.py      -i hists/hists.coffea  -o testPlotsNew
 ```
 >>> plot2d("quadJet_min_dr.lead_vs_subl_m",process="TTToHadronic",region=sum,cut="passPreSel")
 >>> plot2d("quadJet_min_dr.lead_vs_subl_m",process="TTToHadronic",region=sum,cut="passPreSel",full=3)
->>> plot2d("quadJet_min_dr.lead_vs_subl_m",process="TTToHadronic",region=sum,cut="passPreSel",full=3)
 ```
 
 ## To plot the same process from two different cuts
 
 ```
-> py  -i analysis/iPlot.py -i hists/histAll.coffea -m analysis/metadata/plotsOne.yml 
+> py  -i analysis/iPlot.py -i hists/histAll.coffea
 
->>> plot("canJet0.pt",doRatio=1, region="SR",cut=["passSvB","failSvB"],rebin=1,rlim=[0,2],norm=1)
+>>> plot("canJet0.pt", region="SR", cut=["passSvB","failSvB"],process="data")
+>>> plot("canJet0.pt", region=["SB","SR"],cut="passSvB",process="data")
+
 ```
+
+## To plot the same process from two different inputs
+
+```
+> py  -i analysis/iPlot.py -i hists/histAll_file1.coffea hists/histAll_file1.coffea -l file1 file2
+
+>>> plot("canJet0.pt",region="SR",cut="passPreSel",process="data")
+```
+
 
 
 ## To debug the code

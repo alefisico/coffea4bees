@@ -429,7 +429,7 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
         for c in cutList:
             this_hist_dict = this_hist_dict | {c: cutDict[c]}
     
-        fileLabels = kwargs.get("fileLabels")
+        fileLabels = kwargs.get("fileLabels",[])
 
 
         for iF, _input_File in enumerate(input_hist_File):
