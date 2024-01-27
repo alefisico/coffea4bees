@@ -165,6 +165,12 @@ def parse_args():
                         default="analysis/metadata/plotsAll.yml",
                         help='Metadata file.')
 
+    parser.add_argument('--modifiers', dest="modifiers",
+                        default="analysis/metadata/plotModifiers.yml",
+                        help='Metadata file.')
+
+    parser.add_argument('--doTest', action="store_true", help='Metadata file.')
+    
     args = parser.parse_args()
     return args
 

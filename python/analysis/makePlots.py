@@ -11,13 +11,14 @@ import numpy as np
 sys.path.insert(0, os.getcwd())
 from base_class.plots import makePlot, make2DPlot
 
+from analysis.iPlot import parse_args, load_config, load_hists, read_axes_and_cuts
+import analysis.iPlot_config as cfg
+
 
 def doPlots(varList, cutList):
 
     if args.doTest:
         varList = ["SvB_MA.ps_zz", "SvB_MA.ps_zh", "SvB_MA.ps_hh"]
-
-
 
     #
     #  Nominal 1D Plots
@@ -25,25 +26,23 @@ def doPlots(varList, cutList):
     for v in varList:
         print(v)
 
-        vDict = plotModifiers.get(v, {})
+        vDict = cfg.plotModifiers.get(v, {})
 
-        if vDict.get("2d",False):
+        if vDict.get("2d", False):
             pass
-
         
         cut = "passPreSel"
         tag = "fourTag"
 
         vDict["ylabel"] = "Entries"
-        vDict["doRatio"] = plotConfig.get("doRatio", True)
+        vDict["doRatio"] = cfg.plotConfig.get("doRatio", True)
         vDict["legend"] = True
 
         for region in ["SR", "SB"]:
-            fig = makePlot(hists, cutList, plotConfig, var=v,
+            fig = makePlot(cfg.hists[0], cutList, cfg.plotConfig, var=v,
                            cut=cut, region=region,
                            outputFolder=args.outputFolder, **vDict)
             plt.close()
-
 
     #
     #  2D Plots
@@ -54,25 +53,21 @@ def doPlots(varList, cutList):
     for v in varList:
         print(v)
 
-        vDict = plotModifiers.get(v, {})
+        vDict = cfg.plotModifiers.get(v, {})
 
-        if not vDict.get("2d",False):
+        if not vDict.get("2d", False):
             pass
 
-
         vDict["ylabel"] = "Entries"
-        vDict["doRatio"] = plotConfig.get("doRatio", True)
+        vDict["doRatio"] = cfg.plotConfig.get("doRatio", True)
         vDict["legend"] = True
 
-        for process in ["data","Multijet","HH4b","TTToHadronic"]:
+        for process in ["data", "Multijet", "HH4b", "TTToHadronic"]:
             for region in ["SR", "SB"]:
-                fig = make2DPlot(hists, process, cutList, plotConfig, var=v,
+                fig = make2DPlot(cfg.hists[0], process, cutList, cfg.plotConfig, var=v,
                                  cut="passPreSel", region=region,
                                  outputFolder=args.outputFolder, **vDict)
                 plt.close()
-
-
-    
             
     #
     #  Comparison Plots
@@ -84,22 +79,21 @@ def doPlots(varList, cutList):
         for v in varListComp:
             print(v)
 
-            vDict = plotModifiers.get(v, {})
+            vDict = cfg.plotModifiers.get(v, {})
             
             vDict["ylabel"] = "Entries"
-            vDict["doRatio"] = plotConfig.get("doRatio", True)
+            vDict["doRatio"] = cfg.plotConfig.get("doRatio", True)
             vDict["legend"] = True
 
-            for process in ["data","Multijet","HH4b","TTToHadronic"]:
+            for process in ["data", "Multijet", "HH4b", "TTToHadronic"]:
 
                 #
                 # Comp Cuts
                 #
                 for region in ["SR", "SB"]:
-                    
     
-                    fig = makePlot(hists, cutList, plotConfig, var=v,
-                                   cut=["passPreSel","failSvB","passSvB"],
+                    fig = makePlot(cfg.hists[0], cutList, cfg.plotConfig, var=v,
+                                   cut=["passPreSel", "failSvB", "passSvB"],
                                    region=region,
                                    process=process,
                                    norm=True,
@@ -109,84 +103,36 @@ def doPlots(varList, cutList):
     
                     plt.close()
 
-
                 #
                 # Comp Regions
                 #
-                fig = makePlot(hists, cutList, plotConfig, var=v,
+                fig = makePlot(cfg.hists[0], cutList, cfg.plotConfig, var=v,
                                cut="passPreSel",
-                               region=["SR","SB"],
+                               region=["SR", "SB"],
                                process=process,
-                               #norm=True,
                                outputFolder=args.outputFolder,
                                **vDict
                                )
 
                 plt.close()
-                    
-                    
-    
+
+
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description='uproot_plots')
-    parser.add_argument('-i', '--inputFile', dest="inputFile",
-                        default='hists.pkl',
-                        help='Input File. Default: hists.pkl')
-    parser.add_argument('-o', '--outputFolder', default=None,
-                        help='Folder for output folder. Default: plots/')
-    parser.add_argument('-m', '--metadata', dest="metadata",
-                        default="analysis/metadata/plotsAll.yml",
-                        help='Metadata file.')
-    parser.add_argument('--modifiers', dest="modifiers",
-                        default="analysis/metadata/plotModifiers.yml",
-                        help='Metadata file.')
-    parser.add_argument('--doTest', action="store_true", help='Metadata file.')
-    args = parser.parse_args()
+    args = parse_args()
 
-    plotConfig = yaml.safe_load(open(args.metadata, 'r'))
-    for k, v in plotConfig["codes"]["tag"].copy().items():
-        plotConfig["codes"]["tag"][v] = k
-    for k, v in plotConfig["codes"]["region"].copy().items():
-        plotConfig["codes"]["region"][v] = k
+    cfg.plotConfig = load_config(args.metadata)
+    cfg.outputFolder = args.outputFolder
+    
+    cfg.plotModifiers = yaml.safe_load(open(args.modifiers, 'r'))
 
-    plotModifiers = yaml.safe_load(open(args.modifiers, 'r'))
+    if cfg.outputFolder:
+        if not os.path.exists(cfg.outputFolder):
+            os.makedirs(cfg.outputFolder)
 
-    if args.outputFolder:
-        if not os.path.exists(args.outputFolder):
-            os.makedirs(args.outputFolder)
+    cfg.hists = load_hists(args.inputFile)
+    cfg.fileLabels = args.fileLabels
+    cfg.axisLabels, cfg.cutList = read_axes_and_cuts(cfg.hists, cfg.plotConfig)
 
-    with open(f'{args.inputFile}', 'rb') as hfile:
-        hists = load(hfile)
-
-        axisLabels = {}
-        axisLabels["var"] = hists['hists'].keys()
-        var1 = list(hists['hists'].keys())[0]
-
-        varList = list(hists['hists'].keys())
-        cutList = []
-
-        for a in hists["hists"][var1].axes:
-            axisName = a.name
-            if axisName == var1:
-                continue
-
-            if isinstance(a, hist.axis.Boolean):
-                print(f"Adding cut\t{axisName}")
-                cutList.append(axisName)
-                continue
-
-            if a.extent > 20:
-                continue    # HACK to skip the variable bins FIX
-            axisLabels[axisName] = []
-            print(axisName)
-            for iBin in range(a.extent):
-                if axisName in plotConfig["codes"]:
-                    value = plotConfig["codes"][axisName][a.value(iBin)]
-
-                else:
-                    value = a.value(iBin)
-
-                print(f"\t{value}")
-                axisLabels[axisName].append(value)
-
-        doPlots(varList, cutList)
+    varList = list(cfg.hists[0]['hists'].keys())
+    doPlots(varList, cfg.cutList)
