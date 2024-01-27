@@ -24,13 +24,49 @@ def ls(option="var", match=None):
             print(k)
 
 def examples():
-    print("examples:")
-    #>>> plot("*",doRatio=1, region="SR",cut="passPreSel",rlim=[0,2],norm=0, process="Multijet")
-    #
-    #>>> plot("selElecs.pt",doRatio=1, region="SR",cut="passPreSel",rlim=[0,2],norm=0, process="Multijet")
-    #
-    #>>> plot("v4j.mass",doRatio=1, region="SR",cut=["passPreSel","failSvB","passSvB"],rebin=4,rlim=[0,2],norm=0, process="Multijet",debug=True,yscale="log")
-    #>>> plot2d("quadJet_min_dr.close_vs_other_m",process="HH4b",region="SR",cut="passPreSel")
+    print("examples:\n\n")
+    print(
+        '# Nominal plot of data and background in the a region passing a cut \n'
+        'plot("v4j.mass", region="SR", cut="passPreSel")\n\n'
+
+        '# Can get a print out of the varibales\n'
+        'ls()'
+        'plot("*", region="SR", cut="passPreSel")\n'
+        'plot("v4j*", region="SR", cut="passPreSel")\n\n'
+
+        '# Can add ratio\n'
+        'plot("v4j.mass", region="SR", cut="passPreSel", doRatio=1)\n\n'
+
+        '# Can rebin\n'
+        'plot("v4j.mass", region="SR", cut="passPreSel", doRatio=1, rebin=4)\n\n'
+
+        '# Can normalize\n'
+        'plot("v4j.mass", region="SR", cut="passPreSel", doRatio=1, rebin=4, norm=1)\n\n'
+
+        '# Can set logy\n'
+        'plot("v4j.mass", region="SR", cut="passPreSel", doRatio=1, rebin=4, norm=1, yscale="log")\n\n'
+
+        '# Can set ranges\n'
+        'plot("v4j.mass", region="SR", cut="passPreSel", doRatio=1, rebin=4, norm=1, rlim=[0.5,1.5])\n'
+        'plot("v4j.mass", region="SR", cut="passPreSel", doRatio=1, rebin=4, norm=1, xlim=[0,1000])\n'
+        'plot("v4j.mass", region="SR", cut="passPreSel", doRatio=1, rebin=4, norm=1, ylim=[0,0.01])\n\n'
+
+        '# Can overlay different regions \n'
+        'plot("v4j.mass", region=["SR","SB"], cut="passPreSel", process="data", doRatio=1, rebin=4)\n'
+        'plot("v4j.mass", region=["SR","SB"], cut="passPreSel", process="HH4b", doRatio=1, rebin=4)\n'
+        'plot("v4j.mass", region=["SR","SB"], cut="passPreSel", process="Multijet", doRatio=1, rebin=4)\n'
+        'plot("v4j.mass", region=["SR","SB"], cut="passPreSel", process="TTToHadronic", doRatio=1, rebin=4)\n\n'
+
+        '# Can overlay different cuts \n'
+        'plot("v4j.mass", region="SR", cut=["passPreSel","passSvB","failSvB"], process="data", doRatio=1, rebin=4, norm=1)\n'
+        'plot("v4j.mass", region="SR", cut=["passPreSel","passSvB","failSvB"], process="HH4b", doRatio=1, rebin=4, norm=1)\n'
+        'plot("v4j.mass", region="SR", cut=["passPreSel","passSvB","failSvB"], process="Multijet", doRatio=1, rebin=4, norm=1)\n'
+        'plot("v4j.mass", region="SR", cut=["passPreSel","passSvB","failSvB"], process="TTToHadronic", doRatio=1, rebin=4, norm=1)\n\n'
+
+        '# Plot 2d hists \n'
+        'plot2d("quadJet_min_dr.close_vs_other_m",process="Multijet",region="SR",cut="failSvB")\n'
+        'plot2d("quadJet_min_dr.close_vs_other_m",process="Multijet",region="SR",cut="failSvB",full=True)\n\n'
+    )
 
             
 def plot(var='selJets.pt', *, cut="passPreSel", region="SR", **kwargs):

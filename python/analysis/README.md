@@ -51,6 +51,12 @@ python analysis/makePlots.py -i hists/hists.coffea  -o testPlotsNew
 python -i analysis/iPlot.py      -i hists/hists.coffea  -o testPlotsNew
 ```
 
+## Examples
+
+```
+>>> examples()
+```
+
 ## 1D Examples
 
 ```
@@ -68,8 +74,6 @@ python -i analysis/iPlot.py      -i hists/hists.coffea  -o testPlotsNew
 ## To plot the same process from two different cuts
 
 ```
-> py  -i analysis/iPlot.py -i hists/histAll.coffea
-
 >>> plot("canJet0.pt", region="SR", cut=["passSvB","failSvB"],process="data")
 >>> plot("canJet0.pt", region=["SB","SR"],cut="passSvB",process="data")
 
@@ -79,7 +83,9 @@ python -i analysis/iPlot.py      -i hists/hists.coffea  -o testPlotsNew
 
 ```
 > py  -i analysis/iPlot.py -i hists/histAll_file1.coffea hists/histAll_file1.coffea -l file1 file2
+```
 
+```
 >>> plot("canJet0.pt",region="SR",cut="passPreSel",process="data")
 ```
 
