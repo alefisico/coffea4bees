@@ -24,7 +24,7 @@ from base_class.hist import Collection, Fill
 from base_class.hist import H, Template
 from base_class.physics.object import LorentzVector, Jet, Muon, Elec
 
-from analysis.helpers.MultiClassifierSchema import MultiClassifierSchema
+from analysis.helpers.FriendTreeSchema import FriendTreeSchema
 from analysis.helpers.correctionFunctions import btagVariations
 from analysis.helpers.correctionFunctions import btagSF_norm as btagSF_norm_file
 from functools import partial
@@ -232,9 +232,8 @@ class analysis(processor.ProcessorABC):
         #
         path = fname.replace(fname.split('/')[-1], '')
         event['FvT']    = NanoEventsFactory.from_root(f'{path}{"FvT_3bDvTMix4bDvT_v0_newSB.root" if "mix" in dataset else "FvT.root"}',
-                                                      entry_start=estart, entry_stop=estop, schemaclass=MultiClassifierSchema).events().FvT
+                                                      entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().FvT
         event['FvT', 'frac_err'] = event['FvT'].std / event['FvT'].FvT
-
         if not ak.all(event.FvT.event == event.event):
             logging.error('ERROR: FvT events do not match events ttree')
             return
@@ -244,13 +243,13 @@ class analysis(processor.ProcessorABC):
             self.compute_SvB(selev)  ### this computes both
         else:
             event['SvB']    = NanoEventsFactory.from_root(f'{path}{"SvB_newSBDef.root" if "mix" in dataset else "SvB.root"}',
-                                                      entry_start=estart, entry_stop=estop, schemaclass=MultiClassifierSchema).events().SvB
+                                                      entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().SvB
             if not ak.all(event.SvB.event == event.event):
                 logging.error('ERROR: SvB events do not match events ttree')
                 return
 
             event['SvB_MA'] = NanoEventsFactory.from_root(f'{path}{"SvB_MA_newSBDef.root" if "mix" in dataset else "SvB_MA.root"}',
-                                                      entry_start=estart, entry_stop=estop, schemaclass=MultiClassifierSchema).events().SvB_MA
+                                                      entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().SvB_MA
             if not ak.all(event.SvB_MA.event == event.event):
                 logging.error('ERROR: SvB_MA events do not match events ttree')
                 return
@@ -299,37 +298,16 @@ class analysis(processor.ProcessorABC):
             self._cutFlow.fill("all",  event[event.lumimask], allTag=True)
 
         self._cutFlow.fill("passNoiseFilter",  event[ event.lumimask & event.passNoiseFilter], allTag=True)
-        # for data, apply trigger cut first thing, for MC, keep all events and apply trigger in cutflow and for plotting
-        self._cutFlow.fill("passHLT",  event[ event.lumimask & event.passNoiseFilter & (event.passHLT if dataset.startswith('data') else np.full(len(event), True))], allTag=True)
+        self._cutFlow.fill("passHLT",  event[ event.lumimask & event.passNoiseFilter & event.passHLT], allTag=True)
 
         # Apply object selection (function does not remove events, adds content to objects)
         event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year]  )
-
+        self._cutFlow.fill("passJetMult",  event[ event.lumimask & event.passNoiseFilter & event.passHLT & event.passJetMult ], allTag=True)
 
         #
-        # HH4b analysis specific
+        # Filtering object and event selection
         #
-        selev = event[ event.lumimask & event.passHLT & event.passNoiseFilter & (event.nJet_selected >= 4)]
-        self._cutFlow.fill("passJetMult",  selev, allTag=True)
-
-        selev['nJet_tagged']         = ak.num(selev.Jet[selev.Jet.tagged])
-        selev['nJet_tagged_loose']   = ak.num(selev.Jet[selev.Jet.tagged_loose])
-        selev['tagJet']              = selev.Jet[selev.Jet.tagged]
-
-        fourTag  = (selev['nJet_tagged']       >= 4)
-        threeTag = (selev['nJet_tagged_loose'] == 3) & (selev['nJet_selected'] >= 4)
-
-
-        selev[ 'fourTag']   =  fourTag
-        selev['threeTag']   = threeTag
-
-        # selev['tag'] = ak.Array({'threeTag':selev.threeTag, 'fourTag':selev.fourTag})
-        selev['passPreSel'] = selev.threeTag | selev.fourTag
-
-        tagCode = np.full(len(selev), 0, dtype=int)
-        tagCode[selev.fourTag]  = 4
-        tagCode[selev.threeTag] = 3
-        selev['tag'] = tagCode
+        selev = event[ event.lumimask & event.passNoiseFilter & event.passHLT & event.passJetMult ]
 
         #
         # Calculate and apply btag scale factors

@@ -49,9 +49,13 @@ def plot(var='selJets.pt', *, cut="passPreSel", region="SR", **kwargs):
         ls(match=var.replace("*", ""))
         return
 
-    fig = makePlot(hists, cutList, plotConfig, var=var, cut=cut, region=region,
-                   outputFolder=args.outputFolder, **kwargs)
-
+    if len(hists) > 1:
+        fig = makePlot(hists, cutList, plotConfig, var=var, cut=cut, region=region,
+                       outputFolder=args.outputFolder, fileLabels=args.fileLabels, **kwargs)
+    else:
+        fig = makePlot(hists[0], cutList, plotConfig, var=var, cut=cut, region=region,
+                       outputFolder=args.outputFolder, **kwargs)
+    #breakpoint()
     fileName = "test.pdf"
     fig.savefig(fileName)
     plt.close()
@@ -100,14 +104,23 @@ def plot2d(var='quadJet_selected.lead_vs_subl_m', process="HH4b",
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='uproot_plots')
+
     parser.add_argument('-i', '--inputFile', dest="inputFile",
-                        default='hists.pkl',
+                        default='hists.pkl', nargs='+',
                         help='Input File. Default: hists.pkl')
+
+    parser.add_argument('-l', '--labelNames', dest="fileLabels",
+                        default=["fileA", "fileB"], nargs='+',
+                        help='label Names when more than one input file')
+
+    
     parser.add_argument('-o', '--outputFolder', default=None,
                         help='Folder for output folder. Default: plots/')
+
     parser.add_argument('-m', '--metadata', dest="metadata",
                         default="analysis/metadata/plotsNominal.yml",
                         help='Metadata file.')
+
     args = parser.parse_args()
 
     plotConfig = yaml.safe_load(open(args.metadata, 'r'))
@@ -120,36 +133,38 @@ if __name__ == '__main__':
         if not os.path.exists(args.outputFolder):
             os.makedirs(args.outputFolder)
 
-    with open(f'{args.inputFile}', 'rb') as hfile:
-        hists = load(hfile)
+    hists = []
+    for _inFile in args.inputFile:
+        with open(_inFile, 'rb') as hfile:
+            hists.append(load(hfile))
 
-        axisLabels = {}
-        axisLabels["var"] = hists['hists'].keys()
-        var1 = list(hists['hists'].keys())[0]
+    axisLabels = {}
+    axisLabels["var"] = hists[0]['hists'].keys()
+    var1 = list(hists[0]['hists'].keys())[0]
 
-        cutList = []
+    cutList = []
 
-        for a in hists["hists"][var1].axes:
-            axisName = a.name
-            if axisName == var1:
-                continue
+    for a in hists[0]["hists"][var1].axes:
+        axisName = a.name
+        if axisName == var1:
+            continue
 
-            if isinstance(a, hist.axis.Boolean):
-                print(f"Adding cut\t{axisName}")
-                cutList.append(axisName)
-                continue
+        if isinstance(a, hist.axis.Boolean):
+            print(f"Adding cut\t{axisName}")
+            cutList.append(axisName)
+            continue
 
-            if a.extent > 20:
-                continue   # HACK to skip the variable bins FIX
+        if a.extent > 20:
+            continue   # HACK to skip the variable bins FIX
 
-            axisLabels[axisName] = []
-            print(axisName)
-            for iBin in range(a.extent):
-                if axisName in plotConfig["codes"]:
-                    value = plotConfig["codes"][axisName][a.value(iBin)]
+        axisLabels[axisName] = []
+        print(axisName)
+        for iBin in range(a.extent):
+            if axisName in plotConfig["codes"]:
+                value = plotConfig["codes"][axisName][a.value(iBin)]
 
-                else:
-                    value = a.value(iBin)
+            else:
+                value = a.value(iBin)
 
-                print(f"\t{value}")
-                axisLabels[axisName].append(value)
+            print(f"\t{value}")
+            axisLabels[axisName].append(value)
