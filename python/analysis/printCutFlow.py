@@ -7,16 +7,13 @@ import matplotlib.pyplot as plt
 from coffea.util import load
 from hist.intervals import ratio_uncertainty
 
-
 def _round(val):
     return round(float(val),1)
-    
 
 def printLine(words):
     print(f'\t{words[0]:<20}\t{words[1]:<10}   {words[2]:<10} \t\t {words[3]:<10}\t{words[4]:<10}')
 
 def printCF(procKey, cf4, cf4_unit, cf3, cf3_unit):
-
 
     bar = "-"*10
     print('\n')
@@ -30,23 +27,19 @@ def printCF(procKey, cf4, cf4_unit, cf3, cf3_unit):
                    
     print("\n")
 
-    
+
 def add(thisKey):
     print(f"\tadding {thisKey}")
-    
 
-    
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='uproot_plots')
     parser.add_argument('-i','--inputFile', default='hists.pkl', help='Input File. Default: hists.pkl')
     parser.add_argument('-p','--process',   default='data', help='Input process. Default: hists.pkl')
-    parser.add_argument('-e','--era',   nargs='+', dest='eras', default=['UL17C'], help='Input process. Default: hists.pkl')
+    parser.add_argument('-e','--era',   nargs='+', dest='eras', default=['UL16_preVFPB','UL16_postVFPF','UL17C'], help='Input process. Default: hists.pkl')
     #parser.add_argument('-d', '--datasets', nargs='+', dest='datasets', , help="Name of dataset to run. Example if more than one: -d HH4b ZZ4b")
-    #parser.add_argument('-p','--process',   default='data', help='Input process. Default: hists.pkl')
     args = parser.parse_args()
-
-    
 
     with open(f'{args.inputFile}', 'rb') as hfile:
         hists = load(hfile)
@@ -55,9 +48,6 @@ if __name__ == '__main__':
     cf4_unit = hists["cutFlowFourTagUnitWeight"]
     cf3      = hists["cutFlowThreeTag"]
     cf3_unit = hists["cutFlowThreeTagUnitWeight"]
-
-    #process = "data"
-    #era = "UL17F"
 
     eras = args.eras
     eraString = "_".join(eras)
@@ -72,7 +62,6 @@ if __name__ == '__main__':
         cf4_unit [key] = {}
         cf3      [key] = {}
         cf3_unit [key] = {}
-
         
         for e in eras:
 
@@ -81,15 +70,11 @@ if __name__ == '__main__':
                 if cut not in cf4_unit[key]: cf4_unit[key][cut] = 0
                 if cut not in cf3[key]: cf3[key][cut] = 0
                 if cut not in cf3_unit[key]: cf3_unit[key][cut] = 0
-
                 
                 cf4[key][cut]      += cf4[args.process+"_"+e][cut]
                 cf4_unit[key][cut] += cf4_unit[args.process+"_"+e][cut]
                 cf3[key][cut]      += cf3[args.process+"_"+e][cut]
                 cf3_unit[key][cut] += cf3_unit[args.process+"_"+e][cut]
-
-        
-
 
     #cutList = hists["cutFlowThreeTagUnitWeight"][key].keys()
     printCF(key, cf4[key], cf4_unit[key], cf3[key], cf3_unit[key])

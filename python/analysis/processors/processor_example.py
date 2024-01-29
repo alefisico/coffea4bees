@@ -18,7 +18,7 @@ from base_class.hist import Collection, Fill
 from base_class.hist import H, Template
 from base_class.physics.object import LorentzVector, Jet, Muon, Elec
 
-from analysis.helpers.MultiClassifierSchema import MultiClassifierSchema
+from analysis.helpers.FriendTreeSchema import FriendTreeSchema
 
 from functools import partial
 from multiprocessing import Pool
