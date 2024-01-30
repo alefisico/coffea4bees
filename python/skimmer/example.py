@@ -30,12 +30,12 @@ if __name__ == '__main__':
         treename='Events',
         processor_instance=Skimmer(
             base_path=base,
-            # FIXME collections to keep
-            selected_collections=['Jet', 'Electron'],
-            # FIXME branches to keep, use regex
-            selected_branches=['HLT_.*', 'L1_.*', 'Flag_.*',
-                               'event', 'run', 'luminosityBlock', 'genWeight'],
             step=step,
+            # FIXME collections to skip. e.g. 'Tau' will skip all 'Tau_.*' and 'nTau'
+            skip_collections=['CaloMET', 'FatJet', 'FsrPhoton',
+                              'Photon', 'SubJet', 'Tau', 'boostedTau'],
+            # FIXME branches to skip, use regex
+            skip_branches=['btagWeight_.*'],
         ),
         executor=dask_executor,
         executor_args={
