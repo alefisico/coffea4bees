@@ -11,7 +11,8 @@ from hist.axis import (AxesMixin, Boolean, IntCategory, Integer, Regular,
 
 from ..aktools import AnyInt, FieldLike, RealNumber, get_field
 from ..typetools import check_type
-from ..utils import astuple, match_any, re_match_whole
+from ..utils import astuple
+from ..utils.regex import compile_any_wholeword, match_single
 from . import fill as fs
 
 
@@ -186,7 +187,7 @@ class Template:
         self._name = Label(name)
         self._data = fill
         self._bins = bins.copy() if bins is not None else {}
-        self._skip = list(skip) if skip is not None else []
+        self._skip = compile_any_wholeword(skip)
         self._fill_args = fill_args
 
         self._fills = fs.Fill()
@@ -239,7 +240,7 @@ class Template:
         if self._parent is not None:
             skip |= self._parent.skip(self.hist_name(name))
         if not skip:
-            skip |= match_any(name, self._skip, re_match_whole)
+            skip |= match_single(self._skip, name)
         return skip
 
     def new(self, name: str = None, parent: Template = None):
