@@ -8,11 +8,11 @@
     - '* * data/JEC/Summer20UL16APV_JRV3_MC/Summer20UL16APV_JRV3_MC_SF_AK4PFchs.jersf.txt'
   btagSF: '/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/2016preVFP_UL/btagging.json.gz'
   btagWP:
-    L: 0.0508
-    M: 0.2598
-    T: 0.6502
-      #L: 0.3
-      #M: 0.6
+    #L: 0.0508
+    #M: 0.2598
+    #T: 0.6502
+    L: 0.3
+    M: 0.6
   NoiseFilter:
     - goodVertices
     - globalSuperTightHalo2016Filter
@@ -61,11 +61,11 @@
     - '* * data/JEC/Summer19UL17_JRV2_MC/Summer19UL17_JRV2_MC_SF_AK4PFchs.jersf.txt'
   btagSF: '/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/2017_UL/btagging.json.gz'
   btagWP:
-    L: 0.0532
-    M: 0.3040
-    T: 0.7476
-      #L: 0.3
-      #M: 0.6
+    #L: 0.0532
+    #M: 0.3040
+    #T: 0.7476
+    L: 0.3
+    M: 0.6
   NoiseFilter:
     - goodVertices
     - globalSuperTightHalo2016Filter
@@ -88,11 +88,11 @@
     - '* * data/JEC/Summer19UL18_JRV2_MC/Summer19UL18_JRV2_MC_SF_AK4PFchs.jersf.txt'
   btagSF: '/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/2018_UL/btagging.json.gz'
   btagWP:
-    L: 0.0490
-    M: 0.2783
-    T: 0.7100
-      #L: 0.3
-      #M: 0.6
+    #L: 0.0490
+    #M: 0.2783
+    #T: 0.7100
+    L: 0.3
+    M: 0.6
   NoiseFilter:
     - goodVertices
     - globalSuperTightHalo2016Filter

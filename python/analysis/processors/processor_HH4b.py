@@ -271,32 +271,28 @@ class analysis(processor.ProcessorABC):
             logging.debug(f"event['weight'] = event.genWeight * (lumi * xs * kFactor / genEventSumw) = {event.genWeight[0]} * ({lumi} * {xs} * {kFactor} / {genEventSumw}) = {event.weight[0]}\n")
 
             # trigger Weight (to be updated)
-            #event['weight'] = event.weight * event.trigWeight.Data
+            event['weight'] = event.weight * event.trigWeight.Data
 
             #puWeight
             puWeight = list(correctionlib.CorrectionSet.from_file(self.corrections_metadata[year]['PU']).values())[0]
             for var in ['nominal', 'up', 'down']:
                 event[f'PU_weight_{var}'] = puWeight.evaluate(event.Pileup.nTrueInt.to_numpy(), var)
             event['weight'] = event.weight * event.PU_weight_nominal
+
+            # L1 prefiring weight
+            if ('L1PreFiringWeight' in event.fields):   #### AGE: this should be temprorary (field exists in UL)
+                event['weight'] = event.weight * event.L1PreFiringWeight.Nom
         else:
             event['weight'] = 1
 
-        # L1 prefiring weight
-        if isMC & ('L1PreFiringWeight' in event.fields):   #### AGE: this should be temprorary (field exists in UL)
-            event['weight'] = event.weight * event.L1PreFiringWeight.Nom
-        # logging.info(f"event['weight'] = {event.weight}")
-
+        logging.debug(f"event['weight'] = {event.weight}")
 
         #
         # Event selection (function only adds flags, not remove events)
         #
         events = apply_event_selection_4b( event, isMC, self.corrections_metadata[year] )
 
-        if isMC:
-            self._cutFlow.fill("all",  event, allTag=True, wOverride=(lumi * xs * kFactor))
-        else:
-            self._cutFlow.fill("all",  event[event.lumimask], allTag=True)
-
+        self._cutFlow.fill("all",  event[event.lumimask], allTag=True)
         self._cutFlow.fill("passNoiseFilter",  event[ event.lumimask & event.passNoiseFilter], allTag=True)
         self._cutFlow.fill("passHLT",  event[ event.lumimask & event.passNoiseFilter & event.passHLT], allTag=True)
 
