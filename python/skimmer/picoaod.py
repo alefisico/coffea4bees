@@ -1,27 +1,28 @@
+# TODO migrate to coffea2024
 import re
 from abc import abstractmethod
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor
 
 import awkward as ak
 import uproot
+from base_class.awkward.zip import NanoAOD
+from base_class.root import Chunk, TreeReader, TreeWriter, merge
+from base_class.system.eos import EOS, PathLike
 from coffea.processor import ProcessorABC, accumulate
 
-from base_class.awkward.zip import NanoAOD
-from base_class.root.chunk import Chunk
-from base_class.root.io import TreeReader, TreeWriter
-from base_class.system.eos import EOS, PathLike
-
 _PICOAOD = 'picoAOD'
+_ROOT = '.root'
 
 
 class PicoAOD(ProcessorABC):
     def __init__(
-            self,
-            basepath: PathLike,
-            selected_collections: list[str],
-            selected_branches: list[str],
-            step: int = 50_000):
-        self._basepath = EOS(basepath)
+        self,
+        base_path: PathLike,
+        selected_collections: list[str],
+        selected_branches: list[str],
+        step: int
+    ):
+        self._base = EOS(base_path)
         self._step = step
         # TODO select or skip
         selected = (
@@ -41,17 +42,17 @@ class PicoAOD(ProcessorABC):
     def process(self, events):
         selected = self.select(events)
         chunk = Chunk.from_coffea_processor(events)
-        # category = events.metadata['category'] # TODO mc, dataset, year
-        category = 'test'  # TODO remove
-        result = {category: {
-            'nevents': len(events),
+        dataset = events.metadata['dataset']
+        result = {dataset: {
+            'total_events': len(events),
+            'saved_events': ak.sum(selected),
         }}
-        filename = f'{category}/{_PICOAOD}_{chunk.uuid}_{chunk.entry_start}_{chunk.entry_stop}.root'
-        path = self._basepath / filename
+        filename = f'{dataset}/{_PICOAOD}_{chunk.uuid}_{chunk.entry_start}_{chunk.entry_stop}{_ROOT}'
+        path = self._base / filename
         with TreeWriter()(path) as writer:
             for i, data in enumerate(TreeReader(self._filter, self._transform).iterate(self._step, chunk)):
                 writer.extend(data[selected[i*self._step:(i+1)*self._step]])
-        result[category]['files'] = [writer.tree]
+        result[dataset]['files'] = [writer.tree]
 
         return result
 
@@ -59,12 +60,12 @@ class PicoAOD(ProcessorABC):
         pass
 
 
-def _fetch_metadata(category: str, path: PathLike):
+def _fetch_metadata(dataset: str, path: PathLike):
     with uproot.open(path) as f:
         data = f['Runs'].arrays(
             ['genEventCount', 'genEventSumw', 'genEventSumw2'])
         return {
-            category: {
+            dataset: {
                 'count': ak.sum(data['genEventCount']),
                 'sumw': ak.sum(data['genEventSumw']),
                 'sumw2': ak.sum(data['genEventSumw2']),
@@ -72,12 +73,32 @@ def _fetch_metadata(category: str, path: PathLike):
         }
 
 
-def fetch_metadata(**paths: list[PathLike]) -> dict[str, dict[str]]:
-    count = sum(len(path) for path in paths.values())
+def fetch_metadata(fileset: dict[str, dict[str]]) -> dict[str, dict[str]]:
+    count = sum(len(path['files']) for path in fileset.values())
     with ThreadPoolExecutor(max_workers=count) as executor:
-        tasks = []
-        for category, path in paths.items():
-            for p in path:
-                tasks.append(executor.submit(_fetch_metadata, category, p))
+        tasks: list[Future] = []
+        for dataset, files in fileset.items():
+            for files in files['files']:
+                tasks.append(executor.submit(_fetch_metadata, dataset, files))
         results = [task.result() for task in tasks]
     return accumulate(results)
+
+
+def resize(
+    base_path: PathLike,
+    output: dict[str, dict[str, list[Chunk]]],
+    step: int,
+    chunk_size: int
+):
+    base = EOS(base_path)
+    transform = NanoAOD(regular=False, jagged=True)
+    for dataset, chunks in output.items():
+        output[dataset]['files'] = merge.resize(
+            base / dataset/f'{_PICOAOD}{_ROOT}',
+            *chunks['files'],
+            step=step,
+            chunk_size=chunk_size,
+            reader_options={'transform': transform},
+            dask=True,
+        )
+    return output
