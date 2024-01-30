@@ -102,6 +102,25 @@ analysis-cutflow-job:
   script:
     - source .ci-workflows/analysis-cutflow-job.sh
 
+analysis-iplot-job:    
+  stage: plot 
+  dependencies: 
+    - analysis-test-job
+  image: ${CI_REGISTRY_IMAGE}:latest
+  tags:
+    - k8s-cvmfs
+  script:
+    - source .ci-workflows/analysis-iplot-job.sh
+
+
+baseclass-test-job:   
+  stage: build
+  image: ${CI_REGISTRY_IMAGE}:latest
+  tags:
+    - k8s-cvmfs
+  script:
+    - source .ci-workflows/baseclass-test-job.sh
+
 #analysis-testAll-job:   
 #  stage: test   
 #  dependencies:

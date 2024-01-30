@@ -63,7 +63,6 @@ stack:
                 edgecolor: xkcd:blue
                 label: TTbar
 
-
         Multijet:
                 process: data
                 tag: threeTag

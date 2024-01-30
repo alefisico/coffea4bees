@@ -153,8 +153,6 @@ class cutFlow:
         return
 
 
-
-
 def setSvBVars(SvBName, event):
     largest_name = np.array(['None', 'ZZ', 'ZH', 'HH'])
 
@@ -178,7 +176,6 @@ def setSvBVars(SvBName, event):
     this_ps_hh = np.full(len(event), -1, dtype=float)
     this_ps_hh[getattr(event, SvBName).hh] = getattr(event, SvBName).phh[getattr(event, SvBName).hh]
     event[SvBName, 'ps_hh'] = this_ps_hh
-
 
 
 class analysis(processor.ProcessorABC):
@@ -221,7 +218,6 @@ class analysis(processor.ProcessorABC):
         kFactor = event.metadata.get('kFactor', 1.0)
         btagSF_norm = btagSF_norm_file(dataset)
         nEvent = len(event)
-        np.random.seed(0)
 
         processOutput = {}
         processOutput['nEvent'] = {}
@@ -428,6 +424,7 @@ class analysis(processor.ProcessorABC):
         # Adding muons (loose muon id definition)
         # https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonIdRun2
         #
+        #event['Muon', 'selected'] = (event.Muon.pt > 10) & (abs(event.Muon.eta) < 2.5) & (event.Muon.pfRelIso04_all < 0.15) & (event.Muon.looseId)
         event['Muon', 'selected'] = (event.Muon.pt > 25) & (abs(event.Muon.eta) < 2.4) & (event.Muon.pfRelIso04_all < 0.25) & (event.Muon.looseId)
         event['nMuon_selected'] = ak.sum(event.Muon.selected, axis=1)
         event['selMuon'] = event.Muon[event.Muon.selected]
@@ -436,6 +433,7 @@ class analysis(processor.ProcessorABC):
         # Adding electrons (loose electron id)
         # https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedElectronIdentificationRun2
         #
+        #event['Electron', 'selected'] = (event.Electron.pt > 15) & (abs(event.Electron.eta) < 2.5) & (event.Electron.pfRelIso03_all < 0.15) & (event.Electron.mvaIso_WP90)
         event['Electron', 'selected'] = (event.Electron.pt > 25) & (abs(event.Electron.eta) < 2.5) & (event.Electron.cutBased >= 2)
         event['nElectron_selected'] = ak.sum(event.Electron.selected, axis=1)
         event['selElec'] = event.Electron[event.Electron.selected]
@@ -654,12 +652,14 @@ class analysis(processor.ProcessorABC):
         #
         # Build quadJets
         #
+        seeds = np.array(event.event)[[0, -1]].view(np.ulonglong)
+        randomstate = np.random.Generator(np.random.PCG64(seeds))
         quadJet = ak.zip({'lead': diJet[:, :, 0],
                           'subl': diJet[:, :, 1],
                           'close': diJetDr[:, :, 0],
                           'other': diJetDr[:, :, 1],
                           'passDiJetMass': ak.all(diJet.passDiJetMass, axis=2),
-                          'random': np.random.uniform(low=0.1, high=0.9, size=(diJet.__len__(), 3))})
+                          'random': randomstate.uniform(low=0.1, high=0.9, size=(diJet.__len__(), 3))})
 
         quadJet['dr']   = quadJet['lead'].delta_r(quadJet['subl'])
         quadJet['dphi'] = quadJet['lead'].delta_phi(quadJet['subl'])
