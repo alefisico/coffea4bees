@@ -153,8 +153,6 @@ class cutFlow:
         return
 
 
-
-
 def setSvBVars(SvBName, event):
     largest_name = np.array(['None', 'ZZ', 'ZH', 'HH'])
 
@@ -178,7 +176,6 @@ def setSvBVars(SvBName, event):
     this_ps_hh = np.full(len(event), -1, dtype=float)
     this_ps_hh[getattr(event, SvBName).hh] = getattr(event, SvBName).phh[getattr(event, SvBName).hh]
     event[SvBName, 'ps_hh'] = this_ps_hh
-
 
 
 class analysis(processor.ProcessorABC):

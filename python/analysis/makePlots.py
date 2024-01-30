@@ -18,18 +18,18 @@ import analysis.iPlot_config as cfg
 def doPlots(varList, cutList):
 
     if args.doTest:
-        varList = ["SvB_MA.ps_zz", "SvB_MA.ps_zh", "SvB_MA.ps_hh"]
+        varList = ["SvB_MA.ps_zz", "SvB_MA.ps_zh", "SvB_MA.ps_hh", "quadJet_selected.lead_vs_subl_m", "quadJet_min_dr.close_vs_other_m"]
 
     #
     #  Nominal 1D Plots
     #
     for v in varList:
-        print(v)
+
 
         vDict = cfg.plotModifiers.get(v, {})
-
+        print(v, vDict, vDict.get("2d", False))
         if vDict.get("2d", False):
-            pass
+            continue
         
         cut = "passPreSel"
         tag = "fourTag"
@@ -47,16 +47,13 @@ def doPlots(varList, cutList):
     #
     #  2D Plots
     #
-    if args.doTest:
-        varList = ["quadJet_selected.lead_vs_subl_m", "quadJet_min_dr.close_vs_other_m"]
-
     for v in varList:
         print(v)
 
         vDict = cfg.plotModifiers.get(v, {})
 
         if not vDict.get("2d", False):
-            pass
+            continue
 
         vDict["ylabel"] = "Entries"
         vDict["doRatio"] = cfg.plotConfig.get("doRatio", True)
