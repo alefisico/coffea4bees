@@ -234,7 +234,7 @@ class analysis(processor.ProcessorABC):
         #
         # Event selection (function only adds flags, not remove events)
         #
-        events = apply_event_selection_4b( event, isMC, self.corrections_metadata[year] )
+        event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year] )
 
         self._cutFlow.fill("all",  event[event.lumimask], allTag=True)
         self._cutFlow.fill("passNoiseFilter",  event[ event.lumimask & event.passNoiseFilter], allTag=True)
