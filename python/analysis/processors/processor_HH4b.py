@@ -179,7 +179,7 @@ def setSvBVars(SvBName, event):
 
 
 class analysis(processor.ProcessorABC):
-    def __init__(self, *, JCM = '', addbtagVariations=None, SvB=None, SvB_MA=None, threeTag = True, apply_puWeight = False, apply_prefire = False, apply_trigWeight = True, apply_btagSF = True, regions=['SR'], corrections_metadata='analysis/metadata/corrections.yml',  btagSF=True):
+    def __init__(self, *, JCM = '', addbtagVariations=None, SvB=None, SvB_MA=None, threeTag = True, apply_puWeight = False, apply_prefire = False, apply_trigWeight = True, apply_btagSF = True, apply_FvT = True, regions=['SR'], corrections_metadata='analysis/metadata/corrections.yml',  btagSF=True):
         logging.debug('\nInitialize Analysis Processor')
         self.blind = False
         print('Initialize Analysis Processor')
@@ -190,7 +190,7 @@ class analysis(processor.ProcessorABC):
         self.regions = regions
         self.signals = ['zz', 'zh', 'hh']
         self.JCM = jetCombinatoricModel(JCM)
-        self.doReweight = True
+        self.apply_FvT = apply_FvT
         self.btagVar = btagVariations(systematics=addbtagVariations)  #### AGE: these two need to be review later
         self.classifier_SvB = HCREnsemble(SvB) if SvB else None
         self.classifier_SvB_MA = HCREnsemble(SvB_MA) if SvB_MA else None
@@ -594,7 +594,7 @@ class analysis(processor.ProcessorABC):
             weight_noFvT[selev.threeTag] = selev.weight[selev.threeTag] * selev.pseudoTagWeight[selev.threeTag]
             selev['weight_noFvT'] = weight_noFvT
 
-            if self.doReweight:
+            if self.apply_FvT:
                 weight = np.array(selev.weight.to_numpy(), dtype=float)
                 weight[selev.threeTag] = selev.weight[selev.threeTag] * pseudoTagWeight[selev.threeTag] * selev.FvT.FvT[selev.threeTag]
                 selev['weight'] = weight

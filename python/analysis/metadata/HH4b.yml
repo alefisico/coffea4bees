@@ -5,6 +5,7 @@ config:
   JCM: 'analysis/weights/dataRunII/jetCombinatoricModel_SB_00-00-02.txt'
   threeTag: true
   apply_puWeight: true
+  apply_FvT: true
   apply_prefire: true
   apply_trigWeight: true
   apply_btagSF: true
