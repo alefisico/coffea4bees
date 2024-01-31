@@ -124,7 +124,6 @@ def setSvBVars(SvBName, event):
 
 
 class analysis(processor.ProcessorABC):
-<<<<<<< HEAD
     def __init__(self, *, JCM = '', addbtagVariations=None, SvB=None, SvB_MA=None, threeTag = True, apply_trigWeight = True, apply_btagSF = True, apply_FvT = True, regions=['SR'], corrections_metadata='analysis/metadata/corrections.yml'):
         logging.debug('\nInitialize Analysis Processor')
         self.blind = False
@@ -178,7 +177,7 @@ class analysis(processor.ProcessorABC):
         # Reading SvB friend trees
         #
         path = fname.replace(fname.split('/')[-1], '')
-        if apply_FvT:
+        if self.apply_FvT:
             event['FvT']    = NanoEventsFactory.from_root(f'{path}{"FvT_3bDvTMix4bDvT_v0_newSB.root" if "mix" in dataset else "FvT.root"}',
                                                           entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().FvT
             event['FvT', 'frac_err'] = event['FvT'].std / event['FvT'].FvT
@@ -218,7 +217,7 @@ class analysis(processor.ProcessorABC):
             logging.debug(f"event['weight'] = event.genWeight * (lumi * xs * kFactor / genEventSumw) = {event.genWeight[0]} * ({lumi} * {xs} * {kFactor} / {genEventSumw}) = {event.weight[0]}\n")
 
             # trigger Weight (to be updated)
-            if apply_trigWeight: event['weight'] = event.weight * event.trigWeight.Data
+            if self.apply_trigWeight: event['weight'] = event.weight * event.trigWeight.Data
 
             #puWeight
             puWeight = list(correctionlib.CorrectionSet.from_file(self.corrections_metadata[year]['PU']).values())[0]
@@ -255,7 +254,7 @@ class analysis(processor.ProcessorABC):
         #
         # Calculate and apply btag scale factors
         #
-        if isMC and apply_btagSF:
+        if isMC and self.apply_btagSF:
             btagSF = correctionlib.CorrectionSet.from_file(self.corrections_metadata[year]['btagSF'])['deepJet_shape']
             selev['weight'] = apply_btag_sf(selev, selev.selJet,
                                             correction_file=self.corrections_metadata[year]['btagSF'],
