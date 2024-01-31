@@ -253,7 +253,7 @@ class analysis(processor.ProcessorABC):
         #
         # To Add
         #
-
+        
         #    nIsoMed25Muons = dir.make<TH1F>("nIsoMed25Muons", (name+"/nIsoMed25Muons; Number of Prompt Muons; Entries").c_str(),  6,-0.5,5.5);
         #    nIsoMed40Muons = dir.make<TH1F>("nIsoMed40Muons", (name+"/nIsoMed40Muons; Number of Prompt Muons; Entries").c_str(),  6,-0.5,5.5);
         #    muons_isoMed25  = new muonHists(name+"/muon_isoMed25", fs, "iso Medium 25 Muons");
@@ -459,6 +459,19 @@ class analysis(processor.ProcessorABC):
 
         selev = event[event.nJet_selected >= 4]
         self._cutFlow.fill("passJetMult",  selev, allTag=True)
+        
+        for iEvent in range(10):
+            logging.info(f'{chunk} event idx ={iEvent} selectedJets pt {selev[iEvent].Jet[selev[iEvent].Jet.selected].pt}\n')
+            logging.info(f'{chunk} event idx ={iEvent} selectedJets eta {selev[iEvent].Jet[selev[iEvent].Jet.selected].eta}\n')
+            logging.info(f'{chunk} event idx ={iEvent} selectedJets phi {selev[iEvent].Jet[selev[iEvent].Jet.selected].phi}\n')
+            logging.info(f'{chunk} event idx ={iEvent} selectedJets mass {selev[iEvent].Jet[selev[iEvent].Jet.selected].mass}\n')
+            logging.info(f'{chunk} event idx ={iEvent} selectedJets btagDeepFlavB {selev[iEvent].Jet[selev[iEvent].Jet.selected].btagDeepFlavB}\n')
+            logging.info(f'{chunk} event idx ={iEvent} selectedJets bRegCorr {selev[iEvent].Jet[selev[iEvent].Jet.selected].bRegCorr}\n')
+            logging.info(f'{chunk} event idx ={iEvent} xbW {selev[iEvent].xbW}\n')
+            logging.info(f'{chunk} event idx ={iEvent} xW {selev[iEvent].xW}\n')
+
+
+        logging.info(f'{chunk} {type(event.Jet)}\n')        
 
         selev['Jet', 'tagged']       = selev.Jet.selected & (selev.Jet.btagDeepFlavB >= 0.6)
         selev['Jet', 'tagged_loose'] = selev.Jet.selected & (selev.Jet.btagDeepFlavB >= 0.3)
