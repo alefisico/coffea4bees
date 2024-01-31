@@ -14,6 +14,7 @@ from base_class.plots import makePlot, make2DPlot
 from analysis.iPlot import parse_args, load_config, load_hists, read_axes_and_cuts
 import analysis.iPlot_config as cfg
 
+np.seterr(divide='ignore', invalid='ignore')
 
 def doPlots(varList, cutList):
 
@@ -30,7 +31,7 @@ def doPlots(varList, cutList):
         print(v, vDict, vDict.get("2d", False))
         if vDict.get("2d", False):
             continue
-        
+
         cut = "passPreSel"
         tag = "fourTag"
 
@@ -65,7 +66,7 @@ def doPlots(varList, cutList):
                                  cut="passPreSel", region=region,
                                  outputFolder=args.outputFolder, **vDict)
                 plt.close()
-            
+
     #
     #  Comparison Plots
     #
@@ -77,7 +78,7 @@ def doPlots(varList, cutList):
             print(v)
 
             vDict = cfg.plotModifiers.get(v, {})
-            
+
             vDict["ylabel"] = "Entries"
             vDict["doRatio"] = cfg.plotConfig.get("doRatio", True)
             vDict["legend"] = True
@@ -88,7 +89,7 @@ def doPlots(varList, cutList):
                 # Comp Cuts
                 #
                 for region in ["SR", "SB"]:
-    
+
                     fig = makePlot(cfg.hists[0], cutList, cfg.plotConfig, var=v,
                                    cut=["passPreSel", "failSvB", "passSvB"],
                                    region=region,
@@ -97,7 +98,7 @@ def doPlots(varList, cutList):
                                    outputFolder=args.outputFolder,
                                    **vDict
                                    )
-    
+
                     plt.close()
 
                 #
@@ -120,7 +121,7 @@ if __name__ == '__main__':
 
     cfg.plotConfig = load_config(args.metadata)
     cfg.outputFolder = args.outputFolder
-    
+
     cfg.plotModifiers = yaml.safe_load(open(args.modifiers, 'r'))
 
     if cfg.outputFolder:

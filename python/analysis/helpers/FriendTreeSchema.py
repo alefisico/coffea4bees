@@ -1,7 +1,7 @@
 # Based on https://github.com/CoffeaTeam/coffea/blob/7dd4f863837a6319579f078c9e445c61d9106943/coffea/nanoevents/schemas/nanoaod.py
 from coffea.nanoevents.schemas.base import BaseSchema, zip_forms
 
-class MultiClassifierSchema(BaseSchema):
+class FriendTreeSchema(BaseSchema):
     """Basic multiclassifier friend tree schema"""
     def __init__(self, base_form, name=''):
         super().__init__(base_form)
@@ -10,21 +10,14 @@ class MultiClassifierSchema(BaseSchema):
 
     def _build_collections(self, branch_forms):
         for k in branch_forms:
-            if k.startswith('SvB_MA'):
-                name = 'SvB_MA'
-                break
-            if k.startswith('SvB'):
-                name = 'SvB'
-                break
-            if k.startswith('FvT'):
-                name = 'FvT'
-                break
+            if k.endswith('event'):
+                name = '_'.join(k.split('_')[:-1])
 
         mixin = self.mixins.get(name, "NanoCollection")
 
         # simple collection
         output = {}
-        
+
 
         #
         #  Gets the branches with names "name_*"
@@ -49,7 +42,7 @@ class MultiClassifierSchema(BaseSchema):
         output[name].setdefault("parameters", {})
         output[name]["parameters"].update({"collection_name": name})
 
-        return output            
+        return output
 
     @property
     def behavior(self):
