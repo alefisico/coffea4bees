@@ -51,6 +51,13 @@ python analysis/makePlots.py -i hists/hists.coffea  -o testPlotsNew
 python -i analysis/iPlot.py      -i hists/hists.coffea  -o testPlotsNew
 ```
 
+## To produce some plots interactively with out the FvT
+
+```
+python -i analysis/iPlot.py      -i hists/hists.coffea  -o testPlotsNew -m analysis/metadata/plotsAllNoFvT.yml
+```
+
+
 ## Examples
 
 ```
@@ -78,6 +85,15 @@ python -i analysis/iPlot.py      -i hists/hists.coffea  -o testPlotsNew
 >>> plot("canJet0.pt", region=["SB","SR"],cut="passSvB",process="data")
 
 ```
+
+## To plot different processes 
+
+```
+>>> plot("v4j.mass", region="SR", cut="passPreSel",process="data",norm=1)
+>>> plot("v4j.mass", region="SR", cut="passPreSel",process=["TTTo2L2Nu","data"],norm=1)
+
+```
+
 
 ## To plot the same process from two different inputs
 
