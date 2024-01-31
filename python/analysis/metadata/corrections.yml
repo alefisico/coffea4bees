@@ -35,11 +35,11 @@
     - '* * data/JEC/Summer20UL16_JRV3_MC/Summer20UL16_JRV3_MC_SF_AK4PFchs.jersf.txt'
   btagSF: '/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/2016postVFP_UL/btagging.json.gz'
   btagWP:
-    L: 0.0480
-    M: 0.2489
-    T: 0.6377
-      #L: 0.3
-      #M: 0.6
+    #L: 0.0480
+    #M: 0.2489
+    #T: 0.6377
+    L: 0.3
+    M: 0.6
   NoiseFilter:
     - goodVertices
     - globalSuperTightHalo2016Filter

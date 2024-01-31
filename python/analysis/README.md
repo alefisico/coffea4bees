@@ -80,6 +80,15 @@ python -i analysis/iPlot.py      -i hists/hists.coffea  -o testPlotsNew
 
 ```
 
+### To plot different processes 
+
+```
+>>> plot("v4j.mass", region="SR", cut="passPreSel",process="data",norm=1)
+>>> plot("v4j.mass", region="SR", cut="passPreSel",process=["TTTo2L2Nu","data"],norm=1)
+
+```
+
+
 ### To plot the same process from two different inputs
 
 ```
