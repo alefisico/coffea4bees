@@ -124,7 +124,8 @@ def setSvBVars(SvBName, event):
 
 
 class analysis(processor.ProcessorABC):
-    def __init__(self, *, JCM = '', addbtagVariations=None, SvB=None, SvB_MA=None, threeTag = True, regions=['SR'], corrections_metadata='analysis/metadata/corrections.yml'):
+<<<<<<< HEAD
+    def __init__(self, *, JCM = '', addbtagVariations=None, SvB=None, SvB_MA=None, threeTag = True, apply_trigWeight = True, apply_btagSF = True, apply_FvT = True, regions=['SR'], corrections_metadata='analysis/metadata/corrections.yml'):
         logging.debug('\nInitialize Analysis Processor')
         self.blind = False
         print('Initialize Analysis Processor')
@@ -134,7 +135,9 @@ class analysis(processor.ProcessorABC):
         self.regions = regions
         self.signals = ['zz', 'zh', 'hh']
         self.JCM = jetCombinatoricModel(JCM)
-        self.doReweight = True
+        self.apply_trigWeight = apply_trigWeight
+        self.apply_btagSF = apply_btagSF
+        self.apply_FvT = apply_FvT
         self.btagVar = btagVariations(systematics=addbtagVariations)  #### AGE: these two need to be review later
         self.classifier_SvB = HCREnsemble(SvB) if SvB else None
         self.classifier_SvB_MA = HCREnsemble(SvB_MA) if SvB_MA else None
@@ -175,13 +178,13 @@ class analysis(processor.ProcessorABC):
         # Reading SvB friend trees
         #
         path = fname.replace(fname.split('/')[-1], '')
-        event['FvT']    = NanoEventsFactory.from_root(f'{path}{"FvT_3bDvTMix4bDvT_v0_newSB.root" if "mix" in dataset else "FvT.root"}',
-                                                      entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().FvT
-        event['FvT', 'frac_err'] = event['FvT'].std / event['FvT'].FvT
-        if not ak.all(event.FvT.event == event.event):
-            logging.error('ERROR: FvT events do not match events ttree')
-            return
-
+        if apply_FvT:
+            event['FvT']    = NanoEventsFactory.from_root(f'{path}{"FvT_3bDvTMix4bDvT_v0_newSB.root" if "mix" in dataset else "FvT.root"}',
+                                                          entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().FvT
+            event['FvT', 'frac_err'] = event['FvT'].std / event['FvT'].FvT
+            if not ak.all(event.FvT.event == event.event):
+                logging.error('ERROR: FvT events do not match events ttree')
+                return
 
         if (self.classifier_SvB is not None) | (self.classifier_SvB_MA is not None):
             self.compute_SvB(selev)  ### this computes both
@@ -215,7 +218,7 @@ class analysis(processor.ProcessorABC):
             logging.debug(f"event['weight'] = event.genWeight * (lumi * xs * kFactor / genEventSumw) = {event.genWeight[0]} * ({lumi} * {xs} * {kFactor} / {genEventSumw}) = {event.weight[0]}\n")
 
             # trigger Weight (to be updated)
-            event['weight'] = event.weight * event.trigWeight.Data
+            if apply_trigWeight: event['weight'] = event.weight * event.trigWeight.Data
 
             #puWeight
             puWeight = list(correctionlib.CorrectionSet.from_file(self.corrections_metadata[year]['PU']).values())[0]
@@ -252,7 +255,7 @@ class analysis(processor.ProcessorABC):
         #
         # Calculate and apply btag scale factors
         #
-        if isMC:
+        if isMC and apply_btagSF:
             btagSF = correctionlib.CorrectionSet.from_file(self.corrections_metadata[year]['btagSF'])['deepJet_shape']
             selev['weight'] = apply_btag_sf(selev, selev.selJet,
                                             correction_file=self.corrections_metadata[year]['btagSF'],
@@ -337,7 +340,7 @@ class analysis(processor.ProcessorABC):
         weight_noFvT[selev.threeTag] = selev.weight[selev.threeTag] * selev.pseudoTagWeight[selev.threeTag]
         selev['weight_noFvT'] = weight_noFvT
 
-        if self.doReweight:
+        if self.apply_FvT:
             weight = np.array(selev.weight.to_numpy(), dtype=float)
             weight[selev.threeTag] = selev.weight[selev.threeTag] * pseudoTagWeight[selev.threeTag] * selev.FvT.FvT[selev.threeTag]
             selev['weight'] = weight
