@@ -1,14 +1,16 @@
 # Coffea4bees analysis
 
-To run the analysis, remember first to set the coffea environment and your grid certificate. If you followed the instructions in the [README.md](../../README.md), the `shell` file must be located right after the 
-```
+To run the analysis, remember first to set the coffea environment and your grid certificate. If you followed the instructions in the [README.md](../../README.md), the `set_shell.sh` file must be located right after the package, and then:
+
+```{bash}
 voms-proxy-init -rfc -voms cms --valid 168:00
-source ../shell
+cd coffea4bees/ ## Or go to this directory
+source set_shell.sh
 ```
 
 ## In this folder
 
-Here you find the code to run the analysis from `picoAODs` and to make some plots. (The skimming part is still not here, Nov 2023) 
+Here you find the code to run the analysis from `picoAODs` and to make some plots. 
 Each folder contains:
  - [helpers](./helpers/): python files with funcions/classes generic to the analyses
  - [metadata](./metadata/): yml files with the metadata for each analysis. In these files you can find input files, datasets, cross sections, etc.  
@@ -18,7 +20,7 @@ Each folder contains:
  - tests: python scripts for testing the code.
  - hists (optional): if you run the `runner.py` without a name of the output folder, this folder will be created to store the pickle files.
 
-Then, the run-all script is called `runner.py` and it is one directory below (in [analysis/](../analysis/)). This script will run local or condor depending on the flag used. To learn all the options of the script, just run:
+Then, the run-all script is called `runner.py` and it is one directory below (in [python/](../../python/)). This script will run local or condor depending on the flag used. To learn all the options of the script, just run:
 ```
 # (inside /coffea4bees/python/)
 python runner.py --help
