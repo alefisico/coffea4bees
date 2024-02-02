@@ -88,7 +88,7 @@ skimmer-test-job:
     expire_in: 1 day
     paths:
       - python/skimmer/metadata/picoaod_datasets.yml
-      - ${CI_PROJECT_DIR}/python/skimmer/rootfiles/
+      - ${CI_PROJECT_DIR}/picoAOD.root
 
 
 analysis-plot-job:    
