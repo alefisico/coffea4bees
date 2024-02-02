@@ -75,10 +75,25 @@ analysis-test-job:
     paths:
       - python/analysis/hists/test.coffea
 
+skimmer-test-job:   
+  stage: test   
+  dependencies:
+    - voms_proxy
+  image: ${CI_REGISTRY_IMAGE}:latest
+  tags:
+    - k8s-cvmfs
+  script:
+    - source .ci-workflows/skimmer-test-job.sh
+  artifacts: 
+    expire_in: 1 day
+    paths:
+      - python/skimmer/metadata/picoaod_datasets.yml
+      - python/skimmer/rootfiles/
+
 
 analysis-plot-job:    
   stage: plot 
-  dependencies: 
+  needs: 
     - analysis-test-job
   image: ${CI_REGISTRY_IMAGE}:latest 
   tags:
@@ -92,7 +107,7 @@ analysis-plot-job:
 
 analysis-cutflow-job:    
   stage: plot 
-  dependencies: 
+  needs: 
     - analysis-test-job
   image: ${CI_REGISTRY_IMAGE}:latest
   tags:
@@ -102,7 +117,7 @@ analysis-cutflow-job:
 
 analysis-iplot-job:    
   stage: plot 
-  dependencies: 
+  needs: 
     - analysis-test-job
   image: ${CI_REGISTRY_IMAGE}:latest
   tags:

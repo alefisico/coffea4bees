@@ -79,7 +79,6 @@ if __name__ == '__main__':
     configs.setdefault( 'class_name', 'analysis' )
     configs.setdefault( 'condor_cores', 2 )
     configs.setdefault( 'condor_memory', '4GB' )
-    configs.setdefault( 'skimmer_files_output', '.' )
 
     if 'all' in args.datasets:
         metadata['datasets'].pop("mixeddata")   # AGE: this is temporary
@@ -211,7 +210,10 @@ if __name__ == '__main__':
             if ikey in output:
                 metadata[ikey].update(output[ikey])
 
-        yaml.dump(metadata, open(f'{configs["skimmer_files_output"]}/picoaod_datasets.yml', 'w'), default_flow_style=False)
+        args.output_file = 'picoaod_datasets.yml' if args.output_file.endswith('coffea') else args.output_file
+        dfile = f'{args.output_path}/{args.output_file}'
+        yaml.dump(metadata, open(dfile, 'w'), default_flow_style=False)
+        logging.info(f'\nSaving metadata file {dfile}')
 
     else:
         #
