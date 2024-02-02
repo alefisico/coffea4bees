@@ -14,7 +14,8 @@ runner:
     - T3_US_FNALLPC
 
 config:
-  base_path: /srv/python/skimmer/test/
+  base_path: root://cmseos.fnal.gov//store/user/algomez/XX4b/test/
+    #base_path: /srv/python/skimmer/test/
   step: 100000
   skip_collections:
     - Photon

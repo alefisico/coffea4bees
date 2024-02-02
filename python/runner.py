@@ -106,12 +106,13 @@ if __name__ == '__main__':
             else:
                 xsec = eval(metadata['datasets'][dataset]['xs'])
 
-            metadata_dataset[dataset] = { 'year': year }
-            if not args.skimming:
+            metadata_dataset[dataset] = { 'year': year,
+                                         'processName': dataset }
+            if args.skimming:
+                pass
+            else:
                 metadata_dataset[dataset]['xs'] = xsec
-                metadata_dataset[dataset]['lumi'] =  float(metadata['datasets']['data'][year]['lumi']),
-                metadata_dataset[dataset]['year'] =  year,
-                metadata_dataset[dataset]['processName'] =  dataset,
+                metadata_dataset[dataset]['lumi'] =  float(metadata['datasets']['data'][year]['lumi'])
                 metadata_dataset[dataset]['trigger'] =  metadata['datasets']['data'][year]['trigger']
 
             if isinstance(metadata['datasets'][dataset][year][configs['data_tier']], dict):
