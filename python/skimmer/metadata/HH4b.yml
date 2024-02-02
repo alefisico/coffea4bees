@@ -1,6 +1,6 @@
 runner:
-  maxchunks: 10
-  chunksize: 1000
+  #maxchunks: 10
+  #chunksize: 1000
   class_name: Skimmer
   data_tier: nanoAOD
   condor_cores: 4

@@ -21,16 +21,14 @@ Then, the run-all script is called `runner.py` and it is one directory below (in
 python runner.py --help
 ```
 
-## Run Skimmer
+## Run Analysis
 
-### Example to run the skimmer 
+### Example to run the analysis
 
 For example, to run a processor you can do:
 ```
 #  (inside /coffea4bees/python/)
-python runner.py -s -p skimmer/processor/skimmer_4b.py -m skimmer/metadata/HH4b.yml -y UL18 -d TTTo2L2Nu -op skimmer/metadata/ -o picoaod_datasets.yml -t
+python runner.py -s -p skimmer/processor/skimmer_4b.py -m skimmer/metadata/HH4b.yml -y UL18 -d TTTo2L2Nu -t
 ```
 
-This processor creates two files: 
- - One yaml file which is explicitely define in the commands above. This file contains the information of the picoAOD file created and some other variables
- - One root file, which its location is define in the HH4b.yml file. 
+The output file of this process will be located under `python/skimmer/test/`.
