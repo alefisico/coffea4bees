@@ -37,7 +37,7 @@ from multiprocessing import Pool
 # print(torch.__config__.parallel_info())
 
 from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
-from analysis.helpers.common import init_jet_factory, jet_corrections, mask_event_decision, apply_btag_sf, drClean
+from analysis.helpers.common import init_jet_factory, jet_corrections, mask_event_decision, apply_btag_sf, drClean, dumpTopCandidateTestVectors
 import logging
 
 
@@ -460,18 +460,9 @@ class analysis(processor.ProcessorABC):
         selev = event[event.nJet_selected >= 4]
         self._cutFlow.fill("passJetMult",  selev, allTag=True)
         
-        for iEvent in range(10):
-            logging.info(f'{chunk} event idx ={iEvent} selectedJets pt {selev[iEvent].Jet[selev[iEvent].Jet.selected].pt}\n')
-            logging.info(f'{chunk} event idx ={iEvent} selectedJets eta {selev[iEvent].Jet[selev[iEvent].Jet.selected].eta}\n')
-            logging.info(f'{chunk} event idx ={iEvent} selectedJets phi {selev[iEvent].Jet[selev[iEvent].Jet.selected].phi}\n')
-            logging.info(f'{chunk} event idx ={iEvent} selectedJets mass {selev[iEvent].Jet[selev[iEvent].Jet.selected].mass}\n')
-            logging.info(f'{chunk} event idx ={iEvent} selectedJets btagDeepFlavB {selev[iEvent].Jet[selev[iEvent].Jet.selected].btagDeepFlavB}\n')
-            logging.info(f'{chunk} event idx ={iEvent} selectedJets bRegCorr {selev[iEvent].Jet[selev[iEvent].Jet.selected].bRegCorr}\n')
-            logging.info(f'{chunk} event idx ={iEvent} xbW {selev[iEvent].xbW}\n')
-            logging.info(f'{chunk} event idx ={iEvent} xW {selev[iEvent].xW}\n')
+        dumpTopCandidateTestVectors(selev, logging, chunk, 10)
 
 
-        logging.info(f'{chunk} {type(event.Jet)}\n')        
 
         selev['Jet', 'tagged']       = selev.Jet.selected & (selev.Jet.btagDeepFlavB >= 0.6)
         selev['Jet', 'tagged_loose'] = selev.Jet.selected & (selev.Jet.btagDeepFlavB >= 0.3)
