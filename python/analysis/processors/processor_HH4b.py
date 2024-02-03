@@ -17,7 +17,7 @@ import torch
 import torch.nn.functional as F
 
 from analysis.helpers.networks import HCREnsemble
-from analysis.helpers.topCandReconstruction import find_tops, dumpTopCandidateTestVectors
+from analysis.helpers.topCandReconstruction import find_tops0, dumpTopCandidateTestVectors
 
 from coffea.nanoevents import NanoEventsFactory, NanoAODSchema, BaseSchema
 from coffea.nanoevents.methods import vector
@@ -286,12 +286,14 @@ class analysis(processor.ProcessorABC):
         fill += hist.add('hT',          (100,  0,   1000,  ('hT',          'H_{T} [GeV}')))
         fill += hist.add('hT_selected', (100,  0,   1000,  ('hT_selected', 'H_{T} (selected jets) [GeV}')))
 
-        fill += hist.add('xW',          (100, 0, 12, ('xW',       'xW')))
-        fill += hist.add('xW_reco',     (100, 0, 12, ('xW_reco',  'xW')))
-        fill += hist.add('delta_xW',    (100, -5, 5, ('delta_xW', 'delta xW')))
-        fill += hist.add('xbW',         (100, 0, 12, ('xbW',      'xbW')))
-        fill += hist.add('xbW_reco',    (100, 0, 12, ('xbW_reco', 'xbW')))
-        fill += hist.add('delta_xbW',   (100, -5, 5, ('delta_xbW','delta xbW')))
+        fill += hist.add('xW',          (100, 0, 12,   ('xW',       'xW')))
+        fill += hist.add('xW_reco',     (100, 0, 12,   ('xW_reco',  'xW')))
+        fill += hist.add('delta_xW',    (100, -5, 5,   ('delta_xW', 'delta xW')))
+        fill += hist.add('delta_xW_l',  (100, -15, 15, ('delta_xW', 'delta xW')))
+        fill += hist.add('xbW',         (100, 0, 12,   ('xbW',      'xbW')))
+        fill += hist.add('xbW_reco',    (100, 0, 12,   ('xbW_reco', 'xbW')))
+        fill += hist.add('delta_xbW',   (100, -5, 5,   ('delta_xbW','delta xbW')))
+        fill += hist.add('delta_xbW_l', (100, -15, 15, ('delta_xbW','delta xbW')))
 
         #
         #  Make quad jet hists
@@ -733,8 +735,59 @@ class analysis(processor.ProcessorABC):
         #
         #  Build the top Candiates
         #
+
+        # sort the jets by btagging
         selev.selJet = selev.selJet[ak.argsort(selev.selJet.btagDeepFlavB, axis=1, ascending=False)]
-        top_cands = find_tops(selev.selJet)  # Nevents : nCandidates
+
+        #
+        #  top0 uses only 
+        #
+        top_cands = find_tops0(selev.selJet)  # Nevents : nCandidates
+        top_cands = [selev.selJet[top_cands[idx]] for idx in "012"]
+
+        rec_top_cands = ak.zip({
+            "w": ak.zip({
+                "jl": top_cands[1] + top_cands[2],
+            }),
+            "bReg": top_cands[0] * top_cands[0].bRegCorr
+        })
+
+        mW, mt  =  80.4, 173.0
+        rec_top_cands["xW"] = (rec_top_cands.w.jl.mass- mW)/(0.10*rec_top_cands.w.jl.mass)
+        rec_top_cands["w", "jl_wCor"] = rec_top_cands.w.jl * (mW/rec_top_cands.w.jl.mass)
+        rec_top_cands["mbW"] = (rec_top_cands.bReg + rec_top_cands.w.jl_wCor).mass
+
+        rec_top_cands["xbW"]  = (rec_top_cands.mbW-mt)/(0.05*rec_top_cands.mbW) #smaller resolution term because there are fewer degrees of freedom. FWHM=25GeV, about the same as mW
+        rec_top_cands["xWbW"] = np.sqrt( rec_top_cands.xW ** 2 + rec_top_cands.xbW**2)
+        rec_top_cands = rec_top_cands[ak.argsort(rec_top_cands.xWbW, axis=1, ascending=True)]
+        selev["rec_top_cands"] = rec_top_cands
+
+        selev["xbW_reco"] = rec_top_cands[:, 0].xbW
+        selev["xW_reco"] = rec_top_cands[:, 0].xW
+
+        selev["delta_xbW"] = selev.xbW - selev.xbW_reco
+        selev["delta_xW"] = selev.xW - selev.xW_reco
+
+
+#    trijet* thisTop = new trijet(b,j,l);
+#    if(thisTop->xWbW < xWbW1){
+#      xWt1 = thisTop->xWt;
+#      xWbW1= thisTop->xWbW;
+#      dRbW = thisTop->dRbW;
+#      t1.reset(thisTop);
+#      xWt = xWt1; // overwrite global best top candidate
+#      xWbW= xWbW1; // overwrite global best top candidate
+#      xW = thisTop->W->xW;
+#      xt = thisTop->xt;
+#      xbW = thisTop->xbW;
+#      t = t1;
+#    }else{delete thisTop;}
+#      }
+#    }
+
+
+
+
         #top_cands = find_tops_slow(selev.selJet)  # Nevents : nCandidates 
         #logging.info(f"top_cands_idx {top_cands}") 
         #logging.info(f"top_cands_idx shape {type(top_cands)}\n")
@@ -770,30 +823,6 @@ class analysis(processor.ProcessorABC):
         #    raise Exception("ERROR: no top_cands")
 
 
-        top_cands = [selev.selJet[top_cands[idx]] for idx in "012"]
-
-        rec_top_cands = ak.zip({
-            "w": ak.zip({
-                "jl": top_cands[1] + top_cands[2],
-            }),
-            "bReg": top_cands[0] * top_cands[0].bRegCorr
-        })
-
-        mW, mt  =  80.4, 173.0
-        rec_top_cands["xW"] = (rec_top_cands.w.jl.mass- mW)/(0.10*rec_top_cands.w.jl.mass)
-        rec_top_cands["w", "jl_wCor"] = rec_top_cands.w.jl * (mW/rec_top_cands.w.jl.mass)
-        rec_top_cands["mbW"] = (rec_top_cands.bReg + rec_top_cands.w.jl_wCor).mass
-
-        rec_top_cands["xbW"]  = (rec_top_cands.mbW-mt)/(0.05*rec_top_cands.mbW) #smaller resolution term because there are fewer degrees of freedom. FWHM=25GeV, about the same as mW
-        rec_top_cands["xWbW"] = np.sqrt( rec_top_cands.xW ** 2 + rec_top_cands.xbW**2)
-        rec_top_cands = rec_top_cands[ak.argsort(rec_top_cands.xWbW, axis=1, ascending=True)]
-        selev["rec_top_cands"] = rec_top_cands
-
-        selev["xbW_reco"] = rec_top_cands[:, 0].xbW
-        selev["xW_reco"] = rec_top_cands[:, 0].xW
-
-        selev["delta_xbW"] = selev.xbW - selev.xbW_reco
-        selev["delta_xW"] = selev.xW - selev.xW_reco
 
         #
         # Blind data in fourTag SR
