@@ -86,6 +86,8 @@ def find_tops_kernel(events_jets, builder):
     (omitting permutations of the pairs)
     """
     for jets in events_jets:
+        #print(f"jets.pt are {jets.pt}\n")
+        #print(f"jets.btagDeepFlavB are {jets.btagDeepFlavB}\n")
         builder.begin_list()
         nJets = len(jets)
         for ib in range(0, 3):
@@ -107,6 +109,7 @@ def find_tops_kernel(events_jets, builder):
                         builder.index(1).integer(ij)
                         builder.index(2).integer(il)
                         builder.end_tuple()
+
         builder.end_list()
 
     return builder
@@ -149,11 +152,13 @@ def find_tops_kernel_slow(events_jets, builder):
 
 
 def find_tops(events_jets):
-    #if ak.backend(events_leptons) == "typetracer":
+
+    #if ak.backend(events_jets) == "typetracer":
+    #    raise Exception("typetracer")
     #    # here we fake the output of find_4lep_kernel since
     #    # operating on length-zero data returns the wrong layout!
-    #    ak.typetracer.length_zero_if_typetracer(events_leptons.charge) # force touching of the necessary data
-    #    return ak.Array(ak.Array([[(0,0,0,0)]]).layout.to_typetracer(forget_length=True))
+    #    ak.typetracer.length_zero_if_typetracer(events_jets.btagDeepFlavB) # force touching of the necessary data
+    #    return ak.Array(ak.Array([[(0,0,0)]]).layout.to_typetracer(forget_length=True))
     return find_tops_kernel(events_jets, ak.ArrayBuilder()).snapshot()
 
 

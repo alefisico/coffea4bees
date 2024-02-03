@@ -17,6 +17,7 @@ import torch
 import torch.nn.functional as F
 
 from analysis.helpers.networks import HCREnsemble
+from analysis.helpers.topCandReconstruction import find_tops, dumpTopCandidateTestVectors
 
 from coffea.nanoevents import NanoEventsFactory, NanoAODSchema, BaseSchema
 from coffea.nanoevents.methods import vector
@@ -37,7 +38,7 @@ from multiprocessing import Pool
 # print(torch.__config__.parallel_info())
 
 from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
-from analysis.helpers.common import init_jet_factory, jet_corrections, mask_event_decision, apply_btag_sf, drClean, dumpTopCandidateTestVectors
+from analysis.helpers.common import init_jet_factory, jet_corrections, mask_event_decision, apply_btag_sf, drClean
 import logging
 
 
@@ -285,6 +286,13 @@ class analysis(processor.ProcessorABC):
         fill += hist.add('hT',          (100,  0,   1000,  ('hT',          'H_{T} [GeV}')))
         fill += hist.add('hT_selected', (100,  0,   1000,  ('hT_selected', 'H_{T} (selected jets) [GeV}')))
 
+        fill += hist.add('xW',          (100, 0, 12, ('xW',       'xW')))
+        fill += hist.add('xW_reco',     (100, 0, 12, ('xW_reco',  'xW')))
+        fill += hist.add('delta_xW',    (100, -5, 5, ('delta_xW', 'delta xW')))
+        fill += hist.add('xbW',         (100, 0, 12, ('xbW',      'xbW')))
+        fill += hist.add('xbW_reco',    (100, 0, 12, ('xbW_reco', 'xbW')))
+        fill += hist.add('delta_xbW',   (100, -5, 5, ('delta_xbW','delta xbW')))
+
         #
         #  Make quad jet hists
         #
@@ -460,7 +468,7 @@ class analysis(processor.ProcessorABC):
         selev = event[event.nJet_selected >= 4]
         self._cutFlow.fill("passJetMult",  selev, allTag=True)
         
-        dumpTopCandidateTestVectors(selev, logging, chunk, 10)
+        #dumpTopCandidateTestVectors(selev, logging, chunk, 10)
 
 
 
@@ -720,6 +728,72 @@ class analysis(processor.ProcessorABC):
         selev['region'] = selev['quadJet_selected'].SR * 0b10 + selev['quadJet_selected'].SB * 0b01
         selev['passSvB'] = (selev['SvB_MA'].ps > 0.80)
         selev['failSvB'] = (selev['SvB_MA'].ps < 0.05)
+
+
+        #
+        #  Build the top Candiates
+        #
+        selev.selJet = selev.selJet[ak.argsort(selev.selJet.btagDeepFlavB, axis=1, ascending=False)]
+        top_cands = find_tops(selev.selJet)  # Nevents : nCandidates
+        #top_cands = find_tops_slow(selev.selJet)  # Nevents : nCandidates 
+        #logging.info(f"top_cands_idx {top_cands}") 
+        #logging.info(f"top_cands_idx shape {type(top_cands)}\n")
+        #logging.info(f"top_cands_idx dir {dir(top_cands)}\n")
+        #logging.info(f"top_cands_idx ndim {top_cands.ndim}\n")
+        #logging.info(f"top_cands_idx type {ak.type(top_cands)}\n")
+        #logging.info(f"legnths0 = {ak.num(top_cands,axis=0)}\n")
+        #logging.info(f"legnths1 = {ak.num(top_cands,axis=1)}\n")
+        #logging.info(f"legnths2 = {ak.num(top_cands,axis=2)}\n")
+        #logging.info(f"legnths3 = {ak.num(top_cands,axis=3)}\n")
+
+        #error = (ak.num(top_cands,axis=1) == 0)
+        #if np.any(error):
+        #    logging.info(f"ERROR: {error}\n")
+        #
+        #    selevERRORs = selev[error]
+        #
+        #    #logging.info(f"xW {xW_min} vs {selevERRORs.xW}")
+        #    #logging.info(f"xbW {xbW_min} vs {selevERRORs.xbW}")
+        #    for i in range(5):
+        #        #logging.info(f"{i} rec_top_cands {len(selevERRORs[i].rec_top_cands)} {selevERRORs[i].rec_top_cands}")
+        #        logging.info(f"{i} selJet.pt   {selevERRORs[i].selJet.pt}")
+        #        logging.info(f"{i} selJet.eta  {selevERRORs[i].selJet.eta}")
+        #        logging.info(f"{i} selJet.phi  {selevERRORs[i].selJet.phi}")
+        #        logging.info(f"{i} selJet.mass {selevERRORs[i].selJet.mass}")
+        #        logging.info(f"{i} selJet.btag {selevERRORs[i].selJet.btagDeepFlavB}")
+        #        logging.info(f"{i} selJet.bRegCorr {selevERRORs[i].selJet.bRegCorr}")
+        #        logging.info(f"{i} xbW {selevERRORs[i].xbW}")
+        #        logging.info(f"{i} xW {selevERRORs[i].xW}")
+        #        #nlogging.info(f"{i} reco_xbW {selevERRORs[i].rec_top_cands.xbW}")
+        #        #logging.info(f"{i} reco_xW {selevERRORs[i].rec_top_cands.xW}\n")
+        #
+        #    raise Exception("ERROR: no top_cands")
+
+
+        top_cands = [selev.selJet[top_cands[idx]] for idx in "012"]
+
+        rec_top_cands = ak.zip({
+            "w": ak.zip({
+                "jl": top_cands[1] + top_cands[2],
+            }),
+            "bReg": top_cands[0] * top_cands[0].bRegCorr
+        })
+
+        mW, mt  =  80.4, 173.0
+        rec_top_cands["xW"] = (rec_top_cands.w.jl.mass- mW)/(0.10*rec_top_cands.w.jl.mass)
+        rec_top_cands["w", "jl_wCor"] = rec_top_cands.w.jl * (mW/rec_top_cands.w.jl.mass)
+        rec_top_cands["mbW"] = (rec_top_cands.bReg + rec_top_cands.w.jl_wCor).mass
+
+        rec_top_cands["xbW"]  = (rec_top_cands.mbW-mt)/(0.05*rec_top_cands.mbW) #smaller resolution term because there are fewer degrees of freedom. FWHM=25GeV, about the same as mW
+        rec_top_cands["xWbW"] = np.sqrt( rec_top_cands.xW ** 2 + rec_top_cands.xbW**2)
+        rec_top_cands = rec_top_cands[ak.argsort(rec_top_cands.xWbW, axis=1, ascending=True)]
+        selev["rec_top_cands"] = rec_top_cands
+
+        selev["xbW_reco"] = rec_top_cands[:, 0].xbW
+        selev["xW_reco"] = rec_top_cands[:, 0].xW
+
+        selev["delta_xbW"] = selev.xbW - selev.xbW_reco
+        selev["delta_xW"] = selev.xW - selev.xW_reco
 
         #
         # Blind data in fourTag SR
