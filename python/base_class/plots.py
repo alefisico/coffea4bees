@@ -296,11 +296,6 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
     if kwargs.get("debug", False):
         print(f" hist process={process}, "
               f"cut={cut}")
-
-    if type(input_hist_File) is list:
-        varName = input_hist_File[0]['hists'][var].axes[-1].name
-    else:
-        varName = input_hist_File['hists'][var].axes[-1].name
         
     rebin = kwargs.get("rebin", 1)
     codes = plotConfig["codes"]
@@ -336,6 +331,7 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
 
         cutName = "_vs_".join(cut)
         regionName = region
+        varName = input_hist_File['hists'][var].axes[-1].name
         
         for ic, _cut in enumerate(cut):
     
@@ -374,6 +370,7 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
 
         cutName = cut
         regionName = "_vs_".join(region)
+        varName = input_hist_File['hists'][var].axes[-1].name
         
         for ir, _reg in enumerate(region):
     
@@ -412,6 +409,7 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
 
         cutName = cut
         regionName = region
+        varName = input_hist_File[0]['hists'][var].axes[-1].name
         
         if kwargs.get("debug", False):
             print(f" hist process={process}, "
@@ -455,6 +453,7 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
 
         cutName = cut
         regionName = region
+        varName = input_hist_File['hists'][var].axes[-1].name
 
         if kwargs.get("debug", False):
             print(f" hist process={process}, "
@@ -473,7 +472,7 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
             _tagName = _proc_conf.get("tag", "fourTag")
             this_tag = plotConfig["codes"]["tag"][_tagName]
 
-            hist_colors_fill.append(_proc_conf.get("fillcolor", None))
+            hist_colors_fill.append(_proc_conf.get("fillcolor", None).replace("yellow","orange"))
             hist_labels.append(label)
             hist_types. append("errorbar")
 
@@ -488,6 +487,45 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
 
             hists.append(input_hist_File['hists'][var][this_hist_dict])
             hists[-1] *= _proc_conf.get("scalefactor", 1.0)
+    #
+    #  process list
+    #
+    elif type(var) is list:
+
+        cutName = cut
+        regionName = region
+
+        for iv, _var in enumerate(var):
+
+            varName = input_hist_File['hists'][_var].axes[-1].name
+
+            if kwargs.get("debug", False):
+                print(f" hist process={process}, "
+                      f"tag={this_tag}, _cut={cut}"
+                      f"_reg={region}"
+                      )
+
+            hist_colors_fill.append(_colors[iv])
+            label = process if process_config.get("label").lower() == "none" else process_config.get("label")
+            hist_labels.append(label + " " + _var)
+            hist_types. append("errorbar")
+
+            cutDict = {}
+            for c in cutList:
+                cutDict[c] = sum
+            cutDict[cut] = True
+
+            this_hist_dict = {"process": process_config["process"],
+                              "year": year,
+                              "tag": hist.loc(this_tag),
+                              "region": hist.loc(codes["region"][region]),
+                              varName: hist.rebin(rebin)}
+
+            for c in cutList:
+                this_hist_dict = this_hist_dict | {c: cutDict[c]}
+
+            hists.append(input_hist_File['hists'][_var][this_hist_dict])
+            hists[-1] *= process_config.get("scalefactor", 1.0)
 
     else:
         raise Exception("Error something needs to be a list!")
@@ -529,12 +567,14 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
     """
     process = kwargs.get("process", None)
 
-    if type(cut) is list or type(region) is list or type(hists) is list or type(process) is list:
+    if (type(cut) is list) or (type(region) is list) or (type(hists) is list) \
+       or (type(process) is list) or (type(var) is list):
         return _makeHistsFromList(hists, cutList, plotConfig, var, cut, region, **kwargs)
 
     if process and type(process) is not list:
         process = [process]
         kwargs["process"] = process
+        return _makeHistsFromList(hists, cutList, plotConfig, var, cut, region, **kwargs)
 
     h = hists['hists'][var]
     varName = hists['hists'][var].axes[-1].name
