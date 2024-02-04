@@ -12,35 +12,40 @@ def find_tops_kernel(events_jets, builder):
     """
 
     for jets in events_jets:
-        #print(f"jets.pt are {jets.pt}\n")
-        #print(f"jets.btagDeepFlavB are {jets.btagDeepFlavB}\n")
+        # print(f"jets.pt are {jets.pt}\n")
+        # print(f"jets.btagDeepFlavB are {jets.btagDeepFlavB}\n")
+
         builder.begin_list()
         nJets = len(jets)
-        for ib in range(0,3):
+        for ib in range(0, 3):
             for ij in range(2, nJets):
                 if len({ib, ij}) < 2:
                     continue
-
+                #
+                # don't consider W pairs where j is more b-like than b.
+                #
                 if jets[ib].btagDeepFlavB < jets[ij].btagDeepFlavB:
-                    continue  #don't consider W pairs where j is more b-like than b.
+                    continue
 
                 for il in range(2, nJets):
-                        if len({ib, ij, il}) < 3:
-                            continue
-                        if jets[ij].btagDeepFlavB < jets[il].btagDeepFlavB:
-                            continue  #don't consider W pairs where l is more b-like than j.
+                    if len({ib, ij, il}) < 3:
+                        continue
 
-                        builder.begin_tuple(3)
-                        builder.index(0).integer(ib)
-                        builder.index(1).integer(ij)
-                        builder.index(2).integer(il)
-                        builder.end_tuple()
+                    #
+                    # don't consider W pairs where l is more b-like than j.
+                    #
+                    if jets[ij].btagDeepFlavB < jets[il].btagDeepFlavB:
+                        continue
+
+                    builder.begin_tuple(3)
+                    builder.index(0).integer(ib)
+                    builder.index(1).integer(ij)
+                    builder.index(2).integer(il)
+                    builder.end_tuple()
 
         builder.end_list()
 
     return builder
-
-
 
 
 def find_tops_kernel_slow(events_jets, builder):
@@ -109,15 +114,28 @@ def find_tops_slow(events_jets):
 
 def dumpTopCandidateTestVectors(event, logging, chunk, nEvent):
 
-    for iEvent in range(nEvent):
-        logging.info(f'{chunk} event idx ={iEvent} selectedJets pt {event[iEvent].Jet[event[iEvent].Jet.selected].pt}\n')
-        logging.info(f'{chunk} event idx ={iEvent} selectedJets eta {event[iEvent].Jet[event[iEvent].Jet.selected].eta}\n')
-        logging.info(f'{chunk} event idx ={iEvent} selectedJets phi {event[iEvent].Jet[event[iEvent].Jet.selected].phi}\n')
-        logging.info(f'{chunk} event idx ={iEvent} selectedJets mass {event[iEvent].Jet[event[iEvent].Jet.selected].mass}\n')
-        logging.info(f'{chunk} event idx ={iEvent} selectedJets btagDeepFlavB {event[iEvent].Jet[event[iEvent].Jet.selected].btagDeepFlavB}\n')
-        logging.info(f'{chunk} event idx ={iEvent} selectedJets bRegCorr {event[iEvent].Jet[event[iEvent].Jet.selected].bRegCorr}\n')
-        logging.info(f'{chunk} event idx ={iEvent} xbW {event[iEvent].xbW}\n')
-        logging.info(f'{chunk} event idx ={iEvent} xW {event[iEvent].xW}\n')
+    logging.info(f'{chunk}\n\n')
+    logging.info(f'{chunk} self.input_jet_pt  = {[event[iE].Jet[event[iE].Jet.selected].pt.tolist() for iE in range(nEvent)]}')
+    logging.info(f'{chunk} self.input_jet_eta = {[event[iE].Jet[event[iE].Jet.selected].eta.tolist() for iE in range(nEvent)]}')
+    logging.info(f'{chunk} self.input_jet_phi = {[event[iE].Jet[event[iE].Jet.selected].phi.tolist() for iE in range(nEvent)]}')
+    logging.info(f'{chunk} self.input_jet_mass = {[event[iE].Jet[event[iE].Jet.selected].mass.tolist() for iE in range(nEvent)]}')
+    logging.info(f'{chunk} self.input_jet_btagDeepFlavB = {[event[iE].Jet[event[iE].Jet.selected].btagDeepFlavB.tolist() for iE in range(nEvent)]}')
+    logging.info(f'{chunk} self.input_jet_bRegCorr = {[event[iE].Jet[event[iE].Jet.selected].bRegCorr.tolist() for iE in range(nEvent)]}')
+    logging.info(f'{chunk} self.output_xbW = {[event[iE].xbW for iE in range(nEvent)]}')
+    logging.info(f'{chunk} self.output_xW = {[event[iE].xW for iE in range(nEvent)]}')
+    logging.info(f'{chunk}\n\n')
+
+
+#    for iEvent in range(nEvent):
+#        logging.info(f'{chunk} event idx ={iEvent} selectedJets pt {event[iEvent].Jet[event[iEvent].Jet.selected].pt}\n')
+#        logging.info(f'{chunk} event idx ={iEvent} selectedJets eta {event[iEvent].Jet[event[iEvent].Jet.selected].eta}\n')
+#        logging.info(f'{chunk} event idx ={iEvent} selectedJets phi {event[iEvent].Jet[event[iEvent].Jet.selected].phi}\n')
+#        logging.info(f'{chunk} event idx ={iEvent} selectedJets mass {event[iEvent].Jet[event[iEvent].Jet.selected].mass}\n')
+#        logging.info(f'{chunk} event idx ={iEvent} selectedJets btagDeepFlavB {event[iEvent].Jet[event[iEvent].Jet.selected].btagDeepFlavB}\n')
+#        logging.info(f'{chunk} event idx ={iEvent} selectedJets bRegCorr {event[iEvent].Jet[event[iEvent].Jet.selected].bRegCorr}\n')
+#        logging.info(f'{chunk} event idx ={iEvent} xbW {event[iEvent].xbW}\n')
+#        logging.info(f'{chunk} event idx ={iEvent} xW {event[iEvent].xW}\n')
+#        logging.info(f'{chunk}\n event idx ={iEvent} xW {event[iEvent].xW}\n')
 
 
 def buildTop(input_jets, top_cand_idx):

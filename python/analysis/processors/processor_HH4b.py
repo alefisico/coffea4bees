@@ -470,8 +470,7 @@ class analysis(processor.ProcessorABC):
         selev = event[event.nJet_selected >= 4]
         self._cutFlow.fill("passJetMult",  selev, allTag=True)
         
-        #dumpTopCandidateTestVectors(selev, logging, chunk, 10)
-
+        #dumpTopCandidateTestVectors(selev, logging, chunk, 15)
 
 
         selev['Jet', 'tagged']       = selev.Jet.selected & (selev.Jet.btagDeepFlavB >= 0.6)
@@ -751,7 +750,6 @@ class analysis(processor.ProcessorABC):
 
         selev["delta_xbW"] = selev.xbW - selev.xbW_reco
         selev["delta_xW"] = selev.xW - selev.xW_reco
-
 
 
         #top_cands = find_tops_slow(selev.selJet)  # Nevents : nCandidates 
