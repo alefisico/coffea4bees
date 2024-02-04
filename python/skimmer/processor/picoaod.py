@@ -48,7 +48,7 @@ class PicoAOD(ProcessorABC):
         dataset = events.metadata['dataset']
         result = {dataset: {
             'total_events': len(events),
-            'saved_events': ak.sum(selected),
+            'saved_events': int(ak.sum(selected)),
         }}
         filename = f'{dataset}/{_PICOAOD}_{chunk.uuid}_{chunk.entry_start}_{chunk.entry_stop}{_ROOT}'
         path = self._base / filename
@@ -69,9 +69,9 @@ def _fetch_metadata(dataset: str, path: PathLike):
             ['genEventCount', 'genEventSumw', 'genEventSumw2'])
         return {
             dataset: {
-                'count': ak.sum(data['genEventCount']),
-                'sumw': ak.sum(data['genEventSumw']),
-                'sumw2': ak.sum(data['genEventSumw2']),
+                'count': float(ak.sum(data['genEventCount'])),
+                'sumw': float(ak.sum(data['genEventSumw'])),
+                'sumw2': float(ak.sum(data['genEventSumw2'])),
             }
         }
 

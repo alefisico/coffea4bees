@@ -7,6 +7,7 @@ import sys
 import numpy as np
 import uproot
 import yaml
+import dask
 
 uproot.open.defaults["xrootd_handler"] = uproot.source.xrootd.MultithreadedXRootDSource
 from coffea.nanoevents import NanoEventsFactory, NanoAODSchema, BaseSchema
@@ -25,7 +26,7 @@ from datetime import datetime
 
 from base_class.addhash import get_git_revision_hash, get_git_diff
 from base_class.dataset_tools import rucio_utils  ### can be modified when move to coffea2023
-
+from skimmer.processor.picoaod import fetch_metadata, resize
 
 def list_of_files( ifile, allowlist_sites=['T3_US_FNALLPC'], test=False, test_files=5 ):
     '''Check if ifile is root file or dataset to check in rucio'''
@@ -55,6 +56,7 @@ if __name__ == '__main__':
     parser.add_argument('-op', '--outputPath', dest="output_path", default="hists/", help='Output path, if you want to save file somewhere else.')
     parser.add_argument('-y', '--year', nargs='+', dest='years', default=['UL18'], choices=['UL16_postVFP', 'UL16_preVFP', 'UL17', 'UL18'], help="Year of data to run. Example if more than one: --year UL17 UL18")
     parser.add_argument('-d', '--datasets', nargs='+', dest='datasets', default=['HH4b', 'ZZ4b', 'ZH4b'], help="Name of dataset to run. Example if more than one: -d HH4b ZZ4b")
+    parser.add_argument('-s', '--skimming', dest="skimming", action="store_true", default=False, help='Run skimming instead of analysis')
     parser.add_argument('--condor', dest="condor", action="store_true", default=False, help='Run in condor')
     parser.add_argument('--debug', help="Print lots of debugging statements", action="store_true", dest="debug", default=False)
     args = parser.parse_args()
@@ -96,20 +98,21 @@ if __name__ == '__main__':
                 logging.warning(f"{year} name not in metadatafile for {dataset}")
                 continue
 
-            if dataset in ['data', 'mixeddata']:
+            if dataset in ['data', 'mixeddata'] or not ('xs' in metadata['datasets'][dataset].keys()):
                 xsec = 1.
             elif isinstance(metadata['datasets'][dataset]['xs'], float):
                 xsec = metadata['datasets'][dataset]['xs']
             else:
                 xsec = eval(metadata['datasets'][dataset]['xs'])
 
-            metadata_dataset[dataset] = {
-                'xs': xsec,
-                'lumi': float(metadata['datasets']['data'][year]['lumi']),
-                'year': year,
-                'processName': dataset,
-                'trigger': metadata['datasets']['data'][year]['trigger']
-            }
+            metadata_dataset[dataset] = { 'year': year,
+                                         'processName': dataset }
+            if args.skimming:
+                pass
+            else:
+                metadata_dataset[dataset]['xs'] = xsec
+                metadata_dataset[dataset]['lumi'] =  float(metadata['datasets']['data'][year]['lumi'])
+                metadata_dataset[dataset]['trigger'] =  metadata['datasets']['data'][year]['trigger']
 
             if isinstance(metadata['datasets'][dataset][year][configs['data_tier']], dict):
 
@@ -171,13 +174,8 @@ if __name__ == '__main__':
     # Run processor
     #
     processorName = args.processor.split('.')[0].replace("/", '.')
-    try:
-        analysis = getattr(importlib.import_module(processorName), configs['class_name'])
-        logging.info(f"\nRunning processsor: {processorName}")
-    except (ModuleNotFoundError, NameError) as e:
-        logging.error(f"{args.processor} No processor included. Check the "
-                      f"--processor options. The default class name is {configs['class_name']}")
-        sys.exit(0)
+    analysis = getattr(importlib.import_module(processorName), configs['class_name'])
+    logging.info(f"\nRunning processsor: {processorName}")
 
     tstart = time.time()
     logging.info(f"fileset keys are {fileset.keys()}")
@@ -193,36 +191,46 @@ if __name__ == '__main__':
         maxchunks=configs['maxchunks'],
     )
     elapsed = time.time() - tstart
-    if args.condor:
-        nEvent = metrics['entries']
-        processtime = metrics['processtime']
-        logging.info(f'\n{nEvent/elapsed:,.0f} events/s total '
-                     f'({nEvent}/{elapsed}, processtime {processtime})')
+    nEvent = metrics['entries']
+    processtime = metrics['processtime']
+    logging.info(f'\n{nEvent/elapsed:,.0f} events/s total '
+                 f'({nEvent}/{elapsed})')
+
+    if args.skimming:
+        # merge output into new chunks each have `chunksize` events
+        # FIXME can use a different chunksize
+        output = dask.compute(resize(metadata['config']['base_path'], output, 80000, 100000))[0]
+        # only keep file name for each chunk
+        for dataset, chunks in output.items():
+            chunks['files'] = [str(f.path) for f in chunks['files']]
+
+        metadata = fetch_metadata(fileset)
+
+        for ikey in metadata:
+            if ikey in output:
+                metadata[ikey].update(output[ikey])
+
+        args.output_file = 'picoaod_datasets.yml' if args.output_file.endswith('coffea') else args.output_file
+        dfile = f'{args.output_path}/{args.output_file}'
+        yaml.dump(metadata, open(dfile, 'w'), default_flow_style=False)
+        logging.info(f'\nSaving metadata file {dfile}')
 
     else:
-        nEvent = sum([output['nEvent'][dataset]
-                      for dataset in output['nEvent'].keys()
-                      ]
-                     )
-        processtime = metrics['processtime']
-        logging.info(f'\n{nEvent/elapsed:,.0f} events/s total '
-                     f'({nEvent}/{elapsed})')
+        #
+        # Adding reproducible info
+        #
+        output['reproducible'] = {
+            'date': datetime.today().strftime('%Y-%m-%d %H:%M:%S'),
+            'hash': get_git_revision_hash(),
+            'args': args,
+            'diff': get_git_diff(),
+        }
 
-    #
-    # Adding reproducible info
-    #
-    output['reproducible'] = {
-        'date': datetime.today().strftime('%Y-%m-%d %H:%M:%S'),
-        'hash': get_git_revision_hash(),
-        'args': args,
-        'diff': get_git_diff(),
-    }
-
-    #
-    #  Saving file
-    #
-    if not os.path.exists(args.output_path):
-        os.makedirs(args.output_path)
-    hfile = f'{args.output_path}/{args.output_file}'
-    logging.info(f'\nSaving file {hfile}')
-    save(output, hfile)
+        #
+        #  Saving file
+        #
+        if not os.path.exists(args.output_path):
+            os.makedirs(args.output_path)
+        hfile = f'{args.output_path}/{args.output_file}'
+        logging.info(f'\nSaving file {hfile}')
+        save(output, hfile)

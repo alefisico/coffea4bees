@@ -77,10 +77,15 @@ class iPlotTestCase(unittest.TestCase):
         plot2d(**(args2d | full))
 
         manyProcs = {"cut": "passPreSel",
-                     "process": ["data","HH4b","data"]}
+                     "process": ["data","HH4b","TTToHadronic"]}
         print(f"plot with {args | doRatio | norm | rlim | manyProcs}")
         plot(**(args | doRatio | norm | rlim | manyProcs))
 
+        manyVars = {"cut": "passPreSel",
+                    "var": ["canJet0.pt","canJet1.pt","canJet2.pt","canJet3.pt"],
+                    "process": "data"}
+        print(f"plot with {args | doRatio | norm | rlim | manyVars}")
+        plot(**(args | doRatio | norm | rlim | manyVars))
         
         args["var"] = "v4j.mass"
         invalid_region = {"region": "InvalidRegion"}
