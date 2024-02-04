@@ -159,7 +159,7 @@ def parse_args():
     
     parser = argparse.ArgumentParser(description='uproot_plots')
 
-    parser.add_argument('-i', '--inputFile', dest="inputFile",
+    parser.add_argument(dest="inputFile",
                         default='hists.pkl', nargs='+',
                         help='Input File. Default: hists.pkl')
 

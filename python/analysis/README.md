@@ -51,7 +51,7 @@ python analysis/makePlots.py -i hists/hists.coffea  -o testPlotsNew
 ### To produce some plots interactively
 
 ```
-python -i analysis/iPlot.py      -i hists/hists.coffea  -o testPlotsNew
+python -i analysis/iPlot.py  hists/hists.coffea  -o testPlotsNew
 ```
 
 ### Examples
@@ -94,7 +94,7 @@ python -i analysis/iPlot.py      -i hists/hists.coffea  -o testPlotsNew
 ### To plot the same process from two different inputs
 
 ```
-> py  -i analysis/iPlot.py -i hists/histAll_file1.coffea hists/histAll_file1.coffea -l file1 file2
+> py  -i analysis/iPlot.py hists/histAll_file1.coffea hists/histAll_file1.coffea -l file1 file2
 ```
 
 ```
