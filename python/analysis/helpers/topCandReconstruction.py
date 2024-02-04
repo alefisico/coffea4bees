@@ -144,16 +144,20 @@ def buildTop(input_jets, top_cand_idx):
     """
     top_cands = [input_jets[top_cand_idx[idx]] for idx in "012"]
     rec_top_cands = ak.zip({
-        "w": ak.zip({
-            "jl": top_cands[1] + top_cands[2],
+        "b" : top_cands[0],
+        "W": ak.zip({
+            "p" : top_cands[1] + top_cands[2],
+            "j" : top_cands[1], 
+            "l" : top_cands[2],
         }),
-        "bReg": top_cands[0] * top_cands[0].bRegCorr
+        "bReg": top_cands[0] * top_cands[0].bRegCorr,
+        "p": (top_cands[0] * top_cands[0].bRegCorr)  + top_cands[1] + top_cands[2],
     })
 
     mW, mt = 80.4, 173.0
-    rec_top_cands["xW"] = (rec_top_cands.w.jl.mass - mW) / (0.10 * rec_top_cands.w.jl.mass)
-    rec_top_cands["w", "jl_wCor"] = rec_top_cands.w.jl * (mW / rec_top_cands.w.jl.mass)
-    rec_top_cands["mbW"] = (rec_top_cands.bReg + rec_top_cands.w.jl_wCor).mass
+    rec_top_cands["xW"] = (rec_top_cands.W.p.mass - mW) / (0.10 * rec_top_cands.W.p.mass)
+    rec_top_cands["W", "pW"] = rec_top_cands.W.p * (mW / rec_top_cands.W.p.mass)
+    rec_top_cands["mbW"] = (rec_top_cands.bReg + rec_top_cands.W.pW).mass
 
     #
     # smaller resolution term because there are fewer degrees of freedom. FWHM=25GeV, about the same as mW
@@ -161,6 +165,15 @@ def buildTop(input_jets, top_cand_idx):
     rec_top_cands["xbW"] = (rec_top_cands.mbW - mt) / (0.05 * rec_top_cands.mbW)
 
     rec_top_cands["xWbW"] = np.sqrt(rec_top_cands.xW ** 2 + rec_top_cands.xbW**2)
+    
+    rec_top_cands["xt"]   = (rec_top_cands["p"].mass - mt) / (0.10 * rec_top_cands["p"].mass);
+    rec_top_cands["xWt"]  = np.sqrt(rec_top_cands["xW"] ** 2 + rec_top_cands["xt"] ** 2)
+
+    #
+    # after minimizing, the ttbar distribution is centered around ~(0.5, 0.25) with surfaces of constant density approximiately constant radii
+    #
+    rec_top_cands["rWbW"] = np.sqrt( (rec_top_cands["xbW"]-0.25) ** 2 + (rec_top_cands["xW"]-0.5) ** 2)
+
 
     rec_top_cands = rec_top_cands[ak.argsort(rec_top_cands.xWbW, axis=1, ascending=True)]
     return rec_top_cands

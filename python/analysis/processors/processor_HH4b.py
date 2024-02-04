@@ -97,6 +97,38 @@ class QuadJetHists(Template):
     other           = LorentzVector.plot_pair(('...', R'Other Boson Candidate'), 'other', skip=['n'])
 
 
+class WCandHists(Template):
+
+    p  = LorentzVector.plot(('...', R'W Candidate'), 'p',  skip=['n'])
+    pW = LorentzVector.plot(('...', R'W Candidate'), 'pW', skip=['n'])
+
+    j = Jet.plot(('...', R'W j jet Candidate'), 'j',     skip=['deepjet_c','n'])
+    l = Jet.plot(('...', R'W l jet Candidate'), 'l',     skip=['deepjet_c','n'])
+
+class TopCandHists(Template):
+
+    t = LorentzVector.plot(('...', R'Top Candidate'), 'p', skip=['n'])
+    b = Jet.plot(('...', R'Top b jet Candidate'), 'b', skip=['deepjet_c','n'])
+    W = WCandHists(('...', R'W boson Candidate'), 'W')
+
+    mbW  = H((100, 0, 500,   ("mbW",  'm_{b,W}')))
+    xWt  = H(( 60, 0,  12,   ("xWt",  "X_{W,t}")))
+    xWbW = H(( 60, 0,  12,   ("xWbW", "X_{W,bW}")))
+    rWbW = H(( 60, 0,  12,   ("rWbW", "r_{W,bW}")))
+    xbW  = H(( 60, 0,  12,   ("xbW",  "X_{W,bW}")))
+    xW   = H((100, 0,  12,   ("xW",   'X_{W}')))
+
+    mW_vs_mt  = H((50,  0, 250, ('W.p.mass', 'W Candidate Mass [GeV]')),
+                  (50, 80, 280, ('p.mass',   'Top Candidate Mass [GeV]')))
+
+    mW_vs_mbW = H((50,  0, 250, ('W.p.mass', 'W Candidate Mass [GeV]')),
+                  (50, 80, 280, ('mbW',   'm_{b,W} [GeV]')))
+
+    xW_vs_xt  = H((100, 0,  12,   ("xW",   'X_{W}')),
+                  (100, 0,  12,   ("xt",   'X_{t}')))
+
+    xW_vs_xbW  = H((100, 0,  12,   ("xW",   'X_{W}')),
+                   (100, 0,  12,   ("xbW",  'X_{bW}')))
 
 
 class cutFlow:
@@ -269,17 +301,6 @@ class analysis(processor.ProcessorABC):
         #    m4j_vs_leadSt_dR = dir.make<TH2F>("m4j_vs_leadSt_dR", (name+"/m4j_vs_leadSt_dR; m_{4j} [GeV]; S_{T} leading boson candidate #DeltaR(j,j); Entries").c_str(), 40,100,1100, 25,0,5);
         #    m4j_vs_sublSt_dR = dir.make<TH2F>("m4j_vs_sublSt_dR", (name+"/m4j_vs_sublSt_dR; m_{4j} [GeV]; S_{T} subleading boson candidate #DeltaR(j,j); Entries").c_str(), 40,100,1100, 25,0,5);
 
-
-        #    xWt0 = dir.make<TH1F>("xWt0", (name+"/xWt0; X_{Wt,0}; Entries").c_str(), 60, 0, 12);
-        #    xWt1 = dir.make<TH1F>("xWt1", (name+"/xWt1; X_{Wt,1}; Entries").c_str(), 60, 0, 12);
-        #    //xWt2 = dir.make<TH1F>("xWt2", (name+"/xWt2; X_{Wt,2}; Entries").c_str(), 60, 0, 12);
-        #    xWt  = dir.make<TH1F>("xWt",  (name+"/xWt;  X_{Wt};   Entries").c_str(), 60, 0, 12);
-        #    t0 = new trijetHists(name+"/t0",  fs, "Top Candidate (#geq0 non-candidate jets)");
-        #    t1 = new trijetHists(name+"/t1",  fs, "Top Candidate (#geq1 non-candidate jets)");
-        #    //t2 = new trijetHists(name+"/t2",  fs, "Top Candidate (#geq2 non-candidate jets)");
-        #    t = new trijetHists(name+"/t",  fs, "Top Candidate");
-
-
         fill += hist.add('nPVs',     (101, -0.5, 100.5, ('PV.npvs',     'Number of Primary Vertices')))
         fill += hist.add('nPVsGood', (101, -0.5, 100.5, ('PV.npvsGood', 'Number of Good Primary Vertices')))
 
@@ -287,11 +308,10 @@ class analysis(processor.ProcessorABC):
         fill += hist.add('hT_selected', (100,  0,   1000,  ('hT_selected', 'H_{T} (selected jets) [GeV}')))
 
         fill += hist.add('xW',          (100, 0, 12,   ('xW',       'xW')))
-        fill += hist.add('xW_reco',     (100, 0, 12,   ('xW_reco',  'xW')))
         fill += hist.add('delta_xW',    (100, -5, 5,   ('delta_xW', 'delta xW')))
         fill += hist.add('delta_xW_l',  (100, -15, 15, ('delta_xW', 'delta xW')))
+
         fill += hist.add('xbW',         (100, 0, 12,   ('xbW',      'xbW')))
-        fill += hist.add('xbW_reco',    (100, 0, 12,   ('xbW_reco', 'xbW')))
         fill += hist.add('delta_xbW',   (100, -5, 5,   ('delta_xbW','delta xbW')))
         fill += hist.add('delta_xbW_l', (100, -15, 15, ('delta_xbW','delta xbW')))
 
@@ -336,6 +356,12 @@ class analysis(processor.ProcessorABC):
         skip_elecs = ['charge'] + Elec.skip_detailed_plots
         if not isMC: skip_elecs += ['genPartFlav']
         fill += Elec.plot(('selElecs', 'Selected Elecs'),        'selElec', skip=skip_elecs)
+
+        #
+        # Top Candidates
+        #
+        fill += TopCandHists(('top_cand', 'Top Candidate'), 'top_cand')
+
 
         #
         #  Config weights
@@ -471,7 +497,6 @@ class analysis(processor.ProcessorABC):
         self._cutFlow.fill("passJetMult",  selev, allTag=True)
         
         #dumpTopCandidateTestVectors(selev, logging, chunk, 15)
-
 
         selev['Jet', 'tagged']       = selev.Jet.selected & (selev.Jet.btagDeepFlavB >= 0.6)
         selev['Jet', 'tagged_loose'] = selev.Jet.selected & (selev.Jet.btagDeepFlavB >= 0.3)
@@ -736,56 +761,17 @@ class analysis(processor.ProcessorABC):
         #
 
         # sort the jets by btagging
-        selev.selJet = selev.selJet[ak.argsort(selev.selJet.btagDeepFlavB, axis=1, ascending=False)]
-
-        #
-        #  top0 uses only 
-        #
-        top_cands      = find_tops(selev.selJet)
+        selev.selJet  = selev.selJet[ak.argsort(selev.selJet.btagDeepFlavB, axis=1, ascending=False)]
+        top_cands     = find_tops(selev.selJet)
         rec_top_cands = buildTop(selev.selJet, top_cands)
 
         selev["top_cand"] = rec_top_cands[:, 0]
+
         selev["xbW_reco"] = selev.top_cand.xbW
         selev["xW_reco"]  = selev.top_cand.xW
 
         selev["delta_xbW"] = selev.xbW - selev.xbW_reco
         selev["delta_xW"] = selev.xW - selev.xW_reco
-
-
-        #top_cands = find_tops_slow(selev.selJet)  # Nevents : nCandidates 
-        #logging.info(f"top_cands_idx {top_cands}") 
-        #logging.info(f"top_cands_idx shape {type(top_cands)}\n")
-        #logging.info(f"top_cands_idx dir {dir(top_cands)}\n")
-        #logging.info(f"top_cands_idx ndim {top_cands.ndim}\n")
-        #logging.info(f"top_cands_idx type {ak.type(top_cands)}\n")
-        #logging.info(f"legnths0 = {ak.num(top_cands,axis=0)}\n")
-        #logging.info(f"legnths1 = {ak.num(top_cands,axis=1)}\n")
-        #logging.info(f"legnths2 = {ak.num(top_cands,axis=2)}\n")
-        #logging.info(f"legnths3 = {ak.num(top_cands,axis=3)}\n")
-
-        #error = (ak.num(top_cands,axis=1) == 0)
-        #if np.any(error):
-        #    logging.info(f"ERROR: {error}\n")
-        #
-        #    selevERRORs = selev[error]
-        #
-        #    #logging.info(f"xW {xW_min} vs {selevERRORs.xW}")
-        #    #logging.info(f"xbW {xbW_min} vs {selevERRORs.xbW}")
-        #    for i in range(5):
-        #        #logging.info(f"{i} rec_top_cands {len(selevERRORs[i].rec_top_cands)} {selevERRORs[i].rec_top_cands}")
-        #        logging.info(f"{i} selJet.pt   {selevERRORs[i].selJet.pt}")
-        #        logging.info(f"{i} selJet.eta  {selevERRORs[i].selJet.eta}")
-        #        logging.info(f"{i} selJet.phi  {selevERRORs[i].selJet.phi}")
-        #        logging.info(f"{i} selJet.mass {selevERRORs[i].selJet.mass}")
-        #        logging.info(f"{i} selJet.btag {selevERRORs[i].selJet.btagDeepFlavB}")
-        #        logging.info(f"{i} selJet.bRegCorr {selevERRORs[i].selJet.bRegCorr}")
-        #        logging.info(f"{i} xbW {selevERRORs[i].xbW}")
-        #        logging.info(f"{i} xW {selevERRORs[i].xW}")
-        #        #nlogging.info(f"{i} reco_xbW {selevERRORs[i].rec_top_cands.xbW}")
-        #        #logging.info(f"{i} reco_xW {selevERRORs[i].rec_top_cands.xW}\n")
-        #
-        #    raise Exception("ERROR: no top_cands")
-
 
 
         #
