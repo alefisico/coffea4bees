@@ -17,7 +17,7 @@ import torch
 import torch.nn.functional as F
 
 from analysis.helpers.networks import HCREnsemble
-from analysis.helpers.topCandReconstruction import find_tops0, dumpTopCandidateTestVectors
+from analysis.helpers.topCandReconstruction import find_tops, dumpTopCandidateTestVectors, buildTop
 
 from coffea.nanoevents import NanoEventsFactory, NanoAODSchema, BaseSchema
 from coffea.nanoevents.methods import vector
@@ -742,49 +742,15 @@ class analysis(processor.ProcessorABC):
         #
         #  top0 uses only 
         #
-        top_cands = find_tops0(selev.selJet)  # Nevents : nCandidates
-        top_cands = [selev.selJet[top_cands[idx]] for idx in "012"]
+        top_cands      = find_tops(selev.selJet)
+        rec_top_cands = buildTop(selev.selJet, top_cands)
 
-        rec_top_cands = ak.zip({
-            "w": ak.zip({
-                "jl": top_cands[1] + top_cands[2],
-            }),
-            "bReg": top_cands[0] * top_cands[0].bRegCorr
-        })
-
-        mW, mt  =  80.4, 173.0
-        rec_top_cands["xW"] = (rec_top_cands.w.jl.mass- mW)/(0.10*rec_top_cands.w.jl.mass)
-        rec_top_cands["w", "jl_wCor"] = rec_top_cands.w.jl * (mW/rec_top_cands.w.jl.mass)
-        rec_top_cands["mbW"] = (rec_top_cands.bReg + rec_top_cands.w.jl_wCor).mass
-
-        rec_top_cands["xbW"]  = (rec_top_cands.mbW-mt)/(0.05*rec_top_cands.mbW) #smaller resolution term because there are fewer degrees of freedom. FWHM=25GeV, about the same as mW
-        rec_top_cands["xWbW"] = np.sqrt( rec_top_cands.xW ** 2 + rec_top_cands.xbW**2)
-        rec_top_cands = rec_top_cands[ak.argsort(rec_top_cands.xWbW, axis=1, ascending=True)]
-        selev["rec_top_cands"] = rec_top_cands
-
-        selev["xbW_reco"] = rec_top_cands[:, 0].xbW
-        selev["xW_reco"] = rec_top_cands[:, 0].xW
+        selev["top_cand"] = rec_top_cands[:, 0]
+        selev["xbW_reco"] = selev.top_cand.xbW
+        selev["xW_reco"]  = selev.top_cand.xW
 
         selev["delta_xbW"] = selev.xbW - selev.xbW_reco
         selev["delta_xW"] = selev.xW - selev.xW_reco
-
-
-#    trijet* thisTop = new trijet(b,j,l);
-#    if(thisTop->xWbW < xWbW1){
-#      xWt1 = thisTop->xWt;
-#      xWbW1= thisTop->xWbW;
-#      dRbW = thisTop->dRbW;
-#      t1.reset(thisTop);
-#      xWt = xWt1; // overwrite global best top candidate
-#      xWbW= xWbW1; // overwrite global best top candidate
-#      xW = thisTop->W->xW;
-#      xt = thisTop->xt;
-#      xbW = thisTop->xbW;
-#      t = t1;
-#    }else{delete thisTop;}
-#      }
-#    }
-
 
 
 

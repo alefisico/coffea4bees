@@ -12,7 +12,7 @@ import time
 
 import os
 sys.path.insert(0, os.getcwd())
-from analysis.helpers.topCandReconstruction import find_tops0, find_tops_slow, buildTop
+from analysis.helpers.topCandReconstruction import find_tops, find_tops_slow, buildTop
 
 
 class topCandRecoTestCase(unittest.TestCase):
@@ -46,8 +46,6 @@ class topCandRecoTestCase(unittest.TestCase):
         self.output_xbW = [5.096315417599527, 3.6632132901855132, 0.7625406154799873, 5.152339072484923]
         self.output_xW = [3.4008176212106584, 7.01853836034002, 1.8171329974077641, 0.7874135023333089]
 
-
-
         self.input_jets = ak.zip(
             {
                 "pt": self.input_jet_pt,
@@ -64,47 +62,44 @@ class topCandRecoTestCase(unittest.TestCase):
         self.input_jets = self.input_jets[ak.argsort(self.input_jets.btagDeepFlavB, axis=1, ascending=False)]
 
 
+    def test_topCand_time(self):
 
-#    def test_topCand0_time(self):
-#
-#        start = time.perf_counter()
-#        top_cands = find_tops_slow(self.input_jets)
-#        end = time.perf_counter()
-#        elapsed_time_bare_python = (end - start)
-#        print(f"\nElapsed time Bare Python = {elapsed_time_bare_python}s")
-#
-#        start = time.perf_counter()
-#        top_cands = find_tops0(self.input_jets)
-#        end = time.perf_counter()
-#        elapsed_time_with_compilation = (end - start)
-#        print(f"Elapsed time (with compilation) = {elapsed_time_with_compilation}s")
-#
-#        start = time.perf_counter()
-#        top_cands = find_tops0(self.input_jets)
-#        end = time.perf_counter()
-#        elapsed_time_after_compilation = (end - start)
-#        print(f"Elapsed time (after compilation) = {elapsed_time_after_compilation}s")
-#
-#        self.assertTrue(elapsed_time_after_compilation < elapsed_time_with_compilation,
-#                        f"{elapsed_time_after_compilation} is not less than {elapsed_time_bare_python}")
-#
+        start = time.perf_counter()
+        top_cands = find_tops_slow(self.input_jets)
+        end = time.perf_counter()
+        elapsed_time_bare_python = (end - start)
+        print(f"\nElapsed time Bare Python = {elapsed_time_bare_python}s")
+
+        start = time.perf_counter()
+        top_cands = find_tops(self.input_jets)
+        end = time.perf_counter()
+        elapsed_time_with_compilation = (end - start)
+        print(f"Elapsed time (with compilation) = {elapsed_time_with_compilation}s")
+
+        start = time.perf_counter()
+        top_cands = find_tops(self.input_jets)
+        end = time.perf_counter()
+        elapsed_time_after_compilation = (end - start)
+        print(f"Elapsed time (after compilation) = {elapsed_time_after_compilation}s")
+
+        self.assertTrue(elapsed_time_after_compilation < elapsed_time_with_compilation,
+                        f"{elapsed_time_after_compilation} is not less than {elapsed_time_bare_python}")
 
 
+    def test_topCand(self):
 
-    def test_topCand0(self):
-
-        top_cands0 = find_tops0(self.input_jets)
-        for i in range(len(top_cands0)):
-            self.assertTrue(np.array_equal(top_cands0[i].to_list(), self.output_jet_indices[i]), "Arrays are not equal")
+        top_cands = find_tops(self.input_jets)
+        for i in range(len(top_cands)):
+            self.assertTrue(np.array_equal(top_cands[i].to_list(), self.output_jet_indices[i]), "Arrays are not equal")
 
 
 
     def test_buildTopCand(self):
-        top_cands0 = find_tops0(self.input_jets)
+        top_cands = find_tops(self.input_jets)
 
-        rec_top_cands0 = buildTop(self.input_jets, top_cands0)
-        xW_min = rec_top_cands0[:, 0].xW
-        xbW_min = rec_top_cands0[:, 0].xbW
+        rec_top_cands = buildTop(self.input_jets, top_cands)
+        xW_min = rec_top_cands[:, 0].xW
+        xbW_min = rec_top_cands[:, 0].xbW
         #print([xW_min[i] for i in range(len(xW_min))])
         #print([xbW_min[i] for i in range(len(xbW_min))])
         #print(f"xW_min is {xW_min} vs {self.output_xW}  diff {xW_min - self.output_xW}   ({(xW_min - self.output_xW)/self.output_xW})")
