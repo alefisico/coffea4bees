@@ -209,6 +209,12 @@ if __name__ == '__main__':
         for ikey in metadata:
             if ikey in output:
                 metadata[ikey].update(output[ikey])
+                metadata[ikey]['reproducible'] = {
+                    'date': datetime.today().strftime('%Y-%m-%d %H:%M:%S'),
+                    'hash': get_git_revision_hash(),
+                    'args': str(args),
+                    'diff': str(get_git_diff()),
+                    }
 
         args.output_file = 'picoaod_datasets.yml' if args.output_file.endswith('coffea') else args.output_file
         dfile = f'{args.output_path}/{args.output_file}'

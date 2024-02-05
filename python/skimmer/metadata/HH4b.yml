@@ -1,9 +1,9 @@
 runner:
-  #maxchunks: 10
-  #chunksize: 1000
+  #maxchunks: 100
+  chunksize: 100000
   class_name: Skimmer
   data_tier: nanoAOD
-  condor_cores: 4
+  condor_cores: 1
   condor_memory: 8GB
   allowlist_sites:
     - T3_US_NotreDame
@@ -13,9 +13,9 @@ runner:
     - T3_US_FNALLPC
 
 config:
-  base_path: root://cmseos.fnal.gov//store/user/algomez/XX4b/test/
-  #base_path: /srv/python/skimmer/test/
-  step: 100000
+  base_path: root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v1/
+  #base_path: /srv/python/skimmer/test/   ### local
+  step: 1000000
   skip_collections:
     - Photon
     - LHEPart
@@ -24,7 +24,6 @@ config:
     - FatJet
     - L1 
     - SoftActivityJet
-    - PuppiMET
     - IsoTrack
     - SubGenJetAK8
     - boostedTau
@@ -34,9 +33,7 @@ config:
     - GenVtx
     - OtherPV
     - CaloMET
-    - RawMET
     - TkMET
-    - ChsMET
     - GenVisTau
     - FsrPhoton
     - GenIsolatedPhoton
@@ -76,15 +73,15 @@ datasets:
         D: /JetHT/Run2018D-UL2018_MiniAODv2_NanoAODv9-v2/NANOAOD
 
 
-  GluGluToHHTo4B_cHHH0:
+  GluGluToHHTo4B_cHHH1:
     'UL16_postVFP': 
-      nanoAOD: /GluGluToHHTo4B_cHHH0_TuneCP5_PSWeights_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v1/NANOAODSIM
+      nanoAOD: /GluGluToHHTo4B_cHHH1_TuneCP5_PSWeights_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v1/NANOAODSIM
     'UL16_preVFP': 
-      nanoAOD: /GluGluToHHTo4B_cHHH0_TuneCP5_PSWeights_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM
+      nanoAOD: /GluGluToHHTo4B_cHHH1_TuneCP5_PSWeights_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM
     'UL17': 
-      nanoAOD: /GluGluToHHTo4B_cHHH0_TuneCP5_PSWeights_13TeV-powheg-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v1/NANOAODSIM
+      nanoAOD: /GluGluToHHTo4B_cHHH1_TuneCP5_PSWeights_13TeV-powheg-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v1/NANOAODSIM
     'UL18': 
-      nanoAOD: /GluGluToHHTo4B_cHHH0_TuneCP5_PSWeights_13TeV-powheg-pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v1/NANOAODSIM
+      nanoAOD: /GluGluToHHTo4B_cHHH1_TuneCP5_PSWeights_13TeV-powheg-pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v1/NANOAODSIM
 
   TTToHadronic:
     'UL16_postVFP': 
