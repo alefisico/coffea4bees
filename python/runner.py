@@ -52,7 +52,8 @@ if __name__ == '__main__':
     parser.add_argument('-t', '--test', dest="test", action="store_true", default=False, help='Run as a test with few files')
     parser.add_argument('-o', '--output', dest="output_file", default="hists.coffea", help='Output file.')
     parser.add_argument('-p', '--processor', dest="processor", default="analysis/processors/processor_HH4b.py", help='Processor file.')
-    parser.add_argument('-m', '--metadata', dest="metadata", default="analysis/metadata/HH4b.yml", help='Metadata file.')
+    parser.add_argument('-c', '--configs', dest="configs", default="analysis/metadata/HH4b.yml", help='Config file.')
+    parser.add_argument('-m', '--metadata', dest="metadata", default="metadata/datasets_HH4b.yml", help='Metadata datasets file.')
     parser.add_argument('-op', '--outputPath', dest="output_path", default="hists/", help='Output path, if you want to save file somewhere else.')
     parser.add_argument('-y', '--year', nargs='+', dest='years', default=['UL18'], choices=['UL16_postVFP', 'UL16_preVFP', 'UL17', 'UL18'], help="Year of data to run. Example if more than one: --year UL17 UL18")
     parser.add_argument('-d', '--datasets', nargs='+', dest='datasets', default=['HH4b', 'ZZ4b', 'ZH4b'], help="Name of dataset to run. Example if more than one: -d HH4b ZZ4b")
@@ -67,18 +68,19 @@ if __name__ == '__main__':
     #
     # Metadata
     #
+    configs = yaml.safe_load(open(args.configs, 'r'))
     metadata = yaml.safe_load(open(args.metadata, 'r'))
 
-    configs = metadata['runner'] if 'runner' in metadata.keys() else {}
-    configs.setdefault( 'data_tier', 'picoAOD' )
-    configs.setdefault( 'chunksize', (1_000 if args.test else 100_000 ) )
-    configs.setdefault( 'maxchunks', (1 if args.test else None ) )
-    configs.setdefault( 'schema', NanoAODSchema )
-    configs.setdefault( 'test_files', 5 )
-    configs.setdefault( 'allowlist_sites', ['T3_US_FNALLPC'] )
-    configs.setdefault( 'class_name', 'analysis' )
-    configs.setdefault( 'condor_cores', 2 )
-    configs.setdefault( 'condor_memory', '4GB' )
+    config_runner = configs['runner'] if 'runner' in configs.keys() else {}
+    config_runner.setdefault( 'data_tier', 'picoAOD' )
+    config_runner.setdefault( 'chunksize', (1_000 if args.test else 100_000 ) )
+    config_runner.setdefault( 'maxchunks', (1 if args.test else None ) )
+    config_runner.setdefault( 'schema', NanoAODSchema )
+    config_runner.setdefault( 'test_files', 5 )
+    config_runner.setdefault( 'allowlist_sites', ['T3_US_FNALLPC'] )
+    config_runner.setdefault( 'class_name', 'analysis' )
+    config_runner.setdefault( 'condor_cores', 2 )
+    config_runner.setdefault( 'condor_memory', '4GB' )
 
     if 'all' in args.datasets:
         metadata['datasets'].pop("mixeddata")   # AGE: this is temporary
@@ -106,26 +108,24 @@ if __name__ == '__main__':
                 xsec = eval(metadata['datasets'][dataset]['xs'])
 
             metadata_dataset[dataset] = { 'year': year,
-                                         'processName': dataset }
-            if args.skimming:
-                pass
-            else:
-                metadata_dataset[dataset]['xs'] = xsec
-                metadata_dataset[dataset]['lumi'] =  float(metadata['datasets']['data'][year]['lumi'])
-                metadata_dataset[dataset]['trigger'] =  metadata['datasets']['data'][year]['trigger']
+                                         'processName': dataset,
+                                         'xs': xsec,
+                                         'lumi': float(metadata['datasets']['data'][year]['lumi']),
+                                         'trigger':  metadata['datasets']['data'][year]['trigger']
+                                         }
 
-            if isinstance(metadata['datasets'][dataset][year][configs['data_tier']], dict):
+            if isinstance(metadata['datasets'][dataset][year][config_runner['data_tier']], dict):
 
-                for iera, ifile in metadata['datasets'][dataset][year][configs['data_tier']].items():
+                for iera, ifile in metadata['datasets'][dataset][year][config_runner['data_tier']].items():
                     idataset = f'{dataset}_{year}{iera}'
                     metadata_dataset[idataset] = metadata_dataset[dataset]
                     metadata_dataset[idataset]['era'] = iera
-                    fileset[idataset] = {'files': list_of_files( ifile, test=args.test, test_files=configs['test_files'], allowlist_sites=configs['allowlist_sites'] ),
+                    fileset[idataset] = {'files': list_of_files( ifile, test=args.test, test_files=config_runner['test_files'], allowlist_sites=config_runner['allowlist_sites'] ),
                                          'metadata': metadata_dataset[idataset]}
                     logging.info(f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
 
             else:
-                fileset[dataset + "_" + year] = {'files': list_of_files(metadata['datasets'][dataset][year][configs['data_tier']], test=args.test, test_files=configs['test_files'], allowlist_sites=configs['allowlist_sites']),
+                fileset[dataset + "_" + year] = {'files': list_of_files(metadata['datasets'][dataset][year][config_runner['data_tier']], test=args.test, test_files=config_runner['test_files'], allowlist_sites=config_runner['allowlist_sites']),
                                                  'metadata': metadata_dataset[dataset]}
 
                 logging.info(f'\nDataset {dataset+"_"+year} with '
@@ -144,8 +144,8 @@ if __name__ == '__main__':
 
         cluster_args = {'transfer_input_files': transfer_input_files,
                         'shared_temp_directory': '/tmp',
-                        'cores': configs['condor_cores'],
-                        'memory': configs['condor_memory'],
+                        'cores': config_runner['condor_cores'],
+                        'memory': config_runner['condor_memory'],
                         'ship_env': False}
         logging.info("\nCluster arguments: ", cluster_args)
 
@@ -160,11 +160,11 @@ if __name__ == '__main__':
         executor_args = {
             'client': client,
             'savemetrics': True,
-            'schema': configs['schema'],
+            'schema': config_runner['schema'],
             'align_clusters': False,
         }
     else:
-        executor_args = {'schema': configs['schema'],
+        executor_args = {'schema': config_runner['schema'],
                          'workers': 6,
                          'savemetrics': True}
 
@@ -174,7 +174,7 @@ if __name__ == '__main__':
     # Run processor
     #
     processorName = args.processor.split('.')[0].replace("/", '.')
-    analysis = getattr(importlib.import_module(processorName), configs['class_name'])
+    analysis = getattr(importlib.import_module(processorName), config_runner['class_name'])
     logging.info(f"\nRunning processsor: {processorName}")
 
     tstart = time.time()
@@ -184,11 +184,11 @@ if __name__ == '__main__':
     output, metrics = processor.run_uproot_job(
         fileset,
         treename='Events',
-        processor_instance=analysis(**metadata['config']),
+        processor_instance=analysis(**configs['config']),
         executor=processor.dask_executor if args.condor else processor.futures_executor,
         executor_args=executor_args,
-        chunksize=configs['chunksize'],
-        maxchunks=configs['maxchunks'],
+        chunksize=config_runner['chunksize'],
+        maxchunks=config_runner['maxchunks'],
     )
     elapsed = time.time() - tstart
     nEvent = metrics['entries']
@@ -199,7 +199,7 @@ if __name__ == '__main__':
     if args.skimming:
         # merge output into new chunks each have `chunksize` events
         # FIXME can use a different chunksize
-        output = dask.compute(resize(metadata['config']['base_path'], output, 80000, 100000))[0]
+        output = dask.compute(resize(configs['config']['base_path'], output, 80000, 100000))[0]
         # only keep file name for each chunk
         for dataset, chunks in output.items():
             chunks['files'] = [str(f.path) for f in chunks['files']]
