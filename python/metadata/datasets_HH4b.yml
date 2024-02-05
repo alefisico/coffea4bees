@@ -132,46 +132,46 @@ datasets:
   TTToHadronic:
     xs: 377.9607353256 #313.9 from McM. NNLO tt xs = 831.76, W hadronic BR = 0.6741 => NNLO = 831.76*0.6741^2 = 377.9607353256
     'UL16_postVFP': 
-      nanoAOD: '/dataset/dataset/NANOAODSIM'
+      nanoAOD: /TTToHadronic_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM
       picoAOD: '/store/user/algomez/XX4b/20231115/TTToHadronic2016_postVFP/picoAOD.root'
     'UL16_preVFP': 
-      nanoAOD: '/dataset/dataset/NANOAODSIM'
+      nanoAOD: /TTToHadronic_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v1/NANOAODSIM
       picoAOD: '/store/user/algomez/XX4b/20231115/TTToHadronic2016_preVFP/picoAOD.root'
     'UL17': 
-      nanoAOD: '/dataset/dataset/NANOAODSIM'
+      nanoAOD: /TTToHadronic_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v1/NANOAODSIM
       picoAOD: '/store/user/algomez/XX4b/20231115/TTToHadronic2017/picoAOD.root'
     'UL18': 
-      nanoAOD: '/dataset/dataset/NANOAODSIM'
+      nanoAOD: /TTToHadronic_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v1/NANOAODSIM
       picoAOD: '/store/user/algomez/XX4b/20231115/TTToHadronic2018/picoAOD.root'
 
   TTToSemiLeptonic:
     xs: 365.7826460496 #300.9 from McM. NNLO = 831.76*2*(1-0.6741)*0.6747 = 365.7826460496
     'UL16_postVFP': 
-      nanoAOD: '/dataset/dataset/NANOAODSIM'
+      nanoAOD: /TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v1/NANOAODSIM
       picoAOD: '/store/user/algomez/XX4b/20231115/TTToSemiLeptonic2016_postVFP/picoAOD.root'
     'UL16_preVFP': 
-      nanoAOD: '/dataset/dataset/NANOAODSIM'
+      nanoAOD: /TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM
       picoAOD: '/store/user/algomez/XX4b/20231115/TTToSemiLeptonic2016_preVFP/picoAOD.root'
     'UL17': 
-      nanoAOD: '/dataset/dataset/NANOAODSIM'
+      nanoAOD: /TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v1/NANOAODSIM
       picoAOD: '/store/user/algomez/XX4b/20231115/TTToSemiLeptonic2017/picoAOD.root'
     'UL18': 
-      nanoAOD: '/dataset/dataset/NANOAODSIM'
+      nanoAOD: /TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v1/NANOAODSIM
       picoAOD: '/store/user/algomez/XX4b/20231115/TTToSemiLeptonic2018/picoAOD.root'
 
   TTTo2L2Nu:
     xs: 88.3419033256 #72.1 from McM. NNLO = 831.76*(1-0.6741)^2 = 88.3419033256
     'UL16_postVFP': 
-      nanoAOD: '/dataset/dataset/NANOAODSIM'
+      nanoAOD: /TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v1/NANOAODSIM
       picoAOD: '/store/user/algomez/XX4b/20231115/TTTo2L2Nu2016_postVFP/picoAOD.root'
     'UL16_preVFP': 
-      nanoAOD: '/dataset/dataset/NANOAODSIM'
+      nanoAOD: /TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM
       picoAOD: '/store/user/algomez/XX4b/20231115/TTTo2L2Nu2016_preVFP/picoAOD.root'
     'UL17': 
-      nanoAOD: '/dataset/dataset/NANOAODSIM'
+      nanoAOD: /TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v1/NANOAODSIM
       picoAOD: '/store/user/algomez/XX4b/20231115/TTTo2L2Nu2017/picoAOD.root'
     'UL18': 
-      nanoAOD: '/dataset/dataset/NANOAODSIM'
+      nanoAOD: /TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v1/NANOAODSIM
       picoAOD: '/store/user/algomez/XX4b/20231115/TTTo2L2Nu2018/picoAOD.root'
 
   mixeddata:
