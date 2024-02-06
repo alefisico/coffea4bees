@@ -31,11 +31,10 @@ from skimmer.processor.picoaod import fetch_metadata, resize
 def list_of_files( ifile, allowlist_sites=['T3_US_FNALLPC'], test=False, test_files=5 ):
     '''Check if ifile is root file or dataset to check in rucio'''
 
-    if ifile.endswith('.txt'):
+    if isinstance(ifile, list):
+        return ifile
+    elif ifile.endswith('.txt'):
         file_list = [f'root://cmseos.fnal.gov/{jfile.rstrip()}' for jfile in open(ifile).readlines() ]
-        return file_list
-    elif ifile.endswith('.root'):
-        file_list = [f'root://cmseos.fnal.gov/{ifile}']
         return file_list
     else:
         rucio_client = rucio_utils.get_rucio_client()
@@ -111,25 +110,28 @@ if __name__ == '__main__':
                                          'processName': dataset,
                                          'xs': xsec,
                                          'lumi': float(metadata['datasets']['data'][year]['lumi']),
-                                         'trigger':  metadata['datasets']['data'][year]['trigger']
+                                         'trigger':  metadata['datasets']['data'][year]['trigger'],
                                          }
 
-            if isinstance(metadata['datasets'][dataset][year][config_runner['data_tier']], dict):
+            if not dataset.endswith('data'):
+                metadata_dataset[dataset]['genEventSumw'] = metadata['datasets'][dataset][year][config_runner['data_tier']]['sumw']
+
+                fileset[dataset + "_" + year] = {'files': list_of_files(metadata['datasets'][dataset][year][config_runner['data_tier']]['files'], test=args.test, test_files=config_runner['test_files'], allowlist_sites=config_runner['allowlist_sites']),
+                                                 'metadata': metadata_dataset[dataset]}
+
+                logging.info(f'\nDataset {dataset+"_"+year} with '
+                             f'{len(fileset[dataset+"_"+year]["files"])} files')
+
+            else:
 
                 for iera, ifile in metadata['datasets'][dataset][year][config_runner['data_tier']].items():
                     idataset = f'{dataset}_{year}{iera}'
                     metadata_dataset[idataset] = metadata_dataset[dataset]
                     metadata_dataset[idataset]['era'] = iera
-                    fileset[idataset] = {'files': list_of_files( ifile, test=args.test, test_files=config_runner['test_files'], allowlist_sites=config_runner['allowlist_sites'] ),
+                    print(idataset)
+                    fileset[idataset] = {'files': list_of_files( ifile['files'], test=args.test, test_files=config_runner['test_files'], allowlist_sites=config_runner['allowlist_sites'] ),
                                          'metadata': metadata_dataset[idataset]}
                     logging.info(f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
-
-            else:
-                fileset[dataset + "_" + year] = {'files': list_of_files(metadata['datasets'][dataset][year][config_runner['data_tier']], test=args.test, test_files=config_runner['test_files'], allowlist_sites=config_runner['allowlist_sites']),
-                                                 'metadata': metadata_dataset[dataset]}
-
-                logging.info(f'\nDataset {dataset+"_"+year} with '
-                             f'{len(fileset[dataset+"_"+year]["files"])} files')
 
     #
     # IF run in condor
