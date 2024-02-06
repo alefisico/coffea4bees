@@ -114,9 +114,13 @@ if __name__ == '__main__':
                                          }
 
             if not dataset.endswith('data'):
-                metadata_dataset[dataset]['genEventSumw'] = metadata['datasets'][dataset][year][config_runner['data_tier']]['sumw']
+                if config_runner['data_tier'].startswith('pico'):
+                    metadata_dataset[dataset]['genEventSumw'] = metadata['datasets'][dataset][year][config_runner['data_tier']]['sumw']
+                    meta_files = metadata['datasets'][dataset][year][config_runner['data_tier']]['files']
+                else:
+                    meta_files = metadata['datasets'][dataset][year][config_runner['data_tier']]
 
-                fileset[dataset + "_" + year] = {'files': list_of_files(metadata['datasets'][dataset][year][config_runner['data_tier']]['files'], test=args.test, test_files=config_runner['test_files'], allowlist_sites=config_runner['allowlist_sites']),
+                fileset[dataset + "_" + year] = {'files': list_of_files(meta_files, test=args.test, test_files=config_runner['test_files'], allowlist_sites=config_runner['allowlist_sites']),
                                                  'metadata': metadata_dataset[dataset]}
 
                 logging.info(f'\nDataset {dataset+"_"+year} with '
@@ -128,8 +132,7 @@ if __name__ == '__main__':
                     idataset = f'{dataset}_{year}{iera}'
                     metadata_dataset[idataset] = metadata_dataset[dataset]
                     metadata_dataset[idataset]['era'] = iera
-                    print(idataset)
-                    fileset[idataset] = {'files': list_of_files( ifile['files'], test=args.test, test_files=config_runner['test_files'], allowlist_sites=config_runner['allowlist_sites'] ),
+                    fileset[idataset] = {'files': list_of_files( (ifile['files'] if config_runner['data_tier'].startswith('pico') else ifile ), test=args.test, test_files=config_runner['test_files'], allowlist_sites=config_runner['allowlist_sites'] ),
                                          'metadata': metadata_dataset[idataset]}
                     logging.info(f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
 
