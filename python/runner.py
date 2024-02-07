@@ -8,6 +8,7 @@ import numpy as np
 import uproot
 import yaml
 import dask
+dask.config.set({'logging.distributed': 'error'})
 
 uproot.open.defaults["xrootd_handler"] = uproot.source.xrootd.MultithreadedXRootDSource
 from coffea.nanoevents import NanoEventsFactory, NanoAODSchema, BaseSchema
@@ -169,9 +170,16 @@ if __name__ == '__main__':
             'align_clusters': False,
         }
     else:
-        executor_args = {'schema': config_runner['schema'],
-                         'workers': 6,
-                         'savemetrics': True}
+        from dask.distributed import Client, LocalCluster
+        client = Client()
+        cluster = LocalCluster(nanny=False)
+        client = Client(cluster.scheduler.address)
+
+        executor_args = {
+            'client': client,
+            'schema': config_runner['schema'],
+            #'workers': 6,
+            'savemetrics': True}
 
     logging.info(f"\nExecutor arguments: {executor_args}")
 
@@ -190,7 +198,7 @@ if __name__ == '__main__':
         fileset,
         treename='Events',
         processor_instance=analysis(**configs['config']),
-        executor=processor.dask_executor if args.condor else processor.futures_executor,
+        executor=processor.dask_executor, # if args.condor else processor.futures_executor,
         executor_args=executor_args,
         chunksize=config_runner['chunksize'],
         maxchunks=config_runner['maxchunks'],
