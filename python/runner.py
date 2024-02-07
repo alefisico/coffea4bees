@@ -172,13 +172,14 @@ if __name__ == '__main__':
     else:
         from dask.distributed import Client, LocalCluster
         client = Client()
-        cluster = LocalCluster(nanny=False)
+        cluster = LocalCluster(nanny=False, n_workers=6, memory_limit='8GB', threads_per_worker=1, processes=True)
         client = Client(cluster.scheduler.address)
 
         executor_args = {
             'client': client,
             'schema': config_runner['schema'],
             #'workers': 6,
+            'align_clusters': False,
             'savemetrics': True}
 
     logging.info(f"\nExecutor arguments: {executor_args}")
