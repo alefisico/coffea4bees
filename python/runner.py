@@ -8,6 +8,8 @@ import numpy as np
 import uproot
 import yaml
 import dask
+dask.config.set({'logging.distributed': 'error'})
+from dask.distributed import performance_report
 
 uproot.open.defaults["xrootd_handler"] = uproot.source.xrootd.MultithreadedXRootDSource
 from coffea.nanoevents import NanoEventsFactory, NanoAODSchema, BaseSchema
@@ -31,11 +33,10 @@ from skimmer.processor.picoaod import fetch_metadata, resize
 def list_of_files( ifile, allowlist_sites=['T3_US_FNALLPC'], test=False, test_files=5 ):
     '''Check if ifile is root file or dataset to check in rucio'''
 
-    if ifile.endswith('.txt'):
+    if isinstance(ifile, list):
+        return ifile
+    elif ifile.endswith('.txt'):
         file_list = [f'root://cmseos.fnal.gov/{jfile.rstrip()}' for jfile in open(ifile).readlines() ]
-        return file_list
-    elif ifile.endswith('.root'):
-        file_list = [f'root://cmseos.fnal.gov/{ifile}']
         return file_list
     else:
         rucio_client = rucio_utils.get_rucio_client()
@@ -111,25 +112,31 @@ if __name__ == '__main__':
                                          'processName': dataset,
                                          'xs': xsec,
                                          'lumi': float(metadata['datasets']['data'][year]['lumi']),
-                                         'trigger':  metadata['datasets']['data'][year]['trigger']
+                                         'trigger':  metadata['datasets']['data'][year]['trigger'],
                                          }
 
-            if isinstance(metadata['datasets'][dataset][year][config_runner['data_tier']], dict):
+            if not dataset.endswith('data'):
+                if config_runner['data_tier'].startswith('pico'):
+                    metadata_dataset[dataset]['genEventSumw'] = metadata['datasets'][dataset][year][config_runner['data_tier']]['sumw']
+                    meta_files = metadata['datasets'][dataset][year][config_runner['data_tier']]['files']
+                else:
+                    meta_files = metadata['datasets'][dataset][year][config_runner['data_tier']]
+
+                fileset[dataset + "_" + year] = {'files': list_of_files(meta_files, test=args.test, test_files=config_runner['test_files'], allowlist_sites=config_runner['allowlist_sites']),
+                                                 'metadata': metadata_dataset[dataset]}
+
+                logging.info(f'\nDataset {dataset+"_"+year} with '
+                             f'{len(fileset[dataset+"_"+year]["files"])} files')
+
+            else:
 
                 for iera, ifile in metadata['datasets'][dataset][year][config_runner['data_tier']].items():
                     idataset = f'{dataset}_{year}{iera}'
                     metadata_dataset[idataset] = metadata_dataset[dataset]
                     metadata_dataset[idataset]['era'] = iera
-                    fileset[idataset] = {'files': list_of_files( ifile, test=args.test, test_files=config_runner['test_files'], allowlist_sites=config_runner['allowlist_sites'] ),
+                    fileset[idataset] = {'files': list_of_files( (ifile['files'] if config_runner['data_tier'].startswith('pico') else ifile ), test=args.test, test_files=config_runner['test_files'], allowlist_sites=config_runner['allowlist_sites'] ),
                                          'metadata': metadata_dataset[idataset]}
                     logging.info(f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
-
-            else:
-                fileset[dataset + "_" + year] = {'files': list_of_files(metadata['datasets'][dataset][year][config_runner['data_tier']], test=args.test, test_files=config_runner['test_files'], allowlist_sites=config_runner['allowlist_sites']),
-                                                 'metadata': metadata_dataset[dataset]}
-
-                logging.info(f'\nDataset {dataset+"_"+year} with '
-                             f'{len(fileset[dataset+"_"+year]["files"])} files')
 
     #
     # IF run in condor
@@ -152,21 +159,34 @@ if __name__ == '__main__':
         cluster = LPCCondorCluster(**cluster_args)
         cluster.adapt(minimum=1, maximum=200)
         client = Client(cluster)
-        # client = Client()
 
         logging.info('\nWaiting for at least one worker...')
         client.wait_for_workers(1)
 
-        executor_args = {
-            'client': client,
-            'savemetrics': True,
-            'schema': config_runner['schema'],
-            'align_clusters': False,
-        }
     else:
-        executor_args = {'schema': config_runner['schema'],
-                         'workers': 6,
-                         'savemetrics': True}
+        from dask.distributed import Client, LocalCluster
+        client = Client()
+        if args.skimming: cluster_args = {}
+        else:
+            cluster_args = {
+                'n_workers' : 6,
+                'memory_limit': '8GB',
+                'threads_per_worker' : 1,
+            }
+        cluster = LocalCluster(**cluster_args)
+        client = Client(cluster.scheduler.address)
+
+    executor_args = {
+        'client': client,
+        'schema': config_runner['schema'],
+        'align_clusters': False,
+        'savemetrics': True}
+
+    # to run with processor futures_executor ()
+    #executor_args = {
+    #    'schema': config_runner['schema'],
+    #    'workers': 6,
+    #    'savemetrics': True}
 
     logging.info(f"\nExecutor arguments: {executor_args}")
 
@@ -181,62 +201,80 @@ if __name__ == '__main__':
     logging.info(f"fileset keys are {fileset.keys()}")
     logging.debug(f"fileset is {fileset}")
 
-    output, metrics = processor.run_uproot_job(
-        fileset,
-        treename='Events',
-        processor_instance=analysis(**configs['config']),
-        executor=processor.dask_executor if args.condor else processor.futures_executor,
-        executor_args=executor_args,
-        chunksize=config_runner['chunksize'],
-        maxchunks=config_runner['maxchunks'],
-    )
-    elapsed = time.time() - tstart
-    nEvent = metrics['entries']
-    processtime = metrics['processtime']
-    logging.info(f'\n{nEvent/elapsed:,.0f} events/s total '
-                 f'({nEvent}/{elapsed})')
-
-    if args.skimming:
-        # merge output into new chunks each have `chunksize` events
-        # FIXME can use a different chunksize
-        output = dask.compute(resize(configs['config']['base_path'], output, 80000, 100000))[0]
-        # only keep file name for each chunk
-        for dataset, chunks in output.items():
-            chunks['files'] = [str(f.path) for f in chunks['files']]
-
-        metadata = fetch_metadata(fileset)
-
-        for ikey in metadata:
-            if ikey in output:
-                metadata[ikey].update(output[ikey])
-                metadata[ikey]['reproducible'] = {
-                    'date': datetime.today().strftime('%Y-%m-%d %H:%M:%S'),
-                    'hash': get_git_revision_hash(),
-                    'args': str(args),
-                    'diff': str(get_git_diff()),
-                    }
-
-        args.output_file = 'picoaod_datasets.yml' if args.output_file.endswith('coffea') else args.output_file
-        dfile = f'{args.output_path}/{args.output_file}'
-        yaml.dump(metadata, open(dfile, 'w'), default_flow_style=False)
-        logging.info(f'\nSaving metadata file {dfile}')
-
-    else:
-        #
-        # Adding reproducible info
-        #
-        output['reproducible'] = {
-            'date': datetime.today().strftime('%Y-%m-%d %H:%M:%S'),
-            'hash': get_git_revision_hash(),
-            'args': args,
-            'diff': get_git_diff(),
-        }
+    dask_report_file = f'/tmp/coffea4bees-dask-report-{datetime.today().strftime("%Y-%m-%d_%H-%M-%S")}.html'
+    with performance_report(filename=dask_report_file):
 
         #
-        #  Saving file
+        # Running the job
         #
-        if not os.path.exists(args.output_path):
-            os.makedirs(args.output_path)
-        hfile = f'{args.output_path}/{args.output_file}'
-        logging.info(f'\nSaving file {hfile}')
-        save(output, hfile)
+        output, metrics = processor.run_uproot_job(
+            fileset,
+            treename='Events',
+            processor_instance=analysis(**configs['config']),
+            executor=processor.dask_executor, #if args.condor else processor.futures_executor,
+            executor_args=executor_args,
+            chunksize=config_runner['chunksize'],
+            maxchunks=config_runner['maxchunks'],
+        )
+        elapsed = time.time() - tstart
+        nEvent = metrics['entries']
+        processtime = metrics['processtime']
+        logging.info(f'Metrics: {metrics}')
+        logging.info(f'\n{nEvent/elapsed:,.0f} events/s total '
+                     f'({nEvent}/{elapsed})')
+
+        #
+        # Saving the output
+        #
+        if args.skimming:
+            # merge output into new chunks each have `chunksize` events
+            # FIXME can use a different chunksize
+            output = dask.compute(resize(configs['config']['base_path'], output, 80000, 100000))[0]
+            # only keep file name for each chunk
+            for dataset, chunks in output.items():
+                chunks['files'] = [str(f.path) for f in chunks['files']]
+
+            elapsed = time.time() - tstart
+            nEvent = metrics['entries']
+            processtime = metrics['processtime']
+            logging.info(f'\n{nEvent/elapsed:,.0f} events/s total '
+                         f'({nEvent}/{elapsed})')
+
+            metadata = fetch_metadata(fileset)
+
+            for ikey in metadata:
+                if ikey in output:
+                    metadata[ikey].update(output[ikey])
+                    metadata[ikey]['reproducible'] = {
+                        'date': datetime.today().strftime('%Y-%m-%d %H:%M:%S'),
+                        'hash': get_git_revision_hash(),
+                        'args': str(args),
+                        'diff': str(get_git_diff()),
+                        }
+
+            args.output_file = 'picoaod_datasets.yml' if args.output_file.endswith('coffea') else args.output_file
+            dfile = f'{args.output_path}/{args.output_file}'
+            yaml.dump(metadata, open(dfile, 'w'), default_flow_style=False)
+            logging.info(f'\nSaving metadata file {dfile}')
+
+        else:
+            #
+            # Adding reproducible info
+            #
+            output['reproducible'] = {
+                'date': datetime.today().strftime('%Y-%m-%d %H:%M:%S'),
+                'hash': get_git_revision_hash(),
+                'args': args,
+                'diff': get_git_diff(),
+            }
+
+            #
+            #  Saving file
+            #
+            if not os.path.exists(args.output_path):
+                os.makedirs(args.output_path)
+            hfile = f'{args.output_path}/{args.output_file}'
+            logging.info(f'\nSaving file {hfile}')
+            save(output, hfile)
+
+    logging.info(f'Dask performace report saved in {dask_report_file}')

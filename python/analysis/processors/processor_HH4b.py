@@ -241,10 +241,7 @@ class analysis(processor.ProcessorABC):
         #
         if isMC:
             # genWeight
-            with uproot.open(fname) as rfile:
-                Runs = rfile['Runs']
-                genEventSumw = np.sum(Runs['genEventSumw'])
-
+            genEventSumw = event.metadata['genEventSumw']
             event['weight'] = event.genWeight * (lumi * xs * kFactor / genEventSumw)
             logging.debug(f"event['weight'] = event.genWeight * (lumi * xs * kFactor / genEventSumw) = {event.genWeight[0]} * ({lumi} * {xs} * {kFactor} / {genEventSumw}) = {event.weight[0]}\n")
 
