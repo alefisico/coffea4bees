@@ -166,13 +166,13 @@ if __name__ == '__main__':
     else:
         from dask.distributed import Client, LocalCluster
         client = Client()
-        #if args.skimming: cluster_args = {}
-        #else:
-        cluster_args = {
-            'n_workers' : 6,
-            'memory_limit': '8GB',
-            'threads_per_worker' : 1,
-        }
+        if args.skimming: cluster_args = {}
+        else:
+            cluster_args = {
+                'n_workers' : 6,
+                'memory_limit': '8GB',
+                'threads_per_worker' : 1,
+            }
         cluster = LocalCluster(**cluster_args)
         client = Client(cluster.scheduler.address)
 
@@ -203,6 +203,10 @@ if __name__ == '__main__':
 
     dask_report_file = f'/tmp/coffea4bees-dask-report-{datetime.today().strftime("%Y-%m-%d_%H-%M-%S")}.html'
     with performance_report(filename=dask_report_file):
+
+        #
+        # Running the job
+        #
         output, metrics = processor.run_uproot_job(
             fileset,
             treename='Events',
@@ -219,6 +223,9 @@ if __name__ == '__main__':
         logging.info(f'\n{nEvent/elapsed:,.0f} events/s total '
                      f'({nEvent}/{elapsed})')
 
+        #
+        # Saving the output
+        #
         if args.skimming:
             # merge output into new chunks each have `chunksize` events
             # FIXME can use a different chunksize
