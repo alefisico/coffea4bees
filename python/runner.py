@@ -166,13 +166,13 @@ if __name__ == '__main__':
     else:
         from dask.distributed import Client, LocalCluster
         client = Client()
-        if args.skimming: cluster_args = {}
-        else:
-            cluster_args = {
-                #'n_workers' : 6,
-                'memory_limit': '8GB',
-                'threads_per_worker' : 1,
-            }
+        #if args.skimming: cluster_args = {}
+        #else:
+        cluster_args = {
+            #'n_workers' : 6,
+            'memory_limit': '8GB',
+            'threads_per_worker' : 1,
+        }
         cluster = LocalCluster(**cluster_args)
         client = Client(cluster.scheduler.address)
 
