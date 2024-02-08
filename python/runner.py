@@ -169,7 +169,7 @@ if __name__ == '__main__':
         #if args.skimming: cluster_args = {}
         #else:
         cluster_args = {
-            #'n_workers' : 6,
+            'n_workers' : 6,
             'memory_limit': '8GB',
             'threads_per_worker' : 1,
         }
