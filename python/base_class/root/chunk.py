@@ -1,13 +1,11 @@
 from __future__ import annotations
 
+import math
 from concurrent.futures import ThreadPoolExecutor
-from functools import partial, reduce
+from functools import partial
 from logging import Logger
-from operator import and_
 from typing import Iterable
 from uuid import UUID
-
-import uproot
 
 from ..system.eos import EOS, PathLike
 from ..typetools import check_type
@@ -54,7 +52,6 @@ class Chunk(metaclass=_ChunkMeta):
     - :meth:`__eq__`
     - :meth:`__len__`
     - :meth:`__repr__`
-    - :meth:`__json__`
     """
     path: EOS
     '''~heptools.system.eos.EOS : Path to ROOT file.'''
@@ -62,8 +59,8 @@ class Chunk(metaclass=_ChunkMeta):
     '''~uuid.UUID : UUID of ROOT file.'''
     name: str
     '''str : Name of :class:`TTree`.'''
-    branches: set[str]
-    '''set[str] : Name of branches.'''
+    branches: frozenset[str]
+    '''frozenset[str] : Name of branches.'''
     num_entries: int
     '''int : Number of entries.'''
 
@@ -97,7 +94,7 @@ class Chunk(metaclass=_ChunkMeta):
         fetch: bool = False,
     ):
         if isinstance(branches, Iterable):
-            branches = {*branches}
+            branches = frozenset(branches)
 
         self.name = name
         self._entry_start = entry_start
@@ -183,10 +180,11 @@ class Chunk(metaclass=_ChunkMeta):
 
     def _fetch(self):
         if any(v is ... for v in (self._branches, self._num_entries, self._uuid)):
+            import uproot
             with uproot.open(self.path) as file:
                 tree = file[self.name]
                 if self._branches is ...:
-                    self._branches = {*tree.keys()}
+                    self._branches = frozenset(tree.keys())
                 if self._num_entries is ...:
                     self._num_entries = tree.num_entries
                 if self._uuid is ...:
@@ -213,23 +211,6 @@ class Chunk(metaclass=_ChunkMeta):
         if not self._ignore(self._entry_start) and not self._ignore(self._entry_stop):
             text += f' -> [{self._entry_start},{self._entry_stop})'
         return text
-
-    def __json__(self):
-        json_dict = {
-            'path': str(self.path),
-            'name': self.name,
-        }
-        json_dict['uuid'] = None if self._uuid is ... else str(self._uuid)
-        if self._branches is not None:
-            json_dict['branches'] = None if self._branches is ... else list(
-                self._branches)
-        if self._num_entries is not None:
-            json_dict['num_entries'] = None if self._num_entries is ... else self._num_entries
-        if self._entry_start is not None:
-            json_dict['entry_start'] = None if self._entry_start is ... else self._entry_start
-        if self._entry_stop is not None:
-            json_dict['entry_stop'] = None if self._entry_stop is ... else self._entry_stop
-        return json_dict
 
     def deepcopy(self, **kwargs):
         """
@@ -272,24 +253,52 @@ class Chunk(metaclass=_ChunkMeta):
         return chunk
 
     @classmethod
-    def from_path(cls, *paths: str):
+    def from_path(cls, *paths: tuple[str, str]):
         """
         Create :class:`Chunk` from ``paths`` and fetch metadata in parallel.
 
         Parameters
         ----------
-        paths : tuple[str]
-            Path to ROOT file.
+        paths : tuple[tuple[str, str]
+            Path to ROOT file and name of :class:`TTree`.
 
         Returns
         -------
         list[Chunk]
             List of chunks from ``paths``.
         """
-        chunks = [Chunk(path) for path in paths]
+        chunks = [Chunk(path, name) for path, name in paths]
         with ThreadPoolExecutor(max_workers=len(chunks)) as executor:
             executor.map(Chunk._fetch, chunks)
         return chunks
+
+    @classmethod
+    def common(
+        cls,
+        *chunks: Chunk
+    ) -> list[Chunk]:
+        """
+        Find common branches of ``chunks``.
+
+        Parameters
+        ----------
+        chunks : tuple[Chunk]
+            Chunks to select common branches.
+
+        Returns
+        -------
+        list[Chunk]
+            Deep copies of ``chunks`` with only common branches.
+        """
+        chunks = [chunk.deepcopy() for chunk in chunks]
+        branches = set(chunk.branches for chunk in chunks)
+        if len(branches) == 1:
+            return chunks
+        else:
+            common = frozenset.intersection(*branches)
+            for chunk in chunks:
+                chunk._branches = common
+            return chunks
 
     @classmethod
     def partition(
@@ -318,8 +327,7 @@ class Chunk(metaclass=_ChunkMeta):
         i, start, remain = 0, 0, size
         group: list[Chunk] = []
         if common_branches:
-            common = reduce(and_, (chunk.branches for chunk in chunks))
-            chunks = [chunk.deepcopy(branches=common) for chunk in chunks]
+            chunks = cls.common(*chunks)
         while i < len(chunks):
             chunk = min(remain, len(chunks[i]) - start)
             group.append(chunks[i].slice(start, start + chunk))
@@ -336,6 +344,79 @@ class Chunk(metaclass=_ChunkMeta):
             yield group
 
     @classmethod
+    def balance(
+        cls,
+        size: int,
+        *chunks: Chunk,
+        common_branches: bool = False
+    ):
+        """
+        Split ``chunks`` into smaller pieces with ``size`` entries in each. If not possible, will try to find another size minimizing the average deviation.
+
+        Parameters
+        ----------
+        size : int
+            Target number of entries in each chunk.
+        chunks : tuple[Chunk]
+            Chunks to balance.
+        common_branches : bool, optional, default=False
+            If ``True``, only common branches of all chunks are kept.
+
+        Yields
+        -------
+        list[Chunk]
+            Resized chunks with about ``size`` entries in each.
+        """
+        if common_branches:
+            chunks = cls.common(*chunks)
+        for chunk in chunks:
+            total = len(chunk)
+            if total <= size:
+                yield chunk
+            else:
+                n = total // size
+                diff, n_chunks, n_entries, n_remain = math.inf, None, None, None
+                for _chunks in range(n, n+2):
+                    _entries = total // _chunks
+                    _remain = total % _chunks
+                    _diff = (abs(_entries+1-size)*_remain +
+                             abs(_entries-size)*(_chunks-_remain))
+                    if _diff < diff:
+                        diff, n_chunks, n_entries, n_remain = _diff, _chunks, _entries, _remain
+                start = 0
+                for i in range(n_chunks):
+                    stop = start + n_entries
+                    if i < n_remain:
+                        stop += 1
+                    yield chunk.slice(start, stop)
+                    start = stop
+
+    def to_json(self):
+        """
+        Convert ``self`` to JSON data.
+
+        Returns
+        -------
+        dict
+            JSON data.
+        """
+        json_dict = {
+            'path': str(self.path),
+            'name': self.name,
+        }
+        json_dict['uuid'] = None if self._uuid is ... else str(self._uuid)
+        if self._branches is not None:
+            json_dict['branches'] = None if self._branches is ... else list(
+                self._branches)
+        if self._num_entries is not None:
+            json_dict['num_entries'] = None if self._num_entries is ... else self._num_entries
+        if self._entry_start is not None:
+            json_dict['entry_start'] = None if self._entry_start is ... else self._entry_start
+        if self._entry_stop is not None:
+            json_dict['entry_stop'] = None if self._entry_stop is ... else self._entry_stop
+        return json_dict
+
+    @classmethod
     def from_json(cls, data: dict):
         """
         Create :class:`Chunk` from JSON data.
@@ -348,7 +429,7 @@ class Chunk(metaclass=_ChunkMeta):
         Returns
         -------
         Chunk
-            Chunk from JSON data.
+            A :class:`Chunk` object from JSON data.
         """
         kwargs = {
             'name': data['name'],
@@ -369,9 +450,19 @@ class Chunk(metaclass=_ChunkMeta):
         return cls(**kwargs)
 
     @classmethod
-    def from_coffea_processor(cls, events):
+    def from_coffea_events(cls, events):
         """
-        Create :class:`Chunk` from the input of :meth:`coffea.processor.ProcessorABC.process`.
+        Create :class:`Chunk` when using ``coffea<=0.7.22``.
+
+        Parameters
+        ----------
+        events
+            Events generated by :class:`coffea.processor.Runner`.
+
+        Returns
+        -------
+        Chunk
+            Chunk from ``events``.
         """
         metadata = events.metadata
         return cls(
@@ -379,3 +470,31 @@ class Chunk(metaclass=_ChunkMeta):
             name=metadata['treename'],
             entry_start=metadata['entrystart'],
             entry_stop=metadata['entrystop'])
+
+    @classmethod
+    def from_coffea_datasets(cls, datasets: dict) -> dict[str, list[Chunk]]:
+        """
+        Create :class:`Chunk` when using ``coffea>=2023.12.0``.
+
+        Parameters
+        ----------
+        datasets
+            Datasets generated by :func:`coffea.dataset_tools.preprocess`.
+
+        Returns
+        -------
+        dict[str, list[Chunk]]
+            A mapping from dataset names to lists of chunks using the partitions from ``datasets``.
+        """
+        import uproot
+        partitions: dict[str, list[Chunk]] = {}
+        for dataset, files in datasets.items():
+            files = files['files']
+            partitions[dataset] = [cls(
+                source=(path, UUID(files[path]['uuid'])),
+                name=name,
+                entry_start=start,
+                entry_stop=stop)
+                for path, name, steps in uproot._util.regularize_files(files, steps_allowed=True)
+                for start, stop in steps]
+        return partitions
