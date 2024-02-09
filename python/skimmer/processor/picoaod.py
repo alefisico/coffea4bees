@@ -44,7 +44,7 @@ class PicoAOD(ProcessorABC):
 
     def process(self, events):
         selected = self.select(events)
-        chunk = Chunk.from_coffea_processor(events)
+        chunk = Chunk.from_coffea_events(events)
         dataset = events.metadata['dataset']
         result = {dataset: {
             'total_events': len(events),
@@ -53,7 +53,7 @@ class PicoAOD(ProcessorABC):
         filename = f'{dataset}/{_PICOAOD}_{chunk.uuid}_{chunk.entry_start}_{chunk.entry_stop}{_ROOT}'
         path = self._base / filename
         with TreeWriter()(path) as writer:
-            for i, data in enumerate(TreeReader(self._filter, self._transform).iterate(self._step, chunk)):
+            for i, data in enumerate(TreeReader(self._filter, self._transform).iterate(chunk, step=self._step)):
                 writer.extend(data[selected[i*self._step:(i+1)*self._step]])
         result[dataset]['files'] = [writer.tree]
 
