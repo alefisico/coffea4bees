@@ -1,4 +1,3 @@
-# TODO migrate to coffea2024
 import re
 from abc import abstractmethod
 from concurrent.futures import Future, ProcessPoolExecutor
@@ -49,7 +48,9 @@ class PicoAOD(ProcessorABC):
         result = {dataset: {
             'total_events': len(events),
             'saved_events': int(ak.sum(selected)),
-            'source': [(chunk.entry_start, chunk.entry_stop, str(chunk.path))]
+            'source': {
+                f'{chunk.path}': [(chunk.entry_start, chunk.entry_stop)]
+            }
         }}
         filename = f'{dataset}/{_PICOAOD}_{chunk.uuid}_{chunk.entry_start}_{chunk.entry_stop}{_ROOT}'
         path = self._base / filename
@@ -77,7 +78,7 @@ def _fetch_metadata(dataset: str, path: PathLike):
         }
 
 
-def fetch_metadata(fileset: dict[str, dict[str]], n_process: int = None) -> dict[str, dict[str]]:
+def fetch_metadata(fileset: dict[str, dict[str, list[str]]], n_process: int = None) -> dict[str, dict[str]]:
     with ProcessPoolExecutor(max_workers=n_process) as executor:
         tasks: list[Future] = []
         for dataset, files in fileset.items():
@@ -85,6 +86,33 @@ def fetch_metadata(fileset: dict[str, dict[str]], n_process: int = None) -> dict
                 tasks.append(executor.submit(_fetch_metadata, dataset, file))
         results = [task.result() for task in tasks]
     return accumulate(results)
+
+
+def integrity_check(
+    fileset: dict[str, dict[str, list[str]]],
+    output: dict[str, dict[str, dict[str, list[tuple[int, int]]]]],
+    num_entries: dict[str, dict[str, int]] = None,
+):
+    diff = set(fileset) - set(output)
+    if diff:
+        print(f'The whole dataset is missing: {diff}')
+    for dataset in fileset:
+        inputs = dict(fileset[dataset]['files'])
+        outputs = output[dataset]['source']
+        while len(inputs) > 0:
+            file = inputs.pop()
+            if file not in outputs:
+                print(f'The whole file is missing: "{file}"')
+            else:
+                chunks = sorted(outputs[file], key=lambda x: x[0])
+                if num_entries is not None:
+                    n = num_entries[dataset][file]
+                    chunks.append((n, n))
+                start = 0
+                for _start, _stop in chunks:
+                    if _start != start:
+                        print(f'Missing chunk: [{start, _start}) in "{file}"')
+                    start = _stop
 
 
 def resize(
