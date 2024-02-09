@@ -23,6 +23,7 @@
     - eeBadScFilter
     - BadPFMuonDzFilter
     - hfNoisyHitsFilter
+  rochesterCorrections: data/Muon/RoccoR2016aUL.txt
 
 
 'UL16_postVFP': 
@@ -50,6 +51,7 @@
     - eeBadScFilter
     - BadPFMuonDzFilter
     - hfNoisyHitsFilter
+  rochesterCorrections: data/Muon/RoccoR2016UL.txt
 
 'UL17': 
   goldenJSON: 'data/goldenJSON/Cert_294927-306462_13TeV_UL2017_Collisions17_GoldenJSON.txt'
@@ -104,7 +106,11 @@
     - BadPFMuonDzFilter
     - hfNoisyHitsFilter
     - ecalBadCalibFilter
-  jec: /cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/JME/2018_UL/jet_jerc.json.gz
+  jec: 
+    file: /cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/JME/2018_UL/jet_jerc.json.gz
+    data_campaign: Summer19UL18
+    jec_campaign: V5
+    jer_campaign: JRV2
   rochesterCorrections: data/Muon/RoccoR2018UL.txt
 
 '2022':
