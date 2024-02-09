@@ -68,8 +68,9 @@ def init_jet_factory(weight_sets, event):   #### AGE: this is temporary, it shou
     return jet_variations
 
 ##### JER needs to be included
-def jet_corrections( uncorrJets,
+def jet_corrections( uncorr_jets,
                     fixedGridRhoFastjetAll,
+                    isMC,
                     jercFile="/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/JME/2018_UL/jet_jerc.json.gz",
                     data_campaign="Summer19UL18",
                     jec_campaign='V5_MC',
@@ -81,36 +82,31 @@ def jet_corrections( uncorrJets,
 
     JECFile = correctionlib.CorrectionSet.from_file(jercFile)
     # preparing jets
-    uncorrJets['pt_raw'] = (1 - uncorrJets['rawFactor']) * uncorrJets['pt']
-    uncorrJets['rho'] = ak.broadcast_arrays(fixedGridRhoFastjetAll, uncorrJets.pt)[0]
-    j, nj = ak.flatten(uncorrJets), ak.num(uncorrJets)
+    uncorr_jets['pt_raw'] = (1 - uncorr_jets['rawFactor']) * uncorr_jets['pt']
+    uncorr_jets['mass_raw'] = (1 - uncorr_jets['rawFactor']) * uncorr_jets['mass']
+    uncorr_jets['rho'] = ak.broadcast_arrays(fixedGridRhoFastjetAll, uncorr_jets.pt)[0]
+    j, nj = ak.flatten(uncorr_jets), ak.num(uncorr_jets)
 
-    total_flat_jec = np.ones( len(j) )
+    jec_campaign = f'{jec_campaign}_{"MC" if isMC else "DATA"}'
+
+    total_flat_jec = np.ones( len(j), dtype="float32" )
     for ijec in jec_type:
 
         if 'L1' in ijec:
             corr = JECFile.compound[f'{data_campaign}_{jec_campaign}_{ijec}_{jettype}'] if 'L1L2L3' in ijec else JECFile[f'{data_campaign}_{jec_campaign}_{ijec}_{jettype}']
             flat_jec = corr.evaluate( j['area'], j['eta'], j['pt_raw'], j['rho']  )
         else:
-            if 'PtResolution' in ijec:
-                corr = JECFile[f'{data_campaign}_{jer_campaign}_{ijec}_{jettype}']
-                flat_jec = corr.evaluate( j['eta'], j['pt_raw'], j['rho'] )   ###### AGE: to check, I think pt has to be after corrections
-            elif 'ScaleFactor' in ijec:
-                corr = JECFile[f'{data_campaign}_{jer_campaign}_{ijec}_{jettype}']
-                flat_jec = corr.evaluate( j['eta'], variation )
-            else:
-                corr = JECFile[f'{data_campaign}_{jec_campaign}_{ijec}_{jettype}']
-                flat_jec = corr.evaluate( j['eta'], j['pt_raw']  )
+            corr = JECFile[f'{data_campaign}_{jec_campaign}_{ijec}_{jettype}']
+            flat_jec = corr.evaluate( j['eta'], j['pt_raw']  )
         total_flat_jec *= flat_jec
     jec = ak.unflatten(total_flat_jec, nj)
 
-    #correctP4Jets = uncorrJets * jec
-    correctJets = copy.deepcopy(uncorrJets)
-    correctJets['jet_energy_correction'] = jec
-    correctJets['pt'] = correctJets.pt_raw * jec
-    correctJets['mass'] = correctJets.mass_raw * jec
+    corr_jets = uncorr_jets
+    corr_jets['jet_energy_correction'] = jec
+    corr_jets['pt'] = corr_jets.pt_raw * jec
+    corr_jets['mass'] = corr_jets.mass_raw * jec
 
-    return correctJets
+    return corr_jets
 
 
 def mask_event_decision(event, decision='OR', branch='HLT', list_to_mask=[''], list_to_skip=['']):
