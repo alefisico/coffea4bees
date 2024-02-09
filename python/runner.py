@@ -254,7 +254,7 @@ if __name__ == '__main__':
                     base_path=configs['config']['base_path'],
                     output=output,
                     step=configs['config']['step'],
-                    chunk_size=config_runner['picosize']))[0]
+                    chunk_size=config_runner['chunksize']*2))[0]
             # only keep file name for each chunk
             for dataset, chunks in output.items():
                 chunks['files'] = [str(f.path) for f in chunks['files']]
