@@ -179,8 +179,8 @@ if __name__ == '__main__':
         from dask.distributed import Client, LocalCluster
         if args.skimming:
             cluster_args = {
-                'n_workers': 2,
-                'memory_limit': '4GB',
+                'n_workers': 4,
+                'memory_limit': config_runner['condor_memory'],
                 'threads_per_worker': 1,
             }
         else:
@@ -191,8 +191,6 @@ if __name__ == '__main__':
             }
         cluster = LocalCluster(**cluster_args)
         client = Client(cluster)
-
-    client.forward_logging()
 
     executor_args = {
         'client': client,
@@ -256,7 +254,7 @@ if __name__ == '__main__':
                     base_path=configs['config']['base_path'],
                     output=output,
                     step=configs['config']['step'],
-                    chunk_size=config_runner['chunksize']))[0]
+                    chunk_size=config_runner['picosize']))[0]
             # only keep file name for each chunk
             for dataset, chunks in output.items():
                 chunks['files'] = [str(f.path) for f in chunks['files']]

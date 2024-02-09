@@ -99,7 +99,7 @@ def integrity_check(
     if diff:
         logging.error(f'The whole dataset is missing: {diff}')
     for dataset in fileset:
-        inputs = dict(fileset[dataset]['files'])
+        inputs = set(fileset[dataset]['files'])
         outputs = output[dataset]['source']
         while len(inputs) > 0:
             file = inputs.pop()

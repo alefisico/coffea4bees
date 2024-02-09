@@ -1,10 +1,10 @@
 runner:
   #maxchunks: 100
-  chunksize: 1000000
+  chunksize: 500000
   class_name: Skimmer
   data_tier: nanoAOD
   condor_cores: 1
-  condor_memory: 8GB
+  condor_memory: 2GB
   allowlist_sites:
     - T3_US_NotreDame
     - T3_CH_PSI
@@ -15,7 +15,8 @@ runner:
 config:
   base_path: root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v1/
   #base_path: /srv/python/skimmer/test/   ### local
-  step: 100000
+  step: 50000
+  picosize: 1000000
   skip_collections:
     - Photon
     - LHEPart
