@@ -13,14 +13,14 @@ import logging
 import copy
 
 # following example here: https://github.com/CoffeaTeam/coffea/blob/master/tests/test_jetmet_tools.py#L529
-def init_jet_factory(weight_sets, event):   #### AGE: this is temporary, it should be updated with correctionlib
+def init_jet_factory(weight_sets, event, isMC):   #### AGE: this is temporary, it should be updated with correctionlib
 
     event['Jet', 'pt_raw']    = (1 - event.Jet.rawFactor) * event.Jet.pt
     event['Jet', 'mass_raw']  = (1 - event.Jet.rawFactor) * event.Jet.mass
     nominal_jet = event.Jet
     # nominal_jet['pt_raw']   = (1 - nominal_jet.rawFactor) * nominal_jet.pt
     # nominal_jet['mass_raw'] = (1 - nominal_jet.rawFactor) * nominal_jet.mass
-    nominal_jet['pt_gen'] = ak.values_astype(ak.fill_none(nominal_jet.matched_gen.pt, 0), np.float32)
+    if isMC: nominal_jet['pt_gen'] = ak.values_astype(ak.fill_none(nominal_jet.matched_gen.pt, 0), np.float32)
     nominal_jet['rho']      = ak.broadcast_arrays(event.fixedGridRhoFastjetAll, nominal_jet.pt)[0]
 
     from coffea.lookup_tools import extractor
@@ -48,7 +48,7 @@ def init_jet_factory(weight_sets, event):   #### AGE: this is temporary, it shou
     name_map["JetMass"]  = "mass"
     name_map["JetEta"]   = "eta"
     name_map["JetA"]     = "area"
-    name_map['ptGenJet'] = 'pt_gen'
+    if isMC: name_map['ptGenJet'] = 'pt_gen'
     name_map['ptRaw']    = 'pt_raw'
     name_map['massRaw']  = 'mass_raw'
     name_map['Rho']      = 'rho'
@@ -206,6 +206,7 @@ def drClean(coll1,coll2,cone=0.4):
     delta_eta = j_eta - l_eta
     delta_phi = vector._deltaphi_kernel(j_phi,l_phi)
     dr = np.hypot(delta_eta, delta_phi)
-    jets_noleptons = coll1[~ak.any(dr < cone, axis=2)]
-    return jets_noleptons
+    nolepton_mask = ~ak.any(dr < cone, axis=2)
+    jets_noleptons = coll1[nolepton_mask]
+    return [jets_noleptons, nolepton_mask]
 

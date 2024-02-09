@@ -29,8 +29,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='uproot_plots')
     parser.add_argument('-i','--inputFile', default='hists.pkl', help='Input File. Default: hists.pkl')
     parser.add_argument('-o','--outputFile', default='knownCounts.yml', help='Input File. Default: hists.pkl')
-    #parser.add_argument('-d', '--datasets', nargs='+', dest='datasets', , help="Name of dataset to run. Example if more than one: -d HH4b ZZ4b")
-    #parser.add_argument('-p','--process',   default='data', help='Input process. Default: hists.pkl')
     args = parser.parse_args()
 
     outputFile = open(f'{args.outputFile}', 'w')
@@ -42,8 +40,6 @@ if __name__ == '__main__':
     cf4_unit = hists["cutFlowFourTagUnitWeight"]
     cf3      = hists["cutFlowThreeTag"]
     cf3_unit = hists["cutFlowThreeTagUnitWeight"]
-
-
 
     print_counts_yaml(cf4, "counts4")
     print_counts_yaml(cf3, "counts3")

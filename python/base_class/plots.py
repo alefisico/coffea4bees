@@ -9,24 +9,31 @@ plt.style.use([hep.style.CMS, {'font.size': 16}])
 
 _phi = (1 + np.sqrt(5)) / 2
 _epsilon = 0.001
+_colors = ["xkcd:blue", "xkcd:red", "xkcd:off green", "xkcd:orange", "xkcd:violet", "xkcd:grey"]
 
 
-def getHist(var='selJets.pt'):
-    if var.find("*") != -1:
-        ls(match=var.replace("*", ""))
-        return
-
-    return hists['hists'][var]
-
-
-def getFromNestedDict(nested_dict, target_key, default=None):
+def get_value_nested_dict(nested_dict, target_key, default=None):
     """ Return the first value from mathching key from nested dict
     """
     for k, v in nested_dict.items():
         if k == target_key:
             return v
 
+        if type(v) is dict:
+            return_value = get_value_nested_dict(v, target_key, default)
+            if not return_value == default:
+                return return_value
+        
     return default
+
+
+def _savefig(fig, var, *args):
+    outputPath = "/".join(args)
+
+    if not os.path.exists(outputPath):
+        os.makedirs(outputPath)
+    fig.savefig(outputPath + "/" + var.replace(".", '_') + ".pdf")
+    return
 
 
 def _draw_plot(hist_list, stack_dict, **kwargs):
@@ -76,9 +83,9 @@ def _draw_plot(hist_list, stack_dict, **kwargs):
     #
     hist_labels = kwargs.get("hist_labels")
     hist_fill_colors = kwargs.get("hist_fill_colors")
-    hist_edge_colors = kwargs.get("hist_edge_colors")
     hist_types = kwargs.get("hist_types")
     hist_artists = []
+
     for ih, h in enumerate(hist_list):
         this_plot_options = {"density": norm,
                              "label": hist_labels[ih],
@@ -113,7 +120,7 @@ def _draw_plot(hist_list, stack_dict, **kwargs):
     if kwargs.get("xscale", None):
         plt.xscale(kwargs.get('xscale'))
 
-    if kwargs.get('legend', False):
+    if kwargs.get('legend', True):
         handles, labels = plt.gca().get_legend_handles_labels()
 
         for s in stack_patches:
@@ -159,10 +166,6 @@ def _plot(hist_list, stack_dict, plotConfig, **kwargs):
     hep.cms.label("Internal", data=True,
                   year=kwargs['year'].replace("UL", "20"), loc=0, ax=ax)
 
-    # ax.spines["top"]  .set_visible(False)
-    # ax.spines["right"].set_visible(False)
-    # ax.spines["left"] .set_visible(False)
-
     return fig
 
 
@@ -172,9 +175,8 @@ def _plot2d(hist, plotConfig, **kwargs):
         print(f'\t in plot ... kwargs = {kwargs}')
 
     if kwargs.get("full", False):
-        # size = 7
         fig = plt.figure()   # figsize=(size,size/_phi))
-
+        # fig.add_axes((0.1, 0.15, 0.85, 0.8))
         hist.plot2d_full(
             main_cmap="cividis",
             top_ls="--",
@@ -185,22 +187,14 @@ def _plot2d(hist, plotConfig, **kwargs):
             side_color="steelblue",
         )
     else:
-        size = 7
         fig = plt.figure()   # figsize=(size,size/_phi))
-
         fig.add_axes((0.1, 0.15, 0.85, 0.8))
-
         hist.plot2d()
 
-    # _draw_plot(hist_list, stack_dict, **kwargs)
-
     ax = fig.gca()
+
     hep.cms.label("Internal", data=True,
                   year=kwargs['year'].replace("UL", "20"), loc=0, ax=ax)
-
-    # ax.spines["top"]  .set_visible(False)
-    # ax.spines["right"].set_visible(False)
-    # ax.spines["left"] .set_visible(False)
 
     return fig
 
@@ -234,9 +228,17 @@ def _plot_ratio(hist_list, stack_dict, plotConfig, **kwargs):
     plt.setp(main_ax.get_xticklabels(), visible=False)
 
     numValues = hist_list[0].values()
-    hStackHists = list(stack_dict.values())
-    denValues = [h.values() for h in hStackHists]
-    denValues = np.sum(denValues, axis=0)
+
+    #
+    # If stack is given use it for the denominator
+    #   else, take the last histogram
+    #
+    if stack_dict:
+        hStackHists = list(stack_dict.values())
+        denValues = [h.values() for h in hStackHists]
+        denValues = np.sum(denValues, axis=0)
+    else:
+        denValues = hist_list[-1].values()
 
     denValues[denValues == 0] = _epsilon
     ratios = numValues / denValues
@@ -277,7 +279,7 @@ def _plot_ratio(hist_list, stack_dict, plotConfig, **kwargs):
     )
 
     #
-    #  ylabel
+    #  labels / limits
     #
     plt.ylabel(kwargs.get("rlabel", "Ratio"))
     plt.ylabel(plt.gca().get_ylabel(), loc='center')
@@ -285,6 +287,265 @@ def _plot_ratio(hist_list, stack_dict, plotConfig, **kwargs):
     plt.xlabel(kwargs.get("xlabel", top_xlabel), loc='right')
 
     plt.ylim(*kwargs.get('rlim', [0, 2]))
+
+    return fig
+
+
+def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, process, **kwargs):
+
+    if kwargs.get("debug", False):
+        print(f" hist process={process}, "
+              f"cut={cut}")
+        
+    rebin = kwargs.get("rebin", 1)
+    codes = plotConfig["codes"]
+
+    #
+    #  Get the year
+    #    (Got to be a better way to do this....)
+    #
+    yearStr = get_value_nested_dict(plotConfig, "year", default="RunII")
+    year = sum if yearStr == "RunII" else yearStr
+    
+    #
+    #  Unstacked hists
+    #
+    hists = []
+    hist_colors_fill = []
+    hist_colors_edge = []
+    hist_labels = []
+    hist_types = []
+
+    if type(process) is list:
+        process_config = [get_value_nested_dict(plotConfig, p) for p in process]
+        this_tagName = "_vs_".join(process)
+    else:
+        process_config = get_value_nested_dict(plotConfig, process)
+        this_tagName = process_config.get("tag", "fourTag")
+        this_tag = plotConfig["codes"]["tag"][this_tagName]
+
+    #
+    #  cut list
+    #
+    if type(cut) is list:
+
+        cutName = "_vs_".join(cut)
+        regionName = region
+        varName = input_hist_File['hists'][var].axes[-1].name
+        
+        for ic, _cut in enumerate(cut):
+    
+            if kwargs.get("debug", False):
+                print(f" hist process={process}, "
+                      f"tag={this_tag}, _cut={_cut}"
+                      f"region={region}"
+                      )
+    
+            hist_colors_fill.append(_colors[ic])
+            label = process if process_config.get("label").lower() == "none" else process_config.get("label")
+            hist_labels.append(label + " " + _cut)
+            hist_types. append("errorbar")
+                
+            cutDict = {}
+            for c in cutList:
+                cutDict[c] = sum
+            cutDict[_cut] = True
+    
+            this_hist_dict = {"process": process_config["process"],
+                              "year": year,
+                              "tag": hist.loc(this_tag),
+                              "region": hist.loc(codes["region"][region]),
+                              varName: hist.rebin(rebin)}
+    
+            for c in cutList:
+                this_hist_dict = this_hist_dict | {c: cutDict[c]}
+
+            hists.append(input_hist_File['hists'][var][this_hist_dict])
+            hists[-1] *= process_config.get("scalefactor", 1.0)
+
+    #
+    #  region list
+    #
+    elif type(region) is list:
+
+        cutName = cut
+        regionName = "_vs_".join(region)
+        varName = input_hist_File['hists'][var].axes[-1].name
+        
+        for ir, _reg in enumerate(region):
+    
+            if kwargs.get("debug", False):
+                print(f" hist process={process}, "
+                      f"tag={this_tag}, _cut={cut}"
+                      f"_reg={_reg}"
+                      )
+    
+            hist_colors_fill.append(_colors[ir])
+            label = process if process_config.get("label").lower() == "none" else process_config.get("label")
+            hist_labels.append(label + " " + _reg)
+            hist_types. append("errorbar")
+                
+            cutDict = {}
+            for c in cutList:
+                cutDict[c] = sum
+            cutDict[cut] = True
+    
+            this_hist_dict = {"process": process_config["process"],
+                              "year": year,
+                              "tag": hist.loc(this_tag),
+                              "region": hist.loc(codes["region"][_reg]),
+                              varName: hist.rebin(rebin)}
+    
+            for c in cutList:
+                this_hist_dict = this_hist_dict | {c: cutDict[c]}
+    
+            hists.append(input_hist_File['hists'][var][this_hist_dict])
+            hists[-1] *= process_config.get("scalefactor", 1.0)
+
+    #
+    #  input file list
+    #
+    elif type(input_hist_File) is list:
+
+        cutName = cut
+        regionName = region
+        varName = input_hist_File[0]['hists'][var].axes[-1].name
+        
+        if kwargs.get("debug", False):
+            print(f" hist process={process}, "
+                  f"tag={this_tag}, _cut={cut}"
+                  f"_reg={region}"
+                  )
+    
+        label = process if process_config.get("label").lower() == "none" else process_config.get("label")
+            
+        cutDict = {}
+        for c in cutList:
+            cutDict[c] = sum
+        cutDict[cut] = True
+    
+        this_hist_dict = {"process": process_config["process"],
+                          "year": year,
+                          "tag": hist.loc(this_tag),
+                          "region": hist.loc(codes["region"][region]),
+                          varName: hist.rebin(rebin)}
+    
+        for c in cutList:
+            this_hist_dict = this_hist_dict | {c: cutDict[c]}
+    
+        fileLabels = kwargs.get("fileLabels", [])
+
+        for iF, _input_File in enumerate(input_hist_File):
+        
+            hist_colors_fill.append(_colors[iF])
+            if iF < len(fileLabels):
+                hist_labels.append(label + " " + fileLabels[iF])
+            else:
+                hist_labels.append(label + " file" + str(iF + 1))
+            hist_types. append("errorbar")
+            hists.append(input_hist_File[iF]['hists'][var][this_hist_dict])
+            hists[-1] *= process_config.get("scalefactor", 1.0)
+
+    #
+    #  process list
+    #
+    elif type(process) is list:
+
+        cutName = cut
+        regionName = region
+        varName = input_hist_File['hists'][var].axes[-1].name
+
+        if kwargs.get("debug", False):
+            print(f" hist process={process}, "
+                  f"tag={this_tag}, _cut={cut}"
+                  f"_reg={region}"
+                  )
+
+        cutDict = {}
+        for c in cutList:
+            cutDict[c] = sum
+        cutDict[cut] = True
+
+        for _, _proc_conf in enumerate(process_config):
+            label = _proc_conf.get("process") if _proc_conf.get("label").lower() == "none" else _proc_conf.get("label")
+
+            _tagName = _proc_conf.get("tag", "fourTag")
+            this_tag = plotConfig["codes"]["tag"][_tagName]
+
+            hist_colors_fill.append(_proc_conf.get("fillcolor", None).replace("yellow","orange"))
+            hist_labels.append(label)
+            hist_types. append("errorbar")
+
+            this_hist_dict = {"process": _proc_conf["process"],
+                              "year": year,
+                              "tag": hist.loc(this_tag),
+                              "region": hist.loc(codes["region"][region]),
+                              varName: hist.rebin(rebin)}
+
+            for c in cutList:
+                this_hist_dict = this_hist_dict | {c: cutDict[c]}
+
+            hists.append(input_hist_File['hists'][var][this_hist_dict])
+            hists[-1] *= _proc_conf.get("scalefactor", 1.0)
+    #
+    #  process list
+    #
+    elif type(var) is list:
+
+        cutName = cut
+        regionName = region
+
+        for iv, _var in enumerate(var):
+
+            varName = input_hist_File['hists'][_var].axes[-1].name
+
+            if kwargs.get("debug", False):
+                print(f" hist process={process}, "
+                      f"tag={this_tag}, _cut={cut}"
+                      f"_reg={region}"
+                      )
+
+            hist_colors_fill.append(_colors[iv])
+            label = process if process_config.get("label").lower() == "none" else process_config.get("label")
+            hist_labels.append(label + " " + _var)
+            hist_types. append("errorbar")
+
+            cutDict = {}
+            for c in cutList:
+                cutDict[c] = sum
+            cutDict[cut] = True
+
+            this_hist_dict = {"process": process_config["process"],
+                              "year": year,
+                              "tag": hist.loc(this_tag),
+                              "region": hist.loc(codes["region"][region]),
+                              varName: hist.rebin(rebin)}
+
+            for c in cutList:
+                this_hist_dict = this_hist_dict | {c: cutDict[c]}
+
+            hists.append(input_hist_File['hists'][_var][this_hist_dict])
+            hists[-1] *= process_config.get("scalefactor", 1.0)
+
+    else:
+        raise Exception("Error something needs to be a list!")
+
+    #
+    # Add args
+    #
+    kwargs["year"] = yearStr
+    kwargs["hist_fill_colors"] = hist_colors_fill
+    kwargs["hist_labels"] = hist_labels
+    kwargs["hist_types"] = hist_types
+    kwargs["stack_labels"] = []
+    
+    if kwargs.get("doRatio", False):
+        fig = _plot_ratio(hists, {}, plotConfig, **kwargs)
+    else:
+        fig = _plot(hists, {}, plotConfig, **kwargs)
+
+    if kwargs.get("outputFolder", None):
+        _savefig(fig, var, kwargs.get("outputFolder"), yearStr, cutName, this_tagName, regionName, process)
 
     return fig
 
@@ -304,29 +565,31 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
         'doRatio'  : bool (False)
         'rebin'    : int (1),
     """
+    process = kwargs.get("process", None)
+
+    if (type(cut) is list) or (type(region) is list) or (type(hists) is list) \
+       or (type(process) is list) or (type(var) is list):
+        return _makeHistsFromList(hists, cutList, plotConfig, var, cut, region, **kwargs)
+
+    if process and type(process) is not list:
+        process = [process]
+        kwargs["process"] = process
+        return _makeHistsFromList(hists, cutList, plotConfig, var, cut, region, **kwargs)
 
     h = hists['hists'][var]
     varName = hists['hists'][var].axes[-1].name
     rebin = kwargs.get("rebin", 1)
     codes = plotConfig["codes"]
 
+    if cut not in cutList:
+        raise AttributeError(f"{cut} not in cutList {cutList}")
+
     cutDict = {}
     for c in cutList:
         cutDict[c] = sum
     cutDict[cut] = True
 
-    #
-    #  Get the year
-    #    (Got to be a better way to do this....)
-    #
-    year = "RunII"
-    tagName = "fourTag"
-    if len(plotConfig["hists"]):
-        year = getFromNestedDict(plotConfig["hists"], "year", "RunII")
-        tag = getFromNestedDict(plotConfig["hists"], "tag",  "fourTag")
-    else:
-        year = getFromNestedDict(plotConfig["stack"], "year", "RunII")
-        tag  = getFromNestedDict(plotConfig["stack"], "tag",  "fourTag")
+    tagNames = []
 
     #
     #  Unstacked hists
@@ -341,6 +604,7 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
     for k, v in hist_config.items():
         this_process = v["process"]
         this_year = sum if v["year"] == "RunII" else v["year"]
+        tagNames.append(v["tag"])
         this_tag = plotConfig["codes"]["tag"][v["tag"]]
         hist_colors_fill.append(v.get('fillcolor'))
         hist_colors_edge.append(v.get('edgecolor'))
@@ -366,7 +630,8 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
     #
     # Add args
     #
-    kwargs["year"] = year
+    yearName = get_value_nested_dict(plotConfig,  "year", default="RunII")
+    kwargs["year"] = yearName
     kwargs["hist_fill_colors"] = hist_colors_fill
     kwargs["hist_edge_colors"] = hist_colors_edge
     kwargs["hist_labels"] = hist_labels
@@ -382,28 +647,61 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
     stack_labels = []
 
     for k, v in stack_config.items():
-        this_year2 = sum if v["year"] == "RunII" else v["year"]
-        this_tag2 = plotConfig["codes"]["tag"][v["tag"]]
-        this_process = v['process']
+        this_year = sum if v["year"] == "RunII" else v["year"]
+
         stack_labels.append(v.get('label'))
         stack_colors_fill.append(v.get('fillcolor'))
         stack_colors_edge.append(v.get('edgecolor'))
 
-        if kwargs.get("debug", False):
-            print("Drawing")
-            print(f" stack_config process={this_process},"
-                  f"tag={this_tag2}, year={this_year2}")
+        if v.get("process",None):
+            this_process = v['process']
+            tagNames.append(v["tag"])
 
-        this_hist_opts = {"process": this_process,
-                          "year": this_year2,
-                          "tag": hist.loc(this_tag2),
-                          "region": hist.loc(codes["region"][region]),
-                          varName: hist.rebin(rebin)}
-        for c in cutList:
-            this_hist_opts = this_hist_opts | {c: cutDict[c]}
+            this_tag = plotConfig["codes"]["tag"][v["tag"]]
 
-        stack_dict[k] = h[this_hist_opts]
+            if kwargs.get("debug", False):
+                print("Drawing")
+                print(f" stack_config process={this_process},"
+                      f"tag={this_tag}, year={this_year}")
 
+            this_hist_opts = {"process": this_process,
+                              "year": this_year,
+                              "tag": hist.loc(this_tag),
+                              "region": hist.loc(codes["region"][region]),
+                              varName: hist.rebin(rebin)}
+            for c in cutList:
+                this_hist_opts = this_hist_opts | {c: cutDict[c]}
+
+            stack_dict[k] = h[this_hist_opts]
+
+        elif v.get("sum",None):
+
+            hist_sum = None
+            for sum_k, sum_v in v.get("sum").items():
+
+                this_process = sum_v['process']
+                tagNames.append(sum_v["tag"])
+                this_tag = plotConfig["codes"]["tag"][sum_v["tag"]]
+
+                this_hist_opts = {"process": this_process,
+                                  "year": this_year,
+                                  "tag": hist.loc(this_tag),
+                                  "region": hist.loc(codes["region"][region]),
+                                  varName: hist.rebin(rebin)}
+                for c in cutList:
+                    this_hist_opts = this_hist_opts | {c: cutDict[c]}
+
+                this_hist = h[this_hist_opts]
+                this_hist *= sum_v.get("scalefactor", 1.0)
+                if hist_sum:
+                    hist_sum += this_hist
+                else:
+                    hist_sum = this_hist
+
+            stack_dict[k] = hist_sum
+
+        else:
+            raise Exception("Error need to config either process or sum")
     #
     # Pass colors
     #
@@ -416,14 +714,12 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
     else:
         fig = _plot(hists, stack_dict, plotConfig, **kwargs)
 
+    #
+    # Save Fig
+    #
     if kwargs.get("outputFolder", None):
-        yearName = year
-        outputPath = kwargs.get("outputFolder") + "/"
-        outputPath += "/".join([yearName, cut, tagName, region])
-
-        if not os.path.exists(outputPath):
-            os.makedirs(outputPath)
-        fig.savefig(outputPath + "/" + var.replace(".", '_') + ".pdf")
+        tagName = "fourTag" if "fourTag" in tagNames else "threeTag"
+        _savefig(fig, var, kwargs.get("outputFolder"), yearName, cut, tagName, region)
 
     return fig
 
@@ -458,62 +754,51 @@ def make2DPlot(hists, process, cutList, plotConfig, var='selJets.pt',
     #  Get the year
     #    (Got to be a better way to do this....)
     #
-    yearStr = "RunII"
-    tagName = "fourTag"
-    if len(plotConfig["hists"]):
-        year = getFromNestedDict(plotConfig["hists"], "year", "RunII")
-        tag  = getFromNestedDict(plotConfig["hists"], "tag",  "fourTag")
-    else:
-        year = getFromNestedDict(plotConfig["stack"], "year", "RunII")
-        tag  = getFromNestedDict(plotConfig["stack"], "tag",  "fourTag")
+    yearStr = get_value_nested_dict(plotConfig, "year", default="RunII")
+    year = sum if yearStr == "RunII" else yearStr
 
     #
     #  Unstacked hists
     #
-    hist_config = plotConfig["hists"]
-    # hist_labels = []
-    # hist_types = []
+    process_config = get_value_nested_dict(plotConfig, process)
 
-    year = sum if yearStr == "RunII" else yearStr
-    tag = kwargs.get("tag", "fourTag")
-    tag = plotConfig["codes"]["tag"][tag]
+    tagName = process_config.get("tag", "fourTag")
+    tag = plotConfig["codes"]["tag"][tagName]
     # labels.append(v.get("label"))
-    #     hist_types. append(v.get("histtype", "errorbar"))
+    # hist_types. append(v.get("histtype", "errorbar"))
 
-    region = sum if region in ["sum", sum] else hist.loc(codes["region"][region])
+    region_selection = sum if region in ["sum", sum] else hist.loc(codes["region"][region])
 
     if kwargs.get("debug", False):
         print(f" hist process={process}, "
               f"tag={tag}, year={year}")
 
-    hist_dict = {"process": process,  
+    hist_dict = {"process": process_config["process"],
                  "year":    year,
                  "tag":     hist.loc(tag),
-                 "region":  region,
+                 "region":  region_selection,
                  varName:   hist.rebin(rebin)}
 
     for c in cutList:
         hist_dict = hist_dict | {c: cutDict[c]}
-    print(hist_dict)
+
     _hist = h[hist_dict]
-    # hists[-1] *= v.get("scalefactor", 1.0)
 
     #
     # Add args
     #
     kwargs["year"] = yearStr
-    # kwargs["hist_labels"] = hist_labels
-    # kwargs["hist_types"] = hist_types
 
+    #
+    # Make the plot
+    #
     fig = _plot2d(_hist, plotConfig, **kwargs)
 
+    #
+    # Save Fig
+    #
     if kwargs.get("outputFolder", None):
-        yearName = year
-        outputPath = kwargs.get("outputFolder") + "/"
-        outputPath += "/".join([yearName, cut, tagName, region])
-
-        if not os.path.exists(outputPath):
-            os.makedirs(outputPath)
-        fig.savefig(outputPath + "/" + var.replace(".", '_') + ".pdf")
+        _savefig(fig, var, kwargs.get("outputFolder"),
+                 yearStr, cut, tagName, region, process)
 
     return fig
