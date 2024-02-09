@@ -177,7 +177,6 @@ if __name__ == '__main__':
 
     else:
         from dask.distributed import Client, LocalCluster
-        client = Client()
         if args.skimming:
             cluster_args = {
                 'n_workers': 2,
@@ -191,7 +190,9 @@ if __name__ == '__main__':
                 'threads_per_worker': 1,
             }
         cluster = LocalCluster(**cluster_args)
-        client = Client(cluster.scheduler.address)
+        client = Client(cluster)
+
+    client.forward_logging()
 
     executor_args = {
         'client': client,
