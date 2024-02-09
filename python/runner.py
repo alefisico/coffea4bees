@@ -1,4 +1,3 @@
-# can be modified when move to coffea2023
 import argparse
 import importlib
 import logging
@@ -11,6 +10,7 @@ import dask
 import uproot
 import yaml
 from base_class.addhash import get_git_diff, get_git_revision_hash
+# can be modified when move to coffea2023
 from base_class.dataset_tools import rucio_utils
 from coffea import processor
 from coffea.nanoevents import NanoAODSchema
