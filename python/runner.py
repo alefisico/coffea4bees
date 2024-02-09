@@ -82,6 +82,7 @@ if __name__ == '__main__':
     config_runner.setdefault( 'class_name', 'analysis' )
     config_runner.setdefault( 'condor_cores', 2 )
     config_runner.setdefault( 'condor_memory', '4GB' )
+    config_runner.setdefault( 'condor_transfer_input_files', ['analysis/', 'base_class/', 'data/', 'skimmer/'] )
 
     if 'all' in args.datasets:
         metadata['datasets'].pop("mixeddata")   # AGE: this is temporary
@@ -146,8 +147,7 @@ if __name__ == '__main__':
         from distributed import Client
         from lpcjobqueue import LPCCondorCluster
 
-        transfer_input_files = ['analysis/', 'base_class/',
-                                'data/', 'skimmer/']
+        transfer_input_files = config_runner['condor_transfer_input_files']
 
         cluster_args = {'transfer_input_files': transfer_input_files,
                         'shared_temp_directory': '/tmp',
