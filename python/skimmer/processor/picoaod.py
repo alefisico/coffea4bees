@@ -1,3 +1,4 @@
+import logging
 import re
 from abc import abstractmethod
 from concurrent.futures import Future, ProcessPoolExecutor
@@ -93,16 +94,17 @@ def integrity_check(
     output: dict[str, dict[str, dict[str, list[tuple[int, int]]]]],
     num_entries: dict[str, dict[str, int]] = None,
 ):
+    logging.info('Checking integrity of the picoAOD...')
     diff = set(fileset) - set(output)
     if diff:
-        print(f'The whole dataset is missing: {diff}')
+        logging.error(f'The whole dataset is missing: {diff}')
     for dataset in fileset:
         inputs = dict(fileset[dataset]['files'])
         outputs = output[dataset]['source']
         while len(inputs) > 0:
             file = inputs.pop()
             if file not in outputs:
-                print(f'The whole file is missing: "{file}"')
+                logging.error(f'The whole file is missing: "{file}"')
             else:
                 chunks = sorted(outputs[file], key=lambda x: x[0])
                 if num_entries is not None:
@@ -111,7 +113,8 @@ def integrity_check(
                 start = 0
                 for _start, _stop in chunks:
                     if _start != start:
-                        print(f'Missing chunk: [{start, _start}) in "{file}"')
+                        logging.error(
+                            f'Missing chunk: [{start, _start}) in "{file}"')
                     start = _stop
 
 
