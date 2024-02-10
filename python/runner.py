@@ -169,7 +169,7 @@ if __name__ == '__main__':
         logging.info("\nCluster arguments: ", cluster_args)
 
         cluster = LPCCondorCluster(**cluster_args)
-        cluster.adapt(minimum=1, maximum=200)
+        cluster.adapt(minimum=10, maximum=200)
         client = Client(cluster)
 
         logging.info('\nWaiting for at least one worker...')
@@ -246,7 +246,7 @@ if __name__ == '__main__':
         #
         if args.skimming:
             # check integrity of the output
-            integrity_check(fileset, output, metrics['entries'])
+            integrity_check(fileset, output)
             # merge output into new chunks each have `chunksize` events
             # FIXME can use a different chunksize
             output = dask.compute(
