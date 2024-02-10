@@ -99,22 +99,22 @@ def integrity_check(
     if diff:
         logging.error(f'The whole dataset is missing: {diff}')
     for dataset in fileset:
-        inputs = set(fileset[dataset]['files'])
-        outputs = output[dataset]['source']
-        while len(inputs) > 0:
-            file = inputs.pop()
+        inputs = map(EOS, fileset[dataset]['files'])
+        outputs = {EOS(k): v for k, v in output[dataset]['source'].items()}
+        ns = None if num_entries is None else {
+            EOS(k): v for k, v in num_entries[dataset].items()}
+        for file in inputs:
             if file not in outputs:
                 logging.error(f'The whole file is missing: "{file}"')
             else:
                 chunks = sorted(outputs[file], key=lambda x: x[0])
-                if num_entries is not None:
-                    n = num_entries[dataset][file]
-                    chunks.append((n, n))
+                if ns is not None:
+                    chunks.append((ns[file], ns[file]))
                 start = 0
                 for _start, _stop in chunks:
                     if _start != start:
                         logging.error(
-                            f'Missing chunk: [{start, _start}) in "{file}"')
+                            f'Missing chunk: [{start}, {_start}) in "{file}"')
                     start = _stop
 
 
