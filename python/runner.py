@@ -249,7 +249,7 @@ if __name__ == '__main__':
         #
         if args.skimming:
             # check integrity of the output
-            integrity_check(fileset, output)
+            output = integrity_check(fileset, output)
             # merge output into new chunks each have `chunksize` events
             # FIXME can use a different chunksize
             output = dask.compute(
