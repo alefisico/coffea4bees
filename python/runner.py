@@ -93,6 +93,8 @@ if __name__ == '__main__':
     config_runner.setdefault('condor_memory', '4GB')
     config_runner.setdefault('condor_transfer_input_files', [
                              'analysis/', 'base_class/', 'data/', 'skimmer/'])
+    config_runner.setdefault('min_workers', 1)
+    config_runner.setdefault('max_workers', 100)
 
     if 'all' in args.datasets:
         metadata['datasets'].pop("mixeddata")   # AGE: this is temporary
@@ -169,7 +171,8 @@ if __name__ == '__main__':
         logging.info("\nCluster arguments: ", cluster_args)
 
         cluster = LPCCondorCluster(**cluster_args)
-        cluster.adapt(minimum=10, maximum=200)
+        cluster.adapt(
+            minimum=config_runner['min_workers'], maximum=config_runner['max_workers'])
         client = Client(cluster)
 
         logging.info('\nWaiting for at least one worker...')
@@ -186,7 +189,7 @@ if __name__ == '__main__':
         else:
             cluster_args = {
                 'n_workers': 6,
-                'memory_limit': '8GB',
+                'memory_limit': config_runner['condor_memory'],
                 'threads_per_worker': 1,
             }
         cluster = LocalCluster(**cluster_args)
@@ -254,7 +257,7 @@ if __name__ == '__main__':
                     base_path=configs['config']['base_path'],
                     output=output,
                     step=configs['config']['step'],
-                    chunk_size=config_runner['picosize']))[0]
+                    chunk_size=config_runner.get('picosize', config_runner['chunksize'])))[0]
             # only keep file name for each chunk
             for dataset, chunks in output.items():
                 chunks['files'] = [str(f.path) for f in chunks['files']]
