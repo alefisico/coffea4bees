@@ -199,7 +199,8 @@ if __name__ == '__main__':
         'client': client,
         'schema': config_runner['schema'],
         'align_clusters': False,
-        'savemetrics': True}
+        'savemetrics': True,
+        'xrootdtimeout': 180}
 
     # to run with processor futures_executor ()
     # executor_args = {
@@ -251,7 +252,6 @@ if __name__ == '__main__':
             # check integrity of the output
             output = integrity_check(fileset, output)
             # merge output into new chunks each have `chunksize` events
-            # FIXME can use a different chunksize
             output = dask.compute(
                 resize(
                     base_path=configs['config']['base_path'],
@@ -268,7 +268,8 @@ if __name__ == '__main__':
             logging.info(f'\n{nEvent/elapsed:,.0f} events/s total '
                          f'({nEvent}/{elapsed})')
 
-            metadata = fetch_metadata(fileset)
+            metadata, = processor.accumulate(
+                dask.compute(fetch_metadata(fileset, dask=True)))
 
             for ikey in metadata:
                 if ikey in output:

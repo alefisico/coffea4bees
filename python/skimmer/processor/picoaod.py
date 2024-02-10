@@ -6,9 +6,10 @@ from concurrent.futures import Future, ProcessPoolExecutor
 import awkward as ak
 import uproot
 from base_class.awkward.zip import NanoAOD
+from base_class.dask.delayed import delayed
 from base_class.root import Chunk, TreeReader, TreeWriter, merge
 from base_class.system.eos import EOS, PathLike
-from coffea.processor import ProcessorABC, accumulate
+from coffea.processor import ProcessorABC
 
 _PICOAOD = 'picoAOD'
 _ROOT = '.root'
@@ -66,7 +67,8 @@ class PicoAOD(ProcessorABC):
         pass
 
 
-def _fetch_metadata(dataset: str, path: PathLike):
+@delayed
+def _fetch_metadata(dataset: str, path: PathLike, dask: bool = False):
     with uproot.open(path) as f:
         data = f['Runs'].arrays(
             ['genEventCount', 'genEventSumw', 'genEventSumw2'])
@@ -79,14 +81,24 @@ def _fetch_metadata(dataset: str, path: PathLike):
         }
 
 
-def fetch_metadata(fileset: dict[str, dict[str, list[str]]], n_process: int = None) -> dict[str, dict[str]]:
-    with ProcessPoolExecutor(max_workers=n_process) as executor:
-        tasks: list[Future] = []
+def fetch_metadata(
+        fileset: dict[str, dict[str, list[str]]],
+        n_process: int = None,
+        dask: bool = True) -> list[dict[str, dict[str]]]:
+    if not dask:
+        with ProcessPoolExecutor(max_workers=n_process) as executor:
+            tasks: list[Future] = []
+            for dataset, files in fileset.items():
+                for file in files['files']:
+                    tasks.append(executor.submit(
+                        _fetch_metadata, dataset, file, dask=dask))
+            results = [task.result() for task in tasks]
+    else:
+        results = []
         for dataset, files in fileset.items():
             for file in files['files']:
-                tasks.append(executor.submit(_fetch_metadata, dataset, file))
-        results = [task.result() for task in tasks]
-    return accumulate(results)
+                results.append(_fetch_metadata(dataset, file, dask=dask))
+    return results
 
 
 def integrity_check(
