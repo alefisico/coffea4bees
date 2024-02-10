@@ -95,6 +95,7 @@ if __name__ == '__main__':
                              'analysis/', 'base_class/', 'data/', 'skimmer/'])
     config_runner.setdefault('min_workers', 1)
     config_runner.setdefault('max_workers', 100)
+    config_runner.setdefault('dashboard_address', 10200)
 
     if 'all' in args.datasets:
         metadata['datasets'].pop("mixeddata")   # AGE: this is temporary
@@ -167,7 +168,8 @@ if __name__ == '__main__':
                         'shared_temp_directory': '/tmp',
                         'cores': config_runner['condor_cores'],
                         'memory': config_runner['condor_memory'],
-                        'ship_env': False}
+                        'ship_env': False,
+                        'scheduler_options': {'dashboard_address': config_runner['dashboard_address']}}
         logging.info("\nCluster arguments: ", cluster_args)
 
         cluster = LPCCondorCluster(**cluster_args)
@@ -185,12 +187,14 @@ if __name__ == '__main__':
                 'n_workers': 1,
                 'memory_limit': config_runner['condor_memory'],
                 'threads_per_worker': 1,
+                'dashboard_address': config_runner['dashboard_address'],
             }
         else:
             cluster_args = {
                 'n_workers': 6,
                 'memory_limit': config_runner['condor_memory'],
                 'threads_per_worker': 1,
+                'dashboard_address': config_runner['dashboard_address'],
             }
         cluster = LocalCluster(**cluster_args)
         client = Client(cluster)
@@ -268,8 +272,8 @@ if __name__ == '__main__':
             logging.info(f'\n{nEvent/elapsed:,.0f} events/s total '
                          f'({nEvent}/{elapsed})')
 
-            metadata, = processor.accumulate(
-                dask.compute(fetch_metadata(fileset, dask=True)))
+            metadata = processor.accumulate(
+                dask.compute(fetch_metadata(fileset, dask=True))[0])
 
             for ikey in metadata:
                 if ikey in output:
