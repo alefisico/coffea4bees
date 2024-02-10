@@ -38,7 +38,7 @@ def list_of_files(ifile, allowlist_sites=['T3_US_FNALLPC'], test=False, test_fil
         rucio_client = rucio_utils.get_rucio_client()
         outfiles, outsite, sites_counts = rucio_utils.get_dataset_files_replicas(
             ifile, client=rucio_client, mode="first", allowlist_sites=allowlist_sites)
-        return outfiles[:(test_files if test else -1)]
+        return outfiles[:(test_files if test else None)]
 
 
 if __name__ == '__main__':
