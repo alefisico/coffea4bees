@@ -132,6 +132,8 @@ def integrity_check(
                         logging.error(
                             f'Missing chunk: [{stop}, {_start}) in "{file}"')
                     stop = _stop
+                if start != stop:
+                    merged.append([start, stop])
                 output[dataset]['source'][str(file)] = merged
     return output
 
