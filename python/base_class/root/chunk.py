@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 from logging import Logger
 from typing import Iterable
@@ -189,6 +189,7 @@ class Chunk(metaclass=_ChunkMeta):
                     self._num_entries = tree.num_entries
                 if self._uuid is ...:
                     self._uuid = file.file.uuid
+        return self
 
     def __hash__(self):
         return hash((self.uuid, self.name))
@@ -253,7 +254,7 @@ class Chunk(metaclass=_ChunkMeta):
         return chunk
 
     @classmethod
-    def from_path(cls, *paths: tuple[str, str]):
+    def from_path(cls, *paths: tuple[str, str], n_process: int = None):
         """
         Create :class:`Chunk` from ``paths`` and fetch metadata in parallel.
 
@@ -261,6 +262,8 @@ class Chunk(metaclass=_ChunkMeta):
         ----------
         paths : tuple[tuple[str, str]
             Path to ROOT file and name of :class:`TTree`.
+        n_process : int, optional
+            Number of processes to use.
 
         Returns
         -------
@@ -268,9 +271,9 @@ class Chunk(metaclass=_ChunkMeta):
             List of chunks from ``paths``.
         """
         chunks = [Chunk(path, name) for path, name in paths]
-        with ThreadPoolExecutor(max_workers=len(chunks)) as executor:
-            executor.map(Chunk._fetch, chunks)
-        return chunks
+        with ProcessPoolExecutor(max_workers=n_process) as executor:
+            chunks = executor.map(Chunk._fetch, chunks)
+        return [*chunks]
 
     @classmethod
     def common(

@@ -500,6 +500,7 @@ class Friend:
         ----------
         confirm : bool, optional, default=True
             Confirm the deletion.
+
         """
         files = []
         for vs in self._data.values():
@@ -657,7 +658,7 @@ class Friend:
 
     def integrity(
         self,
-        logger: Logger = None
+        logger: Logger = None,
     ):
         """
         Check and report the following:
