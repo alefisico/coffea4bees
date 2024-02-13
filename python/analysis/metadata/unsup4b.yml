@@ -1,0 +1,132 @@
+runner:
+  condor_cores: 4
+  condor_memory: 8GB
+
+config:
+  JCM: 'analysis/weights/dataRunII/jetCombinatoricModel_SB_00-00-02.txt'
+
+datasets:
+  data:
+    'UL16_preVFP':
+      lumi: 19.5e3
+      trigger: 
+        - QuadJet45_TripleBTagCSV_p087 
+        - DoubleJet90_Double30_TripleBTagCSV_p087 
+      picoAOD: 
+        B: '/store/user/algomez/XX4b/20231115/data2016B/picoAOD.root'
+        C: '/store/user/algomez/XX4b/20231115/data2016C/picoAOD.root'
+        D: '/store/user/algomez/XX4b/20231115/data2016D/picoAOD.root'
+        E: '/store/user/algomez/XX4b/20231115/data2016E/picoAOD.root'
+    'UL16_postVFP':
+      lumi: 16.5e3
+      trigger: 
+        - QuadJet45_TripleBTagCSV_p087 
+        - DoubleJet90_Double30_TripleBTagCSV_p087 
+      picoAOD: 
+        F: '/store/user/algomez/XX4b/20231115/data2016F/picoAOD.root'
+        G: '/store/user/algomez/XX4b/20231115/data2016G/picoAOD.root'
+        H: '/store/user/algomez/XX4b/20231115/data2016H/picoAOD.root'
+    'UL17':
+      lumi: 36.7e3
+      trigger:
+        - PFHT300PT30_QuadPFJet_75_60_45_40_TriplePFBTagCSV_3p0
+      picoAOD: 
+#        B: '/store/user/algomez/XX4b/20231115/data2017B/picoAOD.root' # Dont think we need/want this
+        C: '/store/user/algomez/XX4b/20231115/data2017C/picoAOD.root'
+        D: '/store/user/algomez/XX4b/20231115/data2017D/picoAOD.root'
+        E: '/store/user/algomez/XX4b/20231115/data2017E/picoAOD.root'
+        F: '/store/user/algomez/XX4b/20231115/data2017F/picoAOD.root'
+    'UL18':
+      lumi: 59.8e3
+      trigger:
+        - PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepCSV_4p5
+      picoAOD: 
+        A: '/store/user/algomez/XX4b/20231115/data2018A/picoAOD.root'
+        B: '/store/user/algomez/XX4b/20231115/data2018B/picoAOD.root'
+        C: '/store/user/algomez/XX4b/20231115/data2018C/picoAOD.root'
+        D: '/store/user/algomez/XX4b/20231115/data2018D/picoAOD.root'
+
+
+  HH4b:
+    xs: 0.03105*0.5824**2 # (0.0457 2018, doesn't include BR, 0.009788 2016, does include BR...) https://twiki.cern.ch/twiki/bin/view/LHCPhysics/LHCHWGHH recommends 31.05fb*BR^2=10.53fb
+    'UL16_preVFP': 
+      nanoAOD: '/dataset/dataset/NANOAODSIM'
+      picoAOD: '/store/user/algomez/XX4b/20231115/HH4b2016/picoAOD.root'
+    'UL17': 
+      nanoAOD: '/dataset/dataset/NANOAODSIM'
+      picoAOD: '/store/user/algomez/XX4b/20231115/HH4b2017/picoAOD.root'
+    'UL18': 
+      nanoAOD: '/dataset/dataset/NANOAODSIM'
+      picoAOD: '/store/user/algomez/XX4b/20231115/HH4b2018/picoAOD.root'
+
+  TTToHadronic:
+    xs: 377.9607353256 #313.9 from McM. NNLO tt xs = 831.76, W hadronic BR = 0.6741 => NNLO = 831.76*0.6741^2 = 377.9607353256
+    'UL16_postVFP': 
+      nanoAOD: '/dataset/dataset/NANOAODSIM'
+      picoAOD: '/store/user/algomez/XX4b/20231115/TTToHadronic2016_postVFP/picoAOD.root'
+    'UL16_preVFP': 
+      nanoAOD: '/dataset/dataset/NANOAODSIM'
+      picoAOD: '/store/user/algomez/XX4b/20231115/TTToHadronic2016_preVFP/picoAOD.root'
+    'UL17': 
+      nanoAOD: '/dataset/dataset/NANOAODSIM'
+      picoAOD: '/store/user/algomez/XX4b/20231115/TTToHadronic2017/picoAOD.root'
+    'UL18': 
+      nanoAOD: '/dataset/dataset/NANOAODSIM'
+      picoAOD: '/store/user/algomez/XX4b/20231115/TTToHadronic2018/picoAOD.root'
+
+  TTToSemiLeptonic:
+    xs: 365.7826460496 #300.9 from McM. NNLO = 831.76*2*(1-0.6741)*0.6747 = 365.7826460496
+    'UL16_postVFP': 
+      nanoAOD: '/dataset/dataset/NANOAODSIM'
+      picoAOD: '/store/user/algomez/XX4b/20231115/TTToSemiLeptonic2016_postVFP/picoAOD.root'
+    'UL16_preVFP': 
+      nanoAOD: '/dataset/dataset/NANOAODSIM'
+      picoAOD: '/store/user/algomez/XX4b/20231115/TTToSemiLeptonic2016_preVFP/picoAOD.root'
+    'UL17': 
+      nanoAOD: '/dataset/dataset/NANOAODSIM'
+      picoAOD: '/store/user/algomez/XX4b/20231115/TTToSemiLeptonic2017/picoAOD.root'
+    'UL18': 
+      nanoAOD: '/dataset/dataset/NANOAODSIM'
+      picoAOD: '/store/user/algomez/XX4b/20231115/TTToSemiLeptonic2018/picoAOD.root'
+
+  TTTo2L2Nu:
+    xs: 88.3419033256 #72.1 from McM. NNLO = 831.76*(1-0.6741)^2 = 88.3419033256
+    'UL16_postVFP': 
+      nanoAOD: '/dataset/dataset/NANOAODSIM'
+      picoAOD: '/store/user/algomez/XX4b/20231115/TTTo2L2Nu2016_postVFP/picoAOD.root'
+    'UL16_preVFP': 
+      nanoAOD: '/dataset/dataset/NANOAODSIM'
+      picoAOD: '/store/user/algomez/XX4b/20231115/TTTo2L2Nu2016_preVFP/picoAOD.root'
+    'UL17': 
+      nanoAOD: '/dataset/dataset/NANOAODSIM'
+      picoAOD: '/store/user/algomez/XX4b/20231115/TTTo2L2Nu2017/picoAOD.root'
+    'UL18': 
+      nanoAOD: '/dataset/dataset/NANOAODSIM'
+      picoAOD: '/store/user/algomez/XX4b/20231115/TTTo2L2Nu2018/picoAOD.root'
+
+  mixeddata:
+    'UL16_preVFP':
+      picoAOD: '/store/user/jda102/condor/ZH4b/ULTrig/mixed2016_3bDvTMix4bDvT_v0/picoAOD_3bDvTMix4bDvT_4b_wJCM_v0_newSBDef.root'
+    'UL17':
+      picoAOD: '/store/user/jda102/condor/ZH4b/ULTrig/mixed2017_3bDvTMix4bDvT_v0/picoAOD_3bDvTMix4bDvT_4b_wJCM_v0_newSBDef.root'
+    'UL18':
+      picoAOD: '/store/user/jda102/condor/ZH4b/ULTrig/mixed2018_3bDvTMix4bDvT_v0/picoAOD_3bDvTMix4bDvT_4b_wJCM_v0_newSBDef.root'
+
+  data3b:
+    xs: 1.0
+    'UL16':
+      picoAOD: '/store/user/jda102/condor/ZH4b/ULTrig/data2016_3b/picoAOD_3b_wJCM_newSBDef.root'
+    'UL17':
+      picoAOD: '/store/user/jda102/condor/ZH4b/ULTrig/data2017_3b/picoAOD_3b_wJCM_newSBDef.root'
+    'UL18':
+      picoAOD: '/store/user/jda102/condor/ZH4b/ULTrig/data2018_3b/picoAOD_3b_wJCM_newSBDef.root'
+
+######## Current files for 2018
+
+# "root://cmseos.fnal.gov//store/user/smurthy/condor/unsupervised4b/randPair/files/mixed2018_picoAOD_3bDvTMix4bDvT_4b_wJCM_v0_newSBDef.root"
+# ""root://cmseos.fnal.gov//store/user/smurthy/condor/unsupervised4b/randPair/wDtoMwJMC/data2018_picoAOD_3b_wJCM_newSBDef_wDtoM.root"
+# "data2018_picoAOD_3b_wJCM_newSBDef_w3to4_hist.root"
+# "root://cmseos.fnal.gov//store/user/smurthy/condor/unsupervised4b/randPair/files/data2018_picoAOD_3b_wJCM_newSBDef.root"
+# "root://cmseos.fnal.gov//store/user/smurthy/condor/unsupervised4b/randPair/files/TTToSemiLeptonic2018_4b_noPSData_wTrigW_picoAOD_4b_wJCM_newSBDef.root"
+
+
