@@ -65,7 +65,7 @@ analysis-test-job:
   stage: test   
   dependencies:
     - voms_proxy
-  image: ${CI_REGISTRY_IMAGE}:latest
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -80,7 +80,7 @@ analysis-test-job:
 #  stage: test   
 #  dependencies:
 #    - voms_proxy
-#  image: ${CI_REGISTRY_IMAGE}:latest
+#  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
 #  tags:
 #    - k8s-cvmfs
 #  script:
@@ -97,7 +97,7 @@ analysis-plot-job:
   stage: plot 
   needs: 
     - analysis-test-job
-  image: ${CI_REGISTRY_IMAGE}:latest 
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -111,7 +111,7 @@ analysis-cutflow-job:
   stage: plot 
   needs: 
     - analysis-test-job
-  image: ${CI_REGISTRY_IMAGE}:latest
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -121,7 +121,7 @@ analysis-iplot-job:
   stage: plot 
   needs: 
     - analysis-test-job
-  image: ${CI_REGISTRY_IMAGE}:latest
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -130,7 +130,7 @@ analysis-iplot-job:
 
 baseclass-test-job:   
   stage: build
-  image: ${CI_REGISTRY_IMAGE}:latest
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -140,7 +140,7 @@ baseclass-test-job:
 #  stage: test   
 #  dependencies:
 #    - voms_proxy
-#  image: ${CI_REGISTRY_IMAGE}:latest
+#  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
 #  tags:
 #    - k8s-cvmfs
 #  script:
