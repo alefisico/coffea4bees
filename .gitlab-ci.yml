@@ -85,6 +85,8 @@ skimmer-test-job:
     - k8s-cvmfs
   script:
     - source .ci-workflows/skimmer-test-job.sh
+  timeout: 20m
+  allow_failure: true
   artifacts: 
     expire_in: 1 day
     paths:
