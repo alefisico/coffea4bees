@@ -19,16 +19,8 @@ class iPlotTestCase(unittest.TestCase):
     def setUpClass(self):
         self.inputFile = wrapper.args["inputFile"]
 
-    def test_singleFile(self):
 
-        metadata = "analysis/metadata/plotsAll.yml"
-        cfg.plotConfig = load_config(metadata)
-
-        input_files = [self.inputFile]
-        cfg.hists = load_hists(input_files)
-
-        cfg.axisLabels, cfg.cutList = read_axes_and_cuts(cfg.hists,
-                                                         cfg.plotConfig)
+    def do_plots(self):
 
         args    = {"var": "v4j.*", "region": "SR", "cut": "passPreSel"}
         doRatio = {"doRatio": 1}
@@ -36,7 +28,7 @@ class iPlotTestCase(unittest.TestCase):
         logy    = {"yscale": "log"}
         rlim    = {"rlim": [0, 2]}
         rebin   = {"rebin": 4}
-
+        
         print(f"plot with {args}")
         plot(**args)
         args["var"] = "v4j.mass"
@@ -66,17 +58,17 @@ class iPlotTestCase(unittest.TestCase):
         plot(**(args | doRatio | norm | rlim | rebin))
 
         manyCuts = {"cut": ["passPreSel", "failSvB", "passSvB"],
-                    "process": "Multijet"}
+                    "process": "data"}
         print(f"plot with {args | doRatio | norm | rlim | manyCuts}")
         plot(**(args | doRatio | norm | rlim | manyCuts))
 
         manyRegions = {"cut": ["passPreSel", "failSvB", "passSvB"],
-                       "process": "Multijet"}
+                       "process": "data"}
         print(f"plot with {args | doRatio | norm | rlim | manyRegions}")
         plot(**(args | doRatio | norm | rlim | manyRegions))
 
         args2d = {"var": "quadJet_min_dr.close_vs_other_m", "region": "SR",
-                  "cut": "passPreSel", "process": "Multijet"}
+                  "cut": "passPreSel", "process": "data"}
         full = {"full": True}
         print(f"plot with {args2d}")
         plot2d(**args2d)
@@ -84,6 +76,17 @@ class iPlotTestCase(unittest.TestCase):
         print(f"plot with {args2d | full}")
         plot2d(**(args2d | full))
 
+        manyProcs = {"cut": "passPreSel",
+                     "process": ["data","HH4b","TTToHadronic"]}
+        print(f"plot with {args | doRatio | norm | rlim | manyProcs}")
+        plot(**(args | doRatio | norm | rlim | manyProcs))
+
+        manyVars = {"cut": "passPreSel",
+                    "var": ["canJet0.pt","canJet1.pt","canJet2.pt","canJet3.pt"],
+                    "process": "data"}
+        print(f"plot with {args | doRatio | norm | rlim | manyVars}")
+        plot(**(args | doRatio | norm | rlim | manyVars))
+        
         args["var"] = "v4j.mass"
         invalid_region = {"region": "InvalidRegion"}
         print(f"plot with {args | invalid_region}")
@@ -93,6 +96,22 @@ class iPlotTestCase(unittest.TestCase):
         print(f"plot with {args | invalid_cut}")
         self.assertRaises(AttributeError, plot, **(args | invalid_cut))
 
+        
+    def test_singleFile(self):
+
+        metadata = "analysis/metadata/plotsAll.yml"
+        cfg.plotConfig = load_config(metadata)
+
+        input_files = [self.inputFile]
+        cfg.hists = load_hists(input_files)
+
+        cfg.axisLabels, cfg.cutList = read_axes_and_cuts(cfg.hists,
+                                                         cfg.plotConfig)
+
+        self.do_plots()
+
+
+        
     def test_multipleFiles(self):
 
         metadata = "analysis/metadata/plotsAll.yml"
@@ -135,6 +154,22 @@ class iPlotTestCase(unittest.TestCase):
         print(f"plot with {args | doRatio | norm | rlim}")
         plot(**(args | doRatio | norm | rlim))
 
+
+
+    def test_NoFvT(self):
+
+        metadata = "analysis/metadata/plotsAllNoFvT.yml"
+        cfg.plotConfig = load_config(metadata)
+
+        input_files = [self.inputFile]
+        cfg.hists = load_hists(input_files)
+
+        cfg.axisLabels, cfg.cutList = read_axes_and_cuts(cfg.hists,
+                                                         cfg.plotConfig)
+
+        self.do_plots()
+
+        
 
 if __name__ == '__main__':
     wrapper.parse_args()

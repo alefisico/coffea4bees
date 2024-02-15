@@ -63,6 +63,16 @@ def examples():
         'plot("v4j.mass", region="SR", cut=["passPreSel","passSvB","failSvB"], process="Multijet", doRatio=1, rebin=4, norm=1)\n'
         'plot("v4j.mass", region="SR", cut=["passPreSel","passSvB","failSvB"], process="TTToHadronic", doRatio=1, rebin=4, norm=1)\n\n'
 
+        '# Can overlay different variables \n'
+        'plot(["canJet0.pt","canJet1.pt"], region="SR",cut="passPreSel",doRatio=1,process="Multijet")'
+        'plot(["canJet0.pt","canJet1.pt","canJet2.pt","canJet3.pt"], region="SR", cut="passPreSel",doRatio=1,process="Multijet")'
+
+        '# Can plot a single process  \n'
+        'plot("v4j.mass", region="SR", cut="passPreSel",process="data")'
+
+        '# Can overlay processes  \n'
+        'plot("v4j.mass", region="SR", cut="passPreSel",norm=1,process=["data","TTTo2L2Nu","HH4b","Multijet"],doRatio=1)'
+
         '# Plot 2d hists \n'
         'plot2d("quadJet_min_dr.close_vs_other_m",process="Multijet",region="SR",cut="failSvB")\n'
         'plot2d("quadJet_min_dr.close_vs_other_m",process="Multijet",region="SR",cut="failSvB",full=True)\n\n'
@@ -89,7 +99,7 @@ def plot(var='selJets.pt', *, cut="passPreSel", region="SR", **kwargs):
     if kwargs.get("debug", False):
         print(f'kwargs = {kwargs}')
 
-    if var.find("*") != -1:
+    if type(var) is not list and var.find("*") != -1:
         ls(match=var.replace("*", ""))
         return
 
@@ -149,7 +159,7 @@ def parse_args():
     
     parser = argparse.ArgumentParser(description='uproot_plots')
 
-    parser.add_argument('-i', '--inputFile', dest="inputFile",
+    parser.add_argument(dest="inputFile",
                         default='hists.pkl', nargs='+',
                         help='Input File. Default: hists.pkl')
 
