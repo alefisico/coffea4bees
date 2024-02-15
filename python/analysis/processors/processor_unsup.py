@@ -45,7 +45,7 @@ from base_class.hist import H, Template
 
 
 class analysis(processor.ProcessorABC):
-    def __init__(self, JCM='', threeTag = True, corrections_metadata='analysis/metadata/corrections.yml'):
+    def __init__(self, JCM='', threeTag = True, corrections_metadata='analysis/metadata/corrections.yml', SR = '4'):
         logging.debug('\nInitialize Analysis Processor')
         self.cutFlowCuts = ["all", "passHLT", "passNoiseFilter", "passJetMult", "passJetMult_btagSF", "passPreSel"]
         self.histCuts = ['passPreSel']
@@ -53,6 +53,11 @@ class analysis(processor.ProcessorABC):
         self.JCM = jetCombinatoricModel(JCM)
         self.btagVar = btagVariations(systematics=True)  #### AGE: these two need to be review later
         self.corrections_metadata = yaml.safe_load(open(corrections_metadata, 'r'))
+        self.m4jBinEdges = np.array([[0, 361], [361, 425], [425, 479], [479, 533], [533, 591], [591, 658], [658, 741], [741, 854], [854, 1044], [1044, 1800]])
+        self.SR = int(SR)
+        self.m4j_SR = self.m4jBinEdges[self.SR]
+        self.m4j_lowSB = self.m4jBinEdges[int(self.SR-1)]
+        self.m4j_highSB = self.m4jBinEdges[int(self.SR+1)]
 
     def process(self, event):
         tstart = time.time()
@@ -204,7 +209,7 @@ class analysis(processor.ProcessorABC):
         selev['canJet3'] = canJet[:, 3]
         selev['v4j'] = canJet.sum(axis=1)
         selev['m4j'] = selev.v4j.mass
-        
+
         notCanJet = selev.Jet[notCanJet_idx]
         notCanJet = notCanJet[notCanJet.selected_loose]
         notCanJet = notCanJet[ak.argsort(notCanJet.pt, axis=1, ascending=False)]
@@ -213,6 +218,10 @@ class analysis(processor.ProcessorABC):
         selev['notCanJet_coffea'] = notCanJet
         selev['nNotCanJet'] = ak.num(selev.notCanJet_coffea)
 
+        selev['passSRSBm4j'] = (self.m4j_lowSB[0] <= selev.m4j) & (selev.m4j < self.m4j_highSB[1])
+        selev = selev[selev.passSRSBm4j]
+        selev['passSRm4j'] = (self.m4j_SR[0] <= selev.m4j) & (selev.m4j < self.m4j_SR[1])
+        selev['passSBm4j'] = ((self.m4j_lowSB[0] <= selev.m4j) & (selev.m4j < self.m4j_lowSB[1])) | ((self.m4j_highSB[0] <= selev.m4j) & (selev.m4j < self.m4j_highSB[1]))
     
         ### Build diJets, indexed by diJet[event,pairing,0/1]
         canJet = selev['canJet']
@@ -229,6 +238,7 @@ class analysis(processor.ProcessorABC):
         diJetDr = diJet[ak.argsort(diJet.dr, axis=2, ascending=True)]
         # # Now indexed by diJet[event,pairing,lead/subl st]
 
+        #### Do I want this???
         # Compute diJetMass cut with independent min/max for lead/subl
         minDiJetMass = np.array([[[ 0,  0]]])
         maxDiJetMass = np.array([[[1000, 1000]]])

@@ -4,6 +4,7 @@ runner:
 
 config:
   JCM: 'analysis/weights/dataRunII/jetCombinatoricModel_SB_00-00-02.txt'
+  SR: '4'
 
 datasets:
   data:
@@ -112,14 +113,20 @@ datasets:
     'UL18':
       picoAOD: '/store/user/jda102/condor/ZH4b/ULTrig/mixed2018_3bDvTMix4bDvT_v0/picoAOD_3bDvTMix4bDvT_4b_wJCM_v0_newSBDef.root'
 
-  data3b:
+  pico3bdata:
     xs: 1.0
     'UL16':
-      picoAOD: '/store/user/jda102/condor/ZH4b/ULTrig/data2016_3b/picoAOD_3b_wJCM_newSBDef.root'
+      picoAOD: 
+        files: 
+          - 'root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig/data2016_3b/picoAOD_3b_wJCM_newSBDef.root'
     'UL17':
-      picoAOD: '/store/user/jda102/condor/ZH4b/ULTrig/data2017_3b/picoAOD_3b_wJCM_newSBDef.root'
+      picoAOD: 
+        files: 
+          - 'root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig/data2017_3b/picoAOD_3b_wJCM_newSBDef.root'
     'UL18':
-      picoAOD: '/store/user/jda102/condor/ZH4b/ULTrig/data2018_3b/picoAOD_3b_wJCM_newSBDef.root'
+      picoAOD: 
+        files:
+          - 'root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig/data2018_3b/picoAOD_3b_wJCM_newSBDef.root'
 
 ######## Current files for 2018
 
