@@ -28,7 +28,7 @@ python runner.py --help
 For example, to run a processor you can do:
 ```
 #  (inside /coffea4bees/python/)
-python runner.py -s -p skimmer/processor/skimmer_4b.py -m skimmer/metadata/HH4b.yml -y UL18 -d TTTo2L2Nu -t
+python runner.py -s -p skimmer/processor/skimmer_4b.py -c skimmer/metadata/HH4b.yml -y UL18 -d TTTo2L2Nu -t
 ```
 
 The output file of this process will be located under `python/skimmer/test/`.

@@ -33,7 +33,7 @@ python runner.py --help
 For example, to run a processor you can do:
 ```
 #  (inside /coffea4bees/python/)
-python runner.py -t -o test.coffea -d data TTToHadronic TTToSemiLeptonic TTTo2L2Nu  HH4b  -p analysis/processors/processor_example.py -y UL18  -op analysis/hists/ -m analysis/metadata/example.yml
+python runner.py -t -o test.coffea -d data TTToHadronic TTToSemiLeptonic TTTo2L2Nu  HH4b  -p analysis/processors/processor_example.py -y UL18  -op analysis/hists/ -c analysis/metadata/example.yml
 ```
 
 The output file of this process will be `test.coffea` (a coffea output file), which contains many histograms and cutflows. 

@@ -72,7 +72,7 @@ If you did this step correctly, then you can check in your pipelines and see tha
 
 This packages uses its own container. It is based on `coffeateam/coffea-dask:latest` including some additional python packages. This container is created automatically in the gitlab CI step **IF** the name of the branch (and the merging branch in the case of a pull request to the master) starts with `container_`. Additionally, one can take a look at the file [.dockerfiles/Dockerfile_analysis](.dockerfiles/Dockerfile_analysis) which is the one used to create the container.
 
-### Python sytle tips:
+## Python sytle tips:
 
 PEP8
 
