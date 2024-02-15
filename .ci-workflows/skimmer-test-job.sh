@@ -5,8 +5,8 @@ voms-proxy-info
 echo "############### Moving to python folder"
 cd python/
 echo "############### Changing metadata"
-sed "s/#max/max/" skimmer/metadata/HH4b.yml > skimmer/metadata/tmp.yml
-sed "s/#test/test/" skimmer/metadata/HH4b.yml > skimmer/metadata/tmp.yml
+sed "s/\#max.*/maxchunks: 5/" skimmer/metadata/HH4b.yml > skimmer/metadata/tmp.yml
+sed "s/\#test.*/test_files: 1/" skimmer/metadata/HH4b.yml > skimmer/metadata/tmp.yml
 sed "s/2024_.*/tmp\//" skimmer/metadata/HH4b.yml > skimmer/metadata/tmp.yml
 cat skimmer/metadata/tmp.yml
 echo "############### Running test processor"
