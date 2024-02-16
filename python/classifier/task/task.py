@@ -5,7 +5,7 @@ import importlib
 import os
 import sys
 from abc import ABC, abstractmethod
-from collections import deque
+from collections import ChainMap, deque
 from copy import deepcopy
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -27,21 +27,25 @@ class ArgParser(argparse.ArgumentParser):
 
     def remove_argument(self, *name_or_flags: str):
         self.add_argument(
-            *name_or_flags, nargs=argparse.SUPPRESS, help=argparse.SUPPRESS, dest='None')
+            *name_or_flags, nargs=argparse.SUPPRESS, help=argparse.SUPPRESS, default=argparse.SUPPRESS)
 
 
 class Task(ABC):
     argparser: ArgParser = NotImplemented
+    defaults: dict[str] = NotImplemented
 
     @classmethod
     def __mod_name__(cls):
         return '.'.join(f'{cls.__module__}.{cls.__name__}'.split('.')[3:])
 
     def __init_subclass__(cls):
-        parents, kwargs = [], {}
+        defaults, parents, kwargs = [], [], {}
         for base in cls.__bases__:
-            if issubclass(base, Task) and base is not Task:
-                parents.append(deepcopy(base.argparser))
+            if issubclass(base, Task):
+                if base.argparser is not NotImplemented:
+                    parents.append(deepcopy(base.argparser))
+                if base.defaults is not NotImplemented:
+                    defaults.append(base.defaults)
         if 'argparser' in vars(cls):
             parents.append(cls.argparser)
             kwargs['prog'] = cls.argparser.prog or cls.__mod_name__()
@@ -49,10 +53,19 @@ class Task(ABC):
                 kwargs[k] = getattr(cls.argparser, k, None)
         else:
             kwargs['prog'] = cls.__mod_name__()
+        if 'defaults' in vars(cls):
+            defaults.append(cls.defaults)
         cls.argparser = ArgParser(**kwargs, parents=parents)
+        cls.defaults = (
+            NotImplemented if len(defaults) == 0 else
+            dict(ChainMap(*defaults[::-1])))
 
     def parse(self, args: list[str]):
         self.opts, _ = self.argparser.parse_known_args(args)
+        if self.defaults is not NotImplemented:
+            for k, v in self.defaults.items():
+                if not hasattr(self.opts, k):
+                    setattr(self.opts, k, v)
         return self
 
     @classmethod
