@@ -2,14 +2,20 @@ from __future__ import annotations
 
 import argparse
 import importlib
+import os
 import sys
 from abc import ABC, abstractmethod
 from collections import deque
 from copy import deepcopy
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from types import ModuleType
 
 _CLASSIFIER = 'classifier'
 _CONFIG = 'config'
+_MAIN = 'main'
 
 
 class ArgParser(argparse.ArgumentParser):
@@ -64,7 +70,9 @@ class _Main(Task):
 
 
 class Parser:
-    _tasks = ['train', 'evaluate', 'help']
+    _tasks = list(map(lambda x: x.removesuffix('.py'),
+                  filter(lambda x: x.endswith('.py'),
+                         os.listdir(Path(__file__).parent/f'../{_CONFIG}/{_MAIN}'))))
     _keys = ['dataset', 'model']
     _preserved = [f'--{k}' for k in _keys]
 
@@ -81,7 +89,7 @@ class Parser:
         return '.'.join(mods[:-1]), mods[-1]
 
     @classmethod
-    def _fetch_module(cls, module: str, key: str):
+    def _fetch_module(cls, module: str, key: str) -> tuple[ModuleType, type[Task]]:
         modname, clsname = cls._fetch_module_name(module, key)
         _mod, _cls = None, None
         try:
@@ -128,18 +136,20 @@ class Parser:
             raise ValueError(
                 f'The first argument must be one of {self._tasks}, got "{arg}"')
         else:
-            self.args['main'] = arg, self._fetch_subargs(args)
+            self.args[_MAIN] = arg, self._fetch_subargs(args)
         while len(args) > 0:
             cat = args.popleft().removeprefix('--')
             mod = args.popleft()
             opts = self._fetch_subargs(args)
             self.args[cat].append((mod, opts))
 
-        self.main: _Main = getattr(importlib.import_module(
-            f'._{self.args["main"][0]}', __package__), 'Task')()
+        _, cls = self._fetch_module(f'{self.args[_MAIN][0]}.Main', _MAIN)
+        if cls is None:
+            raise AttributeError(f'Task "{self.args[_MAIN][0]}" not found')
+        self.main: _Main = cls()
 
     def run(self):
-        self.main.parse(self.args['main'][1])
-        if self.args['main'][0] != 'help':
+        self.main.parse(self.args[_MAIN][1])
+        if self.args[_MAIN][0] != 'help':
             self._fetch_all()
         self.main.run(self)

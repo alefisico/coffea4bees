@@ -1,13 +1,11 @@
-import importlib
 import inspect
 import os
 import pkgutil
 from pathlib import Path
 from textwrap import indent
 
+from classifier.task import task as _task
 from rich import print
-
-from . import task as _task
 
 _INDENT = '  '
 
@@ -21,12 +19,13 @@ def walk_packages(base):
             yield '.'.join(parts + (mod.name,))
 
 
-class Task(_task._Main):
+class Main(_task._Main):
+    _keys = ' '.join(f'--{k}' for k in _task.Parser._keys)
     argparser = _task.ArgParser(prog='help')
     argparser.add_argument(
-        '--sub', action='store_true', default=False, help=f'print help of {_task.Parser._keys}')
+        '--selected', action='store_true', default=False, help=f'print help of selected [blue]{_keys}[/blue]')
     argparser.add_argument(
-        '--mods', action='store_true', default=False, help=f'list all available modules in {_task.Parser._keys})')
+        '--all', action='store_true', default=False, help=f'list all available modules for [blue]{_keys}[/blue]')
 
     @classmethod
     def _print_help(cls, task: _task.Task, depth: int = 1):
@@ -39,20 +38,23 @@ class Task(_task._Main):
         main = parser.args['main']
         print('[orange3]\[Usage][/orange3]')
         print(' '.join([
-            f'{parser.entrypoint} [blue]\[{"|".join(parser._tasks)}][/blue] [yellow]\[args ...][/yellow]',
-            *(f'[blue]{k}[/blue] [green]\[module.class][/green] [yellow]\[args ...][/yellow]' for k in parser._preserved)]))
+            f'{parser.entrypoint} [blue]task[/blue] [yellow]\[args ...][/yellow]',
+            *(f'[blue]{k}[/blue] [green]module.class[/green] [yellow]\[args ...][/yellow]' for k in parser._preserved)]))
         print(indent(
-            f'[green]\[module.class][/green] = [purple]from[/purple] [green]{_task._CLASSIFIER}.{_task._CONFIG}.\[{"|".join(parser._keys)}].module[/green] [purple]import[/purple] [green]class[/green]', _INDENT))
-        print('\n[orange3]\[Options][orange3]')
-        print(f'[yellow]{" ".join(main[1])}[/yellow]')
+            f'[blue]task[/blue] = [blue]{"|".join(parser._tasks)}[/blue]', _INDENT))
+        print(indent(
+            f'[green]module.class[/green] = [purple]from[/purple] [green]{_task._CLASSIFIER}.{_task._CONFIG}.\[{"|".join(parser._keys)}].module[/green] [purple]import[/purple] [green]class[/green]', _INDENT))
+        print('\n[orange3]\[Tasks][orange3]')
         print(
             f'[blue]help[/blue]')
         self._print_help(self)
         for task in parser._tasks:
             if task != 'help':
                 print(f'[blue]{task}[/blue]')
-                mod = importlib.import_module(f'._{task}', __package__)
-                self._print_help(mod.Task)
+                _, cls = parser._fetch_module(f'{task}.Main', _task._MAIN)
+                self._print_help(cls)
+        print('\n[orange3]\[Options][orange3]')
+        print(f'[blue]task[/blue] [yellow]{" ".join(main[1])}[/yellow]')
         for cat in parser._keys:
             for imp, opts in parser.args[cat]:
                 print(
@@ -70,9 +72,9 @@ class Task(_task._Main):
                         print(
                             f'[red]Class "{clsname}" is not a subclass of Task[/red]')
                     else:
-                        if self.opts.sub:
+                        if self.opts.selected:
                             self._print_help(cls)
-        if self.opts.mods:
+        if self.opts.all:
             print('\n[orange3]\[Modules][/orange3]')
             for cat in parser._keys:
                 print(f'[blue]--{cat}[/blue]')
