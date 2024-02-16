@@ -1,14 +1,7 @@
+# TODO check
 import numpy as np  # TODO move this inside
 
-from dataclasses import dataclass
-
-__all__ = ['Constant', 'Setting']
-
-
-@dataclass  # TODO
-class Address:
-    address: tuple[str, int]
-    pipe: str
+__all__ = ['Constant']
 
 
 class Constant:
@@ -24,15 +17,3 @@ class Constant:
     unscaled_weight = 'unscaled_weight'
 
     authkey_size = 512
-
-
-class Setting:
-    debug: bool = True
-
-    console: bool = True
-    dashboard: bool = True
-
-    use_cuda: bool = True
-
-    monitor_address: tuple[str, int] = ('localhost', 6000)
-    monitor_pipe: str = R'\\.\pipe\monitor_listener'
