@@ -226,12 +226,12 @@ class analysis(processor.ProcessorABC):
         selev['m4j'] = selev.v4j.mass
 
         ### Compute Regions: SR, SB
-        selev['passSR'] = (self.m4j_SR[0] <= selev.m4j) & (selev.m4j < self.m4j_SR[1])
-        selev['passSB_low'] = (self.m4j_lowSB[0] <= selev.m4j) & (selev.m4j < self.m4j_lowSB[1])
-        selev['passSB_high'] = (self.m4j_highSB[0] <= selev.m4j) & (selev.m4j < self.m4j_highSB[1])
-        selev['passSB'] = selev.passSB_low & selev.passSB_high
-        selev['passSRSB'] = selev.passSR & selev.passSB
-        selev['passNotSR'] = ~selev.passSR
+        selev['SR'] = (self.m4j_SR[0] <= selev.m4j) & (selev.m4j < self.m4j_SR[1])
+        selev['SB_low'] = (self.m4j_lowSB[0] <= selev.m4j) & (selev.m4j < self.m4j_lowSB[1])
+        selev['SB_high'] = (self.m4j_highSB[0] <= selev.m4j) & (selev.m4j < self.m4j_highSB[1])
+        selev['SB'] = selev.SB_low & selev.SB_high
+        selev['SRSB'] = selev.SR & selev.SB
+        selev['notSR'] = ~selev.SR
 
         notCanJet = selev.Jet[notCanJet_idx]
         notCanJet = notCanJet[notCanJet.selected_loose]
@@ -288,10 +288,7 @@ class analysis(processor.ProcessorABC):
         selev['leadStM_selected'] = selev.quadJet_selected.lead.mass
         selev['sublStM_selected'] = selev.quadJet_selected.subl.mass
 
-        # selev['region'] = selev['quadJet_selected'].SR * 0b10 + selev['quadJet_selected'].SB * 0b01
-        # selev['passSvB'] = (selev['SvB_MA'].ps > 0.80)
-        # selev['failSvB'] = (selev['SvB_MA'].ps < 0.05)        
-
+        selev['region'] = selev.SR*0b01 + selev.SB*0b10 + selev.SRSB*0b11 + selev.SB_low*0b100 + selev.SB_high*0b101 + selev.notSR*0b110
 
         ###  Build the top Candiates
         ### sort the jets by btagging
@@ -319,6 +316,7 @@ class analysis(processor.ProcessorABC):
         hist = Collection(process = [processName],
                           year    = [year],
                           tag     = [3, 4, 0],    # 3 / 4/ Other
+                          region  = [2, 1, 3, 4, 5, 6, 0],    # SR / SB / Other
                           **dict((s, ...) for s in self.histCuts))
 
         fill += hist.add('nPVs',     (101, -0.5, 100.5, ('PV.npvs',     'Number of Primary Vertices')))
