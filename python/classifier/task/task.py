@@ -18,6 +18,10 @@ _CONFIG = 'config'
 _MAIN = 'main'
 
 
+def _is_private(name: str):
+    return name.startswith('_')
+
+
 class ArgParser(argparse.ArgumentParser):
     def __init__(self, **kwargs):
         kwargs['prog'] = kwargs.get('prog', None) or ''
@@ -84,7 +88,7 @@ class _Main(Task):
 
 class Parser:
     _tasks = list(map(lambda x: x.removesuffix('.py'),
-                  filter(lambda x: x.endswith('.py'),
+                  filter(lambda x: x.endswith('.py') and not _is_private(x),
                          os.listdir(Path(__file__).parent/f'../{_CONFIG}/{_MAIN}'))))
     _keys = ['dataset', 'model']
     _preserved = [f'--{k}' for k in _keys]
