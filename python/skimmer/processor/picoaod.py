@@ -70,15 +70,23 @@ class PicoAOD(ProcessorABC):
 @delayed
 def _fetch_metadata(dataset: str, path: PathLike, dask: bool = False):
     with uproot.open(path) as f:
-        data = f['Runs'].arrays(
-            ['genEventCount', 'genEventSumw', 'genEventSumw2'])
-        return {
-            dataset: {
-                'count': float(ak.sum(data['genEventCount'])),
-                'sumw': float(ak.sum(data['genEventSumw'])),
-                'sumw2': float(ak.sum(data['genEventSumw2'])),
+        if 'genEventCount' in f['Runs'].keys():
+            data = f['Runs'].arrays(
+                ['genEventCount', 'genEventSumw', 'genEventSumw2'])
+            return {
+                dataset: {
+                    'count': float(ak.sum(data['genEventCount'])),
+                    'sumw': float(ak.sum(data['genEventSumw'])),
+                    'sumw2': float(ak.sum(data['genEventSumw2'])),
+                }
             }
-        }
+        else:
+            data = f['Events'].arrays(['event'])
+            return {
+                dataset: {
+                    'count' : float(ak.num(data['event'], axis=0))
+                }
+            }
 
 
 def fetch_metadata(
