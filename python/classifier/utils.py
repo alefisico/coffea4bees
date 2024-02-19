@@ -1,5 +1,4 @@
 from types import ModuleType
-from typing import Callable, TypeVar
 
 from packaging import version
 
@@ -15,10 +14,3 @@ def version_check(pkg: ModuleType, upper: str = None, lower: str = None):
         if current < lower:
             return False
     return True
-
-
-_ResultT = TypeVar('_ResultT')
-
-
-def call(func: Callable[[], _ResultT]) -> _ResultT:
-    return func()

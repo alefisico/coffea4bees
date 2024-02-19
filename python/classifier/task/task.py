@@ -27,6 +27,7 @@ class ArgParser(argparse.ArgumentParser):
         kwargs['prog'] = kwargs.get('prog', None) or ''
         kwargs['add_help'] = False
         kwargs['conflict_handler'] = 'resolve'
+        kwargs['formatter_class'] = argparse.ArgumentDefaultsHelpFormatter
         super().__init__(**kwargs)
 
     def remove_argument(self, *name_or_flags: str):

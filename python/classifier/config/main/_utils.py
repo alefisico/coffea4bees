@@ -37,6 +37,12 @@ class SetupMultiprocessing(task._Main):
         return initializer
 
 
+class SelectDevice(task._Main):
+    argparser = task.ArgParser()
+    argparser.add_argument(
+        '--device', type=str, nargs='+', default=['cuda'], help='the [green]torch.device[/green] used for training')
+
+
 class _load_datasets:
     def __init__(self):
         ...
