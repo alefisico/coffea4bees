@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import os
 from multiprocessing import current_process
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Callable, Literal
 
 if TYPE_CHECKING:
     from multiprocessing.context import BaseContext
@@ -28,7 +28,7 @@ def n_cpu():
 def get_context(
     method: Literal['fork', 'forkserver', 'spawn'] = ...,
     library: Literal['torch', 'builtins'] = 'torch',
-    preload: list[str] = None
+    preload: list[str] = None,
 ) -> Context:
     if method is ...:
         method = 'forkserver' if is_poxis() else 'spawn'
@@ -40,7 +40,7 @@ def get_context(
         logging.warn(
             f'"{method}" is unsafe, consider using "spawn" or "forkserver" instead')
     match library:
-        case 'builtin':
+        case 'builtins':
             import multiprocessing as mp
         case 'torch':
             import torch.multiprocessing as mp
@@ -50,3 +50,8 @@ def get_context(
     if method == 'forkserver' and preload is not None:
         ctx.set_forkserver_preload(preload)
     return ctx
+
+
+class default:
+    context: Context = None
+    initializer: Callable = None

@@ -10,7 +10,7 @@ from rich.console import Console
 _INDENT = '  '
 
 
-def walk_packages(base):
+def _walk_packages(base):
     base = Path(base)
     for root, _, _ in os.walk(base):
         root = Path(root)
@@ -26,8 +26,6 @@ def walk_packages(base):
 class Main(_task._Main):
     _keys = ' '.join(f'--{k}' for k in _task.Parser._keys)
     argparser = _task.ArgParser(prog='help')
-    argparser.add_argument(
-        '--selected', action='store_true', default=False, help=f'print help of selected [blue]{_keys}[/blue]')
     argparser.add_argument(
         '--all', action='store_true', default=False, help=f'list all available modules for [blue]{_keys}[/blue]')
     argparser.add_argument(
@@ -81,13 +79,12 @@ class Main(_task._Main):
                         self._print(
                             f'[red]Class "{clsname}" is not a subclass of Task[/red]')
                     else:
-                        if self.opts.selected:
-                            self._print_help(cls)
+                        self._print_help(cls)
         if self.opts.all:
             self._print('\n[orange3]\[Modules][/orange3]')
             for cat in parser._keys:
                 self._print(f'[blue]--{cat}[/blue]')
-                for imp in walk_packages(f'{_task._CLASSIFIER}/{_task._CONFIG}/{cat}/'):
+                for imp in _walk_packages(f'{_task._CLASSIFIER}/{_task._CONFIG}/{cat}/'):
                     _imp = f'{imp}.*'
                     modname, _ = parser._fetch_module_name(_imp, cat)
                     mod, _ = parser._fetch_module(_imp, cat)
