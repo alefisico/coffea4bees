@@ -7,7 +7,7 @@ from typing import Optional
 import torch
 
 
-class AutoDevice:
+class Device:
     def __init__(
         self,
         *devices: str,

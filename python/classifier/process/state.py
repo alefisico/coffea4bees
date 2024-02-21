@@ -57,19 +57,20 @@ class Cascade(GlobalState):
         for opt in opts:
             protocol, data = _parse_scheme(opt)
             if protocol == 'file':
-                path = Path(data)
-                match path.suffix:
+                match Path(data).suffix:
                     case '.yaml' | '.yml':
                         protocol = 'yaml'
                     case '.json':
                         protocol = 'json'
                     case _:
-                        logging.error(f'Unsupported file: {path}')
+                        logging.error(f'Unsupported file: {data}')
                         continue
                 try:
-                    data = path.read_text()
+                    import fsspec
+                    with fsspec.open(data, 'rt') as f:
+                        data = f.read()
                 except:
-                    logging.error(f'Failed to read file: {path}')
+                    logging.error(f'Failed to read file: {data}')
                     continue
             match protocol:
                 case None | 'yaml':

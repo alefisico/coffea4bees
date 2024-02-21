@@ -1,5 +1,3 @@
-from .process.state import Cascade
-
 __all__ = ['Constant']
 
 
@@ -21,7 +19,3 @@ class Constant:
             import numpy as np
             cls._index_dtype = np.uint8
         return cls._index_dtype
-
-
-class Setting(Cascade):
-    default_io_step: int = 1_000_000

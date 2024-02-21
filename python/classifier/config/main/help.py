@@ -27,9 +27,9 @@ class Main(_task._Main):
     _keys = ' '.join(f'--{k}' for k in _task.Parser._keys)
     argparser = _task.ArgParser(prog='help')
     argparser.add_argument(
-        '--all', action='store_true', default=False, help=f'list all available modules for [blue]{_keys}[/blue]')
+        '--all', action='store_true', help=f'list all available modules for [blue]{_keys}[/blue]')
     argparser.add_argument(
-        '--html', type=str, default=None, help=f'write help to html file')
+        '--html', help=f'write help to html file')
 
     def __init__(self):
         self._console = Console(record=True)
@@ -98,5 +98,5 @@ class Main(_task._Main):
                             self._print(
                                 indent(f'[green]{imp}.{cls}[/green]', _INDENT))
                             self._print_help(tasks[cls], 2)
-        if self.opts.html:
+        if self.opts.html is not None:
             self._console.save_html(self.opts.html)

@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 from collections import ChainMap, deque
 from copy import deepcopy
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable, Optional
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -83,7 +83,7 @@ class Task(ABC):
 
 class _Main(Task):
     @abstractmethod
-    def run(self, parser: Parser):
+    def run(self, parser: Parser) -> Optional[dict[str]]:
         ...
 
 
@@ -166,8 +166,25 @@ class Parser:
             raise AttributeError(f'Task "{self.args[_MAIN][0]}" not found')
         self.main: _Main = cls()
 
-    def run(self):
+    def run(self, reproducible: Callable):
         self.main.parse(self.args[_MAIN][1])
         if self.args[_MAIN][0] != 'help':
             self._fetch_all()
-        self.main.run(self)
+        meta = self.main.run(self)
+        if meta is not None:
+            import fsspec
+            import yaml
+            from base_class.system.eos import EOS
+
+            try:
+                output = self.main.output
+            except:
+                output = EOS('.')
+            output = output / \
+                f'{self.args[_MAIN][0]}.yml'
+            meta |= {
+                'command': self.cmd,
+                'reproducible': reproducible(),
+            }
+            with fsspec.open(output, 'wt') as f:
+                f.write(yaml.dump(meta))
