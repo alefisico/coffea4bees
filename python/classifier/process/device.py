@@ -7,7 +7,7 @@ from typing import Optional
 import torch
 
 
-class DynamicDevice:
+class AutoDevice:
     def __init__(
         self,
         *devices: str,
@@ -21,7 +21,7 @@ class DynamicDevice:
             try:
                 d = torch.device(device)
             except RuntimeError as e:
-                logging.warning(e.args[0])
+                logging.error(e.args[0])
                 continue
             if d.type not in self._devices:
                 match d.type:
@@ -30,7 +30,7 @@ class DynamicDevice:
                     case 'cpu':
                         self._devices[d.type] = None
                     case _:
-                        logging.warning(
+                        logging.error(
                             f'"{d.type}" is not supported')
             if self._devices.get(d.type) is not None:
                 if d.index is None:

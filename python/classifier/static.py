@@ -1,5 +1,4 @@
-# TODO check
-import numpy as np  # TODO move this inside
+from .process.state import Cascade
 
 __all__ = ['Constant']
 
@@ -8,12 +7,21 @@ class Constant:
     event = 'event'
     weight = 'weight'
 
-    index_dtype = np.uint8
-
     label_index = 'label_index'
     region_index = 'region_index'
     event_offset = 'event_offset'
 
     unscaled_weight = 'unscaled_weight'
 
-    authkey_size = 512
+    _index_dtype = ...
+
+    @classmethod
+    def index_dtype(cls):
+        if cls._index_dtype is ...:
+            import numpy as np
+            cls._index_dtype = np.uint8
+        return cls._index_dtype
+
+
+class Setting(Cascade):
+    default_io_step: int = 1_000_000

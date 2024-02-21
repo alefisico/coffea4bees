@@ -1,5 +1,7 @@
+raise NotImplementedError  # noqa # TODO work in progress
 from __future__ import annotations
 
+import logging
 import os
 from collections import defaultdict
 from multiprocessing import Lock as Lock_
@@ -9,9 +11,8 @@ from queue import Queue
 from threading import Thread
 from typing import Any, Callable
 
-from ..process import is_main, is_poxis, Context, get_context
-from ..static import Constant, Setting
-from .console import warn
+from . import Context, get_context, is_main, is_poxis
+from ..static import Constant
 
 
 class Monitor:
@@ -34,14 +35,14 @@ class Monitor:
     @staticmethod
     def start():
         if not Monitor._stopped:
-            warn('Monitor is already running')
+            logging.warn('Monitor is already running')
             return
         if is_main():
             Monitor._stopped = False
             Monitor._authkey = os.urandom(Constant.authkey_size)
             Monitor._queue = defaultdict(Queue)
             Monitor._listener = Listener(
-                address=Setting.monitor_address,  # TODO Address class
+                address=...,  # TODO Address class
                 authkey=Monitor._authkey)
             Monitor._listener_thread = Thread(target=Monitor._listen)
             Monitor._listener_thread.start()
@@ -88,7 +89,7 @@ class Monitor:
             if is_poxis() and Monitor._accepting:
                 # in POSIX, the Listener.accept() will not raise an OSError after the Listener.close()
                 try:
-                    Client(Setting.monitor_address,  # TODO Address class
+                    Client(...,  # TODO Address class
                            authkey=Monitor._authkey).close()
                 except ConnectionRefusedError:
                     pass
@@ -148,7 +149,7 @@ class Worker:
             args: tuple = None,
             kwargs: dict[str] = None,
             context: Context = None):
-        worker = Worker(Setting.monitor_address,
+        worker = Worker(...,
                         Monitor._authkey)  # TODO Address class
         if context is None:
             context = get_context()
@@ -165,6 +166,3 @@ class Worker:
     ...  # TODO separate client and listener
     ...  # TODO spawn process and start worker
     ...  # TODO take authkey from Monitor
-
-
-Monitor.start()

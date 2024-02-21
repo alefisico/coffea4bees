@@ -3,14 +3,16 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Callable, Literal
 
 from . import default
+from .state import share_global_state
 
 if TYPE_CHECKING:
     from . import Context
 
 
-class MultiInitializer:
+class DefaultInitializer:
     def __init__(self, *funcs: Callable):
         self.funcs: list[Callable] = []
+        self.add(share_global_state())
         self.add(*funcs)
 
     def add(self, *funcs: Callable):

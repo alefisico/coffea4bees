@@ -27,10 +27,10 @@ class SetupMultiprocessing(task._Main):
     @cached_property
     def mp_initializer(self):
         from classifier.process.initializer import (
-            MultiInitializer, inherit_context_initializer,
+            DefaultInitializer, inherit_context_initializer,
             torch_set_sharing_strategy)
 
-        initializer = MultiInitializer(
+        initializer = DefaultInitializer(
             torch_set_sharing_strategy('file_system'))
         initializer.add(inherit_context_initializer(
             self.mp_context, initializer))
