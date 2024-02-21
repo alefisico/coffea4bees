@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import importlib
+import logging
 import os
 import sys
 from abc import ABC, abstractmethod
@@ -112,13 +113,17 @@ class Parser:
         _mod, _cls = None, None
         try:
             _mod = importlib.import_module(modname)
-        except:
+        except ModuleNotFoundError:
             ...
+        except Exception as e:
+            logging.error(e)
         if _mod is not None and clsname != '*':
             try:
                 _cls = getattr(_mod, clsname)
-            except:
+            except AttributeError:
                 ...
+            except Exception as e:
+                logging.error(e)
         return _mod, _cls
 
     def _fetch_all(self):
@@ -172,19 +177,21 @@ class Parser:
             self._fetch_all()
         meta = self.main.run(self)
         if meta is not None:
+            import json
+
             import fsspec
-            import yaml
             from base_class.system.eos import EOS
+            from base_class.utils.json import DefaultEncoder
 
             try:
                 output = self.main.output
             except:
                 output = EOS('.')
             output = output / \
-                f'{self.args[_MAIN][0]}.yml'
+                f'{self.args[_MAIN][0]}.json'
             meta |= {
                 'command': self.cmd,
                 'reproducible': reproducible(),
             }
             with fsspec.open(output, 'wt') as f:
-                f.write(yaml.dump(meta))
+                json.dump(meta, f, cls=DefaultEncoder)

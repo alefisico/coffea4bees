@@ -21,7 +21,7 @@ class Device:
             try:
                 d = torch.device(device)
             except RuntimeError as e:
-                logging.error(e.args[0])
+                logging.error(e)
                 continue
             if d.type not in self._devices:
                 match d.type:
