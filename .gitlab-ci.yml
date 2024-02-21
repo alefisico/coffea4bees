@@ -65,7 +65,7 @@ analysis-test-job:
   stage: test   
   dependencies:
     - voms_proxy
-  image: ${CI_REGISTRY_IMAGE}:latest
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -75,29 +75,31 @@ analysis-test-job:
     paths:
       - python/analysis/hists/test.coffea
 
-## problems while running with dask_processor
-#skimmer-test-job:   
-#  stage: test   
-#  dependencies:
-#    - voms_proxy
-#  image: ${CI_REGISTRY_IMAGE}:latest
-#  tags:
-#    - k8s-cvmfs
-#  script:
-#    - source .ci-workflows/skimmer-test-job.sh
-#  artifacts: 
-#    expire_in: 1 day
-#    paths:
-#      - python/skimmer/metadata/picoaod_datasets_TTToSemiLeptonic_UL18.yml
-#      - ${CI_PROJECT_DIR}/TTToSemiLeptonic_UL18/picoAOD.root
-#      - python/coffea4bees-dask-report.html
+# problems while running with dask_processor
+skimmer-test-job:   
+  stage: test   
+  dependencies:
+    - voms_proxy
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  tags:
+    - k8s-cvmfs
+  script:
+    - source .ci-workflows/skimmer-test-job.sh
+  timeout: 20m
+  allow_failure: true
+  artifacts: 
+    expire_in: 1 day
+    paths:
+      - python/skimmer/metadata/picoaod_datasets_TTToSemiLeptonic_UL18.yml
+      - ${CI_PROJECT_DIR}/TTToSemiLeptonic_UL18/picoAOD.root
+      - python/coffea4bees-dask-report.html
 
 
 analysis-plot-job:    
   stage: plot 
   needs: 
     - analysis-test-job
-  image: ${CI_REGISTRY_IMAGE}:latest 
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -111,7 +113,7 @@ analysis-cutflow-job:
   stage: plot 
   needs: 
     - analysis-test-job
-  image: ${CI_REGISTRY_IMAGE}:latest
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -121,7 +123,7 @@ analysis-iplot-job:
   stage: plot 
   needs: 
     - analysis-test-job
-  image: ${CI_REGISTRY_IMAGE}:latest
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -130,7 +132,7 @@ analysis-iplot-job:
 
 baseclass-test-job:   
   stage: build
-  image: ${CI_REGISTRY_IMAGE}:latest
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -140,7 +142,7 @@ baseclass-test-job:
 #  stage: test   
 #  dependencies:
 #    - voms_proxy
-#  image: ${CI_REGISTRY_IMAGE}:latest
+#  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
 #  tags:
 #    - k8s-cvmfs
 #  script:

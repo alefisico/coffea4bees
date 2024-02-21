@@ -1,5 +1,6 @@
 runner:
-  #maxchunks: 100
+  #maxchunks: 2
+  #test_files: 1
   min_workers: 1
   max_workers: 200
   chunksize: 100000
@@ -9,11 +10,10 @@ runner:
   condor_cores: 1
   condor_memory: 4GB
   allowlist_sites:
+    - T3_US_FNALLPC
     - T3_US_NotreDame
-    - T3_CH_PSI
     - T2_US_Nebraska
     - T2_US_Purdue
-    - T3_US_FNALLPC
 
 config:
   base_path: root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v1/
@@ -46,117 +46,3 @@ config:
   skip_branches:
     - "btagWeight_.*"
 
-datasets:
-  data:
-    "UL16_preVFP":
-      nanoAOD:
-        #B: /JetHT/Run2016B-ver1_HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
-        B: /JetHT/Run2016B-ver2_HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
-        C: /JetHT/Run2016C-HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
-        D: /JetHT/Run2016D-HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
-        E: /JetHT/Run2016E-HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
-        F: /JetHT/Run2016F-HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
-    "UL16_postVFP":
-      nanoAOD:
-        F: /JetHT/Run2016F-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD
-        G: /JetHT/Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD
-        H: /JetHT/Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD
-    "UL17":
-      nanoAOD:
-        B: /JetHT/Run2017B-UL2017_MiniAODv2_NanoAODv9-v1/NANOAOD
-        C: /JetHT/Run2017C-UL2017_MiniAODv2_NanoAODv9-v1/NANOAOD
-        D: /JetHT/Run2017D-UL2017_MiniAODv2_NanoAODv9-v1/NANOAOD
-        E: /JetHT/Run2017E-UL2017_MiniAODv2_NanoAODv9-v1/NANOAOD
-        F: /JetHT/Run2017F-UL2017_MiniAODv2_NanoAODv9-v1/NANOAOD
-    "UL18":
-      nanoAOD:
-        A: /JetHT/Run2018A-UL2018_MiniAODv2_NanoAODv9-v2/NANOAOD
-        B: /JetHT/Run2018B-UL2018_MiniAODv2_NanoAODv9-v1/NANOAOD
-        C: /JetHT/Run2018C-UL2018_MiniAODv2_NanoAODv9-v1/NANOAOD
-        D: /JetHT/Run2018D-UL2018_MiniAODv2_NanoAODv9-v2/NANOAOD
-
-  GluGluToHHTo4B_cHHH1:
-    "UL16_postVFP":
-      nanoAOD: /GluGluToHHTo4B_cHHH1_TuneCP5_PSWeights_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v1/NANOAODSIM
-    "UL16_preVFP":
-      nanoAOD: /GluGluToHHTo4B_cHHH1_TuneCP5_PSWeights_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM
-    "UL17":
-      nanoAOD: /GluGluToHHTo4B_cHHH1_TuneCP5_PSWeights_13TeV-powheg-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v1/NANOAODSIM
-    "UL18":
-      nanoAOD: /GluGluToHHTo4B_cHHH1_TuneCP5_PSWeights_13TeV-powheg-pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v1/NANOAODSIM
-
-  TTToHadronic:
-    "UL16_postVFP":
-      nanoAOD: /TTToHadronic_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM
-    "UL16_preVFP":
-      nanoAOD: /TTToHadronic_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v1/NANOAODSIM
-    "UL17":
-      nanoAOD: /TTToHadronic_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v1/NANOAODSIM
-    "UL18":
-      nanoAOD: /TTToHadronic_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v1/NANOAODSIM
-
-  TTToSemiLeptonic:
-    "UL16_postVFP":
-      nanoAOD: /TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v1/NANOAODSIM
-    "UL16_preVFP":
-      nanoAOD: /TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM
-    "UL17":
-      nanoAOD: /TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v1/NANOAODSIM
-    "UL18":
-      nanoAOD: /TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v1/NANOAODSIM
-
-  TTTo2L2Nu:
-    "UL16_preVFP":
-      nanoAOD: /TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM
-    "UL16_postVFP":
-      nanoAOD: /TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v1/NANOAODSIM
-    "UL17":
-      nanoAOD: /TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v1/NANOAODSIM
-    "UL18":
-      nanoAOD: /TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v1/NANOAODSIM
-#
-#  ggZH4b :
-#    xs: 0.1227*0.5824*0.1512 #0.0432 from GenXsecAnalyzer, does not include BR for H, does include BR(Z->hadrons) = 0.69911. 0.0432/0.69911 = 0.0618, almost exactly half the LHCxsWG value... NNLO = 2x NLO??
-#    'UL16_postVFP':
-#      nanoAOD: '/dataset/dataset/NANOAODSIM'
-#      picoAOD: '/store/user/algomez/XX4b/20231115/ggZH4b2016_postVFP/picoAOD.root'
-#    'UL16_preVFP':
-#      nanoAOD: '/dataset/dataset/NANOAODSIM'
-#      picoAOD: '/store/user/algomez/XX4b/20231115/ggZH4b2016_preVFP/picoAOD.root'
-#    'UL17':
-#      nanoAOD: '/dataset/dataset/NANOAODSIM'
-#      picoAOD: '/store/user/algomez/XX4b/20231115/ggZH4b2017/picoAOD.root'
-#    'UL18':
-#      nanoAOD: '/dataset/dataset/NANOAODSIM'
-#      picoAOD: '/store/user/algomez/XX4b/20231115/ggZH4b2018/picoAOD.root'
-#
-#  ZH4b:
-#    xs: 0.7612*0.5824*0.1512 #0.5540 from GenXsecAnalyzer, does not include BR for H, does include BR(Z->hadrons) = 0.69911. 0.5540/0.69911 = 0.7924, 4% larger than the LHCxsWG value.
-#    'UL16_postVFP':
-#      nanoAOD: '/dataset/dataset/NANOAODSIM'
-#      picoAOD: '/store/user/algomez/XX4b/20231115/ZH4b2016_postVFP/picoAOD.root'
-#    'UL16_preVFP':
-#      nanoAOD: '/dataset/dataset/NANOAODSIM'
-#      picoAOD: '/store/user/algomez/XX4b/20231115/ZH4b2016_preVFP/picoAOD.root'
-#    'UL17':
-#      nanoAOD: '/dataset/dataset/NANOAODSIM'
-#      picoAOD: '/store/user/algomez/XX4b/20231115/ZH4b2017/picoAOD.root'
-#    'UL18':
-#      nanoAOD: '/dataset/dataset/NANOAODSIM'
-#      picoAOD: '/store/user/algomez/XX4b/20231115/ZH4b2018/picoAOD.root'
-#
-#  ZZ4b:
-#    xs: 15.5   *0.1512*0.1512  #0.3688 from GenXsecAnalyzer gives 16.13 dividing by BR^2. mcEventSumw/mcEventCount * FxFx Jet Matching eff. = 542638/951791 * 0.647 = 0.3688696216. Jet matching not included in genWeight!
-#    'UL16_postVFP':
-#      nanoAOD: '/dataset/dataset/NANOAODSIM'
-#      picoAOD: '/store/user/algomez/XX4b/20231115/ZZ4b2016_postVFP/picoAOD.root'
-#    'UL16_preVFP':
-#      nanoAOD: '/dataset/dataset/NANOAODSIM'
-#      picoAOD: '/store/user/algomez/XX4b/20231115/ZZ4b2016_preVFP/picoAOD.root'
-#    'UL17':
-#      nanoAOD: '/dataset/dataset/NANOAODSIM'
-#      picoAOD: '/store/user/algomez/XX4b/20231115/ZZ4b2017/picoAOD.root'
-#    'UL18':
-#      nanoAOD: '/dataset/dataset/NANOAODSIM'
-#      picoAOD: '/store/user/algomez/XX4b/20231115/ZZ4b2018/picoAOD.root'
-#

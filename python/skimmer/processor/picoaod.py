@@ -70,15 +70,23 @@ class PicoAOD(ProcessorABC):
 @delayed
 def _fetch_metadata(dataset: str, path: PathLike, dask: bool = False):
     with uproot.open(path) as f:
-        data = f['Runs'].arrays(
-            ['genEventCount', 'genEventSumw', 'genEventSumw2'])
-        return {
-            dataset: {
-                'count': float(ak.sum(data['genEventCount'])),
-                'sumw': float(ak.sum(data['genEventSumw'])),
-                'sumw2': float(ak.sum(data['genEventSumw2'])),
+        if 'genEventCount' in f['Runs'].keys():
+            data = f['Runs'].arrays(
+                ['genEventCount', 'genEventSumw', 'genEventSumw2'])
+            return {
+                dataset: {
+                    'count': float(ak.sum(data['genEventCount'])),
+                    'sumw': float(ak.sum(data['genEventSumw'])),
+                    'sumw2': float(ak.sum(data['genEventSumw2'])),
+                }
             }
-        }
+        else:
+            data = f['Events'].arrays(['event'])
+            return {
+                dataset: {
+                    'count' : float(ak.num(data['event'], axis=0))
+                }
+            }
 
 
 def fetch_metadata(
@@ -108,16 +116,21 @@ def integrity_check(
 ):
     logging.info('Checking integrity of the picoAOD...')
     diff = set(fileset) - set(output)
+    miss_dict = {}
     if diff:
         logging.error(f'The whole dataset is missing: {diff}')
+        miss_dict["dataset_missing"] = "Run again :P"
     for dataset in fileset:
         inputs = map(EOS, fileset[dataset]['files'])
         outputs = {EOS(k): v for k, v in output[dataset]['source'].items()}
         ns = None if num_entries is None else {
             EOS(k): v for k, v in num_entries[dataset].items()}
+        file_missing = []
+        chunk_missing = []
         for file in inputs:
             if file not in outputs:
                 logging.error(f'The whole file is missing: "{file}"')
+                file_missing.append( str(file) )
             else:
                 chunks = sorted(outputs[file], key=lambda x: x[0])
                 if ns is not None:
@@ -127,14 +140,18 @@ def integrity_check(
                 for _start, _stop in chunks:
                     if _start != stop:
                         if start != stop:
-                            merged.append([start, stop])
+                            merged.append([str(start), str(stop)])
                         start = _start
                         logging.error(
                             f'Missing chunk: [{stop}, {_start}) in "{file}"')
+                        chuck_missing.append( f'[{stop}, {_start}) in "{file}"' )
                     stop = _stop
                 if start != stop:
                     merged.append([start, stop])
-                output[dataset]['source'][str(file)] = merged
+        if file_missing: miss_dict["file_missing"] = file_missing
+        if chunk_missing: miss_dict["chunk_missing"] = chunk_missing
+    output[dataset].pop('source')
+    output[dataset]['missing'] = miss_dict
     return output
 
 

@@ -130,9 +130,10 @@ if __name__ == '__main__':
                                          'trigger':  metadata['datasets']['data'][year]['trigger'],
                                          }
 
-            if not dataset.endswith('data'):
+            if not (dataset == 'data'):    
                 if config_runner['data_tier'].startswith('pico'):
-                    metadata_dataset[dataset]['genEventSumw'] = metadata['datasets'][dataset][year][config_runner['data_tier']]['sumw']
+                    if 'data' not in dataset:
+                        metadata_dataset[dataset]['genEventSumw'] = metadata['datasets'][dataset][year][config_runner['data_tier']]['sumw']
                     meta_files = metadata['datasets'][dataset][year][config_runner['data_tier']]['files']
                 else:
                     meta_files = metadata['datasets'][dataset][year][config_runner['data_tier']]
@@ -184,7 +185,7 @@ if __name__ == '__main__':
         from dask.distributed import Client, LocalCluster
         if args.skimming:
             cluster_args = {
-                'n_workers': 1,
+                'n_workers': 4,
                 'memory_limit': config_runner['condor_memory'],
                 'threads_per_worker': 1,
                 'dashboard_address': config_runner['dashboard_address'],

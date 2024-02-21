@@ -13,6 +13,9 @@ class FriendTreeSchema(BaseSchema):
             if k.endswith('event'):
                 name = '_'.join(k.split('_')[:-1])
 
+            elif k.startswith('w'):
+                name = k
+
         mixin = self.mixins.get(name, "NanoCollection")
 
         # simple collection
