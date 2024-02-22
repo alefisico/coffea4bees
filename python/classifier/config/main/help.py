@@ -23,7 +23,7 @@ def _walk_packages(base):
             yield '.'.join(parts + (mod.name,))
 
 
-class Main(_task._Main):
+class Main(_task.Main):
     _keys = ' '.join(f'--{k}' for k in _task.Parser._keys)
     argparser = _task.ArgParser(prog='help')
     argparser.add_argument(

@@ -5,11 +5,10 @@ import importlib
 import logging
 import os
 import sys
-from abc import ABC, abstractmethod
 from collections import ChainMap, deque
 from copy import deepcopy
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Optional
+from typing import TYPE_CHECKING, Callable, Optional, TypeVar
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -17,6 +16,27 @@ if TYPE_CHECKING:
 _CLASSIFIER = 'classifier'
 _CONFIG = 'config'
 _MAIN = 'main'
+
+
+_InterfaceT = TypeVar('_InterfaceT')
+
+
+class _Interface:
+    def __init__(self, func):
+        self.func = func
+
+    def __get__(self, _, owner):
+        import inspect
+        signature = (
+            str(inspect.signature(self.func))
+            .replace("'", "")
+            .replace('"', ''))
+        raise NotImplementedError(
+            f'Task interface {owner.__name__}.{self.func.__name__}{signature} is not implemented')
+
+
+def interface(func: _InterfaceT) -> _InterfaceT:
+    return _Interface(func)
 
 
 def _is_private(name: str):
@@ -36,7 +56,7 @@ class ArgParser(argparse.ArgumentParser):
             *name_or_flags, nargs=argparse.SUPPRESS, help=argparse.SUPPRESS, default=argparse.SUPPRESS)
 
 
-class Task(ABC):
+class Task:
     argparser: ArgParser = NotImplemented
     defaults: dict[str] = NotImplemented
 
@@ -80,12 +100,6 @@ class Task(ABC):
             raise ValueError(
                 f'{cls.__name__}.argparser is not implemented')
         return cls.argparser.format_help()
-
-
-class _Main(Task):
-    @abstractmethod
-    def run(self, parser: Parser) -> Optional[dict[str]]:
-        ...
 
 
 class Parser:
@@ -169,7 +183,7 @@ class Parser:
         _, cls = self._fetch_module(f'{self.args[_MAIN][0]}.Main', _MAIN)
         if cls is None:
             raise AttributeError(f'Task "{self.args[_MAIN][0]}" not found')
-        self.main: _Main = cls()
+        self.main: Main = cls()
 
     def run(self, reproducible: Callable):
         self.main.parse(self.args[_MAIN][1])
@@ -195,3 +209,11 @@ class Parser:
             }
             with fsspec.open(output, 'wt') as f:
                 json.dump(meta, f, cls=DefaultEncoder)
+
+
+# main
+
+class Main(Task):
+    @interface
+    def run(self, parser: Parser) -> Optional[dict[str]]:
+        ...

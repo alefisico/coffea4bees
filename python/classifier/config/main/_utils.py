@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from classifier.task.dataset import Dataset, TrainingSetLoader
 
 
-class WriteOutput(task._Main):
+class WriteOutput(task.Main):
     argparser = task.ArgParser()
     argparser.add_argument(
         '--output', default=argparse.SUPPRESS, required=True, help='the output directory')
@@ -24,7 +24,7 @@ class WriteOutput(task._Main):
         return EOS(self.opts.output).mkdir(recursive=True)
 
 
-class SetupMultiprocessing(task._Main):
+class SetupMultiprocessing(task.Main):
     argparser = task.ArgParser()
     argparser.add_argument(
         '--mp-preload', action='extend', nargs='+', default=['torch'], help='preloaded imports when using multiprocessing')
@@ -48,7 +48,7 @@ class SetupMultiprocessing(task._Main):
         return initializer
 
 
-class SelectDevice(task._Main):
+class SelectDevice(task.Main):
     argparser = task.ArgParser()
     argparser.add_argument(
         '--device', nargs='+', default=['cuda'], help='the [green]torch.device[/green] used for training')
