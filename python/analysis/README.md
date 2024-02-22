@@ -44,7 +44,7 @@ The output file of this process will be `test.coffea` (a coffea output file), wh
 
 Assuming that the file with your histograms is called `hists/hists.coffea`, you can run:
 ```
-python analysis/makePlots.py -i hists/hists.coffea  -o testPlotsNew 
+python analysis/makePlots.py hists/hists.coffea  -o testPlotsNew 
 
 ```
 
