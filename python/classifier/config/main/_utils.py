@@ -8,14 +8,14 @@ from itertools import chain
 from typing import TYPE_CHECKING
 
 from base_class.utils import unique
-from classifier.task import task
+from classifier.task import ArgParser, EntryPoint, Main
 
 if TYPE_CHECKING:
     from classifier.task.dataset import Dataset, TrainingSetLoader
 
 
-class WriteOutput(task.Main):
-    argparser = task.ArgParser()
+class WriteOutput(Main):
+    argparser = ArgParser()
     argparser.add_argument(
         '--output', default=argparse.SUPPRESS, required=True, help='the output directory')
 
@@ -25,8 +25,8 @@ class WriteOutput(task.Main):
         return EOS(self.opts.output).mkdir(recursive=True)
 
 
-class SetupMultiprocessing(task.Main):
-    argparser = task.ArgParser()
+class SetupMultiprocessing(Main):
+    argparser = ArgParser()
     argparser.add_argument(
         '--preload', action='extend', nargs='+', default=['torch'], help='preloaded imports when using multiprocessing')
 
@@ -49,8 +49,8 @@ class SetupMultiprocessing(task.Main):
         return initializer
 
 
-class SelectDevice(task.Main):
-    argparser = task.ArgParser()
+class SelectDevice(Main):
+    argparser = ArgParser()
     argparser.add_argument(
         '--device', nargs='+', default=['cuda'], help='the [green]torch.device[/green] used for training')
 
@@ -64,11 +64,11 @@ class _load_datasets:
 
 
 class LoadTrainingSets(SetupMultiprocessing):
-    argparser = task.ArgParser()
+    argparser = ArgParser()
     argparser.add_argument(
         '--max-loaders', type=int, default=1, help='the maximum number of datasets to load in parallel')
 
-    def load_training_sets(self, parser: task.EntryPoint):
+    def load_training_sets(self, parser: EntryPoint):
         from concurrent.futures import ProcessPoolExecutor as Pool
 
         from torch.utils.data import ConcatDataset, StackDataset

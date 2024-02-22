@@ -75,8 +75,9 @@ class _write_to_file:
 
     def __call__(self, args: tuple[int, npt.ArrayLike]):
         import torch
-        from classifier.task.dataset import Setting
         from torch.utils.data import DataLoader, Subset
+
+        from ..setting.default import Dataset as Setting
 
         chunk, indices = args
         subset = Subset(self.dataset, indices)

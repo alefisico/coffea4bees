@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Mapping
+from typing import Any, Mapping, get_type_hints
 
 from ..task.parsers import parse_dict
 
@@ -39,7 +39,7 @@ class share_global_state:
 
 class Cascade(GlobalState):
     @classmethod
-    def update(cls, *opts: str):
+    def parse(cls, opts: list[str]):
         for opt in opts:
             data = parse_dict(opt)
             if isinstance(data, Mapping):
@@ -49,3 +49,33 @@ class Cascade(GlobalState):
             else:
                 logging.error(
                     f'Unsupported data {data} when updating {cls.__name__}, expect a mapping.')
+
+    @classmethod
+    def help(cls):
+        import os
+
+        from base_class.typetools import type_name
+        from rich.markup import escape
+
+        _MAX_WIDTH = os.get_terminal_size().columns // 3
+
+        annotations = get_type_hints(cls)
+        keys = dict(filter(_is_state, vars(cls).items()))
+        infos = []
+        if cls.__doc__:
+            infos.append(cls.__doc__)
+        for k, v in keys.items():
+            info = k
+            if k in annotations:
+                info += f': [green]{escape(type_name(annotations[k]))}[/green]'
+            value = str(v)
+            truncate = False
+            if '\n' in value:
+                value = value.split('\n', 1)[0]
+                truncate = True
+            if len(value) > _MAX_WIDTH:
+                value = value[:_MAX_WIDTH]
+                truncate = True
+            info += f' = {value}{"..." if truncate else ""}'
+            infos.append(info)
+        return '\n'.join(infos)

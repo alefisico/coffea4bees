@@ -2,22 +2,21 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Protocol
 
-from ..process.state import Cascade
-from . import task
+from .task import Task, interface
 
 if TYPE_CHECKING:
     from torch.utils.data import Dataset as TorchDataset
 
 
-class Dataset(task.Task):
-    @task.interface
+class Dataset(Task):
+    @interface
     def train(self) -> list[TrainingSetLoader]:
         """
         Prepare training set loaders.
         """
         ...
 
-    @task.interface
+    @interface
     def evaluate(self):  # TODO evaluation
         ...
 
@@ -34,6 +33,5 @@ class EvaluationSetLoader(Protocol):  # TODO evaluation
     ...
 
 
-class Setting(Cascade):
-    io_step: int = 1_000_000
-    dataloader_shuffle: bool = True
+def sizeof(dataset: TorchDataset) -> int:
+    ...

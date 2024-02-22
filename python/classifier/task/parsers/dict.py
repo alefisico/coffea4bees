@@ -11,15 +11,31 @@ def _parse_scheme(opt: str):
         return opt[0], opt[1]
 
 
+def _parse_keys(opt: str):
+    opt = opt.rsplit('=>', 1)
+    if len(opt) == 1:
+        return opt[0], None
+    else:
+        return opt[0], opt[1].split('.')
+
+
 def parse_dict(opt: str) -> Mapping[str, Any]:
     '''
     - `{data}`: parse as yaml
     - `yaml:///{data}`: parse as yaml
     - `json:///{data}`: parse as json
+    - `file:///{path}`: read from file, support .yaml(.yml), .json
     - `py:///{module.class}`: parse as python import
-    - `file:///{path}`: read from file, support .yaml/.yml, .json
+
+    `file`, `py` support an optional suffix `=>{key}.{key}...` to select a nested dict
     '''
+    def error(msg: str):
+        logging.error(f'{msg} when parsing "{opt}"')
+
     protocol, data = _parse_scheme(opt)
+    keys = None
+    if protocol in ('file', 'py'):
+        data, keys = _parse_keys(data)
     if protocol == 'file':
         match Path(data).suffix:
             case '.yaml' | '.yml':
@@ -27,29 +43,41 @@ def parse_dict(opt: str) -> Mapping[str, Any]:
             case '.json':
                 protocol = 'json'
             case _:
-                logging.error(f'Unsupported file: {data}')
+                error(f'Unsupported file "{data}"')
                 return
         try:
             import fsspec
             with fsspec.open(data, 'rt') as f:
                 data = f.read()
         except:
-            logging.error(f'Failed to read file: {data}')
+            error(f'Failed to read file "{data}"')
             return
+
+    result = None
     match protocol:
         case None | 'yaml':
             import yaml
-            return yaml.safe_load(data)
+            result = yaml.safe_load(data)
         case 'json':
             import json
-            return json.loads(data)
+            result = json.loads(data)
         case 'py':
             import importlib
             mods = data.split('.')
             try:
                 mod = importlib.import_module('.'.join(mods[:-1]))
-                return vars(getattr(mod, mods[-1]))
+                result = vars(getattr(mod, mods[-1]))
             except:
-                logging.error(f'Failed to import {data}')
+                error(f'Failed to import "{data}"')
         case _:
-            logging.error(f'Unsupported protocol: {protocol}')
+            error(f'Unsupported protocol "{protocol}"')
+
+    if result is not None and keys is not None:
+        for i, k in enumerate(keys):
+            try:
+                result = result[k]
+            except:
+                error(
+                    f'Failed to select key "{".".join(keys[:i+1])}"')
+                return
+    return result
