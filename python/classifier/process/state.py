@@ -5,6 +5,9 @@ from typing import Any, Mapping, get_type_hints
 
 from ..task.parsers import parse_dict
 
+_INDENT = '  '
+_MAX_WIDTH = 30
+
 
 def _is_special(name: str):
     return name.startswith('__') and name.endswith('__')
@@ -52,18 +55,18 @@ class Cascade(GlobalState):
 
     @classmethod
     def help(cls):
-        import os
+        from textwrap import indent
 
         from base_class.typetools import type_name
         from rich.markup import escape
-
-        _MAX_WIDTH = os.get_terminal_size().columns // 3
 
         annotations = get_type_hints(cls)
         keys = dict(filter(_is_state, vars(cls).items()))
         infos = []
         if cls.__doc__:
-            infos.append(cls.__doc__)
+            doc = filter(None, (l.strip() for l in cls.__doc__.split('\n')))
+            infos.extend([*doc, ''])
+        infos.append('options:')
         for k, v in keys.items():
             info = k
             if k in annotations:
@@ -77,5 +80,5 @@ class Cascade(GlobalState):
                 value = value[:_MAX_WIDTH]
                 truncate = True
             info += f' = {value}{"..." if truncate else ""}'
-            infos.append(info)
+            infos.append(indent(info, _INDENT))
         return '\n'.join(infos)
