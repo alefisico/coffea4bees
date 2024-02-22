@@ -24,7 +24,7 @@ def _walk_packages(base):
 
 
 class Main(_task.Main):
-    _keys = ' '.join(f'--{k}' for k in _task.Parser._keys)
+    _keys = ' '.join(f'--{k}' for k in _task.EntryPoint._keys)
     argparser = _task.ArgParser(prog='help')
     argparser.add_argument(
         '--all', action='store_true', help=f'list all available modules for [blue]{_keys}[/blue]')
@@ -41,7 +41,7 @@ class Main(_task.Main):
     def _print_help(self, task: _task.Task, depth: int = 1):
         self._print(indent(task.help(), _INDENT*depth))
 
-    def run(self, parser: _task.Parser):
+    def run(self, parser: _task.EntryPoint):
         main = parser.args['main']
         self._print('[orange3]\[Usage][/orange3]')
         self._print(' '.join([

@@ -7,6 +7,7 @@ from functools import cached_property
 from itertools import chain
 from typing import TYPE_CHECKING
 
+from base_class.utils import unique
 from classifier.task import task
 
 if TYPE_CHECKING:
@@ -27,13 +28,13 @@ class WriteOutput(task.Main):
 class SetupMultiprocessing(task.Main):
     argparser = task.ArgParser()
     argparser.add_argument(
-        '--mp-preload', action='extend', nargs='+', default=['torch'], help='preloaded imports when using multiprocessing')
+        '--preload', action='extend', nargs='+', default=['torch'], help='preloaded imports when using multiprocessing')
 
     @cached_property
     def mp_context(self):
         from classifier import process
 
-        return process.get_context(method='forkserver', library='torch', preload=self.opts.mp_preload)
+        return process.get_context(method='forkserver', library='torch', preload=unique(self.opts.preload))
 
     @cached_property
     def mp_initializer(self):
@@ -67,7 +68,7 @@ class LoadTrainingSets(SetupMultiprocessing):
     argparser.add_argument(
         '--max-loaders', type=int, default=1, help='the maximum number of datasets to load in parallel')
 
-    def load_training_sets(self, parser: task.Parser):
+    def load_training_sets(self, parser: task.EntryPoint):
         from concurrent.futures import ProcessPoolExecutor as Pool
 
         from torch.utils.data import ConcatDataset, StackDataset

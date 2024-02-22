@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 from typing import Any, Mapping
+
+from ..task.parsers import parse_dict
 
 
 def _is_special(name: str):
@@ -12,14 +13,6 @@ def _is_special(name: str):
 def _is_state(var: tuple[str, Any]):
     name, value = var
     return not _is_special(name) and not isinstance(value, classmethod)
-
-
-def _parse_scheme(opt: str):
-    opt = opt.split(':///', 1)
-    if len(opt) == 1:
-        return None, opt[0]
-    else:
-        return opt[0], opt[1]
 
 
 class GlobalState:
@@ -46,56 +39,13 @@ class share_global_state:
 
 class Cascade(GlobalState):
     @classmethod
-    def update(self, *opts: str):
-        '''
-         - `{data}`: parse as yaml
-         - `yaml:///{data}`: parse as yaml
-         - `json:///{data}`: parse as json
-         - `py:///{module.class}`: parse as python import
-         - `file:///{path}`: read from file, support .yaml/.yml, .json
-        '''
+    def update(cls, *opts: str):
         for opt in opts:
-            protocol, data = _parse_scheme(opt)
-            if protocol == 'file':
-                match Path(data).suffix:
-                    case '.yaml' | '.yml':
-                        protocol = 'yaml'
-                    case '.json':
-                        protocol = 'json'
-                    case _:
-                        logging.error(f'Unsupported file: {data}')
-                        continue
-                try:
-                    import fsspec
-                    with fsspec.open(data, 'rt') as f:
-                        data = f.read()
-                except:
-                    logging.error(f'Failed to read file: {data}')
-                    continue
-            match protocol:
-                case None | 'yaml':
-                    import yaml
-                    self.update_dict(yaml.safe_load(data))
-                case 'json':
-                    import json
-                    self.update_dict(json.loads(data))
-                case 'py':
-                    import importlib
-                    mods = data.split('.')
-                    try:
-                        mod = importlib.import_module('.'.join(mods[:-1]))
-                        self.update_dict(vars(getattr(mod, mods[-1])))
-                    except:
-                        logging.error(f'Failed to import {data}')
-                case _:
-                    logging.error(f'Unsupported protocol: {protocol}')
-
-    @classmethod
-    def update_dict(cls, data):
-        if isinstance(data, Mapping):
-            for k, v in data.items():
-                if not _is_special(k):
-                    setattr(cls, k, v)
-        else:
-            logging.error(
-                f'Unsupported data {data} when updating {cls.__name__}, expect a mapping.')
+            data = parse_dict(opt)
+            if isinstance(data, Mapping):
+                for k, v in data.items():
+                    if not _is_special(k):
+                        setattr(cls, k, v)
+            else:
+                logging.error(
+                    f'Unsupported data {data} when updating {cls.__name__}, expect a mapping.')

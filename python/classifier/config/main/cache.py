@@ -29,7 +29,7 @@ class Main(WriteOutput, LoadTrainingSets):
     argparser.add_argument(
         '--max-writers', type=int, default=1, help='the maximum number of files to write in parallel')
 
-    def run(self, parser: task.Parser):
+    def run(self, parser: task.EntryPoint):
         import math
         from concurrent.futures import ProcessPoolExecutor as Pool
 

@@ -102,7 +102,7 @@ class Task:
         return cls.argparser.format_help()
 
 
-class Parser:
+class EntryPoint:
     _tasks = list(map(lambda x: x.removesuffix('.py'),
                   filter(lambda x: x.endswith('.py') and not _is_private(x),
                          os.listdir(Path(__file__).parent/f'../{_CONFIG}/{_MAIN}'))))
@@ -215,5 +215,5 @@ class Parser:
 
 class Main(Task):
     @interface
-    def run(self, parser: Parser) -> Optional[dict[str]]:
+    def run(self, parser: EntryPoint) -> Optional[dict[str]]:
         ...
