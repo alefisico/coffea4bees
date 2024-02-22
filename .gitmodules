@@ -1,3 +1,0 @@
-[submodule "python/.php-plots"]
-	path = python/.php-plots
-	url = https://gitlab.cern.ch/cms-analysis/general/php-plots.git

@@ -2,6 +2,11 @@ from datetime import datetime
 
 TIMESTAMP = datetime.now().strftime('%Y%m%d_%H%M%S')
 
+
+#
+# rule all sets the entire workflow. This is were you define the last output of the workflow.
+# Snakemake will go backawrds and check what rules does the workflow need to get the output.
+#
 rule all:
     input:
         "output/RunII/passPreSel/fourTag/SB/SvB_MA_ps_zh.pdf"
@@ -19,7 +24,7 @@ rule analysis:
         """
         cd python/ 
         echo "Running" {wildcards.dataset}
-        python runner.py -d {wildcards.dataset} -p analysis/processors/processor_HH4b.py -y UL17 UL18 UL16_preVFP UL16_postVFP -o histAll_{wildcards.dataset}.coffea -op ../output/ -t
+        python runner.py -d {wildcards.dataset} -p analysis/processors/processor_HH4b.py -y UL17 UL18 UL16_preVFP UL16_postVFP -o histAll_{wildcards.dataset}.coffea -op ../output/ 
         """
 
 rule merging_coffea_files:
@@ -51,6 +56,6 @@ rule make_plots:
         """
         cd python/ 
         python analysis/makePlots.py ../output/histAll.coffea -o ../output/ -m analysis/metadata/plotsAll.yml
-        python .php-plots/bin/pb_deploy_plots.py ../output/RunII/ /eos/user/a/algomez/work/HH4b/reana/{TIMESTAMP}/RunII/ -r -c
+        python .php-plots/bin/pb_deploy_plots.py ../output/RunII/ /eos/user/a/algomez/work/HH4b/reana/{TIMESTAMP}/ -r -c
         """
         
