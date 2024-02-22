@@ -69,24 +69,31 @@ class PicoAOD(ProcessorABC):
 
 @delayed
 def _fetch_metadata(dataset: str, path: PathLike, dask: bool = False):
-    with uproot.open(path) as f:
-        if 'genEventCount' in f['Runs'].keys():
-            data = f['Runs'].arrays(
-                ['genEventCount', 'genEventSumw', 'genEventSumw2'])
-            return {
-                dataset: {
-                    'count': float(ak.sum(data['genEventCount'])),
-                    'sumw': float(ak.sum(data['genEventSumw'])),
-                    'sumw2': float(ak.sum(data['genEventSumw2'])),
+    try:
+        with uproot.open(path) as f:
+            if 'genEventCount' in f['Runs'].keys():
+                data = f['Runs'].arrays(
+                    ['genEventCount', 'genEventSumw', 'genEventSumw2'])
+                return {
+                    dataset: {
+                        'count': float(ak.sum(data['genEventCount'])),
+                        'sumw': float(ak.sum(data['genEventSumw'])),
+                        'sumw2': float(ak.sum(data['genEventSumw2'])),
+                    }
                 }
-            }
-        else:
-            data = f['Events'].arrays(['event'])
-            return {
-                dataset: {
-                    'count' : float(ak.num(data['event'], axis=0))
+            else:
+                data = f['Events'].arrays(['event'])
+                return {
+                    dataset: {
+                        'count': float(ak.num(data['event'], axis=0))
+                    }
                 }
+    except:
+        return {
+            dataset: {
+                'bad_files': [str(EOS(path))]
             }
+        }
 
 
 def fetch_metadata(
@@ -130,7 +137,7 @@ def integrity_check(
         for file in inputs:
             if file not in outputs:
                 logging.error(f'The whole file is missing: "{file}"')
-                file_missing.append( str(file) )
+                file_missing.append(str(file))
             else:
                 chunks = sorted(outputs[file], key=lambda x: x[0])
                 if ns is not None:
@@ -144,12 +151,14 @@ def integrity_check(
                         start = _start
                         logging.error(
                             f'Missing chunk: [{stop}, {_start}) in "{file}"')
-                        chuck_missing.append( f'[{stop}, {_start}) in "{file}"' )
+                        chunk_missing.append(f'[{stop}, {_start}) in "{file}"')
                     stop = _stop
                 if start != stop:
                     merged.append([start, stop])
-        if file_missing: miss_dict["file_missing"] = file_missing
-        if chunk_missing: miss_dict["chunk_missing"] = chunk_missing
+        if file_missing:
+            miss_dict["file_missing"] = file_missing
+        if chunk_missing:
+            miss_dict["chunk_missing"] = chunk_missing
     output[dataset].pop('source')
     output[dataset]['missing'] = miss_dict
     return output
