@@ -17,7 +17,8 @@ workflow:
 
 stages:          
   - build
-  - test
+  - skimmer-test
+  - analysis-test
   - plot
 
 voms_proxy:
@@ -62,7 +63,7 @@ build_kaniko_command:
       - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^container.*/'
 
 analysis-test-job:   
-  stage: test   
+  stage: analysis-test   
   dependencies:
     - voms_proxy
   image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
@@ -75,9 +76,9 @@ analysis-test-job:
     paths:
       - python/analysis/hists/test.coffea
 
-# problems while running with dask_processor
+
 skimmer-test-job:   
-  stage: test   
+  stage: skimmer-test   
   dependencies:
     - voms_proxy
   image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
@@ -85,14 +86,27 @@ skimmer-test-job:
     - k8s-cvmfs
   script:
     - source .ci-workflows/skimmer-test-job.sh
-  timeout: 20m
   allow_failure: true
   artifacts: 
     expire_in: 1 day
     paths:
       - python/skimmer/metadata/picoaod_datasets_TTToSemiLeptonic_UL18.yml
-      - ${CI_PROJECT_DIR}/TTToSemiLeptonic_UL18/picoAOD.root
       - python/coffea4bees-dask-report.html
+
+skimmer-analysis-test-job:   
+  stage: analysis-test   
+  needs: skimmer-test-job
+  dependencies:
+    - voms_proxy
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  tags:
+    - k8s-cvmfs
+  script:
+    - source .ci-workflows/skimmer-analysis-test-job.sh
+  artifacts: 
+    expire_in: 1 day
+    paths:
+      - python/analysis/hists/test_skimmer.coffea
 
 
 analysis-plot-job:    
