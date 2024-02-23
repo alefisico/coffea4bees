@@ -8,7 +8,7 @@ from collections import deque
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Optional
 
-from ..process.state import Cascade
+from ..process.state import Cascade, _is_private
 from .dataset import Dataset
 from .model import Model
 from .task import Task, interface
@@ -22,8 +22,11 @@ _CONFIG = 'config'
 _MAIN = 'main'
 
 
-def _is_private(name: str):
-    return name.startswith('_')
+def _new(cls: type[Task], opts: list[str]):
+    obj = object.__new__(cls)
+    obj.parse(opts)
+    obj.__init__()
+    return obj
 
 
 class EntryPoint:
@@ -86,7 +89,7 @@ class EntryPoint:
                         raise TypeError(
                             f'Class "{clsname}" is not a subclass of Task')
                     else:
-                        self.mods[cat].append(cls().parse(opts))
+                        self.mods[cat].append(_new(cls, opts))
 
     def __init__(self):
         self.entrypoint = Path(sys.argv[0]).name

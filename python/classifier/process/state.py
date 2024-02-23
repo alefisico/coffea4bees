@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Mapping, get_type_hints
-
-from ..task.parsers import parse_dict
-from ..task.task import _INDENT
+from typing import Any, Mapping
 
 _MAX_WIDTH = 30
+
+
+def _is_private(name: str):
+    return name.startswith('_')
 
 
 def _is_special(name: str):
@@ -18,7 +19,22 @@ def _is_state(var: tuple[str, Any]):
     return not _is_special(name) and not isinstance(value, classmethod)
 
 
-class GlobalState:
+class _CachedStateMeta(type):
+    __cached_states__ = {}
+
+    def __getattribute__(self, __name: str):
+        if not _is_private(__name):
+            value = vars(self).get(__name)
+            parser = vars(self).get(f'_{__name}')
+            if isinstance(parser, classmethod):
+                if __name not in self.__cached_states__:
+                    self.__cached_states__[
+                        __name] = parser.__func__(self, value)
+                return self.__cached_states__[__name]
+        return super().__getattribute__(__name)
+
+
+class GlobalState(metaclass=_CachedStateMeta):
     _states: list[type[GlobalState]] = []
 
     def __init_subclass__(cls):
@@ -43,6 +59,8 @@ class share_global_state:
 class Cascade(GlobalState):
     @classmethod
     def parse(cls, opts: list[str]):
+        from ..task.parsers import parse_dict
+
         for opt in opts:
             data = parse_dict(opt)
             if isinstance(data, Mapping):
@@ -57,10 +75,15 @@ class Cascade(GlobalState):
     def help(cls):
         from textwrap import indent
 
-        from base_class.typetools import type_name
+        from base_class.typetools import get_partial_type_hints, type_name
         from rich.markup import escape
 
-        annotations = get_type_hints(cls)
+        from ..task.task import _INDENT
+
+        try:
+            annotations = get_partial_type_hints(cls, include_extras=True)
+        except Exception:
+            annotations = cls.__annotations__
         keys = dict(filter(_is_state, vars(cls).items()))
         infos = []
         if cls.__doc__:
