@@ -4,11 +4,10 @@ import pkgutil
 from pathlib import Path
 from textwrap import indent
 
-from classifier.task import ArgParser, EntryPoint, Main, Task
+from classifier.task import ArgParser, EntryPoint, Task
 from classifier.task import main as _main
+from classifier.task.task import _INDENT
 from rich.console import Console
-
-_INDENT = '  '
 
 
 def _walk_packages(base):
@@ -24,9 +23,14 @@ def _walk_packages(base):
             yield '.'.join(parts + (mod.name,))
 
 
-class Main(Main):
+class Main(_main.Main):
     _keys = ' '.join(f'--{k}' for k in EntryPoint._keys)
-    argparser = ArgParser(prog='help')
+    argparser = ArgParser(
+        prog='help',
+        description='print help messages',
+        workflow=[
+            ('main', f'call [blue]{"|".join(EntryPoint._keys)}[/blue].help'),
+        ])
     argparser.add_argument(
         '--all', action='store_true', help=f'list all available modules for [blue]{_keys}[/blue]')
     argparser.add_argument(

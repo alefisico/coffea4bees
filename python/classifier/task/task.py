@@ -3,9 +3,12 @@ from __future__ import annotations
 import argparse
 from collections import ChainMap
 from copy import deepcopy
-from typing import TypeVar
+from textwrap import indent
+from typing import Iterable, Literal, TypeVar
 
 _InterfaceT = TypeVar('_InterfaceT')
+
+_INDENT = '  '
 
 
 class _Interface:
@@ -26,12 +29,29 @@ def interface(func: _InterfaceT) -> _InterfaceT:
     return _Interface(func)
 
 
+class _Formatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter):
+    ...
+
+
 class ArgParser(argparse.ArgumentParser):
-    def __init__(self, **kwargs):
+    def __init__(
+        self,
+        workflow: Iterable[tuple[Literal['main', 'sub'], str]] = None,
+        **kwargs
+    ):
         kwargs['prog'] = kwargs.get('prog', None) or ''
         kwargs['add_help'] = False
         kwargs['conflict_handler'] = 'resolve'
-        kwargs['formatter_class'] = argparse.ArgumentDefaultsHelpFormatter
+        kwargs['formatter_class'] = _Formatter
+        if workflow:
+            wf = ['workflow:']
+            wf.extend(indent(indent(
+                f'->([yellow]{p} process[/yellow])\n{t}', _INDENT)[2:], _INDENT) for p, t in workflow)
+            wf = '\n'.join(wf)
+            if 'description' in kwargs:
+                kwargs['description'] += '\n\n' + wf
+            else:
+                kwargs['description'] = wf
         super().__init__(**kwargs)
 
     def remove_argument(self, *name_or_flags: str):

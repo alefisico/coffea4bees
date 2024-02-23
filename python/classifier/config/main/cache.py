@@ -17,7 +17,12 @@ if TYPE_CHECKING:
 
 class Main(WriteOutput, LoadTrainingSets):
     argparser = task.ArgParser(
-        prog='cache', description='write the datasets to files, which can be loaded by [green]cache.Torch[/green]')
+        prog='cache',
+        description='write the datasets to files, which can be loaded by [green]cache.Torch[/green]',
+        workflow=[
+            *LoadTrainingSets._workflow,
+            ('sub', 'write chunks to disk'),
+        ])
     argparser.add_argument(
         '--shuffle', action='store_true', help='shuffle the dataset before saving')
     argparser.add_argument(

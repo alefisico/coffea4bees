@@ -4,8 +4,8 @@ import logging
 from typing import Any, Mapping, get_type_hints
 
 from ..task.parsers import parse_dict
+from ..task.task import _INDENT
 
-_INDENT = '  '
 _MAX_WIDTH = 30
 
 

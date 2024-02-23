@@ -64,6 +64,10 @@ class _load_datasets:
 
 
 class LoadTrainingSets(SetupMultiprocessing):
+    _workflow = [
+        ('main', 'call [blue]dataset[/blue].train'),
+        ('sub', 'run [blue]dataset[/blue] loaders'),
+    ]
     argparser = ArgParser()
     argparser.add_argument(
         '--max-loaders', type=int, default=1, help='the maximum number of datasets to load in parallel')
