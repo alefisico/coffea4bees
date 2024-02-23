@@ -96,9 +96,8 @@ skimmer-test-job:
 
 skimmer-analysis-test-job:   
   stage: analysis-test   
-  dependencies:
-    - voms_proxy
   needs: 
+    - voms_proxy
     - skimmer-test-job
   image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
   tags:
