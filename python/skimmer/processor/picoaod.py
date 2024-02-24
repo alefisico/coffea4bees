@@ -140,7 +140,7 @@ def integrity_check(
         logging.error(f'The whole dataset is missing: {diff}')
         miss_dict["dataset_missing"] = "Run again :P"
     for dataset in fileset:
-        if len(output[dataset]['files']):
+        if len(output[dataset]['files']) == 0:
             logging.warning(f'No file is saved for "{dataset}"')
         inputs = map(EOS, fileset[dataset]['files'])
         outputs = {EOS(k): v for k, v in output[dataset]['source'].items()}
