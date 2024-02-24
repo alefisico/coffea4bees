@@ -4,7 +4,7 @@ from inspect import getmro
 from operator import add
 from types import UnionType
 from typing import (Annotated, Any, Literal, Protocol, TypeVar, Union,
-                    get_args, get_origin, runtime_checkable)
+                    get_args, get_origin, get_type_hints, runtime_checkable)
 
 from .utils import count, unique
 
@@ -31,6 +31,8 @@ def _expand_type(__class_or_tuple):
 
 
 def check_subclass(__derived, __base) -> bool:
+    # TODO Callable, TypedDict
+
     origin_base, args_base, _ = _expand_type(__base)
     origin_derived, args_derived, _ = _expand_type(__derived)
 
@@ -65,7 +67,7 @@ def check_subclass(__derived, __base) -> bool:
             args_base[1:] == args_derived[1:]
             and check_subclass(args_derived[0], args_base[0])),
         (Callable, lambda:
-            True)  # TODO Callable
+            True)  # FIXME compare args
     ):
         match count([origin_base, origin_derived], type_):
             case 2:
@@ -84,6 +86,8 @@ def check_subclass(__derived, __base) -> bool:
 
 
 def check_type(__obj, __type) -> bool:
+    # TODO Callable, TypedDict
+
     # object(), None, Ellipsis
     if __type.__class__ is object or __type is None or __type is ...:
         return __obj is __type
@@ -103,7 +107,6 @@ def check_type(__obj, __type) -> bool:
     # Annotated
     if origin is Annotated:
         return check_type(__obj, args[0])
-    # TODO Callable
 
     if generic:
         if not isinstance(__obj, origin):
@@ -131,6 +134,9 @@ def check_type(__obj, __type) -> bool:
 
 
 def type_name(__type) -> str:
+    # TODO TypedDict
+    if isinstance(__type, str):
+        return __type
     if isinstance(__type, tuple | list):
         return f'({", ".join(type_name(i) for i in __type)})'
 
@@ -168,6 +174,26 @@ def type_name(__type) -> str:
     if args:
         args = f'[{", ".join(args)}]'
     return f'{type_name(origin)}{args}'
+
+
+def get_partial_type_hints(cls, include_extras: bool = False):
+    try:
+        return get_type_hints(cls, include_extras=include_extras)
+    except:
+        if not hasattr(cls, '__annotations__'):
+            return {}
+
+        class dummy:
+            __annotations__ = {}
+        hints = {}
+        for k, v in cls.__annotations__.items():
+            dummy.__annotations__ = {k: v}
+            try:
+                hints[k] = get_type_hints(
+                    dummy, include_extras=include_extras)[k]
+            except:
+                hints[k] = v
+        return hints
 
 # mro
 
