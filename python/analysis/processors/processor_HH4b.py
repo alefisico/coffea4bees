@@ -427,8 +427,9 @@ class analysis(processor.ProcessorABC):
         selev["xbW_reco"] = selev.top_cand.xbW
         selev["xW_reco"]  = selev.top_cand.xW
 
-        selev["delta_xbW"] = selev.xbW - selev.xbW_reco
-        selev["delta_xW"] = selev.xW - selev.xW_reco
+        if 'xbW' in selev.fields:  #### AGE: this should be temporary
+            selev["delta_xbW"] = selev.xbW - selev.xbW_reco
+            selev["delta_xW"] = selev.xW - selev.xW_reco
 
         #
         # Blind data in fourTag SR
@@ -472,13 +473,15 @@ class analysis(processor.ProcessorABC):
         fill += hist.add('hT',          (100,  0,   1000,  ('hT',          'H_{T} [GeV}')))
         fill += hist.add('hT_selected', (100,  0,   1000,  ('hT_selected', 'H_{T} (selected jets) [GeV}')))
 
-        fill += hist.add('xW',          (100, 0, 12,   ('xW',       'xW')))
-        fill += hist.add('delta_xW',    (100, -5, 5,   ('delta_xW', 'delta xW')))
-        fill += hist.add('delta_xW_l',  (100, -15, 15, ('delta_xW', 'delta xW')))
+        if 'xbW' in selev.fields:  ### AGE: this should be temporary
 
-        fill += hist.add('xbW',         (100, 0, 12,   ('xbW',      'xbW')))
-        fill += hist.add('delta_xbW',   (100, -5, 5,   ('delta_xbW','delta xbW')))
-        fill += hist.add('delta_xbW_l', (100, -15, 15, ('delta_xbW','delta xbW')))
+            fill += hist.add('xW',          (100, 0, 12,   ('xW',       'xW')))
+            fill += hist.add('delta_xW',    (100, -5, 5,   ('delta_xW', 'delta xW')))
+            fill += hist.add('delta_xW_l',  (100, -15, 15, ('delta_xW', 'delta xW')))
+
+            fill += hist.add('xbW',         (100, 0, 12,   ('xbW',      'xbW')))
+            fill += hist.add('delta_xbW',   (100, -5, 5,   ('delta_xbW','delta xbW')))
+            fill += hist.add('delta_xbW_l', (100, -15, 15, ('delta_xbW','delta xbW')))
 
         #
         #  Make quad jet hists
