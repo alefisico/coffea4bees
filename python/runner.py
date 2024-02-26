@@ -157,8 +157,6 @@ if __name__ == '__main__':
                                              'metadata': metadata_dataset[idataset]}
                         logging.info(
                             f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
-                print(fileset)
-                sys.exit(0)
 
     #
     # IF run in condor
