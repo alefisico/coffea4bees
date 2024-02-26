@@ -64,6 +64,8 @@ if __name__ == '__main__':
                         'UL16_postVFP', 'UL16_preVFP', 'UL17', 'UL18'], help="Year of data to run. Example if more than one: --year UL17 UL18")
     parser.add_argument('-d', '--datasets', nargs='+', dest='datasets', default=[
                         'HH4b', 'ZZ4b', 'ZH4b'], help="Name of dataset to run. Example if more than one: -d HH4b ZZ4b")
+    parser.add_argument('-e', '--era', nargs='+', dest='era', default=['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
+                        help="For data only. To run only on one data era.")
     parser.add_argument('-s', '--skimming', dest="skimming", action="store_true",
                         default=False, help='Run skimming instead of analysis')
     parser.add_argument('--condor', dest="condor",
@@ -130,7 +132,7 @@ if __name__ == '__main__':
                                          'trigger':  metadata['datasets']['data'][year]['trigger'],
                                          }
 
-            if not (dataset == 'data'):    
+            if not (dataset == 'data'):
                 if config_runner['data_tier'].startswith('pico'):
                     if 'data' not in dataset:
                         metadata_dataset[dataset]['genEventSumw'] = metadata['datasets'][dataset][year][config_runner['data_tier']]['sumw']
@@ -147,13 +149,14 @@ if __name__ == '__main__':
             else:
 
                 for iera, ifile in metadata['datasets'][dataset][year][config_runner['data_tier']].items():
-                    idataset = f'{dataset}_{year}{iera}'
-                    metadata_dataset[idataset] = metadata_dataset[dataset]
-                    metadata_dataset[idataset]['era'] = iera
-                    fileset[idataset] = {'files': list_of_files((ifile['files'] if config_runner['data_tier'].startswith('pico') else ifile), test=args.test, test_files=config_runner['test_files'], allowlist_sites=config_runner['allowlist_sites']),
-                                         'metadata': metadata_dataset[idataset]}
-                    logging.info(
-                        f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
+                    if iera in args.era:
+                        idataset = f'{dataset}_{year}{iera}'
+                        metadata_dataset[idataset] = metadata_dataset[dataset]
+                        metadata_dataset[idataset]['era'] = iera
+                        fileset[idataset] = {'files': list_of_files((ifile['files'] if config_runner['data_tier'].startswith('pico') else ifile), test=args.test, test_files=config_runner['test_files'], allowlist_sites=config_runner['allowlist_sites']),
+                                             'metadata': metadata_dataset[idataset]}
+                        logging.info(
+                            f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
 
     #
     # IF run in condor
