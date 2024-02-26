@@ -1,6 +1,9 @@
 import argparse
+import json
 import logging
+import math
 
+import fsspec
 from classifier.task import ArgParser, Dataset, parsers
 
 
@@ -12,10 +15,6 @@ class Torch(Dataset):
         '--chunk', action='extend', nargs='+', default=[], help='if given, only load the selected chunks e.g. [yellow]--chunks 0-3 5[/yellow]')
 
     def train(self):
-        import json
-        import math
-
-        import fsspec
         from base_class.system.eos import EOS
 
         base = EOS(self.opts.input)
@@ -43,7 +42,6 @@ class _read_torch_load:
         self.compression = compression
 
     def __call__(self):
-        import fsspec
         import torch
 
         with fsspec.open(self.path, 'rb', compression=self.compression) as f:

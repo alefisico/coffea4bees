@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import argparse
 import logging
 from datetime import datetime
 from functools import cached_property
@@ -12,17 +11,6 @@ from classifier.task import ArgParser, EntryPoint, Main
 
 if TYPE_CHECKING:
     from classifier.task.dataset import Dataset, TrainingSetLoader
-
-
-class WriteOutput(Main):
-    argparser = ArgParser()
-    argparser.add_argument(
-        '--output', default=argparse.SUPPRESS, required=True, help='the output directory')
-
-    @cached_property
-    def output(self):
-        from base_class.system.eos import EOS
-        return EOS(self.opts.output).mkdir(recursive=True)
 
 
 class SetupMultiprocessing(Main):
@@ -84,7 +72,7 @@ class LoadTrainingSets(SetupMultiprocessing):
             raise ValueError('No dataset to load')
         timer = datetime.now()
         with Pool(
-            max_workers=min(self.opts.max_loaders, len(d_loaders)),
+            max_workers=self.opts.max_loaders,
             mp_context=self.mp_context,
             initializer=self.mp_initializer
         ) as pool:

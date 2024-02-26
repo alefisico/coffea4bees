@@ -1,17 +1,21 @@
 from __future__ import annotations
 
 import importlib
+import json
 import logging
 import os
 import sys
 from collections import deque
+from functools import cached_property
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Optional
+
+import fsspec
 
 from ..process.state import Cascade, _is_private
 from .dataset import Dataset
 from .model import Model
-from .task import Task, interface
+from .task import ArgParser, Task, interface
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -121,30 +125,38 @@ class EntryPoint:
         self.main.parse(self.args[_MAIN][1])
         self._fetch_all()
         meta = self.main.run(self)
-        if meta is not None:
-            import json
 
-            import fsspec
-            from base_class.system.eos import EOS
+        output = self.main.output
+
+        if self.main.opts.save_state:
+            from ..config.setting.cache import save
+            save.parse([output/'state.pkl'])
+
+        if meta is not None:
             from base_class.utils.json import DefaultEncoder
 
-            try:
-                output = self.main.output
-            except:
-                output = EOS('.')
-            output = output / \
-                f'{self.args[_MAIN][0]}.json'
             meta |= {
                 'command': self.cmd,
                 'reproducible': reproducible(),
             }
-            with fsspec.open(output, 'wt') as f:
+            with fsspec.open(output/f'{self.args[_MAIN][0]}.json', 'wt') as f:
                 json.dump(meta, f, cls=DefaultEncoder)
 
 
 # main
 
 class Main(Task):
+    argparser = ArgParser()
+    argparser.add_argument(
+        '--output', default='.', help='the output directory')
+    argparser.add_argument(
+        '--save-state', action='store_true', help='save global states to the output directory')
+
+    @cached_property
+    def output(self):
+        from base_class.system.eos import EOS
+        return EOS(self.opts.output).mkdir(recursive=True)
+
     @interface
     def run(self, parser: EntryPoint) -> Optional[dict[str]]:
         ...

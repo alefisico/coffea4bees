@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import logging
+import math
 from datetime import datetime
 from typing import TYPE_CHECKING
 
 import fsspec
-from classifier.task import task
+from classifier.task import ArgParser, EntryPoint
 
-from ._utils import LoadTrainingSets, WriteOutput
+from ._utils import LoadTrainingSets
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -15,8 +16,8 @@ if TYPE_CHECKING:
     from torch.utils.data import StackDataset
 
 
-class Main(WriteOutput, LoadTrainingSets):
-    argparser = task.ArgParser(
+class Main(LoadTrainingSets):
+    argparser = ArgParser(
         prog='cache',
         description='write the datasets to files, which can be loaded by [green]cache.Torch[/green]',
         workflow=[
@@ -34,8 +35,7 @@ class Main(WriteOutput, LoadTrainingSets):
     argparser.add_argument(
         '--max-writers', type=int, default=1, help='the maximum number of files to write in parallel')
 
-    def run(self, parser: task.EntryPoint):
-        import math
+    def run(self, parser: EntryPoint):
         from concurrent.futures import ProcessPoolExecutor as Pool
 
         import numpy as np
@@ -55,7 +55,7 @@ class Main(WriteOutput, LoadTrainingSets):
 
         timer = datetime.now()
         with Pool(
-            max_workers=min(self.opts.max_writers, len(chunks)),
+            max_workers=self.opts.max_writers,
             mp_context=self.mp_context,
             initializer=self.mp_initializer
         ) as pool:
@@ -87,7 +87,7 @@ class _write_to_file:
         chunk, indices = args
         subset = Subset(self.dataset, indices)
         chunks = [
-            *DataLoader(subset, batch_size=Setting.io_step//len(self.dataset.datasets))]
+            *DataLoader(subset, batch_size=Setting.dataloader_io_batch//len(self.dataset.datasets))]
         data = {
             k: torch.cat([c[k] for c in chunks])
             for k in self.dataset.datasets}

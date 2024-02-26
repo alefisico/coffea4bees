@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from textwrap import indent
 from typing import Any, Mapping
 
 _MAX_WIDTH = 30
@@ -43,8 +44,10 @@ class GlobalState(metaclass=_CachedStateMeta):
 
 class share_global_state:
     def __getstate__(self):
-        return [(cls, dict(filter(_is_state, vars(cls).items())))
-                for cls in GlobalState._states]
+        return [*filter(
+            lambda x: x[1],
+            ((cls, dict(filter(_is_state, vars(cls).items())))
+             for cls in GlobalState._states))]
 
     def __setstate__(self, states: list[tuple[type[GlobalState], dict]]):
         self._states = states
@@ -57,6 +60,10 @@ class share_global_state:
 
 
 class Cascade(GlobalState):
+    @classmethod
+    def __mod_name__(cls):
+        return '.'.join(f'{cls.__module__}.{cls.__name__}'.split('.')[3:])
+
     @classmethod
     def parse(cls, opts: list[str]):
         from ..task.parsers import parse_dict
@@ -73,8 +80,6 @@ class Cascade(GlobalState):
 
     @classmethod
     def help(cls):
-        from textwrap import indent
-
         from base_class.typetools import get_partial_type_hints, type_name
         from rich.markup import escape
 
@@ -85,7 +90,7 @@ class Cascade(GlobalState):
         except Exception:
             annotations = cls.__annotations__
         keys = dict(filter(_is_state, vars(cls).items()))
-        infos = []
+        infos = [f'usage: {cls.__mod_name__()} OPTIONS [OPTIONS ...]', '']
         if cls.__doc__:
             doc = filter(None, (l.strip() for l in cls.__doc__.split('\n')))
             infos.extend([*doc, ''])
@@ -104,4 +109,5 @@ class Cascade(GlobalState):
                 truncate = True
             info += f' = {value}{"..." if truncate else ""}'
             infos.append(indent(info, _INDENT))
+        infos.append('')
         return '\n'.join(infos)
