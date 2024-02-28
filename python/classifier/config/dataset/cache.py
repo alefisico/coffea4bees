@@ -33,10 +33,10 @@ class Torch(Dataset):
                 count -= (total * metadata['chunksize'] - metadata['size'])
             logging.info(
                 f'Loading {count}/{metadata["size"]} entries from {len(chunks)}/{total} cached chunks (shuffle={metadata["shuffle"]}, compression={metadata["compression"]})')
-        return [_read_torch_load(str(base/f'chunk{i}.pt'), metadata['compression']) for i in chunks]
+        return [_load_cache(str(base/f'chunk{i}.pt'), metadata['compression']) for i in chunks]
 
 
-class _read_torch_load:
+class _load_cache:
     def __init__(self, path: str, compression: str):
         self.path = path
         self.compression = compression

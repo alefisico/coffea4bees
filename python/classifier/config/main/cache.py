@@ -59,7 +59,7 @@ class Main(LoadTrainingSets):
             mp_context=self.mp_context,
             initializer=self.mp_initializer
         ) as pool:
-            _ = pool.map(_write_to_file(datasets, self.output, self.opts.compression),
+            _ = pool.map(_save_cache(datasets, self.output, self.opts.compression),
                          zip(range(len(chunks)), chunks))
         logging.info(
             f'Wrote {size} entries to {len(chunks)} files in {datetime.now() - timer}')
@@ -72,7 +72,7 @@ class Main(LoadTrainingSets):
         }
 
 
-class _write_to_file:
+class _save_cache:
     def __init__(self, dataset: StackDataset, path: EOS, compression: str = None):
         self.dataset = dataset
         self.path = path

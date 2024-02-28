@@ -75,7 +75,7 @@ class ToTensor:
         return self
 
     def tensor(self, data: pd.DataFrame):
-        dataset = {}
+        dataset: dict[str, torch.Tensor] = {}
         for name, (dtype, columns) in self._columns.items():
             missing = [c for c, *_ in columns if c not in data]
             if missing:
