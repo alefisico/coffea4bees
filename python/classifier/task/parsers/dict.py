@@ -1,6 +1,7 @@
 import logging
+from collections import defaultdict
+from io import StringIO
 from pathlib import Path
-from typing import Any, Mapping
 
 
 def _parse_scheme(opt: str):
@@ -12,22 +13,23 @@ def _parse_scheme(opt: str):
 
 
 def _parse_keys(opt: str):
-    opt = opt.rsplit('=>', 1)
+    opt = opt.rsplit('@@', 1)
     if len(opt) == 1:
         return opt[0], None
     else:
         return opt[0], opt[1].split('.')
 
 
-def parse_dict(opt: str) -> Mapping[str, Any]:
+def parse_dict(opt: str):
     '''
     - `{data}`: parse as yaml
     - `yaml:///{data}`: parse as yaml
     - `json:///{data}`: parse as json
-    - `file:///{path}`: read from file, support .yaml(.yml), .json
+    - `csv:///{data}`: parse as csv
+    - `file:///{path}`: read from file, support .yaml(.yml), .json .csv
     - `py:///{module.class}`: parse as python import
 
-    `file`, `py` support an optional suffix `=>{key}.{key}...` to select a nested dict
+    `file`, `py` support an optional suffix `@@{key}.{key}...` to select a nested dict
     '''
     def error(msg: str):
         logging.error(f'{msg} when parsing "{opt}"')
@@ -37,11 +39,12 @@ def parse_dict(opt: str) -> Mapping[str, Any]:
     if protocol in ('file', 'py'):
         data, keys = _parse_keys(data)
     if protocol == 'file':
-        match Path(data).suffix:
-            case '.yaml' | '.yml':
+        suffix = Path(data).suffix
+        match suffix:
+            case '.yml':
                 protocol = 'yaml'
-            case '.json':
-                protocol = 'json'
+            case '.yaml' | '.json' | '.csv':
+                protocol = suffix[1:]
             case _:
                 error(f'Unsupported file "{data}"')
                 return
@@ -69,6 +72,9 @@ def parse_dict(opt: str) -> Mapping[str, Any]:
                 result = vars(getattr(mod, mods[-1]))
             except:
                 error(f'Failed to import "{data}"')
+        case 'csv':
+            import pandas as pd
+            result = pd.read_csv(StringIO(data)).to_dict(orient='list')
         case _:
             error(f'Unsupported protocol "{protocol}"')
 
@@ -80,4 +86,11 @@ def parse_dict(opt: str) -> Mapping[str, Any]:
                 error(
                     f'Failed to select key "{".".join(keys[:i+1])}"')
                 return
+    return result
+
+
+def parse_group(opt: list[tuple[str, str]]) -> dict[str, list[str]]:
+    result = defaultdict(list)
+    for k, v in opt:
+        result[k].append(v)
     return result

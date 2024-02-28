@@ -15,12 +15,12 @@ class FromRoot:
         self,
         friends: list[Friend] = None,
         branches: Callable[[set[str]], set[str]] = None,
-        selection: Callable[[pd.DataFrame], pd.DataFrame] = None,
+        preprocessors: list[Callable[[pd.DataFrame], pd.DataFrame]] = None,
         metadata: dict[str, Any] = None,
     ):
         self.chain = Chain()
         self.branches = branches
-        self.selection = selection
+        self.preprocessors = preprocessors or []
         self.metadata = metadata or {}
 
         for friend in friends or ():
@@ -34,8 +34,8 @@ class FromRoot:
             library='pd',
             reader_options={'filter': self.branches}
         ):
-            if self.selection:
-                df = self.selection(df)
+            for preprocessor in self.preprocessors:
+                df = preprocessor(df)
         for k, v in self.metadata.items():
             df[k] = v
         return df
