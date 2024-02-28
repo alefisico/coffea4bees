@@ -26,7 +26,7 @@ class Torch(Dataset):
         else:
             chunks = list(range(total))
         if len(chunks) == 0:
-            logging.warning('No chunk to load')
+            logging.warn('No chunk to load')
         else:
             count = len(chunks) * metadata['chunksize']
             if chunks[-1] == total - 1:

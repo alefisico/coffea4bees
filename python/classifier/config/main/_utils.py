@@ -87,7 +87,7 @@ class LoadTrainingSets(SetupMultiprocessing):
         logging.info(
             f'The following keys will be kept: {kept}')
         if ignored:
-            logging.warning(
+            logging.warn(
                 f'The following keys will be ignored: {sorted(ignored)}')
         datasets = {k: ConcatDataset(d[k] for d in datasets) for k in kept}
         logging.info(

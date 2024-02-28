@@ -60,7 +60,7 @@ class Device:
                 else:
                     available = list(filter(lambda x: x < count, indices))
                     if len(available) == 0:
-                        logging.warning(
+                        logging.warn(
                             f'Only {count} CUDA devices available on this system, got indices {list(sorted(indices))}')
                 if len(available) > 0:
                     i, mem = self._balance_cuda_device(*available)
@@ -71,7 +71,7 @@ class Device:
                             f'Found {count} CUDA devices, using device {i} {stat.name} with {mem//1024**2}/{stat.total_memory//1024**2} MiB free/total memory')
                         return d
                     else:
-                        logging.warning(
+                        logging.warn(
                             f'No CUDA device with at least {self.cuda_min_memory//1024**2} MiB of memory available')
         if 'cpu' in self._devices:
             return torch.device('cpu')
