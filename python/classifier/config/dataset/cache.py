@@ -8,7 +8,8 @@ from classifier.task import ArgParser, Dataset, parsers
 
 
 class Torch(Dataset):
-    argparser = ArgParser()
+    argparser = ArgParser(
+        description='Load datasets saved by [blue]cache[/blue].')
     argparser.add_argument(
         '--input', default=argparse.SUPPRESS, required=True, help='the input directory')
     argparser.add_argument(

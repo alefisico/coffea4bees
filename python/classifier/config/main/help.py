@@ -4,6 +4,7 @@ import pkgutil
 from pathlib import Path
 from textwrap import indent
 
+import rich.terminal_theme as themes
 from classifier.task import ArgParser, EntryPoint, Task, main
 from classifier.task.task import _INDENT
 from rich.console import Console
@@ -26,14 +27,15 @@ class Main(main.Main):
     _keys = ' '.join(f'--{k}' for k in EntryPoint._keys)
     argparser = ArgParser(
         prog='help',
-        description='print help messages',
+        description='Print help messages.',
         workflow=[
             ('main', f'call [blue]{"|".join(EntryPoint._keys)}[/blue].help'),
         ])
+    argparser.remove_argument('--save-state')
     argparser.add_argument(
         '--all', action='store_true', help=f'list all available modules for [blue]{_keys}[/blue]')
     argparser.add_argument(
-        '--html', action='store_true', help=f'write help to html file')
+        '--html', action='store_true', help=f'write "help.html" to output directory')
 
     def __init__(self):
         self._console = Console(record=True)
@@ -105,4 +107,5 @@ class Main(main.Main):
                                 indent(f'[green]{imp}.{cls}[/green]', _INDENT))
                             self._print_help(classes[cls], 2)
         if self.opts.html:
-            self._console.save_html(self.output / 'help.html')
+            self._console.save_html(
+                self.output / 'help.html', theme=themes.SVG_EXPORT_THEME)

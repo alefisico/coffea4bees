@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 class Main(LoadTrainingSets):
     argparser = ArgParser(
         prog='cache',
-        description='write the datasets to files, which can be loaded by [green]cache.Torch[/green]',
+        description='Save datasets to disk. Use [blue]--dataset[/blue] [green]cache.Torch[/green] to load.',
         workflow=[
             *LoadTrainingSets._workflow,
             ('sub', 'write chunks to disk'),

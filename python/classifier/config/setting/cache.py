@@ -15,7 +15,7 @@ class save(Cascade):
         infos = [
             f'usage: {cls.__mod_name__()} OUTPUT',
             '',
-            'save global states to file',
+            'Save global states to file.',
             '']
         return '\n'.join(infos)
 
@@ -31,6 +31,6 @@ class load(Cascade):
         infos = [
             f'usage: {cls.__mod_name__()} INPUT',
             '',
-            'load global states from file',
+            'Load global states from file.',
             '']
         return '\n'.join(infos)

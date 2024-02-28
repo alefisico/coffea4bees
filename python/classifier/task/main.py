@@ -128,7 +128,7 @@ class EntryPoint:
 
         output = self.main.output
 
-        if self.main.opts.save_state:
+        if hasattr(self.main.opts, 'save_state') and self.main.opts.save_state:
             from ..config.setting.cache import save
             save.parse([output/'state.pkl'])
 

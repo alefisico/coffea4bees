@@ -41,3 +41,40 @@ Select a release with `torch`, `cuda`, `awkward>=2.0.0` and `uproot>=5.0.0`, e.g
 ```bash
 source /cvmfs/sft.cern.ch/lcg/views/dev3cuda/x86_64-centos7-gcc11-opt/setup.sh
 ```
+
+### Use [conda](https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-from-an-environment-yml-file)
+
+Create conda environment from `env.yml`:
+
+```bash
+conda env create -f env.yml
+conda activate ml
+```
+
+or use [mamba](https://mamba.readthedocs.io/en/latest/installation/mamba-installation.html) for faster dependency resolution:
+
+```bash
+mamba env create -f env.yml
+```
+
+### Run Command Line Interface
+
+#### Help
+
+To list all available commands and options:
+
+```bash
+python run_classifier.py help --all
+```
+
+#### Train
+
+TODO
+
+#### Evaluate
+
+TODO
+
+## Advanced
+
+TODO
