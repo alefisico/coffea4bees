@@ -42,6 +42,11 @@ class SelectDevice(Main):
     argparser.add_argument(
         '--device', nargs='+', default=['cuda'], help='the [green]torch.device[/green] used for training')
 
+    @cached_property
+    def device(self):
+        from classifier.process.device import Device
+        return Device(*self.opts.device)
+
 
 class _load_datasets:
     def __call__(self, loader: TrainingSetLoader):
@@ -50,8 +55,8 @@ class _load_datasets:
 
 class LoadTrainingSets(SetupMultiprocessing):
     _workflow = [
-        ('main', 'call [blue]dataset[/blue].train'),
-        ('sub', 'run [blue]dataset[/blue] loaders'),
+        ('main', 'call [blue]dataset.train()[/blue]'),
+        ('sub', 'load [blue]dataset[/blue]'),
     ]
     argparser = ArgParser()
     argparser.add_argument(

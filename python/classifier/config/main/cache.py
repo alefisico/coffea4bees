@@ -82,12 +82,16 @@ class _save_cache:
         import torch
         from torch.utils.data import DataLoader, Subset
 
-        from ..setting.default import Dataset as Setting
+        from ..setting.default import DataLoader as Setting
 
         chunk, indices = args
         subset = Subset(self.dataset, indices)
         chunks = [
-            *DataLoader(subset, batch_size=Setting.dataloader_io_batch//len(self.dataset.datasets))]
+            *DataLoader(
+                dataset=subset,
+                batch_size=Setting.batch_io//len(self.dataset.datasets),
+                num_workers=Setting.num_workers,
+            )]
         data = {
             k: torch.cat([c[k] for c in chunks])
             for k in self.dataset.datasets}
