@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ..config.setting.dataframe import Columns
+from ..config.setting.df import Columns
 from ..config.state.label import MultiClass
 
 if TYPE_CHECKING:

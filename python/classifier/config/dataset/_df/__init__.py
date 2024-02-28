@@ -6,7 +6,6 @@ from itertools import chain
 from typing import TYPE_CHECKING, Callable
 
 from base_class.utils import unique
-from classifier.df.tools import add_label_flag, add_label_index
 from classifier.task import ArgParser, Dataset, parsers
 
 if TYPE_CHECKING:
@@ -54,28 +53,6 @@ class _load_df(ABC):
     @abstractmethod
     def load(self) -> pd.DataFrame:
         ...
-
-# extensions
-
-
-class WithSingleLabel(Dataframe):
-    argparser = ArgParser()
-    argparser.add_argument(
-        '--label', required=True, help='the label of the dataset')
-
-    def __init__(self):
-        super().__init__()
-        self._postprocessors.append(add_label_index(self.opts.label))
-
-
-class WithMultipleLabel(Dataframe):
-    argparser = ArgParser()
-    argparser.add_argument(
-        '--labels', nargs='+', required=True, help='the labels of the dataset')
-
-    def __init__(self):
-        super().__init__()
-        self._postprocessors.append(add_label_flag(*self.opts.labels))
 
 # ROOT
 
