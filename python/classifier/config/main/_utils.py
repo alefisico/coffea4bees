@@ -44,9 +44,6 @@ class SelectDevice(Main):
 
 
 class _load_datasets:
-    def __init__(self):
-        ...
-
     def __call__(self, loader: TrainingSetLoader):
         return loader()
 

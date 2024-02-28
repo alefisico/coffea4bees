@@ -4,8 +4,7 @@ import pkgutil
 from pathlib import Path
 from textwrap import indent
 
-from classifier.task import ArgParser, EntryPoint, Task
-from classifier.task import main as _main
+from classifier.task import ArgParser, EntryPoint, Task, main
 from classifier.task.task import _INDENT
 from rich.console import Console
 
@@ -15,15 +14,15 @@ def _walk_packages(base):
     for root, _, _ in os.walk(base):
         root = Path(root)
         parts = root.relative_to(base).parts
-        if any(_main._is_private(p) for p in parts):
+        if any(main._is_private(p) for p in parts):
             continue
         for mod in pkgutil.iter_modules([str(root)]):
-            if _main._is_private(mod.name):
+            if main._is_private(mod.name):
                 continue
             yield '.'.join(parts + (mod.name,))
 
 
-class Main(_main.Main):
+class Main(main.Main):
     _keys = ' '.join(f'--{k}' for k in EntryPoint._keys)
     argparser = ArgParser(
         prog='help',
@@ -47,7 +46,7 @@ class Main(_main.Main):
         self._print(indent(task.help(), _INDENT*depth))
 
     def run(self, parser: EntryPoint):
-        main = parser.args['main']
+        tasks = parser.args['main']
         self._print('[orange3]\[Usage][/orange3]')
         self._print(' '.join([
             f'{parser.entrypoint} [blue]task[/blue] [yellow]\[args ...][/yellow]',
@@ -55,7 +54,7 @@ class Main(_main.Main):
         self._print(indent(
             f'[blue]task[/blue] = [blue]{"|".join(parser._tasks)}[/blue]', _INDENT))
         self._print(indent(
-            f'[green]module.class[/green] = [purple]from[/purple] [green]{_main._CLASSIFIER}.{_main._CONFIG}.\[{"|".join(parser._keys)}].module[/green] [purple]import[/purple] [green]class[/green]', _INDENT))
+            f'[green]module.class[/green] = [purple]from[/purple] [green]{main._CLASSIFIER}.{main._CONFIG}.\[{"|".join(parser._keys)}].module[/green] [purple]import[/purple] [green]class[/green]', _INDENT))
         self._print('\n[orange3]\[Tasks][orange3]')
         self._print(
             f'[blue]help[/blue]')
@@ -63,10 +62,10 @@ class Main(_main.Main):
         for task in parser._tasks:
             if task != 'help':
                 self._print(f'[blue]{task}[/blue]')
-                _, cls = parser._fetch_module(f'{task}.Main', _main._MAIN)
+                _, cls = parser._fetch_module(f'{task}.Main', main._MAIN)
                 self._print_help(cls)
         self._print('\n[orange3]\[Options][orange3]')
-        self._print(f'[blue]task[/blue] [yellow]{" ".join(main[1])}[/yellow]')
+        self._print(f'[blue]task[/blue] [yellow]{" ".join(tasks[1])}[/yellow]')
         for cat in parser._keys:
             target = EntryPoint._keys[cat]
             for imp, opts in parser.args[cat]:
@@ -91,19 +90,19 @@ class Main(_main.Main):
             for cat in parser._keys:
                 target = EntryPoint._keys[cat]
                 self._print(f'[blue]--{cat}[/blue]')
-                for imp in _walk_packages(f'{_main._CLASSIFIER}/{_main._CONFIG}/{cat}/'):
+                for imp in _walk_packages(f'{main._CLASSIFIER}/{main._CONFIG}/{cat}/'):
                     _imp = f'{imp}.*'
                     modname, _ = parser._fetch_module_name(_imp, cat)
                     mod, _ = parser._fetch_module(_imp, cat)
-                    tasks = {}
+                    classes = {}
                     if mod is not None:
                         for name, obj in inspect.getmembers(mod, inspect.isclass):
-                            if issubclass(obj, target) and not _main._is_private(name) and obj.__module__ == modname:
-                                tasks[name] = obj
-                    if tasks:
-                        for cls in tasks:
+                            if issubclass(obj, target) and not main._is_private(name) and obj.__module__ == modname:
+                                classes[name] = obj
+                    if classes:
+                        for cls in classes:
                             self._print(
                                 indent(f'[green]{imp}.{cls}[/green]', _INDENT))
-                            self._print_help(tasks[cls], 2)
+                            self._print_help(classes[cls], 2)
         if self.opts.html:
             self._console.save_html(self.output / 'help.html')
