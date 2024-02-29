@@ -233,48 +233,22 @@ def loadCoffeaHists():
 
     ttbar_list = ['TTTo2L2Nu', 'TTToSemiLeptonic', 'TTToHadronic']
     tt4b, tt4b_nTagJets, tt3b, tt3b_nTagJets, tt3b_nTagJets_tight = None, None, None, None, None
-    for ttbar_name in ttbar_list:
-        this_tt4b_hist = infile['selJets_noJCM.n'][ttbar_name,sum,1,1,True,False,False,:]
-        this_tt4b = make_TH1F_from_Hist(this_tt4b_hist, "tt4b", "tt4b")
-
-        this_tt4b_nTagJets_hist = infile['tagJets_loose_noJCM.n'][ttbar_name,sum,1,1,True,False,False,:]
-        this_tt4b_nTagJets = make_TH1F_from_Hist(this_tt4b_nTagJets_hist, "tt4b_nTagJets", "tt4b_nTagJets")
-
-        this_tt3b_hist = infile['selJets_noJCM.n'][ttbar_name,sum,0,1,True,False,False,:]
-        this_tt3b = make_TH1F_from_Hist(this_tt3b_hist, "tt3b", "tt3b")
-
-        this_tt3b_nTagJets_hist = infile['tagJets_loose_noJCM.n'][ttbar_name,sum,0,1,True,False,False,:]
-        this_tt3b_nTagJets = make_TH1F_from_Hist(this_tt3b_nTagJets_hist, "tt3b_nTagJets", "tt3b_nTagJets")
-
-        this_tt3b_nTagJets_tight_hist = infile['tagJets_noJCM.n'][ttbar_name,sum,0,1,True,False,False,:]
-        this_tt3b_nTagJets_tight = make_TH1F_from_Hist(this_tt3b_nTagJets_tight_hist, "tt3b_nTagJets_tight", "tt3b_nTagJets_tight")
 
 
-        if not tt4b:  
-            tt4b = this_tt4b
-        else:
-            tt4b.Add(this_tt4b)
+    tt4b_hist = infile['selJets_noJCM.n'][ttbar_list,sum,1,1,True,False,False,:][sum,:]
+    tt4b = make_TH1F_from_Hist(tt4b_hist, "tt4b", "tt4b")
 
-        if not tt4b_nTagJets:  
-            tt4b_nTagJets = this_tt4b_nTagJets
-        else:
-            tt4b_nTagJets.Add(this_tt4b_nTagJets)
-        
-        if not tt3b: 
-            tt3b = this_tt3b
-        else:
-            tt3b.Add(this_tt3b)
+    tt4b_nTagJets_hist = infile['tagJets_loose_noJCM.n'][ttbar_list,sum,1,1,True,False,False,:][sum,:]
+    tt4b_nTagJets = make_TH1F_from_Hist(tt4b_nTagJets_hist, "tt4b_nTagJets", "tt4b_nTagJets")
 
-        if not tt3b_nTagJets:  
-            tt3b_nTagJets = this_tt3b_nTagJets
-        else:
-            tt3b_nTagJets.Add(this_tt3b_nTagJets)
+    tt3b_hist = infile['selJets_noJCM.n'][ttbar_list,sum,0,1,True,False,False,:][sum,:]
+    tt3b = make_TH1F_from_Hist(tt3b_hist, "tt3b", "tt3b")
 
-        if not tt3b_nTagJets_tight:  
-            tt3b_nTagJets_tight = this_tt3b_nTagJets_tight
-        else:
-            tt3b_nTagJets_tight.Add(this_tt3b_nTagJets_tight)
+    tt3b_nTagJets_hist = infile['tagJets_loose_noJCM.n'][ttbar_list,sum,0,1,True,False,False,:][sum,:]
+    tt3b_nTagJets = make_TH1F_from_Hist(tt3b_nTagJets_hist, "tt3b_nTagJets", "tt3b_nTagJets")
 
+    tt3b_nTagJets_tight_hist = infile['tagJets_noJCM.n'][ttbar_list,sum,0,1,True,False,False,:][sum,:]
+    tt3b_nTagJets_tight = make_TH1F_from_Hist(tt3b_nTagJets_tight_hist, "tt3b_nTagJets_tight", "tt3b_nTagJets_tight")
     
     qcd4b = data4b.Clone("qcd4b")
     qcd4b.Add( tt4b, -1 )
