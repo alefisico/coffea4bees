@@ -232,8 +232,6 @@ def loadCoffeaHists():
     data3b_nTagJets_tight = make_TH1F_from_Hist(data3b_nTagJets_tight_hist, "data3b_nTagJets_tight", "data3b_nTagJets_tight")
 
     ttbar_list = ['TTTo2L2Nu', 'TTToSemiLeptonic', 'TTToHadronic']
-    tt4b, tt4b_nTagJets, tt3b, tt3b_nTagJets, tt3b_nTagJets_tight = None, None, None, None, None
-
 
     tt4b_hist = infile['selJets_noJCM.n'][ttbar_list,sum,1,1,True,False,False,:][sum,:]
     tt4b = make_TH1F_from_Hist(tt4b_hist, "tt4b", "tt4b")

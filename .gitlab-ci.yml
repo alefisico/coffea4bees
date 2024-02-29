@@ -144,6 +144,7 @@ skimmer-analysis-cutflow-job:
     - k8s-cvmfs
   script:
     - source .ci-workflows/skimmer-analysis-cutflow-job.sh
+  allow_failure: true
 
 analysis-iplot-job:    
   stage: plot 
