@@ -26,7 +26,7 @@ _CONFIG = 'config'
 _MAIN = 'main'
 
 
-def _new(cls: type[Task], opts: list[str]):
+def new_task(cls: type[Task], opts: list[str]):
     obj = object.__new__(cls)
     obj.parse(opts)
     obj.__init__()
@@ -93,7 +93,7 @@ class EntryPoint:
                         raise TypeError(
                             f'Class "{clsname}" is not a subclass of Task')
                     else:
-                        self.mods[cat].append(_new(cls, opts))
+                        self.mods[cat].append(new_task(cls, opts))
 
     def __init__(self):
         self.entrypoint = Path(sys.argv[0]).name

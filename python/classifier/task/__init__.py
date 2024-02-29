@@ -1,5 +1,5 @@
 from .dataset import Dataset
-from .main import EntryPoint, Main
+from .main import EntryPoint, Main, new_task
 from .model import Model
 from .task import ArgParser, Task
 
@@ -9,5 +9,6 @@ __all__ = [
     'EntryPoint',
     'Main',
     'Model',
-    'Task'
+    'Task',
+    'new_task',
 ]
