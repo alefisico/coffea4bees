@@ -1,21 +1,21 @@
 from __future__ import annotations
 
 import logging
-from functools import cached_property
 from typing import Optional
 
 import torch
+
+# PLAN balance based on usage if memory is satisfied
+# PLAN balance jobs during the first round of pool
+# PLAN raise error if no valid device found then handle in train.py to retry
 
 
 class Device:
     def __init__(
         self,
         *devices: str,
-        cuda_min_memory: int = 0,
     ):
         self._devices: dict[str, Optional[set[int]]] = {}
-
-        self.cuda_min_memory = cuda_min_memory
 
         for device in devices:
             try:
@@ -41,16 +41,15 @@ class Device:
         if not self._devices:
             raise ValueError('No valid device found')
 
-    def _balance_cuda_device(self, *indices: int):
+    def _balance_cuda_device(self, *indices: int, min_memory):
         ram = [(i, torch.cuda.mem_get_info(f'cuda:{i}')[0]) for i in indices]
-        ram = list(filter(lambda x: x[1] >= self.cuda_min_memory, ram))
+        ram = list(filter(lambda x: x[1] >= min_memory, ram))
         if not ram:
             return None, None
         else:
             return sorted(ram, key=lambda x: x[1])[0]
 
-    @cached_property
-    def device(self) -> torch.device:
+    def get(self, cuda_min_memory: int = 0) -> torch.device:
         if 'cuda' in self._devices:
             if torch.cuda.is_available():
                 indices = self._devices['cuda']
@@ -63,7 +62,8 @@ class Device:
                         logging.warn(
                             f'Only {count} CUDA devices available on this system, got indices {list(sorted(indices))}')
                 if len(available) > 0:
-                    i, mem = self._balance_cuda_device(*available)
+                    i, mem = self._balance_cuda_device(
+                        *available, min_memory=cuda_min_memory)
                     if i is not None:
                         d = torch.device(f'cuda:{i}')
                         stat = torch.cuda.get_device_properties(d)

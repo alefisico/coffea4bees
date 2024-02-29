@@ -24,7 +24,7 @@ class Model(Task):
 
 
 class ModelTrainer(Protocol):
-    def __call__(self, device: Device):
+    def __call__(self, device: Device) -> dict[str]:
         ...
 
 

@@ -3,15 +3,15 @@ from __future__ import annotations
 import argparse
 from abc import ABC, abstractmethod
 from functools import cached_property
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
-from classifier.discriminator import Classifier
 from classifier.task import ArgParser, Model, converter
 
 from ...config.setting.default import DataLoader as DLSetting
 from ...config.setting.df import Columns
 
 if TYPE_CHECKING:
+    from classifier.discriminator import Classifier
     from classifier.process.device import Device
     from torch.utils.data import Dataset, StackDataset
 
@@ -25,9 +25,8 @@ class KFoldClassifier(ABC, Model):
     argparser.add_argument(
         '--kfold-split-key', default=argparse.SUPPRESS, help='the key used to split the dataset (default: [green]Columns[/green].event_offset)')
 
-    @property
     @abstractmethod
-    def initializer(self) -> Callable[[], Classifier]:
+    def initializer(self, kfolds: int, offset: int) -> Classifier:
         ...
 
     @cached_property
@@ -42,7 +41,7 @@ class KFoldClassifier(ABC, Model):
 
     def train(self, dataset: StackDataset):
         if self.kfolds == 1:
-            return [_train_classifier(self.initializer, dataset, dataset)]
+            return [_train_classifier(self.initializer(kfolds=self.kfolds, offset=0), dataset, dataset)]
         else:
             import numpy as np
             from torch.utils.data import ConcatDataset, DataLoader, Subset
@@ -65,7 +64,7 @@ class KFoldClassifier(ABC, Model):
                 self.opts, 'kfold_max_folds', self.kfolds))
             return [
                 _train_classifier(
-                    self.initializer,
+                    self.initializer(kfolds=self.kfolds, offset=i),
                     ConcatDataset(folds[:i] + folds[i + 1:]),
                     folds[i])
                 for i in range(max_folds)
@@ -75,7 +74,7 @@ class KFoldClassifier(ABC, Model):
 class _train_classifier:
     def __init__(
         self,
-        model: Callable[[], Classifier],
+        model: Classifier,
         training: Dataset,
         validation: Dataset,
     ):
@@ -84,7 +83,7 @@ class _train_classifier:
         self._validation = validation
 
     def __call__(self, device: Device):
-        return self._model().train(
+        return self._model.train(
             training=self._training,
             validation=self._validation,
             device=device)
