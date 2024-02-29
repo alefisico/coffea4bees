@@ -1,3 +1,4 @@
+# TODO clean up
 import collections
 import math
 

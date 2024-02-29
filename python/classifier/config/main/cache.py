@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING
 import fsspec
 from classifier.task import ArgParser, EntryPoint
 
+from ...config.setting.default import IO as IOSetting
+from ...config.setting.default import DataLoader as DLSetting
 from ._utils import LoadTrainingSets
 
 if TYPE_CHECKING:
@@ -59,7 +61,7 @@ class Main(LoadTrainingSets):
             mp_context=self.mp_context,
             initializer=self.mp_initializer
         ) as pool:
-            _ = pool.map(_save_cache(datasets, self.output, self.opts.compression),
+            _ = pool.map(_save_cache(datasets, IOSetting.output, self.opts.compression),
                          zip(range(len(chunks)), chunks))
         logging.info(
             f'Wrote {size} entries to {len(chunks)} files in {datetime.now() - timer}')
@@ -82,15 +84,13 @@ class _save_cache:
         import torch
         from torch.utils.data import DataLoader, Subset
 
-        from ..setting.default import DataLoader as Setting
-
         chunk, indices = args
         subset = Subset(self.dataset, indices)
         chunks = [
             *DataLoader(
                 dataset=subset,
-                batch_size=Setting.batch_io//len(self.dataset.datasets),
-                num_workers=Setting.num_workers,
+                batch_size=DLSetting.batch_io//len(self.dataset.datasets),
+                num_workers=DLSetting.num_workers,
             )]
         data = {
             k: torch.cat([c[k] for c in chunks])

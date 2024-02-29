@@ -6,12 +6,12 @@ import logging
 import os
 import sys
 from collections import deque
-from functools import cached_property
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Optional
 
 import fsspec
 
+from ..config.setting.default import IO as IOSetting
 from ..process.state import Cascade, _is_private
 from .dataset import Dataset
 from .model import Model
@@ -126,11 +126,9 @@ class EntryPoint:
         self._fetch_all()
         meta = self.main.run(self)
 
-        output = self.main.output
-
         if hasattr(self.main.opts, 'save_state') and self.main.opts.save_state:
             from ..config.setting.cache import save
-            save.parse([output/'state.pkl'])
+            save.parse([IOSetting.output/'state.pkl'])
 
         if meta is not None:
             from base_class.utils.json import DefaultEncoder
@@ -139,7 +137,7 @@ class EntryPoint:
                 'command': self.cmd,
                 'reproducible': reproducible(),
             }
-            with fsspec.open(output/f'{self.args[_MAIN][0]}.json', 'wt') as f:
+            with fsspec.open(IOSetting.output/f'{self.args[_MAIN][0]}.json', 'wt') as f:
                 json.dump(meta, f, cls=DefaultEncoder)
 
 
@@ -148,14 +146,7 @@ class EntryPoint:
 class Main(Task):
     argparser = ArgParser()
     argparser.add_argument(
-        '--output', default='.', help='the output directory')
-    argparser.add_argument(
         '--save-state', action='store_true', help='save global states to the output directory')
-
-    @cached_property
-    def output(self):
-        from base_class.system.eos import EOS
-        return EOS(self.opts.output).mkdir(recursive=True)
 
     @interface
     def run(self, parser: EntryPoint) -> Optional[dict[str]]:

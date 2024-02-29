@@ -47,6 +47,29 @@ class add_event_offset:
         return df
 
 
+class add_region_index:
+    def __init__(self, *args: str, **kwargs: int):
+        self.regions = dict(zip(args, range(len(args))))
+        self.regions.update(kwargs)
+
+    def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
+        df.loc[:, (Columns.region_index,)] = (
+            df.loc[:, [*self.regions]]
+            .mul(self.regions)
+            .sum(axis=1)
+            .astype(Columns.index_dtype)
+        )
+        return df
+
+
+class drop_columns:
+    def __init__(self, *columns: str):
+        self.columns = [*columns]
+
+    def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
+        return df.drop(columns=self.columns)
+
+
 def normalize_weight(df: pd.DataFrame) -> pd.DataFrame:
     df.loc[:, (Columns.weight_normalized,)] = (
         df[Columns.weight] / df[Columns.weight].sum())

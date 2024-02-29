@@ -9,6 +9,8 @@ from classifier.task import ArgParser, EntryPoint, Task, main
 from classifier.task.task import _INDENT
 from rich.console import Console
 
+from ...config.setting.default import IO as IOSetting
+
 
 def _walk_packages(base):
     base = Path(base)
@@ -108,4 +110,4 @@ class Main(main.Main):
                             self._print_help(classes[cls], 2)
         if self.opts.html:
             self._console.save_html(
-                self.output / 'help.html', theme=themes.SVG_EXPORT_THEME)
+                IOSetting.output / 'help.html', theme=themes.SVG_EXPORT_THEME)

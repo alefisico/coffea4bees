@@ -15,5 +15,6 @@ class Columns(Cascade):
     weight_normalized: str = 'weight_normalized'
 
     label_index: str = 'label_index'
+    region_index: str = 'region_index'
 
     index_dtype: DTypeLike = 'uint8'
