@@ -208,6 +208,7 @@ if __name__ == '__main__':
         'schema': config_runner['schema'],
         'align_clusters': False,
         'savemetrics': True,
+        'skipbadfiles': True,
         'xrootdtimeout': 180}
 
     # to run with processor futures_executor ()
