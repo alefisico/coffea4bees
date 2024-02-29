@@ -38,9 +38,9 @@ class EntryPoint:
                   filter(lambda x: x.endswith('.py') and not _is_private(x),
                          os.listdir(Path(__file__).parent/f'../{_CONFIG}/{_MAIN}'))))
     _keys = {
+        'setting': Cascade,
         'dataset': Dataset,
         'model': Model,
-        'setting': Cascade
     }
     _preserved = [f'--{k}' for k in _keys]
 

@@ -38,12 +38,12 @@ class add_event_offset:
     a workaround for no ``uint64`` in torch.Tensor
     """
 
-    def __init__(self, kfold: int):
-        self.kfold = kfold
+    def __init__(self, modulus: int):
+        self.modulus = modulus
 
     def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
         df.loc[:, (Columns.event_offset,)] = (
-            df[Columns.event] % self.kfold).astype(Columns.index_dtype)
+            df[Columns.event] % self.modulus).astype(Columns.index_dtype)
         return df
 
 
