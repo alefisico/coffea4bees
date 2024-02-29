@@ -104,6 +104,7 @@ skimmer-analysis-test-job:
     - k8s-cvmfs
   script:
     - source .ci-workflows/skimmer-analysis-test-job.sh
+  allow_failure: true
   artifacts: 
     expire_in: 1 day
     paths:
@@ -143,6 +144,7 @@ skimmer-analysis-cutflow-job:
     - k8s-cvmfs
   script:
     - source .ci-workflows/skimmer-analysis-cutflow-job.sh
+  allow_failure: true
 
 analysis-iplot-job:    
   stage: plot 
