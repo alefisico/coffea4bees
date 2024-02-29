@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 import fsspec
-from classifier.task import ArgParser, EntryPoint
+from classifier.task import ArgParser, EntryPoint, converter
 
 from ...config.setting.default import IO as IOSetting
 from ...config.setting.default import DataLoader as DLSetting
@@ -29,13 +29,13 @@ class Main(LoadTrainingSets):
     argparser.add_argument(
         '--shuffle', action='store_true', help='shuffle the dataset before saving')
     argparser.add_argument(
-        '--nchunks', type=int, help='number of chunks')
+        '--nchunks', type=converter.int_pos, help='number of chunks')
     argparser.add_argument(
-        '--chunksize', type=int, help='size of each chunk, will be ignored if [yellow]--nchunks[/yellow] is given')
+        '--chunksize', type=converter.int_pos, help='size of each chunk, will be ignored if [yellow]--nchunks[/yellow] is given')
     argparser.add_argument(
         '--compression', choices=fsspec.available_compressions(), help='compression algorithm to use')
     argparser.add_argument(
-        '--max-writers', type=int, default=1, help='the maximum number of files to write in parallel')
+        '--max-writers', type=converter.int_pos, default=1, help='the maximum number of files to write in parallel')
 
     def run(self, parser: EntryPoint):
         from concurrent.futures import ProcessPoolExecutor as Pool

@@ -7,7 +7,7 @@ import os
 import sys
 from collections import deque
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Optional
+from typing import TYPE_CHECKING, Callable, Optional, TypeVar
 
 import fsspec
 
@@ -25,8 +25,10 @@ _CLASSIFIER = 'classifier'
 _CONFIG = 'config'
 _MAIN = 'main'
 
+_TaskT = TypeVar('_TaskT', bound=Task)
 
-def new_task(cls: type[Task], opts: list[str]):
+
+def new_task(cls: type[_TaskT], opts: list[str]) -> _TaskT:
     obj = object.__new__(cls)
     obj.parse(opts)
     obj.__init__()

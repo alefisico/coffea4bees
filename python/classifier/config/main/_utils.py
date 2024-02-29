@@ -7,7 +7,7 @@ from itertools import chain
 from typing import TYPE_CHECKING
 
 from base_class.utils import unique
-from classifier.task import ArgParser, EntryPoint, Main
+from classifier.task import ArgParser, EntryPoint, Main, converter
 
 if TYPE_CHECKING:
     from classifier.task.dataset import Dataset, TrainingSetLoader
@@ -60,7 +60,7 @@ class LoadTrainingSets(SetupMultiprocessing):
     ]
     argparser = ArgParser()
     argparser.add_argument(
-        '--max-loaders', type=int, default=1, help='the maximum number of datasets to load in parallel')
+        '--max-loaders', type=converter.int_pos, default=1, help='the maximum number of datasets to load in parallel')
 
     def load_training_sets(self, parser: EntryPoint):
         from concurrent.futures import ProcessPoolExecutor as Pool

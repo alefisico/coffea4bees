@@ -6,7 +6,7 @@ from itertools import chain
 from typing import TYPE_CHECKING, Callable
 
 from base_class.utils import unique
-from classifier.task import ArgParser, Dataset, parsers
+from classifier.task import ArgParser, Dataset, converter, parsers
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -66,9 +66,9 @@ class LoadRoot(ABC, Dataframe):
     argparser.add_argument(
         '--friends', action='extend', nargs='+', default=[], help='the paths to the json files with friend tree metadata')
     argparser.add_argument(
-        '--max-workers', type=int, default=1, help='the maximum number of workers to use when reading the ROOT files in parallel')
+        '--max-workers', type=converter.int_pos, default=1, help='the maximum number of workers to use when reading the ROOT files in parallel')
     argparser.add_argument(
-        '--chunksize', type=int, default=1_000_000, help='the size of chunk to read ROOT files')
+        '--chunksize', type=converter.int_pos, default=1_000_000, help='the size of chunk to read ROOT files')
     argparser.add_argument(
         '--tree', default='Events', help='the name of the TTree')
 
