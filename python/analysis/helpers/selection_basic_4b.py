@@ -66,6 +66,7 @@ def apply_object_selection_4b( event, year, isMC, dataset, corrections_metadata 
     event['nJet_tagged']         = ak.num(event.Jet[event.Jet.tagged])
     event['nJet_tagged_loose']   = ak.num(event.Jet[event.Jet.tagged_loose])
     event['tagJet']              = event.Jet[event.Jet.tagged]
+    event['tagJet_loose']        = event.Jet[event.Jet.tagged_loose]
 
     fourTag  = (event['nJet_tagged']       >= 4)
     threeTag = (event['nJet_tagged_loose'] == 3) & (event['nJet_selected'] >= 4)
