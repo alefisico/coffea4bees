@@ -46,12 +46,12 @@ class GlobalState(metaclass=_CachedStateMeta):
 
 class share_global_state:
     def __getstate__(self):
-        return [*filter(
+        return (*filter(
             lambda x: x[1],
             ((cls, dict(filter(_is_state, vars(cls).items())))
-             for cls in GlobalState._states))]
+             for cls in GlobalState._states)),)
 
-    def __setstate__(self, states: list[tuple[type[GlobalState], dict]]):
+    def __setstate__(self, states: tuple[tuple[type[GlobalState], dict[str]]]):
         self._states = states
 
     def __call__(self):

@@ -2,6 +2,7 @@ import logging
 from collections import defaultdict
 from io import StringIO
 from pathlib import Path
+from typing import Iterable
 
 
 def _parse_scheme(opt: str):
@@ -89,7 +90,7 @@ def parse_dict(opt: str):
     return result
 
 
-def parse_group(opt: list[tuple[str, str]]) -> dict[str, list[str]]:
+def parse_group(opt: Iterable[tuple[str, str]]) -> dict[str, list[str]]:
     result = defaultdict(list)
     for k, v in opt:
         result[k].append(v)

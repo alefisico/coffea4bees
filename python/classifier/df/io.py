@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Iterable, Mapping, Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -13,15 +13,15 @@ from base_class.root import Chain, Chunk, Friend
 class FromRoot:
     def __init__(
         self,
-        friends: list[Friend] = None,
+        friends: Iterable[Friend] = None,
         branches: Callable[[set[str]], set[str]] = None,
-        preprocessors: list[Callable[[pd.DataFrame], pd.DataFrame]] = None,
-        metadata: dict[str, Any] = None,
+        preprocessors: Iterable[Callable[[pd.DataFrame], pd.DataFrame]] = None,
+        metadata: Mapping[str, Any] = None,
     ):
         self.chain = Chain()
         self.branches = branches
-        self.preprocessors = preprocessors or []
-        self.metadata = metadata or {}
+        self.preprocessors = [*preprocessors] if preprocessors else []
+        self.metadata = {**metadata} if metadata else {}
 
         for friend in friends or ():
             self.chain.add_friend(friend, renaming='{friend}_{branch}')
