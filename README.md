@@ -1,7 +1,7 @@
 # Coffea4bees
 
+
 This is the repository for the 4b analyses at CMU based in coffea. 
-This repository in based on the coffea implementation of the ZZ/ZH to 4b analysis for Run2. More information about that repository [here](https://github.com/patrickbryant/ZZ4b).
 
 The package has a python component, where most of the analysis is made, and a c++ component meant to be run inside CMSSW.
 
@@ -57,6 +57,17 @@ git commit -m "add a message"
 git push myRepo BRANCH        #### change BRANCH with the name of your branch
 ```
 Once you are happy with your changes, you can make a merge request in the gitlab website to the main repository.
+
+## REANA
+
+[![Launch with Snakemake on REANA](https://www.reana.io/static/img/badges/launch-on-reana.svg)]($https://reana.cern.ch/launch?name=Coffea4bees&specification=reana.yml&url=https%3A%2F%2Fgitlab.cern.ch%2Fcms-cmu%2Fcoffea4bees)
+
+This package runs a workflow in [REANA](https://reana.cern.ch/) for every commit to the master. The output of the reana workflow can be found here:
+
+ * Website with plots: [https://plotsalgomez.webtest.cern.ch/HH4b/reana/](https://plotsalgomez.webtest.cern.ch/HH4b/reana/)
+ * Coffea files: [https://cernbox.cern.ch/s/M1hF3y9fOdaanJh](https://cernbox.cern.ch/s/M1hF3y9fOdaanJh)
+
+In both cases one can find a directory with the date and the time the job run. 
 
 ## Information for continuos integration (CI)
 
