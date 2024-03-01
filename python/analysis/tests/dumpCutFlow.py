@@ -19,11 +19,13 @@ def print_counts_yaml(counts, name):
 
         outputFile.write(f"    {k}:\n")
         for cut in ['passJetMult', 'passPreSel', 'passDiJetMass', 'SR', 'SB', 'passSvB', 'failSvB']:
-            outputFile.write(f"        {cut}: {round(float(counts[k][cut]),2)}\n")
+            try:
+                outputFile.write(f"        {cut}: {round(float(counts[k][cut]),2)}\n")
+            except KeyError: pass
         outputFile.write("\n")
     outputFile.write("\n\n")
 
-    
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='uproot_plots')
@@ -35,7 +37,7 @@ if __name__ == '__main__':
 
     with open(f'{args.inputFile}', 'rb') as hfile:
         hists = load(hfile)
-        
+
     cf4      = hists["cutFlowFourTag"]
     cf4_unit = hists["cutFlowFourTagUnitWeight"]
     cf3      = hists["cutFlowThreeTag"]
@@ -48,4 +50,4 @@ if __name__ == '__main__':
 
 
 
-    
+

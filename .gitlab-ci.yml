@@ -17,8 +17,10 @@ workflow:
 
 stages:          
   - build
-  - test
+  - skimmer-test
+  - analysis-test
   - plot
+  - cutflow
 
 voms_proxy:
   stage: build
@@ -62,10 +64,10 @@ build_kaniko_command:
       - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^container.*/'
 
 analysis-test-job:   
-  stage: test   
-  dependencies:
+  stage: analysis-test   
+  needs:
     - voms_proxy
-  image: ${CI_REGISTRY_IMAGE}:latest
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -75,27 +77,45 @@ analysis-test-job:
     paths:
       - python/analysis/hists/test.coffea
 
+
 skimmer-test-job:   
-  stage: test   
-  dependencies:
+  stage: skimmer-test   
+  needs:
     - voms_proxy
-  image: ${CI_REGISTRY_IMAGE}:latest
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
     - source .ci-workflows/skimmer-test-job.sh
+  allow_failure: true
   artifacts: 
     expire_in: 1 day
     paths:
-      - python/skimmer/metadata/picoaod_datasets.yml
-      - ${CI_PROJECT_DIR}/picoAOD.root
+      - python/skimmer/metadata/picoaod_datasets_TTToSemiLeptonic_UL18.yml
+      - python/coffea4bees-dask-report.html
+
+skimmer-analysis-test-job:   
+  stage: analysis-test   
+  needs: 
+    - voms_proxy
+    - skimmer-test-job
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  tags:
+    - k8s-cvmfs
+  script:
+    - source .ci-workflows/skimmer-analysis-test-job.sh
+  allow_failure: true
+  artifacts: 
+    expire_in: 1 day
+    paths:
+      - python/analysis/hists/test_skimmer.coffea
 
 
 analysis-plot-job:    
   stage: plot 
   needs: 
     - analysis-test-job
-  image: ${CI_REGISTRY_IMAGE}:latest 
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -106,20 +126,31 @@ analysis-plot-job:
       - python/analysis/testCoffeaPlots/RunII/
 
 analysis-cutflow-job:    
-  stage: plot 
+  stage: cutflow
   needs: 
     - analysis-test-job
-  image: ${CI_REGISTRY_IMAGE}:latest
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
     - source .ci-workflows/analysis-cutflow-job.sh
 
+skimmer-analysis-cutflow-job:    
+  stage: cutflow
+  needs: 
+    - skimmer-analysis-test-job
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  tags:
+    - k8s-cvmfs
+  script:
+    - source .ci-workflows/skimmer-analysis-cutflow-job.sh
+  allow_failure: true
+
 analysis-iplot-job:    
   stage: plot 
   needs: 
     - analysis-test-job
-  image: ${CI_REGISTRY_IMAGE}:latest
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -128,23 +159,9 @@ analysis-iplot-job:
 
 baseclass-test-job:   
   stage: build
-  image: ${CI_REGISTRY_IMAGE}:latest
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
     - source .ci-workflows/baseclass-test-job.sh
-
-#analysis-testAll-job:   
-#  stage: test   
-#  dependencies:
-#    - voms_proxy
-#  image: ${CI_REGISTRY_IMAGE}:latest
-#  tags:
-#    - k8s-cvmfs
-#  script:
-#    - source .ci-workflows/analysis-testAll-job.sh
-#  rules:
-#    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"
-#      when: manual
-
 

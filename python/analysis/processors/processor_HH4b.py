@@ -22,8 +22,8 @@ from coffea.nanoevents.methods import vector
 from coffea import processor
 
 from base_class.hist import Collection, Fill
-from base_class.hist import H, Template
 from base_class.physics.object import LorentzVector, Jet, Muon, Elec
+from analysis.helpers.hist_templates import SvBHists, FvTHists, QuadJetHists, WCandHists, TopCandHists
 
 from analysis.helpers.cutflow import cutFlow
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
@@ -50,87 +50,6 @@ NanoAODSchema.warn_missing_crossrefs = False
 warnings.filterwarnings("ignore")
 ak.behavior.update(vector.behavior)
 
-
-class SvBHists(Template):
-    ps      = H((100, 0, 1, ('ps', "Regressed P(Signal)")))
-    ptt     = H((100, 0, 1, ('ptt', "Regressed P(tT)")))
-
-    ps_zz   = H((100, 0, 1, ('ps_zz', "Regressed P(Signal) $|$ P(ZZ) is largest ")))
-    ps_zh   = H((100, 0, 1, ('ps_zh', "Regressed P(Signal) $|$ P(ZH) is largest ")))
-    ps_hh   = H((100, 0, 1, ('ps_hh', "Regressed P(Signal) $|$ P(HH) is largest ")))
-
-
-class FvTHists(Template):
-    FvT  = H((100, 0, 5, ('FvT', 'FvT reweight')))
-    pd4  = H((100, 0, 1, ("pd4",   'FvT Regressed P(Four-tag Data)')))
-    pd3  = H((100, 0, 1, ("pd3",   'FvT Regressed P(Three-tag Data)')))
-    pt4  = H((100, 0, 1, ("pt4",   'FvT Regressed P(Four-tag t#bar{t})')))
-    pt3  = H((100, 0, 1, ("pt3",   'FvT Regressed P(Three-tag t#bar{t})')))
-    pm4  = H((100, 0, 1, ("pm4",   'FvT Regressed P(Four-tag Multijet)')))
-    pm3  = H((100, 0, 1, ("pm3",   'FvT Regressed P(Three-tag Multijet)')))
-    pt   = H((100, 0, 1, ("pt",    'FvT Regressed P(t#bar{t})')))
-    std  = H((100, 0, 3, ("std",   'FvT Standard Deviation')))
-    frac_err = H((100, 0, 5, ("frac_err",  'FvT std/FvT')))
-    #'q_1234', 'q_1324', 'q_1423',
-
-class QuadJetHists(Template):
-    dr              = H((50,     0, 5,   ("dr",          'Diboson Candidate $\\Delta$R(d,d)')))
-    dphi            = H((100, -3.2, 3.2, ("dphi",        'Diboson Candidate $\\Delta$R(d,d)')))
-    deta            = H((100,   -5, 5,   ("deta",        'Diboson Candidate $\\Delta$R(d,d)')))
-    FvT_score       = H((100, 0, 1,      ("FvT_q_score", 'Diboson FvT q score')))
-    SvB_q_score     = H((100, 0, 1,      ("SvB_q_score", 'Diboson SvB q score')))
-    SvB_MA_q_score  = H((100, 0, 1,      ("SvB_q_score", 'Diboson SvB MA q score')))
-    xZZ             = H((100, 0, 10,     ("xZZ",         'Diboson Candidate zZZ')))
-    xZH             = H((100, 0, 10,     ("xZH",         'Diboson Candidate zZH')))
-    xHH             = H((100, 0, 10,     ("xHH",         'Diboson Candidate zHH')))
-
-    lead_vs_subl_m   = H((50, 0, 250, ('lead.mass', 'Lead Boson Candidate Mass')),
-                         (50, 0, 250, ('subl.mass', 'Subl Boson Candidate Mass')))
-
-    close_vs_other_m = H((50, 0, 250, ('close.mass', 'Close Boson Candidate Mass')),
-                         (50, 0, 250, ('other.mass', 'Other Boson Candidate Mass')))
-
-    lead            = LorentzVector.plot_pair(('...', R'Lead Boson Candidate'),  'lead',  skip=['n'])
-    subl            = LorentzVector.plot_pair(('...', R'Subl Boson Candidate'),  'subl',  skip=['n'])
-    close           = LorentzVector.plot_pair(('...', R'Close Boson Candidate'), 'close', skip=['n'])
-    other           = LorentzVector.plot_pair(('...', R'Other Boson Candidate'), 'other', skip=['n'])
-
-
-class WCandHists(Template):
-
-    p  = LorentzVector.plot(('...', R'W Candidate'), 'p',  skip=['n'])
-    pW = LorentzVector.plot(('...', R'W Candidate'), 'pW', skip=['n'])
-
-    j = Jet.plot(('...', R'W j jet Candidate'), 'j',     skip=['deepjet_c','n'])
-    l = Jet.plot(('...', R'W l jet Candidate'), 'l',     skip=['deepjet_c','n'])
-
-class TopCandHists(Template):
-
-    t = LorentzVector.plot(('...', R'Top Candidate'), 'p', skip=['n'])
-    b = Jet.plot(('...', R'Top b jet Candidate'), 'b', skip=['deepjet_c','n'])
-    W = WCandHists(('...', R'W boson Candidate'), 'W')
-
-    mbW  = H((100, 0, 500,   ("mbW",  'm_{b,W}')))
-    xWt  = H(( 60, 0,  12,   ("xWt",  "X_{W,t}")))
-    xWbW = H(( 60, 0,  12,   ("xWbW", "X_{W,bW}")))
-    rWbW = H(( 60, 0,  12,   ("rWbW", "r_{W,bW}")))
-    xbW  = H(( 60, 0,  12,   ("xbW",  "X_{W,bW}")))
-    xW   = H((100, 0,  12,   ("xW",   'X_{W}')))
-
-    mW_vs_mt  = H((50,  0, 250, ('W.p.mass', 'W Candidate Mass [GeV]')),
-                  (50, 80, 280, ('p.mass',   'Top Candidate Mass [GeV]')))
-
-    mW_vs_mbW = H((50,  0, 250, ('W.p.mass', 'W Candidate Mass [GeV]')),
-                  (50, 80, 280, ('mbW',   'm_{b,W} [GeV]')))
-
-    xW_vs_xt  = H((100, 0,  12,   ("xW",   'X_{W}')),
-                  (100, 0,  12,   ("xt",   'X_{t}')))
-
-    xW_vs_xbW  = H((100, 0,  12,   ("xW",   'X_{W}')),
-                   (100, 0,  12,   ("xbW",  'X_{bW}')))
-
-
-
 def setSvBVars(SvBName, event):
     largest_name = np.array(['None', 'ZZ', 'ZH', 'HH'])
 
@@ -156,24 +75,26 @@ def setSvBVars(SvBName, event):
     event[SvBName, 'ps_hh'] = this_ps_hh
 
 
+
 class analysis(processor.ProcessorABC):
-    def __init__(self, *, JCM = '', addbtagVariations=None, SvB=None, SvB_MA=None, threeTag = True, apply_trigWeight = True, apply_btagSF = True, apply_FvT = True, regions=['SR'], corrections_metadata='analysis/metadata/corrections.yml'):
+    def __init__(self, *, JCM = None, addbtagVariations=None, SvB=None, SvB_MA=None, threeTag = True, apply_trigWeight = True, apply_btagSF = True, apply_FvT = True, run_SvB = True, corrections_metadata='analysis/metadata/corrections.yml'):
         logging.debug('\nInitialize Analysis Processor')
         self.blind = False
         print('Initialize Analysis Processor')
-        self.cutFlowCuts = ["all", "passHLT", "passNoiseFilter", "passJetMult", "passJetMult_btagSF", "passPreSel", "passDiJetMass", 'SR', 'SB', 'passSvB', 'failSvB']
-        self.histCuts = ['passPreSel', 'passSvB', 'failSvB']
-        self.tags = ['threeTag', 'fourTag'] if threeTag else ['fourTag']
-        self.regions = regions
-        self.signals = ['zz', 'zh', 'hh']
-        self.JCM = jetCombinatoricModel(JCM)
+        self.JCM = jetCombinatoricModel(JCM) if JCM else None
         self.apply_trigWeight = apply_trigWeight
         self.apply_btagSF = apply_btagSF
         self.apply_FvT = apply_FvT
         self.btagVar = btagVariations(systematics=addbtagVariations)  #### AGE: these two need to be review later
+        self.run_SvB = run_SvB
         self.classifier_SvB = HCREnsemble(SvB) if SvB else None
         self.classifier_SvB_MA = HCREnsemble(SvB_MA) if SvB_MA else None
         self.corrections_metadata = yaml.safe_load(open(corrections_metadata, 'r'))
+        self.cutFlowCuts = ["all", "passHLT", "passNoiseFilter", "passJetMult", "passJetMult_btagSF", "passPreSel", "passDiJetMass", 'SR', 'SB']
+        self.histCuts = ['passPreSel']
+        if self.run_SvB:
+            self.cutFlowCuts += ['passSvB', 'failSvB']
+            self.histCuts += ['passSvB', 'failSvB']
 
     def process(self, event):
         tstart = time.time()
@@ -217,34 +138,32 @@ class analysis(processor.ProcessorABC):
                 logging.error('ERROR: FvT events do not match events ttree')
                 return
 
-        if (self.classifier_SvB is not None) | (self.classifier_SvB_MA is not None):
-            self.compute_SvB(selev)  ### this computes both
-        else:
-            event['SvB']    = NanoEventsFactory.from_root(f'{path}{"SvB_newSBDef.root" if "mix" in dataset else "SvB.root"}',
-                                                      entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().SvB
-            if not ak.all(event.SvB.event == event.event):
-                logging.error('ERROR: SvB events do not match events ttree')
-                return
+        if self.run_SvB:
+            if (self.classifier_SvB is not None) | (self.classifier_SvB_MA is not None):
+                self.compute_SvB(selev)  ### this computes both
+            else:
+                event['SvB']    = NanoEventsFactory.from_root(f'{path}{"SvB_newSBDef.root" if "mix" in dataset else "SvB.root"}',
+                                                          entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().SvB
+                if not ak.all(event.SvB.event == event.event):
+                    logging.error('ERROR: SvB events do not match events ttree')
+                    return
 
-            event['SvB_MA'] = NanoEventsFactory.from_root(f'{path}{"SvB_MA_newSBDef.root" if "mix" in dataset else "SvB_MA.root"}',
-                                                      entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().SvB_MA
-            if not ak.all(event.SvB_MA.event == event.event):
-                logging.error('ERROR: SvB_MA events do not match events ttree')
-                return
+                event['SvB_MA'] = NanoEventsFactory.from_root(f'{path}{"SvB_MA_newSBDef.root" if "mix" in dataset else "SvB_MA.root"}',
+                                                          entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().SvB_MA
+                if not ak.all(event.SvB_MA.event == event.event):
+                    logging.error('ERROR: SvB_MA events do not match events ttree')
+                    return
 
-            # defining SvB for different SR
-            setSvBVars("SvB",    event)
-            setSvBVars("SvB_MA", event)
+                # defining SvB for different SR
+                setSvBVars("SvB",    event)
+                setSvBVars("SvB_MA", event)
 
         #
         # general event weights
         #
         if isMC:
             # genWeight
-            with uproot.open(fname) as rfile:
-                Runs = rfile['Runs']
-                genEventSumw = np.sum(Runs['genEventSumw'])
-
+            genEventSumw = event.metadata['genEventSumw']
             event['weight'] = event.genWeight * (lumi * xs * kFactor / genEventSumw)
             logging.debug(f"event['weight'] = event.genWeight * (lumi * xs * kFactor / genEventSumw) = {event.genWeight[0]} * ({lumi} * {xs} * {kFactor} / {genEventSumw}) = {event.weight[0]}\n")
 
@@ -356,28 +275,28 @@ class analysis(processor.ProcessorABC):
         #
         # calculate pseudoTagWeight for threeTag events
         #
-        selev['Jet_untagged_loose'] = selev.Jet[selev.Jet.selected & ~selev.Jet.tagged_loose]
-        nJet_pseudotagged = np.zeros(len(selev), dtype=int)
-        pseudoTagWeight = np.ones(len(selev))
-        pseudoTagWeight[selev.threeTag], nJet_pseudotagged[selev.threeTag] = self.JCM(selev[selev.threeTag]['Jet_untagged_loose'])
-        selev['nJet_pseudotagged'] = nJet_pseudotagged
-        selev['pseudoTagWeight'] = pseudoTagWeight
-
-        #
-        # apply pseudoTagWeight and FvT to threeTag events
-        #
         selev['weight_noJCM_noFvT'] = selev.weight
+        if self.JCM:
+            selev['Jet_untagged_loose'] = selev.Jet[selev.Jet.selected & ~selev.Jet.tagged_loose]
+            nJet_pseudotagged = np.zeros(len(selev), dtype=int)
+            pseudoTagWeight = np.ones(len(selev))
+            pseudoTagWeight[selev.threeTag], nJet_pseudotagged[selev.threeTag] = self.JCM(selev[selev.threeTag]['Jet_untagged_loose'])
+            selev['nJet_pseudotagged'] = nJet_pseudotagged
+            selev['pseudoTagWeight'] = pseudoTagWeight
 
-        weight_noFvT = np.array(selev.weight.to_numpy(), dtype=float)
-        weight_noFvT[selev.threeTag] = selev.weight[selev.threeTag] * selev.pseudoTagWeight[selev.threeTag]
-        selev['weight_noFvT'] = weight_noFvT
+            #
+            # apply pseudoTagWeight and FvT to threeTag events
+            #
+            weight_noFvT = np.array(selev.weight.to_numpy(), dtype=float)
+            weight_noFvT[selev.threeTag] = selev.weight[selev.threeTag] * selev.pseudoTagWeight[selev.threeTag]
+            selev['weight_noFvT'] = weight_noFvT
 
-        if self.apply_FvT:
-            weight = np.array(selev.weight.to_numpy(), dtype=float)
-            weight[selev.threeTag] = selev.weight[selev.threeTag] * pseudoTagWeight[selev.threeTag] * selev.FvT.FvT[selev.threeTag]
-            selev['weight'] = weight
-        else:
-            selev['weight'] = weight_noFvT
+            if self.apply_FvT:
+                weight = np.array(selev.weight.to_numpy(), dtype=float)
+                weight[selev.threeTag] = selev.weight[selev.threeTag] * pseudoTagWeight[selev.threeTag] * selev.FvT.FvT[selev.threeTag]
+                selev['weight'] = weight
+            else:
+                selev['weight'] = weight_noFvT
 
 
         #
@@ -439,18 +358,19 @@ class analysis(processor.ProcessorABC):
         quadJet['dphi'] = quadJet['lead'].delta_phi(quadJet['subl'])
         quadJet['deta'] = quadJet['lead'].eta - quadJet['subl'].eta
 
-        quadJet['FvT_q_score'] = np.concatenate((np.reshape(np.array(selev.FvT.q_1234), (-1, 1)),
-                                                 np.reshape(np.array(selev.FvT.q_1324), (-1, 1)),
-                                                 np.reshape(np.array(selev.FvT.q_1423), (-1, 1))), axis=1)
+        if self.apply_FvT:
+            quadJet['FvT_q_score'] = np.concatenate((np.reshape(np.array(selev.FvT.q_1234), (-1, 1)),
+                                                     np.reshape(np.array(selev.FvT.q_1324), (-1, 1)),
+                                                     np.reshape(np.array(selev.FvT.q_1423), (-1, 1))), axis=1)
 
-        quadJet['SvB_q_score'] = np.concatenate((np.reshape(np.array(selev.SvB.q_1234), (-1, 1)),
-                                                 np.reshape(np.array(selev.SvB.q_1324), (-1, 1)),
-                                                 np.reshape(np.array(selev.SvB.q_1423), (-1, 1))), axis=1)
+        if self.run_SvB:
+            quadJet['SvB_q_score'] = np.concatenate((np.reshape(np.array(selev.SvB.q_1234), (-1, 1)),
+                                                     np.reshape(np.array(selev.SvB.q_1324), (-1, 1)),
+                                                     np.reshape(np.array(selev.SvB.q_1423), (-1, 1))), axis=1)
 
-        quadJet['SvB_MA_q_score'] = np.concatenate((np.reshape(np.array(selev.SvB_MA.q_1234), (-1, 1)),
-                                                    np.reshape(np.array(selev.SvB_MA.q_1324), (-1, 1)),
-                                                    np.reshape(np.array(selev.SvB_MA.q_1423), (-1, 1))), axis=1)
-
+            quadJet['SvB_MA_q_score'] = np.concatenate((np.reshape(np.array(selev.SvB_MA.q_1234), (-1, 1)),
+                                                        np.reshape(np.array(selev.SvB_MA.q_1324), (-1, 1)),
+                                                        np.reshape(np.array(selev.SvB_MA.q_1423), (-1, 1))), axis=1)
         #
         # Compute Signal Regions
         #
@@ -488,9 +408,9 @@ class analysis(processor.ProcessorABC):
         selev["passDiJetMass"] = ak.any(quadJet.passDiJetMass, axis=1)
 
         selev['region'] = selev['quadJet_selected'].SR * 0b10 + selev['quadJet_selected'].SB * 0b01
-        selev['passSvB'] = (selev['SvB_MA'].ps > 0.80)
-        selev['failSvB'] = (selev['SvB_MA'].ps < 0.05)
-
+        if self.run_SvB:
+            selev['passSvB'] = (selev['SvB_MA'].ps > 0.80)
+            selev['failSvB'] = (selev['SvB_MA'].ps < 0.05)
 
         #
         #  Build the top Candiates
@@ -507,9 +427,9 @@ class analysis(processor.ProcessorABC):
         selev["xbW_reco"] = selev.top_cand.xbW
         selev["xW_reco"]  = selev.top_cand.xW
 
-        selev["delta_xbW"] = selev.xbW - selev.xbW_reco
-        selev["delta_xW"] = selev.xW - selev.xW_reco
-
+        if 'xbW' in selev.fields:  #### AGE: this should be temporary
+            selev["delta_xbW"] = selev.xbW - selev.xbW_reco
+            selev["delta_xW"] = selev.xW - selev.xW_reco
 
         #
         # Blind data in fourTag SR
@@ -553,13 +473,15 @@ class analysis(processor.ProcessorABC):
         fill += hist.add('hT',          (100,  0,   1000,  ('hT',          'H_{T} [GeV}')))
         fill += hist.add('hT_selected', (100,  0,   1000,  ('hT_selected', 'H_{T} (selected jets) [GeV}')))
 
-        fill += hist.add('xW',          (100, 0, 12,   ('xW',       'xW')))
-        fill += hist.add('delta_xW',    (100, -5, 5,   ('delta_xW', 'delta xW')))
-        fill += hist.add('delta_xW_l',  (100, -15, 15, ('delta_xW', 'delta xW')))
+        if 'xbW' in selev.fields:  ### AGE: this should be temporary
 
-        fill += hist.add('xbW',         (100, 0, 12,   ('xbW',      'xbW')))
-        fill += hist.add('delta_xbW',   (100, -5, 5,   ('delta_xbW','delta xbW')))
-        fill += hist.add('delta_xbW_l', (100, -15, 15, ('delta_xbW','delta xbW')))
+            fill += hist.add('xW',          (100, 0, 12,   ('xW',       'xW')))
+            fill += hist.add('delta_xW',    (100, -5, 5,   ('delta_xW', 'delta xW')))
+            fill += hist.add('delta_xW_l',  (100, -15, 15, ('delta_xW', 'delta xW')))
+
+            fill += hist.add('xbW',         (100, 0, 12,   ('xbW',      'xbW')))
+            fill += hist.add('delta_xbW',   (100, -5, 5,   ('delta_xbW','delta xbW')))
+            fill += hist.add('delta_xbW_l', (100, -15, 15, ('delta_xbW','delta xbW')))
 
         #
         #  Make quad jet hists
@@ -571,11 +493,17 @@ class analysis(processor.ProcessorABC):
         #
         #  Make classifier hists
         #
-        fill += FvTHists(('FvT', 'FvT Classifier'), 'FvT')
-        fill += hist.add('FvT_noFvT', (100, 0, 5, ('FvT.FvT', 'FvT reweight')), weight="weight_noFvT")
+        if self.apply_FvT:
+            fill += FvTHists(('FvT', 'FvT Classifier'), 'FvT')
+            fill += hist.add('quadJet_selected_FvT_score', (100, 0, 1, ("quadJet_selected.FvT_q_score", 'Selected Quad Jet Diboson FvT q score')))
+            fill += hist.add('quadJet_min_FvT_score', (100, 0, 1, ("quadJet_min_dr.FvT_q_score", 'Min dR Quad Jet Diboson FvT q score')))
+            if self.JCM: fill += hist.add('FvT_noFvT', (100, 0, 5, ('FvT.FvT', 'FvT reweight')), weight="weight_noFvT")
 
-        fill += SvBHists(('SvB', 'SvB Classifier'), 'SvB')
-        fill += SvBHists(('SvB_MA', 'SvB MA Classifier'), 'SvB_MA')
+        if self.run_SvB:
+            fill += SvBHists(('SvB', 'SvB Classifier'), 'SvB')
+            fill += SvBHists(('SvB_MA', 'SvB MA Classifier'), 'SvB_MA')
+            fill += hist.add('quadJet_selected_SvB_q_score', (100, 0, 1, ("quadJet_selected.SvB_q_score", 'Selected Quad Jet Diboson SvB q score')))
+            fill += hist.add('quadJet_min_SvB_MA_q_score', (100, 0, 1, ("quadJet_min_dr.SvB_MA_q_score", 'Min dR Quad Jet Diboson SvB MA q score')))
 
         #
         # Jets
@@ -588,6 +516,8 @@ class analysis(processor.ProcessorABC):
         skip_all_but_n = ['deepjet_b', 'energy', 'eta', 'id_jet', 'id_pileup', 'mass', 'phi', 'pt', 'pz', 'deepjet_c']
         fill += Jet.plot(('selJets_noJCM', 'Selected Jets'), 'selJet', weight="weight_noJCM_noFvT", skip=skip_all_but_n)
         fill += Jet.plot(('tagJets_noJCM', 'Tag Jets'),      'tagJet', weight="weight_noJCM_noFvT", skip=skip_all_but_n)
+        fill += Jet.plot(('tagJets_loose_noJCM', 'Loose Tag Jets'),   'tagJet_loose', weight="weight_noJCM_noFvT", skip=skip_all_but_n)
+
 
         for iJ in range(4):
             fill += Jet.plot((f'canJet{iJ}', f'Higgs Candidate Jets {iJ}'), f'canJet{iJ}', skip=['n', 'deepjet_c'])
@@ -619,10 +549,11 @@ class analysis(processor.ProcessorABC):
         #
         self._cutFlow.fill("passPreSel", selev)
         self._cutFlow.fill("passDiJetMass", selev[selev.passDiJetMass])
-        self._cutFlow.fill("SR",            selev[(selev.passDiJetMass & selev['quadJet_selected'].SR)])
-        self._cutFlow.fill("SB",            selev[(selev.passDiJetMass & selev['quadJet_selected'].SB)])
-        self._cutFlow.fill("passSvB",       selev[selev.passSvB])
-        self._cutFlow.fill("failSvB",       selev[selev.failSvB])
+        if self.run_SvB:
+            self._cutFlow.fill("SR",            selev[(selev.passDiJetMass & selev['quadJet_selected'].SR)])
+            self._cutFlow.fill("SB",            selev[(selev.passDiJetMass & selev['quadJet_selected'].SB)])
+            self._cutFlow.fill("passSvB",       selev[selev.passSvB])
+            self._cutFlow.fill("failSvB",       selev[selev.failSvB])
 
         garbage = gc.collect()
         # print('Garbage:',garbage)
