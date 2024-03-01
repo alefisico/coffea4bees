@@ -8,8 +8,8 @@ from typing import TYPE_CHECKING
 import fsspec
 from classifier.task import ArgParser, EntryPoint, converter
 
-from ...config.setting.default import IO as IOSetting
-from ...config.setting.default import DataLoader as DLSetting
+from ..setting.default import IO as IOSetting
+from ..setting.default import DataLoader as DLSetting
 from ._utils import LoadTrainingSets
 
 if TYPE_CHECKING:

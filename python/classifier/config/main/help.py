@@ -9,7 +9,7 @@ from classifier.task import ArgParser, EntryPoint, Task, main
 from classifier.task.task import _INDENT
 from rich.console import Console
 
-from ...config.setting.default import IO as IOSetting
+from ..setting.default import IO as IOSetting
 
 
 def _walk_packages(base):

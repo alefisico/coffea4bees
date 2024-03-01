@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING
 
 from classifier.task import ArgParser, Model, converter
 
-from ...config.setting.default import DataLoader as DLSetting
-from ...config.setting.df import Columns
+from ..setting.default import DataLoader as DLSetting
+from ..setting.df import Columns
 
 if TYPE_CHECKING:
     from classifier.discriminator import Classifier
