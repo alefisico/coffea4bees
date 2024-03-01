@@ -1,5 +1,8 @@
 import os
 import hist
+import yaml
+import argparse
+from coffea.util import load
 from hist.intervals import ratio_uncertainty
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
@@ -10,6 +13,23 @@ plt.style.use([hep.style.CMS, {'font.size': 16}])
 _phi = (1 + np.sqrt(5)) / 2
 _epsilon = 0.001
 _colors = ["xkcd:blue", "xkcd:red", "xkcd:off green", "xkcd:orange", "xkcd:violet", "xkcd:grey"]
+
+def load_config(metadata):
+    """  Load meta data
+    """
+    plotConfig = yaml.safe_load(open(metadata, 'r'))
+
+    #
+    #  Make two way code mapping:
+    #    ie: 3 mapts to  "threeTag" and "threeTag" maps to 3
+    for k, v in plotConfig["codes"]["tag"].copy().items():
+        plotConfig["codes"]["tag"][v] = k
+
+    for k, v in plotConfig["codes"]["region"].copy().items():
+        plotConfig["codes"]["region"][v] = k
+
+    return plotConfig
+
 
 
 def get_value_nested_dict(nested_dict, target_key, default=None):
@@ -166,7 +186,7 @@ def _plot(hist_list, stack_dict, plotConfig, **kwargs):
     hep.cms.label("Internal", data=True,
                   year=kwargs['year'].replace("UL", "20"), loc=0, ax=ax)
 
-    return fig
+    return fig, ax
 
 
 def _plot2d(hist, plotConfig, **kwargs):
@@ -196,7 +216,7 @@ def _plot2d(hist, plotConfig, **kwargs):
     hep.cms.label("Internal", data=True,
                   year=kwargs['year'].replace("UL", "20"), loc=0, ax=ax)
 
-    return fig
+    return fig, ax
 
 
 def _plot_ratio(hist_list, stack_dict, plotConfig, **kwargs):
@@ -288,7 +308,7 @@ def _plot_ratio(hist_list, stack_dict, plotConfig, **kwargs):
 
     plt.ylim(*kwargs.get('rlim', [0, 2]))
 
-    return fig
+    return fig, main_ax, subplot_ax
 
 
 def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, process, **kwargs):
@@ -357,8 +377,7 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
                               "region": hist.loc(codes["region"][region]),
                               varName: hist.rebin(rebin)}
     
-            for c in cutList:
-                this_hist_dict = this_hist_dict | {c: cutDict[c]}
+            this_hist_dict = this_hist_dict | cutDict
 
             hists.append(input_hist_File['hists'][var][this_hist_dict])
             hists[-1] *= process_config.get("scalefactor", 1.0)
@@ -396,8 +415,7 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
                               "region": hist.loc(codes["region"][_reg]),
                               varName: hist.rebin(rebin)}
     
-            for c in cutList:
-                this_hist_dict = this_hist_dict | {c: cutDict[c]}
+            this_hist_dict = this_hist_dict | cutDict
     
             hists.append(input_hist_File['hists'][var][this_hist_dict])
             hists[-1] *= process_config.get("scalefactor", 1.0)
@@ -430,8 +448,7 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
                           "region": hist.loc(codes["region"][region]),
                           varName: hist.rebin(rebin)}
     
-        for c in cutList:
-            this_hist_dict = this_hist_dict | {c: cutDict[c]}
+        this_hist_dict = this_hist_dict | cutDict
     
         fileLabels = kwargs.get("fileLabels", [])
 
@@ -482,8 +499,7 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
                               "region": hist.loc(codes["region"][region]),
                               varName: hist.rebin(rebin)}
 
-            for c in cutList:
-                this_hist_dict = this_hist_dict | {c: cutDict[c]}
+            this_hist_dict = this_hist_dict | cutDict
 
             hists.append(input_hist_File['hists'][var][this_hist_dict])
             hists[-1] *= _proc_conf.get("scalefactor", 1.0)
@@ -521,8 +537,7 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
                               "region": hist.loc(codes["region"][region]),
                               varName: hist.rebin(rebin)}
 
-            for c in cutList:
-                this_hist_dict = this_hist_dict | {c: cutDict[c]}
+            this_hist_dict = this_hist_dict | cutDict
 
             hists.append(input_hist_File['hists'][_var][this_hist_dict])
             hists[-1] *= process_config.get("scalefactor", 1.0)
@@ -540,14 +555,14 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
     kwargs["stack_labels"] = []
     
     if kwargs.get("doRatio", False):
-        fig = _plot_ratio(hists, {}, plotConfig, **kwargs)
+        fig, ax = _plot_ratio(hists, {}, plotConfig, **kwargs)
     else:
-        fig = _plot(hists, {}, plotConfig, **kwargs)
+        fig, ax = _plot(hists, {}, plotConfig, **kwargs)
 
     if kwargs.get("outputFolder", None):
         _savefig(fig, var, kwargs.get("outputFolder"), yearStr, cutName, this_tagName, regionName, process)
 
-    return fig
+    return fig, ax
 
 
 def makePlot(hists, cutList, plotConfig, var='selJets.pt',
@@ -621,8 +636,8 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
                           "region": hist.loc(codes["region"][region]),
                           varName: hist.rebin(rebin)}
 
-        for c in cutList:
-            this_hist_dict = this_hist_dict | {c: cutDict[c]}
+
+        this_hist_dict = this_hist_dict | cutDict
 
         hists.append(h[this_hist_dict])
         hists[-1] *= v.get("scalefactor", 1.0)
@@ -669,8 +684,8 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
                               "tag": hist.loc(this_tag),
                               "region": hist.loc(codes["region"][region]),
                               varName: hist.rebin(rebin)}
-            for c in cutList:
-                this_hist_opts = this_hist_opts | {c: cutDict[c]}
+
+            this_hist_opts = this_hist_opts | cutDict
 
             stack_dict[k] = h[this_hist_opts]
 
@@ -688,8 +703,8 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
                                   "tag": hist.loc(this_tag),
                                   "region": hist.loc(codes["region"][region]),
                                   varName: hist.rebin(rebin)}
-                for c in cutList:
-                    this_hist_opts = this_hist_opts | {c: cutDict[c]}
+
+                this_hist_opts = this_hist_opts | cutDict
 
                 this_hist = h[this_hist_opts]
                 this_hist *= sum_v.get("scalefactor", 1.0)
@@ -710,9 +725,10 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
     kwargs["stack_labels"]      = stack_labels
 
     if kwargs.get("doRatio", False):
-        fig = _plot_ratio(hists, stack_dict, plotConfig, **kwargs)
+        fig, main_ax, ratio_ax = _plot_ratio(hists, stack_dict, plotConfig, **kwargs)
+        ax = (main_ax, ratio_ax)
     else:
-        fig = _plot(hists, stack_dict, plotConfig, **kwargs)
+        fig, ax = _plot(hists, stack_dict, plotConfig, **kwargs)
 
     #
     # Save Fig
@@ -721,7 +737,7 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
         tagName = "fourTag" if "fourTag" in tagNames else "threeTag"
         _savefig(fig, var, kwargs.get("outputFolder"), yearName, cut, tagName, region)
 
-    return fig
+    return fig, ax
 
 
 def make2DPlot(hists, process, cutList, plotConfig, var='selJets.pt',
@@ -779,8 +795,7 @@ def make2DPlot(hists, process, cutList, plotConfig, var='selJets.pt',
                  "region":  region_selection,
                  varName:   hist.rebin(rebin)}
 
-    for c in cutList:
-        hist_dict = hist_dict | {c: cutDict[c]}
+    hist_dict = hist_dict | cutDict
 
     _hist = h[hist_dict]
 
@@ -792,7 +807,7 @@ def make2DPlot(hists, process, cutList, plotConfig, var='selJets.pt',
     #
     # Make the plot
     #
-    fig = _plot2d(_hist, plotConfig, **kwargs)
+    fig, ax = _plot2d(_hist, plotConfig, **kwargs)
 
     #
     # Save Fig
@@ -801,4 +816,83 @@ def make2DPlot(hists, process, cutList, plotConfig, var='selJets.pt',
         _savefig(fig, var, kwargs.get("outputFolder"),
                  yearStr, cut, tagName, region, process)
 
-    return fig
+    return fig, ax
+
+
+
+
+def parse_args():
+    
+    parser = argparse.ArgumentParser(description='uproot_plots')
+
+    parser.add_argument(dest="inputFile",
+                        default='hists.pkl', nargs='+',
+                        help='Input File. Default: hists.pkl')
+
+    parser.add_argument('-l', '--labelNames', dest="fileLabels",
+                        default=["fileA", "fileB"], nargs='+',
+                        help='label Names when more than one input file')
+
+    
+    parser.add_argument('-o', '--outputFolder', default=None,
+                        help='Folder for output folder. Default: plots/')
+
+    parser.add_argument('-m', '--metadata', dest="metadata",
+                        default="analysis/metadata/plotsAll.yml",
+                        help='Metadata file.')
+
+    parser.add_argument('--modifiers', dest="modifiers",
+                        default="analysis/metadata/plotModifiers.yml",
+                        help='Metadata file.')
+
+    parser.add_argument('--doTest', action="store_true", help='Metadata file.')
+    
+    args = parser.parse_args()
+    return args
+
+
+
+
+def load_hists(input_hists):
+    hists = []
+    for _inFile in input_hists:
+        with open(_inFile, 'rb') as hfile:
+            hists.append(load(hfile))
+
+    return hists
+
+
+def read_axes_and_cuts(hists, plotConfig):
+
+    axisLabels = {}
+    cutList = []
+    
+    axisLabels["var"] = hists[0]['hists'].keys()
+    var1 = list(hists[0]['hists'].keys())[0]
+
+    for a in hists[0]["hists"][var1].axes:
+        axisName = a.name
+        if axisName == var1:
+            continue
+
+        if isinstance(a, hist.axis.Boolean):
+            print(f"Adding cut\t{axisName}")
+            cutList.append(axisName)
+            continue
+
+        if a.extent > 20:
+            continue   # HACK to skip the variable bins FIX
+
+        axisLabels[axisName] = []
+        print(axisName)
+        for iBin in range(a.extent):
+            if axisName in plotConfig["codes"]:
+                value = plotConfig["codes"][axisName][a.value(iBin)]
+
+            else:
+                value = a.value(iBin)
+
+            print(f"\t{value}")
+            axisLabels[axisName].append(value)
+
+    return axisLabels, cutList

@@ -2,13 +2,11 @@ import os
 import sys
 import yaml
 import hist
-import argparse
 import matplotlib.pyplot as plt
-from coffea.util import load
 from hist.intervals import ratio_uncertainty
 sys.path.insert(0, os.getcwd())
-from base_class.plots import makePlot, make2DPlot
-import analysis.iPlot_config as cfg
+from base_class.plots.plots import makePlot, make2DPlot, load_config, load_hists, read_axes_and_cuts, parse_args
+import base_class.plots.iPlot_config as cfg
 
 #
 # TO Add
@@ -104,16 +102,19 @@ def plot(var='selJets.pt', *, cut="passPreSel", region="SR", **kwargs):
         return
 
     if len(cfg.hists) > 1:
-        fig = makePlot(cfg.hists, cfg.cutList, cfg.plotConfig, var=var, cut=cut, region=region,
+        fig, ax = makePlot(cfg.hists, cfg.cutList, cfg.plotConfig, var=var, cut=cut, region=region,
                        outputFolder=cfg.outputFolder, fileLabels=cfg.fileLabels, **kwargs)
     else:
-        fig = makePlot(cfg.hists[0], cfg.cutList, cfg.plotConfig, var=var, cut=cut, region=region,
-                       outputFolder=cfg.outputFolder, **kwargs)
-    #breakpoint()
+        fig, ax = makePlot(cfg.hists[0], cfg.cutList, cfg.plotConfig, var=var, cut=cut, region=region,
+                           outputFolder=cfg.outputFolder, **kwargs)
+
     fileName = "test.pdf"
     fig.savefig(fileName)
     plt.close()
     os.system("open "+fileName)
+
+    if kwargs.get("debug", False):
+        return fig, ax
 
 
 def plot2d(var='quadJet_selected.lead_vs_subl_m', process="HH4b",
@@ -146,7 +147,7 @@ def plot2d(var='quadJet_selected.lead_vs_subl_m', process="HH4b",
         ls(match=var.replace("*", ""))
         return
 
-    fig = make2DPlot(cfg.hists[0], process, cfg.cutList, cfg.plotConfig, var=var, cut=cut,
+    fig, ax = make2DPlot(cfg.hists[0], process, cfg.cutList, cfg.plotConfig, var=var, cut=cut,
                      region=region, outputFolder=cfg.outputFolder, **kwargs)
 
     fileName = "test.pdf"
@@ -154,97 +155,9 @@ def plot2d(var='quadJet_selected.lead_vs_subl_m', process="HH4b",
     plt.close()
     os.system("open "+fileName)
 
-
-def parse_args():
+    if kwargs.get("debug", False):
+        return fig, ax
     
-    parser = argparse.ArgumentParser(description='uproot_plots')
-
-    parser.add_argument(dest="inputFile",
-                        default='hists.pkl', nargs='+',
-                        help='Input File. Default: hists.pkl')
-
-    parser.add_argument('-l', '--labelNames', dest="fileLabels",
-                        default=["fileA", "fileB"], nargs='+',
-                        help='label Names when more than one input file')
-
-    
-    parser.add_argument('-o', '--outputFolder', default=None,
-                        help='Folder for output folder. Default: plots/')
-
-    parser.add_argument('-m', '--metadata', dest="metadata",
-                        default="analysis/metadata/plotsAll.yml",
-                        help='Metadata file.')
-
-    parser.add_argument('--modifiers', dest="modifiers",
-                        default="analysis/metadata/plotModifiers.yml",
-                        help='Metadata file.')
-
-    parser.add_argument('--doTest', action="store_true", help='Metadata file.')
-    
-    args = parser.parse_args()
-    return args
-
-
-def load_config(metadata):
-    """  Load meta data
-    """
-    plotConfig = yaml.safe_load(open(metadata, 'r'))
-
-    #
-    #  Make two way code mapping:
-    #    ie: 3 mapts to  "threeTag" and "threeTag" maps to 3
-    for k, v in plotConfig["codes"]["tag"].copy().items():
-        plotConfig["codes"]["tag"][v] = k
-
-    for k, v in plotConfig["codes"]["region"].copy().items():
-        plotConfig["codes"]["region"][v] = k
-
-    return plotConfig
-
-
-def load_hists(input_hists):
-    hists = []
-    for _inFile in input_hists:
-        with open(_inFile, 'rb') as hfile:
-            hists.append(load(hfile))
-
-    return hists
-
-
-def read_axes_and_cuts(hists, plotConfig):
-
-    axisLabels = {}
-    cutList = []
-    
-    axisLabels["var"] = hists[0]['hists'].keys()
-    var1 = list(hists[0]['hists'].keys())[0]
-
-    for a in hists[0]["hists"][var1].axes:
-        axisName = a.name
-        if axisName == var1:
-            continue
-
-        if isinstance(a, hist.axis.Boolean):
-            print(f"Adding cut\t{axisName}")
-            cutList.append(axisName)
-            continue
-
-        if a.extent > 20:
-            continue   # HACK to skip the variable bins FIX
-
-        axisLabels[axisName] = []
-        print(axisName)
-        for iBin in range(a.extent):
-            if axisName in plotConfig["codes"]:
-                value = plotConfig["codes"][axisName][a.value(iBin)]
-
-            else:
-                value = a.value(iBin)
-
-            print(f"\t{value}")
-            axisLabels[axisName].append(value)
-
-    return axisLabels, cutList
 
 
 if __name__ == '__main__':
