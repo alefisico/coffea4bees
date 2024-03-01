@@ -163,13 +163,13 @@ class _load_df_from_root(_load_df):
 
         import pandas as pd
         from base_class.root import Chunk
-        from classifier.process import default
+        from classifier.process import process_state
 
         dfs = []
         with ProcessPoolExecutor(
             max_workers=self._max_workers,
-            mp_context=default.context,
-            initializer=default.initializer,
+            mp_context=process_state.context,
+            initializer=process_state.initializer,
         ) as pool:
             chunks = []
             for _, files in self._from_root:

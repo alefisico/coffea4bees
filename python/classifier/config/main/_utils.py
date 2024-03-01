@@ -20,21 +20,20 @@ class SetupMultiprocessing(Main):
 
     @cached_property
     def mp_context(self):
-        from classifier import process
+        from classifier.process import get_context, process_state
 
-        return process.get_context(method='forkserver', library='torch', preload=unique(self.opts.preload))
+        process_state.context = get_context(
+            method='forkserver', library='torch', preload=unique(self.opts.preload))
+        return process_state.context
 
     @cached_property
     def mp_initializer(self):
         from classifier.process.initializer import (
-            DefaultInitializer, inherit_context_initializer,
-            torch_set_sharing_strategy)
+            process_state, torch_set_sharing_strategy)
 
-        initializer = DefaultInitializer(
+        process_state.initializer.add(
             torch_set_sharing_strategy('file_system'))
-        initializer.add(inherit_context_initializer(
-            self.mp_context, initializer))
-        return initializer
+        return process_state.initializer
 
 
 class SelectDevice(Main):

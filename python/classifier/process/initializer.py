@@ -2,17 +2,19 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Callable, Literal
 
-from . import default
 from .state import share_global_state
 
 if TYPE_CHECKING:
     from . import Context
 
 
-class DefaultInitializer:
+class _initializer:
     def __init__(self, *funcs: Callable):
         self.funcs: list[Callable] = []
-        self.add(share_global_state())
+        self.add(
+            inherit_context_initializer(),
+            share_global_state(),
+        )
         self.add(*funcs)
 
     def add(self, *funcs: Callable):
@@ -24,13 +26,12 @@ class DefaultInitializer:
 
 
 class inherit_context_initializer:
-    def __init__(self, context: Context = None, initializer: Callable = None):
-        self._context = context or default.context
-        self._initializer = initializer or default.initializer
+    def __getstate__(self):
+        return (process_state.context, process_state.initializer)
 
-    def __call__(self):
-        default.context = self._context
-        default.initializer = self._initializer
+    def __setstate__(self, states: tuple[Context, _initializer]):
+        process_state.context, process_state.initializer = states
+        process_state.is_main = False
 
 
 class torch_set_sharing_strategy:
@@ -45,3 +46,9 @@ class torch_set_sharing_strategy:
     def __call__(self):
         import torch.multiprocessing as mp
         mp.set_sharing_strategy(self.strategy)
+
+
+class process_state:
+    context: Context = None
+    initializer = _initializer()
+    is_main: bool = True

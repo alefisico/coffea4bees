@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import logging
 import os
-from multiprocessing import current_process
-from typing import TYPE_CHECKING, Callable, Literal
+from typing import TYPE_CHECKING, Literal
+
+from .initializer import process_state
 
 if TYPE_CHECKING:
     from multiprocessing.context import BaseContext
@@ -12,9 +13,12 @@ if TYPE_CHECKING:
     class Context(BaseContext):
         Process: type[BaseProcess]
 
-
-def is_main():
-    return current_process().name == 'MainProcess'
+__all__ = [
+    'process_state',
+    'is_poxis',
+    'n_cpu',
+    'get_context'
+]
 
 
 def is_poxis():
@@ -50,8 +54,3 @@ def get_context(
     if method == 'forkserver' and preload is not None:
         ctx.set_forkserver_preload(preload)
     return ctx
-
-
-class default:
-    context: Context = None
-    initializer: Callable = None
