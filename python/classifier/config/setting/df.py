@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from classifier.process.state import Cascade
+from classifier.task import Cascade
 
 if TYPE_CHECKING:
     from numpy.typing import DTypeLike

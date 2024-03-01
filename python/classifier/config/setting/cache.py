@@ -1,7 +1,7 @@
 import pickle
 
 import fsspec
-from classifier.process.state import Cascade, share_global_state
+from classifier.task.state import Cascade, share_global_state
 
 
 class save(Cascade):

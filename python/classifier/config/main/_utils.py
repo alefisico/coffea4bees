@@ -18,22 +18,15 @@ class SetupMultiprocessing(Main):
     argparser.add_argument(
         '--preload', action='extend', nargs='+', default=['torch'], help='preloaded imports when using multiprocessing')
 
-    @cached_property
-    def mp_context(self):
+    def __init__(self):
+        super().__init__()
         from classifier.process import get_context, process_state
+        from classifier.process.initializer import torch_set_sharing_strategy
 
         process_state.context = get_context(
             method='forkserver', library='torch', preload=unique(self.opts.preload))
-        return process_state.context
-
-    @cached_property
-    def mp_initializer(self):
-        from classifier.process.initializer import (
-            process_state, torch_set_sharing_strategy)
-
         process_state.initializer.add(
             torch_set_sharing_strategy('file_system'))
-        return process_state.initializer
 
 
 class SelectDevice(Main):
@@ -64,6 +57,7 @@ class LoadTrainingSets(SetupMultiprocessing):
     def load_training_sets(self, parser: EntryPoint):
         from concurrent.futures import ProcessPoolExecutor as Pool
 
+        from classifier.process import process_state
         from torch.utils.data import ConcatDataset, StackDataset
 
         # load datasets in parallel
@@ -74,8 +68,8 @@ class LoadTrainingSets(SetupMultiprocessing):
         timer = datetime.now()
         with Pool(
             max_workers=self.opts.max_loaders,
-            mp_context=self.mp_context,
-            initializer=self.mp_initializer
+            mp_context=process_state.context,
+            initializer=process_state.initializer
         ) as pool:
             datasets = [*pool.map(_load_datasets(), d_loaders)]
         logging.info(

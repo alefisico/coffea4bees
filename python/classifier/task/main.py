@@ -11,10 +11,9 @@ from typing import TYPE_CHECKING, Callable, Optional, TypeVar
 
 import fsspec
 
-from ..config.setting.default import IO as IOSetting
-from ..process.state import Cascade, _is_private
 from .dataset import Dataset
 from .model import Model
+from .state import Cascade, _is_private
 from .task import ArgParser, Task, interface
 
 if TYPE_CHECKING:
@@ -29,7 +28,7 @@ _TaskT = TypeVar('_TaskT', bound=Task)
 
 
 def new_task(cls: type[_TaskT], opts: list[str]) -> _TaskT:
-    obj = object.__new__(cls)
+    obj = cls.__new__(cls)
     obj.parse(opts)
     obj.__init__()
     return obj
@@ -124,6 +123,8 @@ class EntryPoint:
         self.main: Main = cls()
 
     def run(self, reproducible: Callable):
+        from ..config.setting.default import IO as IOSetting
+
         self.main.parse(self.args[_MAIN][1])
         self._fetch_all()
         meta = self.main.run(self)

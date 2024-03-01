@@ -1,4 +1,4 @@
-from classifier.process.state import GlobalState
+from classifier.task import GlobalState
 
 
 class MultiClass(GlobalState):

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Callable, Literal
 
-from .state import share_global_state
+from ..task.state import share_global_state
 
 if TYPE_CHECKING:
     from . import Context
@@ -30,7 +30,11 @@ class inherit_context_initializer:
         return (process_state.context, process_state.initializer)
 
     def __setstate__(self, states: tuple[Context, _initializer]):
-        process_state.context, process_state.initializer = states
+        self._context, self._initializer = states
+
+    def __call__(self):
+        process_state.context = self._context
+        process_state.initializer = self._initializer
         process_state.is_main = False
 
 

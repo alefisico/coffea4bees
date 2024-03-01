@@ -4,6 +4,8 @@ import logging
 from textwrap import indent
 from typing import Any, Mapping
 
+from .special import Static
+
 _MAX_WIDTH = 30
 
 
@@ -59,14 +61,14 @@ class share_global_state:
         del self._states
 
 
-class Cascade(GlobalState):
+class Cascade(GlobalState, Static):
     @classmethod
     def __mod_name__(cls):
         return '.'.join(f'{cls.__module__}.{cls.__name__}'.split('.')[3:])
 
     @classmethod
     def parse(cls, opts: list[str]):
-        from ..task.parsers import parse_dict
+        from .parsers import parse_dict
 
         for opt in opts:
             data = parse_dict(opt)
@@ -83,7 +85,7 @@ class Cascade(GlobalState):
         from base_class.typetools import get_partial_type_hints, type_name
         from rich.markup import escape
 
-        from ..task.task import _INDENT
+        from .task import _INDENT
 
         try:
             annotations = get_partial_type_hints(cls, include_extras=True)
