@@ -13,8 +13,9 @@ import fsspec
 
 from .dataset import Dataset
 from .model import Model
+from .special import interface, new
 from .state import Cascade, _is_private
-from .task import ArgParser, Task, interface
+from .task import ArgParser, Task
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -23,15 +24,6 @@ if TYPE_CHECKING:
 _CLASSIFIER = 'classifier'
 _CONFIG = 'config'
 _MAIN = 'main'
-
-_TaskT = TypeVar('_TaskT', bound=Task)
-
-
-def new_task(cls: type[_TaskT], opts: list[str]) -> _TaskT:
-    obj = cls.__new__(cls)
-    obj.parse(opts)
-    obj.__init__()
-    return obj
 
 
 class EntryPoint:
@@ -94,7 +86,7 @@ class EntryPoint:
                         raise TypeError(
                             f'Class "{clsname}" is not a subclass of Task')
                     else:
-                        self.mods[cat].append(new_task(cls, opts))
+                        self.mods[cat].append(new(cls, opts))
 
     def __init__(self):
         self.entrypoint = Path(sys.argv[0]).name
@@ -120,12 +112,11 @@ class EntryPoint:
         _, cls = self._fetch_module(f'{self.args[_MAIN][0]}.Main', _MAIN)
         if cls is None:
             raise AttributeError(f'Task "{self.args[_MAIN][0]}" not found')
-        self.main: Main = cls()
+        self.main: Main = new(cls, self.args[_MAIN][1])
 
     def run(self, reproducible: Callable):
         from ..config.setting.default import IO as IOSetting
 
-        self.main.parse(self.args[_MAIN][1])
         self._fetch_all()
         meta = self.main.run(self)
 

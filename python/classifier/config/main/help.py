@@ -40,8 +40,8 @@ class Main(main.Main):
         '--html', action='store_true', help=f'write "help.html" to output directory')
 
     def __init__(self):
-        self._console = Console(record=True)
         super().__init__()
+        self._console = Console(record=True)
 
     def _print(self, *args, **kwargs):
         self._console.print(*args, **kwargs)

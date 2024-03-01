@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Protocol
 
-from .task import Task, interface
+from .special import interface
+from .task import Task
 
 if TYPE_CHECKING:
     from torch.utils.data import Dataset as TorchDataset

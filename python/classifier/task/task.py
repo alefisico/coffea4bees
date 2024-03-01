@@ -4,29 +4,11 @@ import argparse
 from collections import ChainMap
 from copy import deepcopy
 from textwrap import indent
-from typing import Iterable, Literal, TypeVar
+from typing import Iterable, Literal
 
-_InterfaceT = TypeVar('_InterfaceT')
+from .special import TaskBase
 
 _INDENT = '  '
-
-
-class _Interface:
-    def __init__(self, func):
-        self.func = func
-
-    def __get__(self, _, owner):
-        import inspect
-        signature = (
-            str(inspect.signature(self.func))
-            .replace("'", "")
-            .replace('"', ''))
-        raise NotImplementedError(
-            f'Task interface {owner.__name__}.{self.func.__name__}{signature} is not implemented')
-
-
-def interface(func: _InterfaceT) -> _InterfaceT:
-    return _Interface(func)
 
 
 class _Formatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter):
@@ -59,7 +41,7 @@ class ArgParser(argparse.ArgumentParser):
             *name_or_flags, nargs=argparse.SUPPRESS, help=argparse.SUPPRESS, default=argparse.SUPPRESS)
 
 
-class Task:
+class Task(TaskBase):
     argparser: ArgParser = NotImplemented
     defaults: dict[str] = NotImplemented
 
