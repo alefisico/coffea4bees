@@ -9,10 +9,8 @@ from coffea.util import load
 import numpy as np
 
 sys.path.insert(0, os.getcwd())
-from base_class.plots import makePlot, make2DPlot
-
-from analysis.iPlot import parse_args, load_config, load_hists, read_axes_and_cuts
-import analysis.iPlot_config as cfg
+from base_class.plots.plots import makePlot, make2DPlot, load_config, load_hists, read_axes_and_cuts, parse_args
+import base_class.plots.iPlot_config as cfg
 
 np.seterr(divide='ignore', invalid='ignore')
 

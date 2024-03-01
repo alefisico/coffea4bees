@@ -13,7 +13,7 @@ class CutFlowTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         
-        inputFile = wrapper.args["inputFile"] #"hists/test.coffea"
+        inputFile = wrapper.args["inputFile"]
         with open(f'{inputFile}', 'rb') as hfile:
             hists = load(hfile)
         

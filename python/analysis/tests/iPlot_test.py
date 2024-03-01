@@ -9,8 +9,9 @@ import sys
 import os
 sys.path.insert(0, os.getcwd())
 
-from analysis.iPlot import load_config, load_hists, read_axes_and_cuts, plot, plot2d
-import analysis.iPlot_config as cfg
+from analysis.iPlot import plot, plot2d
+import base_class.plots.iPlot_config as cfg
+from base_class.plots.plots import load_config, load_hists, read_axes_and_cuts
 
 
 class iPlotTestCase(unittest.TestCase):
