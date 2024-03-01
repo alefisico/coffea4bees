@@ -1,4 +1,5 @@
 def plotClasses(train, valid, name, contr=None, selection=''):
+    # TODO
     # Make place holder datasets to add the training/validation set graphical distinction to the legend
     trainLegend=pltHelper.dataSet(name=  'Training', color='black', alpha=1.0, linewidth=1)
     validLegend=pltHelper.dataSet(name='Validation', color='black', alpha=0.5, linewidth=2)
