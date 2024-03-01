@@ -20,8 +20,8 @@ class FromRoot:
     ):
         self.chain = Chain()
         self.branches = branches
-        self.preprocessors = [*preprocessors] if preprocessors else []
-        self.metadata = {**metadata} if metadata else {}
+        self.preprocessors = [*(preprocessors or ())]
+        self.metadata = {**(metadata or {})}
 
         for friend in friends or ():
             self.chain.add_friend(friend, renaming='{friend}_{branch}')
