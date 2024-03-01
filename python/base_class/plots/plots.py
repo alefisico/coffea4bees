@@ -56,6 +56,15 @@ def _savefig(fig, var, *args):
     return
 
 
+def get_cut_dict(cut, cutList):
+    cutDict = {}
+    for c in cutList:
+        cutDict[c] = sum
+    cutDict[cut] = True
+    return cutDict
+
+
+
 def _draw_plot(hist_list, stack_dict, **kwargs):
     r"""
     Takes options:
@@ -365,12 +374,9 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
             label = process if process_config.get("label").lower() == "none" else process_config.get("label")
             hist_labels.append(label + " " + _cut)
             hist_types. append("errorbar")
-                
-            cutDict = {}
-            for c in cutList:
-                cutDict[c] = sum
-            cutDict[_cut] = True
-    
+            
+            cutDict = get_cut_dict(_cut, cutList)
+            
             this_hist_dict = {"process": process_config["process"],
                               "year": year,
                               "tag": hist.loc(this_tag),
@@ -404,10 +410,7 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
             hist_labels.append(label + " " + _reg)
             hist_types. append("errorbar")
                 
-            cutDict = {}
-            for c in cutList:
-                cutDict[c] = sum
-            cutDict[cut] = True
+            cutDict = get_cut_dict(cut, cutList)
     
             this_hist_dict = {"process": process_config["process"],
                               "year": year,
@@ -437,10 +440,7 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
     
         label = process if process_config.get("label").lower() == "none" else process_config.get("label")
             
-        cutDict = {}
-        for c in cutList:
-            cutDict[c] = sum
-        cutDict[cut] = True
+        cutDict = get_cut_dict(cut, cutList)
     
         this_hist_dict = {"process": process_config["process"],
                           "year": year,
@@ -478,10 +478,7 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
                   f"_reg={region}"
                   )
 
-        cutDict = {}
-        for c in cutList:
-            cutDict[c] = sum
-        cutDict[cut] = True
+        cutDict = get_cut_dict(cut, cutList)
 
         for _, _proc_conf in enumerate(process_config):
             label = _proc_conf.get("process") if _proc_conf.get("label").lower() == "none" else _proc_conf.get("label")
@@ -526,10 +523,7 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
             hist_labels.append(label + " " + _var)
             hist_types. append("errorbar")
 
-            cutDict = {}
-            for c in cutList:
-                cutDict[c] = sum
-            cutDict[cut] = True
+            cutDict = get_cut_dict(cut, cutList)
 
             this_hist_dict = {"process": process_config["process"],
                               "year": year,
@@ -600,11 +594,8 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
     if cut not in cutList:
         raise AttributeError(f"{cut} not in cutList {cutList}")
 
-    cutDict = {}
-    for c in cutList:
-        cutDict[c] = sum
-    cutDict[cut] = True
-
+    cutDict = get_cut_dict(cut, cutList)
+    
     tagNames = []
 
     #
@@ -762,10 +753,7 @@ def make2DPlot(hists, process, cutList, plotConfig, var='selJets.pt',
     rebin = kwargs.get("rebin", 1)
     codes = plotConfig["codes"]
 
-    cutDict = {}
-    for c in cutList:
-        cutDict[c] = sum
-    cutDict[cut] = True
+    cutDict = get_cut_dict(cut, cutList)
 
     #
     #  Get the year
