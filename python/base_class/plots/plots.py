@@ -555,7 +555,8 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
     kwargs["stack_labels"] = []
     
     if kwargs.get("doRatio", False):
-        fig, ax = _plot_ratio(hists, {}, plotConfig, **kwargs)
+        fig, main_ax, ratio_ax = _plot_ratio(hists, {}, plotConfig, **kwargs)
+        ax = (main_ax, ratio_ax)
     else:
         fig, ax = _plot(hists, {}, plotConfig, **kwargs)
 
