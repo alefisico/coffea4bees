@@ -15,6 +15,7 @@ import torch
 import torch.nn.functional as F
 
 from analysis.helpers.networks import HCREnsemble
+from analysis.helpers.topCandReconstruction import find_tops, dumpTopCandidateTestVectors, buildTop
 
 from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
 from coffea.nanoevents.methods import vector
@@ -95,6 +96,38 @@ class QuadJetHists(Template):
     other           = LorentzVector.plot_pair(('...', R'Other Boson Candidate'), 'other', skip=['n'])
 
 
+class WCandHists(Template):
+
+    p  = LorentzVector.plot(('...', R'W Candidate'), 'p',  skip=['n'])
+    pW = LorentzVector.plot(('...', R'W Candidate'), 'pW', skip=['n'])
+
+    j = Jet.plot(('...', R'W j jet Candidate'), 'j',     skip=['deepjet_c','n'])
+    l = Jet.plot(('...', R'W l jet Candidate'), 'l',     skip=['deepjet_c','n'])
+
+class TopCandHists(Template):
+
+    t = LorentzVector.plot(('...', R'Top Candidate'), 'p', skip=['n'])
+    b = Jet.plot(('...', R'Top b jet Candidate'), 'b', skip=['deepjet_c','n'])
+    W = WCandHists(('...', R'W boson Candidate'), 'W')
+
+    mbW  = H((100, 0, 500,   ("mbW",  'm_{b,W}')))
+    xWt  = H(( 60, 0,  12,   ("xWt",  "X_{W,t}")))
+    xWbW = H(( 60, 0,  12,   ("xWbW", "X_{W,bW}")))
+    rWbW = H(( 60, 0,  12,   ("rWbW", "r_{W,bW}")))
+    xbW  = H(( 60, 0,  12,   ("xbW",  "X_{W,bW}")))
+    xW   = H((100, 0,  12,   ("xW",   'X_{W}')))
+
+    mW_vs_mt  = H((50,  0, 250, ('W.p.mass', 'W Candidate Mass [GeV]')),
+                  (50, 80, 280, ('p.mass',   'Top Candidate Mass [GeV]')))
+
+    mW_vs_mbW = H((50,  0, 250, ('W.p.mass', 'W Candidate Mass [GeV]')),
+                  (50, 80, 280, ('mbW',   'm_{b,W} [GeV]')))
+
+    xW_vs_xt  = H((100, 0,  12,   ("xW",   'X_{W}')),
+                  (100, 0,  12,   ("xt",   'X_{t}')))
+
+    xW_vs_xbW  = H((100, 0,  12,   ("xW",   'X_{W}')),
+                   (100, 0,  12,   ("xbW",  'X_{bW}')))
 
 
 
@@ -172,7 +205,6 @@ class analysis(processor.ProcessorABC):
         logging.debug(f'{chunk}Process {nEvent} Events')
 
 
-
         #
         # Reading SvB friend trees
         #
@@ -245,6 +277,7 @@ class analysis(processor.ProcessorABC):
         # Apply object selection (function does not remove events, adds content to objects)
         event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year]  )
         self._cutFlow.fill("passJetMult",  event[ event.lumimask & event.passNoiseFilter & event.passHLT & event.passJetMult ], allTag=True)
+
 
         #
         # Filtering object and event selection
@@ -458,6 +491,26 @@ class analysis(processor.ProcessorABC):
         selev['passSvB'] = (selev['SvB_MA'].ps > 0.80)
         selev['failSvB'] = (selev['SvB_MA'].ps < 0.05)
 
+
+        #
+        #  Build the top Candiates
+        #
+        # dumpTopCandidateTestVectors(selev, logging, chunk, 15)
+
+        # sort the jets by btagging
+        selev.selJet  = selev.selJet[ak.argsort(selev.selJet.btagDeepFlavB, axis=1, ascending=False)]
+        top_cands     = find_tops(selev.selJet)
+        rec_top_cands = buildTop(selev.selJet, top_cands)
+
+        selev["top_cand"] = rec_top_cands[:, 0]
+
+        selev["xbW_reco"] = selev.top_cand.xbW
+        selev["xW_reco"]  = selev.top_cand.xW
+
+        selev["delta_xbW"] = selev.xbW - selev.xbW_reco
+        selev["delta_xW"] = selev.xW - selev.xW_reco
+
+
         #
         # Blind data in fourTag SR
         #
@@ -494,22 +547,19 @@ class analysis(processor.ProcessorABC):
         #    m4j_vs_leadSt_dR = dir.make<TH2F>("m4j_vs_leadSt_dR", (name+"/m4j_vs_leadSt_dR; m_{4j} [GeV]; S_{T} leading boson candidate #DeltaR(j,j); Entries").c_str(), 40,100,1100, 25,0,5);
         #    m4j_vs_sublSt_dR = dir.make<TH2F>("m4j_vs_sublSt_dR", (name+"/m4j_vs_sublSt_dR; m_{4j} [GeV]; S_{T} subleading boson candidate #DeltaR(j,j); Entries").c_str(), 40,100,1100, 25,0,5);
 
-
-        #    xWt0 = dir.make<TH1F>("xWt0", (name+"/xWt0; X_{Wt,0}; Entries").c_str(), 60, 0, 12);
-        #    xWt1 = dir.make<TH1F>("xWt1", (name+"/xWt1; X_{Wt,1}; Entries").c_str(), 60, 0, 12);
-        #    //xWt2 = dir.make<TH1F>("xWt2", (name+"/xWt2; X_{Wt,2}; Entries").c_str(), 60, 0, 12);
-        #    xWt  = dir.make<TH1F>("xWt",  (name+"/xWt;  X_{Wt};   Entries").c_str(), 60, 0, 12);
-        #    t0 = new trijetHists(name+"/t0",  fs, "Top Candidate (#geq0 non-candidate jets)");
-        #    t1 = new trijetHists(name+"/t1",  fs, "Top Candidate (#geq1 non-candidate jets)");
-        #    //t2 = new trijetHists(name+"/t2",  fs, "Top Candidate (#geq2 non-candidate jets)");
-        #    t = new trijetHists(name+"/t",  fs, "Top Candidate");
-
-
         fill += hist.add('nPVs',     (101, -0.5, 100.5, ('PV.npvs',     'Number of Primary Vertices')))
         fill += hist.add('nPVsGood', (101, -0.5, 100.5, ('PV.npvsGood', 'Number of Good Primary Vertices')))
 
         fill += hist.add('hT',          (100,  0,   1000,  ('hT',          'H_{T} [GeV}')))
         fill += hist.add('hT_selected', (100,  0,   1000,  ('hT_selected', 'H_{T} (selected jets) [GeV}')))
+
+        fill += hist.add('xW',          (100, 0, 12,   ('xW',       'xW')))
+        fill += hist.add('delta_xW',    (100, -5, 5,   ('delta_xW', 'delta xW')))
+        fill += hist.add('delta_xW_l',  (100, -15, 15, ('delta_xW', 'delta xW')))
+
+        fill += hist.add('xbW',         (100, 0, 12,   ('xbW',      'xbW')))
+        fill += hist.add('delta_xbW',   (100, -5, 5,   ('delta_xbW','delta xbW')))
+        fill += hist.add('delta_xbW_l', (100, -15, 15, ('delta_xbW','delta xbW')))
 
         #
         #  Make quad jet hists
@@ -553,6 +603,10 @@ class analysis(processor.ProcessorABC):
         if not isMC: skip_elecs += ['genPartFlav']
         fill += Elec.plot(('selElecs', 'Selected Elecs'),        'selElec', skip=skip_elecs)
 
+        #
+        # Top Candidates
+        #
+        fill += TopCandHists(('top_cand', 'Top Candidate'), 'top_cand')
 
         #
         # fill histograms
