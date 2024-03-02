@@ -463,7 +463,6 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
     #
     elif type(process) is list:
 
-
         for _, _proc_conf in enumerate(process_config):
             label = _proc_conf.get("process") if _proc_conf.get("label").lower() == "none" else _proc_conf.get("label")
 
@@ -563,12 +562,15 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
     h = hists['hists'][var]
     varName = hists['hists'][var].axes[-1].name
     rebin = kwargs.get("rebin", 1)
+    var_dict = {varName: hist.rebin(rebin)}
+
     codes = plotConfig["codes"]
 
     if cut not in cutList:
         raise AttributeError(f"{cut} not in cutList {cutList}")
 
     cut_dict = get_cut_dict(cut, cutList)
+    region_dict = {"region":  hist.loc(codes["region"][region])}
     
     tagNames = []
 
@@ -597,13 +599,11 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
                   f"tag={this_tag}, year={this_year}")
 
         this_hist_dict = {"process": this_process,
-                          "year": this_year,
-                          "tag": hist.loc(this_tag),
-                          "region": hist.loc(codes["region"][region]),
-                          varName: hist.rebin(rebin)}
+                          "year":    this_year,
+                          "tag":     hist.loc(this_tag),
+                          }
 
-
-        this_hist_dict = this_hist_dict | cut_dict
+        this_hist_dict = this_hist_dict | var_dict | region_dict | cut_dict
 
         hists.append(h[this_hist_dict])
         hists[-1] *= v.get("scalefactor", 1.0)
@@ -629,6 +629,7 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
 
     for k, v in stack_config.items():
         this_year = sum if v["year"] == "RunII" else v["year"]
+        year_dict = {"year": this_year}
 
         stack_labels.append(v.get('label'))
         stack_colors_fill.append(v.get('fillcolor'))
@@ -646,12 +647,10 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
                       f"tag={this_tag}, year={this_year}")
 
             this_hist_opts = {"process": this_process,
-                              "year": this_year,
                               "tag": hist.loc(this_tag),
-                              "region": hist.loc(codes["region"][region]),
-                              varName: hist.rebin(rebin)}
+                              }
 
-            this_hist_opts = this_hist_opts | cut_dict
+            this_hist_opts = this_hist_opts | var_dict | region_dict | year_dict | cut_dict
 
             stack_dict[k] = h[this_hist_opts]
 
@@ -665,12 +664,10 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
                 this_tag = plotConfig["codes"]["tag"][sum_v["tag"]]
 
                 this_hist_opts = {"process": this_process,
-                                  "year": this_year,
                                   "tag": hist.loc(this_tag),
-                                  "region": hist.loc(codes["region"][region]),
-                                  varName: hist.rebin(rebin)}
+                                  }
 
-                this_hist_opts = this_hist_opts | cut_dict
+                this_hist_opts = this_hist_opts | var_dict | region_dict | year_dict | cut_dict
 
                 this_hist = h[this_hist_opts]
                 this_hist *= sum_v.get("scalefactor", 1.0)
