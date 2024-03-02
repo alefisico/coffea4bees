@@ -17,10 +17,13 @@ from coffea.util import load
 from functools import reduce
 from past.builtins import xrange
 import matplotlib.pyplot as plt
+import hist
 
 sys.path.insert(0, os.getcwd())
-from analysis.iPlot import load_config, load_hists, read_axes_and_cuts
-import analysis.iPlot_config as cfg
+from base_class.plots.plots import load_config, load_hists, read_axes_and_cuts, get_cut_dict
+import base_class.plots.iPlot_config as cfg
+
+
 
 def ncr(n, r):
     r = min(r, n-r)
@@ -140,7 +143,8 @@ parser.add_argument('-w', '--weightSet',dest="weightSet",default="")
 parser.add_argument('-r',dest="weightRegion",default="")
 parser.add_argument('-c',dest="cut",default="passXWt")
 parser.add_argument('-o', '--outputDir',dest='outputDir',default="")
-parser.add_argument('-y', '--year',                 dest="year",          default="2018", help="Year specifies trigger (and lumiMask for data)")
+parser.add_argument(      '--ROOTInputs',action="store_true")
+parser.add_argument('-y', '--year',                 dest="year",          default="RunII", help="Year specifies trigger (and lumiMask for data)")
 parser.add_argument('-l', '--lumi',                 dest="lumi",          default="1",    help="Luminosity for MC normalization: units [pb]")
 parser.add_argument('-m', '--metadata', dest="metadata",
                     default="analysis/metadata/plotsAll.yml",
@@ -190,7 +194,7 @@ class jetCombinatoricModel:
         for parameter in self.parameters:
             parameter.dump()
 
-jetCombinatoricModelNext = args.outputDir+"jetCombinatoricModel_"+args.weightRegion+"_"+args.weightSet+".txt"
+jetCombinatoricModelNext = args.outputDir+"/"+"jetCombinatoricModel_"+args.weightRegion+"_"+args.weightSet+".txt"
 print(jetCombinatoricModelNext)
 jetCombinatoricModelFile =             open(jetCombinatoricModelNext, "w")
 JCMROOTFileName = jetCombinatoricModelNext.replace(".txt",".root")
@@ -201,11 +205,11 @@ jetCombinatoricModels = {}
 cut=args.cut
 
 
-def make_TH1F_from_Hist(inputHist, name, title):
-    x_centers = inputHist.axes[0].centers
-    x_edges   = inputHist.axes[0].edges
+def make_TH1F_from_Hist(inputHist, name, title, maxBin=16):
+    x_centers = inputHist.axes[0].centers[0:maxBin]
+    x_edges   = inputHist.axes[0].edges[0:maxBin+1]
 
-    output = ROOT.TH1F( name, title , len(x_edges)-1, x_edges[0], x_edges[-1] )
+    output = ROOT.TH1F( name, title , len(x_edges)-1, x_edges[0]-0.5, x_edges[-1]-0.5 )
     output.Sumw2()
     values = inputHist.values()
     errors = np.sqrt( inputHist.variances() )
@@ -220,69 +224,79 @@ def make_TH1F_from_Hist(inputHist, name, title):
 
 
 def loadCoffeaHists():
-    #infile = load("hists/histAll_testJCM.coffea")['hists']
-    #infile = load("analysis/hists/histAll.coffea")['hists']
-    infile = load("analysis/hists/test.coffea")['hists']
 
     cfg.plotConfig = load_config(args.metadata)
     cfg.hists = load_hists(["analysis/hists/test.coffea"])
     cfg.axisLabels, cfg.cutList = read_axes_and_cuts(cfg.hists, cfg.plotConfig)
 
-
-    cutDict = {}
-    for c in cfg.cutList:
-        cutDict[c] = sum
-    cutDict[cut] = True
+    cutDict = get_cut_dict(cut, cfg.cutList)
 
     codes = cfg.plotConfig["codes"]
     year = sum if args.year == "RunII" else args.year
     #tag = plotConfig["codes"]["tag"][tagName]
     region_selection = sum if args.weightRegion in ["sum", sum] else hist.loc(codes["region"][args.weightRegion])
 
-    hist_dict_4tag = {
+    region_year_dict = {
         "year":    year,
-        "tag":     hist.loc(codes["tag"]["fourTag"]),
         "region":  region_selection,
     }
 
-    data4b_hist = infile['selJets_noJCM.n']['data',sum,1,1,True,False,False,:]
-    data4b = make_TH1F_from_Hist(data4b_hist, "data4b", "dat4b")
+    fourTag_dict = {"tag":     hist.loc(codes["tag"]["fourTag"])}
 
-    data4b_nTagJets_hist = infile['tagJets_loose_noJCM.n']['data',sum,1,1,True,False,False,:]
-    data4b_nTagJets = make_TH1F_from_Hist(data4b_nTagJets_hist, "data4b_nTagJets", "data4b_nTagJets")
+    threeTag_dict = { "tag":     hist.loc(codes["tag"]["threeTag"])}
 
-    data3b_hist = infile['selJets_noJCM.n']['data',sum,0,1,True,False,False,:]
-    data3b = make_TH1F_from_Hist(data3b_hist, "data3b", "dat3b")
 
-    data3b_nTagJets_hist = infile['tagJets_loose_noJCM.n']['data',sum,0,1,True,False,False,:]
-    data3b_nTagJets = make_TH1F_from_Hist(data3b_nTagJets_hist, "data3b_nTagJets", "data3b_nTagJets")
-
-    data3b_nTagJets_tight_hist = infile['tagJets_noJCM.n']['data',sum,0,1,True,False,False,:]
-    data3b_nTagJets_tight = make_TH1F_from_Hist(data3b_nTagJets_tight_hist, "data3b_nTagJets_tight", "data3b_nTagJets_tight")
+    fourTag_data_dict  = {"process":'data'} | fourTag_dict | region_year_dict | cutDict
+    threeTag_data_dict = {"process":'data'} | threeTag_dict | region_year_dict | cutDict
 
     ttbar_list = ['TTTo2L2Nu', 'TTToSemiLeptonic', 'TTToHadronic']
+    fourTag_ttbar_dict   = {"process":ttbar_list} | fourTag_dict  | region_year_dict | cutDict
+    threeTag_ttbar_dict  = {"process":ttbar_list} | threeTag_dict | region_year_dict | cutDict
 
-    tt4b_hist = infile['selJets_noJCM.n'][ttbar_list,sum,1,1,True,False,False,:][sum,:]
-    tt4b = make_TH1F_from_Hist(tt4b_hist, "tt4b", "tt4b")
+    hists = cfg.hists[0]['hists']
 
-    tt4b_nTagJets_hist = infile['tagJets_loose_noJCM.n'][ttbar_list,sum,1,1,True,False,False,:][sum,:]
-    tt4b_nTagJets = make_TH1F_from_Hist(tt4b_nTagJets_hist, "tt4b_nTagJets", "tt4b_nTagJets")
+    data4b_hist                = hists['selJets_noJCM.n']      [fourTag_data_dict]
+    data4b_nTagJets_hist       = hists['tagJets_loose_noJCM.n'][fourTag_data_dict]
 
-    tt3b_hist = infile['selJets_noJCM.n'][ttbar_list,sum,0,1,True,False,False,:][sum,:]
-    tt3b = make_TH1F_from_Hist(tt3b_hist, "tt3b", "tt3b")
+    data3b_hist                = hists['selJets_noJCM.n']      [threeTag_data_dict]
+    data3b_nTagJets_hist       = hists['tagJets_loose_noJCM.n'][threeTag_data_dict]
+    data3b_nTagJets_tight_hist = hists['tagJets_noJCM.n']      [threeTag_data_dict]
 
-    tt3b_nTagJets_hist = infile['tagJets_loose_noJCM.n'][ttbar_list,sum,0,1,True,False,False,:][sum,:]
-    tt3b_nTagJets = make_TH1F_from_Hist(tt3b_nTagJets_hist, "tt3b_nTagJets", "tt3b_nTagJets")
+    tt4b_hist                  = hists['selJets_noJCM.n']      [fourTag_ttbar_dict][sum,:]
+    tt4b_nTagJets_hist         = hists['tagJets_loose_noJCM.n'][fourTag_ttbar_dict][sum,:]
+                               
+    tt3b_hist                  = hists['selJets_noJCM.n']      [threeTag_ttbar_dict][sum,:]
+    tt3b_nTagJets_hist         = hists['tagJets_loose_noJCM.n'][threeTag_ttbar_dict][sum,:]
+    tt3b_nTagJets_tight_hist   = hists['tagJets_noJCM.n']      [threeTag_ttbar_dict][sum,:]
 
-    tt3b_nTagJets_tight_hist = infile['tagJets_noJCM.n'][ttbar_list,sum,0,1,True,False,False,:][sum,:]
-    tt3b_nTagJets_tight = make_TH1F_from_Hist(tt3b_nTagJets_tight_hist, "tt3b_nTagJets_tight", "tt3b_nTagJets_tight")
-    
+
+    #
+    # Convert to ROOT
+    #
+    data4b                = make_TH1F_from_Hist(data4b_hist,                "data4b",                "data4b")
+    data4b_nTagJets       = make_TH1F_from_Hist(data4b_nTagJets_hist,       "data4b_nTagJets",       "data4b_nTagJets")
+                                                                                                     
+    data3b                = make_TH1F_from_Hist(data3b_hist,                "data3b",                "data3b")
+    data3b_nTagJets       = make_TH1F_from_Hist(data3b_nTagJets_hist,       "data3b_nTagJets",       "data3b_nTagJets")
+    data3b_nTagJets_tight = make_TH1F_from_Hist(data3b_nTagJets_tight_hist, "data3b_nTagJets_tight", "data3b_nTagJets_tight")
+
+    tt4b                  = make_TH1F_from_Hist(tt4b_hist,                  "tt4b",                  "tt4b")
+    tt4b_nTagJets         = make_TH1F_from_Hist(tt4b_nTagJets_hist,         "tt4b_nTagJets",         "tt4b_nTagJets")
+                                                                                                     
+    tt3b                  = make_TH1F_from_Hist(tt3b_hist,                  "tt3b",                  "tt3b")
+    tt3b_nTagJets         = make_TH1F_from_Hist(tt3b_nTagJets_hist,         "tt3b_nTagJets",         "tt3b_nTagJets")
+    tt3b_nTagJets_tight   = make_TH1F_from_Hist(tt3b_nTagJets_tight_hist,   "tt3b_nTagJets_tight",   "tt3b_nTagJets_tight")
+
+
+    #
+    #  Make QCD hists
+    #
     qcd4b = data4b.Clone("qcd4b")
     qcd4b.Add( tt4b, -1 )
+
     qcd3b = data3b.Clone('qcd3b')
     qcd3b.Add( tt3b, -1 )
-    #qcd4b_nTagJets = data4b_nTagJets.Clone("qcd4b")
-    #qcd4b_nTagJets.Add( tt4b_nTagJets, -1 )
+
     qcd3b_nTightTags = data3b_nTagJets_tight.Clone('qcd3b')
     qcd3b_nTightTags.Add( tt3b_nTagJets_tight, -1 )
     
@@ -347,12 +361,6 @@ def getHists(cut,region,var,inFile4b, inFile3b, ttFile4b, ttFile3b, plot=False):
     if tt4b:
         bkgd.Add(tt4b)
 
-    data4b.SetLineColor(ROOT.kBlack)
-    qcd3b.SetFillColor(ROOT.kYellow)
-    qcd3b.SetLineColor(ROOT.kBlack)
-    if tt4b:
-        tt4b.SetLineColor(ROOT.kBlack)
-        tt4b.SetFillColor(ROOT.kAzure-9)
         
     if plot:
         if '/' in var: var=var.replace('/','_')
@@ -418,12 +426,21 @@ def loadROOTHists():
     return data4b, data3b, tt4b, tt3b, qcd4b, qcd3b, data4b_nTagJets, tt4b_nTagJets, qcd3b_nTightTags
 
 
-do_read_coffea = True
-
-if do_read_coffea:
-    data4b, data3b, tt4b, tt3b, qcd4b, qcd3b, data4b_nTagJets, tt4b_nTagJets, qcd3b_nTightTags = loadCoffeaHists()
-else:
+if args.ROOTInputs:
     data4b, data3b, tt4b, tt3b, qcd4b, qcd3b, data4b_nTagJets, tt4b_nTagJets, qcd3b_nTightTags = loadROOTHists()
+else:
+    data4b, data3b, tt4b, tt3b, qcd4b, qcd3b, data4b_nTagJets, tt4b_nTagJets, qcd3b_nTightTags = loadCoffeaHists()
+
+#
+# Colors
+#
+
+data4b.SetLineColor(ROOT.kBlack)
+qcd3b.SetFillColor(ROOT.kYellow)
+qcd3b.SetLineColor(ROOT.kBlack)
+if tt4b:
+    tt4b.SetLineColor(ROOT.kBlack)
+    tt4b.SetFillColor(ROOT.kAzure-9)
 
 
 
