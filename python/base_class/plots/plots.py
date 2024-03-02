@@ -12,7 +12,9 @@ plt.style.use([hep.style.CMS, {'font.size': 16}])
 
 _phi = (1 + np.sqrt(5)) / 2
 _epsilon = 0.001
-_colors = ["xkcd:blue", "xkcd:red", "xkcd:off green", "xkcd:orange", "xkcd:violet", "xkcd:grey"]
+_colors = ["xkcd:blue", "xkcd:red", "xkcd:off green",
+           "xkcd:orange", "xkcd:violet", "xkcd:grey"]
+
 
 def load_config(metadata):
     """  Load meta data
@@ -31,7 +33,6 @@ def load_config(metadata):
     return plotConfig
 
 
-
 def get_value_nested_dict(nested_dict, target_key, default=None):
     """ Return the first value from mathching key from nested dict
     """
@@ -43,7 +44,7 @@ def get_value_nested_dict(nested_dict, target_key, default=None):
             return_value = get_value_nested_dict(v, target_key, default)
             if not return_value == default:
                 return return_value
-        
+
     return default
 
 
@@ -63,11 +64,11 @@ def get_cut_dict(cut, cutList):
     cutDict[cut] = True
     return cutDict
 
+
 def print_list_debug_info(process, tag, cut, region):
     print(f" hist process={process}, "
           f"tag={tag}, _cut={cut}"
           f"_reg={region}")
-          
 
 
 def _draw_plot(hist_list, stack_dict, **kwargs):
@@ -330,7 +331,7 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
     if kwargs.get("debug", False):
         print(f" hist process={process}, "
               f"cut={cut}")
-        
+
     rebin = kwargs.get("rebin", 1)
     codes = plotConfig["codes"]
 
@@ -340,8 +341,8 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
     #
     yearStr = get_value_nested_dict(plotConfig, "year", default="RunII")
     year = sum if yearStr == "RunII" else yearStr
-    year_dict    = {"year": year}
-    
+    year_dict = {"year": year}
+
     #
     #  Unstacked hists
     #
@@ -360,7 +361,7 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
     else:
         cutName = cut
         cut_dict = get_cut_dict(cut, cutList)
-    
+
     if type(process) is list:
         process_config = [get_value_nested_dict(plotConfig, p) for p in process]
         this_tagName = "_vs_".join(process)
@@ -375,7 +376,6 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
         process_dict = {"process": process_config["process"]}
         label = process if process_config.get("label").lower() == "none" else process_config.get("label")
 
-
     if type(region) is list:
         region_dict = None
         regionName = "_vs_".join(region)
@@ -385,7 +385,7 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
 
     if type(var) is list:
         varName  = None
-        var_dict = None 
+        var_dict = None
     else:
         if type(input_hist_File) is list:
             varName = input_hist_File[0]['hists'][var].axes[-1].name
@@ -399,16 +399,16 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
     if type(cut) is list:
 
         for ic, _cut in enumerate(cut):
-    
+
             if kwargs.get("debug", False):
                 print_list_debug_info(process, this_tag, _cut, region)
-    
+
             hist_colors_fill.append(_colors[ic])
             hist_labels.append(label + " " + _cut)
             hist_types. append("errorbar")
-            
+
             this_cut_dict = get_cut_dict(_cut, cutList)
-    
+
             this_hist_dict = process_dict | tag_dict | region_dict | year_dict | var_dict | this_cut_dict
 
             hists.append(input_hist_File['hists'][var][this_hist_dict])
@@ -420,18 +420,18 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
     elif type(region) is list:
 
         for ir, _reg in enumerate(region):
-    
+
             if kwargs.get("debug", False):
                 print_list_debug_info(process, this_tag, cut, _reg)
-    
+
             hist_colors_fill.append(_colors[ir])
             hist_labels.append(label + " " + _reg)
             hist_types. append("errorbar")
-                
+
             this_region_dict = {"region": hist.loc(codes["region"][_reg])}
 
-            this_hist_dict = process_dict | tag_dict | this_region_dict | year_dict | var_dict | cut_dict            
-    
+            this_hist_dict = process_dict | tag_dict | this_region_dict | year_dict | var_dict | cut_dict
+
             hists.append(input_hist_File['hists'][var][this_hist_dict])
             hists[-1] *= process_config.get("scalefactor", 1.0)
 
@@ -439,16 +439,16 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
     #  input file list
     #
     elif type(input_hist_File) is list:
-        
+
         if kwargs.get("debug", False):
             print_list_debug_info(process, this_tag, cut, region)
-    
-        this_hist_dict = process_dict | tag_dict | region_dict | year_dict | var_dict | cut_dict    
+
+        this_hist_dict = process_dict | tag_dict | region_dict | year_dict | var_dict | cut_dict
 
         fileLabels = kwargs.get("fileLabels", [])
 
         for iF, _input_File in enumerate(input_hist_File):
-        
+
             hist_colors_fill.append(_colors[iF])
             if iF < len(fileLabels):
                 hist_labels.append(label + " " + fileLabels[iF])
@@ -472,8 +472,7 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
             if kwargs.get("debug", False):
                 print_list_debug_info(_proc_conf["process"], this_tag, cut, region)
 
-            
-            hist_colors_fill.append(_proc_conf.get("fillcolor", None).replace("yellow","orange"))
+            hist_colors_fill.append(_proc_conf.get("fillcolor", None).replace("yellow", "orange"))
             hist_labels.append(label)
             hist_types. append("errorbar")
 
@@ -481,7 +480,7 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
             this_tag_dict     = {"tag":     hist.loc(this_tag)}
 
             this_hist_dict = this_process_dict | this_tag_dict | region_dict | year_dict | var_dict | cut_dict
-                                      
+
             hists.append(input_hist_File['hists'][var][this_hist_dict])
             hists[-1] *= _proc_conf.get("scalefactor", 1.0)
 
@@ -493,7 +492,7 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
         for iv, _var in enumerate(var):
 
             varName = input_hist_File['hists'][_var].axes[-1].name
-                                      
+
             if kwargs.get("debug", False):
                 print_list_debug_info(process, this_tag, cut, region)
 
@@ -503,8 +502,8 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
             hist_types. append("errorbar")
 
             this_var_dict = {varName: hist.rebin(rebin)}
-                              
-            this_hist_dict = process_dict | tag_dict | region_dict | year_dict | this_var_dict | cut_dict            
+
+            this_hist_dict = process_dict | tag_dict | region_dict | year_dict | this_var_dict | cut_dict
 
             hists.append(input_hist_File['hists'][_var][this_hist_dict])
             hists[-1] *= process_config.get("scalefactor", 1.0)
@@ -520,7 +519,7 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
     kwargs["hist_labels"] = hist_labels
     kwargs["hist_types"] = hist_types
     kwargs["stack_labels"] = []
-    
+
     if kwargs.get("doRatio", False):
         fig, main_ax, ratio_ax = _plot_ratio(hists, {}, plotConfig, **kwargs)
         ax = (main_ax, ratio_ax)
@@ -571,7 +570,7 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
 
     cut_dict = get_cut_dict(cut, cutList)
     region_dict = {"region":  hist.loc(codes["region"][region])}
-    
+
     tagNames = []
 
     #
@@ -635,7 +634,7 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
         stack_colors_fill.append(v.get('fillcolor'))
         stack_colors_edge.append(v.get('edgecolor'))
 
-        if v.get("process",None):
+        if v.get("process", None):
             this_process = v['process']
             tagNames.append(v["tag"])
 
@@ -654,7 +653,7 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
 
             stack_dict[k] = h[this_hist_opts]
 
-        elif v.get("sum",None):
+        elif v.get("sum", None):
 
             hist_sum = None
             for sum_k, sum_v in v.get("sum").items():
@@ -779,10 +778,8 @@ def make2DPlot(hists, process, cutList, plotConfig, var='selJets.pt',
     return fig, ax
 
 
-
-
 def parse_args():
-    
+
     parser = argparse.ArgumentParser(description='uproot_plots')
 
     parser.add_argument(dest="inputFile",
@@ -793,7 +790,6 @@ def parse_args():
                         default=["fileA", "fileB"], nargs='+',
                         help='label Names when more than one input file')
 
-    
     parser.add_argument('-o', '--outputFolder', default=None,
                         help='Folder for output folder. Default: plots/')
 
@@ -806,11 +802,9 @@ def parse_args():
                         help='Metadata file.')
 
     parser.add_argument('--doTest', action="store_true", help='Metadata file.')
-    
+
     args = parser.parse_args()
     return args
-
-
 
 
 def load_hists(input_hists):
@@ -826,7 +820,7 @@ def read_axes_and_cuts(hists, plotConfig):
 
     axisLabels = {}
     cutList = []
-    
+
     axisLabels["var"] = hists[0]['hists'].keys()
     var1 = list(hists[0]['hists'].keys())[0]
 
@@ -845,10 +839,11 @@ def read_axes_and_cuts(hists, plotConfig):
 
         axisLabels[axisName] = []
         print(axisName)
+
         for iBin in range(a.extent):
+
             if axisName in plotConfig["codes"]:
                 value = plotConfig["codes"][axisName][a.value(iBin)]
-
             else:
                 value = a.value(iBin)
 
