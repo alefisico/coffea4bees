@@ -24,6 +24,12 @@ if __name__ == '__main__':
             dataset = ikey.split( tmp_split )[0]
             year = tmp_split.split('_')[1] + '_'.join(ikey.split(tmp_split)[1:])
             if dataset in main_file['datasets']:
-                main_file['datasets'][dataset][year]['picoAOD'] = tmp_file[ikey]
+                if 'source' in tmp_file[ikey].keys(): tmp_file[ikey].pop('source')
+                if 'data' in dataset:
+                    era = year[-1]
+                    year = ''.join(year[:-1])
+                    main_file['datasets'][dataset][year]['picoAOD'][era] = tmp_file[ikey]
+                else:
+                    main_file['datasets'][dataset][year]['picoAOD'] = tmp_file[ikey]
 
     yaml.dump(main_file, open(args.output_file, 'w'), default_flow_style=False)
