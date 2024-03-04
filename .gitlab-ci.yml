@@ -21,6 +21,7 @@ stages:
   - analysis-test
   - plot
   - cutflow
+  - reana
 
 voms_proxy:
   stage: build
@@ -173,3 +174,15 @@ baseclass-test-job:
   script:
     - source .ci-workflows/baseclass-test-job.sh
 
+reana-job:
+  stage: reana
+  image: gitlab-registry.cern.ch/cms-cloud/cmssw-docker/cc7-cms 
+  tags:
+    - k8s-cvmfs
+  before_script:
+    - source /afs/cern.ch/user/r/reana/public/reana/bin/activate 
+    - export REANA_SERVER_URL=https://reana.cern.ch 
+    - export REANA_ACCESS_TOKEN="${REANA_TOKEN}"
+  script:
+    - reana-client run -f reana.yaml
+  allow_failure: true

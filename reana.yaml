@@ -3,7 +3,7 @@ inputs:
   directories:
     - python
   parameters:
-      input: .reana_workflows/inputs.yaml
+    input: .reana_workflows/inputs.yaml
   files:
     - .reana_workflows/Snakefile
     - .reana_workflows/input.yaml
