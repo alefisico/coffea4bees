@@ -11,10 +11,15 @@ from base_class.awkward.zip import NanoAOD
 from base_class.dask.delayed import delayed
 from base_class.root import Chunk, TreeReader, TreeWriter, merge
 from base_class.system.eos import EOS, PathLike
+from base_class.utils.wrapper import retry
 from coffea.processor import ProcessorABC
 
 _PICOAOD = 'picoAOD'
 _ROOT = '.root'
+
+
+def _return_empty(*_):
+    return {}
 
 
 class PicoAOD(ProcessorABC):
@@ -45,7 +50,10 @@ class PicoAOD(ProcessorABC):
     def select(self, events: ak.Array) -> npt.ArrayLike:
         pass
 
+    # no retry, return empty dict if any exception
+    @retry(1, handler=_return_empty)
     def process(self, events: ak.Array):
+        EOS.set_retry(3, 10)  # 3 retries with 10 seconds interval
         selected = self.select(events)
         chunk = Chunk.from_coffea_events(events)
         dataset = events.metadata['dataset']
