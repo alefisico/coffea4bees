@@ -182,9 +182,10 @@ reana-job:
   before_script:
     #- echo "${KRB_PASSWORD}" | kinit ${KRB_USERNAME}@CERN.CH
     #- source /afs/cern.ch/user/r/reana/public/reana/bin/activate 
-    - virtualenv ~/.virtualenvs/reana && source ~/.virtualenvs/reana/bin/activate && pip install reana-client
+    - python -m virtualenv ~/.virtualenvs/reana && source ~/.virtualenvs/reana/bin/activate && pip install reana-client
     - export REANA_SERVER_URL=https://reana.cern.ch 
     - export REANA_ACCESS_TOKEN="${REANA_TOKEN}"
+    - reana-client ping
   script:
     - reana-client run -f reana.yaml
   allow_failure: true
