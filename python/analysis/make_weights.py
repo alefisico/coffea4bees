@@ -23,7 +23,7 @@ sys.path.insert(0, os.getcwd())
 from base_class.plots.plots import load_config, load_hists, read_axes_and_cuts, get_cut_dict
 import base_class.plots.iPlot_config as cfg
 
-
+#from base_class.JCMTools import ncr
 
 def ncr(n, r):
     r = min(r, n-r)
@@ -31,16 +31,16 @@ def ncr(n, r):
     numer = reduce(op.mul, xrange(n, n-r, -1))
     denom = reduce(op.mul, xrange(1, r+1))
     return numer//denom #double slash means integer division or "floor" division
-
-def nPairings(n):
-    pairings=1
-    if n<=1: return 0
-    if n%2:
-        pairings = n #n options for the item to be unpaired
-        n = n-1 # now need so solve the simpler case with n even
-    nPairs = n//2
-    pairings *= reduce(op.mul, xrange(n, nPairs, -1))//(2**nPairs)
-    return pairings
+   
+## def nPairings(n):
+##     pairings=1
+##     if n<=1: return 0
+##     if n%2:
+##         pairings = n #n options for the item to be unpaired
+##         n = n-1 # now need so solve the simpler case with n even
+##     nPairs = n//2
+##     pairings *= reduce(op.mul, xrange(n, nPairs, -1))//(2**nPairs)
+##     return pairings
 
 
 # def getCombinatoricWeight(f,nj,pairEnhancement=0.0,pairEnhancementDecay=1.0, unTaggedPartnerRate=0.0, pairRate=0.0, singleRate=1.0):
@@ -197,6 +197,7 @@ class jetCombinatoricModel:
 jetCombinatoricModelNext = args.outputDir+"/"+"jetCombinatoricModel_"+args.weightRegion+"_"+args.weightSet+".txt"
 print(jetCombinatoricModelNext)
 jetCombinatoricModelFile =             open(jetCombinatoricModelNext, "w")
+jetCombinatoricModelFile_yml = open(f'{jetCombinatoricModelNext.replace(".txt",".yml")}', 'w')
 JCMROOTFileName = jetCombinatoricModelNext.replace(".txt",".root")
 jetCombinatoricModelRoot = ROOT.TFile(JCMROOTFileName,"RECREATE")
 print(jetCombinatoricModelRoot, JCMROOTFileName)
@@ -241,9 +242,8 @@ def loadCoffeaHists():
         "region":  region_selection,
     }
 
-    fourTag_dict = {"tag":     hist.loc(codes["tag"]["fourTag"])}
-
-    threeTag_dict = { "tag":     hist.loc(codes["tag"]["threeTag"])}
+    fourTag_dict  = {"tag":hist.loc(codes["tag"]["fourTag"])}
+    threeTag_dict = {"tag":hist.loc(codes["tag"]["threeTag"])}
 
 
     fourTag_data_dict  = {"process":'data'} | fourTag_dict | region_year_dict | cutDict
@@ -400,9 +400,6 @@ def getHists(cut,region,var,inFile4b, inFile3b, ttFile4b, ttFile3b, plot=False):
         c.SaveAs(plotName)
 
     return (data4b, tt4b, qcd4b, data3b, tt3b, qcd3b)
-
-
-
 
 
 def loadROOTHists():
@@ -585,6 +582,7 @@ for ibin in range(1, data4b.GetSize()-2):#data4b.GetNbinsX()-2): #GetXaxis().Get
     data4b.SetBinError(ibin, total_error)
 
 # perform fit
+print(f"tf1_bkgd_njet is {tf1_bkgd_njet}")
 data4b.Fit(tf1_bkgd_njet,"0R L")
 chi2 = tf1_bkgd_njet.GetChisquare()
 ndf = tf1_bkgd_njet.GetNDF()
@@ -602,21 +600,32 @@ for parameter in jetCombinatoricModels[cut].parameters:
     parameter.value = tf1_bkgd_njet.GetParameter(parameter.index)
     parameter.error = tf1_bkgd_njet.GetParError( parameter.index)
 
+
+def write_to_JCM_file(text, value):
+    jetCombinatoricModelFile.write(text+"               "+str(value)+"\n")
+
+    jetCombinatoricModelFile_yml.write(text+":\n")
+    jetCombinatoricModelFile_yml.write("        "+str(value)+"\n")
+
+
 jetCombinatoricModels[cut].dump()
 for parameter in jetCombinatoricModels[cut].parameters:
-    jetCombinatoricModelFile.write(parameter.name+"_"+cut+"               "+str(parameter.value)+"\n")
-    jetCombinatoricModelFile.write(parameter.name+"_"+cut+"_err           "+str(parameter.error)+"\n")
-    jetCombinatoricModelFile.write(parameter.name+"_"+cut+"_pererr        "+str(parameter.percentError)+"\n")
-jetCombinatoricModelFile.write("chi^2     "+str(chi2)+"\n")
-jetCombinatoricModelFile.write("ndf       "+str(ndf)+"\n")
-jetCombinatoricModelFile.write("chi^2/ndf "+str(chi2/ndf)+"\n")
-jetCombinatoricModelFile.write("p-value   "+str(prob)+"\n")
+    write_to_JCM_file(parameter.name+"_"+cut,             parameter.value)
+    write_to_JCM_file(parameter.name+"_"+cut+"_err",      parameter.error)
+    write_to_JCM_file(parameter.name+"_"+cut+"_pererr",   parameter.percentError)
+
+
+write_to_JCM_file("chi^2"     ,chi2)
+write_to_JCM_file("ndf"       ,ndf)
+write_to_JCM_file("chi^2/ndf" ,chi2/ndf)
+write_to_JCM_file("p-value"   ,prob)
+
 
 n5b_pred, n5b_pred_error = nTagPred(tf1_bkgd_njet.GetParameters(),5)
 print("Fitted number of 5b events: %5.1f +/- %f"%(n5b_pred, n5b_pred_error))
 print("Actual number of 5b events: %5.1f, (%3.1f sigma pull)"%(n5b_true,(n5b_true-n5b_pred)/n5b_pred**0.5))
-jetCombinatoricModelFile.write("n5b_pred   "+str(n5b_pred)+"\n")
-jetCombinatoricModelFile.write("n5b_true   "+str(n5b_true)+"\n")
+write_to_JCM_file("n5b_pred"   ,n5b_pred)
+write_to_JCM_file("n5b_true"   ,n5b_true)
 
 
 background_TH1 = data4b.Clone("background_TH1")
@@ -656,7 +665,8 @@ qcd3b.Write()
 stack = ROOT.THStack("stack","stack")
 #mu_qcd = qcd4b.Integral()/qcdDraw.Integral()
 print("mu_qcd = %f +/- %f%%"%(mu_qcd, 100*n4b**-0.5))
-jetCombinatoricModelFile.write("mu_qcd_"+cut+"       "+str(mu_qcd)+"\n")
+write_to_JCM_file("mu_qcd_"+cut, str(mu_qcd))
+#jetCombinatoricModelFile.write("mu_qcd_"+cut+"       "+str(mu_qcd)+"\n")
 qcdDraw.Scale(mu_qcd)
 qcdDraw.SetLineColor(ROOT.kMagenta)
 #stack.Add(qcdDraw,"hist")
@@ -700,6 +710,9 @@ c.SaveAs(histName)
 
 
 jetCombinatoricModelFile.close()
+jetCombinatoricModelFile_yml.close()
+
+
 
 # To add
 
