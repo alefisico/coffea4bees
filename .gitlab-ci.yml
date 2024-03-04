@@ -16,12 +16,12 @@ workflow:
     - if: $CI_COMMIT_BRANCH
 
 stages:          
+  - reana
   - build
   - skimmer-test
   - analysis-test
   - plot
   - cutflow
-  - reana
 
 voms_proxy:
   stage: build
@@ -180,7 +180,9 @@ reana-job:
   tags:
     - k8s-cvmfs
   before_script:
-    - source /afs/cern.ch/user/r/reana/public/reana/bin/activate 
+    #- echo "${KRB_PASSWORD}" | kinit ${KRB_USERNAME}@CERN.CH
+    #- source /afs/cern.ch/user/r/reana/public/reana/bin/activate 
+    - virtualenv ~/.virtualenvs/reana && source ~/.virtualenvs/reana/bin/activate && pip install reana-client
     - export REANA_SERVER_URL=https://reana.cern.ch 
     - export REANA_ACCESS_TOKEN="${REANA_TOKEN}"
   script:

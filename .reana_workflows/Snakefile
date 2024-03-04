@@ -20,13 +20,13 @@ rule analysis:
         voms_proxy=True,
         kerberos=True,
         compute_backend="kubernetes",
-        kubernetes_memory_limit="8Gi"
+        kubernetes_memory_limit="9.5Gi"
     shell:
         """
 cd python/ 
 echo "Running {wildcards.sample} {wildcards.iy}"
 sed -i 's/root:\/\/cmseos\.fnal\.gov\/\/store\/user\/algomez/root:\/\/eosuser.cern.ch\/\/eos\/user\/a\/algomez\/tmpFiles/' metadata/datasets_HH4b.yml
-python runner.py -d {wildcards.sample} -p analysis/processors/processor_HH4b.py -y {wildcards.iy} -o histAll_{wildcards.sample}_{wildcards.iy}.coffea -op ../output/ -t
+python runner.py -d {wildcards.sample} -p analysis/processors/processor_HH4b.py -y {wildcards.iy} -o histAll_{wildcards.sample}_{wildcards.iy}.coffea -op ../output/
         """
 
 rule merging_coffea_files:
