@@ -8,7 +8,7 @@ from types import FunctionType, MethodType
 from typing import Callable, Concatenate, Generic, Iterable, ParamSpec, TypeVar
 
 
-class Wrapper:
+class Wrapped:
     def __init__(self, cls, *args, **kwargs):
         self._cls = cls
         self._args = args
@@ -36,6 +36,8 @@ class OptionalDecorator(ABC):
     def __init__(self, __func, **kwargs):
         if isinstance(__func, FunctionType):
             __sig = __func
+        elif isinstance(__func, type):
+            __sig = __func.__init__
         elif hasattr(__func, '__wrapped__'):
             __sig = __func.__wrapped__
         elif hasattr(__func, '__call__'):
@@ -45,6 +47,7 @@ class OptionalDecorator(ABC):
         if self._switch not in signature.parameters:
             raise ValueError(
                 f'Function "{name}{signature}" must have a parameter "{self._switch}: bool"')
+        wraps(__func)(self)
         self._func = __func
         self._decorated = None
         self._default = signature.parameters[self._switch].default
@@ -56,6 +59,9 @@ class OptionalDecorator(ABC):
         if instance is None:
             return self
         return MethodType(self, instance)
+
+    def __getattr__(self, __name: str):
+        return getattr(self._func, __name)
 
     def __call__(self, *args, **kwargs):
         kwargs.setdefault(self._switch, self._default)
@@ -85,6 +91,7 @@ class AutoRetry(Generic[_RetryFuncP, _RetryFuncReturnT]):
             _RetryFuncP, None] = None,
         skip: Iterable[Exception] = (),
     ):
+        wraps(func)(self)
         self._func = func
         self._max = max
         self._delay = delay
@@ -133,7 +140,7 @@ def retry(
         _RetryFuncP, None] = None,
     skip: Iterable[Exception] = (),
 ) -> Callable[[_RetryFuncT], _RetryFuncT]:
-    return Wrapper(
+    return partial(
         AutoRetry,
         max=max,
         delay=delay,
