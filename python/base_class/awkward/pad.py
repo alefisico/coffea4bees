@@ -16,12 +16,12 @@ class selected:
         self._value = padded_value
         self._size = jagged_size
 
-    def _pad_regular(self, array: npt.NDArray, selection: npt.NDArray) -> npt.NDArray:
+    def _pad_regular(self, array: npt.NDArray, selection: npt.NDArray):
         padded = np.full(len(selection), self._value, dtype=array.dtype)
         padded[selection] = array
-        return padded
+        return ak.Array(padded)
 
-    def _pad_jagged(self, array: npt.NDArray, count: npt.NDArray, selection: npt.NDArray) -> npt.NDArray:
+    def _pad_jagged(self, array: npt.NDArray, count: npt.NDArray, selection: npt.NDArray) -> ak.Array:
         shape = (len(selection) - len(count)) * self._size + count.sum()
         padded_count = np.full(len(selection), self._size, dtype=count.dtype)
         padded_count[selection] = count
@@ -29,7 +29,7 @@ class selected:
         padded[np.repeat(selection, padded_count)] = array
         return ak.unflatten(padded, padded_count)
 
-    def _pad(self, array: npt.NDArray | tuple[npt.NDArray, npt.NDArray], selection: npt.NDArray) -> npt.NDArray:
+    def _pad(self, array: npt.NDArray | tuple[npt.NDArray, npt.NDArray], selection: npt.NDArray):
         if isinstance(array, tuple):
             return self._pad_jagged(*array, selection)
         else:
@@ -42,9 +42,8 @@ class selected:
     ) -> ak.Array:
         selection = np.asarray(selection, dtype=bool)
         if ak.fields(array):
-            padded = {
+            return ak.zip({
                 name: self._pad(arr, selection)
-                for name, arr in to_numpy(array).items()}
+                for name, arr in to_numpy(array).items()})
         else:
-            padded = self._pad(ak.to_numpy(array), selection)
-        return ak.Array(padded)
+            return self._pad(to_numpy(array), selection)
