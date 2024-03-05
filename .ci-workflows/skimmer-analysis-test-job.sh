@@ -4,8 +4,10 @@ echo "############### Checking proxy"
 voms-proxy-info
 echo "############### Moving to python folder"
 cd python/
+echo "############### Modifying previous dataset file"
+sed -i "s/\/builds\/algomez\/coffea4bees\/python\///" skimmer/metadata/picoaod_datasets_TTToSemiLeptonic_UL18.yml
+cat skimmer/metadata/picoaod_datasets_TTToSemiLeptonic_UL18.yml
 echo "############### Modifying dataset file with skimmer ci output"
-sed -i "s/\/builds\/algomez\/coffea4bees\/python//" skimmer/metadata/picoaod_datasets_TTToSemiLeptonic_UL18.yml
 python metadata/merge_yaml_datasets.py -m metadata/datasets_HH4b.yml -f skimmer/metadata/picoaod_datasets_TTToSemiLeptonic_UL18.yml -o metadata/datasets_ci.yml
 cat metadata/datasets_ci.yml
 echo "############### Changing metadata"
