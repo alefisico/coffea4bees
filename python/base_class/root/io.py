@@ -25,7 +25,12 @@ ROOT file I/O based on :func:`uproot.reading.open`, :func:`uproot._dask.dask` an
     Writers will always overwrite the output file if it exists.
 
 .. todo::
-    Consider migrating to `fsspec-xrootd <https://coffeateam.github.io/fsspec-xrootd/>`_
+    Test `fsspec-xrootd <https://coffeateam.github.io/fsspec-xrootd/>`_
+
+.. todo::
+    Test :func:`uproot.writing._dask_write.dask_write`
+    Use :func:`dask_awkward.new_scalar_object` to return object.
+
 """
 from __future__ import annotations
 
@@ -180,7 +185,8 @@ class TreeWriter:
             self._buffer = []
         if data is not None and len(data) > 0:
             if self._backend == 'ak':
-                if data.layout.minmax_depth[1] > 1:
+                from .. import awkward as akext
+                if akext.is_.jagged(data):
                     data = {k: data[k] for k in data.fields}
             if self._name not in self._file:
                 self._file[self._name] = data

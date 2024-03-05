@@ -64,14 +64,14 @@ class ToTensor:
         self,
         *columns: str,
         target: int = None,
-        padding: Any = 0,
+        pad_value: Any = 0,
         reshape: tuple[int, ...] = None,
     ):
         if self._current is None:
             raise RuntimeError(
                 'Call add() to specify a name before adding columns')
         self._columns[self._current][1].extend(
-            (c, target, padding, reshape) for c in columns)
+            (c, target, pad_value, reshape) for c in columns)
         return self
 
     def tensor(self, data: pd.DataFrame):
@@ -83,12 +83,12 @@ class ToTensor:
                     f'columns {missing} not found in dataframe')
                 continue
             arrays = []
-            for c, target, padding, reshape in columns:
+            for c, target, pad_value, reshape in columns:
                 if data[c].dtype == 'awkward':
                     if target is None:
                         target = int(np.max(data[c].ak.num()))
                     array = np.ma.filled(
-                        data[c].ak.pad_none(target, clip=True).ak.to_numpy(), padding).astype(dtype)
+                        data[c].ak.pad_none(target, clip=True).ak.to_numpy(), pad_value).astype(dtype)
                 else:
                     array = data[c].to_numpy(dtype)
                     if len(array.shape) == 1 and len(columns) > 1:
