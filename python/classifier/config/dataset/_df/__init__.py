@@ -6,7 +6,7 @@ from itertools import chain
 from typing import TYPE_CHECKING, Callable
 
 from base_class.utils import unique
-from classifier.task import ArgParser, Dataset, converter, parsers
+from classifier.task import ArgParser, Dataset, converter, parse
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -75,13 +75,13 @@ class LoadRoot(ABC, Dataframe):
     def _parse_files(self, files: list[str], filelists: list[str]) -> list[str]:
         return unique(reduce(
             list.__add__,
-            (parsers.parse_dict(f'file:///{f}') for f in filelists),
+            (parse.mappings(f'file:///{f}') for f in filelists),
             files.copy()
         ))
 
     def _parse_friends(self, friends: list[str]) -> list[Friend]:
         from base_class.root import Friend
-        return [Friend.from_json(parsers.parse_dict(f'file:///{f}')) for f in friends]
+        return [Friend.from_json(parse.mappings(f'file:///{f}')) for f in friends]
 
     def _from_root(self):
         yield self.from_root(), self.files
@@ -125,8 +125,8 @@ class LoadGroupedRoot(LoadRoot):
 
     @cached_property
     def files(self):
-        files = parsers.parse_group(self.opts.files, ',')
-        filelists = parsers.parse_group(self.opts.filelists, ',')
+        files = parse.grouped_mappings(self.opts.files, ',')
+        filelists = parse.grouped_mappings(self.opts.filelists, ',')
         return {
             k: self._parse_files(files.get(k, []), filelists.get(k, []))
             for k in set(files).union(filelists)}
@@ -135,7 +135,7 @@ class LoadGroupedRoot(LoadRoot):
     def friends(self):
         return {
             k: self._parse_friends(v)
-            for k, v in parsers.parse_group(self.opts.friends, ',').items()}
+            for k, v in parse.grouped_mappings(self.opts.friends, ',').items()}
 
     @abstractmethod
     def from_root(self, *groups: str) -> FromRoot:

@@ -21,7 +21,7 @@ def _parse_keys(opt: str):
         return opt[0], opt[1].split('.')
 
 
-def parse_dict(opt: str):
+def mappings(opt: str):
     '''
     - `{data}`: parse as yaml
     - `yaml:///{data}`: parse as yaml
@@ -91,16 +91,16 @@ def parse_dict(opt: str):
 
 
 @overload
-def parse_group(opt: Iterable[tuple[str, str]], sep: str) -> dict[frozenset[str], list[str]]:
+def grouped_mappings(opt: Iterable[tuple[str, str]], sep: str) -> dict[frozenset[str], list[str]]:
     ...
 
 
 @overload
-def parse_group(opt: Iterable[tuple[str, str]], sep: None = None) -> dict[str, list[str]]:
+def grouped_mappings(opt: Iterable[tuple[str, str]], sep: None = None) -> dict[str, list[str]]:
     ...
 
 
-def parse_group(opt: Iterable[tuple[str, str]], sep: str = None):
+def grouped_mappings(opt: Iterable[tuple[str, str]], sep: str = None):
     result = defaultdict(list)
     for k, v in opt:
         if sep is not None:

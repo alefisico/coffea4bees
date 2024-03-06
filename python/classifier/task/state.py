@@ -68,10 +68,10 @@ class Cascade(GlobalState, Static):
 
     @classmethod
     def parse(cls, opts: list[str]):
-        from .parsers import parse_dict
+        from . import parse
 
         for opt in opts:
-            data = parse_dict(opt)
+            data = parse.mappings(opt)
             if isinstance(data, Mapping):
                 for k, v in data.items():
                     if not _is_special(k):

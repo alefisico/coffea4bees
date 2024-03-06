@@ -1,7 +1,7 @@
 import logging
 
 
-def parse_intervals(opt: str, max: int = None) -> list[int]:
+def intervals(opt: str, max: int = None) -> list[int]:
     result = []
     for r in opt:
         rs = r.split('-')

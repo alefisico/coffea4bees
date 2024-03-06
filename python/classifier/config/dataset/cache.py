@@ -4,7 +4,7 @@ import logging
 import math
 
 import fsspec
-from classifier.task import ArgParser, Dataset, parsers
+from classifier.task import ArgParser, Dataset, parse
 
 
 class Torch(Dataset):
@@ -23,7 +23,7 @@ class Torch(Dataset):
             metadata = json.load(f)
         total = math.ceil(metadata['size']/metadata['chunksize'])
         if self.opts.chunk:
-            chunks = parsers.parse_intervals(self.opts.chunk, total)
+            chunks = parse.intervals(self.opts.chunk, total)
         else:
             chunks = list(range(total))
         if len(chunks) == 0:
