@@ -1,9 +1,7 @@
 #
 # python make_weights.py -o tmp/ -c passPreSel -r SB
 #
-import ROOT
-ROOT.gROOT.SetBatch(True)
-import operator as op
+import scipy.stats
 import sys
 from copy import copy
 #import optparse
@@ -14,151 +12,22 @@ from array import array
 import os
 #import collections
 from coffea.util import load
-from functools import reduce
-from past.builtins import xrange
 import matplotlib.pyplot as plt
 import hist
+from scipy.optimize import curve_fit
+from hist import Hist
 
 sys.path.insert(0, os.getcwd())
 from base_class.plots.plots import load_config, load_hists, read_axes_and_cuts, get_cut_dict
 import base_class.plots.iPlot_config as cfg
 
-#from base_class.JCMTools import ncr
-
-def ncr(n, r):
-    r = min(r, n-r)
-    if r <= 0: return 1
-    numer = reduce(op.mul, xrange(n, n-r, -1))
-    denom = reduce(op.mul, xrange(1, r+1))
-    return numer//denom #double slash means integer division or "floor" division
-   
-## def nPairings(n):
-##     pairings=1
-##     if n<=1: return 0
-##     if n%2:
-##         pairings = n #n options for the item to be unpaired
-##         n = n-1 # now need so solve the simpler case with n even
-##     nPairs = n//2
-##     pairings *= reduce(op.mul, xrange(n, nPairs, -1))//(2**nPairs)
-##     return pairings
+from base_class.JCMTools import getCombinatoricWeight, getPseudoTagProbs
 
 
-# def getCombinatoricWeight(f,nj,pairEnhancement=0.0,pairEnhancementDecay=1.0, unTaggedPartnerRate=0.0, pairRate=0.0, singleRate=1.0):
-#     w = 0
-#     nbt = 3 #number of required bTags
-#     nlt = nj-nbt #number of selected untagged jets ("light" jets)
-#     nPseudoTagProb = []
-#     unPseudoTagProb = 1-singleRate-pairRate-unTaggedPartnerRate
-#     for npt in range(0,nlt + 1):#npt is the number of pseudoTags in this combination
-#         ntg = nbt+npt
-#         nut = nlt-npt
-
-#         w_npt = 0
-#         # nested loop over all possible configurations of pseudoTags
-#         for npr in range(0,npt+1): # loop over all possible number of pseudoTags which were pair produced
-#             # (all ways to choose npt pseudotags from nlt light tagged jets) * (all ways to choose npr pseudotags which were pair produced from npt pseudotags) * pairRate^npr
-#             p_npr = ncr(nlt,npt) * ncr(npt,npr) * pairRate**npr
-#             w_npt_npr = 0
-
-#             #for nup in range(0,npt-npr+1): # loop over all possible untagged partners to true b pseudotags
-#             for nup in range(0,min(nut,npt-npr)+1): # loop over all possible untagged partners to true b pseudotags
-#                 for nsg in range(0,npt-npr-nup+1): # loop over all possible pseudotags where pair produced b did not end up in preselected jet collection
-#                     p_nsg = ncr(npt-npr-nup,nsg) * singleRate**nsg # prob to get nsg-nup single pseudo-tags where the partner b-jet was out of acceptance
-#                     # Fakes and pair produced b's out of acceptance look the same and can be encapsulated in one parameter called "singleRate"
-#                     # The case where the pair produced b was untagged needs an additional parameter due to the fact that it is a true b which was untagged.
-
-#                     # (all ways to choose nup from remaining pseudotags) (all ways to choose nup unTagged partners to true b pseudotags from nut untagged jets) * pairRate^nup * unTaggedPartnerRate^nup * unPseudoTagProb^(nut-nup)
-#                     p_nup = ncr(nut,nup) * pairRate**nup * unTaggedPartnerRate**nup * unPseudoTagProb**(nut-nup)
-#                     p_nup *=
-
-#                     # all ways to choose nsg single pseudotags where the pair produced b-jet did not pass jet preselection from the available npt-npr pseudotags * singleRate^(nsg-)
-#                     # nsg = npt-npr-nup-nupb
-#                     w_npt_npr_nup = p_npr * p_nup * p_nsg
-#                     w_npt_npr += w_npt_npr_nup
-#                     print('npt, npr, nup, nupb, nsg',npt,npr,nup,nupb,nsg, 'w_npt_npr_nup =',w_npt_npr_nup,'= p_npr * p_nup * p_nsg =',p_npr,'*',p_nup,'*',p_nsg
-
-#                     w_npt += w_npt_npr
-
-#         #  (ways to choose i pseudoTags from nlt light jets) * pseudoTagProb^i * (1-pseudoTagProb)^{nut}
-#         # w_npt = ncr(nlt,i) * f**i * (1-f)**(nut)
-#         # if(i%2)==1: w_npt *= 1 + pairEnhancement/(nlt**pairEnhancementDecay)
-
-#         nPseudoTagProb.append(w_npt)
-#         if npt>=4-nbt: w += w_npt
-
-#     if abs(singleRate-0.0775166688549)<1e-3 or True:
-#         print(sum(nPseudoTagProb), nPseudoTagProb
-#         raw_input()
-
-#     return w, nPseudoTagProb
-
-
-# def getCombinatoricWeight(f,nj,pairEnhancement=0.0,pairEnhancementDecay=1.0, unTaggedPartnerRate=0.0, pairRate=0.0, singleRate=1.0, fakeRate = 0.0):
-#     w = 0
-#     nbt = 3 #number of required bTags
-#     nlt = nj-nbt #number of selected untagged jets ("light" jets)
-#     nTagProb = np.zeros(nj+1)
-#     nSingleTagProb = np.zeros(nj+1)
-
-#     max_npr = nj//2
-#     for npr in range(0,max_npr+1):#npr is the number of tag jet pairs
-#         p_npr = ncr(max_npr,npr) * (pairRate)**npr #* (1-pairRate)**(max_npr-npr)
-#         max_nup = max_npr-npr
-#         for nup in range(0,max_nup+1):#nup is the number of b-jet pairs where only one was tagged but both were kinematically selected
-#             p_nup = ncr(max_nup,nup) * unTaggedPartnerRate**nup * (1-unTaggedPartnerRate-pairRate)**(max_npr-npr-nup)
-#             max_nsg = nj-2*(npr+nup)
-#             for nsg in range(0,max_nsg+1):#nsg is the number of single tags
-#                 if npr or nup or nsg<3: continue
-#                 p_nsg = ncr(max_nsg,nsg) * singleRate**nsg * (1-singleRate)**(max_nsg-nsg)
-#                 nt = 2*npr+nup+nsg
-#                 nTagProb[nt] += p_npr * p_nup * p_nsg
-
-#     nPseudoTagProb = nTagProb[3:]/np.sum(nTagProb[3:])
-#     w = sum(nPseudoTagProb[1:])
-#     return w, nPseudoTagProb
-
-
-def getCombinatoricWeight(nj, f, e=0.0, d=1.0, norm=1.0):
-    w = 0
-    nbt = 3 #number of required bTags
-    nlt = nj-nbt #number of selected untagged jets ("light" jets)
-    nPseudoTagProb = np.zeros(nlt+1)
-    for npt in range(0,nlt + 1):#npt is the number of pseudoTags in this combination
-        nt = nbt + npt
-        nnt = nlt-npt # number of not tagged
-        # (ways to choose npt pseudoTags from nlt light jets) * pseudoTagProb^nlt * (1-pseudoTagProb)^{nlt-npt}
-        w_npt = norm * ncr(nlt,npt) * f**npt * (1-f)**nnt
-        if (nt%2) == 0: w_npt *= 1 + e/nlt**d
-
-        nPseudoTagProb[npt] += w_npt
-    w = np.sum(nPseudoTagProb[1:])
-    return w, nPseudoTagProb
-
-
-
-#parser = optparse.OptionParser()
-parser = argparse.ArgumentParser(description='uproot_plots')
-parser.add_argument('--noFitWeight',dest='noFitWeight',default="")
-parser.add_argument('-w', '--weightSet',dest="weightSet",default="")
-parser.add_argument('-r',dest="weightRegion",default="")
-parser.add_argument('-c',dest="cut",default="passXWt")
-parser.add_argument('-o', '--outputDir',dest='outputDir',default="")
-parser.add_argument(      '--ROOTInputs',action="store_true")
-parser.add_argument('-y', '--year',                 dest="year",          default="RunII", help="Year specifies trigger (and lumiMask for data)")
-parser.add_argument('-l', '--lumi',                 dest="lumi",          default="1",    help="Luminosity for MC normalization: units [pb]")
-parser.add_argument('-m', '--metadata', dest="metadata",
-                    default="analysis/metadata/plotsAll.yml",
-                    help='Metadata file.')
-
-args = parser.parse_args()
-#o, a = parser.parse_args()
-
-lumi = float(args.lumi)/1000
-
-if not os.path.isdir(args.outputDir):
-    os.mkdir(args.outputDir)
-
-
+#
+#  To do:
+#    - add limit consgtraints
+#
 
 class modelParameter:
     def __init__(self, name="", index=0, lowerLimit=0, upperLimit=1, default=0.5, fix=None):
@@ -194,47 +63,28 @@ class jetCombinatoricModel:
         for parameter in self.parameters:
             parameter.dump()
 
-jetCombinatoricModelNext = args.outputDir+"/"+"jetCombinatoricModel_"+args.weightRegion+"_"+args.weightSet+".txt"
-print(jetCombinatoricModelNext)
-jetCombinatoricModelFile =             open(jetCombinatoricModelNext, "w")
-jetCombinatoricModelFile_yml = open(f'{jetCombinatoricModelNext.replace(".txt",".yml")}', 'w')
-JCMROOTFileName = jetCombinatoricModelNext.replace(".txt",".root")
-jetCombinatoricModelRoot = ROOT.TFile(JCMROOTFileName,"RECREATE")
-print(jetCombinatoricModelRoot, JCMROOTFileName)
-jetCombinatoricModels = {}
 
-cut=args.cut
-
-
-def make_TH1F_from_Hist(inputHist, name, title, maxBin=16):
-    x_centers = inputHist.axes[0].centers[0:maxBin]
-    x_edges   = inputHist.axes[0].edges[0:maxBin+1]
-
-    output = ROOT.TH1F( name, title , len(x_edges)-1, x_edges[0]-0.5, x_edges[-1]-0.5 )
-    output.Sumw2()
+def data_from_Hist(inputHist, maxBin=15):
+    x_centers = inputHist.axes[0].centers
     values = inputHist.values()
     errors = np.sqrt( inputHist.variances() )
+    
+    if x_centers[0] == 0.5:
+        x_centers = x_centers - 0.5
 
-    #print(values)
-
-    for i in range(1, output.GetNbinsX()):
-        output.SetBinContent( i, values[i-1] )
-        output.SetBinError( i, errors[i-1] )
-
-    return output
+    return x_centers[0:maxBin], values[0:maxBin], errors[0:maxBin]
 
 
-def loadCoffeaHists():
+def loadCoffeaHists(inputFile):
 
     cfg.plotConfig = load_config(args.metadata)
-    cfg.hists = load_hists(["analysis/hists/test.coffea"])
+    cfg.hists = load_hists([inputFile])
     cfg.axisLabels, cfg.cutList = read_axes_and_cuts(cfg.hists, cfg.plotConfig)
 
     cutDict = get_cut_dict(cut, cfg.cutList)
 
     codes = cfg.plotConfig["codes"]
     year = sum if args.year == "RunII" else args.year
-    #tag = plotConfig["codes"]["tag"][tagName]
     region_selection = sum if args.weightRegion in ["sum", sum] else hist.loc(codes["region"][args.weightRegion])
 
     region_year_dict = {
@@ -245,7 +95,6 @@ def loadCoffeaHists():
     fourTag_dict  = {"tag":hist.loc(codes["tag"]["fourTag"])}
     threeTag_dict = {"tag":hist.loc(codes["tag"]["threeTag"])}
 
-
     fourTag_data_dict  = {"process":'data'} | fourTag_dict | region_year_dict | cutDict
     threeTag_data_dict = {"process":'data'} | threeTag_dict | region_year_dict | cutDict
 
@@ -255,350 +104,97 @@ def loadCoffeaHists():
 
     hists = cfg.hists[0]['hists']
 
-    data4b_hist                = hists['selJets_noJCM.n']      [fourTag_data_dict]
-    data4b_nTagJets_hist       = hists['tagJets_loose_noJCM.n'][fourTag_data_dict]
+    data4b                = hists['selJets_noJCM.n']      [fourTag_data_dict]
+    data4b_nTagJets       = hists['tagJets_loose_noJCM.n'][fourTag_data_dict]
 
-    data3b_hist                = hists['selJets_noJCM.n']      [threeTag_data_dict]
-    data3b_nTagJets_hist       = hists['tagJets_loose_noJCM.n'][threeTag_data_dict]
-    data3b_nTagJets_tight_hist = hists['tagJets_noJCM.n']      [threeTag_data_dict]
+    data3b                = hists['selJets_noJCM.n']      [threeTag_data_dict]
+    data3b_nTagJets       = hists['tagJets_loose_noJCM.n'][threeTag_data_dict]
+    data3b_nTagJets_tight = hists['tagJets_noJCM.n']      [threeTag_data_dict]
 
-    tt4b_hist                  = hists['selJets_noJCM.n']      [fourTag_ttbar_dict][sum,:]
-    tt4b_nTagJets_hist         = hists['tagJets_loose_noJCM.n'][fourTag_ttbar_dict][sum,:]
+    tt4b                  = hists['selJets_noJCM.n']      [fourTag_ttbar_dict][sum,:]
+    tt4b_nTagJets         = hists['tagJets_loose_noJCM.n'][fourTag_ttbar_dict][sum,:]
                                
-    tt3b_hist                  = hists['selJets_noJCM.n']      [threeTag_ttbar_dict][sum,:]
-    tt3b_nTagJets_hist         = hists['tagJets_loose_noJCM.n'][threeTag_ttbar_dict][sum,:]
-    tt3b_nTagJets_tight_hist   = hists['tagJets_noJCM.n']      [threeTag_ttbar_dict][sum,:]
+    tt3b                  = hists['selJets_noJCM.n']      [threeTag_ttbar_dict][sum,:]
+    tt3b_nTagJets         = hists['tagJets_loose_noJCM.n'][threeTag_ttbar_dict][sum,:]
+    tt3b_nTagJets_tight   = hists['tagJets_noJCM.n']      [threeTag_ttbar_dict][sum,:]
 
+    qcd4b = copy(data4b)
+    qcd4b.view().value = data4b.values() - tt4b.values()
+    qcd4b.view().variance = data4b.variances() + tt4b.variances()
 
-    #
-    # Convert to ROOT
-    #
-    data4b                = make_TH1F_from_Hist(data4b_hist,                "data4b",                "data4b")
-    data4b_nTagJets       = make_TH1F_from_Hist(data4b_nTagJets_hist,       "data4b_nTagJets",       "data4b_nTagJets")
-                                                                                                     
-    data3b                = make_TH1F_from_Hist(data3b_hist,                "data3b",                "data3b")
-    data3b_nTagJets       = make_TH1F_from_Hist(data3b_nTagJets_hist,       "data3b_nTagJets",       "data3b_nTagJets")
-    data3b_nTagJets_tight = make_TH1F_from_Hist(data3b_nTagJets_tight_hist, "data3b_nTagJets_tight", "data3b_nTagJets_tight")
+    qcd3b = copy(data3b)
+    qcd3b.view().value = data3b.values() - tt3b.values()
+    qcd3b.view().variance = data3b.variances() + tt3b.variances()
 
-    tt4b                  = make_TH1F_from_Hist(tt4b_hist,                  "tt4b",                  "tt4b")
-    tt4b_nTagJets         = make_TH1F_from_Hist(tt4b_nTagJets_hist,         "tt4b_nTagJets",         "tt4b_nTagJets")
-                                                                                                     
-    tt3b                  = make_TH1F_from_Hist(tt3b_hist,                  "tt3b",                  "tt3b")
-    tt3b_nTagJets         = make_TH1F_from_Hist(tt3b_nTagJets_hist,         "tt3b_nTagJets",         "tt3b_nTagJets")
-    tt3b_nTagJets_tight   = make_TH1F_from_Hist(tt3b_nTagJets_tight_hist,   "tt3b_nTagJets_tight",   "tt3b_nTagJets_tight")
-
-
-    #
-    #  Make QCD hists
-    #
-    qcd4b = data4b.Clone("qcd4b")
-    qcd4b.Add( tt4b, -1 )
-
-    qcd3b = data3b.Clone('qcd3b')
-    qcd3b.Add( tt3b, -1 )
-
-    qcd3b_nTightTags = data3b_nTagJets_tight.Clone('qcd3b')
-    qcd3b_nTightTags.Add( tt3b_nTagJets_tight, -1 )
+    qcd3b_nTightTags = copy(data3b_nTagJets_tight)
+    qcd3b_nTightTags.view().value = data3b_nTagJets_tight.values() - tt3b_nTagJets_tight.values()
+    qcd3b_nTightTags.view().variance = data3b_nTagJets_tight.variances() + tt3b_nTagJets_tight.variances()
     
     return data4b, data3b, tt4b, tt3b, qcd4b, qcd3b, data4b_nTagJets, tt4b_nTagJets, qcd3b_nTightTags
 
 
-# variables = []
-def get(rootFile, path):
-    obj = rootFile.Get(path)
-    if str(obj) == "<ROOT.TObject object at 0x(nil)>": 
-        rootFile.ls()
-        print() 
-        print( "ERROR: Object not found -", rootFile, path)
-        sys.exit()
-
-    else: return obj
-
-
-def getHists(cut,region,var,inFile4b, inFile3b, ttFile4b, ttFile3b, plot=False):#allow for different cut for mu calculation
-    baseName = cut+"_"+region+"_"+var#+("_use_mu" if mu_cut else "")
-    data4b = inFile4b.Get(cut+"/fourTag/mainView/"+region+"/"+var)
-    data4b.SetDirectory(0)
-    try:
-        data4b.SetName("data4b_"+baseName)
-    except:
-        inFile4b.ls()
-    data4b.Sumw2()
-    data3b = inFile3b.Get(cut+"/threeTag/mainView/"+region+"/"+var)
-    data3b.SetName("data3b_"+baseName)
-    data3b.SetDirectory(0)
-
-    tt4b = ttFile4b.Get(cut+"/fourTag/mainView/"+region+"/"+var)
-    tt4b.SetName("tt4b_"+baseName)
-    tt4b.SetDirectory(0)
-
-    tt3b = ttFile3b.Get(cut+"/threeTag/mainView/"+region+"/"+var)
-    tt3b.SetName("tt3b_"+baseName)
-    tt3b.SetDirectory(0)
+def loadROOTHists(inputFile):
 
     #
-    # Make qcd histograms
+    #  > From python analysis/tests/dumpROOTToHist.py -o analysis/tests/HistsFromROOTFile.coffea -c passPreSel -r SB 
     #
-    print( "str(data3b) is", str(data3b))
-    if "TH1" in str(type(data3b)):
-        qcd3b = ROOT.TH1F(data3b)
-        qcd3b.SetDirectory(0)
-        qcd3b.SetName("qcd3b_"+baseName)
-        qcd4b = ROOT.TH1F(data4b)
-        qcd4b.SetDirectory(0)
-        qcd4b.SetName("qcd4b_"+baseName)
+    h = load(inputFile)["Hists"]
 
-    if tt4b:
-        qcd3b.Add(tt3b,-1)
-        qcd4b.Add(tt4b,-1)
+    data4b           = h["data4b"]
+    data3b           = h["data3b"]
+    tt4b             = h["tt4b"]
+    tt3b             = h["tt3b"]
+    qcd4b            = h["qcd4b"]
+    qcd3b            = h["qcd3b"]
+    data4b_nTagJets  = h["data4b_nTagJets"]
+    tt4b_nTagJets    = h["tt4b_nTagJets"]
+    qcd3b_nTightTags = h["qcd3b_nTightTags"]
 
-    if "TH1" in str(type(data3b)):
-        bkgd = ROOT.TH1F(qcd3b)
-        bkgd.SetName("bkgd_"+baseName)
-    elif "TH2" in str(type(data3b)):
-        bkgd = ROOT.TH2F(qcd3b)
-        bkgd.SetName("bkgd_"+baseName)
-    if tt4b:
-        bkgd.Add(tt4b)
-
-        
-    if plot:
-        if '/' in var: var=var.replace('/','_')
-        c=ROOT.TCanvas(var+"_"+cut+"_4b","")
-        data4b.Draw("P EX0")
-        stack = ROOT.THStack("stack","stack")
-        if tt4b:
-            stack.Add(tt4b,"hist")
-        stack.Add(qcd3b,"hist")
-        stack.Draw("HIST SAME")
-        data4b.SetStats(0)
-        data4b.SetMarkerStyle(20)
-        data4b.SetMarkerSize(0.7)
-        data4b.Draw("P EX0 SAME axis")
-        data4b.Draw("P EX0 SAME")
-        plotName = args.outputDir+"/"+var+"_"+cut+"_4b.pdf" 
-        print( plotName)
-        c.SetLogy(True)
-        c.SaveAs(plotName)
-        del stack
-
-        c=ROOT.TCanvas(var+"_"+cut+"_3b","")
-        data3b.SetLineColor(ROOT.kBlack)
-        data3b.Draw("P EX0")
-        if tt3b:
-            tt3b.SetLineColor(ROOT.kBlack)
-            tt3b.SetFillColor(ROOT.kAzure-9)
-            tt3b.Draw("HIST SAME")
-        data3b.SetStats(0)
-        data3b.SetMarkerStyle(20)
-        data3b.SetMarkerSize(0.7)
-        data3b.Draw("P EX0 SAME axis")
-        data3b.Draw("P EX0 SAME")
-        plotName = args.outputDir+"/"+var+"_"+cut+"_3b.pdf" 
-        print( plotName)
-        c.SetLogy(True)
-        c.SaveAs(plotName)
-
-    return (data4b, tt4b, qcd4b, data3b, tt3b, qcd3b)
-
-
-def loadROOTHists():
-
-    data3bHist = "root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//dataRunII/hists_3b_newSBDef.root"
-    data4bHist = "root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//dataRunII/hists_4b_newSBDef.root"
-    tt3bHists  = "root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//TTRunII/hists_3b_newSBDef.root" 
-    tt4bHists  = "root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//TTRunII/hists_4b_newSBDef.root"
-    
-    inFile3b = ROOT.TFile.Open(data3bHist)
-    inFile4b = ROOT.TFile.Open(data4bHist)
-    ttFile3b = ROOT.TFile.Open(tt3bHists)
-    ttFile4b = ROOT.TFile.Open(tt4bHists)
-    
-    jetCombinatoricModelRoot.cd()
-
-    (data4b, tt4b, qcd4b, data3b, tt3b, qcd3b)   = getHists(cut,args.weightRegion,"nSelJetsUnweighted", inFile4b, inFile3b, ttFile4b, ttFile3b)
-    (data4b_nTagJets, tt4b_nTagJets, _, _, _, _) = getHists(cut,args.weightRegion,"nPSTJetsUnweighted", inFile4b, inFile3b, ttFile4b, ttFile3b)
-    (_, _, _, _, _, qcd3b_nTightTags)            = getHists(cut,args.weightRegion,"nTagJetsUnweighted", inFile4b, inFile3b, ttFile4b, ttFile3b)
-    print(f"data4b is {data4b}" )
     return data4b, data3b, tt4b, tt3b, qcd4b, qcd3b, data4b_nTagJets, tt4b_nTagJets, qcd3b_nTightTags
 
 
-if args.ROOTInputs:
-    data4b, data3b, tt4b, tt3b, qcd4b, qcd3b, data4b_nTagJets, tt4b_nTagJets, qcd3b_nTightTags = loadROOTHists()
-else:
-    data4b, data3b, tt4b, tt3b, qcd4b, qcd3b, data4b_nTagJets, tt4b_nTagJets, qcd3b_nTightTags = loadCoffeaHists()
+def prepHists(data4b, qcd3b, tt4b, data4b_nTagJets, tt4b_nTagJets):
 
-#
-# Colors
-#
+    data4b_new_values         = data4b.values()
+    data4b_new_variances      = data4b.variances()
+    data4b_new_values   [0:4] = data4b_nTagJets.values()   [4:8]
+    data4b_new_variances[0:4] = data4b_nTagJets.variances()[4:8]
+    data4b.view().value       = data4b_new_values
+    data4b.view().variance    = data4b_new_variances
 
-data4b.SetLineColor(ROOT.kBlack)
-qcd3b.SetFillColor(ROOT.kYellow)
-qcd3b.SetLineColor(ROOT.kBlack)
-if tt4b:
-    tt4b.SetLineColor(ROOT.kBlack)
-    tt4b.SetFillColor(ROOT.kAzure-9)
-
-
-
-#can = ROOT.TCanvas("test", 'test')
-#qcd3b_nTightTags.Draw("histe")
-#data3b_nTagJets.Draw("histe same")
-#tt3b_nTagJets.Draw("histe same")
-#can.SaveAs("tmp/test.png")
-#sys.exit(0)
+    tt4b_new_values         = tt4b.values()
+    tt4b_new_variances      = tt4b.variances()
+    tt4b_new_values   [0:4] = tt4b_nTagJets.values()   [4:8]
+    tt4b_new_variances[0:4] = tt4b_nTagJets.variances()[4:8]
+    tt4b.view().value       = tt4b_new_values
+    tt4b.view().variance    = tt4b_new_variances
 
 
-print("nSelJetsUnweighted", "data4b.Integral()", data4b.Integral(), "data3b.Integral()", data3b.Integral())
-if tt4b and tt3b:
-    print("nSelJetsUnweighted", "  tt4b.Integral()",   tt4b.Integral(),   "tt3b.Integral()",   tt3b.Integral())
+def nTagPred_values(par, n, tt4b_nTagJets_values, qcd3b_values):
+    output = np.zeros(len(n))
+    output = copy(tt4b_nTagJets_values)
 
-print('data4b.Integral()',data4b.Integral())
-print('data3b.Integral()',data3b.Integral())
-if tt4b:
-    print('  tt4b.Integral()',  tt4b.Integral())
-if tt3b:
-    print('  tt3b.Integral()',  tt3b.Integral())
+    for ibin, this_nTag in enumerate(n):
+        for nj in range(this_nTag,14):
+            nPseudoTagProb = getPseudoTagProbs(nj, par[0],par[1],par[2],threeTightTagFraction)
+            output[ibin+4] += nPseudoTagProb[this_nTag-3] * qcd3b_values[nj]
 
-mu_qcd = qcd4b.Integral()/qcd3b.Integral()
-n4b = data4b.Integral()
-
-n5b_true = data4b_nTagJets.GetBinContent(data4b_nTagJets.GetXaxis().FindBin(5))
-data4b.SetBinContent(data4b.GetXaxis().FindBin(0), data4b_nTagJets.GetBinContent(data4b_nTagJets.GetXaxis().FindBin(4)))
-data4b.SetBinContent(data4b.GetXaxis().FindBin(1), data4b_nTagJets.GetBinContent(data4b_nTagJets.GetXaxis().FindBin(5)))
-data4b.SetBinContent(data4b.GetXaxis().FindBin(2), data4b_nTagJets.GetBinContent(data4b_nTagJets.GetXaxis().FindBin(6)))
-data4b.SetBinContent(data4b.GetXaxis().FindBin(3), data4b_nTagJets.GetBinContent(data4b_nTagJets.GetXaxis().FindBin(7)))
-
-data4b.SetBinError(data4b.GetXaxis().FindBin(0), data4b_nTagJets.GetBinContent(data4b_nTagJets.GetXaxis().FindBin(4))**0.5)
-data4b.SetBinError(data4b.GetXaxis().FindBin(1), data4b_nTagJets.GetBinContent(data4b_nTagJets.GetXaxis().FindBin(5))**0.5)
-data4b.SetBinError(data4b.GetXaxis().FindBin(2), data4b_nTagJets.GetBinContent(data4b_nTagJets.GetXaxis().FindBin(6))**0.5)
-data4b.SetBinError(data4b.GetXaxis().FindBin(3), data4b_nTagJets.GetBinContent(data4b_nTagJets.GetXaxis().FindBin(7))**0.5)
-
-if tt4b:
-    tt4b.SetBinContent(tt4b.GetXaxis().FindBin(0), tt4b_nTagJets.GetBinContent(tt4b_nTagJets.GetXaxis().FindBin(4)))
-    tt4b.SetBinContent(tt4b.GetXaxis().FindBin(1), tt4b_nTagJets.GetBinContent(tt4b_nTagJets.GetXaxis().FindBin(5)))
-    tt4b.SetBinContent(tt4b.GetXaxis().FindBin(2), tt4b_nTagJets.GetBinContent(tt4b_nTagJets.GetXaxis().FindBin(6)))
-    tt4b.SetBinContent(tt4b.GetXaxis().FindBin(3), tt4b_nTagJets.GetBinContent(tt4b_nTagJets.GetXaxis().FindBin(7)))
-
-    tt4b.SetBinError(tt4b.GetXaxis().FindBin(0), tt4b_nTagJets.GetBinError(tt4b_nTagJets.GetXaxis().FindBin(4)))
-    tt4b.SetBinError(tt4b.GetXaxis().FindBin(1), tt4b_nTagJets.GetBinError(tt4b_nTagJets.GetXaxis().FindBin(5)))
-    tt4b.SetBinError(tt4b.GetXaxis().FindBin(2), tt4b_nTagJets.GetBinError(tt4b_nTagJets.GetXaxis().FindBin(6)))
-    tt4b.SetBinError(tt4b.GetXaxis().FindBin(3), tt4b_nTagJets.GetBinError(tt4b_nTagJets.GetXaxis().FindBin(7)))
-
-threeTightTagFraction = qcd3b_nTightTags.GetBinContent(qcd3b_nTightTags.FindBin(3)) / qcd3b_nTightTags.Integral()
-print("threeTightTagFraction",threeTightTagFraction)
-
-def nTagPred(par,n):
-    if tt4b_nTagJets:
-        b = tt4b_nTagJets.GetXaxis().FindBin(n)
-        nPred = tt4b_nTagJets.GetBinContent(b)
-        nPredError = tt4b_nTagJets.GetBinError(b)**2
-    else:
-        b = 0
-        nPred = 0
-        nPredError = 0
-
-    # nPred = 0
-    # for bin in range(1,qcd3b.GetSize()-1):
-    #     nj = int(qcd3b.GetBinCenter(bin))
-    #     if nj < n: continue
-    for nj in range(n,14):
-        bin = qcd3b.GetXaxis().FindBin(nj)
-        #w, nPseudoTagProb = getCombinatoricWeight(nj, par[0],par[1],par[2])#,par[3],par[4],par[5],par[6])
-        w, nPseudoTagProb = getCombinatoricWeight(nj, par[0],par[1],par[2],threeTightTagFraction)
-        nPred += nPseudoTagProb[n-3] * qcd3b.GetBinContent(bin)
-        nPredError += (nPseudoTagProb[n-3] * qcd3b.GetBinError(bin))**2
-        #nPred += nPseudoTagProb[n-3] * (data3b.GetBinContent(bin) - tt3b.GetBinContent(bin))
-    nPredError = nPredError**0.5
-    return nPred, nPredError
-
-def bkgd_func_njet(x,par):
-    nj = int(x[0] + 0.5)
-    if nj in [0,1,2,3]:
-        nTags = nj+4
-        nEvents, _ = nTagPred(par,nTags)
-        return nEvents
-
-    if nj < 4: return 0
-    w, _ = getCombinatoricWeight(nj, par[0],par[1],par[2],threeTightTagFraction)
-    b = qcd3b.GetXaxis().FindBin(x[0])
-    if tt4b:
-        return w*qcd3b.GetBinContent(b) + tt4b.GetBinContent(b)
-    return w*qcd3b.GetBinContent(b)
+    return np.array(output,float)
 
 
-jetCombinatoricModels[cut] = jetCombinatoricModel()
-jetCombinatoricModels[cut].threeTightTagFraction.fix = threeTightTagFraction
+def nTagPred_errors(par, n, tt4b_nTagJets_errors, qcd3b_errors):
+    output = np.zeros(len(n))
+    output = tt4b_nTagJets_errors**2
 
-# set to prefit scale factor
-#tf1_bkgd_njet = ROOT.TF1("tf1_bkgd",bkgd_func_njet,-0.5,14.5, jetCombinatoricModels[cut].nParameters)
-tf1_bkgd_njet = ROOT.TF1("tf1_bkgd",bkgd_func_njet,0.,15., jetCombinatoricModels[cut].nParameters) # including the nbtags==4 bin in the fit double counts the normalization stat error
-#tf1_bkgd_njet = ROOT.TF1("tf1_bkgd",bkgd_func_njet,0.5,14.5, jetCombinatoricModels[cut].nParameters) # including the nbtags==4 bin in the fit double counts the normalization stat error
-#tf1_bkgd_njet = ROOT.TF1("tf1_qcd",bkgd_func_njet,3.5,11.5,3)
-
-for parameter in jetCombinatoricModels[cut].parameters:
-    tf1_bkgd_njet.SetParName(parameter.index, parameter.name)
-    tf1_bkgd_njet.SetParLimits(parameter.index, parameter.lowerLimit, parameter.upperLimit)
-    tf1_bkgd_njet.SetParameter(parameter.index, parameter.default)
-    if parameter.fix is not None:
-        tf1_bkgd_njet.FixParameter(parameter.index, parameter.fix)
-
-## So that fit includes stat error from background templates, combine all stat error in quadrature
-for ibin in range(1, data4b.GetSize()-2):#data4b.GetNbinsX()-2): #GetXaxis().GetNbins()-2):
-    x = data4b.GetBinCenter(ibin)
-    data4b_error = data4b.GetBinError(ibin)
-    mu_qcd_this_bin = qcd4b.GetBinContent(ibin)/qcd3b.GetBinContent(ibin) if qcd3b.GetBinContent(ibin) else 0
-    data3b_error = data3b.GetBinError(ibin) * mu_qcd_this_bin
-
-    if tt4b:
-        tt4b_error = tt4b.GetBinError(ibin)
-    else:
-        tt4b_error = 0
-
-    if tt3b:
-        tt3b_error = tt3b.GetBinError(ibin)
-    else:
-        tt3b_error = 0
-
-    if tt4b and tt3b:
-        total_error = (data3b_error**2 + data4b_error**2 + tt3b_error**2 + tt4b_error**2)**0.5 if data4b_error else 0
-    elif tt4b:
-        total_error = (data3b_error**2 + data4b_error**2  + tt4b_error**2)**0.5 if data4b_error else 0
-    elif tt3b:
-        total_error = (data3b_error**2 + data4b_error**2  + tt3b_error**2)**0.5 if data4b_error else 0
-    else:
-        total_error = (data3b_error**2 + data4b_error**2  )**0.5 if data4b_error else 0
-
-    increase = 100*total_error/data4b_error if data4b_error else 100
-    if tt4b and tt3b:
-        print('%2i, %2.0f| %5.1f, %5.1f, %5.1f, %5.1f, %5.0f%%'%(ibin, x, data4b_error, data3b_error, tt4b_error, tt3b_error, increase))
-    elif tt4b:
-        print('%2i, %2.0f| %5.1f, %5.1f, %5.1f, %5.0f%%'%(ibin, x, data4b_error, data3b_error, tt4b_error, increase))
-    elif tt3b:
-        print('%2i, %2.0f| %5.1f, %5.1f, %5.1f, %5.0f%%'%(ibin, x, data4b_error, data3b_error, tt3b_error, increase))
-    else:
-        print('%2i, %2.0f| %5.1f, %5.1f, %5.0f%%'%(ibin, x, data4b_error, data3b_error, increase))
-
-    data4b.SetBinError(ibin, total_error)
-
-# perform fit
-print(f"tf1_bkgd_njet is {tf1_bkgd_njet}")
-data4b.Fit(tf1_bkgd_njet,"0R L")
-chi2 = tf1_bkgd_njet.GetChisquare()
-ndf = tf1_bkgd_njet.GetNDF()
-prob = tf1_bkgd_njet.GetProb()
-print("chi^2 =",chi2,"ndf =",ndf,"chi^2/ndf =",chi2/ndf,"| p-value =",prob)
-
-print("Pulls:")
-for bin in range(1,data4b.GetSize()-2):
-    error = data4b.GetBinError(bin)
-    residual = data4b.GetBinContent(bin)-tf1_bkgd_njet.Eval(data4b.GetBinCenter(bin))
-    pull = residual/error if error else 0
-    print('%2i| %5.1f/%5.1f = %4.1f'%(bin, residual, error, pull))
-
-for parameter in jetCombinatoricModels[cut].parameters:
-    parameter.value = tf1_bkgd_njet.GetParameter(parameter.index)
-    parameter.error = tf1_bkgd_njet.GetParError( parameter.index)
+    #print(f"n {n}")
+    
+    for ibin, this_nTag in enumerate(n):
+        for nj in range(this_nTag,14):
+            nPseudoTagProb = getPseudoTagProbs(nj, par[0],par[1],par[2],threeTightTagFraction)
+            output[ibin+4] += (nPseudoTagProb[this_nTag-3] * qcd3b_errors[nj])**2
+    output = output**0.5            
+    #print(f"nTagPred {output}")
+    return np.array(output,float)
 
 
 def write_to_JCM_file(text, value):
@@ -606,112 +202,6 @@ def write_to_JCM_file(text, value):
 
     jetCombinatoricModelFile_yml.write(text+":\n")
     jetCombinatoricModelFile_yml.write("        "+str(value)+"\n")
-
-
-jetCombinatoricModels[cut].dump()
-for parameter in jetCombinatoricModels[cut].parameters:
-    write_to_JCM_file(parameter.name+"_"+cut,             parameter.value)
-    write_to_JCM_file(parameter.name+"_"+cut+"_err",      parameter.error)
-    write_to_JCM_file(parameter.name+"_"+cut+"_pererr",   parameter.percentError)
-
-
-write_to_JCM_file("chi^2"     ,chi2)
-write_to_JCM_file("ndf"       ,ndf)
-write_to_JCM_file("chi^2/ndf" ,chi2/ndf)
-write_to_JCM_file("p-value"   ,prob)
-
-
-n5b_pred, n5b_pred_error = nTagPred(tf1_bkgd_njet.GetParameters(),5)
-print("Fitted number of 5b events: %5.1f +/- %f"%(n5b_pred, n5b_pred_error))
-print("Actual number of 5b events: %5.1f, (%3.1f sigma pull)"%(n5b_true,(n5b_true-n5b_pred)/n5b_pred**0.5))
-write_to_JCM_file("n5b_pred"   ,n5b_pred)
-write_to_JCM_file("n5b_true"   ,n5b_true)
-
-
-background_TH1 = data4b.Clone("background_TH1")
-background_TH1.Reset()
-
-# Reset bin error for plotting
-for bin in range(1,data4b.GetSize()-2):
-    if data4b.GetBinContent(bin) > 0:
-        data4b_error = data4b.GetBinContent(bin)**0.5
-        data4b.SetBinError(bin, data4b_error)
-
-    binCenter = int(background_TH1.GetBinCenter(bin))
-    bc = tf1_bkgd_njet.Eval(binCenter)
-    background_TH1.SetBinContent(bin, bc)
-    if binCenter < 4:
-        bc, be = nTagPred(tf1_bkgd_njet.GetParameters(), binCenter+4)
-    else:
-        te = tt4b.GetBinError(bin) if tt4b else 0
-        qc = qcd3b.GetBinContent(bin)
-        qe = qcd3b.GetBinError(bin)
-        be = (te**2 + (qe*bc/qc if qc else 0)**2)**0.5
-    background_TH1.SetBinError(bin, be)
-background_TH1.Write()
-
-c=ROOT.TCanvas(cut+"_postfit_tf1","Post-fit")
-#data4b.SetLineColor(ROOT.kBlack)
-data4b.GetYaxis().SetTitleOffset(1.5)
-data4b.GetYaxis().SetTitle("Events")
-xTitle = "Number of b-tags - 4"+" "*63+"Number of Selected Jets"
-data4b.GetXaxis().SetTitle(xTitle)
-data4b.Draw("P EX0")
-data4b.Write()
-qcdDraw = ROOT.TH1F(qcd3b)
-qcdDraw.SetName(qcd3b.GetName()+"draw")
-qcd3b.Write()
-
-stack = ROOT.THStack("stack","stack")
-#mu_qcd = qcd4b.Integral()/qcdDraw.Integral()
-print("mu_qcd = %f +/- %f%%"%(mu_qcd, 100*n4b**-0.5))
-write_to_JCM_file("mu_qcd_"+cut, str(mu_qcd))
-#jetCombinatoricModelFile.write("mu_qcd_"+cut+"       "+str(mu_qcd)+"\n")
-qcdDraw.Scale(mu_qcd)
-qcdDraw.SetLineColor(ROOT.kMagenta)
-#stack.Add(qcdDraw,"hist")
-#stack.Draw("HIST SAME")
-if tt4b:
-    stack.Add(tt4b)
-    tt4b.Write()
-stack.Add(qcdDraw)
-#qcdDraw.Write()
-stack.Draw("HIST SAME")
-#qcd3b.Draw("HIST SAME")
-data4b.SetStats(0)
-data4b.SetMarkerStyle(20)
-data4b.SetMarkerSize(0.7)
-data4b.Draw("P EX0 SAME axis")
-data4b.Draw("P EX0 SAME")
-background_TH1.SetLineColor(ROOT.kRed)
-background_TH1.Draw("HIST SAME")
-#tf1_bkgd_njet.SetLineColor(ROOT.kRed)
-#tf1_bkgd_njet.Draw("SAME")
-tf1_bkgd_njet.Write()
-
-xleg, yleg = [0.67, 0.9-0.035], [0.9-0.06*4, 0.9-0.035]
-leg = ROOT.TLegend(xleg[0], yleg[0], xleg[1], yleg[1])
-leg.AddEntry(data4b, "Data "+str(lumi)+"/fb, "+args.year)
-leg.AddEntry(qcdDraw, "Multijet Model")
-if tt4b:
-    leg.AddEntry(tt4b, "t#bar{t}")
-leg.AddEntry(background_TH1, "JCM Fit")
-#leg.AddEntry(tf1_bkgd_njet, "JCM Fit")
-leg.Draw()
-
-c.Update()
-print(c.GetFrame().GetY1(),c.GetFrame().GetY2())
-line=ROOT.TLine(3.5,-5000,3.5,c.GetFrame().GetY2())
-line.SetLineColor(ROOT.kBlack)
-line.Draw()
-histName = args.outputDir+"/"+"nJets_"+cut+"_postfit_tf1.pdf"
-print(histName)
-c.SaveAs(histName)
-
-
-jetCombinatoricModelFile.close()
-jetCombinatoricModelFile_yml.close()
-
 
 
 # To add
@@ -774,3 +264,273 @@ jetCombinatoricModelFile_yml.close()
 ##                  "outputName": "nSelJets"+st+"_"+cut+"_postfit_tf1"}
 ##
 ##    PlotTools.plot(samples, parameters)
+
+
+if __name__ == "__main__":
+    
+    #parser = optparse.OptionParser()
+    parser = argparse.ArgumentParser(description='uproot_plots')
+    parser.add_argument('--noFitWeight',dest='noFitWeight',default="")
+    parser.add_argument('-w', '--weightSet',dest="weightSet",default="")
+    parser.add_argument('-r',dest="weightRegion",default="")
+    parser.add_argument('-c',dest="cut",default="passXWt")
+    parser.add_argument('-i', '--inputFile', dest="inputFile", default='hists.pkl', help='Input File. Default: hists.pkl')
+    parser.add_argument('-o', '--outputDir',dest='outputDir',default="")
+    parser.add_argument(      '--ROOTInputs',action="store_true")
+    parser.add_argument('-y', '--year',                 dest="year",          default="RunII", help="Year specifies trigger (and lumiMask for data)")
+    parser.add_argument('--debug',                 action="store_true")
+    parser.add_argument('-l', '--lumi',                 dest="lumi",          default="1",    help="Luminosity for MC normalization: units [pb]")
+    parser.add_argument('-m', '--metadata', dest="metadata",
+                        default="analysis/metadata/plotsAll.yml",
+                        help='Metadata file.')
+    
+    args = parser.parse_args()
+    #o, a = parser.parse_args()
+    
+    lumi = float(args.lumi)/1000
+    
+    if not os.path.isdir(args.outputDir):
+        os.mkdir(args.outputDir)
+
+    #
+    #  Output files
+    #
+    jetCombinatoricModelNext = args.outputDir+"/"+"jetCombinatoricModel_"+args.weightRegion+"_"+args.weightSet+".txt"
+    print(jetCombinatoricModelNext)
+    jetCombinatoricModelFile =             open(jetCombinatoricModelNext, "w")
+    jetCombinatoricModelFile_yml = open(f'{jetCombinatoricModelNext.replace(".txt",".yml")}', 'w')
+    jetCombinatoricModels = {}
+    
+    cut=args.cut
+
+    #
+    # Get Hists
+    #
+    if args.ROOTInputs:
+        data4b, data3b, tt4b, tt3b, qcd4b, qcd3b, data4b_nTagJets, tt4b_nTagJets, qcd3b_nTightTags = loadROOTHists(args.inputFile)
+    else:
+        data4b, data3b, tt4b, tt3b, qcd4b, qcd3b, data4b_nTagJets, tt4b_nTagJets, qcd3b_nTightTags = loadCoffeaHists(args.inputFile)
+
+    #
+    # Prep Hists
+    #
+    prepHists(data4b, qcd3b, tt4b, data4b_nTagJets, tt4b_nTagJets)
+    
+    print("nSelJetsUnweighted", "data4b.Integral()", np.sum(data4b.values()), "\ndata3b.Integral()", np.sum(data3b.values()))
+    print("nSelJetsUnweighted", "  tt4b.Integral()", np.sum(tt4b.values()),   "\ntt3b.Integral()",   np.sum(tt3b.values()))
+    
+    mu_qcd = np.sum(qcd4b.values())/np.sum(qcd3b.values())
+    n4b = np.sum(data4b.values())
+    n5b_true = data4b_nTagJets.values()[5]#GetBinContent(data4b_nTagJets.GetXaxis().FindBin(5))
+    threeTightTagFraction = qcd3b_nTightTags.values()[3] / np.sum(qcd3b_nTightTags.values())
+
+    print("threeTightTagFraction",threeTightTagFraction)
+    
+    jetCombinatoricModels[cut] = jetCombinatoricModel()
+    jetCombinatoricModels[cut].threeTightTagFraction.fix = threeTightTagFraction
+
+    # 
+    #  Updating the errors to have the errors of the templates as well
+    # 
+    #combined_variances = data4b.variances()
+    mu_qcd_bin_by_bin = np.zeros(len(qcd4b.values()))
+    qcd3b_non_zero_filter = qcd3b.values() > 0
+    mu_qcd_bin_by_bin[qcd3b_non_zero_filter] = qcd4b.values()[qcd3b_non_zero_filter]/qcd3b.values()[qcd3b_non_zero_filter] # if qcd3b.GetBinContent(ibin) else 0
+    data3b_error = np.sqrt(data3b.variances()) * mu_qcd_bin_by_bin
+    data3b_variances = data3b_error**2
+
+    combined_variances = data4b.variances() + data3b_variances + tt4b.variances()  + tt3b.variances()
+    combined_error = np.sqrt(combined_variances)
+    previous_error = np.sqrt(data4b.variances())
+
+    tt4b_error = np.sqrt(tt4b.variances())
+    tt3b_error = np.sqrt(tt3b.variances())
+
+    for ibin in range(len(data4b.values())-1):
+        x = data4b.axes[0].centers[ibin]-0.5
+        increase = 100*combined_error[ibin]/previous_error[ibin] if previous_error[ibin] else 100
+        print(f'{ibin:2}, {x:2.0f}| {previous_error[ibin]:5.1f}, {data3b_error[ibin]:5.1f}, {tt4b_error[ibin]:5.1f}, {tt3b_error[ibin]:5.1f}, {increase:5.0f}%')
+
+    data4b.view().variance = combined_variances
+
+    #
+    #  Setting the fit parameters
+    #
+    p0 = []
+
+    for parameter in jetCombinatoricModels[cut].parameters:
+        #tf1_bkgd_njet.SetParLimits(parameter.index, parameter.lowerLimit, parameter.upperLimit)
+        if parameter.fix is not None:
+            print(f"Fixing {parameter.name} to {parameter.fix}")
+        else:
+            p0.append(parameter.default)
+
+    bin_centers, bin_values, bin_errors = data_from_Hist(data4b)
+    tt4b_nTagJets_centers, tt4b_nTagJets_values, tt4b_nTagJets_errors =  data_from_Hist(tt4b_nTagJets)
+    tt4b_centers, tt4b_values, tt4b_errors =  data_from_Hist(tt4b)
+    qcd3b_centers, qcd3b_values, qcd3b_errors =  data_from_Hist(qcd3b)
+
+    if args.debug:
+        print("bin_centers", bin_centers, len(bin_centers))
+        print(bin_values)
+        print(bin_errors)
+    
+
+    def objective(x, f, e, d, norm, debug=False):
+        nj = x.astype(int) 
+        output = np.zeros(len(x))
+
+        nTags = nj + 4
+        nTags_pred_result = nTagPred_values([f,e,d,norm],nTags,tt4b_nTagJets_values, qcd3b_values)
+        output[0:4] = nTags_pred_result[4:8]
+        if debug: print(f"output is {output}")
+        
+        for ibin, this_nj in enumerate(nj):
+            if this_nj < 4: continue
+
+            w = getCombinatoricWeight(this_nj, f,e,d,norm)
+            output[this_nj] += w * qcd3b_values[this_nj]
+            output[this_nj] += tt4b_values[this_nj]
+
+        return output
+
+    objective_constrained = lambda x, f, e, d, debug=False: objective(x, f, e, d, jetCombinatoricModels[cut].threeTightTagFraction.fix, debug)
+
+    #
+    #  Give empty bins ~poisson uncertianties
+    #
+    bin_errors[bin_errors==0] = 3
+
+    if args.debug:
+        for ibin, center in enumerate(bin_centers):
+            print(f"{ibin} {bin_values[ibin]} {bin_errors[ibin]} {center} {objective_constrained(bin_centers, *p0)[ibin]}")
+    
+    popt, errs = curve_fit(objective_constrained, bin_centers, bin_values, p0, sigma=bin_errors)
+
+    sigma_p1 = [np.absolute(errs[i][i])**0.5 for i in range(len(popt))]
+
+    chi2 = np.sum((objective_constrained(bin_centers, *popt) - bin_values)**2 / bin_errors**2)
+    ndf =  len(bin_values) - len(popt) #tf1_bkgd_njet.GetNDF()
+
+    prob = scipy.stats.chi2.sf(chi2, ndf)
+    print(f"chi^2 ={chi2}  ndf ={ndf} chi^2/ndf ={chi2/ndf} | p-value ={prob}")
+
+    print("Pulls:")
+    residuals  = bin_values - objective_constrained(bin_centers, *popt)
+    pulls      = residuals / bin_errors
+
+    for iBin, res in enumerate(residuals):
+        print(f"{iBin:2}| {res:5.1f}  / {bin_errors[iBin]:5.1f} = {pulls[iBin]:4.1f}")
+
+    for parameter in jetCombinatoricModels[cut].parameters:
+        if parameter.fix:
+            parameter.value = parameter.fix
+            parameter.error = 0
+            continue
+            
+        parameter.value = popt[parameter.index]
+        parameter.error = sigma_p1[parameter.index]
+    
+    jetCombinatoricModels[cut].dump()
+
+    for parameter in jetCombinatoricModels[cut].parameters:
+        write_to_JCM_file(parameter.name+"_"+cut,             parameter.value)
+        write_to_JCM_file(parameter.name+"_"+cut+"_err",      parameter.error)
+        write_to_JCM_file(parameter.name+"_"+cut+"_pererr",   parameter.percentError)
+    
+    
+    write_to_JCM_file("chi^2"     ,chi2)
+    write_to_JCM_file("ndf"       ,ndf)
+    write_to_JCM_file("chi^2/ndf" ,chi2/ndf)
+    write_to_JCM_file("p-value"   ,prob)
+
+    n5b_pred = nTagPred_values(popt, bin_centers.astype(int)+4, tt4b_nTagJets_values, qcd3b_values)[5]
+    n5b_pred_error = nTagPred_errors(popt,bin_centers.astype(int)+4,tt4b_nTagJets_errors, qcd3b_errors)[5]
+    print(f"Fitted number of 5b events: {n5b_pred:5.1f} +/- {n5b_pred_error:5f}")
+    print(f"Actual number of 5b events: {n5b_true:5.1f}, ({(n5b_true-n5b_pred)/n5b_pred**0.5:3.1f} sigma pull)")
+    write_to_JCM_file("n5b_pred"   ,n5b_pred)
+    write_to_JCM_file("n5b_true"   ,n5b_true)
+
+##    background_TH1 = data4b.Clone("background_TH1")
+##    background_TH1.Reset()
+##    
+##    # Reset bin error for plotting
+##    for bin in range(1,data4b.GetSize()-2):
+##        if data4b.GetBinContent(bin) > 0:
+##            data4b_error = data4b.GetBinContent(bin)**0.5
+##            data4b.SetBinError(bin, data4b_error)
+##    
+##        binCenter = int(background_TH1.GetBinCenter(bin))
+##        bc = tf1_bkgd_njet.Eval(binCenter)
+##        background_TH1.SetBinContent(bin, bc)
+##        if binCenter < 4:
+##            bc, be = nTagPred(tf1_bkgd_njet.GetParameters(), binCenter+4)
+##        else:
+##            te = tt4b.GetBinError(bin) if tt4b else 0
+##            qc = qcd3b.GetBinContent(bin)
+##            qe = qcd3b.GetBinError(bin)
+##            be = (te**2 + (qe*bc/qc if qc else 0)**2)**0.5
+##        background_TH1.SetBinError(bin, be)
+##    background_TH1.Write()
+##    
+##    c=ROOT.TCanvas(cut+"_postfit_tf1","Post-fit")
+##    #data4b.SetLineColor(ROOT.kBlack)
+##    data4b.GetYaxis().SetTitleOffset(1.5)
+##    data4b.GetYaxis().SetTitle("Events")
+##    xTitle = "Number of b-tags - 4"+" "*63+"Number of Selected Jets"
+##    data4b.GetXaxis().SetTitle(xTitle)
+##    data4b.Draw("P EX0")
+##    data4b.Write()
+##    qcdDraw = ROOT.TH1F(qcd3b)
+##    qcdDraw.SetName(qcd3b.GetName()+"draw")
+##    qcd3b.Write()
+##    
+##    stack = ROOT.THStack("stack","stack")
+##    #mu_qcd = qcd4b.Integral()/qcdDraw.Integral()
+##    print("mu_qcd = %f +/- %f%%"%(mu_qcd, 100*n4b**-0.5))
+##    write_to_JCM_file("mu_qcd_"+cut, str(mu_qcd))
+##    #jetCombinatoricModelFile.write("mu_qcd_"+cut+"       "+str(mu_qcd)+"\n")
+##    qcdDraw.Scale(mu_qcd)
+##    qcdDraw.SetLineColor(ROOT.kMagenta)
+##    #stack.Add(qcdDraw,"hist")
+##    #stack.Draw("HIST SAME")
+##    if tt4b:
+##        stack.Add(tt4b)
+##        tt4b.Write()
+##    stack.Add(qcdDraw)
+##    #qcdDraw.Write()
+##    stack.Draw("HIST SAME")
+##    #qcd3b.Draw("HIST SAME")
+##    data4b.SetStats(0)
+##    data4b.SetMarkerStyle(20)
+##    data4b.SetMarkerSize(0.7)
+##    data4b.Draw("P EX0 SAME axis")
+##    data4b.Draw("P EX0 SAME")
+##    background_TH1.SetLineColor(ROOT.kRed)
+##    background_TH1.Draw("HIST SAME")
+##    #tf1_bkgd_njet.SetLineColor(ROOT.kRed)
+##    #tf1_bkgd_njet.Draw("SAME")
+##    tf1_bkgd_njet.Write()
+##    
+##    xleg, yleg = [0.67, 0.9-0.035], [0.9-0.06*4, 0.9-0.035]
+##    leg = ROOT.TLegend(xleg[0], yleg[0], xleg[1], yleg[1])
+##    leg.AddEntry(data4b, "Data "+str(lumi)+"/fb, "+args.year)
+##    leg.AddEntry(qcdDraw, "Multijet Model")
+##    if tt4b:
+##        leg.AddEntry(tt4b, "t#bar{t}")
+##    leg.AddEntry(background_TH1, "JCM Fit")
+##    #leg.AddEntry(tf1_bkgd_njet, "JCM Fit")
+##    leg.Draw()
+##    
+##    c.Update()
+##    print(c.GetFrame().GetY1(),c.GetFrame().GetY2())
+##    line=ROOT.TLine(3.5,-5000,3.5,c.GetFrame().GetY2())
+##    line.SetLineColor(ROOT.kBlack)
+##    line.Draw()
+##    histName = args.outputDir+"/"+"nJets_"+cut+"_postfit_tf1.pdf"
+##    print(histName)
+##    c.SaveAs(histName)
+    
+    
+    jetCombinatoricModelFile.close()
+    jetCombinatoricModelFile_yml.close()

@@ -34,13 +34,24 @@ class TestJCM(unittest.TestCase):
         #
         # make output
         #
-        os.system("python analysis/make_weights.py -o testJCM_ROOT_tests -c passPreSel -r SB --ROOTInputs")
-        os.system("python analysis/make_weights.py -o testJCM_Coffea_tests -c passPreSel -r SB ")
+        #os.system("python analysis/make_weights_ROOT.py -o testJCM_ROOT_tests -c passPreSel -r SB --ROOTInputs")
+        #os.system("python analysis/make_weights_ROOT.py -o testJCM_Coffea_tests -c passPreSel -r SB ")
+
+        #
+        #  > From python analysis/tests/dumpROOTToHist.py -o analysis/tests/HistsFromROOTFile.coffea -c passPreSel -r SB 
+        #
+        os.system("python analysis/make_weights.py -o testJCM_ROOT -c passPreSel -r SB --ROOTInputs --i analysis/tests/HistsFromROOTFile.coffea")
+        os.system("python analysis/make_weights.py -o testJCM_Coffea -c passPreSel -r SB -i analysis/hists/test.coffea")
+
 
     def test_yaml_content(self):
         
-        for test_pair in [('testJCM_ROOT_tests/jetCombinatoricModel_SB_.yml', 'analysis/tests/jetCombinatoricModel_SB_ROOT.yml'),
-                          ('testJCM_Coffea_tests/jetCombinatoricModel_SB_.yml', 'analysis/tests/jetCombinatoricModel_SB_Coffea.yml'),
+        for test_pair in [#('testJCM_ROOT_tests/jetCombinatoricModel_SB_.yml', 'analysis/tests/jetCombinatoricModel_SB_ROOT.yml'),
+                          #('testJCM_Coffea_tests/jetCombinatoricModel_SB_.yml', 'analysis/tests/jetCombinatoricModel_SB_Coffea.yml'),
+                          
+                          ('testJCM_ROOT/jetCombinatoricModel_SB_.yml',   'analysis/tests/jetCombinatoricModel_SB_ROOT_new.yml'),
+                          ('testJCM_Coffea/jetCombinatoricModel_SB_.yml', 'analysis/tests/jetCombinatoricModel_SB_Coffea_new.yml'),
+
                           ]:
 
             test_file      = test_pair[0]
@@ -60,6 +71,3 @@ class TestJCM(unittest.TestCase):
 if __name__ == '__main__':
     unittest.main()
 
-
-if __name__ == '__main__':
-    unittest.main()
