@@ -27,7 +27,7 @@ from base_class.JCMTools import getCombinatoricWeight, getPseudoTagProbs
 #
 #  To do:
 #    - add limit consgtraints
-#
+#    - make plots
 
 class modelParameter:
     def __init__(self, name="", index=0, lowerLimit=0, upperLimit=1, default=0.5, fix=None):
@@ -333,7 +333,7 @@ if __name__ == "__main__":
     #  Updating the errors to have the errors of the templates as well
     # 
     #combined_variances = data4b.variances()
-    mu_qcd_bin_by_bin = np.zeros(len(qcd4b.values()))
+    mu_qcd_bin_by_bin     = np.zeros(len(qcd4b.values()))
     qcd3b_non_zero_filter = qcd3b.values() > 0
     mu_qcd_bin_by_bin[qcd3b_non_zero_filter] = qcd4b.values()[qcd3b_non_zero_filter]/qcd3b.values()[qcd3b_non_zero_filter] # if qcd3b.GetBinContent(ibin) else 0
     data3b_error = np.sqrt(data3b.variances()) * mu_qcd_bin_by_bin
@@ -343,6 +343,10 @@ if __name__ == "__main__":
     combined_error = np.sqrt(combined_variances)
     previous_error = np.sqrt(data4b.variances())
 
+
+    #
+    #  Print increases in errors
+    #
     tt4b_error = np.sqrt(tt4b.variances())
     tt3b_error = np.sqrt(tt3b.variances())
 
@@ -365,16 +369,18 @@ if __name__ == "__main__":
         else:
             p0.append(parameter.default)
 
-    bin_centers, bin_values, bin_errors = data_from_Hist(data4b)
-    tt4b_nTagJets_centers, tt4b_nTagJets_values, tt4b_nTagJets_errors =  data_from_Hist(tt4b_nTagJets)
-    tt4b_centers, tt4b_values, tt4b_errors =  data_from_Hist(tt4b)
-    qcd3b_centers, qcd3b_values, qcd3b_errors =  data_from_Hist(qcd3b)
+    #
+    #  Get data to fit
+    #
+    bin_centers,           bin_values,           bin_errors           = data_from_Hist(data4b)
+    tt4b_nTagJets_centers, tt4b_nTagJets_values, tt4b_nTagJets_errors = data_from_Hist(tt4b_nTagJets)
+    tt4b_centers,          tt4b_values,          tt4b_errors          = data_from_Hist(tt4b)
+    qcd3b_centers,         qcd3b_values,         qcd3b_errors         = data_from_Hist(qcd3b)
 
     if args.debug:
         print("bin_centers", bin_centers, len(bin_centers))
         print(bin_values)
         print(bin_errors)
-    
 
     def objective(x, f, e, d, norm, debug=False):
         nj = x.astype(int) 
@@ -394,6 +400,9 @@ if __name__ == "__main__":
 
         return output
 
+    #
+    #  Fix the normalizaiton to the threeTightTagFraction
+    #
     objective_constrained = lambda x, f, e, d, debug=False: objective(x, f, e, d, jetCombinatoricModels[cut].threeTightTagFraction.fix, debug)
 
     #
@@ -404,24 +413,30 @@ if __name__ == "__main__":
     if args.debug:
         for ibin, center in enumerate(bin_centers):
             print(f"{ibin} {bin_values[ibin]} {bin_errors[ibin]} {center} {objective_constrained(bin_centers, *p0)[ibin]}")
-    
-    popt, errs = curve_fit(objective_constrained, bin_centers, bin_values, p0, sigma=bin_errors)
 
-    sigma_p1 = [np.absolute(errs[i][i])**0.5 for i in range(len(popt))]
+    #
+    # Do the fit
+    #
+    popt, errs = curve_fit(objective_constrained, bin_centers, bin_values, p0, sigma=bin_errors)
 
     chi2 = np.sum((objective_constrained(bin_centers, *popt) - bin_values)**2 / bin_errors**2)
     ndf =  len(bin_values) - len(popt) #tf1_bkgd_njet.GetNDF()
-
     prob = scipy.stats.chi2.sf(chi2, ndf)
     print(f"chi^2 ={chi2}  ndf ={ndf} chi^2/ndf ={chi2/ndf} | p-value ={prob}")
 
+    #
+    #  Print the pulls
+    #
     print("Pulls:")
     residuals  = bin_values - objective_constrained(bin_centers, *popt)
     pulls      = residuals / bin_errors
-
     for iBin, res in enumerate(residuals):
         print(f"{iBin:2}| {res:5.1f}  / {bin_errors[iBin]:5.1f} = {pulls[iBin]:4.1f}")
 
+    #
+    #  Print the fit parameters
+    #
+    sigma_p1 = [np.absolute(errs[i][i])**0.5 for i in range(len(popt))]
     for parameter in jetCombinatoricModels[cut].parameters:
         if parameter.fix:
             parameter.value = parameter.fix
@@ -437,7 +452,6 @@ if __name__ == "__main__":
         write_to_JCM_file(parameter.name+"_"+cut,             parameter.value)
         write_to_JCM_file(parameter.name+"_"+cut+"_err",      parameter.error)
         write_to_JCM_file(parameter.name+"_"+cut+"_pererr",   parameter.percentError)
-    
     
     write_to_JCM_file("chi^2"     ,chi2)
     write_to_JCM_file("ndf"       ,ndf)
