@@ -7,7 +7,7 @@ cd python/
 echo "############### Modifying previous dataset file"
 ls -lR skimmer/
 sed -i "s/\/builds\/algomez\/coffea4bees\/python\///" skimmer/metadata/picoaod_datasets_TTToSemiLeptonic_UL18.yml
-sed -i "s#skipbadfiles': True#skipbadfiles: False#" runner.py
+sed -i "s#skipbadfiles': True#skipbadfiles': False#" runner.py
 cat skimmer/metadata/picoaod_datasets_TTToSemiLeptonic_UL18.yml
 echo "############### Modifying dataset file with skimmer ci output"
 python metadata/merge_yaml_datasets.py -m metadata/datasets_HH4b.yml -f skimmer/metadata/picoaod_datasets_TTToSemiLeptonic_UL18.yml -o metadata/datasets_ci.yml
