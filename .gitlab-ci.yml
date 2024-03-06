@@ -87,12 +87,11 @@ skimmer-test-job:
     - k8s-cvmfs
   script:
     - source .ci-workflows/skimmer-test-job.sh
-  allow_failure: true
   artifacts: 
     expire_in: 1 day
     paths:
       - python/skimmer/metadata/picoaod_datasets_TTToSemiLeptonic_UL18.yml
-      - python/coffea4bees-dask-report.html
+      - python/skimmer/TTToSemiLeptonic_UL18/picoAOD.root
 
 skimmer-analysis-test-job:   
   stage: analysis-test   
@@ -104,7 +103,6 @@ skimmer-analysis-test-job:
     - k8s-cvmfs
   script:
     - source .ci-workflows/skimmer-analysis-test-job.sh
-  allow_failure: true
   artifacts: 
     expire_in: 1 day
     paths:
@@ -144,7 +142,6 @@ skimmer-analysis-cutflow-job:
     - k8s-cvmfs
   script:
     - source .ci-workflows/skimmer-analysis-cutflow-job.sh
-  allow_failure: true
 
 analysis-iplot-job:    
   stage: plot 
