@@ -1,6 +1,8 @@
 # TODO for test only, will be removed or rewritten
 # TODO work in progress to match new skimmed data
 
+import re
+
 from classifier.df.tools import (add_event_offset, add_label_index,
                                  drop_columns, map_selection_to_index)
 
@@ -9,7 +11,9 @@ from ..setting.df import Columns
 from ._df import LoadGroupedRoot
 
 
-class _Basic(LoadGroupedRoot):
+class _Common(LoadGroupedRoot):
+    _year_pattern = re.compile(r'20\d{2}')
+
     _CanJet = [*map('CanJet_{}'.format, features.candidate_jet)]
     _NotCanJet = [*map('NotCanJet_{}'.format, features.other_jet)]
     _branches = {
@@ -40,4 +44,11 @@ class _Basic(LoadGroupedRoot):
             drop_columns('ZZSR', 'ZHSR', 'HHSR', 'SB',
                          'fourTag', 'threeTag', 'passHLT', 'event'),
         ])
+
+    @classmethod
+    def _get_year(cls, groups: frozenset[str]):
+        matched = [*filter(cls._year_pattern.fullmatch, groups)]
+        if len(matched) >= 1:
+            return int(matched[0]), groups - {matched[0]}
+        return None, groups
 
