@@ -135,6 +135,17 @@ analysis-cutflow-job:
   script:
     - source .ci-workflows/analysis-cutflow-job.sh
 
+analysis-makeweights-job:    
+  stage: makeweights
+  needs: 
+    - analysis-test-job
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  tags:
+    - k8s-cvmfs
+  script:
+    - source .ci-workflows/analysis-makeweights-job.sh
+
+
 skimmer-analysis-cutflow-job:    
   stage: cutflow
   needs: 
