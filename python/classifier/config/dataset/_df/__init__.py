@@ -33,10 +33,14 @@ class Dataframe(Dataset):
     def preprocessors(self):
         return self._preprocessors
 
+    @property
+    def postprocessors(self):
+        return self._postprocessors
+
     def train(self):
         for t in self._trainables:
             t.to_tensor = self.to_tensor
-            t.postprocessors = self._postprocessors
+            t.postprocessors = self.postprocessors
         return self._trainables
 
 

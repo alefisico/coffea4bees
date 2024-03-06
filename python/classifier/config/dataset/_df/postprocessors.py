@@ -10,7 +10,7 @@ class WithSingleLabel(Dataframe):
 
     def __init__(self):
         super().__init__()
-        self._postprocessors.append(add_label_index(self.opts.label))
+        self.postprocessors.append(add_label_index(self.opts.label))
 
 
 class WithMultipleLabel(Dataframe):
@@ -20,4 +20,4 @@ class WithMultipleLabel(Dataframe):
 
     def __init__(self):
         super().__init__()
-        self._postprocessors.append(add_label_flag(*self.opts.labels))
+        self.postprocessors.append(add_label_flag(*self.opts.labels))
