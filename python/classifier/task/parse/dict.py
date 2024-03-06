@@ -4,6 +4,8 @@ from io import StringIO
 from pathlib import Path
 from typing import Iterable, overload
 
+from ._utils import fsspec_read
+
 
 def _parse_scheme(opt: str):
     opt = opt.split(':///', 1)
@@ -50,9 +52,7 @@ def mappings(opt: str):
                 error(f'Unsupported file "{data}"')
                 return
         try:
-            import fsspec
-            with fsspec.open(data, 'rt') as f:
-                data = f.read()
+            data = fsspec_read(data)
         except:
             error(f'Failed to read file "{data}"')
             return

@@ -31,7 +31,7 @@ class Main(main.Main):
         prog='help',
         description='Print help messages.',
         workflow=[
-            ('main', f'call [blue]{"|".join(EntryPoint._keys)}[/blue].help'),
+            ('main', f'call [blue]task.help()[/blue]'),
         ])
     argparser.remove_argument('--save-state')
     argparser.add_argument(

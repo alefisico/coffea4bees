@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from logging import Logger
 from typing import TypeVar
 
 __all__ = [
@@ -36,6 +37,10 @@ class TaskBase:
     def parse(self, opts: list[str]):
         ...
 
+    @interface
+    def debug(self, logger: Logger):
+        ...
+
     @classmethod
     @interface
     def help(cls) -> str:
@@ -56,6 +61,11 @@ class Static(TaskBase):
     @classmethod
     @interface
     def parse(cls, opts: list[str]):
+        ...
+
+    @classmethod
+    @interface
+    def debug(cls, logger: Logger):
         ...
 
     def __new__(cls):
