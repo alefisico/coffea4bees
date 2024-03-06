@@ -4,7 +4,7 @@ echo "############### Checking proxy"
 voms-proxy-info
 echo "############### Moving to python folder"
 cd python/
-echo "############### Modifying previous dataset file"
+echo "############### Modifying previous dataset file (to read local files)"
 ls -lR skimmer/
 sed -i "s/\/builds\/algomez\/coffea4bees\/python\///" skimmer/metadata/picoaod_datasets_TTToSemiLeptonic_UL18.yml
 sed -i "s#skipbadfiles': True#skipbadfiles': False#" runner.py
