@@ -5,11 +5,12 @@ from base_class.system.eos import PathLike
 
 
 def _build_cutflow(*selections):
-    pad = akext.pad.selected(False)
-    selection = selections[-1]
-    for s in selections[-2::-1]:
-        selection = s & pad(selection, s)
-    return selection
+    if len(selections) == 1:
+        return selections[0]
+    selection = akext.to.numpy(selections[0], copy=True).astype(bool)
+    for s in selections[1:]:
+        selection[selection] = s
+    return ak.Array(selection)
 
 
 def build_input_friend(
