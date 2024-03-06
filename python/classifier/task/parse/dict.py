@@ -102,8 +102,10 @@ def grouped_mappings(opt: Iterable[tuple[str, str]], sep: None = None) -> dict[s
 
 def grouped_mappings(opt: Iterable[tuple[str, str]], sep: str = None):
     result = defaultdict(list)
-    for k, v in opt:
-        if sep is not None:
-            k = frozenset(k.split(sep))
-        result[k].append(v)
+    if sep is None:
+        for k, v in opt:
+            result[k].append(v)
+    else:
+        for k, v in opt:
+            result[frozenset(k.split(sep))].extend(v.split(sep))
     return result

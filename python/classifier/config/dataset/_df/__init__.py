@@ -112,11 +112,11 @@ class LoadRoot(ABC, Dataframe):
 class LoadGroupedRoot(LoadRoot):
     argparser = ArgParser()
     argparser.add_argument(
-        '--files', action='append', nargs=2, metavar=('GROUPS', 'PATH'), default=[], help='comma-separated groups and path to the ROOT file')
+        '--files', action='append', nargs=2, metavar=('GROUPS', 'PATHS'), default=[], help='comma-separated groups and paths to the ROOT file')
     argparser.add_argument(
-        '--filelists', action='append', nargs=2, metavar=('GROUPS', 'PATH'), default=[], help='comma-separated groups and path to the filelist')
+        '--filelists', action='append', nargs=2, metavar=('GROUPS', 'PATHS'), default=[], help='comma-separated groups and paths to the filelist')
     argparser.add_argument(
-        '--friends', action='append', nargs=2, metavar=('GROUPS', 'PATH'), default=[], help='comma-separated groups and path to the json file with the friend tree metadata')
+        '--friends', action='append', nargs=2, metavar=('GROUPS', 'PATHS'), default=[], help='comma-separated groups and paths to the json file with the friend tree metadata')
 
     def _from_root(self):
         files = self.files
