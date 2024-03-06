@@ -24,7 +24,7 @@ class FromRoot:
         self.metadata = {**(metadata or {})}
 
         for friend in friends or ():
-            self.chain.add_friend(friend, renaming='{friend}_{branch}')
+            self.chain.add_friend(friend)
 
     def read(self, chunk: Chunk):
         chain = self.chain.copy()

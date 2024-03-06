@@ -2,7 +2,7 @@ import logging
 from collections import defaultdict
 from io import StringIO
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, overload
 
 
 def _parse_scheme(opt: str):
@@ -90,8 +90,20 @@ def parse_dict(opt: str):
     return result
 
 
-def parse_group(opt: Iterable[tuple[str, str]]) -> dict[str, list[str]]:
+@overload
+def parse_group(opt: Iterable[tuple[str, str]], sep: str) -> dict[frozenset[str], list[str]]:
+    ...
+
+
+@overload
+def parse_group(opt: Iterable[tuple[str, str]], sep: None = None) -> dict[str, list[str]]:
+    ...
+
+
+def parse_group(opt: Iterable[tuple[str, str]], sep: str = None):
     result = defaultdict(list)
     for k, v in opt:
+        if sep is not None:
+            k = frozenset(k.split(sep))
         result[k].append(v)
     return result

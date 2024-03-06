@@ -84,7 +84,7 @@ class LoadRoot(ABC, Dataframe):
         return [Friend.from_json(parsers.parse_dict(f'file:///{f}')) for f in friends]
 
     def _from_root(self):
-        yield self.from_root, self.files
+        yield self.from_root(), self.files
 
     def train(self):
         self._trainables.append(
@@ -104,7 +104,6 @@ class LoadRoot(ABC, Dataframe):
     def friends(self) -> list[Friend]:
         return self._parse_friends(self.opts.friends)
 
-    @property
     @abstractmethod
     def from_root(self) -> FromRoot:
         ...
@@ -113,22 +112,21 @@ class LoadRoot(ABC, Dataframe):
 class LoadGroupedRoot(LoadRoot):
     argparser = ArgParser()
     argparser.add_argument(
-        '--files', action='append', nargs=2, metavar=('GROUP', 'PATH'), default=[], help='the group and path to the ROOT file')
+        '--files', action='append', nargs=2, metavar=('GROUPS', 'PATH'), default=[], help='comma-separated groups and path to the ROOT file')
     argparser.add_argument(
-        '--filelists', action='append', nargs=2, metavar=('GROUP', 'PATH'), default=[], help='the group and path to the filelist')
+        '--filelists', action='append', nargs=2, metavar=('GROUPS', 'PATH'), default=[], help='comma-separated groups and path to the filelist')
     argparser.add_argument(
-        '--friends', action='append', nargs=2, metavar=('GROUP', 'PATH'), default=[], help='the group and path to the json file with the friend tree metadata')
+        '--friends', action='append', nargs=2, metavar=('GROUPS', 'PATH'), default=[], help='comma-separated groups and path to the json file with the friend tree metadata')
 
     def _from_root(self):
-        from_root = self.from_root
         files = self.files
-        for k in set(from_root).intersection(files):
-            yield from_root[k], files[k]
+        for k in files:
+            yield self.from_root(*k), files[k]
 
     @cached_property
-    def files(self) -> dict[str, list[str]]:
-        files = parsers.parse_group(self.opts.files)
-        filelists = parsers.parse_group(self.opts.filelists)
+    def files(self):
+        files = parsers.parse_group(self.opts.files, ',')
+        filelists = parsers.parse_group(self.opts.filelists, ',')
         return {
             k: self._parse_files(files.get(k, []), filelists.get(k, []))
             for k in set(files).union(filelists)}
@@ -137,11 +135,10 @@ class LoadGroupedRoot(LoadRoot):
     def friends(self):
         return {
             k: self._parse_friends(v)
-            for k, v in parsers.parse_group(self.opts.friends).items()}
+            for k, v in parsers.parse_group(self.opts.friends, ',').items()}
 
-    @property
     @abstractmethod
-    def from_root(self) -> dict[str, FromRoot]:
+    def from_root(self, *groups: str) -> FromRoot:
         ...
 
 
