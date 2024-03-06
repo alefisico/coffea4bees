@@ -42,9 +42,9 @@ def build_input_friend(
         }), selection)
     } | akext.to.numpy(padded(
         events[[
-            'ZZSR', 'ZHSR', 'HHSR', 'SR', 'SB',
+            'ZZSR', 'ZHSR', 'HHSR', 'SB',
             'fourTag', 'threeTag', 'passHLT',
-            'event', 'nSelJets', weight,
+            'nSelJets', weight,
         ]], selection))
     ))
     friend.dump(output)

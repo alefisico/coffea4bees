@@ -16,5 +16,5 @@ def reproducible():
 
 
 if __name__ == '__main__':
-    parser = EntryPoint()
-    parser.run(reproducible)
+    main = EntryPoint()
+    main.run(reproducible)

@@ -92,7 +92,7 @@ class ToTensor:
                 else:
                     array = data[c].to_numpy(dtype)
                     if len(array.shape) == 1 and len(columns) > 1:
-                        array = array[:, None]
+                        array = array[:, np.newaxis]
                 if reshape is not None:
                     array = array.reshape(reshape)
                 arrays.append(array)

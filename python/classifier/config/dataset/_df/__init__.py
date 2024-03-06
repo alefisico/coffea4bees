@@ -121,7 +121,7 @@ class LoadGroupedRoot(LoadRoot):
     def _from_root(self):
         files = self.files
         for k in files:
-            yield self.from_root(*k), files[k]
+            yield self.from_root(k), files[k]
 
     @cached_property
     def files(self):
@@ -138,7 +138,7 @@ class LoadGroupedRoot(LoadRoot):
             for k, v in parse.grouped_mappings(self.opts.friends, ',').items()}
 
     @abstractmethod
-    def from_root(self, *groups: str) -> FromRoot:
+    def from_root(self, groups: frozenset[str]) -> FromRoot:
         ...
 
 

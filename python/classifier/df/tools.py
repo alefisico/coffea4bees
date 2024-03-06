@@ -51,7 +51,7 @@ class add_label_flag:
 
 class add_event_offset:
     """
-    a workaround for no ``uint64`` in torch.Tensor
+    a workaround for no ``uint64`` support in :class:`torch.Tensor`
     """
 
     def __init__(self, modulus: int):
