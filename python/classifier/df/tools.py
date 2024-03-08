@@ -18,8 +18,9 @@ class add_label_index:
     def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
         import numpy as np
 
-        df.loc[:, (Columns.label_index,)] = np.dtype(
-            Columns.index_dtype).type(MultiClass.index(self._label))
+        df.loc[:, (Columns.label_index,)] = np.dtype(Columns.index_dtype).type(
+            MultiClass.index(self._label)
+        )
         return df
 
 
@@ -58,8 +59,9 @@ class add_event_offset:
         self._modulus = modulus
 
     def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
-        df.loc[:, (Columns.event_offset,)] = (
-            df[Columns.event] % self._modulus).astype(Columns.index_dtype)
+        df.loc[:, (Columns.event_offset,)] = (df[Columns.event] % self._modulus).astype(
+            Columns.index_dtype
+        )
         return df
 
 
@@ -86,7 +88,9 @@ class map_selection_to_index:
             idx += arr * t.type(v)
             sel |= arr
         idx[~sel] = t.type(self._default)
-        df.loc[:, (Columns.selection_index if self._selection is ... else self._selection,)] = idx
+        df.loc[
+            :, (Columns.selection_index if self._selection is ... else self._selection,)
+        ] = idx
         return df
 
 
@@ -112,6 +116,7 @@ class normalize_weight:
         self._norm = norm
 
     def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
-        df.loc[:, (Columns.weight_normalized,)] = (
-            df[Columns.weight] / (df[Columns.weight].sum() / self._norm))
+        df.loc[:, (Columns.weight_normalized,)] = df[Columns.weight] / (
+            df[Columns.weight].sum() / self._norm
+        )
         return df

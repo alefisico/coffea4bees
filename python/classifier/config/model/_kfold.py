@@ -19,15 +19,25 @@ if TYPE_CHECKING:
 class KFoldClassifier(ABC, Model):
     argparser = ArgParser()
     argparser.add_argument(
-        '--kfolds', type=converter.int_pos, default=3, help='total number of folds')
+        "--kfolds",
+        type=converter.int_pos,
+        default=3,
+        help="total number of folds",
+    )
     argparser.add_argument(
-        '--kfold-max-folds', type=converter.int_pos, default=argparse.SUPPRESS, help='the maximum number of folds to use')
+        "--kfold-max-folds",
+        type=converter.int_pos,
+        default=argparse.SUPPRESS,
+        help="the maximum number of folds to use",
+    )
     argparser.add_argument(
-        '--kfold-split-key', default=argparse.SUPPRESS, help='the key used to split the dataset (default: [green]Columns[/green].event_offset)')
+        "--kfold-split-key",
+        default=argparse.SUPPRESS,
+        help="the key used to split the dataset (default: [green]Columns[/green].event_offset)",
+    )
 
     @abstractmethod
-    def initializer(self, kfolds: int, offset: int) -> Classifier:
-        ...
+    def initializer(self, kfolds: int, offset: int) -> Classifier: ...
 
     @cached_property
     def kfolds(self) -> int:
@@ -35,13 +45,17 @@ class KFoldClassifier(ABC, Model):
 
     @cached_property
     def kfold_key(self) -> str:
-        if not hasattr(self.opts, 'kfold_split_key'):
+        if not hasattr(self.opts, "kfold_split_key"):
             return Columns.event_offset
         return self.opts.kfold_split_key
 
     def train(self, dataset: StackDataset):
         if self.kfolds == 1:
-            return [_train_classifier(self.initializer(kfolds=self.kfolds, offset=0), dataset, dataset)]
+            return [
+                _train_classifier(
+                    self.initializer(kfolds=self.kfolds, offset=0), dataset, dataset
+                )
+            ]
         else:
             import numpy as np
             from torch.utils.data import ConcatDataset, DataLoader, Subset
@@ -56,17 +70,16 @@ class KFoldClassifier(ABC, Model):
                 offset.append(i.numpy() % self.kfolds)
             offset = np.concatenate(offset)
             indices = np.arange(len(offset))
-            folds = [
-                Subset(dataset, indices[offset == i])
-                for i in range(self.kfolds)
-            ]
-            max_folds = min(self.kfolds, getattr(
-                self.opts, 'kfold_max_folds', self.kfolds))
+            folds = [Subset(dataset, indices[offset == i]) for i in range(self.kfolds)]
+            max_folds = min(
+                self.kfolds, getattr(self.opts, "kfold_max_folds", self.kfolds)
+            )
             return [
                 _train_classifier(
                     self.initializer(kfolds=self.kfolds, offset=i),
-                    ConcatDataset(folds[:i] + folds[i + 1:]),
-                    folds[i])
+                    ConcatDataset(folds[:i] + folds[i + 1 :]),
+                    folds[i],
+                )
                 for i in range(max_folds)
             ]
 
@@ -84,6 +97,5 @@ class _train_classifier:
 
     def __call__(self, device: Device):
         return self._model.train(
-            training=self._training,
-            validation=self._validation,
-            device=device)
+            training=self._training, validation=self._validation, device=device
+        )

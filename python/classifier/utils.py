@@ -1,6 +1,6 @@
 from typing import Callable, Iterable, TypeVar
 
-_GroupT = TypeVar('_GroupT', bound=Iterable)
+_GroupT = TypeVar("_GroupT", bound=Iterable)
 
 
 def _subgroup(group: list, left: int, remain: int):
@@ -9,7 +9,7 @@ def _subgroup(group: list, left: int, remain: int):
     else:
         size = len(group)
         for i in range(size, left, -1):
-            yield from _subgroup(group[:i-1] + group[i:], i-1,  remain - 1)
+            yield from _subgroup(group[: i - 1] + group[i:], i - 1, remain - 1)
 
 
 def subgroups(group: _GroupT, new: Callable[[Iterable], _GroupT] = None):

@@ -8,7 +8,7 @@ from ._utils import fsspec_read
 
 
 def _parse_scheme(opt: str):
-    opt = opt.split(':///', 1)
+    opt = opt.split(":///", 1)
     if len(opt) == 1:
         return None, opt[0]
     else:
@@ -16,15 +16,15 @@ def _parse_scheme(opt: str):
 
 
 def _parse_keys(opt: str):
-    opt = opt.rsplit('@@', 1)
+    opt = opt.rsplit("@@", 1)
     if len(opt) == 1:
         return opt[0], None
     else:
-        return opt[0], opt[1].split('.')
+        return opt[0], opt[1].split(".")
 
 
 def mappings(opt: str):
-    '''
+    """
     - `{data}`: parse as yaml
     - `yaml:///{data}`: parse as yaml
     - `json:///{data}`: parse as json
@@ -33,20 +33,21 @@ def mappings(opt: str):
     - `py:///{module.class}`: parse as python import
 
     `file`, `py` support an optional suffix `@@{key}.{key}...` to select a nested dict
-    '''
+    """
+
     def error(msg: str):
         logging.error(f'{msg} when parsing "{opt}"')
 
     protocol, data = _parse_scheme(opt)
     keys = None
-    if protocol in ('file', 'py'):
+    if protocol in ("file", "py"):
         data, keys = _parse_keys(data)
-    if protocol == 'file':
+    if protocol == "file":
         suffix = Path(data).suffix
         match suffix:
-            case '.yml':
-                protocol = 'yaml'
-            case '.yaml' | '.json' | '.csv':
+            case ".yml":
+                protocol = "yaml"
+            case ".yaml" | ".json" | ".csv":
                 protocol = suffix[1:]
             case _:
                 error(f'Unsupported file "{data}"')
@@ -59,23 +60,27 @@ def mappings(opt: str):
 
     result = None
     match protocol:
-        case None | 'yaml':
+        case None | "yaml":
             import yaml
+
             result = yaml.safe_load(data)
-        case 'json':
+        case "json":
             import json
+
             result = json.loads(data)
-        case 'py':
+        case "py":
             import importlib
-            mods = data.split('.')
+
+            mods = data.split(".")
             try:
-                mod = importlib.import_module('.'.join(mods[:-1]))
+                mod = importlib.import_module(".".join(mods[:-1]))
                 result = vars(getattr(mod, mods[-1]))
             except:
                 error(f'Failed to import "{data}"')
-        case 'csv':
+        case "csv":
             import pandas as pd
-            result = pd.read_csv(StringIO(data)).to_dict(orient='list')
+
+            result = pd.read_csv(StringIO(data)).to_dict(orient="list")
         case _:
             error(f'Unsupported protocol "{protocol}"')
 
@@ -84,20 +89,21 @@ def mappings(opt: str):
             try:
                 result = result[k]
             except:
-                error(
-                    f'Failed to select key "{".".join(keys[:i+1])}"')
+                error(f'Failed to select key "{".".join(keys[:i+1])}"')
                 return
     return result
 
 
 @overload
-def grouped_mappings(opt: Iterable[tuple[str, str]], sep: str) -> dict[frozenset[str], list[str]]:
-    ...
+def grouped_mappings(
+    opt: Iterable[tuple[str, str]], sep: str
+) -> dict[frozenset[str], list[str]]: ...
 
 
 @overload
-def grouped_mappings(opt: Iterable[tuple[str, str]], sep: None = None) -> dict[str, list[str]]:
-    ...
+def grouped_mappings(
+    opt: Iterable[tuple[str, str]], sep: None = None
+) -> dict[str, list[str]]: ...
 
 
 def grouped_mappings(opt: Iterable[tuple[str, str]], sep: str = None):

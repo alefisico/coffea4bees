@@ -8,37 +8,45 @@ from typing import Iterable, Literal
 
 from .special import TaskBase
 
-_INDENT = '  '
+_INDENT = "  "
 
 
-class _Formatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter):
-    ...
+class _Formatter(
+    argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter
+): ...
 
 
 class ArgParser(argparse.ArgumentParser):
     def __init__(
-        self,
-        workflow: Iterable[tuple[Literal['main', 'sub'], str]] = None,
-        **kwargs
+        self, workflow: Iterable[tuple[Literal["main", "sub"], str]] = None, **kwargs
     ):
-        kwargs['prog'] = kwargs.get('prog', None) or ''
-        kwargs['add_help'] = False
-        kwargs['conflict_handler'] = 'resolve'
-        kwargs['formatter_class'] = _Formatter
+        kwargs["prog"] = kwargs.get("prog", None) or ""
+        kwargs["add_help"] = False
+        kwargs["conflict_handler"] = "resolve"
+        kwargs["formatter_class"] = _Formatter
         if workflow:
-            wf = ['workflow:']
-            wf.extend(indent(indent(
-                f'->([yellow]{p} process[/yellow])\n{t}', _INDENT)[2:], _INDENT) for p, t in workflow)
-            wf = '\n'.join(wf)
-            if 'description' in kwargs:
-                kwargs['description'] += '\n\n' + wf
+            wf = ["workflow:"]
+            wf.extend(
+                indent(
+                    indent(f"->([yellow]{p} process[/yellow])\n{t}", _INDENT)[2:],
+                    _INDENT,
+                )
+                for p, t in workflow
+            )
+            wf = "\n".join(wf)
+            if "description" in kwargs:
+                kwargs["description"] += "\n\n" + wf
             else:
-                kwargs['description'] = wf
+                kwargs["description"] = wf
         super().__init__(**kwargs)
 
     def remove_argument(self, *name_or_flags: str):
         self.add_argument(
-            *name_or_flags, nargs=argparse.SUPPRESS, help=argparse.SUPPRESS, default=argparse.SUPPRESS)
+            *name_or_flags,
+            nargs=argparse.SUPPRESS,
+            help=argparse.SUPPRESS,
+            default=argparse.SUPPRESS,
+        )
 
 
 class Task(TaskBase):
@@ -47,7 +55,7 @@ class Task(TaskBase):
 
     @classmethod
     def __mod_name__(cls):
-        return '.'.join(f'{cls.__module__}.{cls.__name__}'.split('.')[3:])
+        return ".".join(f"{cls.__module__}.{cls.__name__}".split(".")[3:])
 
     def __init_subclass__(cls):
         defaults, parents, kwargs = [], [], {}
@@ -57,19 +65,19 @@ class Task(TaskBase):
                     parents.append(deepcopy(base.argparser))
                 if base.defaults is not NotImplemented:
                     defaults.append(base.defaults)
-        if 'argparser' in vars(cls):
+        if "argparser" in vars(cls):
             parents.append(cls.argparser)
-            kwargs['prog'] = cls.argparser.prog or cls.__mod_name__()
-            for k in ['usage', 'description', 'epilog']:
+            kwargs["prog"] = cls.argparser.prog or cls.__mod_name__()
+            for k in ["usage", "description", "epilog"]:
                 kwargs[k] = getattr(cls.argparser, k, None)
         else:
-            kwargs['prog'] = cls.__mod_name__()
-        if 'defaults' in vars(cls):
+            kwargs["prog"] = cls.__mod_name__()
+        if "defaults" in vars(cls):
             defaults.append(cls.defaults)
         cls.argparser = ArgParser(**kwargs, parents=parents)
         cls.defaults = (
-            NotImplemented if len(defaults) == 0 else
-            dict(ChainMap(*defaults[::-1])))
+            NotImplemented if len(defaults) == 0 else dict(ChainMap(*defaults[::-1]))
+        )
 
     def parse(self, args: list[str]):
         self.opts, _ = self.argparser.parse_known_args(args)
@@ -82,6 +90,5 @@ class Task(TaskBase):
     @classmethod
     def help(cls):
         if cls.argparser is NotImplemented:
-            raise ValueError(
-                f'{cls.__name__}.argparser is not implemented')
+            raise ValueError(f"{cls.__name__}.argparser is not implemented")
         return cls.argparser.format_help()

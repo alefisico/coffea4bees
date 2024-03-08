@@ -13,8 +13,7 @@ class BSScheduler(ABC):
     dataloader: DataLoader
 
     @abstractmethod
-    def step(self):
-        ...
+    def step(self): ...
 
 
 class Schedule(ABC):
@@ -26,28 +25,13 @@ class Schedule(ABC):
                 setattr(self, k, v)
 
     @abstractmethod
-    def optimizer(
-        cls,
-        parameters,
-        **kwargs
-    ) -> optim.Optimizer:
-        ...
+    def optimizer(cls, parameters, **kwargs) -> optim.Optimizer: ...
 
     @abstractmethod
-    def bs_scheduler(
-        cls,
-        dataset: Dataset,
-        **kwargs
-    ) -> BSScheduler:
-        ...
+    def bs_scheduler(cls, dataset: Dataset, **kwargs) -> BSScheduler: ...
 
     @abstractmethod
-    def lr_scheduler(
-        cls,
-        optimizer: optim.Optimizer,
-        **kwargs
-    ) -> LRScheduler:
-        ...
+    def lr_scheduler(cls, optimizer: optim.Optimizer, **kwargs) -> LRScheduler: ...
 
 
 class MultiStepBS(BSScheduler):
@@ -57,7 +41,7 @@ class MultiStepBS(BSScheduler):
         batch_size: int,
         milestones: Optional[Iterable[int]] = None,
         gamma: Optional[float] = None,
-        **kwargs
+        **kwargs,
     ):
         self.dataset = dataset
         self.batch_size = batch_size
@@ -73,15 +57,15 @@ class MultiStepBS(BSScheduler):
 
     def _new_dataloader(self):
         from torch.utils.data import DataLoader
-        return DataLoader(
-            dataset=self.dataset,
-            batch_size=self._bs,
-            **self.kwargs)
+
+        return DataLoader(dataset=self.dataset, batch_size=self._bs, **self.kwargs)
 
     def step(self):
         self._epoch += 1
-        if (self._milestone < len(self.milestones)
-                and self._epoch == self.milestones[self._milestone]):
+        if (
+            self._milestone < len(self.milestones)
+            and self._epoch == self.milestones[self._milestone]
+        ):
             self._milestone += 1
-            self._bs = int(self.batch_size * (self.gamma ** self._milestone))
+            self._bs = int(self.batch_size * (self.gamma**self._milestone))
             self.dataloader = self._new_dataloader()

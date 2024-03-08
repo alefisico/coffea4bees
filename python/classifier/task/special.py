@@ -3,15 +3,9 @@ from __future__ import annotations
 from logging import Logger
 from typing import TypeVar
 
-__all__ = [
-    'interface',
-    'new',
-    'TaskBase',
-    'Static',
-    'Unique'
-]
+__all__ = ["interface", "new", "TaskBase", "Static", "Unique"]
 
-_InterfaceT = TypeVar('_InterfaceT')
+_InterfaceT = TypeVar("_InterfaceT")
 
 
 class _Interface:
@@ -20,12 +14,9 @@ class _Interface:
 
     def __get__(self, _, owner):
         import inspect
-        signature = (
-            str(inspect.signature(self.func))
-            .replace("'", "")
-            .replace('"', ''))
-        raise NotImplementedError(
-            f'{owner.__name__}.{self.func.__name__}{signature}')
+
+        signature = str(inspect.signature(self.func)).replace("'", "").replace('"', "")
+        raise NotImplementedError(f"{owner.__name__}.{self.func.__name__}{signature}")
 
 
 def interface(func: _InterfaceT) -> _InterfaceT:
@@ -34,20 +25,17 @@ def interface(func: _InterfaceT) -> _InterfaceT:
 
 class TaskBase:
     @interface
-    def parse(self, opts: list[str]):
-        ...
+    def parse(self, opts: list[str]): ...
 
     @interface
-    def debug(self, logger: Logger):
-        ...
+    def debug(self, logger: Logger): ...
 
     @classmethod
     @interface
-    def help(cls) -> str:
-        ...
+    def help(cls) -> str: ...
 
 
-_TaskT = TypeVar('_TaskT', bound=TaskBase)
+_TaskT = TypeVar("_TaskT", bound=TaskBase)
 
 
 def new(cls: type[_TaskT], opts: list[str]) -> _TaskT:
@@ -60,20 +48,16 @@ def new(cls: type[_TaskT], opts: list[str]) -> _TaskT:
 class Static(TaskBase):
     @classmethod
     @interface
-    def parse(cls, opts: list[str]):
-        ...
+    def parse(cls, opts: list[str]): ...
 
     @classmethod
     @interface
-    def debug(cls, logger: Logger):
-        ...
+    def debug(cls, logger: Logger): ...
 
     def __new__(cls):
         return cls
 
-    def __init__():
-        ...
+    def __init__(): ...
 
 
-class Unique(TaskBase):
-    ...  # TODO
+class Unique(TaskBase): ...  # TODO

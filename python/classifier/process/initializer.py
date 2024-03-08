@@ -39,16 +39,21 @@ class inherit_context_initializer:
 
 
 class torch_set_sharing_strategy:
-    def __init__(self, strategy: Literal['file_system', 'file_descriptor'] = 'file_system'):
+    def __init__(
+        self, strategy: Literal["file_system", "file_descriptor"] = "file_system"
+    ):
         import torch.multiprocessing as mp
+
         strategies = mp.get_all_sharing_strategies()
         if strategy not in strategies:
             raise ValueError(
-                f'Unknown strategy "{strategy}", available strategies are {strategies}')
+                f'Unknown strategy "{strategy}", available strategies are {strategies}'
+            )
         self.strategy = strategy
 
     def __call__(self):
         import torch.multiprocessing as mp
+
         mp.set_sharing_strategy(self.strategy)
 
 

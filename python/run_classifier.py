@@ -9,12 +9,12 @@ logging.getLogger().setLevel(logging.INFO)
 
 def reproducible():
     return {
-        'date': datetime.today().strftime('%Y-%m-%d %H:%M:%S'),
-        'hash': get_git_revision_hash(),
-        'diff': get_git_diff(),
+        "date": datetime.today().strftime("%Y-%m-%d %H:%M:%S"),
+        "hash": get_git_revision_hash(),
+        "diff": get_git_diff(),
     }
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main = EntryPoint()
     main.run(reproducible)

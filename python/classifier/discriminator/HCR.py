@@ -7,8 +7,6 @@ class HCR(Classifier):
         super().__init__()
         # TODO
 
-    def forward(self, batch, validation=False):
-        ...  # TODO
+    def forward(self, batch, validation=False): ...  # TODO
 
-    def loss(self, pred):
-        ...
+    def loss(self, pred): ...

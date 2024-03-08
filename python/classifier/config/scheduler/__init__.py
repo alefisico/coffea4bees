@@ -2,11 +2,12 @@ from classifier.nn.schedule import MultiStepBS, Schedule
 
 
 class FixedStep(Schedule):
-    '''
+    """
     Use a much larger training batches and learning rate by default [1]_.
 
     .. [1] https://arxiv.org/pdf/1711.00489.pdf
-    '''
+    """
+
     epoch = 20
 
     bs_init = 2**10
@@ -18,6 +19,7 @@ class FixedStep(Schedule):
 
     def optimizer(self, parameters, **kwargs):
         import torch.optim as optim
+
         return optim.Adam(
             parameters,
             lr=self.lr_init,
@@ -36,6 +38,7 @@ class FixedStep(Schedule):
 
     def lr_scheduler(self, optimizer, **kwargs):
         from torch.optim.lr_scheduler import MultiStepLR
+
         return MultiStepLR(
             optimizer=optimizer,
             milestones=self.lr_milestones,
@@ -52,15 +55,17 @@ class AutoStep(FixedStep):
 
     def lr_scheduler(self, optimizer, **kwargs):
         from torch.optim.lr_scheduler import ReduceLROnPlateau
+
         return ReduceLROnPlateau(
             optimizer=optimizer,
-            mode='min',
+            mode="min",
             factor=self.lr_scale,
             threshold=self.lr_threshold,
             patience=self.lr_patience,
             cooldown=self.lr_cooldown,
             min_lr=self.lr_min,
-            **kwargs)
+            **kwargs
+        )
 
 
 class FinetuneStep(AutoStep):
@@ -75,8 +80,5 @@ class FinetuneStep(AutoStep):
 class FinetuneStepSGD(FinetuneStep):  # PLAN test performance
     def optimizer(self, parameters, **kwargs):
         import torch.optim as optim
-        return optim.SGD(
-            parameters,
-            lr=self.lr_init,
-            **kwargs
-        )
+
+        return optim.SGD(parameters, lr=self.lr_init, **kwargs)

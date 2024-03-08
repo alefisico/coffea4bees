@@ -9,11 +9,12 @@ if TYPE_CHECKING:
 
 
 class IO(Cascade):
-    output: EOS = '.'
+    output: EOS = "."
 
     @classmethod
     def _output(cls, var):
         from base_class.system.eos import EOS
+
         return EOS(var).mkdir(recursive=True)
 
 

@@ -25,8 +25,7 @@ class Model(Task):
 
 
 class ModelTrainer(Protocol):
-    def __call__(self, device: Device) -> dict[str]:
-        ...
+    def __call__(self, device: Device) -> dict[str]: ...
 
 
 class ModelRunner(Protocol):  # TODO evaluation
