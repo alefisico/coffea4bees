@@ -35,6 +35,8 @@ class FromRoot:
             reader_options={'filter': self.branches}
         ):
             for preprocessor in self.preprocessors:
+                if len(df) == 0: # TODO test
+                    return df
                 df = preprocessor(df)
         for k, v in self.metadata.items():
             df[k] = v

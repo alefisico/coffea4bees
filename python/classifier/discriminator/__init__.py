@@ -50,9 +50,11 @@ class Classifier(ABC):
         ...
 
     @property
+    @abstractmethod
     def finetune_schedule(self) -> Optional[Schedule]:
         ...
 
+    @abstractmethod
     def setup_finetune(self):  # TODO modify
         ...
 

@@ -3,15 +3,12 @@ from . import Classifier
 
 
 class HCR(Classifier):
-    def __init__(
-        self,
-        max_other_jets: int = 8,
-    ):
+    def __init__(self):
         super().__init__()
         # TODO
 
-    def forward(self, data):
+    def forward(self, batch, validation=False):
         ...  # TODO
 
-    def loss(self, data):
-        ...  # TODO
+    def loss(self, pred):
+        ...
