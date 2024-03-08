@@ -75,9 +75,8 @@ def setSvBVars(SvBName, event):
     event[SvBName, 'ps_hh'] = this_ps_hh
 
 
-
 class analysis(processor.ProcessorABC):
-    def __init__(self, *, JCM = None, addbtagVariations=None, SvB=None, SvB_MA=None, threeTag = True, apply_trigWeight = True, apply_btagSF = True, apply_FvT = True, run_SvB = True, corrections_metadata='analysis/metadata/corrections.yml'):
+    def __init__(self, *, JCM = None, addbtagVariations=None, SvB=None, SvB_MA=None, threeTag = True, apply_trigWeight = True, apply_btagSF = True, apply_FvT = True, run_SvB = True, corrections_metadata='analysis/metadata/corrections.yml', make_classifier_input: str = None):
         logging.debug('\nInitialize Analysis Processor')
         self.blind = False
         print('Initialize Analysis Processor')
@@ -95,6 +94,7 @@ class analysis(processor.ProcessorABC):
         if self.run_SvB:
             self.cutFlowCuts += ['passSvB', 'failSvB']
             self.histCuts += ['passSvB', 'failSvB']
+        self.make_classifier_input = make_classifier_input
 
     def process(self, event):
         tstart = time.time()
@@ -124,7 +124,6 @@ class analysis(processor.ProcessorABC):
 
         logging.debug(fname)
         logging.debug(f'{chunk}Process {nEvent} Events')
-
 
         #
         # Reading SvB friend trees
@@ -170,7 +169,7 @@ class analysis(processor.ProcessorABC):
             # trigger Weight (to be updated)
             if self.apply_trigWeight: event['weight'] = event.weight * event.trigWeight.Data
 
-            #puWeight
+            # puWeight
             puWeight = list(correctionlib.CorrectionSet.from_file(self.corrections_metadata[year]['PU']).values())[0]
             for var in ['nominal', 'up', 'down']:
                 event[f'PU_weight_{var}'] = puWeight.evaluate(event.Pileup.nTrueInt.to_numpy(), var)
@@ -195,13 +194,13 @@ class analysis(processor.ProcessorABC):
 
         # Apply object selection (function does not remove events, adds content to objects)
         event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year]  )
-        self._cutFlow.fill("passJetMult",  event[ event.lumimask & event.passNoiseFilter & event.passHLT & event.passJetMult ], allTag=True)
-
+        basic_selection = event.lumimask & event.passNoiseFilter & event.passHLT & event.passJetMult
+        self._cutFlow.fill("passJetMult", event[basic_selection], allTag=True)
 
         #
         # Filtering object and event selection
         #
-        selev = event[ event.lumimask & event.passNoiseFilter & event.passHLT & event.passJetMult ]
+        selev = event[basic_selection]
 
         #
         # Calculate and apply btag scale factors
@@ -271,7 +270,6 @@ class analysis(processor.ProcessorABC):
         selev['notCanJet_coffea'] = notCanJet
         selev['nNotCanJet'] = ak.num(selev.notCanJet_coffea)
 
-
         #
         # calculate pseudoTagWeight for threeTag events
         #
@@ -297,7 +295,6 @@ class analysis(processor.ProcessorABC):
                 selev['weight'] = weight
             else:
                 selev['weight'] = weight_noFvT
-
 
         #
         # Build diJets, indexed by diJet[event,pairing,0/1]
@@ -437,7 +434,6 @@ class analysis(processor.ProcessorABC):
         if not (isMC or 'mixed' in dataset) and self.blind:
             selev = selev[~(selev['quadJet_selected'].SR & selev.fourTag)]
 
-
         #
         # Hists
         #
@@ -518,7 +514,6 @@ class analysis(processor.ProcessorABC):
         fill += Jet.plot(('tagJets_noJCM', 'Tag Jets'),      'tagJet', weight="weight_noJCM_noFvT", skip=skip_all_but_n)
         fill += Jet.plot(('tagJets_loose_noJCM', 'Loose Tag Jets'),   'tagJet_loose', weight="weight_noJCM_noFvT", skip=skip_all_but_n)
 
-
         for iJ in range(4):
             fill += Jet.plot((f'canJet{iJ}', f'Higgs Candidate Jets {iJ}'), f'canJet{iJ}', skip=['n', 'deepjet_c'])
 
@@ -566,8 +561,18 @@ class analysis(processor.ProcessorABC):
 
         self._cutFlow.addOutput(processOutput, event.metadata['dataset'])
 
-        return hist.output | processOutput
+        friends = {}
+        if self.make_classifier_input is not None:
+            from ..helpers.classifier.HCR import build_input_friend
+            friends['friends'] = build_input_friend(
+                selev,
+                self.make_classifier_input,
+                'HCR_input',
+                basic_selection,
+                selev.passPreSel,
+            )
 
+        return hist.output | processOutput | friends
 
     def compute_SvB(self, event):
         n = len(event)

@@ -18,34 +18,62 @@ def build_input_friend(
     output: PathLike,
     name: str,
     *selections: ak.Array,
-    canJet: str = 'canJet',
-    notCanJet: str = 'notCanJet',
-    weight: str = 'weight',
+    CanJet: str = "canJet",
+    NotCanJet: str = "notCanJet",
+    weight: str = "weight",
+    dump_naming: str = "{path1}/{path0}_{uuid}_{start}_{stop}.root",
 ):
     chunk = Chunk.from_coffea_events(events)
     selection = _build_cutflow(*selections)
     padded = akext.pad.selected()
     friend = Friend(name)
-    friend.add(chunk, ak.Array({
-        'CanJet': padded(ak.zip({
-            'pt': events[canJet].pt,
-            'eta': events[canJet].eta,
-            'phi': events[canJet].phi,
-            'mass': events[canJet].mass,
-        }), selection),
-        'NotCanJet': padded(ak.zip({
-            'pt': events[notCanJet].pt,
-            'eta': events[notCanJet].eta,
-            'phi': events[notCanJet].phi,
-            'mass': events[notCanJet].mass,
-            'isSelJet': events[notCanJet].isSelJet,
-        }), selection)
-    } | akext.to.numpy(padded(
-        events[[
-            'ZZSR', 'ZHSR', 'HHSR', 'SB',
-            'fourTag', 'threeTag', 'passHLT',
-            'nSelJets', weight,
-        ]], selection))
-    ))
-    friend.dump(output)
+    friend.add(
+        chunk,
+        ak.Array(
+            {
+                "CanJet": padded(
+                    ak.zip(
+                        {
+                            "pt": events[CanJet].pt,
+                            "eta": events[CanJet].eta,
+                            "phi": events[CanJet].phi,
+                            "mass": events[CanJet].mass,
+                        }
+                    ),
+                    selection,
+                ),
+                "NotCanJet": padded(
+                    ak.zip(
+                        {
+                            "pt": events[NotCanJet].pt,
+                            "eta": events[NotCanJet].eta,
+                            "phi": events[NotCanJet].phi,
+                            "mass": events[NotCanJet].mass,
+                            "isSelJet": events[NotCanJet].isSelJet,
+                        }
+                    ),
+                    selection,
+                ),
+            }
+            | akext.to.numpy(
+                padded(
+                    events[
+                        [
+                            "ZZSR",
+                            "ZHSR",
+                            "HHSR",
+                            "SB",
+                            "fourTag",
+                            "threeTag",
+                            "passHLT",
+                            "nSelJets",
+                            weight,
+                        ]
+                    ],
+                    selection,
+                )
+            )
+        ),
+    )
+    friend.dump(output, dump_naming)
     return {name: friend}
