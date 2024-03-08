@@ -45,22 +45,18 @@ class _Common(LoadGroupedRoot):
 
     def __init__(self):
         super().__init__()
+        # fmt: off
         (
-            self.to_tensor.add(Columns.event_offset, Columns.index_dtype)
-            .columns(Columns.event_offset)
-            .add(Columns.label_index, Columns.index_dtype)
-            .columns(Columns.label_index)
-            .add("region_index", Columns.index_dtype)
-            .columns("region_index")
-            .add("weight", "float32")
-            .columns("genWeight")
-            .add("ancillary", "float32")
-            .columns(*features.ancillary)
-            .add("candidate_jet", "float32")
-            .columns(*self._CanJet, target=features.candidate_jet_max)
-            .add("other_jet", "float32")
-            .columns(*self._NotCanJet, target=features.other_jet_max)
+            self.to_tensor
+            .add(Columns.event_offset, Columns.index_dtype).columns(Columns.event_offset)
+            .add(Columns.label_index, Columns.index_dtype).columns(Columns.label_index)
+            .add("region_index", Columns.index_dtype).columns("region_index")
+            .add("weight", "float32").columns("genWeight")
+            .add("ancillary", "float32").columns(*features.ancillary)
+            .add("candidate_jet", "float32").columns(*self._CanJet, target=features.candidate_jet_max)
+            .add("other_jet", "float32").columns(*self._NotCanJet, target=features.other_jet_max)
         )
+        # fmt: on
         self.preprocessors.extend(
             [
                 add_event_offset(60),  # 1, 2, 3, 4, 5, 6 folds
