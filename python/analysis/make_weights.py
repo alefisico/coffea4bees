@@ -3,114 +3,21 @@ from copy import copy
 import argparse
 import numpy as np
 import os
-import scipy.stats
 
-from scipy.optimize import curve_fit
+
+
 from hist import Hist
 
 sys.path.insert(0, os.getcwd())
 
 
-from base_class.JCMTools import getCombinatoricWeight, getPseudoTagProbs, loadROOTHists, loadCoffeaHists, data_from_Hist
+from base_class.JCMTools import getCombinatoricWeight, getPseudoTagProbs, loadROOTHists, loadCoffeaHists, data_from_Hist, prepHists, jetCombinatoricModel
 
 
 #
 #  To do:
 #    - add limit consgtraints
 #    - make plots
-
-class modelParameter:
-    def __init__(self, name="", index=0, lowerLimit=0, upperLimit=1, default=0.5, fix=None):
-        self.name = name
-        self.value = None
-        self.error = None
-        self.percentError = None
-        self.index = index
-        self.lowerLimit = lowerLimit
-        self.upperLimit = upperLimit
-        self.default = default
-        self.fix = fix
-
-    def dump(self):
-        self.percentError = self.error/self.value*100 if self.value else 0
-        print((self.name+" %1.4f +/- %0.5f (%1.1f%%)")%(self.value,self.error,self.percentError))
-
-class jetCombinatoricModel:
-    def __init__(self):
-        self.pseudoTagProb       = modelParameter("pseudoTagProb",        index=0, lowerLimit=0,   upperLimit= 1, default=0.05)
-        self.pairEnhancement     = modelParameter("pairEnhancement",      index=1, lowerLimit=0,   upperLimit= 3, default=1.0,
-                                                  #fix=0,
-                                                  )
-        self.pairEnhancementDecay= modelParameter("pairEnhancementDecay", index=2, lowerLimit=0.1, upperLimit=100, default=0.7,
-                                                  #fix=1,
-                                                  )
-        self.threeTightTagFraction = modelParameter("threeTightTagFraction",   index=3, lowerLimit=0, upperLimit=1000000, default=1000)
-
-        self.parameters         = [self.pseudoTagProb, self.pairEnhancement, self.pairEnhancementDecay, self.threeTightTagFraction]
-
-        self.default_parameters = [] 
-        self.fit_parameters = []
-        for p in self.parameters:
-            self.fit_parameters.append(p)
-            self.default_parameters.append(p.default)
-
-        self.nParameters = len(self.parameters)
-
-    def dump(self):
-        for parameter in self.parameters:
-            parameter.dump()
-
-    def fixParameter(self, name, value):
-        for p in self.parameters:
-            if name is p.name:
-                print(f"Fixing {name} to {value}")
-                p.fix = value
-                self.fit_parameters.remove(p)
-                self.default_parameters.remove(p.default)
-
-
-def prepHists(data4b, qcd3b, tt4b, data4b_nTagJets, tt4b_nTagJets):
-
-    data4b_new_values         = data4b.values()
-    data4b_new_variances      = data4b.variances()
-    data4b_new_values   [0:4] = data4b_nTagJets.values()   [4:8]
-    data4b_new_variances[0:4] = data4b_nTagJets.variances()[4:8]
-    data4b.view().value       = data4b_new_values
-    data4b.view().variance    = data4b_new_variances
-
-    tt4b_new_values         = tt4b.values()
-    tt4b_new_variances      = tt4b.variances()
-    tt4b_new_values   [0:4] = tt4b_nTagJets.values()   [4:8]
-    tt4b_new_variances[0:4] = tt4b_nTagJets.variances()[4:8]
-    tt4b.view().value       = tt4b_new_values
-    tt4b.view().variance    = tt4b_new_variances
-
-
-def nTagPred_values(par, n, tt4b_nTagJets_values, qcd3b_values):
-    output = np.zeros(len(n))
-    output = copy(tt4b_nTagJets_values)
-
-    for ibin, this_nTag in enumerate(n):
-        for nj in range(this_nTag,14):
-            nPseudoTagProb = getPseudoTagProbs(nj, par[0],par[1],par[2],threeTightTagFraction)
-            output[ibin+4] += nPseudoTagProb[this_nTag-3] * qcd3b_values[nj]
-
-    return np.array(output,float)
-
-
-def nTagPred_errors(par, n, tt4b_nTagJets_errors, qcd3b_errors):
-    output = np.zeros(len(n))
-    output = tt4b_nTagJets_errors**2
-
-    #print(f"n {n}")
-    
-    for ibin, this_nTag in enumerate(n):
-        for nj in range(this_nTag,14):
-            nPseudoTagProb = getPseudoTagProbs(nj, par[0],par[1],par[2],threeTightTagFraction)
-            output[ibin+4] += (nPseudoTagProb[this_nTag-3] * qcd3b_errors[nj])**2
-    output = output**0.5            
-    #print(f"nTagPred {output}")
-    return np.array(output,float)
 
 
 def write_to_JCM_file(text, value):
@@ -242,12 +149,6 @@ if __name__ == "__main__":
 
     print("threeTightTagFraction",threeTightTagFraction)
 
-    #
-    # Define the model
-    #
-    JCM_model = jetCombinatoricModel()
-    JCM_model.fixParameter("threeTightTagFraction", threeTightTagFraction)
-    #JCM_model.threeTightTagFraction.fix = threeTightTagFraction
 
     # 
     #  Updating the errors to have the errors of the templates as well
@@ -291,28 +192,13 @@ if __name__ == "__main__":
         print(bin_values)
         print(bin_errors)
 
-    def objective(x, f, e, d, norm, debug=False):
-        nj = x.astype(int) 
-        output = np.zeros(len(x))
-
-        nTags = nj + 4
-        nTags_pred_result = nTagPred_values([f,e,d,norm], nTags, tt4b_nTagJets_values, qcd3b_values)
-        output[0:4] = nTags_pred_result[4:8]
-        if debug: print(f"output is {output}")
-        
-        for ibin, this_nj in enumerate(nj):
-            if this_nj < 4: continue
-
-            w = getCombinatoricWeight(this_nj, f,e,d,norm)
-            output[this_nj] += w * qcd3b_values[this_nj]
-            output[this_nj] += tt4b_values[this_nj]
-
-        return output
-
     #
-    #  Fix the normalizaiton to the threeTightTagFraction
+    # Define the model
     #
-    objective_constrained = lambda x, f, e, d, debug=False: objective(x, f, e, d, JCM_model.threeTightTagFraction.fix, debug)
+    JCM_model = jetCombinatoricModel(tt4b_nTagJets = tt4b_nTagJets_values, tt4b_nTagJets_errors = tt4b_nTagJets_errors, qcd3b=qcd3b_values, qcd3b_errors = qcd3b_errors, tt4b = tt4b_values)
+    JCM_model.fixParameter("threeTightTagFraction", threeTightTagFraction)
+    #JCM_model.threeTightTagFraction.fix = threeTightTagFraction
+
 
     #
     #  Give empty bins ~poisson uncertianties
@@ -326,35 +212,19 @@ if __name__ == "__main__":
     #
     # Do the fit
     #
-    popt, errs = curve_fit(objective_constrained, bin_centers, bin_values, JCM_model.default_parameters, sigma=bin_errors)
-
-    chi2 = np.sum((objective_constrained(bin_centers, *popt) - bin_values)**2 / bin_errors**2)
-    ndf =  len(bin_values) - len(popt) #tf1_bkgd_njet.GetNDF()
-    prob = scipy.stats.chi2.sf(chi2, ndf)
-    print(f"chi^2 ={chi2}  ndf ={ndf} chi^2/ndf ={chi2/ndf} | p-value ={prob}")
+    residuals, pulls = JCM_model.fit(bin_centers, bin_values, bin_errors)
+    print(f"chi^2 ={JCM_model.fit_chi2}  ndf ={JCM_model.fit_ndf} chi^2/ndf ={JCM_model.fit_chi2/JCM_model.fit_ndf} | p-value ={JCM_model.fit_prob}")
 
     #
     #  Print the pulls
     #
     print("Pulls:")
-    residuals  = bin_values - objective_constrained(bin_centers, *popt)
-    pulls      = residuals / bin_errors
     for iBin, res in enumerate(residuals):
         print(f"{iBin:2}| {res:5.1f}  / {bin_errors[iBin]:5.1f} = {pulls[iBin]:4.1f}")
 
     #
     #  Print the fit parameters
     #
-    sigma_p1 = [np.absolute(errs[i][i])**0.5 for i in range(len(popt))]
-    for parameter in JCM_model.parameters:
-        if parameter.fix:
-            parameter.value = parameter.fix
-            parameter.error = 0
-            continue
-            
-        parameter.value = popt[parameter.index]
-        parameter.error = sigma_p1[parameter.index]
-    
     JCM_model.dump()
 
     for parameter in JCM_model.parameters:
@@ -362,13 +232,13 @@ if __name__ == "__main__":
         write_to_JCM_file(parameter.name+"_"+cut+"_err",      parameter.error)
         write_to_JCM_file(parameter.name+"_"+cut+"_pererr",   parameter.percentError)
     
-    write_to_JCM_file("chi^2"     ,chi2)
-    write_to_JCM_file("ndf"       ,ndf)
-    write_to_JCM_file("chi^2/ndf" ,chi2/ndf)
-    write_to_JCM_file("p-value"   ,prob)
+    write_to_JCM_file("chi^2"     ,JCM_model.fit_chi2)
+    write_to_JCM_file("ndf"       ,JCM_model.fit_ndf)
+    write_to_JCM_file("chi^2/ndf" ,JCM_model.fit_chi2/JCM_model.fit_ndf)
+    write_to_JCM_file("p-value"   ,JCM_model.fit_prob)
 
-    n5b_pred = nTagPred_values(popt, bin_centers.astype(int)+4, tt4b_nTagJets_values, qcd3b_values)[5]
-    n5b_pred_error = nTagPred_errors(popt,bin_centers.astype(int)+4,tt4b_nTagJets_errors, qcd3b_errors)[5]
+    n5b_pred = JCM_model.nTagPred_values(bin_centers.astype(int)+4)[5]
+    n5b_pred_error = JCM_model.nTagPred_errors(bin_centers.astype(int)+4)[5]
     print(f"Fitted number of 5b events: {n5b_pred:5.1f} +/- {n5b_pred_error:5f}")
     print(f"Actual number of 5b events: {n5b_true:5.1f}, ({(n5b_true-n5b_pred)/n5b_pred**0.5:3.1f} sigma pull)")
     write_to_JCM_file("n5b_pred"   ,n5b_pred)

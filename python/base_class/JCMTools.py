@@ -5,6 +5,163 @@ from base_class.plots.plots import load_config, load_hists, read_axes_and_cuts, 
 import base_class.plots.iPlot_config as cfg
 import hist
 from copy import copy
+from scipy.optimize import curve_fit
+import scipy.stats
+
+class modelParameter:
+    def __init__(self, name="", index=0, lowerLimit=0, upperLimit=1, default=0.5, fix=None):
+        self.name = name
+        self.value = None
+        self.error = None
+        self.percentError = None
+        self.index = index
+        self.lowerLimit = lowerLimit
+        self.upperLimit = upperLimit
+        self.default = default
+        self.fix = fix
+
+    def dump(self):
+        self.percentError = self.error/self.value*100 if self.value else 0
+        print((self.name+" %1.4f +/- %0.5f (%1.1f%%)")%(self.value,self.error,self.percentError))
+
+
+
+class jetCombinatoricModel:
+
+    def __init__(self, *, tt4b_nTagJets, tt4b_nTagJets_errors, qcd3b, qcd3b_errors, tt4b ):
+        self.pseudoTagProb       = modelParameter("pseudoTagProb",        index=0, lowerLimit=0,   upperLimit= 1, default=0.05)
+        self.pairEnhancement     = modelParameter("pairEnhancement",      index=1, lowerLimit=0,   upperLimit= 3, default=1.0,
+                                                  #fix=0,
+                                                  )
+        self.pairEnhancementDecay= modelParameter("pairEnhancementDecay", index=2, lowerLimit=0.1, upperLimit=100, default=0.7,
+                                                  #fix=1,
+                                                  )
+        self.threeTightTagFraction = modelParameter("threeTightTagFraction",   index=3, lowerLimit=0, upperLimit=1000000, default=1000)
+
+        self.parameters         = [self.pseudoTagProb, self.pairEnhancement, self.pairEnhancementDecay, self.threeTightTagFraction]
+
+    
+
+        #
+        #  Data
+        #
+        self.tt4b_nTagJets        = tt4b_nTagJets
+        self.tt4b_nTagJets_errors = tt4b_nTagJets_errors
+        self.qcd3b                = qcd3b
+        self.qcd3b_errors         = qcd3b_errors
+        self.tt4b                 = tt4b
+
+        self.default_parameters = [] 
+        self.fit_parameters = []
+        for p in self.parameters:
+            self.fit_parameters.append(p)
+            self.default_parameters.append(p.default)
+
+        self.nParameters = len(self.parameters)
+
+    def dump(self):
+        for parameter in self.parameters:
+            parameter.dump()
+
+    def fixParameter(self, name, value):
+        for p in self.parameters:
+            if name is p.name:
+                print(f"Fixing {name} to {value}")
+                p.fix = value
+                self.fit_parameters.remove(p)
+                self.default_parameters.remove(p.default)
+
+        #
+        #  Fix the normalizaiton to the threeTightTagFraction
+        #
+        self.bkgd_func_njet_constrained = lambda x, f, e, d, debug=False: self.bkgd_func_njet(x, f, e, d, value, debug)
+
+
+                
+    def _nTagPred_values(self, par, n):
+        output = np.zeros(len(n))
+        output = copy(self.tt4b_nTagJets)
+    
+        for ibin, this_nTag in enumerate(n):
+            for nj in range(this_nTag,14):
+                nPseudoTagProb = getPseudoTagProbs(nj, par[0],par[1],par[2],par[3])
+                output[ibin+4] += nPseudoTagProb[this_nTag-3] * self.qcd3b[nj]
+    
+        return np.array(output,float)
+
+    def nTagPred_values(self, n):
+        return self._nTagPred_values(self.fit_parameters + [self.threeTightTagFraction.fix] , n)
+
+
+    def _nTagPred_errors(self, par, n):
+        output = np.zeros(len(n))
+        output = self.tt4b_nTagJets_errors**2
+    
+        for ibin, this_nTag in enumerate(n):
+            for nj in range(this_nTag,14):
+                nPseudoTagProb = getPseudoTagProbs(nj, par[0],par[1],par[2],par[3])
+                output[ibin+4] += (nPseudoTagProb[this_nTag-3] * self.qcd3b_errors[nj])**2
+
+        output = output**0.5            
+        return np.array(output,float)
+
+    def nTagPred_errors(self, n):
+        return self._nTagPred_errors(self.fit_parameters + [self.threeTightTagFraction.fix] , n)
+
+
+    def bkgd_func_njet(self, x, f, e, d, norm, debug=False):
+        nj = x.astype(int) 
+        output = np.zeros(len(x))
+
+        nTags = nj + 4
+        nTags_pred_result = self._nTagPred_values([f,e,d,norm], nTags)
+        output[0:4] = nTags_pred_result[4:8]
+        if debug: print(f"output is {output}")
+        
+        for ibin, this_nj in enumerate(nj):
+            if this_nj < 4: continue
+
+            w = getCombinatoricWeight(this_nj, f,e,d,norm)
+            output[this_nj] += w * self.qcd3b[this_nj]
+            output[this_nj] += self.tt4b[this_nj]
+
+        return output
+
+    def fit(self, bin_centers, bin_values, bin_errors):
+
+        #
+        # Do the fit
+        #
+        popt, errs = curve_fit(self.bkgd_func_njet_constrained, bin_centers, bin_values, self.default_parameters, sigma=bin_errors)
+        
+        self.fit_errs = errs
+        sigma_p1 = [np.absolute(errs[i][i])**0.5 for i in range(len(popt))]
+
+        for parameter in self.parameters:
+            if parameter.fix:
+                parameter.value = parameter.fix
+                parameter.error = 0
+                continue
+            
+            parameter.value = popt[parameter.index]
+            parameter.error = sigma_p1[parameter.index]
+            self.fit_parameters[parameter.index] = popt[parameter.index]
+
+        self.fit_chi2 = np.sum((self.bkgd_func_njet_constrained(bin_centers, *popt) - bin_values)**2 / bin_errors**2)
+        self.fit_ndf =  len(bin_values) - len(popt) #tf1_bkgd_njet.GetNDF()
+        self.fit_prob = scipy.stats.chi2.sf(self.fit_chi2, self.fit_ndf)
+
+        residuals  = bin_values - self.bkgd_func_njet_constrained(bin_centers, *popt)
+        pulls      = residuals / bin_errors
+        return residuals, pulls
+
+
+
+
+
+    
+    
+
 
 def getPseudoTagProbs(nj, f, e=0.0, d=1.0, norm=1.0):
     nbt = 3 #number of required bTags
@@ -112,3 +269,22 @@ def data_from_Hist(inputHist, maxBin=15):
         x_centers = x_centers - 0.5
 
     return x_centers[0:maxBin], values[0:maxBin], errors[0:maxBin]
+
+#
+#  Puth teh number of additional tag jets in teh first 4 bins
+#
+def prepHists(data4b, qcd3b, tt4b, data4b_nTagJets, tt4b_nTagJets):
+
+    data4b_new_values         = data4b.values()
+    data4b_new_variances      = data4b.variances()
+    data4b_new_values   [0:4] = data4b_nTagJets.values()   [4:8]
+    data4b_new_variances[0:4] = data4b_nTagJets.variances()[4:8]
+    data4b.view().value       = data4b_new_values
+    data4b.view().variance    = data4b_new_variances
+
+    tt4b_new_values         = tt4b.values()
+    tt4b_new_variances      = tt4b.variances()
+    tt4b_new_values   [0:4] = tt4b_nTagJets.values()   [4:8]
+    tt4b_new_variances[0:4] = tt4b_nTagJets.variances()[4:8]
+    tt4b.view().value       = tt4b_new_values
+    tt4b.view().variance    = tt4b_new_variances
