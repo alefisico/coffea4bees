@@ -212,13 +212,13 @@ class _load_df_from_root(_load_df):
 
         import pandas as pd
         from base_class.root import Chunk
-        from classifier.process import process_state
+        from classifier.process import status
 
         dfs = []
         with ProcessPoolExecutor(
             max_workers=self._max_workers,
-            mp_context=process_state.context,
-            initializer=process_state.initializer,
+            mp_context=status.context,
+            initializer=status.initializer,
         ) as pool:
             chunks = []
             for _, files in self._from_root:
@@ -230,4 +230,4 @@ class _load_df_from_root(_load_df):
                     self._chunksize, *chunks[i], common_branches=True
                 )
                 dfs.append(pool.map(self._from_root[i][0].read, balanced))
-        return pd.concat(chain(*dfs), ignore_index=True)
+        return pd.concat(chain(*dfs), ignore_index=True, copy=False)

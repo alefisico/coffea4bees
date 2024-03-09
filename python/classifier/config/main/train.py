@@ -51,7 +51,7 @@ class Main(SelectDevice, LoadTrainingSets):
     def run(self, parser: EntryPoint):
         from concurrent.futures import ProcessPoolExecutor as Pool
 
-        from classifier.process import process_state
+        from classifier.process import status
 
         # load datasets in parallel
         datasets = self.load_training_sets(parser)
@@ -61,16 +61,16 @@ class Main(SelectDevice, LoadTrainingSets):
         timer = datetime.now()
         with Pool(
             max_workers=self.opts.max_trainers,
-            mp_context=process_state.context,
-            initializer=process_state.initializer,
+            mp_context=status.context,
+            initializer=status.initializer,
         ) as pool:
             models = [*chain(*pool.map(_init_model(datasets), m_initializer))]
         logging.info(f"Initialized {len(models)} models in {datetime.now() - timer}")
         # train models in parallel
         with Pool(
             max_workers=self.opts.max_trainers,
-            mp_context=process_state.context,
-            initializer=process_state.initializer,
+            mp_context=status.context,
+            initializer=status.initializer,
         ) as pool:
             results = [*pool.map(_train_model(self.device), models)]
 

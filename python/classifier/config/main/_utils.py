@@ -25,13 +25,13 @@ class SetupMultiprocessing(Main):
 
     def __init__(self):
         super().__init__()
-        from classifier.process import get_context, process_state
+        from classifier.process import get_context, status
         from classifier.process.initializer import torch_set_sharing_strategy
 
-        process_state.context = get_context(
+        status.context = get_context(
             method="forkserver", library="torch", preload=unique(self.opts.preload)
         )
-        process_state.initializer.add(torch_set_sharing_strategy("file_system"))
+        status.initializer.add(torch_set_sharing_strategy("file_system"))
 
 
 class SelectDevice(Main):
@@ -71,7 +71,7 @@ class LoadTrainingSets(SetupMultiprocessing):
     def load_training_sets(self, parser: EntryPoint):
         from concurrent.futures import ProcessPoolExecutor as Pool
 
-        from classifier.process import process_state
+        from classifier.process import status
         from torch.utils.data import ConcatDataset, StackDataset
 
         # load datasets in parallel
@@ -82,8 +82,8 @@ class LoadTrainingSets(SetupMultiprocessing):
         timer = datetime.now()
         with Pool(
             max_workers=self.opts.max_loaders,
-            mp_context=process_state.context,
-            initializer=process_state.initializer,
+            mp_context=status.context,
+            initializer=status.initializer,
         ) as pool:
             datasets = [*pool.map(_load_datasets(), d_loaders)]
         logging.info(f"Loaded {len(d_loaders)} datasets in {datetime.now() - timer}")

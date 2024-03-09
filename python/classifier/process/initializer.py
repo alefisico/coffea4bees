@@ -27,15 +27,15 @@ class _initializer:
 
 class inherit_context_initializer:
     def __getstate__(self):
-        return (process_state.context, process_state.initializer)
+        return (status.context, status.initializer)
 
     def __setstate__(self, states: tuple[Context, _initializer]):
         self._context, self._initializer = states
 
     def __call__(self):
-        process_state.context = self._context
-        process_state.initializer = self._initializer
-        process_state.is_main = False
+        status.context = self._context
+        status.initializer = self._initializer
+        status.is_main = False
 
 
 class torch_set_sharing_strategy:
@@ -57,7 +57,7 @@ class torch_set_sharing_strategy:
         mp.set_sharing_strategy(self.strategy)
 
 
-class process_state:
+class status:
     context: Context = None
     initializer = _initializer()
     is_main: bool = True

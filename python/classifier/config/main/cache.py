@@ -58,7 +58,7 @@ class Main(LoadTrainingSets):
         from concurrent.futures import ProcessPoolExecutor as Pool
 
         import numpy as np
-        from classifier.process import process_state
+        from classifier.process import status
 
         datasets = self.load_training_sets(parser)
         size = len(datasets)
@@ -76,8 +76,8 @@ class Main(LoadTrainingSets):
         timer = datetime.now()
         with Pool(
             max_workers=self.opts.max_writers,
-            mp_context=process_state.context,
-            initializer=process_state.initializer,
+            mp_context=status.context,
+            initializer=status.initializer,
         ) as pool:
             _ = pool.map(
                 _save_cache(datasets, IOSetting.output, self.opts.compression),

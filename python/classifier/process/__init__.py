@@ -4,7 +4,7 @@ import logging
 import os
 from typing import TYPE_CHECKING, Literal
 
-from .initializer import process_state
+from .initializer import status
 
 if TYPE_CHECKING:
     from multiprocessing.context import BaseContext
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
         Process: type[BaseProcess]
 
 
-__all__ = ["process_state", "is_poxis", "n_cpu", "get_context"]
+__all__ = ["status", "is_poxis", "n_cpu", "get_context"]
 
 
 def is_poxis():
