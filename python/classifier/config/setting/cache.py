@@ -1,14 +1,14 @@
 import pickle
 
 import fsspec
-from classifier.task.state import Cascade, share_global_state
+from classifier.task.state import Cascade, _share_global_state
 
 
 class save(Cascade):
     @classmethod
     def parse(cls, opts: list[str]):
         with fsspec.open(opts[0], "wb") as f:
-            pickle.dump(share_global_state(), f)
+            pickle.dump(_share_global_state(), f)
 
     @classmethod
     def help(cls):

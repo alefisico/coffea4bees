@@ -4,6 +4,7 @@ import logging
 from textwrap import indent
 from typing import Any, Mapping
 
+from ..process import status
 from .special import Static
 
 _MAX_WIDTH = 30
@@ -43,7 +44,7 @@ class GlobalState(metaclass=_CachedStateMeta):
         cls._states.append(cls)
 
 
-class share_global_state:
+class _share_global_state:
     def __getstate__(self):
         return (
             *filter(
@@ -63,6 +64,9 @@ class share_global_state:
             for k, v in vars.items():
                 setattr(cls, k, v)
         del self._states
+
+
+status.initializer.add_unique(_share_global_state)
 
 
 class Cascade(GlobalState, Static):

@@ -2,30 +2,42 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Callable, Literal
 
-from ..task.state import share_global_state
-
 if TYPE_CHECKING:
     from . import Context
 
 
 class _initializer:
     def __init__(self, *funcs: Callable):
-        self.funcs: list[Callable] = []
-        self.add(
-            inherit_context_initializer(),
-            share_global_state(),
-        )
+        self._funcs: list[Callable] = []
         self.add(*funcs)
 
     def add(self, *funcs: Callable):
-        self.funcs.extend(funcs)
+        self._funcs.extend(funcs)
+
+    def add_unique(self, cls):
+        if isinstance(cls, type):
+            for func in self._funcs:
+                if isinstance(func, cls):
+                    return
+            cls = cls()
+        else:
+            for func in self._funcs:
+                if func is cls:
+                    return
+        self._funcs.append(cls)
 
     def __call__(self):
-        for func in self.funcs:
+        for func in self._funcs:
             func()
 
 
-class inherit_context_initializer:
+class status:
+    context: Context = None
+    initializer = _initializer()
+    is_main: bool = True
+
+
+class _inherit_context_initializer:
     def __getstate__(self):
         return (status.context, status.initializer)
 
@@ -36,6 +48,9 @@ class inherit_context_initializer:
         status.context = self._context
         status.initializer = self._initializer
         status.is_main = False
+
+
+status.initializer.add_unique(_inherit_context_initializer)
 
 
 class torch_set_sharing_strategy:
@@ -55,9 +70,3 @@ class torch_set_sharing_strategy:
         import torch.multiprocessing as mp
 
         mp.set_sharing_strategy(self.strategy)
-
-
-class status:
-    context: Context = None
-    initializer = _initializer()
-    is_main: bool = True
