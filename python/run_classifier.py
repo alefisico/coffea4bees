@@ -2,6 +2,7 @@ import logging
 from datetime import datetime
 
 from base_class.addhash import get_git_diff, get_git_revision_hash
+from classifier.patch import patch_awkward_pandas
 from classifier.task import EntryPoint
 
 logging.getLogger().setLevel(logging.INFO)
@@ -16,5 +17,6 @@ def reproducible():
 
 
 if __name__ == "__main__":
+    patch_awkward_pandas()
     main = EntryPoint()
     main.run(reproducible)

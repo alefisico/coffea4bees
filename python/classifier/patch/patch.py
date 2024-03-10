@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import sys
 from collections import defaultdict
-from importlib.abc import Loader
-from types import ModuleType
-from typing import Callable
+from typing import TYPE_CHECKING, Callable
 
 from ..process import status
 from ..task import GlobalState
+
+if TYPE_CHECKING:
+    from importlib.abc import Loader
+    from types import ModuleType
 
 
 class _PatchedLoader:
