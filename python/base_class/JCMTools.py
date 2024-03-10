@@ -1,7 +1,7 @@
 from scipy.special import comb
 import numpy as np
 from coffea.util import load
-from base_class.plots.plots import load_config, load_hists, read_axes_and_cuts, get_cut_dict
+from base_class.plots.plots import get_cut_dict
 import base_class.plots.iPlot_config as cfg
 import hist
 from copy import copy
@@ -92,6 +92,9 @@ class jetCombinatoricModel:
     def nTagPred_values(self, n):
         return self._nTagPred_values(self.fit_parameters + [self.threeTightTagFraction.fix] , n)
 
+    
+    def nJetPred_values(self, n):
+        return self.bkgd_func_njet_constrained(n, *self.fit_parameters)
 
     def _nTagPred_errors(self, par, n):
         output = np.zeros(len(n))
@@ -203,11 +206,7 @@ def loadROOTHists(inputFile):
     return data4b, data3b, tt4b, tt3b, qcd4b, qcd3b, data4b_nTagJets, tt4b_nTagJets, qcd3b_nTightTags
 
 
-def loadCoffeaHists(inputFile, metadata, *, cut="passPreSel", year="RunII", weightRegion="SB"):
-
-    cfg.plotConfig = load_config(metadata)
-    cfg.hists = load_hists([inputFile])
-    cfg.axisLabels, cfg.cutList = read_axes_and_cuts(cfg.hists, cfg.plotConfig)
+def loadCoffeaHists(cfg,  *, cut="passPreSel", year="RunII", weightRegion="SB"):
 
     cutDict = get_cut_dict(cut, cfg.cutList)
 

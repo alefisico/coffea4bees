@@ -6,82 +6,20 @@ import os
 from hist import Hist
 
 sys.path.insert(0, os.getcwd())
-
-
+import base_class.plots.iPlot_config as cfg
 from base_class.JCMTools import getCombinatoricWeight, getPseudoTagProbs, loadROOTHists, loadCoffeaHists, data_from_Hist, prepHists, jetCombinatoricModel
+from base_class.plots.plots import load_config, load_hists, read_axes_and_cuts, get_cut_dict, makePlot
 
 #
 #  To do:
 #    - add limit consgtraints
-#    - make plots
+#    - Ration of data to JCM in plots
 
 def write_to_JCM_file(text, value):
     jetCombinatoricModelFile.write(text + "               " + str(value) + "\n")
 
     jetCombinatoricModelFile_yml.write(text + ":\n")
     jetCombinatoricModelFile_yml.write("        " + str(value) + "\n")
-
-
-# To add
-
-#
-#    #jetCombinatoricModelRoot.Close()
-#
-#    samples=collections.OrderedDict()
-#    samples[JCMROOTFileName] = collections.OrderedDict()
-#    samples[JCMROOTFileName][data4b.GetName()] = {
-#        "label" : ("Data %.1f/fb, "+o.year)%(lumi),
-#        "legend": 1,
-#        "isData" : True,
-#        "ratio" : "numer A",
-#        "color" : "ROOT.kBlack"}
-#    samples[JCMROOTFileName][qcd3b.GetName()] = {
-#        "label" : "Multijet Model",
-#        "weight": mu_qcd,
-#        "legend": 2,
-#        "stack" : 3,
-#        "ratio" : "denom A",
-#        "color" : "ROOT.kYellow"}
-#    if tt4b:
-#        samples[JCMROOTFileName][tt4b.GetName()] = {
-#            "label" : "t#bar{t}",
-#            "legend": 3,
-#            "stack" : 2,
-#            "ratio" : "denom A",
-#            "color" : "ROOT.kAzure-9"}
-#    #samples[JCMROOTFileName][tf1_bkgd_njet.GetName()] = {
-#    samples[JCMROOTFileName]["background_TH1"] = {
-#        "label" : "JCM Fit",
-#        "legend": 4,
-#        "ratio": "denom A",
-#        "color" : "ROOT.kRed"}
-#
-#    #xTitle = "Number of b-tags - 4"+" "*31+"Number of Selected Jets"
-#    xTitle = "Extra b-tags"+" "*36+"Number of Selected Jets"
-#    parameters = {"titleLeft"   : "#bf{CMS} Internal",
-#                  "titleCenter" : regionNames[o.weightRegion],
-#                  "titleRight"  : cutTitle,
-#                  "maxDigits"   : 4,
-#                  "ratio"     : True,
-#                  "rMin"      : 0,
-#                  "rMax"      : 2,
-#                  "xMin"      : 0.5,
-#                  "xMax"      : 14.5,
-#                  "rTitle"    : "Data / Bkgd.",
-#                  "xTitle"    : xTitle,
-#                  "yTitle"    : "Events",
-#                  "legendSubText" : ["",
-#                                     "#bf{Fit Result:}",
-#                                     "#font[12]{f} = %0.3f #pm %0.1f%%"%(jetCombinatoricModels[cut].pseudoTagProb.value, jetCombinatoricModels[cut].pseudoTagProb.percentError),
-#                                     "#font[12]{e} = %0.2f #pm %0.1f%%"%(jetCombinatoricModels[cut].pairEnhancement.value, jetCombinatoricModels[cut].pairEnhancement.percentError),
-#                                     "#font[12]{d} = %0.2f #pm %0.1f%%"%(jetCombinatoricModels[cut].pairEnhancementDecay.value, jetCombinatoricModels[cut].pairEnhancementDecay.percentError),
-#                                     "#chi^{2}/DoF = %0.2f"%(chi2/ndf),
-#                                     "p-value = %2.0f%%"%(prob*100),
-#                                     ],
-#                  "outputDir" : o.outputDir,
-#                  "outputName": "nSelJets"+st+"_"+cut+"_postfit_tf1"}
-#
-#    PlotTools.plot(samples, parameters)
 
 
 if __name__ == "__main__":
@@ -125,7 +63,11 @@ if __name__ == "__main__":
     if args.ROOTInputs:
         data4b, data3b, tt4b, tt3b, qcd4b, qcd3b, data4b_nTagJets, tt4b_nTagJets, qcd3b_nTightTags = loadROOTHists(args.inputFile)
     else:
-        data4b, data3b, tt4b, tt3b, qcd4b, qcd3b, data4b_nTagJets, tt4b_nTagJets, qcd3b_nTightTags = loadCoffeaHists(args.inputFile, args.metadata,
+        cfg.plotConfig = load_config(args.metadata)
+        cfg.hists = load_hists([args.inputFile])
+        cfg.axisLabels, cfg.cutList = read_axes_and_cuts(cfg.hists, cfg.plotConfig)
+
+        data4b, data3b, tt4b, tt3b, qcd4b, qcd3b, data4b_nTagJets, tt4b_nTagJets, qcd3b_nTightTags = loadCoffeaHists(cfg,
                                                                                                                      cut=cut, year=args.year, weightRegion=args.weightRegion)
 
     #
@@ -136,7 +78,7 @@ if __name__ == "__main__":
     print("nSelJetsUnweighted", "data4b.Integral()", np.sum(data4b.values()), "\ndata3b.Integral()", np.sum(data3b.values()))
     print("nSelJetsUnweighted", "  tt4b.Integral()", np.sum(tt4b.values()),   "\nqcd3b.Integral()",   np.sum(qcd3b.values()))
 
-    # mu_qcd = np.sum(qcd4b.values()) / np.sum(qcd3b.values())
+    mu_qcd = np.sum(qcd4b.values()) / np.sum(qcd3b.values())
     # n4b = np.sum(data4b.values())
     threeTightTagFraction = qcd3b_nTightTags.values()[3] / np.sum(qcd3b_nTightTags.values())
 
@@ -225,92 +167,70 @@ if __name__ == "__main__":
     write_to_JCM_file("p-value",   JCM_model.fit_prob)
 
     n5b_true = data4b_nTagJets.values()[5]
-    n5b_pred = JCM_model.nTagPred_values(bin_centers.astype(int) + 4)[5]
+    nTag_pred = JCM_model.nTagPred_values(bin_centers.astype(int) + 4)
+    n5b_pred = nTag_pred[5]
     n5b_pred_error = JCM_model.nTagPred_errors(bin_centers.astype(int) + 4)[5]
     print(f"Fitted number of 5b events: {n5b_pred:5.1f} +/- {n5b_pred_error:5f}")
     print(f"Actual number of 5b events: {n5b_true:5.1f}, ({(n5b_true-n5b_pred)/n5b_pred**0.5:3.1f} sigma pull)")
     write_to_JCM_file("n5b_pred", n5b_pred)
     write_to_JCM_file("n5b_true", n5b_true)
 
-#    background_TH1 = data4b.Clone("background_TH1")
-#    background_TH1.Reset()
-#
-#    # Reset bin error for plotting
-#    for bin in range(1,data4b.GetSize()-2):
-#        if data4b.GetBinContent(bin) > 0:
-#            data4b_error = data4b.GetBinContent(bin)**0.5
-#            data4b.SetBinError(bin, data4b_error)
-#
-#        binCenter = int(background_TH1.GetBinCenter(bin))
-#        bc = tf1_bkgd_njet.Eval(binCenter)
-#        background_TH1.SetBinContent(bin, bc)
-#        if binCenter < 4:
-#            bc, be = nTagPred(tf1_bkgd_njet.GetParameters(), binCenter+4)
-#        else:
-#            te = tt4b.GetBinError(bin) if tt4b else 0
-#            qc = qcd3b.GetBinContent(bin)
-#            qe = qcd3b.GetBinError(bin)
-#            be = (te**2 + (qe*bc/qc if qc else 0)**2)**0.5
-#        background_TH1.SetBinError(bin, be)
-#    background_TH1.Write()
-#
-#    c=ROOT.TCanvas(cut+"_postfit_tf1","Post-fit")
-#    #data4b.SetLineColor(ROOT.kBlack)
-#    data4b.GetYaxis().SetTitleOffset(1.5)
-#    data4b.GetYaxis().SetTitle("Events")
-#    xTitle = "Number of b-tags - 4"+" "*63+"Number of Selected Jets"
-#    data4b.GetXaxis().SetTitle(xTitle)
-#    data4b.Draw("P EX0")
-#    data4b.Write()
-#    qcdDraw = ROOT.TH1F(qcd3b)
-#    qcdDraw.SetName(qcd3b.GetName()+"draw")
-#    qcd3b.Write()
-#
-#    stack = ROOT.THStack("stack","stack")
-#    #mu_qcd = qcd4b.Integral()/qcdDraw.Integral()
-#    print("mu_qcd = %f +/- %f%%"%(mu_qcd, 100*n4b**-0.5))
-#    write_to_JCM_file("mu_qcd_"+cut, str(mu_qcd))
-#    #jetCombinatoricModelFile.write("mu_qcd_"+cut+"       "+str(mu_qcd)+"\n")
-#    qcdDraw.Scale(mu_qcd)
-#    qcdDraw.SetLineColor(ROOT.kMagenta)
-#    #stack.Add(qcdDraw,"hist")
-#    #stack.Draw("HIST SAME")
-#    if tt4b:
-#        stack.Add(tt4b)
-#        tt4b.Write()
-#    stack.Add(qcdDraw)
-#    #qcdDraw.Write()
-#    stack.Draw("HIST SAME")
-#    #qcd3b.Draw("HIST SAME")
-#    data4b.SetStats(0)
-#    data4b.SetMarkerStyle(20)
-#    data4b.SetMarkerSize(0.7)
-#    data4b.Draw("P EX0 SAME axis")
-#    data4b.Draw("P EX0 SAME")
-#    background_TH1.SetLineColor(ROOT.kRed)
-#    background_TH1.Draw("HIST SAME")
-#    #tf1_bkgd_njet.SetLineColor(ROOT.kRed)
-#    #tf1_bkgd_njet.Draw("SAME")
-#    tf1_bkgd_njet.Write()
-#
-#    xleg, yleg = [0.67, 0.9-0.035], [0.9-0.06*4, 0.9-0.035]
-#    leg = ROOT.TLegend(xleg[0], yleg[0], xleg[1], yleg[1])
-#    leg.AddEntry(data4b, "Data "+str(lumi)+"/fb, "+args.year)
-#    leg.AddEntry(qcdDraw, "Multijet Model")
-#    if tt4b:
-#        leg.AddEntry(tt4b, "t#bar{t}")
-#    leg.AddEntry(background_TH1, "JCM Fit")
-#    #leg.AddEntry(tf1_bkgd_njet, "JCM Fit")
-#    leg.Draw()
-#
-#    c.Update()
-#    print(c.GetFrame().GetY1(),c.GetFrame().GetY2())
-#    line=ROOT.TLine(3.5,-5000,3.5,c.GetFrame().GetY2())
-#    line.SetLineColor(ROOT.kBlack)
-#    line.Draw()
-#    histName = args.outputDir+"/"+"nJets_"+cut+"_postfit_tf1.pdf"
-#    print(histName)
-#    c.SaveAs(histName)
+
+    #
+    #  Plots
+    #
+
+    
+    #
+    #  Sclae QCD by mu_qcd
+    #
+    cfg.plotConfig["stack"]["MultiJet"]["sum"]["data_3tag"]["scalefactor"] = mu_qcd
+
+    #
+    #  Plot the jet multiplicity
+    #
+    nJet_pred = JCM_model.nJetPred_values(bin_centers.astype(int))
+    nJet_pred[0:4] = 0
+    
+    #
+    # Add dummy values to add the JCM process
+    #
+    dummy_data = {
+        'process': ['JCM'],  
+        'year': ['UL18'],  'tag': [4],  'region': [1],  
+        'passPreSel': [True], 'passSvB': [False],  'failSvB': [False],   'n': [0],  
+    }
+    cfg.hists[0]["hists"]["selJets_noJCM.n"].fill(**dummy_data)
+
+    #
+    # OVerwrite with predicted values
+    #
+    for iBin in range(14):
+        cfg.hists[0]["hists"]["selJets_noJCM.n"]["JCM","UL18",1,1,True,False,False,iBin] = (nJet_pred[iBin], 0)
+    
+    plot_options = {"doRatio":True,
+                    "xlim":[4,15]}
+    makePlot(cfg.hists[0], cfg.cutList, cfg.plotConfig, var="selJets_noJCM.n",
+             cut="passPreSel", region="SB",
+             outputFolder=args.outputDir, **plot_options)
+
+
+    #
+    #  Plot NTagged Jets
+    #
+    cfg.hists[0]["hists"]["tagJets_noJCM.n"].fill(**dummy_data)
+    
+    #
+    # OVerwrite with predicted values
+    #
+    for iBin in range(15):
+        cfg.hists[0]["hists"]["tagJets_noJCM.n"]["JCM","UL18",1,1,True,False,False,iBin] = (nTag_pred[iBin], 0)
+
+    plot_options = {"doRatio":True,
+                    "xlim":[4,15]}
+    makePlot(cfg.hists[0], cfg.cutList, cfg.plotConfig, var="tagJets_noJCM.n",
+             cut="passPreSel", region="SB",
+             outputFolder=args.outputDir, **plot_options)
 
     jetCombinatoricModelFile.close()
     jetCombinatoricModelFile_yml.close()
