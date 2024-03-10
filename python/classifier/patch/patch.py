@@ -33,15 +33,13 @@ class _PatchedLoader:
 
 
 def _install_patch():
-    if not Patch._installed and Patch not in sys.meta_path:
+    if Patch not in sys.meta_path:
         sys.meta_path.insert(0, Patch)
-        Patch._installed = True
         status.initializer.add_unique(_install_patch)
 
 
 class Patch(GlobalState):
     _post_import: dict[str, list[Callable[[ModuleType], None]]] = defaultdict(list)
-    _installed = False
 
     @classmethod
     def find_spec(cls, fullname, path, target=None):
