@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from functools import cached_property
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable, Iterable
 
 from ..config.setting.df import Columns
 from ..config.state.label import MultiClass
 
 if TYPE_CHECKING:
+    import numpy.typing as npt
     import pandas as pd
 
 
@@ -111,12 +112,41 @@ class rename_columns:
         return df
 
 
-class normalize_weight:
-    def __init__(self, norm: float = 1.0):
-        self._norm = norm
+class prescale:
+    def __init__(
+        self,
+        scale: int,
+        selection: Callable[[pd.DataFrame], npt.ArrayLike] = None,
+        shuffle: bool = False,
+        scale_columns: Iterable[str] = None,
+    ):
+        if not (0 < scale < 1):
+            raise ValueError(f"scale must be in the range (0, 1], got {scale}")
+        self._scale = scale
+        self._selection = selection
+        self._shuffle = shuffle
+        self._scale_columns = set(scale_columns or ())
+        self._scale_columns.add(Columns.weight)
 
     def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
-        df.loc[:, (Columns.weight_normalized,)] = df[Columns.weight] / (
-            df[Columns.weight].sum() / self._norm
-        )
-        return df
+        import numpy as np
+
+        if self._selection is not None:
+            mask = self._selection(df)
+        else:
+            mask = np.full(len(df), True)
+        index = np.arange(len(df))[mask]
+        if self._shuffle:
+            np.random.shuffle(index)
+
+        weight = np.abs(df[Columns.weight].to_numpy())
+        weight = weight[index]
+        summed = np.cumsum(weight)
+        last = np.searchsorted(summed, self._scale * summed[-1])
+        scale = summed[last] / summed[-1]
+        df.loc[index[: last + 1], [*self._scale_columns]] /= scale
+
+        kept = np.full(len(df), False)
+        kept[~mask] = True
+        kept[index[: last + 1]] = True
+        return df[kept]

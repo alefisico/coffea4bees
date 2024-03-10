@@ -46,7 +46,7 @@ class _Common(LoadGroupedRoot):
             .add(Columns.event_offset, Columns.index_dtype).columns(Columns.event_offset)
             .add(Columns.label_index, Columns.index_dtype).columns(Columns.label_index)
             .add("region_index", Columns.index_dtype).columns("region_index")
-            .add("weight", "float32").columns("weight")
+            .add(Columns.weight, "float32").columns(Columns.weight)
             .add("ancillary", "float32").columns(*InputBranch.feature_ancillary)
             .add("CanJet", "float32").columns(*InputBranch.feature_CanJet, target=InputBranch.n_CanJet)
             .add("NotCanJet", "float32").columns(*InputBranch.feature_NotCanJet, target=InputBranch.n_NotCanJet)
