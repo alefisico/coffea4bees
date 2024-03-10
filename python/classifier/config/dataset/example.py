@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from abc import abstractmethod
-from functools import cache
+from functools import cache, cached_property
 from typing import TYPE_CHECKING, Callable, Iterable
 
 from classifier.df.tools import (
@@ -15,8 +15,8 @@ from classifier.df.tools import (
 )
 
 from ...utils import subgroups
-from ..model.example import features
 from ..setting.df import Columns
+from ..setting.HCR import InputBranch
 from ._df import LoadGroupedRoot
 
 if TYPE_CHECKING:
@@ -26,9 +26,7 @@ if TYPE_CHECKING:
 class _Common(LoadGroupedRoot):
     _year_pattern = re.compile(r"20\d{2}")
 
-    _CanJet = [*map("CanJet_{}".format, features.candidate_jet)]
-    _NotCanJet = [*map("NotCanJet_{}".format, features.other_jet)]
-    _branches = {
+    _other_branches = [
         "ZZSR",
         "ZHSR",
         "HHSR",
@@ -36,12 +34,9 @@ class _Common(LoadGroupedRoot):
         "fourTag",
         "threeTag",
         "passHLT",
-        "nSelJets",
-        "weight",
         "event",
-        *_CanJet,
-        *_NotCanJet,
-    }
+        "weight",
+    ]
 
     def __init__(self):
         super().__init__()
@@ -51,33 +46,28 @@ class _Common(LoadGroupedRoot):
             .add(Columns.event_offset, Columns.index_dtype).columns(Columns.event_offset)
             .add(Columns.label_index, Columns.index_dtype).columns(Columns.label_index)
             .add("region_index", Columns.index_dtype).columns("region_index")
-            .add("weight", "float32").columns("genWeight")
-            .add("ancillary", "float32").columns(*features.ancillary)
-            .add("candidate_jet", "float32").columns(*self._CanJet, target=features.candidate_jet_max)
-            .add("other_jet", "float32").columns(*self._NotCanJet, target=features.other_jet_max)
+            .add("weight", "float32").columns("weight")
+            .add("ancillary", "float32").columns(*InputBranch.feature_ancillary)
+            .add("CanJet", "float32").columns(*InputBranch.feature_CanJet, target=InputBranch.n_CanJet)
+            .add("NotCanJet", "float32").columns(*InputBranch.feature_NotCanJet, target=InputBranch.n_NotCanJet)
         )
-        # fmt: on
         self.preprocessors.extend(
             [
                 add_event_offset(60),  # 1, 2, 3, 4, 5, 6 folds
                 map_selection_to_index(
                     SB=0b10, ZZSR=0b00101, ZHSR=0b01001, HHSR=0b10001
                 ).set(selection="region_index"),
-                map_selection_to_index(fourTag=0b10, threeTag=0b01).set(
-                    selection="ntag_index"
-                ),
+                map_selection_to_index(
+                    fourTag=0b10, threeTag=0b01
+                ).set(selection="ntag_index"),
                 drop_columns(
-                    "ZZSR",
-                    "ZHSR",
-                    "HHSR",
-                    "SB",
-                    "fourTag",
-                    "threeTag",
-                    "passHLT",
-                    "event",
+                    "ZZSR", "ZHSR", "HHSR", "SB",
+                    "fourTag", "threeTag",
+                    "passHLT", "event",
                 ),
             ]
         )
+        # fmt: on
 
     def _get_year(self, groups: frozenset[str]):
         matched = [*filter(self._year_pattern.fullmatch, groups)]
@@ -85,7 +75,7 @@ class _Common(LoadGroupedRoot):
             return int(matched[0])
 
     def _get_label(self, groups: frozenset[str]):
-        matched = groups.intersection(self.allowed_labels)
+        matched = groups.intersection(self._allowed_labels)
         if len(matched) >= 1:
             return next(iter(matched))
 
@@ -102,8 +92,8 @@ class _Common(LoadGroupedRoot):
                 break
 
         pres = []
-        for gs, ps in self._preprocessor_by_label():
-            if gs.intersection(groups):
+        for gs, ps in self._preprocessor_by_label:
+            if gs.intersection(subs):
                 pres.extend(ps)
         pres.extend(self.preprocessors)
 
@@ -117,32 +107,39 @@ class _Common(LoadGroupedRoot):
 
         return FromRoot(
             friends=friends,
-            branches=self._branches,
+            branches=self._branches.intersection,
             preprocessors=pres,
             metadata=metadata,
         )
 
-    @classmethod
-    @cache
-    def _allowed_labels(cls):
-        return frozenset(cls.allowed_labels())
+    @cached_property
+    def _allowed_labels(self):
+        return frozenset(self.allowed_labels)
 
-    @classmethod
-    @cache
-    def _preprocessor_by_label(cls):
+    @cached_property
+    def _preprocessor_by_label(self):
         return [
             (set(frozenset(g) for g in gs), [*ps])
-            for gs, ps in cls.preprocessor_by_label()
+            for gs, ps in self.preprocessor_by_label
         ]
 
-    @classmethod
-    @abstractmethod
-    def allowed_labels(cls) -> Iterable[str]: ...
+    @cached_property
+    def _branches(self):
+        return set(
+            self._other_branches
+            + InputBranch.feature_ancillary
+            + InputBranch.feature_CanJet
+            + InputBranch.feature_NotCanJet
+        )
 
-    @classmethod
+    @property
+    @abstractmethod
+    def allowed_labels(self) -> Iterable[str]: ...
+
+    @property
     @abstractmethod
     def preprocessor_by_label(
-        cls,
+        self,
     ) -> Iterable[
         tuple[Iterable[Iterable[str]], Iterable[Callable[[pd.DataFrame], pd.DataFrame]]]
     ]: ...
@@ -153,10 +150,12 @@ class FvT(_Common):
         super().__init__()
         # TODO normalization
 
-    def allowed_labels(cls):
+    @property
+    def allowed_labels(self):
         return []
 
-    def preprocessor_by_label(cls):
+    @property
+    def preprocessor_by_label(self):
         return [
             (
                 [

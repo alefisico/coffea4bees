@@ -1,8 +1,6 @@
 import logging
 
 from classifier.task import ArgParser, EntryPoint, main
-from rich.console import Console
-from rich.logging import RichHandler
 
 
 class Main(main.Main):
@@ -10,30 +8,26 @@ class Main(main.Main):
         prog="debug",
         description="Debug tasks.",
         workflow=[
-            ("main", f"call [blue]task.debug(logger)[/blue]"),
+            ("main", f"call [blue]task.debug()[/blue]"),
         ],
     )
 
     def __init__(self):
         super().__init__()
-        self._console = Console(record=True)
-        self._logger = logging.Logger("debug", logging.DEBUG)
-        self._logger.addHandler(
-            RichHandler(logging.DEBUG, console=self._console, markup=True)
-        )
 
     def run(self, parser: EntryPoint):
-        logger = self._logger
+        logger = logging.getLogger()
+        logger.setLevel(logging.DEBUG)
         for k, v in parser.mods.items():
-            logger.debug(f"Checking [blue]{k}[/blue]...")
+            logging.debug(f"Checking [blue]{k}[/blue]...")
             args = parser.args[k]
             for t, arg in zip(v, args):
-                logger.debug(
+                logging.debug(
                     f'[green]{arg[0]}[/green] [yellow]{" ".join(arg[1])}[/yellow]'
                 )
                 try:
-                    t.debug(logger)
+                    t.debug()
                 except NotImplementedError:
                     ...
                 except Exception as e:
-                    logger.error(f"{e}")
+                    logging.error(f"{e}")
