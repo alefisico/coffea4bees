@@ -115,38 +115,41 @@ class rename_columns:
 class prescale:
     def __init__(
         self,
-        scale: int,
+        scale: float,
         selection: Callable[[pd.DataFrame], npt.ArrayLike] = None,
         shuffle: bool = False,
         scale_columns: Iterable[str] = None,
     ):
-        if not (0 < scale < 1):
-            raise ValueError(f"scale must be in the range (0, 1], got {scale}")
-        self._scale = scale
+        if scale < 1:
+            raise ValueError(f"Scale must be greater than 1, got {scale}")
+        self._scale = 1.0 / scale
         self._selection = selection
         self._shuffle = shuffle
         self._scale_columns = set(scale_columns or ())
         self._scale_columns.add(Columns.weight)
 
     def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
+        if self._scale == 1.0:
+            return df
+
         import numpy as np
+        import pandas as pd
 
         if self._selection is not None:
-            mask = self._selection(df)
+            mask = np.asarray(self._selection(df))
         else:
             mask = np.full(len(df), True)
-        index = np.arange(len(df))[mask]
+        index = df.index[mask]
         if self._shuffle:
             np.random.shuffle(index)
 
-        weight = np.abs(df[Columns.weight].to_numpy())
-        weight = weight[index]
+        weight = np.abs(df.loc[index, Columns.weight].to_numpy())
         summed = np.cumsum(weight)
         last = np.searchsorted(summed, self._scale * summed[-1])
         scale = summed[last] / summed[-1]
         df.loc[index[: last + 1], [*self._scale_columns]] /= scale
 
-        kept = np.full(len(df), False)
-        kept[~mask] = True
-        kept[index[: last + 1]] = True
+        kept = pd.Series(False, index=df.index)
+        kept.loc[~mask] = True
+        kept.loc[index[: last + 1]] = True
         return df[kept]

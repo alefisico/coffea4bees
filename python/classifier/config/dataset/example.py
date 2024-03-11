@@ -1,5 +1,3 @@
-# TODO for test only, will be removed or rewritten
-# TODO work in progress to match new skimmed data
 from __future__ import annotations
 
 import re
@@ -12,6 +10,7 @@ from classifier.df.tools import (
     add_label_index_from_column,
     drop_columns,
     map_selection_to_index,
+    prescale,
 )
 
 from ...utils import subgroups
@@ -145,6 +144,14 @@ class _Common(LoadGroupedRoot):
     ]: ...
 
 
+def _FvT_selection(df):
+    return df[df["SB"] & df["passHLT"] & (df["fourTag"] | df["threeTag"])]
+
+
+def _ttbar_3b_prescale(df):
+    return df["threeTag"]
+
+
 class FvT(_Common):
     def __init__(self):
         super().__init__()
@@ -162,6 +169,7 @@ class FvT(_Common):
                     ("data",),
                 ],
                 [
+                    _FvT_selection,
                     add_label_index_from_column(threeTag="d3", fourTag="d4"),
                 ],
             ),
@@ -170,6 +178,8 @@ class FvT(_Common):
                     ("ttbar",),
                 ],
                 [
+                    _FvT_selection,
+                    prescale(10, selection=_ttbar_3b_prescale),
                     add_label_index_from_column(threeTag="t3", fourTag="t4"),
                 ],
             ),

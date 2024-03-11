@@ -87,15 +87,15 @@ class KFoldClassifier(ABC, Model):
 class _train_classifier:
     def __init__(
         self,
-        model: Classifier,
+        classifier: Classifier,
         training: Dataset,
         validation: Dataset,
     ):
-        self._model = model
+        self._classifier = classifier
         self._training = training
         self._validation = validation
 
     def __call__(self, device: Device):
-        return self._model.train(
+        return self._classifier.train(
             training=self._training, validation=self._validation, device=device
         )

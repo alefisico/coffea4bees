@@ -28,7 +28,7 @@ class TaskBase:
     def parse(self, opts: list[str]): ...
 
     @interface
-    def debug(self, logger: Logger): ...
+    def debug(self): ...
 
     @classmethod
     @interface
@@ -52,7 +52,7 @@ class Static(TaskBase):
 
     @classmethod
     @interface
-    def debug(cls, logger: Logger): ...
+    def debug(cls): ...
 
     def __new__(cls):
         return cls

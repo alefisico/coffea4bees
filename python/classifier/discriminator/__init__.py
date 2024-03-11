@@ -1,4 +1,3 @@
-# TODO testing with new data
 # TODO multiprocessing
 from __future__ import annotations
 
@@ -6,7 +5,7 @@ import gc
 import uuid
 from abc import ABC, abstractmethod
 from functools import cached_property, reduce
-from typing import Optional
+from typing import Iterable
 
 import torch
 from torch import Tensor, nn
@@ -16,6 +15,36 @@ from ..config.setting.default import DataLoader as DLSetting
 from ..config.state.monitor import Classifier as Monitor
 from ..nn.schedule import Schedule
 from ..process.device import Device
+
+
+class Module(ABC):
+    def eval(self):
+        self.module.eval()
+
+    def train(self):
+        self.module.train()
+
+    def parameters(self):
+        return self.module.parameters()
+
+    def to(self, device: torch.device):
+        self.module.to(device)
+
+    @property
+    def n_parameters(self) -> int:
+        return sum(p.numel() for p in self.module.parameters())
+
+    @property
+    @abstractmethod
+    def module(self) -> nn.Module: ...
+
+    @abstractmethod
+    def forward(
+        self, batch: dict[str, Tensor], validation: bool = False
+    ) -> dict[str, Tensor]: ...
+
+    @abstractmethod
+    def loss(self, pred: dict[str, Tensor]) -> Tensor: ...
 
 
 class Classifier(ABC):
@@ -32,36 +61,13 @@ class Classifier(ABC):
         gc.collect()
 
     @cached_property
-    def n_trainable_parameters(self):
-        return sum(p.numel() for p in self.model.parameters() if p.requires_grad)
-
-    @cached_property
     def min_memory(self):
         return 0
 
-    @property
     @abstractmethod
-    def model(self) -> nn.Module: ...
-
-    @property
-    @abstractmethod
-    def train_schedule(self) -> Schedule: ...
-
-    @property
-    @abstractmethod
-    def finetune_schedule(self) -> Optional[Schedule]: ...
-
-    @abstractmethod
-    def setup_finetune(self):  # TODO modify
-        ...
-
-    @abstractmethod
-    def forward(
-        self, batch: dict[str, Tensor], validation: bool = False
-    ) -> dict[str, Tensor]: ...
-
-    @abstractmethod
-    def loss(self, pred: dict[str, Tensor]) -> Tensor: ...
+    def train_schedules(
+        self,
+    ) -> Iterable[tuple[str, Schedule, Module]]: ...
 
     def train(
         self,
@@ -74,16 +80,13 @@ class Classifier(ABC):
             "uuid": str(self.uuid),
             "name": self.name,
             "metadata": self.metadata,
-            "parameters": self.n_trainable_parameters,
+            "parameters": {},
             "benchmark": {},
         }
-        result["benchmark"]["train"] = self._train(
-            training, validation, self.train_schedule, "training steps"
-        )
-        if self.finetune_schedule is not None:
-            self.setup_finetune()
-            result["benchmark"]["finetune"] = self._train(
-                training, validation, self.finetune_schedule, "finetuning steps"
+        for name, schedule, module in self.train_schedules():
+            result["parameters"][name] = module.n_parameters
+            result["benchmark"][name] = self._train(
+                module, training, validation, schedule, name
             )
         return result
 
@@ -109,13 +112,14 @@ class Classifier(ABC):
 
     def _train(
         self,
+        module: Module,
         training: Dataset,
         validation: Dataset,
         schedule: Schedule,
         name: str,
     ):
         # training preparation
-        optimizer = schedule.optimizer(self.model.parameters())
+        optimizer = schedule.optimizer(module.parameters())
         lr = schedule.lr_scheduler(optimizer)
         bs = schedule.bs_scheduler(
             dataset=training,
@@ -129,11 +133,11 @@ class Classifier(ABC):
         datasets = {"training": training, "validation": validation}
         for epoch in range(schedule.epoch):
             self.cleanup()
-            self.model.train()
+            module.train()
             for batch in bs.dataloader:
                 optimizer.zero_grad()
-                pred = self.forward(batch)
-                loss = self.loss(pred)
+                pred = module.forward(batch)
+                loss = module.loss(pred)
                 loss.backward()
                 optimizer.step()
             benchmark.append(
@@ -151,15 +155,16 @@ class Classifier(ABC):
     @torch.no_grad()
     def _evaluate(
         self,
-        validation: Dataset,
+        module: Module,
+        dataset: Dataset,
     ):
         loader = DataLoader(
-            validation,
+            dataset,
             batch_size=DLSetting.batch_eval,
             num_workers=DLSetting.num_workers,
             shuffle=False,
             drop_last=False,
         )
-        self.model.eval()
-        preds = [self.forward(batch, validation=True) for batch in loader]
+        module.eval()
+        preds = [module.forward(batch, validation=True) for batch in loader]
         return {k: torch.cat([p[k] for p in preds], dim=0) for k in preds[0]}
