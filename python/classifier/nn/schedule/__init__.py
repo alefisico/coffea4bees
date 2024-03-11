@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from bisect import bisect_right
 from typing import TYPE_CHECKING, Iterable, Optional
 
 if TYPE_CHECKING:
@@ -13,7 +14,7 @@ class BSScheduler(ABC):
     dataloader: DataLoader
 
     @abstractmethod
-    def step(self): ...
+    def step(self, epoch: int = None): ...
 
 
 class Schedule(ABC):
@@ -50,22 +51,23 @@ class MultiStepBS(BSScheduler):
         self.kwargs = kwargs
 
         self._epoch = 0
-        self._milestone = 0
         self._bs = batch_size
+        self._dataloader: DataLoader = None
 
-        self.dataloader = self._new_dataloader()
+    @property
+    def dataloader(self):
+        if self._dataloader is None or self._dataloader.batch_size != self._bs:
+            from torch.utils.data import DataLoader
 
-    def _new_dataloader(self):
-        from torch.utils.data import DataLoader
+            self._dataloader = DataLoader(
+                dataset=self.dataset, batch_size=self._bs, **self.kwargs
+            )
+        return self._dataloader
 
-        return DataLoader(dataset=self.dataset, batch_size=self._bs, **self.kwargs)
-
-    def step(self):
-        self._epoch += 1
-        if (
-            self._milestone < len(self.milestones)
-            and self._epoch == self.milestones[self._milestone]
-        ):
-            self._milestone += 1
-            self._bs = int(self.batch_size * (self.gamma**self._milestone))
-            self.dataloader = self._new_dataloader()
+    def step(self, epoch: int = None):
+        if epoch is None:
+            self._epoch += 1
+        else:
+            self._epoch = epoch
+        milestone = bisect_right(self.milestones, self._epoch)
+        self._bs = int(self.batch_size * (self.gamma**milestone))

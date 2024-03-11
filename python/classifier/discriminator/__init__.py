@@ -46,6 +46,8 @@ class Module(ABC):
     @abstractmethod
     def loss(self, pred: dict[str, Tensor]) -> Tensor: ...
 
+    def step(self, epoch: int = None): ...
+
 
 class Classifier(ABC):
     device: torch.device
@@ -148,8 +150,9 @@ class Classifier(ABC):
                 }
                 for k in datasets
             )
-            lr.step()
-            bs.step()
+            lr.step(epoch)
+            bs.step(epoch)
+            module.step(epoch)
         return benchmark
 
     @torch.no_grad()
