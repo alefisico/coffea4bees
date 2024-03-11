@@ -4,6 +4,7 @@ from __future__ import annotations
 import gc
 import uuid
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from functools import cached_property, reduce
 from typing import Iterable
 
@@ -15,6 +16,14 @@ from ..config.setting.default import DataLoader as DLSetting
 from ..config.state.monitor import Classifier as Monitor
 from ..nn.schedule import Schedule
 from ..process.device import Device
+
+
+@dataclass
+class TrainingStage:
+    name: str
+    module: Module
+    schedule: Schedule
+    do_benchmark: bool = True
 
 
 class Module(ABC):
@@ -67,9 +76,9 @@ class Classifier(ABC):
         return 0
 
     @abstractmethod
-    def train_schedules(
+    def training_stages(
         self,
-    ) -> Iterable[tuple[str, Schedule, Module]]: ...
+    ) -> Iterable[TrainingStage]: ...
 
     def train(
         self,
@@ -85,10 +94,12 @@ class Classifier(ABC):
             "parameters": {},
             "benchmark": {},
         }
-        for name, schedule, module in self.train_schedules():
-            result["parameters"][name] = module.n_parameters
-            result["benchmark"][name] = self._train(
-                module, training, validation, schedule, name
+        for stage in self.training_stages():
+            result["parameters"][stage.name] = stage.module.n_parameters
+            result["benchmark"][stage.name] = self._train(
+                stage=stage,
+                training=training,
+                validation=validation,
             )
         return result
 
@@ -114,12 +125,12 @@ class Classifier(ABC):
 
     def _train(
         self,
-        module: Module,
+        stage: TrainingStage,
         training: Dataset,
         validation: Dataset,
-        schedule: Schedule,
-        name: str,
     ):
+        module = stage.module
+        schedule = stage.schedule
         # training preparation
         optimizer = schedule.optimizer(module.parameters())
         lr = schedule.lr_scheduler(optimizer)
@@ -142,14 +153,15 @@ class Classifier(ABC):
                 loss = module.loss(pred)
                 loss.backward()
                 optimizer.step()
-            benchmark.append(
-                {
-                    k: self._benchmark(
-                        epoch, self._evaluate(datasets[k]), name, f"{k} set"
-                    ),
-                }
-                for k in datasets
-            )
+            if stage.do_benchmark:
+                benchmark.append(
+                    {
+                        k: self._benchmark(
+                            epoch, self._evaluate(datasets[k]), stage.name, f"{k} set"
+                        ),
+                    }
+                    for k in datasets
+                )
             lr.step(epoch)
             bs.step(epoch)
             module.step(epoch)
