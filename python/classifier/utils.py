@@ -19,3 +19,11 @@ def subgroups(group: _GroupT, new: Callable[[Iterable], _GroupT] = None):
     for i in range(len(group)):
         for sub in _subgroup(group, 0, i):
             yield new(sub)
+
+
+class noop:
+    def __getattr__(self, _):
+        return self
+
+    def __call__(self, *_, **__):
+        return self

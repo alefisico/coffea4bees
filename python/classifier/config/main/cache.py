@@ -6,10 +6,10 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 import fsspec
+from classifier.nn.dataset import io_loader
 from classifier.task import ArgParser, EntryPoint, converter
 
 from ..setting.default import IO as IOSetting
-from ..setting.default import DataLoader as DLSetting
 from ._utils import LoadTrainingSets
 
 if TYPE_CHECKING:
@@ -103,17 +103,11 @@ class _save_cache:
 
     def __call__(self, args: tuple[int, npt.ArrayLike]):
         import torch
-        from torch.utils.data import DataLoader, Subset
+        from torch.utils.data import Subset
 
         chunk, indices = args
         subset = Subset(self.dataset, indices)
-        chunks = [
-            *DataLoader(
-                dataset=subset,
-                batch_size=DLSetting.batch_io // len(self.dataset.datasets),
-                num_workers=DLSetting.num_workers,
-            )
-        ]
+        chunks = [*io_loader(subset)]
         data = {k: torch.cat([c[k] for c in chunks]) for k in self.dataset.datasets}
         with fsspec.open(
             self.path / f"chunk{chunk}.pt", "wb", compression=self.compression

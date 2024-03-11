@@ -4,6 +4,8 @@ from abc import ABC, abstractmethod
 from bisect import bisect_right
 from typing import TYPE_CHECKING, Iterable, Optional
 
+from ..dataset import mp_loader
+
 if TYPE_CHECKING:
     from torch import optim
     from torch.optim.lr_scheduler import LRScheduler
@@ -57,10 +59,8 @@ class MultiStepBS(BSScheduler):
     @property
     def dataloader(self):
         if self._dataloader is None or self._dataloader.batch_size != self._bs:
-            from torch.utils.data import DataLoader
-
-            self._dataloader = DataLoader(
-                dataset=self.dataset, batch_size=self._bs, **self.kwargs
+            self._dataloader = mp_loader(
+                self.dataset, batch_size=self._bs, **self.kwargs
             )
         return self._dataloader
 

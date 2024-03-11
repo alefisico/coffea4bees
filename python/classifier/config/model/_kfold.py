@@ -5,9 +5,9 @@ from abc import ABC, abstractmethod
 from functools import cached_property
 from typing import TYPE_CHECKING
 
+from classifier.nn.dataset import io_loader
 from classifier.task import ArgParser, Model, converter
 
-from ..setting.default import DataLoader as DLSetting
 from ..setting.df import Columns
 
 if TYPE_CHECKING:
@@ -58,15 +58,11 @@ class KFoldClassifier(ABC, Model):
             ]
         else:
             import numpy as np
-            from torch.utils.data import ConcatDataset, DataLoader, Subset
+            from torch.utils.data import ConcatDataset, Subset
 
             key = dataset.datasets[self.kfold_key]
             offset = []
-            for i in DataLoader(
-                key,
-                batch_size=DLSetting.batch_io,
-                num_workers=DLSetting.num_workers,
-            ):
+            for i in io_loader(key):
                 offset.append(i.numpy() % self.kfolds)
             offset = np.concatenate(offset)
             indices = np.arange(len(offset))

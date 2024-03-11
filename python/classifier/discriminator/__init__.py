@@ -10,10 +10,11 @@ from typing import Iterable
 
 import torch
 from torch import Tensor, nn
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import Dataset
 
 from ..config.setting.default import DataLoader as DLSetting
 from ..config.state.monitor import Classifier as Monitor
+from ..nn.dataset import mp_loader
 from ..nn.schedule import Schedule
 from ..process.device import Device
 
@@ -135,8 +136,7 @@ class Classifier(ABC):
         optimizer = schedule.optimizer(module.parameters())
         lr = schedule.lr_scheduler(optimizer)
         bs = schedule.bs_scheduler(
-            dataset=training,
-            num_workers=DLSetting.num_workers,
+            training,
             shuffle=True,
             drop_last=True,
         )
@@ -173,10 +173,9 @@ class Classifier(ABC):
         module: Module,
         dataset: Dataset,
     ):
-        loader = DataLoader(
+        loader = mp_loader(
             dataset,
             batch_size=DLSetting.batch_eval,
-            num_workers=DLSetting.num_workers,
             shuffle=False,
             drop_last=False,
         )
