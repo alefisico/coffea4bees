@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from bisect import bisect_right
 from typing import TYPE_CHECKING, Iterable, Optional
 
-from ..dataset import mp_loader
+from .dataset import mp_loader
 
 if TYPE_CHECKING:
     from torch import optim

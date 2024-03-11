@@ -1,6 +1,6 @@
-from ...utils import noop
-from ..dataset import io_loader
-from . import Schedule
+from classifier.nn.dataset import io_loader
+from classifier.nn.schedule import Schedule
+from classifier.utils import noop
 
 
 class _SkimBS(noop):
@@ -8,7 +8,7 @@ class _SkimBS(noop):
         self.dataloader = io_loader(dataset, shuffle=False, drop_last=False)
 
 
-class Skim(Schedule):
+class SkimStep(Schedule):
     epoch: int = 1
 
     def optimizer(cls, _, **__):
