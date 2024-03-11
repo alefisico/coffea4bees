@@ -14,7 +14,7 @@ import base_class.plots.iPlot_config as cfg
 
 np.seterr(divide='ignore', invalid='ignore')
 
-def doPlots(varList, cutList):
+def doPlots(varList, cutList, debug=False):
 
     if args.doTest:
         varList = ["SvB_MA.ps_zz", "SvB_MA.ps_zh", "SvB_MA.ps_hh", "quadJet_selected.lead_vs_subl_m", "quadJet_min_dr.close_vs_other_m"]
@@ -23,7 +23,7 @@ def doPlots(varList, cutList):
     #  Nominal 1D Plots
     #
     for v in varList:
-
+        if debug: print(f"plotting 1D ...{v}")
 
         vDict = cfg.plotModifiers.get(v, {})
         print(v, vDict, vDict.get("2d", False))
@@ -38,9 +38,17 @@ def doPlots(varList, cutList):
         vDict["legend"] = True
 
         for region in ["SR", "SB"]:
-            fig = makePlot(cfg.hists[0], cutList, cfg.plotConfig, var=v,
-                           cut=cut, region=region,
-                           outputFolder=args.outputFolder, **vDict)
+
+            if debug: print(f"plotting 1D ...{v}")
+            plot_args  = {}
+            plot_args["var"] = v
+            plot_args["cut"] = cut
+            plot_args["region"] = region
+            plot_args["outputFolder"] = args.outputFolder
+            plot_args = plot_args | vDict
+            if debug: print(plot_args)
+            fig = makePlot(cfg.hists[0], cutList, cfg.plotConfig,
+                           **plot_args)
             plt.close()
 
     #
@@ -60,9 +68,19 @@ def doPlots(varList, cutList):
 
         for process in ["data", "Multijet", "HH4b", "TTToHadronic"]:
             for region in ["SR", "SB"]:
-                fig = make2DPlot(cfg.hists[0], process, cutList, cfg.plotConfig, var=v,
-                                 cut="passPreSel", region=region,
-                                 outputFolder=args.outputFolder, **vDict)
+
+                plot_args  = {}
+                plot_args["var"] = v
+                plot_args["cut"] = cut
+                plot_args["region"] = region
+                plot_args["outputFolder"] = args.outputFolder
+                plot_args = plot_args | vDict
+
+                if debug: print("process is ",process)
+                if debug: print(plot_args)
+
+                fig = make2DPlot(cfg.hists[0], process, cutList, cfg.plotConfig, 
+                                 **plot_args)
                 plt.close()
 
     #
@@ -88,14 +106,20 @@ def doPlots(varList, cutList):
                 #
                 for region in ["SR", "SB"]:
 
-                    fig = makePlot(cfg.hists[0], cutList, cfg.plotConfig, var=v,
-                                   cut=["passPreSel", "failSvB", "passSvB"],
-                                   region=region,
-                                   process=process,
-                                   norm=True,
-                                   outputFolder=args.outputFolder,
-                                   **vDict
-                                   )
+                    plot_args  = {}
+                    plot_args["var"] = v
+                    plot_args["cut"] = ["passPreSel", "failSvB", "passSvB"]
+                    plot_args["region"] = region
+                    plot_args["outputFolder"] = args.outputFolder
+                    plot_args["process"] = process
+                    plot_args["norm"] = True
+                    plot_args = plot_args | vDict
+
+                    if debug: print(plot_args)
+                
+                    fig = makePlot(cfg.hists[0], cutList, cfg.plotConfig, 
+                                   **plot_args)
+                                   
 
                     plt.close()
 
@@ -131,4 +155,4 @@ if __name__ == '__main__':
     cfg.axisLabels, cfg.cutList = read_axes_and_cuts(cfg.hists, cfg.plotConfig)
 
     varList = list(cfg.hists[0]['hists'].keys())
-    doPlots(varList, cfg.cutList)
+    doPlots(varList, cfg.cutList, debug=args.debug)
