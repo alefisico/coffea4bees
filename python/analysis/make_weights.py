@@ -175,62 +175,64 @@ if __name__ == "__main__":
     write_to_JCM_file("n5b_pred", n5b_pred)
     write_to_JCM_file("n5b_true", n5b_true)
 
+    jetCombinatoricModelFile.close()
+    jetCombinatoricModelFile_yml.close()
 
     #
     #  Plots
     #
-
+    if not args.ROOTInputs:
+        
+        
+        #
+        #  Sclae QCD by mu_qcd
+        #
+        cfg.plotConfig["stack"]["MultiJet"]["sum"]["data_3tag"]["scalefactor"] = mu_qcd
     
-    #
-    #  Sclae QCD by mu_qcd
-    #
-    cfg.plotConfig["stack"]["MultiJet"]["sum"]["data_3tag"]["scalefactor"] = mu_qcd
-
-    #
-    #  Plot the jet multiplicity
-    #
-    nJet_pred = JCM_model.nJetPred_values(bin_centers.astype(int))
-    nJet_pred[0:4] = 0
+        #
+        #  Plot the jet multiplicity
+        #
+        nJet_pred = JCM_model.nJetPred_values(bin_centers.astype(int))
+        nJet_pred[0:4] = 0
+        
+        #
+        # Add dummy values to add the JCM process
+        #
+        dummy_data = {
+            'process': ['JCM'],  
+            'year': ['UL18'],  'tag': [4],  'region': [1],  
+            'passPreSel': [True], 'passSvB': [False],  'failSvB': [False],   'n': [0],  
+        }
+        cfg.hists[0]["hists"]["selJets_noJCM.n"].fill(**dummy_data)
     
-    #
-    # Add dummy values to add the JCM process
-    #
-    dummy_data = {
-        'process': ['JCM'],  
-        'year': ['UL18'],  'tag': [4],  'region': [1],  
-        'passPreSel': [True], 'passSvB': [False],  'failSvB': [False],   'n': [0],  
-    }
-    cfg.hists[0]["hists"]["selJets_noJCM.n"].fill(**dummy_data)
-
-    #
-    # OVerwrite with predicted values
-    #
-    for iBin in range(14):
-        cfg.hists[0]["hists"]["selJets_noJCM.n"]["JCM","UL18",1,1,True,False,False,iBin] = (nJet_pred[iBin], 0)
+        #
+        # OVerwrite with predicted values
+        #
+        for iBin in range(14):
+            cfg.hists[0]["hists"]["selJets_noJCM.n"]["JCM","UL18",1,1,True,False,False,iBin] = (nJet_pred[iBin], 0)
+        
+        plot_options = {"doRatio":True,
+                        "xlim":[4,15]}
+        makePlot(cfg.hists[0], cfg.cutList, cfg.plotConfig, var="selJets_noJCM.n",
+                 cut="passPreSel", region="SB",
+                 outputFolder=args.outputDir, **plot_options)
     
-    plot_options = {"doRatio":True,
-                    "xlim":[4,15]}
-    makePlot(cfg.hists[0], cfg.cutList, cfg.plotConfig, var="selJets_noJCM.n",
-             cut="passPreSel", region="SB",
-             outputFolder=args.outputDir, **plot_options)
-
-
-    #
-    #  Plot NTagged Jets
-    #
-    cfg.hists[0]["hists"]["tagJets_noJCM.n"].fill(**dummy_data)
     
-    #
-    # OVerwrite with predicted values
-    #
-    for iBin in range(15):
-        cfg.hists[0]["hists"]["tagJets_noJCM.n"]["JCM","UL18",1,1,True,False,False,iBin] = (nTag_pred[iBin], 0)
-
-    plot_options = {"doRatio":True,
-                    "xlim":[4,15]}
-    makePlot(cfg.hists[0], cfg.cutList, cfg.plotConfig, var="tagJets_noJCM.n",
-             cut="passPreSel", region="SB",
-             outputFolder=args.outputDir, **plot_options)
-
-    jetCombinatoricModelFile.close()
-    jetCombinatoricModelFile_yml.close()
+        #
+        #  Plot NTagged Jets
+        #
+        cfg.hists[0]["hists"]["tagJets_noJCM.n"].fill(**dummy_data)
+        
+        #
+        # OVerwrite with predicted values
+        #
+        for iBin in range(15):
+            cfg.hists[0]["hists"]["tagJets_noJCM.n"]["JCM","UL18",1,1,True,False,False,iBin] = (nTag_pred[iBin], 0)
+    
+        plot_options = {"doRatio":True,
+                        "xlim":[4,15]}
+        makePlot(cfg.hists[0], cfg.cutList, cfg.plotConfig, var="tagJets_noJCM.n",
+                 cut="passPreSel", region="SB",
+                 outputFolder=args.outputDir, **plot_options)
+    
+    
