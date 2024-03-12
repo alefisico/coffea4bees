@@ -78,3 +78,8 @@ TODO
 ## Advanced
 
 TODO
+
+## TODO
+
+- Add die loss?
+- Check FvT (Normalization, preprocessing, need SR for training?)

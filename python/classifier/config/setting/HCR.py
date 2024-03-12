@@ -17,11 +17,6 @@ class InputBranch(Cascade):
         return [f"NotCanJet_{f}" for f in var]
 
 
-class Architecture(Cascade):
-    n_features: int = 8
-    use_attention_block: bool = True
-
-
 class Input(Cascade):
     offset: str = "offset"
     label: str = "label"

@@ -34,8 +34,7 @@ class Schedule(ABC):
 
 class MilestoneStep:
     def __init__(self, milestones: Optional[Iterable[int]] = None):
-        self._step = 0
-        self._milestone = 0
+        self.reset()
         self._milestones = []
         self.milestones = milestones
 
@@ -51,13 +50,17 @@ class MilestoneStep:
     def milestones(self, milestones: Iterable[int] = None):
         self._milestones = sorted(milestones or [])
 
+    def reset(self):
+        self._step = 0
+        self._milestone = 0
+
     def step(self, step: int = None):
         if step is None:
             self._step += 1
         else:
             self._step = step
-        milestone = bisect_right(self._milestones, self._step)
-        changed = milestone != self._milestone
+        milestone = bisect_right(self.milestones, self._step)
+        changed = milestone != self.milestone
         self._milestone = milestone
         return changed
 

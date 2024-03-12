@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Callable
 
 import torch
 
 from ..config.scheduler import SkimStep
-from ..config.setting.HCR import Architecture, Input, InputBranch, Output
+from ..config.setting.HCR import Input, InputBranch, Output
 from ..config.state.label import MultiClass
 from ..nn.blocks import HCR
+from ..nn.schedule import MilestoneStep
 from ..utils import noop
 from . import Classifier, Module, TrainingStage
 
@@ -18,7 +20,25 @@ if TYPE_CHECKING:
     from ..nn.schedule import Schedule
 
 
-class _SetupGBN(Module):
+@dataclass
+class HCRArch:
+    loss: Callable[[dict[str, Tensor]], Tensor]
+    n_features: int = 4
+    use_attention_block: bool = True
+
+
+@dataclass
+class GBN(MilestoneStep):
+    n_batches: int = 64
+    milestones: list[int] = (1, 3, 6, 10, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24)
+    gamma: float = 0.25
+
+    def __post_init__(self):
+        self.milestones = sorted(self.milestones)
+        self.reset()
+
+
+class _HCRSkim(Module):
     def __init__(self, device: torch.device):
         self.tensors = defaultdict(list)
         self.device = device
@@ -41,26 +61,37 @@ class _SetupGBN(Module):
 
 
 class HCRModule(Module):
-
     def __init__(
         self,
-        loss: Callable[[HCRModule, dict[str, Tensor]], Tensor],
+        arch: HCRArch,
         device: torch.device,
-        gbn_size: int = 0,
     ):
+        self._loss = arch.loss
+        self._device = device
+        self._gbn = None
         self._nn = HCR(
-            dijetFeatures=Architecture.n_features,
-            quadjetFeatures=Architecture.n_features,
+            dijetFeatures=arch.n_features,
+            quadjetFeatures=arch.n_features,
             ancillaryFeatures=InputBranch.feature_ancillary,
-            useOthJets=(
-                "attention" if Architecture.use_attention_block else ""
-            ),  # TODO take from init arg
+            useOthJets=("attention" if arch.use_attention_block else ""),
             device=device,
             nClasses=len(MultiClass.labels),
         )
-        self._nn.setGhostBatches(gbn_size, gbn_size > 0)
-        self._loss = loss
-        self._device = device
+
+    @property
+    def ghost_batch(self):
+        return self._gbn
+
+    @ghost_batch.setter
+    def ghost_batch(self, gbn: GBN):
+        self._gbn = gbn
+        if gbn is None:
+            self._nn.setGhostBatches(0, False)
+        else:
+            self._gbn.reset()
+            self._nn.setGhostBatches(
+                self._gbn.n_batches, True
+            )  # TODO check what the subset do
 
     @property
     def module(self):
@@ -84,49 +115,59 @@ class HCRModule(Module):
     def loss(self, pred: dict[str, Tensor]) -> Tensor:
         return self._loss(self, pred)
 
+    def step(self, epoch: int = None):
+        if self.ghost_batch is not None and self.ghost_batch.step(epoch):
+            self._nn.setGhostBatches(
+                int(
+                    self.ghost_batch.n_batches
+                    * (self.ghost_batch.gamma**self.ghost_batch.milestone)
+                ),
+                True,
+            )
+
 
 class HCRClassifier(Classifier):
-
     def __init__(
         self,
-        loss: Callable[[dict[str, Tensor]], Tensor],
+        arch: HCRArch,
+        ghost_batch: GBN,
         training_schedule: Schedule,
         finetuning_schedule: Schedule = None,
-        ghost_batch_size: int = 0,
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self._loss = loss
+        self._arch = arch
+        self._ghost_batch = ghost_batch
         self._training = training_schedule
         self._finetuning = finetuning_schedule
-        self._gbn_size = ghost_batch_size
         self._module: HCRModule = None
 
     def training_stages(self):
-        gbn = _SetupGBN(self.device)
+        skim = _HCRSkim(self.device)
         yield TrainingStage(
             name="Setup GBN",
-            module=gbn,
+            module=skim,
             schedule=SkimStep(),
             do_benchmark=False,
         )
         if self._module is None:
             self._module = HCRModule(
-                loss=self._loss,
+                arch=self._arch,
                 device=self.device,
-                gbn_size=self._gbn_size,
-            )  # TODO config ghost batch size
+            )
+            self._module.ghost_batch = self._ghost_batch
             self._module.to(self.device)
             self._module.module.setMeanStd(
-                torch.cat(gbn.tensors[Input.CanJet]),
-                torch.cat(gbn.tensors[Input.NotCanJet]),
-                torch.cat(gbn.tensors[Input.ancillary]),
+                torch.cat(skim.tensors[Input.CanJet]),
+                torch.cat(skim.tensors[Input.NotCanJet]),
+                torch.cat(skim.tensors[Input.ancillary]),
             )
-            gbn = None
+            skim = None
         yield TrainingStage(
             name="Training",
             module=self._module,
             schedule=self._training,
             do_benchmark=True,
         )
+        self._module.ghost_batch = None
         # TODO finetuning

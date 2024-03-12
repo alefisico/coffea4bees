@@ -7,7 +7,7 @@ from typing import Iterable, overload
 from ._utils import fsspec_read
 
 
-def _parse_scheme(opt: str):
+def _mapping_scheme(opt: str):
     opt = opt.split(":///", 1)
     if len(opt) == 1:
         return None, opt[0]
@@ -15,7 +15,7 @@ def _parse_scheme(opt: str):
         return opt[0], opt[1]
 
 
-def _parse_keys(opt: str):
+def _mapping_nested_keys(opt: str):
     opt = opt.rsplit("@@", 1)
     if len(opt) == 1:
         return opt[0], None
@@ -38,10 +38,10 @@ def mappings(opt: str):
     def error(msg: str):
         logging.error(f'{msg} when parsing "{opt}"')
 
-    protocol, data = _parse_scheme(opt)
+    protocol, data = _mapping_scheme(opt)
     keys = None
     if protocol in ("file", "py"):
-        data, keys = _parse_keys(data)
+        data, keys = _mapping_nested_keys(data)
     if protocol == "file":
         suffix = Path(data).suffix
         match suffix:
