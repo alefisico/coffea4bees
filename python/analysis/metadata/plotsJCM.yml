@@ -82,6 +82,19 @@ ratios:
                 color: k
                 marker: "o"
 
+        dataToJCM:
+                numerator:
+                        type: hists
+                        key: data
+                denominator:
+                        type: hists
+                        key: JCM
+                uncertianty:
+                        nominal
+                color: r
+                marker: "o"
+
+
 
 codes:
    region:

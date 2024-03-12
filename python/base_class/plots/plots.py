@@ -83,6 +83,30 @@ def print_list_debug_info(process, tag, cut, region):
           f"_reg={region}")
 
 
+def makeRatio(numValues, denValues, **kwargs):
+
+    denValues[denValues == 0] = _epsilon    
+    ratios = numValues / denValues
+
+    if kwargs.get("norm", False):
+        numSF = np.sum(numValues, axis=0)
+        denSF = np.sum(denValues, axis=0)
+        ratios *= denSF / numSF
+
+    # Set 0 and inf to nan to hide during plotting
+    ratios[ratios == 0] = np.nan
+    ratios[np.isinf(ratios)] = np.nan
+
+    # https://github.com/scikit-hep/hist/blob/main/src/hist/intervals.py
+    ratio_uncert = ratio_uncertainty(
+        num=numValues,
+        denom=denValues,
+        uncertainty_type=kwargs.get("uncertainty_type", "poisson"),
+    )
+
+    return ratios, ratio_uncert
+
+    
 def _draw_plot(hist_list, stack_dict, **kwargs):
     r"""
     Takes options:
@@ -515,23 +539,7 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
 
             numValues = hists[iH].values()
 
-            ratios = numValues / denValues
-
-            if kwargs.get("norm", False):
-                numSF = np.sum(numValues, axis=0)
-                denSF = np.sum(denValues, axis=0)
-                ratios *= denSF / numSF
-    
-            # Set 0 and inf to nan to hide during plotting
-            ratios[ratios == 0] = np.nan
-            ratios[np.isinf(ratios)] = np.nan
-
-            # https://github.com/scikit-hep/hist/blob/main/src/hist/intervals.py
-            ratio_uncert = ratio_uncertainty(
-                num=numValues,
-                denom=denValues,
-                uncertainty_type="poisson",   # FIXME
-            )
+            ratios, ratio_uncert = makeRatio(numValues, denValues, **kwargs)
 
             ratio_plots.append( (denCenters, ratios, ratio_uncert) )
             ratio_colors.append(_colors[iH])
@@ -722,30 +730,12 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
             numValues, numCenters = get_values_centers_from_dict(numDict, hist_index, hists, stack_dict)
             denValues, _          = get_values_centers_from_dict(denDict, hist_index, hists, stack_dict)
 
+            if kwargs.get("norm", False): v["norm"] = True
+            
             #
             # Clean den 
             #
-            denValues[denValues == 0] = _epsilon
-            ratios = numValues / denValues
-
-            #
-            # Scale if normalizing
-            #
-            if kwargs.get("norm", False):
-                numSF = np.sum(numValues, axis=0)
-                denSF = np.sum(denValues, axis=0)
-                ratios *= denSF / numSF
-
-            # Set 0 and inf to nan to hide during plotting
-            ratios[ratios == 0] = np.nan
-            ratios[np.isinf(ratios)] = np.nan
-
-            # https://github.com/scikit-hep/hist/blob/main/src/hist/intervals.py
-            ratio_uncert = ratio_uncertainty(
-                num=numValues,
-                denom=denValues,
-                uncertainty_type=v.get("uncertainty_type", "poisson"),
-            )
+            ratios, ratio_uncert = makeRatio(numValues, denValues, **v)
 
             ratio_plots.append( (numCenters, ratios, ratio_uncert) )
             ratio_colors.append(v.get("color","black"))
