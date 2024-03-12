@@ -35,5 +35,5 @@ def mp_loader(dataset: Dataset, **kwargs):
 
 def io_loader(dataset: Dataset, **kwargs):
     if "batch_size" not in kwargs:
-        kwargs["batch_size"] = DLSetting.batch_io // (entry_size(dataset) / 4)
+        kwargs["batch_size"] = int(DLSetting.batch_io // (entry_size(dataset) / 4))
     return mp_loader(dataset, **kwargs)

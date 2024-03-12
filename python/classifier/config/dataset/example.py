@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Callable, Iterable
 
 from classifier.df.tools import (
     add_event_offset,
+    add_label_index,
     add_label_index_from_column,
     drop_columns,
     map_selection_to_index,
@@ -15,11 +16,16 @@ from classifier.df.tools import (
 
 from ...utils import subgroups
 from ..setting.df import Columns
-from ..setting.HCR import InputBranch
+from ..setting.HCR import Input, InputBranch
 from ._df import LoadGroupedRoot
 
 if TYPE_CHECKING:
     import pandas as pd
+
+
+class _Derived:
+    region_index: str = "region_index"
+    ntag_index: str = "ntag_index"
 
 
 class _Common(LoadGroupedRoot):
@@ -33,8 +39,8 @@ class _Common(LoadGroupedRoot):
         "fourTag",
         "threeTag",
         "passHLT",
-        "event",
-        "weight",
+        Columns.event,
+        Columns.weight,
     ]
 
     def __init__(self):
@@ -42,27 +48,27 @@ class _Common(LoadGroupedRoot):
         # fmt: off
         (
             self.to_tensor
-            .add(Columns.event_offset, Columns.index_dtype).columns(Columns.event_offset)
-            .add(Columns.label_index, Columns.index_dtype).columns(Columns.label_index)
-            .add("region_index", Columns.index_dtype).columns("region_index")
-            .add(Columns.weight, "float32").columns(Columns.weight)
-            .add("ancillary", "float32").columns(*InputBranch.feature_ancillary)
-            .add("CanJet", "float32").columns(*InputBranch.feature_CanJet, target=InputBranch.n_CanJet)
-            .add("NotCanJet", "float32").columns(*InputBranch.feature_NotCanJet, target=InputBranch.n_NotCanJet)
+            .add(Input.offset, Columns.index_dtype).columns(Columns.event_offset)
+            .add(Input.label, Columns.index_dtype).columns(Columns.label_index)
+            .add(Input.region, Columns.index_dtype).columns(_Derived.region_index)
+            .add(Input.weight, "float32").columns(Columns.weight)
+            .add(Input.ancillary, "float32").columns(*InputBranch.feature_ancillary)
+            .add(Input.CanJet, "float32").columns(*InputBranch.feature_CanJet, target=InputBranch.n_CanJet)
+            .add(Input.NotCanJet, "float32").columns(*InputBranch.feature_NotCanJet, target=InputBranch.n_NotCanJet)
         )
         self.preprocessors.extend(
             [
                 add_event_offset(60),  # 1, 2, 3, 4, 5, 6 folds
                 map_selection_to_index(
                     SB=0b10, ZZSR=0b00101, ZHSR=0b01001, HHSR=0b10001
-                ).set(selection="region_index"),
+                ).set(selection=_Derived.region_index),
                 map_selection_to_index(
                     fourTag=0b10, threeTag=0b01
-                ).set(selection="ntag_index"),
+                ).set(selection=_Derived.ntag_index),
                 drop_columns(
                     "ZZSR", "ZHSR", "HHSR", "SB",
                     "fourTag", "threeTag",
-                    "passHLT", "event",
+                    "passHLT", Columns.event,
                 ),
             ]
         )
@@ -102,7 +108,7 @@ class _Common(LoadGroupedRoot):
             metadata["year"] = year
         label = self._get_label(groups)
         if label:
-            metadata["label"] = label
+            pres.append(add_label_index(label))
 
         return FromRoot(
             friends=friends,

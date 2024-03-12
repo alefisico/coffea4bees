@@ -20,3 +20,18 @@ class InputBranch(Cascade):
 class Architecture(Cascade):
     n_features: int = 8
     use_attention_block: bool = True
+
+
+class Input(Cascade):
+    offset: str = "offset"
+    label: str = "label"
+    region: str = "region"
+    weight: str = "weight"
+    ancillary: str = "ancillary"
+    CanJet: str = "CanJet"
+    NotCanJet: str = "NotCanJet"
+
+
+class Output(Cascade):
+    class_score: str = "class_score"
+    quadjet_score: str = "quadjet_score"

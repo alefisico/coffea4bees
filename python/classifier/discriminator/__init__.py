@@ -49,9 +49,7 @@ class Module(ABC):
     def module(self) -> nn.Module: ...
 
     @abstractmethod
-    def forward(
-        self, batch: dict[str, Tensor], validation: bool = False
-    ) -> dict[str, Tensor]: ...
+    def forward(self, batch: dict[str, Tensor]) -> dict[str, Tensor]: ...
 
     @abstractmethod
     def loss(self, pred: dict[str, Tensor]) -> Tensor: ...
@@ -150,6 +148,7 @@ class Classifier(ABC):
             for batch in bs.dataloader:
                 optimizer.zero_grad()
                 pred = module.forward(batch)
+                # TODO monitor pred
                 loss = module.loss(pred)
                 loss.backward()
                 optimizer.step()
@@ -180,5 +179,5 @@ class Classifier(ABC):
             drop_last=False,
         )
         module.eval()
-        preds = [module.forward(batch, validation=True) for batch in loader]
+        preds = [module.forward(batch) for batch in loader]
         return {k: torch.cat([p[k] for p in preds], dim=0) for k in preds[0]}
