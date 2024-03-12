@@ -27,8 +27,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='uproot_plots')
     parser.add_argument('--noFitWeight', dest='noFitWeight', default="")
     parser.add_argument('-w', '--weightSet', dest="weightSet", default="")
-    parser.add_argument('-r', dest="weightRegion", default="")
-    parser.add_argument('-c', dest="cut", default="passXWt")
+    parser.add_argument('-r', dest="weightRegion", default="SB")
+    parser.add_argument('-c', dest="cut", default="passPreSel")
     parser.add_argument('-i', '--inputFile',  dest="inputFile", default='hists.pkl', help='Input File. Default: hists.pkl')
     parser.add_argument('-o', '--outputDir', dest='outputDir', default="")
     parser.add_argument('--ROOTInputs', action="store_true")
@@ -36,7 +36,7 @@ if __name__ == "__main__":
     parser.add_argument('--debug',                 action="store_true")
     parser.add_argument('-l', '--lumi',                 dest="lumi",          default="1",    help="Luminosity for MC normalization: units [pb]")
     parser.add_argument('-m', '--metadata', dest="metadata",
-                        default="analysis/metadata/plotsAll.yml",
+                        default="analysis/metadata/plotsJCM.yml",
                         help='Metadata file.')
 
     args = parser.parse_args()
