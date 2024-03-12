@@ -204,18 +204,20 @@ if __name__ == '__main__':
         client = Client(cluster)
 
     executor_args = {
-        'client': client,
         'schema': config_runner['schema'],
-        'align_clusters': False,
         'savemetrics': True,
         'skipbadfiles': True,
-        'xrootdtimeout': 180}
+        'xrootdtimeout': 180
+    }
 
-    # to run with processor futures_executor ()
-    # executor_args = {
-    #    'schema': config_runner['schema'],
-    #    'workers': 6,
-    #    'savemetrics': True}
+    if args.condor | args.skimming:
+        executor_args['client'] = client
+        executor_args['align_clusters'] = False
+
+    else:
+        logging.info(f"\nRunning futures executor (Dask client is launch for performance report only) ")
+        # to run with processor futures_executor ()
+        executor_args['workers'] = config_runner['condor_cores']
 
     logging.info(f"\nExecutor arguments: {executor_args}")
 
@@ -241,8 +243,7 @@ if __name__ == '__main__':
             fileset,
             treename='Events',
             processor_instance=analysis(**configs['config']),
-            # if args.condor else processor.futures_executor,
-            executor=processor.dask_executor,
+            executor=processor.dask_executor if (args.condor | args.skimming) else processor.futures_executor,
             executor_args=executor_args,
             chunksize=config_runner['chunksize'],
             maxchunks=config_runner['maxchunks'],
