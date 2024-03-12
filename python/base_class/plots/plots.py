@@ -47,18 +47,19 @@ def get_value_nested_dict(nested_dict, target_key, default=None):
 
     return default
 
+
 def get_values_centers_from_dict(input_dict, hist_index, hists, stack_dict):
     if input_dict["type"] == "hists":
         return hists[hist_index[input_dict["key"]]].values(), hists[hist_index[input_dict["key"]]].axes[0].centers
-        
-        
+
     if input_dict["type"] == "stack":
         hStackHists = list(stack_dict.values())
-        denValues = [h.values() for h in hStackHists]
-        denValues = np.sum(denValues, axis=0)
-        return denValues, hStackHists[0].axes[0].centers
+        return_values = [h.values() for h in hStackHists]
+        return_values = np.sum(return_values, axis=0)
+        return return_values, hStackHists[0].axes[0].centers
 
     print("ERROR: ratio needs to be of type 'hists' or 'stack'")
+
 
 def _savefig(fig, var, *args):
     outputPath = "/".join(args)
@@ -85,7 +86,7 @@ def print_list_debug_info(process, tag, cut, region):
 
 def makeRatio(numValues, denValues, **kwargs):
 
-    denValues[denValues == 0] = _epsilon    
+    denValues[denValues == 0] = _epsilon
     ratios = numValues / denValues
 
     if kwargs.get("norm", False):
@@ -106,7 +107,7 @@ def makeRatio(numValues, denValues, **kwargs):
 
     return ratios, ratio_uncert
 
-    
+
 def _draw_plot(hist_list, stack_dict, **kwargs):
     r"""
     Takes options:
@@ -304,7 +305,7 @@ def _plot_ratio(hist_list, stack_dict, ratio_list, **kwargs):
         linestyle="dashed",
         linewidth=1.0
     )
-    
+
     for ir, ratio in enumerate(ratio_list):
 
         subplot_ax.errorbar(
@@ -316,7 +317,7 @@ def _plot_ratio(hist_list, stack_dict, ratio_list, **kwargs):
             linestyle="none",
             markersize=4,
         )
-    
+
     #
     #  labels / limits
     #
@@ -535,20 +536,19 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
         denValues[denValues == 0] = _epsilon
         denCenters = hists[-1].axes[0].centers
 
-        for iH in range(len(hists)-1):
+        for iH in range(len(hists) - 1):
 
             numValues = hists[iH].values()
 
             ratios, ratio_uncert = makeRatio(numValues, denValues, **kwargs)
 
-            ratio_plots.append( (denCenters, ratios, ratio_uncert) )
+            ratio_plots.append((denCenters, ratios, ratio_uncert))
             ratio_colors.append(_colors[iH])
             ratio_markers.append("o")
-        
 
         kwargs["ratio_colors"]  = ratio_colors
         kwargs["ratio_markers"] = ratio_markers
-        
+
         fig, main_ax, ratio_ax = _plot_ratio(hists, {}, ratio_plots, **kwargs)
         ax = (main_ax, ratio_ax)
     else:
@@ -611,7 +611,7 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
     hist_labels = []
     hist_types = []
     hist_index = {}
-    
+
     for k, v in hist_config.items():
         hist_index[k] = len(hists)
         this_process = v["process"]
@@ -730,20 +730,21 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
             numValues, numCenters = get_values_centers_from_dict(numDict, hist_index, hists, stack_dict)
             denValues, _          = get_values_centers_from_dict(denDict, hist_index, hists, stack_dict)
 
-            if kwargs.get("norm", False): v["norm"] = True
-            
+            if kwargs.get("norm", False):
+                v["norm"] = True
+
             #
-            # Clean den 
+            # Clean den
             #
             ratios, ratio_uncert = makeRatio(numValues, denValues, **v)
 
-            ratio_plots.append( (numCenters, ratios, ratio_uncert) )
-            ratio_colors.append(v.get("color","black"))
-            ratio_markers.append(v.get("marker","o"))
-                
+            ratio_plots.append((numCenters, ratios, ratio_uncert))
+            ratio_colors.append(v.get("color", "black"))
+            ratio_markers.append(v.get("marker", "o"))
+
         kwargs["ratio_colors"]  = ratio_colors
         kwargs["ratio_markers"] = ratio_markers
-            
+
         fig, main_ax, ratio_ax = _plot_ratio(hists, stack_dict, ratio_plots,  **kwargs)
         ax = (main_ax, ratio_ax)
     else:
