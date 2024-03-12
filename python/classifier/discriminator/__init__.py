@@ -22,12 +22,12 @@ from ..process.device import Device
 @dataclass
 class TrainingStage:
     name: str
-    module: Module
+    model: Model
     schedule: Schedule
     do_benchmark: bool = True
 
 
-class Module(ABC):
+class Model(ABC):
     def eval(self):
         self.module.eval()
 
@@ -94,7 +94,7 @@ class Classifier(ABC):
             "benchmark": {},
         }
         for stage in self.training_stages():
-            result["parameters"][stage.name] = stage.module.n_parameters
+            result["parameters"][stage.name] = stage.model.n_parameters
             result["benchmark"][stage.name] = self._train(
                 stage=stage,
                 training=training,
@@ -128,10 +128,10 @@ class Classifier(ABC):
         training: Dataset,
         validation: Dataset,
     ):
-        module = stage.module
+        model = stage.model
         schedule = stage.schedule
         # training preparation
-        optimizer = schedule.optimizer(module.parameters())
+        optimizer = schedule.optimizer(model.parameters())
         lr = schedule.lr_scheduler(optimizer)
         bs = schedule.bs_scheduler(
             training,
@@ -144,12 +144,12 @@ class Classifier(ABC):
         datasets = {"training": training, "validation": validation}
         for epoch in range(schedule.epoch):
             self.cleanup()
-            module.train()
+            model.train()
             for batch in bs.dataloader:
                 optimizer.zero_grad()
-                pred = module.forward(batch)
+                pred = model.forward(batch)
                 # TODO monitor pred
-                loss = module.loss(pred)
+                loss = model.loss(pred)
                 loss.backward()
                 optimizer.step()
             if stage.do_benchmark:
@@ -163,13 +163,13 @@ class Classifier(ABC):
                 )
             lr.step(epoch)
             bs.step(epoch)
-            module.step(epoch)
+            model.step(epoch)
         return benchmark
 
     @torch.no_grad()
     def _evaluate(
         self,
-        module: Module,
+        model: Model,
         dataset: Dataset,
     ):
         loader = mp_loader(
@@ -178,6 +178,6 @@ class Classifier(ABC):
             shuffle=False,
             drop_last=False,
         )
-        module.eval()
-        preds = [module.forward(batch) for batch in loader]
+        model.eval()
+        preds = [model.forward(batch) for batch in loader]
         return {k: torch.cat([p[k] for p in preds], dim=0) for k in preds[0]}

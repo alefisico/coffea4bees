@@ -12,7 +12,7 @@ from ..config.state.label import MultiClass
 from ..nn.blocks import HCR
 from ..nn.schedule import MilestoneStep
 from ..utils import noop
-from . import Classifier, Module, TrainingStage
+from . import Classifier, Model, TrainingStage
 
 if TYPE_CHECKING:
     from torch import Tensor
@@ -38,7 +38,7 @@ class GBN(MilestoneStep):
         self.reset()
 
 
-class _HCRSkim(Module):
+class _HCRSkim(Model):
     def __init__(self, device: torch.device):
         self.tensors = defaultdict(list)
         self.device = device
@@ -60,7 +60,7 @@ class _HCRSkim(Module):
         return noop()
 
 
-class HCRModule(Module):
+class HCRModel(Model):
     def __init__(
         self,
         arch: HCRArch,
@@ -140,24 +140,24 @@ class HCRClassifier(Classifier):
         self._ghost_batch = ghost_batch
         self._training = training_schedule
         self._finetuning = finetuning_schedule
-        self._module: HCRModule = None
+        self._HCR: HCRModel = None
 
     def training_stages(self):
         skim = _HCRSkim(self.device)
         yield TrainingStage(
             name="Setup GBN",
-            module=skim,
+            model=skim,
             schedule=SkimStep(),
             do_benchmark=False,
         )
-        if self._module is None:
-            self._module = HCRModule(
+        if self._HCR is None:
+            self._HCR = HCRModel(
                 arch=self._arch,
                 device=self.device,
             )
-            self._module.ghost_batch = self._ghost_batch
-            self._module.to(self.device)
-            self._module.module.setMeanStd(
+            self._HCR.ghost_batch = self._ghost_batch
+            self._HCR.to(self.device)
+            self._HCR.module.setMeanStd(
                 torch.cat(skim.tensors[Input.CanJet]),
                 torch.cat(skim.tensors[Input.NotCanJet]),
                 torch.cat(skim.tensors[Input.ancillary]),
@@ -165,9 +165,9 @@ class HCRClassifier(Classifier):
             skim = None
         yield TrainingStage(
             name="Training",
-            module=self._module,
+            model=self._HCR,
             schedule=self._training,
             do_benchmark=True,
         )
-        self._module.ghost_batch = None
+        self._HCR.ghost_batch = None
         # TODO finetuning

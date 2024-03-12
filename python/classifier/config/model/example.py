@@ -7,11 +7,11 @@ from ..setting.HCR import Input, Output
 from ._kfold import KFoldClassifier
 
 if TYPE_CHECKING:
-    from classifier.discriminator.HCR import HCRModule
+    from classifier.discriminator.HCR import HCRModel
     from torch import Tensor
 
 
-def loss_FvT(self: HCRModule, batch: dict[str, Tensor]):
+def loss_FvT(self: HCRModel, batch: dict[str, Tensor]):
     import torch.nn.functional as F
 
     c_score = batch[Output.class_score]

@@ -81,5 +81,10 @@ TODO
 
 ## TODO
 
+- main:
+  - Add evaluation
+  - Add logging, benchmark, plotting
 - Add die loss?
 - Check FvT (Normalization, preprocessing, need SR for training?)
+- Add SvB
+- Add DvT
