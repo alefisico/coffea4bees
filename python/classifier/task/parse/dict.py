@@ -34,6 +34,10 @@ def mappings(opt: str):
 
     `file`, `py` support an optional suffix `@@{key}.{key}...` to select a nested dict
     """
+    if opt is None:
+        return None
+    if opt == "":
+        return {}
 
     def error(msg: str):
         logging.error(f'{msg} when parsing "{opt}"')

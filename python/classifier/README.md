@@ -84,7 +84,12 @@ TODO
 - main:
   - Add evaluation
   - Add logging, benchmark, plotting
-- Add die loss?
-- Check FvT (Normalization, preprocessing, need SR for training?)
+- HCR:
+  - Add fine-tuning
+  - Add die loss?
+- FvT
+  - Normalization
+  - selection
+  - SR ?
 - Add SvB
 - Add DvT

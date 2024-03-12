@@ -156,14 +156,17 @@ class Classifier(ABC):
                 benchmark.append(
                     {
                         k: self._benchmark(
-                            epoch, self._evaluate(datasets[k]), stage.name, f"{k} set"
-                        ),
+                            epoch,
+                            self._evaluate(model, datasets[k]),
+                            stage.name,
+                            f"{k} set",
+                        )
+                        for k in datasets
                     }
-                    for k in datasets
                 )
-            lr.step(epoch)
-            bs.step(epoch)
-            model.step(epoch)
+            lr.step()
+            bs.step()
+            model.step()
         return benchmark
 
     @torch.no_grad()

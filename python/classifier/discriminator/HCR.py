@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 @dataclass
 class HCRArch:
     loss: Callable[[dict[str, Tensor]], Tensor]
-    n_features: int = 4
+    n_features: int = 8
     use_attention_block: bool = True
 
 

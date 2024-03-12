@@ -8,8 +8,6 @@ from typing import TYPE_CHECKING
 from classifier.nn.dataset import io_loader
 from classifier.task import ArgParser, Model, converter
 
-from ..setting.df import Columns
-
 if TYPE_CHECKING:
     from classifier.discriminator import Classifier
     from classifier.process.device import Device
@@ -32,8 +30,8 @@ class KFoldClassifier(ABC, Model):
     )
     argparser.add_argument(
         "--kfold-split-key",
-        default=argparse.SUPPRESS,
-        help="the key used to split the dataset (default: [green]Columns[/green].event_offset)",
+        default="offset",
+        help="the key used to split the dataset",
     )
 
     @abstractmethod
@@ -42,12 +40,6 @@ class KFoldClassifier(ABC, Model):
     @cached_property
     def kfolds(self) -> int:
         return self.opts.kfolds
-
-    @cached_property
-    def kfold_key(self) -> str:
-        if not hasattr(self.opts, "kfold_split_key"):
-            return Columns.event_offset
-        return self.opts.kfold_split_key
 
     def train(self, dataset: StackDataset):
         if self.kfolds == 1:
@@ -60,7 +52,7 @@ class KFoldClassifier(ABC, Model):
             import numpy as np
             from torch.utils.data import ConcatDataset, Subset
 
-            key = dataset.datasets[self.kfold_key]
+            key = dataset.datasets[self.opts.kfold_split_key]
             offset = []
             for i in io_loader(key):
                 offset.append(i.numpy() % self.kfolds)
