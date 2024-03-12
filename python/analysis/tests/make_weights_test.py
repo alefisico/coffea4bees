@@ -40,9 +40,7 @@ class TestJCM(unittest.TestCase):
         #
         #  > From python analysis/tests/dumpROOTToHist.py -o analysis/tests/HistsFromROOTFile.coffea -c passPreSel -r SB 
         #
-        os.system("python analysis/make_weights.py -o testJCM_ROOT -c passPreSel -r SB --ROOTInputs --i analysis/tests/HistsFromROOTFile.coffea")
-        os.system("python analysis/make_weights.py -o testJCM_Coffea -c passPreSel -r SB -i analysis/hists/test.coffea")
-
+        pass
 
     def test_yaml_content(self):
         

@@ -71,7 +71,17 @@ stack:
                 edgecolor: k
                 label: Multijet
 
-
+ratios:
+        dataToBkg:
+                numerator:
+                        type: hists
+                        key: data
+                denominator:
+                        type: stack
+                uncertianty:
+                        nominal
+                color: k
+                marker: "o"
 
 codes:
    region:

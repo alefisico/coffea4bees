@@ -48,6 +48,19 @@ def get_value_nested_dict(nested_dict, target_key, default=None):
     return default
 
 
+def get_values_centers_from_dict(input_dict, hist_index, hists, stack_dict):
+    if input_dict["type"] == "hists":
+        return hists[hist_index[input_dict["key"]]].values(), hists[hist_index[input_dict["key"]]].axes[0].centers
+
+    if input_dict["type"] == "stack":
+        hStackHists = list(stack_dict.values())
+        return_values = [h.values() for h in hStackHists]
+        return_values = np.sum(return_values, axis=0)
+        return return_values, hStackHists[0].axes[0].centers
+
+    print("ERROR: ratio needs to be of type 'hists' or 'stack'")
+
+
 def _savefig(fig, var, *args):
     outputPath = "/".join(args)
 
@@ -69,6 +82,30 @@ def print_list_debug_info(process, tag, cut, region):
     print(f" hist process={process}, "
           f"tag={tag}, _cut={cut}"
           f"_reg={region}")
+
+
+def makeRatio(numValues, denValues, **kwargs):
+
+    denValues[denValues == 0] = _epsilon
+    ratios = numValues / denValues
+
+    if kwargs.get("norm", False):
+        numSF = np.sum(numValues, axis=0)
+        denSF = np.sum(denValues, axis=0)
+        ratios *= denSF / numSF
+
+    # Set 0 and inf to nan to hide during plotting
+    ratios[ratios == 0] = np.nan
+    ratios[np.isinf(ratios)] = np.nan
+
+    # https://github.com/scikit-hep/hist/blob/main/src/hist/intervals.py
+    ratio_uncert = ratio_uncertainty(
+        num=numValues,
+        denom=denValues,
+        uncertainty_type=kwargs.get("uncertainty_type", "poisson"),
+    )
+
+    return ratios, ratio_uncert
 
 
 def _draw_plot(hist_list, stack_dict, **kwargs):
@@ -234,7 +271,7 @@ def _plot2d(hist, plotConfig, **kwargs):
     return fig, ax
 
 
-def _plot_ratio(hist_list, stack_dict, plotConfig, **kwargs):
+def _plot_ratio(hist_list, stack_dict, ratio_list, **kwargs):
     r"""
     Takes options:
         "norm"              : bool (False),
@@ -262,31 +299,6 @@ def _plot_ratio(hist_list, stack_dict, plotConfig, **kwargs):
     subplot_ax = fig.add_subplot(grid[1], sharex=main_ax)
     plt.setp(main_ax.get_xticklabels(), visible=False)
 
-    numValues = hist_list[0].values()
-
-    #
-    # If stack is given use it for the denominator
-    #   else, take the last histogram
-    #
-    if stack_dict:
-        hStackHists = list(stack_dict.values())
-        denValues = [h.values() for h in hStackHists]
-        denValues = np.sum(denValues, axis=0)
-    else:
-        denValues = hist_list[-1].values()
-
-    denValues[denValues == 0] = _epsilon
-    ratios = numValues / denValues
-
-    if kwargs.get("norm", False):
-        numSF = np.sum(hist_list[0].values(), axis=0)
-        denSF = np.sum(denValues, axis=0)
-        ratios *= denSF / numSF
-
-    # Set 0 and inf to nan to hide during plotting
-    ratios[ratios == 0] = np.nan
-    ratios[np.isinf(ratios)] = np.nan
-
     central_value_artist = subplot_ax.axhline(
         kwargs.get("ratio_line_value", 1.0),
         color="black",
@@ -294,24 +306,17 @@ def _plot_ratio(hist_list, stack_dict, plotConfig, **kwargs):
         linewidth=1.0
     )
 
-    # https://github.com/scikit-hep/hist/blob/main/src/hist/intervals.py
-    ratio_uncert = ratio_uncertainty(
-        num=numValues,
-        denom=denValues,
-        uncertainty_type=kwargs.get("uncertainty_type", "poisson"),
-    )
+    for ir, ratio in enumerate(ratio_list):
 
-    x_values = hist_list[0].axes[0].centers
-
-    subplot_ax.errorbar(
-        x_values,
-        ratios,
-        yerr=ratio_uncert,
-        color="black",
-        marker="o",
-        linestyle="none",
-        markersize=4,
-    )
+        subplot_ax.errorbar(
+            ratio[0],       # x-values
+            ratio[1],       # y-values
+            yerr=ratio[2],
+            color=kwargs.get("ratio_colors")[ir],
+            marker=kwargs.get("ratio_markers")[ir],
+            linestyle="none",
+            markersize=4,
+        )
 
     #
     #  labels / limits
@@ -521,7 +526,30 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
     kwargs["stack_labels"] = []
 
     if kwargs.get("doRatio", False):
-        fig, main_ax, ratio_ax = _plot_ratio(hists, {}, plotConfig, **kwargs)
+
+        ratio_plots = []
+        ratio_colors = []
+        ratio_markers = []
+
+        denValues = hists[-1].values()
+
+        denValues[denValues == 0] = _epsilon
+        denCenters = hists[-1].axes[0].centers
+
+        for iH in range(len(hists) - 1):
+
+            numValues = hists[iH].values()
+
+            ratios, ratio_uncert = makeRatio(numValues, denValues, **kwargs)
+
+            ratio_plots.append((denCenters, ratios, ratio_uncert))
+            ratio_colors.append(_colors[iH])
+            ratio_markers.append("o")
+
+        kwargs["ratio_colors"]  = ratio_colors
+        kwargs["ratio_markers"] = ratio_markers
+
+        fig, main_ax, ratio_ax = _plot_ratio(hists, {}, ratio_plots, **kwargs)
         ax = (main_ax, ratio_ax)
     else:
         fig, ax = _plot(hists, {}, plotConfig, **kwargs)
@@ -582,8 +610,10 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
     hist_colors_edge = []
     hist_labels = []
     hist_types = []
+    hist_index = {}
 
     for k, v in hist_config.items():
+        hist_index[k] = len(hists)
         this_process = v["process"]
         this_year = sum if v["year"] == "RunII" else v["year"]
         tagNames.append(v["tag"])
@@ -687,7 +717,35 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
     kwargs["stack_labels"]      = stack_labels
 
     if kwargs.get("doRatio", False):
-        fig, main_ax, ratio_ax = _plot_ratio(hists, stack_dict, plotConfig, **kwargs)
+        ratio_config = plotConfig["ratios"]
+        ratio_plots = []
+        ratio_colors = []
+        ratio_markers = []
+
+        for k, v in ratio_config.items():
+
+            numDict = v.get("numerator")
+            denDict = v.get("denominator")
+
+            numValues, numCenters = get_values_centers_from_dict(numDict, hist_index, hists, stack_dict)
+            denValues, _          = get_values_centers_from_dict(denDict, hist_index, hists, stack_dict)
+
+            if kwargs.get("norm", False):
+                v["norm"] = True
+
+            #
+            # Clean den
+            #
+            ratios, ratio_uncert = makeRatio(numValues, denValues, **v)
+
+            ratio_plots.append((numCenters, ratios, ratio_uncert))
+            ratio_colors.append(v.get("color", "black"))
+            ratio_markers.append(v.get("marker", "o"))
+
+        kwargs["ratio_colors"]  = ratio_colors
+        kwargs["ratio_markers"] = ratio_markers
+
+        fig, main_ax, ratio_ax = _plot_ratio(hists, stack_dict, ratio_plots,  **kwargs)
         ax = (main_ax, ratio_ax)
     else:
         fig, ax = _plot(hists, stack_dict, plotConfig, **kwargs)
@@ -802,6 +860,7 @@ def parse_args():
                         help='Metadata file.')
 
     parser.add_argument('--doTest', action="store_true", help='Metadata file.')
+    parser.add_argument('--debug', action="store_true", help='')
 
     args = parser.parse_args()
     return args

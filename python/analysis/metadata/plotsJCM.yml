@@ -7,36 +7,15 @@ hists:
                 edgecolor: k
                 fillcolor: k            
 
-        HH4b:
-                process: HH4b
+        JCM:
+                process: JCM
                 tag: fourTag
                 year: RunII
-                label: HH4b (x100)
+                label: JCM fit
                 edgecolor: r
                 fillcolor: r            
                 histtype: step
-                scalefactor: 100
-                
-        ZH4b:
-                process: ZH4b
-                tag: fourTag
-                year: RunII
-                label: ZH4b (x100)
-                edgecolor: b
-                fillcolor: b            
-                histtype: step
-                scalefactor: 100
-                
-        ZZ4b:
-                process: ZZ4b
-                tag: fourTag
-                year: RunII
-                label: ZZ4b (x100)
-                edgecolor: g
-                fillcolor: g            
-                histtype: step
-                scalefactor: 100
-
+                scalefactor: 1
 
 stack:
         TTTo2L2Nu:
@@ -89,6 +68,7 @@ stack:
                             process: TTToHadronic
                             tag: threeTag
                             scalefactor: -1
+            
 
 ratios:
         dataToBkg:
@@ -100,6 +80,18 @@ ratios:
                 uncertianty:
                         nominal
                 color: k
+                marker: "o"
+
+        dataToJCM:
+                numerator:
+                        type: hists
+                        key: data
+                denominator:
+                        type: hists
+                        key: JCM
+                uncertianty:
+                        nominal
+                color: r
                 marker: "o"
 
 
