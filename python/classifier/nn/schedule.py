@@ -22,11 +22,6 @@ class BSScheduler(ABC):
 class Schedule(ABC):
     epoch: int
 
-    def __init__(self, **kwargs):
-        for k, v in kwargs.items():
-            if hasattr(self, k):
-                setattr(self, k, v)
-
     @abstractmethod
     def optimizer(cls, parameters, **kwargs) -> optim.Optimizer: ...
 
@@ -37,7 +32,37 @@ class Schedule(ABC):
     def lr_scheduler(cls, optimizer: optim.Optimizer, **kwargs) -> LRScheduler: ...
 
 
-class MultiStepBS(BSScheduler):
+class MilestoneStep:
+    def __init__(self, milestones: Optional[Iterable[int]] = None):
+        self._step = 0
+        self._milestone = 0
+        self._milestones = []
+        self.milestones = milestones
+
+    @property
+    def milestone(self):
+        return self._milestone
+
+    @property
+    def milestones(self):
+        return self._milestones
+
+    @milestones.setter
+    def milestones(self, milestones: Iterable[int] = None):
+        self._milestones = sorted(milestones or [])
+
+    def step(self, step: int = None):
+        if step is None:
+            self._step += 1
+        else:
+            self._step = step
+        milestone = bisect_right(self._milestones, self._step)
+        changed = milestone != self._milestone
+        self._milestone = milestone
+        return changed
+
+
+class MultiStepBS(BSScheduler, MilestoneStep):
     def __init__(
         self,
         dataset: Dataset,
@@ -46,13 +71,12 @@ class MultiStepBS(BSScheduler):
         gamma: Optional[float] = None,
         **kwargs,
     ):
+        super().__init__(milestones=milestones)
         self.dataset = dataset
         self.batch_size = batch_size
-        self.milestones = sorted(milestones or [])
         self.gamma = gamma
         self.kwargs = kwargs
 
-        self._epoch = 0
         self._bs = batch_size
         self._dataloader: DataLoader = None
 
@@ -65,9 +89,5 @@ class MultiStepBS(BSScheduler):
         return self._dataloader
 
     def step(self, epoch: int = None):
-        if epoch is None:
-            self._epoch += 1
-        else:
-            self._epoch = epoch
-        milestone = bisect_right(self.milestones, self._epoch)
-        self._bs = int(self.batch_size * (self.gamma**milestone))
+        super().step(epoch)
+        self._bs = int(self.batch_size * (self.gamma**self.milestone))

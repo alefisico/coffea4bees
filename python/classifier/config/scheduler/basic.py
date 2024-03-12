@@ -1,6 +1,9 @@
+from dataclasses import dataclass
+
 from classifier.nn.schedule import MultiStepBS, Schedule
 
 
+@dataclass
 class FixedStep(Schedule):
     """
     Use a much larger training batches and learning rate by default [1]_.
@@ -8,14 +11,18 @@ class FixedStep(Schedule):
     .. [1] https://arxiv.org/pdf/1711.00489.pdf
     """
 
-    epoch = 20
+    epoch: int = 20
 
-    bs_init = 2**10
-    bs_milestones = [1, 3, 6, 10]
-    bs_scale = 2
-    lr_init = 1.0e-2
-    lr_milestones = [15, 16, 17, 18, 19, 20, 21, 22, 23, 24]
-    lr_scale = 0.25
+    bs_init: int = 2**10
+    bs_scale: float = 2.0
+    bs_milestones: list[int] = (1, 3, 6, 10)
+    lr_init: float = 1.0e-2
+    lr_scale: float = 0.25
+    lr_milestones: list[int] = (15, 16, 17, 18, 19, 20, 21, 22, 23, 24)
+
+    def __post_init__(self):
+        self.bs_milestones = sorted(self.bs_milestones)
+        self.lr_milestones = sorted(self.lr_milestones)
 
     def optimizer(self, parameters, **kwargs):
         import torch.optim as optim
@@ -47,11 +54,12 @@ class FixedStep(Schedule):
         )
 
 
+@dataclass
 class AutoStep(FixedStep):
-    lr_threshold = 1e-4
-    lr_patience = 1
-    lr_cooldown = 1
-    lr_min = 2e-4
+    lr_threshold: float = 1e-4
+    lr_patience: int = 1
+    lr_cooldown: int = 1
+    lr_min: float = 2e-4
 
     def lr_scheduler(self, optimizer, **kwargs):
         from torch.optim.lr_scheduler import ReduceLROnPlateau
