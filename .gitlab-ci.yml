@@ -178,7 +178,7 @@ reana-job:
   stage: reana
   image: gitlab-registry.cern.ch/cms-cloud/cmssw-docker/cc7-cms 
   tags:
-    - k8s-cvmfs
+    - docker-privileged-xl
   before_script:
     - wget -q https://github.com/reanahub/reana-client/releases/download/0.9.3/reana-client-0.9.3-x86_64.AppImage
     - mv ./reana-client-0.9.3-x86_64.AppImage reana-client
