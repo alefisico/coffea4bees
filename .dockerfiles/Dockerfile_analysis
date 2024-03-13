@@ -1,8 +1,10 @@
 FROM coffeateam/coffea-dask:latest
 #### coffea latest is ecaebc20c1d
 
-RUN apt-get update && apt-get -y install poppler-utils
+RUN apt-get update && apt-get -y install poppler-utils snakemake
+RUN pip install --upgrade pip
 RUN pip install rucio-clients pycodestyle 
+RUN pip install reana-client
 
 RUN mkdir -p /home/user/coffea4bees/python/
 COPY python/ /home/user/coffea4bees/python/

@@ -16,12 +16,12 @@ workflow:
     - if: $CI_COMMIT_BRANCH
 
 stages:          
-  - reana
   - build
   - skimmer-test
   - analysis-test
   - plot
   - cutflow
+  - reana
 
 voms_proxy:
   stage: build
@@ -176,7 +176,7 @@ baseclass-test-job:
 
 reana-job:
   stage: reana
-  image: gitlab-registry.cern.ch/algomez/coffea4bees:test
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
   tags:
     - k8s-cvmfs
   before_script:
