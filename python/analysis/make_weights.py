@@ -89,14 +89,16 @@ if __name__ == "__main__":
     #
     mu_qcd_bin_by_bin     = np.zeros(len(qcd4b.values()))
     qcd3b_non_zero_filter = qcd3b.values() > 0
-    mu_qcd_bin_by_bin[qcd3b_non_zero_filter] = qcd4b.values()[qcd3b_non_zero_filter] / qcd3b.values()[qcd3b_non_zero_filter]
+    mu_qcd_bin_by_bin[qcd3b_non_zero_filter] = np.abs(qcd4b.values()[qcd3b_non_zero_filter] / qcd3b.values()[qcd3b_non_zero_filter])
+    mu_qcd_bin_by_bin[mu_qcd_bin_by_bin<0] = 0
     data3b_error = np.sqrt(data3b.variances()) * mu_qcd_bin_by_bin
     data3b_variances = data3b_error**2
 
-    combined_variances = data4b.variances() #+ data3b_variances + tt4b.variances() + tt3b.variances()
+    combined_variances = data4b.variances() + data3b_variances + tt4b.variances() + tt3b.variances()
     combined_error = np.sqrt(combined_variances)
     previous_error = np.sqrt(data4b.variances())
-
+    data4b.view().variance = combined_variances
+    
     #
     #  Print increases in errors
     #
@@ -105,10 +107,11 @@ if __name__ == "__main__":
 
     for ibin in range(len(data4b.values()) - 1):
         x = data4b.axes[0].centers[ibin] - 0.5
-        increase = 100 * combined_error[ibin] / previous_error[ibin] if previous_error[ibin] else 100
+        #increase = 100 * combined_error[ibin] / previous_error[ibin] if previous_error[ibin] else 100
+        increase = 100 * np.sqrt(data4b.variances()[ibin]) / previous_error[ibin] if previous_error[ibin] else 100
         print(f'{ibin:2}, {x:2.0f}| {previous_error[ibin]:5.1f}, {data3b_error[ibin]:5.1f}, {tt4b_error[ibin]:5.1f}, {tt3b_error[ibin]:5.1f}, {increase:5.0f}%')
 
-    data4b.view().variance = combined_variances
+
 
     #
     #  Get data to fit

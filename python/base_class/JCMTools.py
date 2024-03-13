@@ -136,7 +136,9 @@ class jetCombinatoricModel:
         #
         # Do the fit
         #
-        popt, errs = curve_fit(self.bkgd_func_njet_constrained, bin_centers, bin_values, self.default_parameters, sigma=bin_errors, bounds=(self.parameters_lower_bounds, self.parameters_upper_bounds))
+        popt, errs = curve_fit(self.bkgd_func_njet_constrained, bin_centers, bin_values, self.default_parameters, sigma=bin_errors,
+                               bounds=(self.parameters_lower_bounds, self.parameters_upper_bounds)
+                               )
 
         self.fit_errs = errs
         sigma_p1 = [np.absolute(errs[i][i])**0.5 for i in range(len(popt))]

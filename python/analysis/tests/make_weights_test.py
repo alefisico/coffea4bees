@@ -49,12 +49,13 @@ class TestJCM(unittest.TestCase):
                           
                           ('testJCM_ROOT/jetCombinatoricModel_SB_.yml',   'analysis/tests/jetCombinatoricModel_SB_ROOT_new.yml'),
                           ('testJCM_Coffea/jetCombinatoricModel_SB_.yml', 'analysis/tests/jetCombinatoricModel_SB_Coffea_new.yml'),
-
+                
                           ]:
 
             test_file      = test_pair[0]
             reference_file = test_pair[1]
-
+            print("testing",test_file)
+            
             # Load the content of the test YAML file
             with open(test_file, 'r') as file:
                 test_data = yaml.safe_load(file)
