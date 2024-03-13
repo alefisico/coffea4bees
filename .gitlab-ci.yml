@@ -181,12 +181,11 @@ reana-job:
     - k8s-cvmfs
   before_script:
     - wget -q https://github.com/reanahub/reana-client/releases/download/0.9.3/reana-client-0.9.3-x86_64.AppImage
-    - chmod u+x ./reana-client-0.9.3-x86_64.AppImage
-    - mkdir -p $HOME/.local/bin/
-    - mv ./reana-client-0.9.3-x86_64.AppImage $HOME/.local/bin/reana-client-0.9.3
+    - mv ./reana-client-0.9.3-x86_64.AppImage reana-client
+    - chmod u+x ./reana-client
     - export REANA_SERVER_URL=https://reana.cern.ch 
     - export REANA_ACCESS_TOKEN="${REANA_TOKEN}"
-    - reana-client-0.9.3 ping
+    - ./reana-client ping
   script:
-    - reana-client-0.9.3 run -f reana.yaml -w coffea4bees
+    - ./reana-client run -f reana.yaml -w coffea4bees
   allow_failure: true
