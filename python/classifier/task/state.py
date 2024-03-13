@@ -5,6 +5,7 @@ from textwrap import indent
 from typing import Any, Mapping
 
 from ..process import status
+from ..typetools import dict_proxy
 from .special import Static
 
 _MAX_WIDTH = 30
@@ -78,12 +79,11 @@ class Cascade(GlobalState, Static):
     def parse(cls, opts: list[str]):
         from . import parse
 
+        proxy = dict_proxy(cls)
         for opt in opts:
             data = parse.mappings(opt)
             if isinstance(data, Mapping):
-                for k, v in data.items():
-                    if not _is_special(k):
-                        setattr(cls, k, v)
+                proxy.updata(dict(filter(_is_state, data.items())))
             else:
                 logging.error(
                     f"Unsupported data {data} when updating {cls.__name__}, expect a mapping."
