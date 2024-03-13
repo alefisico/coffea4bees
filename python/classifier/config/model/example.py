@@ -34,14 +34,14 @@ class _HCR(KFoldClassifier):
         nargs="+",
         default=["FixedStep"],
         metavar=("CLASS", "KWARGS"),
-        help="training schedule configuration",
+        help="training scheduler",
     )
     argparser.add_argument(
         "--finetuning",
         nargs="+",
         default=[],
         metavar=("CLASS", "KWARGS"),
-        help="fine-tuning schedule configuration",
+        help="fine-tuning scheduler",
     )
 
     @staticmethod
