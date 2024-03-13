@@ -47,18 +47,19 @@ def get_value_nested_dict(nested_dict, target_key, default=None):
 
     return default
 
+
 def get_values_centers_from_dict(input_dict, hist_index, hists, stack_dict):
     if input_dict["type"] == "hists":
         return hists[hist_index[input_dict["key"]]].values(), hists[hist_index[input_dict["key"]]].axes[0].centers
 
-
     if input_dict["type"] == "stack":
         hStackHists = list(stack_dict.values())
-        denValues = [h.values() for h in hStackHists]
-        denValues = np.sum(denValues, axis=0)
-        return denValues, hStackHists[0].axes[0].centers
+        return_values = [h.values() for h in hStackHists]
+        return_values = np.sum(return_values, axis=0)
+        return return_values, hStackHists[0].axes[0].centers
 
     print("ERROR: ratio needs to be of type 'hists' or 'stack'")
+
 
 def _savefig(fig, var, *args):
     outputPath = "/".join(args)
@@ -535,16 +536,15 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
         denValues[denValues == 0] = _epsilon
         denCenters = hists[-1].axes[0].centers
 
-        for iH in range(len(hists)-1):
+        for iH in range(len(hists) - 1):
 
             numValues = hists[iH].values()
 
             ratios, ratio_uncert = makeRatio(numValues, denValues, **kwargs)
 
-            ratio_plots.append( (denCenters, ratios, ratio_uncert) )
+            ratio_plots.append((denCenters, ratios, ratio_uncert))
             ratio_colors.append(_colors[iH])
             ratio_markers.append("o")
-
 
         kwargs["ratio_colors"]  = ratio_colors
         kwargs["ratio_markers"] = ratio_markers
@@ -730,16 +730,17 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
             numValues, numCenters = get_values_centers_from_dict(numDict, hist_index, hists, stack_dict)
             denValues, _          = get_values_centers_from_dict(denDict, hist_index, hists, stack_dict)
 
-            if kwargs.get("norm", False): v["norm"] = True
+            if kwargs.get("norm", False):
+                v["norm"] = True
 
             #
             # Clean den
             #
             ratios, ratio_uncert = makeRatio(numValues, denValues, **v)
 
-            ratio_plots.append( (numCenters, ratios, ratio_uncert) )
-            ratio_colors.append(v.get("color","black"))
-            ratio_markers.append(v.get("marker","o"))
+            ratio_plots.append((numCenters, ratios, ratio_uncert))
+            ratio_colors.append(v.get("color", "black"))
+            ratio_markers.append(v.get("marker", "o"))
 
         kwargs["ratio_colors"]  = ratio_colors
         kwargs["ratio_markers"] = ratio_markers

@@ -4,11 +4,12 @@ import yaml
 import sys
 import os
 sys.path.insert(0, os.getcwd())
-from base_class.plots.plots import get_value_nested_dict, makePlot, load_config, load_hists, read_axes_and_cuts, get_cut_dict
+from base_class.plots.plots import get_value_nested_dict, makePlot, load_config, load_hists, read_axes_and_cuts, get_cut_dict, get_value_nested_dict, get_values_centers_from_dict
 import sys
 import base_class.plots.iPlot_config as cfg
 import numpy as np
 from base_class.tests.parser import wrapper
+from unittest.mock import MagicMock
 
 
 #
@@ -101,6 +102,51 @@ class PlotTestCase(unittest.TestCase):
             y_plot = ax.lines[-1].get_ydata()
             np.testing.assert_array_equal(y_plot, counts)
 
+
+    def test_get_values_centers_from_dict_hists_type(self):
+        # Mocking histogram objects
+        hist_mock = MagicMock()
+        hist_mock.values.return_value = np.array([1, 2, 3])
+        hist_mock.axes[0].centers = np.array([0.5, 1.5, 2.5])
+        
+        # Setting up inputs
+        input_dict = {"type": "hists", "key": "hist1"}
+        hist_index = {"hist1": 0}
+        hists = [hist_mock]
+        stack_dict = {}
+        
+        # Expected values
+        expected_values = np.array([1, 2, 3])
+        expected_centers = np.array([0.5, 1.5, 2.5])
+        
+        # Test
+        values, centers = get_values_centers_from_dict(input_dict, hist_index, hists, stack_dict)
+        np.testing.assert_array_equal(values, expected_values)
+        np.testing.assert_array_equal(centers, expected_centers)
+
+
+    def test_stack_type(self):
+        # Mocking histogram objects
+        hist_mock = MagicMock()
+        hist_mock.values.return_value = np.array([1, 2, 3])
+        hist_mock.axes[0].centers = np.array([0.5, 1.5, 2.5])
+        stack_dict = {"stack1": hist_mock, "stack2": hist_mock}
+
+        # Setting up inputs
+        input_dict = {"type": "stack"}
+        hist_index = {}
+        hists = []
+        
+        # Expected values (sum of two histograms)
+        expected_values = np.array([2, 4, 6])
+        expected_centers = np.array([0.5, 1.5, 2.5])
+        
+        # Test
+        values, centers = get_values_centers_from_dict(input_dict, hist_index, hists, stack_dict)
+        np.testing.assert_array_equal(values, expected_values)
+        np.testing.assert_array_equal(centers, expected_centers)        
+
+            
 
 if __name__ == '__main__':
     wrapper.parse_args()
