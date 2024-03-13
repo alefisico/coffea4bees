@@ -1,3 +1,5 @@
+from enum import Enum
+
 from classifier.task import Cascade
 
 
@@ -30,3 +32,16 @@ class Input(Cascade):
 class Output(Cascade):
     class_score: str = "class_score"
     quadjet_score: str = "quadjet_score"
+
+
+class MassRegion(Enum):
+    SB = 0b10
+    ZZSR = 0b0101
+    ZHSR = 0b1001
+    HHSR = 0b1101
+    SR = 0b01
+
+
+class NTag(Enum):
+    fourTag = 0b10
+    threeTag = 0b01

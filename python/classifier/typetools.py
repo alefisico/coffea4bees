@@ -1,4 +1,5 @@
 import builtins
+from enum import Enum
 from functools import partial
 from typing import Mapping, MutableMapping
 
@@ -41,3 +42,7 @@ class dict_proxy(MutableMapping):
                 else:
                     self[k] = v
         return self
+
+
+def enum_dict(enum: type[Enum]):
+    return {i.name: i.value for i in enum}

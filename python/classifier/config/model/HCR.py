@@ -5,7 +5,8 @@ from typing import TYPE_CHECKING
 
 from classifier.task import ArgParser, parse
 
-from ..setting.HCR import Input, Output
+from ..setting.HCR import Input, MassRegion, Output
+from ..state.label import MultiClass
 from ._kfold import KFoldClassifier
 
 if TYPE_CHECKING:
@@ -70,10 +71,27 @@ class _HCR(KFoldClassifier):
 class FvT(_HCR):
     @staticmethod
     def loss(model: HCRModel, batch: dict[str, Tensor]):
+        import torch
         import torch.nn.functional as F
 
+        # get tensors
         c_score = batch[Output.class_score]
+        is_SR = (batch[Input.region] & MassRegion.SR.value) != 0
         weight = batch[Input.weight]
-        cross_entropy = F.cross_entropy(c_score, batch[Input.label], reduction="none")
+
+        # remove 4b data contribution from SR
+        no_SR_d4 = torch.ones(
+            len(MultiClass.labels), dtype=c_score.dtype, device=c_score.device
+        )
+        no_SR_d4[MultiClass.labels.index("d4")] = 0
+
+        # calculate loss
+        cross_entropy = torch.zeros_like(weight)
+        cross_entropy[~is_SR] = F.cross_entropy(
+            c_score[~is_SR], batch[Input.label][~is_SR], reduction="none"
+        )
+        cross_entropy[is_SR] = F.cross_entropy(
+            c_score[is_SR], batch[Input.label][is_SR], weight=no_SR_d4, reduction="none"
+        )
         loss = (cross_entropy * weight).sum() / weight.sum()
         return loss

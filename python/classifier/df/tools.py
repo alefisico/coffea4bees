@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import cached_property
-from typing import TYPE_CHECKING, Callable, Iterable
+from typing import TYPE_CHECKING, Callable, Iterable, Literal
 
 from ..config.setting.df import Columns
 from ..config.state.label import MultiClass
@@ -70,12 +70,17 @@ class map_selection_to_index:
     def __init__(self, *args: str, **kwargs: int):
         self._indices = dict(zip(args, range(len(args))))
         self._indices.update(kwargs)
-        self._default = 0
-        self._selection = ...
+        self.set()
 
-    def set(self, default: int = 0, selection: str = ...):
+    def set(
+        self,
+        default: int = 0,
+        selection: str = ...,
+        op: Literal["+", "|"] = "+",
+    ):
         self._default = default
         self._selection = selection
+        self._op = op
         return self
 
     def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -86,7 +91,11 @@ class map_selection_to_index:
         sel = np.zeros(len(df), dtype=bool)
         for k, v in self._indices.items():
             arr = df[k].to_numpy(dtype=bool)
-            idx += arr * t.type(v)
+            match self._op:
+                case "+":
+                    idx += arr * t.type(v)
+                case "|":
+                    idx |= arr * t.type(v)
             sel |= arr
         idx[~sel] = t.type(self._default)
         df.loc[

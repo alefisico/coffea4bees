@@ -88,8 +88,6 @@ TODO
   - Add fine-tuning
   - Add die loss?
 - FvT
-  - Normalization
-  - selection
   - SR ?
 - Add SvB
 - Add DvT

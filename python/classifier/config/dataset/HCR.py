@@ -4,7 +4,7 @@ import re
 from abc import abstractmethod
 from functools import cache, cached_property
 from typing import TYPE_CHECKING, Callable, Iterable
-from classifier.task import ArgParser
+
 from classifier.df.tools import (
     add_event_offset,
     add_label_index,
@@ -13,10 +13,12 @@ from classifier.df.tools import (
     map_selection_to_index,
     prescale,
 )
+from classifier.task import ArgParser
+from classifier.typetools import enum_dict
+from classifier.utils import subgroups
 
-from ...utils import subgroups
 from ..setting.df import Columns
-from ..setting.HCR import Input, InputBranch
+from ..setting.HCR import Input, InputBranch, MassRegion, NTag
 from ._df import LoadGroupedRoot
 
 if TYPE_CHECKING:
@@ -35,6 +37,7 @@ class _Common(LoadGroupedRoot):
         "ZZSR",
         "ZHSR",
         "HHSR",
+        "SR",
         "SB",
         "fourTag",
         "threeTag",
@@ -60,13 +63,13 @@ class _Common(LoadGroupedRoot):
             [
                 add_event_offset(60),  # 1, 2, 3, 4, 5, 6 folds
                 map_selection_to_index(
-                    SB=0b10, ZZSR=0b00101, ZHSR=0b01001, HHSR=0b10001
-                ).set(selection=_Derived.region_index),
+                    **enum_dict(MassRegion)
+                ).set(selection=_Derived.region_index, op="|"),
                 map_selection_to_index(
-                    fourTag=0b10, threeTag=0b01
+                    **enum_dict(NTag)
                 ).set(selection=_Derived.ntag_index),
                 drop_columns(
-                    "ZZSR", "ZHSR", "HHSR", "SB",
+                    "ZZSR", "ZHSR", "HHSR", "SR", "SB",
                     "fourTag", "threeTag",
                     "passHLT", Columns.event,
                 ),
@@ -150,8 +153,21 @@ class _Common(LoadGroupedRoot):
     ]: ...
 
 
-def _FvT_selection(df):
-    return df[df["SB"] & df["passHLT"] & (df["fourTag"] | df["threeTag"])]
+def _FvT_data_selection(df):
+    return df[
+        df["passHLT"]  # trigger
+        & (df["SB"] | df["SR"])  # boson mass
+        & (df["fourTag"] | df["threeTag"])  # n-tag
+        & (~(df["SR"] & df["fourTag"]))  # blind
+    ]
+
+
+def _FvT_ttbar_selection(df):
+    return df[
+        df["passHLT"]  # trigger
+        & (df["SB"] | df["SR"])  # boson mass
+        & (df["fourTag"] | df["threeTag"])  # n-tag
+    ]
 
 
 def _FvT_ttbar_3b_prescale(df):
@@ -169,7 +185,6 @@ class FvT(_Common):
 
     def __init__(self):
         super().__init__()
-        # TODO normalization
 
     @property
     def allowed_labels(self):
@@ -183,7 +198,7 @@ class FvT(_Common):
                     ("data",),
                 ],
                 [
-                    _FvT_selection,
+                    _FvT_data_selection,
                     add_label_index_from_column(threeTag="d3", fourTag="d4"),
                 ],
             ),
@@ -192,7 +207,7 @@ class FvT(_Common):
                     ("ttbar",),
                 ],
                 [
-                    _FvT_selection,
+                    _FvT_ttbar_selection,
                     prescale(
                         self.opts.ttbar_3b_prescale, selection=_FvT_ttbar_3b_prescale
                     ),

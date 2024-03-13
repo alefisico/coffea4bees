@@ -62,6 +62,7 @@ def build_input_friend(
                             "ZZSR",
                             "ZHSR",
                             "HHSR",
+                            "SR",
                             "SB",
                             "fourTag",
                             "threeTag",
