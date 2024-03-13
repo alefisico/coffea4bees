@@ -93,7 +93,7 @@ if __name__ == "__main__":
     data3b_error = np.sqrt(data3b.variances()) * mu_qcd_bin_by_bin
     data3b_variances = data3b_error**2
 
-    combined_variances = data4b.variances() + data3b_variances + tt4b.variances() + tt3b.variances()
+    combined_variances = data4b.variances() #+ data3b_variances + tt4b.variances() + tt3b.variances()
     combined_error = np.sqrt(combined_variances)
     previous_error = np.sqrt(data4b.variances())
 
