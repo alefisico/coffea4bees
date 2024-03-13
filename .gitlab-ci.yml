@@ -182,6 +182,7 @@ reana-job:
   before_script:
     - wget -q https://github.com/reanahub/reana-client/releases/download/0.9.3/reana-client-0.9.3-x86_64.AppImage
     - chmod u+x ./reana-client-0.9.3-x86_64.AppImage
+    - mkdir $HOME/.local/bin/
     - mv ./reana-client-0.9.3-x86_64.AppImage $HOME/.local/bin/reana-client-0.9.3
     - export REANA_SERVER_URL=https://reana.cern.ch 
     - export REANA_ACCESS_TOKEN="${REANA_TOKEN}"
