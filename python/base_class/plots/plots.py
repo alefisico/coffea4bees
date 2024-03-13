@@ -838,7 +838,7 @@ def make2DPlot(hists, process, cutList, plotConfig, var='selJets.pt',
 
 def parse_args():
 
-    parser = argparse.ArgumentParser(description='uproot_plots')
+    parser = argparse.ArgumentParser(description='plots', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument(dest="inputFile",
                         default='hists.pkl', nargs='+',
