@@ -37,6 +37,7 @@ class jetCombinatoricModel:
 
         self.parameters         = [self.pseudoTagProb, self.pairEnhancement, self.pairEnhancementDecay, self.threeTightTagFraction]
 
+        
         #
         #  Data
         #
@@ -48,8 +49,12 @@ class jetCombinatoricModel:
 
         self.default_parameters = []
         self.fit_parameters = []
+        self.parameters_lower_bounds = []
+        self.parameters_upper_bounds = []
         for p in self.parameters:
             self.fit_parameters.append(p)
+            self.parameters_lower_bounds.append(p.lowerLimit)
+            self.parameters_upper_bounds.append(p.upperLimit)
             self.default_parameters.append(p.default)
 
         self.nParameters = len(self.parameters)
@@ -59,12 +64,15 @@ class jetCombinatoricModel:
             parameter.dump()
 
     def fixParameter(self, name, value):
-        for p in self.parameters:
+        for ip, p in enumerate(self.parameters):
             if name is p.name:
                 print(f"Fixing {name} to {value}")
                 p.fix = value
-                self.fit_parameters.remove(p)
-                self.default_parameters.remove(p.default)
+                self.fit_parameters.pop(ip)
+                self.default_parameters.pop(ip)
+                self.parameters_lower_bounds.pop(ip)
+                self.parameters_upper_bounds.pop(ip)
+
 
         #
         #  Fix the normalizaiton to the threeTightTagFraction
@@ -128,7 +136,9 @@ class jetCombinatoricModel:
         #
         # Do the fit
         #
-        popt, errs = curve_fit(self.bkgd_func_njet_constrained, bin_centers, bin_values, self.default_parameters, sigma=bin_errors)
+        popt, errs = curve_fit(self.bkgd_func_njet_constrained, bin_centers, bin_values, self.default_parameters, sigma=bin_errors,
+                               bounds=(self.parameters_lower_bounds, self.parameters_upper_bounds)
+                               )
 
         self.fit_errs = errs
         sigma_p1 = [np.absolute(errs[i][i])**0.5 for i in range(len(popt))]
