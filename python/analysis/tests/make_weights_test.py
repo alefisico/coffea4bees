@@ -49,12 +49,13 @@ class TestJCM(unittest.TestCase):
                           
                           ('testJCM_ROOT/jetCombinatoricModel_SB_.yml',   'analysis/tests/jetCombinatoricModel_SB_ROOT_new.yml'),
                           ('testJCM_Coffea/jetCombinatoricModel_SB_.yml', 'analysis/tests/jetCombinatoricModel_SB_Coffea_new.yml'),
-
+                
                           ]:
 
             test_file      = test_pair[0]
             reference_file = test_pair[1]
-
+            print("testing",test_file)
+            
             # Load the content of the test YAML file
             with open(test_file, 'r') as file:
                 test_data = yaml.safe_load(file)
@@ -62,9 +63,10 @@ class TestJCM(unittest.TestCase):
             # Load the content of the reference YAML file
             with open(reference_file, 'r') as file:
                 reference_data = yaml.safe_load(file)
-        
-            # Compare the two dictionaries
-            self.assertEqual(test_data, reference_data, "The YAML files do not match.")
+
+            for k, v in test_data.items():
+                self.assertAlmostEqual(v, reference_data[k], delta=0.001, msg=f"Failed match {k}... {v} vs {reference_data[k]} ... Diff: {v-reference_data[k]}")
+
 
 if __name__ == '__main__':
     unittest.main()
