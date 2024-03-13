@@ -1,16 +1,15 @@
 from __future__ import annotations
 
-import importlib
 import json
-import logging
 import os
 import sys
 from collections import deque
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Optional, TypeVar
+from typing import TYPE_CHECKING, Callable, Optional
 
 import fsspec
 
+from ..utils import import_
 from .dataset import Dataset
 from .model import Model
 from .special import interface, new
@@ -57,22 +56,7 @@ class EntryPoint:
 
     @classmethod
     def _fetch_module(cls, module: str, key: str) -> tuple[ModuleType, type[Task]]:
-        modname, clsname = cls._fetch_module_name(module, key)
-        _mod, _cls = None, None
-        try:
-            _mod = importlib.import_module(modname)
-        except ModuleNotFoundError:
-            ...
-        except Exception as e:
-            logging.error(e)
-        if _mod is not None and clsname != "*":
-            try:
-                _cls = getattr(_mod, clsname)
-            except AttributeError:
-                ...
-            except Exception as e:
-                logging.error(e)
-        return _mod, _cls
+        return import_(*cls._fetch_module_name(module, key))
 
     def _fetch_all(self):
         self.mods: dict[str, list[Task]] = {}

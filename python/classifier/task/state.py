@@ -81,9 +81,9 @@ class Cascade(GlobalState, Static):
 
         proxy = dict_proxy(cls)
         for opt in opts:
-            data = parse.mappings(opt)
+            data = parse.mapping(opt)
             if isinstance(data, Mapping):
-                proxy.updata(dict(filter(_is_state, data.items())))
+                proxy.update(dict(filter(_is_state, data.items())))
             else:
                 logging.error(
                     f"Unsupported data {data} when updating {cls.__name__}, expect a mapping."

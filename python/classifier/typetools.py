@@ -33,10 +33,11 @@ class dict_proxy(MutableMapping):
     def __setitem__(self, __key, __value):
         return self._set(__key, __value)
 
-    def updata(self, *mappings: Mapping):
+    def update(self, *mappings: Mapping):
         for mapping in mappings:
             for k, v in mapping.items():
                 if k in self and isinstance(v, Mapping):
-                    dict_proxy(self[k]).updata(v)
+                    dict_proxy(self[k]).update(v)
                 else:
                     self[k] = v
+        return self

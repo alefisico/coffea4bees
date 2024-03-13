@@ -2,28 +2,28 @@ import logging
 from collections import defaultdict
 from io import StringIO
 from pathlib import Path
-from typing import Iterable, overload
+from typing import overload
 
 from ._utils import fsspec_read
 
 
-def _mapping_scheme(opt: str):
-    opt = opt.split(":///", 1)
-    if len(opt) == 1:
-        return None, opt[0]
+def _mapping_scheme(arg: str):
+    arg = arg.split(":///", 1)
+    if len(arg) == 1:
+        return None, arg[0]
     else:
-        return opt[0], opt[1]
+        return arg[0], arg[1]
 
 
-def _mapping_nested_keys(opt: str):
-    opt = opt.rsplit("@@", 1)
-    if len(opt) == 1:
-        return opt[0], None
+def _mapping_nested_keys(arg: str):
+    arg = arg.rsplit("@@", 1)
+    if len(arg) == 1:
+        return arg[0], None
     else:
-        return opt[0], opt[1].split(".")
+        return arg[0], arg[1].split(".")
 
 
-def mappings(opt: str):
+def mapping(arg: str):
     """
     - `{data}`: parse as yaml
     - `yaml:///{data}`: parse as yaml
@@ -34,15 +34,15 @@ def mappings(opt: str):
 
     `file`, `py` support an optional suffix `@@{key}.{key}...` to select a nested dict
     """
-    if opt is None:
+    if arg is None:
         return None
-    if opt == "":
+    if arg == "":
         return {}
 
     def error(msg: str):
-        logging.error(f'{msg} when parsing "{opt}"')
+        logging.error(f'{msg} when parsing "{arg}"')
 
-    protocol, data = _mapping_scheme(opt)
+    protocol, data = _mapping_scheme(arg)
     keys = None
     if protocol in ("file", "py"):
         data, keys = _mapping_nested_keys(data)
@@ -100,22 +100,24 @@ def mappings(opt: str):
 
 @overload
 def grouped_mappings(
-    opt: Iterable[tuple[str, str]], sep: str
+    opts: list[list[str]], sep: str
 ) -> dict[frozenset[str], list[str]]: ...
 
 
 @overload
 def grouped_mappings(
-    opt: Iterable[tuple[str, str]], sep: None = None
+    opts: list[list[str]], sep: None = None
 ) -> dict[str, list[str]]: ...
 
 
-def grouped_mappings(opt: Iterable[tuple[str, str]], sep: str = None):
+def grouped_mappings(opts: list[list[str]], sep: str = None):
     result = defaultdict(list)
-    if sep is None:
-        for k, v in opt:
-            result[k].append(v)
-    else:
-        for k, v in opt:
-            result[frozenset(k.split(sep))].extend(v.split(sep))
+    for opt in opts:
+        if len(opt) < 2:
+            continue
+        else:
+            arg = opt[0]
+            if sep is not None:
+                arg = frozenset(arg.split(sep))
+            result[arg].extend(opt[1:])
     return result

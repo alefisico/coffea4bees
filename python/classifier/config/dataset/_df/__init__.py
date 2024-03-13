@@ -106,7 +106,7 @@ class LoadRoot(ABC, Dataframe):
         return unique(
             reduce(
                 list.__add__,
-                (parse.mappings(f"file:///{f}") for f in filelists),
+                (parse.mapping(f"file:///{f}") for f in filelists),
                 files.copy(),
             )
         )
@@ -114,7 +114,7 @@ class LoadRoot(ABC, Dataframe):
     def _parse_friends(self, friends: list[str]) -> list[Friend]:
         from base_class.root import Friend
 
-        return [Friend.from_json(parse.mappings(f"file:///{f}")) for f in friends]
+        return [Friend.from_json(parse.mapping(f"file:///{f}")) for f in friends]
 
     def _from_root(self):
         yield self.from_root(), self.files
@@ -147,7 +147,7 @@ class LoadGroupedRoot(LoadRoot):
     argparser.add_argument(
         "--files",
         action="append",
-        nargs=2,
+        nargs="+",
         metavar=("GROUPS", "PATHS"),
         default=[],
         help="comma-separated groups and paths to the ROOT file",
@@ -155,7 +155,7 @@ class LoadGroupedRoot(LoadRoot):
     argparser.add_argument(
         "--filelists",
         action="append",
-        nargs=2,
+        nargs="+",
         metavar=("GROUPS", "PATHS"),
         default=[],
         help="comma-separated groups and paths to the filelist",
@@ -163,7 +163,7 @@ class LoadGroupedRoot(LoadRoot):
     argparser.add_argument(
         "--friends",
         action="append",
-        nargs=2,
+        nargs="+",
         metavar=("GROUPS", "PATHS"),
         default=[],
         help="comma-separated groups and paths to the json file with the friend tree metadata",

@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 
 from classifier.task import ArgParser, parse
 
-from ..scheduler import FinetuneStep, FixedStep
 from ..setting.HCR import Input, Output
 from ._kfold import KFoldClassifier
 
@@ -13,31 +12,35 @@ if TYPE_CHECKING:
     from classifier.discriminator.HCR import HCRModel
     from torch import Tensor
 
+_SCHEDULER = "classifier.config.scheduler"
+
 
 class _HCR(KFoldClassifier):
     argparser = ArgParser()
     argparser.add_argument(
         "--architecture",
-        type=parse.mappings,
+        type=parse.mapping,
         default="",
         help="HCR architecture",
     )
     argparser.add_argument(
         "--ghost-batch",
-        type=parse.mappings,
+        type=parse.mapping,
         default="",
         help="ghost batch normalization configuration",
     )
     argparser.add_argument(
         "--training",
-        type=parse.mappings,
-        default="",
+        nargs="+",
+        default=["FixedStep"],
+        metavar=("CLASS", "KWARGS"),
         help="training schedule configuration",
     )
     argparser.add_argument(
         "--finetuning",
-        type=parse.mappings,
-        default=None,
+        nargs="+",
+        default=[],
+        metavar=("CLASS", "KWARGS"),
         help="fine-tuning schedule configuration",
     )
 
@@ -51,12 +54,8 @@ class _HCR(KFoldClassifier):
 
         arch = HCRArch(**({"loss": self.loss} | self.opts.architecture))
         gbn = GBN(**self.opts.ghost_batch)
-        training = FixedStep(**self.opts.training)
-        finetuning = (
-            FinetuneStep(**self.opts.finetuning)
-            if self.opts.finetuning is not None
-            else None
-        )
+        training = parse.instance(self.opts.training, _SCHEDULER)
+        finetuning = parse.instance(self.opts.finetuning, _SCHEDULER)
 
         return HCRClassifier(
             arch=arch,

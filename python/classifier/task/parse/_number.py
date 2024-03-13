@@ -1,9 +1,9 @@
 import logging
 
 
-def intervals(opt: str, max: int = None) -> list[int]:
+def intervals(arg: str, max: int = None) -> list[int]:
     result = []
-    for r in opt:
+    for r in arg:
         rs = r.split("-")
         try:
             match len(rs):
