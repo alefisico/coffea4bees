@@ -215,3 +215,48 @@ class FvT(_Common):
                 ],
             ),
         ]
+
+
+class FvT_picoAOD(FvT):
+    argparser = ArgParser()
+    argparser.remove_argument("--files", "--filelists")
+    defaults = {"files": [], "filelists": []}
+
+    def __init__(self):
+        self.opts.filelists = self._filelists()
+
+    def _filelists(self):
+        base = "metadata/datasets_HH4b_2024_v1.yml@@datasets.{dataset}.{year}.picoAOD{era}.files"
+        year = {
+            "2016": ["UL16_preVFP", "UL16_postVFP"],
+            "2017": ["UL17"],
+            "2018": ["UL18"],
+        }
+        era = {
+            "UL16_preVFP": ["B", "C", "D", "E", "F"],
+            "UL16_postVFP": ["F", "G", "H"],
+            "UL17": ["B", "C", "D", "E", "F"],
+            "UL18": ["A", "B", "C", "D"],
+        }
+        ttbar = ["TTTo2L2Nu", "TTToHadronic", "TTToSemiLeptonic"]
+        filelists = []
+        for k, v in year.items():
+            files = [f"data,{k},friend"]
+            for y in v:
+                for e in era[y]:
+                    files.append(base.format(dataset="data", year=y, era=f".{e}"))
+            filelists.append(files)
+        for k, v in year.items():
+            files = [f"ttbar,{k},friend"]
+            for y in v:
+                for tt in ttbar:
+                    files.append(base.format(dataset=tt, year=y, era=""))
+            filelists.append(files)
+        return filelists
+
+    def debug(self):
+        import logging
+
+        from rich.pretty import pretty_repr
+
+        logging.debug(pretty_repr(self.files))
