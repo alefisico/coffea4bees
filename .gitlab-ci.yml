@@ -178,7 +178,7 @@ reana-job:
   stage: reana
   image: gitlab-registry.cern.ch/algomez/coffea4bees:test
   tags:
-    - docker-privileged-xl
+    - k8s-cvmfs
   before_script:
     - export REANA_SERVER_URL=https://reana.cern.ch 
     - export REANA_ACCESS_TOKEN="${REANA_TOKEN}"
