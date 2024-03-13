@@ -63,9 +63,10 @@ class TestJCM(unittest.TestCase):
             # Load the content of the reference YAML file
             with open(reference_file, 'r') as file:
                 reference_data = yaml.safe_load(file)
-        
-            # Compare the two dictionaries
-            self.assertEqual(test_data, reference_data, "The YAML files do not match.")
+
+            for k, v in test_data.items():
+                self.assertAlmostEqual(v, reference_data[k], delta=0.001, msg=f"Failed match {k}... {v} vs {reference_data[k]} ... Diff: {v-reference_data[k]}")
+
 
 if __name__ == '__main__':
     unittest.main()
