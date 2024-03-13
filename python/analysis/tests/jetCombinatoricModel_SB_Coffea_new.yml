@@ -1,21 +1,21 @@
 pseudoTagProb_passPreSel:
-        0.05477545682040576
+        0.054775476051305755
 pseudoTagProb_passPreSel_err:
-        0.008749460478652825
+        0.008749543323451715
 pseudoTagProb_passPreSel_pererr:
-        15.973322700602921
+        15.973468336918529
 pairEnhancement_passPreSel:
-        0.6256307053514063
+        0.6256264262107814
 pairEnhancement_passPreSel_err:
-        0.2967199866644267
+        0.29672094747179695
 pairEnhancement_passPreSel_pererr:
-        47.42733758531945
+        47.42781555263587
 pairEnhancementDecay_passPreSel:
-        2.544886269197666
+        2.54483735834322
 pairEnhancementDecay_passPreSel_err:
-        2.592625135316525
+        2.592556212502499
 pairEnhancementDecay_passPreSel_pererr:
-        101.87587424619609
+        101.87512392502545
 threeTightTagFraction_passPreSel:
         0.4430704191318601
 threeTightTagFraction_passPreSel_err:
@@ -23,14 +23,14 @@ threeTightTagFraction_passPreSel_err:
 threeTightTagFraction_passPreSel_pererr:
         0.0
 chi^2:
-        6.426202793910438
+        6.426202790286579
 ndf:
         12
 chi^2/ndf:
-        0.5355168994925364
+        0.5355168991905482
 p-value:
-        0.8930931103494744
+        0.8930931105575158
 n5b_pred:
-        4.557316457215802
+        4.557319552429901
 n5b_true:
         7.0
