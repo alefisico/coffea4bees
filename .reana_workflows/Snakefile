@@ -8,7 +8,7 @@ TIMESTAMP = datetime.now().strftime('%Y%m%d_%H%M%S')
 #
 rule all:
     input:
-        "output/RunII/passPreSel/fourTag/SB/SvB_MA_ps_zh.pdf",
+        "output/RunII/passPreSel/fourTag/SB/nPVs.pdf",
         expand("output/histAll_{sample}_{iy}.coffea", sample=config['dataset'], iy=config['year'])
 
 rule analysis:
@@ -20,13 +20,15 @@ rule analysis:
         voms_proxy=True,
         kerberos=True,
         compute_backend="kubernetes",
-        kubernetes_memory_limit="9.5Gi"
+        kubernetes_memory_limit="8Gi"
     shell:
         """
 cd python/ 
 echo "Running {wildcards.sample} {wildcards.iy}"
 sed -i 's/root:\/\/cmseos\.fnal\.gov\/\/store\/user\/algomez/root:\/\/eosuser.cern.ch\/\/eos\/user\/a\/algomez\/tmpFiles/' metadata/datasets_HH4b.yml
-python runner.py -d {wildcards.sample} -p analysis/processors/processor_HH4b.py -y {wildcards.iy} -o histAll_{wildcards.sample}_{wildcards.iy}.coffea -op ../output/
+sed -i 's/run_topreco.*/run_topreco : false/' analysis/metadata/HH4b.yml
+python runner.py -d {wildcards.sample} -p analysis/processors/processor_HH4b.py -y {wildcards.iy} -o histAll_{wildcards.sample}_{wildcards.iy}.coffea -op ../output/ 
+cp /tmp/coffea4bees-dask-report-* ../output/coffea4bees-dask-report_{wildcards.sample}_{wildcards.iy}.html
         """
 
 rule merging_coffea_files:
@@ -52,7 +54,7 @@ rule make_plots:
     input:
         "output/histAll.coffea"
     output:
-        "output/RunII/passPreSel/fourTag/SB/SvB_MA_ps_zh.pdf"
+        "output/RunII/passPreSel/fourTag/SB/nPVs.pdf"
     container:
         "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
     resources:

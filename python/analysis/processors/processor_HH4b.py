@@ -76,7 +76,7 @@ def setSvBVars(SvBName, event):
 
 
 class analysis(processor.ProcessorABC):
-    def __init__(self, *, JCM = None, addbtagVariations=None, SvB=None, SvB_MA=None, threeTag = True, apply_trigWeight = True, apply_btagSF = True, apply_FvT = True, run_SvB = True, corrections_metadata='analysis/metadata/corrections.yml', make_classifier_input: str = None):
+    def __init__(self, *, JCM = None, addbtagVariations=None, SvB=None, SvB_MA=None, threeTag = True, apply_trigWeight = True, apply_btagSF = True, apply_FvT = True, run_SvB = True, run_topreco = True, corrections_metadata='analysis/metadata/corrections.yml', make_classifier_input: str = None):
         logging.debug('\nInitialize Analysis Processor')
         self.blind = False
         print('Initialize Analysis Processor')
@@ -86,6 +86,7 @@ class analysis(processor.ProcessorABC):
         self.apply_FvT = apply_FvT
         self.btagVar = btagVariations(systematics=addbtagVariations)  #### AGE: these two need to be review later
         self.run_SvB = run_SvB
+        self.run_topreco = run_topreco  #### AGE: this is temporary topreco is memory consuming (needs fix)
         self.classifier_SvB = HCREnsemble(SvB) if SvB else None
         self.classifier_SvB_MA = HCREnsemble(SvB_MA) if SvB_MA else None
         self.corrections_metadata = yaml.safe_load(open(corrections_metadata, 'r'))
@@ -414,19 +415,20 @@ class analysis(processor.ProcessorABC):
         #
         # dumpTopCandidateTestVectors(selev, logging, chunk, 15)
 
-        # sort the jets by btagging
-        selev.selJet  = selev.selJet[ak.argsort(selev.selJet.btagDeepFlavB, axis=1, ascending=False)]
-        top_cands     = find_tops(selev.selJet)
-        rec_top_cands = buildTop(selev.selJet, top_cands)
+        if self.run_topreco:
+            # sort the jets by btagging
+            selev.selJet  = selev.selJet[ak.argsort(selev.selJet.btagDeepFlavB, axis=1, ascending=False)]
+            top_cands     = find_tops(selev.selJet)
+            rec_top_cands = buildTop(selev.selJet, top_cands)
 
-        selev["top_cand"] = rec_top_cands[:, 0]
+            selev["top_cand"] = rec_top_cands[:, 0]
 
-        selev["xbW_reco"] = selev.top_cand.xbW
-        selev["xW_reco"]  = selev.top_cand.xW
+            selev["xbW_reco"] = selev.top_cand.xbW
+            selev["xW_reco"]  = selev.top_cand.xW
 
-        if 'xbW' in selev.fields:  #### AGE: this should be temporary
-            selev["delta_xbW"] = selev.xbW - selev.xbW_reco
-            selev["delta_xW"] = selev.xW - selev.xW_reco
+            if 'xbW' in selev.fields:  #### AGE: this should be temporary
+                selev["delta_xbW"] = selev.xbW - selev.xbW_reco
+                selev["delta_xW"] = selev.xW - selev.xW_reco
 
         #
         # Blind data in fourTag SR
@@ -469,7 +471,7 @@ class analysis(processor.ProcessorABC):
         fill += hist.add('hT',          (100,  0,   1000,  ('hT',          'H_{T} [GeV}')))
         fill += hist.add('hT_selected', (100,  0,   1000,  ('hT_selected', 'H_{T} (selected jets) [GeV}')))
 
-        if 'xbW' in selev.fields:  ### AGE: this should be temporary
+        if ('xbW' in selev.fields) and (self.run_topreco):  ### AGE: this should be temporary
 
             fill += hist.add('xW',          (100, 0, 12,   ('xW',       'xW')))
             fill += hist.add('delta_xW',    (100, -5, 5,   ('delta_xW', 'delta xW')))
@@ -531,7 +533,8 @@ class analysis(processor.ProcessorABC):
         #
         # Top Candidates
         #
-        fill += TopCandHists(('top_cand', 'Top Candidate'), 'top_cand')
+        if self.run_topreco:
+            fill += TopCandHists(('top_cand', 'Top Candidate'), 'top_cand')
 
         #
         # fill histograms

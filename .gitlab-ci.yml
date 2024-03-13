@@ -180,10 +180,9 @@ reana-job:
   tags:
     - k8s-cvmfs
   before_script:
-    #- echo "${KRB_PASSWORD}" | kinit ${KRB_USERNAME}@CERN.CH
-    #- source /afs/cern.ch/user/r/reana/public/reana/bin/activate 
-    - python -m pip install virtualenv
-    - virtualenv ~/.virtualenvs/reana && . ~/.virtualenvs/reana/bin/activate && pip install reana-client
+    - wget -q https://github.com/reanahub/reana-client/releases/download/0.9.3/reana-client-0.9.3-x86_64.AppImage
+    - chmod u+x ./reana-client-0.9.3-x86_64.AppImage
+    - mv ./reana-client-0.9.3-x86_64.AppImage $HOME/.local/bin/reana-client-0.9.3
     - export REANA_SERVER_URL=https://reana.cern.ch 
     - export REANA_ACCESS_TOKEN="${REANA_TOKEN}"
     - reana-client ping
