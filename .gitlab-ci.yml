@@ -176,16 +176,13 @@ baseclass-test-job:
 
 reana-job:
   stage: reana
-  image: gitlab-registry.cern.ch/cms-cloud/cmssw-docker/cc7-cms 
+  image: gitlab-registry.cern.ch/algomez/coffea4bees:test
   tags:
     - docker-privileged-xl
   before_script:
-    - wget -q https://github.com/reanahub/reana-client/releases/download/0.9.3/reana-client-0.9.3-x86_64.AppImage
-    - mv ./reana-client-0.9.3-x86_64.AppImage reana-client
-    - chmod u+x ./reana-client
     - export REANA_SERVER_URL=https://reana.cern.ch 
     - export REANA_ACCESS_TOKEN="${REANA_TOKEN}"
-    - ./reana-client ping
+    - reana-client ping
   script:
-    - ./reana-client run -f reana.yaml -w coffea4bees
+    - reana-client run -f reana.yaml -w coffea4bees
   allow_failure: true
