@@ -4,7 +4,7 @@ import re
 from abc import abstractmethod
 from functools import cache, cached_property
 from typing import TYPE_CHECKING, Callable, Iterable
-
+from classifier.task import ArgParser
 from classifier.df.tools import (
     add_event_offset,
     add_label_index,
@@ -154,11 +154,19 @@ def _FvT_selection(df):
     return df[df["SB"] & df["passHLT"] & (df["fourTag"] | df["threeTag"])]
 
 
-def _ttbar_3b_prescale(df):
+def _FvT_ttbar_3b_prescale(df):
     return df["threeTag"]
 
 
 class FvT(_Common):
+    argparser = ArgParser()
+    argparser.add_argument(
+        "--ttbar-3b-prescale",
+        type=float,
+        default=10.0,
+        help="prescale 3b ttbar events",
+    )
+
     def __init__(self):
         super().__init__()
         # TODO normalization
@@ -185,7 +193,9 @@ class FvT(_Common):
                 ],
                 [
                     _FvT_selection,
-                    prescale(10, selection=_ttbar_3b_prescale),
+                    prescale(
+                        self.opts.ttbar_3b_prescale, selection=_FvT_ttbar_3b_prescale
+                    ),
                     add_label_index_from_column(threeTag="t3", fourTag="t4"),
                 ],
             ),
