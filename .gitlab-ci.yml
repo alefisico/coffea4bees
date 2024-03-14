@@ -68,7 +68,7 @@ analysis-test-job:
   stage: analysis-test   
   needs:
     - voms_proxy
-  image: gitlab-registry.cern.ch/algomez/coffea4bees:test
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -83,7 +83,7 @@ skimmer-test-job:
   stage: skimmer-test   
   needs:
     - voms_proxy
-  image: gitlab-registry.cern.ch/algomez/coffea4bees:test
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -99,7 +99,7 @@ skimmer-analysis-test-job:
   needs: 
     - voms_proxy
     - skimmer-test-job
-  image: gitlab-registry.cern.ch/algomez/coffea4bees:test
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -114,7 +114,7 @@ analysis-plot-job:
   stage: plot 
   needs: 
     - analysis-test-job
-  image: gitlab-registry.cern.ch/algomez/coffea4bees:test
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -128,7 +128,7 @@ analysis-cutflow-job:
   stage: cutflow
   needs: 
     - analysis-test-job
-  image: gitlab-registry.cern.ch/algomez/coffea4bees:test
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -138,7 +138,7 @@ analysis-makeweights-job:
   stage: plot
   needs: 
     - analysis-test-job
-  image: gitlab-registry.cern.ch/algomez/coffea4bees:test
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -149,7 +149,7 @@ skimmer-analysis-cutflow-job:
   stage: cutflow
   needs: 
     - skimmer-analysis-test-job
-  image: gitlab-registry.cern.ch/algomez/coffea4bees:test
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -159,7 +159,7 @@ analysis-iplot-job:
   stage: plot 
   needs: 
     - analysis-test-job
-  image: gitlab-registry.cern.ch/algomez/coffea4bees:test
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -168,7 +168,7 @@ analysis-iplot-job:
 
 baseclass-test-job:   
   stage: plot
-  image: gitlab-registry.cern.ch/algomez/coffea4bees:test
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
