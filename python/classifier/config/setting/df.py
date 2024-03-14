@@ -9,12 +9,12 @@ if TYPE_CHECKING:
 
 
 class Columns(Cascade):
-    event: str = 'event'
-    event_offset: str = 'event_offset'
-    weight: str = 'weight'
-    weight_normalized: str = 'weight_normalized'
+    event: str = "event"
+    event_offset: str = "event_offset"
+    weight: str = "weight"
+    weight_normalized: str = "weight_normalized"
 
-    label_index: str = 'label_index'
-    selection_index: str = 'selection_index'
+    label_index: str = "label_index"
+    selection_index: str = "selection_index"
 
-    index_dtype: DTypeLike = 'uint8'
+    index_dtype: DTypeLike = "uint8"

@@ -69,7 +69,23 @@ python run_classifier.py help --all
 
 #### Train
 
-TODO
+##### Simple HCR FvT
+
+Check what files will be used:
+
+```bash
+python run_classifier.py debug --dataset HCR.FvT_picoAOD
+```
+
+Train with default datasets and settings:
+
+```bash
+python run_classifier.py train --max-trainers 3 \
+--dataset HCR.FvT_picoAOD \
+--friends data,friend path/to/friend.metadata.json@@friend.data \
+--friends ttbar,friend path/to/friend.metadata.json@@friend.ttbar \
+--model HCR.FvT
+```
 
 #### Evaluate
 
@@ -78,3 +94,16 @@ TODO
 ## Advanced
 
 TODO
+
+## TODO
+
+- main:
+  - Add evaluation
+  - Add logging, benchmark, plotting
+- HCR:
+  - Add fine-tuning
+  - Add die loss?
+- FvT
+  - SR ?
+- Add SvB
+- Add DvT

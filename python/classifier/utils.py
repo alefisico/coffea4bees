@@ -1,16 +1,49 @@
-from types import ModuleType
+import importlib
+import logging
+from typing import Callable, Iterable, TypeVar
 
-from packaging import version
+_GroupT = TypeVar("_GroupT", bound=Iterable)
 
 
-def version_check(pkg: ModuleType, upper: str = None, lower: str = None):
-    current = version.parse(pkg.__version__)
-    if upper is not None:
-        upper = version.parse(upper)
-        if current > upper:
-            return False
-    if lower is not None:
-        lower = version.parse(lower)
-        if current < lower:
-            return False
-    return True
+def _subgroup(group: list, left: int, remain: int):
+    if remain == 0:
+        yield group
+    else:
+        size = len(group)
+        for i in range(size, left, -1):
+            yield from _subgroup(group[: i - 1] + group[i:], i - 1, remain - 1)
+
+
+def subgroups(group: _GroupT, new: Callable[[Iterable], _GroupT] = None):
+    if new is None:
+        new = type(group)
+    group = [*group]
+    for i in range(len(group)):
+        for sub in _subgroup(group, 0, i):
+            yield new(sub)
+
+
+class noop:
+    def __getattr__(self, _):
+        return self
+
+    def __call__(self, *_, **__):
+        return self
+
+
+def import_(modname: str, clsname: str):
+    _mod, _cls = None, None
+    try:
+        _mod = importlib.import_module(modname)
+    except ModuleNotFoundError:
+        ...
+    except Exception as e:
+        logging.error(e)
+    if _mod is not None and clsname != "*":
+        try:
+            _cls = getattr(_mod, clsname)
+        except AttributeError:
+            ...
+        except Exception as e:
+            logging.error(e)
+    return _mod, _cls

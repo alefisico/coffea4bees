@@ -24,17 +24,16 @@ class FromRoot:
         self.metadata = {**(metadata or {})}
 
         for friend in friends or ():
-            self.chain.add_friend(friend, renaming='{friend}_{branch}')
+            self.chain.add_friend(friend)
 
     def read(self, chunk: Chunk):
         chain = self.chain.copy()
         chain += chunk
         df = None
-        for df in chain.iterate(
-            library='pd',
-            reader_options={'filter': self.branches}
-        ):
+        for df in chain.iterate(library="pd", reader_options={"filter": self.branches}):
             for preprocessor in self.preprocessors:
+                if len(df) == 0:  # TODO test
+                    return df
                 df = preprocessor(df)
         for k, v in self.metadata.items():
             df[k] = v
@@ -43,8 +42,13 @@ class FromRoot:
 
 class ToTensor:
     def __init__(self):
-        self._columns: dict[str, tuple[
-            npt.DTypeLike, list[tuple[str, Optional[int], Any, Optional[tuple[int, ...]]]]]] = {}
+        self._columns: dict[
+            str,
+            tuple[
+                npt.DTypeLike,
+                list[tuple[str, Optional[int], Any, Optional[tuple[int, ...]]]],
+            ],
+        ] = {}
         self._current: str = None
 
     def remove(self, name: str):
@@ -64,14 +68,14 @@ class ToTensor:
         self,
         *columns: str,
         target: int = None,
-        padding: Any = 0,
+        pad_value: Any = 0,
         reshape: tuple[int, ...] = None,
     ):
         if self._current is None:
-            raise RuntimeError(
-                'Call add() to specify a name before adding columns')
+            raise RuntimeError("Call add() to specify a name before adding columns")
         self._columns[self._current][1].extend(
-            (c, target, padding, reshape) for c in columns)
+            (c, target, pad_value, reshape) for c in columns
+        )
         return self
 
     def tensor(self, data: pd.DataFrame):
@@ -79,20 +83,20 @@ class ToTensor:
         for name, (dtype, columns) in self._columns.items():
             missing = [c for c, *_ in columns if c not in data]
             if missing:
-                logging.warning(
-                    f'columns {missing} not found in dataframe')
+                logging.warning(f"columns {missing} not found in dataframe")
                 continue
             arrays = []
-            for c, target, padding, reshape in columns:
-                if data[c].dtype == 'awkward':
+            for c, target, pad_value, reshape in columns:
+                if data[c].dtype == "awkward":
                     if target is None:
                         target = int(np.max(data[c].ak.num()))
                     array = np.ma.filled(
-                        data[c].ak.pad_none(target, clip=True).ak.to_numpy(), padding).astype(dtype)
+                        data[c].ak.pad_none(target, clip=True).ak.to_numpy(), pad_value
+                    ).astype(dtype)
                 else:
                     array = data[c].to_numpy(dtype)
                     if len(array.shape) == 1 and len(columns) > 1:
-                        array = array[:, None]
+                        array = array[:, np.newaxis]
                 if reshape is not None:
                     array = array.reshape(reshape)
                 arrays.append(array)

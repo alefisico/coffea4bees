@@ -7,5 +7,4 @@ if TYPE_CHECKING:
 
 
 class TrainingBenchmark(Protocol):
-    def __call__(self, pred: dict[str, Tensor], **metadata) -> dict[str]:
-        ...
+    def __call__(self, pred: dict[str, Tensor], **metadata) -> dict[str]: ...

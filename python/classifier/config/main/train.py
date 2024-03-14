@@ -33,41 +33,45 @@ class _train_model:
 
 class Main(SelectDevice, LoadTrainingSets):
     argparser = ArgParser(
-        prog='train',
-        description='Train multiple models using one dataset.',
+        prog="train",
+        description="Train multiple models using one dataset.",
         workflow=[
             *LoadTrainingSets._workflow,
-            ('sub', 'call [blue]model.train(dataset)[/blue]'),
-            ('sub', 'train [blue]model[/blue]')
-        ])
+            ("sub", "call [blue]model.train(dataset)[/blue]"),
+            ("sub", "train [blue]model[/blue]"),
+        ],
+    )
     argparser.add_argument(
-        '--max-trainers', type=converter.int_pos, default=1, help='the maximum number of models to train in parallel')
+        "--max-trainers",
+        type=converter.int_pos,
+        default=1,
+        help="the maximum number of models to train in parallel",
+    )
 
     def run(self, parser: EntryPoint):
         from concurrent.futures import ProcessPoolExecutor as Pool
 
-        from classifier.process import process_state
+        from classifier.process import status
 
         # load datasets in parallel
         datasets = self.load_training_sets(parser)
         # TODO test below with new skimmed data
         # initialize datasets in parallel
-        m_initializer = parser.mods['model']
+        m_initializer = parser.mods["model"]
         timer = datetime.now()
         with Pool(
             max_workers=self.opts.max_trainers,
-            mp_context=process_state.context,
-            initializer=process_state.initializer
+            mp_context=status.context,
+            initializer=status.initializer,
         ) as pool:
             models = [*chain(*pool.map(_init_model(datasets), m_initializer))]
-        logging.info(
-            f'Initialized {len(models)} models in {datetime.now() - timer}')
+        logging.info(f"Initialized {len(models)} models in {datetime.now() - timer}")
         # train models in parallel
         with Pool(
             max_workers=self.opts.max_trainers,
-            mp_context=process_state.context,
-            initializer=process_state.initializer
+            mp_context=status.context,
+            initializer=status.initializer,
         ) as pool:
             results = [*pool.map(_train_model(self.device), models)]
 
-        return {'models': results}
+        return {"models": results}
