@@ -183,9 +183,6 @@ class FvT(_Common):
         help="prescale 3b ttbar events",
     )
 
-    def __init__(self):
-        super().__init__()
-
     @property
     def allowed_labels(self):
         return []
@@ -223,6 +220,7 @@ class FvT_picoAOD(FvT):
     defaults = {"files": [], "filelists": []}
 
     def __init__(self):
+        super().__init__()
         self.opts.filelists = self._filelists()
 
     def _filelists(self):
