@@ -157,8 +157,13 @@ class jetCombinatoricModel:
         self.fit_ndf = len(bin_values) - len(popt)    # tf1_bkgd_njet.GetNDF()
         self.fit_prob = scipy.stats.chi2.sf(self.fit_chi2, self.fit_ndf)
 
+        #print("bin_values",bin_values)
+        #print("fit",self.bkgd_func_njet_constrained(bin_centers, *popt))
+
         residuals  = bin_values - self.bkgd_func_njet_constrained(bin_centers, *popt)
         pulls      = residuals / bin_errors
+        #print("residuals",residuals)
+        #print("pulls",pulls)
         return residuals, pulls
 
 
@@ -232,14 +237,14 @@ def loadCoffeaHists(cfg, *, cut="passPreSel", year="RunII", weightRegion="SB"):
     hists = cfg.hists[0]['hists']
 
     data4b                = hists['selJets_noJCM.n']      [fourTag_data_dict]
-    data4b_nTagJets       = hists['tagJets_loose_noJCM.n'][fourTag_data_dict]
+    data4b_nTagJets       = hists['tagJets_noJCM.n']      [fourTag_data_dict]
 
     data3b                = hists['selJets_noJCM.n']      [threeTag_data_dict]
     data3b_nTagJets       = hists['tagJets_loose_noJCM.n'][threeTag_data_dict]
     data3b_nTagJets_tight = hists['tagJets_noJCM.n']      [threeTag_data_dict]
 
     tt4b                  = hists['selJets_noJCM.n']      [fourTag_ttbar_dict][sum, :]
-    tt4b_nTagJets         = hists['tagJets_loose_noJCM.n'][fourTag_ttbar_dict][sum, :]
+    tt4b_nTagJets         = hists['tagJets_noJCM.n']      [fourTag_ttbar_dict][sum, :]
 
     tt3b                  = hists['selJets_noJCM.n']      [threeTag_ttbar_dict][sum, :]
     tt3b_nTagJets         = hists['tagJets_loose_noJCM.n'][threeTag_ttbar_dict][sum, :]
