@@ -184,5 +184,12 @@ reana-job:
     - export REANA_ACCESS_TOKEN="${REANA_TOKEN}"
     - reana-client ping
   script:
+    - echo "##########################################################"
+    - echo "#### THIS JOB WILL FAILED IF YOU DONT HAVE A REANA ACCOUNT"
+    - echo "#### AND THE REANA TOKEN AS CI SECRETS VARIABLE"
+    - echo "#### BECAUSE AT THE MOMENT REANA DOES NOT HAVE GROUP ACCOUNTS"
+    - echo "#### BUT IT HAS TO RUN IN THE CMU CENTRAL REPO AND IT IS "
+    - echo "#### ALLOWED TO FAILED FOR MERGE REQUEST"
+    - echo "##########################################################"
     - reana-client run -f reana.yaml -w coffea4bees
   allow_failure: true

@@ -4,6 +4,8 @@ import sys
 import yaml
 import hist
 import argparse
+import tempfile
+os.environ['MPLCONFIGDIR'] = tempfile.mkdtemp()
 import matplotlib.pyplot as plt
 from coffea.util import load
 import numpy as np
@@ -79,7 +81,7 @@ def doPlots(varList, cutList, debug=False):
                 if debug: print("process is ",process)
                 if debug: print(plot_args)
 
-                fig = make2DPlot(cfg.hists[0], process, cutList, cfg.plotConfig, 
+                fig = make2DPlot(cfg.hists[0], process, cutList, cfg.plotConfig,
                                  **plot_args)
                 plt.close()
 
@@ -116,10 +118,10 @@ def doPlots(varList, cutList, debug=False):
                     plot_args = plot_args | vDict
 
                     if debug: print(plot_args)
-                
-                    fig = makePlot(cfg.hists[0], cutList, cfg.plotConfig, 
+
+                    fig = makePlot(cfg.hists[0], cutList, cfg.plotConfig,
                                    **plot_args)
-                                   
+
 
                     plt.close()
 
