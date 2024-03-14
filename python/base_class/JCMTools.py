@@ -37,7 +37,7 @@ class jetCombinatoricModel:
 
         self.parameters         = [self.pseudoTagProb, self.pairEnhancement, self.pairEnhancementDecay, self.threeTightTagFraction]
 
-        
+
         #
         #  Data
         #

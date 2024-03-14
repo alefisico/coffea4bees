@@ -1,5 +1,4 @@
 def plotClasses(train, valid, name, contr=None, selection=''):
-    # TODO
     # Make place holder datasets to add the training/validation set graphical distinction to the legend
     trainLegend=pltHelper.dataSet(name=  'Training', color='black', alpha=1.0, linewidth=1)
     validLegend=pltHelper.dataSet(name='Validation', color='black', alpha=0.5, linewidth=2)
@@ -78,16 +77,16 @@ def plotClasses(train, valid, name, contr=None, selection=''):
         # if contr is not None:
         #     bm_vs_d4_args['dataSets'].append(contrLegend)
         #     d4_contr = pltHelper.dataSet(              points=contr.rd4, weights= contr.wd4/contr.w_sum, color=d4.color, alpha=0.5, linewidth=1, fmt='o')
-        bm_train = pltHelper.dataSet(name='Background Model', 
-                                     points =np.concatenate((train.rd3[train.Rd3!=3], train.rt3[train.Rt3!=3], train.rt4[train.Rt4!=3]),axis=None), 
-                                     weights=np.concatenate((train.wd3[train.Rd3!=3],-train.wt3[train.Rt3!=3], train.wt4[train.Rt4!=3]),axis=None)/train_fraction, 
+        bm_train = pltHelper.dataSet(name='Background Model',
+                                     points =np.concatenate((train.rd3[train.Rd3!=3], train.rt3[train.Rt3!=3], train.rt4[train.Rt4!=3]),axis=None),
+                                     weights=np.concatenate((train.wd3[train.Rd3!=3],-train.wt3[train.Rt3!=3], train.wt4[train.Rt4!=3]),axis=None)/train_fraction,
                                      color='brown', alpha=1.0, linewidth=1)
-        bm_valid = pltHelper.dataSet(points =np.concatenate((valid.rd3[valid.Rd3!=3], valid.rt3[valid.Rt3!=3], valid.rt4[valid.Rt4!=3]),axis=None), 
-                                     weights=np.concatenate((valid.wd3[valid.Rd3!=3],-valid.wt3[valid.Rt3!=3], valid.wt4[valid.Rt4!=3]),axis=None)/valid_fraction, 
+        bm_valid = pltHelper.dataSet(points =np.concatenate((valid.rd3[valid.Rd3!=3], valid.rt3[valid.Rt3!=3], valid.rt4[valid.Rt4!=3]),axis=None),
+                                     weights=np.concatenate((valid.wd3[valid.Rd3!=3],-valid.wt3[valid.Rt3!=3], valid.wt4[valid.Rt4!=3]),axis=None)/valid_fraction,
                                      color='brown', alpha=0.5, linewidth=2)
         # if contr is not None:
-        #     bm_contr = pltHelper.dataSet(points=np.concatenate((contr.rd3,contr.rt3,contr.rt4),axis=None), 
-        #                                  weights=np.concatenate((contr.wd3,-contr.wt3,contr.wt4)/contr.w_sum,axis=None), 
+        #     bm_contr = pltHelper.dataSet(points=np.concatenate((contr.rd3,contr.rt3,contr.rt4),axis=None),
+        #                                  weights=np.concatenate((contr.wd3,-contr.wt3,contr.wt4)/contr.w_sum,axis=None),
         #                                  color='brown', alpha=0.5, linewidth=1, fmt='o')
         t4_train = pltHelper.dataSet(name=t4.name, points=train.rt4[train.Rt4!=3], weights= train.wt4[train.Rt4!=3]/train_fraction, color=t4.color, alpha=1.0, linewidth=1)
         t4_valid = pltHelper.dataSet(              points=valid.rt4[valid.Rt4!=3], weights= valid.wt4[valid.Rt4!=3]/valid_fraction, color=t4.color, alpha=0.5, linewidth=2)
@@ -97,14 +96,14 @@ def plotClasses(train, valid, name, contr=None, selection=''):
         t3_valid = pltHelper.dataSet(              points=valid.rt3[valid.Rt3!=3], weights=-valid.wt3[valid.Rt3!=3]/valid_fraction, color=t3.color, alpha=0.5, linewidth=2)
         # if contr is not None:
         #     t3_contr = pltHelper.dataSet(              points=contr.rt3, weights=-contr.wt3/contr.w_sum, color=t3.color, alpha=0.5, linewidth=1, fmt='o')
-        #     bm_vs_d4_args['dataSets'] += [d4_contr, d4_valid, d4_train, 
-        #                                   bm_contr, bm_valid, bm_train, 
-        #                                   t4_contr, t4_valid, t4_train, 
+        #     bm_vs_d4_args['dataSets'] += [d4_contr, d4_valid, d4_train,
+        #                                   bm_contr, bm_valid, bm_train,
+        #                                   t4_contr, t4_valid, t4_train,
         #                                   t3_contr, t3_valid, t3_train]
         # else:
-        bm_vs_d4_args['dataSets'] += [d4_valid, d4_train, 
-                                      bm_valid, bm_train, 
-                                      t4_valid, t4_train, 
+        bm_vs_d4_args['dataSets'] += [d4_valid, d4_train,
+                                      bm_valid, bm_train,
+                                      t4_valid, t4_train,
                                       t3_valid, t3_train]
 
         bm_vs_d4 = pltHelper.histPlotter(**bm_vs_d4_args)
@@ -123,29 +122,29 @@ def plotClasses(train, valid, name, contr=None, selection=''):
                          'xlabel': r'P( Class $\rightarrow$ FourTag Multijet )/P( Class $\rightarrow$ ThreeTag Data )',
                          'ylabel': 'Arb. Units',
                          }
-        rbm_train = pltHelper.dataSet(name='Background Model', 
-                                     points= np.concatenate((train.rd3[train.Rd3!=3]                        , train.rt4[train.Rt4!=3]),axis=None), 
-                                     weights=np.concatenate((train.rd3[train.Rd3!=3]*train.wd3[train.Rd3!=3], train.wt4[train.Rt4!=3]),axis=None)/train_fraction, 
+        rbm_train = pltHelper.dataSet(name='Background Model',
+                                     points= np.concatenate((train.rd3[train.Rd3!=3]                        , train.rt4[train.Rt4!=3]),axis=None),
+                                     weights=np.concatenate((train.rd3[train.Rd3!=3]*train.wd3[train.Rd3!=3], train.wt4[train.Rt4!=3]),axis=None)/train_fraction,
                                      color='brown', alpha=1.0, linewidth=1)
-        rbm_valid = pltHelper.dataSet(points=np.concatenate((valid.rd3[valid.Rd3!=3]                        , valid.rt4[valid.Rt4!=3]),axis=None), 
-                                     weights=np.concatenate((valid.rd3[valid.Rd3!=3]*valid.wd3[valid.Rd3!=3], valid.wt4[valid.Rt4!=3]),axis=None)/valid_fraction, 
+        rbm_valid = pltHelper.dataSet(points=np.concatenate((valid.rd3[valid.Rd3!=3]                        , valid.rt4[valid.Rt4!=3]),axis=None),
+                                     weights=np.concatenate((valid.rd3[valid.Rd3!=3]*valid.wd3[valid.Rd3!=3], valid.wt4[valid.Rt4!=3]),axis=None)/valid_fraction,
                                      color='brown', alpha=0.5, linewidth=2)
         # if contr is not None:
         #     rbm_vs_d4_args['dataSets'].append(contrLegend)
-        #     rbm_contr = pltHelper.dataSet(points=np.concatenate((contr.rd3,contr.rt4),axis=None), 
-        #                                   weights=np.concatenate((contr.rd3*contr.wd3,contr.wt4)/contr.w_sum,axis=None), 
+        #     rbm_contr = pltHelper.dataSet(points=np.concatenate((contr.rd3,contr.rt4),axis=None),
+        #                                   weights=np.concatenate((contr.rd3*contr.wd3,contr.wt4)/contr.w_sum,axis=None),
         #                                   color='brown', alpha=0.5, linewidth=1, fmt='o')
         rt3_train = pltHelper.dataSet(name=t3.name, points=train.rt3[train.Rt3!=3], weights=-train.rt3[train.Rt3!=3]*train.wt3[train.Rt3!=3]/train_fraction, color=t3.color, alpha=1.0, linewidth=1)
         rt3_valid = pltHelper.dataSet(              points=valid.rt3[valid.Rt3!=3], weights=-valid.rt3[valid.Rt3!=3]*valid.wt3[valid.Rt3!=3]/valid_fraction, color=t3.color, alpha=0.5, linewidth=2)
         # if contr is not None:
         #     rt3_contr = pltHelper.dataSet(              points=contr.rt3, weights=-contr.rt3*contr.wt3/contr.w_sum, color=t3.color, alpha=0.5, linewidth=1, fmt='o')
-        #     rbm_vs_d4_args['dataSets'] += [ d4_contr,  d4_valid,  d4_train, 
-        #                                     rbm_contr, rbm_valid, rbm_train, 
+        #     rbm_vs_d4_args['dataSets'] += [ d4_contr,  d4_valid,  d4_train,
+        #                                     rbm_contr, rbm_valid, rbm_train,
         #                                     t4_contr,  t4_valid,  t4_train,
         #                                     rt3_contr, rt3_valid, rt3_train]
         # else:
-        rbm_vs_d4_args['dataSets'] += [d4_valid,  d4_train, 
-                                       rbm_valid, rbm_train, 
+        rbm_vs_d4_args['dataSets'] += [d4_valid,  d4_train,
+                                       rbm_valid, rbm_train,
                                        t4_valid,  t4_train,
                                        rt3_valid, rt3_train]
         rbm_vs_d4 = pltHelper.histPlotter(**rbm_vs_d4_args)
@@ -176,7 +175,7 @@ def plotClasses(train, valid, name, contr=None, selection=''):
         c_train = pltHelper.histChisquare(obs=d4_train.points, obs_w=d4_train.weights,
                                           exp=rbm_train.points, exp_w=rbm_train.weights,
                                           bins=rbm_vs_d4_args['bins'], overflow=True)
-        rbm_vs_d4.sub1.annotate('$\chi^2/$NDF (Training)[Validation] = (%1.2f, %1.0f$\%%$)[%1.2f, %1.0f$\%%$]'%(c_train.chi2/c_train.ndfs, c_train.prob*100, c_valid.chi2/c_valid.ndfs, c_valid.prob*100), 
+        rbm_vs_d4.sub1.annotate('$\chi^2/$NDF (Training)[Validation] = (%1.2f, %1.0f$\%%$)[%1.2f, %1.0f$\%%$]'%(c_train.chi2/c_train.ndfs, c_train.prob*100, c_valid.chi2/c_valid.ndfs, c_valid.prob*100),
                                 (1.0,1.02), horizontalalignment='right', xycoords='axes fraction')
         try:
             rbm_vs_d4.savefig(name.replace('.pdf','_rbm_vs_d4_fixedBins.pdf'))
@@ -208,8 +207,8 @@ def plotROC(train, valid, control=None, plotName='test.pdf'): #fpr = false posit
         #ax.scatter(rate_StoS, rate_BtoB, marker='o', c='k')
         #ax.text(rate_StoS+0.03, rate_BtoB-0.100, ZB+"SR \n (%0.2f, %0.2f)"%(rate_StoS, rate_BtoB), bbox=bbox)
         ax.scatter(valid.tprSigma, (1-valid.fprSigma), marker='o', c='#d34031')
-        ax.text(valid.tprSigma+0.03, (1-valid.fprSigma)-0.025, 
-                ("(%0.3f, %0.3f), "+valid.pName+" $>$ %0.2f \n S=%0.1f, B=%0.1f, $%1.2f\sigma$")%(valid.tprSigma, (1-valid.fprSigma), valid.thrSigma, valid.S, valid.B, valid.sigma), 
+        ax.text(valid.tprSigma+0.03, (1-valid.fprSigma)-0.025,
+                ("(%0.3f, %0.3f), "+valid.pName+" $>$ %0.2f \n S=%0.1f, B=%0.1f, $%1.2f\sigma$")%(valid.tprSigma, (1-valid.fprSigma), valid.thrSigma, valid.S, valid.B, valid.sigma),
                 bbox=bbox)
 
     try:
@@ -283,7 +282,7 @@ def plotCrossEntropy(train, valid, name):
         plt.ylabel(ylabel)
         #plt.ylim(yMin,yMax)
         if batch:
-            plt.plot([b[0] for b in batch], [b[1] for b in batch], 
+            plt.plot([b[0] for b in batch], [b[1] for b in batch],
                      linestyle='-',
                      linewidth=1, alpha=0.33,
                      color='black',
@@ -333,4 +332,4 @@ def plotCrossEntropy(train, valid, name):
             fig.savefig(plotName)
         except:
             print("Cannot save fig: ",plotName)
-        plt.close(fig)        
+        plt.close(fig)
