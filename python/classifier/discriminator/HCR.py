@@ -39,9 +39,8 @@ class GBN(MilestoneStep):
 
 
 class _HCRSkim(Model):
-    def __init__(self, device: torch.device):
+    def __init__(self):
         self.tensors = defaultdict(list)
-        self.device = device
 
     @property
     def n_parameters(self) -> int:
@@ -53,7 +52,7 @@ class _HCRSkim(Model):
 
     def forward(self, batch: dict[str, Tensor]):
         for k in [Input.CanJet, Input.NotCanJet, Input.ancillary]:
-            self.tensors[k].append(batch[k].to(self.device))
+            self.tensors[k].append(batch[k])
         return {}
 
     def loss(self, _):
@@ -143,7 +142,7 @@ class HCRClassifier(Classifier):
         self._HCR: HCRModel = None
 
     def training_stages(self):
-        skim = _HCRSkim(self.device)
+        skim = _HCRSkim()
         yield TrainingStage(
             name="Setup GBN",
             model=skim,
@@ -158,9 +157,9 @@ class HCRClassifier(Classifier):
             self._HCR.ghost_batch = self._ghost_batch
             self._HCR.to(self.device)
             self._HCR.module.setMeanStd(
-                torch.cat(skim.tensors[Input.CanJet]),
-                torch.cat(skim.tensors[Input.NotCanJet]),
-                torch.cat(skim.tensors[Input.ancillary]),
+                torch.cat(skim.tensors[Input.CanJet]).to(self.device),
+                torch.cat(skim.tensors[Input.NotCanJet]).to(self.device),
+                torch.cat(skim.tensors[Input.ancillary]).to(self.device),
             )
             skim = None
         yield TrainingStage(
