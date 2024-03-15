@@ -34,6 +34,8 @@ class jetCombinatoricModel:
                 self.e = self.data[f'pairEnhancement_{self.cut}']
                 self.d = self.data[f'pairEnhancementDecay_{self.cut}']
                 self.t = self.data[f'threeTightTagFraction_{self.cut}']
+                self.JCM_weights = self.data[f'JCM_weights']
+
             except KeyError:
                 logging.error(f'No {self.cut} key in JCM file. Keys are {self.data.keys()}')
 
