@@ -195,13 +195,14 @@ class analysis(processor.ProcessorABC):
 
         # Apply object selection (function does not remove events, adds content to objects)
         event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year]  )
-        basic_selection = event.lumimask & event.passNoiseFilter & event.passHLT & event.passJetMult
-        self._cutFlow.fill("passJetMult", event[basic_selection], allTag=True)
+        selections = []
+        selections.append(event.lumimask & event.passNoiseFilter & event.passHLT & event.passJetMult)
+        self._cutFlow.fill("passJetMult", event[selections[-1]], allTag=True)
 
         #
         # Filtering object and event selection
         #
-        selev = event[basic_selection]
+        selev = event[selections[-1]]
 
         #
         # Calculate and apply btag scale factors
@@ -219,6 +220,7 @@ class analysis(processor.ProcessorABC):
         #
         # Preselection: keep only three or four tag events
         #
+        selections.append(selev.passPreSel)
         selev = selev[selev.passPreSel]
 
         #
@@ -567,11 +569,11 @@ class analysis(processor.ProcessorABC):
         friends = {}
         if self.make_classifier_input is not None:
             from ..helpers.classifier.HCR import build_input_friend
-            friends['friends'] = build_input_friend(
+            friends["friends"] = build_input_friend(
                 selev,
                 self.make_classifier_input,
-                'HCR_input',
-                basic_selection,
+                "HCR_input",
+                *selections,
                 selev.passPreSel,
             )
 
