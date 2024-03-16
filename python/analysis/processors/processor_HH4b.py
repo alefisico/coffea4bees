@@ -533,8 +533,8 @@ class analysis(processor.ProcessorABC):
         #
         # Top Candidates
         #
-        if self.run_topreco:
-            fill += TopCandHists(('top_cand', 'Top Candidate'), 'top_cand')
+        #if self.run_topreco:
+        #    fill += TopCandHists(('top_cand', 'Top Candidate'), 'top_cand')
 
         #
         # fill histograms
