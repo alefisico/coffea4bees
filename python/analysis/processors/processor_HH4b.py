@@ -575,6 +575,7 @@ class analysis(processor.ProcessorABC):
                 "HCR_input",
                 *selections,
                 selev.passPreSel,
+                NotCanJet="notCanJet_coffea", # AGE: this should be temporary
             )
 
         return hist.output | processOutput | friends
