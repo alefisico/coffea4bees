@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Callable, Literal
 
+from ..utils import append_unique_instance
+
 if TYPE_CHECKING:
     from . import Context
 
@@ -14,17 +16,8 @@ class _initializer:
     def add(self, *funcs: Callable):
         self._funcs.extend(funcs)
 
-    def add_unique(self, cls):
-        if isinstance(cls, type):
-            for func in self._funcs:
-                if isinstance(func, cls):
-                    return
-            cls = cls()
-        else:
-            for func in self._funcs:
-                if func is cls:
-                    return
-        self._funcs.append(cls)
+    def add_unique(self, func):
+        append_unique_instance(self._funcs, func)
 
     def __call__(self):
         for func in self._funcs:

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from logging import Logger
 from typing import TypeVar
 
 __all__ = ["interface", "new", "TaskBase", "Static", "Unique"]
@@ -8,15 +7,22 @@ __all__ = ["interface", "new", "TaskBase", "Static", "Unique"]
 _InterfaceT = TypeVar("_InterfaceT")
 
 
+class InterfaceError(NotImplementedError):
+    def __init__(self, owner, func):
+        import inspect
+
+        signature = str(inspect.signature(func)).replace("'", "").replace('"', "")
+        super().__init__(
+            f"Interface is not implemented: {owner.__name__}.{func.__name__}{signature}"
+        )
+
+
 class _Interface:
     def __init__(self, func):
         self.func = func
 
     def __get__(self, _, owner):
-        import inspect
-
-        signature = str(inspect.signature(self.func)).replace("'", "").replace('"', "")
-        raise NotImplementedError(f"{owner.__name__}.{self.func.__name__}{signature}")
+        raise InterfaceError(owner, self.func)
 
 
 def interface(func: _InterfaceT) -> _InterfaceT:
