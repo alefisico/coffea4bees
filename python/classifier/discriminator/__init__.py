@@ -13,7 +13,6 @@ from torch import Tensor, nn
 from torch.utils.data import Dataset
 
 from ..config.setting.default import DataLoader as DLSetting
-from ..config.state.monitor import Classifier as Monitor
 from ..nn.dataset import mp_loader
 from ..nn.schedule import Schedule
 from ..process.device import Device
@@ -107,20 +106,7 @@ class Classifier(ABC):
     ): ...  # TODO evaluataion
 
     def _benchmark(self, epoch: int, pred: dict[str, Tensor], *group: str):
-        return reduce(
-            dict.__or__,
-            (
-                f(
-                    pred=pred,
-                    uuid=self.uuid,
-                    name=self.name,
-                    epoch=epoch,
-                    group=group,
-                )
-                for f in Monitor.benchmark
-            ),
-            {},
-        )
+        return {}  # TODO monitor
 
     def _train(
         self,
@@ -163,7 +149,7 @@ class Classifier(ABC):
                         )
                         for k in datasets
                     }
-                )
+                )  # TODO monitor
             lr.step()
             bs.step()
             model.step()

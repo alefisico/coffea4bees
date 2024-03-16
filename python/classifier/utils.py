@@ -1,8 +1,10 @@
 import importlib
 import logging
+from functools import cache
 from typing import Callable, Iterable, TypeVar
 
 _GroupT = TypeVar("_GroupT", bound=Iterable)
+_GroupItemT = TypeVar("_GroupItemT")
 
 
 def _subgroup(group: list, left: int, remain: int):
@@ -21,6 +23,16 @@ def subgroups(group: _GroupT, new: Callable[[Iterable], _GroupT] = None):
     for i in range(len(group)):
         for sub in _subgroup(group, 0, i):
             yield new(sub)
+    yield new(())
+
+
+@cache
+def _subsets_cached(group):
+    return tuple(subgroups(group, frozenset))
+
+
+def subsets(group: frozenset[_GroupItemT]) -> frozenset[frozenset[_GroupItemT]]:
+    return _subsets_cached(group)
 
 
 class noop:
