@@ -65,7 +65,11 @@ class TestJCM(unittest.TestCase):
                 reference_data = yaml.safe_load(file)
 
             for k, v in test_data.items():
-                self.assertAlmostEqual(v, reference_data[k], delta=0.001, msg=f"Failed match {k}... {v} vs {reference_data[k]} ... Diff: {v-reference_data[k]}")
+                if type(v) == list:
+                    for listIdx in range(len(v)):
+                        self.assertAlmostEqual(v[listIdx], reference_data[k][listIdx], delta=0.001, msg=f"Failed match {k}... {v} vs {reference_data[k]} ... Diff: {v[listIdx]-reference_data[k][listIdx]}")
+                else:
+                    self.assertAlmostEqual(v, reference_data[k], delta=0.001, msg=f"Failed match {k}... {v} vs {reference_data[k]} ... Diff: {v-reference_data[k]}")
 
 
 if __name__ == '__main__':

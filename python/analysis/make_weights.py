@@ -9,11 +9,13 @@ sys.path.insert(0, os.getcwd())
 import base_class.plots.iPlot_config as cfg
 from base_class.JCMTools import getCombinatoricWeight, getPseudoTagProbs, loadROOTHists, loadCoffeaHists, data_from_Hist, prepHists, jetCombinatoricModel
 from base_class.plots.plots import load_config, load_hists, read_axes_and_cuts, get_cut_dict, makePlot
+from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel as JCMModel
 
 #
 #  To do:
 #    - add limit consgtraints
 #    - Ration of data to JCM in plots
+
 
 def write_to_JCM_file(text, value):
     jetCombinatoricModelFile.write(text + "               " + str(value) + "\n")
@@ -90,7 +92,7 @@ if __name__ == "__main__":
     mu_qcd_bin_by_bin     = np.zeros(len(qcd4b.values()))
     qcd3b_non_zero_filter = qcd3b.values() > 0
     mu_qcd_bin_by_bin[qcd3b_non_zero_filter] = np.abs(qcd4b.values()[qcd3b_non_zero_filter] / qcd3b.values()[qcd3b_non_zero_filter])
-    mu_qcd_bin_by_bin[mu_qcd_bin_by_bin<0] = 0
+    mu_qcd_bin_by_bin[mu_qcd_bin_by_bin < 0] = 0
     data3b_error = np.sqrt(data3b.variances()) * mu_qcd_bin_by_bin
     data3b_variances = data3b_error**2
 
@@ -98,7 +100,7 @@ if __name__ == "__main__":
     #  Set poission errors
     #
     data4b_variance = data4b.variances()
-    data4b_variance[data4b_variance==0] = 1.17
+    data4b_variance[data4b_variance == 0] = 1.17
 
     combined_variances = data4b.variances() + data3b_variances + tt4b.variances() + tt3b.variances()
     combined_error = np.sqrt(combined_variances)
@@ -113,11 +115,9 @@ if __name__ == "__main__":
 
     for ibin in range(len(data4b.values()) - 1):
         x = data4b.axes[0].centers[ibin] - 0.5
-        #increase = 100 * combined_error[ibin] / previous_error[ibin] if previous_error[ibin] else 100
+        # increase = 100 * combined_error[ibin] / previous_error[ibin] if previous_error[ibin] else 100
         increase = 100 * np.sqrt(data4b.variances()[ibin]) / previous_error[ibin] if previous_error[ibin] else 100
         print(f'{ibin:2}, {x:2.0f}| {data4b.values()[ibin]:9.1f} | {previous_error[ibin]:5.1f}, {data3b_error[ibin]:5.1f}, {tt4b_error[ibin]:5.1f}, {tt3b_error[ibin]:5.1f}, {increase:5.0f}%')
-
-
 
     #
     #  Get data to fit
@@ -146,7 +146,6 @@ if __name__ == "__main__":
     if args.debug:
         for ibin, center in enumerate(bin_centers):
             print(f"{ibin} {bin_values[ibin]} {bin_errors[ibin]} {center} {objective_constrained(bin_centers, *JCM_model.default_parameters)[ibin]}")
-
 
     #
     # Do the fit
@@ -177,7 +176,6 @@ if __name__ == "__main__":
     write_to_JCM_file("chi^2/ndf", JCM_model.fit_chi2 / JCM_model.fit_ndf)
     write_to_JCM_file("p-value",   JCM_model.fit_prob)
 
-
     n5b_true = data4b_nTagJets.values()[5]
     nTag_pred = JCM_model.nTagPred_values(bin_centers.astype(int) + 4)
     n5b_pred = nTag_pred[5]
@@ -187,9 +185,26 @@ if __name__ == "__main__":
     write_to_JCM_file("n5b_pred", n5b_pred)
     write_to_JCM_file("n5b_true", n5b_true)
 
+    #
+    #   Write the event weights
+    #
+    write_to_JCM_file("JCM_weights",JCM_model.getCombinatoricWeightList())
+
     jetCombinatoricModelFile.close()
     jetCombinatoricModelFile_yml.close()
 
+
+    #
+    #  Read back the weights and check that they are consistent
+    #
+    JCM = JCMModel(jetCombinatoricModelName.replace(".txt",".yml"))
+    for i in range(1,13):
+        jets = np.array(range(i))
+        diff = JCM([jets])[0] - JCM.JCM_weights[i-1]
+        if diff > 0.001:
+            print("ERROR nPSeudoTagJets",i,JCM([jets]), "vs", JCM.JCM_weights[i-1])
+    
+    
     #
     #  Plots
     #
@@ -198,7 +213,7 @@ if __name__ == "__main__":
         #
         #  Sclae QCD by mu_qcd
         #
-        for p in ["data_3tag","TTTo2L2Nu_3tag","TTToSemiLeptonic_3tag","TTToHadronic_3tag"]:
+        for p in ["data_3tag", "TTTo2L2Nu_3tag", "TTToSemiLeptonic_3tag", "TTToHadronic_3tag"]:
             cfg.plotConfig["stack"]["MultiJet"]["sum"][p]["scalefactor"]            *= mu_qcd
 
         #
@@ -221,16 +236,16 @@ if __name__ == "__main__":
         # OVerwrite with predicted values
         #
         for iBin in range(14):
-            cfg.hists[0]["hists"]["selJets_noJCM.n"]["JCM","UL18",1,1,True,False,False,iBin] = (nJet_pred[iBin], 0)
+            cfg.hists[0]["hists"]["selJets_noJCM.n"]["JCM", "UL18", 1, 1, True, False, False, iBin] = (nJet_pred[iBin], 0)
 
-        plot_options = {"doRatio":True,
-                        "xlim":[4,15],
-                        "rlim":[0,2],
+        plot_options = {"doRatio": True,
+                        "xlim": [4, 15],
+                        "rlim": [0, 2],
                         }
+
         makePlot(cfg.hists[0], cfg.cutList, cfg.plotConfig, var="selJets_noJCM.n",
                  cut="passPreSel", region="SB",
                  outputFolder=args.outputDir, **plot_options)
-
 
         #
         #  Plot NTagged Jets
@@ -241,14 +256,15 @@ if __name__ == "__main__":
         # OVerwrite with predicted values
         #
         for iBin in range(15):
-            cfg.hists[0]["hists"]["tagJets_noJCM.n"]["JCM","UL18",1,1,True,False,False,iBin] = (nTag_pred[iBin], 0)
+            cfg.hists[0]["hists"]["tagJets_noJCM.n"]["JCM", "UL18", 1, 1, True, False, False, iBin] = (nTag_pred[iBin], 0)
 
-        plot_options = {"doRatio":True,
-                        "xlim":[4,8],
-                        "yscale":"log",
-                        "rlim":[0.8,1.2],
-                        "ylim":[0.1,None]
+        plot_options = {"doRatio": True,
+                        "xlim": [4, 8],
+                        "yscale": "log",
+                        "rlim": [0.8, 1.2],
+                        "ylim": [0.1, None]
                         }
         makePlot(cfg.hists[0], cfg.cutList, cfg.plotConfig, var="tagJets_noJCM.n",
                  cut="passPreSel", region="SB",
                  outputFolder=args.outputDir, **plot_options)
+
