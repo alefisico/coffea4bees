@@ -96,6 +96,12 @@ class jetCombinatoricModel:
     def nJetPred_values(self, n):
         return self.bkgd_func_njet_constrained(n, *self.fit_parameters)
 
+    def getCombinatoricWeightList(self):
+        output_weights = []
+        for nj in range(4, 16):
+            output_weights.append(getCombinatoricWeight(nj, *(self.fit_parameters + [self.threeTightTagFraction.fix])))
+        return output_weights
+    
     def _nTagPred_errors(self, par, n):
         output = np.zeros(len(n))
         output = self.tt4b_nTagJets_errors**2
@@ -156,9 +162,6 @@ class jetCombinatoricModel:
         self.fit_chi2 = np.sum((self.bkgd_func_njet_constrained(bin_centers, *popt) - bin_values)**2 / bin_errors**2)
         self.fit_ndf = len(bin_values) - len(popt)    # tf1_bkgd_njet.GetNDF()
         self.fit_prob = scipy.stats.chi2.sf(self.fit_chi2, self.fit_ndf)
-
-        #print("bin_values",bin_values)
-        #print("fit",self.bkgd_func_njet_constrained(bin_centers, *popt))
 
         residuals  = bin_values - self.bkgd_func_njet_constrained(bin_centers, *popt)
         pulls      = residuals / bin_errors
