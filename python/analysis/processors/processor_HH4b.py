@@ -15,7 +15,7 @@ import torch
 import torch.nn.functional as F
 
 from analysis.helpers.networks import HCREnsemble
-from analysis.helpers.topCandReconstruction import find_tops, dumpTopCandidateTestVectors, buildTop
+from analysis.helpers.topCandReconstruction import find_tops, dumpTopCandidateTestVectors, buildTop, mW, mt
 
 from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
 from coffea.nanoevents.methods import vector
@@ -418,12 +418,32 @@ class analysis(processor.ProcessorABC):
         # dumpTopCandidateTestVectors(selev, logging, chunk, 15)
 
         if self.run_topreco:
+
             # sort the jets by btagging
             selev.selJet  = selev.selJet[ak.argsort(selev.selJet.btagDeepFlavB, axis=1, ascending=False)]
             top_cands     = find_tops(selev.selJet)
             rec_top_cands = buildTop(selev.selJet, top_cands)
 
             selev["top_cand"] = rec_top_cands[:, 0]
+            bReg_p = selev.top_cand.b * selev.top_cand.b.bRegCorr
+            selev["top_cand", "p"] = bReg_p  + selev.top_cand.j + selev.top_cand.l
+
+            #mW, mt = 80.4, 173.0
+            selev["top_cand", "W"] = ak.zip({"p": selev.top_cand.j + selev.top_cand.l,
+                                             "j": selev.top_cand.j,
+                                             "l": selev.top_cand.l})
+
+            selev["top_cand","W", "pW"] = selev.top_cand.W.p * (mW / selev.top_cand.W.p.mass)
+            selev["top_cand", "mbW"] = (bReg_p + selev.top_cand.W.pW).mass
+            selev["top_cand", "xt"]   = (selev.top_cand.p.mass - mt) / (0.10 * selev.top_cand.p.mass)
+            selev["top_cand", "xWt"]  = np.sqrt(selev.top_cand.xW ** 2 + selev.top_cand.xt ** 2)
+            selev["top_cand", "mbW"]  = (bReg_p + selev.top_cand.W.pW).mass
+            selev["top_cand", "xWbW"] = np.sqrt(selev.top_cand.xW ** 2 + selev.top_cand.xbW**2)
+
+            #
+            # after minimizing, the ttbar distribution is centered around ~(0.5, 0.25) with surfaces of constant density approximiately constant radii
+            #
+            selev["top_cand", "rWbW"] = np.sqrt( (selev.top_cand.xbW-0.25) ** 2 + (selev.top_cand.xW-0.5) ** 2)
 
             selev["xbW_reco"] = selev.top_cand.xbW
             selev["xW_reco"]  = selev.top_cand.xW
@@ -535,8 +555,8 @@ class analysis(processor.ProcessorABC):
         #
         # Top Candidates
         #
-        #if self.run_topreco:
-        #    fill += TopCandHists(('top_cand', 'Top Candidate'), 'top_cand')
+        if self.run_topreco:
+            fill += TopCandHists(('top_cand', 'Top Candidate'), 'top_cand')
 
         #
         # fill histograms
