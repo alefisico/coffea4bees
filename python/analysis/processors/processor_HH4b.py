@@ -15,7 +15,7 @@ import torch
 import torch.nn.functional as F
 
 from analysis.helpers.networks import HCREnsemble
-from analysis.helpers.topCandReconstruction import find_tops, dumpTopCandidateTestVectors, buildTop, mW, mt
+from analysis.helpers.topCandReconstruction import find_tops, dumpTopCandidateTestVectors, buildTop, mW, mt, find_tops_slow
 
 from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
 from coffea.nanoevents.methods import vector
@@ -421,7 +421,7 @@ class analysis(processor.ProcessorABC):
 
             # sort the jets by btagging
             selev.selJet  = selev.selJet[ak.argsort(selev.selJet.btagDeepFlavB, axis=1, ascending=False)]
-            top_cands     = find_tops(selev.selJet)
+            top_cands     = find_tops_slow(selev.selJet)
             rec_top_cands = buildTop(selev.selJet, top_cands)
 
             selev["top_cand"] = rec_top_cands[:, 0]
