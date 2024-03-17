@@ -3,6 +3,7 @@ import numpy as np
 import numba
 from math import sqrt
 mW, mt = 80.4, 173.0
+from gc import collect
 
 @numba.njit
 def find_tops_kernel(events_jets, builder):
@@ -61,7 +62,7 @@ def find_tops_kernel_slow(events_jets, builder):
         nJets = len(jets)
 
         for ib in range(0, 3):
-            for ij in range(2, 4):
+            for ij in range(2, nJets):
                 if len({ib, ij}) < 2:
                     continue
 
@@ -71,7 +72,7 @@ def find_tops_kernel_slow(events_jets, builder):
                 if jets[ib].btagDeepFlavB < jets[ij].btagDeepFlavB:
                     continue
 
-                for il in range(2, 4):
+                for il in range(2, nJets):
                     if len({ib, ij, il}) < 3:
                         continue
 
@@ -161,6 +162,7 @@ def buildTop(input_jets, top_cand_idx):
     t_p = bReg_p + W_p
     W_p = None
     bReg_p = None
+    collect()
     
     #
     # smaller resolution term because there are fewer degrees of freedom. FWHM=25GeV, about the same as mW
