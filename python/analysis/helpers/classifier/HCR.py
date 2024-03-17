@@ -68,6 +68,8 @@ def build_input_friend(
                             "threeTag",
                             "passHLT",
                             "nSelJets",
+                            "xbW",
+                            "xW",
                             weight,
                         ]
                     ],

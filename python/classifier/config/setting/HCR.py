@@ -6,7 +6,7 @@ from classifier.task import Cascade
 class InputBranch(Cascade):
     feature_CanJet: list[str] = ["pt", "eta", "phi", "mass"]
     feature_NotCanJet: list[str] = feature_CanJet + ["isSelJet"]
-    feature_ancillary: list[str] = ["nSelJets", "year"]
+    feature_ancillary: list[str] = ["nSelJets", "year", "xbW", "xW"]
     n_CanJet: int = 4
     n_NotCanJet: int = 8
 

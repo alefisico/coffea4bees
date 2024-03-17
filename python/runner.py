@@ -1,12 +1,17 @@
 import argparse
 import importlib
+import json
 import logging
+import operator as op
 import os
 import time
 import warnings
 from datetime import datetime
+from functools import reduce
+from typing import TYPE_CHECKING
 
 import dask
+import fsspec
 import uproot
 import yaml
 from base_class.addhash import get_git_diff, get_git_revision_hash
@@ -17,6 +22,9 @@ from coffea.nanoevents import NanoAODSchema
 from coffea.util import save
 from dask.distributed import performance_report
 from skimmer.processor.picoaod import fetch_metadata, integrity_check, resize
+
+if TYPE_CHECKING:
+    from base_class.root.chain import Friend
 
 dask.config.set({'logging.distributed': 'error'})
 
@@ -307,6 +315,29 @@ if __name__ == '__main__':
                 'args': args,
                 'diff': get_git_diff(),
             }
+
+            #
+            # Save friend tree metadata if exists
+            #
+            _FRIEND_BASE_PROCESSOR_ARG = 'make_classifier_input' # AGE: need to make it more general
+            _FRIEND_NAME = 'HCR_input'
+            _FRIEND_MERGE_STEP = 100_000
+
+            if friend_base := configs['config'].get(_FRIEND_BASE_PROCESSOR_ARG, None) is not None:
+                friend: Friend = reduce(op.add, [
+                    v['friend'][_FRIEND_NAME]
+                    for v in output.values()
+                    if 'friend' in v and _FRIEND_NAME in v['friend']
+                ])
+                if args.condor:
+                    friend, = dask.compute(
+                        friend.merge(step=_FRIEND_MERGE_STEP, dask=True)
+                    )
+                else:
+                    friend = friend.merge(step=_FRIEND_MERGE_STEP, dask=False)
+                from base_class.utils.json import DefaultEncoder
+                with fsspec.open(friend_base, 'wt') as f:
+                    json.dump(friend, f, cls=DefaultEncoder)
 
             #
             #  Saving file
