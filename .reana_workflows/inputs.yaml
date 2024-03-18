@@ -1,0 +1,14 @@
+year:
+  - UL16_preVFP
+  - UL16_postVFP
+  - UL17
+  - UL18
+dataset:
+  - data 
+  - TTToHadronic 
+  - TTToSemiLeptonic 
+  - TTTo2L2Nu 
+  - ZZ4b 
+  - ZH4b 
+  - HH4b  
+

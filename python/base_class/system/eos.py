@@ -3,7 +3,6 @@
 An interface to operate on both local filesystem and EOS (or other XRootD supported system).
 
 .. todo::
-    - Consider migrating to :mod:`os`, :mod:`shutil` and :class:`XRootD.client.FileSystem`.
     - Use :func:`os.path.normpath`, :func:`glob.glob`
 """
 from __future__ import annotations
@@ -20,31 +19,41 @@ from typing import Any, Generator, Literal
 
 from ..utils import arg_set
 from ..utils.string import ensure
+from ..utils.wrapper import retry
 
-__all__ = ['EOS', 'PathLike', 'save', 'load']
+__all__ = ['EOS', 'PathLike', 'EOSError', 'save', 'load']
+
+
+class EOSError(Exception):
+    __module__ = Exception.__module__
+
+    def __init__(self, cmd: list[str], stderr: bytes, *args):
+        msg = f'Operation failed\n  Command: {" ".join(cmd)}\n  Message: {stderr.decode()}'
+        super().__init__(msg, *args)
 
 
 class EOS:
-    _url_pattern = re.compile(r'^[\w]+://[^/]+')
+    _host_pattern = re.compile(r'^[\w]+://[^/]+')
     _slash_pattern = re.compile(r'(?<!:)/{2,}')
 
     run: bool = True
+    allow_fail: bool = False
     client: Literal['eos', 'xrdfs'] = 'xrdfs'
 
     history: list[tuple[datetime, str, tuple[bool, bytes]]] = []
 
-    def __init__(self, path: PathLike, url: str = ...):
+    def __init__(self, path: PathLike, host: str = ...):
         default = ''
         if isinstance(path, EOS):
             default, path = path.host, path.path
         elif not isinstance(path, Path):
             if isinstance(path, os.PathLike):
                 path = os.fspath(path)
-            match = self._url_pattern.match(path)
+            match = self._host_pattern.match(path)
             if match:
                 default = match.group(0)
                 path = path[len(default):]
-        self.host = arg_set(url, '', default)
+        self.host = arg_set(host, '', default)
         if self.host:
             self.host = ensure(self.host, __suffix='/')
         self.path = Path(self._slash_pattern.sub('/', str(path)))
@@ -74,6 +83,7 @@ class EOS:
         return self.path.exists()
 
     @classmethod
+    @retry(1)
     def cmd(cls, *args) -> tuple[bool, bytes]:
         args = [str(arg) for arg in args if arg]
         if cls.run:
@@ -90,11 +100,24 @@ class EOS:
         else:
             output = (True, b'')
         cls.history.append((datetime.now(), ' '.join(args), output))
+        if not cls.allow_fail and not output[0]:
+            raise EOSError(args, output[1])
         return output
+
+    @classmethod
+    def set_retry(cls, max: int = ..., delay: float = ...):
+        cls.cmd.set(max=max, delay=delay)
 
     def call(self, executable: str, *args):
         eos = () if self.is_local else (self.client, self.host)
         return self.cmd(*eos, executable, *args)
+
+    def ls(self) -> list[EOS]:  # TODO test and improve
+        files = self.call('ls', self.path)[1].decode().split('\n')
+        if self.is_local or self.client == 'eos':
+            return [self/f for f in files if f]
+        else:
+            return [EOS(f, self.host) for f in files if f]
 
     def rm(self, recursive: bool = False):
         if not self.is_local and recursive and self.client == 'xrdfs':
@@ -245,6 +268,9 @@ class EOS:
 
     def __str__(self):  # TODO rich, __repr__
         return self.host + str(self.path)
+
+    def __repr__(self):
+        return str(self)
 
     def __fspath__(self):
         return str(self)

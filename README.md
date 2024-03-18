@@ -1,7 +1,7 @@
 # Coffea4bees
 
+
 This is the repository for the 4b analyses at CMU based in coffea. 
-This repository in based on the coffea implementation of the ZZ/ZH to 4b analysis for Run2. More information about that repository [here](https://github.com/patrickbryant/ZZ4b).
 
 The package has a python component, where most of the analysis is made, and a c++ component meant to be run inside CMSSW.
 
@@ -58,6 +58,17 @@ git push myRepo BRANCH        #### change BRANCH with the name of your branch
 ```
 Once you are happy with your changes, you can make a merge request in the gitlab website to the main repository.
 
+## REANA
+
+[![Launch with Snakemake on REANA](https://www.reana.io/static/img/badges/launch-on-reana.svg)]($https://reana.cern.ch/launch?name=Coffea4bees&specification=reana.yml&url=https%3A%2F%2Fgitlab.cern.ch%2Fcms-cmu%2Fcoffea4bees)
+
+This package runs a workflow in [REANA](https://reana.cern.ch/) for every commit to the master. The output of the reana workflow can be found here:
+
+ * Website with plots: [https://plotsalgomez.webtest.cern.ch/HH4b/reana/](https://plotsalgomez.webtest.cern.ch/HH4b/reana/)
+ * Coffea files: [https://cernbox.cern.ch/s/M1hF3y9fOdaanJh](https://cernbox.cern.ch/s/M1hF3y9fOdaanJh)
+
+In both cases one can find a directory with the date and the time the job run. 
+
 ## Information for continuos integration (CI)
 
 By default only the **master branch** runs the gitlab CI workflow. If you want to push incomplete or buggy code, without running the CI workflow, create a new branch. 
@@ -72,7 +83,7 @@ If you did this step correctly, then you can check in your pipelines and see tha
 
 This packages uses its own container. It is based on `coffeateam/coffea-dask:latest` including some additional python packages. This container is created automatically in the gitlab CI step **IF** the name of the branch (and the merging branch in the case of a pull request to the master) starts with `container_`. Additionally, one can take a look at the file [.dockerfiles/Dockerfile_analysis](.dockerfiles/Dockerfile_analysis) which is the one used to create the container.
 
-### Python sytle tips:
+## Python sytle tips:
 
 PEP8
 

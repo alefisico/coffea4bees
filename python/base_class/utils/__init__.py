@@ -62,8 +62,11 @@ def unpack(__iter: Iterable) -> Any:
     return __next
 
 
-def unique(seq: Iterable):
-    return list(set(seq))
+_UniqueT = TypeVar('_UniqueT')
+
+
+def unique(seq: Iterable[_UniqueT]):
+    return list(dict.fromkeys(seq))
 
 
 def count(seq: Iterable, value: Any) -> int:

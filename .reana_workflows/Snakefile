@@ -1,0 +1,69 @@
+from datetime import datetime
+
+TIMESTAMP = datetime.now().strftime('%Y%m%d_%H%M%S')
+
+#
+# rule all sets the entire workflow. This is were you define the last output of the workflow.
+# Snakemake will go backawrds and check what rules does the workflow need to get the output.
+#
+rule all:
+    input:
+        "output/RunII/passPreSel/fourTag/SB/nPVs.pdf",
+        expand("output/histAll_{sample}_{iy}.coffea", sample=config['dataset'], iy=config['year'])
+
+rule analysis:
+    output:
+        "output/histAll_{sample,[^_]+}_{iy}.coffea"
+    container:
+        "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
+    resources:
+        voms_proxy=True,
+        kerberos=True,
+        compute_backend="kubernetes",
+        kubernetes_memory_limit="8Gi"
+    shell:
+        """
+cd python/ 
+echo "Running {wildcards.sample} {wildcards.iy}"
+#sed -i 's/run_topreco.*/run_topreco : false/' analysis/metadata/HH4b.yml
+python runner.py -d {wildcards.sample} -p analysis/processors/processor_HH4b.py -y {wildcards.iy} -o histAll_{wildcards.sample}_{wildcards.iy}.coffea -op ../output/ -m metadata/datasets_HH4b_cernbox.yml
+cp /tmp/coffea4bees-dask-report-* ../output/coffea4bees-dask-report_{wildcards.sample}_{wildcards.iy}.html
+        """
+
+rule merging_coffea_files:
+    input:
+        files = expand(['output/histAll_{idat}_{iyear}.coffea'], idat=config['dataset'], iyear=config['year'])
+    output:
+        "output/histAll.coffea"
+    container:
+        "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
+    resources:
+        kerberos=True,
+        compute_backend="kubernetes",
+        kubernetes_memory_limit="8Gi"
+    shell:
+        """
+python python/analysis/merge_coffea_files.py -f {input.files} -o output/histAll.coffea
+xrdcp output/histAll.coffea root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/histAll.coffea
+cp output/histAll.coffea /eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/histAll.coffea
+        """
+        
+
+rule make_plots:
+    input:
+        "output/histAll.coffea"
+    output:
+        "output/RunII/passPreSel/fourTag/SB/nPVs.pdf"
+    container:
+        "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
+    resources:
+        kerberos=True,
+        compute_backend="kubernetes",
+        kubernetes_memory_limit="8Gi"
+    shell:
+        """
+cd python/ 
+python analysis/makePlots.py ../output/histAll.coffea -o ../output/ -m analysis/metadata/plotsAll.yml
+python .php-plots/bin/pb_deploy_plots.py ../output/RunII/ /eos/user/a/algomez/work/HH4b/reana/{TIMESTAMP}/ -r -c
+        """
+        

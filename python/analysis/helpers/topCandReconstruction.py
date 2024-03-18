@@ -2,7 +2,8 @@ import awkward as ak
 import numpy as np
 import numba
 from math import sqrt
-
+mW, mt = 80.4, 173.0
+from gc import collect
 
 @numba.njit
 def find_tops_kernel(events_jets, builder):
@@ -61,7 +62,7 @@ def find_tops_kernel_slow(events_jets, builder):
         nJets = len(jets)
 
         for ib in range(0, 3):
-            for ij in range(2, 4):
+            for ij in range(2, nJets):
                 if len({ib, ij}) < 2:
                     continue
 
@@ -71,7 +72,7 @@ def find_tops_kernel_slow(events_jets, builder):
                 if jets[ib].btagDeepFlavB < jets[ij].btagDeepFlavB:
                     continue
 
-                for il in range(2, 4):
+                for il in range(2, nJets):
                     if len({ib, ij, il}) < 3:
                         continue
 
@@ -145,35 +146,29 @@ def buildTop(input_jets, top_cand_idx):
     top_cands = [input_jets[top_cand_idx[idx]] for idx in "012"]
     rec_top_cands = ak.zip({
         "b" : top_cands[0],
-        "W": ak.zip({
-            "p" : top_cands[1] + top_cands[2],
-            "j" : top_cands[1], 
-            "l" : top_cands[2],
-        }),
-        "bReg": top_cands[0] * top_cands[0].bRegCorr,
-        "p": (top_cands[0] * top_cands[0].bRegCorr)  + top_cands[1] + top_cands[2],
+        "j" : top_cands[1],
+        "l" : top_cands[2],
     })
 
-    mW, mt = 80.4, 173.0
-    rec_top_cands["xW"] = (rec_top_cands.W.p.mass - mW) / (0.10 * rec_top_cands.W.p.mass)
-    rec_top_cands["W", "pW"] = rec_top_cands.W.p * (mW / rec_top_cands.W.p.mass)
-    rec_top_cands["mbW"] = (rec_top_cands.bReg + rec_top_cands.W.pW).mass
 
+    
+    W_p = top_cands[1] + top_cands[2]
+
+    rec_top_cands["xW"] = (W_p.mass - mW) / (0.10 * W_p.mass)
+    W_p = W_p * (mW / W_p.mass)
+ 
+    bReg_p = top_cands[0] * top_cands[0].bRegCorr 
+    mbW = (bReg_p + W_p).mass
+    t_p = bReg_p + W_p
+    W_p = None
+    bReg_p = None
+    collect()
+    
     #
     # smaller resolution term because there are fewer degrees of freedom. FWHM=25GeV, about the same as mW
     #
-    rec_top_cands["xbW"] = (rec_top_cands.mbW - mt) / (0.05 * rec_top_cands.mbW)
+    rec_top_cands["xbW"] = (mbW - mt) / (0.05 * mbW)
 
-    rec_top_cands["xWbW"] = np.sqrt(rec_top_cands.xW ** 2 + rec_top_cands.xbW**2)
-    
-    rec_top_cands["xt"]   = (rec_top_cands["p"].mass - mt) / (0.10 * rec_top_cands["p"].mass);
-    rec_top_cands["xWt"]  = np.sqrt(rec_top_cands["xW"] ** 2 + rec_top_cands["xt"] ** 2)
+    rec_top_cands = rec_top_cands[ak.argsort(  rec_top_cands.xW ** 2 + rec_top_cands.xbW ** 2, axis=1, ascending=True)]
 
-    #
-    # after minimizing, the ttbar distribution is centered around ~(0.5, 0.25) with surfaces of constant density approximiately constant radii
-    #
-    rec_top_cands["rWbW"] = np.sqrt( (rec_top_cands["xbW"]-0.25) ** 2 + (rec_top_cands["xW"]-0.5) ** 2)
-
-
-    rec_top_cands = rec_top_cands[ak.argsort(rec_top_cands.xWbW, axis=1, ascending=True)]
     return rec_top_cands

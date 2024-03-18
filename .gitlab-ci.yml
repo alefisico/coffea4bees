@@ -17,8 +17,11 @@ workflow:
 
 stages:          
   - build
-  - test
+  - skimmer-test
+  - analysis-test
   - plot
+  - cutflow
+  - reana
 
 voms_proxy:
   stage: build
@@ -62,8 +65,8 @@ build_kaniko_command:
       - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^container.*/'
 
 analysis-test-job:   
-  stage: test   
-  dependencies:
+  stage: analysis-test   
+  needs:
     - voms_proxy
   image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
   tags:
@@ -75,22 +78,36 @@ analysis-test-job:
     paths:
       - python/analysis/hists/test.coffea
 
-## problems while running with dask_processor
-#skimmer-test-job:   
-#  stage: test   
-#  dependencies:
-#    - voms_proxy
-#  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
-#  tags:
-#    - k8s-cvmfs
-#  script:
-#    - source .ci-workflows/skimmer-test-job.sh
-#  artifacts: 
-#    expire_in: 1 day
-#    paths:
-#      - python/skimmer/metadata/picoaod_datasets_TTToSemiLeptonic_UL18.yml
-#      - ${CI_PROJECT_DIR}/TTToSemiLeptonic_UL18/picoAOD.root
-#      - python/coffea4bees-dask-report.html
+
+skimmer-test-job:   
+  stage: skimmer-test   
+  needs:
+    - voms_proxy
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  tags:
+    - k8s-cvmfs
+  script:
+    - source .ci-workflows/skimmer-test-job.sh
+  artifacts: 
+    expire_in: 1 day
+    paths:
+      - python/skimmer/metadata/picoaod_datasets_TTToSemiLeptonic_UL18.yml
+      - python/skimmer/TTToSemiLeptonic_UL18/picoAOD.root
+
+skimmer-analysis-test-job:   
+  stage: analysis-test   
+  needs: 
+    - voms_proxy
+    - skimmer-test-job
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  tags:
+    - k8s-cvmfs
+  script:
+    - source .ci-workflows/skimmer-analysis-test-job.sh
+  artifacts: 
+    expire_in: 1 day
+    paths:
+      - python/analysis/hists/test_skimmer.coffea
 
 
 analysis-plot-job:    
@@ -108,7 +125,7 @@ analysis-plot-job:
       - python/analysis/testCoffeaPlots/RunII/
 
 analysis-cutflow-job:    
-  stage: plot 
+  stage: cutflow
   needs: 
     - analysis-test-job
   image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
@@ -116,6 +133,38 @@ analysis-cutflow-job:
     - k8s-cvmfs
   script:
     - source .ci-workflows/analysis-cutflow-job.sh
+
+analysis-makeweights-job:    
+  stage: plot
+  needs: 
+    - analysis-test-job
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  tags:
+    - k8s-cvmfs
+  script:
+    - source .ci-workflows/analysis-makeweights-job.sh
+
+analysis-helpers-job:    
+  stage: plot
+  needs: 
+    - voms_proxy
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  tags:
+    - k8s-cvmfs
+  script:
+    - source .ci-workflows/analysis-helpers-job.sh
+
+
+
+skimmer-analysis-cutflow-job:    
+  stage: cutflow
+  needs: 
+    - skimmer-analysis-test-job
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  tags:
+    - k8s-cvmfs
+  script:
+    - source .ci-workflows/skimmer-analysis-cutflow-job.sh
 
 analysis-iplot-job:    
   stage: plot 
@@ -129,24 +178,29 @@ analysis-iplot-job:
 
 
 baseclass-test-job:   
-  stage: build
+  stage: plot
   image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
     - source .ci-workflows/baseclass-test-job.sh
 
-#analysis-testAll-job:   
-#  stage: test   
-#  dependencies:
-#    - voms_proxy
-#  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
-#  tags:
-#    - k8s-cvmfs
-#  script:
-#    - source .ci-workflows/analysis-testAll-job.sh
-#  rules:
-#    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"
-#      when: manual
-
-
+reana-job:
+  stage: reana
+  image: gitlab-registry.cern.ch/algomez/coffea4bees:test
+  tags:
+    - k8s-cvmfs
+  before_script:
+    - export REANA_SERVER_URL=https://reana.cern.ch 
+    - export REANA_ACCESS_TOKEN="${REANA_TOKEN}"
+    - reana-client ping
+  script:
+    - echo "##########################################################"
+    - echo "#### THIS JOB WILL FAILED IF YOU DONT HAVE A REANA ACCOUNT"
+    - echo "#### AND THE REANA TOKEN AS CI SECRETS VARIABLE"
+    - echo "#### BECAUSE AT THE MOMENT REANA DOES NOT HAVE GROUP ACCOUNTS"
+    - echo "#### BUT IT HAS TO RUN IN THE CMU CENTRAL REPO AND IT IS "
+    - echo "#### ALLOWED TO FAILED FOR MERGE REQUEST"
+    - echo "##########################################################"
+    - reana-client run -f reana.yaml -w coffea4bees
+  allow_failure: true

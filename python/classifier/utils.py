@@ -1,68 +1,61 @@
-import itertools
-from operator import gt, lt
-from types import ModuleType
-from typing import Literal, TypeVar
+import importlib
+import logging
+from functools import cache
+from typing import Callable, Iterable, TypeVar
 
-from packaging import version
-
-from .monitor import console
-
-
-def version_warn(pkg: ModuleType, ver: str, op: Literal['<', '>']):
-    ops = {'<': lt, '>': gt}
-    warns = {'<': FutureWarning, '>': DeprecationWarning}
-    if ops[op](version.parse(pkg.__version__), version.parse(ver)):
-        console.warn(
-            f'{pkg.__name__} version {op} {ver} may not work with this code, get {pkg.__version__}', warns[op])
+_GroupT = TypeVar("_GroupT", bound=Iterable)
+_GroupItemT = TypeVar("_GroupItemT")
 
 
-def version_check(pkg: ModuleType, upper: str = None, lower: str = None):
-    if upper is not None:
-        version_warn(pkg, upper, '>')
-    if lower is not None:
-        version_warn(pkg, lower, '<')
+def _subgroup(group: list, left: int, remain: int):
+    if remain == 0:
+        yield group
+    else:
+        size = len(group)
+        for i in range(size, left, -1):
+            yield from _subgroup(group[: i - 1] + group[i:], i - 1, remain - 1)
 
 
-class TypedStr:
-    def __init__(self, name: str):
-        self.name = name
-
-    def __repr__(self):
-        return f'{self.__class__.__name__}({self.name})'
-
-    def __str__(self):
-        return self.name
-
-    def __hash__(self) -> int:
-        return hash(self.name)
-
-    def __eq__(self, __value: object) -> bool:
-        if isinstance(__value, self.__class__):
-            return self.name == __value.name
-        return False
+def subgroups(group: _GroupT, new: Callable[[Iterable], _GroupT] = None):
+    if new is None:
+        new = type(group)
+    group = [*group]
+    for i in range(len(group)):
+        for sub in _subgroup(group, 0, i):
+            yield new(sub)
+    yield new(())
 
 
-def ranges(seq: list[int]):
-    for _, i in itertools.groupby(enumerate(seq), lambda x: x[1] - x[0]):
-        i = list(i)
-        yield i[0][1], i[-1][1]
+@cache
+def _subsets_cached(group):
+    return tuple(subgroups(group, frozenset))
 
 
-def ranges_str(seq: list[int]):
-    for a, b in ranges(seq):
-        if a == b:
-            yield str(a)
-        else:
-            yield f'{a}-{b}'
+def subsets(group: frozenset[_GroupItemT]) -> frozenset[frozenset[_GroupItemT]]:
+    return _subsets_cached(group)
 
 
-_TypeHintT = TypeVar('_TypeHintT')
+class noop:
+    def __getattr__(self, _):
+        return self
+
+    def __call__(self, *_, **__):
+        return self
 
 
-def _type_hint_class(cls, *args, **kwargs):
-    raise RuntimeError(f'{cls.__name__} is only used for type hinting')
-
-
-def type_hint_only(cls: _TypeHintT) -> _TypeHintT:
-    cls.__new__ = _type_hint_class
-    return cls
+def import_(modname: str, clsname: str):
+    _mod, _cls = None, None
+    try:
+        _mod = importlib.import_module(modname)
+    except ModuleNotFoundError:
+        ...
+    except Exception as e:
+        logging.error(e)
+    if _mod is not None and clsname != "*":
+        try:
+            _cls = getattr(_mod, clsname)
+        except AttributeError:
+            ...
+        except Exception as e:
+            logging.error(e)
+    return _mod, _cls
