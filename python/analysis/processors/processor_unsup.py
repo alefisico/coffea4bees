@@ -66,7 +66,7 @@ from base_class.hist import H, Template
 
 
 class analysis(processor.ProcessorABC):
-    def __init__(self, JCM='', threeTag = True, corrections_metadata='analysis/metadata/corrections.yml', SR = '4'):
+    def __init__(self, JCM='', threeTag = True, corrections_metadata='analysis/metadata/corrections.yml', SRno = '4'):
         logging.debug('\nInitialize Analysis Processor')
         self.cutFlowCuts = ["all", "passHLT", "passNoiseFilter", "passJetMult", "passJetMult_btagSF", "passPreSel"]
         self.histCuts = ['passPreSel']
@@ -75,14 +75,20 @@ class analysis(processor.ProcessorABC):
         self.btagVar = btagVariations(systematics=True)  #### AGE: these two need to be review later
         self.corrections_metadata = yaml.safe_load(open(corrections_metadata, 'r'))
         self.m4jBinEdges = np.array([[0, 361], [361, 425], [425, 479], [479, 533], [533, 591], [591, 658], [658, 741], [741, 854], [854, 1044], [1044, 1800]])
-        self.SR = int(SR)
-        self.m4j_SR = self.m4jBinEdges[self.SR]
-        self.m4j_lowSB = self.m4jBinEdges[int(self.SR-1)]
-        self.m4j_highSB = self.m4jBinEdges[int(self.SR+1)]
+        self.SRno = int(SRno)
+        self.m4j_SR = self.m4jBinEdges[self.SRno]
+        self.m4j_lowSB = self.m4jBinEdges[int(self.SRno-1)]
+        self.m4j_highSB = self.m4jBinEdges[int(self.SRno+1)]
+        logging.info(f'Region SR at {self.SRno} with low SB at {int(self.SRno-1)} and high SB at {int(self.SRno+1)}')
+        logging.info(f'm4js are {self.m4j_lowSB[0]}, {self.m4j_SR[0]}, {self.m4j_SR[1]}, {self.m4j_highSB[1]} GeV.')
 
     def process(self, event):
         tstart = time.time()
         fname   = event.metadata['filename']
+
+        logging.info('File path')
+        logging.info(f'{fname}')
+
         dataset = event.metadata['dataset']
         estart  = event.metadata['entrystart']
         estop   = event.metadata['entrystop']
@@ -105,6 +111,7 @@ class analysis(processor.ProcessorABC):
         ###### Reading 3to4, DtoM friend trees ########
         ###############################################
 
+        
         path = fname.replace(fname.split('store/user')[-1], '')
     
         if fname.find('picoAOD_3b_wJCM_newSBDef') != -1:
@@ -141,10 +148,13 @@ class analysis(processor.ProcessorABC):
             ###event['weight'] = event.weight * event.trigWeight.Data
 
             ###puWeight
-            puWeight = list(correctionlib.CorrectionSet.from_file(self.corrections_metadata[year]['PU']).values())[0]
-            for var in ['nominal', 'up', 'down']:
-                event[f'PU_weight_{var}'] = puWeight.evaluate(event.Pileup.nTrueInt.to_numpy(), var)
-            event['weight'] = event.weight * event.PU_weight_nominal
+            if ('Pileup' in event.fields):
+                puWeight = list(correctionlib.CorrectionSet.from_file(self.corrections_metadata[year]['PU']).values())[0]
+                for var in ['nominal', 'up', 'down']:
+                    event[f'PU_weight_{var}'] = puWeight.evaluate(event.Pileup.nTrueInt.to_numpy(), var)
+                event['weight'] = event.weight * event.PU_weight_nominal
+            else:
+                logging.info('Pileup weights not found')
 
             ### L1 prefiring weight
             if ('L1PreFiringWeight' in event.fields):   #### AGE: this should be temprorary (field exists in UL)
@@ -163,7 +173,7 @@ class analysis(processor.ProcessorABC):
         self._cutFlow.fill("passHLT",  event[ event.lumimask & event.passNoiseFilter & event.passHLT], allTag=True)
 
         ### Apply object selection (function does not remove events, adds content to objects)
-        event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year]  )
+        event =  apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year]  )
         self._cutFlow.fill("passJetMult",  event[ event.lumimask & event.passNoiseFilter & event.passHLT & event.passJetMult ], allTag=True)
 
         ### Filtering object and event selection
@@ -187,6 +197,7 @@ class analysis(processor.ProcessorABC):
         if fname.find('picoAOD_3b_wJCM_newSBDef') != -1:
             selev['weight_wDtoM'] = selev.weight * selev.wDtoM
             selev['weight_wDtoM_w3to4'] = selev.weight_wDtoM * selev.w3to4
+            # selev['weight'] = selev.weight_wDtoM_w3to4 ########## Change this later !!!!! ##################
         
         ############################################
         ############## Unsup 4b code ###############
@@ -229,9 +240,14 @@ class analysis(processor.ProcessorABC):
         selev['SR'] = (self.m4j_SR[0] <= selev.m4j) & (selev.m4j < self.m4j_SR[1])
         selev['SB_low'] = (self.m4j_lowSB[0] <= selev.m4j) & (selev.m4j < self.m4j_lowSB[1])
         selev['SB_high'] = (self.m4j_highSB[0] <= selev.m4j) & (selev.m4j < self.m4j_highSB[1])
-        selev['SB'] = selev.SB_low & selev.SB_high
-        selev['SRSB'] = selev.SR & selev.SB
-        selev['notSR'] = ~selev.SR
+        selev['SB'] = selev.SB_low | selev.SB_high
+        selev['SRSB'] = selev.SR | selev.SB
+        selev['notSRSB'] = ~selev.SRSB
+
+        # logging.info(selev.SR)
+        # logging.info(selev.SB)
+        # logging.info(selev.SRSB)
+        # logging.info(selev.notSR)
 
         notCanJet = selev.Jet[notCanJet_idx]
         notCanJet = notCanJet[notCanJet.selected_loose]
@@ -288,7 +304,20 @@ class analysis(processor.ProcessorABC):
         selev['leadStM_selected'] = selev.quadJet_selected.lead.mass
         selev['sublStM_selected'] = selev.quadJet_selected.subl.mass
 
-        selev['region'] = selev.SR*0b01 + selev.SB*0b10 + selev.SRSB*0b11 + selev.SB_low*0b100 + selev.SB_high*0b101 + selev.notSR*0b110
+        # selev['region'] = selev.SR*0b10 + selev.SB*0b01 # +selev.notSR*0b100 #+ selev.SRSB*0b11# + selev.SB_low*0b100 + selev.SB_high*0b101 + selev.notSR*0b110
+        #### SR = 2: 2
+        #### notSR = 1: 1
+        #### SB = 3: 3+1 = 4 (since SB is a subset of notSR)
+        #### lowSB = 5: 5+4 = 9 (since lowSB is a subset of SB)
+        #### highSB = 6: 6+4 = 10 (since highSB is a subset of SB) 
+
+        selev['region'] = selev.SR*0b01  +selev.notSRSB*0b100 + selev.SB_low*0b10 + selev.SB_high*0b11 # + selev.SB*0b01 
+
+        logging.info(f'{selev.SR}')
+        logging.info(f'{selev.SB}')
+        logging.info(f'{selev.region}')
+        logging.info(f'{selev.region}')
+        logging.info(f'{selev.region}')
 
         ###  Build the top Candiates
         ### sort the jets by btagging
@@ -316,7 +345,7 @@ class analysis(processor.ProcessorABC):
         hist = Collection(process = [processName],
                           year    = [year],
                           tag     = [3, 4, 0],    # 3 / 4/ Other
-                          region  = [2, 1, 3, 4, 5, 6, 0],    # SR / SB / Other
+                          region  = [4, 3, 2, 1, 0],    # SR / SB / Other
                           **dict((s, ...) for s in self.histCuts))
 
         fill += hist.add('nPVs',     (101, -0.5, 100.5, ('PV.npvs',     'Number of Primary Vertices')))
@@ -342,9 +371,9 @@ class analysis(processor.ProcessorABC):
             fill += hist.add('sublStM_bkg_selected', (100, 0, 1000, ('sublStM_selected', 'leadSt_M data')), weight="weight_wDtoM_w3to4")
             fill += hist.add('nSelJet_bkg', (16, 0, 15, ('nJet_selected', 'nJet_selected background')), weight="weight_wDtoM_w3to4")
         
-        fill += Jet.plot(('selJets', 'Selected Jets'),        'selJet',           skip=['deepjet_c'])
-        fill += Jet.plot(('tagJets', 'Tag Jets'),             'tagJet',           skip=['deepjet_c'])
-        fill += Jet.plot(('canJets', 'Higgs Candidate Jets'), 'canJet',           skip=['deepjet_c'])
+        # fill += Jet.plot(('selJets', 'Selected Jets'),        'selJet',           skip=['deepjet_c'])
+        # fill += Jet.plot(('tagJets', 'Tag Jets'),             'tagJet',           skip=['deepjet_c'])
+        # fill += Jet.plot(('canJets', 'Higgs Candidate Jets'), 'canJet',           skip=['deepjet_c'])
 
 
         ###  Make quad jet hists

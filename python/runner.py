@@ -135,6 +135,10 @@ if __name__ == '__main__':
                     if 'data' not in dataset:
                         metadata_dataset[dataset]['genEventSumw'] = metadata['datasets'][dataset][year][config_runner['data_tier']]['sumw']
                     meta_files = metadata['datasets'][dataset][year][config_runner['data_tier']]['files']
+            # if not dataset.endswith('data'):
+            #     if config_runner['data_tier'].startswith('pico'):
+            #         metadata_dataset[dataset]['genEventSumw'] = metadata['datasets'][dataset][year][config_runner['data_tier']]['sumw']
+            #         meta_files = metadata['datasets'][dataset][year][config_runner['data_tier']]['files']
                 else:
                     meta_files = metadata['datasets'][dataset][year][config_runner['data_tier']]
 
@@ -143,7 +147,6 @@ if __name__ == '__main__':
 
                 logging.info(f'\nDataset {dataset+"_"+year} with '
                              f'{len(fileset[dataset+"_"+year]["files"])} files')
-
             else:
 
                 for iera, ifile in metadata['datasets'][dataset][year][config_runner['data_tier']].items():
@@ -207,11 +210,11 @@ if __name__ == '__main__':
         'savemetrics': True,
         'xrootdtimeout': 180}
 
-    # to run with processor futures_executor ()
-    # executor_args = {
-    #    'schema': config_runner['schema'],
-    #    'workers': 6,
-    #    'savemetrics': True}
+####    to run with processor futures_executor ()
+    executor_args = {
+       'schema': config_runner['schema'],
+       'workers': 6,
+       'savemetrics': True}
 
     logging.info(f"\nExecutor arguments: {executor_args}")
 
@@ -238,7 +241,8 @@ if __name__ == '__main__':
             treename='Events',
             processor_instance=analysis(**configs['config']),
             # if args.condor else processor.futures_executor,
-            executor=processor.dask_executor,
+            executor=processor.futures_executor,  ######## to run locally
+            # executor=processor.dask_executor,   ######## to run on DASK
             executor_args=executor_args,
             chunksize=config_runner['chunksize'],
             maxchunks=config_runner['maxchunks'],
