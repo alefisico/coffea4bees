@@ -28,6 +28,8 @@ def load_config(metadata):
         plotConfig["codes"]["tag"][v] = k
 
     for k, v in plotConfig["codes"]["region"].copy().items():
+        if type(v) is list:
+            continue
         plotConfig["codes"]["region"][v] = k
 
     return plotConfig
@@ -597,7 +599,12 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
         raise AttributeError(f"{cut} not in cutList {cutList}")
 
     cut_dict = get_cut_dict(cut, cutList)
-    region_dict = {"region":  hist.loc(codes["region"][region])}
+
+    if type(codes["region"][region]) is list:
+        hist_locs = [hist.loc(r) for r in codes["region"][region]]
+        region_dict = {"region":  hist_locs}
+    else:
+        region_dict = {"region":  hist.loc(codes["region"][region])}
 
     tagNames = []
 
@@ -634,7 +641,15 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
 
         this_hist_dict = this_hist_dict | var_dict | region_dict | cut_dict
 
-        hists.append(h[this_hist_dict])
+        #
+        # Catch list vs hist
+        #  Shape give (nregion, nBins)
+        #
+        this_hist = h[this_hist_dict]
+        if len(this_hist.shape) == 2:
+            this_hist = this_hist[sum,:]
+        
+        hists.append(this_hist)
         hists[-1] *= v.get("scalefactor", 1.0)
 
     #
@@ -680,8 +695,16 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
                               }
 
             this_hist_opts = this_hist_opts | var_dict | region_dict | year_dict | cut_dict
-
-            stack_dict[k] = h[this_hist_opts]
+    
+            #
+            # Catch list vs hist
+            #  Shape give (nregion, nBins)
+            #
+            this_hist = h[this_hist_opts]
+            if len(this_hist.shape) == 2:
+                this_hist = this_hist[sum,:]
+                
+            stack_dict[k] = this_hist
 
         elif v.get("sum", None):
 
@@ -698,7 +721,14 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
 
                 this_hist_opts = this_hist_opts | var_dict | region_dict | year_dict | cut_dict
 
+                #
+                # Catch list vs hist
+                #  Shape give (nregion, nBins)
+                #
                 this_hist = h[this_hist_opts]
+                if len(this_hist.shape) == 2:
+                    this_hist = this_hist[sum,:]
+                    
                 this_hist *= sum_v.get("scalefactor", 1.0)
                 if hist_sum:
                     hist_sum += this_hist
