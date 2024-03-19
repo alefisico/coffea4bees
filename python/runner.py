@@ -2,12 +2,11 @@ import argparse
 import importlib
 import json
 import logging
-import operator as op
 import os
 import time
 import warnings
+from collections import defaultdict
 from datetime import datetime
-from functools import reduce
 from typing import TYPE_CHECKING
 
 import dask
@@ -320,24 +319,28 @@ if __name__ == '__main__':
             # Save friend tree metadata if exists
             #
             _FRIEND_BASE_PROCESSOR_ARG = 'make_classifier_input' # AGE: need to make it more general
-            _FRIEND_NAME = 'HCR_input'
             _FRIEND_MERGE_STEP = 100_000
 
             if friend_base := configs['config'].get(_FRIEND_BASE_PROCESSOR_ARG, None) is not None:
-                friend: Friend = reduce(op.add, [
-                    v['friend'][_FRIEND_NAME]
-                    for v in output.values()
-                    if 'friend' in v and _FRIEND_NAME in v['friend']
-                ])
+                friends: dict[str, Friend] = defaultdict(lambda: None)
+                for fs in output.values():
+                    if 'friend' in fs:
+                        for k, v in fs['friend'].items():
+                            if friends[k] is None:
+                                friends[k] = v
+                            else:
+                                friends[k] += v
+                        fs.pop('friend')
                 if args.condor:
-                    friend, = dask.compute(
-                        friend.merge(step=_FRIEND_MERGE_STEP, dask=True)
+                    friends, = dask.compute(
+                        {k: friends[k].merge(step=_FRIEND_MERGE_STEP, dask=True) for k in friends}
                     )
                 else:
-                    friend = friend.merge(step=_FRIEND_MERGE_STEP, dask=False)
+                    for k, v in friends.items():
+                        friends[k] = v.merge(step=_FRIEND_MERGE_STEP)
                 from base_class.utils.json import DefaultEncoder
                 with fsspec.open(friend_base, 'wt') as f:
-                    json.dump(friend, f, cls=DefaultEncoder)
+                    json.dump(friends, f, cls=DefaultEncoder)
 
             #
             #  Saving file
