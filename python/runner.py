@@ -232,6 +232,8 @@ if __name__ == '__main__':
     elif args.condor or args.skimming:
         executor_args["client"] = client
         executor_args["align_clusters"] = False
+        # disable the progressbar when using Dask which will mess up the logging. use Dask's Dashboard instead
+        executor_args["status"] = False
         executor = processor.dask_executor
     else:
         logging.info(f"\nRunning futures executor (Dask client is launch for performance report only) ")
