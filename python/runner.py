@@ -292,7 +292,7 @@ if __name__ == '__main__':
                 resize(
                     base_path=configs['config']['base_path'],
                     output=output,
-                    step=configs['config']['step'],
+                    step=config_runner.get('basketsize', configs['config']['step']),
                     chunk_size=config_runner.get('picosize', config_runner['chunksize'])))[0]
             # only keep file name for each chunk
             for dataset, chunks in output.items():
