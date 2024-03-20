@@ -1,9 +1,7 @@
 import awkward as ak
-import numpy as np
 import numba
-from math import sqrt
+
 mW, mt = 80.4, 173.0
-from gc import collect
 
 @numba.njit
 def find_tops_kernel(events_jets, builder):
@@ -113,6 +111,26 @@ def find_tops_slow(events_jets):
     return find_tops_kernel_slow(events_jets, ak.ArrayBuilder()).snapshot()
 
 
+def find_tops_no_numba(events_jest):
+    from base_class.partition import Partition
+    sizes = ak.num(events_jest)
+    combs = []
+    for i in range(ak.max(sizes) + 1):
+        parts = Partition(i, 1, 3).combination[0]
+        if len(parts) > 0:
+            parts = parts[(parts[:, :, 0] < 3) & (parts[:, :, 1] > 1), :]
+        combs.append(parts)
+    combs = ak.Array(combs)[sizes]
+    j0 = events_jest[combs[:, :, 0]]
+    j1 = events_jest[combs[:, :, 1]]
+    j2 = events_jest[combs[:, :, 2]]
+    combs = combs[
+        (j0.btagDeepFlavB >= j1.btagDeepFlavB)
+        & (j1.btagDeepFlavB >= j2.btagDeepFlavB),
+        :,
+    ]
+    return combs
+
 def dumpTopCandidateTestVectors(event, logging, chunk, nEvent):
 
     logging.info(f'{chunk}\n\n')
@@ -159,10 +177,8 @@ def buildTop(input_jets, top_cand_idx):
  
     bReg_p = top_cands[0] * top_cands[0].bRegCorr 
     mbW = (bReg_p + W_p).mass
-    t_p = bReg_p + W_p
     W_p = None
     bReg_p = None
-    collect()
     
     #
     # smaller resolution term because there are fewer degrees of freedom. FWHM=25GeV, about the same as mW

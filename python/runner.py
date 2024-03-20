@@ -181,7 +181,11 @@ if __name__ == '__main__':
                         'cores': config_runner['condor_cores'],
                         'memory': config_runner['condor_memory'],
                         'ship_env': False,
-                        'scheduler_options': {'dashboard_address': config_runner['dashboard_address']}}
+                        'scheduler_options': {'dashboard_address': config_runner['dashboard_address']},
+                        'worker_extra_args':[
+                            f"--worker-port 10000:10100",
+                            f"--nanny-port 10100:10200",
+                        ]}
         logging.info("\nCluster arguments: ", cluster_args)
 
         cluster = LPCCondorCluster(**cluster_args)
