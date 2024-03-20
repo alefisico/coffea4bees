@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import argparse
 import importlib
 import json
@@ -5,7 +7,6 @@ import logging
 import os
 import time
 import warnings
-from collections import defaultdict
 from datetime import datetime
 from typing import TYPE_CHECKING
 
@@ -318,19 +319,13 @@ if __name__ == '__main__':
             #
             # Save friend tree metadata if exists
             #
-            _FRIEND_BASE_PROCESSOR_ARG = 'make_classifier_input' # AGE: need to make it more general
-            _FRIEND_MERGE_STEP = 100_000
+            _FRIEND_BASE_PROCESSOR_ARG = 'make_classifier_input' # FIXME: need to make it more general
+            _FRIEND_MERGE_STEP = 100_000  # FIXME: need to make it more general
+            _FRIEND_METADATA_FILENAME = 'friends.json' # FIXME: need to make it more general
 
-            if friend_base := configs['config'].get(_FRIEND_BASE_PROCESSOR_ARG, None) is not None:
-                friends: dict[str, Friend] = defaultdict(lambda: None)
-                for fs in output.values():
-                    if 'friend' in fs:
-                        for k, v in fs['friend'].items():
-                            if friends[k] is None:
-                                friends[k] = v
-                            else:
-                                friends[k] += v
-                        fs.pop('friend')
+            friend_base = configs["config"].get(_FRIEND_BASE_PROCESSOR_ARG, None)
+            friends: dict[str, Friend] = output.get("friends", None)
+            if friend_base is not None and friends is not None:
                 if args.condor:
                     friends, = dask.compute(
                         {k: friends[k].merge(step=_FRIEND_MERGE_STEP, dask=True) for k in friends}
@@ -339,8 +334,11 @@ if __name__ == '__main__':
                     for k, v in friends.items():
                         friends[k] = v.merge(step=_FRIEND_MERGE_STEP)
                 from base_class.utils.json import DefaultEncoder
-                with fsspec.open(friend_base, 'wt') as f:
+                from base_class.system.eos import EOS
+                with fsspec.open(EOS(friend_base) / _FRIEND_METADATA_FILENAME, "wt") as f:
                     json.dump(friends, f, cls=DefaultEncoder)
+                logging.info(f"The following frends trees are created {friends.keys()}")
+                logging.info(f"Saved friend trees and metadata to {friend_base}")
 
             #
             #  Saving file

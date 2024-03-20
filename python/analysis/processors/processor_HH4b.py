@@ -588,6 +588,13 @@ class analysis(processor.ProcessorABC):
 
         friends = {}
         if self.make_classifier_input is not None:
+            ### AGE: this should be temporary
+            for k in ["ZZSR", "ZHSR", "HHSR", "SR", "SB"]:
+                selev[k] = selev["quadJet_selected"][k]
+            selev["nSelJets"] = ak.num(selev.selJet)
+            selev["xbW"] = selev["xbW_reco"]
+            selev["xW"] = selev["xW_reco"]
+            ####
             from ..helpers.classifier.HCR import build_input_friend
             friends["friends"] = build_input_friend(
                 selev,
