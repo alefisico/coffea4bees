@@ -32,8 +32,6 @@ dask.config.set({'logging.distributed': 'error'})
 NanoAODSchema.warn_missing_crossrefs = False
 warnings.filterwarnings("ignore")
 
-logging.getLogger().addHandler(RichHandler(markup=True))
-
 def list_of_files(ifile, allowlist_sites=['T3_US_FNALLPC'], test=False, test_files=5):
     '''Check if ifile is root file or dataset to check in rucio'''
 
@@ -86,7 +84,11 @@ if __name__ == '__main__':
     parser.add_argument('--debug', help="Print lots of debugging statements",
                         action="store_true", dest="debug", default=False)
     args = parser.parse_args()
-    logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
+    logging_level = logging.DEBUG if args.debug else logging.INFO
+    logging.basicConfig(
+        level=logging_level,
+        handlers=[RichHandler(level=logging_level, markup=True)],
+    )
 
     logging.info(f"\nRunning with these parameters: {args}")
 
