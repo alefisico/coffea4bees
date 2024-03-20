@@ -21,7 +21,7 @@ def build_input_friend(
     CanJet: str = "canJet",
     NotCanJet: str = "notCanJet",
     weight: str = "weight",
-    dump_naming: str = "{path1}/{path0}_{uuid}_{start}_{stop}.root",
+    dump_naming: str = "{path1}/{name}_{uuid}_{start}_{stop}_{path0}",
 ):
     chunk = Chunk.from_coffea_events(events)
     selection = _build_cutflow(*selections)

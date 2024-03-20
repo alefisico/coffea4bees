@@ -49,8 +49,8 @@ def list_of_files(ifile, allowlist_sites=['T3_US_FNALLPC'], test=False, test_fil
         return outfiles[:(test_files if test else None)]
 
 
-def _friend_merge_name(path1: str, path0: str, name: str, **kwargs):
-    return f'{path1}/{path0.replace("picoAOD", name)}.root'
+def _friend_merge_name(path1: str, path0: str, name: str, **_):
+    return f'{path1}/{path0.replace("picoAOD", name)}'
 
 
 if __name__ == '__main__':
