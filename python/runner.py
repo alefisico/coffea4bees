@@ -21,6 +21,7 @@ from coffea import processor
 from coffea.nanoevents import NanoAODSchema
 from coffea.util import save
 from dask.distributed import performance_report
+from rich.logging import RichHandler
 from skimmer.processor.picoaod import fetch_metadata, integrity_check, resize
 
 if TYPE_CHECKING:
@@ -28,10 +29,10 @@ if TYPE_CHECKING:
 
 dask.config.set({'logging.distributed': 'error'})
 
-uproot.open.defaults["xrootd_handler"] = uproot.source.xrootd.MultithreadedXRootDSource
 NanoAODSchema.warn_missing_crossrefs = False
 warnings.filterwarnings("ignore")
 
+logging.getLogger().addHandler(RichHandler(markup=True))
 
 def list_of_files(ifile, allowlist_sites=['T3_US_FNALLPC'], test=False, test_files=5):
     '''Check if ifile is root file or dataset to check in rucio'''
@@ -225,18 +226,19 @@ if __name__ == '__main__':
         'skipbadfiles': True,
         'xrootdtimeout': 180
     }
-
-    if args.condor | args.skimming:
-        executor_args['client'] = client
-        executor_args['align_clusters'] = False
-
+    if args.debug:
+        logging.info(f"\nRunning iterative executor in debug mode")
+        executor = processor.iterative_executor
+    elif args.condor or args.skimming:
+        executor_args["client"] = client
+        executor_args["align_clusters"] = False
+        executor = processor.dask_executor
     else:
         logging.info(f"\nRunning futures executor (Dask client is launch for performance report only) ")
         # to run with processor futures_executor ()
         executor_args['workers'] = config_runner['condor_cores']
-
+        executor = processor.futures_executor
     logging.info(f"\nExecutor arguments: {executor_args}")
-
     #
     # Run processor
     #
@@ -251,7 +253,6 @@ if __name__ == '__main__':
 
     dask_report_file = f'/tmp/coffea4bees-dask-report-{datetime.today().strftime("%Y-%m-%d_%H-%M-%S")}.html'
     with performance_report(filename=dask_report_file):
-
         #
         # Running the job
         #
@@ -259,7 +260,7 @@ if __name__ == '__main__':
             fileset,
             treename='Events',
             processor_instance=analysis(**configs['config']),
-            executor=processor.dask_executor if (args.condor | args.skimming) else processor.futures_executor,
+            executor=executor,
             executor_args=executor_args,
             chunksize=config_runner['chunksize'],
             maxchunks=config_runner['maxchunks'],
@@ -353,8 +354,8 @@ if __name__ == '__main__':
                             base_path=friend_base,
                             naming=_friend_merge_name,
                         )
-                from base_class.utils.json import DefaultEncoder
                 from base_class.system.eos import EOS
+                from base_class.utils.json import DefaultEncoder
                 with fsspec.open(EOS(friend_base) / _FRIEND_METADATA_FILENAME, "wt") as f:
                     json.dump(friends, f, cls=DefaultEncoder)
                 logging.info(f"The following frends trees are created {friends.keys()}")

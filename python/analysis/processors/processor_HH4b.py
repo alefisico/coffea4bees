@@ -601,7 +601,7 @@ class analysis(processor.ProcessorABC):
                 self.make_classifier_input,
                 "HCR_input",
                 *selections,
-                selev.passPreSel,
+                weight="weight" if isMC else "weight_noJCM_noFvT",
                 NotCanJet="notCanJet_coffea", # AGE: this should be temporary
             )
 
