@@ -5,6 +5,7 @@ runner:
   max_workers: 200
   chunksize: 100000
   picosize: 100000
+  basketsize: 10000
   class_name: Skimmer
   data_tier: nanoAOD
   condor_cores: 1
