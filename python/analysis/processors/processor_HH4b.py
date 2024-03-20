@@ -1,24 +1,15 @@
-import os
 import time
 import gc
-import argparse
-import sys
-from copy import deepcopy
 import awkward as ak
 import numpy as np
-import uproot
 import correctionlib
-import correctionlib._core as core
 import yaml
 import warnings
-import torch
-import torch.nn.functional as F
 
 from analysis.helpers.networks import HCREnsemble
 from analysis.helpers.topCandReconstruction import find_tops, dumpTopCandidateTestVectors, buildTop, mW, mt, find_tops_slow
 
 from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
-from coffea.nanoevents.methods import vector
 from coffea import processor
 
 from base_class.hist import Collection, Fill
@@ -29,12 +20,6 @@ from analysis.helpers.cutflow import cutFlow
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
 from analysis.helpers.correctionFunctions import btagVariations
 from analysis.helpers.correctionFunctions import btagSF_norm as btagSF_norm_file
-from functools import partial
-from multiprocessing import Pool
-
-# torch.set_num_threads(1)
-# torch.set_num_interop_threads(1)
-# print(torch.__config__.parallel_info())
 
 from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
 from analysis.helpers.common import apply_btag_sf
@@ -45,10 +30,8 @@ import logging
 #
 # Setup
 #
-uproot.open.defaults["xrootd_handler"] = uproot.source.xrootd.MultithreadedXRootDSource
 NanoAODSchema.warn_missing_crossrefs = False
 warnings.filterwarnings("ignore")
-ak.behavior.update(vector.behavior)
 
 def setSvBVars(SvBName, event):
     largest_name = np.array(['None', 'ZZ', 'ZH', 'HH'])
@@ -608,6 +591,8 @@ class analysis(processor.ProcessorABC):
         return hist.output | processOutput | friends
 
     def compute_SvB(self, event):
+        import torch
+        import torch.nn.functional as F
         n = len(event)
 
         j = torch.zeros(n, 4, 4)
