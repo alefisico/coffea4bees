@@ -12,7 +12,6 @@ from typing import TYPE_CHECKING
 
 import dask
 import fsspec
-import uproot
 import yaml
 from base_class.addhash import get_git_diff, get_git_revision_hash
 # can be modified when move to coffea2023
@@ -22,6 +21,7 @@ from coffea.nanoevents import NanoAODSchema
 from coffea.util import save
 from dask.distributed import performance_report
 from rich.logging import RichHandler
+from rich.pretty import pretty_repr
 from skimmer.processor.picoaod import fetch_metadata, integrity_check, resize
 
 if TYPE_CHECKING:
@@ -31,8 +31,6 @@ dask.config.set({'logging.distributed': 'error'})
 
 NanoAODSchema.warn_missing_crossrefs = False
 warnings.filterwarnings("ignore")
-
-logging.getLogger().addHandler(RichHandler(markup=True))
 
 def list_of_files(ifile, allowlist_sites=['T3_US_FNALLPC'], test=False, test_files=5):
     '''Check if ifile is root file or dataset to check in rucio'''
@@ -86,7 +84,11 @@ if __name__ == '__main__':
     parser.add_argument('--debug', help="Print lots of debugging statements",
                         action="store_true", dest="debug", default=False)
     args = parser.parse_args()
-    logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
+    logging_level = logging.DEBUG if args.debug else logging.INFO
+    logging.basicConfig(
+        level=logging_level,
+        handlers=[RichHandler(level=logging_level, markup=True)],
+    )
 
     logging.info(f"\nRunning with these parameters: {args}")
 
@@ -191,7 +193,8 @@ if __name__ == '__main__':
                             f"--worker-port 10000:10100",
                             f"--nanny-port 10100:10200",
                         ]}
-        logging.info("\nCluster arguments: ", cluster_args)
+        logging.info("\nCluster arguments: ")
+        logging.info(pretty_repr(cluster_args))
 
         cluster = LPCCondorCluster(**cluster_args)
         cluster.adapt(
@@ -240,7 +243,8 @@ if __name__ == '__main__':
         # to run with processor futures_executor ()
         executor_args['workers'] = config_runner['condor_cores']
         executor = processor.futures_executor
-    logging.info(f"\nExecutor arguments: {executor_args}")
+    logging.info(f"\nExecutor arguments:")
+    logging.info(pretty_repr(executor_args))
     #
     # Run processor
     #
@@ -250,8 +254,10 @@ if __name__ == '__main__':
     logging.info(f"\nRunning processsor: {processorName}")
 
     tstart = time.time()
-    logging.info(f"fileset keys are {fileset.keys()}")
-    logging.debug(f"fileset is {fileset}")
+    logging.info(f"fileset keys are:")
+    logging.info(pretty_repr(fileset.keys()))
+    logging.debug(f"fileset is")
+    logging.debug(pretty_repr(fileset))
 
     dask_report_file = f'/tmp/coffea4bees-dask-report-{datetime.today().strftime("%Y-%m-%d_%H-%M-%S")}.html'
     with performance_report(filename=dask_report_file):
@@ -270,7 +276,8 @@ if __name__ == '__main__':
         elapsed = time.time() - tstart
         nEvent = metrics['entries']
         processtime = metrics['processtime']
-        logging.info(f'Metrics: {metrics}')
+        logging.info(f'Metrics:')
+        logging.info(pretty_repr(metrics))
         logging.info(f'\n{nEvent/elapsed:,.0f} events/s total '
                      f'({nEvent}/{elapsed})')
 
@@ -360,7 +367,8 @@ if __name__ == '__main__':
                 from base_class.utils.json import DefaultEncoder
                 with fsspec.open(EOS(friend_base) / _FRIEND_METADATA_FILENAME, "wt") as f:
                     json.dump(friends, f, cls=DefaultEncoder)
-                logging.info(f"The following frends trees are created {friends.keys()}")
+                logging.info(f"The following frends trees are created:")
+                logging.info(pretty_repr([*friends.keys()]))
                 logging.info(f"Saved friend trees and metadata to {friend_base}")
 
             #
