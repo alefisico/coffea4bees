@@ -4,7 +4,7 @@ from functools import cache
 from typing import Callable, Iterable, TypeVar
 
 _GroupT = TypeVar("_GroupT", bound=Iterable)
-_GroupItemT = TypeVar("_GroupItemT")
+_ItemT = TypeVar("_ItemT")
 
 
 def _subgroup(group: list, left: int, remain: int):
@@ -31,7 +31,7 @@ def _subsets_cached(group):
     return tuple(subgroups(group, frozenset))
 
 
-def subsets(group: frozenset[_GroupItemT]) -> frozenset[frozenset[_GroupItemT]]:
+def subsets(group: frozenset[_ItemT]) -> frozenset[frozenset[_ItemT]]:
     return _subsets_cached(group)
 
 
@@ -59,3 +59,15 @@ def import_(modname: str, clsname: str):
         except Exception as e:
             logging.error(e)
     return _mod, _cls
+
+
+def append_unique_instance(collection: list[_ItemT], item: _ItemT | type[_ItemT]):
+    if isinstance(item, type):
+        for i in collection:
+            if isinstance(i, item):
+                return collection
+        item = item()
+    elif item in collection:
+        return collection
+    collection.append(item)
+    return collection

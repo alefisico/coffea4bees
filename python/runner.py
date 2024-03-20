@@ -1,12 +1,17 @@
+from __future__ import annotations
+
 import argparse
 import importlib
+import json
 import logging
 import os
 import time
 import warnings
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 import dask
+import fsspec
 import uproot
 import yaml
 from base_class.addhash import get_git_diff, get_git_revision_hash
@@ -16,14 +21,18 @@ from coffea import processor
 from coffea.nanoevents import NanoAODSchema
 from coffea.util import save
 from dask.distributed import performance_report
+from rich.logging import RichHandler
 from skimmer.processor.picoaod import fetch_metadata, integrity_check, resize
+
+if TYPE_CHECKING:
+    from base_class.root.chain import Friend
 
 dask.config.set({'logging.distributed': 'error'})
 
-uproot.open.defaults["xrootd_handler"] = uproot.source.xrootd.MultithreadedXRootDSource
 NanoAODSchema.warn_missing_crossrefs = False
 warnings.filterwarnings("ignore")
 
+logging.getLogger().addHandler(RichHandler(markup=True))
 
 def list_of_files(ifile, allowlist_sites=['T3_US_FNALLPC'], test=False, test_files=5):
     '''Check if ifile is root file or dataset to check in rucio'''
@@ -39,6 +48,10 @@ def list_of_files(ifile, allowlist_sites=['T3_US_FNALLPC'], test=False, test_fil
         outfiles, outsite, sites_counts = rucio_utils.get_dataset_files_replicas(
             ifile, client=rucio_client, mode="first", allowlist_sites=allowlist_sites)
         return outfiles[:(test_files if test else None)]
+
+
+def _friend_merge_name(path1: str, path0: str, name: str, **_):
+    return f'{path1}/{path0.replace("picoAOD", name)}'
 
 
 if __name__ == '__main__':
@@ -173,7 +186,11 @@ if __name__ == '__main__':
                         'cores': config_runner['condor_cores'],
                         'memory': config_runner['condor_memory'],
                         'ship_env': False,
-                        'scheduler_options': {'dashboard_address': config_runner['dashboard_address']}}
+                        'scheduler_options': {'dashboard_address': config_runner['dashboard_address']},
+                        'worker_extra_args':[
+                            f"--worker-port 10000:10100",
+                            f"--nanny-port 10100:10200",
+                        ]}
         logging.info("\nCluster arguments: ", cluster_args)
 
         cluster = LPCCondorCluster(**cluster_args)
@@ -209,18 +226,21 @@ if __name__ == '__main__':
         'skipbadfiles': True,
         'xrootdtimeout': 180
     }
-
-    if args.condor | args.skimming:
-        executor_args['client'] = client
-        executor_args['align_clusters'] = False
-
+    if args.debug:
+        logging.info(f"\nRunning iterative executor in debug mode")
+        executor = processor.iterative_executor
+    elif args.condor or args.skimming:
+        executor_args["client"] = client
+        executor_args["align_clusters"] = False
+        # disable the progressbar when using Dask which will mess up the logging. use Dask's Dashboard instead
+        executor_args["status"] = False
+        executor = processor.dask_executor
     else:
         logging.info(f"\nRunning futures executor (Dask client is launch for performance report only) ")
         # to run with processor futures_executor ()
         executor_args['workers'] = config_runner['condor_cores']
-
+        executor = processor.futures_executor
     logging.info(f"\nExecutor arguments: {executor_args}")
-
     #
     # Run processor
     #
@@ -235,7 +255,6 @@ if __name__ == '__main__':
 
     dask_report_file = f'/tmp/coffea4bees-dask-report-{datetime.today().strftime("%Y-%m-%d_%H-%M-%S")}.html'
     with performance_report(filename=dask_report_file):
-
         #
         # Running the job
         #
@@ -243,7 +262,7 @@ if __name__ == '__main__':
             fileset,
             treename='Events',
             processor_instance=analysis(**configs['config']),
-            executor=processor.dask_executor if (args.condor | args.skimming) else processor.futures_executor,
+            executor=executor,
             executor_args=executor_args,
             chunksize=config_runner['chunksize'],
             maxchunks=config_runner['maxchunks'],
@@ -266,7 +285,7 @@ if __name__ == '__main__':
                 resize(
                     base_path=configs['config']['base_path'],
                     output=output,
-                    step=configs['config']['step'],
+                    step=config_runner.get('basketsize', configs['config']['step']),
                     chunk_size=config_runner.get('picosize', config_runner['chunksize'])))[0]
             # only keep file name for each chunk
             for dataset, chunks in output.items():
@@ -307,6 +326,42 @@ if __name__ == '__main__':
                 'args': args,
                 'diff': get_git_diff(),
             }
+
+            #
+            # Save friend tree metadata if exists
+            #
+            _FRIEND_BASE_PROCESSOR_ARG = 'make_classifier_input' # FIXME: need to make it more general
+            _FRIEND_MERGE_STEP = 100_000  # FIXME: need to make it more general
+            _FRIEND_METADATA_FILENAME = 'friends.json' # FIXME: need to make it more general
+
+            friend_base = configs["config"].get(_FRIEND_BASE_PROCESSOR_ARG, None)
+            friends: dict[str, Friend] = output.get("friends", None)
+            if friend_base is not None and friends is not None:
+                if args.condor:
+                    (friends,) = dask.compute(
+                        {
+                            k: friends[k].merge(
+                                step=_FRIEND_MERGE_STEP,
+                                base_path=friend_base,
+                                naming=_friend_merge_name,
+                                dask=True,
+                            )
+                            for k in friends
+                        }
+                    )
+                else:
+                    for k, v in friends.items():
+                        friends[k] = v.merge(
+                            step=_FRIEND_MERGE_STEP,
+                            base_path=friend_base,
+                            naming=_friend_merge_name,
+                        )
+                from base_class.system.eos import EOS
+                from base_class.utils.json import DefaultEncoder
+                with fsspec.open(EOS(friend_base) / _FRIEND_METADATA_FILENAME, "wt") as f:
+                    json.dump(friends, f, cls=DefaultEncoder)
+                logging.info(f"The following frends trees are created {friends.keys()}")
+                logging.info(f"Saved friend trees and metadata to {friend_base}")
 
             #
             #  Saving file
