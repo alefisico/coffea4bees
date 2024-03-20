@@ -49,6 +49,10 @@ def list_of_files(ifile, allowlist_sites=['T3_US_FNALLPC'], test=False, test_fil
         return outfiles[:(test_files if test else None)]
 
 
+def _friend_merge_name(path1: str, path0: str, name: str, **kwargs):
+    return f'{path1}/{path0.replace("picoAOD", name)}.root'
+
+
 if __name__ == '__main__':
 
     #
@@ -331,12 +335,24 @@ if __name__ == '__main__':
             friends: dict[str, Friend] = output.get("friends", None)
             if friend_base is not None and friends is not None:
                 if args.condor:
-                    friends, = dask.compute(
-                        {k: friends[k].merge(step=_FRIEND_MERGE_STEP, dask=True) for k in friends}
+                    (friends,) = dask.compute(
+                        {
+                            k: friends[k].merge(
+                                step=_FRIEND_MERGE_STEP,
+                                base_path=friend_base,
+                                naming=_friend_merge_name,
+                                dask=True,
+                            )
+                            for k in friends
+                        }
                     )
                 else:
                     for k, v in friends.items():
-                        friends[k] = v.merge(step=_FRIEND_MERGE_STEP)
+                        friends[k] = v.merge(
+                            step=_FRIEND_MERGE_STEP,
+                            base_path=friend_base,
+                            naming=_friend_merge_name,
+                        )
                 from base_class.utils.json import DefaultEncoder
                 from base_class.system.eos import EOS
                 with fsspec.open(EOS(friend_base) / _FRIEND_METADATA_FILENAME, "wt") as f:

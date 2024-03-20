@@ -12,7 +12,7 @@ from ..system.eos import EOS, PathLike
 from ._backend import concat_record, merge_record, rename_record
 from .chunk import Chunk
 from .io import TreeReader, TreeWriter
-from .merge import resize
+from .merge import move, resize
 
 if TYPE_CHECKING:
     import awkward as ak
@@ -487,7 +487,7 @@ class Friend:
         - ``{stop}``: ``target.entry_stop``
         - ``{path0}``, ``{path1}``, ... : ``target.path.parts`` without suffixes in reversed order.
 
-        where the ``target`` is the one passed to :meth:`add`. In a more general case, a :class:`~typing.Callable` can be used to generate the path.
+        where the ``target`` is the one passed to :meth:`add`. To apply operations beyond the built-in :meth:`str.format` syntax, use a :data:`~typing.Callable` instead.
 
         .. warning::
             The generated path is not guaranteed to be unique. If multiple chunks are dumped to the same path, the last one will overwrite the previous ones.
@@ -629,10 +629,10 @@ class Friend:
                 if to_merge:
                     dummy = _FriendItem(to_merge[0].start, to_merge[-1].stop)
                     chunks = [i.chunk for i in to_merge]
-                    if len(chunks) > 1:
-                        path = base / _apply_naming(
-                            naming, self._name_dump(target, dummy)
-                        )
+                    path = base / _apply_naming(naming, self._name_dump(target, dummy))
+                    if len(chunks) == 1:
+                        chunks = [move(path, chunks[0], dask=dask)]
+                    elif len(chunks) > 1:
                         chunks = resize(
                             path,
                             *chunks,
@@ -668,7 +668,7 @@ class Friend:
         base_path: PathLike
             Base path to store the cloned files.
         naming : str or ~typing.Callable, optional
-            Naming format for the cloned files. See below for details. If not given, the common base path of all chunks will be replaced by ``base_path``.
+            Naming format for the cloned files. See below for details. If not given, will simply replace the common base with ``base_path``.
 
         Returns
         -------
@@ -681,6 +681,7 @@ class Friend:
 
         - ``{source0}``, ``{source1}``, ... : ``source.path.parts`` without suffixes in reversed order.
 
+        where the ``source`` is the chunk to be cloned.
         """
         base_path = EOS(base_path)
         friend = Friend(self.name)
