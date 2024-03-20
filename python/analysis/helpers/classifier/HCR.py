@@ -70,12 +70,12 @@ def build_input_friend(
                             "nSelJets",
                             "xbW",
                             "xW",
-                            weight,
                         ]
                     ],
                     selection,
                 )
             )
+            | {"weight": padded(events[weight], selection)}
         ),
     )
     friend.dump(output, dump_naming)
