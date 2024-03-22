@@ -16,12 +16,12 @@ workflow:
     - if: $CI_COMMIT_BRANCH
 
 stages:          
+  - reana
   - build
   - skimmer-test
   - analysis-test
   - plot
   - cutflow
-  - reana
 
 voms_proxy:
   stage: build
@@ -188,12 +188,12 @@ baseclass-test-job:
 reana-job:
   stage: reana
   #image: gitlab-registry.cern.ch/algomez/coffea4bees:test
+  image: docker.io/reanahub/reana-client:0.9.3
   tags:
     - k8s-cvmfs
   before_script:
     - export REANA_SERVER_URL=https://reana.cern.ch 
     - export REANA_ACCESS_TOKEN="${REANA_TOKEN}"
-    - docker pull docker.io/reanahub/reana-client:0.9.3
       #  - reana-client ping
   script:
     - echo "##########################################################"
@@ -203,6 +203,6 @@ reana-job:
     - echo "#### BUT IT HAS TO RUN IN THE CMU CENTRAL REPO AND IT IS "
     - echo "#### ALLOWED TO FAILED FOR MERGE REQUEST"
     - echo "##########################################################"
-    - docker run -i -t --rm -v $PWD:/home/reana --env REANA_SERVER_URL --env REANA_ACCESS_TOKEN docker.io/reanahub/reana-client:0.9.3 run -f reana.yaml -w coffea4bees
-      #- reana-client run -f reana.yaml -w coffea4bees
+    - set -i -e 's/condor_cores.*/condor_cores: 6/' -e 's/condor_memory.*/condor_memory: 8/' python/analysis/metadata/HH4b.yml
+    - reana-client run -f reana.yaml -w coffea4bees
   allow_failure: true

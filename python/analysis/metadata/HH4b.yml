@@ -1,6 +1,6 @@
 runner:
-  condor_cores: 6
-  condor_memory: 8GB
+  condor_cores: 1
+  condor_memory: 2GB
 
 config:
   JCM: 'analysis/weights/JCM/2023/dataRunII/jetCombinatoricModel_SB_00-00-02.yml'
