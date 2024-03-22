@@ -187,24 +187,22 @@ baseclass-test-job:
 
 reana-job:
   stage: reana
-    #  image: gitlab-registry.cern.ch/algomez/coffea4bees:test
+  #image: gitlab-registry.cern.ch/algomez/coffea4bees:test
   tags:
     - k8s-cvmfs
   before_script:
     - export REANA_SERVER_URL=https://reana.cern.ch 
     - export REANA_ACCESS_TOKEN="${REANA_TOKEN}"
     - docker pull docker.io/reanahub/reana-client:0.9.3
-      #- reana-client ping
+      #  - reana-client ping
   script:
-    - echo """
-##########################################################
-#### THIS JOB WILL FAILED IF YOU DONT HAVE A REANA ACCOUNT
-#### AND THE REANA TOKEN AS CI SECRETS VARIABLE
-#### BECAUSE AT THE MOMENT REANA DOES NOT HAVE GROUP ACCOUNTS
-#### BUT IT HAS TO RUN IN THE CMU CENTRAL REPO AND IT IS 
-#### ALLOWED TO FAILED FOR MERGE REQUEST
-##########################################################
-      """
-    #- reana-client run -f reana.yaml -w coffea4bees
+    - echo "##########################################################"
+    - echo "#### THIS JOB WILL FAILED IF YOU DONT HAVE A REANA ACCOUNT"
+    - echo "#### AND THE REANA TOKEN AS CI SECRETS VARIABLE"
+    - echo "#### BECAUSE AT THE MOMENT REANA DOES NOT HAVE GROUP ACCOUNTS"
+    - echo "#### BUT IT HAS TO RUN IN THE CMU CENTRAL REPO AND IT IS "
+    - echo "#### ALLOWED TO FAILED FOR MERGE REQUEST"
+    - echo "##########################################################"
     - docker run -i -t --rm -v $PWD:/home/reana --env REANA_SERVER_URL --env REANA_ACCESS_TOKEN docker.io/reanahub/reana-client:0.9.3 run -f reana.yaml -w coffea4bees
+      #- reana-client run -f reana.yaml -w coffea4bees
   allow_failure: true
