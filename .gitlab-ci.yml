@@ -204,7 +204,7 @@ reana-job:
 #### BUT IT HAS TO RUN IN THE CMU CENTRAL REPO AND IT IS 
 #### ALLOWED TO FAILED FOR MERGE REQUEST
 ##########################################################
-"""
-#- reana-client run -f reana.yaml -w coffea4bees
+      """
+    #- reana-client run -f reana.yaml -w coffea4bees
     - docker run -i -t --rm -v $PWD:/home/reana --env REANA_SERVER_URL --env REANA_ACCESS_TOKEN docker.io/reanahub/reana-client:0.9.3 run -f reana.yaml -w coffea4bees
   allow_failure: true
