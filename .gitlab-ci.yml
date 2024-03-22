@@ -191,18 +191,6 @@ reana-job:
   image: docker.io/reanahub/reana-client:0.9.3
   tags:
     - k8s-cvmfs
-  before_script:
-    - export REANA_SERVER_URL=https://reana.cern.ch 
-    - export REANA_ACCESS_TOKEN="${REANA_TOKEN}"
-      #  - reana-client ping
   script:
-    - echo "##########################################################"
-    - echo "#### THIS JOB WILL FAILED IF YOU DONT HAVE A REANA ACCOUNT"
-    - echo "#### AND THE REANA TOKEN AS CI SECRETS VARIABLE"
-    - echo "#### BECAUSE AT THE MOMENT REANA DOES NOT HAVE GROUP ACCOUNTS"
-    - echo "#### BUT IT HAS TO RUN IN THE CMU CENTRAL REPO AND IT IS "
-    - echo "#### ALLOWED TO FAILED FOR MERGE REQUEST"
-    - echo "##########################################################"
-    - set -i -e "s#condor_cores.*#condor_cores: 6#" -e "s#condor_memory.*#condor_memory: 8#" python/analysis/metadata/HH4b.yml
-    - reana-client run -f reana.yaml -w coffea4bees
+    - source .ci_workflows/reana-job.sh
   allow_failure: true
