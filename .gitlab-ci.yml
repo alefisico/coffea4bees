@@ -21,6 +21,7 @@ stages:
   - code 
   - skimmer-test
   - analysis-test
+  - fits
   - plot
   - cutflow
   - reana
@@ -137,7 +138,7 @@ analysis-cutflow-job:
     - source .ci-workflows/analysis-cutflow-job.sh
 
 analysis-makeweights-job:    
-  stage: analysis
+  stage: fits
   needs: 
     - analysis-test-job
   image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
