@@ -112,6 +112,7 @@ if __name__ == '__main__':
                              'analysis/', 'base_class/', 'data/', 'skimmer/'])
     config_runner.setdefault('min_workers', 1)
     config_runner.setdefault('max_workers', 100)
+    config_runner.setdefault('skipbadfiles', False)
     config_runner.setdefault('dashboard_address', 10200)
 
     if 'all' in args.datasets:
@@ -178,6 +179,7 @@ if __name__ == '__main__':
     #
     if args.condor:
 
+        run_dask = False
         from distributed import Client
         from lpcjobqueue import LPCCondorCluster
 
@@ -205,6 +207,7 @@ if __name__ == '__main__':
         client.wait_for_workers(1)
 
     else:
+        run_dask = True
         from dask.distributed import Client, LocalCluster
         if args.skimming:
             cluster_args = {
@@ -226,8 +229,8 @@ if __name__ == '__main__':
     executor_args = {
         'schema': config_runner['schema'],
         'savemetrics': True,
-        'skipbadfiles': True,
-        'xrootdtimeout': 180
+        'skipbadfiles': config_runner['skipbadfiles'],
+        'xrootdtimeout': 600
     }
     if args.debug:
         logging.info(f"\nRunning iterative executor in debug mode")
@@ -259,11 +262,10 @@ if __name__ == '__main__':
     logging.debug(f"fileset is")
     logging.debug(pretty_repr(fileset))
 
-    dask_report_file = f'/tmp/coffea4bees-dask-report-{datetime.today().strftime("%Y-%m-%d_%H-%M-%S")}.html'
-    with performance_report(filename=dask_report_file):
-        #
-        # Running the job
-        #
+    #
+    # Running the job
+    #
+    def run_job():
         output, metrics = processor.run_uproot_job(
             fileset,
             treename='Events',
@@ -380,4 +382,12 @@ if __name__ == '__main__':
             logging.info(f'\nSaving file {hfile}')
             save(output, hfile)
 
-    logging.info(f'Dask performace report saved in {dask_report_file}')
+    #
+    # Run dask performance only in dask jobs
+    #
+    if run_dask:
+        dask_report_file = f'/tmp/coffea4bees-dask-report-{datetime.today().strftime("%Y-%m-%d_%H-%M-%S")}.html'
+        with performance_report(filename=dask_report_file):
+            run_job()
+        logging.info(f'Dask performace report saved in {dask_report_file}')
+    else: run_job()
