@@ -192,5 +192,5 @@ reana-job:
   tags:
     - k8s-cvmfs
   script:
-    - source .ci_workflows/reana-job.sh
+    - source .ci-workflows/reana-job.sh
   allow_failure: true
