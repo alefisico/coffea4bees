@@ -11,7 +11,7 @@ class jetCombinatoricModel:
         self.filename = filename
         self.cut = cut
         self.read_parameter_file()
-        self._rng = Squares(0) # FIXME need a better way to setup seed for different RNGs
+        self._rng = Squares(("JCM", "pseudo tag"))
 
     def read_parameter_file(self):
 

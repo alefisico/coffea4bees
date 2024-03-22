@@ -1,5 +1,8 @@
+from __future__ import annotations
+
+import hashlib
 from abc import ABC, abstractmethod
-from typing import Literal, overload
+from typing import Iterable, Literal, overload
 
 import numpy as np
 import numpy.typing as npt
@@ -7,6 +10,28 @@ import numpy.typing as npt
 _UINT64_MAX_52BITS = np.float64(1 << 53)
 _UINT64_32 = np.uint64(32)
 _UINT64_11 = np.uint64(11)
+
+
+SeedLike = int | str | Iterable[int | str]
+
+
+def _str_to_entropy(__str: str) -> list[np.uint32]:
+    return np.frombuffer(hashlib.md5(__str.encode()).digest(), dtype=np.uint32).tolist()
+
+
+def _seed(entropy: SeedLike):
+    if isinstance(entropy, str):
+        return _str_to_entropy(entropy)
+    elif isinstance(entropy, Iterable):
+        seeds = []
+        for i in entropy:
+            if isinstance(i, str):
+                seeds.extend(_str_to_entropy(i))
+            else:
+                seeds.append(i)
+        return seeds
+    else:
+        return entropy
 
 
 class CBRNG(ABC):
@@ -63,8 +88,8 @@ class Squares(CBRNG):
     """
 
     @classmethod
-    def _generate_key(cls, seed: int) -> np.uint64:
-        gen = np.random.Generator(np.random.MT19937(seed))
+    def _generate_key(cls, seed: SeedLike) -> np.uint64:
+        gen = np.random.Generator(np.random.MT19937(_seed(seed)))
         bits = np.arange(1, 16, dtype=np.uint64)
         offsets = np.arange(0, 29, 4, dtype=np.uint64)
         lower8 = gen.choice(bits, 8, replace=False)
@@ -92,7 +117,7 @@ class Squares(CBRNG):
     def key(self) -> np.uint64:
         return self._key
 
-    def __init__(self, seed: int):
+    def __init__(self, seed: SeedLike):
         self._key = self._generate_key(seed)
 
     def bit32(self, ctrs: npt.NDArray[np.uint64]) -> npt.NDArray[np.uint32]:
