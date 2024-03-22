@@ -79,6 +79,8 @@ if __name__ == '__main__':
                         help="For data only. To run only on one data era.")
     parser.add_argument('-s', '--skimming', dest="skimming", action="store_true",
                         default=False, help='Run skimming instead of analysis')
+    parser.add_argument('--dask', dest="run_dask",
+                        action="store_true", default=False, help='Run with dask')
     parser.add_argument('--condor', dest="condor",
                         action="store_true", default=False, help='Run in condor')
     parser.add_argument('--debug', help="Print lots of debugging statements",
@@ -179,7 +181,7 @@ if __name__ == '__main__':
     #
     if args.condor:
 
-        run_dask = False
+        args.run_dask = True
         from distributed import Client
         from lpcjobqueue import LPCCondorCluster
 
@@ -207,24 +209,24 @@ if __name__ == '__main__':
         client.wait_for_workers(1)
 
     else:
-        run_dask = True
-        from dask.distributed import Client, LocalCluster
-        if args.skimming:
-            cluster_args = {
-                'n_workers': 4,
-                'memory_limit': config_runner['condor_memory'],
-                'threads_per_worker': 1,
-                'dashboard_address': config_runner['dashboard_address'],
-            }
-        else:
-            cluster_args = {
-                'n_workers': 6,
-                'memory_limit': config_runner['condor_memory'],
-                'threads_per_worker': 1,
-                'dashboard_address': config_runner['dashboard_address'],
-            }
-        cluster = LocalCluster(**cluster_args)
-        client = Client(cluster)
+        if args.run_dask:
+            from dask.distributed import Client, LocalCluster
+            if args.skimming:
+                cluster_args = {
+                    'n_workers': 4,
+                    'memory_limit': config_runner['condor_memory'],
+                    'threads_per_worker': 1,
+                    'dashboard_address': config_runner['dashboard_address'],
+                }
+            else:
+                cluster_args = {
+                    'n_workers': 6,
+                    'memory_limit': config_runner['condor_memory'],
+                    'threads_per_worker': 1,
+                    'dashboard_address': config_runner['dashboard_address'],
+                }
+            cluster = LocalCluster(**cluster_args)
+            client = Client(cluster)
 
     executor_args = {
         'schema': config_runner['schema'],
@@ -235,7 +237,7 @@ if __name__ == '__main__':
     if args.debug:
         logging.info(f"\nRunning iterative executor in debug mode")
         executor = processor.iterative_executor
-    elif args.condor or args.skimming:
+    elif args.condor or args.run_dask:
         executor_args["client"] = client
         executor_args["align_clusters"] = False
         # disable the progressbar when using Dask which will mess up the logging. use Dask's Dashboard instead
@@ -385,7 +387,7 @@ if __name__ == '__main__':
     #
     # Run dask performance only in dask jobs
     #
-    if run_dask:
+    if args.run_dask:
         dask_report_file = f'/tmp/coffea4bees-dask-report-{datetime.today().strftime("%Y-%m-%d_%H-%M-%S")}.html'
         with performance_report(filename=dask_report_file):
             run_job()
