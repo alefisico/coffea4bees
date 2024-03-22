@@ -264,7 +264,12 @@ class analysis(processor.ProcessorABC):
             selev['Jet_untagged_loose'] = selev.Jet[selev.Jet.selected & ~selev.Jet.tagged_loose]
             nJet_pseudotagged = np.zeros(len(selev), dtype=int)
             pseudoTagWeight = np.ones(len(selev))
-            pseudoTagWeight[selev.threeTag], nJet_pseudotagged[selev.threeTag] = self.JCM(selev[selev.threeTag]['Jet_untagged_loose'])
+            pseudoTagWeight[selev.threeTag], nJet_pseudotagged[selev.threeTag] = (
+                self.JCM(
+                    selev[selev.threeTag]["Jet_untagged_loose"],
+                    selev.event[selev.threeTag],
+                )
+            )
             selev['nJet_pseudotagged'] = nJet_pseudotagged
             selev['pseudoTagWeight'] = pseudoTagWeight
 
@@ -411,7 +416,7 @@ class analysis(processor.ProcessorABC):
             bReg_p = selev.top_cand.b * selev.top_cand.b.bRegCorr
             selev["top_cand", "p"] = bReg_p  + selev.top_cand.j + selev.top_cand.l
 
-            #mW, mt = 80.4, 173.0
+            # mW, mt = 80.4, 173.0
             selev["top_cand", "W"] = ak.zip({"p": selev.top_cand.j + selev.top_cand.l,
                                              "j": selev.top_cand.j,
                                              "l": selev.top_cand.l})
@@ -578,14 +583,20 @@ class analysis(processor.ProcessorABC):
             selev["xbW"] = selev["xbW_reco"]
             selev["xW"] = selev["xW_reco"]
             ####
-            from ..helpers.classifier.HCR import build_input_friend
-            friends["friends"] = build_input_friend(
+            from ..helpers.classifier.HCR import dump_input_friend, dump_JCM_weight
+
+            friends["friends"] = dump_input_friend(
                 selev,
                 self.make_classifier_input,
                 "HCR_input",
                 *selections,
                 weight="weight" if isMC else "weight_noJCM_noFvT",
-                NotCanJet="notCanJet_coffea", # AGE: this should be temporary
+                NotCanJet="notCanJet_coffea",  # AGE: this should be temporary
+            ) | dump_JCM_weight(
+                selev,
+                self.make_classifier_input,
+                "JCM_weight",
+                *selections,
             )
 
         return hist.output | processOutput | friends
