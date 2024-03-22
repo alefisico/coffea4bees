@@ -79,6 +79,7 @@ class LoadTrainingSets(SetupMultiprocessing):
         d_loaders = [*chain(*(k.train() for k in d_mods))]
         if len(d_loaders) == 0:
             raise ValueError("No dataset to load")
+        logging.info(f"Loading {len(d_loaders)} datasets")
         timer = datetime.now()
         with Pool(
             max_workers=self.opts.max_loaders,
