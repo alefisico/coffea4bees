@@ -1,5 +1,6 @@
 import awkward as ak
 import base_class.awkward as akext
+import numpy as np
 from base_class.root import Chunk, Friend
 from base_class.system.eos import PathLike
 
@@ -13,7 +14,21 @@ def _build_cutflow(*selections):
     return ak.Array(selection)
 
 
-def build_input_friend(
+def dump_friend(
+    events: ak.Array,
+    output: PathLike,
+    name: str,
+    data: ak.Array,
+    dump_naming: str = "{path1}/{name}_{uuid}_{start}_{stop}_{path0}",
+):
+    chunk = Chunk.from_coffea_events(events)
+    friend = Friend(name)
+    friend.add(chunk, data)
+    friend.dump(output, dump_naming)
+    return {name: friend}
+
+
+def dump_input_friend(
     events: ak.Array,
     output: PathLike,
     name: str,
@@ -23,60 +38,83 @@ def build_input_friend(
     weight: str = "weight",
     dump_naming: str = "{path1}/{name}_{uuid}_{start}_{stop}_{path0}",
 ):
-    chunk = Chunk.from_coffea_events(events)
     selection = _build_cutflow(*selections)
     padded = akext.pad.selected()
-    friend = Friend(name)
-    friend.add(
-        chunk,
-        ak.Array(
-            {
-                "CanJet": padded(
-                    ak.zip(
-                        {
-                            "pt": events[CanJet].pt,
-                            "eta": events[CanJet].eta,
-                            "phi": events[CanJet].phi,
-                            "mass": events[CanJet].mass,
-                        }
-                    ),
-                    selection,
+    data = ak.Array(
+        {
+            "CanJet": padded(
+                ak.zip(
+                    {
+                        "pt": events[CanJet].pt,
+                        "eta": events[CanJet].eta,
+                        "phi": events[CanJet].phi,
+                        "mass": events[CanJet].mass,
+                    }
                 ),
-                "NotCanJet": padded(
-                    ak.zip(
-                        {
-                            "pt": events[NotCanJet].pt,
-                            "eta": events[NotCanJet].eta,
-                            "phi": events[NotCanJet].phi,
-                            "mass": events[NotCanJet].mass,
-                            "isSelJet": events[NotCanJet].isSelJet,
-                        }
-                    ),
-                    selection,
+                selection,
+            ),
+            "NotCanJet": padded(
+                ak.zip(
+                    {
+                        "pt": events[NotCanJet].pt,
+                        "eta": events[NotCanJet].eta,
+                        "phi": events[NotCanJet].phi,
+                        "mass": events[NotCanJet].mass,
+                        "isSelJet": events[NotCanJet].isSelJet,
+                    }
                 ),
-            }
-            | akext.to.numpy(
-                padded(
-                    events[
-                        [
-                            "ZZSR",
-                            "ZHSR",
-                            "HHSR",
-                            "SR",
-                            "SB",
-                            "fourTag",
-                            "threeTag",
-                            "passHLT",
-                            "nSelJets",
-                            "xbW",
-                            "xW",
-                        ]
-                    ],
-                    selection,
-                )
+                selection,
+            ),
+        }
+        | akext.to.numpy(
+            padded(
+                events[
+                    [
+                        "ZZSR",
+                        "ZHSR",
+                        "HHSR",
+                        "SR",
+                        "SB",
+                        "fourTag",
+                        "threeTag",
+                        "passHLT",
+                        "nSelJets",
+                        "xbW",
+                        "xW",
+                    ]
+                ],
+                selection,
             )
-            | {"weight": padded(events[weight], selection)}
-        ),
+        )
+        | {"weight": padded(events[weight], selection)}
     )
-    friend.dump(output, dump_naming)
-    return {name: friend}
+    return dump_friend(
+        events=events,
+        output=output,
+        name=name,
+        data=data,
+        dump_naming=dump_naming,
+    )
+
+
+def dump_JCM_weight(
+    events: ak.Array,
+    output: PathLike,
+    name: str,
+    *selections: ak.Array,
+    pseudo_tag: str = "pseudoTagWeight",
+    dump_naming: str = "{path1}/{name}_{uuid}_{start}_{stop}_{path0}",
+):
+    if not pseudo_tag in events.fields:
+        weight = np.ones(len(selections[0]), dtype=np.float64)
+    else:
+        selection = _build_cutflow(*selections)
+        padded = akext.pad.selected(1)
+        weight = padded(events[pseudo_tag], selection)
+    return dump_friend(
+        events=events,
+        output=output,
+        name=name,
+        data={"pseudoTagWeight": weight},
+        dump_naming=dump_naming,
+    )

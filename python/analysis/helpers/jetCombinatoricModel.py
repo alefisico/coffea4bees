@@ -1,13 +1,17 @@
+import logging
+
 import awkward as ak
 import numpy as np
 import yaml
-import logging
+from base_class.math.random import Squares
+
 
 class jetCombinatoricModel:
     def __init__(self, filename, cut='passPreSel'):
         self.filename = filename
         self.cut = cut
         self.read_parameter_file()
+        self._rng = Squares(("JCM", "pseudo tag"))
 
     def read_parameter_file(self):
 
@@ -40,8 +44,7 @@ class jetCombinatoricModel:
             except KeyError:
                 logging.error(f'No {self.cut} key in JCM file. Keys are {self.data.keys()}')
 
-
-    def __call__(self, untagged_jets):
+    def __call__(self, untagged_jets, event=None):
         nEvent = len(untagged_jets)
         maxPseudoTags = 12
         nbt = 3 # number of required b-tags
@@ -58,9 +61,12 @@ class jetCombinatoricModel:
                 w_npt *= 1 + self.e/nlt**self.d
             nPseudoTagProb[npt] = w_npt
         w = np.sum(nPseudoTagProb[1:], axis=0)
-        r = np.random.uniform(0,1, size=nEvent)*w + nPseudoTagProb[0] # random number between nPseudoTagProb[0] and nPseudoTagProb.sum(axis=0)
+        if event is None:
+            prob = np.random.uniform(0, 1, size=nEvent)
+        else:
+            prob = self._rng.float(event)
+        r = prob*w + nPseudoTagProb[0] # random number between nPseudoTagProb[0] and nPseudoTagProb.sum(axis=0)
         r = r.reshape(1,nEvent).repeat(maxPseudoTags+1,0)
         c = np.array([nPseudoTagProb[:npt+1].sum(axis=0) for npt in range(maxPseudoTags+1)]) # cumulative prob
         npt = (r>c).sum(axis=0)
         return w, npt
-

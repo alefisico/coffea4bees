@@ -393,7 +393,10 @@ class analysis(processor.ProcessorABC):
             nJet_pseudotagged = np.zeros(len(selev), dtype=int)
             pseudoTagWeight = np.ones(len(selev))
             pseudoTagWeight[selev.threeTag], nJet_pseudotagged[selev.threeTag] = (
-                self.JCM(selev[selev.threeTag]["Jet_untagged_loose"])
+                self.JCM(
+                    selev[selev.threeTag]["Jet_untagged_loose"],
+                    selev.event[selev.threeTag],
+                )
             )
             selev["nJet_pseudotagged"] = nJet_pseudotagged
             selev["pseudoTagWeight"] = pseudoTagWeight
@@ -852,14 +855,19 @@ class analysis(processor.ProcessorABC):
                 selev[k] = selev["quadJet_selected"][k]
             selev["nSelJets"] = ak.num(selev.selJet)
             ####
-            from ..helpers.classifier.HCR import build_input_friend
+            from ..helpers.classifier.HCR import dump_input_friend, dump_JCM_weight
 
-            friends["friends"] = build_input_friend(
+            friends["friends"] = dump_input_friend(
                 selev,
                 self.make_classifier_input,
                 "HCR_input",
                 *selections,
                 weight="weight" if isMC else "weight_noJCM_noFvT",
+            ) | dump_JCM_weight(
+                selev,
+                self.make_classifier_input,
+                "JCM_weight",
+                *selections,
             )
 
         return hist.output | processOutput | friends
