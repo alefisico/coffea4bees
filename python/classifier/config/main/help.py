@@ -14,6 +14,7 @@ from ..setting.default import IO as IOSetting
 
 def _walk_packages(base):
     base = Path(base)
+    yield ""
     for root, _, _ in os.walk(base):
         root = Path(root)
         parts = root.relative_to(base).parts
@@ -118,7 +119,9 @@ class Main(main.Main):
                 target = EntryPoint._keys[cat]
                 self._print(f"[blue]--{cat}[/blue]")
                 for imp in _walk_packages(f"{main._CLASSIFIER}/{main._CONFIG}/{cat}/"):
-                    _imp = f"{imp}.*"
+                    if imp:
+                        imp = f"{imp}."
+                    _imp = f"{imp}*"
                     modname, _ = parser._fetch_module_name(_imp, cat)
                     mod, _ = parser._fetch_module(_imp, cat)
                     classes = {}
@@ -132,7 +135,7 @@ class Main(main.Main):
                                 classes[name] = obj
                     if classes:
                         for cls in classes:
-                            self._print(indent(f"[green]{imp}.{cls}[/green]", _INDENT))
+                            self._print(indent(f"[green]{imp}{cls}[/green]", _INDENT))
                             self._print_help(classes[cls], 2)
         if self.opts.html:
             self._console.save_html(

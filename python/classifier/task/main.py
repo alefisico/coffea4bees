@@ -111,7 +111,7 @@ class EntryPoint:
         meta = self.main.run(self)
 
         if hasattr(self.main.opts, "save_state") and self.main.opts.save_state:
-            from ..config.setting.cache import save
+            from ..config.setting import save
 
             save.parse([IOSetting.output / "state.pkl"])
 
