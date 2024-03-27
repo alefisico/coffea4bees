@@ -42,6 +42,7 @@ class _Common(LoadGroupedRoot):
         "fourTag",
         "threeTag",
         "passHLT",
+        "pseudoTagWeight",
         Columns.event,
         Columns.weight,
     ]
@@ -70,7 +71,7 @@ class _Common(LoadGroupedRoot):
                 ).set(selection=_Derived.ntag_index),
                 drop_columns(
                     "ZZSR", "ZHSR", "HHSR", "SR", "SB",
-                    "fourTag", "threeTag",
+                    "fourTag", "threeTag", "pseudoTagWeight",
                     "passHLT", Columns.event,
                 ),
             ]
@@ -93,11 +94,10 @@ class _Common(LoadGroupedRoot):
 
         subs = {*subgroups(groups)}
 
-        friends = None
+        friends = []
         for g in subs:
             if g in self.friends:
-                friends = self.friends[g]
-                break
+                friends.extend(self.friends[g])
 
         pres = []
         for gs, ps in self._preprocessor_by_label:
@@ -153,6 +153,11 @@ class _Common(LoadGroupedRoot):
     ]: ...
 
 
+def _FvT_apply_JCM(df):
+    df.loc[df["threeTag"], "weight"] *= df.loc[df["threeTag"], "pseudoTagWeight"]
+    return df
+
+
 def _FvT_data_selection(df):
     return df[
         df["passHLT"]  # trigger
@@ -191,24 +196,26 @@ class FvT(_Common):
     def preprocessor_by_label(self):
         return [
             (
-                [
-                    ("data",),
-                ],
+                [("data",)],
                 [
                     _FvT_data_selection,
                     add_label_index_from_column(threeTag="d3", fourTag="d4"),
                 ],
             ),
             (
-                [
-                    ("ttbar",),
-                ],
+                [("ttbar",)],
                 [
                     _FvT_ttbar_selection,
                     prescale(
                         self.opts.ttbar_3b_prescale, selection=_FvT_ttbar_3b_prescale
                     ),
                     add_label_index_from_column(threeTag="t3", fourTag="t4"),
+                ],
+            ),
+            (
+                [()],
+                [
+                    _FvT_apply_JCM,
                 ],
             ),
         ]
@@ -239,13 +246,13 @@ class FvT_picoAOD(FvT):
         ttbar = ["TTTo2L2Nu", "TTToHadronic", "TTToSemiLeptonic"]
         filelists = []
         for k, v in year.items():
-            files = [f"data,{k},friend"]
+            files = [f"data,{k}"]
             for y in v:
                 for e in era[y]:
                     files.append(base.format(dataset="data", year=y, era=f".{e}"))
             filelists.append(files)
         for k, v in year.items():
-            files = [f"ttbar,{k},friend"]
+            files = [f"ttbar,{k}"]
             for y in v:
                 for tt in ttbar:
                     files.append(base.format(dataset=tt, year=y, era=""))

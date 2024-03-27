@@ -23,16 +23,18 @@ class FromRoot:
         self.preprocessors = [*(preprocessors or ())]
         self.metadata = {**(metadata or {})}
 
-        for friend in friends or ():
-            self.chain.add_friend(friend)
+        if friends:
+            self.chain.add_friend(*friends)
 
     def read(self, chunk: Chunk):
         chain = self.chain.copy()
         chain += chunk
         df = None
-        for df in chain.iterate(library="pd", reader_options={"filter": self.branches}):
+        for df in chain.iterate(
+            library="pd", reader_options={"branch_filter": self.branches}
+        ):
             for preprocessor in self.preprocessors:
-                if len(df) == 0:  # TODO test
+                if len(df) == 0:
                     return df
                 df = preprocessor(df)
         for k, v in self.metadata.items():
