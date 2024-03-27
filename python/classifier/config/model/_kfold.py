@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import argparse
 from abc import ABC, abstractmethod
 from functools import cached_property
 from typing import TYPE_CHECKING
 
 from classifier.nn.dataset import io_loader
-from classifier.task import ArgParser, Model, converter
+from classifier.task import ArgParser, Model, converter, parse
 
 if TYPE_CHECKING:
     from classifier.discriminator import Classifier
@@ -14,7 +13,7 @@ if TYPE_CHECKING:
     from torch.utils.data import Dataset, StackDataset
 
 
-class KFoldClassifier(ABC, Model):
+class _KFold(Model):
     argparser = ArgParser()
     argparser.add_argument(
         "--kfolds",
@@ -23,10 +22,11 @@ class KFoldClassifier(ABC, Model):
         help="total number of folds",
     )
     argparser.add_argument(
-        "--kfold-max-folds",
-        type=converter.int_pos,
-        default=argparse.SUPPRESS,
-        help="the maximum number of folds to use",
+        "--kfold-offsets",
+        action="extend",
+        nargs="+",
+        default=[],
+        help="selected offsets e.g. [yellow]--chunks 0-3 5[/yellow]",
     )
     argparser.add_argument(
         "--kfold-split-key",
@@ -34,12 +34,23 @@ class KFoldClassifier(ABC, Model):
         help="the key used to split the dataset",
     )
 
-    @abstractmethod
-    def initializer(self, kfolds: int, offset: int) -> Classifier: ...
-
     @cached_property
     def kfolds(self) -> int:
         return self.opts.kfolds
+
+    @cached_property
+    def offsets(self) -> list[int]:
+        offsets = getattr(self.opts, "kfold_offsets", None)
+        if offsets is None:
+            offsets = [*range(self.kfolds)]
+        else:
+            offsets = parse.intervals(offsets, self.kfolds)
+        return offsets
+
+
+class KFoldClassifier(ABC, _KFold):
+    @abstractmethod
+    def initializer(self, kfolds: int, offset: int) -> Classifier: ...
 
     def train(self, dataset: StackDataset):
         if self.kfolds == 1:
@@ -59,16 +70,13 @@ class KFoldClassifier(ABC, Model):
             offset = np.concatenate(offset)
             indices = np.arange(len(offset))
             folds = [Subset(dataset, indices[offset == i]) for i in range(self.kfolds)]
-            max_folds = min(
-                self.kfolds, getattr(self.opts, "kfold_max_folds", self.kfolds)
-            )
             return [
                 _train_classifier(
                     self.initializer(kfolds=self.kfolds, offset=i),
                     ConcatDataset(folds[:i] + folds[i + 1 :]),
                     folds[i],
                 )
-                for i in range(max_folds)
+                for i in self.offsets
             ]
 
 
