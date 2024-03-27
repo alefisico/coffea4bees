@@ -51,6 +51,8 @@ codes:
       lowSB: 2
       highSB: 3
       notSRSB: 4
+      SB: [2,3]
+      SRSB: [1,2,3]
       other: 0
    tag:
       threeTag: 3
