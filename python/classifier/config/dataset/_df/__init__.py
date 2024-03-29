@@ -230,4 +230,6 @@ class _load_df_from_root(_load_df):
                     self._chunksize, *chunks[i], common_branches=True
                 )
                 dfs.append(pool.map(self._from_root[i][0].read, balanced))
-        return pd.concat(filter(None, chain(*dfs)), ignore_index=True, copy=False)
+        return pd.concat(
+            filter(lambda x: x is not None, chain(*dfs)), ignore_index=True, copy=False
+        )
