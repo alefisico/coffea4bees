@@ -9,9 +9,15 @@ class BatchNorm(Variance[torch.Tensor]):
     @classmethod
     @torch.no_grad()
     def calculate(cls, data: torch.Tensor, weight: torch.Tensor = None):
-        sumw = cls._t(len(data)) if weight is None else weight.sum(dtype=cls._t)
-        for _ in range(len(data.shape) - 1):
-            weight = weight.unsqueeze(-1)
+        sumw = (
+            torch.tensor(len(data), dtype=cls._t)
+            if weight is None
+            else weight.sum(dtype=cls._t)
+        )
+        sumw2 = sumw.clone() if weight is None else weight.pow(2).sum(dtype=cls._t)
+        if weight is not None:
+            for _ in range(len(data.shape) - 1):
+                weight = weight.unsqueeze(-1)
         m1 = (
             data.mean(**cls._k)
             if weight is None
@@ -22,4 +28,4 @@ class BatchNorm(Variance[torch.Tensor]):
             if weight is None
             else ((data - m1).pow(2) * weight).sum(**cls._k)
         )
-        return sumw, m1, M2
+        return sumw, sumw2, m1, M2
