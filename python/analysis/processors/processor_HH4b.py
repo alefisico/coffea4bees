@@ -92,6 +92,7 @@ class analysis(processor.ProcessorABC):
         era     = event.metadata.get('era', '')
         processName = event.metadata['processName']
         isMC    = True if event.run[0] == 1 else False
+        isMixedData = not (dataset.find("mix_v") == -1)
         lumi    = event.metadata.get('lumi',    1.0)
         xs      = event.metadata.get('xs',      1.0)
         kFactor = event.metadata.get('kFactor', 1.0)
@@ -114,8 +115,27 @@ class analysis(processor.ProcessorABC):
         #
         path = fname.replace(fname.split('/')[-1], '')
         if self.apply_FvT:
-            event['FvT']    = NanoEventsFactory.from_root(f'{path}{"FvT_3bDvTMix4bDvT_v0_newSB.root" if "mix" in dataset else "FvT.root"}',
-                                                          entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().FvT
+            if isMixedData:
+
+                FvT_name = event.metadata["FvT_name"]
+                event['FvT']    = getattr(NanoEventsFactory.from_root(f'{event.metadata["FvT_file"]}',
+                                                                      entry_start=estart, entry_stop=estop, 
+                                                                      schemaclass=FriendTreeSchema).events(), FvT_name)
+
+                event['FvT', 'FvT']    = getattr(event['FvT'], FvT_name)
+
+                #
+                # Dummies
+                #
+                event['FvT', 'q_1234'] = np.full(len(event), -1, dtype=int)
+                event['FvT', 'q_1324'] = np.full(len(event), -1, dtype=int)
+                event['FvT', 'q_1423'] = np.full(len(event), -1, dtype=int)
+
+
+            else:
+                event['FvT']    = NanoEventsFactory.from_root(f'{path}{"FvT.root"}',
+                                                              entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().FvT
+
             event['FvT', 'frac_err'] = event['FvT'].std / event['FvT'].FvT
             if not ak.all(event.FvT.event == event.event):
                 logging.error('ERROR: FvT events do not match events ttree')
@@ -170,14 +190,14 @@ class analysis(processor.ProcessorABC):
         #
         # Event selection (function only adds flags, not remove events)
         #
-        event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year] )
+        event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year], isMixedData=isMixedData)
 
         self._cutFlow.fill("all",  event[event.lumimask], allTag=True)
         self._cutFlow.fill("passNoiseFilter",  event[ event.lumimask & event.passNoiseFilter], allTag=True)
         self._cutFlow.fill("passHLT",  event[ event.lumimask & event.passNoiseFilter & event.passHLT], allTag=True)
 
         # Apply object selection (function does not remove events, adds content to objects)
-        event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year]  )
+        event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year], isMixedData=isMixedData)
         selections = []
         selections.append(event.lumimask & event.passNoiseFilter & event.passHLT & event.passJetMult)
         self._cutFlow.fill("passJetMult", event[selections[-1]], allTag=True)
@@ -228,7 +248,8 @@ class analysis(processor.ProcessorABC):
         canJet['jetId'] = selev.Jet.puId[canJet_idx]
         if isMC:
             canJet['hadronFlavour'] = selev.Jet.hadronFlavour[canJet_idx]
-        canJet['calibration'] = selev.Jet.calibration[canJet_idx]
+        if not isMixedData:
+            canJet['calibration'] = selev.Jet.calibration[canJet_idx]
 
         #
         # pt sort canJets
@@ -461,17 +482,6 @@ class analysis(processor.ProcessorABC):
         # To Add
         #
 
-        #    nIsoMed25Muons = dir.make<TH1F>("nIsoMed25Muons", (name+"/nIsoMed25Muons; Number of Prompt Muons; Entries").c_str(),  6,-0.5,5.5);
-        #    nIsoMed40Muons = dir.make<TH1F>("nIsoMed40Muons", (name+"/nIsoMed40Muons; Number of Prompt Muons; Entries").c_str(),  6,-0.5,5.5);
-        #    muons_isoMed25  = new muonHists(name+"/muon_isoMed25", fs, "iso Medium 25 Muons");
-        #    muons_isoMed40  = new muonHists(name+"/muon_isoMed40", fs, "iso Medium 40 Muons");
-
-        #    nIsoMed25Elecs = dir.make<TH1F>("nIsoMed25Elecs", (name+"/nIsoMed25Elecs; Number of Prompt Elecs; Entries").c_str(),  6,-0.5,5.5);
-        #    nIsoMed40Elecs = dir.make<TH1F>("nIsoMed40Elecs", (name+"/nIsoMed40Elecs; Number of Prompt Elecs; Entries").c_str(),  6,-0.5,5.5);
-        #    elecs_isoMed25  = new elecHists(name+"/elec_isoMed25", fs, "iso Medium 25 Elecs");
-        #    elecs_isoMed40  = new elecHists(name+"/elec_isoMed40", fs, "iso Medium 40 Elecs");
-        #
-
         #    m4j_vs_leadSt_dR = dir.make<TH2F>("m4j_vs_leadSt_dR", (name+"/m4j_vs_leadSt_dR; m_{4j} [GeV]; S_{T} leading boson candidate #DeltaR(j,j); Entries").c_str(), 40,100,1100, 25,0,5);
         #    m4j_vs_sublSt_dR = dir.make<TH2F>("m4j_vs_sublSt_dR", (name+"/m4j_vs_sublSt_dR; m_{4j} [GeV]; S_{T} subleading boson candidate #DeltaR(j,j); Entries").c_str(), 40,100,1100, 25,0,5);
 
@@ -502,7 +512,11 @@ class analysis(processor.ProcessorABC):
         #  Make classifier hists
         #
         if self.apply_FvT:
-            fill += FvTHists(('FvT', 'FvT Classifier'), 'FvT')
+            FvT_skip = []
+            if isMixedData:
+                FvT_skip = ["pt", "pm3", "pm4"]
+
+            fill += FvTHists(('FvT', 'FvT Classifier'), 'FvT', skip=FvT_skip)
             fill += hist.add('quadJet_selected_FvT_score', (100, 0, 1, ("quadJet_selected.FvT_q_score", 'Selected Quad Jet Diboson FvT q score')))
             fill += hist.add('quadJet_min_FvT_score', (100, 0, 1, ("quadJet_min_dr.FvT_q_score", 'Min dR Quad Jet Diboson FvT q score')))
             if self.JCM: fill += hist.add('FvT_noFvT', (100, 0, 5, ('FvT.FvT', 'FvT reweight')), weight="weight_noFvT")
@@ -536,9 +550,10 @@ class analysis(processor.ProcessorABC):
         if not isMC: skip_muons += ['genPartFlav']
         fill += Muon.plot(('selMuons', 'Selected Muons'),        'selMuon', skip=skip_muons)
 
-        skip_elecs = ['charge'] + Elec.skip_detailed_plots
-        if not isMC: skip_elecs += ['genPartFlav']
-        fill += Elec.plot(('selElecs', 'Selected Elecs'),        'selElec', skip=skip_elecs)
+        if not isMixedData:
+            skip_elecs = ['charge'] + Elec.skip_detailed_plots
+            if not isMC: skip_elecs += ['genPartFlav']
+            fill += Elec.plot(('selElecs', 'Selected Elecs'),        'selElec', skip=skip_elecs)
 
         #
         # Top Candidates
