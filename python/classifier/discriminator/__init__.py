@@ -122,6 +122,7 @@ class Classifier(WithUUID, ABC):
             training,
             shuffle=True,
             drop_last=True,
+            pin_memory=True,
         )
 
         # training
@@ -165,6 +166,7 @@ class Classifier(WithUUID, ABC):
             batch_size=Setting.DataLoader.batch_eval,
             shuffle=False,
             drop_last=False,
+            pin_memory=True,
         )
         model.eval()
         preds = [model.forward(batch) for batch in loader]
