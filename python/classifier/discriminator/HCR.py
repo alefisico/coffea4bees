@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from collections import defaultdict
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Callable
 
+import fsspec
 import torch
 
 from ..config.scheduler import SkimStep
+from ..config.setting.default import IO as IOSetting
 from ..config.setting.HCR import Input, InputBranch, Output
 from ..config.state.label import MultiClass
 from ..nn.blocks import HCR
@@ -150,7 +151,7 @@ class HCRClassifier(Classifier):
             self._HCR.to(self.device)
             skim = _HCRSkim(self._HCR._nn, self.device)
             yield TrainingStage(
-                name="Setup GBN",
+                name="Initialization",
                 model=skim,
                 schedule=SkimStep(),
                 do_benchmark=False,
@@ -163,4 +164,25 @@ class HCRClassifier(Classifier):
             do_benchmark=True,
         )
         self._HCR.ghost_batch = None
-        # TODO finetuning
+        if self._finetuning is not None:
+            layers = self._HCR._nn.layers
+            layers.setLayerRequiresGrad(
+                requires_grad=False, index=sorted(layers.layers.keys())[:-1]
+            )
+            yield TrainingStage(
+                name="Finetuning",
+                model=self._HCR,
+                schedule=self._finetuning,
+                do_benchmark=True,
+            )
+            self._HCR.ghost_batch = self._ghost_batch
+            layers.setLayerRequiresGrad(requires_grad=True)
+        with fsspec.open(IOSetting.output / f"{self.name}_{self.uuid}.pkl", "wb") as f:
+            torch.save(
+                {
+                    "model": self._HCR.module.state_dict(),
+                    "metadata": self.metadata,
+                    "uuid": self.uuid,
+                },
+                f,
+            )

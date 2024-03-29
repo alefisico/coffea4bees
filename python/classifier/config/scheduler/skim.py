@@ -1,7 +1,8 @@
-from classifier.config.setting.default import DataLoader as DLSetting
 from classifier.nn.dataset import mp_loader
 from classifier.nn.schedule import Schedule
 from classifier.utils import noop
+
+from ..setting.default import DataLoader as DLSetting
 
 
 class _SkimBS(noop):
