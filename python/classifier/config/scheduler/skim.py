@@ -1,11 +1,14 @@
-from classifier.nn.dataset import io_loader
+from classifier.config.setting.default import DataLoader as DLSetting
+from classifier.nn.dataset import mp_loader
 from classifier.nn.schedule import Schedule
 from classifier.utils import noop
 
 
 class _SkimBS(noop):
     def __init__(self, dataset):
-        self.dataloader = io_loader(dataset, shuffle=False, drop_last=False)
+        self.dataloader = mp_loader(
+            dataset, batch_size=DLSetting.batch_eval, shuffle=False, drop_last=False
+        )
 
 
 class SkimStep(Schedule):

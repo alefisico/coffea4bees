@@ -7,6 +7,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from .utils import MeanVariance
+
 
 class Lin_View(nn.Module):
     def __init__(self):
@@ -366,6 +368,7 @@ class GhostBatchNorm1d(
             self.gamma = nn.Parameter(torch.ones(self.features))
             if bias:
                 self.bias = nn.Parameter(torch.zeros(self.features))
+        self._mean_var = MeanVariance()
         self.runningStats = True
         self.initialized = False
 
@@ -399,10 +402,9 @@ class GhostBatchNorm1d(
         print()
 
     @torch.no_grad()
-    def setMeanStd(self, x, mask=None):
+    def updateMeanStd(self, x, mask=None):
         batch_size = x.shape[0]
         pixels = x.shape[2]
-        pixel_groups = pixels // self.stride
         x = (
             x.detach()
             .transpose(1, 2)
@@ -414,14 +416,39 @@ class GhostBatchNorm1d(
             x = x[mask == 0, :, :]
         # this won't work for any layers with stride!=1
         x = x.view(-1, 1, self.stride, self.features)
-        m64 = x.mean(dim=0, keepdim=True, dtype=torch.float64)  # .to(self.device)
-        self.m = m64.type(torch.float32).to(self.device)
-        self.s = x.std(dim=0, keepdim=True).to(self.device)
-        # if x.shape[0]>16777216: # too big for quantile???
+        self._mean_var += MeanVariance(x)
+
+    @torch.no_grad()
+    def initMeanStd(self):
+        self.m = self._mean_var.mean.to(self.device)
+        self.s = self._mean_var.variance_unbiased.sqrt().to(self.device)
         self.initialized = True
-        # self.setGhostBatches(0)
         self.runningStats = False
         self.print()
+
+    # @torch.no_grad()
+    # def setMeanStd(self, x, mask=None):
+    #     batch_size = x.shape[0]
+    #     pixels = x.shape[2]
+    #     x = (
+    #         x.detach()
+    #         .transpose(1, 2)
+    #         .contiguous()
+    #         .view(batch_size * pixels, 1, self.features)
+    #     )
+    #     if mask is not None:
+    #         mask = mask.detach().view(batch_size * pixels)
+    #         x = x[mask == 0, :, :]
+    #     # this won't work for any layers with stride!=1
+    #     x = x.view(-1, 1, self.stride, self.features)
+    #     m64 = x.mean(dim=0, keepdim=True, dtype=torch.float64)  # .to(self.device)
+    #     self.m = m64.type(torch.float32).to(self.device)
+    #     self.s = x.std(dim=0, keepdim=True).to(self.device)
+    #     # if x.shape[0]>16777216: # too big for quantile???
+    #     self.initialized = True
+    #     # self.setGhostBatches(0)
+    #     self.runningStats = False
+    #     self.print()
 
     def setGhostBatches(self, nGhostBatches):
         # if nGhostBatches==0 and self.nGhostBatches>0:
@@ -952,7 +979,7 @@ class MultiHeadAttention(
             print("output\n", output[0])
         return output
 
-    def setMeanStd(self, q, k, v, mask=None, qxkv=None):
+    def updateMeanStd(self, q, k, v, mask=None, qxkv=None):
         bs = q.shape[0]
         qsl = q.shape[2]
         sl = k.shape[2]
@@ -969,7 +996,7 @@ class MultiHeadAttention(
 
         qxkv = qxkv.view(bs, 2, qsl * sl)
         mask = mask.view(bs, qsl * sl)
-        self.qxk_conv.setMeanStd(qxkv, mask)
+        self.qxk_conv.updateMeanStd(qxkv, mask)
 
     def forward(self, q, k, v, q0=None, a=None, mask=None, qxkv=None, debug=False):
         bs = q.shape[0]
@@ -1787,13 +1814,13 @@ class InputEmbed(nn.Module):
 
         return j, d, q, a, o, ooMdPhi, doMdPhi, mask, mask_oo, mask_do
 
-    def setMeanStd(self, j, o, a):
+    def updateMeanStd(self, j, o, a):
         j, d, q, a, o, ooMdPhi, doMdPhi, mask, mask_oo, mask_do = self.dataPrep(
             j, o, a
         )  # , device='cpu')
-        self.ancillaryEmbed.setMeanStd(a)
+        self.ancillaryEmbed.updateMeanStd(a)
         if self.useOthJets:
-            self.othJetEmbed.setMeanStd(o, mask)
+            self.othJetEmbed.updateMeanStd(o, mask)
 
             n, self.dsl, self.osl = d.shape[0], d.shape[2], o.shape[2]
             MdPhi = torch.cat(
@@ -1810,13 +1837,22 @@ class InputEmbed(nn.Module):
                 ),
                 dim=1,
             )
-            self.MdPhi_embed.setMeanStd(MdPhi, mask_MdPhi)
+            self.MdPhi_embed.updateMeanStd(MdPhi, mask_MdPhi)
             # self. diMdPhi_embed.setMeanStd(ooMdPhi.view(n, 2, self.osl*self.osl), mask_oo.view(n, self.osl*self.osl))
             # self.triMdPhi_embed.setMeanStd(doMdPhi.view(n, 2, self.dsl*self.osl), mask_do.view(n, self.dsl*self.osl))
 
-        self.jetEmbed.setMeanStd(j)
-        self.dijetEmbed.setMeanStd(d)
-        self.quadjetEmbed.setMeanStd(q)
+        self.jetEmbed.updateMeanStd(j)
+        self.dijetEmbed.updateMeanStd(d)
+        self.quadjetEmbed.updateMeanStd(q)
+
+    def initMeanStd(self):
+        self.ancillaryEmbed.initMeanStd()
+        if self.useOthJets:
+            self.othJetEmbed.initMeanStd()
+            self.MdPhi_embed.initMeanStd()
+        self.jetEmbed.initMeanStd()
+        self.dijetEmbed.initMeanStd()
+        self.quadjetEmbed.initMeanStd()
 
     def setGhostBatches(self, nGhostBatches, subset=False):
         self.ancillaryEmbed.setGhostBatches(nGhostBatches)
@@ -2017,8 +2053,11 @@ class HCR(nn.Module):
         )  # [self.quadjetResNetBlock.reinforce[-1], self.select_q])
         self.forwardCalls = 0
 
-    def setMeanStd(self, j, o, a):
-        self.inputEmbed.setMeanStd(j, o, a)
+    def updateMeanStd(self, j, o, a):
+        self.inputEmbed.updateMeanStd(j, o, a)
+
+    def initMeanStd(self):
+        self.inputEmbed.initMeanStd()
 
     def setGhostBatches(self, nGhostBatches, subset=False):
         self.inputEmbed.setGhostBatches(nGhostBatches, subset)

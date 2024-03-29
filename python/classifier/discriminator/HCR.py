@@ -38,9 +38,17 @@ class GBN(MilestoneStep):
         self.reset()
 
 
+def _HCRInput(batch: dict[str, Tensor], device: torch.device):
+    CanJet = batch.pop(Input.CanJet)
+    NotCanJet = batch.pop(Input.NotCanJet)
+    ancillary = batch.pop(Input.ancillary)
+    return CanJet.to(device), NotCanJet.to(device), ancillary.to(device)
+
+
 class _HCRSkim(Model):
-    def __init__(self):
-        self.tensors = defaultdict(list)
+    def __init__(self, nn: HCR, device: torch.device):
+        self._nn = nn
+        self._device = device
 
     @property
     def n_parameters(self) -> int:
@@ -51,9 +59,7 @@ class _HCRSkim(Model):
         return noop()
 
     def forward(self, batch: dict[str, Tensor]):
-        for k in [Input.CanJet, Input.NotCanJet, Input.ancillary]:
-            self.tensors[k].append(batch[k])
-        return {}
+        self._nn.updateMeanStd(*_HCRInput(batch, self._device))
 
     def loss(self, _):
         return noop()
@@ -97,14 +103,7 @@ class HCRModel(Model):
         return self._nn
 
     def forward(self, batch: dict[str, Tensor]) -> dict[str, Tensor]:
-        CanJet = batch.pop(Input.CanJet)
-        NotCanJet = batch.pop(Input.NotCanJet)
-        ancillary = batch.pop(Input.ancillary)
-        c, p = self._nn(
-            CanJet.to(self._device),
-            NotCanJet.to(self._device),
-            ancillary.to(self._device),
-        )
+        c, p = self._nn(*_HCRInput(batch, self._device))
         batch[Output.quadjet_score] = p
         batch[Output.class_score] = c
         for k, v in batch.items():
@@ -142,13 +141,6 @@ class HCRClassifier(Classifier):
         self._HCR: HCRModel = None
 
     def training_stages(self):
-        skim = _HCRSkim()
-        yield TrainingStage(
-            name="Setup GBN",
-            model=skim,
-            schedule=SkimStep(),
-            do_benchmark=False,
-        )
         if self._HCR is None:
             self._HCR = HCRModel(
                 arch=self._arch,
@@ -156,12 +148,14 @@ class HCRClassifier(Classifier):
             )
             self._HCR.ghost_batch = self._ghost_batch
             self._HCR.to(self.device)
-            self._HCR.module.setMeanStd(
-                torch.cat(skim.tensors[Input.CanJet]),
-                torch.cat(skim.tensors[Input.NotCanJet]),
-                torch.cat(skim.tensors[Input.ancillary]),
+            skim = _HCRSkim(self._HCR._nn, self.device)
+            yield TrainingStage(
+                name="Setup GBN",
+                model=skim,
+                schedule=SkimStep(),
+                do_benchmark=False,
             )
-            skim = None
+            self._HCR.module.initMeanStd()
         yield TrainingStage(
             name="Training",
             model=self._HCR,
