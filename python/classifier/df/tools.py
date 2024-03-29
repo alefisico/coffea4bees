@@ -104,6 +104,16 @@ class map_selection_to_index:
         return df
 
 
+class add_columns:
+    def __init__(self, **columns: str):
+        self.columns = columns
+
+    def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
+        for k, v in self.columns.items():
+            df.loc[:, (k,)] = v
+        return df
+
+
 class drop_columns:
     def __init__(self, *columns: str):
         self.columns = [*columns]

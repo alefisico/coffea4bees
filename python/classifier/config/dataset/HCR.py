@@ -6,6 +6,7 @@ from functools import cache, cached_property
 from typing import TYPE_CHECKING, Callable, Iterable
 
 from classifier.df.tools import (
+    add_columns,
     add_event_offset,
     add_label_index,
     add_label_index_from_column,
@@ -105,19 +106,17 @@ class _Common(LoadGroupedRoot):
                 pres.extend(ps)
         pres.extend(self.preprocessors)
 
-        metadata = {}
         year = self._get_year(groups)
-        if year:
-            metadata["year"] = year
+        if year is not None:
+            pres.append(add_columns(year=year))
         label = self._get_label(groups)
-        if label:
+        if label is not None:
             pres.append(add_label_index(label))
 
         return FromRoot(
             friends=friends,
             branches=self._branches.intersection,
             preprocessors=pres,
-            metadata=metadata,
         )
 
     @cached_property

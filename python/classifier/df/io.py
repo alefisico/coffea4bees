@@ -16,29 +16,22 @@ class FromRoot:
         friends: Iterable[Friend] = None,
         branches: Callable[[set[str]], set[str]] = None,
         preprocessors: Iterable[Callable[[pd.DataFrame], pd.DataFrame]] = None,
-        metadata: Mapping[str, Any] = None,
     ):
         self.chain = Chain()
         self.branches = branches
         self.preprocessors = [*(preprocessors or ())]
-        self.metadata = {**(metadata or {})}
 
         if friends:
-            self.chain.add_friend(*friends)
+            self.chain += friends
 
     def read(self, chunk: Chunk):
         chain = self.chain.copy()
         chain += chunk
-        df = None
-        for df in chain.iterate(
-            library="pd", reader_options={"branch_filter": self.branches}
-        ):
-            for preprocessor in self.preprocessors:
-                if len(df) == 0:
-                    return df
-                df = preprocessor(df)
-        for k, v in self.metadata.items():
-            df[k] = v
+        df = chain.concat(library="pd", reader_options={"branch_filter": self.branches})
+        for preprocessor in self.preprocessors:
+            if len(df) == 0:
+                return None
+            df = preprocessor(df)
         return df
 
 
