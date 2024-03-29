@@ -842,7 +842,16 @@ def make2DPlot(hists, process, cutList, plotConfig, var='selJets.pt',
     # labels.append(v.get("label"))
     # hist_types. append(v.get("histtype", "errorbar"))
 
-    region_selection = sum if region in ["sum", sum] else hist.loc(codes["region"][region])
+    # region_selection = sum if region in ["sum", sum] else hist.loc(codes["region"][region])
+    
+    if region in ["sum",sum]:
+        region_selection = sum
+    elif type(codes["region"][region]) is list:
+        region_selection = [hist.loc(_r) for _r in codes["region"][region]]
+    else:
+        region_selection = hist.loc(codes["region"][region])
+
+    
 
     if kwargs.get("debug", False):
         print(f" hist process={process}, "
@@ -854,10 +863,13 @@ def make2DPlot(hists, process, cutList, plotConfig, var='selJets.pt',
                  "region":  region_selection,
                  varName:   hist.rebin(rebin)}
 
+
     hist_dict = hist_dict | cut_dict
-
     _hist = h[hist_dict]
+    
 
+    if len(_hist.shape) == 3:  ## for 2D plots
+        _hist = _hist[sum,:,:]
     #
     # Add args
     #

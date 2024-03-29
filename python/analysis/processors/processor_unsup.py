@@ -24,6 +24,7 @@ from analysis.helpers.correctionFunctions import btagVariations
 from analysis.helpers.correctionFunctions import btagSF_norm as btagSF_norm_file
 from analysis.helpers.cutflow import cutFlow
 from analysis.helpers.topCandReconstruction import find_tops, dumpTopCandidateTestVectors, buildTop
+from analysis.helpers.hist_templates import SvBHists, FvTHists, QuadJetHists, WCandHists, TopCandHists
 
 from functools import partial
 from multiprocessing import Pool
@@ -41,8 +42,6 @@ uproot.open.defaults["xrootd_handler"] = uproot.source.xrootd.MultithreadedXRoot
 NanoAODSchema.warn_missing_crossrefs = False
 warnings.filterwarnings("ignore")
 ak.behavior.update(vector.behavior)
-
-from base_class.hist import H, Template
 
 ##### Build a new template
 # class QuadJetHists(Template):
@@ -71,7 +70,7 @@ class analysis(processor.ProcessorABC):
         self.cutFlowCuts = ["all", "passHLT", "passNoiseFilter", "passJetMult", "passJetMult_btagSF", "passPreSel"]
         self.histCuts = ['passPreSel']
         self.tags = ['threeTag', 'fourTag'] if threeTag else ['fourTag']
-        self.JCM = jetCombinatoricModel(JCM)
+        # self.JCM = jetCombinatoricModel(JCM)
         self.btagVar = btagVariations(systematics=True)  #### AGE: these two need to be review later
         self.corrections_metadata = yaml.safe_load(open(corrections_metadata, 'r'))
         self.m4jBinEdges = np.array([[0, 361], [361, 425], [425, 479], [479, 533], [533, 591], [591, 658], [658, 741], [741, 854], [854, 1044], [1044, 1800]])
@@ -244,10 +243,6 @@ class analysis(processor.ProcessorABC):
         selev['SRSB'] = selev.SR | selev.SB
         selev['notSRSB'] = ~selev.SRSB
 
-        # logging.info(selev.SR)
-        # logging.info(selev.SB)
-        # logging.info(selev.SRSB)
-        # logging.info(selev.notSR)
 
         notCanJet = selev.Jet[notCanJet_idx]
         notCanJet = notCanJet[notCanJet.selected_loose]
@@ -313,11 +308,11 @@ class analysis(processor.ProcessorABC):
 
         selev['region'] = selev.SR*0b01  +selev.notSRSB*0b100 + selev.SB_low*0b10 + selev.SB_high*0b11 # + selev.SB*0b01 
 
-        logging.info(f'{selev.SR}')
-        logging.info(f'{selev.SB}')
-        logging.info(f'{selev.region}')
-        logging.info(f'{selev.region}')
-        logging.info(f'{selev.region}')
+        # logging.info(f'{selev.SR}')
+        # logging.info(f'{selev.SB}')
+        # logging.info(f'{selev.region}')
+        # logging.info(f'{selev.region}')
+        # logging.info(f'{selev.region}')
 
         ###  Build the top Candiates
         ### sort the jets by btagging
@@ -355,14 +350,14 @@ class analysis(processor.ProcessorABC):
         fill += hist.add('sublStM_selected', (100, 0, 1000, ('sublStM_selected', 'leadSt_M data')))
         fill += hist.add('nJet_selected', (16, 0, 15, ('nJet_selected', 'nJet_selected')))
 
-        fill += hist.add('hT',          (100,  0,   1000,  ('hT',          'H_{T} [GeV}')))
-        fill += hist.add('hT_selected', (100,  0,   1000,  ('hT_selected', 'H_{T} (selected jets) [GeV}')))
-        fill += hist.add('xW',          (100, 0, 12,   ('xW',       'xW')))
-        fill += hist.add('delta_xW',    (100, -5, 5,   ('delta_xW', 'delta xW')))
-        fill += hist.add('delta_xW_l',  (100, -15, 15, ('delta_xW', 'delta xW')))
-        fill += hist.add('xbW',         (100, 0, 12,   ('xbW',      'xbW')))
-        fill += hist.add('delta_xbW',   (100, -5, 5,   ('delta_xbW','delta xbW')))
-        fill += hist.add('delta_xbW_l', (100, -15, 15, ('delta_xbW','delta xbW')))
+        # fill += hist.add('hT',          (100,  0,   1000,  ('hT',          'H_{T} [GeV}')))
+        # fill += hist.add('hT_selected', (100,  0,   1000,  ('hT_selected', 'H_{T} (selected jets) [GeV}')))
+        # fill += hist.add('xW',          (100, 0, 12,   ('xW',       'xW')))
+        # fill += hist.add('delta_xW',    (100, -5, 5,   ('delta_xW', 'delta xW')))
+        # fill += hist.add('delta_xW_l',  (100, -15, 15, ('delta_xW', 'delta xW')))
+        # fill += hist.add('xbW',         (100, 0, 12,   ('xbW',      'xbW')))
+        # fill += hist.add('delta_xbW',   (100, -5, 5,   ('delta_xbW','delta xbW')))
+        # fill += hist.add('delta_xbW_l', (100, -15, 15, ('delta_xbW','delta xbW')))
         
         if fname.find('picoAOD_3b_wJCM_newSBDef') != -1:
             fill += hist.add('m4j_wDtoM', (100, 0, 1000, ('m4j', 'm4j multijet')), weight="weight_wDtoM")
@@ -377,8 +372,8 @@ class analysis(processor.ProcessorABC):
 
 
         ###  Make quad jet hists
-        fill += LorentzVector.plot_pair(('v4j', R'$HH_{4b}$'), 'v4j', skip=['n', 'dr', 'dphi', 'st'], bins={'mass': (120, 0, 1200)})
-        # fill += QuadJetHists(('quadJet_selected', 'Selected Quad Jet'), 'quadJet_selected')  #### Build a new template
+        fill += LorentzVector.plot_pair(('v4j'), 'v4j', skip=['n', 'dr', 'dphi', 'st'], bins={'mass': (120, 0, 1200)})
+        fill += QuadJetHists(('quadJet_selected', 'Selected Quad Jet'), 'quadJet_selected')  #### Build a new template
 
         ### fill histograms ###
         # fill.cache(selev)

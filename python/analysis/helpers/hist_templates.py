@@ -27,9 +27,9 @@ class QuadJetHists(Template):
     dr              = H((50,     0, 5,   ("dr",          'Diboson Candidate $\\Delta$R(d,d)')))
     dphi            = H((100, -3.2, 3.2, ("dphi",        'Diboson Candidate $\\Delta$R(d,d)')))
     deta            = H((100,   -5, 5,   ("deta",        'Diboson Candidate $\\Delta$R(d,d)')))
-    xZZ             = H((100, 0, 10,     ("xZZ",         'Diboson Candidate zZZ')))
-    xZH             = H((100, 0, 10,     ("xZH",         'Diboson Candidate zZH')))
-    xHH             = H((100, 0, 10,     ("xHH",         'Diboson Candidate zHH')))
+    # xZZ             = H((100, 0, 10,     ("xZZ",         'Diboson Candidate zZZ')))
+    # xZH             = H((100, 0, 10,     ("xZH",         'Diboson Candidate zZH')))
+    # xHH             = H((100, 0, 10,     ("xHH",         'Diboson Candidate zHH')))
 
     lead_vs_subl_m   = H((50, 0, 250, ('lead.mass', 'Lead Boson Candidate Mass')),
                          (50, 0, 250, ('subl.mass', 'Subl Boson Candidate Mass')))
