@@ -188,6 +188,40 @@ baseclass-test-job:
   script:
     - source .ci-workflows/baseclass-test-job.sh
 
+
+histtoyml-test-job:   
+stage: plot
+  needs: 
+    - analysis-test-job
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  tags:
+    - k8s-cvmfs
+  script:
+    - cd python/stats_analysis/
+    - python convert_hist_to_yaml.py -o hists/histAll.yml -i ../analysis/hists/test.coffea
+  artifacts: 
+    expire_in: 1 day
+    paths:
+      - python/stats_analysis/hists/histAll.yml
+
+ymltoroot-test-job:   
+  stage: plot
+  needs: 
+    - histtoyml-test-job
+  image: rootproject/root:6.24.06-centos7
+  tags:
+    - k8s-cvmfs
+  script:
+    - cd python/stats_analysis/
+    - python convert_yml_to_root.py --classifier SvB_MA SvB -f hists/histAll.yml --merge2016 --output_dir datacards/ --plot
+  artifacts: 
+    expire_in: 1 day
+    paths:
+      - python/stats_analysis/datacards/test_plot_SvB_MA_hh.png
+      - python/stats_analysis/datacards/test_plot_SvB_hh.png
+
+
+
 reana-job:
   stage: reana
   image: docker.io/reanahub/reana-client:0.9.3

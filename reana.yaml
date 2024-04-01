@@ -6,6 +6,7 @@ inputs:
     - python/data/
     - python/metadata/
     - python/.php-plots/
+    - python/skimmer/processor/
   parameters:
     input: .reana_workflows/inputs.yaml
   files:
