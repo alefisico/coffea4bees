@@ -1,10 +1,15 @@
 version: 0.9.3
 inputs:
   directories:
-    - python
+    - python/analysis/
+    - python/base_class/
+    - python/data/
+    - python/metadata/
+    - python/.php-plots/
   parameters:
     input: .reana_workflows/inputs.yaml
   files:
+    - python/runner.py
     - .reana_workflows/Snakefile
     - .reana_workflows/input.yaml
 workflow:
