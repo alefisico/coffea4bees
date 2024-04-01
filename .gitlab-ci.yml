@@ -208,7 +208,7 @@ ymltoroot-test-job:
   stage: plot
   needs: 
     - histtoyml-test-job
-  image: rootproject/root:6.24.06-centos7
+  image: gitlab-registry.cern.ch/cms-cloud/cmssw-docker/cmssw_11_2_5-slc7_amd64_gcc900:2022-06-20-9afcb2be
   tags:
     - k8s-cvmfs
   script:
