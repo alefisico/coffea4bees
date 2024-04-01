@@ -190,7 +190,6 @@ baseclass-test-job:
 
 reana-job:
   stage: reana
-  #image: gitlab-registry.cern.ch/algomez/coffea4bees:test
   image: docker.io/reanahub/reana-client:0.9.3
   tags:
     - k8s-cvmfs
