@@ -2,10 +2,9 @@
 from __future__ import annotations
 
 import gc
-import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from functools import cached_property, reduce
+from functools import cached_property
 from typing import Iterable
 
 import torch
@@ -16,6 +15,7 @@ from ..config.setting.default import DataLoader as DLSetting
 from ..nn.dataset import mp_loader
 from ..nn.schedule import Schedule
 from ..process.device import Device
+from ..typetools import WithUUID
 
 
 @dataclass
@@ -56,13 +56,13 @@ class Model(ABC):
     def step(self, epoch: int = None): ...
 
 
-class Classifier(ABC):
+class Classifier(WithUUID, ABC):
     device: torch.device
 
     def __init__(self, **kwargs):
+        super().__init__()
         self.metadata = kwargs
         self.name = "__".join(f"{k}_{v}" for k, v in kwargs.items())
-        self.uuid = uuid.uuid1()
 
     def cleanup(self):
         if self.device.type == "cuda":

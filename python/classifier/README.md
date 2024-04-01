@@ -96,13 +96,14 @@ TODO
 TODO
 
 ## TODO
-
-- main:
-  - Add evaluation
-  - Add logging, benchmark, plotting
 - HCR:
   - Add fine-tuning
   - Add die loss?
+  - rewrite setMeanStd to accumulate chunks
+  - JCM weight 3b ttbar, 3b data
+- main:
+  - Add evaluation
+  - Add logging, benchmark, plotting
 - FvT
   - SR ?
 - Add SvB

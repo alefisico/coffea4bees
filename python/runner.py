@@ -1,13 +1,18 @@
+from __future__ import annotations
+
 import argparse
 import importlib
+import json
 import logging
 import os
 import time
 import warnings
 from datetime import datetime
+from typing import TYPE_CHECKING
+from copy import copy
 
 import dask
-import uproot
+import fsspec
 import yaml
 from base_class.addhash import get_git_diff, get_git_revision_hash
 # can be modified when move to coffea2023
@@ -16,14 +21,17 @@ from coffea import processor
 from coffea.nanoevents import NanoAODSchema
 from coffea.util import save
 from dask.distributed import performance_report
+from rich.logging import RichHandler
+from rich.pretty import pretty_repr
 from skimmer.processor.picoaod import fetch_metadata, integrity_check, resize
+
+if TYPE_CHECKING:
+    from base_class.root.chain import Friend
 
 dask.config.set({'logging.distributed': 'error'})
 
-uproot.open.defaults["xrootd_handler"] = uproot.source.xrootd.MultithreadedXRootDSource
 NanoAODSchema.warn_missing_crossrefs = False
 warnings.filterwarnings("ignore")
-
 
 def list_of_files(ifile, allowlist_sites=['T3_US_FNALLPC'], test=False, test_files=5):
     '''Check if ifile is root file or dataset to check in rucio'''
@@ -39,6 +47,10 @@ def list_of_files(ifile, allowlist_sites=['T3_US_FNALLPC'], test=False, test_fil
         outfiles, outsite, sites_counts = rucio_utils.get_dataset_files_replicas(
             ifile, client=rucio_client, mode="first", allowlist_sites=allowlist_sites)
         return outfiles[:(test_files if test else None)]
+
+
+def _friend_merge_name(path1: str, path0: str, name: str, **_):
+    return f'{path1}/{path0.replace("picoAOD", name)}'
 
 
 if __name__ == '__main__':
@@ -68,12 +80,18 @@ if __name__ == '__main__':
                         help="For data only. To run only on one data era.")
     parser.add_argument('-s', '--skimming', dest="skimming", action="store_true",
                         default=False, help='Run skimming instead of analysis')
+    parser.add_argument('--dask', dest="run_dask",
+                        action="store_true", default=False, help='Run with dask')
     parser.add_argument('--condor', dest="condor",
                         action="store_true", default=False, help='Run in condor')
     parser.add_argument('--debug', help="Print lots of debugging statements",
                         action="store_true", dest="debug", default=False)
     args = parser.parse_args()
-    logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
+    logging_level = logging.DEBUG if args.debug else logging.INFO
+    logging.basicConfig(
+        level=logging_level,
+        handlers=[RichHandler(level=logging_level, markup=True)],
+    )
 
     logging.info(f"\nRunning with these parameters: {args}")
 
@@ -97,6 +115,7 @@ if __name__ == '__main__':
                              'analysis/', 'base_class/', 'data/', 'skimmer/'])
     config_runner.setdefault('min_workers', 1)
     config_runner.setdefault('max_workers', 100)
+    config_runner.setdefault('skipbadfiles', False)
     config_runner.setdefault('dashboard_address', 10200)
 
     if 'all' in args.datasets:
@@ -132,7 +151,11 @@ if __name__ == '__main__':
                                          'trigger':  metadata['datasets']['data'][year]['trigger'],
                                          }
 
-            if not (dataset == 'data'):
+            isMixedData = (dataset == 'mixeddata')
+            isData = (dataset == 'data')
+
+            if not ( isData or isMixedData):
+                logging.info("\nConfig MC")
                 if config_runner['data_tier'].startswith('pico'):
                     if 'data' not in dataset:
                         metadata_dataset[dataset]['genEventSumw'] = metadata['datasets'][dataset][year][config_runner['data_tier']]['sumw']
@@ -149,6 +172,33 @@ if __name__ == '__main__':
 
                 logging.info(f'\nDataset {dataset+"_"+year} with '
                              f'{len(fileset[dataset+"_"+year]["files"])} files')
+
+            elif isMixedData:
+                logging.info("\nConfig Mixed Data ")
+
+                nMixedSamples = metadata['datasets'][dataset]["nSamples"]
+                mixed_config = metadata['datasets'][dataset][year][config_runner['data_tier']]
+                logging.info("\nNumber of mixed samples is {nMixedSamples}")
+                for v in range(nMixedSamples):
+
+                    mixed_name = f"mix_v{v}"
+                    idataset = f'{mixed_name}_{year}'
+
+                    metadata_dataset[idataset] = copy(metadata_dataset[dataset])
+                    metadata_dataset[idataset]['processName'] = mixed_name
+                    metadata_dataset[idataset]['FvT_name'] = mixed_config['FvT_name_template'].replace("XXX",str(v))
+                    metadata_dataset[idataset]['FvT_file'] = mixed_config['FvT_file_template'].replace("XXX",str(v))
+                    mixed_files = [f.replace("XXX",str(v)) for f in mixed_config['files_template']]
+                    fileset[idataset] = {'files': list_of_files(mixed_files,
+                                                                test=args.test, test_files=config_runner['test_files'],
+                                                                allowlist_sites=config_runner['allowlist_sites']),
+                                         'metadata': metadata_dataset[idataset]}
+
+                    logging.info(
+                        f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
+
+
+            # isData
             else:
 
                 for iera, ifile in metadata['datasets'][dataset][year][config_runner['data_tier']].items():
@@ -158,6 +208,7 @@ if __name__ == '__main__':
                         metadata_dataset[idataset]['era'] = iera
                         fileset[idataset] = {'files': list_of_files((ifile['files'] if config_runner['data_tier'].startswith('pico') else ifile), test=args.test, test_files=config_runner['test_files'], allowlist_sites=config_runner['allowlist_sites']),
                                              'metadata': metadata_dataset[idataset]}
+
                         logging.info(
                             f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
 
@@ -166,6 +217,7 @@ if __name__ == '__main__':
     #
     if args.condor:
 
+        args.run_dask = True
         from distributed import Client
         from lpcjobqueue import LPCCondorCluster
 
@@ -176,8 +228,13 @@ if __name__ == '__main__':
                         'cores': config_runner['condor_cores'],
                         'memory': config_runner['condor_memory'],
                         'ship_env': False,
-                        'scheduler_options': {'dashboard_address': config_runner['dashboard_address']}}
-        logging.info("\nCluster arguments: ", cluster_args)
+                        'scheduler_options': {'dashboard_address': config_runner['dashboard_address']},
+                        'worker_extra_args':[
+                            f"--worker-port 10000:10100",
+                            f"--nanny-port 10100:10200",
+                        ]}
+        logging.info("\nCluster arguments: ")
+        logging.info(pretty_repr(cluster_args))
 
         cluster = LPCCondorCluster(**cluster_args)
         cluster.adapt(
@@ -188,42 +245,47 @@ if __name__ == '__main__':
         client.wait_for_workers(1)
 
     else:
-        from dask.distributed import Client, LocalCluster
-        if args.skimming:
-            cluster_args = {
-                'n_workers': 4,
-                'memory_limit': config_runner['condor_memory'],
-                'threads_per_worker': 1,
-                'dashboard_address': config_runner['dashboard_address'],
-            }
-        else:
-            cluster_args = {
-                'n_workers': 6,
-                'memory_limit': config_runner['condor_memory'],
-                'threads_per_worker': 1,
-                'dashboard_address': config_runner['dashboard_address'],
-            }
-        cluster = LocalCluster(**cluster_args)
-        client = Client(cluster)
+        if args.run_dask:
+            from dask.distributed import Client, LocalCluster
+            if args.skimming:
+                cluster_args = {
+                    'n_workers': 4,
+                    'memory_limit': config_runner['condor_memory'],
+                    'threads_per_worker': 1,
+                    'dashboard_address': config_runner['dashboard_address'],
+                }
+            else:
+                cluster_args = {
+                    'n_workers': 6,
+                    'memory_limit': config_runner['condor_memory'],
+                    'threads_per_worker': 1,
+                    'dashboard_address': config_runner['dashboard_address'],
+                }
+            cluster = LocalCluster(**cluster_args)
+            client = Client(cluster)
 
     executor_args = {
         'schema': config_runner['schema'],
         'savemetrics': True,
-        'skipbadfiles': True,
-        'xrootdtimeout': 180
+        'skipbadfiles': config_runner['skipbadfiles'],
+        'xrootdtimeout': 600
     }
-
-    if args.condor | args.skimming:
-        executor_args['client'] = client
-        executor_args['align_clusters'] = False
-
+    if args.debug:
+        logging.info(f"\nRunning iterative executor in debug mode")
+        executor = processor.iterative_executor
+    elif args.condor or args.run_dask:
+        executor_args["client"] = client
+        executor_args["align_clusters"] = False
+        # disable the progressbar when using Dask which will mess up the logging. use Dask's Dashboard instead
+        executor_args["status"] = False
+        executor = processor.dask_executor
     else:
         logging.info(f"\nRunning futures executor (Dask client is launch for performance report only) ")
         # to run with processor futures_executor ()
         executor_args['workers'] = config_runner['condor_cores']
-
-    logging.info(f"\nExecutor arguments: {executor_args}")
-
+        executor = processor.futures_executor
+    logging.info(f"\nExecutor arguments:")
+    logging.info(pretty_repr(executor_args))
     #
     # Run processor
     #
@@ -233,20 +295,20 @@ if __name__ == '__main__':
     logging.info(f"\nRunning processsor: {processorName}")
 
     tstart = time.time()
-    logging.info(f"fileset keys are {fileset.keys()}")
-    logging.debug(f"fileset is {fileset}")
+    logging.info(f"fileset keys are:")
+    logging.info(pretty_repr(fileset.keys()))
+    logging.debug(f"fileset is")
+    logging.debug(pretty_repr(fileset))
 
-    dask_report_file = f'/tmp/coffea4bees-dask-report-{datetime.today().strftime("%Y-%m-%d_%H-%M-%S")}.html'
-    with performance_report(filename=dask_report_file):
-
-        #
-        # Running the job
-        #
+    #
+    # Running the job
+    #
+    def run_job():
         output, metrics = processor.run_uproot_job(
             fileset,
             treename='Events',
             processor_instance=analysis(**configs['config']),
-            executor=processor.dask_executor if (args.condor | args.skimming) else processor.futures_executor,
+            executor=executor,
             executor_args=executor_args,
             chunksize=config_runner['chunksize'],
             maxchunks=config_runner['maxchunks'],
@@ -254,7 +316,8 @@ if __name__ == '__main__':
         elapsed = time.time() - tstart
         nEvent = metrics['entries']
         processtime = metrics['processtime']
-        logging.info(f'Metrics: {metrics}')
+        logging.info(f'Metrics:')
+        logging.info(pretty_repr(metrics))
         logging.info(f'\n{nEvent/elapsed:,.0f} events/s total '
                      f'({nEvent}/{elapsed})')
 
@@ -269,7 +332,7 @@ if __name__ == '__main__':
                 resize(
                     base_path=configs['config']['base_path'],
                     output=output,
-                    step=configs['config']['step'],
+                    step=config_runner.get('basketsize', configs['config']['step']),
                     chunk_size=config_runner.get('picosize', config_runner['chunksize'])))[0]
             # only keep file name for each chunk
             for dataset, chunks in output.items():
@@ -312,6 +375,43 @@ if __name__ == '__main__':
             }
 
             #
+            # Save friend tree metadata if exists
+            #
+            _FRIEND_BASE_PROCESSOR_ARG = 'make_classifier_input' # FIXME: need to make it more general
+            _FRIEND_MERGE_STEP = 100_000  # FIXME: need to make it more general
+            _FRIEND_METADATA_FILENAME = 'friends.json' # FIXME: need to make it more general
+
+            friend_base = configs["config"].get(_FRIEND_BASE_PROCESSOR_ARG, None)
+            friends: dict[str, Friend] = output.get("friends", None)
+            if friend_base is not None and friends is not None:
+                if args.condor:
+                    (friends,) = dask.compute(
+                        {
+                            k: friends[k].merge(
+                                step=_FRIEND_MERGE_STEP,
+                                base_path=friend_base,
+                                naming=_friend_merge_name,
+                                dask=True,
+                            )
+                            for k in friends
+                        }
+                    )
+                else:
+                    for k, v in friends.items():
+                        friends[k] = v.merge(
+                            step=_FRIEND_MERGE_STEP,
+                            base_path=friend_base,
+                            naming=_friend_merge_name,
+                        )
+                from base_class.system.eos import EOS
+                from base_class.utils.json import DefaultEncoder
+                with fsspec.open(EOS(friend_base) / _FRIEND_METADATA_FILENAME, "wt") as f:
+                    json.dump(friends, f, cls=DefaultEncoder)
+                logging.info(f"The following frends trees are created:")
+                logging.info(pretty_repr([*friends.keys()]))
+                logging.info(f"Saved friend trees and metadata to {friend_base}")
+
+            #
             #  Saving file
             #
             if not os.path.exists(args.output_path):
@@ -320,4 +420,12 @@ if __name__ == '__main__':
             logging.info(f'\nSaving file {hfile}')
             save(output, hfile)
 
-    logging.info(f'Dask performace report saved in {dask_report_file}')
+    #
+    # Run dask performance only in dask jobs
+    #
+    if args.run_dask:
+        dask_report_file = f'/tmp/coffea4bees-dask-report-{datetime.today().strftime("%Y-%m-%d_%H-%M-%S")}.html'
+        with performance_report(filename=dask_report_file):
+            run_job()
+        logging.info(f'Dask performace report saved in {dask_report_file}')
+    else: run_job()

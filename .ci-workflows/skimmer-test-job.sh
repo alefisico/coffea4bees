@@ -10,5 +10,4 @@ cat skimmer/metadata/tmp.yml
 echo "############### Running test processor"
 python runner.py -s -p skimmer/processor/skimmer_4b.py -c skimmer/metadata/tmp.yml -y UL18 -d TTToSemiLeptonic -op skimmer/metadata/ -o picoaod_datasets_TTToSemiLeptonic_UL18.yml -t
 ls -R skimmer/
-cp /tmp/coffea4bees*html coffea3bees-dask-report.html
 cd ../

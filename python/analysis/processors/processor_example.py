@@ -1,31 +1,21 @@
-import os
 import time
 import gc
-import argparse
-import sys
-from copy import deepcopy
-import awkward as ak
 import numpy as np
 import uproot
 import correctionlib
 import yaml
 import warnings
 
-from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
-from coffea.nanoevents.methods import vector
+from coffea.nanoevents import NanoAODSchema
 from coffea import processor
 
 from base_class.hist import Collection, Fill
-from base_class.hist import H, Template
-from base_class.physics.object import LorentzVector, Jet, Muon, Elec
+from base_class.physics.object import Jet
 
-from analysis.helpers.FriendTreeSchema import FriendTreeSchema
 from analysis.helpers.correctionFunctions import btagVariations
 from analysis.helpers.correctionFunctions import btagSF_norm as btagSF_norm_file
 from analysis.helpers.cutflow import cutFlow
 
-from functools import partial
-from multiprocessing import Pool
 
 from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
 from analysis.helpers.common import apply_btag_sf
@@ -36,12 +26,8 @@ import logging
 #
 # Setup
 #
-uproot.open.defaults["xrootd_handler"] = uproot.source.xrootd.MultithreadedXRootDSource
 NanoAODSchema.warn_missing_crossrefs = False
 warnings.filterwarnings("ignore")
-ak.behavior.update(vector.behavior)
-
-from base_class.hist import H, Template
 
 
 class analysis(processor.ProcessorABC):

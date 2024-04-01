@@ -85,8 +85,7 @@ class analysis(processor.ProcessorABC):
         tstart = time.time()
         fname   = event.metadata['filename']
 
-        logging.info('File path')
-        logging.info(f'{fname}')
+        logging.info(f'File path: {fname}')
 
         dataset = event.metadata['dataset']
         estart  = event.metadata['entrystart']
@@ -96,6 +95,7 @@ class analysis(processor.ProcessorABC):
         era     = event.metadata.get('era', '')
         processName = event.metadata['processName']
         isMC    = True if event.run[0] == 1 else False
+        isMixedData = not (dataset.find("mix_v") == -1)
         lumi    = event.metadata.get('lumi',    1.0)
         xs      = event.metadata.get('xs',      1.0)
         kFactor = event.metadata.get('kFactor', 1.0)
@@ -113,6 +113,7 @@ class analysis(processor.ProcessorABC):
         
         path = fname.replace(fname.split('store/user')[-1], '')
     
+
         if fname.find('picoAOD_3b_wJCM_newSBDef') != -1:
             fname_w3to4 = f"/smurthy/condor/unsupervised4b/randPair/w3to4hist/data20{year[-2:]}_picoAOD_3b_wJCM_newSBDef_w3to4_hist.root"
             fname_wDtoM = f"/smurthy/condor/unsupervised4b/randPair/wDtoMwJMC/data20{year[-2:]}_picoAOD_3b_wJCM_newSBDef_wDtoM.root"
@@ -165,14 +166,14 @@ class analysis(processor.ProcessorABC):
         logging.debug(f"event['weight'] = {event.weight}")
 
         ### Event selection (function only adds flags, not remove events)
-        event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year] )
+        event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year] , isMixedData=isMixedData)
 
         self._cutFlow.fill("all",  event[event.lumimask], allTag=True)
         self._cutFlow.fill("passNoiseFilter",  event[ event.lumimask & event.passNoiseFilter], allTag=True)
         self._cutFlow.fill("passHLT",  event[ event.lumimask & event.passNoiseFilter & event.passHLT], allTag=True)
 
         ### Apply object selection (function does not remove events, adds content to objects)
-        event =  apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year]  )
+        event =  apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year], isMixedData=isMixedData  )
         self._cutFlow.fill("passJetMult",  event[ event.lumimask & event.passNoiseFilter & event.passHLT & event.passJetMult ], allTag=True)
 
         ### Filtering object and event selection
@@ -221,7 +222,8 @@ class analysis(processor.ProcessorABC):
         canJet['jetId'] = selev.Jet.puId[canJet_idx]
         if isMC:
             canJet['hadronFlavour'] = selev.Jet.hadronFlavour[canJet_idx]
-        canJet['calibration'] = selev.Jet.calibration[canJet_idx]
+        if not isMixedData:
+            canJet['calibration'] = selev.Jet.calibration[canJet_idx]
 
         ### pt sort canJets    
         canJet = canJet[ak.argsort(canJet.pt, axis=1, ascending=False)]

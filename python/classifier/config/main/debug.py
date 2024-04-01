@@ -1,6 +1,7 @@
 import logging
 
 from classifier.task import ArgParser, EntryPoint, main
+from classifier.task.special import InterfaceError
 
 
 class Main(main.Main):
@@ -27,7 +28,7 @@ class Main(main.Main):
                 )
                 try:
                     t.debug()
-                except NotImplementedError:
+                except InterfaceError:
                     ...
                 except Exception as e:
                     logging.error(f"{e}")

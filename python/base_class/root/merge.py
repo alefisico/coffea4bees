@@ -5,6 +5,34 @@ from .io import TreeReader, TreeWriter
 
 
 @delayed
+def move(
+    path: PathLike,
+    source: Chunk,
+    dask: bool = False,
+):
+    """
+    Move ``source`` to ``path``.
+
+    Parameters
+    ----------
+    path : PathLike
+        Path to output ROOT file.
+    source : ~heptools.root.chunk.Chunk
+        Source chunk to move.
+    dask : bool, optional, default=False
+        If ``True``, return a :class:`~dask.delayed.Delayed` object.
+
+    Returns
+    -------
+    Chunk or Delayed
+        Moved chunk.
+    """
+    source = source.deepcopy()
+    source.path = source.path.move_to(path)
+    return source
+
+
+@delayed
 def merge(
     path: PathLike,
     *sources: Chunk,
@@ -108,13 +136,16 @@ def resize(
     path = EOS(path)
     results: list[Chunk] = []
     if chunk_size is ...:
-        results.append(merge(
-            path,
-            *sources,
-            step=step,
-            reader_options=reader_options,
-            writer_options=writer_options,
-            dask=dask))
+        results.append(
+            merge(
+                path,
+                *sources,
+                step=step,
+                reader_options=reader_options,
+                writer_options=writer_options,
+                dask=dask,
+            )
+        )
     else:
         parent = path.parent
         filename = f'{path.stem}.chunk{{index}}{"".join(path.suffixes)}'
@@ -124,12 +155,15 @@ def resize(
                 new_path = path
             else:
                 new_path = parent / filename.format(index=index)
-            results.append(merge(
-                new_path,
-                *new_chunks,
-                step=step,
-                reader_options=reader_options,
-                writer_options=writer_options,
-                dask=dask))
+            results.append(
+                merge(
+                    new_path,
+                    *new_chunks,
+                    step=step,
+                    reader_options=reader_options,
+                    writer_options=writer_options,
+                    dask=dask,
+                )
+            )
     results = clean(sources, results, dask=dask)
     return results

@@ -1,24 +1,15 @@
-import os
 import time
 import gc
-import argparse
-import sys
-from copy import deepcopy
 import awkward as ak
 import numpy as np
-import uproot
 import correctionlib
-import correctionlib._core as core
 import yaml
 import warnings
-import torch
-import torch.nn.functional as F
 
 from analysis.helpers.networks import HCREnsemble
 from analysis.helpers.topCandReconstruction import find_tops, dumpTopCandidateTestVectors, buildTop, mW, mt, find_tops_slow
 
 from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
-from coffea.nanoevents.methods import vector
 from coffea import processor
 
 from base_class.hist import Collection, Fill
@@ -29,12 +20,6 @@ from analysis.helpers.cutflow import cutFlow
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
 from analysis.helpers.correctionFunctions import btagVariations
 from analysis.helpers.correctionFunctions import btagSF_norm as btagSF_norm_file
-from functools import partial
-from multiprocessing import Pool
-
-# torch.set_num_threads(1)
-# torch.set_num_interop_threads(1)
-# print(torch.__config__.parallel_info())
 
 from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
 from analysis.helpers.common import apply_btag_sf
@@ -45,10 +30,8 @@ import logging
 #
 # Setup
 #
-uproot.open.defaults["xrootd_handler"] = uproot.source.xrootd.MultithreadedXRootDSource
 NanoAODSchema.warn_missing_crossrefs = False
 warnings.filterwarnings("ignore")
-ak.behavior.update(vector.behavior)
 
 def setSvBVars(SvBName, event):
     largest_name = np.array(['None', 'ZZ', 'ZH', 'HH'])
@@ -109,6 +92,7 @@ class analysis(processor.ProcessorABC):
         era     = event.metadata.get('era', '')
         processName = event.metadata['processName']
         isMC    = True if event.run[0] == 1 else False
+        isMixedData = not (dataset.find("mix_v") == -1)
         lumi    = event.metadata.get('lumi',    1.0)
         xs      = event.metadata.get('xs',      1.0)
         kFactor = event.metadata.get('kFactor', 1.0)
@@ -131,8 +115,27 @@ class analysis(processor.ProcessorABC):
         #
         path = fname.replace(fname.split('/')[-1], '')
         if self.apply_FvT:
-            event['FvT']    = NanoEventsFactory.from_root(f'{path}{"FvT_3bDvTMix4bDvT_v0_newSB.root" if "mix" in dataset else "FvT.root"}',
-                                                          entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().FvT
+            if isMixedData:
+
+                FvT_name = event.metadata["FvT_name"]
+                event['FvT']    = getattr(NanoEventsFactory.from_root(f'{event.metadata["FvT_file"]}',
+                                                                      entry_start=estart, entry_stop=estop, 
+                                                                      schemaclass=FriendTreeSchema).events(), FvT_name)
+
+                event['FvT', 'FvT']    = getattr(event['FvT'], FvT_name)
+
+                #
+                # Dummies
+                #
+                event['FvT', 'q_1234'] = np.full(len(event), -1, dtype=int)
+                event['FvT', 'q_1324'] = np.full(len(event), -1, dtype=int)
+                event['FvT', 'q_1423'] = np.full(len(event), -1, dtype=int)
+
+
+            else:
+                event['FvT']    = NanoEventsFactory.from_root(f'{path}{"FvT.root"}',
+                                                              entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().FvT
+
             event['FvT', 'frac_err'] = event['FvT'].std / event['FvT'].FvT
             if not ak.all(event.FvT.event == event.event):
                 logging.error('ERROR: FvT events do not match events ttree')
@@ -187,14 +190,14 @@ class analysis(processor.ProcessorABC):
         #
         # Event selection (function only adds flags, not remove events)
         #
-        event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year] )
+        event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year], isMixedData=isMixedData)
 
         self._cutFlow.fill("all",  event[event.lumimask], allTag=True)
         self._cutFlow.fill("passNoiseFilter",  event[ event.lumimask & event.passNoiseFilter], allTag=True)
         self._cutFlow.fill("passHLT",  event[ event.lumimask & event.passNoiseFilter & event.passHLT], allTag=True)
 
         # Apply object selection (function does not remove events, adds content to objects)
-        event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year]  )
+        event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year], isMixedData=isMixedData)
         selections = []
         selections.append(event.lumimask & event.passNoiseFilter & event.passHLT & event.passJetMult)
         self._cutFlow.fill("passJetMult", event[selections[-1]], allTag=True)
@@ -245,7 +248,8 @@ class analysis(processor.ProcessorABC):
         canJet['jetId'] = selev.Jet.puId[canJet_idx]
         if isMC:
             canJet['hadronFlavour'] = selev.Jet.hadronFlavour[canJet_idx]
-        canJet['calibration'] = selev.Jet.calibration[canJet_idx]
+        if not isMixedData:
+            canJet['calibration'] = selev.Jet.calibration[canJet_idx]
 
         #
         # pt sort canJets
@@ -281,7 +285,12 @@ class analysis(processor.ProcessorABC):
             selev['Jet_untagged_loose'] = selev.Jet[selev.Jet.selected & ~selev.Jet.tagged_loose]
             nJet_pseudotagged = np.zeros(len(selev), dtype=int)
             pseudoTagWeight = np.ones(len(selev))
-            pseudoTagWeight[selev.threeTag], nJet_pseudotagged[selev.threeTag] = self.JCM(selev[selev.threeTag]['Jet_untagged_loose'])
+            pseudoTagWeight[selev.threeTag], nJet_pseudotagged[selev.threeTag] = (
+                self.JCM(
+                    selev[selev.threeTag]["Jet_untagged_loose"],
+                    selev.event[selev.threeTag],
+                )
+            )
             selev['nJet_pseudotagged'] = nJet_pseudotagged
             selev['pseudoTagWeight'] = pseudoTagWeight
 
@@ -428,7 +437,7 @@ class analysis(processor.ProcessorABC):
             bReg_p = selev.top_cand.b * selev.top_cand.b.bRegCorr
             selev["top_cand", "p"] = bReg_p  + selev.top_cand.j + selev.top_cand.l
 
-            #mW, mt = 80.4, 173.0
+            # mW, mt = 80.4, 173.0
             selev["top_cand", "W"] = ak.zip({"p": selev.top_cand.j + selev.top_cand.l,
                                              "j": selev.top_cand.j,
                                              "l": selev.top_cand.l})
@@ -473,17 +482,6 @@ class analysis(processor.ProcessorABC):
         # To Add
         #
 
-        #    nIsoMed25Muons = dir.make<TH1F>("nIsoMed25Muons", (name+"/nIsoMed25Muons; Number of Prompt Muons; Entries").c_str(),  6,-0.5,5.5);
-        #    nIsoMed40Muons = dir.make<TH1F>("nIsoMed40Muons", (name+"/nIsoMed40Muons; Number of Prompt Muons; Entries").c_str(),  6,-0.5,5.5);
-        #    muons_isoMed25  = new muonHists(name+"/muon_isoMed25", fs, "iso Medium 25 Muons");
-        #    muons_isoMed40  = new muonHists(name+"/muon_isoMed40", fs, "iso Medium 40 Muons");
-
-        #    nIsoMed25Elecs = dir.make<TH1F>("nIsoMed25Elecs", (name+"/nIsoMed25Elecs; Number of Prompt Elecs; Entries").c_str(),  6,-0.5,5.5);
-        #    nIsoMed40Elecs = dir.make<TH1F>("nIsoMed40Elecs", (name+"/nIsoMed40Elecs; Number of Prompt Elecs; Entries").c_str(),  6,-0.5,5.5);
-        #    elecs_isoMed25  = new elecHists(name+"/elec_isoMed25", fs, "iso Medium 25 Elecs");
-        #    elecs_isoMed40  = new elecHists(name+"/elec_isoMed40", fs, "iso Medium 40 Elecs");
-        #
-
         #    m4j_vs_leadSt_dR = dir.make<TH2F>("m4j_vs_leadSt_dR", (name+"/m4j_vs_leadSt_dR; m_{4j} [GeV]; S_{T} leading boson candidate #DeltaR(j,j); Entries").c_str(), 40,100,1100, 25,0,5);
         #    m4j_vs_sublSt_dR = dir.make<TH2F>("m4j_vs_sublSt_dR", (name+"/m4j_vs_sublSt_dR; m_{4j} [GeV]; S_{T} subleading boson candidate #DeltaR(j,j); Entries").c_str(), 40,100,1100, 25,0,5);
 
@@ -514,7 +512,11 @@ class analysis(processor.ProcessorABC):
         #  Make classifier hists
         #
         if self.apply_FvT:
-            fill += FvTHists(('FvT', 'FvT Classifier'), 'FvT')
+            FvT_skip = []
+            if isMixedData:
+                FvT_skip = ["pt", "pm3", "pm4"]
+
+            fill += FvTHists(('FvT', 'FvT Classifier'), 'FvT', skip=FvT_skip)
             fill += hist.add('quadJet_selected_FvT_score', (100, 0, 1, ("quadJet_selected.FvT_q_score", 'Selected Quad Jet Diboson FvT q score')))
             fill += hist.add('quadJet_min_FvT_score', (100, 0, 1, ("quadJet_min_dr.FvT_q_score", 'Min dR Quad Jet Diboson FvT q score')))
             if self.JCM: fill += hist.add('FvT_noFvT', (100, 0, 5, ('FvT.FvT', 'FvT reweight')), weight="weight_noFvT")
@@ -548,9 +550,10 @@ class analysis(processor.ProcessorABC):
         if not isMC: skip_muons += ['genPartFlav']
         fill += Muon.plot(('selMuons', 'Selected Muons'),        'selMuon', skip=skip_muons)
 
-        skip_elecs = ['charge'] + Elec.skip_detailed_plots
-        if not isMC: skip_elecs += ['genPartFlav']
-        fill += Elec.plot(('selElecs', 'Selected Elecs'),        'selElec', skip=skip_elecs)
+        if not isMixedData:
+            skip_elecs = ['charge'] + Elec.skip_detailed_plots
+            if not isMC: skip_elecs += ['genPartFlav']
+            fill += Elec.plot(('selElecs', 'Selected Elecs'),        'selElec', skip=skip_elecs)
 
         #
         # Top Candidates
@@ -588,18 +591,34 @@ class analysis(processor.ProcessorABC):
 
         friends = {}
         if self.make_classifier_input is not None:
-            from ..helpers.classifier.HCR import build_input_friend
-            friends["friends"] = build_input_friend(
+            ### AGE: this should be temporary
+            for k in ["ZZSR", "ZHSR", "HHSR", "SR", "SB"]:
+                selev[k] = selev["quadJet_selected"][k]
+            selev["nSelJets"] = ak.num(selev.selJet)
+            selev["xbW"] = selev["xbW_reco"]
+            selev["xW"] = selev["xW_reco"]
+            ####
+            from ..helpers.classifier.HCR import dump_input_friend, dump_JCM_weight
+
+            friends["friends"] = dump_input_friend(
                 selev,
                 self.make_classifier_input,
                 "HCR_input",
                 *selections,
-                selev.passPreSel,
+                weight="weight" if isMC else "weight_noJCM_noFvT",
+                NotCanJet="notCanJet_coffea",  # AGE: this should be temporary
+            ) | dump_JCM_weight(
+                selev,
+                self.make_classifier_input,
+                "JCM_weight",
+                *selections,
             )
 
         return hist.output | processOutput | friends
 
     def compute_SvB(self, event):
+        import torch
+        import torch.nn.functional as F
         n = len(event)
 
         j = torch.zeros(n, 4, 4)

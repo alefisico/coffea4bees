@@ -1,0 +1,16 @@
+runner:
+  condor_cores: 1
+  condor_memory: 2GB
+
+config:
+  make_classifier_input: root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/friend/
+  JCM: "analysis/weights/JCM/2023/dataRunII/jetCombinatoricModel_SB_00-00-02.yml"
+  threeTag: true
+  apply_FvT: false
+  apply_trigWeight: false
+  apply_btagSF: false
+  addbtagVariations: false
+  run_SvB: false
+  run_topreco: true
+  #SvB   : 'analysis/weights/pytorch_models/2023/SvB_HCR_8_np753_seed0_lr0.01_epochs20_offset*_epoch20.pkl',
+  #SvB_MA': 'analysis/weights/pytorch_models/2023/SvB_MA_HCR+attention_8_np1061_seed0_lr0.01_epochs20_offset*_epoch20.pkl',

@@ -1,7 +1,13 @@
 import builtins
+import uuid
 from enum import Enum
 from functools import partial
 from typing import Mapping, MutableMapping
+
+
+class WithUUID:
+    def __init__(self):
+        self.uuid = uuid.uuid4()
 
 
 class dict_proxy(MutableMapping):

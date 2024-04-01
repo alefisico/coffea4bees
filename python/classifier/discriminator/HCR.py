@@ -157,9 +157,9 @@ class HCRClassifier(Classifier):
             self._HCR.ghost_batch = self._ghost_batch
             self._HCR.to(self.device)
             self._HCR.module.setMeanStd(
-                torch.cat(skim.tensors[Input.CanJet]).to(self.device),
-                torch.cat(skim.tensors[Input.NotCanJet]).to(self.device),
-                torch.cat(skim.tensors[Input.ancillary]).to(self.device),
+                torch.cat(skim.tensors[Input.CanJet]),
+                torch.cat(skim.tensors[Input.NotCanJet]),
+                torch.cat(skim.tensors[Input.ancillary]),
             )
             skim = None
         yield TrainingStage(
