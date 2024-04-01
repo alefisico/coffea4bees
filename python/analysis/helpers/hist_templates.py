@@ -27,9 +27,25 @@ class QuadJetHists(Template):
     dr              = H((50,     0, 5,   ("dr",          'Diboson Candidate $\\Delta$R(d,d)')))
     dphi            = H((100, -3.2, 3.2, ("dphi",        'Diboson Candidate $\\Delta$R(d,d)')))
     deta            = H((100,   -5, 5,   ("deta",        'Diboson Candidate $\\Delta$R(d,d)')))
-    # xZZ             = H((100, 0, 10,     ("xZZ",         'Diboson Candidate zZZ')))
-    # xZH             = H((100, 0, 10,     ("xZH",         'Diboson Candidate zZH')))
-    # xHH             = H((100, 0, 10,     ("xHH",         'Diboson Candidate zHH')))
+    xZZ             = H((100, 0, 10,     ("xZZ",         'Diboson Candidate zZZ')))
+    xZH             = H((100, 0, 10,     ("xZH",         'Diboson Candidate zZH')))
+    xHH             = H((100, 0, 10,     ("xHH",         'Diboson Candidate zHH')))
+
+    lead_vs_subl_m   = H((50, 0, 250, ('lead.mass', 'Lead Boson Candidate Mass')),
+                         (50, 0, 250, ('subl.mass', 'Subl Boson Candidate Mass')))
+
+    close_vs_other_m = H((50, 0, 250, ('close.mass', 'Close Boson Candidate Mass')),
+                         (50, 0, 250, ('other.mass', 'Other Boson Candidate Mass')))
+
+    lead            = LorentzVector.plot_pair(('...', R'Lead Boson Candidate'),  'lead',  skip=['n'])
+    subl            = LorentzVector.plot_pair(('...', R'Subl Boson Candidate'),  'subl',  skip=['n'])
+    close           = LorentzVector.plot_pair(('...', R'Close Boson Candidate'), 'close', skip=['n'])
+    other           = LorentzVector.plot_pair(('...', R'Other Boson Candidate'), 'other', skip=['n'])
+
+class QuadJetHistsUnsup(Template):
+    dr              = H((50,     0, 5,   ("dr",          'Diboson Candidate $\\Delta$R(d,d)')))
+    dphi            = H((100, -3.2, 3.2, ("dphi",        'Diboson Candidate $\\Delta$R(d,d)')))
+    deta            = H((100,   -5, 5,   ("deta",        'Diboson Candidate $\\Delta$R(d,d)')))
 
     lead_vs_subl_m   = H((50, 0, 250, ('lead.mass', 'Lead Boson Candidate Mass')),
                          (50, 0, 250, ('subl.mass', 'Subl Boson Candidate Mass')))

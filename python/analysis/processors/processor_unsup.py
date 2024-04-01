@@ -24,7 +24,7 @@ from analysis.helpers.correctionFunctions import btagVariations
 from analysis.helpers.correctionFunctions import btagSF_norm as btagSF_norm_file
 from analysis.helpers.cutflow import cutFlow
 from analysis.helpers.topCandReconstruction import find_tops, dumpTopCandidateTestVectors, buildTop
-from analysis.helpers.hist_templates import SvBHists, FvTHists, QuadJetHists, WCandHists, TopCandHists
+from analysis.helpers.hist_templates import SvBHists, FvTHists, QuadJetHistsUnsup, WCandHists, TopCandHists
 
 from functools import partial
 from multiprocessing import Pool
@@ -373,7 +373,7 @@ class analysis(processor.ProcessorABC):
 
         ###  Make quad jet hists
         fill += LorentzVector.plot_pair(('v4j'), 'v4j', skip=['n', 'dr', 'dphi', 'st'], bins={'mass': (120, 0, 1200)})
-        fill += QuadJetHists(('quadJet_selected', 'Selected Quad Jet'), 'quadJet_selected')  #### Build a new template
+        fill += QuadJetHistsUnsup(('quadJet_selected', 'Selected Quad Jet'), 'quadJet_selected')  #### Build a new template
 
         ### fill histograms ###
         # fill.cache(selev)
