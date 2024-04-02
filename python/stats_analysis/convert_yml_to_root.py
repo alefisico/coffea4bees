@@ -44,10 +44,9 @@ def create_root_file(file_to_convert, histos, output_dir):
             for iy in coffea_hists[ih][iprocess].keys():
                 for itag in coffea_hists[ih][iprocess][iy].keys():
                     for iregion in coffea_hists[ih][iprocess][iy][itag].keys():
-                        ih = ih.replace(".", "_")
                         this_hist = yml_to_TH1(
                             coffea_hists[ih][iprocess][iy][itag][iregion],
-                            ih + "_" + iprocess + "_" + iy + "_" + itag + "_" + iregion,
+                            ih.replace(".", "_") + "_" + iprocess + "_" + iy + "_" + itag + "_" + iregion,
                             1)
                         this_hist.Write()
 
