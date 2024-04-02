@@ -8,7 +8,7 @@ class MeanVariance(Variance[torch.Tensor]):
 
     @classmethod
     @torch.no_grad()
-    def calculate(cls, data: torch.Tensor, weight: torch.Tensor = None):
+    def compute(cls, data: torch.Tensor, weight: torch.Tensor = None):
         sumw = (
             torch.tensor(len(data), dtype=cls._t)
             if weight is None

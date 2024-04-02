@@ -139,5 +139,5 @@ class Main(main.Main):
                             self._print_help(classes[cls], 2)
         if self.opts.html:
             self._console.save_html(
-                IOSetting.output / "help.html", theme=themes.SVG_EXPORT_THEME
+                IOSetting.output / "help.html", theme=themes.MONOKAI
             )
