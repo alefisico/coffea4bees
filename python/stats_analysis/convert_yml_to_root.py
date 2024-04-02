@@ -54,7 +54,7 @@ def create_root_file(file_to_convert, histos, output_dir):
     logging.info("\n File " + output + " created.")
 
 
-def create_combine_root_file( file_to_convert, histos, rebin, classifier, output_dir, plot, merge_2016=False ):
+def create_combine_root_file( file_to_convert, rebin, classifier, output_dir, plot, merge_2016=False ):
 
     coffea_hists = yaml.safe_load(open(file_to_convert, 'r'))
 
