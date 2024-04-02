@@ -208,10 +208,11 @@ ymltoroot-test-job:
   stage: plot
   needs: 
     - histtoyml-test-job
-  image: gitlab-registry.cern.ch/cms-cloud/cmssw-docker/cmssw_11_2_5-slc7_amd64_gcc900:2022-06-20-9afcb2be
+  image: gitlab-registry.cern.ch/cms-cloud/cmssw-docker/cc7-cms 
   tags:
     - k8s-cvmfs
   script:
+    - source /cvmfs/sft.cern.ch/lcg/views/LCG_104/x86_64-centos7-gcc12-opt/setup.sh
     - cd python/stats_analysis/
     - python convert_yml_to_root.py --classifier SvB_MA SvB -f hists/histAll.yml --merge2016 --output_dir datacards/ --plot
   artifacts: 
