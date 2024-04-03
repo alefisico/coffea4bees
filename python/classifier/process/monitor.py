@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import socket
 from dataclasses import dataclass
 from enum import Flag
@@ -10,18 +11,19 @@ from threading import Lock, Thread
 from typing import Any, Callable, Concatenate, ParamSpec, TypeVar, overload
 from uuid import uuid4
 
-from ..config.setting import Scheduler as Setting
+from ..config.setting import Monitor as Setting
 from ..typetools import Method
 from ..utils import noop
 from . import is_poxis
 from .initializer import status
 
 __all__ = [
-    "SchedulerError",
-    "Scheduler",
-    "Worker",
+    "MonitorError",
+    "Monitor",
+    "Reporter",
     "Proxy",
     "callback",
+    "connect_to_monitor",
 ]
 
 
@@ -36,33 +38,39 @@ def _get_host():
     return socket.gethostbyname(socket.gethostname())
 
 
-class _start_worker:
+def _parse_url(url: str):
+    host, port = url.rsplit(":", 1)
+    return host, int(port)
+
+
+class _start_reporter:
     def __getstate__(self):
-        try:
-            return self._address
-        except AttributeError:
-            return Scheduler.current()._address
+        match _Status.now():
+            case _Status.Monitor:
+                return Monitor.current()._address
+            case _Status.Reporter:
+                return Reporter.current()._address
 
     def __setstate__(self, address: str):
         self._address = address
 
     def __call__(self):
-        Worker.init(self._address)
+        Reporter.init(self._address)
 
 
 class _Status(Flag):
     Unknown = 0b000
-    Scheduler = 0b100
-    Worker = 0b010
+    Monitor = 0b100
+    Reporter = 0b010
     Fresh = 0b001
 
     @classmethod
     def now(cls):
         status = _Status.Unknown
-        if Scheduler.current() is not None:
-            status |= cls.Scheduler
-        if Worker.current() is not None:
-            status |= cls.Worker
+        if Monitor.current() is not None:
+            status |= cls.Monitor
+        if Reporter.current() is not None:
+            status |= cls.Reporter
         if status == _Status.Unknown:
             status |= cls.Fresh
         return status
@@ -72,7 +80,7 @@ _SingletonT = TypeVar("_SingletonT", bound="_Singleton")
 
 
 class _Singleton:
-    __allowed_process__ = _Status.Fresh | _Status.Scheduler
+    __allowed_process__ = _Status.Fresh | _Status.Monitor
 
     def __init_subclass__(cls) -> None:
         cls.__instance = None
@@ -124,11 +132,11 @@ class _Packet:
         return NotImplemented
 
 
-class SchedulerError(Exception):
+class MonitorError(Exception):
     __module__ = Exception.__module__
 
 
-class Scheduler(_Singleton):
+class Monitor(_Singleton):
     __allowed_process__ = _Status.Fresh
 
     def __init__(self):
@@ -137,26 +145,26 @@ class Scheduler(_Singleton):
 
         # listener
         if Setting.port is None:
-            uuid = f"scheduler-{uuid4()}"
+            uuid = f"monitor-{uuid4()}"
             self._address = f"/tmp/{uuid}" if is_poxis() else rf"\\.\pipe\{uuid}"
         else:
             self._address = (_get_host(), Setting.port)
         self._listener: tuple[Listener, Thread] = None
 
-        # workers
+        # clients
         self._connections: list[Connection] = []
         self._handlers: list[Thread] = []
 
     @classmethod
-    def start(cls):
+    def start(cls, standalone=False):
         self = cls.init()
         if self._listener is None:
             self._listener = (
                 Listener(self._address),
-                Thread(target=self._listen, daemon=True),
+                Thread(target=self._listen, daemon=(not standalone)),
             )
             self._listener[1].start()
-            status.initializer.add_unique(_start_worker)
+            status.initializer.add_unique(_start_reporter)
 
     @classmethod
     def stop(cls):
@@ -213,12 +221,14 @@ class Scheduler(_Singleton):
                 break
 
 
-class Worker(_Singleton):
+class Reporter(_Singleton):
     __allowed_process__ = _Status.Fresh
 
     def __init__(self, address: str):
         self._address = address
-        self._name = f"{_get_host()}:{status.context.current_process().name}"
+        self._name = (
+            f"{_get_host()}/pid-{os.getpid()}/{status.context.current_process().name}"
+        )
 
         self._lock = Lock()
         self._jobs: PriorityQueue[_Packet] = PriorityQueue()
@@ -238,14 +248,14 @@ class Worker(_Singleton):
                 if self._sender is not None:
                     _close_connection(self._sender)
                     self._sender = None
-                raise SchedulerError
+                raise MonitorError
 
     def _send_non_blocking(self):
         while (packet := self._jobs.get()) is not None:
             packet.retry -= 1
             try:
                 self._send(packet)
-            except SchedulerError:
+            except MonitorError:
                 if packet.retry >= 1:
                     self._jobs.put(packet)
 
@@ -275,8 +285,8 @@ class Proxy(_Singleton, metaclass=_ProxyMeta):
 
     @classmethod
     def lock(cls):
-        if _Status.now() != _Status.Scheduler:
-            raise RuntimeError("lock can only be accessed in scheduler process")
+        if _Status.now() != _Status.Monitor:
+            raise RuntimeError("lock can only be accessed in monitor process")
         if cls._lock is None:
             cls._lock = Lock()
         return cls._lock
@@ -292,10 +302,10 @@ class _callback:
 
     def __call__(self, cls: type[Proxy], *args, **kwargs):
         match _Status.now():
-            case _Status.Scheduler:
+            case _Status.Monitor:
                 return self._func(cls.init(), *args, **kwargs)
-            case _Status.Worker:
-                return Worker.current().send(
+            case _Status.Reporter:
+                return Reporter.current().send(
                     _Packet(
                         cls,
                         self._name,
@@ -331,3 +341,8 @@ def callback(
         return lambda func: callback(func, wait_for_return, acquire_class_lock)
     else:
         return classmethod(_callback(func, wait_for_return, acquire_class_lock))
+
+
+def connect_to_monitor(address: str):
+    Reporter.init(_parse_url(address))
+    status.initializer.add_unique(_start_reporter)
