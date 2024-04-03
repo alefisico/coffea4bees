@@ -145,7 +145,7 @@ class Classifier(WithUUID, ABC):
                             epoch,
                             self._evaluate(model, datasets[k]),
                             stage.name,
-                            f"{k} set",
+                            f"{k}-dataset",
                         )
                         for k in datasets
                     }

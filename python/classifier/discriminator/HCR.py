@@ -57,13 +57,13 @@ class _HCRSkim(Model):
 
     @property
     def module(self):
-        return noop()
+        return noop
 
     def forward(self, batch: dict[str, Tensor]):
         self._nn.updateMeanStd(*_HCRInput(batch, self._device))
 
     def loss(self, _):
-        return noop()
+        return noop
 
 
 class HCRModel(Model):

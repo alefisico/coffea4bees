@@ -1,13 +1,34 @@
 import builtins
-import uuid
 from enum import Enum
 from functools import partial
-from typing import Mapping, MutableMapping
+from typing import (
+    Any,
+    Callable,
+    Generic,
+    Mapping,
+    MutableMapping,
+    ParamSpec,
+    Protocol,
+    TypeVar,
+)
+from uuid import uuid4
+
+_MethodP = ParamSpec("_MethodP")
+_MethodReturnT = TypeVar("_MethodReturnT")
+
+
+class Method(Protocol, Generic[_MethodP, _MethodReturnT]):
+    def __get__(
+        self, instance: Any, owner: type | None = None
+    ) -> Callable[_MethodP, _MethodReturnT]: ...
+    def __call__(
+        self_, self: Any, *args: _MethodP.args, **kwargs: _MethodP.kwargs
+    ) -> _MethodReturnT: ...
 
 
 class WithUUID:
     def __init__(self):
-        self.uuid = uuid.uuid4()
+        self.uuid = uuid4()
 
 
 class dict_proxy(MutableMapping):

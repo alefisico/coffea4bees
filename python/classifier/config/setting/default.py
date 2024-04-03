@@ -5,17 +5,28 @@ from typing import TYPE_CHECKING
 from classifier.task import Cascade
 
 if TYPE_CHECKING:
-    from base_class.system.eos import EOS
+    from base_class.system.eos import EOS, PathLike
 
 
 class IO(Cascade):
     output: EOS = "."
 
     @classmethod
-    def _output(cls, var):
+    def get__output(cls, value: PathLike):
         from base_class.system.eos import EOS
 
-        return EOS(var).mkdir(recursive=True)
+        return EOS(value).mkdir(recursive=True)
+
+
+class Scheduler(Cascade):
+    socket_timeout: float = None
+    max_retry: int = 2
+
+    @classmethod
+    def set__socket_timeout(cls, value: float):
+        import socket
+
+        socket.setdefaulttimeout(value)
 
 
 class DataLoader(Cascade):

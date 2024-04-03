@@ -16,10 +16,10 @@ class SkimStep(Schedule):
     epoch: int = 1
 
     def optimizer(cls, _, **__):
-        return noop()
+        return noop
 
     def lr_scheduler(self, _, **__):
-        return noop()
+        return noop
 
     def bs_scheduler(self, dataset, **__):
         return _SkimBS(dataset)

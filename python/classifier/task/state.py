@@ -30,12 +30,19 @@ class _CachedStateMeta(type):
     def __getattribute__(self, __name: str):
         if not _is_private(__name):
             value = vars(self).get(__name)
-            parser = vars(self).get(f"_{__name}")
+            parser = vars(self).get(f"get__{__name}")
             if isinstance(parser, classmethod):
                 if __name not in self.__cached_states__:
                     self.__cached_states__[__name] = parser.__func__(self, value)
                 return self.__cached_states__[__name]
         return super().__getattribute__(__name)
+
+    def __setattr__(self, __name: str, __value: Any):
+        super().__setattr__(__name, __value)
+        if not _is_private(__name):
+            parser = vars(self).get(f"set__{__name}")
+            if isinstance(parser, classmethod):
+                parser.__func__(self, __value)
 
 
 class GlobalState(metaclass=_CachedStateMeta):
