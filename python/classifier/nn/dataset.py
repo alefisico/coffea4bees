@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ..config.setting.default import DataLoader as DLSetting
+from ..config.setting.torch import DataLoader as DLSetting
 
 if TYPE_CHECKING:
     from torch.utils.data import Dataset

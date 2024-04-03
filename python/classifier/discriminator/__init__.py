@@ -10,7 +10,8 @@ from typing import Iterable
 import torch
 from torch import Tensor, nn
 from torch.utils.data import Dataset
-from ..config.setting import default as Setting
+
+from ..config.setting.torch import DataLoader as DLSetting
 from ..nn.dataset import mp_loader
 from ..nn.schedule import Schedule
 from ..process.device import Device
@@ -163,7 +164,7 @@ class Classifier(WithUUID, ABC):
     ):
         loader = mp_loader(
             dataset,
-            batch_size=Setting.DataLoader.batch_eval,
+            batch_size=DLSetting.batch_eval,
             shuffle=False,
             drop_last=False,
             pin_memory=True,

@@ -9,7 +9,7 @@ import fsspec
 from classifier.nn.dataset import io_loader
 from classifier.task import ArgParser, EntryPoint, converter
 
-from ..setting.default import IO as IOSetting
+from ..setting import IO as IOSetting
 from ._utils import LoadTrainingSets
 
 if TYPE_CHECKING:

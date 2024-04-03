@@ -105,7 +105,7 @@ class EntryPoint:
         self.main: Main = new(cls, self.args[_MAIN][1])
 
     def run(self, reproducible: Callable):
-        from ..config.setting.default import IO as IOSetting
+        from ..config.setting import IO as IOSetting
 
         self._fetch_all()
         meta = self.main.run(self)

@@ -7,7 +7,7 @@ import fsspec
 import torch
 
 from ..config.scheduler import SkimStep
-from ..config.setting.default import IO as IOSetting
+from ..config.setting import IO as IOSetting
 from ..config.setting.HCR import Input, InputBranch, Output
 from ..config.state.label import MultiClass
 from ..nn.blocks import HCR

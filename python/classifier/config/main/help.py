@@ -1,6 +1,7 @@
 import inspect
 import os
 import pkgutil
+import re
 from pathlib import Path
 from textwrap import indent
 
@@ -9,7 +10,7 @@ from classifier.task import ArgParser, EntryPoint, Task, main
 from classifier.task.task import _INDENT
 from rich.console import Console
 
-from ..setting.default import IO as IOSetting
+from ..setting import IO as IOSetting
 
 
 def _walk_packages(base):
@@ -43,6 +44,12 @@ class Main(main.Main):
     )
     argparser.add_argument(
         "--html", action="store_true", help=f'write "help.html" to output directory'
+    )
+    argparser.add_argument(
+        "--filter",
+        type=re.compile,
+        help="a Python style regular expression to filter modules when [yellow]--all[/yellow] is set",
+        default=".*",
     )
 
     def __init__(self):
@@ -132,10 +139,12 @@ class Main(main.Main):
                                 and not main._is_private(name)
                                 and obj.__module__ == modname
                             ):
-                                classes[name] = obj
+                                fullname = f"{imp}{name}"
+                                if self.opts.filter.fullmatch(fullname) is not None:
+                                    classes[fullname] = obj
                     if classes:
                         for cls in classes:
-                            self._print(indent(f"[green]{imp}{cls}[/green]", _INDENT))
+                            self._print(indent(f"[green]{cls}[/green]", _INDENT))
                             self._print_help(classes[cls], 2)
         if self.opts.html:
             self._console.save_html(

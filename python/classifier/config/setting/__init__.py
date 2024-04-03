@@ -1,11 +1,17 @@
+from __future__ import annotations
+
 import pickle
-from typing import Mapping
+from typing import TYPE_CHECKING, Mapping
 
 import fsspec
 from classifier.task.state import Cascade, _share_global_state
 from classifier.typetools import dict_proxy
 
+if TYPE_CHECKING:
+    from base_class.system.eos import EOS, PathLike
+
 _SETTING = "setting"
+_SPECIAL = "[red]\[special][/red]"
 
 
 class save(Cascade):
@@ -17,6 +23,7 @@ class save(Cascade):
     @classmethod
     def help(cls):
         infos = [
+            _SPECIAL,
             f"usage: {cls.__mod_name__()} OUTPUT",
             "",
             "Save global states to file.",
@@ -35,6 +42,7 @@ class load(Cascade):
     @classmethod
     def help(cls):
         infos = [
+            _SPECIAL,
             f"usage: {cls.__mod_name__()} INPUT [INPUT ...]",
             "",
             "Load global states from files.",
@@ -60,9 +68,32 @@ class setup(Cascade):
     @classmethod
     def help(cls):
         infos = [
+            _SPECIAL,
             f"usage: {cls.__mod_name__()} FILE [FILE ...]",
             "",
             "Setup all settings from input files.",
             "",
         ]
         return "\n".join(infos)
+
+
+class IO(Cascade):
+    output: EOS = "."
+
+    @classmethod
+    def get__output(cls, value: PathLike):
+        from base_class.system.eos import EOS
+
+        return EOS(value).mkdir(recursive=True)
+
+
+class Scheduler(Cascade):
+    port: int = None
+    max_retry: int = 3
+    socket_timeout: float = None
+
+    @classmethod
+    def set__socket_timeout(cls, value: float):
+        import socket
+
+        socket.setdefaulttimeout(value)
