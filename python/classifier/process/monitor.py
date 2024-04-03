@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import logging
+import multiprocessing as mp
 import os
 import socket
+import time
 from dataclasses import dataclass
 from enum import Flag
 from functools import wraps
@@ -118,9 +120,12 @@ class _Packet:
     kwargs: dict
     wait: bool
     lock: bool
+    retry: int = None
 
     def __post_init__(self):
-        self.retry = Setting.max_retry
+        self._timestamp = time.time_ns()
+        self._n_retried = 0
+        self.retry = self.retry or Setting.max_retry
 
     def __call__(self):
         lock = self.cls.lock() if self.lock else noop
@@ -132,17 +137,24 @@ class _Packet:
 
     def __lt__(self, other):
         if isinstance(other, _Packet):
-            return self.retry > other.retry
+            return (
+                self._n_retried,
+                self._timestamp,
+            ) < (
+                other._n_retried,
+                other._timestamp,
+            )
         return NotImplemented
 
 
 class _callback:
-    def __init__(self, func, wait: bool, lock: bool):
+    def __init__(self, func, wait: bool, lock: bool, retry: int):
         wraps(func)(self)
         self._func = func
         self._name = func.__name__
         self._wait = wait
         self._lock = lock
+        self._retry = retry
 
     def __call__(self, cls: type[Proxy], *args, **kwargs):
         match _Status.now():
@@ -157,6 +169,7 @@ class _callback:
                         kwargs,
                         wait=self._wait,
                         lock=self._lock,
+                        retry=self._retry,
                     )
                 )
 
@@ -171,7 +184,10 @@ def callback(
 ) -> Method[_CallbackP, _CallbackReturnT]: ...
 @overload
 def callback(
-    func: None = None, wait_for_return: bool = False, acquire_class_lock: bool = True
+    func: None = None,
+    wait_for_return: bool = False,
+    acquire_class_lock: bool = True,
+    max_retry: int = None,
 ) -> Callable[
     [Callable[Concatenate[Any, _CallbackP], _CallbackReturnT]],
     Method[_CallbackP, _CallbackReturnT],
@@ -180,11 +196,24 @@ def callback(
     func=None,
     wait_for_return: bool = False,
     acquire_class_lock: bool = True,
+    max_retry: int = None,
 ):
     if func is None:
-        return lambda func: callback(func, wait_for_return, acquire_class_lock)
+        return lambda func: callback(
+            func,
+            wait_for_return=wait_for_return,
+            acquire_class_lock=acquire_class_lock,
+            max_retry=max_retry,
+        )
     else:
-        return classmethod(_callback(func, wait_for_return, acquire_class_lock))
+        return classmethod(
+            _callback(
+                func,
+                wait=wait_for_return,
+                lock=acquire_class_lock,
+                retry=max_retry,
+            )
+        )
 
 
 class MonitorError(Exception):
@@ -303,9 +332,7 @@ class Reporter(_Singleton):
 
     def __init__(self, address: str):
         self._address = address
-        self._name = (
-            f"{_get_host()}/pid-{os.getpid()}/{status.context.current_process().name}"
-        )
+        self._name = f"{_get_host()}/pid-{os.getpid()}/{mp.current_process().name}"
 
         self._lock = Lock()
         self._jobs: PriorityQueue[_Packet] = PriorityQueue()
@@ -330,11 +357,11 @@ class Reporter(_Singleton):
 
     def _send_non_blocking(self):
         while (packet := self._jobs.get()) is not None:
-            packet.retry -= 1
+            packet._n_retried += 1
             try:
                 self._send(packet)
             except MonitorError:
-                if packet.retry >= 1:
+                if packet._n_retried < packet.retry:
                     self._jobs.put(packet)
 
     def send(self, packet: _Packet):
@@ -370,6 +397,10 @@ class Proxy(_Singleton, metaclass=_ProxyMeta):
         return cls._lock
 
 
-def connect_to_monitor(address: str):
-    Reporter.init(_parse_url(address))
+def connect_to_monitor(address: str | tuple = None):
+    if address is None:
+        address = (Setting.address, Setting.port)
+    elif not isinstance(address, tuple):
+        address = _parse_url(address)
+    Reporter.init(address)
     status.initializer.add_unique(_start_reporter)

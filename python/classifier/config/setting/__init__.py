@@ -88,7 +88,8 @@ class IO(Cascade):
 
 
 class Monitor(Cascade):
-    port: int = None
+    address: str = None
+    port: int = 12345
     max_retry: int = 3
 
     logging_level: int = 20

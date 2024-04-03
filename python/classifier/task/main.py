@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import sys
 from collections import deque
@@ -102,12 +103,12 @@ class EntryPoint:
         _, cls = self._fetch_module(f"{self.args[_MAIN][0]}.Main", _MAIN)
         if cls is None:
             raise AttributeError(f'Task "{self.args[_MAIN][0]}" not found')
+        self._fetch_all()
         self.main: Main = new(cls, self.args[_MAIN][1])
 
     def run(self, reproducible: Callable):
         from ..config.setting import IO as IOSetting
 
-        self._fetch_all()
         meta = self.main.run(self)
 
         if hasattr(self.main.opts, "save_state") and self.main.opts.save_state:
@@ -132,12 +133,36 @@ class EntryPoint:
 
 
 class Main(Task):
+    _standalone = False
+    _no_monitor = False
+
     argparser = ArgParser()
     argparser.add_argument(
         "--save-state",
         action="store_true",
         help="save global states to the output directory",
     )
+
+    def __init__(self):
+        super().__init__()
+        if not self._no_monitor:
+            from ..config.setting import Monitor as Setting
+
+            if Setting.address is None:
+                from ..monitor.logging import setup_main_logger
+                from ..process.monitor import Monitor
+
+                Monitor().start(self._standalone)
+                setup_main_logger()
+                address, port = Monitor.current()._address
+                logging.info(f"Started Monitor at {address}:{port}")
+            else:
+                from ..monitor.logging import setup_remote_logger
+                from ..process.monitor import connect_to_monitor
+
+                connect_to_monitor()
+                setup_remote_logger()
+                logging.info(f"Connecting to Monitor {Setting.address}:{Setting.port}")
 
     @interface
     def run(self, parser: EntryPoint) -> Optional[dict[str]]: ...

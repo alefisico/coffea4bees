@@ -28,6 +28,8 @@ def _walk_packages(base):
 
 
 class Main(main.Main):
+    _no_monitor = True
+
     _keys = " ".join(f"--{k}" for k in EntryPoint._keys)
     argparser = ArgParser(
         prog="help",
