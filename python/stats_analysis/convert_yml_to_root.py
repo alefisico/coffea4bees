@@ -26,8 +26,35 @@ def yml_to_TH1( coffea_hist, iname, rebin ):
 
     return rHist
 
+def create_root_file(file_to_convert, histos, output_dir):
 
-def create_combine_root_file( file_to_convert, histos, rebin, classifier, output_dir, plot, merge_2016=False ):
+    coffea_hists = yaml.safe_load(open(file_to_convert, 'r'))
+
+    root_hists = {}
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    output = output_dir + "/" + (file_to_convert.split("/")
+                                 [-1].replace(".yml", "")) + ".root"
+
+    root_file = ROOT.TFile(output, 'recreate')
+
+    for ih in coffea_hists.keys():
+        for iprocess in coffea_hists[ih].keys():
+            for iy in coffea_hists[ih][iprocess].keys():
+                for itag in coffea_hists[ih][iprocess][iy].keys():
+                    for iregion in coffea_hists[ih][iprocess][iy][itag].keys():
+                        this_hist = yml_to_TH1(
+                            coffea_hists[ih][iprocess][iy][itag][iregion],
+                            ih.replace(".", "_") + "_" + iprocess + "_" + iy + "_" + itag + "_" + iregion,
+                            1)
+                        this_hist.Write()
+
+    root_file.Close()
+    logging.info("\n File " + output + " created.")
+
+
+def create_combine_root_file( file_to_convert, rebin, classifier, output_dir, plot, merge_2016=False ):
 
     coffea_hists = yaml.safe_load(open(file_to_convert, 'r'))
 
@@ -144,6 +171,8 @@ if __name__ == '__main__':
                         default=["SvB_MA", "SvB"], help='Classifier to make histograms.')
     parser.add_argument('-f', '--file', dest='file_to_convert',
                         default="histos/histAll.yml", help="File with coffea hists")
+    parser.add_argument('--make_combine_inputs', dest='make_combine_inputs', action="store_true",
+                        default=False, help="Make a combine output root files")
     parser.add_argument('--plot', dest='plot', action="store_true",
                         default=False, help="Make a test plot with root objects")
     parser.add_argument('--merge2016', dest='merge_2016', action="store_true",
@@ -154,7 +183,17 @@ if __name__ == '__main__':
     logging.info("\nRunning with these parameters: ")
     logging.info(args)
 
-    rebin = {'zz':  4, 'zh':  5, 'hh': 10}  ### temp
+    if args.make_combine_inputs:
+        rebin = {'zz': 4, 'zh': 5, 'hh': 10}  # temp
+        logging.info("Creating root files for combine")
+        create_combine_root_file(
+            args.file_to_convert,
+            rebin,
+            args.classifier,
+            args.output_dir,
+            args.plot,
+            args.merge_2016)
 
-    logging.info("Creating root files for combine")
-    create_combine_root_file( args.file_to_convert, args.histos, rebin, args.classifier, args.output_dir, args.plot, args.merge_2016 )
+    else:
+        logging.info("Creating root files from yml")
+        create_root_file(args.file_to_convert, args.histos, args.output_dir)
