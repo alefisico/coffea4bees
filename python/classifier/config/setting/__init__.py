@@ -90,6 +90,8 @@ class IO(Cascade):
 class Monitor(Cascade):
     port: int = None
     max_retry: int = 3
+
+    logging_level: int = 20
     socket_timeout: float = None
 
     @classmethod

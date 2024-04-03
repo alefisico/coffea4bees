@@ -136,6 +136,57 @@ class _Packet:
         return NotImplemented
 
 
+class _callback:
+    def __init__(self, func, wait: bool, lock: bool):
+        wraps(func)(self)
+        self._func = func
+        self._name = func.__name__
+        self._wait = wait
+        self._lock = lock
+
+    def __call__(self, cls: type[Proxy], *args, **kwargs):
+        match _Status.now():
+            case _Status.Monitor:
+                return self._func(cls.init(), *args, **kwargs)
+            case _Status.Reporter:
+                return Reporter.current().send(
+                    _Packet(
+                        cls,
+                        self._name,
+                        args,
+                        kwargs,
+                        wait=self._wait,
+                        lock=self._lock,
+                    )
+                )
+
+
+_CallbackP = ParamSpec("_CallbackP")
+_CallbackReturnT = TypeVar("_CallbackReturnT")
+
+
+@overload
+def callback(
+    func: Callable[Concatenate[Any, _CallbackP], _CallbackReturnT], /
+) -> Method[_CallbackP, _CallbackReturnT]: ...
+@overload
+def callback(
+    func: None = None, wait_for_return: bool = False, acquire_class_lock: bool = True
+) -> Callable[
+    [Callable[Concatenate[Any, _CallbackP], _CallbackReturnT]],
+    Method[_CallbackP, _CallbackReturnT],
+]: ...
+def callback(
+    func=None,
+    wait_for_return: bool = False,
+    acquire_class_lock: bool = True,
+):
+    if func is None:
+        return lambda func: callback(func, wait_for_return, acquire_class_lock)
+    else:
+        return classmethod(_callback(func, wait_for_return, acquire_class_lock))
+
+
 class MonitorError(Exception):
     __module__ = Exception.__module__
 
@@ -146,6 +197,7 @@ class Monitor(_Singleton):
     def __init__(self):
         # states
         self._accepting = False
+        self._lock = Lock()
 
         # listener
         if Setting.port is None:
@@ -158,6 +210,7 @@ class Monitor(_Singleton):
         # clients
         self._connections: list[Connection] = []
         self._handlers: list[Thread] = []
+        self._reporters: dict[str, int] = {}
 
     @classmethod
     def start(cls, standalone=False):
@@ -224,6 +277,26 @@ class Monitor(_Singleton):
                 _close_connection(connection)
                 break
 
+    @classmethod
+    def lock(cls):
+        return cls.current()._lock
+
+    @callback
+    def register(cls, name: str):
+        index = len(cls.current()._reporters)
+        cls.current()._reporters[name] = index
+        logging.info(f'"{name}" is registered as \[#{index}]')
+
+    @classmethod
+    def registered(cls, name: str):
+        total = len(str(len(cls.current()._reporters)))
+        index = cls.current()._reporters.get(name)
+        if index is None:
+            index = "?" * (total + 1)
+        else:
+            index = f"#{index:0{total}d}"
+        return index
+
 
 class Reporter(_Singleton):
     __allowed_process__ = _Status.Fresh
@@ -239,6 +312,7 @@ class Reporter(_Singleton):
         self._sender: Connection = None
         self._thread = Thread(target=self._send_non_blocking, daemon=True)
         self._thread.start()
+        Monitor.register(self._name)
 
     def _send(self, packet: _Packet):
         with self._lock:
@@ -294,57 +368,6 @@ class Proxy(_Singleton, metaclass=_ProxyMeta):
         if cls._lock is None:
             cls._lock = Lock()
         return cls._lock
-
-
-class _callback:
-    def __init__(self, func, wait: bool, lock: bool):
-        wraps(func)(self)
-        self._func = func
-        self._name = func.__name__
-        self._wait = wait
-        self._lock = lock
-
-    def __call__(self, cls: type[Proxy], *args, **kwargs):
-        match _Status.now():
-            case _Status.Monitor:
-                return self._func(cls.init(), *args, **kwargs)
-            case _Status.Reporter:
-                return Reporter.current().send(
-                    _Packet(
-                        cls,
-                        self._name,
-                        args,
-                        kwargs,
-                        wait=self._wait,
-                        lock=self._lock,
-                    )
-                )
-
-
-_CallbackP = ParamSpec("_CallbackP")
-_CallbackReturnT = TypeVar("_CallbackReturnT")
-
-
-@overload
-def callback(
-    func: Callable[Concatenate[Any, _CallbackP], _CallbackReturnT], /
-) -> Method[_CallbackP, _CallbackReturnT]: ...
-@overload
-def callback(
-    func: None = None, wait_for_return: bool = False, acquire_class_lock: bool = True
-) -> Callable[
-    [Callable[Concatenate[Any, _CallbackP], _CallbackReturnT]],
-    Method[_CallbackP, _CallbackReturnT],
-]: ...
-def callback(
-    func=None,
-    wait_for_return: bool = False,
-    acquire_class_lock: bool = True,
-):
-    if func is None:
-        return lambda func: callback(func, wait_for_return, acquire_class_lock)
-    else:
-        return classmethod(_callback(func, wait_for_return, acquire_class_lock))
 
 
 def connect_to_monitor(address: str):
