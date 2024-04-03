@@ -44,9 +44,12 @@ def apply_object_selection_4b( event, year, isMC, dataset, corrections_metadata,
                for istep in ['L1FastJet', 'L2Relative', 'L2L3Residual', 'L3Absolute'] ]      ###### AGE: to be reviewed for data, but should be remove with jsonpog
     if isMC:
         juncWS += corrections_metadata["JERC"][1:]
+        jet_variations = init_jet_factory(juncWS, event, isMC)  #### currently creates the pt_raw branch
+    
+    # if 'fixedGridRhoFastjetAll' in event.fields:
+    #     jet_tmp = jet_corrections( event.Jet, event.fixedGridRhoFastjetAll, jec_type=['L1L2L3Res'])   # AGE: jsonpog+correctionlib but not final, that is why it is not used yet
 
     if isMixedData:
-
         event['Jet', 'pileup'] = ((event.Jet.puId < 0b110) & (event.Jet.pt < 50)) | ((np.abs(event.Jet.eta) > 2.4) & (event.Jet.pt < 40))
         event['Jet', 'selected_loose'] = (event.Jet.pt >= 20) & ~event.Jet.pileup & (event.Jet.jetId>=2)
         event['Jet', 'selected'] = (event.Jet.pt >= 40) & (np.abs(event.Jet.eta) <= 2.4) & ~event.Jet.pileup & (event.Jet.jetId>=2)

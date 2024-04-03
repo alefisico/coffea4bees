@@ -160,6 +160,10 @@ if __name__ == '__main__':
                     if 'data' not in dataset:
                         metadata_dataset[dataset]['genEventSumw'] = metadata['datasets'][dataset][year][config_runner['data_tier']]['sumw']
                     meta_files = metadata['datasets'][dataset][year][config_runner['data_tier']]['files']
+            # if not dataset.endswith('data'):
+            #     if config_runner['data_tier'].startswith('pico'):
+            #         metadata_dataset[dataset]['genEventSumw'] = metadata['datasets'][dataset][year][config_runner['data_tier']]['sumw']
+            #         meta_files = metadata['datasets'][dataset][year][config_runner['data_tier']]['files']
                 else:
                     meta_files = metadata['datasets'][dataset][year][config_runner['data_tier']]
 
