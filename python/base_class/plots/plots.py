@@ -419,12 +419,19 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
             hist_colors_fill.append(_colors[ic])
             hist_labels.append(label + " " + _cut)
             hist_types. append("errorbar")
-
+            
+            if type(codes["region"][region]) is list:
+                region_dict = {"region": [hist.loc(_r) for _r in codes["region"][region]] }
+            else:
+                region_dict = {"region": hist.loc(codes["region"][region])} ### check this is a list
+        
             this_cut_dict = get_cut_dict(_cut, cutList)
-
             this_hist_dict = process_dict | tag_dict | region_dict | year_dict | var_dict | this_cut_dict
 
-            hists.append(input_hist_File['hists'][var][this_hist_dict])
+            this_hist = input_hist_File['hists'][var][this_hist_dict]
+            if len(this_hist.shape) == 2:
+                this_hist = this_hist[sum,:]
+            hists.append(this_hist)
             hists[-1] *= process_config.get("scalefactor", 1.0)
 
     #
@@ -459,6 +466,11 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
         if kwargs.get("debug", False):
             print_list_debug_info(process, this_tag, cut, region)
 
+        if type(codes["region"][region]) is list:
+                region_dict = {"region": [hist.loc(_r) for _r in codes["region"][region]] }
+        else:
+                region_dict = {"region": hist.loc(codes["region"][region])} ### check this is a list
+
         this_hist_dict = process_dict | tag_dict | region_dict | year_dict | var_dict | cut_dict
 
         fileLabels = kwargs.get("fileLabels", [])
@@ -471,7 +483,12 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
             else:
                 hist_labels.append(label + " file" + str(iF + 1))
             hist_types. append("errorbar")
-            hists.append(input_hist_File[iF]['hists'][var][this_hist_dict])
+
+            this_hist = input_hist_File[iF]['hists'][var][this_hist_dict]
+            if len(this_hist.shape) == 2:
+                this_hist = this_hist[sum,:]
+            hists.append(this_hist)
+
             hists[-1] *= process_config.get("scalefactor", 1.0)
 
     #
@@ -494,9 +511,19 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
             this_process_dict = {"process": _proc_conf["process"]}
             this_tag_dict     = {"tag":     hist.loc(this_tag)}
 
+            if type(codes["region"][region]) is list:
+                region_dict = {"region": [hist.loc(_r) for _r in codes["region"][region]] }
+            else:
+                region_dict = {"region": hist.loc(codes["region"][region])} ### check this is a list
+
             this_hist_dict = this_process_dict | this_tag_dict | region_dict | year_dict | var_dict | cut_dict
 
-            hists.append(input_hist_File['hists'][var][this_hist_dict])
+            this_hist = input_hist_File['hists'][var][this_hist_dict]
+            if len(this_hist.shape) == 2:
+                this_hist = this_hist[sum,:]
+            hists.append(this_hist)
+            
+            # hists.append(input_hist_File['hists'][var][this_hist_dict])
             hists[-1] *= _proc_conf.get("scalefactor", 1.0)
 
     #
@@ -517,9 +544,17 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
 
             this_var_dict = {varName: hist.rebin(rebin)}
 
+            if type(codes["region"][region]) is list:
+                region_dict = {"region": [hist.loc(_r) for _r in codes["region"][region]] }
+            else:
+                region_dict = {"region": hist.loc(codes["region"][region])} ### check this is a list
+
             this_hist_dict = process_dict | tag_dict | region_dict | year_dict | this_var_dict | cut_dict
 
-            hists.append(input_hist_File['hists'][_var][this_hist_dict])
+            this_hist = input_hist_File['hists'][_var][this_hist_dict]
+            if len(this_hist.shape) == 2:
+                this_hist = this_hist[sum,:]
+            hists.append(this_hist)
             hists[-1] *= process_config.get("scalefactor", 1.0)
 
     else:

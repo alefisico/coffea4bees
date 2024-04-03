@@ -1,6 +1,6 @@
 hists:
-        mixeddata:
-                process: mixeddata
+        mix_v0:
+                process: mix_v0
                 tag: fourTag
                 year: RunII
                 label: Four-tag Data
