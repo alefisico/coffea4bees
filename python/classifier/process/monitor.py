@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 import socket
 from dataclasses import dataclass
@@ -123,8 +124,11 @@ class _Packet:
 
     def __call__(self):
         lock = self.cls.lock() if self.lock else noop
-        with lock:
-            return getattr(self.cls, self.func)(*self.args, **self.kwargs)
+        try:
+            with lock:
+                return getattr(self.cls, self.func)(*self.args, **self.kwargs)
+        except Exception as e:
+            logging.error(e)
 
     def __lt__(self, other):
         if isinstance(other, _Packet):

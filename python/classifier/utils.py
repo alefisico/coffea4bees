@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import importlib
 import logging
+from fractions import Fraction
 from functools import cache
 from typing import Callable, Iterable, TypeVar
 
@@ -82,3 +85,7 @@ def append_unique_instance(collection: list[_ItemT], item: _ItemT | type[_ItemT]
         return collection
     collection.append(item)
     return collection
+
+
+def keep_fraction(fraction: Fraction, indices):
+    return (indices % fraction.denominator) < fraction.numerator

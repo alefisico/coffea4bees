@@ -182,8 +182,7 @@ class FvT(_Common):
     argparser = ArgParser()
     argparser.add_argument(
         "--ttbar-3b-prescale",
-        type=float,
-        default=10.0,
+        default="10",
         help="prescale 3b ttbar events",
     )
 
@@ -206,7 +205,9 @@ class FvT(_Common):
                 [
                     _FvT_ttbar_selection,
                     prescale(
-                        self.opts.ttbar_3b_prescale, selection=_FvT_ttbar_3b_prescale
+                        scale=self.opts.ttbar_3b_prescale,
+                        selection=_FvT_ttbar_3b_prescale,
+                        seed=("ttbar", 0),
                     ),
                     add_label_index_from_column(threeTag="t3", fourTag="t4"),
                 ],

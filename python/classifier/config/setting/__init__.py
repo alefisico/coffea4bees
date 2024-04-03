@@ -87,7 +87,7 @@ class IO(Cascade):
         return EOS(value).mkdir(recursive=True)
 
 
-class Scheduler(Cascade):
+class Monitor(Cascade):
     port: int = None
     max_retry: int = 3
     socket_timeout: float = None
