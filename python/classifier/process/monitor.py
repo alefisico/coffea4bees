@@ -312,18 +312,16 @@ class Monitor(_Singleton):
 
     @callback
     def register(cls, name: str):
-        index = len(cls.current()._reporters)
+        index = f"#{len(cls.current()._reporters)}"
         cls.current()._reporters[name] = index
-        logging.info(f'"{name}" is registered as \[#{index}]')
+        logging.info(f'"{name}" is registered as \[{index}]')
+        return index
 
     @classmethod
     def registered(cls, name: str):
-        total = len(str(len(cls.current()._reporters)))
         index = cls.current()._reporters.get(name)
         if index is None:
-            index = "?" * (total + 1)
-        else:
-            index = f"#{index:0{total}d}"
+            index = cls.register(name)
         return index
 
 
