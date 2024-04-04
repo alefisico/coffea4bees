@@ -1,14 +1,6 @@
-FROM coffeateam/coffea-dask:0.7.22-py3.10-g7f049
+FROM coffeateam/coffea-dask:0.7.22-py3.10-ga998f
 
 RUN apt-get update && apt-get -y install poppler-utils 
-#RUN yum install -y wget fontconfig && cd ~ && \
-#    wget https://poppler.freedesktop.org/poppler-0.13.4.tar.gz --no-check-certificate && \
-#    tar xf poppler-0.13.4.tar.gz && \
-#    cd poppler-0.13.4 && \
-#    yum install -y libjpeg libjpeg-devel && \
-#    ./configure && \ #--enable-libjpeg #&& \
-#    make && make install
-#RUN yum install -y poppler-utils
 RUN pip install --upgrade pip
 RUN pip install rucio-clients pycodestyle 
 
