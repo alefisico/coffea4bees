@@ -44,6 +44,12 @@ class EntryPoint:
     _preserved = [f"--{k}" for k in _keys]
 
     @classmethod
+    def get_main(cls):
+        if len(sys.argv) > 1:
+            return sys.argv[1]
+        return _CLASSIFIER
+
+    @classmethod
     def _fetch_subargs(cls, args: deque):
         subargs = []
         while len(args) > 0 and args[0] not in cls._preserved:
@@ -114,7 +120,7 @@ class EntryPoint:
         if hasattr(self.main.opts, "save_state") and self.main.opts.save_state:
             from ..config.setting import save
 
-            save.parse([IOSetting.output / "state.pkl"])
+            save.parse([IOSetting.output / IOSetting.file_states])
 
         if meta is not None:
             from base_class.utils.json import DefaultEncoder
@@ -124,7 +130,8 @@ class EntryPoint:
                 "reproducible": reproducible(),
             }
             with fsspec.open(
-                IOSetting.output / f"{self.args[_MAIN][0]}.json", "wt"
+                IOSetting.output / IOSetting.file_metadata,
+                "wt",
             ) as f:
                 json.dump(meta, f, cls=DefaultEncoder)
 
@@ -142,6 +149,11 @@ class Main(Task):
         action="store_true",
         help="save global states to the output directory",
     )
+    argparser.add_argument(
+        "--save-logs",
+        action="store_true",
+        help="save logs to the output directory",
+    )  # TODO add console to capture logs
 
     def __init__(self):
         super().__init__()

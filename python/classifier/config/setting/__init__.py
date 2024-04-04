@@ -78,10 +78,27 @@ class setup(Cascade):
 
 
 class IO(Cascade):
-    output: EOS = "."
+    timestamp: str = "%Y-%m-%dT%H-%M-%S"
+
+    output: EOS = "./{main}-{timestamp}/"
+
+    file_logs: str = "logs.html"
+    file_states: str = "states.pkl"
+    file_metadata: str = "metadata.json"
 
     @classmethod
-    def get__output(cls, value: PathLike):
+    def set__output(cls, value: str):
+        from datetime import datetime
+
+        from classifier.task import EntryPoint
+
+        return value.format(
+            main=EntryPoint.get_main(),
+            timestamp=datetime.now().strftime(cls.timestamp),
+        )
+
+    @classmethod
+    def get__output(cls, value: str):
         from base_class.system.eos import EOS
 
         return EOS(value).mkdir(recursive=True)

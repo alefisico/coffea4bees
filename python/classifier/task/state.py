@@ -38,11 +38,14 @@ class _CachedStateMeta(type):
         return super().__getattribute__(__name)
 
     def __setattr__(self, __name: str, __value: Any):
-        super().__setattr__(__name, __value)
+        __new = None
         if not _is_private(__name):
             parser = vars(self).get(f"set__{__name}")
             if isinstance(parser, classmethod):
-                parser.__func__(self, __value)
+                __new = parser.__func__(self, __value)
+        if __new is not None:
+            __value = __new
+        super().__setattr__(__name, __value)
 
 
 class GlobalState(metaclass=_CachedStateMeta):
@@ -78,6 +81,12 @@ status.initializer.add_unique(_share_global_state)
 
 
 class Cascade(GlobalState, Static):
+    def __init_subclass__(cls):
+        super().__init_subclass__()
+        for k, v in vars(cls).items():
+            if _is_state((k, v)):
+                setattr(cls, k, v)
+
     @classmethod
     def __mod_name__(cls):
         return ".".join(f"{cls.__module__}.{cls.__name__}".split(".")[3:])
