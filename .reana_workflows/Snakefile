@@ -9,7 +9,8 @@ TIMESTAMP = datetime.now().strftime('%Y%m%d_%H%M%S')
 rule all:
     input:
         "output/RunII/passPreSel/fourTag/SB/nPVs.pdf",
-        expand("output/histAll_{sample}_{iy}.coffea", sample=config['dataset'], iy=config['year'])
+        expand("output/histAll_{sample}_{iy}.coffea", sample=config['dataset'], iy=config['year']),
+        "output/datacards/hists_SvB.root"
 
 rule analysis:
     output:
@@ -26,7 +27,7 @@ rule analysis:
 cd python/ 
 echo "Running {wildcards.sample} {wildcards.iy}"
 #sed -i 's/run_topreco.*/run_topreco : false/' analysis/metadata/HH4b.yml
-python runner.py -d {wildcards.sample} -p analysis/processors/processor_HH4b.py -y {wildcards.iy} -o histAll_{wildcards.sample}_{wildcards.iy}.coffea -op ../output/ -m metadata/datasets_HH4b_cernbox.yml
+python runner.py -d {wildcards.sample} -p analysis/processors/processor_HH4b.py -y {wildcards.iy} -o histAll_{wildcards.sample}_{wildcards.iy}.coffea -op ../output/ -m metadata/datasets_HH4b_cernbox.yml --dask
 cp /tmp/coffea4bees-dask-report-* ../output/coffea4bees-dask-report_{wildcards.sample}_{wildcards.iy}.html
         """
 
@@ -67,3 +68,31 @@ python analysis/makePlots.py ../output/histAll.coffea -o ../output/ -m analysis/
 python .php-plots/bin/pb_deploy_plots.py ../output/RunII/ /eos/user/a/algomez/work/HH4b/reana/{TIMESTAMP}/ -r -c
         """
         
+rule convert_hist_to_yml:
+    input:
+        "output/histAll.coffea"
+    output:
+        "output/histAll.yml"
+    container:
+        "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
+    resources:
+        compute_backend="kubernetes",
+        kubernetes_memory_limit="8Gi"
+    shell:
+        """
+python python/stats_analysis/convert_hist_to_yaml.py -o {output} -i {input}
+        """
+
+rule convert_yml_to_hist:
+    input:
+        "output/histAll.yml"
+    output:
+        "output/datacards/hists_SvB.root"
+    container:
+        "gitlab-registry.cern.ch/cms-cloud/combine-standalone:v9.2.0"
+    resources:
+        compute_backend="kubernetes"
+    shell:
+        """
+python python/stats_analysis/convert_yml_to_root.py --classifier SvB_MA SvB -f output/histAll.yml --merge2016 --output_dir output/datacards/ --plot --make_combine_inputs
+        """
