@@ -69,7 +69,9 @@ def _savefig(fig, var, *args):
 
     if not os.path.exists(outputPath):
         os.makedirs(outputPath)
-    fig.savefig(outputPath + "/" + var.replace(".", '_') + ".pdf")
+
+    varStr = var if type(var) == str else "_vs_".join(var)
+    fig.savefig(outputPath + "/" + varStr.replace(".", '_') + ".pdf")
     return
 
 
