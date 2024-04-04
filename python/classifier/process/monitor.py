@@ -242,12 +242,12 @@ class Monitor(_Singleton):
         self._reporters: dict[str, int] = {}
 
     @classmethod
-    def start(cls, standalone=False):
+    def start(cls):
         self = cls.init()
         if self._listener is None:
             self._listener = (
                 Listener(self._address),
-                Thread(target=self._listen, daemon=(not standalone)),
+                Thread(target=self._listen, daemon=True),
             )
             self._listener[1].start()
             status.initializer.add_unique(_start_reporter)

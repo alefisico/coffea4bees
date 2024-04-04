@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Optional
 
 import fsspec
+import rich.terminal_theme as themes
 
 from ..utils import import_
 from .dataset import Dataset
@@ -117,10 +118,20 @@ class EntryPoint:
 
         meta = self.main.run(self)
 
-        if hasattr(self.main.opts, "save_state") and self.main.opts.save_state:
+        if self.main.flag("save_state"):
             from ..config.setting import save
 
             save.parse([IOSetting.output / IOSetting.file_states])
+
+        if self.main.flag("save_logs"):
+            from ..monitor.logging import RemoteHandler
+
+            if RemoteHandler.console is not None:
+                with fsspec.open(
+                    IOSetting.output / IOSetting.file_logs,
+                    "wt",
+                ) as f:
+                    f.write(RemoteHandler.console.export_html(theme=themes.MONOKAI))
 
         if meta is not None:
             from base_class.utils.json import DefaultEncoder
@@ -140,7 +151,6 @@ class EntryPoint:
 
 
 class Main(Task):
-    _standalone = False
     _no_monitor = False
 
     argparser = ArgParser()
@@ -153,7 +163,7 @@ class Main(Task):
         "--save-logs",
         action="store_true",
         help="save logs to the output directory",
-    )  # TODO add console to capture logs
+    )
 
     def __init__(self):
         super().__init__()
@@ -164,7 +174,7 @@ class Main(Task):
                 from ..monitor.logging import setup_main_logger
                 from ..process.monitor import Monitor
 
-                Monitor().start(self._standalone)
+                Monitor().start()
                 setup_main_logger()
                 address, port = Monitor.current()._address
                 logging.info(f"Started Monitor at {address}:{port}")

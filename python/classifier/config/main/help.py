@@ -56,7 +56,7 @@ class Main(main.Main):
 
     def __init__(self):
         super().__init__()
-        self._console = Console(record=True)
+        self._console = Console(record=True, markup=True)
 
     def _print(self, *args, **kwargs):
         self._console.print(*args, **kwargs)
