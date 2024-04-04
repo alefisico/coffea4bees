@@ -8,7 +8,7 @@ from classifier.task.state import Cascade, _share_global_state
 from classifier.typetools import dict_proxy
 
 if TYPE_CHECKING:
-    from base_class.system.eos import EOS, PathLike
+    from base_class.system.eos import EOS
 
 _SETTING = "setting"
 _SPECIAL = "[red]\[special][/red]"
@@ -88,13 +88,11 @@ class IO(Cascade):
 
     @classmethod
     def set__output(cls, value: str):
-        from datetime import datetime
-
-        from classifier.task import EntryPoint
+        from ..state import RunInfo
 
         return value.format(
-            main=EntryPoint.get_main(),
-            timestamp=datetime.now().strftime(cls.timestamp),
+            main=RunInfo.main_task,
+            timestamp=RunInfo.startup_time.strftime(cls.timestamp),
         )
 
     @classmethod

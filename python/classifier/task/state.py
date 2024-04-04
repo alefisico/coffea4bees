@@ -27,22 +27,22 @@ def _is_state(var: tuple[str, Any]):
 class _CachedStateMeta(type):
     __cached_states__ = {}
 
-    def __getattribute__(self, __name: str):
+    def __getattribute__(cls, __name: str):
         if not _is_private(__name):
-            value = vars(self).get(__name)
-            parser = vars(self).get(f"get__{__name}")
+            value = vars(cls).get(__name)
+            parser = vars(cls).get(f"get__{__name}")
             if isinstance(parser, classmethod):
-                if __name not in self.__cached_states__:
-                    self.__cached_states__[__name] = parser.__func__(self, value)
-                return self.__cached_states__[__name]
+                if __name not in cls.__cached_states__:
+                    cls.__cached_states__[__name] = parser.__func__(cls, value)
+                return cls.__cached_states__[__name]
         return super().__getattribute__(__name)
 
-    def __setattr__(self, __name: str, __value: Any):
+    def __setattr__(cls, __name: str, __value: Any):
         __new = None
         if not _is_private(__name):
-            parser = vars(self).get(f"set__{__name}")
+            parser = vars(cls).get(f"set__{__name}")
             if isinstance(parser, classmethod):
-                __new = parser.__func__(self, __value)
+                __new = parser.__func__(cls, __value)
         if __new is not None:
             __value = __new
         super().__setattr__(__name, __value)

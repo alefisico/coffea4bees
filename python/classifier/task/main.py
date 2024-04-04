@@ -5,6 +5,7 @@ import logging
 import os
 import sys
 from collections import deque
+from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Optional
 
@@ -44,12 +45,6 @@ class EntryPoint:
     _preserved = [f"--{k}" for k in _keys]
 
     @classmethod
-    def get_main(cls):
-        if len(sys.argv) > 1:
-            return sys.argv[1]
-        return _CLASSIFIER
-
-    @classmethod
     def _fetch_subargs(cls, args: deque):
         subargs = []
         while len(args) > 0 and args[0] not in cls._preserved:
@@ -86,6 +81,11 @@ class EntryPoint:
                         self.mods[cat].append(new(cls, opts))
 
     def __init__(self):
+        from ..config.state import RunInfo
+
+        RunInfo.startup_time = datetime.now()
+        RunInfo.main_task = sys.argv[1]
+
         self.entrypoint = Path(sys.argv[0]).name
         self.cmd = " ".join(sys.argv)
         self.args: dict[str, list[tuple[str, list[str]]]] = {k: [] for k in self._keys}

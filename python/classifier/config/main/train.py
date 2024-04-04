@@ -55,7 +55,6 @@ class Main(SelectDevice, LoadTrainingSets):
 
         # load datasets in parallel
         datasets = self.load_training_sets(parser)
-        # TODO test below with new skimmed data
         # initialize datasets in parallel
         m_initializer = parser.mods["model"]
         timer = datetime.now()
