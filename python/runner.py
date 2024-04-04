@@ -276,7 +276,7 @@ if __name__ == '__main__':
         executor_args["status"] = False
         executor = processor.dask_executor
     else:
-        logging.info(f"\nRunning futures executor (Dask client is launch for performance report only) ")
+        logging.info(f"\nRunning futures executor")
         # to run with processor futures_executor ()
         executor_args['workers'] = config_runner['condor_cores']
         executor = processor.futures_executor

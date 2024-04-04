@@ -32,18 +32,20 @@ def apply_object_selection_4b( event, year, isMC, dataset, corrections_metadata,
     # Adding electrons (loose electron id)
     # https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedElectronIdentificationRun2
     #
-    if not isMixedData:
+    if 'Electron' in event.fields:
         event['Electron', 'selected'] = (event.Electron.pt > 15) & (abs(event.Electron.eta) < 2.5) & (event.Electron.pfRelIso03_all < 0.15) & getattr(event.Electron, ('mvaFall17V2Iso_WP90' if year.startswith('UL') else 'mvaIso_WP90' ) )
         event['nElectron_selected'] = ak.sum(event.Electron.selected, axis=1)
         event['selElec'] = event.Electron[event.Electron.selected]
+        selLepton = ak.concatenate( [event.selElec, event.selMuon], axis=1 )
+    else: selLepton = event.selMuon
 
     #
     # Calculate and apply Jet Energy Calibration
     #
-    juncWS = [ corrections_metadata["JERC"][0].replace('STEP', istep)
-               for istep in ['L1FastJet', 'L2Relative', 'L2L3Residual', 'L3Absolute'] ]      ###### AGE: to be reviewed for data, but should be remove with jsonpog
-    if isMC:
-        juncWS += corrections_metadata["JERC"][1:]
+#    juncWS = [ corrections_metadata["JERC"][0].replace('STEP', istep)
+#               for istep in ['L1FastJet', 'L2Relative', 'L2L3Residual', 'L3Absolute'] ]      ###### AGE: to be reviewed for data, but should be remove with jsonpog
+#    if isMC:
+#        juncWS += corrections_metadata["JERC"][1:]
 
     if isMixedData:
 
@@ -52,12 +54,10 @@ def apply_object_selection_4b( event, year, isMC, dataset, corrections_metadata,
         event['Jet', 'selected'] = (event.Jet.pt >= 40) & (np.abs(event.Jet.eta) <= 2.4) & ~event.Jet.pileup & (event.Jet.jetId>=2)
 
     else:
-        jet_variations = init_jet_factory(juncWS, event, isMC)  #### currently creates the pt_raw branch
-#    jet_tmp = jet_corrections( event.Jet, event.fixedGridRhoFastjetAll, jec_type=['L1L2L3Res'])   # AGE: jsonpog+correctionlib but not final, that is why it is not used yet
+        #jet_variations = init_jet_factory(juncWS, event, isMC)  #### currently creates the pt_raw branch
+        #jet_tmp = jet_corrections( event.Jet, event.fixedGridRhoFastjetAll, jec_type=['L1L2L3Res'])   # AGE: jsonpog+correctionlib but not final, that is why it is not used yet
 
-        event['Jet', 'calibration'] = event.Jet.pt / ( 1 if 'data' in dataset else event.Jet.pt_raw )    # AGE: I include the mix condition, I think it is wrong, to check later
-    # print(f'calibration nominal: \n{ak.mean(event.Jet.calibration)}')
-        selLepton = ak.concatenate( [event.selElec, event.selMuon], axis=1 )
+        event['Jet', 'calibration'] = event.Jet.pt / ( event.Jet.pt_raw if 'pt_raw' in event.Jet.fields else ak.full_like(event.Jet.pt, 1) )
         event['Jet', 'lepton_cleaned'] = drClean( event.Jet, selLepton )[1]  ### 0 is the collection of jets, 1 is the flag
 
         event['Jet', 'pileup'] = ((event.Jet.puId < 0b110) & (event.Jet.pt < 50)) | ((np.abs(event.Jet.eta) > 2.4) & (event.Jet.pt < 40))
