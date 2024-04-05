@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from base_class.system.eos import EOS, PathLike
-from classifier.process import is_poxis
 from classifier.task import GlobalState
 
 if TYPE_CHECKING:
@@ -33,6 +32,4 @@ class RepoInfo:
         if not path.isin(cls._local):
             return str(path)
         path = path.relative_to(cls._local)
-        if not is_poxis():
-            path = path.replace("\\", "/")
         return f"{cls.url}{path}"

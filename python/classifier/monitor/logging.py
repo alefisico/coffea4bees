@@ -1,25 +1,95 @@
-import logging
+from __future__ import annotations
 
+import logging
+import re
+
+from rich._log_render import LogRender
 from rich.console import Console
+from rich.logging import RichHandler
+from rich.table import Table
+from rich.text import Text
 
 from ..config.setting import Monitor as Setting
 from ..config.state import RepoInfo
 from ..process import status
 from ..process.monitor import Monitor, Reporter, callback
-from ._rich_logging import RichHandler
+
+
+class _LogRender(LogRender):
+    _url_pattern = re.compile(r"^([\w]+)://.*$")
+    _https = frozenset({"https", "http"})
+
+    @classmethod
+    def _parse_link(cls, path: str, no: str):
+        if path:
+            if (match := cls._url_pattern.match(path)) is None:
+                path = f"file://{path}"
+            elif no and (match.groups()[0] in cls._https):
+                no = f"L{no}"
+        return path, no
+
+    def __call__(
+        self,
+        *args,
+        path: str = None,
+        line_no: str = None,
+        link_path: str = None,
+        **kwargs,
+    ) -> Table:
+        table = super().__call__(
+            *args, **kwargs, path=path, line_no=line_no, link_path=link_path
+        )
+        if self.show_path and path:
+            link_path, line_no = self._parse_link(link_path, line_no)
+            path_text = Text()
+            path_text.append(path, style=f"link {link_path}" if link_path else "")
+            if line_no:
+                path_text.append(":")
+                path_text.append(
+                    f"{line_no}",
+                    style=f"link {link_path}#{line_no}" if link_path else "",
+                )
+            table.columns[-1]._cells[-1] = path_text
+        return table
+
+
+class _RichHandler(RichHandler):
+    def __init__(
+        self,
+        *args,
+        show_time: bool = True,
+        omit_repeated_times: bool = True,
+        show_level: bool = True,
+        show_path: bool = True,
+        log_time_format: str = "[%x %X]",
+        **kwargs,
+    ):
+        super().__init__(*args, **kwargs)
+        self._log_render = _LogRender(
+            show_time=show_time,
+            show_level=show_level,
+            show_path=show_path,
+            time_format=log_time_format,
+            omit_repeated_times=omit_repeated_times,
+            level_width=None,
+        )
+
+    def emit(self, record: logging.LogRecord):
+        if _LogRender._url_pattern.match(record.pathname) is None:
+            record.pathname = RepoInfo.get_url(record.pathname)
+        return super().emit(record)
 
 
 class RemoteHandler(logging.Handler):
-    console: Console = None
-
     @classmethod
     def init(cls):
         return cls
 
     def emit(self, record: logging.LogRecord):
-        record.name = Reporter.name()
-        record.pathname = RepoInfo.get_url(record.pathname)
-        self.send(record)
+        if Setting.show_log:
+            record.name = Reporter.name()
+            record.pathname = RepoInfo.get_url(record.pathname)
+            self.send(record)
 
     @callback(acquire_class_lock=False, max_retry=1)
     def send(self, record: logging.LogRecord):
@@ -27,16 +97,29 @@ class RemoteHandler(logging.Handler):
         logging.getLogger().handle(record)
 
 
+class Log:
+    console: Console = None
+
+
 def setup_remote_logger():
-    logging.basicConfig(handlers=[RemoteHandler()], level=Setting.logging_level)
-    status.initializer.add_unique(setup_remote_logger)
+    if Setting.show_log:
+        logging.basicConfig(handlers=[RemoteHandler()], level=Setting.logging_level)
+        status.initializer.add_unique(setup_remote_logger)
 
 
 def setup_main_logger():
-    RemoteHandler.console = Console(record=True, markup=True)
-    logging.basicConfig(
-        handlers=[RichHandler(markup=True, console=RemoteHandler.console)],
-        level=Setting.logging_level,
-        format="\[%(name)s] %(message)s",
-    )
-    status.initializer.add_unique(setup_remote_logger)
+    if Setting.show_log:
+        handlers = []
+        if Setting.use_console:
+            Log.console = Console(record=True, markup=True)
+            handlers.append(_RichHandler(markup=True, console=Log.console))
+        if not handlers:
+            handlers.append(logging.NullHandler())
+        logging.basicConfig(
+            handlers=handlers,
+            level=Setting.logging_level,
+            format="\[%(name)s] %(message)s",
+        )
+        status.initializer.add_unique(setup_remote_logger)
+    else:
+        logging.basicConfig(handlers=[logging.NullHandler()], level=None)

@@ -105,8 +105,19 @@ class IO(Cascade):
 class Monitor(Cascade):
     address: str = None
     port: int = 12345
+
+    # interface
+    use_console: bool = True
+    use_web: bool = False
+
+    # functions
+    show_log: bool = True
+    show_progress: bool = True
+
+    # performance
     max_retry: int = 3
 
+    # builtins
     logging_level: int = 20
     socket_timeout: float = None
 

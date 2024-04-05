@@ -115,8 +115,10 @@ class EntryPoint:
 
     def run(self, reproducible: Callable):
         from ..config.setting import IO as IOSetting
+        from ..process.monitor import wait_for_reporter
 
         meta = self.main.run(self)
+        wait_for_reporter()
 
         if self.main.flag("save_state"):
             from ..config.setting import save
@@ -124,14 +126,14 @@ class EntryPoint:
             save.parse([IOSetting.output / IOSetting.file_states])
 
         if self.main.flag("save_logs"):
-            from ..monitor.logging import RemoteHandler
+            from ..monitor.logging import Log
 
-            if RemoteHandler.console is not None:
+            if Log.console is not None:
                 with fsspec.open(
                     IOSetting.output / IOSetting.file_logs,
                     "wt",
                 ) as f:
-                    f.write(RemoteHandler.console.export_html(theme=themes.MONOKAI))
+                    f.write(Log.console.export_html(theme=themes.MONOKAI))
 
         if meta is not None:
             from base_class.utils.json import DefaultEncoder

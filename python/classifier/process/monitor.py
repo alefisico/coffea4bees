@@ -114,12 +114,12 @@ class _Singleton:
 
 @dataclass
 class _Packet:
-    cls: type[Proxy]
-    func: str
-    args: tuple
-    kwargs: dict
-    wait: bool
-    lock: bool
+    cls: type[Proxy] = None
+    func: str = None
+    args: tuple = None
+    kwargs: dict = None
+    wait: bool = None
+    lock: bool = None
     retry: int = None
 
     def __post_init__(self):
@@ -137,6 +137,10 @@ class _Packet:
 
     def __lt__(self, other):
         if isinstance(other, _Packet):
+            if self.cls is None:
+                return False
+            elif other.cls is None:
+                return True
             return (
                 self._n_retried,
                 self._timestamp,
@@ -354,7 +358,7 @@ class Reporter(_Singleton):
                 raise MonitorError
 
     def _send_non_blocking(self):
-        while (packet := self._jobs.get()) is not None:
+        while (packet := self._jobs.get()).cls is not None:
             packet._n_retried += 1
             try:
                 self._send(packet)
@@ -374,7 +378,7 @@ class Reporter(_Singleton):
 
     @classmethod
     def stop(cls):
-        cls.current()._jobs.put(None)
+        cls.current()._jobs.put(_Packet())
         cls.current()._thread.join()
 
 
@@ -402,3 +406,8 @@ def connect_to_monitor(address: str | tuple = None):
         address = _parse_url(address)
     Reporter.init(address)
     status.initializer.add_unique(_start_reporter)
+
+
+def wait_for_reporter():
+    if _Status.now() is _Status.Reporter:
+        Reporter.current().stop()
