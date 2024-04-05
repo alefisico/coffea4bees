@@ -101,10 +101,16 @@ class Log:
     console: Console = None
 
 
+def _disable_logging():
+    logging.basicConfig(handlers=[logging.NullHandler()], level=None)
+
+
 def setup_remote_logger():
     if Setting.show_log:
         logging.basicConfig(handlers=[RemoteHandler()], level=Setting.logging_level)
         status.initializer.add_unique(setup_remote_logger)
+        return
+    _disable_logging()
 
 
 def setup_main_logger():
@@ -113,13 +119,12 @@ def setup_main_logger():
         if Setting.use_console:
             Log.console = Console(record=True, markup=True)
             handlers.append(_RichHandler(markup=True, console=Log.console))
-        if not handlers:
-            handlers.append(logging.NullHandler())
-        logging.basicConfig(
-            handlers=handlers,
-            level=Setting.logging_level,
-            format="\[%(name)s] %(message)s",
-        )
-        status.initializer.add_unique(setup_remote_logger)
-    else:
-        logging.basicConfig(handlers=[logging.NullHandler()], level=None)
+        if handlers:
+            logging.basicConfig(
+                handlers=handlers,
+                level=Setting.logging_level,
+                format="\[%(name)s] %(message)s",
+            )
+            status.initializer.add_unique(setup_remote_logger)
+            return
+    _disable_logging()
