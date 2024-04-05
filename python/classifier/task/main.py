@@ -81,17 +81,22 @@ class EntryPoint:
                     else:
                         self.mods[cat].append(new(cls, opts))
 
-    def __init__(self):
+    def __init__(self, argv: list[str] = None, initializer: Callable[[], None] = None):
+        if initializer is not None:
+            initializer()
+        if argv is None:
+            argv = sys.argv.copy()
+
         from ..config.state import RunInfo
 
         RunInfo.startup_time = datetime.now()
-        RunInfo.main_task = sys.argv[1]
+        RunInfo.main_task = argv[1]
 
-        self.entrypoint = Path(sys.argv[0]).name
-        self.cmd = " ".join(sys.argv)
+        self.entrypoint = Path(argv[0]).name
+        self.cmd = " ".join(argv)
         self.args: dict[str, list[tuple[str, list[str]]]] = {k: [] for k in self._keys}
 
-        args = deque(sys.argv[1:])
+        args = deque(argv[1:])
         if len(args) == 0:
             raise ValueError(f"No task specified")
         arg = args.popleft()
