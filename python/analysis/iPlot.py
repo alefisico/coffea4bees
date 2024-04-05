@@ -5,7 +5,7 @@ import hist
 import matplotlib.pyplot as plt
 from hist.intervals import ratio_uncertainty
 sys.path.insert(0, os.getcwd())
-from base_class.plots.plots import makePlot, make2DPlot, load_config, load_hists, read_axes_and_cuts, parse_args
+from base_class.plots.plots import makePlot, make2DPlot, load_config, load_hists, read_axes_and_cuts, parse_args, print_cfg
 import base_class.plots.iPlot_config as cfg
 
 #
@@ -20,6 +20,9 @@ def ls(option="var", match=None):
                 print(k)
         else:
             print(k)
+
+def info():
+    print_cfg(cfg)
 
 def examples():
     print("examples:\n\n")
@@ -62,21 +65,27 @@ def examples():
         'plot("v4j.mass", region="SR", cut=["passPreSel","passSvB","failSvB"], process="TTToHadronic", doRatio=1, rebin=4, norm=1)\n\n'
 
         '# Can overlay different variables \n'
-        'plot(["canJet0.pt","canJet1.pt"], region="SR",cut="passPreSel",doRatio=1,process="Multijet")'
-        'plot(["canJet0.pt","canJet1.pt","canJet2.pt","canJet3.pt"], region="SR", cut="passPreSel",doRatio=1,process="Multijet")'
+        'plot(["canJet0.pt","canJet1.pt"], region="SR",cut="passPreSel",doRatio=1,process="Multijet")\n'
+        'plot(["canJet0.pt","canJet1.pt","canJet2.pt","canJet3.pt"], region="SR", cut="passPreSel",doRatio=1,process="Multijet")\n\n'
 
         '# Can plot a single process  \n'
-        'plot("v4j.mass", region="SR", cut="passPreSel",process="data")'
+        'plot("v4j.mass", region="SR", cut="passPreSel",process="data")\n\n'
 
         '# Can overlay processes  \n'
-        'plot("v4j.mass", region="SR", cut="passPreSel",norm=1,process=["data","TTTo2L2Nu","HH4b","Multijet"],doRatio=1)'
+        'plot("v4j.mass", region="SR", cut="passPreSel",norm=1,process=["data","TTTo2L2Nu","HH4b","Multijet"],doRatio=1)\n\n'
 
         '# Plot 2d hists \n'
         'plot2d("quadJet_min_dr.close_vs_other_m",process="Multijet",region="SR",cut="failSvB")\n'
         'plot2d("quadJet_min_dr.close_vs_other_m",process="Multijet",region="SR",cut="failSvB",full=True)\n\n'
+
+        '# Unsup4b plots with SB and SRSB as composite regions \n'
+        'plot("v4j.mass", region="SRSB", cut="passPreSel") \n'
+        'plot2d("quadJet_selected.lead_vs_subl_m",process="data3b",region="SRSB") \n'
+        'plot("leadStM_selected", region="SB", cut="passPreSel", process = ["data3b","mixeddata"]) \n'
+        'plot("v4j.mass", region=["SR", "SB"], cut="passPreSel", process = "data3b") \n\n'
     )
 
-            
+
 def plot(var='selJets.pt', *, cut="passPreSel", region="SR", **kwargs):
     r"""
     Plot
@@ -157,16 +166,16 @@ def plot2d(var='quadJet_selected.lead_vs_subl_m', process="HH4b",
 
     if kwargs.get("debug", False):
         return fig, ax
-    
+
 
 
 if __name__ == '__main__':
 
     args = parse_args()
-    
+
     cfg.plotConfig = load_config(args.metadata)
     cfg.outputFolder = args.outputFolder
-    
+
     if cfg.outputFolder:
         if not os.path.exists(cfg.outputFolder):
             os.makedirs(cfg.outputFolder)
@@ -175,4 +184,5 @@ if __name__ == '__main__':
     cfg.fileLabels = args.fileLabels
     cfg.axisLabels, cfg.cutList = read_axes_and_cuts(cfg.hists, cfg.plotConfig)
 
-    
+    print_cfg(cfg)
+
