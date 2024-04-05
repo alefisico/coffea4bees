@@ -33,3 +33,8 @@ class RepoInfo:
             return str(path)
         path = path.relative_to(cls._local)
         return f"{cls.url}{path}"
+
+
+class MonitorInfo:
+    backends: tuple[str] = ("console",)
+    components: tuple[str] = ("logging",)

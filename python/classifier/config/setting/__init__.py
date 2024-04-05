@@ -106,11 +106,11 @@ class Monitor(Cascade):
     address: str = None
     port: int = 12345
 
-    # interface
+    # backends
     use_console: bool = True
     use_web: bool = False
 
-    # functions
+    # components
     show_log: bool = True
     show_progress: bool = True
 

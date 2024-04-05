@@ -11,7 +11,6 @@ from rich.text import Text
 
 from ..config.setting import Monitor as Setting
 from ..config.state import RepoInfo
-from ..process import status
 from ..process.monitor import Monitor, Reporter, callback
 
 
@@ -105,26 +104,24 @@ def _disable_logging():
     logging.basicConfig(handlers=[logging.NullHandler()], level=None)
 
 
-def setup_remote_logger():
+def setup_reporter():
     if Setting.show_log:
-        logging.basicConfig(handlers=[RemoteHandler()], level=Setting.logging_level)
-        status.initializer.add_unique(setup_remote_logger)
-        return
+        return logging.basicConfig(
+            handlers=[RemoteHandler()], level=Setting.logging_level
+        )
     _disable_logging()
 
 
-def setup_main_logger():
+def setup_monitor():
     if Setting.show_log:
         handlers = []
         if Setting.use_console:
             Log.console = Console(record=True, markup=True)
             handlers.append(_RichHandler(markup=True, console=Log.console))
         if handlers:
-            logging.basicConfig(
+            return logging.basicConfig(
                 handlers=handlers,
                 level=Setting.logging_level,
                 format="\[%(name)s] %(message)s",
             )
-            status.initializer.add_unique(setup_remote_logger)
-            return
     _disable_logging()
