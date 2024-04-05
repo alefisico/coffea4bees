@@ -5,7 +5,7 @@ import hist
 import matplotlib.pyplot as plt
 from hist.intervals import ratio_uncertainty
 sys.path.insert(0, os.getcwd())
-from base_class.plots.plots import makePlot, make2DPlot, load_config, load_hists, read_axes_and_cuts, parse_args
+from base_class.plots.plots import makePlot, make2DPlot, load_config, load_hists, read_axes_and_cuts, parse_args, print_cfg
 import base_class.plots.iPlot_config as cfg
 
 #
@@ -20,6 +20,9 @@ def ls(option="var", match=None):
                 print(k)
         else:
             print(k)
+
+def info():
+    print_cfg(cfg)
 
 def examples():
     print("examples:\n\n")
@@ -82,7 +85,7 @@ def examples():
         'plot("v4j.mass", region=["SR", "SB"], cut="passPreSel", process = "data3b") \n\n'
     )
 
-            
+
 def plot(var='selJets.pt', *, cut="passPreSel", region="SR", **kwargs):
     r"""
     Plot
@@ -163,16 +166,16 @@ def plot2d(var='quadJet_selected.lead_vs_subl_m', process="HH4b",
 
     if kwargs.get("debug", False):
         return fig, ax
-    
+
 
 
 if __name__ == '__main__':
 
     args = parse_args()
-    
+
     cfg.plotConfig = load_config(args.metadata)
     cfg.outputFolder = args.outputFolder
-    
+
     if cfg.outputFolder:
         if not os.path.exists(cfg.outputFolder):
             os.makedirs(cfg.outputFolder)
@@ -181,4 +184,5 @@ if __name__ == '__main__':
     cfg.fileLabels = args.fileLabels
     cfg.axisLabels, cfg.cutList = read_axes_and_cuts(cfg.hists, cfg.plotConfig)
 
-    
+    print_cfg(cfg)
+

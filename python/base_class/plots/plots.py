@@ -162,7 +162,7 @@ def _draw_plot(hist_list, stack_dict, **kwargs):
     hist_fill_colors = kwargs.get("hist_fill_colors")
     hist_types = kwargs.get("hist_types")
     hist_artists = []
-    
+
     for ih, h in enumerate(hist_list):
         this_plot_options = {"density": norm,
                              "label": hist_labels[ih],
@@ -396,7 +396,14 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
         regionName = "_vs_".join(region)
     else:
         regionName = region
-        region_dict = {"region": hist.loc(codes["region"][region])}
+
+        if type(codes["region"][region]) is list:
+            region_dict = {"region": [hist.loc(_r) for _r in codes["region"][region]] }
+        else:
+            region_dict = {"region": hist.loc(codes["region"][region])} ### check this is a list
+
+
+
 
     if type(var) is list:
         varName  = None
@@ -421,12 +428,7 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
             hist_colors_fill.append(_colors[ic])
             hist_labels.append(label + " " + _cut)
             hist_types. append("errorbar")
-            
-            if type(codes["region"][region]) is list:
-                region_dict = {"region": [hist.loc(_r) for _r in codes["region"][region]] }
-            else:
-                region_dict = {"region": hist.loc(codes["region"][region])} ### check this is a list
-        
+
             this_cut_dict = get_cut_dict(_cut, cutList)
             this_hist_dict = process_dict | tag_dict | region_dict | year_dict | var_dict | this_cut_dict
 
@@ -452,9 +454,9 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
                 this_region_dict = {"region": [hist.loc(_r) for _r in codes["region"][_reg]] }
             else:
                 this_region_dict = {"region": hist.loc(codes["region"][_reg])} ### check this is a list
-        
+
             this_hist_dict = process_dict | tag_dict | this_region_dict | year_dict | var_dict | cut_dict
-            
+
             this_hist = input_hist_File['hists'][var][this_hist_dict]
             if len(this_hist.shape) == 2:
                 this_hist = this_hist[sum,:]
@@ -467,11 +469,6 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
     elif type(input_hist_File) is list:
         if kwargs.get("debug", False):
             print_list_debug_info(process, this_tag, cut, region)
-
-        if type(codes["region"][region]) is list:
-                region_dict = {"region": [hist.loc(_r) for _r in codes["region"][region]] }
-        else:
-                region_dict = {"region": hist.loc(codes["region"][region])} ### check this is a list
 
         this_hist_dict = process_dict | tag_dict | region_dict | year_dict | var_dict | cut_dict
 
@@ -513,18 +510,13 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
             this_process_dict = {"process": _proc_conf["process"]}
             this_tag_dict     = {"tag":     hist.loc(this_tag)}
 
-            if type(codes["region"][region]) is list:
-                region_dict = {"region": [hist.loc(_r) for _r in codes["region"][region]] }
-            else:
-                region_dict = {"region": hist.loc(codes["region"][region])} ### check this is a list
-
             this_hist_dict = this_process_dict | this_tag_dict | region_dict | year_dict | var_dict | cut_dict
 
             this_hist = input_hist_File['hists'][var][this_hist_dict]
             if len(this_hist.shape) == 2:
                 this_hist = this_hist[sum,:]
             hists.append(this_hist)
-            
+
             # hists.append(input_hist_File['hists'][var][this_hist_dict])
             hists[-1] *= _proc_conf.get("scalefactor", 1.0)
 
@@ -545,11 +537,6 @@ def _makeHistsFromList(input_hist_File, cutList, plotConfig, var, cut, region, p
             hist_types. append("errorbar")
 
             this_var_dict = {varName: hist.rebin(rebin)}
-
-            if type(codes["region"][region]) is list:
-                region_dict = {"region": [hist.loc(_r) for _r in codes["region"][region]] }
-            else:
-                region_dict = {"region": hist.loc(codes["region"][region])} ### check this is a list
 
             this_hist_dict = process_dict | tag_dict | region_dict | year_dict | this_var_dict | cut_dict
 
@@ -695,7 +682,7 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
         this_hist = h[this_hist_dict]
         if len(this_hist.shape) == 2:
             this_hist = this_hist[sum,:]
-        
+
         hists.append(this_hist)
         hists[-1] *= v.get("scalefactor", 1.0)
 
@@ -744,7 +731,7 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
                             }
 
             this_hist_opts = this_hist_opts | var_dict | region_dict | year_dict | cut_dict
-    
+
             #
             # Catch list vs hist
             #  Shape give (nregion, nBins)
@@ -752,7 +739,7 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
             this_hist = h[this_hist_opts]
             if len(this_hist.shape) == 2:
                 this_hist = this_hist[sum,:]
-                
+
             stack_dict[k] = this_hist
 
         elif v.get("sum", None):
@@ -777,7 +764,7 @@ def makePlot(hists, cutList, plotConfig, var='selJets.pt',
                 this_hist = h[this_hist_opts]
                 if len(this_hist.shape) == 2:
                     this_hist = this_hist[sum,:]
-                    
+
                 this_hist *= sum_v.get("scalefactor", 1.0)
                 if hist_sum:
                     hist_sum += this_hist
@@ -880,7 +867,7 @@ def make2DPlot(hists, process, cutList, plotConfig, var='selJets.pt',
     # hist_types. append(v.get("histtype", "errorbar"))
 
     # region_selection = sum if region in ["sum", sum] else hist.loc(codes["region"][region])
-    
+
     if region in ["sum",sum]:
         region_selection = sum
     elif type(codes["region"][region]) is list:
@@ -888,7 +875,7 @@ def make2DPlot(hists, process, cutList, plotConfig, var='selJets.pt',
     else:
         region_selection = hist.loc(codes["region"][region])
 
-    
+
 
     if kwargs.get("debug", False):
         print(f" hist process={process}, "
@@ -903,7 +890,7 @@ def make2DPlot(hists, process, cutList, plotConfig, var='selJets.pt',
 
     hist_dict = hist_dict | cut_dict
     _hist = h[hist_dict]
-    
+
 
     if len(_hist.shape) == 3:  ## for 2D plots
         _hist = _hist[sum,:,:]
@@ -980,7 +967,7 @@ def read_axes_and_cuts(hists, plotConfig):
             continue
 
         if isinstance(a, hist.axis.Boolean):
-            print(f"Adding cut\t{axisName}")
+            #print(f"Adding cut\t{axisName}")
             cutList.append(axisName)
             continue
 
@@ -988,7 +975,7 @@ def read_axes_and_cuts(hists, plotConfig):
             continue   # HACK to skip the variable bins FIX
 
         axisLabels[axisName] = []
-        print(axisName)
+        #print(axisName)
 
         for iBin in range(a.extent):
 
@@ -997,7 +984,22 @@ def read_axes_and_cuts(hists, plotConfig):
             else:
                 value = a.value(iBin)
 
-            print(f"\t{value}")
+            #print(f"\t{value}")
             axisLabels[axisName].append(value)
 
     return axisLabels, cutList
+
+def print_cfg(cfg):
+    print("Regions...")
+    for r in cfg.axisLabels["region"]:
+        print(f"\t{r}")
+
+    print("Cuts...")
+    for c in cfg.cutList:
+        print(f"\t{c}")
+
+    print("Processes...")
+    for key, values in cfg.plotConfig.items():
+        if key in ["hists", "stack"]:
+            for _key, _ in values.items():
+                print(f"\t{_key}")
