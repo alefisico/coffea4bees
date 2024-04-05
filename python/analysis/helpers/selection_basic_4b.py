@@ -4,20 +4,20 @@ from coffea.nanoevents import NanoEventsFactory, NanoAODSchema, BaseSchema
 from analysis.helpers.common import init_jet_factory, jet_corrections, mask_event_decision, drClean
 from coffea.lumi_tools import LumiMask
 
-def apply_event_selection_4b( event, isMC, corrections_metadata, *, isMixedData=False):
+def apply_event_selection_4b( event, isMC, corrections_metadata, *, isMixedData=False, isTTForMixed=False, isDataForMixed=False):
 
     lumimask = LumiMask(corrections_metadata['goldenJSON'])
     event['lumimask'] = np.full(len(event), True) if isMC else np.array( lumimask(event.run, event.luminosityBlock) )
 
     event['passHLT'] = np.full(len(event), True) if (isMC or isMixedData) else mask_event_decision( event, decision="OR", branch="HLT", list_to_mask=event.metadata['trigger']  )
-
-    event['passNoiseFilter'] = np.full(len(event), True) if isMixedData else mask_event_decision( event, decision="AND", branch="Flag",
-                                                                                                  list_to_mask=corrections_metadata['NoiseFilter'],
-                                                                                                  list_to_skip=['BadPFMuonDzFilter', 'hfNoisyHitsFilter']  )
+    
+    event['passNoiseFilter'] = np.full(len(event), True) if (isMixedData or isTTForMixed or isDataForMixed) else mask_event_decision( event, decision="AND", branch="Flag",
+                                                                                                                    list_to_mask=corrections_metadata['NoiseFilter'],
+                                                                                                                    list_to_skip=['BadPFMuonDzFilter', 'hfNoisyHitsFilter']  )
 
     return event
 
-def apply_object_selection_4b( event, year, isMC, dataset, corrections_metadata, *, isMixedData=False  ):
+def apply_object_selection_4b( event, year, isMC, dataset, corrections_metadata, *, isMixedData=False, isTTForMixed=False, isDataForMixed=False  ):
     """docstring for apply_basic_selection_4b. This fuction is not modifying the content of anything in events. it is just adding it"""
 
     #
@@ -45,7 +45,7 @@ def apply_object_selection_4b( event, year, isMC, dataset, corrections_metadata,
     if isMC:
         juncWS += corrections_metadata["JERC"][1:]
 
-    if isMixedData:
+    if isMixedData or isTTForMixed or isDataForMixed:
 
         event['Jet', 'pileup'] = ((event.Jet.puId < 0b110) & (event.Jet.pt < 50)) | ((np.abs(event.Jet.eta) > 2.4) & (event.Jet.pt < 40))
         event['Jet', 'selected_loose'] = (event.Jet.pt >= 20) & ~event.Jet.pileup & (event.Jet.jetId>=2)
