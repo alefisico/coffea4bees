@@ -9,7 +9,7 @@ def apply_event_selection_4b( event, isMC, corrections_metadata, *, isMixedData=
     lumimask = LumiMask(corrections_metadata['goldenJSON'])
     event['lumimask'] = np.full(len(event), True) if isMC else np.array( lumimask(event.run, event.luminosityBlock) )
 
-    event['passHLT'] = np.full(len(event), True) if (isMC or isMixedData) else mask_event_decision( event, decision="OR", branch="HLT", list_to_mask=event.metadata['trigger']  )
+    event['passHLT'] = np.full(len(event), True) if isMixedData else mask_event_decision( event, decision="OR", branch="HLT", list_to_mask=event.metadata['trigger']  )
 
     event['passNoiseFilter'] = np.full(len(event), True) if isMixedData else mask_event_decision( event, decision="AND", branch="Flag",
                                                                                                   list_to_mask=corrections_metadata['NoiseFilter'],

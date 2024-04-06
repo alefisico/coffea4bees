@@ -19,7 +19,6 @@ from analysis.helpers.hist_templates import SvBHists, FvTHists, QuadJetHists, WC
 
 from analysis.helpers.cutflow import cutFlow
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
-from analysis.helpers.correctionFunctions import btagVariations
 from analysis.helpers.correctionFunctions import btagSF_norm as btagSF_norm_file
 
 from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
@@ -67,14 +66,13 @@ def update(events, collections):
     return out
 
 class analysis(processor.ProcessorABC):
-    def __init__(self, *, JCM = None, addbtagVariations=None, SvB=None, SvB_MA=None, threeTag = True, apply_trigWeight = True, apply_btagSF = True, apply_FvT = True, run_SvB = True, run_topreco = True, corrections_metadata='analysis/metadata/corrections.yml', processes_toshift=[], make_classifier_input: str = None):
+    def __init__(self, *, JCM = None, SvB=None, SvB_MA=None, threeTag = True, apply_trigWeight = True, apply_btagSF = True, apply_FvT = True, run_SvB = True, run_topreco = True, corrections_metadata='analysis/metadata/corrections.yml', processes_toshift=[], make_classifier_input: str = None):
         logging.debug('\nInitialize Analysis Processor')
         self.blind = False
         self.JCM = jetCombinatoricModel(JCM) if JCM else None
         self.apply_trigWeight = apply_trigWeight
         self.apply_btagSF = apply_btagSF
         self.apply_FvT = apply_FvT
-        self.btagVar = btagVariations(systematics=addbtagVariations)  #### AGE: these two need to be review later
         self.run_SvB = run_SvB
         self.run_topreco = run_topreco  #### AGE: this is temporary topreco is memory consuming (needs fix)
         self.classifier_SvB = HCREnsemble(SvB) if SvB else None
@@ -98,8 +96,10 @@ class analysis(processor.ProcessorABC):
         lumi    = event.metadata.get('lumi',    1.0)
         xs      = event.metadata.get('xs',      1.0)
         kFactor = event.metadata.get('kFactor', 1.0)
+        isMixedData = not (dataset.find("mix_v") == -1)
         weights = Weights(len(event), storeIndividual=True)
 
+        event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year], isMixedData=isMixedData)
         #
         # general event weights
         #
@@ -113,7 +113,7 @@ class analysis(processor.ProcessorABC):
             # trigger Weight (to be updated)
             if self.apply_trigWeight:
                 event['weight'] = event.weight * event.trigWeight.Data
-                weights.add( 'triggerweight', event.trigWeight.Data )
+                weights.add( 'trigWeight', event.trigWeight.Data, event.trigWeight.MC, ak.where(event.passHLT, 1., 0.) )
 
             # puWeight
             puWeight = list(correctionlib.CorrectionSet.from_file(self.corrections_metadata[year]['PU']).values())[0]
@@ -124,7 +124,6 @@ class analysis(processor.ProcessorABC):
                         puWeight.evaluate(event.Pileup.nTrueInt.to_numpy(), 'down')
                         )
             event['weight'] = event.weight * event.PU_weight_nominal
-            weights.add( 'triggerweight', event.trigWeight.Data )
 
             # L1 prefiring weight
             if ('L1PreFiringWeight' in event.fields):   #### AGE: this should be temprorary (field exists in UL)
@@ -142,15 +141,21 @@ class analysis(processor.ProcessorABC):
         logging.debug(f"Weight Statistics {weights.weightStatistics}")
 
         juncWS = [ self.corrections_metadata[year]["JERC"][0].replace('STEP', istep)
-                   for istep in ['L1FastJet', 'L2Relative', 'L2L3Residual', 'L3Absolute'] ]      ###### AGE: to be reviewed for data, but should be remove with jsonpog
-        if isMC: juncWS += self.corrections_metadata[year]["JERC"][1:]
-        jets = init_jet_factory(juncWS, event, isMC)  #### currently creates the pt_raw branch
+                   for istep in ['L1FastJet', 'L2Relative', 'L2L3Residual', 'L3Absolute'] ] + \
+            self.corrections_metadata[year]["JERC"][2:]
+        if processName in self.processes_toshift: juncWS += [ self.corrections_metadata[year]["JERC"][1] ]
+        jets = init_jet_factory(juncWS, event, isMC)
 
         shifts = [ ({"Jet": jets}, None) ]
         if processName in self.processes_toshift:
+            for jesunc in self.corrections_metadata[year]['JES_uncertainties']:
+                shifts.extend([
+                    ({"Jet": jets[ f'JES_{jesunc}' ].up}, f'JES_{jesunc}_Up'),
+                    ({"Jet": jets[ f'JES_{jesunc}' ].down}, f'JES_{jesunc}_Down')
+                ])
             shifts.extend([
-                ({"Jet": jets.JES_Total.up}, 'JESUp'),
-                ({"Jet": jets.JES_Total.down}, 'JESDown')
+                ({"Jet": jets.JER.up}, 'JER_Up'),
+                ({"Jet": jets.JER.down}, 'JER_Down')
             ])
 
         return processor.accumulate(self.process_shift(update(event, collections), name, weights) for collections, name in shifts)
@@ -164,15 +169,11 @@ class analysis(processor.ProcessorABC):
         estop   = event.metadata['entrystop']
         chunk   = f'{dataset}::{estart:6d}:{estop:6d} >>> '
         year    = event.metadata['year']
-        era     = event.metadata.get('era', '')
         processName = event.metadata['processName']
         isMC    = True if event.run[0] == 1 else False
         isMixedData = not (dataset.find("mix_v") == -1)
-        lumi    = event.metadata.get('lumi',    1.0)
-        xs      = event.metadata.get('xs',      1.0)
-        kFactor = event.metadata.get('kFactor', 1.0)
         nEvent = len(event)
-
+        selections = PackedSelection()
 
         #
         #  Cut Flows
@@ -240,35 +241,31 @@ class analysis(processor.ProcessorABC):
         #
         # Event selection (function only adds flags, not remove events)
         #
-        event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year], isMixedData=isMixedData)
 
-        self._cutFlow.fill("all",  event[event.lumimask], allTag=True)
-        self._cutFlow.fill("passNoiseFilter",  event[ event.lumimask & event.passNoiseFilter], allTag=True)
-        self._cutFlow.fill("passHLT",  event[ event.lumimask & event.passNoiseFilter & event.passHLT], allTag=True)
+        selections.add( 'lumimask', event.lumimask )
+        selections.add( 'passNoiseFilter', event.passNoiseFilter )
+        selections.add( 'passHLT', np.full(len(event), True) if (isMC or isMixedData) else event.passHLT )
+        self._cutFlow.fill("all",  event[selections.require(lumimask=True)], allTag=True)
+        self._cutFlow.fill("passNoiseFilter",  event[ selections.require(lumimask=True, passNoiseFilter=True) ], allTag=True)
+        self._cutFlow.fill("passHLT",  event[ selections.require(lumimask=True, passNoiseFilter=True, passHLT=True) ], allTag=True)
 
         # Apply object selection (function does not remove events, adds content to objects)
         event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year], isMixedData=isMixedData)
-        selections = PackedSelection()
         selections.add( 'passJetMult', event.lumimask & event.passNoiseFilter & event.passHLT & event.passJetMult )
         self._cutFlow.fill("passJetMult", event[selections.require( passJetMult=True )], allTag=True)
-        #selections = []
-        #selections.append(event.lumimask & event.passNoiseFilter & event.passHLT & event.passJetMult)
-        #self._cutFlow.fill("passJetMult", event[selections[-1]], allTag=True)
 
         #
         # Filtering object and event selection
         #
-        #selev = event[selections[-1]]
         selev = event[selections.require( passJetMult=True )]
 
         #
         # Calculate and apply btag scale factors
         #
         if isMC and self.apply_btagSF:
-            btagSF = correctionlib.CorrectionSet.from_file(self.corrections_metadata[year]['btagSF'])['deepJet_shape']
             selev['weight'] = apply_btag_sf(selev, selev.selJet,
                                             correction_file=self.corrections_metadata[year]['btagSF'],
-                                            btag_var=self.btagVar,
+                                            btag_uncertainties= self.corrections_metadata[year]['btag_uncertainties'] if processName in self.processes_toshift else None,
                                             btagSF_norm=btagSF_norm_file(dataset),
                                             weight=selev.weight )
 
@@ -277,8 +274,7 @@ class analysis(processor.ProcessorABC):
         #
         # Preselection: keep only three or four tag events
         #
-        #selections.append(selev.passPreSel)
-        selection.add( 'passPreSel', events.passPreSel )
+        selections.add( 'passPreSel', event.passPreSel )
         selev = selev[selev.passPreSel]
 
         #
@@ -656,9 +652,8 @@ class analysis(processor.ProcessorABC):
                                       **dict((s, ...) for s in self.histCuts))
                     fill_SvB = Fill(process=processName, year=year, variation=ivar, weight='weight')
                     tmp_ivar = None if 'nominal' in ivar else ivar
-                    #selev['weight'] = weights.weight(modifier=tmp_ivar)[ selections[0] & event.passPreSel ]
-                    selev['weight'] = weights.weight(modifier=tmp_ivar)[ selections.require( passMultiJet=True, passPreSel=True ) ]
-                    logging.info(f"{ivar} {selev['weight']}")
+                    selev['weight'] = weights.weight(modifier=tmp_ivar)[ selections.require( passJetMult=True, passPreSel=True ) ]
+                    logging.debug(f"{ivar} {selev['weight']}")
                     fill_SvB += SvBHists(('SvB', 'SvB Classifier'), 'SvB')
                     fill_SvB += SvBHists(('SvB_MA', 'SvB MA Classifier'), 'SvB_MA')
                     fill_SvB += hist_SvB[ivar].add('quadJet_selected_SvB_q_score', (100, 0, 1, ("quadJet_selected.SvB_q_score", 'Selected Quad Jet Diboson SvB q score')))
