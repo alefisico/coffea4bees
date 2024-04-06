@@ -623,35 +623,35 @@ class analysis(processor.ProcessorABC):
             fill += hist.add('nPVs',     (101, -0.5, 100.5, ('PV.npvs',     'Number of Primary Vertices')))
             fill += hist.add('nPVsGood', (101, -0.5, 100.5, ('PV.npvsGood', 'Number of Good Primary Vertices')))
 
-        #
-        #  Make classifier hists
-        #
-        if self.apply_FvT:
-            FvT_skip = []
-            if isMixedData or isDataForMixed or isTTForMixed:
-                FvT_skip = ["pt", "pm3", "pm4"]
+            #
+            #  Make classifier hists
+            #
+            if self.apply_FvT:
+                FvT_skip = []
+                if isMixedData or isDataForMixed or isTTForMixed:
+                    FvT_skip = ["pt", "pm3", "pm4"]
 
-            if ('xbW' in selev.fields) and (self.run_topreco):  ### AGE: this should be temporary
+                if ('xbW' in selev.fields) and (self.run_topreco):  ### AGE: this should be temporary
 
-                fill += hist.add('xW',          (100, 0, 12,   ('xW',       'xW')))
-                fill += hist.add('delta_xW',    (100, -5, 5,   ('delta_xW', 'delta xW')))
-                fill += hist.add('delta_xW_l',  (100, -15, 15, ('delta_xW', 'delta xW')))
+                    fill += hist.add('xW',          (100, 0, 12,   ('xW',       'xW')))
+                    fill += hist.add('delta_xW',    (100, -5, 5,   ('delta_xW', 'delta xW')))
+                    fill += hist.add('delta_xW_l',  (100, -15, 15, ('delta_xW', 'delta xW')))
 
-        #
-        # Separate reweighting for the different mixed samples
-        #
-        if isDataForMixed:
-            for  _FvT_name in event.metadata["FvT_names"]:
-                fill += SvBHists((f'SvB_{_FvT_name}',    'SvB Classifier'),    'SvB',    weight=f"weight_{_FvT_name}")
-                fill += SvBHists((f'SvB_MA_{_FvT_name}', 'SvB MA Classifier'), 'SvB_MA', weight=f"weight_{_FvT_name}")
+            #
+            # Separate reweighting for the different mixed samples
+            #
+            if isDataForMixed:
+                for  _FvT_name in event.metadata["FvT_names"]:
+                    fill += SvBHists((f'SvB_{_FvT_name}',    'SvB Classifier'),    'SvB',    weight=f"weight_{_FvT_name}")
+                    fill += SvBHists((f'SvB_MA_{_FvT_name}', 'SvB MA Classifier'), 'SvB_MA', weight=f"weight_{_FvT_name}")
 
-        #
-        # Jets
-        #
-        fill += Jet.plot(('selJets', 'Selected Jets'),        'selJet',           skip=['deepjet_c'])
-        fill += Jet.plot(('canJets', 'Higgs Candidate Jets'), 'canJet',           skip=['deepjet_c'])
-        fill += Jet.plot(('othJets', 'Other Jets'),           'notCanJet_coffea', skip=['deepjet_c'])
-        fill += Jet.plot(('tagJets', 'Tag Jets'),             'tagJet',           skip=['deepjet_c'])
+            #
+            # Jets
+            #
+            fill += Jet.plot(('selJets', 'Selected Jets'),        'selJet',           skip=['deepjet_c'])
+            fill += Jet.plot(('canJets', 'Higgs Candidate Jets'), 'canJet',           skip=['deepjet_c'])
+            fill += Jet.plot(('othJets', 'Other Jets'),           'notCanJet_coffea', skip=['deepjet_c'])
+            fill += Jet.plot(('tagJets', 'Tag Jets'),             'tagJet',           skip=['deepjet_c'])
 
             #
             #  Make quad jet hists

@@ -8,7 +8,6 @@ config:
   apply_FvT: true
   apply_trigWeight: true
   apply_btagSF: true
-  addbtagVariations: true
   run_SvB: true
   run_topreco: true
   processes_toshift: 
