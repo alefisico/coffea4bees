@@ -26,6 +26,7 @@ from analysis.helpers.common import init_jet_factory, apply_btag_sf
 from analysis.helpers.selection_basic_4b import apply_event_selection_4b, apply_object_selection_4b
 import logging
 
+from base_class.root import TreeReader, Chunk
 
 #
 # Setup
@@ -115,15 +116,16 @@ class analysis(processor.ProcessorABC):
                 event['weight'] = event.weight * event.trigWeight.Data
                 weights.add( 'trigWeight', event.trigWeight.Data, event.trigWeight.MC, ak.where(event.passHLT, 1., 0.) )
 
-            # puWeight
-            puWeight = list(correctionlib.CorrectionSet.from_file(self.corrections_metadata[year]['PU']).values())[0]
-            event[f'PU_weight_nominal'] = puWeight.evaluate(event.Pileup.nTrueInt.to_numpy(), 'nominal')
-            weights.add( 'PU',
-                        puWeight.evaluate(event.Pileup.nTrueInt.to_numpy(), 'nominal'),
-                        puWeight.evaluate(event.Pileup.nTrueInt.to_numpy(), 'up'),
-                        puWeight.evaluate(event.Pileup.nTrueInt.to_numpy(), 'down')
-                        )
-            event['weight'] = event.weight * event.PU_weight_nominal
+            # puWeight (to be checked)
+            if not isTTForMixed:
+                puWeight = list(correctionlib.CorrectionSet.from_file(self.corrections_metadata[year]['PU']).values())[0]
+                event[f'PU_weight_nominal'] = puWeight.evaluate(event.Pileup.nTrueInt.to_numpy(), 'nominal')
+                weights.add( 'PU',
+                            puWeight.evaluate(event.Pileup.nTrueInt.to_numpy(), 'nominal'),
+                            puWeight.evaluate(event.Pileup.nTrueInt.to_numpy(), 'up'),
+                            puWeight.evaluate(event.Pileup.nTrueInt.to_numpy(), 'down')
+                            )
+                event['weight'] = event.weight * event.PU_weight_nominal
 
             # L1 prefiring weight
             if ('L1PreFiringWeight' in event.fields):   #### AGE: this should be temprorary (field exists in UL)
@@ -171,7 +173,10 @@ class analysis(processor.ProcessorABC):
         year    = event.metadata['year']
         processName = event.metadata['processName']
         isMC    = True if event.run[0] == 1 else False
+
         isMixedData = not (dataset.find("mix_v") == -1)
+        isDataForMixed = not (dataset.find("data_3b_for_mixed") == -1)
+        isTTForMixed = not (dataset.find("TTTo" ) == -1) and not(dataset.find("_for_mixed") == -1)
         nEvent = len(event)
         selections = PackedSelection()
 
@@ -209,6 +214,37 @@ class analysis(processor.ProcessorABC):
                 event['FvT', 'q_1423'] = np.full(len(event), -1, dtype=int)
 
 
+            elif (isDataForMixed or isTTForMixed):
+
+                #
+                # Use the first to define the FvT weights
+                #
+                event['FvT']    = getattr(NanoEventsFactory.from_root(f'{event.metadata["FvT_files"][0]}',
+                                                                      entry_start=estart, entry_stop=estop,
+                                                                      schemaclass=FriendTreeSchema).events(), event.metadata["FvT_names"][0])
+
+                event['FvT', 'FvT']    = getattr(event['FvT'], event.metadata["FvT_names"][0])
+
+                #
+                # Dummies
+                #
+                event['FvT', 'q_1234'] = np.full(len(event), -1, dtype=int)
+                event['FvT', 'q_1324'] = np.full(len(event), -1, dtype=int)
+                event['FvT', 'q_1423'] = np.full(len(event), -1, dtype=int)
+
+
+                for _FvT_name, _FvT_file in zip(event.metadata["FvT_names"], event.metadata["FvT_files"]):
+
+
+                    event[_FvT_name]    = getattr(NanoEventsFactory.from_root(f'{_FvT_file}',
+                                                                              entry_start=estart, entry_stop=estop,
+                                                                              schemaclass=FriendTreeSchema).events(), _FvT_name)
+
+                    event[_FvT_name, _FvT_name]    = getattr(event[_FvT_name], _FvT_name)
+
+
+
+
             else:
                 event['FvT']    = NanoEventsFactory.from_root(f'{path}{"FvT.root"}',
                                                               entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().FvT
@@ -238,9 +274,16 @@ class analysis(processor.ProcessorABC):
                 setSvBVars("SvB",    event)
                 setSvBVars("SvB_MA", event)
 
-        #
-        # Event selection (function only adds flags, not remove events)
-        #
+
+        if isDataForMixed:
+            #
+            # Load the different JCMs
+            #
+            JCM_array = TreeReader(lambda x: [s for s in x if s.startswith("pseudoTagWeight_3bDvTMix4bDvT_v")]).arrays(Chunk.from_coffea_events(event))
+            for _JCM_load in event.metadata["JCM_loads"]:
+                event[_JCM_load] = JCM_array[_JCM_load]
+
+        event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year], isMixedData=isMixedData, isTTForMixed=isTTForMixed, isDataForMixed=isDataForMixed)
 
         selections.add( 'lumimask', event.lumimask )
         selections.add( 'passNoiseFilter', event.passNoiseFilter )
@@ -250,7 +293,7 @@ class analysis(processor.ProcessorABC):
         self._cutFlow.fill("passHLT",  event[ selections.require(lumimask=True, passNoiseFilter=True, passHLT=True) ], allTag=True)
 
         # Apply object selection (function does not remove events, adds content to objects)
-        event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year], isMixedData=isMixedData)
+        event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year], isMixedData=isMixedData, isTTForMixed=isTTForMixed, isDataForMixed=isDataForMixed)
         selections.add( 'passJetMult', event.lumimask & event.passNoiseFilter & event.passHLT & event.passJetMult )
         self._cutFlow.fill("passJetMult", event[selections.require( passJetMult=True )], allTag=True)
 
@@ -299,7 +342,7 @@ class analysis(processor.ProcessorABC):
         canJet['jetId'] = selev.Jet.puId[canJet_idx]
         if isMC:
             canJet['hadronFlavour'] = selev.Jet.hadronFlavour[canJet_idx]
-        if not isMixedData:
+        if not isMixedData and not isTTForMixed and not isDataForMixed:
             canJet['calibration'] = selev.Jet.calibration[canJet_idx]
 
         #
@@ -353,9 +396,28 @@ class analysis(processor.ProcessorABC):
             selev['weight_noFvT'] = weight_noFvT
 
             if self.apply_FvT:
-                weight = np.array(selev.weight.to_numpy(), dtype=float)
-                weight[selev.threeTag] = selev.weight[selev.threeTag] * pseudoTagWeight[selev.threeTag] * selev.FvT.FvT[selev.threeTag]
-                selev['weight'] = weight
+
+                if isDataForMixed:
+
+                    #
+                    #  Load the weights for each mixed sample
+                    #
+                    for _JCM_load, _FvT_name in zip(event.metadata["JCM_loads"], event.metadata["FvT_names"]):
+                        _weight = np.array(selev.weight.to_numpy(), dtype=float)
+                        _weight[selev.threeTag] = selev.weight[selev.threeTag] * getattr(selev , f"{_JCM_load}")[selev.threeTag] * getattr(getattr(selev, _FvT_name), _FvT_name)[selev.threeTag]
+                        selev[f'weight_{_FvT_name}'] = _weight
+
+                    #
+                    # Use the first as the nominal weight
+                    #
+                    selev['weight'] = selev[f'weight_{event.metadata["FvT_names"][0]}']
+
+                else:
+                    weight = np.array(selev.weight.to_numpy(), dtype=float)
+                    weight[selev.threeTag] = selev.weight[selev.threeTag] * pseudoTagWeight[selev.threeTag] * selev.FvT.FvT[selev.threeTag]
+                    selev['weight'] = weight
+
+
             else:
                 selev['weight'] = weight_noFvT
 
@@ -561,8 +623,13 @@ class analysis(processor.ProcessorABC):
             fill += hist.add('nPVs',     (101, -0.5, 100.5, ('PV.npvs',     'Number of Primary Vertices')))
             fill += hist.add('nPVsGood', (101, -0.5, 100.5, ('PV.npvsGood', 'Number of Good Primary Vertices')))
 
-            fill += hist.add('hT',          (100,  0,   1000,  ('hT',          'H_{T} [GeV}')))
-            fill += hist.add('hT_selected', (100,  0,   1000,  ('hT_selected', 'H_{T} (selected jets) [GeV}')))
+        #
+        #  Make classifier hists
+        #
+        if self.apply_FvT:
+            FvT_skip = []
+            if isMixedData or isDataForMixed or isTTForMixed:
+                FvT_skip = ["pt", "pm3", "pm4"]
 
             if ('xbW' in selev.fields) and (self.run_topreco):  ### AGE: this should be temporary
 
@@ -570,9 +637,21 @@ class analysis(processor.ProcessorABC):
                 fill += hist.add('delta_xW',    (100, -5, 5,   ('delta_xW', 'delta xW')))
                 fill += hist.add('delta_xW_l',  (100, -15, 15, ('delta_xW', 'delta xW')))
 
-                fill += hist.add('xbW',         (100, 0, 12,   ('xbW',      'xbW')))
-                fill += hist.add('delta_xbW',   (100, -5, 5,   ('delta_xbW','delta xbW')))
-                fill += hist.add('delta_xbW_l', (100, -15, 15, ('delta_xbW','delta xbW')))
+        #
+        # Separate reweighting for the different mixed samples
+        #
+        if isDataForMixed:
+            for  _FvT_name in event.metadata["FvT_names"]:
+                fill += SvBHists((f'SvB_{_FvT_name}',    'SvB Classifier'),    'SvB',    weight=f"weight_{_FvT_name}")
+                fill += SvBHists((f'SvB_MA_{_FvT_name}', 'SvB MA Classifier'), 'SvB_MA', weight=f"weight_{_FvT_name}")
+
+        #
+        # Jets
+        #
+        fill += Jet.plot(('selJets', 'Selected Jets'),        'selJet',           skip=['deepjet_c'])
+        fill += Jet.plot(('canJets', 'Higgs Candidate Jets'), 'canJet',           skip=['deepjet_c'])
+        fill += Jet.plot(('othJets', 'Other Jets'),           'notCanJet_coffea', skip=['deepjet_c'])
+        fill += Jet.plot(('tagJets', 'Tag Jets'),             'tagJet',           skip=['deepjet_c'])
 
             #
             #  Make quad jet hists
