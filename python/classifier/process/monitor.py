@@ -125,7 +125,7 @@ class _Packet:
     def __post_init__(self):
         self._timestamp = time.time_ns()
         self._n_retried = 0
-        self.retry = self.retry or Setting.max_retry
+        self.retry = self.retry or Setting.max_resend
 
     def __call__(self):
         lock = self.cls.lock() if self.lock else noop
@@ -351,10 +351,12 @@ class Reporter(_Singleton):
                 self._sender.send(packet)
                 if packet.wait:
                     return self._sender.recv()
-            except:
+            except Exception as e:
                 if self._sender is not None:
                     _close_connection(self._sender)
                     self._sender = None
+                if isinstance(e, ConnectionError):
+                    raise
                 raise MonitorError
 
     def _send_non_blocking(self):
@@ -362,7 +364,11 @@ class Reporter(_Singleton):
             packet._n_retried += 1
             try:
                 self._send(packet)
-            except MonitorError:
+            except (MonitorError, ConnectionError) as e:
+                if isinstance(e, ConnectionError):
+                    if self._thread is None:
+                        return
+                    time.sleep(Setting.reconnect_delay)
                 if packet._n_retried < packet.retry:
                     self._jobs.put(packet)
 
@@ -378,8 +384,15 @@ class Reporter(_Singleton):
 
     @classmethod
     def stop(cls):
-        cls.current()._jobs.put(_Packet())
-        cls.current()._thread.join()
+        self = cls.current()
+        if self._thread is not None:
+            with self._lock:
+                running = self._sender is not None
+            if running:
+                self._jobs.put(_Packet())
+                thread = self._thread
+                self._thread = None
+                thread.join()
 
 
 class _ProxyMeta(type):

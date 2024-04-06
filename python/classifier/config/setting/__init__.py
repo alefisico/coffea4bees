@@ -115,7 +115,8 @@ class Monitor(Cascade):
     show_progress: bool = True
 
     # performance
-    max_retry: int = 3
+    max_resend: int = 1
+    reconnect_delay: float = 0.1
 
     # builtins
     logging_level: int = 20
