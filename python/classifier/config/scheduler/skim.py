@@ -1,11 +1,11 @@
 from classifier.nn.dataset import mp_loader
 from classifier.nn.schedule import Schedule
-from classifier.utils import noop
+from classifier.utils import NOOP, noop
 
 from ..setting.torch import DataLoader as DLSetting
 
 
-class _SkimBS(noop):
+class _SkimBS(NOOP):
     def __init__(self, dataset):
         self.dataloader = mp_loader(
             dataset, batch_size=DLSetting.batch_eval, shuffle=False, drop_last=False

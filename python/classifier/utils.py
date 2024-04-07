@@ -38,18 +38,21 @@ def subsets(group: frozenset[_ItemT]) -> frozenset[frozenset[_ItemT]]:
     return _subsets_cached(group)
 
 
-class _NoopMeta(type):
-    def __getattr__(cls, _):
-        return cls
+class NOOP:
+    def __getattr__(self, _):
+        return self
 
-    def __enter__(cls):
-        return cls
+    def __enter__(self):
+        return self
 
-    def __exit__(cls, *_):
+    def __exit__(self, *_):
         return False
 
-    def __repr__(cls):
+    def __repr__(self):
         return "no-op"
+
+
+class _NoopMeta(NOOP, type): ...
 
 
 class noop(metaclass=_NoopMeta):
