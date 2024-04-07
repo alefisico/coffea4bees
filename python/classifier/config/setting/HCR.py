@@ -11,11 +11,11 @@ class InputBranch(Cascade):
     n_NotCanJet: int = 8
 
     @classmethod
-    def _feature_CanJet(cls, var: list[str]):
+    def get__feature_CanJet(cls, var: list[str]):
         return [f"CanJet_{f}" for f in var]
 
     @classmethod
-    def _feature_NotCanJet(cls, var: list[str]):
+    def get__feature_NotCanJet(cls, var: list[str]):
         return [f"NotCanJet_{f}" for f in var]
 
 
