@@ -26,7 +26,7 @@ class RepoInfo:
     def get_url(cls, path: PathLike) -> str:
         if cls._local is None:
             cls._local = EOS(__file__)
-            while cls._local.name != cls.repo:
+            for _ in range(5):
                 cls._local = cls._local.parent
         path = EOS(path)
         if not path.isin(cls._local):
