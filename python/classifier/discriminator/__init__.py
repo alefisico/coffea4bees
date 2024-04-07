@@ -22,6 +22,10 @@ class TrainingStage:
     name: str
     model: Model
     schedule: Schedule
+
+    training: Dataset
+    validation: Dataset = None
+
     do_benchmark: bool = True
 
 
@@ -56,12 +60,12 @@ class Model(ABC):
 
 
 class Classifier(WithUUID, ABC):
-    device: torch.device
-
     def __init__(self, **kwargs):
         super().__init__()
         self.metadata = kwargs
         self.name = "__".join(f"{k}_{v}" for k, v in kwargs.items())
+        self.device: torch.device = None
+        self.dataset: Dataset = None
 
     def cleanup(self):
         if self.device.type == "cuda":
@@ -79,11 +83,11 @@ class Classifier(WithUUID, ABC):
 
     def train(
         self,
-        training: Dataset,
-        validation: Dataset,
+        dataset: Dataset,
         device: Device,
     ):
         self.device = device.get(self.min_memory)
+        self.dataset = dataset
         result = {
             "uuid": str(self.uuid),
             "name": self.name,
@@ -95,8 +99,6 @@ class Classifier(WithUUID, ABC):
             result["parameters"][stage.name] = stage.model.n_parameters
             result["benchmark"][stage.name] = self._train(
                 stage=stage,
-                training=training,
-                validation=validation,
             )
         return result
 
@@ -110,8 +112,6 @@ class Classifier(WithUUID, ABC):
     def _train(
         self,
         stage: TrainingStage,
-        training: Dataset,
-        validation: Dataset,
     ):
         model = stage.model
         schedule = stage.schedule
@@ -119,7 +119,7 @@ class Classifier(WithUUID, ABC):
         optimizer = schedule.optimizer(model.parameters())
         lr = schedule.lr_scheduler(optimizer)
         bs = schedule.bs_scheduler(
-            training,
+            stage.training,
             shuffle=True,
             drop_last=True,
             pin_memory=True,
@@ -127,7 +127,7 @@ class Classifier(WithUUID, ABC):
 
         # training
         benchmark = []
-        datasets = {"training": training, "validation": validation}
+        datasets = {"training": stage.training, "validation": stage.validation}
         for epoch in range(schedule.epoch):
             self.cleanup()
             model.train()

@@ -11,6 +11,7 @@ from ._kfold import KFoldClassifier
 
 if TYPE_CHECKING:
     from classifier.discriminator.HCR import HCRModel
+    from classifier.discriminator.skimmer import Splitter
     from torch import Tensor
 
 _SCHEDULER = "classifier.config.scheduler"
@@ -50,7 +51,7 @@ class _HCR(KFoldClassifier):
     def loss(model: HCRModel, batch: dict[str, Tensor]) -> Tensor:
         pass
 
-    def initializer(self, kfolds: int, offset: int):
+    def initializer(self, splitter: Splitter, **kwargs):
         from classifier.discriminator.HCR import GBN, HCRArch, HCRClassifier
 
         arch = HCRArch(**({"loss": self.loss} | self.opts.architecture))
@@ -61,10 +62,10 @@ class _HCR(KFoldClassifier):
         return HCRClassifier(
             arch=arch,
             ghost_batch=gbn,
+            cross_validation=splitter,
             training_schedule=training,
             finetuning_schedule=finetuning,
-            kfolds=kfolds,
-            offset=offset,
+            **kwargs,
         )
 
 

@@ -12,11 +12,12 @@ from ..config.setting.HCR import Input, InputBranch, Output
 from ..config.state.label import MultiClass
 from ..nn.blocks import HCR
 from ..nn.schedule import MilestoneStep
-from ..utils import noop
 from . import Classifier, Model, TrainingStage
+from .skimmer import Skimmer, Splitter
 
 if TYPE_CHECKING:
     from torch import Tensor
+    from torch.utils.data import Dataset
 
     from ..nn.schedule import Schedule
 
@@ -46,24 +47,20 @@ def _HCRInput(batch: dict[str, Tensor], device: torch.device):
     return CanJet.to(device), NotCanJet.to(device), ancillary.to(device)
 
 
-class _HCRSkim(Model):
-    def __init__(self, nn: HCR, device: torch.device):
+class _HCRSkim(Skimmer):
+    def __init__(
+        self,
+        nn: HCR,
+        device: torch.device,
+        splitter: Splitter,
+    ):
         self._nn = nn
         self._device = device
-
-    @property
-    def n_parameters(self) -> int:
-        return 0
-
-    @property
-    def module(self):
-        return noop
+        self._splitter = splitter
 
     def forward(self, batch: dict[str, Tensor]):
+        self._splitter.step(batch)
         self._nn.updateMeanStd(*_HCRInput(batch, self._device))
-
-    def loss(self, _):
-        return noop
 
 
 class HCRModel(Model):
@@ -130,6 +127,7 @@ class HCRClassifier(Classifier):
         self,
         arch: HCRArch,
         ghost_batch: GBN,
+        cross_validation: Splitter,
         training_schedule: Schedule,
         finetuning_schedule: Schedule = None,
         **kwargs,
@@ -137,30 +135,35 @@ class HCRClassifier(Classifier):
         super().__init__(**kwargs)
         self._arch = arch
         self._ghost_batch = ghost_batch
+        self._splitter = cross_validation
         self._training = training_schedule
         self._finetuning = finetuning_schedule
         self._HCR: HCRModel = None
 
     def training_stages(self):
-        if self._HCR is None:
-            self._HCR = HCRModel(
-                arch=self._arch,
-                device=self.device,
-            )
-            self._HCR.ghost_batch = self._ghost_batch
-            self._HCR.to(self.device)
-            skim = _HCRSkim(self._HCR._nn, self.device)
-            yield TrainingStage(
-                name="Initialization",
-                model=skim,
-                schedule=SkimStep(),
-                do_benchmark=False,
-            )
-            self._HCR.module.initMeanStd()
+        self._HCR = HCRModel(
+            arch=self._arch,
+            device=self.device,
+        )
+        self._HCR.ghost_batch = self._ghost_batch
+        self._HCR.to(self.device)
+        self._splitter.setup(self.dataset)
+        skim = _HCRSkim(self._HCR._nn, self.device, self._splitter)
+        yield TrainingStage(
+            name="Initialization",
+            model=skim,
+            schedule=SkimStep(),
+            training=self.dataset,
+            do_benchmark=False,
+        )
+        self._HCR.module.initMeanStd()
+        training, validation = self._splitter.get()
         yield TrainingStage(
             name="Training",
             model=self._HCR,
             schedule=self._training,
+            training=training,
+            validation=validation,
             do_benchmark=True,
         )
         self._HCR.ghost_batch = None
@@ -173,6 +176,8 @@ class HCRClassifier(Classifier):
                 name="Finetuning",
                 model=self._HCR,
                 schedule=self._finetuning,
+                training=training,
+                validation=validation,
                 do_benchmark=True,
             )
             self._HCR.ghost_batch = self._ghost_batch

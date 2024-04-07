@@ -13,9 +13,9 @@ if TYPE_CHECKING:
 
 class Model(Task):
     @interface
-    def train(self, datasets: StackDataset) -> list[ModelTrainer]:
+    def train(self) -> list[ModelTrainer]:
         """
-        Preprocess datasets and prepare models for training.
+        Pepare models for training.
         """
         ...
 
@@ -25,7 +25,7 @@ class Model(Task):
 
 
 class ModelTrainer(Protocol):
-    def __call__(self, device: Device) -> dict[str]: ...
+    def __call__(self, device: Device, datasets: StackDataset) -> dict[str]: ...
 
 
 class ModelRunner(Protocol):  # TODO evaluation

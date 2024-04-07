@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 import fsspec
-from classifier.nn.dataset import io_loader
+from classifier.nn.dataset import skim_loader
 from classifier.task import ArgParser, EntryPoint, converter
 
 from ..setting import IO as IOSetting
@@ -109,7 +109,7 @@ class _save_cache:
 
         chunk, indices = args
         subset = Subset(self.dataset, indices)
-        chunks = [*io_loader(subset)]
+        chunks = [*skim_loader(subset)]
         data = {k: torch.cat([c[k] for c in chunks]) for k in self.dataset.datasets}
         with fsspec.open(
             self.path / f"chunk{chunk}.pt", "wb", compression=self.compression

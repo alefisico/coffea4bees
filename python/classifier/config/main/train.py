@@ -15,20 +15,13 @@ if TYPE_CHECKING:
     from torch.utils.data import StackDataset
 
 
-class _init_model:
-    def __init__(self, dataset: StackDataset):
-        self._dataset = dataset
-
-    def __call__(self, model: Model):
-        return model.train(self._dataset)
-
-
 class _train_model:
-    def __init__(self, device: Device):
+    def __init__(self, device: Device, datasets: StackDataset):
         self._device = device
+        self._datasets = datasets
 
     def __call__(self, trainer: ModelTrainer):
-        return trainer(self._device)
+        return trainer(self._device, self._datasets)
 
 
 class Main(SelectDevice, LoadTrainingSets):
@@ -37,7 +30,7 @@ class Main(SelectDevice, LoadTrainingSets):
         description="Train multiple models using one dataset.",
         workflow=[
             *LoadTrainingSets._workflow,
-            ("sub", "call [blue]model.train(dataset)[/blue]"),
+            ("main", "call [blue]model.train()[/blue]"),
             ("sub", "train [blue]model[/blue]"),
         ],
     )
@@ -55,15 +48,10 @@ class Main(SelectDevice, LoadTrainingSets):
 
         # load datasets in parallel
         datasets = self.load_training_sets(parser)
-        # initialize datasets in parallel
-        m_initializer = parser.mods["model"]
+        # initialize datasets
+        m_initializer: list[Model] = parser.mods["model"]
         timer = datetime.now()
-        with Pool(
-            max_workers=self.opts.max_trainers,
-            mp_context=status.context,
-            initializer=status.initializer,
-        ) as pool:
-            models = [*chain(*pool.map(_init_model(datasets), m_initializer))]
+        models = [*chain(*(m.train() for m in m_initializer))]
         logging.info(f"Initialized {len(models)} models in {datetime.now() - timer}")
         # train models in parallel
         with Pool(
@@ -71,6 +59,6 @@ class Main(SelectDevice, LoadTrainingSets):
             mp_context=status.context,
             initializer=status.initializer,
         ) as pool:
-            results = [*pool.map(_train_model(self.device), models)]
+            results = [*pool.map(_train_model(self.device, datasets), models)]
 
         return {"models": results}
