@@ -24,7 +24,7 @@ def _is_state(var: tuple[str, Any]):
     return not _is_special(name) and not isinstance(value, classmethod)
 
 
-class _CachedStateMeta(type):
+class _ClassPropertyMeta(type):
     __cached_states__ = {}
 
     def __getattribute__(cls, __name: str):
@@ -48,7 +48,7 @@ class _CachedStateMeta(type):
         super().__setattr__(__name, __value)
 
 
-class GlobalState(metaclass=_CachedStateMeta):
+class GlobalState:
     _states: list[type[GlobalState]] = []
 
     def __init_subclass__(cls):
@@ -80,7 +80,7 @@ class _share_global_state:
 status.initializer.add_unique(_share_global_state)
 
 
-class Cascade(GlobalState, Static):
+class Cascade(GlobalState, Static, metaclass=_ClassPropertyMeta):
     def __init_subclass__(cls):
         super().__init_subclass__()
         for k, v in vars(cls).items():

@@ -1,17 +1,14 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from datetime import datetime
 
 from base_class.system.eos import EOS, PathLike
 from classifier.task import GlobalState
 
-if TYPE_CHECKING:
-    from datetime import datetime
-
 
 class RunInfo(GlobalState):
     main_task: str = None
-    startup_time: datetime = None
+    startup_time: datetime = datetime.now()
 
 
 class RepoInfo:
