@@ -89,7 +89,6 @@ class EntryPoint:
 
         from ..config.state import RunInfo
 
-        RunInfo.startup_time = datetime.now()
         RunInfo.main_task = argv[1]
 
         self.entrypoint = Path(argv[0]).name
