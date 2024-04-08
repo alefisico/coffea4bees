@@ -7,11 +7,15 @@ from pathlib import Path
 from textwrap import indent
 
 import rich.terminal_theme as themes
-from classifier.task import ArgParser, EntryPoint, Task, main
+from classifier.task import ArgParser, EntryPoint, Task, main, parse
 from classifier.task.task import _INDENT
 from rich.console import Console
 
 from ..setting import IO as IOSetting
+
+_NOTES = [
+    f"A special task/flag [blue]{main._FROM}[/blue]/[blue]--{main._FROM}[/blue] [yellow]file \[file ...][/yellow] can be used to load and merge workflows from files. If an option is marked as {parse.EMBED}, it can directly read the jsonable object embedded in the workflow configuration file.",
+]
 
 
 def _print_mod(cat: str, imp: str, opts: list[str | dict], newline: str = "\n"):
@@ -82,7 +86,7 @@ class Main(main.Main):
     def _print_help(self, task: Task, depth: int = 1):
         self._print(indent(task.help(), _INDENT * depth))
 
-    def run(self, parser: EntryPoint):  # TODO print help information for from
+    def run(self, parser: EntryPoint):
         tasks = parser.args["main"]
         self._print("[orange3]\[Usage][/orange3]")
         self._print(
@@ -90,8 +94,8 @@ class Main(main.Main):
                 [
                     f"{parser.entrypoint} [blue]task[/blue] [yellow]\[args ...][/yellow]",
                     *(
-                        f"[blue]{k}[/blue] [green]module.class[/green] [yellow]\[args ...][/yellow]"
-                        for k in parser._preserved
+                        f"[blue]--{k}[/blue] [green]module.class[/green] [yellow]\[args ...][/yellow]"
+                        for k in parser._keys
                     ),
                 ]
             )
@@ -107,6 +111,10 @@ class Main(main.Main):
                 _INDENT,
             )
         )
+        self._print("\n[orange3]\[Notes][orange3]")
+        for i, note in enumerate(_NOTES, 1):
+            self._print(f"#{i}")
+            self._print(indent(note, _INDENT))
         self._print("\n[orange3]\[Tasks][orange3]")
         self._print(f"[blue]help[/blue]")
         self._print_help(self)
