@@ -17,7 +17,6 @@ from .skimmer import Skimmer, Splitter
 
 if TYPE_CHECKING:
     from torch import Tensor
-    from torch.utils.data import Dataset
 
     from ..nn.schedule import Schedule
 
@@ -40,10 +39,14 @@ class GBN(MilestoneStep):
         self.reset()
 
 
-def _HCRInput(batch: dict[str, Tensor], device: torch.device):
+def _HCRInput(batch: dict[str, Tensor], device: torch.device, selection: Tensor = None):
     CanJet = batch.pop(Input.CanJet)
     NotCanJet = batch.pop(Input.NotCanJet)
     ancillary = batch.pop(Input.ancillary)
+    if selection is not None:
+        CanJet = CanJet[selection]
+        NotCanJet = NotCanJet[selection]
+        ancillary = ancillary[selection]
     return CanJet.to(device), NotCanJet.to(device), ancillary.to(device)
 
 
@@ -59,8 +62,9 @@ class _HCRSkim(Skimmer):
         self._splitter = splitter
 
     def forward(self, batch: dict[str, Tensor]):
-        self._splitter.step(batch)
-        self._nn.updateMeanStd(*_HCRInput(batch, self._device))
+        training, _ = self._splitter.step(batch)
+        self._nn.updateMeanStd(*_HCRInput(batch, self._device, training))
+        # TODO compute die loss
 
 
 class HCRModel(Model):
@@ -92,9 +96,7 @@ class HCRModel(Model):
             self._nn.setGhostBatches(0, False)
         else:
             self._gbn.reset()
-            self._nn.setGhostBatches(
-                self._gbn.n_batches, True
-            )  # TODO check what the subset do
+            self._nn.setGhostBatches(self._gbn.n_batches, True)  # TODO check subset
 
     @property
     def module(self):

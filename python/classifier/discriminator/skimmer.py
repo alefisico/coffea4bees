@@ -36,7 +36,7 @@ class Splitter(ABC):
         self.reset()
         self._dataset = dataset
 
-    def step(self, batch: dict[str, Tensor]):
+    def step(self, batch: dict[str, Tensor]) -> tuple[BoolTensor, ...]:
         selected = self.split(batch)
         size = len(selected[0])
         if self._selected is None:
@@ -46,6 +46,7 @@ class Splitter(ABC):
         for i, s in enumerate(selected):
             self._selected[i, self._start : self._start + size] = s
         self._start += size
+        return selected
 
     def reset(self):
         self._dataset = None
