@@ -84,17 +84,32 @@ class EntryPoint:
                     else:
                         self.mods[cat].append(new(cls, opts))
 
+    @classmethod
+    def _expand_module(cls, data: dict):
+        import shlex
+
+        from . import parse
+
+        mod = data[_MODULE]
+        opts = []
+        for opt in data.get(_OPTION, []):
+            if isinstance(opt, str):
+                opts.extend(shlex.split(opt))
+            else:
+                opts.append(parse.escape(opt))
+        return mod, opts
+
     def _expand(self, *files: str, fetch_main: bool = False):
         from . import parse
 
         for file in files:
             args = parse.mapping(file, "file")
             if fetch_main and _MAIN in args:
-                self.args[_MAIN] = args[_MAIN][_MODULE], args[_MAIN].get(_OPTION, [])
+                self.args[_MAIN] = self._expand_module(args[_MAIN])
             for cat in self._keys:
                 if cat in args:
                     for arg in args[cat]:
-                        self.args[cat].append((arg[_MODULE], arg.get(_OPTION, [])))
+                        self.args[cat].append(self._expand_module(arg))
 
     def __init__(self, argv: list[str] = None, initializer: Callable[[], None] = None):
         from ..config.state import RunInfo

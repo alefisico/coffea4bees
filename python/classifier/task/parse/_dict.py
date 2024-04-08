@@ -98,8 +98,6 @@ def mapping(arg: str, default: str = "yaml"):
         return None
     if arg == "":
         return {}
-    if not isinstance(arg, str):
-        return arg
 
     def error(msg: str):
         logging.error(f'{msg} when parsing "{arg}"')

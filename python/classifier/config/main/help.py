@@ -29,8 +29,6 @@ def _print_mod(cat: str, imp: str, opts: list[str | dict], newline: str = "\n"):
             if current:
                 output.append(indent(f"[yellow]{' '.join(current)}[/yellow]", _INDENT))
             current.clear()
-        if not isinstance(opt, str):
-            opt = json.dumps(opt)
         current.append(opt)
     return newline.join(output)
 
