@@ -87,6 +87,7 @@ class Monitor(Cascade):
 
     track_usage: bool = True
     track_usage_interval: float = 1.0  # seconds
+    track_gpu_usage: bool = True
 
     # records
     dir_records: str = "diagnostic"

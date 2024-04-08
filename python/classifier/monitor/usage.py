@@ -7,6 +7,7 @@ from typing import TypedDict
 import psutil
 
 from ..config.setting import Monitor as Setting
+from ..config.state import RunInfo
 from ..process.monitor import Proxy, Recorder, callback
 
 _NVIDIA_SMI = "nvidia-smi"
@@ -60,14 +61,23 @@ class Usage(Proxy):
         while True:
             now = time.time()
             process = psutil.Process()
-            gpu_mems = cls._gpu()
-            cpu = process.cpu_percent()
+            pids = [process.pid]
+            # CPU, memory
+            cpu = process.cpu_percent(Setting.track_usage_interval)
             mem = process.memory_info().rss / _MIB
-            gpu = gpu_mems.get(process.pid, 0)
             for child in process.children(recursive=True):
                 cpu += child.cpu_percent()
                 mem += child.memory_info().rss / _MIB
-                gpu += gpu_mems.get(child.pid, 0)
+                pids.append(child.pid)
+            # GPU
+            if Setting.track_gpu_usage:
+                if RunInfo.singularity:
+                    gpu = cls._gpu_singularity()
+                else:
+                    gpu = cls._gpu()
+                    gpu = sum(gpu.get(pid, 0) for pid in pids)
+            else:
+                gpu = 0
             cls._records.append({"time": now, "cpu": cpu, "memory": mem, "gpu": gpu})
             time.sleep(Setting.track_usage_interval)
 
@@ -89,6 +99,22 @@ class Usage(Proxy):
             ).decode()
             return dict(map(int, line.split(", ")) for line in mem.splitlines())
         return {}
+
+    @classmethod
+    def _gpu_singularity(cls):
+        import torch
+
+        if cls._has_gpu is None:
+            cls._has_gpu = torch.cuda.is_available()
+        if cls._has_gpu:
+            return (
+                sum(
+                    torch.cuda.memory_reserved(i)
+                    for i in range(torch.cuda.device_count())
+                )
+                / _MIB
+            )
+        return 0
 
     @classmethod
     def serialize(cls):

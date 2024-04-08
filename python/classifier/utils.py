@@ -42,6 +42,9 @@ class NOOP:
     def __getattr__(self, _):
         return self
 
+    def __call__(self):
+        return self
+
     def __enter__(self):
         return self
 
