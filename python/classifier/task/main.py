@@ -172,26 +172,15 @@ class EntryPoint:
                 logging.info(f"Connecting to Monitor {Setting.address}:{Setting.port}")
 
     def run(self, reproducible: Callable):
-        from ..config.setting import IO as IOSetting
-        from ..process.monitor import wait_for_reporter
+        from ..config.setting import IO, save
+        from ..process.monitor import Recorder, wait_for_reporter
 
         meta = self.main.run(self)
         wait_for_reporter()
 
         if self.main.flag("save_state"):
-            from ..config.setting import save
-
-            save.parse([IOSetting.output / IOSetting.file_states])
-
-        if self.main.flag("save_logs"):
-            from ..monitor.logging import Log
-
-            if Log.console is not None:
-                with fsspec.open(
-                    IOSetting.output / IOSetting.file_logs,
-                    "wt",
-                ) as f:
-                    f.write(Log.console.export_html(theme=themes.MONOKAI))
+            save.parse([IO.output / IO.file_states])
+        Recorder.dump()
 
         if meta is not None:
             from base_class.utils.json import DefaultEncoder
@@ -201,7 +190,7 @@ class EntryPoint:
                 "reproducible": reproducible(),
             }
             with fsspec.open(
-                IOSetting.output / IOSetting.file_metadata,
+                IO.output / IO.file_metadata,
                 "wt",
             ) as f:
                 json.dump(meta, f, cls=DefaultEncoder)
@@ -218,11 +207,6 @@ class Main(Task):
         "--save-state",
         action="store_true",
         help="save global states to the output directory",
-    )
-    argparser.add_argument(
-        "--save-logs",
-        action="store_true",
-        help="save logs to the output directory",
     )
 
     @interface

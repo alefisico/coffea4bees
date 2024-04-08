@@ -54,7 +54,6 @@ class IO(Cascade):
 
     output: EOS = "./{main}-{timestamp}/"
 
-    file_logs: str = "logs.html"
     file_states: str = "states.pkl"
     file_metadata: str = "metadata.json"
 
@@ -86,9 +85,18 @@ class Monitor(Cascade):
     show_log: bool = True
     show_progress: bool = True
 
+    track_usage: bool = True
+    track_usage_interval: float = 1.0  # seconds
+
+    # records
+    dir_records: str = "diagnostic"
+    file_meta: str = "meta.json"
+    file_logs: str = "logs.html"
+    file_usage: str = "usage.json"
+
     # performance
     max_resend: int = 1
-    reconnect_delay: float = 0.1
+    reconnect_delay: float = 0.1  # seconds
 
     # builtins
     logging_level: int = 20

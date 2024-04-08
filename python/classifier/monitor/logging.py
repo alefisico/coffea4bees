@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import re
 
+import rich.terminal_theme as themes
 from rich._log_render import LogRender
 from rich.console import Console
 from rich.logging import RichHandler
@@ -11,7 +12,7 @@ from rich.text import Text
 
 from ..config.setting import Monitor as Setting
 from ..config.state import RepoInfo
-from ..process.monitor import Monitor, Reporter, callback
+from ..process.monitor import Recorder, callback
 
 
 class _LogRender(LogRender):
@@ -86,18 +87,22 @@ class RemoteHandler(logging.Handler):
 
     def emit(self, record: logging.LogRecord):
         if Setting.show_log:
-            record.name = Reporter.name()
+            record.name = Recorder.name()
             record.pathname = RepoInfo.get_url(record.pathname)
             self.send(record)
 
     @callback(acquire_class_lock=False, max_retry=1)
     def send(self, record: logging.LogRecord):
-        record.name = Monitor.registered(record.name)
+        record.name = Recorder.registered(record.name)
         logging.getLogger().handle(record)
 
 
 class Log:
     console: Console = None
+
+    @classmethod
+    def serialize(cls):
+        return cls.console.export_html(theme=themes.MONOKAI).encode()
 
 
 def _disable_logging():
@@ -117,6 +122,7 @@ def setup_monitor():
         handlers = []
         if Setting.use_console:
             Log.console = Console(record=True, markup=True)
+            Recorder.to_dump(Setting.file_logs, Log.serialize)
             handlers.append(_RichHandler(markup=True, console=Log.console))
         if handlers:
             return logging.basicConfig(

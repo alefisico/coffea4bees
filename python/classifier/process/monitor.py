@@ -14,7 +14,9 @@ from threading import Lock, Thread
 from typing import Any, Callable, Concatenate, ParamSpec, TypeVar, overload
 from uuid import uuid4
 
-from ..config.setting import Monitor as Setting
+import fsspec
+
+from ..config import setting as cfg
 from ..typetools import Method
 from ..utils import noop
 from . import is_poxis
@@ -125,7 +127,7 @@ class _Packet:
     def __post_init__(self):
         self._timestamp = time.time_ns()
         self._n_retried = 0
-        self.retry = self.retry or Setting.max_resend
+        self.retry = self.retry or cfg.Monitor.max_resend
 
     def __call__(self):
         lock = self.cls.lock() if self.lock else noop
@@ -233,17 +235,16 @@ class Monitor(_Singleton):
         self._lock = Lock()
 
         # listener
-        if Setting.port is None:
+        if cfg.Monitor.port is None:
             uuid = f"monitor-{uuid4()}"
             self._address = f"/tmp/{uuid}" if is_poxis() else rf"\\.\pipe\{uuid}"
         else:
-            self._address = (_get_host(), Setting.port)
+            self._address = (_get_host(), cfg.Monitor.port)
         self._listener: tuple[Listener, Thread] = None
 
         # clients
         self._connections: list[Connection] = []
         self._handlers: list[Thread] = []
-        self._reporters: dict[str, int] = {}
 
     @classmethod
     def start(cls):
@@ -314,34 +315,19 @@ class Monitor(_Singleton):
     def lock(cls):
         return cls.current()._lock
 
-    @callback
-    def register(cls, name: str):
-        index = f"#{len(cls.current()._reporters)}"
-        cls.current()._reporters[name] = index
-        logging.info(f'"{name}" is registered as \[{index}]')
-        return index
-
-    @classmethod
-    def registered(cls, name: str):
-        index = cls.current()._reporters.get(name)
-        if index is None:
-            index = cls.register(name)
-        return index
-
 
 class Reporter(_Singleton):
     __allowed_process__ = _Status.Fresh
 
     def __init__(self, address: str):
         self._address = address
-        self._name = f"{_get_host()}/pid-{os.getpid()}/{mp.current_process().name}"
 
         self._lock = Lock()
         self._jobs: PriorityQueue[_Packet] = PriorityQueue()
         self._sender: Connection = None
         self._thread = Thread(target=self._send_non_blocking, daemon=True)
         self._thread.start()
-        Monitor.register(self._name)
+        Recorder.register(Recorder.name())
 
     def _send(self, packet: _Packet):
         with self._lock:
@@ -368,7 +354,7 @@ class Reporter(_Singleton):
                 if isinstance(e, ConnectionError):
                     if self._thread is None:
                         return
-                    time.sleep(Setting.reconnect_delay)
+                    time.sleep(cfg.Monitor.reconnect_delay)
                 if packet._n_retried < packet.retry:
                     self._jobs.put(packet)
 
@@ -377,10 +363,6 @@ class Reporter(_Singleton):
             return self._send(packet)
         else:
             self._jobs.put(packet)
-
-    @classmethod
-    def name(cls):
-        return cls.current()._name
 
     @classmethod
     def stop(cls):
@@ -412,9 +394,56 @@ class Proxy(_Singleton, metaclass=_ProxyMeta):
         return cls._lock
 
 
+class Recorder(Proxy):
+    _name = f"{_get_host()}/pid-{os.getpid()}/{mp.current_process().name}"
+
+    _reporters: dict[str, int]
+    _data: list[tuple[str, Callable[[], bytes]]]
+
+    def __init__(self):
+        self._reporters = {self._name: "root"}
+        self._data = [(cfg.Monitor.file_meta, Recorder.serialize)]
+
+    @callback
+    def register(self, name: str):
+        index = f"#{len(self._reporters)}"
+        self._reporters[name] = index
+        logging.info(f'"{name}" is registered as \[{index}]')
+        return index
+
+    @classmethod
+    def name(cls):
+        return cls._name
+
+    @classmethod
+    def registered(cls, name: str):
+        index = cls._reporters.get(name)
+        if index is None:
+            index = cls.register(name)
+        return index
+
+    @classmethod
+    def to_dump(cls, file: str, func: Callable[[], bytes]):
+        cls._data.append((file, func))
+
+    @classmethod
+    def serialize(cls):
+        import json
+
+        return json.dumps(cls._reporters, indent=4).encode()
+
+    @classmethod
+    def dump(cls):
+        if (cfg.Monitor.dir_records is not None) and (_Status.now() == _Status.Monitor):
+            base = (cfg.IO.output / cfg.Monitor.dir_records).mkdir()
+            for file, func in cls._data:
+                with fsspec.open(base / file, "wb") as f:
+                    f.write(func())
+
+
 def connect_to_monitor(address: str | tuple = None):
     if address is None:
-        address = (Setting.address, Setting.port)
+        address = (cfg.Monitor.address, cfg.Monitor.port)
     elif not isinstance(address, tuple):
         address = _parse_url(address)
     Reporter.init(address)

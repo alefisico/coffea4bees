@@ -8,4 +8,3 @@ class Main(_Main):
             Monitor.current()._listener[1].join()
         except KeyboardInterrupt:
             pass
-        return {"registered": Monitor.current()._reporters}
