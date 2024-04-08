@@ -42,11 +42,12 @@ class Usage(Proxy):
 
     @classmethod
     def checkpoint(cls, name: str):
-        checkpoint = {"time": time.time(), "name": name}
-        end = len(cls._records)
-        records = cls._records[cls._head : end]
-        cls._head = end
-        cls.send(Recorder.name(), checkpoint, records)
+        if Setting.track_usage:
+            checkpoint = {"time": time.time(), "name": name}
+            end = len(cls._records)
+            records = cls._records[cls._head : end]
+            cls._head = end
+            cls.send(Recorder.name(), checkpoint, records)
 
     @callback
     def send(self, process: str, checkpoint: _Checkpoint, records: list[_Resource]):
