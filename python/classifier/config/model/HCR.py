@@ -23,27 +23,27 @@ class _HCR(KFoldClassifier):
         "--architecture",
         type=parse.mapping,
         default="",
-        help="HCR architecture",
+        help=f"HCR architecture {parse.EMBED}",
     )
     argparser.add_argument(
         "--ghost-batch",
         type=parse.mapping,
         default="",
-        help="ghost batch normalization configuration",
+        help=f"ghost batch normalization configuration {parse.EMBED}",
     )
     argparser.add_argument(
         "--training",
         nargs="+",
         default=["FixedStep"],
         metavar=("CLASS", "KWARGS"),
-        help="training scheduler",
+        help=f"training scheduler {parse.EMBED}",
     )
     argparser.add_argument(
         "--finetuning",
         nargs="+",
         default=[],
         metavar=("CLASS", "KWARGS"),
-        help="fine-tuning scheduler",
+        help=f"fine-tuning scheduler {parse.EMBED}",
     )
 
     @staticmethod

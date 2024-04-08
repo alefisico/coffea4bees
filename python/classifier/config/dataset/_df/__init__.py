@@ -75,7 +75,7 @@ class LoadRoot(ABC, Dataframe):
         action="extend",
         nargs="+",
         default=[],
-        help="the paths to the filelists",
+        help=f"the paths to the filelists {parse.EMBED}",
     )
     argparser.add_argument(
         "--friends",
@@ -106,7 +106,7 @@ class LoadRoot(ABC, Dataframe):
         return unique(
             reduce(
                 list.__add__,
-                (parse.mapping(f"file:///{f}") for f in filelists),
+                (parse.mapping(f, "file") for f in filelists),
                 files.copy(),
             )
         )
@@ -114,7 +114,7 @@ class LoadRoot(ABC, Dataframe):
     def _parse_friends(self, friends: list[str]) -> list[Friend]:
         from base_class.root import Friend
 
-        return [Friend.from_json(parse.mapping(f"file:///{f}")) for f in friends]
+        return [Friend.from_json(parse.mapping(f, "file")) for f in friends]
 
     def _from_root(self):
         yield self.from_root(), self.files
@@ -158,7 +158,7 @@ class LoadGroupedRoot(LoadRoot):
         nargs="+",
         metavar=("GROUPS", "PATHS"),
         default=[],
-        help="comma-separated groups and paths to the filelist",
+        help=f"comma-separated groups and paths to the filelist {parse.EMBED}",
     )
     argparser.add_argument(
         "--friends",

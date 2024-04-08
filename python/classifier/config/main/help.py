@@ -1,4 +1,5 @@
 import inspect
+import json
 import os
 import pkgutil
 import re
@@ -11,6 +12,23 @@ from classifier.task.task import _INDENT
 from rich.console import Console
 
 from ..setting import IO as IOSetting
+
+
+def _print_mod(cat: str, imp: str, opts: list[str | dict], newline: str = "\n"):
+    if cat is None:
+        output = [f"[blue]{imp}[/blue]"]
+    else:
+        output = [f"[blue]--{cat}[/blue] [green]{imp}[/green]"]
+    current = []
+    for opt in opts + [None]:
+        if (isinstance(opt, str) and opt.startswith("-")) or (opt is None):
+            if current:
+                output.append(indent(f"[yellow]{' '.join(current)}[/yellow]", _INDENT))
+            current.clear()
+        if not isinstance(opt, str):
+            opt = json.dumps(opt)
+        current.append(opt)
+    return newline.join(output)
 
 
 def _walk_packages(base):
@@ -64,7 +82,7 @@ class Main(main.Main):
     def _print_help(self, task: Task, depth: int = 1):
         self._print(indent(task.help(), _INDENT * depth))
 
-    def run(self, parser: EntryPoint):
+    def run(self, parser: EntryPoint):  # TODO print help information for from
         tasks = parser.args["main"]
         self._print("[orange3]\[Usage][/orange3]")
         self._print(
@@ -98,13 +116,11 @@ class Main(main.Main):
                 _, cls = parser._fetch_module(f"{task}.Main", main._MAIN)
                 self._print_help(cls)
         self._print("\n[orange3]\[Options][orange3]")
-        self._print(f'[blue]task[/blue] [yellow]{" ".join(tasks[1])}[/yellow]')
+        self._print(_print_mod(None, "task", tasks[1]))
         for cat in parser._keys:
             target = EntryPoint._keys[cat]
             for imp, opts in parser.args[cat]:
-                self._print(
-                    f'[blue]--{cat}[/blue] [green]{imp}[/green] [yellow]{" ".join(opts)}[/yellow]'
-                )
+                self._print(_print_mod(cat, imp, opts))
                 modname, clsname = parser._fetch_module_name(imp, cat)
                 mod, cls = parser._fetch_module(imp, cat)
                 if mod is None:

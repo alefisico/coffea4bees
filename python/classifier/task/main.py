@@ -5,7 +5,6 @@ import logging
 import os
 import sys
 from collections import deque
-from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Optional
 
@@ -26,6 +25,10 @@ if TYPE_CHECKING:
 _CLASSIFIER = "classifier"
 _CONFIG = "config"
 _MAIN = "main"
+_FROM = "from"
+
+_MODULE = "module"
+_OPTION = "option"
 
 
 class EntryPoint:
@@ -43,7 +46,7 @@ class EntryPoint:
         "dataset": Dataset,
         "model": Model,
     }
-    _preserved = [f"--{k}" for k in _keys]
+    _preserved = [*(f"--{k}" for k in _keys), f"--{_FROM}"]
 
     @classmethod
     def _fetch_subargs(cls, args: deque):
@@ -81,15 +84,25 @@ class EntryPoint:
                     else:
                         self.mods[cat].append(new(cls, opts))
 
+    def _expand(self, *files: str, fetch_main: bool = False):
+        from . import parse
+
+        for file in files:
+            args = parse.mapping(file, "file")
+            if fetch_main and _MAIN in args:
+                self.args[_MAIN] = args[_MAIN][_MODULE], args[_MAIN].get(_OPTION, [])
+            for cat in self._keys:
+                if cat in args:
+                    for arg in args[cat]:
+                        self.args[cat].append((arg[_MODULE], arg.get(_OPTION, [])))
+
     def __init__(self, argv: list[str] = None, initializer: Callable[[], None] = None):
+        from ..config.state import RunInfo
+
         if initializer is not None:
             initializer()
         if argv is None:
             argv = sys.argv.copy()
-
-        from ..config.state import RunInfo
-
-        RunInfo.main_task = argv[1]
 
         self.entrypoint = Path(argv[0]).name
         self.cmd = " ".join(argv)
@@ -99,17 +112,24 @@ class EntryPoint:
         if len(args) == 0:
             raise ValueError(f"No task specified")
         arg = args.popleft()
-        if arg not in self._tasks:
-            raise ValueError(
-                f'The first argument must be one of {self._tasks}, got "{arg}"'
-            )
-        else:
-            self.args[_MAIN] = arg, self._fetch_subargs(args)
+        self.args[_MAIN] = arg, self._fetch_subargs(args)
+        if arg == _FROM:
+            self._expand(*self.args[_MAIN][1], fetch_main=True)
         while len(args) > 0:
             cat = args.popleft().removeprefix("--")
             mod = args.popleft()
             opts = self._fetch_subargs(args)
-            self.args[cat].append((mod, opts))
+            if cat == _FROM:
+                self._expand(mod)
+            else:
+                self.args[cat].append((mod, opts))
+
+        main: str = self.args[_MAIN][0]
+        if main not in self._tasks:
+            raise ValueError(
+                f'The first argument must be one of {self._tasks}, got "{main}"'
+            )
+        RunInfo.main_task = main
 
         _, cls = self._fetch_module(f"{self.args[_MAIN][0]}.Main", _MAIN)
         if cls is None:

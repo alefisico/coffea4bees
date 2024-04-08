@@ -110,6 +110,7 @@ class Cascade(GlobalState, Static, metaclass=_ClassPropertyMeta):
         from base_class.typetools import get_partial_type_hints, type_name
         from rich.markup import escape
 
+        from . import parse
         from .task import _INDENT
 
         try:
@@ -121,7 +122,7 @@ class Cascade(GlobalState, Static, metaclass=_ClassPropertyMeta):
         if cls.__doc__:
             doc = filter(None, (l.strip() for l in cls.__doc__.split("\n")))
             infos.extend([*doc, ""])
-        infos.append("options:")
+        infos.append(f"options: {parse.EMBED}")
         for k, v in keys.items():
             info = k
             if k in annotations:

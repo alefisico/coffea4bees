@@ -1,16 +1,14 @@
 from __future__ import annotations
 
 import pickle
-from typing import TYPE_CHECKING, Mapping
+from typing import TYPE_CHECKING
 
 import fsspec
 from classifier.task.state import Cascade, _share_global_state
-from classifier.typetools import dict_proxy
 
 if TYPE_CHECKING:
     from base_class.system.eos import EOS
 
-_SETTING = "setting"
 _SPECIAL = "[red]\[special][/red]"
 
 
@@ -46,32 +44,6 @@ class load(Cascade):
             f"usage: {cls.__mod_name__()} INPUT [INPUT ...]",
             "",
             "Load global states from files.",
-            "",
-        ]
-        return "\n".join(infos)
-
-
-class setup(Cascade):
-    @classmethod
-    def parse(cls, opts: list[str]):
-        from classifier.task import EntryPoint, parse
-
-        for opt in opts:
-            configs = parse.mapping(f"file:///{opt}")
-            for k, v in configs.items():
-                _, k = EntryPoint._fetch_module(k, _SETTING)
-                if isinstance(v, Mapping):
-                    dict_proxy(k).update(v)
-                elif isinstance(v, list):
-                    k.parse(v)
-
-    @classmethod
-    def help(cls):
-        infos = [
-            _SPECIAL,
-            f"usage: {cls.__mod_name__()} FILE [FILE ...]",
-            "",
-            "Setup all settings from input files.",
             "",
         ]
         return "\n".join(infos)

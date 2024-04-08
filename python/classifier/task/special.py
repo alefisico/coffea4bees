@@ -45,7 +45,10 @@ _TaskT = TypeVar("_TaskT", bound=TaskBase)
 
 
 def new(cls: type[_TaskT], opts: list[str]) -> _TaskT:
+    from . import parse
+
     obj = cls.__new__(cls)
+    opts = [parse.escape(opt) for opt in opts]
     obj.parse(opts)
     obj.__init__()
     return obj
@@ -64,6 +67,3 @@ class Static(TaskBase):
         return cls
 
     def __init__(): ...
-
-
-class Unique(TaskBase): ...  # TODO

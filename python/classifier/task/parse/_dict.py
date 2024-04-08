@@ -33,7 +33,7 @@ def _mapping_nested_keys(arg: str):
 
 def _deserialize(data: str, protocol: str):
     match protocol:
-        case None | "yaml":
+        case "yaml":
             import yaml
 
             return yaml.safe_load(data)
@@ -75,7 +75,15 @@ def _deserialize_file(path: str):
         raise DeserializationError(f'Failed to read file "{path}"')
 
 
-def mapping(arg: str):
+def escape(obj) -> str:
+    if not isinstance(obj, str):
+        import json
+
+        obj = f"json:///{json.dumps(obj)}"
+    return obj
+
+
+def mapping(arg: str, default: str = "yaml"):
     """
     - `{data}`: parse as yaml
     - `yaml:///{data}`: parse as yaml
@@ -90,11 +98,15 @@ def mapping(arg: str):
         return None
     if arg == "":
         return {}
+    if not isinstance(arg, str):
+        return arg
 
     def error(msg: str):
         logging.error(f'{msg} when parsing "{arg}"')
 
     protocol, data = _mapping_scheme(arg)
+    if protocol is None:
+        protocol = default
     keys = None
     if protocol in ("file", "py"):
         data, keys = _mapping_nested_keys(data)
