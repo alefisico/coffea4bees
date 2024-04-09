@@ -180,6 +180,14 @@ datasets:
         total_events: 994000
     xs: 0.09482*0.5824**2
   HH4b:
+    UL16_postVFP:
+      nanoAOD: /dataset/dataset/NANOAODSIM
+      picoAOD:
+        files:
+        - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115/HH4b2016/picoAOD.root
+        sumw: 299800.0
+        sumw2: 299800.0
+        total_events: 299800.0
     UL16_preVFP:
       nanoAOD: /dataset/dataset/NANOAODSIM
       picoAOD:

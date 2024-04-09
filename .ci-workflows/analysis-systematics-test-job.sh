@@ -8,8 +8,8 @@ if [[ $(hostname) = *fnal* ]]; then
     DATASETS=metadata/datasets_HH4b.yml
 else
     echo "############### Modifying corrections for ci"
-    sed -e "/Absolute_/d" -e "/BBEC1/d" -e "/EC2/d"  -e "/- Flav/d" -e "/- HF/d" -e "/- Relative/d" -e "/- hf/d" -e "/- lf/d" analysis/metadata/corrections.yml > analysis/metadata/corrections_ci.yml
-    cat analysis/metadata/HH4b.yml
+    sed -e "/Absolute_/d" -e "/BBEC1/d" -e "/EC2/d" -e "/- HF/d" -e "/- Relative/d" -e "/- hf/d" -e "/- lf/d" analysis/metadata/corrections.yml > analysis/metadata/corrections_ci.yml
+    cat analysis/metadata/corrections_ci.yml
     echo "############### Modifying config"
     sed -e "s/corrections\.yml/corrections_ci\.yml/" -i analysis/metadata/HH4b_systematics.yml
     cat analysis/metadata/HH4b.yml

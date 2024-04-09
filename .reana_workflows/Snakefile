@@ -10,6 +10,7 @@ rule all:
     input:
         "output/RunII/passPreSel/fourTag/SB/nPVs.pdf",
         expand("output/histAll_{sample}_{iy}.coffea", sample=config['dataset'], iy=config['year']),
+        expand("output/histAll_{sample}_{iy}.coffea", sample_syst=config['dataset_systematics'], iy=config['year']),
         "output/datacards/hists_SvB.root"
 
 rule analysis:
@@ -27,6 +28,24 @@ rule analysis:
 cd python/ 
 echo "Running {wildcards.sample} {wildcards.iy}"
 python runner.py -d {wildcards.sample} -p analysis/processors/processor_HH4b.py -y {wildcards.iy} -o histAll_{wildcards.sample}_{wildcards.iy}.coffea -op ../output/ -m metadata/datasets_HH4b_cernbox.yml --dask
+cp /tmp/coffea4bees-dask-report-* ../output/coffea4bees-dask-report_{wildcards.sample}_{wildcards.iy}.html
+        """
+
+rule analysis_systematics:
+    output:
+        "output/histAll_{sample_syst,[^_]+}_{iy}.coffea"
+    container:
+        "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
+    resources:
+        voms_proxy=True,
+        kerberos=True,
+        compute_backend="kubernetes",
+        kubernetes_memory_limit="8Gi"
+    shell:
+        """
+cd python/ 
+echo "Running {wildcards.sample_syst} {wildcards.iy}"
+python runner.py -d {wildcards.sample_syst} -p analysis/processors/processor_HH4b.py -y {wildcards.iy} -o histAll_{wildcards.sample}_{wildcards.iy}.coffea -op ../output/ -m metadata/datasets_HH4b_cernbox.yml -c analysis/metadata/HH4b_systematics.yml --dask
 cp /tmp/coffea4bees-dask-report-* ../output/coffea4bees-dask-report_{wildcards.sample}_{wildcards.iy}.html
         """
 
