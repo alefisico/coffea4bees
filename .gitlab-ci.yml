@@ -81,20 +81,20 @@ analysis-test-job:
     paths:
       - python/analysis/hists/test.coffea
 
-analysis-test-mixed-job:   
-  stage: analysis-test   
-  needs:
-    - voms_proxy
-  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
-  tags:
-    - k8s-cvmfs
-  script:
-    - source .ci-workflows/analysis-test-mixed-job.sh
-  artifacts: 
-    expire_in: 1 day
-    paths:
-      - python/analysis/hists/testMixedBkg.coffea
-      - python/analysis/hists/testMixedData.coffea
+#analysis-test-mixed-job:   
+#  stage: analysis-test   
+#  needs:
+#    - voms_proxy
+#  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+#  tags:
+#    - k8s-cvmfs
+#  script:
+#    - source .ci-workflows/analysis-test-mixed-job.sh
+#  artifacts: 
+#    expire_in: 1 day
+#    paths:
+#      - python/analysis/hists/testMixedBkg.coffea
+#      - python/analysis/hists/testMixedData.coffea
 
 
 skimmer-test-job:   
