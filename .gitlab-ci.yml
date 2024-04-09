@@ -89,7 +89,7 @@ analysis-test-mixed-job:
   tags:
     - k8s-cvmfs
   script:
-    - source .ci-workflows/analysis-test-mixedjob.sh
+    - source .ci-workflows/analysis-test-mixed-job.sh
   artifacts: 
     expire_in: 1 day
     paths:
