@@ -161,6 +161,10 @@ analysis-makeweights-job:
     - k8s-cvmfs
   script:
     - source .ci-workflows/analysis-makeweights-job.sh
+  artifacts:
+    expire_in: 1 day
+    paths:
+      - python/testJCM_Coffea/
 
 analysis-helpers-job:    
   stage: code

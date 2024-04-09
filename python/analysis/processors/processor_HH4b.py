@@ -19,7 +19,6 @@ from analysis.helpers.hist_templates import SvBHists, FvTHists, QuadJetHists, WC
 
 from analysis.helpers.cutflow import cutFlow
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
-from analysis.helpers.correctionFunctions import btagSF_norm as btagSF_norm_file
 
 from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
 from analysis.helpers.common import init_jet_factory, apply_btag_sf
@@ -308,15 +307,12 @@ class analysis(processor.ProcessorABC):
             weights.add( 'btagSF',
                         apply_btag_sf(event.selJet,
                                       correction_file=self.corrections_metadata[year]['btagSF'],
-                                      btag_uncertainties= None,
-                                      btagSF_norm = btagSF_norm_file(dataset) )['btagSF_central'] )
+                                      btag_uncertainties= None )['btagSF_central'] )
 
             if ( not shift_name ) & self.run_systematics :
                 btag_SF_weights = apply_btag_sf(event.selJet,
                                             correction_file=self.corrections_metadata[year]['btagSF'],
-                                            btag_uncertainties= self.corrections_metadata[year]['btag_uncertainties'],
-                                            btagSF_norm = btagSF_norm_file(dataset) )
-                #for var in self.corrections_metadata[year]['btag_uncertainties']:
+                                            btag_uncertainties= self.corrections_metadata[year]['btag_uncertainties'] )
                 weights.add_multivariation( f'btagSF',
                                            btag_SF_weights['btagSF_central'],
                                            self.corrections_metadata[year]['btag_uncertainties'],

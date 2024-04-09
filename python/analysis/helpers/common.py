@@ -8,6 +8,7 @@ from coffea.nanoevents.methods import vector
 ak.behavior.update(vector.behavior)
 from coffea import processor, util
 import correctionlib
+import pickle
 import cachetools
 import logging
 import copy
@@ -133,7 +134,8 @@ def apply_btag_sf( jets,
                   correction_file='data/JEC/BTagSF2016/btagging_legacy16_deepJet_itFit.json.gz',
                   correction_type="deepJet_shape",
                   btag_uncertainties = None,
-                  btagSF_norm=1.
+                  dataset = '',
+                  btagSF_norm_file='ZZ4b/nTupleAnalysis/weights/btagSF_norm.pkl',
                   ):
     '''
     Can be replace with coffea.btag_tools if official WP are used
@@ -160,6 +162,14 @@ def apply_btag_sf( jets,
     SF_c= btagSF.evaluate('central', hf_c, eta_c, pt_c, tag_c)
     SF_c = ak.unflatten(SF_c, nj_c)
     SF_c = np.prod(SF_c, axis=1)
+
+    ### btag norm
+    try:
+        with open(btagSF_norm_file, 'rb') as f:
+            btagSF_norm = pickle.load(f)[dataset]
+            logging.info(f'btagSF_norm {btagSF_norm}')
+    except FileNotFoundError:
+        btagSF_norm = 1.0
 
     btag_var = [ 'central' ]
     if btag_uncertainties:
