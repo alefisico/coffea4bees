@@ -42,7 +42,7 @@ class NOOP:
     def __getattr__(self, _):
         return self
 
-    def __call__(self):
+    def __call__(self, *_, **__):
         return self
 
     def __enter__(self):
@@ -58,9 +58,7 @@ class NOOP:
 class _NoopMeta(NOOP, type): ...
 
 
-class noop(metaclass=_NoopMeta):
-    def __new__(cls, *_, **__):
-        return cls
+class noop(metaclass=_NoopMeta): ...
 
 
 def import_(modname: str, clsname: str):

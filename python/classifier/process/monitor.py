@@ -241,8 +241,10 @@ class Monitor(_Singleton):
         else:
             self._address = (_get_host(), cfg.Monitor.port)
         self._listener: tuple[Listener, Thread] = None
+        self._runner: Thread = None
 
         # clients
+        self._jobs: PriorityQueue[_Packet] = PriorityQueue()
         self._connections: list[Connection] = []
         self._handlers: list[Thread] = []
 
@@ -255,6 +257,8 @@ class Monitor(_Singleton):
                 Thread(target=self._listen, daemon=True),
             )
             self._listener[1].start()
+            self._runner = Thread(target=self._run, daemon=True)
+            self._runner.start()
             status.initializer.add_unique(_start_reporter)
 
     @classmethod
@@ -271,6 +275,9 @@ class Monitor(_Singleton):
                     pass
             listener.close()
             thread.join()
+            # close runner
+            self._jobs.put(_Packet())
+            self._runner.join()
             # close connections
             for connection in self._connections:
                 _close_connection(connection)
@@ -278,6 +285,10 @@ class Monitor(_Singleton):
             for handler in self._handlers:
                 handler.join()
             self._handlers.clear()
+
+    def _run(self):
+        while (packet := self._jobs.get()).cls is not None:
+            packet()
 
     def _listen(self):
         while True:
@@ -303,10 +314,11 @@ class Monitor(_Singleton):
     def _handle(self, connection: Connection):
         while True:
             try:
-                runner: _Packet = connection.recv()
-                result = runner()
-                if runner.wait:
-                    connection.send(result)
+                packet: _Packet = connection.recv()
+                if packet.wait:
+                    connection.send(packet())
+                else:
+                    self._jobs.put(packet)
             except:
                 _close_connection(connection)
                 break
@@ -450,6 +462,8 @@ def connect_to_monitor(address: str | tuple = None):
     status.initializer.add_unique(_start_reporter)
 
 
-def wait_for_reporter():
+def wait_for_monitor():
     if _Status.now() is _Status.Reporter:
         Reporter.current().stop()
+    elif _Status.now() is _Status.Monitor:
+        Monitor.current().stop()

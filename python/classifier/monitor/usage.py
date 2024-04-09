@@ -27,14 +27,14 @@ class _Checkpoint(TypedDict):
 
 
 class Usage(Proxy):
-    _records: list[_Resource] = []
+    _locals: list[_Resource] = []
     _has_gpu: bool = None
     _tracker: Thread = None
     _head: int = 0
 
     def __init__(self):
-        self._data: dict[str, list[_Resource]] = defaultdict(list)
-        self._checkpoint: dict[str, list[_Checkpoint]] = defaultdict(list)
+        self._records: dict[str, list[_Resource]] = defaultdict(list)
+        self._checkpoints: dict[str, list[_Checkpoint]] = defaultdict(list)
 
     @classmethod
     def start(cls):
@@ -45,16 +45,18 @@ class Usage(Proxy):
     def checkpoint(cls, name: str):
         if Setting.track_usage:
             checkpoint = {"time": time.time(), "name": name}
-            end = len(cls._records)
-            records = cls._records[cls._head : end]
+            end = len(cls._locals)
+            records = cls._locals[cls._head : end]
             cls._head = end
-            cls.send(Recorder.name(), checkpoint, records)
+            cls._checkpoint(Recorder.name(), checkpoint, records)
 
     @callback
-    def send(self, process: str, checkpoint: _Checkpoint, records: list[_Resource]):
+    def _checkpoint(
+        self, process: str, checkpoint: _Checkpoint, records: list[_Resource]
+    ):
         process = Recorder.registered(process)
-        self._data[process].extend(records)
-        self._checkpoint[process].append(checkpoint)
+        self._records[process].extend(records)
+        self._checkpoints[process].append(checkpoint)
 
     @classmethod
     def _track(cls):
@@ -63,14 +65,14 @@ class Usage(Proxy):
             process = psutil.Process()
             pids = [process.pid]
             # CPU, memory
-            cpu = process.cpu_percent(Setting.track_usage_interval)
+            cpu = process.cpu_percent(Setting.usage_update_interval)
             mem = process.memory_info().rss / _MIB
             for child in process.children(recursive=True):
                 cpu += child.cpu_percent()
                 mem += child.memory_info().rss / _MIB
                 pids.append(child.pid)
             # GPU
-            if Setting.track_gpu_usage:
+            if Setting.usage_gpu:
                 if RunInfo.singularity:
                     gpu = cls._gpu_singularity()
                 else:
@@ -78,8 +80,8 @@ class Usage(Proxy):
                     gpu = sum(gpu.get(pid, 0) for pid in pids)
             else:
                 gpu = 0
-            cls._records.append({"time": now, "cpu": cpu, "memory": mem, "gpu": gpu})
-            time.sleep(Setting.track_usage_interval)
+            cls._locals.append({"time": now, "cpu": cpu, "memory": mem, "gpu": gpu})
+            time.sleep(Setting.usage_update_interval)
 
     @classmethod
     def _gpu(cls):
@@ -110,7 +112,7 @@ class Usage(Proxy):
             return (
                 sum(
                     torch.cuda.memory_reserved(i)
-                    for i in range(torch.cuda.device_count())
+                    for i in range(torch.cuda.device_count())  # TODO calibration
                 )
                 / _MIB
             )
@@ -122,8 +124,8 @@ class Usage(Proxy):
 
         return json.dumps(
             {
-                "checkpoint": cls._checkpoint,
-                "data": cls._data,
+                "checkpoints": cls._checkpoints,
+                "records": cls._records,
             }
         ).encode()
 

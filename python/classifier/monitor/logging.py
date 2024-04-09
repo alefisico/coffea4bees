@@ -13,6 +13,7 @@ from rich.text import Text
 from ..config.setting import Monitor as Setting
 from ..config.state import RepoInfo
 from ..process.monitor import Recorder, callback
+from ..utils import noop
 
 
 class _LogRender(LogRender):
@@ -86,23 +87,23 @@ class RemoteHandler(logging.Handler):
         return cls
 
     def emit(self, record: logging.LogRecord):
-        if Setting.show_log:
+        if Setting.track_log:
             record.name = Recorder.name()
             record.pathname = RepoInfo.get_url(record.pathname)
-            self.send(record)
+            self._emit(record)
 
     @callback(acquire_class_lock=False, max_retry=1)
-    def send(self, record: logging.LogRecord):
+    def _emit(self, record: logging.LogRecord):
         record.name = Recorder.registered(record.name)
         logging.getLogger().handle(record)
 
 
 class Log:
-    console: Console = None
+    _html: Console = None
 
     @classmethod
     def serialize(cls):
-        return cls.console.export_html(theme=themes.MONOKAI).encode()
+        return cls._html.export_html(theme=themes.MONOKAI).encode()
 
 
 def _disable_logging():
@@ -110,7 +111,7 @@ def _disable_logging():
 
 
 def setup_reporter():
-    if Setting.show_log:
+    if Setting.track_log:
         return logging.basicConfig(
             handlers=[RemoteHandler()], level=Setting.logging_level
         )
@@ -118,16 +119,17 @@ def setup_reporter():
 
 
 def setup_monitor():
-    if Setting.show_log:
-        handlers = []
+    if Setting.track_log:
+        Log._html = Console(record=True, markup=True, file=noop)
+        Recorder.to_dump(Setting.file_logs, Log.serialize)
+        handlers = [_RichHandler(markup=True, console=Log._html)]
         if Setting.use_console:
-            Log.console = Console(record=True, markup=True)
-            Recorder.to_dump(Setting.file_logs, Log.serialize)
-            handlers.append(_RichHandler(markup=True, console=Log.console))
-        if handlers:
-            return logging.basicConfig(
-                handlers=handlers,
-                level=Setting.logging_level,
-                format="\[%(name)s] %(message)s",
-            )
+            from .backends.console import Dashboard as _CD
+
+            handlers.append(_RichHandler(markup=True, console=_CD.console))
+        return logging.basicConfig(
+            handlers=handlers,
+            level=Setting.logging_level,
+            format="\[%(name)s] %(message)s",
+        )
     _disable_logging()

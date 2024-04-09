@@ -173,10 +173,10 @@ class EntryPoint:
 
     def run(self, reproducible: Callable):
         from ..config.setting import IO, save
-        from ..process.monitor import Recorder, wait_for_reporter
+        from ..process.monitor import Recorder, wait_for_monitor
 
         meta = self.main.run(self)
-        wait_for_reporter()
+        wait_for_monitor()
 
         if self.main.flag("save_state"):
             save.parse([IO.output / IO.file_states])
