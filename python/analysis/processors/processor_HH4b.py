@@ -113,7 +113,7 @@ class analysis(processor.ProcessorABC):
             # genWeight
             genEventSumw = event.metadata['genEventSumw']
             weights.add( 'genweight', event.genWeight * (lumi * xs * kFactor / genEventSumw) )
-            logging.debug(f" genweight {event.genWeight * (lumi * xs * kFactor / genEventSumw) = {event.genWeight[0]} * ({lumi} * {xs} * {kFactor} / {genEventSumw}) = {event.weight[0]}}\n")
+            logging.debug(f"genweight {weights.partial_weight(include=['genweight'])}\n")
 
             # trigger Weight (to be updated)
             if self.apply_trigWeight:
