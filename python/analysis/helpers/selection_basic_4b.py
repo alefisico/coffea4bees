@@ -4,18 +4,18 @@ from coffea.nanoevents import NanoEventsFactory, NanoAODSchema, BaseSchema
 from analysis.helpers.common import init_jet_factory, jet_corrections, mask_event_decision, drClean
 from coffea.lumi_tools import LumiMask
 
-def apply_event_selection_4b( event, isMC, corrections_metadata, *, isMixedData=False, isTTForMixed=False, isDataForMixed=False):
+def apply_event_selection_4b( event, isMC, corrections_metadata):
 
     lumimask = LumiMask(corrections_metadata['goldenJSON'])
     event['lumimask'] = np.full(len(event), True) \
             if isMC else np.array( lumimask(event.run, event.luminosityBlock) )
 
     event['passHLT'] = np.full(len(event), True) \
-            if isMixedData else mask_event_decision( event,
+            if 'HLT' not in event.fields else mask_event_decision( event,
                     decision="OR", branch="HLT", list_to_mask=event.metadata['trigger']  )
 
     event['passNoiseFilter'] = np.full(len(event), True) \
-            if 'Flag' in event.fields else mask_event_decision( event,
+            if 'Flag' not in event.fields else mask_event_decision( event,
                     decision="AND", branch="Flag",
                     list_to_mask=corrections_metadata['NoiseFilter'],
                     list_to_skip=['BadPFMuonDzFilter', 'hfNoisyHitsFilter']  )
@@ -44,9 +44,6 @@ def apply_object_selection_4b( event, year, isMC, dataset, corrections_metadata,
         selLepton = ak.concatenate( [event.selElec, event.selMuon], axis=1 )
     else: selLepton = event.selMuon
 
-    #
-    # Calculate and apply Jet Energy Calibration
-    #
 
     if isMixedData or isTTForMixed or isDataForMixed:   #### AGE: to simplify
         event['Jet', 'pileup'] = ((event.Jet.puId < 0b110) & (event.Jet.pt < 50)) | ((np.abs(event.Jet.eta) > 2.4) & (event.Jet.pt < 40))

@@ -78,6 +78,8 @@ if __name__ == '__main__':
                         'HH4b', 'ZZ4b', 'ZH4b'], help="Name of dataset to run. Example if more than one: -d HH4b ZZ4b")
     parser.add_argument('-e', '--era', nargs='+', dest='era', default=['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
                         help="For data only. To run only on one data era.")
+    parser.add_argument('--systematics', dest="systematics", action="store_true",
+                        default=False, help='Run Systematics for analysis processor')
     parser.add_argument('-s', '--skimming', dest="skimming", action="store_true",
                         default=False, help='Run skimming instead of analysis')
     parser.add_argument('--dask', dest="run_dask",
@@ -117,6 +119,9 @@ if __name__ == '__main__':
     config_runner.setdefault('max_workers', 100)
     config_runner.setdefault('skipbadfiles', False)
     config_runner.setdefault('dashboard_address', 10200)
+    if args.systematics:
+        logging.info("\nRunning with systematics")
+        configs['config']['run_systematics'] = True
 
     if 'all' in args.datasets:
         metadata['datasets'].pop("mixeddata")   # AGE: this is temporary

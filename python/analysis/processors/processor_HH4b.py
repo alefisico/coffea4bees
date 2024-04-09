@@ -67,7 +67,7 @@ def update(events, collections):
     return out
 
 class analysis(processor.ProcessorABC):
-    def __init__(self, *, JCM = None, SvB=None, SvB_MA=None, threeTag = True, apply_trigWeight = True, apply_btagSF = True, apply_FvT = True, run_SvB = True, run_topreco = True, corrections_metadata='analysis/metadata/corrections.yml', processes_toshift=[], make_classifier_input: str = None):
+    def __init__(self, *, JCM = None, SvB=None, SvB_MA=None, threeTag = True, apply_trigWeight = True, apply_btagSF = True, apply_FvT = True, run_SvB = True, corrections_metadata='analysis/metadata/corrections.yml', run_systematics=[], make_classifier_input: str = None):
         logging.debug('\nInitialize Analysis Processor')
         self.blind = False
         self.JCM = jetCombinatoricModel(JCM) if JCM else None
@@ -75,7 +75,6 @@ class analysis(processor.ProcessorABC):
         self.apply_btagSF = apply_btagSF
         self.apply_FvT = apply_FvT
         self.run_SvB = run_SvB
-        self.run_topreco = run_topreco  #### AGE: this is temporary topreco is memory consuming (needs fix)
         self.classifier_SvB = HCREnsemble(SvB) if SvB else None
         self.classifier_SvB_MA = HCREnsemble(SvB_MA) if SvB_MA else None
         self.corrections_metadata = yaml.safe_load(open(corrections_metadata, 'r'))
@@ -84,7 +83,7 @@ class analysis(processor.ProcessorABC):
         if self.run_SvB:
             self.cutFlowCuts += ['passSvB', 'failSvB']
             self.histCuts += ['passSvB', 'failSvB']
-        self.processes_toshift = processes_toshift
+        self.run_systematics = run_systematics
         self.make_classifier_input = make_classifier_input
 
     def process(self, event):
@@ -98,58 +97,65 @@ class analysis(processor.ProcessorABC):
         xs      = event.metadata.get('xs',      1.0)
         kFactor = event.metadata.get('kFactor', 1.0)
         isMixedData = not (dataset.find("mix_v") == -1)
+        isDataForMixed = not (dataset.find("data_3b_for_mixed") == -1)
+        isTTForMixed = not (dataset.find("TTTo" ) == -1) and not(dataset.find("_for_mixed") == -1)
         weights = Weights(len(event), storeIndividual=True)
 
-        event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year], isMixedData=isMixedData)
+        #
+        # Event selection
+        #
+        event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year])
+
         #
         # general event weights
         #
         if isMC:
             # genWeight
             genEventSumw = event.metadata['genEventSumw']
-            event['weight'] = event.genWeight * (lumi * xs * kFactor / genEventSumw)
             weights.add( 'genweight', event.genWeight * (lumi * xs * kFactor / genEventSumw) )
             logging.debug(f"event['weight'] = event.genWeight * (lumi * xs * kFactor / genEventSumw) = {event.genWeight[0]} * ({lumi} * {xs} * {kFactor} / {genEventSumw}) = {event.weight[0]}\n")
 
             # trigger Weight (to be updated)
             if self.apply_trigWeight:
-                event['weight'] = event.weight * event.trigWeight.Data
                 weights.add( 'trigWeight', event.trigWeight.Data, event.trigWeight.MC, ak.where(event.passHLT, 1., 0.) )
 
             # puWeight (to be checked)
             if not isTTForMixed:
                 puWeight = list(correctionlib.CorrectionSet.from_file(self.corrections_metadata[year]['PU']).values())[0]
-                event[f'PU_weight_nominal'] = puWeight.evaluate(event.Pileup.nTrueInt.to_numpy(), 'nominal')
                 weights.add( 'PU',
                             puWeight.evaluate(event.Pileup.nTrueInt.to_numpy(), 'nominal'),
                             puWeight.evaluate(event.Pileup.nTrueInt.to_numpy(), 'up'),
                             puWeight.evaluate(event.Pileup.nTrueInt.to_numpy(), 'down')
                             )
-                event['weight'] = event.weight * event.PU_weight_nominal
 
             # L1 prefiring weight
             if ('L1PreFiringWeight' in event.fields):   #### AGE: this should be temprorary (field exists in UL)
-                event['weight'] = event.weight * event.L1PreFiringWeight.Nom
                 weights.add( 'L1PreFiring',
                             event.L1PreFiringWeight.Nom,
                             event.L1PreFiringWeight.Up,
                             event.L1PreFiringWeight.Dn
                             )
         else:
-            event['weight'] = 1
             weights.add( 'data', np.ones(len(event)) )
 
-        logging.debug(f"event['weight'] = {event.weight}")
+        logging.debug(f"weights {weights.weight()}")
         logging.debug(f"Weight Statistics {weights.weightStatistics}")
 
-        juncWS = [ self.corrections_metadata[year]["JERC"][0].replace('STEP', istep)
-                   for istep in ['L1FastJet', 'L2Relative', 'L2L3Residual', 'L3Absolute'] ] + \
-            self.corrections_metadata[year]["JERC"][2:]
-        if processName in self.processes_toshift: juncWS += [ self.corrections_metadata[year]["JERC"][1] ]
-        jets = init_jet_factory(juncWS, event, isMC)
+        #
+        # Calculate and apply Jet Energy Calibration
+        #
+        if (isMixedData or isDataForMixed or isTTForMixed or not isMC):  #### AGE: data corrections are not applied. Should be changed
+            jets = event.Jet
+
+        else:
+            juncWS = [ self.corrections_metadata[year]["JERC"][0].replace('STEP', istep)
+                       for istep in ['L1FastJet', 'L2Relative', 'L2L3Residual', 'L3Absolute'] ] + \
+                        self.corrections_metadata[year]["JERC"][2:]
+            if self.run_systematics: juncWS += [ self.corrections_metadata[year]["JERC"][1] ]
+            jets = init_jet_factory(juncWS, event, isMC)
 
         shifts = [ ({"Jet": jets}, None) ]
-        if processName in self.processes_toshift:
+        if self.run_systematics:
             for jesunc in self.corrections_metadata[year]['JES_uncertainties']:
                 shifts.extend([
                     ({"Jet": jets[ f'JES_{jesunc}' ].up}, f'JES_{jesunc}_Up'),
@@ -159,12 +165,13 @@ class analysis(processor.ProcessorABC):
                 ({"Jet": jets.JER.up}, 'JER_Up'),
                 ({"Jet": jets.JER.down}, 'JER_Down')
             ])
+            logging.info(f'\nJet variations {[name for _, name in shifts]}')
 
         return processor.accumulate(self.process_shift(update(event, collections), name, weights) for collections, name in shifts)
 
     def process_shift(self, event, shift_name, weights):
+        '''For different jet variations. It computes event variations for the nominal case.'''
 
-        tstart = time.time()
         fname   = event.metadata['filename']
         dataset = event.metadata['dataset']
         estart  = event.metadata['entrystart']
@@ -242,9 +249,6 @@ class analysis(processor.ProcessorABC):
 
                     event[_FvT_name, _FvT_name]    = getattr(event[_FvT_name], _FvT_name)
 
-
-
-
             else:
                 event['FvT']    = NanoEventsFactory.from_root(f'{path}{"FvT.root"}',
                                                               entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().FvT
@@ -255,9 +259,7 @@ class analysis(processor.ProcessorABC):
                 return
 
         if self.run_SvB:
-            if (self.classifier_SvB is not None) | (self.classifier_SvB_MA is not None):
-                self.compute_SvB(selev)  ### this computes both
-            else:
+            if (self.classifier_SvB is None) | (self.classifier_SvB_MA is None):
                 event['SvB']    = NanoEventsFactory.from_root(f'{path}{"SvB_newSBDef.root" if "mix" in dataset else "SvB.root"}',
                                                           entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().SvB
                 if not ak.all(event.SvB.event == event.event):
@@ -283,7 +285,7 @@ class analysis(processor.ProcessorABC):
             for _JCM_load in event.metadata["JCM_loads"]:
                 event[_JCM_load] = JCM_array[_JCM_load]
 
-        event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year], isMixedData=isMixedData, isTTForMixed=isTTForMixed, isDataForMixed=isDataForMixed)
+        event['weight'] = weights.weight()   ### this is for _cutflow
 
         selections.add( 'lumimask', event.lumimask )
         selections.add( 'passNoiseFilter', event.passNoiseFilter )
@@ -294,31 +296,42 @@ class analysis(processor.ProcessorABC):
 
         # Apply object selection (function does not remove events, adds content to objects)
         event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year], isMixedData=isMixedData, isTTForMixed=isTTForMixed, isDataForMixed=isDataForMixed)
-        selections.add( 'passJetMult', event.lumimask & event.passNoiseFilter & event.passHLT & event.passJetMult )
+
+        selections.add( 'passJetMult', event.lumimask & event.passNoiseFilter & selections.require(passHLT=True) & event.passJetMult )
         self._cutFlow.fill("passJetMult", event[selections.require( passJetMult=True )], allTag=True)
 
         #
-        # Filtering object and event selection
-        #
-        selev = event[selections.require( passJetMult=True )]
-
-        #
         # Calculate and apply btag scale factors
+        #### AGE to add btag JES
         #
         if isMC and self.apply_btagSF:
-            selev['weight'] = apply_btag_sf(selev, selev.selJet,
-                                            correction_file=self.corrections_metadata[year]['btagSF'],
-                                            btag_uncertainties= self.corrections_metadata[year]['btag_uncertainties'] if processName in self.processes_toshift else None,
-                                            btagSF_norm=btagSF_norm_file(dataset),
-                                            weight=selev.weight )
+            weights.add( 'btagSF',
+                        apply_btag_sf(event.selJet,
+                                      correction_file=self.corrections_metadata[year]['btagSF'],
+                                      btag_uncertainties= None,
+                                      btagSF_norm = btagSF_norm_file(dataset) )['btagSF_central'] )
 
-            self._cutFlow.fill("passJetMult_btagSF",  selev, allTag=True)
+            if ( not shift_name ) & self.run_systematics :
+                btag_SF_weights = apply_btag_sf(event.selJet,
+                                            correction_file=self.corrections_metadata[year]['btagSF'],
+                                            btag_uncertainties= self.corrections_metadata[year]['btag_uncertainties'],
+                                            btagSF_norm = btagSF_norm_file(dataset) )
+                #for var in self.corrections_metadata[year]['btag_uncertainties']:
+                weights.add_multivariation( f'btagSF',
+                                           btag_SF_weights['btagSF_central'],
+                                           self.corrections_metadata[year]['btag_uncertainties'],
+                                           [ var.to_numpy() for name, var in btag_SF_weights.items() if '_up' in name ],
+                                           [ var.to_numpy() for name, var in btag_SF_weights.items() if '_down' in name ]
+                                           )
+
+            event['weight'] = weights.weight()
+            self._cutFlow.fill("passJetMult_btagSF", event[selections.require( passJetMult=True )], allTag=True)
 
         #
         # Preselection: keep only three or four tag events
         #
         selections.add( 'passPreSel', event.passPreSel )
-        selev = selev[selev.passPreSel]
+        selev = event[ selections.require( passJetMult=True, passPreSel=True ) ]
 
         #
         #  Calculate hT
@@ -374,7 +387,7 @@ class analysis(processor.ProcessorABC):
         #
         # calculate pseudoTagWeight for threeTag events
         #
-        selev['weight_noJCM_noFvT'] = selev.weight
+        selev['weight_noJCM_noFvT'] = weights.weight()[ selections.require( passJetMult=True, passPreSel=True ) ]
         if self.JCM:
             selev['Jet_untagged_loose'] = selev.Jet[selev.Jet.selected & ~selev.Jet.tagged_loose]
             nJet_pseudotagged = np.zeros(len(selev), dtype=int)
@@ -415,11 +428,15 @@ class analysis(processor.ProcessorABC):
                 else:
                     weight = np.array(selev.weight.to_numpy(), dtype=float)
                     weight[selev.threeTag] = selev.weight[selev.threeTag] * pseudoTagWeight[selev.threeTag] * selev.FvT.FvT[selev.threeTag]
-                    selev['weight'] = weight
+                    tmp_weight = np.full(len(event), 1.)
+                    tmp_weight[ selections.require( passJetMult=True, passPreSel=True ) ] = weight
+                    weights.add( 'FvT', tmp_weight )
 
 
             else:
-                selev['weight'] = weight_noFvT
+                tmp_weight = np.full(len(event), 1.)
+                tmp_weight[ selections.require( passJetMult=True, passPreSel=True ) ] = weight_noFvT
+                weights.add( 'no_FvT', tmp_weight )
 
         #
         # Build diJets, indexed by diJet[event,pairing,0/1]
@@ -486,6 +503,10 @@ class analysis(processor.ProcessorABC):
                                                      np.reshape(np.array(selev.FvT.q_1423), (-1, 1))), axis=1)
 
         if self.run_SvB:
+
+            if (self.classifier_SvB is not None) | (self.classifier_SvB_MA is not None):
+                self.compute_SvB(selev)  ### this computes both
+
             quadJet['SvB_q_score'] = np.concatenate((np.reshape(np.array(selev.SvB.q_1234), (-1, 1)),
                                                      np.reshape(np.array(selev.SvB.q_1324), (-1, 1)),
                                                      np.reshape(np.array(selev.SvB.q_1423), (-1, 1))), axis=1)
@@ -539,40 +560,38 @@ class analysis(processor.ProcessorABC):
         #
         # dumpTopCandidateTestVectors(selev, logging, chunk, 15)
 
-        if self.run_topreco:
+        # sort the jets by btagging
+        selev.selJet  = selev.selJet[ak.argsort(selev.selJet.btagDeepFlavB, axis=1, ascending=False)]
+        top_cands     = find_tops_slow(selev.selJet)
+        rec_top_cands = buildTop(selev.selJet, top_cands)
 
-            # sort the jets by btagging
-            selev.selJet  = selev.selJet[ak.argsort(selev.selJet.btagDeepFlavB, axis=1, ascending=False)]
-            top_cands     = find_tops_slow(selev.selJet)
-            rec_top_cands = buildTop(selev.selJet, top_cands)
+        selev["top_cand"] = rec_top_cands[:, 0]
+        bReg_p = selev.top_cand.b * selev.top_cand.b.bRegCorr
+        selev["top_cand", "p"] = bReg_p  + selev.top_cand.j + selev.top_cand.l
 
-            selev["top_cand"] = rec_top_cands[:, 0]
-            bReg_p = selev.top_cand.b * selev.top_cand.b.bRegCorr
-            selev["top_cand", "p"] = bReg_p  + selev.top_cand.j + selev.top_cand.l
+        # mW, mt = 80.4, 173.0
+        selev["top_cand", "W"] = ak.zip({"p": selev.top_cand.j + selev.top_cand.l,
+                                         "j": selev.top_cand.j,
+                                         "l": selev.top_cand.l})
 
-            # mW, mt = 80.4, 173.0
-            selev["top_cand", "W"] = ak.zip({"p": selev.top_cand.j + selev.top_cand.l,
-                                             "j": selev.top_cand.j,
-                                             "l": selev.top_cand.l})
+        selev["top_cand","W", "pW"] = selev.top_cand.W.p * (mW / selev.top_cand.W.p.mass)
+        selev["top_cand", "mbW"] = (bReg_p + selev.top_cand.W.pW).mass
+        selev["top_cand", "xt"]   = (selev.top_cand.p.mass - mt) / (0.10 * selev.top_cand.p.mass)
+        selev["top_cand", "xWt"]  = np.sqrt(selev.top_cand.xW ** 2 + selev.top_cand.xt ** 2)
+        selev["top_cand", "mbW"]  = (bReg_p + selev.top_cand.W.pW).mass
+        selev["top_cand", "xWbW"] = np.sqrt(selev.top_cand.xW ** 2 + selev.top_cand.xbW**2)
 
-            selev["top_cand","W", "pW"] = selev.top_cand.W.p * (mW / selev.top_cand.W.p.mass)
-            selev["top_cand", "mbW"] = (bReg_p + selev.top_cand.W.pW).mass
-            selev["top_cand", "xt"]   = (selev.top_cand.p.mass - mt) / (0.10 * selev.top_cand.p.mass)
-            selev["top_cand", "xWt"]  = np.sqrt(selev.top_cand.xW ** 2 + selev.top_cand.xt ** 2)
-            selev["top_cand", "mbW"]  = (bReg_p + selev.top_cand.W.pW).mass
-            selev["top_cand", "xWbW"] = np.sqrt(selev.top_cand.xW ** 2 + selev.top_cand.xbW**2)
+        #
+        # after minimizing, the ttbar distribution is centered around ~(0.5, 0.25) with surfaces of constant density approximiately constant radii
+        #
+        selev["top_cand", "rWbW"] = np.sqrt( (selev.top_cand.xbW-0.25) ** 2 + (selev.top_cand.xW-0.5) ** 2)
 
-            #
-            # after minimizing, the ttbar distribution is centered around ~(0.5, 0.25) with surfaces of constant density approximiately constant radii
-            #
-            selev["top_cand", "rWbW"] = np.sqrt( (selev.top_cand.xbW-0.25) ** 2 + (selev.top_cand.xW-0.5) ** 2)
+        selev["xbW_reco"] = selev.top_cand.xbW
+        selev["xW_reco"]  = selev.top_cand.xW
 
-            selev["xbW_reco"] = selev.top_cand.xbW
-            selev["xW_reco"]  = selev.top_cand.xW
-
-            if 'xbW' in selev.fields:  #### AGE: this should be temporary
-                selev["delta_xbW"] = selev.xbW - selev.xbW_reco
-                selev["delta_xW"] = selev.xW - selev.xW_reco
+        if 'xbW' in selev.fields:  #### AGE: this should be temporary
+            selev["delta_xbW"] = selev.xbW - selev.xbW_reco
+            selev["delta_xW"] = selev.xW - selev.xW_reco
 
         #
         # Blind data in fourTag SR
@@ -631,7 +650,7 @@ class analysis(processor.ProcessorABC):
                 if isMixedData or isDataForMixed or isTTForMixed:
                     FvT_skip = ["pt", "pm3", "pm4"]
 
-                if ('xbW' in selev.fields) and (self.run_topreco):  ### AGE: this should be temporary
+                if ('xbW' in selev.fields):  ### AGE: this should be temporary
 
                     fill += hist.add('xW',          (100, 0, 12,   ('xW',       'xW')))
                     fill += hist.add('delta_xW',    (100, -5, 5,   ('delta_xW', 'delta xW')))
@@ -705,8 +724,7 @@ class analysis(processor.ProcessorABC):
             #
             # Top Candidates
             #
-            if self.run_topreco:
-                fill += TopCandHists(('top_cand', 'Top Candidate'), 'top_cand')
+            fill += TopCandHists(('top_cand', 'Top Candidate'), 'top_cand')
 
             #
             # fill histograms
@@ -716,7 +734,7 @@ class analysis(processor.ProcessorABC):
 
             if self.run_SvB:
                 variation_list = ['nominal']
-                if processName in self.processes_toshift:
+                if self.run_systematics:
                     logging.info(f"Weight variations {weights.variations}")
                     variation_list += list(weights.variations)
 
@@ -748,6 +766,7 @@ class analysis(processor.ProcessorABC):
             #
             # CutFlow
             #
+            selev['weight'] = weights.weight()[ selections.require( passJetMult=True, passPreSel=True ) ]
             self._cutFlow.fill("passPreSel", selev)
             self._cutFlow.fill("passDiJetMass", selev[selev.passDiJetMass])
             if self.run_SvB:
@@ -847,23 +866,24 @@ class analysis(processor.ProcessorABC):
 
             SvB['ps'] = SvB.pzz + SvB.pzh + SvB.phh
             SvB['passMinPs'] = (SvB.pzz > 0.01) | (SvB.pzh > 0.01) | (SvB.phh > 0.01)
-            SvB['zz'] = (SvB.pzz > SvB.pzh) & (SvB.pzz > SvB.phh)
-            SvB['zh'] = (SvB.pzh > SvB.pzz) & (SvB.pzh > SvB.phh)
-            SvB['hh'] = (SvB.phh > SvB.pzz) & (SvB.phh > SvB.pzh)
+            SvB['ps_zz'] = (SvB.pzz > SvB.pzh) & (SvB.pzz > SvB.phh)
+            SvB['ps_zh'] = (SvB.pzh > SvB.pzz) & (SvB.pzh > SvB.phh)
+            SvB['ps_hh'] = (SvB.phh > SvB.pzz) & (SvB.phh > SvB.pzh)
 
-            error = ~np.isclose(event[classifier].ps, SvB.ps, atol=1e-5, rtol=1e-3)
-            if np.any(error):
-                delta = np.abs(event[classifier].ps - SvB.ps)
-                worst = np.max(delta) == delta
-                worst_event = event[worst][0]
-                logging.warning(f'WARNING: Calculated {classifier} does not agree '
-                                f'within tolerance for some events ({np.sum(error)}/{len(error)})', delta[worst])
-                logging.warning('----------')
-                for field in event[classifier].fields:
-                    logging.warning(field, worst_event[classifier][field])
-                logging.warning('----------')
-                for field in SvB.fields:
-                    logging.warning(f'{field}, {SvB[worst][field]}')
+            if classifier in event.fields:
+                error = ~np.isclose(event[classifier].ps, SvB.ps, atol=1e-5, rtol=1e-3)
+                if np.any(error):
+                    delta = np.abs(event[classifier].ps - SvB.ps)
+                    worst = np.max(delta) == delta
+                    worst_event = event[worst][0]
+                    logging.warning(f'WARNING: Calculated {classifier} does not agree '
+                                    f'within tolerance for some events ({np.sum(error)}/{len(error)})', delta[worst])
+                    logging.warning('----------')
+                    for field in event[classifier].fields:
+                        logging.warning(field, worst_event[classifier][field])
+                    logging.warning('----------')
+                    for field in SvB.fields:
+                        logging.warning(f'{field}, {SvB[worst][field]}')
 
             # del event[classifier]
             event[classifier] = SvB
