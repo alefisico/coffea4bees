@@ -89,7 +89,7 @@ analysis-test-mixed-job:
   tags:
     - k8s-cvmfs
   script:
-    - source .ci-workflows/analysis-test--mixedjob.sh
+    - source .ci-workflows/analysis-test-mixedjob.sh
   artifacts: 
     expire_in: 1 day
     paths:
@@ -151,6 +151,10 @@ analysis-cutflow-job:
     - k8s-cvmfs
   script:
     - source .ci-workflows/analysis-cutflow-job.sh
+  artifacts:
+    expire_in: 1 day
+    paths:
+      - python/analysis/tests/test_dump_cutflow.yml
 
 analysis-makeweights-job:    
   stage: fits
@@ -186,6 +190,10 @@ skimmer-analysis-cutflow-job:
     - k8s-cvmfs
   script:
     - source .ci-workflows/skimmer-analysis-cutflow-job.sh
+  artifacts:
+    expire_in: 1 day
+    paths:
+      - python/analysis/tests/test_dump_skimmer_cutflow.yml
 
 analysis-iplot-job:    
   stage: plot 
