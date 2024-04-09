@@ -1,0 +1,1632 @@
+counts4:
+    mix_v9_UL18:
+        passJetMult: 998.0
+        passPreSel: 997.0
+        passDiJetMass: 349.0
+        SR: 137.0
+        SB: 212.0
+        passSvB: 7.0
+        failSvB: 625.0
+
+    mix_v9_UL17:
+        passJetMult: 999.0
+        passPreSel: 999.0
+        passDiJetMass: 369.0
+        SR: 132.0
+        SB: 237.0
+        passSvB: 13.0
+        failSvB: 616.0
+
+    mix_v9_UL16_preVFP:
+        passJetMult: 996.0
+        passPreSel: 995.0
+        passDiJetMass: 446.0
+        SR: 167.0
+        SB: 279.0
+        passSvB: 8.0
+        failSvB: 633.0
+
+    mix_v8_UL18:
+        passJetMult: 1000.0
+        passPreSel: 1000.0
+        passDiJetMass: 340.0
+        SR: 131.0
+        SB: 209.0
+        passSvB: 6.0
+        failSvB: 621.0
+
+    mix_v8_UL17:
+        passJetMult: 1004.0
+        passPreSel: 1003.0
+        passDiJetMass: 383.0
+        SR: 120.0
+        SB: 263.0
+        passSvB: 7.0
+        failSvB: 615.0
+
+    mix_v8_UL16_preVFP:
+        passJetMult: 1002.0
+        passPreSel: 1001.0
+        passDiJetMass: 453.0
+        SR: 161.0
+        SB: 292.0
+        passSvB: 7.0
+        failSvB: 575.0
+
+    mix_v7_UL18:
+        passJetMult: 1003.0
+        passPreSel: 1003.0
+        passDiJetMass: 335.0
+        SR: 137.0
+        SB: 198.0
+        passSvB: 9.0
+        failSvB: 620.0
+
+    mix_v7_UL17:
+        passJetMult: 1005.0
+        passPreSel: 1005.0
+        passDiJetMass: 358.0
+        SR: 121.0
+        SB: 237.0
+        passSvB: 9.0
+        failSvB: 644.0
+
+    mix_v7_UL16_preVFP:
+        passJetMult: 998.0
+        passPreSel: 998.0
+        passDiJetMass: 422.0
+        SR: 149.0
+        SB: 273.0
+        passSvB: 12.0
+        failSvB: 611.0
+
+    mix_v6_UL18:
+        passJetMult: 998.0
+        passPreSel: 997.0
+        passDiJetMass: 353.0
+        SR: 140.0
+        SB: 213.0
+        passSvB: 10.0
+        failSvB: 605.0
+
+    mix_v6_UL17:
+        passJetMult: 999.0
+        passPreSel: 998.0
+        passDiJetMass: 380.0
+        SR: 140.0
+        SB: 240.0
+        passSvB: 10.0
+        failSvB: 604.0
+
+    mix_v6_UL16_preVFP:
+        passJetMult: 1001.0
+        passPreSel: 1001.0
+        passDiJetMass: 458.0
+        SR: 166.0
+        SB: 292.0
+        passSvB: 10.0
+        failSvB: 625.0
+
+    mix_v5_UL18:
+        passJetMult: 1001.0
+        passPreSel: 1001.0
+        passDiJetMass: 348.0
+        SR: 128.0
+        SB: 220.0
+        passSvB: 9.0
+        failSvB: 640.0
+
+    mix_v5_UL17:
+        passJetMult: 1001.0
+        passPreSel: 1001.0
+        passDiJetMass: 374.0
+        SR: 134.0
+        SB: 240.0
+        passSvB: 10.0
+        failSvB: 610.0
+
+    mix_v5_UL16_preVFP:
+        passJetMult: 999.0
+        passPreSel: 999.0
+        passDiJetMass: 439.0
+        SR: 164.0
+        SB: 275.0
+        passSvB: 7.0
+        failSvB: 614.0
+
+    mix_v4_UL18:
+        passJetMult: 1001.0
+        passPreSel: 1001.0
+        passDiJetMass: 363.0
+        SR: 123.0
+        SB: 240.0
+        passSvB: 9.0
+        failSvB: 619.0
+
+    mix_v4_UL17:
+        passJetMult: 1001.0
+        passPreSel: 1001.0
+        passDiJetMass: 360.0
+        SR: 126.0
+        SB: 234.0
+        passSvB: 8.0
+        failSvB: 614.0
+
+    mix_v4_UL16_preVFP:
+        passJetMult: 1005.0
+        passPreSel: 1004.0
+        passDiJetMass: 436.0
+        SR: 173.0
+        SB: 263.0
+        passSvB: 8.0
+        failSvB: 591.0
+
+    mix_v3_UL18:
+        passJetMult: 999.0
+        passPreSel: 999.0
+        passDiJetMass: 366.0
+        SR: 133.0
+        SB: 233.0
+        passSvB: 7.0
+        failSvB: 600.0
+
+    mix_v3_UL17:
+        passJetMult: 998.0
+        passPreSel: 998.0
+        passDiJetMass: 353.0
+        SR: 131.0
+        SB: 222.0
+        passSvB: 12.0
+        failSvB: 591.0
+
+    mix_v3_UL16_preVFP:
+        passJetMult: 998.0
+        passPreSel: 998.0
+        passDiJetMass: 421.0
+        SR: 164.0
+        SB: 257.0
+        passSvB: 11.0
+        failSvB: 628.0
+
+    mix_v2_UL18:
+        passJetMult: 1000.0
+        passPreSel: 1000.0
+        passDiJetMass: 365.0
+        SR: 152.0
+        SB: 213.0
+        passSvB: 10.0
+        failSvB: 618.0
+
+    mix_v2_UL17:
+        passJetMult: 999.0
+        passPreSel: 999.0
+        passDiJetMass: 394.0
+        SR: 138.0
+        SB: 256.0
+        passSvB: 7.0
+        failSvB: 587.0
+
+    mix_v2_UL16_preVFP:
+        passJetMult: 1004.0
+        passPreSel: 1003.0
+        passDiJetMass: 423.0
+        SR: 135.0
+        SB: 288.0
+        passSvB: 9.0
+        failSvB: 614.0
+
+    mix_v1_UL18:
+        passJetMult: 1003.0
+        passPreSel: 1003.0
+        passDiJetMass: 350.0
+        SR: 132.0
+        SB: 218.0
+        passSvB: 10.0
+        failSvB: 608.0
+
+    mix_v1_UL17:
+        passJetMult: 1004.0
+        passPreSel: 1004.0
+        passDiJetMass: 362.0
+        SR: 138.0
+        SB: 224.0
+        passSvB: 3.0
+        failSvB: 595.0
+
+    mix_v1_UL16_preVFP:
+        passJetMult: 1001.0
+        passPreSel: 1000.0
+        passDiJetMass: 459.0
+        SR: 143.0
+        SB: 316.0
+        passSvB: 8.0
+        failSvB: 602.0
+
+    mix_v14_UL18:
+        passJetMult: 1003.0
+        passPreSel: 1003.0
+        passDiJetMass: 338.0
+        SR: 115.0
+        SB: 223.0
+        passSvB: 5.0
+        failSvB: 598.0
+
+    mix_v14_UL17:
+        passJetMult: 1002.0
+        passPreSel: 1002.0
+        passDiJetMass: 385.0
+        SR: 137.0
+        SB: 248.0
+        passSvB: 10.0
+        failSvB: 602.0
+
+    mix_v14_UL16_preVFP:
+        passJetMult: 997.0
+        passPreSel: 996.0
+        passDiJetMass: 418.0
+        SR: 143.0
+        SB: 275.0
+        passSvB: 7.0
+        failSvB: 642.0
+
+    mix_v13_UL18:
+        passJetMult: 999.0
+        passPreSel: 999.0
+        passDiJetMass: 372.0
+        SR: 130.0
+        SB: 242.0
+        passSvB: 3.0
+        failSvB: 610.0
+
+    mix_v13_UL17:
+        passJetMult: 1002.0
+        passPreSel: 1002.0
+        passDiJetMass: 385.0
+        SR: 137.0
+        SB: 248.0
+        passSvB: 10.0
+        failSvB: 602.0
+
+    mix_v13_UL16_preVFP:
+        passJetMult: 997.0
+        passPreSel: 997.0
+        passDiJetMass: 411.0
+        SR: 136.0
+        SB: 275.0
+        passSvB: 11.0
+        failSvB: 629.0
+
+    mix_v12_UL18:
+        passJetMult: 1000.0
+        passPreSel: 1000.0
+        passDiJetMass: 383.0
+        SR: 131.0
+        SB: 252.0
+        passSvB: 9.0
+        failSvB: 622.0
+
+    mix_v12_UL17:
+        passJetMult: 1002.0
+        passPreSel: 1002.0
+        passDiJetMass: 385.0
+        SR: 137.0
+        SB: 248.0
+        passSvB: 10.0
+        failSvB: 602.0
+
+    mix_v12_UL16_preVFP:
+        passJetMult: 998.0
+        passPreSel: 998.0
+        passDiJetMass: 449.0
+        SR: 152.0
+        SB: 297.0
+        passSvB: 7.0
+        failSvB: 627.0
+
+    mix_v11_UL18:
+        passJetMult: 999.0
+        passPreSel: 999.0
+        passDiJetMass: 364.0
+        SR: 138.0
+        SB: 226.0
+        passSvB: 11.0
+        failSvB: 593.0
+
+    mix_v11_UL17:
+        passJetMult: 996.0
+        passPreSel: 996.0
+        passDiJetMass: 366.0
+        SR: 127.0
+        SB: 239.0
+        passSvB: 15.0
+        failSvB: 600.0
+
+    mix_v11_UL16_preVFP:
+        passJetMult: 1001.0
+        passPreSel: 1001.0
+        passDiJetMass: 419.0
+        SR: 163.0
+        SB: 256.0
+        passSvB: 12.0
+        failSvB: 638.0
+
+    mix_v10_UL18:
+        passJetMult: 999.0
+        passPreSel: 999.0
+        passDiJetMass: 339.0
+        SR: 133.0
+        SB: 206.0
+        passSvB: 9.0
+        failSvB: 621.0
+
+    mix_v10_UL17:
+        passJetMult: 1004.0
+        passPreSel: 1004.0
+        passDiJetMass: 367.0
+        SR: 129.0
+        SB: 238.0
+        passSvB: 10.0
+        failSvB: 640.0
+
+    mix_v10_UL16_preVFP:
+        passJetMult: 997.0
+        passPreSel: 997.0
+        passDiJetMass: 445.0
+        SR: 155.0
+        SB: 290.0
+        passSvB: 12.0
+        failSvB: 611.0
+
+    mix_v0_UL18:
+        passJetMult: 999.0
+        passPreSel: 999.0
+        passDiJetMass: 340.0
+        SR: 145.0
+        SB: 195.0
+        passSvB: 13.0
+        failSvB: 633.0
+
+    mix_v0_UL17:
+        passJetMult: 1000.0
+        passPreSel: 1000.0
+        passDiJetMass: 386.0
+        SR: 135.0
+        SB: 251.0
+        passSvB: 9.0
+        failSvB: 596.0
+
+    mix_v0_UL16_preVFP:
+        passJetMult: 998.0
+        passPreSel: 997.0
+        passDiJetMass: 458.0
+        SR: 154.0
+        SB: 304.0
+        passSvB: 5.0
+        failSvB: 601.0
+
+
+
+counts3:
+    mix_v9_UL18:
+        passJetMult: 998.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v9_UL17:
+        passJetMult: 999.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v9_UL16_preVFP:
+        passJetMult: 996.0
+        passPreSel: 0.03
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.03
+
+    mix_v8_UL18:
+        passJetMult: 1000.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v8_UL17:
+        passJetMult: 1004.0
+        passPreSel: 0.14
+        passDiJetMass: 0.14
+        SR: 0.14
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.14
+
+    mix_v8_UL16_preVFP:
+        passJetMult: 1002.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v7_UL18:
+        passJetMult: 1003.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v7_UL17:
+        passJetMult: 1005.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v7_UL16_preVFP:
+        passJetMult: 998.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v6_UL18:
+        passJetMult: 998.0
+        passPreSel: 0.04
+        passDiJetMass: 0.04
+        SR: 0.0
+        SB: 0.04
+        passSvB: 0.0
+        failSvB: 0.04
+
+    mix_v6_UL17:
+        passJetMult: 999.0
+        passPreSel: 0.04
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v6_UL16_preVFP:
+        passJetMult: 1001.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v5_UL18:
+        passJetMult: 1001.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v5_UL17:
+        passJetMult: 1001.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v5_UL16_preVFP:
+        passJetMult: 999.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v4_UL18:
+        passJetMult: 1001.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v4_UL17:
+        passJetMult: 1001.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v4_UL16_preVFP:
+        passJetMult: 1005.0
+        passPreSel: 0.02
+        passDiJetMass: 0.02
+        SR: 0.0
+        SB: 0.02
+        passSvB: 0.0
+        failSvB: 0.02
+
+    mix_v3_UL18:
+        passJetMult: 999.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v3_UL17:
+        passJetMult: 998.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v3_UL16_preVFP:
+        passJetMult: 998.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v2_UL18:
+        passJetMult: 1000.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v2_UL17:
+        passJetMult: 999.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v2_UL16_preVFP:
+        passJetMult: 1004.0
+        passPreSel: 0.06
+        passDiJetMass: 0.06
+        SR: 0.0
+        SB: 0.06
+        passSvB: 0.0
+        failSvB: 0.06
+
+    mix_v1_UL18:
+        passJetMult: 1003.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v1_UL17:
+        passJetMult: 1004.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v1_UL16_preVFP:
+        passJetMult: 1001.0
+        passPreSel: 0.02
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.02
+
+    mix_v14_UL18:
+        passJetMult: 1003.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v14_UL17:
+        passJetMult: 1002.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v14_UL16_preVFP:
+        passJetMult: 997.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v13_UL18:
+        passJetMult: 999.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v13_UL17:
+        passJetMult: 1002.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v13_UL16_preVFP:
+        passJetMult: 997.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v12_UL18:
+        passJetMult: 1000.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v12_UL17:
+        passJetMult: 1002.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v12_UL16_preVFP:
+        passJetMult: 998.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v11_UL18:
+        passJetMult: 999.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v11_UL17:
+        passJetMult: 996.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v11_UL16_preVFP:
+        passJetMult: 1001.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v10_UL18:
+        passJetMult: 999.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v10_UL17:
+        passJetMult: 1004.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v10_UL16_preVFP:
+        passJetMult: 997.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v0_UL18:
+        passJetMult: 999.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v0_UL17:
+        passJetMult: 1000.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v0_UL16_preVFP:
+        passJetMult: 998.0
+        passPreSel: 0.04
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.04
+        failSvB: 0.0
+
+
+
+counts4_unit:
+    mix_v9_UL18:
+        passJetMult: 998.0
+        passPreSel: 997.0
+        passDiJetMass: 349.0
+        SR: 137.0
+        SB: 212.0
+        passSvB: 7.0
+        failSvB: 625.0
+
+    mix_v9_UL17:
+        passJetMult: 999.0
+        passPreSel: 999.0
+        passDiJetMass: 369.0
+        SR: 132.0
+        SB: 237.0
+        passSvB: 13.0
+        failSvB: 616.0
+
+    mix_v9_UL16_preVFP:
+        passJetMult: 996.0
+        passPreSel: 995.0
+        passDiJetMass: 446.0
+        SR: 167.0
+        SB: 279.0
+        passSvB: 8.0
+        failSvB: 633.0
+
+    mix_v8_UL18:
+        passJetMult: 1000.0
+        passPreSel: 1000.0
+        passDiJetMass: 340.0
+        SR: 131.0
+        SB: 209.0
+        passSvB: 6.0
+        failSvB: 621.0
+
+    mix_v8_UL17:
+        passJetMult: 1004.0
+        passPreSel: 1003.0
+        passDiJetMass: 383.0
+        SR: 120.0
+        SB: 263.0
+        passSvB: 7.0
+        failSvB: 615.0
+
+    mix_v8_UL16_preVFP:
+        passJetMult: 1002.0
+        passPreSel: 1001.0
+        passDiJetMass: 453.0
+        SR: 161.0
+        SB: 292.0
+        passSvB: 7.0
+        failSvB: 575.0
+
+    mix_v7_UL18:
+        passJetMult: 1003.0
+        passPreSel: 1003.0
+        passDiJetMass: 335.0
+        SR: 137.0
+        SB: 198.0
+        passSvB: 9.0
+        failSvB: 620.0
+
+    mix_v7_UL17:
+        passJetMult: 1005.0
+        passPreSel: 1005.0
+        passDiJetMass: 358.0
+        SR: 121.0
+        SB: 237.0
+        passSvB: 9.0
+        failSvB: 644.0
+
+    mix_v7_UL16_preVFP:
+        passJetMult: 998.0
+        passPreSel: 998.0
+        passDiJetMass: 422.0
+        SR: 149.0
+        SB: 273.0
+        passSvB: 12.0
+        failSvB: 611.0
+
+    mix_v6_UL18:
+        passJetMult: 998.0
+        passPreSel: 997.0
+        passDiJetMass: 353.0
+        SR: 140.0
+        SB: 213.0
+        passSvB: 10.0
+        failSvB: 605.0
+
+    mix_v6_UL17:
+        passJetMult: 999.0
+        passPreSel: 998.0
+        passDiJetMass: 380.0
+        SR: 140.0
+        SB: 240.0
+        passSvB: 10.0
+        failSvB: 604.0
+
+    mix_v6_UL16_preVFP:
+        passJetMult: 1001.0
+        passPreSel: 1001.0
+        passDiJetMass: 458.0
+        SR: 166.0
+        SB: 292.0
+        passSvB: 10.0
+        failSvB: 625.0
+
+    mix_v5_UL18:
+        passJetMult: 1001.0
+        passPreSel: 1001.0
+        passDiJetMass: 348.0
+        SR: 128.0
+        SB: 220.0
+        passSvB: 9.0
+        failSvB: 640.0
+
+    mix_v5_UL17:
+        passJetMult: 1001.0
+        passPreSel: 1001.0
+        passDiJetMass: 374.0
+        SR: 134.0
+        SB: 240.0
+        passSvB: 10.0
+        failSvB: 610.0
+
+    mix_v5_UL16_preVFP:
+        passJetMult: 999.0
+        passPreSel: 999.0
+        passDiJetMass: 439.0
+        SR: 164.0
+        SB: 275.0
+        passSvB: 7.0
+        failSvB: 614.0
+
+    mix_v4_UL18:
+        passJetMult: 1001.0
+        passPreSel: 1001.0
+        passDiJetMass: 363.0
+        SR: 123.0
+        SB: 240.0
+        passSvB: 9.0
+        failSvB: 619.0
+
+    mix_v4_UL17:
+        passJetMult: 1001.0
+        passPreSel: 1001.0
+        passDiJetMass: 360.0
+        SR: 126.0
+        SB: 234.0
+        passSvB: 8.0
+        failSvB: 614.0
+
+    mix_v4_UL16_preVFP:
+        passJetMult: 1005.0
+        passPreSel: 1004.0
+        passDiJetMass: 436.0
+        SR: 173.0
+        SB: 263.0
+        passSvB: 8.0
+        failSvB: 591.0
+
+    mix_v3_UL18:
+        passJetMult: 999.0
+        passPreSel: 999.0
+        passDiJetMass: 366.0
+        SR: 133.0
+        SB: 233.0
+        passSvB: 7.0
+        failSvB: 600.0
+
+    mix_v3_UL17:
+        passJetMult: 998.0
+        passPreSel: 998.0
+        passDiJetMass: 353.0
+        SR: 131.0
+        SB: 222.0
+        passSvB: 12.0
+        failSvB: 591.0
+
+    mix_v3_UL16_preVFP:
+        passJetMult: 998.0
+        passPreSel: 998.0
+        passDiJetMass: 421.0
+        SR: 164.0
+        SB: 257.0
+        passSvB: 11.0
+        failSvB: 628.0
+
+    mix_v2_UL18:
+        passJetMult: 1000.0
+        passPreSel: 1000.0
+        passDiJetMass: 365.0
+        SR: 152.0
+        SB: 213.0
+        passSvB: 10.0
+        failSvB: 618.0
+
+    mix_v2_UL17:
+        passJetMult: 999.0
+        passPreSel: 999.0
+        passDiJetMass: 394.0
+        SR: 138.0
+        SB: 256.0
+        passSvB: 7.0
+        failSvB: 587.0
+
+    mix_v2_UL16_preVFP:
+        passJetMult: 1004.0
+        passPreSel: 1003.0
+        passDiJetMass: 423.0
+        SR: 135.0
+        SB: 288.0
+        passSvB: 9.0
+        failSvB: 614.0
+
+    mix_v1_UL18:
+        passJetMult: 1003.0
+        passPreSel: 1003.0
+        passDiJetMass: 350.0
+        SR: 132.0
+        SB: 218.0
+        passSvB: 10.0
+        failSvB: 608.0
+
+    mix_v1_UL17:
+        passJetMult: 1004.0
+        passPreSel: 1004.0
+        passDiJetMass: 362.0
+        SR: 138.0
+        SB: 224.0
+        passSvB: 3.0
+        failSvB: 595.0
+
+    mix_v1_UL16_preVFP:
+        passJetMult: 1001.0
+        passPreSel: 1000.0
+        passDiJetMass: 459.0
+        SR: 143.0
+        SB: 316.0
+        passSvB: 8.0
+        failSvB: 602.0
+
+    mix_v14_UL18:
+        passJetMult: 1003.0
+        passPreSel: 1003.0
+        passDiJetMass: 338.0
+        SR: 115.0
+        SB: 223.0
+        passSvB: 5.0
+        failSvB: 598.0
+
+    mix_v14_UL17:
+        passJetMult: 1002.0
+        passPreSel: 1002.0
+        passDiJetMass: 385.0
+        SR: 137.0
+        SB: 248.0
+        passSvB: 10.0
+        failSvB: 602.0
+
+    mix_v14_UL16_preVFP:
+        passJetMult: 997.0
+        passPreSel: 996.0
+        passDiJetMass: 418.0
+        SR: 143.0
+        SB: 275.0
+        passSvB: 7.0
+        failSvB: 642.0
+
+    mix_v13_UL18:
+        passJetMult: 999.0
+        passPreSel: 999.0
+        passDiJetMass: 372.0
+        SR: 130.0
+        SB: 242.0
+        passSvB: 3.0
+        failSvB: 610.0
+
+    mix_v13_UL17:
+        passJetMult: 1002.0
+        passPreSel: 1002.0
+        passDiJetMass: 385.0
+        SR: 137.0
+        SB: 248.0
+        passSvB: 10.0
+        failSvB: 602.0
+
+    mix_v13_UL16_preVFP:
+        passJetMult: 997.0
+        passPreSel: 997.0
+        passDiJetMass: 411.0
+        SR: 136.0
+        SB: 275.0
+        passSvB: 11.0
+        failSvB: 629.0
+
+    mix_v12_UL18:
+        passJetMult: 1000.0
+        passPreSel: 1000.0
+        passDiJetMass: 383.0
+        SR: 131.0
+        SB: 252.0
+        passSvB: 9.0
+        failSvB: 622.0
+
+    mix_v12_UL17:
+        passJetMult: 1002.0
+        passPreSel: 1002.0
+        passDiJetMass: 385.0
+        SR: 137.0
+        SB: 248.0
+        passSvB: 10.0
+        failSvB: 602.0
+
+    mix_v12_UL16_preVFP:
+        passJetMult: 998.0
+        passPreSel: 998.0
+        passDiJetMass: 449.0
+        SR: 152.0
+        SB: 297.0
+        passSvB: 7.0
+        failSvB: 627.0
+
+    mix_v11_UL18:
+        passJetMult: 999.0
+        passPreSel: 999.0
+        passDiJetMass: 364.0
+        SR: 138.0
+        SB: 226.0
+        passSvB: 11.0
+        failSvB: 593.0
+
+    mix_v11_UL17:
+        passJetMult: 996.0
+        passPreSel: 996.0
+        passDiJetMass: 366.0
+        SR: 127.0
+        SB: 239.0
+        passSvB: 15.0
+        failSvB: 600.0
+
+    mix_v11_UL16_preVFP:
+        passJetMult: 1001.0
+        passPreSel: 1001.0
+        passDiJetMass: 419.0
+        SR: 163.0
+        SB: 256.0
+        passSvB: 12.0
+        failSvB: 638.0
+
+    mix_v10_UL18:
+        passJetMult: 999.0
+        passPreSel: 999.0
+        passDiJetMass: 339.0
+        SR: 133.0
+        SB: 206.0
+        passSvB: 9.0
+        failSvB: 621.0
+
+    mix_v10_UL17:
+        passJetMult: 1004.0
+        passPreSel: 1004.0
+        passDiJetMass: 367.0
+        SR: 129.0
+        SB: 238.0
+        passSvB: 10.0
+        failSvB: 640.0
+
+    mix_v10_UL16_preVFP:
+        passJetMult: 997.0
+        passPreSel: 997.0
+        passDiJetMass: 445.0
+        SR: 155.0
+        SB: 290.0
+        passSvB: 12.0
+        failSvB: 611.0
+
+    mix_v0_UL18:
+        passJetMult: 999.0
+        passPreSel: 999.0
+        passDiJetMass: 340.0
+        SR: 145.0
+        SB: 195.0
+        passSvB: 13.0
+        failSvB: 633.0
+
+    mix_v0_UL17:
+        passJetMult: 1000.0
+        passPreSel: 1000.0
+        passDiJetMass: 386.0
+        SR: 135.0
+        SB: 251.0
+        passSvB: 9.0
+        failSvB: 596.0
+
+    mix_v0_UL16_preVFP:
+        passJetMult: 998.0
+        passPreSel: 997.0
+        passDiJetMass: 458.0
+        SR: 154.0
+        SB: 304.0
+        passSvB: 5.0
+        failSvB: 601.0
+
+
+
+counts3_unit:
+    mix_v9_UL18:
+        passJetMult: 998.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v9_UL17:
+        passJetMult: 999.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v9_UL16_preVFP:
+        passJetMult: 996.0
+        passPreSel: 1.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 1.0
+
+    mix_v8_UL18:
+        passJetMult: 1000.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v8_UL17:
+        passJetMult: 1004.0
+        passPreSel: 1.0
+        passDiJetMass: 1.0
+        SR: 1.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 1.0
+
+    mix_v8_UL16_preVFP:
+        passJetMult: 1002.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v7_UL18:
+        passJetMult: 1003.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v7_UL17:
+        passJetMult: 1005.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v7_UL16_preVFP:
+        passJetMult: 998.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v6_UL18:
+        passJetMult: 998.0
+        passPreSel: 1.0
+        passDiJetMass: 1.0
+        SR: 0.0
+        SB: 1.0
+        passSvB: 0.0
+        failSvB: 1.0
+
+    mix_v6_UL17:
+        passJetMult: 999.0
+        passPreSel: 1.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v6_UL16_preVFP:
+        passJetMult: 1001.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v5_UL18:
+        passJetMult: 1001.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v5_UL17:
+        passJetMult: 1001.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v5_UL16_preVFP:
+        passJetMult: 999.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v4_UL18:
+        passJetMult: 1001.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v4_UL17:
+        passJetMult: 1001.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v4_UL16_preVFP:
+        passJetMult: 1005.0
+        passPreSel: 1.0
+        passDiJetMass: 1.0
+        SR: 0.0
+        SB: 1.0
+        passSvB: 0.0
+        failSvB: 1.0
+
+    mix_v3_UL18:
+        passJetMult: 999.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v3_UL17:
+        passJetMult: 998.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v3_UL16_preVFP:
+        passJetMult: 998.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v2_UL18:
+        passJetMult: 1000.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v2_UL17:
+        passJetMult: 999.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v2_UL16_preVFP:
+        passJetMult: 1004.0
+        passPreSel: 1.0
+        passDiJetMass: 1.0
+        SR: 0.0
+        SB: 1.0
+        passSvB: 0.0
+        failSvB: 1.0
+
+    mix_v1_UL18:
+        passJetMult: 1003.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v1_UL17:
+        passJetMult: 1004.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v1_UL16_preVFP:
+        passJetMult: 1001.0
+        passPreSel: 1.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 1.0
+
+    mix_v14_UL18:
+        passJetMult: 1003.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v14_UL17:
+        passJetMult: 1002.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v14_UL16_preVFP:
+        passJetMult: 997.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v13_UL18:
+        passJetMult: 999.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v13_UL17:
+        passJetMult: 1002.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v13_UL16_preVFP:
+        passJetMult: 997.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v12_UL18:
+        passJetMult: 1000.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v12_UL17:
+        passJetMult: 1002.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v12_UL16_preVFP:
+        passJetMult: 998.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v11_UL18:
+        passJetMult: 999.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v11_UL17:
+        passJetMult: 996.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v11_UL16_preVFP:
+        passJetMult: 1001.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v10_UL18:
+        passJetMult: 999.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v10_UL17:
+        passJetMult: 1004.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v10_UL16_preVFP:
+        passJetMult: 997.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v0_UL18:
+        passJetMult: 999.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v0_UL17:
+        passJetMult: 1000.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    mix_v0_UL16_preVFP:
+        passJetMult: 998.0
+        passPreSel: 1.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 1.0
+        failSvB: 0.0
+
+
+

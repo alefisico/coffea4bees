@@ -288,7 +288,7 @@ class analysis(processor.ProcessorABC):
 
         selections.add( 'lumimask', event.lumimask )
         selections.add( 'passNoiseFilter', event.passNoiseFilter )
-        selections.add( 'passHLT', np.full(len(event), True) if (isMC or isMixedData) else event.passHLT )
+        selections.add( 'passHLT', np.full(len(event), True) if (isMC or isMixedData or isTTForMixed or isDataForMixed) else event.passHLT )
         self._cutFlow.fill("all",  event[selections.require(lumimask=True)], allTag=True)
         self._cutFlow.fill("passNoiseFilter",  event[ selections.require(lumimask=True, passNoiseFilter=True) ], allTag=True)
         self._cutFlow.fill("passHLT",  event[ selections.require(lumimask=True, passNoiseFilter=True, passHLT=True) ], allTag=True)
@@ -493,6 +493,44 @@ class analysis(processor.ProcessorABC):
         quadJet['dphi'] = quadJet['lead'].delta_phi(quadJet['subl'])
         quadJet['deta'] = quadJet['lead'].eta - quadJet['subl'].eta
 
+        #
+        #  Build the top Candiates
+        #
+        # dumpTopCandidateTestVectors(selev, logging, chunk, 15)
+
+        # sort the jets by btagging
+        selev.selJet  = selev.selJet[ak.argsort(selev.selJet.btagDeepFlavB, axis=1, ascending=False)]
+        top_cands     = find_tops_slow(selev.selJet)
+        rec_top_cands = buildTop(selev.selJet, top_cands)
+
+        selev["top_cand"] = rec_top_cands[:, 0]
+        bReg_p = selev.top_cand.b * selev.top_cand.b.bRegCorr
+        selev["top_cand", "p"] = bReg_p  + selev.top_cand.j + selev.top_cand.l
+
+        # mW, mt = 80.4, 173.0
+        selev["top_cand", "W"] = ak.zip({"p": selev.top_cand.j + selev.top_cand.l,
+                                         "j": selev.top_cand.j,
+                                         "l": selev.top_cand.l})
+
+        selev["top_cand","W", "pW"] = selev.top_cand.W.p * (mW / selev.top_cand.W.p.mass)
+        selev["top_cand", "mbW"] = (bReg_p + selev.top_cand.W.pW).mass
+        selev["top_cand", "xt"]   = (selev.top_cand.p.mass - mt) / (0.10 * selev.top_cand.p.mass)
+        selev["top_cand", "xWt"]  = np.sqrt(selev.top_cand.xW ** 2 + selev.top_cand.xt ** 2)
+        selev["top_cand", "mbW"]  = (bReg_p + selev.top_cand.W.pW).mass
+        selev["top_cand", "xWbW"] = np.sqrt(selev.top_cand.xW ** 2 + selev.top_cand.xbW**2)
+
+        #
+        # after minimizing, the ttbar distribution is centered around ~(0.5, 0.25) with surfaces of constant density approximiately constant radii
+        #
+        selev["top_cand", "rWbW"] = np.sqrt( (selev.top_cand.xbW-0.25) ** 2 + (selev.top_cand.xW-0.5) ** 2)
+
+        selev["xbW_reco"] = selev.top_cand.xbW
+        selev["xW_reco"]  = selev.top_cand.xW
+
+        if 'xbW' in selev.fields:  #### AGE: this should be temporary
+            selev["delta_xbW"] = selev.xbW - selev.xbW_reco
+            selev["delta_xW"] = selev.xW - selev.xW_reco
+
         if self.apply_FvT:
             quadJet['FvT_q_score'] = np.concatenate((np.reshape(np.array(selev.FvT.q_1234), (-1, 1)),
                                                      np.reshape(np.array(selev.FvT.q_1324), (-1, 1)),
@@ -550,44 +588,6 @@ class analysis(processor.ProcessorABC):
         if self.run_SvB:
             selev['passSvB'] = (selev['SvB_MA'].ps > 0.80)
             selev['failSvB'] = (selev['SvB_MA'].ps < 0.05)
-
-        #
-        #  Build the top Candiates
-        #
-        # dumpTopCandidateTestVectors(selev, logging, chunk, 15)
-
-        # sort the jets by btagging
-        selev.selJet  = selev.selJet[ak.argsort(selev.selJet.btagDeepFlavB, axis=1, ascending=False)]
-        top_cands     = find_tops_slow(selev.selJet)
-        rec_top_cands = buildTop(selev.selJet, top_cands)
-
-        selev["top_cand"] = rec_top_cands[:, 0]
-        bReg_p = selev.top_cand.b * selev.top_cand.b.bRegCorr
-        selev["top_cand", "p"] = bReg_p  + selev.top_cand.j + selev.top_cand.l
-
-        # mW, mt = 80.4, 173.0
-        selev["top_cand", "W"] = ak.zip({"p": selev.top_cand.j + selev.top_cand.l,
-                                         "j": selev.top_cand.j,
-                                         "l": selev.top_cand.l})
-
-        selev["top_cand","W", "pW"] = selev.top_cand.W.p * (mW / selev.top_cand.W.p.mass)
-        selev["top_cand", "mbW"] = (bReg_p + selev.top_cand.W.pW).mass
-        selev["top_cand", "xt"]   = (selev.top_cand.p.mass - mt) / (0.10 * selev.top_cand.p.mass)
-        selev["top_cand", "xWt"]  = np.sqrt(selev.top_cand.xW ** 2 + selev.top_cand.xt ** 2)
-        selev["top_cand", "mbW"]  = (bReg_p + selev.top_cand.W.pW).mass
-        selev["top_cand", "xWbW"] = np.sqrt(selev.top_cand.xW ** 2 + selev.top_cand.xbW**2)
-
-        #
-        # after minimizing, the ttbar distribution is centered around ~(0.5, 0.25) with surfaces of constant density approximiately constant radii
-        #
-        selev["top_cand", "rWbW"] = np.sqrt( (selev.top_cand.xbW-0.25) ** 2 + (selev.top_cand.xW-0.5) ** 2)
-
-        selev["xbW_reco"] = selev.top_cand.xbW
-        selev["xW_reco"]  = selev.top_cand.xW
-
-        if 'xbW' in selev.fields:  #### AGE: this should be temporary
-            selev["delta_xbW"] = selev.xbW - selev.xbW_reco
-            selev["delta_xW"] = selev.xW - selev.xW_reco
 
         #
         # Blind data in fourTag SR
@@ -680,7 +680,7 @@ class analysis(processor.ProcessorABC):
             #
             if self.apply_FvT:
                 FvT_skip = []
-                if isMixedData:
+                if isMixedData or isDataForMixed or isTTForMixed:
                     FvT_skip = ["pt", "pm3", "pm4"]
 
                 fill += FvTHists(('FvT', 'FvT Classifier'), 'FvT', skip=FvT_skip)
@@ -751,6 +751,12 @@ class analysis(processor.ProcessorABC):
                     fill_SvB += SvBHists(('SvB_MA', 'SvB MA Classifier'), 'SvB_MA')
                     fill_SvB += hist_SvB[ivar].add('quadJet_selected_SvB_q_score', (100, 0, 1, ("quadJet_selected.SvB_q_score", 'Selected Quad Jet Diboson SvB q score')))
                     fill_SvB += hist_SvB[ivar].add('quadJet_min_SvB_MA_q_score', (100, 0, 1, ("quadJet_min_dr.SvB_MA_q_score", 'Min dR Quad Jet Diboson SvB MA q score')))
+                    if isDataForMixed:
+                        for  _FvT_name in event.metadata["FvT_names"]:
+                            fill_SvB += SvBHists((f'SvB_{_FvT_name}',    'SvB Classifier'),    'SvB',    weight=f"weight_{_FvT_name}")
+                            fill_SvB += SvBHists((f'SvB_MA_{_FvT_name}', 'SvB MA Classifier'), 'SvB_MA', weight=f"weight_{_FvT_name}")
+
+
                     fill_SvB(selev)
 
                     if not 'nominal' in ivar:
@@ -778,7 +784,6 @@ class analysis(processor.ProcessorABC):
 
             friends = {}
             if self.make_classifier_input is not None:
-                ### AGE: this should be temporary
                 for k in ["ZZSR", "ZHSR", "HHSR", "SR", "SB"]:
                     selev[k] = selev["quadJet_selected"][k]
                 selev["nSelJets"] = ak.num(selev.selJet)
@@ -836,8 +841,8 @@ class analysis(processor.ProcessorABC):
         a = torch.zeros(n, 4)
         a[:, 0] =        float(event.metadata['year'][3])
         a[:, 1] = torch.tensor(event.nJet_selected)
-        a[:, 2] = torch.tensor(event.xW)
-        a[:, 3] = torch.tensor(event.xbW)
+        a[:, 2] = torch.tensor(event.xW_reco)
+        a[:, 3] = torch.tensor(event.xbW_reco)
 
         e = torch.tensor(event.event) % 3
 

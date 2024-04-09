@@ -42,7 +42,7 @@ datasets:
         sumw: 58023.9636257
         sumw2: 615626.6029922854
         total_events: 978000
-    xs: 0.03105*0.5824**2
+    xs: 0.07038*0.5824**2   #### from https://twiki.cern.ch/twiki/bin/view/LHCPhysics/LHCHWGHH
   GluGluToHHTo4B_cHHH1:
     UL16_postVFP:
       nanoAOD: /GluGluToHHTo4B_cHHH1_TuneCP5_PSWeights_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v1/NANOAODSIM
@@ -134,7 +134,7 @@ datasets:
         sumw: 10752.851367299998
         sumw2: 357.94212966148234
         total_events: 950000
-    xs: 0.03105*0.5824**2
+    xs: 0.01310*0.5824**2
   GluGluToHHTo4B_cHHH5:
     UL16_postVFP:
       nanoAOD: /GluGluToHHTo4B_cHHH5_TuneCP5_PSWeights_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v1/NANOAODSIM
@@ -178,7 +178,7 @@ datasets:
         sumw: 78489.34013980003
         sumw2: 6400.488181203013
         total_events: 994000
-    xs: 0.03105*0.5824**2
+    xs: 0.09482*0.5824**2
   HH4b:
     UL16_preVFP:
       nanoAOD: /dataset/dataset/NANOAODSIM
