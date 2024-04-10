@@ -383,7 +383,9 @@ class analysis(processor.ProcessorABC):
         #
         # calculate pseudoTagWeight for threeTag events
         #
-        selev['weight_noJCM_noFvT'] = weights.weight()[ selections.require( passJetMult=True, passPreSel=True ) ]
+        logging.debug(f"noJCM_noFVT {weights.weight()[ selections.require( passJetMult=True, passPreSel=True ) ][:10]}")
+        logging.debug(f"noJCM_noFVT partial {weights.partial_weight(include=['genweight', 'trigWeight', 'PU' ,'btagSF'])[ selections.require( passJetMult=True, passPreSel=True ) ][:10]}")
+        selev['weight_noJCM_noFvT'] = weights.partial_weight(include=['genweight', 'trigWeight', 'PU' ,'btagSF'])[ selections.require( passJetMult=True, passPreSel=True ) ]
         if self.JCM:
             selev['Jet_untagged_loose'] = selev.Jet[selev.Jet.selected & ~selev.Jet.tagged_loose]
             nJet_pseudotagged = np.zeros(len(selev), dtype=int)
@@ -422,10 +424,9 @@ class analysis(processor.ProcessorABC):
                     selev['weight'] = selev[f'weight_{event.metadata["FvT_names"][0]}']
 
                 else:
-                    weight = np.array(selev.weight.to_numpy(), dtype=float)
-                    weight[selev.threeTag] = selev.weight[selev.threeTag] * pseudoTagWeight[selev.threeTag] * selev.FvT.FvT[selev.threeTag]
+                    weight = pseudoTagWeight[selev.threeTag] * selev.FvT.FvT[selev.threeTag]
                     tmp_weight = np.full(len(event), 1.)
-                    tmp_weight[ selections.require( passJetMult=True, passPreSel=True ) ] = weight
+                    tmp_weight[ selections.require( passJetMult=True, passPreSel=True ) & event.threeTag ] = weight
                     weights.add( 'FvT', tmp_weight )
 
 
