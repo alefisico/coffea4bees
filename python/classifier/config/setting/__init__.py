@@ -79,18 +79,21 @@ class Monitor(Cascade):
 
     # backends
     use_console: bool = True
+    console_update_interval: float = 1.0  # seconds
+    console_fps: int = 10
+
     use_web: bool = False
 
     # components
-    show_log: bool = True
-    show_progress: bool = True
+    track_log: bool = True
+    track_progress: bool = True
 
     track_usage: bool = True
-    track_usage_interval: float = 1.0  # seconds
-    track_gpu_usage: bool = True
+    usage_update_interval: float = 1.0  # seconds
+    usage_gpu: bool = True
 
     # records
-    dir_records: str = "diagnostic"
+    dir_records: str = "diagnostics"
     file_meta: str = "meta.json"
     file_logs: str = "logs.html"
     file_usage: str = "usage.json"

@@ -27,7 +27,7 @@ class _Checkpoint(TypedDict):
 
 
 class Usage(Proxy):
-    _locals: list[_Resource] = []
+    _records_local: list[_Resource] = []
     _has_gpu: bool = None
     _tracker: Thread = None
     _head: int = 0
@@ -45,8 +45,8 @@ class Usage(Proxy):
     def checkpoint(cls, name: str):
         if Setting.track_usage:
             checkpoint = {"time": time.time(), "name": name}
-            end = len(cls._locals)
-            records = cls._locals[cls._head : end]
+            end = len(cls._records_local)
+            records = cls._records_local[cls._head : end]
             cls._head = end
             cls._checkpoint(Recorder.name(), checkpoint, records)
 
@@ -80,7 +80,9 @@ class Usage(Proxy):
                     gpu = sum(gpu.get(pid, 0) for pid in pids)
             else:
                 gpu = 0
-            cls._locals.append({"time": now, "cpu": cpu, "memory": mem, "gpu": gpu})
+            cls._records_local.append(
+                {"time": now, "cpu": cpu, "memory": mem, "gpu": gpu}
+            )
             time.sleep(Setting.usage_update_interval)
 
     @classmethod

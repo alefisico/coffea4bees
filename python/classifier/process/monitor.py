@@ -409,7 +409,7 @@ class Proxy(_Singleton, metaclass=_ProxyMeta):
 class Recorder(Proxy):
     _name = f"{_get_host()}/pid-{os.getpid()}/{mp.current_process().name}"
 
-    _reporters: dict[str, int]
+    _reporters: dict[str, str]
     _data: list[tuple[str, Callable[[], bytes]]]
 
     def __init__(self):
@@ -449,8 +449,9 @@ class Recorder(Proxy):
         if (cfg.Monitor.dir_records is not None) and (_Status.now() == _Status.Monitor):
             base = (cfg.IO.output / cfg.Monitor.dir_records).mkdir()
             for file, func in cls._data:
-                with fsspec.open(base / file, "wb") as f:
-                    f.write(func())
+                if file is not None:
+                    with fsspec.open(base / file, "wb") as f:
+                        f.write(func())
 
 
 def connect_to_monitor(address: str | tuple = None):
