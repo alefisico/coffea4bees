@@ -16,6 +16,7 @@ workflow:
     - if: $CI_COMMIT_BRANCH
 
 stages:          
+  - reana
   - build
   - proxy
   - code 
@@ -24,7 +25,6 @@ stages:
   - fits
   - plot
   - cutflow
-  - reana
 
 voms_proxy:
   stage: proxy
