@@ -292,17 +292,12 @@ class analysis(processor.ProcessorABC):
         self._cutFlow.fill("all",  event[selections.require(lumimask=True)], allTag=True)
         self._cutFlow.fill("passNoiseFilter",  event[ selections.require(lumimask=True, passNoiseFilter=True) ], allTag=True)
         self._cutFlow.fill("passHLT",  event[ selections.require(lumimask=True, passNoiseFilter=True, passHLT=True) ], allTag=True)
-        logging.info(f"all {event[selections.require(lumimask=True)].event}")
-        logging.info(f"passNoiseFilter {event[selections.require(lumimask=True, passNoiseFilter=True)].event}")
-        logging.info(f"passHLT {event[selections.require(lumimask=True, passNoiseFilter=True, passHLT=True)].event}")
-        logging.info(f"passHLT {selections.require(lumimask=True, passNoiseFilter=True, passHLT=True)}")
 
         # Apply object selection (function does not remove events, adds content to objects)
         event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year], isMixedData=isMixedData, isTTForMixed=isTTForMixed, isDataForMixed=isDataForMixed)
 
         selections.add( 'passJetMult', event.lumimask & event.passNoiseFilter & selections.require(passHLT=True) & event.passJetMult )
         self._cutFlow.fill("passJetMult", event[selections.require( passJetMult=True )], allTag=True)
-        logging.info(f"passJetMult {event[selections.require(passJetMult=True)].event}")
 
         #
         # Calculate and apply btag scale factors
