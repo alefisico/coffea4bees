@@ -24,8 +24,9 @@ class _ProgressTracker(WithUUID):
     def __post_init__(self):
         self.start_t = time.time()
         self.updated_t = self.start_t
-        self.completed = 0
         self.source = Recorder.name()
+        self._completed = 0
+        self._step = None
         super().__init__()
 
     def _update(self, msg: str = None, updated: bool = False):
@@ -34,32 +35,35 @@ class _ProgressTracker(WithUUID):
             updated = True
         if updated:
             Progress._update(self)
+        self._step = None
 
     def update(self, completed: int, msg: str = None):
-        updated = completed > self.completed
+        updated = completed > self._completed
         if updated:
             self.updated_t = time.time()
-            self.completed = completed
+            self._completed = completed
+            self._step = None
         self._update(msg, updated)
 
     def advance(self, step: int, msg: str = None):
         updated = step > 0
         if updated:
             self.updated_t = time.time()
-            self.completed += step
+            self._completed += step
+            self._step = step
         self._update(msg, updated)
 
     @property
     def estimate(self):
-        if self.completed > 0:
+        if self._completed > 0:
             return (
                 self.updated_t - self.start_t
-            ) / self.completed * self.total + self.start_t
+            ) / self._completed * self.total + self.start_t
         return None
 
     @property
     def is_finished(self):
-        return self.completed == self.total
+        return self._completed >= self.total
 
 
 class _EstimateColumn(ProgressColumn):
@@ -100,13 +104,17 @@ class Progress(Proxy):
             return job
         return noop
 
-    @callback
-    def _update(self, job: _ProgressTracker):
-        uuid = (job.source, job.uuid)
-        if job.is_finished:
-            self._jobs.pop(uuid, None)
-        else:
-            self._jobs[uuid] = job
+    @callback(max_retry=1)
+    def _update(self, new: _ProgressTracker):
+        uuid = (new.source, new.uuid)
+        old = self._jobs.get(uuid)
+        if new._step is not None:
+            if old is None:
+                return
+            new._completed = max(new._completed, old._completed + new._step)
+        self._jobs[uuid] = new
+        if new.is_finished:
+            self._jobs.pop(uuid)
 
     @classmethod
     def _console_callback(cls):
@@ -116,7 +124,7 @@ class Progress(Proxy):
         for uuid, job in jobs.items():
             kwargs = {
                 "description": job.msg,
-                "completed": job.completed,
+                "completed": job._completed,
                 "estimate": job.estimate,
                 "source": Recorder.registered(job.source),
             }

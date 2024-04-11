@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from functools import cached_property, reduce
+from functools import cached_property, partial, reduce
 from itertools import chain
 from typing import TYPE_CHECKING, Callable
 
 from base_class.utils import unique
+from classifier.monitor.progress import Progress
 from classifier.task import ArgParser, Dataset, converter, parse
 
 if TYPE_CHECKING:
@@ -225,11 +226,18 @@ class _load_df_from_root(_load_df):
                 chunks.append(
                     pool.map(Chunk._fetch, (Chunk(f, self._tree) for f in files))
                 )
+            progress = Progress.new(
+                total=sum(map(len, chunks)), msg="loading ROOT files"
+            )
             for i in range(len(chunks)):
                 balanced = Chunk.balance(
                     self._chunksize, *chunks[i], common_branches=True
                 )
-                dfs.append(pool.map(self._from_root[i][0].read, balanced))
+                dfs.append(
+                    pool.map(
+                        partial(self._from_root[i][0].read, progress=progress), balanced
+                    )
+                )
         return pd.concat(
             filter(lambda x: x is not None, chain(*dfs)), ignore_index=True, copy=False
         )

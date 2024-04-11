@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable, Iterable, Mapping, Optional
+from typing import Any, Callable, Iterable, Optional
 
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
 import torch
 from base_class.root import Chain, Chunk, Friend
+
+from ..monitor.progress import _ProgressTracker
 
 
 class FromRoot:
@@ -24,7 +26,7 @@ class FromRoot:
         if friends:
             self.chain += friends
 
-    def read(self, chunk: Chunk):
+    def read(self, chunk: Chunk, progress: _ProgressTracker = None):
         chain = self.chain.copy()
         chain += chunk
         df = chain.concat(library="pd", reader_options={"branch_filter": self.branches})
@@ -32,6 +34,8 @@ class FromRoot:
             if len(df) == 0:
                 return None
             df = preprocessor(df)
+        if progress is not None:
+            progress.advance(len(chunk))
         return df
 
 
