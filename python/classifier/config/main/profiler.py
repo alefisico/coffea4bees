@@ -7,6 +7,19 @@ from .. import setting as cfg
 from ._utils import LoadTrainingSets, SelectDevice
 from .help import _print_mod
 
+_PROFILE_DEFAULT = {
+    "record_shapes": True,
+    "profile_memory": True,
+    "with_stack": True,
+    "with_flops": True,
+    "with_modules": True,
+}
+_PROFILE_SCHEDULE_DEFAULT = {
+    "wait": 1,
+    "warmup": 1,
+    "active": 10,
+}
+
 
 class Main(SelectDevice, LoadTrainingSets):
     argparser = ArgParser(
@@ -26,10 +39,28 @@ class Main(SelectDevice, LoadTrainingSets):
         default=100,
         help=f"size of dataset",
     )
+    argparser.add_argument(
+        "--profile-options",
+        type=parse.mapping,
+        default="",
+        help=f"profiling options {parse.EMBED}",
+    )
+    argparser.add_argument(
+        "--profile-schedule",
+        type=parse.mapping,
+        default="",
+        help=f"profiling schedule {parse.EMBED}",
+    )
+    argparser.add_argument(
+        "--profile-activities",
+        nargs="+",
+        default=["CPU", "CUDA"],
+        help="profiling activities",
+    )
 
     def run(self, parser: EntryPoint):
         import numpy as np
-        import torch
+        from torch.profiler import ProfilerActivity, profile, schedule
         from torch.utils.data import Subset
 
         # load datasets in parallel
@@ -47,10 +78,21 @@ class Main(SelectDevice, LoadTrainingSets):
             trainers = model.train()
             for j, trainer in enumerate(trainers):
                 name = f"{i}.{j}"
-                torch.cuda.memory._record_memory_history()
-                results[name] = trainer(self.device, datasets)
-                torch.cuda.memory._dump_snapshot(
-                    os.fspath(cfg.IO.profiler / f"snapshot_{name}.pkl")
+                with profile(
+                    activities=[
+                        getattr(ProfilerActivity, a)
+                        for a in self.opts.profile_activities
+                    ],
+                    schedule=schedule(
+                        **(_PROFILE_SCHEDULE_DEFAULT | self.opts.profile_schedule)
+                    ),
+                    **(_PROFILE_DEFAULT | self.opts.profile_options),
+                ) as p:
+                    results[name] = trainer(self.device, datasets)
+                p.export_memory_timeline(
+                    os.fspath(cfg.IO.profiler / f"profiler_{name}.html")
                 )
-                torch.cuda.memory._record_memory_history(enabled=False)
+                p.export_chrome_trace(
+                    os.fspath(cfg.IO.profiler / f"profiler_{name}.json")
+                )
         return {"models": results}
