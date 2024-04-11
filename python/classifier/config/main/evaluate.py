@@ -1,9 +1,10 @@
 from classifier.task import ArgParser, EntryPoint
+from classifier.task.special import WorkInProgress
 
 from ._utils import SelectDevice, SetupMultiprocessing
 
 
-class Main(SelectDevice, SetupMultiprocessing):
-    argparser = ArgParser(prog="evaluate", description="[red]Work in Progress[/red]")
+class Main(WorkInProgress, SelectDevice, SetupMultiprocessing):
+    argparser = ArgParser(prog="evaluate")
 
     def run(self, parser: EntryPoint): ...  # TODO

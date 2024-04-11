@@ -1,5 +1,4 @@
 import inspect
-import json
 import os
 import pkgutil
 import re
@@ -8,6 +7,7 @@ from textwrap import indent
 
 import rich.terminal_theme as themes
 from classifier.task import ArgParser, EntryPoint, Task, main, parse
+from classifier.task.special import WorkInProgress
 from classifier.task.task import _INDENT
 from rich.console import Console
 
@@ -53,9 +53,9 @@ class Main(main.Main):
     _keys = " ".join(f"--{k}" for k in EntryPoint._keys)
     argparser = ArgParser(
         prog="help",
-        description="Print help messages.",
+        description="Print help information.",
         workflow=[
-            ("main", f"call [blue]task.help()[/blue]"),
+            ("main", f"[blue]task.help()[/blue] print help information"),
         ],
     )
     argparser.remove_argument("--save-state")
@@ -73,6 +73,13 @@ class Main(main.Main):
         help="a Python style regular expression to filter modules when [yellow]--all[/yellow] is set",
         default=".*",
     )
+    argparser.add_argument(
+        "--wip",
+        "--work-in-progress",
+        action="store_true",
+        help="list tasks that is still [red]Work In Progress[/red]",
+        default=False,
+    )
 
     def __init__(self):
         super().__init__()
@@ -81,8 +88,16 @@ class Main(main.Main):
     def _print(self, *args, **kwargs):
         self._console.print(*args, **kwargs)
 
-    def _print_help(self, task: Task, depth: int = 1):
+    def _print_help(self, task: type[Task], depth: int = 1):
         self._print(indent(task.help(), _INDENT * depth))
+
+    def _check_wip(self, cls: type, depth: int = 0):
+        if isinstance(cls, type) and issubclass(cls, WorkInProgress):
+            if self.opts.wip:
+                self._print(indent("[red]\[Work In Progress][/red]", _INDENT * depth))
+            else:
+                return False
+        return True
 
     def run(self, parser: EntryPoint):
         tasks = parser.args["main"]
@@ -118,17 +133,19 @@ class Main(main.Main):
         self._print_help(self)
         for task in parser._tasks:
             if task != "help":
-                self._print(f"[blue]{task}[/blue]")
                 _, cls = parser._fetch_module(f"{task}.Main", main._MAIN)
-                self._print_help(cls)
+                if self._check_wip(cls):
+                    self._print(f"[blue]{task}[/blue]")
+                    self._print_help(cls)
         self._print("\n[orange3]\[Options][orange3]")
         self._print(_print_mod(None, "task", tasks[1]))
         for cat in parser._keys:
             target = EntryPoint._keys[cat]
             for imp, opts in parser.args[cat]:
-                self._print(_print_mod(cat, imp, opts))
                 modname, clsname = parser._fetch_module_name(imp, cat)
                 mod, cls = parser._fetch_module(imp, cat)
+                self._check_wip(cls)
+                self._print(_print_mod(cat, imp, opts))
                 if mod is None:
                     self._print(
                         indent(f'[red]Module "{modname}" not found[/red]', _INDENT)
@@ -168,8 +185,9 @@ class Main(main.Main):
                                     classes[fullname] = obj
                     if classes:
                         for cls in classes:
-                            self._print(indent(f"[green]{cls}[/green]", _INDENT))
-                            self._print_help(classes[cls], 2)
+                            if self._check_wip(classes[cls], 1):
+                                self._print(indent(f"[green]{cls}[/green]", _INDENT))
+                                self._print_help(classes[cls], 2)
         if self.opts.html:
             self._console.save_html(
                 IOSetting.output / "help.html", theme=themes.MONOKAI

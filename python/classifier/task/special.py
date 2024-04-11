@@ -64,3 +64,6 @@ class Static(TaskBase):
         return cls
 
     def __init__(): ...
+
+
+class WorkInProgress: ...

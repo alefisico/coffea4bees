@@ -40,7 +40,7 @@ class _KFold(Model):
         action="extend",
         nargs="+",
         default=[],
-        help="the offsets to generate new seeds, e.g. [yellow]--kfold-seed-offsets 0-3 5[/yellow]. [red]If not given, the dataset will not be shuffled.[/red]",
+        help="the offsets to generate new seeds, e.g. [yellow]--kfold-seed-offsets 0-3 5[/yellow]. If not given, the dataset will not be shuffled.",
     )
 
     def _get_offsets(self, name: str, max: int = None) -> list[int]:

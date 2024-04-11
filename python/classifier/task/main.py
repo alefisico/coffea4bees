@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Optional
 
 import fsspec
-import rich.terminal_theme as themes
 
 from ..utils import import_
 from .dataset import Dataset

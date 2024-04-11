@@ -1,11 +1,11 @@
 import logging
 import os
 
-from classifier.task import ArgParser, EntryPoint, Model, converter, parse
+from classifier.task import ArgParser, EntryPoint, converter
+from classifier.task.special import WorkInProgress
 
 from .. import setting as cfg
 from ._utils import LoadTrainingSets, SelectDevice
-from .help import _print_mod
 
 _PROFILE_DEFAULT = {
     "record_shapes": True,
@@ -15,13 +15,13 @@ _PROFILE_DEFAULT = {
     "with_modules": True,
 }
 _PROFILE_SCHEDULE_DEFAULT = {
-    "wait": 1,
-    "warmup": 1,
-    "active": 10,
+    "wait": 0,
+    "warmup": 0,
+    "active": 1,
 }
 
 
-class Main(SelectDevice, LoadTrainingSets):
+class Main(WorkInProgress, SelectDevice, LoadTrainingSets):
     argparser = ArgParser(
         prog="profiler",
         description="""Run torch profiler on models.
@@ -29,27 +29,13 @@ class Main(SelectDevice, LoadTrainingSets):
 [2] https://pytorch.org/blog/understanding-gpu-memory-2/""",
         workflow=[
             *LoadTrainingSets._workflow,
-            ("main", "call [blue]model.profile()[/blue]"),
-            ("main", "train [blue]model[/blue] with profiler enabled"),
         ],
     )
     argparser.add_argument(
         "--dataset-size",
         type=converter.int_pos,
-        default=100,
+        default=128,
         help=f"size of dataset",
-    )
-    argparser.add_argument(
-        "--profile-options",
-        type=parse.mapping,
-        default="",
-        help=f"profiling options {parse.EMBED}",
-    )
-    argparser.add_argument(
-        "--profile-schedule",
-        type=parse.mapping,
-        default="",
-        help=f"profiling schedule {parse.EMBED}",
     )
     argparser.add_argument(
         "--profile-activities",
@@ -59,42 +45,47 @@ class Main(SelectDevice, LoadTrainingSets):
     )
 
     def run(self, parser: EntryPoint):
+        logging.warning("[red]Profiler is currently hardcoded and for test only.[/red]")
         import numpy as np
+        import torch.nn.functional as F
+        import torch.optim as optim
+        from classifier.nn.blocks import HCR
         from torch.profiler import ProfilerActivity, profile, schedule
-        from torch.utils.data import Subset
+        from torch.utils.data import DataLoader, Subset
 
         # load datasets in parallel
         dataset = self.load_training_sets(parser)
         datasets = Subset(
             dataset, np.random.choice(len(dataset), size=self.opts.dataset_size)
         )
-        # initialize datasets
-        m_initializer: list[Model] = parser.mods["model"]
-        args = parser.args["model"]
-        results = {}
+        batch = next(iter(DataLoader(datasets, batch_size=self.opts.dataset_size)))
+        input = (
+            batch["CanJet"].cuda(),
+            batch["NotCanJet"].cuda(),
+            batch["ancillary"].cuda(),
+        )
+        truth = batch["label"].cuda()
         # train models in sequence
-        for i, model in enumerate(m_initializer):
-            logging.info(f"Initalizing {_print_mod('model', *args[i], ' ')}")
-            trainers = model.train()
-            for j, trainer in enumerate(trainers):
-                name = f"{i}.{j}"
-                with profile(
-                    activities=[
-                        getattr(ProfilerActivity, a)
-                        for a in self.opts.profile_activities
-                    ],
-                    schedule=schedule(
-                        **(_PROFILE_SCHEDULE_DEFAULT | self.opts.profile_schedule)
-                    ),
-                    **(_PROFILE_DEFAULT | self.opts.profile_options),
-                ) as p:
-                    results[name] = trainer(self.device, datasets)
-                logging.info(f"Exporting timeline for model {name}...")
-                p.export_memory_timeline(
-                    os.fspath(cfg.IO.profiler / f"profiler_{name}.html")
-                )
-                logging.info(f"Exporting trace for model {name}...")
-                p.export_chrome_trace(
-                    os.fspath(cfg.IO.profiler / f"profiler_{name}.json")
-                )
-        return {"models": results}
+        model = HCR(8, 8, [*range(4)], "attention", "cuda", nClasses=4).to("cuda")
+        opt = optim.Adam(model.parameters(), lr=0.01)
+
+        with profile(
+            activities=[
+                getattr(ProfilerActivity, a) for a in self.opts.profile_activities
+            ],
+            schedule=schedule(**_PROFILE_SCHEDULE_DEFAULT),
+            **_PROFILE_DEFAULT,
+        ) as p:
+            model.updateMeanStd(*input)
+            model.initMeanStd()
+            model.train()
+            for _ in range(10):
+                opt.zero_grad()
+                c, _ = model(*input)
+                loss = F.cross_entropy(c, truth)
+                loss.backward()
+                opt.step()
+        logging.info(f"Exporting timeline for model...")
+        p.export_memory_timeline(os.fspath(cfg.IO.profiler / f"profiler.html"))
+        logging.info(f"Exporting trace for model...")
+        p.export_chrome_trace(os.fspath(cfg.IO.profiler / f"profiler.json"))

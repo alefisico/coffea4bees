@@ -30,8 +30,8 @@ class Main(SelectDevice, LoadTrainingSets):
         description="Train multiple models using one dataset.",
         workflow=[
             *LoadTrainingSets._workflow,
-            ("main", "call [blue]model.train()[/blue]"),
-            ("sub", "train [blue]model[/blue]"),
+            ("main", "[blue]\[trainer, ...]=model.train()[/blue] initialize models"),
+            ("sub", "[blue]trainer(device, datasets)[/blue] train models"),
         ],
     )
     argparser.add_argument(

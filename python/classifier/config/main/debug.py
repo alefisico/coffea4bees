@@ -11,7 +11,7 @@ class Main(main.Main):
         prog="debug",
         description="Debug tasks.",
         workflow=[
-            ("main", f"call [blue]task.debug()[/blue]"),
+            ("main", f"[blue]task.debug()[/blue] debug tasks"),
         ],
     )
 

@@ -9,8 +9,6 @@ from classifier.task.state import Cascade, _share_global_state
 if TYPE_CHECKING:
     from base_class.system.eos import EOS
 
-_SPECIAL = "[red]\[special][/red]"
-
 
 class save(Cascade):
     @classmethod
@@ -21,7 +19,6 @@ class save(Cascade):
     @classmethod
     def help(cls):
         infos = [
-            _SPECIAL,
             f"usage: {cls.__mod_name__()} OUTPUT",
             "",
             "Save global states to file.",
@@ -40,7 +37,6 @@ class load(Cascade):
     @classmethod
     def help(cls):
         infos = [
-            _SPECIAL,
             f"usage: {cls.__mod_name__()} INPUT [INPUT ...]",
             "",
             "Load global states from files.",
