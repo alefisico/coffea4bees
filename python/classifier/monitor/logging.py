@@ -10,7 +10,7 @@ from rich.logging import RichHandler
 from rich.table import Table
 from rich.text import Text
 
-from ..config.setting import Monitor as Setting
+from ..config.setting import Monitor as cfg
 from ..config.state import RepoInfo
 from ..process.monitor import Recorder, callback
 from ..utils import noop
@@ -87,7 +87,7 @@ class RemoteHandler(logging.Handler):
         return cls
 
     def emit(self, record: logging.LogRecord):
-        if Setting.track_log:
+        if cfg.log_enable:
             record.name = Recorder.name()
             record.pathname = RepoInfo.get_url(record.pathname)
             self._emit(record)
@@ -111,25 +111,23 @@ def _disable_logging():
 
 
 def setup_reporter():
-    if Setting.track_log:
-        return logging.basicConfig(
-            handlers=[RemoteHandler()], level=Setting.logging_level
-        )
+    if cfg.log_enable:
+        return logging.basicConfig(handlers=[RemoteHandler()], level=cfg.logging_level)
     _disable_logging()
 
 
 def setup_monitor():
-    if Setting.track_log:
+    if cfg.log_enable:
         Log._html = Console(record=True, markup=True, file=noop)
-        Recorder.to_dump(Setting.file_logs, Log.serialize)
+        Recorder.to_dump(cfg.file_log, Log.serialize)
         handlers = [_RichHandler(markup=True, console=Log._html)]
-        if Setting.use_console:
+        if cfg.console_enable:
             from .backends.console import Dashboard as _CD
 
             handlers.append(_RichHandler(markup=True, console=_CD.console))
         return logging.basicConfig(
             handlers=handlers,
-            level=Setting.logging_level,
+            level=cfg.logging_level,
             format="\[%(name)s] %(message)s",
         )
     _disable_logging()

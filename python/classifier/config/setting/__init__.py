@@ -94,23 +94,24 @@ class Monitor(Cascade):
     port: int = 12345
 
     # backends
-    use_console: bool = True
+    console_enable: bool = True
     console_update_interval: float = 1.0  # seconds
     console_fps: int = 10
 
-    use_web: bool = False
+    web_enable: bool = False
 
     # components
-    track_log: bool = True
-    track_progress: bool = True
+    log_enable: bool = True
 
-    track_usage: bool = True
+    progress_enable: bool = True
+
+    usage_enable: bool = True
     usage_update_interval: float = 1.0  # seconds
     usage_gpu: bool = True
 
     # records
     file_meta: str = "meta.json"
-    file_logs: str = "logs.html"
+    file_log: str = "logs.html"
     file_usage: str = "usage.json"
 
     # performance

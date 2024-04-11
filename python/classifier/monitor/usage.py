@@ -6,7 +6,7 @@ from typing import TypedDict
 
 import psutil
 
-from ..config.setting import Monitor as Setting
+from ..config.setting import Monitor as cfg
 from ..config.state import RunInfo
 from ..process.monitor import Proxy, Recorder, callback
 
@@ -43,7 +43,7 @@ class Usage(Proxy):
 
     @classmethod
     def checkpoint(cls, name: str):
-        if Setting.track_usage:
+        if cfg.usage_enable:
             checkpoint = {"time": time.time(), "name": name}
             end = len(cls._records_local)
             records = cls._records_local[cls._head : end]
@@ -65,14 +65,14 @@ class Usage(Proxy):
             process = psutil.Process()
             pids = [process.pid]
             # CPU, memory
-            cpu = process.cpu_percent(Setting.usage_update_interval)
+            cpu = process.cpu_percent(cfg.usage_update_interval)
             mem = process.memory_info().rss / _MIB
             for child in process.children(recursive=True):
                 cpu += child.cpu_percent()
                 mem += child.memory_info().rss / _MIB
                 pids.append(child.pid)
             # GPU
-            if Setting.usage_gpu:
+            if cfg.usage_gpu:
                 if RunInfo.singularity:
                     gpu = cls._gpu_singularity()
                 else:
@@ -83,7 +83,7 @@ class Usage(Proxy):
             cls._records_local.append(
                 {"time": now, "cpu": cpu, "memory": mem, "gpu": gpu}
             )
-            time.sleep(Setting.usage_update_interval)
+            time.sleep(cfg.usage_update_interval)
 
     @classmethod
     def _gpu(cls):
@@ -133,11 +133,11 @@ class Usage(Proxy):
 
 
 def setup_reporter():
-    if Setting.track_usage:
+    if cfg.usage_enable:
         Usage.start()
 
 
 def setup_monitor():
-    if Setting.track_usage:
+    if cfg.usage_enable:
         Usage.start()
-        Recorder.to_dump(Setting.file_usage, Usage.serialize)
+        Recorder.to_dump(cfg.file_usage, Usage.serialize)

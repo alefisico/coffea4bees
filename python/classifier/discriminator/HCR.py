@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING, Callable
 import fsspec
 import torch
 
+from ..config import setting as cfg
 from ..config.scheduler import SkimStep
-from ..config.setting import IO as IOSetting
 from ..config.setting.HCR import Input, InputBranch, Output
 from ..config.state.label import MultiClass
 from ..nn.blocks import HCR
@@ -184,7 +184,7 @@ class HCRClassifier(Classifier):
             )
             self._HCR.ghost_batch = self._ghost_batch
             layers.setLayerRequiresGrad(requires_grad=True)
-        with fsspec.open(IOSetting.output / f"{self.name}_{self.uuid}.pkl", "wb") as f:
+        with fsspec.open(cfg.IO.output / f"{self.name}_{self.uuid}.pkl", "wb") as f:
             torch.save(
                 {
                     "model": self._HCR.module.state_dict(),

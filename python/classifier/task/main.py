@@ -153,9 +153,9 @@ class EntryPoint:
         self._fetch_all()
         self.main: Main = new(cls, self.args[_MAIN][1])
         if not self.main._no_monitor:
-            from ..config.setting import Monitor as Setting
+            from ..config.setting import Monitor as cfg
 
-            if Setting.address is None:
+            if cfg.address is None:
                 from ..monitor import setup_monitor
                 from ..process.monitor import Monitor
 
@@ -169,7 +169,7 @@ class EntryPoint:
 
                 connect_to_monitor()
                 setup_reporter()
-                logging.info(f"Connecting to Monitor {Setting.address}:{Setting.port}")
+                logging.info(f"Connecting to Monitor {cfg.address}:{cfg.port}")
 
     def run(self, reproducible: Callable):
         from ..config.setting import IO, save

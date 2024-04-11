@@ -6,7 +6,7 @@ from rich.console import Console
 from rich.live import Live
 from rich.table import Table
 
-from ...config.setting import Monitor as Setting
+from ...config.setting import Monitor as cfg
 
 
 class Dashboard:
@@ -20,7 +20,7 @@ class Dashboard:
     def start(cls):
         with Live(
             cls.layout,
-            refresh_per_second=Setting.console_fps,
+            refresh_per_second=cfg.console_fps,
             transient=True,
             console=cls.console,
         ):
@@ -28,7 +28,7 @@ class Dashboard:
                 with cls._lock:
                     for callback in cls._callbacks:
                         callback()
-                time.sleep(Setting.console_update_interval)
+                time.sleep(cfg.console_update_interval)
 
     @classmethod
     def add(cls, callback: Callable[[], None]):

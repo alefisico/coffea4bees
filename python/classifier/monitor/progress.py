@@ -7,7 +7,7 @@ from rich.progress import BarColumn
 from rich.progress import Progress as _Bar
 from rich.progress import ProgressColumn, SpinnerColumn, TimeElapsedColumn
 
-from ..config.setting import Monitor as Setting
+from ..config.setting import Monitor as cfg
 from ..process.monitor import Proxy, Recorder, callback
 from ..typetools import WithUUID
 from ..utils import noop
@@ -80,7 +80,7 @@ class Progress(Proxy):
 
     def __init__(self):
         self._jobs = {}
-        if Setting.use_console:
+        if cfg.console_enable:
             self._console_bar = _Bar(
                 SpinnerColumn(),
                 TimeElapsedColumn(),
@@ -94,7 +94,7 @@ class Progress(Proxy):
 
     @classmethod
     def new(cls, total: int, msg: str = "") -> _ProgressTracker:
-        if Setting.track_progress:
+        if cfg.progress_enable:
             job = _ProgressTracker(msg=msg, total=total)
             cls._update(job)
             return job
@@ -134,8 +134,8 @@ class Progress(Proxy):
 
 
 def setup_monitor():
-    if Setting.track_progress:
-        if Setting.use_console:
+    if cfg.progress_enable:
+        if cfg.console_enable:
             from .backends.console import Dashboard as _CD
 
             _CD.layout.add_row(Progress._console_bar)
