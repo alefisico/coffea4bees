@@ -72,11 +72,8 @@ class KFold(Splitter):
         return ~validation, validation
 
     @classmethod
-    def _get_offset(cls, batch: dict[str, Tensor]):
-        offset: npt.NDArray = batch[cfg.KFold.offset].numpy()
-        if cfg.KFold.offset_dtype == "uint64":
-            offset = offset.view("uint64")
-        return offset
+    def _get_offset(cls, batch: dict[str, Tensor]) -> npt.NDArray:
+        return batch[cfg.KFold.offset].numpy().view(cfg.KFold.offset_dtype)
 
 
 class RandomSubSample(KFold):

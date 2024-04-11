@@ -104,6 +104,8 @@ class ToTensor:
             else:
                 to_tensor = np.concatenate(arrays, axis=-1)
             if to_tensor.dtype == np.uint64:  # workaround for no "uint64" in torch
-                to_tensor = to_tensor.view(np.uint32)
+                to_tensor = to_tensor.view(np.int64)
+            if to_tensor.dtype == np.uint32:  # workaround for no "uint32" in torch
+                to_tensor = to_tensor.view(np.int32)
             dataset[name] = torch.from_numpy(to_tensor)
         return dataset
