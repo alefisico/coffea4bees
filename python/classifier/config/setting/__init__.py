@@ -121,9 +121,19 @@ class Monitor(Cascade):
     # builtins
     logging_level: int = 20
     socket_timeout: float = None
+    warnings_ignore: bool = True
 
     @classmethod
     def set__socket_timeout(cls, value: float):
         import socket
 
         socket.setdefaulttimeout(value)
+
+    @classmethod
+    def set__warnings_ignore(cls, value: bool):
+        import warnings
+
+        if value:
+            warnings.filterwarnings("ignore")
+        else:
+            warnings.filterwarnings("default")

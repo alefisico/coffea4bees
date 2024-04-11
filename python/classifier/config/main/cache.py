@@ -75,6 +75,7 @@ class Main(LoadTrainingSets):
             chunksize = size
         chunks = [chunks[i : i + chunksize] for i in range(0, size, chunksize)]
 
+        logging.info("Caching datasets...")
         timer = datetime.now()
         with Pool(
             max_workers=self.opts.max_writers,

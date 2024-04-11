@@ -231,7 +231,7 @@ class _load_df_from_root(_load_df):
             chunks = [list(c) for c in chunks]
             logging.info("Loading dataframe...")
             progress = Progress.new(
-                total=sum(map(len, chain(*chunks))), msg="Loading ROOT file"
+                total=sum(map(len, chain(*chunks))), msg="Loading ROOT files"
             )
             for i in range(len(chunks)):
                 balanced = Chunk.balance(
