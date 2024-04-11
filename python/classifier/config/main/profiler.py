@@ -1,6 +1,7 @@
 import logging
+import os
 
-from classifier.task import ArgParser, EntryPoint, Model, parse
+from classifier.task import ArgParser, EntryPoint, Model, converter, parse
 
 from .. import setting as cfg
 from ._utils import LoadTrainingSets, SelectDevice
@@ -33,6 +34,12 @@ class Main(SelectDevice, LoadTrainingSets):
         ],
     )
     argparser.add_argument(
+        "--dataset-size",
+        type=converter.int_pos,
+        default=100,
+        help=f"size of dataset",
+    )
+    argparser.add_argument(
         "--profile-options",
         type=parse.mapping,
         default="",
@@ -52,10 +59,15 @@ class Main(SelectDevice, LoadTrainingSets):
     )
 
     def run(self, parser: EntryPoint):
+        import numpy as np
         from torch.profiler import ProfilerActivity, profile, schedule
+        from torch.utils.data import Subset
 
         # load datasets in parallel
-        datasets = self.load_training_sets(parser)
+        dataset = self.load_training_sets(parser)
+        datasets = Subset(
+            dataset, np.random.choice(len(dataset), size=self.opts.dataset_size)
+        )
         # initialize datasets
         m_initializer: list[Model] = parser.mods["model"]
         args = parser.args["model"]
@@ -77,5 +89,7 @@ class Main(SelectDevice, LoadTrainingSets):
                     **(_PROFILE_DEFAULT | self.opts.profile_options),
                 ) as p:
                     results[name] = trainer(self.device, datasets)
-                p.export_memory_timeline(cfg.IO.profiler / f"profiler_{name}.html")
+                p.export_memory_timeline(
+                    os.fspath(cfg.IO.profiler / f"profiler_{name}.html")
+                )
         return {"models": results}
