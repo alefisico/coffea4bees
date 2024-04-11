@@ -20,7 +20,6 @@ class InputBranch(Cascade):
 
 
 class Input(Cascade):
-    offset: str = "offset"
     label: str = "label"
     region: str = "region"
     weight: str = "weight"

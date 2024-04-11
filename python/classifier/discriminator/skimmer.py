@@ -8,10 +8,12 @@ import torch
 from base_class.math.random import SeedLike, Squares
 from torch.utils.data import Dataset, Subset
 
+from ..config.setting import torch as cfg
 from ..utils import keep_fraction, noop
 from . import Model
 
 if TYPE_CHECKING:
+    import numpy.typing as npt
     from torch import BoolTensor, Tensor
 
 
@@ -61,41 +63,47 @@ class Splitter(ABC):
 
 
 class KFold(Splitter):
-    def __init__(self, k: int, offset: int, key: str):
-        self._key = key
-
+    def __init__(self, k: int, offset: int):
         self._k = k
         self._i = offset
 
     def split(self, batch: dict[str, Tensor]) -> tuple[BoolTensor, ...]:
-        validation = (batch[self._key] % self._k) == self._i
+        validation = torch.from_numpy((self._get_offset(batch) % self._k) == self._i)
         return ~validation, validation
 
+    @classmethod
+    def _get_offset(cls, batch: dict[str, Tensor]):
+        offset: npt.NDArray = batch[cfg.KFold.offset].numpy()
+        if cfg.KFold.offset_dtype == "uint64":
+            offset = offset.view("uint64")
+        return offset
 
-class RandomSubSample(Splitter):
-    def __init__(self, seed: SeedLike, fraction: str | Fraction, key: str):
-        self._key = key
 
+class RandomSubSample(KFold):
+    def __init__(self, seed: SeedLike, fraction: str | Fraction):
         self._rng = Squares(seed)
         self._r = Fraction(fraction)
 
     def split(self, batch: dict[str, Tensor]) -> tuple[BoolTensor, ...]:
-        training = torch.from_numpy(
-            keep_fraction(self._r, self._rng.uint(batch[self._key]))
-        )
+        training = torch.from_numpy(keep_fraction(self._r, self._random_offset(batch)))
         return training, ~training
 
+    def _random_offset(self, batch: dict[str, Tensor]) -> npt.NDArray:
+        offset = self._get_offset(batch)
+        shape = offset.shape
+        if len(shape) == 1:
+            return self._rng.uint(offset)
+        else:
+            offset = offset.reshape(shape[0], -1)
+            return self._rng.reduce(offset)
 
-class RandomKFold(Splitter):
-    def __init__(self, seed: SeedLike, k: int, offset: int, key: str):
-        self._key = key
 
+class RandomKFold(RandomSubSample):
+    def __init__(self, seed: SeedLike, k: int, offset: int):
         self._rng = Squares(seed)
         self._k = k
         self._i = offset
 
     def split(self, batch: dict[str, Tensor]) -> tuple[BoolTensor, ...]:
-        validation = torch.from_numpy(
-            (self._rng.uint(batch[self._key]) % self._k) == self._i
-        )
+        validation = torch.from_numpy((self._random_offset(batch) % self._k) == self._i)
         return ~validation, validation

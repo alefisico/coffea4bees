@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Callable, Iterable
 
 from classifier.df.tools import (
     add_columns,
-    add_event_offset,
     add_label_index,
     add_label_index_from_column,
     drop_columns,
@@ -20,6 +19,7 @@ from classifier.utils import subgroups
 
 from ..setting.df import Columns
 from ..setting.HCR import Input, InputBranch, MassRegion, NTag
+from ..setting.torch import KFold
 from ._df import LoadGroupedRoot
 
 if TYPE_CHECKING:
@@ -53,7 +53,7 @@ class _Common(LoadGroupedRoot):
         # fmt: off
         (
             self.to_tensor
-            .add(Input.offset, Columns.index_dtype).columns(Columns.event_offset)
+            .add(KFold.offset, KFold.offset_dtype).columns(Columns.event)
             .add(Input.label, Columns.index_dtype).columns(Columns.label_index)
             .add(Input.region, Columns.index_dtype).columns(_Derived.region_index)
             .add(Input.weight, "float32").columns(Columns.weight)
@@ -63,7 +63,6 @@ class _Common(LoadGroupedRoot):
         )
         self.preprocessors.extend(
             [
-                add_event_offset(60),  # 1, 2, 3, 4, 5, 6 folds
                 map_selection_to_index(
                     **enum_dict(MassRegion)
                 ).set(selection=_Derived.region_index, op="|"),

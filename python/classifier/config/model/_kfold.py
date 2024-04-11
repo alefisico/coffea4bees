@@ -29,11 +29,6 @@ class _KFold(Model):
         help="selected offsets, e.g. [yellow]--kfold-offsets 0-3 5[/yellow]",
     )
     argparser.add_argument(
-        "--kfold-split-key",
-        default="offset",
-        help="the key used to split the dataset",
-    )
-    argparser.add_argument(
         "--kfold-seed",
         action="extend",
         nargs="+",
@@ -77,14 +72,13 @@ class KFoldClassifier(ABC, _KFold):
     def initializer(self, splitter: Splitter, **kwargs) -> Classifier: ...
 
     def train(self):
-        key = self.opts.kfold_split_key
         if not self.seeds:
             from classifier.discriminator.skimmer import KFold
 
             return [
                 _train_classifier(
                     self.initializer(
-                        KFold(self.kfolds, offset, key),
+                        KFold(self.kfolds, offset),
                         kfolds=self.kfolds,
                         offset=offset,
                     )
@@ -97,7 +91,7 @@ class KFoldClassifier(ABC, _KFold):
             return [
                 _train_classifier(
                     self.initializer(
-                        RandomKFold(seed, self.kfolds, offset, key),
+                        RandomKFold(seed, self.kfolds, offset),
                         kfolds=self.kfolds,
                         offset=offset,
                         seed=seed,

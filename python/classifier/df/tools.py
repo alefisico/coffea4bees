@@ -55,21 +55,6 @@ class add_label_flag:
         return df
 
 
-class add_event_offset:
-    """
-    a workaround for no ``uint64`` support in :class:`torch.Tensor`
-    """
-
-    def __init__(self, modulus: int):
-        self._modulus = modulus
-
-    def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
-        df.loc[:, (Columns.event_offset,)] = (df[Columns.event] % self._modulus).astype(
-            Columns.index_dtype
-        )
-        return df
-
-
 class map_selection_to_index:
     def __init__(self, *args: str, **kwargs: int):
         self._indices = dict(zip(args, range(len(args))))
