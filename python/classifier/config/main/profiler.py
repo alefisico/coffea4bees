@@ -89,9 +89,11 @@ class Main(SelectDevice, LoadTrainingSets):
                     **(_PROFILE_DEFAULT | self.opts.profile_options),
                 ) as p:
                     results[name] = trainer(self.device, datasets)
+                logging.info(f"Exporting timeline for model {name}...")
                 p.export_memory_timeline(
                     os.fspath(cfg.IO.profiler / f"profiler_{name}.html")
                 )
+                logging.info(f"Exporting trace for model {name}...")
                 p.export_chrome_trace(
                     os.fspath(cfg.IO.profiler / f"profiler_{name}.json")
                 )
