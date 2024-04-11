@@ -7,7 +7,7 @@ import fsspec
 from classifier.task import ArgParser, Dataset, parse
 
 
-class Torch(Dataset):
+class cache(Dataset):
     argparser = ArgParser(description="Load datasets saved by [blue]cache[/blue].")
     argparser.add_argument(
         "--input",
