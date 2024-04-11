@@ -98,6 +98,6 @@ class ToTensor:
             if len(arrays) == 1:
                 to_tensor = arrays[0]
             else:
-                to_tensor = np.concatenate(arrays, axis=1)
+                to_tensor = np.concatenate(arrays, axis=-1)
             dataset[name] = torch.from_numpy(to_tensor)
         return dataset
