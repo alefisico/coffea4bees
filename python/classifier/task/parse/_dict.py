@@ -105,11 +105,7 @@ def mapping(arg: str, default: str = "yaml"):
     def error(msg: str):
         logging.error(f'{msg} when parsing "{arg}"')
 
-    try:
-        protocol, data = _mapping_scheme(arg)
-    except DeserializationError:
-        protocol = None
-        data = arg
+    protocol, data = _mapping_scheme(arg)
     if protocol is None:
         protocol = default
     keys = None
