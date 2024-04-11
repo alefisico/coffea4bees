@@ -72,7 +72,7 @@ class _Common(LoadGroupedRoot):
                 drop_columns(
                     "ZZSR", "ZHSR", "HHSR", "SR", "SB",
                     "fourTag", "threeTag", "pseudoTagWeight",
-                    "passHLT", Columns.event,
+                    "passHLT",
                 ),
             ]
         )

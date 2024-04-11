@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from abc import ABC, abstractmethod
 from functools import cached_property, partial, reduce
 from itertools import chain
@@ -215,21 +216,24 @@ class _load_df_from_root(_load_df):
         from base_class.root import Chunk
         from classifier.process import status
 
+        chunks = []
         dfs = []
         with ProcessPoolExecutor(
             max_workers=self._max_workers,
             mp_context=status.context,
             initializer=status.initializer,
         ) as pool:
-            chunks = []
+            logging.info("Fetching metadata...")
             for _, files in self._from_root:
                 chunks.append(
                     pool.map(Chunk._fetch, (Chunk(f, self._tree) for f in files))
                 )
+            chunks = [list(c) for c in chunks]
+            logging.info("Loading dataframe...")
+            progress = Progress.new(
+                total=sum(map(len, chain(*chunks))), msg="Loading ROOT file"
+            )
             for i in range(len(chunks)):
-                progress = Progress.new(
-                    total=sum(map(len, chunks[i])), msg="loading ROOT file"
-                )
                 balanced = Chunk.balance(
                     self._chunksize, *chunks[i], common_branches=True
                 )
@@ -238,6 +242,7 @@ class _load_df_from_root(_load_df):
                         partial(self._from_root[i][0].read, progress=progress), balanced
                     )
                 )
+        progress.complete()
         return pd.concat(
             filter(lambda x: x is not None, chain(*dfs)), ignore_index=True, copy=False
         )

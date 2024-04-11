@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+from copy import deepcopy
 from dataclasses import dataclass
 
 from rich.progress import BarColumn
@@ -29,20 +30,20 @@ class _ProgressTracker(WithUUID):
         self._step = None
         super().__init__()
 
-    def _update(self, msg: str = None, updated: bool = False):
+    def _update(self, msg: str = None, updated: bool = False, step: int = None):
         if (msg is not None) and (msg != self.msg):
             self.msg = msg
             updated = True
         if updated:
-            Progress._update(self)
-        self._step = None
+            new = deepcopy(self)
+            new._step = step
+            Progress._update(new)
 
     def update(self, completed: int, msg: str = None):
         updated = completed > self._completed
         if updated:
             self.updated_t = time.time()
             self._completed = completed
-            self._step = None
         self._update(msg, updated)
 
     def advance(self, step: int, msg: str = None):
@@ -50,8 +51,10 @@ class _ProgressTracker(WithUUID):
         if updated:
             self.updated_t = time.time()
             self._completed += step
-            self._step = step
-        self._update(msg, updated)
+        self._update(msg, updated, step)
+
+    def complete(self):
+        self.update(self.total)
 
     @property
     def estimate(self):

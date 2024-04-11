@@ -7,19 +7,6 @@ from .. import setting as cfg
 from ._utils import LoadTrainingSets, SelectDevice
 from .help import _print_mod
 
-_PROFILE_DEFAULT = {
-    "record_shapes": True,
-    "profile_memory": True,
-    "with_stack": True,
-    "with_flops": True,
-    "with_modules": True,
-}
-_PROFILE_SCHEDULE_DEFAULT = {
-    "wait": 0,
-    "warmup": 0,
-    "active": 1,
-}
-
 
 class Main(SelectDevice, LoadTrainingSets):
     argparser = ArgParser(
