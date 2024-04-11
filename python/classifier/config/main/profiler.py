@@ -6,12 +6,17 @@ from .. import setting as cfg
 from ._utils import LoadTrainingSets, SelectDevice
 from .help import _print_mod
 
-_PROFILE_DEFAULT_OPTS = {
+_PROFILE_DEFAULT = {
     "record_shapes": True,
     "profile_memory": True,
     "with_stack": True,
     "with_flops": True,
     "with_modules": True,
+}
+_PROFILE_SCHEDULE_DEFAULT = {
+    "wait": 0,
+    "warmup": 0,
+    "active": 1,
 }
 
 
@@ -66,8 +71,10 @@ class Main(SelectDevice, LoadTrainingSets):
                         getattr(ProfilerActivity, a)
                         for a in self.opts.profile_activities
                     ],
-                    schedule=schedule(**self.opts.profile_schedule),
-                    **(_PROFILE_DEFAULT_OPTS | self.opts.profile_options),
+                    schedule=schedule(
+                        **(_PROFILE_SCHEDULE_DEFAULT | self.opts.profile_schedule)
+                    ),
+                    **(_PROFILE_DEFAULT | self.opts.profile_options),
                 ) as p:
                     results[name] = trainer(self.device, datasets)
                 p.export_memory_timeline(cfg.IO.profiler / f"profiler_{name}.html")
