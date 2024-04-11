@@ -16,7 +16,7 @@ class DeserializationError(Exception):
 
 
 def _mapping_scheme(arg: str):
-    arg = arg.split(":///", 1)
+    arg = arg.split("://", 1)
     if len(arg) == 1:
         return None, arg[0]
     else:
@@ -79,18 +79,18 @@ def escape(obj) -> str:
     if not isinstance(obj, str):
         import json
 
-        obj = f"json:///{json.dumps(obj)}"
+        obj = f"json://{json.dumps(obj)}"
     return obj
 
 
 def mapping(arg: str, default: str = "yaml"):
     """
     - `{data}`: parse as yaml
-    - `yaml:///{data}`: parse as yaml
-    - `json:///{data}`: parse as json
-    - `csv:///{data}`: parse as csv
-    - `file:///{path}`: read from file, support .yaml(.yml), .json .csv
-    - `py:///{module.class}`: parse as python import
+    - `yaml://{data}`: parse as yaml
+    - `json://{data}`: parse as json
+    - `csv://{data}`: parse as csv
+    - `file://{path}`: read from file, support .yaml(.yml), .json .csv
+    - `py://{module.class}`: parse as python import
 
     `file`, `py` support an optional suffix `@@{key}.{key}...` to select a nested dict
     """
