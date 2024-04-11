@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import atexit
 import logging
 import multiprocessing as mp
 import os
@@ -376,6 +377,12 @@ class Reporter(_Singleton):
         else:
             self._jobs.put(packet)
 
+    def send_atexit(self):
+        self.stop()
+        if not self._jobs.empty():
+            self._jobs.put(_Packet())
+            self._send_non_blocking()
+
     @classmethod
     def stop(cls):
         self = cls.current()
@@ -446,11 +453,10 @@ class Recorder(Proxy):
 
     @classmethod
     def dump(cls):
-        if (cfg.Monitor.dir_records is not None) and (_Status.now() == _Status.Monitor):
-            base = (cfg.IO.output / cfg.Monitor.dir_records).mkdir()
+        if (_Status.now() == _Status.Monitor) and (cfg.IO.monitor is not None):
             for file, func in cls._data:
                 if file is not None:
-                    with fsspec.open(base / file, "wb") as f:
+                    with fsspec.open(cfg.IO.monitor / file, "wb") as f:
                         f.write(func())
 
 
@@ -461,10 +467,9 @@ def connect_to_monitor(address: str | tuple = None):
         address = _parse_url(address)
     Reporter.init(address)
     status.initializer.add_unique(_start_reporter)
+    atexit.register(Reporter.current().send_atexit)
 
 
 def wait_for_monitor():
-    if _Status.now() is _Status.Reporter:
-        Reporter.current().stop()
-    elif _Status.now() is _Status.Monitor:
+    if _Status.now() is _Status.Monitor:
         Monitor.current().stop()

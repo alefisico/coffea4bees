@@ -53,9 +53,17 @@ class IO(Cascade):
     timestamp: str = "%Y-%m-%dT%H-%M-%S"
 
     output: EOS = "./{main}-{timestamp}/"
+    monitor: EOS = "diagnostics"
+    profiler: EOS = "profiling"
 
     file_states: str = "states.pkl"
     file_metadata: str = "metadata.json"
+
+    @classmethod
+    def _generate_path(cls, value: str):
+        if value is None:
+            return None
+        return (cls.output / value).mkdir(recursive=True)
 
     @classmethod
     def set__output(cls, value: str):
@@ -71,6 +79,14 @@ class IO(Cascade):
         from base_class.system.eos import EOS
 
         return EOS(value).mkdir(recursive=True)
+
+    @classmethod
+    def get__monitor(cls, value: str):
+        return cls._generate_path(value)
+
+    @classmethod
+    def get__profiler(cls, value: str):
+        return cls._generate_path(value)
 
 
 class Monitor(Cascade):
@@ -93,7 +109,6 @@ class Monitor(Cascade):
     usage_gpu: bool = True
 
     # records
-    dir_records: str = "diagnostics"
     file_meta: str = "meta.json"
     file_logs: str = "logs.html"
     file_usage: str = "usage.json"
