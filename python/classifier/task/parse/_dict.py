@@ -7,6 +7,9 @@ from typing import overload
 
 import fsspec
 
+_SCHEME = ":##"
+_KEY = "@@"
+
 
 class DeserializationError(Exception):
     __module__ = Exception.__module__
@@ -16,7 +19,7 @@ class DeserializationError(Exception):
 
 
 def _mapping_scheme(arg: str):
-    arg = arg.split("://", 1)
+    arg = arg.split(_SCHEME, 1)
     if len(arg) == 1:
         return None, arg[0]
     else:
@@ -24,7 +27,7 @@ def _mapping_scheme(arg: str):
 
 
 def _mapping_nested_keys(arg: str):
-    arg = arg.rsplit("@@", 1)
+    arg = arg.rsplit(_KEY, 1)
     if len(arg) == 1:
         return arg[0], None
     else:
@@ -79,18 +82,18 @@ def escape(obj) -> str:
     if not isinstance(obj, str):
         import json
 
-        obj = f"json://{json.dumps(obj)}"
+        obj = f"json{_SCHEME}{json.dumps(obj)}"
     return obj
 
 
 def mapping(arg: str, default: str = "yaml"):
     """
     - `{data}`: parse as yaml
-    - `yaml://{data}`: parse as yaml
-    - `json://{data}`: parse as json
-    - `csv://{data}`: parse as csv
-    - `file://{path}`: read from file, support .yaml(.yml), .json .csv
-    - `py://{module.class}`: parse as python import
+    - `yaml:##{data}`: parse as yaml
+    - `json:##{data}`: parse as json
+    - `csv:##{data}`: parse as csv
+    - `file:##{path}`: read from file, support .yaml(.yml), .json .csv
+    - `py:##{module.class}`: parse as python import
 
     `file`, `py` support an optional suffix `@@{key}.{key}...` to select a nested dict
     """
@@ -102,7 +105,11 @@ def mapping(arg: str, default: str = "yaml"):
     def error(msg: str):
         logging.error(f'{msg} when parsing "{arg}"')
 
-    protocol, data = _mapping_scheme(arg)
+    try:
+        protocol, data = _mapping_scheme(arg)
+    except DeserializationError:
+        protocol = None
+        data = arg
     if protocol is None:
         protocol = default
     keys = None
