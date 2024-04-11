@@ -226,10 +226,10 @@ class _load_df_from_root(_load_df):
                 chunks.append(
                     pool.map(Chunk._fetch, (Chunk(f, self._tree) for f in files))
                 )
-            progress = Progress.new(
-                total=sum(map(len, chunks)), msg="loading ROOT files"
-            )
             for i in range(len(chunks)):
+                progress = Progress.new(
+                    total=sum(map(len, chunks[i])), msg="loading ROOT file"
+                )
                 balanced = Chunk.balance(
                     self._chunksize, *chunks[i], common_branches=True
                 )
