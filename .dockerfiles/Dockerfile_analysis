@@ -3,6 +3,7 @@ FROM coffeateam/coffea-dask:0.7.22-py3.10-ga998f
 RUN apt-get update && apt-get -y install poppler-utils 
 RUN pip install --upgrade pip
 RUN pip install rucio-clients pycodestyle 
+RUN pip install memory-profiler
 
 RUN mkdir -p /home/user/coffea4bees/python/
 COPY python/ /home/user/coffea4bees/python/
