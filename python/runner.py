@@ -140,6 +140,7 @@ if __name__ == '__main__':
                              'analysis/', 'base_class/', 'data/', 'skimmer/'])
     config_runner.setdefault('min_workers', 1)
     config_runner.setdefault('max_workers', 100)
+    config_runner.setdefault('workers', 2)
     config_runner.setdefault('skipbadfiles', False)
     config_runner.setdefault('dashboard_address', 10200)
     if args.systematics:
@@ -357,7 +358,7 @@ if __name__ == '__main__':
     else:
         logging.info(f"\nRunning futures executor")
         # to run with processor futures_executor ()
-        executor_args['workers'] = config_runner['condor_cores']
+        executor_args['workers'] = config_runner['workers']
         executor = processor.futures_executor
     logging.info(f"\nExecutor arguments:")
     logging.info(pretty_repr(executor_args))
