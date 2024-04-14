@@ -8,50 +8,145 @@ TIMESTAMP = datetime.now().strftime('%Y%m%d_%H%M%S')
 #
 rule all:
     input:
+        expand("output/histdatabkgs_{sample}-{iy}.coffea", sample=config['dataset'], iy=config['year']),
+        expand("output/histsyst_{samplesyst}-{iysyst}.coffea", samplesyst=config['dataset_systematics'], iysyst=config['year']),
+        expand("output/histmixed_{samplemixed}-{iymixed}.coffea", samplemixed=config['dataset_mixed'], iymixed=config['year_mixed']),
+        'output/histAll.coffea',
         "output/RunII/passPreSel/fourTag/SB/nPVs.pdf",
-        expand("output/histAll_{sample}_{iy}.coffea", sample=config['dataset'], iy=config['year']),
-        #expand("output/histAll_{sample_syst}_{iy}.coffea", sample_syst=config['dataset_systematics'], iy=config['year']),
         "output/datacards/hists_SvB.root"
 
-rule analysis:
+rule analysis_databkgs:
     output:
-        "output/histAll_{sample,[^_]+}_{iy}.coffea"
+        "output/histdatabkgs_{sample}-{iy}.coffea"
     container:
         "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
     resources:
         voms_proxy=True,
         kerberos=True,
         compute_backend="kubernetes",
-        kubernetes_memory_limit="8Gi"
+        kubernetes_memory_limit="9.5Gi"
     shell:
         """
 cd python/ 
-echo "Running {wildcards.sample} {wildcards.iy}"
-python runner.py -d {wildcards.sample} -p analysis/processors/processor_HH4b.py -y {wildcards.iy} -o histAll_{wildcards.sample}_{wildcards.iy}.coffea -op ../output/ -m metadata/datasets_HH4b_cernbox.yml #--dask
+echo "Running {wildcards.sample} {wildcards.iy} - output ../{output}"
+mprof run -C -o mprofile_{wildcards.sample}_{wildcards.iy}.dat python runner.py -d {wildcards.sample} -p analysis/processors/processor_HH4b.py -y {wildcards.iy} -o ../{output} -op ../output/ -m metadata/datasets_HH4b_cernbox.yml -t #--dask
+mprof plot -o ../output/mprofile_{wildcards.sample}_{wildcards.iy}.png mprofile_{wildcards.sample}_{wildcards.iy}.dat
 #cp /tmp/coffea4bees-dask-report-* ../output/coffea4bees-dask-report_{wildcards.sample}_{wildcards.iy}.html
         """
 
-#rule analysis_systematics:
-#    output:
-#        "output/histAll_{sample_syst,[^_]+}_{iy}.coffea"
-#    container:
-#        "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
-#    resources:
-#        voms_proxy=True,
-#        kerberos=True,
-#        compute_backend="kubernetes",
-#        kubernetes_memory_limit="8Gi"
-#    shell:
-#        """
-#cd python/ 
-#echo "Running {wildcards.sample_syst} {wildcards.iy}"
-#python runner.py -d {wildcards.sample_syst} -p analysis/processors/processor_HH4b.py -y {wildcards.iy} -o histAll_{wildcards.sample}_{wildcards.iy}.coffea -op ../output/ -m metadata/datasets_HH4b_cernbox.yml -c analysis/metadata/HH4b_systematics.yml --dask
-#cp /tmp/coffea4bees-dask-report-* ../output/coffea4bees-dask-report_{wildcards.sample}_{wildcards.iy}.html
-#        """
+rule analysis_systematics:
+    output:
+        "output/histsyst_{samplesyst}-{iysyst}.coffea"
+    container:
+        "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
+    resources:
+        voms_proxy=True,
+        kerberos=True,
+        compute_backend="kubernetes",
+        kubernetes_memory_limit="9.5Gi"
+    shell:
+        """
+cd python/ 
+echo "Running {wildcards.samplesyst} {wildcards.iysyst} - output ../{output}"
+mprof run -C -o mprofile_{wildcards.samplesyst}_{wildcards.iysyst}.dat python runner.py -d {wildcards.samplesyst} -p analysis/processors/processor_HH4b.py -y {wildcards.iysyst} -o ../{output} -op ../output/ -m metadata/datasets_HH4b_cernbox.yml -c analysis/metadata/HH4b_systematics.yml -t #--dask
+mprof plot -o ../output/mprofile_{wildcards.samplesyst}_{wildcards.iysyst}.png mprofile_{wildcards.samplesyst}_{wildcards.iysyst}.dat
+#cp /tmp/coffea4bees-dask-report-* ../output/coffea4bees-dask-report_{wildcards.samplesyst}_{wildcards.iysyst}.html
+        """
+
+        
+rule analysis_mixed:
+    output:
+        "output/histmixed_{samplemixed}-{iymixed}.coffea"
+    container:
+        "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
+    resources:
+        voms_proxy=True,
+        kerberos=True,
+        compute_backend="kubernetes",
+        kubernetes_memory_limit="9.5Gi"
+    shell:
+        """
+cd python/ 
+echo "Running {wildcards.samplemixed} {wildcards.iymixed}"
+mprof run -C -o mprofile_{wildcards.samplemixed}_{wildcards.iymixed}.dat python runner.py -d {wildcards.samplemixed} -p analysis/processors/processor_HH4b.py -y {wildcards.iymixed} -o ../{output} -op ../output/ -m metadata/datasets_HH4b_cernbox.yml -c analysis/metadata/HH4b.yml -t #--dask
+mprof plot -o ../output/mprofile_{wildcards.samplemixed}_{wildcards.iymixed}.png mprofile_{wildcards.samplemixed}_{wildcards.iymixed}.dat
+#cp /tmp/coffea4bees-dask-report-* ../output/coffea4bees-dask-report_{wildcards.samplemixed}_{wildcards.iymixed}.html
+        """
+
+rule merging_coffea_files_databkgs:
+    input:
+        files = expand(['output/histdatabkgs_{idat}-{iyear}.coffea'], idat=config['dataset'], iyear=config['year'])
+    output:
+        "output/hist_databkgs.coffea"
+    container:
+        "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
+    resources:
+        kerberos=True,
+        compute_backend="kubernetes",
+        kubernetes_memory_limit="8Gi"
+    shell:
+        """
+mprof run -C -o mprofile_merge_databkgs.dat python python/analysis/merge_coffea_files.py -f {input.files} -o {output}
+mprof plot -o output/mprofile_merge_databkgs.png mprofile_merge_databkgs.dat
+        """
+
+rule merging_coffea_files_syst:
+    input:
+        files = expand(['output/histsyst_{idatsyst}-{iyear}.coffea'], idatsyst=config['dataset_systematics'], iyear=config['year'])
+    output:
+        "output/hist_syst.coffea"
+    container:
+        "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
+    resources:
+        kerberos=True,
+        compute_backend="kubernetes",
+        kubernetes_memory_limit="9.5Gi"
+    shell:
+        """
+mprof run -C -o mprofile_merge_syst.dat python python/analysis/merge_coffea_files.py -f {input.files} -o {output}
+mprof plot -o output/mprofile_merge_syst.png mprofile_merge_syst.dat
+        """
+
+rule merging_coffea_files_mixeddata:
+    input:
+        files = expand(['output/histmixed_mixeddata-{iyear}.coffea'], iyear=config['year_mixed'])
+    output:
+        "output/hist_mixeddata-{wildcards.iymixed}.coffea"
+    container:
+        "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
+    resources:
+        kerberos=True,
+        compute_backend="kubernetes",
+        kubernetes_memory_limit="9.5Gi"
+    shell:
+        """
+for i in {input.files}; do
+    xrdcp ${i} root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/${i}
+    cp ${i} /eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/${i}
+done
+        """
+
+rule merging_coffea_files_mixed:
+    input:
+        files = expand(['output/histmixed_{idatmix}-{iyear}.coffea'], idatmix=config['dataset_mixed'], iyear=config['year_mixed'])
+    output:
+        "output/hist_mixed.coffea"
+    container:
+        "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
+    resources:
+        kerberos=True,
+        compute_backend="kubernetes",
+        kubernetes_memory_limit="8Gi"
+    shell:
+        """
+python python/analysis/merge_coffea_files.py -f output/histmixed_TT*.coffea output/histmixed_data*.coffea -o {output}
+xrdcp {output} root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/hist_mixed.coffea
+cp {output} /eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/hist_mixed.coffea
+        """
 
 rule merging_coffea_files:
     input:
-        files = expand(['output/histAll_{idat}_{iyear}.coffea'], idat=config['dataset'], iyear=config['year'])
+        files = expand(['output/hist_{itype}.coffea'], itype=['databkgs', 'syst']),
     output:
         "output/histAll.coffea"
     container:
@@ -62,11 +157,11 @@ rule merging_coffea_files:
         kubernetes_memory_limit="8Gi"
     shell:
         """
-python python/analysis/merge_coffea_files.py -f {input.files} -o output/histAll.coffea
-xrdcp output/histAll.coffea root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/histAll.coffea
-cp output/histAll.coffea /eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/histAll.coffea
+mprof run -C -o mprofile_merge_all.dat python python/analysis/merge_coffea_files.py -f {input.files} -o {output}
+mprof plot -o output/mprofile_merge_all.png mprofile_merge_all.dat
+xrdcp {output} root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/histAll.coffea
+cp {output} /eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/histAll.coffea
         """
-        
 
 rule make_plots:
     input:
@@ -82,7 +177,8 @@ rule make_plots:
     shell:
         """
 cd python/ 
-python analysis/makePlots.py ../output/histAll.coffea -o ../output/ -m analysis/metadata/plotsAll.yml
+mprof run -C -o mprofile_makeplots.dat python analysis/makePlots.py ../output/histAll.coffea -o ../output/ -m analysis/metadata/plotsAll.yml
+mprof plot -o mprofile_makeplots.png ../output/mprofile_makeplots.dat
 python .php-plots/bin/pb_deploy_plots.py ../output/RunII/ /eos/user/a/algomez/work/HH4b/reana/{TIMESTAMP}/ -r -c
         """
         
