@@ -730,10 +730,6 @@ class analysis(processor.ProcessorABC):
             fill(selev, hist)
 
             if self.run_SvB:
-                fill = Fill(process=processName, year=year, weight='weight')
-                fill += hist.add('quadJet_selected_SvB_q_score', (100, 0, 1, ("quadJet_selected.SvB_q_score", 'Selected Quad Jet Diboson SvB q score')))
-                fill += hist.add('quadJet_min_SvB_MA_q_score', (100, 0, 1, ("quadJet_min_dr.SvB_MA_q_score", 'Min dR Quad Jet Diboson SvB MA q score')))
-                fill(selev, hist)
 
                 variation_list = ['nominal']
                 if self.run_systematics:
@@ -755,6 +751,8 @@ class analysis(processor.ProcessorABC):
                     logging.debug(f"{ivar} {selev['weight']}")
                     fill_SvB += SvBHists(('SvB', 'SvB Classifier'), 'SvB')
                     fill_SvB += SvBHists(('SvB_MA', 'SvB MA Classifier'), 'SvB_MA')
+                    fill_SvB += hist_SvB[ivar].add('quadJet_selected_SvB_q_score', (100, 0, 1, ("quadJet_selected.SvB_q_score", 'Selected Quad Jet Diboson SvB q score')))
+                    fill_SvB += hist_SvB[ivar].add('quadJet_min_SvB_MA_q_score', (100, 0, 1, ("quadJet_min_dr.SvB_MA_q_score", 'Min dR Quad Jet Diboson SvB MA q score')))
                     if isDataForMixed:
                         for  _FvT_name in event.metadata["FvT_names"]:
                             fill_SvB += SvBHists((f'SvB_{_FvT_name}',    'SvB Classifier'),    'SvB',    weight=f"weight_{_FvT_name}")
