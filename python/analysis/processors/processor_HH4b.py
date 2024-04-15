@@ -65,6 +65,7 @@ def update(events, collections):
         out = ak.with_field(out, value, name)
     return out
 
+
 class analysis(processor.ProcessorABC):
     def __init__(self, *, JCM = None, SvB=None, SvB_MA=None, threeTag = True, apply_trigWeight = True, apply_btagSF = True, apply_FvT = True, run_SvB = True, corrections_metadata='analysis/metadata/corrections.yml', run_systematics=[], make_classifier_input: str = None):
         logging.debug('\nInitialize Analysis Processor')
@@ -116,7 +117,17 @@ class analysis(processor.ProcessorABC):
 
             # trigger Weight (to be updated)
             if self.apply_trigWeight:
-                weights.add( 'trigWeight', event.trigWeight.Data, event.trigWeight.MC, ak.where(event.passHLT, 1., 0.) )
+                if 'GluGlu' in dataset:
+                    weights.add( 'trigWeight', ak.where(event.passHLT, 1., 0.) )
+
+#                    fname   = event.metadata['filename']
+#                    estart  = event.metadata['entrystart']
+#                    estop   = event.metadata['entrystop']
+#                    path = fname.replace(fname.split('/')[-1], '')
+#                    event['trigWeight']    = NanoEventsFactory.from_root(f'{path}{"trigWeights.root"}',
+#                                                              entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events()
+                else:
+                    weights.add( 'trigWeight', event.trigWeight.Data, event.trigWeight.MC, ak.where(event.passHLT, 1., 0.) )
 
             # puWeight (to be checked)
             if not isTTForMixed:
@@ -597,29 +608,24 @@ class analysis(processor.ProcessorABC):
             selev = selev[~(selev['quadJet_selected'].SR & selev.fourTag)]
 
         #
+        # CutFlow
+        #
+        selev['weight'] = weights.weight()[ selections.require( passJetMult=True, passPreSel=True ) ]
+        self._cutFlow.fill("passPreSel", selev)
+        self._cutFlow.fill("passDiJetMass", selev[selev.passDiJetMass])
+        if self.run_SvB:
+            self._cutFlow.fill("SR",            selev[(selev.passDiJetMass & selev['quadJet_selected'].SR)])
+            self._cutFlow.fill("SB",            selev[(selev.passDiJetMass & selev['quadJet_selected'].SB)])
+            self._cutFlow.fill("passSvB",       selev[selev.passSvB])
+            self._cutFlow.fill("failSvB",       selev[selev.failSvB])
+
+        self._cutFlow.addOutput(processOutput, event.metadata['dataset'])
+
+        #
         # Hists
         #
 
-        if shift_name:
-
-            if self.run_SvB:
-                event['weight'] = weights.weight()
-                fill_SvB = Fill(process=processName, year=year, variation=shift_name, weight='weight')
-                hist_SvB = Collection(process = [processName],
-                                  year    = [year],
-                                  variation = [shift_name],
-                                  tag     = [4],    # 3 / 4/ Other
-                                  region  = [2],    # SR / SB / Other
-                                  **dict((s, ...) for s in self.histCuts))
-                fill_SvB += SvBHists(('SvB', 'SvB Classifier'), 'SvB')
-                fill_SvB += SvBHists(('SvB_MA', 'SvB MA Classifier'), 'SvB_MA')
-                fill_SvB += hist_SvB.add('quadJet_selected_SvB_q_score', (100, 0, 1, ("quadJet_selected.SvB_q_score", 'Selected Quad Jet Diboson SvB q score')))
-                fill_SvB += hist_SvB.add('quadJet_min_SvB_MA_q_score', (100, 0, 1, ("quadJet_min_dr.SvB_MA_q_score", 'Min dR Quad Jet Diboson SvB MA q score')))
-
-                fill_SvB(selev)
-                output = hist_SvB.output
-
-        else:
+        if not self.run_systematics:
 
             fill = Fill(process=processName, year=year, weight='weight')
 
@@ -723,66 +729,25 @@ class analysis(processor.ProcessorABC):
             #
             fill += TopCandHists(('top_cand', 'Top Candidate'), 'top_cand')
 
+            if self.run_SvB:
+
+                fill += SvBHists(('SvB', 'SvB Classifier'), 'SvB')
+                fill += SvBHists(('SvB_MA', 'SvB MA Classifier'), 'SvB_MA')
+                fill += hist.add('quadJet_selected_SvB_q_score', (100, 0, 1, ("quadJet_selected.SvB_q_score", 'Selected Quad Jet Diboson SvB q score')))
+                fill += hist.add('quadJet_min_SvB_MA_q_score', (100, 0, 1, ("quadJet_min_dr.SvB_MA_q_score", 'Min dR Quad Jet Diboson SvB MA q score')))
+                if isDataForMixed:
+                    for  _FvT_name in event.metadata["FvT_names"]:
+                        fill += SvBHists((f'SvB_{_FvT_name}',    'SvB Classifier'),    'SvB',    weight=f"weight_{_FvT_name}")
+                        fill += SvBHists((f'SvB_MA_{_FvT_name}', 'SvB MA Classifier'), 'SvB_MA', weight=f"weight_{_FvT_name}")
+
             #
             # fill histograms
             #
             # fill.cache(selev)
             fill(selev, hist)
 
-            if self.run_SvB:
-
-                variation_list = ['nominal']
-                if self.run_systematics:
-                    logging.info(f"Weight variations {weights.variations}")
-                    variation_list += list(weights.variations)
-
-                hist_SvB = {}
-                for ivar in variation_list:
-
-                    hist_SvB[ivar] =  Collection(process = [processName],
-                                      year    = [year],
-                                      variation = [ivar],
-                                      tag     = [3, 4, 0],    # 3 / 4/ Other
-                                      region  = [2, 1, 0],    # SR / SB / Other
-                                      **dict((s, ...) for s in self.histCuts))
-                    fill_SvB = Fill(process=processName, year=year, variation=ivar, weight='weight')
-                    tmp_ivar = None if 'nominal' in ivar else ivar
-                    selev['weight'] = weights.weight(modifier=tmp_ivar)[ selections.require( passJetMult=True, passPreSel=True ) ]
-                    logging.debug(f"{ivar} {selev['weight']}")
-                    fill_SvB += SvBHists(('SvB', 'SvB Classifier'), 'SvB')
-                    fill_SvB += SvBHists(('SvB_MA', 'SvB MA Classifier'), 'SvB_MA')
-                    fill_SvB += hist_SvB[ivar].add('quadJet_selected_SvB_q_score', (100, 0, 1, ("quadJet_selected.SvB_q_score", 'Selected Quad Jet Diboson SvB q score')))
-                    fill_SvB += hist_SvB[ivar].add('quadJet_min_SvB_MA_q_score', (100, 0, 1, ("quadJet_min_dr.SvB_MA_q_score", 'Min dR Quad Jet Diboson SvB MA q score')))
-                    if isDataForMixed:
-                        for  _FvT_name in event.metadata["FvT_names"]:
-                            fill_SvB += SvBHists((f'SvB_{_FvT_name}',    'SvB Classifier'),    'SvB',    weight=f"weight_{_FvT_name}")
-                            fill_SvB += SvBHists((f'SvB_MA_{_FvT_name}', 'SvB MA Classifier'), 'SvB_MA', weight=f"weight_{_FvT_name}")
-
-
-                    fill_SvB(selev, hist_SvB[ivar])
-
-                    if not 'nominal' in ivar:
-                        for ih in hist_SvB['nominal'].output['hists'].keys():
-                            hist_SvB['nominal'].output['hists'][ih] = hist_SvB['nominal'].output['hists'][ih] + hist_SvB[ivar].output['hists'][ih]
-
-                hist_SvB = hist_SvB['nominal']
-
-            #
-            # CutFlow
-            #
-            selev['weight'] = weights.weight()[ selections.require( passJetMult=True, passPreSel=True ) ]
-            self._cutFlow.fill("passPreSel", selev)
-            self._cutFlow.fill("passDiJetMass", selev[selev.passDiJetMass])
-            if self.run_SvB:
-                self._cutFlow.fill("SR",            selev[(selev.passDiJetMass & selev['quadJet_selected'].SR)])
-                self._cutFlow.fill("SB",            selev[(selev.passDiJetMass & selev['quadJet_selected'].SB)])
-                self._cutFlow.fill("passSvB",       selev[selev.passSvB])
-                self._cutFlow.fill("failSvB",       selev[selev.failSvB])
-
             garbage = gc.collect()
             # print('Garbage:',garbage)
-
-            self._cutFlow.addOutput(processOutput, event.metadata['dataset'])
 
             friends = {}
             if self.make_classifier_input is not None:
@@ -808,11 +773,51 @@ class analysis(processor.ProcessorABC):
                     *selections,
                 )
 
-            if self.run_SvB:
-                output = { 'hists': hist.output['hists'] | hist_SvB.output['hists'],
-                          'categories': hist.output['categories']
-                          } | processOutput | friends
-            else: output = hist.output | processOutput | friends
+            output = hist.output | processOutput | friends
+        #
+        # Run systematics
+        #
+        else:
+
+            shift_name = 'nominal' if not shift_name else shift_name
+            hist_SvB = Collection(process = [processName],
+                              year    = [year],
+                              variation = [shift_name],
+                              tag     = [4],    # 3 / 4/ Other
+                              region  = [2],    # SR / SB / Other
+                              **dict((s, ...) for s in self.histCuts))
+            fill_SvB = Fill(process=processName, year=year, variation=shift_name, weight='weight')
+            fill_SvB += SvBHists(('SvB', 'SvB Classifier'), 'SvB', skip=['ps', 'ptt'])
+            fill_SvB += SvBHists(('SvB_MA', 'SvB MA Classifier'), 'SvB_MA', skip=['ps', 'ptt'])
+
+            fill_SvB(selev)
+
+
+            if 'nominal' in shift_name:
+                logging.info(f"Weight variations {weights.variations}")
+
+                dict_hist_SvB = {}
+                for ivar in list(weights.variations):
+
+                    dict_hist_SvB[ivar] = Collection(process = [processName],
+                                      year    = [year],
+                                      variation = [ivar],
+                                      tag     = [4],    # 3 / 4/ Other
+                                      region  = [2],    # SR / SB / Other
+                                      **dict((s, ...) for s in self.histCuts))
+                    selev[f'weight_{ivar}'] = weights.weight(modifier=ivar)[ selections.require( passJetMult=True, passPreSel=True ) ]
+                    fill_SvB_ivar = Fill(process=processName, year=year, variation=ivar, weight=f'weight_{ivar}')
+                    logging.debug(f"{ivar} {selev['weight']}")
+                    fill_SvB_ivar += SvBHists(('SvB', 'SvB Classifier'), 'SvB', skip=['ps', 'ptt'])
+                    fill_SvB_ivar += SvBHists(('SvB_MA', 'SvB MA Classifier'), 'SvB_MA', skip=['ps', 'ptt'])
+
+                    fill_SvB_ivar(selev, dict_hist_SvB[ivar])
+
+                    for ih in hist_SvB.output['hists'].keys():
+                        hist_SvB.output['hists'][ih] = hist_SvB.output['hists'][ih] + dict_hist_SvB[ivar].output['hists'][ih]
+
+            output = hist_SvB.output | processOutput
+
         return output
 
         #
