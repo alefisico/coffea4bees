@@ -77,7 +77,10 @@ class IO(Cascade):
     def get__output(cls, value: str):
         from base_class.system.eos import EOS
 
-        return EOS(value).mkdir(recursive=True)
+        output = EOS(value)
+        if not output.isin(os.devnull):
+            output.mkdir(recursive=True)
+        return output
 
     @classmethod
     def get__monitor(cls, value: str):
