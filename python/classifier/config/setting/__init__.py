@@ -58,8 +58,6 @@ class IO(Cascade):
 
     @classmethod
     def _generate_path(cls, value: str):
-        if value is None:
-            return None
         return (cls.output / value).mkdir(recursive=True)
 
     @classmethod
@@ -77,10 +75,7 @@ class IO(Cascade):
     def get__output(cls, value: str):
         from base_class.system.eos import EOS
 
-        output = EOS(value)
-        if not output.isin(os.devnull):
-            output.mkdir(recursive=True)
-        return output
+        return EOS(value).mkdir(recursive=True)
 
     @classmethod
     def get__monitor(cls, value: str):

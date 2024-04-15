@@ -44,10 +44,9 @@ class EOS:
 
     def __init__(self, path: PathLike = None, host: str = ...):
         if path is None:
-            self.host = ""
             self.path = None
         elif isinstance(path, EOS):
-            self.host = path.host
+            default = path.host
             self.path = None if path.path is None else Path(path.path)
         else:
             default = ""
@@ -55,13 +54,18 @@ class EOS:
                 if isinstance(path, os.PathLike):
                     path = os.fspath(path)
                 match = self._host_pattern.match(path)
-                if match:
+                if match is not None:
                     default = match.group(0)
                     path = path[len(default) :]
+            self.path = Path(self._slash_pattern.sub("/", str(path)))
+            if self.path == Path(os.devnull):
+                self.path = None
+        if self.path is None:
+            self.host = ""
+        else:
             self.host = arg_set(host, "", default)
             if self.host:
                 self.host = ensure(self.host, __suffix="/")
-            self.path = Path(self._slash_pattern.sub("/", str(path)))
 
     def _devnull(default=...):
         def wrapper(func):
@@ -214,8 +218,6 @@ class EOS:
 
     def isin(self, other: PathLike):
         other = EOS(other)
-        if (self.path is None) and (other.path is None):
-            return True
         if self.host != other.host:
             return False
         return self.common_base(self, other).path == other.path
@@ -223,14 +225,16 @@ class EOS:
     def relative_to(self, other: PathLike) -> str:
         other = EOS(other)
         if (self.path is None) and (other.path is None):
-            return EOS()
+            return "."
         if (
             (self.path is not None)
             and (other.path is not None)
             and (self.host == other.host)
         ):
             return os.path.relpath(self.path, other.path)
-        raise ValueError(f'"{self}" is not in the subpath of "{other}"')
+        raise ValueError(
+            f'Unable to determine the relative path between"{self}" and "{other}"'
+        )
 
     @_devnull()
     def cd(self, relative: str):
@@ -370,7 +374,6 @@ class EOS:
     def __fspath__(self):
         return str(self)
 
-    @_devnull(os.devnull)
     def __truediv__(self, other: str):
         return self.join(other)
 
