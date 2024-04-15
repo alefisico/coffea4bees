@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import pickle
 from typing import TYPE_CHECKING
 
@@ -65,6 +66,8 @@ class IO(Cascade):
     def set__output(cls, value: str):
         from ..state import RunInfo
 
+        if value is None:
+            return os.devnull
         return value.format(
             main=RunInfo.main_task,
             timestamp=RunInfo.startup_time.strftime(cls.timestamp),
