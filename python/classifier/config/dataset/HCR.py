@@ -15,7 +15,6 @@ from classifier.df.tools import (
 )
 from classifier.task import ArgParser
 from classifier.typetools import enum_dict
-from classifier.utils import subgroups
 
 from ..setting.df import Columns
 from ..setting.HCR import Input, InputBranch, MassRegion, NTag
@@ -92,16 +91,14 @@ class _Common(LoadGroupedRoot):
     def from_root(self, groups: frozenset[str]):
         from classifier.df.io import FromRoot
 
-        subs = {*subgroups(groups)}
-
         friends = []
-        for g in subs:
-            if g in self.friends:
-                friends.extend(self.friends[g])
+        for k, v in self.friends.items():
+            if k <= groups:
+                friends.extend(v)
 
         pres = []
         for gs, ps in self._preprocessor_by_label:
-            if gs.intersection(subs):
+            if any(map(lambda g: g <= groups, gs)):
                 pres.extend(ps)
         pres.extend(self.preprocessors)
 
@@ -125,8 +122,7 @@ class _Common(LoadGroupedRoot):
     @cached_property
     def _preprocessor_by_label(self):
         return [
-            (set(frozenset(g) for g in gs), [*ps])
-            for gs, ps in self.preprocessor_by_label
+            ([frozenset(g) for g in gs], [*ps]) for gs, ps in self.preprocessor_by_label
         ]
 
     @cached_property

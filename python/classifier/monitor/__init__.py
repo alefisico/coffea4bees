@@ -2,7 +2,11 @@ import importlib
 
 from ..config.state import MonitorInfo
 from ..process import status
+from .backends import Platform
 
+__all__ = [
+    "Platform",
+]
 _PKG = "classifier.monitor"
 
 

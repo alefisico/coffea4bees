@@ -98,13 +98,9 @@ TODO
 ## TODO
 
 - HCR:
-  - Add fine-tuning
   - Add die loss?
-  - Add help --filter FILTER regex
 - main:
   - Add evaluation
-  - Add logging, benchmark, plotting
-- FvT
-  - SR ?
+  - Add plotting
 - Add SvB
 - Add DvT

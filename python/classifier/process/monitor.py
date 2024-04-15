@@ -319,6 +319,7 @@ class Monitor(_Singleton):
                 if packet.wait:
                     connection.send(packet())
                 else:
+                    packet._n_retried = 0
                     self._jobs.put(packet)
             except:
                 _close_connection(connection)

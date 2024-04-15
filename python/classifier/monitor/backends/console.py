@@ -1,3 +1,8 @@
+"""
+A rich renderable class is defined by the following protocol:
+https://rich.readthedocs.io/en/stable/protocol.html
+"""
+
 import time
 from threading import Lock, Thread
 from typing import Callable
