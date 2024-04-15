@@ -134,7 +134,9 @@ class _Packet:
         lock = self.cls.lock() if self.lock else noop
         try:
             with lock:
-                return getattr(self.cls, self.func)(*self.args, **self.kwargs)
+                return getattr(self.cls, self.func)._func(
+                    self.cls.init(), *self.args, **self.kwargs
+                )
         except Exception as e:
             logging.error(e)
 
@@ -155,30 +157,31 @@ class _Packet:
 
 
 class _callback:
-    def __init__(self, func, wait: bool, lock: bool, retry: int):
+    def __init__(self, func, wait: bool, retry: int):
         wraps(func)(self)
         self._func = func
         self._name = func.__name__
         self._wait = wait
-        self._lock = lock
         self._retry = retry
 
     def __call__(self, cls: type[Proxy], *args, **kwargs):
+        packet = _Packet(
+            cls,
+            self._name,
+            args,
+            kwargs,
+            wait=self._wait,
+            lock=self._wait,
+            retry=self._retry,
+        )
         match _Status.now():
             case _Status.Monitor:
-                return self._func(cls.init(), *args, **kwargs)
+                if self._wait:
+                    return packet()
+                else:
+                    return Monitor.current()._jobs.put(packet)
             case _Status.Reporter:
-                return Reporter.current().send(
-                    _Packet(
-                        cls,
-                        self._name,
-                        args,
-                        kwargs,
-                        wait=self._wait,
-                        lock=self._lock,
-                        retry=self._retry,
-                    )
-                )
+                return Reporter.current().send(packet)
 
 
 _CallbackP = ParamSpec("_CallbackP")
@@ -193,7 +196,6 @@ def callback(
 def callback(
     func: None = None,
     wait_for_return: bool = False,
-    acquire_class_lock: bool = True,
     max_retry: int = None,
 ) -> Callable[
     [Callable[Concatenate[Any, _CallbackP], _CallbackReturnT]],
@@ -202,14 +204,12 @@ def callback(
 def callback(
     func=None,
     wait_for_return: bool = False,
-    acquire_class_lock: bool = True,
     max_retry: int = None,
 ):
     if func is None:
         return lambda func: callback(
             func,
             wait_for_return=wait_for_return,
-            acquire_class_lock=acquire_class_lock,
             max_retry=max_retry,
         )
     else:
@@ -217,7 +217,6 @@ def callback(
             _callback(
                 func,
                 wait=wait_for_return,
-                lock=acquire_class_lock,
                 retry=max_retry,
             )
         )
@@ -428,7 +427,7 @@ class Recorder(Proxy):
     def register(self, name: str):
         index = f"#{len(self._reporters)}"
         self._reporters[name] = index
-        logging.info(f'"{name}" is registered as \[{index}]')
+        logging.info(f'"{name}" is registered as [repr.number]\[{index}][/repr.number]')
         return index
 
     @classmethod

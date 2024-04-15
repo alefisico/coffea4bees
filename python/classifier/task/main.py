@@ -151,9 +151,10 @@ class EntryPoint:
 
         self._fetch_all()
         self.main: Main = new(cls, self.args[_MAIN][1])
-        if not self.main._no_monitor:
-            from ..config.setting import Monitor as cfg
 
+        from ..config.setting import Monitor as cfg
+
+        if not self.main._no_monitor and cfg.enable:
             if cfg.address is None:
                 from ..monitor import setup_monitor
                 from ..process.monitor import Monitor

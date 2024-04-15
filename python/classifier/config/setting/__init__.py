@@ -86,6 +86,7 @@ class IO(Cascade):
 
 
 class Monitor(Cascade):
+    enable: bool = True
     address: str = None
     port: int = 12345
 
