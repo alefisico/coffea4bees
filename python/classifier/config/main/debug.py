@@ -31,4 +31,4 @@ class Main(main.Main):
                 except InterfaceError:
                     ...
                 except Exception as e:
-                    logging.error(f"{e}")
+                    logging.error(e, exc_info=e)

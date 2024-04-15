@@ -38,14 +38,14 @@ def import_(modname: str, clsname: str):
     except ModuleNotFoundError:
         ...
     except Exception as e:
-        logging.error(e)
+        logging.error(e, exc_info=e)
     if _mod is not None and clsname != "*":
         try:
             _cls = getattr(_mod, clsname)
         except AttributeError:
             ...
         except Exception as e:
-            logging.error(e)
+            logging.error(e, exc_info=e)
     return _mod, _cls
 
 

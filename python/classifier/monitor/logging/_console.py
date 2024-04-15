@@ -47,7 +47,7 @@ class ConsoleLogRender(LogRender):
     ) -> Table:
         from rich.containers import Renderables
 
-        output = Table.grid()
+        output = Table.grid(padding=(0, 1))
         output.expand = True
         if self.show_time:
             output.add_column(style="log.time")
@@ -139,7 +139,15 @@ class ConsoleHandler(_RichHandler):
     def render_message(self, record, message):
         if isinstance(message, Platform):
             return message
-        return super().render_message(record, message)
+        return super().render_message(record, str(message))
+
+    @classmethod
+    def new(cls, console: Console):
+        return cls(
+            markup=True,
+            rich_tracebacks=True,
+            console=console,
+        )
 
 
 class ConsoleDump:
@@ -148,7 +156,7 @@ class ConsoleDump:
     @classmethod
     def init(cls):
         cls.console = Console(record=True, markup=True, file=noop)
-        cls.handler = ConsoleHandler(markup=True, console=cls.console)
+        cls.handler = ConsoleHandler.new(cls.console)
 
     @classmethod
     def serialize(cls):

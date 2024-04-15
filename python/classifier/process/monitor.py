@@ -138,7 +138,7 @@ class _Packet:
                     self.cls.init(), *self.args, **self.kwargs
                 )
         except Exception as e:
-            logging.error(e, exc_info=e.__traceback__)
+            logging.error(e, exc_info=e)
 
     def __lt__(self, other):
         if isinstance(other, _Packet):
