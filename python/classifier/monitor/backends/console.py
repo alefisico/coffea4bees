@@ -3,6 +3,7 @@ A rich renderable class is defined by the following protocol:
 https://rich.readthedocs.io/en/stable/protocol.html
 """
 
+import atexit
 import time
 from threading import Lock, Thread
 from typing import Callable
@@ -46,3 +47,4 @@ def setup_backend():
     Dashboard.layout = Table.grid()
     Dashboard._lock = Lock()
     Thread(target=Dashboard.start, daemon=True).start()
+    atexit.register(Dashboard.console.show_cursor)
