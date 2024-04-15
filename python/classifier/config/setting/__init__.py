@@ -104,6 +104,7 @@ class Monitor(Cascade):
     usage_enable: bool = True
     usage_update_interval: float = 1.0  # seconds
     usage_gpu: bool = True
+    usage_gpu_force_torch: bool = False
 
     # records
     file_meta: str = "meta.json"

@@ -1,6 +1,5 @@
 import time
 from collections import defaultdict
-from subprocess import check_output
 from threading import Thread
 from typing import TypedDict
 
@@ -10,8 +9,8 @@ from ..config.setting import Monitor as cfg
 from ..config.state import RunInfo
 from ..process.monitor import Proxy, Recorder, callback
 
-_NVIDIA_SMI = "nvidia-smi"
 _MIB = 2**20
+_CUDA = {"12.1": 254}  # MiB
 
 
 class _Resource(TypedDict):
@@ -28,9 +27,14 @@ class _Checkpoint(TypedDict):
 
 class Usage(Proxy):
     _records_local: list[_Resource] = []
-    _has_gpu: bool = None
     _tracker: Thread = None
     _head: int = 0
+
+    # GPU
+    _n_gpu: int = None
+    _torch_calibration: int = None  # MiB
+    _pynvml_handles: list = None
+    _pynvml_unavailable = RunInfo.singularity
 
     def __init__(self):
         self._records: dict[str, list[_Resource]] = defaultdict(list)
@@ -73,51 +77,59 @@ class Usage(Proxy):
                 pids.append(child.pid)
             # GPU
             if cfg.usage_gpu:
-                if RunInfo.singularity:
-                    gpu = cls._gpu_singularity()
+                if cfg.usage_gpu_force_torch or cls._pynvml_unavailable:
+                    gpu = cls._gpu_torch()
                 else:
                     gpu = cls._gpu()
-                    gpu = sum(gpu.get(pid, 0) for pid in pids)
+                    if gpu is None:
+                        cls._pynvml_unavailable = True
+                        gpu = cls._gpu_torch()
+                    else:
+                        gpu = sum(gpu.get(pid, 0) for pid in pids)
             else:
                 gpu = 0
             cls._records_local.append(
-                {"time": now, "cpu": cpu, "memory": mem, "gpu": gpu}
+                {"time": now, "cpu": cpu, "memory": mem, "gpu": float(gpu)}
             )
             time.sleep(cfg.usage_update_interval)
 
     @classmethod
     def _gpu(cls):
-        if cls._has_gpu is None:
+        import pynvml
+
+        if cls._n_gpu is None:
             try:
-                check_output([_NVIDIA_SMI])
-                cls._has_gpu = True
-            except:
-                cls._has_gpu = False
-        if cls._has_gpu:
-            mem = check_output(
-                [
-                    _NVIDIA_SMI,
-                    "--query-compute-apps=pid,used_memory",
-                    "--format=csv,noheader,nounits",
+                pynvml.nvmlInit()
+                cls._n_gpu = pynvml.nvmlDeviceGetCount()
+            except pynvml.NVMLError:
+                return None
+        if cls._n_gpu > 0:
+            if cls._pynvml_handles is None:
+                cls._pynvml_handles = [
+                    pynvml.nvmlDeviceGetHandleByIndex(i) for i in range(cls._n_gpu)
                 ]
-            ).decode()
-            return dict(map(int, line.split(", ")) for line in mem.splitlines())
+            gpu = defaultdict(float)
+            for handle in cls._pynvml_handles:
+                for p in pynvml.nvmlDeviceGetComputeRunningProcesses(handle):
+                    gpu[p.pid] += (p.usedGpuMemory or 0) / _MIB
+            return gpu
         return {}
 
     @classmethod
-    def _gpu_singularity(cls):
+    def _gpu_torch(cls):
         import torch
 
-        if cls._has_gpu is None:
-            cls._has_gpu = torch.cuda.is_available()
-        if cls._has_gpu:
-            return (
-                sum(
-                    torch.cuda.memory_reserved(i)
-                    for i in range(torch.cuda.device_count())  # TODO calibration
-                )
-                / _MIB
-            )
+        if cls._n_gpu is None:
+            cls._n_gpu = torch.cuda.device_count()
+        if cls._n_gpu > 0:
+            if cls._torch_calibration is None:
+                cls._torch_calibration = _CUDA.get(torch.version.cuda, 0)
+            gpu = 0
+            for i in range(cls._n_gpu):
+                reserved = torch.cuda.memory_reserved(i)
+                if reserved > 0:
+                    gpu += (reserved / _MIB) + cls._torch_calibration
+            return gpu
         return 0
 
     @classmethod
