@@ -118,16 +118,24 @@ class analysis(processor.ProcessorABC):
             # trigger Weight (to be updated)
             if self.apply_trigWeight:
                 if 'GluGlu' in dataset:
-                    weights.add( 'trigWeight', ak.where(event.passHLT, 1., 0.) )
+                    weights.add( 'trigWeight', np.full(len(event), 1) )
 
 #                    fname   = event.metadata['filename']
 #                    estart  = event.metadata['entrystart']
 #                    estop   = event.metadata['entrystop']
+##                    path = fname.replace(fname.split('/')[-1], '')
+##                    event['trigWeight']    = NanoEventsFactory.from_root(f'{path}{"trigWeights.root"}',
+##                                                              entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events()
+#                    import uproot
 #                    path = fname.replace(fname.split('/')[-1], '')
-#                    event['trigWeight']    = NanoEventsFactory.from_root(f'{path}{"trigWeights.root"}',
-#                                                              entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events()
-                else:
-                    weights.add( 'trigWeight', event.trigWeight.Data, event.trigWeight.MC, ak.where(event.passHLT, 1., 0.) )
+#                    trigWeight = uproot.open(f'{path}{"trigWeights.root"}')['Events'].arrays(entry_start=estart, entry_stop=estop)
+#
+#                    #if not ak.all(trigWeight.event == event.event):
+#                    #    raise ValueError('trigWeight events do not match events ttree')
+#                    #weights.add( 'trigWeight', trigWeight["trigWeight_Data"], trigWeight["trigWeight_MC"], ak.where(event.passHLT, 1., 0.) )
+#
+#                else:
+#                    weights.add( 'trigWeight', event.trigWeight.Data, event.trigWeight.MC, ak.where(event.passHLT, 1., 0.) )
 
             # puWeight (to be checked)
             if not isTTForMixed:
@@ -145,6 +153,60 @@ class analysis(processor.ProcessorABC):
                             event.L1PreFiringWeight.Up,
                             event.L1PreFiringWeight.Dn
                             )
+
+
+            if ('PSWeight' in event.fields):  #### AGE: this should be temprorary (field exists in UL)
+
+                nom = np.ones(len(weights.weight()))
+                up_isr = np.ones(len(weights.weight()))
+                down_isr = np.ones(len(weights.weight()))
+                up_fsr = np.ones(len(weights.weight()))
+                down_fsr = np.ones(len(weights.weight()))
+
+                if len(event.PSWeight[0]) == 4:
+                    up_isr = event.PSWeight[:, 0]
+                    down_isr = event.PSWeight[:, 2]
+                    up_fsr = event.PSWeight[:, 1]
+                    down_fsr = event.PSWeight[:, 3]
+
+                else:
+                    logging.warning(f"PS weight vector has length {len(event.PSWeight[0])}")
+
+                weights.add( 'ISR', nom, up_isr, down_isr )
+                weights.add( 'FSR', nom, up_fsr, down_fsr )
+
+            if ('LHEPdfWeight' in event.fields):
+
+                # https://github.com/nsmith-/boostedhiggs/blob/a33dca8464018936fbe27e86d52c700115343542/boostedhiggs/corrections.py#L53
+                nom = np.ones(len(weights.weight()))
+                up = np.ones(len(weights.weight()))
+                down = np.ones(len(weights.weight()))
+
+                # NNPDF31_nnlo_hessian_pdfas
+                # https://lhapdfsets.web.cern.ch/current/NNPDF31_nnlo_hessian_pdfas/NNPDF31_nnlo_hessian_pdfas.info
+                if "306000 - 306102" in event.LHEPdfWeight.__doc__:
+                    # Hessian PDF weights
+                    # Eq. 21 of https://arxiv.org/pdf/1510.03865v1.pdf
+                    arg = event.LHEPdfWeight[:, 1:-2] - np.ones((len(weights.weight()), 100))
+                    summed = ak.sum(np.square(arg), axis=1)
+                    pdf_unc = np.sqrt((1. / 99.) * summed)
+                    weights.add('PDF', nom, pdf_unc + nom)
+
+                    # alpha_S weights
+                    # Eq. 27 of same ref
+                    as_unc = 0.5 * (event.LHEPdfWeight[:, 102] - event.LHEPdfWeight[:, 101])
+                    weights.add('aS', nom, as_unc + nom)
+
+                    # PDF + alpha_S weights
+                    # Eq. 28 of same ref
+                    pdfas_unc = np.sqrt(np.square(pdf_unc) + np.square(as_unc))
+                    weights.add('PDFaS', nom, pdfas_unc + nom)
+
+                else:
+                    weights.add('aS', nom, up, down)
+                    weights.add('PDF', nom, up, down)
+                    weights.add('PDFaS', nom, up, down)
+
         else:
             weights.add( 'data', np.ones(len(event)) )
 
@@ -265,22 +327,19 @@ class analysis(processor.ProcessorABC):
 
             event['FvT', 'frac_err'] = event['FvT'].std / event['FvT'].FvT
             if not ak.all(event.FvT.event == event.event):
-                logging.error('ERROR: FvT events do not match events ttree')
-                return
+                raise ValueError('ERROR: FvT events do not match events ttree')
 
         if self.run_SvB:
             if (self.classifier_SvB is None) | (self.classifier_SvB_MA is None):
                 event['SvB']    = NanoEventsFactory.from_root(f'{path}{"SvB_newSBDef.root" if "mix" in dataset else "SvB.root"}',
                                                           entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().SvB
                 if not ak.all(event.SvB.event == event.event):
-                    logging.error('ERROR: SvB events do not match events ttree')
-                    return
+                    raise ValueError('ERROR: SvB events do not match events ttree')
 
                 event['SvB_MA'] = NanoEventsFactory.from_root(f'{path}{"SvB_MA_newSBDef.root" if "mix" in dataset else "SvB_MA.root"}',
                                                           entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().SvB_MA
                 if not ak.all(event.SvB_MA.event == event.event):
-                    logging.error('ERROR: SvB_MA events do not match events ttree')
-                    return
+                    raise ValueError('ERROR: SvB_MA events do not match events ttree')
 
                 # defining SvB for different SR
                 setSvBVars("SvB",    event)
