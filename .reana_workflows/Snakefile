@@ -11,7 +11,7 @@ rule all:
         expand("output/histdatabkgs_{sample}-{iy}.coffea", sample=config['dataset'], iy=config['year']),
         expand("output/histsyst_{samplesyst}-{iysyst}.coffea", samplesyst=config['dataset_systematics'], iysyst=config['year']),
         expand("output/histmixed_{samplemixed}-{iymixed}.coffea", samplemixed=config['dataset_for_mixed'], iymixed=config['year']),
-        expand("output/histmixeddata_{samplemixed}-{iymixed}.coffea", samplemixeddata=config['dataset_mixeddata'], iymixeddata=config['year_mixed']),
+        expand("output/histmixeddata_{samplemixeddata}-{iymixeddata}.coffea", samplemixeddata=config['dataset_mixeddata'], iymixeddata=config['year_mixed']),
         'output/histAll_syst.coffea',
         'output/histAll_mixeddata.coffea',
         'output/histAll_for_mixed.coffea',
@@ -153,7 +153,7 @@ cp {output} /eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/histAll_mixeddat
 
 rule merging_coffea_files_for_mixed:
     input:
-        files = expand(['output/histmixed_{idatmix}-{iyear}.coffea'], idatmix=config['dataset_mixed'], iyear=config['year_mixed'])
+        files = expand(['output/histmixed_{idatmix}-{iyear}.coffea'], idatmix=config['dataset_for_mixed'], iyear=config['year'])
     output:
         "output/histAll_for_mixed.coffea"
     container:

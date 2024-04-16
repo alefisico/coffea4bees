@@ -11,7 +11,6 @@ dataset:
   - ZZ4b 
   - ZH4b 
   - HH4b  
-  - GluGluToHHTo4B_cHHH1
 dataset_systematics:
   - ZZ4b 
   - ZH4b 
@@ -21,8 +20,8 @@ dataset_for_mixed:
   - TTToSemiLeptonic_for_mixed
   - TTToHadronic_for_mixed
   - TTTo2L2Nu_for_mixed
-  - data_3b_for_mixed
 dataset_mixeddata:
+  - data_3b_for_mixed
   - mixeddata
 year_mixed:
   - UL16_preVFP

@@ -72,12 +72,12 @@ def create_combine_root_file( file_to_convert, rebin, classifier, output_dir, pl
                 ### For multijets
 
                 root_hists[iclass][channel+"_"+iyear]['mj'] = yml_to_TH1(
-                    coffea_hists[ih]['data'][iyear]['nominal']['threeTag']['SR'], "mj_"+ih.replace('.', '_')+"_passPreSel_SR_"+iyear, rebin[channel] )
+                    coffea_hists[ih]['data'][iyear]['threeTag']['SR'], "mj_"+ih.replace('.', '_')+"_passPreSel_SR_"+iyear, rebin[channel] )
 
                 ### SR 4b
                 for iprocess in coffea_hists[ih].keys():
                     root_hists[iclass][channel+"_"+iyear][iprocess] = yml_to_TH1(
-                        coffea_hists[ih][iprocess][iyear]['nominal']['fourTag']['SR'], iprocess+"_"+ih.replace('.', '_')+"_passPreSel_SR_"+iyear, rebin[channel] )
+                        coffea_hists[ih][iprocess][iyear]['fourTag']['SR'], iprocess+"_"+ih.replace('.', '_')+"_passPreSel_SR_"+iyear, rebin[channel] )
 
         for iy in root_hists[iclass].keys():
             root_hists[iclass][iy]['tt'] = root_hists[iclass][iy]['data'].Clone()

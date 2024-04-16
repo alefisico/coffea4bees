@@ -204,7 +204,7 @@ class analysis(processor.ProcessorABC):
         processOutput['nEvent'] = {}
         processOutput['nEvent'][event.metadata['dataset']] = nEvent
 
-        self._cutFlow = cutFlow(self.cutFlowCuts)
+        if not shift_name: self._cutFlow = cutFlow(self.cutFlowCuts)
 
         logging.debug(fname)
         logging.debug(f'{chunk}Process {nEvent} Events')
@@ -300,15 +300,16 @@ class analysis(processor.ProcessorABC):
         selections.add( 'lumimask', event.lumimask )
         selections.add( 'passNoiseFilter', event.passNoiseFilter )
         selections.add( 'passHLT', np.full(len(event), True) if (isMC or isMixedData or isTTForMixed or isDataForMixed) else event.passHLT )
-        self._cutFlow.fill("all",  event[selections.require(lumimask=True)], allTag=True)
-        self._cutFlow.fill("passNoiseFilter",  event[ selections.require(lumimask=True, passNoiseFilter=True) ], allTag=True)
-        self._cutFlow.fill("passHLT",  event[ selections.require(lumimask=True, passNoiseFilter=True, passHLT=True) ], allTag=True)
+        if not shift_name:
+            self._cutFlow.fill("all",  event[selections.require(lumimask=True)], allTag=True)
+            self._cutFlow.fill("passNoiseFilter",  event[ selections.require(lumimask=True, passNoiseFilter=True) ], allTag=True)
+            self._cutFlow.fill("passHLT",  event[ selections.require(lumimask=True, passNoiseFilter=True, passHLT=True) ], allTag=True)
 
         # Apply object selection (function does not remove events, adds content to objects)
         event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year], isMixedData=isMixedData, isTTForMixed=isTTForMixed, isDataForMixed=isDataForMixed)
 
         selections.add( 'passJetMult', event.lumimask & event.passNoiseFilter & selections.require(passHLT=True) & event.passJetMult )
-        self._cutFlow.fill("passJetMult", event[selections.require( passJetMult=True )], allTag=True)
+        if not shift_name: self._cutFlow.fill("passJetMult", event[selections.require( passJetMult=True )], allTag=True)
 
         #
         # Calculate and apply btag scale factors
@@ -332,7 +333,7 @@ class analysis(processor.ProcessorABC):
                                            )
 
             event['weight'] = weights.weight()
-            self._cutFlow.fill("passJetMult_btagSF", event[selections.require( passJetMult=True )], allTag=True)
+            if not shift_name: self._cutFlow.fill("passJetMult_btagSF", event[selections.require( passJetMult=True )], allTag=True)
 
         #
         # Preselection: keep only three or four tag events
@@ -611,15 +612,16 @@ class analysis(processor.ProcessorABC):
         # CutFlow
         #
         selev['weight'] = weights.weight()[ selections.require( passJetMult=True, passPreSel=True ) ]
-        self._cutFlow.fill("passPreSel", selev)
-        self._cutFlow.fill("passDiJetMass", selev[selev.passDiJetMass])
-        if self.run_SvB:
-            self._cutFlow.fill("SR",            selev[(selev.passDiJetMass & selev['quadJet_selected'].SR)])
-            self._cutFlow.fill("SB",            selev[(selev.passDiJetMass & selev['quadJet_selected'].SB)])
-            self._cutFlow.fill("passSvB",       selev[selev.passSvB])
-            self._cutFlow.fill("failSvB",       selev[selev.failSvB])
+        if not shift_name:
+            self._cutFlow.fill("passPreSel", selev)
+            self._cutFlow.fill("passDiJetMass", selev[selev.passDiJetMass])
+            if self.run_SvB:
+                self._cutFlow.fill("SR",            selev[(selev.passDiJetMass & selev['quadJet_selected'].SR)])
+                self._cutFlow.fill("SB",            selev[(selev.passDiJetMass & selev['quadJet_selected'].SB)])
+                self._cutFlow.fill("passSvB",       selev[selev.passSvB])
+                self._cutFlow.fill("failSvB",       selev[selev.failSvB])
 
-        self._cutFlow.addOutput(processOutput, event.metadata['dataset'])
+            self._cutFlow.addOutput(processOutput, event.metadata['dataset'])
 
         #
         # Hists
