@@ -64,23 +64,20 @@ if __name__ == '__main__':
             yml_dict[ih][iprocess] = {}
             for iy in coffea_hists[ih].axes[1]:
                 yml_dict[ih][iprocess][iy] = {}
-                for isys in coffea_hists[ih].axes[2]:
-                    yml_dict[ih][iprocess][iy][isys] = {}
-                    for itag in range(len(coffea_hists[ih].axes[3])):
-                        yml_dict[ih][iprocess][iy][isys][codes['tag'][itag]] = {}
-                        for iregion in range(len(coffea_hists[ih].axes[4])):
-                            this_hist = {
-                                'process' : iprocess,
-                                'year' : iy,
-                                'variation' : isys,
-                                'tag' : itag,
-                                'region' : iregion,
-                                'passPreSel' : True,
-                                'passSvB' : sum,
-                                'failSvB' : sum
-                            }
-                            logging.info(f"Converting hist {ih} {this_hist}")
-                            yml_dict[ih][iprocess][iy][isys][codes['tag'][itag]][codes['region'][iregion]] = hist_to_yml( coffea_hists[ih][this_hist] )
+                for itag in range(len(coffea_hists[ih].axes[3])):
+                    yml_dict[ih][iprocess][iy][codes['tag'][itag]] = {}
+                    for iregion in range(len(coffea_hists[ih].axes[4])):
+                        this_hist = {
+                            'process' : iprocess,
+                            'year' : iy,
+                            'tag' : itag,
+                            'region' : iregion,
+                            'passPreSel' : True,
+                            'passSvB' : sum,
+                            'failSvB' : sum
+                        }
+                        logging.info(f"Converting hist {ih} {this_hist}")
+                        yml_dict[ih][iprocess][iy][codes['tag'][itag]][codes['region'][iregion]] = hist_to_yml( coffea_hists[ih][this_hist] )
 
     logging.info(f"Saving histos in yml format in {args.output}")
     output_dir = '/'.join( args.output.split('/')[:-1] )
