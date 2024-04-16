@@ -133,9 +133,9 @@ class analysis(processor.ProcessorABC):
 #                    #if not ak.all(trigWeight.event == event.event):
 #                    #    raise ValueError('trigWeight events do not match events ttree')
 #                    #weights.add( 'trigWeight', trigWeight["trigWeight_Data"], trigWeight["trigWeight_MC"], ak.where(event.passHLT, 1., 0.) )
-#
-#                else:
-#                    weights.add( 'trigWeight', event.trigWeight.Data, event.trigWeight.MC, ak.where(event.passHLT, 1., 0.) )
+
+                else:
+                    weights.add( 'trigWeight', event.trigWeight.Data, event.trigWeight.MC, ak.where(event.passHLT, 1., 0.) )
 
             # puWeight (to be checked)
             if not isTTForMixed:

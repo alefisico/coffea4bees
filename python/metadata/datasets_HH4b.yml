@@ -460,7 +460,7 @@ datasets:
     xs: 0.7612*0.5824*0.1512
   ZZ4b:
     UL16_postVFP:
-      nanoAOD: /dataset/dataset/NANOAODSIM
+      nanoAOD: /ZZTo4B01j_5f_TuneCP5_13TeV-amcatnloFXFX-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v2/NANOAODSIM
       picoAOD:
         files:
         - root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/ZZ4b2016_postVFP/picoAOD.root
@@ -476,7 +476,7 @@ datasets:
         sumw2: 16982111.667165413
         total_events: 21046873.0
     UL17:
-      nanoAOD: /dataset/dataset/NANOAODSIM
+      nanoAOD: /ZZTo4B01j_5f_TuneCP5_13TeV-amcatnloFXFX-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v1/NANOAODSIM
       picoAOD:
         files:
         - root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/ZZ4b2017/picoAOD.root
@@ -484,7 +484,7 @@ datasets:
         sumw2: 31176969.732390407
         total_events: 38639348.0
     UL18:
-      nanoAOD: /dataset/dataset/NANOAODSIM
+      nanoAOD: /ZZTo4B01j_5f_TuneCP5_13TeV-amcatnloFXFX-pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v2/NANOAODSIM
       picoAOD:
         files:
         - root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/ZZ4b2018/picoAOD.root
