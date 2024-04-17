@@ -133,7 +133,7 @@ class Classifier(WithUUID, ABC):
         for epoch in range(schedule.epoch):
             self.cleanup()
             model.train()
-            batch_msg = f"batch {stage.name} epoch{epoch}"
+            batch_msg = f"batch {stage.name}"
             batch_p = Progress.new(len(bs.dataloader), batch_msg)
             for batch in bs.dataloader:
                 optimizer.zero_grad()
@@ -141,7 +141,7 @@ class Classifier(WithUUID, ABC):
                 loss = model.loss(pred)
                 loss.backward()
                 optimizer.step()
-                batch_p.advance(1, f"{batch_msg}|loss={loss.item()}")
+                batch_p.advance(1, f"{batch_msg}|loss={loss.item():.4g}")
             batch_p.complete()
             if stage.do_benchmark:
                 benchmark.append(
