@@ -24,6 +24,9 @@ class NOOP:
     def __repr__(self):
         return "N/A"
 
+    def __format__(self, _):
+        return repr(self)
+
 
 class _NoopMeta(NOOP, type): ...
 

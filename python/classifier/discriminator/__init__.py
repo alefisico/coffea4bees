@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import gc
+import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from functools import cached_property
@@ -107,9 +108,6 @@ class Classifier(WithUUID, ABC):
         self,
     ): ...  # TODO evaluataion
 
-    def _benchmark(self, epoch: int, pred: dict[str, Tensor], *group: str):
-        return {}  # TODO monitor
-
     def _train(
         self,
         stage: TrainingStage,
@@ -128,37 +126,26 @@ class Classifier(WithUUID, ABC):
 
         # training
         benchmark = []
-        datasets = {"training": stage.training, "validation": stage.validation}
-        epoch_p = Progress.new(schedule.epoch, f"epoch {stage.name}")
+        epoch_p = Progress.new(schedule.epoch, f"epoch")
+        logging.info(f"Start {stage.name}")
         for epoch in range(schedule.epoch):
             self.cleanup()
             model.train()
-            batch_msg = f"batch {stage.name}"
-            batch_p = Progress.new(len(bs.dataloader), batch_msg)
-            for batch in bs.dataloader:
+            batch_p = Progress.new(len(bs.dataloader), "batch")
+            for i, batch in enumerate(bs.dataloader):
                 optimizer.zero_grad()
                 pred = model.forward(batch)
                 loss = model.loss(pred)
                 loss.backward()
                 optimizer.step()
-                batch_p.advance(1, f"{batch_msg}|loss={loss.item():.4g}")
+                batch_p.update(i, f"batch|loss={loss.item():.4g}")
             batch_p.complete()
             if stage.do_benchmark:
-                benchmark.append(
-                    {
-                        k: self._benchmark(
-                            epoch,
-                            self._evaluate(model, datasets[k]),
-                            stage.name,
-                            f"{k}-dataset",
-                        )
-                        for k in datasets
-                    }
-                )  # TODO monitor
+                ...  # TODO benchmark
             lr.step()
             bs.step()
             model.step()
-            epoch_p.advance(1)
+            epoch_p.update(epoch)
         epoch_p.complete()
         return benchmark
 
@@ -177,4 +164,4 @@ class Classifier(WithUUID, ABC):
         )
         model.eval()
         preds = [model.forward(batch) for batch in loader]
-        return {k: torch.cat([p[k] for p in preds], dim=0) for k in preds[0]}
+        ...  # TODO evaluation

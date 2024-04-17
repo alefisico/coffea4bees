@@ -89,7 +89,7 @@ class IO(Cascade):
 class Monitor(Cascade):
     enable: bool = True
     address: str = None
-    port: int = 12345
+    port: int = 10200
 
     # backends
     console_enable: bool = True
