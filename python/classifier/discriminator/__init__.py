@@ -138,14 +138,14 @@ class Classifier(WithUUID, ABC):
                 loss = model.loss(pred)
                 loss.backward()
                 optimizer.step()
-                batch_p.update(i, f"batch|loss={loss.item():.4g}")
+                batch_p.update(i + 1, f"batch|loss={loss.item():.4g}")
             batch_p.complete()
             if stage.do_benchmark:
                 ...  # TODO benchmark
             lr.step()
             bs.step()
             model.step()
-            epoch_p.update(epoch)
+            epoch_p.update(epoch + 1)
         epoch_p.complete()
         return benchmark
 
