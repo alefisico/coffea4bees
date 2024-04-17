@@ -34,7 +34,7 @@ stack:
                 label: TTbar
         
         data_3b_for_mixed:
-                process: data_3b_for_mi
+                process: data_3b_for_mixed
                 tag: threeTag
                 year: RunII
                 fillcolor: xkcd:bright yellow 
