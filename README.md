@@ -95,4 +95,6 @@ https://pypi.org/project/pycodestyle/
 > pycodestyle  --show-source base_class/plots.py
 
 > pycodestyle --show-pep8 --show-source base_class/plots.py 
+
+> pycodestyle --ignore E501,E222,E241,E202,E221,E201     --show-source analysis/processors/processor_HH4b.py
 ```

@@ -9,6 +9,7 @@ import time
 import warnings
 from datetime import datetime
 from typing import TYPE_CHECKING
+from copy import copy
 
 import dask
 import fsspec
@@ -119,6 +120,7 @@ if __name__ == '__main__':
 
     if 'all' in args.datasets:
         metadata['datasets'].pop("mixeddata")   # AGE: this is temporary
+        metadata['datasets'].pop("data_3b_for_mixed")   # AGE: this is temporary
         args.datasets = metadata['datasets'].keys()
 
     metadata_dataset = {}
@@ -136,7 +138,7 @@ if __name__ == '__main__':
                     f"{year} name not in metadatafile for {dataset}")
                 continue
 
-            if dataset in ['data', 'mixeddata'] or not ('xs' in metadata['datasets'][dataset].keys()):
+            if dataset in ['data', 'mixeddata', 'data_3b_for_mixed'] or not ('xs' in metadata['datasets'][dataset].keys()):
                 xsec = 1.
             elif isinstance(metadata['datasets'][dataset]['xs'], float):
                 xsec = metadata['datasets'][dataset]['xs']
@@ -149,12 +151,21 @@ if __name__ == '__main__':
                                          'lumi': float(metadata['datasets']['data'][year]['lumi']),
                                          'trigger':  metadata['datasets']['data'][year]['trigger'],
                                          }
+            isData = (dataset == 'data')
+            isMixedData = (dataset == 'mixeddata')
+            isDataForMix = (dataset == 'data_3b_for_mixed')
+            isTTForMixed = (dataset in ['TTToHadronic_for_mixed', 'TTToSemiLeptonic_for_mixed', 'TTTo2L2Nu_for_mixed'])
 
-            if not (dataset == 'data'):
+            if not ( isData or isMixedData or isDataForMix or isTTForMixed):
+                logging.info("\nConfig MC")
                 if config_runner['data_tier'].startswith('pico'):
                     if 'data' not in dataset:
                         metadata_dataset[dataset]['genEventSumw'] = metadata['datasets'][dataset][year][config_runner['data_tier']]['sumw']
                     meta_files = metadata['datasets'][dataset][year][config_runner['data_tier']]['files']
+            # if not dataset.endswith('data'):
+            #     if config_runner['data_tier'].startswith('pico'):
+            #         metadata_dataset[dataset]['genEventSumw'] = metadata['datasets'][dataset][year][config_runner['data_tier']]['sumw']
+            #         meta_files = metadata['datasets'][dataset][year][config_runner['data_tier']]['files']
                 else:
                     meta_files = metadata['datasets'][dataset][year][config_runner['data_tier']]
 
@@ -164,6 +175,77 @@ if __name__ == '__main__':
                 logging.info(f'\nDataset {dataset+"_"+year} with '
                              f'{len(fileset[dataset+"_"+year]["files"])} files')
 
+            elif isMixedData:
+                logging.info("\nConfig Mixed Data ")
+
+                nMixedSamples = metadata['datasets'][dataset]["nSamples"]
+                mixed_config = metadata['datasets'][dataset][year][config_runner['data_tier']]
+                logging.info("\nNumber of mixed samples is {nMixedSamples}")
+                for v in range(nMixedSamples):
+
+                    mixed_name = f"mix_v{v}"
+                    idataset = f'{mixed_name}_{year}'
+
+                    metadata_dataset[idataset] = copy(metadata_dataset[dataset])
+                    metadata_dataset[idataset]['processName'] = mixed_name
+                    metadata_dataset[idataset]['FvT_name'] = mixed_config['FvT_name_template'].replace("XXX",str(v))
+                    metadata_dataset[idataset]['FvT_file'] = mixed_config['FvT_file_template'].replace("XXX",str(v))
+                    mixed_files = [f.replace("XXX",str(v)) for f in mixed_config['files_template']]
+                    fileset[idataset] = {'files': list_of_files(mixed_files,
+                                                                test=args.test, test_files=config_runner['test_files'],
+                                                                allowlist_sites=config_runner['allowlist_sites']),
+                                         'metadata': metadata_dataset[idataset]}
+
+                    logging.info(
+                        f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
+
+
+            elif isDataForMix:
+                logging.info("\nConfig Data for Mixed ")
+
+                nMixedSamples = metadata['datasets'][dataset]["nSamples"]
+                data_3b_mix_config = metadata['datasets'][dataset][year][config_runner['data_tier']]
+                logging.info("\nNumber of mixed samples is {nMixedSamples}")
+
+                idataset = f'{dataset}_{year}'
+
+                metadata_dataset[idataset] = copy(metadata_dataset[dataset])
+                metadata_dataset[idataset]['FvT_files'] = [data_3b_mix_config['FvT_file_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
+                metadata_dataset[idataset]['FvT_names'] = [data_3b_mix_config['FvT_name_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
+                metadata_dataset[idataset]['JCM_loads'] = [data_3b_mix_config['JCM_load_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
+
+                fileset[idataset] = {'files': list_of_files(data_3b_mix_config['files'],
+                                                            test=args.test, test_files=config_runner['test_files'],
+                                                            allowlist_sites=config_runner['allowlist_sites']),
+                                     'metadata': metadata_dataset[idataset]}
+
+                logging.info(f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
+
+
+            elif isTTForMixed:
+                logging.info("\nConfig TT for Mixed ")
+
+                nMixedSamples = metadata['datasets'][dataset]["nSamples"]
+                TT_3b_mix_config = metadata['datasets'][dataset][year][config_runner['data_tier']]
+                logging.info("\nNumber of mixed samples is {nMixedSamples}")
+
+                idataset = f'{dataset}_{year}'
+
+                metadata_dataset[idataset] = copy(metadata_dataset[dataset])
+                metadata_dataset[idataset]['FvT_files'] = [TT_3b_mix_config['FvT_file_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
+                metadata_dataset[idataset]['FvT_names'] = [TT_3b_mix_config['FvT_name_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
+                metadata_dataset[idataset]['genEventSumw'] = TT_3b_mix_config['sumw']
+
+                fileset[idataset] = {'files': list_of_files(TT_3b_mix_config['files'],
+                                                            test=args.test, test_files=config_runner['test_files'],
+                                                            allowlist_sites=config_runner['allowlist_sites']),
+                                     'metadata': metadata_dataset[idataset]}
+
+                logging.info(f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
+
+
+
+            # isData
             else:
 
                 for iera, ifile in metadata['datasets'][dataset][year][config_runner['data_tier']].items():
@@ -173,6 +255,7 @@ if __name__ == '__main__':
                         metadata_dataset[idataset]['era'] = iera
                         fileset[idataset] = {'files': list_of_files((ifile['files'] if config_runner['data_tier'].startswith('pico') else ifile), test=args.test, test_files=config_runner['test_files'], allowlist_sites=config_runner['allowlist_sites']),
                                              'metadata': metadata_dataset[idataset]}
+
                         logging.info(
                             f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
 

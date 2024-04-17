@@ -5,9 +5,13 @@ class SvBHists(Template):
     ps      = H((100, 0, 1, ('ps', "Regressed P(Signal)")))
     ptt     = H((100, 0, 1, ('ptt', "Regressed P(tT)")))
 
-    ps_zz   = H((100, 0, 1, ('ps_zz', "Regressed P(Signal) $|$ P(ZZ) is largest ")))
-    ps_zh   = H((100, 0, 1, ('ps_zh', "Regressed P(Signal) $|$ P(ZH) is largest ")))
-    ps_hh   = H((100, 0, 1, ('ps_hh', "Regressed P(Signal) $|$ P(HH) is largest ")))
+    ps_zz   = H((200, 0, 1, ('ps_zz', "Regressed P(Signal) $|$ P(ZZ) is largest ")))
+    ps_zh   = H((200, 0, 1, ('ps_zh', "Regressed P(Signal) $|$ P(ZH) is largest ")))
+    ps_hh   = H((200, 0, 1, ('ps_hh', "Regressed P(Signal) $|$ P(HH) is largest ")))
+
+    ps_zz_fine   = H((240, 0, 1, ('ps_zz', "Regressed P(Signal) $|$ P(ZZ) is largest ")))
+    ps_zh_fine   = H((240, 0, 1, ('ps_zh', "Regressed P(Signal) $|$ P(ZH) is largest ")))
+    ps_hh_fine   = H((240, 0, 1, ('ps_hh', "Regressed P(Signal) $|$ P(HH) is largest ")))
 
 
 class FvTHists(Template):
@@ -30,6 +34,22 @@ class QuadJetHists(Template):
     xZZ             = H((100, 0, 10,     ("xZZ",         'Diboson Candidate zZZ')))
     xZH             = H((100, 0, 10,     ("xZH",         'Diboson Candidate zZH')))
     xHH             = H((100, 0, 10,     ("xHH",         'Diboson Candidate zHH')))
+
+    lead_vs_subl_m   = H((50, 0, 250, ('lead.mass', 'Lead Boson Candidate Mass')),
+                         (50, 0, 250, ('subl.mass', 'Subl Boson Candidate Mass')))
+
+    close_vs_other_m = H((50, 0, 250, ('close.mass', 'Close Boson Candidate Mass')),
+                         (50, 0, 250, ('other.mass', 'Other Boson Candidate Mass')))
+
+    lead            = LorentzVector.plot_pair(('...', R'Lead Boson Candidate'),  'lead',  skip=['n'])
+    subl            = LorentzVector.plot_pair(('...', R'Subl Boson Candidate'),  'subl',  skip=['n'])
+    close           = LorentzVector.plot_pair(('...', R'Close Boson Candidate'), 'close', skip=['n'])
+    other           = LorentzVector.plot_pair(('...', R'Other Boson Candidate'), 'other', skip=['n'])
+
+class QuadJetHistsUnsup(Template):
+    dr              = H((50,     0, 5,   ("dr",          'Diboson Candidate $\\Delta$R(d,d)')))
+    dphi            = H((100, -3.2, 3.2, ("dphi",        'Diboson Candidate $\\Delta$R(d,d)')))
+    deta            = H((100,   -5, 5,   ("deta",        'Diboson Candidate $\\Delta$R(d,d)')))
 
     lead_vs_subl_m   = H((50, 0, 250, ('lead.mass', 'Lead Boson Candidate Mass')),
                          (50, 0, 250, ('subl.mass', 'Subl Boson Candidate Mass')))
