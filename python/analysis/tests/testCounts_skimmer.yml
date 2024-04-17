@@ -1,7 +1,7 @@
 counts4:
     TTToSemiLeptonic_UL18:
-        passJetMult: 109227.54
-        passPreSel: 22229.16
+        passJetMult: 109286.03
+        passPreSel: 21995.01
         passDiJetMass: 6914.74
         SR: 0.0
         SB: 0.0
@@ -10,9 +10,9 @@ counts4:
 
 counts3:
     TTToSemiLeptonic_UL18:
-        passJetMult: 109227.54
-        passPreSel: 113496.34
-        passDiJetMass: 62355.0
+        passJetMult: 109286.03
+        passPreSel: 113642.35
+        passDiJetMass: 62804.04
         SR: 0.0
         SB: 0.0
 
@@ -20,8 +20,8 @@ counts3:
 
 counts4_unit:
     TTToSemiLeptonic_UL18:
-        passJetMult: 6481.0
-        passPreSel: 94.0
+        passJetMult: 6484.0
+        passPreSel: 93.0
         passDiJetMass: 38.0
         SR: 0.0
         SB: 0.0
@@ -30,9 +30,9 @@ counts4_unit:
 
 counts3_unit:
     TTToSemiLeptonic_UL18:
-        passJetMult: 6481.0
-        passPreSel: 6296.0
-        passDiJetMass: 3633.0
+        passJetMult: 6484.0
+        passPreSel: 6298.0
+        passDiJetMass: 3644.0
         SR: 0.0
         SB: 0.0
 
