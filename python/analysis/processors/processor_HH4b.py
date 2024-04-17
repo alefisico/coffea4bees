@@ -367,8 +367,9 @@ class analysis(processor.ProcessorABC):
         # Apply object selection (function does not remove events, adds content to objects)
         event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year], isMixedData=isMixedData, isTTForMixed=isTTForMixed, isDataForMixed=isDataForMixed)
 
-        selections.add( 'passJetMult', event.lumimask & event.passNoiseFilter & selections.require(passHLT=True) & event.passJetMult )
-        if not shift_name: self._cutFlow.fill("passJetMult", event[selections.require( passJetMult=True )], allTag=True)
+        selections.add( 'passJetMult', event.passJetMult )
+        allcuts = [ 'lumimask', 'passNoiseFilter', 'passHLT', 'passJetMult' ]
+        if not shift_name: self._cutFlow.fill("passJetMult", event[selections.all(*allcuts)], allTag=True)
 
         #
         # Calculate and apply btag scale factors
@@ -392,13 +393,14 @@ class analysis(processor.ProcessorABC):
                                            )
 
             event['weight'] = weights.weight()
-            if not shift_name: self._cutFlow.fill("passJetMult_btagSF", event[selections.require( passJetMult=True )], allTag=True)
+            if not shift_name: self._cutFlow.fill("passJetMult_btagSF", event[selections.all(*allcuts)], allTag=True)
 
         #
         # Preselection: keep only three or four tag events
         #
         selections.add( 'passPreSel', event.passPreSel )
-        selev = event[ selections.require( passJetMult=True, passPreSel=True ) ]
+        allcuts.append("passPreSel")
+        selev = event[ selections.all(*allcuts) ]
 
         #
         #  Calculate hT
@@ -454,9 +456,9 @@ class analysis(processor.ProcessorABC):
         #
         # calculate pseudoTagWeight for threeTag events
         #
-        logging.debug(f"noJCM_noFVT {weights.weight()[ selections.require( passJetMult=True, passPreSel=True ) ][:10]}")
-        logging.debug(f"noJCM_noFVT partial {weights.partial_weight(include=['genweight', 'trigWeight', 'PU' ,'btagSF'])[ selections.require( passJetMult=True, passPreSel=True ) ][:10]}")
-        selev['weight_noJCM_noFvT'] = weights.partial_weight(include=['genweight', 'trigWeight', 'PU' ,'btagSF'])[ selections.require( passJetMult=True, passPreSel=True ) ]
+        logging.debug(f"noJCM_noFVT {weights.weight()[ selections.all(*allcuts ) ][:10]}")
+        logging.debug(f"noJCM_noFVT partial {weights.partial_weight(include=['genweight', 'trigWeight', 'PU' ,'btagSF'])[ selections.all(*allcuts) ][:10]}")
+        selev['weight_noJCM_noFvT'] = weights.partial_weight(include=['genweight', 'trigWeight', 'PU' ,'btagSF'])[ selections.all(*allcuts) ]
         if self.JCM:
             selev['Jet_untagged_loose'] = selev.Jet[selev.Jet.selected & ~selev.Jet.tagged_loose]
             nJet_pseudotagged = np.zeros(len(selev), dtype=int)
@@ -497,13 +499,13 @@ class analysis(processor.ProcessorABC):
                 else:
                     weight = pseudoTagWeight[selev.threeTag] * selev.FvT.FvT[selev.threeTag]
                     tmp_weight = np.full(len(event), 1.)
-                    tmp_weight[ selections.require( passJetMult=True, passPreSel=True ) & event.threeTag ] = weight
+                    tmp_weight[ selections.all(*allcuts) & event.threeTag ] = weight
                     weights.add( 'FvT', tmp_weight )
 
 
             else:
                 tmp_weight = np.full(len(event), 1.)
-                tmp_weight[ selections.require( passJetMult=True, passPreSel=True ) ] = weight_noFvT
+                tmp_weight[ selections.all(*allcuts) ] = weight_noFvT
                 weights.add( 'no_FvT', tmp_weight )
 
         #
@@ -670,7 +672,7 @@ class analysis(processor.ProcessorABC):
         #
         # CutFlow
         #
-        selev['weight'] = weights.weight()[ selections.require( passJetMult=True, passPreSel=True ) ]
+        selev['weight'] = weights.weight()[ selections.all(*allcuts) ]
         if not shift_name:
             self._cutFlow.fill("passPreSel", selev)
             self._cutFlow.fill("passDiJetMass", selev[selev.passDiJetMass])
@@ -866,7 +868,7 @@ class analysis(processor.ProcessorABC):
                                       tag     = [4],    # 3 / 4/ Other
                                       region  = [2],    # SR / SB / Other
                                       **dict((s, ...) for s in self.histCuts))
-                    selev[f'weight_{ivar}'] = weights.weight(modifier=ivar)[ selections.require( passJetMult=True, passPreSel=True ) ]
+                    selev[f'weight_{ivar}'] = weights.weight(modifier=ivar)[ selections.all(*allcuts) ]
                     fill_SvB_ivar = Fill(process=processName, year=year, variation=ivar, weight=f'weight_{ivar}')
                     logging.debug(f"{ivar} {selev['weight']}")
                     fill_SvB_ivar += SvBHists(('SvB', 'SvB Classifier'), 'SvB', skip=['ps', 'ptt'])
