@@ -243,7 +243,7 @@ if __name__ == "__main__":
                         "rlim": [0, 2],
                         }
 
-        makePlot(cfg.hists[0], cfg.cutList, cfg.plotConfig, var="selJets_noJCM.n",
+        makePlot(cfg, var="selJets_noJCM.n",
                  cut="passPreSel", region="SB",
                  outputFolder=args.outputDir, **plot_options)
 
@@ -264,7 +264,7 @@ if __name__ == "__main__":
                         "rlim": [0.8, 1.2],
                         "ylim": [0.1, None]
                         }
-        makePlot(cfg.hists[0], cfg.cutList, cfg.plotConfig, var="tagJets_noJCM.n",
+        makePlot(cfg, var="tagJets_noJCM.n",
                  cut="passPreSel", region="SB",
                  outputFolder=args.outputDir, **plot_options)
 

@@ -375,7 +375,7 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
         cut_dict = None
     else:
         cutName = cut
-        cut_dict = get_cut_dict(cut, cutList)
+        cut_dict = get_cut_dict(cut, cfg.cutList)
 
     if type(process) is list:
         process_config = [get_value_nested_dict(plotConfig, p) for p in process]
@@ -427,7 +427,7 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
             hist_labels.append(label + " " + _cut)
             hist_types. append("errorbar")
 
-            this_cut_dict = get_cut_dict(_cut, cutList)
+            this_cut_dict = get_cut_dict(_cut, cfg.cutList)
             this_hist_dict = process_dict | tag_dict | region_dict | year_dict | var_dict | this_cut_dict
 
             this_hist = input_hist_File['hists'][var][this_hist_dict]
@@ -833,7 +833,7 @@ def makePlot(cfg, var='selJets.pt',
     return fig, ax
 
 
-def make2DPlot(hists, process, cutList, plotConfig, var='selJets.pt',
+def make2DPlot(cfg, process, var='selJets.pt',
                cut="passPreSel", region="SR", **kwargs):
     r"""
     Takes Options:
@@ -849,18 +849,24 @@ def make2DPlot(hists, process, cutList, plotConfig, var='selJets.pt',
         'rebin'    : int (1),
     """
 
-    h = hists['hists'][var]
-    varName = hists['hists'][var].axes[-1].name
+    if len(cfg.hists) > 1:
+        input_data = cfg.hists
+    else:
+        input_data = cfg.hists[0]
+
+    hist_to_plot = input_data['hists'][var]
+    varName = hist_to_plot.axes[-1].name
     rebin = kwargs.get("rebin", 1)
+    plotConfig = cfg.plotConfig
     codes = plotConfig["codes"]
 
-    cut_dict = get_cut_dict(cut, cutList)
+    cut_dict = get_cut_dict(cut, cfg.cutList)
 
     #
     #  Get the year
     #    (Got to be a better way to do this....)
     #
-    yearStr = get_value_nested_dict(plotConfig, "year", default="RunII")
+    yearStr = get_value_nested_dict(cfg.plotConfig, "year", default="RunII")
     year = sum if yearStr == "RunII" else yearStr
 
     #

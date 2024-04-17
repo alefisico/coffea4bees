@@ -156,8 +156,8 @@ def plot2d(var='quadJet_selected.lead_vs_subl_m', process="HH4b",
         ls(match=var.replace("*", ""))
         return
 
-    fig, ax = make2DPlot(cfg.hists[0], process, cfg.cutList, cfg.plotConfig, var=var, cut=cut,
-                     region=region, outputFolder=cfg.outputFolder, **kwargs)
+    fig, ax = make2DPlot(cfg, process, var=var, cut=cut,
+                         region=region, outputFolder=cfg.outputFolder, **kwargs)
 
     fileName = "test.pdf"
     fig.savefig(fileName)
