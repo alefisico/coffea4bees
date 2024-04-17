@@ -10,7 +10,7 @@ class MeanVariance(Variance[torch.Tensor]):
     @torch.no_grad()
     def compute(cls, data: torch.Tensor, weight: torch.Tensor = None):
         sumw = (
-            torch.tensor(len(data), dtype=cls._t)
+            torch.tensor(len(data), dtype=cls._t, device=data.device)
             if weight is None
             else weight.sum(dtype=cls._t)
         )
