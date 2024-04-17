@@ -19,7 +19,7 @@ class Lin_View(nn.Module):
 
     def forward(self, x):
         return x.view(x.size()[0], -1)
-    
+
 
 def vec2str(v, f="{:.4g}"):
     return map(f.format, v)
@@ -387,9 +387,7 @@ class GhostBatchNorm1d(
         self.register_buffer("two", torch.tensor(2.0, dtype=torch.float))
 
     def print(self):
-        table = Table(
-            box=BoxStyle.HORIZONTALS,
-        )
+        table = Table(box=BoxStyle.HORIZONTALS, show_header=False)
         for i in range(self.stride):
             table.add_row("mean", *vec2str(self.m[0, 0, i, :]))
         for i in range(self.stride):

@@ -11,6 +11,7 @@ from torch import Tensor, nn
 from torch.utils.data import Dataset
 
 from ..config.setting.torch import DataLoader as cfg
+from ..monitor.progress import Progress
 from ..nn.dataset import mp_loader
 from ..nn.schedule import Schedule
 from ..process.device import Device
@@ -128,16 +129,20 @@ class Classifier(WithUUID, ABC):
         # training
         benchmark = []
         datasets = {"training": stage.training, "validation": stage.validation}
+        epoch_p = Progress.new(schedule.epoch, f"epoch {stage.name}")
         for epoch in range(schedule.epoch):
             self.cleanup()
             model.train()
+            batch_msg = f"batch {stage.name} epoch{epoch}"
+            batch_p = Progress.new(len(bs.dataloader), batch_msg)
             for batch in bs.dataloader:
                 optimizer.zero_grad()
                 pred = model.forward(batch)
-                # TODO monitor pred
                 loss = model.loss(pred)
                 loss.backward()
                 optimizer.step()
+                batch_p.advance(1, f"{batch_msg}|loss={loss.item()}")
+            batch_p.complete()
             if stage.do_benchmark:
                 benchmark.append(
                     {
@@ -153,6 +158,8 @@ class Classifier(WithUUID, ABC):
             lr.step()
             bs.step()
             model.step()
+            epoch_p.advance(1)
+        epoch_p.complete()
         return benchmark
 
     @torch.no_grad()

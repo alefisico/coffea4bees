@@ -22,7 +22,7 @@ class NOOP:
         return False
 
     def __repr__(self):
-        return "no-op"
+        return "N/A"
 
 
 class _NoopMeta(NOOP, type): ...
