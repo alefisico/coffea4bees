@@ -33,8 +33,8 @@ stack:
                 edgecolor: xkcd:blue
                 label: TTbar
         
-        data3b:
-                process: data3b
+        data_3b_for_mixed:
+                process: data_3b_for_mi
                 tag: threeTag
                 year: RunII
                 fillcolor: xkcd:bright yellow 

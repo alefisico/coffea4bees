@@ -114,9 +114,9 @@ class analysis(processor.ProcessorABC):
         path = fname.replace(fname.split('store/user')[-1], '')
     
 
-        if fname.find('picoAOD_3b_wJCM_newSBDef') != -1:
-            fname_w3to4 = f"/smurthy/condor/unsupervised4b/randPair/w3to4hist/data20{year[-2:]}_picoAOD_3b_wJCM_newSBDef_w3to4_hist.root"
-            fname_wDtoM = f"/smurthy/condor/unsupervised4b/randPair/wDtoMwJMC/data20{year[-2:]}_picoAOD_3b_wJCM_newSBDef_wDtoM.root"
+        if 'picoAOD_3b_wJCM_newSBDef' in fname:    
+            fname_w3to4 = f"/smurthy/condor/unsupervised4b/randPair/w3to4hist/data20{year[2:4]}_picoAOD_3b_wJCM_newSBDef_w3to4_hist.root"
+            fname_wDtoM = f"/smurthy/condor/unsupervised4b/randPair/wDtoMwJMC/data20{year[2:4]}_picoAOD_3b_wJCM_newSBDef_wDtoM.root"
             event['w3to4'] = NanoEventsFactory.from_root(f'{path}{fname_w3to4}', 
                             entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().w3to4.w3to4
             
@@ -194,16 +194,19 @@ class analysis(processor.ProcessorABC):
         
         ### Preselection: keep only three or four tag events
         selev = selev[selev.passPreSel]
-        if fname.find('picoAOD_3b_wJCM_newSBDef') != -1:
-            selev['weight_wDtoM'] = selev.weight * selev.wDtoM
-            selev['weight_wDtoM_w3to4'] = selev.weight_wDtoM * selev.w3to4
-            # selev['weight'] = selev.weight_wDtoM_w3to4 ########## Change this later !!!!! ##################
+        selev['wNo3to4DtoM'] = selev.weight
+        selev['wNo3to4'] = selev.weight
+
+        if 'picoAOD_3b_wJCM_newSBDef' in fname:
+            selev['wNo3to4'] = selev.wNo3to4DtoM * selev.wDtoM
+            selev['weight'] = selev.wNo3to4 * selev.w3to4
+
         
         ############################################
         ############## Unsup 4b code ###############
         ############################################
 
-        #### Calculate hT (scalar sum of jet pts)
+        #### Calculate hT (scalar sum of jet pts) (previously known as St)
         selev['hT']          = ak.sum(selev.Jet[selev.Jet.selected_loose].pt, axis=1)
         selev['hT_selected'] = ak.sum(selev.Jet[selev.Jet.selected      ].pt, axis=1)
 
@@ -236,6 +239,7 @@ class analysis(processor.ProcessorABC):
         selev['canJet3'] = canJet[:, 3]
         selev['v4j'] = canJet.sum(axis=1)
         selev['m4j'] = selev.v4j.mass
+        
 
         ### Compute Regions: SR, SB
         selev['SR'] = (self.m4j_SR[0] <= selev.m4j) & (selev.m4j < self.m4j_SR[1])
@@ -347,36 +351,31 @@ class analysis(processor.ProcessorABC):
 
         fill += hist.add('nPVs',     (101, -0.5, 100.5, ('PV.npvs',     'Number of Primary Vertices')))
         fill += hist.add('nPVsGood', (101, -0.5, 100.5, ('PV.npvsGood', 'Number of Good Primary Vertices')))
-        fill += hist.add('m4j', (100, 0, 1000, ('m4j', 'm4j data')))
-        fill += hist.add('leadStM_selected', (100, 0, 1000, ('leadStM_selected', 'leadSt_M data')))
-        fill += hist.add('sublStM_selected', (100, 0, 1000, ('sublStM_selected', 'leadSt_M data')))
-        fill += hist.add('nJet_selected', (16, 0, 15, ('nJet_selected', 'nJet_selected')))
-
-        # fill += hist.add('hT',          (100,  0,   1000,  ('hT',          'H_{T} [GeV}')))
-        # fill += hist.add('hT_selected', (100,  0,   1000,  ('hT_selected', 'H_{T} (selected jets) [GeV}')))
-        # fill += hist.add('xW',          (100, 0, 12,   ('xW',       'xW')))
-        # fill += hist.add('delta_xW',    (100, -5, 5,   ('delta_xW', 'delta xW')))
-        # fill += hist.add('delta_xW_l',  (100, -15, 15, ('delta_xW', 'delta xW')))
-        # fill += hist.add('xbW',         (100, 0, 12,   ('xbW',      'xbW')))
-        # fill += hist.add('delta_xbW',   (100, -5, 5,   ('delta_xbW','delta xbW')))
-        # fill += hist.add('delta_xbW_l', (100, -15, 15, ('delta_xbW','delta xbW')))
         
-        if fname.find('picoAOD_3b_wJCM_newSBDef') != -1:
-            fill += hist.add('m4j_wDtoM', (100, 0, 1000, ('m4j', 'm4j multijet')), weight="weight_wDtoM")
-            fill += hist.add('m4j_bkg', (100, 0, 1000, ('m4j', 'm4j background')), weight="weight_wDtoM_w3to4")
-            fill += hist.add('leadStM_bkg_selected', (100, 0, 1000, ('leadStM_selected', 'leadSt_M data')), weight="weight_wDtoM_w3to4")
-            fill += hist.add('sublStM_bkg_selected', (100, 0, 1000, ('sublStM_selected', 'leadSt_M data')), weight="weight_wDtoM_w3to4")
-            fill += hist.add('nSelJet_bkg', (16, 0, 15, ('nJet_selected', 'nJet_selected background')), weight="weight_wDtoM_w3to4")
+        fill += hist.add('nJet_selected', (16, 0, 15, ('nJet_selected', 'nJet_selected')))
+        fill += hist.add('hT',          (100,  0,   1000,  ('hT',          'H_{T} [GeV}')))
+        fill += hist.add('hT_selected', (100,  0,   1000,  ('hT_selected', 'H_{T} (selected jets) [GeV}')))
+        fill += LorentzVector.plot_pair(('v4j'), 'v4j', skip=['n', 'dr', 'dphi', 'st'], bins={'mass': (120, 0, 1200)})   ###  Make quad jet hists
+        fill += QuadJetHistsUnsup(('quadJet_selected', 'Selected Quad Jet'), 'quadJet_selected')  #### Build a new template
+        
+        fill += hist.add('nJet_selected_no3to4', (16, 0, 15, ('nJet_selected', 'nJet_selected no3to4')), weight="wNo3to4")
+        fill += hist.add('hT_no3to4',          (100,  0,   1000,  ('hT',          'H_{T} [GeV}')), weight="wNo3to4")
+        fill += hist.add('hT_selected_no3to4', (100,  0,   1000,  ('hT_selected', 'H_{T} (selected jets) [GeV}')), weight="wNo3to4")
+        fill += LorentzVector.plot_pair(('v4j_no3to4'), 'v4j', skip=['n', 'dr', 'dphi', 'st'], bins={'mass': (120, 0, 1200)}, weight="wNo3to4")
+        fill += QuadJetHistsUnsup(('quadJet_selected_no3to4', 'Selected Quad Jet no3to4'), 'quadJet_selected', weight = "wNo3to4")  
+
+        fill += hist.add('nJet_selected_no3to4DtoM', (16, 0, 15, ('nJet_selected', 'nJet_selected no3to4DtoM')), weight="wNo3to4DtoM")
+        fill += hist.add('hT_no3to4DtoM',          (100,  0,   1000,  ('hT',          'H_{T} [GeV}')), weight="wNo3to4DtoM")
+        fill += hist.add('hT_selected_no3to4DtoM', (100,  0,   1000,  ('hT_selected', 'H_{T} (selected jets) [GeV}')), weight="wNo3to4DtoM")
+        fill += LorentzVector.plot_pair(('v4j_no3to4DtoM'), 'v4j', skip=['n', 'dr', 'dphi', 'st'], bins={'mass': (120, 0, 1200)}, weight="wNo3to4DtoM")
+        fill += QuadJetHistsUnsup(('quadJet_selected_no3to4DtoM', 'Selected Quad Jet no3to4DtoM'), 'quadJet_selected', weight = "wNo3to4DtoM")  
+        
         
         # fill += Jet.plot(('selJets', 'Selected Jets'),        'selJet',           skip=['deepjet_c'])
         # fill += Jet.plot(('tagJets', 'Tag Jets'),             'tagJet',           skip=['deepjet_c'])
         # fill += Jet.plot(('canJets', 'Higgs Candidate Jets'), 'canJet',           skip=['deepjet_c'])
 
-
-        ###  Make quad jet hists
-        fill += LorentzVector.plot_pair(('v4j'), 'v4j', skip=['n', 'dr', 'dphi', 'st'], bins={'mass': (120, 0, 1200)})
-        fill += QuadJetHistsUnsup(('quadJet_selected', 'Selected Quad Jet'), 'quadJet_selected')  #### Build a new template
-
+        
         ### fill histograms ###
         # fill.cache(selev)
         fill(selev)
