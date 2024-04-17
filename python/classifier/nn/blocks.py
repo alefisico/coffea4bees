@@ -1,11 +1,14 @@
 # TODO clean up
 import collections
+import logging
 import math
 
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from rich import box as BoxStyle
+from rich.table import Table
 
 from .utils import MeanVariance
 
@@ -16,11 +19,10 @@ class Lin_View(nn.Module):
 
     def forward(self, x):
         return x.view(x.size()[0], -1)
+    
 
-
-def vectorPrint(vector, formatString="%7.2f", end="\n"):
-    vectorString = ", ".join([formatString % element for element in vector])
-    print(vectorString, end=end)
+def vec2str(v, f="{:.4g}"):
+    return map(f.format, v)
 
 
 # pytorch 0.4 does not have inverse hyperbolic trig functions
@@ -385,21 +387,18 @@ class GhostBatchNorm1d(
         self.register_buffer("two", torch.tensor(2.0, dtype=torch.float))
 
     def print(self):
-        print("-" * 50)
-        print(self.name)
+        table = Table(
+            box=BoxStyle.HORIZONTALS,
+        )
         for i in range(self.stride):
-            print(" mean ", end="")
-            vectorPrint(self.m[0, 0, i, :])
+            table.add_row("mean", *vec2str(self.m[0, 0, i, :]))
         for i in range(self.stride):
-            print("  std ", end="")
-            vectorPrint(self.s[0, 0, i, :])
+            table.add_row("std", *vec2str(self.s[0, 0, i, :]))
         if self.gamma is not None:
-            print("gamma ", end="")
-            vectorPrint(self.gamma.data)
+            table.add_row("gamma", *vec2str(self.gamma.data))
             if self.bias is not None:
-                print(" bias ", end="")
-                vectorPrint(self.bias.data)
-        print()
+                table.add_row("bias", *vec2str(self.bias.data))
+        logging.info(f"Ghost Batch {self.name}", table)
 
     @torch.no_grad()
     def updateMeanStd(self, x, mask=None):

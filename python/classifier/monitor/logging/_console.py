@@ -72,7 +72,7 @@ class ConsoleLogRender(LogRender):
                 row.append(log_time_display)
                 self._last_time = log_time_display
         if name is not None:
-            row.append(Text(f"[{name:<{_LOG_NAME_WIDTH-2}}]"))
+            row.append(Text(f"[{name:>{_LOG_NAME_WIDTH-2}}]"))
         if self.show_level:
             row.append(level)
         row.append(message)
