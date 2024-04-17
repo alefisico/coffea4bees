@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     import pandas as pd
     from base_class.root import Friend
     from classifier.df.io import FromRoot, ToTensor
+    from classifier.monitor.progress import ProgressTracker
 
 # basic
 
@@ -196,6 +197,19 @@ class LoadGroupedRoot(LoadRoot):
     def from_root(self, groups: frozenset[str]) -> FromRoot: ...
 
 
+class _fetch:
+    def __init__(self, tree: str, progress: ProgressTracker):
+        self._tree = tree
+        self._progress = progress
+
+    def __call__(self, path: str):
+        from base_class.root import Chunk
+
+        chunk = Chunk(source=path, name=self._tree, fetch=True)
+        self._progress.advance(1)
+        return chunk
+
+
 class _load_df_from_root(_load_df):
     def __init__(
         self,
@@ -223,15 +237,18 @@ class _load_df_from_root(_load_df):
             mp_context=status.context,
             initializer=status.initializer,
         ) as pool:
-            logging.info("Fetching metadata...")
+            progress = Progress.new(
+                total=sum(map(lambda x: len(x[1]), self._from_root)),
+                msg="Fetching metadata of ROOT files",
+            )
             for _, files in self._from_root:
                 chunks.append(
-                    pool.map(Chunk._fetch, (Chunk(f, self._tree) for f in files))
+                    pool.map(_fetch(tree=self._tree, progress=progress), files)
                 )
             chunks = [list(c) for c in chunks]
-            logging.info("Loading dataframe...")
+            progress.complete()
             progress = Progress.new(
-                total=sum(map(len, chain(*chunks))), msg="Loading ROOT files"
+                total=sum(map(len, chain(*chunks))), msg="Loading ROOT files "
             )
             for i in range(len(chunks)):
                 balanced = Chunk.balance(

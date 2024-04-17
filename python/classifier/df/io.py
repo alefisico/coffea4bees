@@ -9,7 +9,7 @@ import pandas as pd
 import torch
 from base_class.root import Chain, Chunk, Friend
 
-from ..monitor.progress import _ProgressTracker
+from ..monitor.progress import ProgressTracker
 
 
 class FromRoot:
@@ -26,7 +26,7 @@ class FromRoot:
         if friends:
             self.chain += friends
 
-    def read(self, chunk: Chunk, progress: _ProgressTracker = None):
+    def read(self, chunk: Chunk, progress: ProgressTracker = None):
         chain = self.chain.copy()
         chain += chunk
         df = chain.concat(library="pd", reader_options={"branch_filter": self.branches})

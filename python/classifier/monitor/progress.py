@@ -18,7 +18,7 @@ _UNKNOWN = "+--:--:--"
 
 
 @dataclass
-class _ProgressTracker(WithUUID):
+class ProgressTracker(WithUUID):
     msg: str
     total: int
 
@@ -81,7 +81,7 @@ class _EstimateColumn(ProgressColumn):
 
 
 class Progress(Proxy):
-    _jobs: dict[tuple, _ProgressTracker]
+    _jobs: dict[tuple, ProgressTracker]
     _console_ids: dict[tuple, str]
     _console_bar: _Bar
 
@@ -100,15 +100,15 @@ class Progress(Proxy):
             self._console_ids = {}
 
     @classmethod
-    def new(cls, total: int, msg: str = "") -> _ProgressTracker:
+    def new(cls, total: int, msg: str = "") -> ProgressTracker:
         if cfg.progress_enable:
-            job = _ProgressTracker(msg=msg, total=total)
+            job = ProgressTracker(msg=msg, total=total)
             cls._update(job)
             return job
         return noop
 
     @callback(max_retry=1)
-    def _update(self, new: _ProgressTracker):
+    def _update(self, new: ProgressTracker):
         uuid = (new.source, new.uuid)
         old = self._jobs.get(uuid)
         if new._step is not None:
