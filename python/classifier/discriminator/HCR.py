@@ -61,7 +61,7 @@ class _HCRSkim(Skimmer):
         self._device = device
         self._splitter = splitter
 
-    def forward(self, batch: dict[str, Tensor]):
+    def train(self, batch: dict[str, Tensor]):
         training, _ = self._splitter.step(batch)
         self._nn.updateMeanStd(*_HCRInput(batch, self._device, training))
         # TODO compute die loss
@@ -102,16 +102,13 @@ class HCRModel(Model):
     def module(self):
         return self._nn
 
-    def forward(self, batch: dict[str, Tensor]) -> dict[str, Tensor]:
+    def train(self, batch: dict[str, Tensor]) -> dict[str, Tensor]:
         c, p = self._nn(*_HCRInput(batch, self._device))
         batch[Output.quadjet_score] = p
         batch[Output.class_score] = c
         for k, v in batch.items():
             batch[k] = v.to(self._device, non_blocking=True)
-        return batch
-
-    def loss(self, pred: dict[str, Tensor]) -> Tensor:
-        return self._loss(self, pred)
+        return self._loss(batch)
 
     def step(self, epoch: int = None):
         if self.ghost_batch is not None and self.ghost_batch.step(epoch):

@@ -194,7 +194,6 @@ def callback(
 ) -> Method[_CallbackP, _CallbackReturnT]: ...
 @overload
 def callback(
-    func: None = None,
     wait_for_return: bool = False,
     max_retry: int = None,
 ) -> Callable[
@@ -203,6 +202,7 @@ def callback(
 ]: ...
 def callback(
     func=None,
+    *,
     wait_for_return: bool = False,
     max_retry: int = None,
 ):

@@ -26,9 +26,8 @@ class Main(main.Main):
             args = parser.args[k]
             for t, arg in zip(v, args):
                 logging.debug(_print_mod(k, arg[0], arg[1], ""))
-                try:
-                    t.debug()
-                except InterfaceError:
-                    ...
-                except Exception as e:
-                    logging.error(e, exc_info=e)
+                if t.debug is not NotImplemented:
+                    try:
+                        t.debug()
+                    except Exception as e:
+                        logging.error(e, exc_info=e)

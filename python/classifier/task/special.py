@@ -1,39 +1,61 @@
 from __future__ import annotations
 
-from typing import TypeVar
+from typing import Any, Callable, Concatenate, ParamSpec, TypeVar, overload
+
+from ..typetools import Method
 
 __all__ = ["interface", "new", "TaskBase", "Static", "Unique"]
 
-_InterfaceT = TypeVar("_InterfaceT")
+_InterfaceP = ParamSpec("_InterfaceP")
+_InterfaceReturnT = TypeVar("_InterfaceReturnT")
 
 
 class InterfaceError(NotImplementedError):
+    __module__ = NotImplementedError.__module__
+
     def __init__(self, owner, func):
         import inspect
 
         signature = str(inspect.signature(func)).replace("'", "").replace('"', "")
         super().__init__(
-            f"Interface is not implemented: {owner.__name__}.{func.__name__}{signature}"
+            f"Not implemented: {owner.__name__}.{func.__name__}{signature}"
         )
 
 
 class _Interface:
-    def __init__(self, func):
-        self.func = func
+    def __init__(self, func, optional: bool = True):
+        self._func = func
+        self._optional = optional
 
     def __get__(self, _, owner):
-        raise InterfaceError(owner, self.func)
+        if self._optional:
+            return NotImplemented
+        else:
+            raise InterfaceError(owner, self._func)
 
 
-def interface(func: _InterfaceT) -> _InterfaceT:
-    return _Interface(func)
+@overload
+def interface(
+    func: Callable[Concatenate[Any, _InterfaceP], _InterfaceReturnT], /
+) -> Method[_InterfaceP, _InterfaceReturnT]: ...
+@overload
+def interface(
+    optional: bool = False,
+) -> Callable[
+    [Callable[Concatenate[Any, _InterfaceP], _InterfaceReturnT]],
+    Method[_InterfaceP, _InterfaceReturnT],
+]: ...
+def interface(func=None, *, optional: bool = False):
+    if func is None:
+        return lambda func: _Interface(func, optional=optional)
+    return _Interface(func, optional=optional)
 
 
 class TaskBase:
     @interface
     def parse(self, opts: list[str]): ...
 
-    @interface
+    @interface(optional=True)
     def debug(self): ...
 
     @classmethod
@@ -57,7 +79,7 @@ class Static(TaskBase):
     def parse(cls, opts: list[str]): ...
 
     @classmethod
-    @interface
+    @interface(optional=True)
     def debug(cls): ...
 
     def __new__(cls):

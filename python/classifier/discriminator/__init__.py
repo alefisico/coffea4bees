@@ -16,6 +16,7 @@ from ..monitor.progress import Progress
 from ..nn.dataset import mp_loader
 from ..nn.schedule import Schedule
 from ..process.device import Device
+from ..task.special import interface
 from ..typetools import WithUUID
 
 
@@ -32,12 +33,6 @@ class TrainingStage:
 
 
 class Model(ABC):
-    def eval(self):
-        self.module.eval()
-
-    def train(self):
-        self.module.train()
-
     def parameters(self):
         return self.module.parameters()
 
@@ -52,12 +47,16 @@ class Model(ABC):
     @abstractmethod
     def module(self) -> nn.Module: ...
 
-    @abstractmethod
-    def forward(self, batch: dict[str, Tensor]) -> dict[str, Tensor]: ...
+    @interface
+    def train(self, batch: dict[str, Tensor]) -> Tensor: ...
 
-    @abstractmethod
-    def loss(self, pred: dict[str, Tensor]) -> Tensor: ...
+    @interface(optional=True)
+    def validate(self, batches: Iterable[dict[str, Tensor]]) -> dict: ...
 
+    @interface
+    def evaluate(self, batch: dict[str, Tensor]) -> dict[str, Tensor]: ...
+
+    @interface(optional=True)
     def step(self, epoch: int = None): ...
 
 
@@ -104,7 +103,7 @@ class Classifier(WithUUID, ABC):
             )
         return result
 
-    def eval(
+    def evaluate(
         self,
     ): ...  # TODO evaluataion
 
@@ -130,36 +129,43 @@ class Classifier(WithUUID, ABC):
         logging.info(f"Start {stage.name}")
         for epoch in range(schedule.epoch):
             self.cleanup()
-            model.train()
+            model.module.train()
             batch_p = Progress.new(len(bs.dataloader), "batch")
             for i, batch in enumerate(bs.dataloader):
                 optimizer.zero_grad()
-                pred = model.forward(batch)
-                loss = model.loss(pred)
+                loss = model.train(batch)
                 loss.backward()
                 optimizer.step()
                 batch_p.update(i + 1, f"batch|loss={loss.item():.4g}")
-            if stage.do_benchmark:
-                ...  # TODO benchmark
-            lr.step()
-            bs.step()
-            model.step()
+            if stage.do_benchmark and model.validate is not NotImplemented:
+                benchmark.append(
+                    {
+                        "training": self._validate(model, stage.training),
+                        "validation": self._validate(model, stage.validation),
+                    }
+                )
+            lr.step(), bs.step()
+            if model.step is not NotImplemented:
+                model.step()
             epoch_p.update(epoch + 1)
         return benchmark
 
     @torch.no_grad()
-    def _evaluate(
+    def _validate(
         self,
         model: Model,
         dataset: Dataset,
     ):
-        loader = mp_loader(
-            dataset,
-            batch_size=cfg.batch_eval,
-            shuffle=False,
-            drop_last=False,
-            pin_memory=True,
+        model.module.eval()
+        return model.validate(
+            mp_loader(
+                dataset,
+                batch_size=cfg.batch_eval,
+                shuffle=False,
+                drop_last=False,
+                pin_memory=True,
+            )
         )
-        model.eval()
-        preds = [model.forward(batch) for batch in loader]
-        ...  # TODO evaluation
+
+    @torch.no_grad()
+    def _evaluate(self, model: Model): ...  # TODO evaluation

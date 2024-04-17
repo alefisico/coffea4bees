@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from abc import abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 from classifier.task import ArgParser, parse
 
@@ -10,7 +9,6 @@ from ..state.label import MultiClass
 from ._kfold import KFoldClassifier
 
 if TYPE_CHECKING:
-    from classifier.discriminator.HCR import HCRModel
     from classifier.discriminator.skimmer import Splitter
     from torch import Tensor
 
@@ -18,6 +16,8 @@ _SCHEDULER = "classifier.config.scheduler"
 
 
 class _HCR(KFoldClassifier):
+    loss: Callable[[dict[str, Tensor]], Tensor]
+
     argparser = ArgParser()
     argparser.add_argument(
         "--architecture",
@@ -46,11 +46,6 @@ class _HCR(KFoldClassifier):
         help=f"fine-tuning scheduler {parse.EMBED}",
     )
 
-    @staticmethod
-    @abstractmethod
-    def loss(model: HCRModel, batch: dict[str, Tensor]) -> Tensor:
-        pass
-
     def initializer(self, splitter: Splitter, **kwargs):
         from classifier.discriminator.HCR import GBN, HCRArch, HCRClassifier
 
@@ -71,7 +66,7 @@ class _HCR(KFoldClassifier):
 
 class FvT(_HCR):
     @staticmethod
-    def loss(model: HCRModel, batch: dict[str, Tensor]):
+    def loss(batch: dict[str, Tensor]):
         import torch
         import torch.nn.functional as F
 
