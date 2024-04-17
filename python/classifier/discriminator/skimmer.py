@@ -26,6 +26,9 @@ class Skimmer(Model):
     def module(self):
         return noop
 
+    def train(self, _):
+        return noop
+
 
 class Splitter(ABC):
     @abstractmethod

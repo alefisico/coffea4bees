@@ -1,7 +1,6 @@
 import logging
 
 from classifier.task import ArgParser, EntryPoint, main
-from classifier.task.special import InterfaceError
 
 from .help import _print_mod
 

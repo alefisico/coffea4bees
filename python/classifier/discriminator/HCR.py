@@ -65,6 +65,7 @@ class _HCRSkim(Skimmer):
         training, _ = self._splitter.step(batch)
         self._nn.updateMeanStd(*_HCRInput(batch, self._device, training))
         # TODO compute die loss
+        return super().train(batch)
 
 
 class HCRModel(Model):
