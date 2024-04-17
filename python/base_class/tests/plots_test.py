@@ -95,8 +95,7 @@ class PlotTestCase(unittest.TestCase):
             region = v["region"]
             counts = v["counts"]
 
-            fig, ax = makePlot(cfg.hists[0], cfg.cutList, cfg.plotConfig,
-                               var=var, cut=cut, region=region,
+            fig, ax = makePlot(cfg, var=var, cut=cut, region=region,
                                outputFolder=cfg.outputFolder, **default_args)
 
             y_plot = ax.lines[-1].get_ydata()
