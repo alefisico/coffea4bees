@@ -341,6 +341,15 @@ counts4:
         passSvB: 2.19
         failSvB: 0.36
 
+    HH4b_UL16_postVFP:
+        passJetMult: 34.12
+        passPreSel: 5.74
+        passDiJetMass: 5.08
+        SR: 4.39
+        SB: 0.68
+        passSvB: 2.0
+        failSvB: 0.34
+
 
 
 counts3:
@@ -455,9 +464,9 @@ counts3:
     data_UL16_postVFPH:
         passJetMult: 852830.0
         passPreSel: 20878.34
-        passDiJetMass: 11477.11
-        SR: 4189.58
-        SB: 7287.53
+        passDiJetMass: 11477.2
+        SR: 4189.62
+        SB: 7287.58
         passSvB: 219.55
         failSvB: 12485.14
 
@@ -465,8 +474,8 @@ counts3:
         passJetMult: 836127.0
         passPreSel: 20695.51
         passDiJetMass: 11390.9
-        SR: 4143.08
-        SB: 7247.82
+        SR: 4143.07
+        SB: 7247.83
         passSvB: 217.11
         failSvB: 12397.06
 
@@ -474,8 +483,8 @@ counts3:
         passJetMult: 294232.0
         passPreSel: 7297.55
         passDiJetMass: 3930.33
-        SR: 1422.68
-        SB: 2507.65
+        SR: 1422.71
+        SB: 2507.62
         passSvB: 81.98
         failSvB: 4355.08
 
@@ -683,6 +692,15 @@ counts3:
         passDiJetMass: 0.58
         SR: 0.43
         SB: 0.16
+        passSvB: 0.19
+        failSvB: 0.15
+
+    HH4b_UL16_postVFP:
+        passJetMult: 34.12
+        passPreSel: 0.83
+        passDiJetMass: 0.57
+        SR: 0.42
+        SB: 0.15
         passSvB: 0.19
         failSvB: 0.15
 
@@ -1031,6 +1049,15 @@ counts4_unit:
         passSvB: 4135.0
         failSvB: 854.0
 
+    HH4b_UL16_postVFP:
+        passJetMult: 71030.0
+        passPreSel: 12399.0
+        passDiJetMass: 11108.0
+        SR: 9645.0
+        SB: 1463.0
+        passSvB: 4135.0
+        failSvB: 854.0
+
 
 
 counts3_unit:
@@ -1145,8 +1172,8 @@ counts3_unit:
     data_UL16_postVFPH:
         passJetMult: 852830.0
         passPreSel: 827403.0
-        passDiJetMass: 359965.0
-        SR: 136650.0
+        passDiJetMass: 359966.0
+        SR: 136651.0
         SB: 223315.0
         passSvB: 5075.0
         failSvB: 538105.0
@@ -1155,8 +1182,8 @@ counts3_unit:
         passJetMult: 836127.0
         passPreSel: 812236.0
         passDiJetMass: 354970.0
-        SR: 134524.0
-        SB: 220446.0
+        SR: 134523.0
+        SB: 220447.0
         passSvB: 5025.0
         failSvB: 528181.0
 
@@ -1164,8 +1191,8 @@ counts3_unit:
         passJetMult: 294232.0
         passPreSel: 286085.0
         passDiJetMass: 120805.0
-        SR: 45662.0
-        SB: 75143.0
+        SR: 45663.0
+        SB: 75142.0
         passSvB: 1922.0
         failSvB: 185865.0
 
@@ -1227,8 +1254,8 @@ counts3_unit:
         passJetMult: 140146.0
         passPreSel: 116866.0
         passDiJetMass: 89702.0
-        SR: 59958.0
-        SB: 29744.0
+        SR: 59957.0
+        SB: 29745.0
         passSvB: 16625.0
         failSvB: 28652.0
 
@@ -1368,6 +1395,15 @@ counts3_unit:
         failSvB: 19973.0
 
     HH4b_UL16_preVFP:
+        passJetMult: 71030.0
+        passPreSel: 58359.0
+        passDiJetMass: 33311.0
+        SR: 23274.0
+        SB: 10037.0
+        passSvB: 6945.0
+        failSvB: 17145.0
+
+    HH4b_UL16_postVFP:
         passJetMult: 71030.0
         passPreSel: 58359.0
         passDiJetMass: 33311.0

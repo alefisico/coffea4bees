@@ -2,6 +2,31 @@ import argparse
 import logging
 from coffea.util import load, save
 
+def merge_coffea_files( files_to_merge, output_file ):
+    """docstring for merge_coffea_files"""
+
+    output = {}
+
+    output = load(files_to_merge[0])
+    for ifile in files_to_merge[1:]:
+        logging.info(f'Merging {ifile}')
+        iout = load(ifile)
+        for ikey in output.keys():
+            if 'hists' in ikey:
+                for ihist in output['hists'].keys():
+                    try:
+                        output['hists'][ihist] += iout['hists'][ihist]
+                    except KeyError:
+                        pass
+            else:
+                output[ikey] = output[ikey] | iout[ikey]
+
+
+    hfile = f'{output_file}'
+    logging.info(f'\nSaving file {hfile}')
+    save(output, hfile)
+
+
 if __name__ == '__main__':
 
     #
@@ -17,23 +42,4 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     logging.info(f"\nRunning with these parameters: {args}")
 
-    output = {}
-
-    output = load(args.files_to_merge[0])
-    for ifile in args.files_to_merge[1:]:
-        logging.info(f'Merging {ifile}')
-        iout = load(ifile)
-        for ikey in output.keys():
-            if 'hists' in ikey:
-                for ihist in output['hists'].keys():
-                    try:
-                        output['hists'][ihist] += iout['hists'][ihist]
-                    except KeyError:
-                        pass
-            else:
-                output[ikey] = output[ikey] | iout[ikey]
-
-
-    hfile = f'{args.output_file}'
-    logging.info(f'\nSaving file {hfile}')
-    save(output, hfile)
+    merge_coffea_files( args.files_to_merge, args.output_file )
