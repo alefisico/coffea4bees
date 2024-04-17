@@ -111,10 +111,10 @@ def plot(var='selJets.pt', *, cut="passPreSel", region="SR", **kwargs):
         return
 
     if len(cfg.hists) > 1:
-        fig, ax = makePlot(cfg.hists, cfg.cutList, cfg.plotConfig, var=var, cut=cut, region=region,
-                       outputFolder=cfg.outputFolder, fileLabels=cfg.fileLabels, **kwargs)
+        fig, ax = makePlot(cfg, var=var, cut=cut, region=region,
+                           outputFolder=cfg.outputFolder, fileLabels=cfg.fileLabels, **kwargs)
     else:
-        fig, ax = makePlot(cfg.hists[0], cfg.cutList, cfg.plotConfig, var=var, cut=cut, region=region,
+        fig, ax = makePlot(cfg, var=var, cut=cut, region=region,
                            outputFolder=cfg.outputFolder, **kwargs)
 
     fileName = "test.pdf"
@@ -175,7 +175,7 @@ if __name__ == '__main__':
 
     cfg.plotConfig = load_config(args.metadata)
     cfg.outputFolder = args.outputFolder
-
+    
     if cfg.outputFolder:
         if not os.path.exists(cfg.outputFolder):
             os.makedirs(cfg.outputFolder)
