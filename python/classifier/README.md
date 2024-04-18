@@ -126,7 +126,7 @@ Load the dataset from cache and train the classifier using the example workflow:
 python run_classifier.py from ${WFS}/train_hcr_fvt.yml --template "user: "${USER} ${WFS}/template/load_cached_dataset.yml --setting Monitor ... --setting IO ...
 ```
 
-> **_NOTE:_** By using `--template` with a mapping followed by files, it will replace the keys in the files with Python's `str.format`. e.g. replace `{user}` by current `${USER}`. ([Escape](https://docs.python.org/3/library/string.html#format-string-syntax) by `{{` and `}}`)
+> **_NOTE:_** By using `--template` with a mapping followed by files, it will replace the keys in the files with Python's [`str.format`](https://docs.python.org/3/library/string.html#format-string-syntax) (escaped by `{{` and `}}`). e.g. replace `{user}` by current `${USER}`.
 
 #### Evaluate
 
