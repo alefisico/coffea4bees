@@ -420,7 +420,7 @@ class Recorder(Proxy):
     _data: list[tuple[str, Callable[[], bytes]]]
 
     def __init__(self):
-        self._reporters = {self._name: "root"}
+        self._reporters = {self._name: "main"}
         self._data = [(cfg.Monitor.file_meta, Recorder.serialize)]
 
     @callback

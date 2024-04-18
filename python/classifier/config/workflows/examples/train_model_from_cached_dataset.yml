@@ -1,0 +1,31 @@
+main:
+  module: train
+  option:
+    - --max-loaders 3 # match the number of dataset loaders
+    - --max-trainers 1 # train 1 model at a time for testing
+
+dataset:
+  - module: cache
+    option:
+      - --input
+      - root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/classifier/cache/metadata.json
+      - --chunk 1-3 # use 3 chunks out of 10 for testing
+
+model:
+  - module: HCR.FvT
+    option:
+      - --kfolds 3
+      - --kfold-offsets 0 # use 1 offset out 3 for testing
+      - --training FixedStep # setup training schedule
+      - epoch: 1 # training for 1 epoch for testing
+        bs_init: 1024
+      - --kfold-seed data # setup initial seed for random dataset splitter
+      - --kfold-seed-offsets 0-4 # generate 5 seeds from the initial seed to get uncorrelated subsets
+
+setting:
+  - module: load
+    option:
+      - root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/classifier/cache/states.pkl # the labels are dynamically set when initializing the dataset, need to be retrieved
+  - module: IO
+    option:
+      - output: root://cmseos.fnal.gov//store/user/{user}/HH4b/classifier/train/data-{timestamp}/ # override the output path

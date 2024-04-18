@@ -16,7 +16,7 @@ from ...utils import noop
 from ..backends import Platform
 from ._redirect import MultiPlatformLogRecord
 
-_LOG_NAME_WIDTH = 6
+_LOG_NAME_WIDTH = 7
 
 
 class ConsoleLogRender(LogRender):

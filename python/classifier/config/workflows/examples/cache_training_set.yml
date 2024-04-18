@@ -1,13 +1,19 @@
 main:
   module: cache
   option:
-    - --max-writers 4
-    - --nchunks 6
+    - --max-writers 10
+    - --nchunks 10
+    - --shuffle # shuffle the dataset before splitting into chunks
 
 dataset:
   - module: HCR.FvT_picoAOD
     option:
-      - --friends ""
+      - --friends "" # "" means no specified tag and applying friend tree to all files
       - root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/friend/friends.json@@HCR_input
       - root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/friend/friends.json@@JCM_weight
       - --max-workers 8
+
+setting:
+  - module: IO
+    option:
+      - output: root://cmseos.fnal.gov//store/user/{user}/HH4b/classifier/cache/ # {user} will be replaced by username

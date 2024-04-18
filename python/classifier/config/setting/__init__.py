@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import getpass
 import os
 import pickle
 from typing import TYPE_CHECKING
@@ -67,6 +68,7 @@ class IO(Cascade):
         if value is None:
             return os.devnull
         return value.format(
+            user=getpass.getuser(),
             main=RunInfo.main_task,
             timestamp=RunInfo.startup_time.strftime(cls.timestamp),
         )
