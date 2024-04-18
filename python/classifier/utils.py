@@ -5,6 +5,8 @@ import logging
 from fractions import Fraction
 from typing import TypeVar
 
+import yaml
+
 _ItemT = TypeVar("_ItemT")
 
 
@@ -66,3 +68,10 @@ def append_unique_instance(collection: list[_ItemT], item: _ItemT | type[_ItemT]
 
 def keep_fraction(fraction: Fraction, indices):
     return (indices % fraction.denominator) < fraction.numerator
+
+
+class YamlIndentSequence(yaml.Dumper):
+    "https://stackoverflow.com/questions/25108581/python-yaml-dump-bad-indentation"
+
+    def increase_indent(self, flow=False, indentless=False):
+        return super().increase_indent(flow, False)

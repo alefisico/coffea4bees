@@ -25,7 +25,7 @@ def _print_mod(cat: str, imp: str, opts: list[str | dict], newline: str = "\n"):
         output = [f"[blue]--{cat}[/blue] [green]{imp}[/green]"]
     current = []
     for opt in opts + [None]:
-        if (isinstance(opt, str) and opt.startswith("-")) or (opt is None):
+        if (isinstance(opt, str) and opt.startswith(main._DASH)) or (opt is None):
             if current:
                 output.append(indent(f"[yellow]{' '.join(current)}[/yellow]", _INDENT))
             current.clear()

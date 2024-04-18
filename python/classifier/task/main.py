@@ -29,6 +29,8 @@ _FROM = "from"
 _MODULE = "module"
 _OPTION = "option"
 
+_DASH = "-"
+
 
 class EntryPoint:
     _tasks = list(
@@ -92,7 +94,9 @@ class EntryPoint:
         mod = data[_MODULE]
         opts = []
         for opt in data.get(_OPTION, []):
-            if isinstance(opt, str):
+            if opt is None:
+                opts.append("")
+            elif isinstance(opt, str):
                 opts.extend(shlex.split(opt))
             else:
                 opts.append(parse.escape(opt))
@@ -145,16 +149,18 @@ class EntryPoint:
             )
         RunInfo.main_task = main
 
-        _, cls = self._fetch_module(f"{self.args[_MAIN][0]}.Main", _MAIN)
+        cls: type[Main] = self._fetch_module(f"{self.args[_MAIN][0]}.Main", _MAIN)[1]
         if cls is None:
             raise AttributeError(f'Task "{self.args[_MAIN][0]}" not found')
 
-        self._fetch_all()
+        if not cls._no_load:
+            self._fetch_all()
+
         self.main: Main = new(cls, self.args[_MAIN][1])
 
         from ..config.setting import Monitor as cfg
 
-        if not self.main._no_monitor and cfg.enable:
+        if not cls._no_monitor and cfg.enable:
             if cfg.address is None:
                 from ..monitor import setup_monitor
                 from ..process.monitor import Monitor
@@ -201,6 +207,7 @@ class EntryPoint:
 
 class Main(Task):
     _no_monitor = False
+    _no_load = False
 
     argparser = ArgParser()
     argparser.add_argument(

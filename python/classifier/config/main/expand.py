@@ -6,6 +6,8 @@ from .help import _print_mod
 
 class Main(main.Main):
     _no_monitor = True
+    _no_load = True
+
     argparser = ArgParser(
         prog="expand",
         description="Expand options from predefined workflows.",

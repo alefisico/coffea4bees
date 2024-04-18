@@ -8,7 +8,8 @@ main:
 dataset:
   - module: HCR.FvT_picoAOD
     option:
-      - --friends "" # "" means no specified tag and applying friend tree to all files
+      - --friends
+      -  # empty tag so that the friend tree will be applied to all files
       - root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/friend/friends.json@@HCR_input
       - root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/friend/friends.json@@JCM_weight
       - --max-workers 8
