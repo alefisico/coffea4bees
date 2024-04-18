@@ -81,6 +81,34 @@ analysis-test-job:
     paths:
       - python/analysis/hists/test.coffea
 
+analysis-test-mixed-job:   
+  stage: analysis-test   
+  needs:
+    - voms_proxy
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  tags:
+    - k8s-cvmfs
+  script:
+    - source .ci-workflows/analysis-test-mixed-job.sh
+  artifacts: 
+    expire_in: 1 day
+    paths:
+      - python/analysis/hists/testMixedBkg.coffea
+      - python/analysis/hists/testMixedData.coffea
+
+analysis-systematics-test-job:   
+  stage: analysis-test   
+  needs:
+    - voms_proxy
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  tags:
+    - k8s-cvmfs
+  script:
+    - source .ci-workflows/analysis-systematics-test-job.sh
+  artifacts: 
+    expire_in: 1 day
+    paths:
+      - python/analysis/hists/test_systematics.coffea
 
 skimmer-test-job:   
   stage: skimmer-test   
@@ -136,6 +164,53 @@ analysis-cutflow-job:
     - k8s-cvmfs
   script:
     - source .ci-workflows/analysis-cutflow-job.sh
+  artifacts:
+    expire_in: 1 day
+    paths:
+      - python/analysis/tests/test_dump_cutflow.yml
+
+analysis-mixed-cutflow-job:    
+  stage: cutflow
+  needs: 
+    - analysis-test-mixed-job
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  tags:
+    - k8s-cvmfs
+  script:
+    - source .ci-workflows/analysis-mixed-cutflow-job.sh
+  artifacts:
+    expire_in: 1 day
+    paths:
+      - python/analysis/tests/test_dump_cutflow_mixed_data.yml
+      - python/analysis/tests/test_dump_cutflow_mixed_bkg.yml
+
+skimmer-analysis-cutflow-job:    
+  stage: cutflow
+  needs: 
+    - skimmer-analysis-test-job
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  tags:
+    - k8s-cvmfs
+  script:
+    - source .ci-workflows/skimmer-analysis-cutflow-job.sh
+  artifacts:
+    expire_in: 1 day
+    paths:
+      - python/analysis/tests/test_dump_skimmer_cutflow.yml
+
+analysis-systematics-cutflow-job:    
+  stage: cutflow
+  needs: 
+    - analysis-systematics-test-job
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  tags:
+    - k8s-cvmfs
+  script:
+    - source .ci-workflows/analysis-systematics-cutflow-job.sh
+  artifacts:
+    expire_in: 1 day
+    paths:
+      - python/analysis/tests/test_systematics_dump_cutflow.yml
 
 analysis-makeweights-job:    
   stage: fits
@@ -146,6 +221,10 @@ analysis-makeweights-job:
     - k8s-cvmfs
   script:
     - source .ci-workflows/analysis-makeweights-job.sh
+  artifacts:
+    expire_in: 1 day
+    paths:
+      - python/testJCM_Coffea/
 
 analysis-helpers-job:    
   stage: code
@@ -158,15 +237,6 @@ analysis-helpers-job:
     - source .ci-workflows/analysis-helpers-job.sh
 
 
-skimmer-analysis-cutflow-job:    
-  stage: cutflow
-  needs: 
-    - skimmer-analysis-test-job
-  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
-  tags:
-    - k8s-cvmfs
-  script:
-    - source .ci-workflows/skimmer-analysis-cutflow-job.sh
 
 analysis-iplot-job:    
   stage: plot 

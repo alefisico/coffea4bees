@@ -16,7 +16,7 @@ import base_class.plots.iPlot_config as cfg
 
 np.seterr(divide='ignore', invalid='ignore')
 
-def doPlots(varList, cutList, debug=False):
+def doPlots(varList, debug=False):
 
     if args.doTest:
         varList = ["SvB_MA.ps_zz", "SvB_MA.ps_zh", "SvB_MA.ps_hh", "quadJet_selected.lead_vs_subl_m", "quadJet_min_dr.close_vs_other_m"]
@@ -49,8 +49,8 @@ def doPlots(varList, cutList, debug=False):
             plot_args["outputFolder"] = args.outputFolder
             plot_args = plot_args | vDict
             if debug: print(plot_args)
-            fig = makePlot(cfg.hists[0], cutList, cfg.plotConfig,
-                           **plot_args)
+            fig = makePlot(cfg, **plot_args)
+
             plt.close()
 
     #
@@ -81,7 +81,7 @@ def doPlots(varList, cutList, debug=False):
                 if debug: print("process is ",process)
                 if debug: print(plot_args)
 
-                fig = make2DPlot(cfg.hists[0], process, cutList, cfg.plotConfig,
+                fig = make2DPlot(cfg, process,
                                  **plot_args)
                 plt.close()
 
@@ -119,8 +119,8 @@ def doPlots(varList, cutList, debug=False):
 
                     if debug: print(plot_args)
 
-                    fig = makePlot(cfg.hists[0], cutList, cfg.plotConfig,
-                                   **plot_args)
+                    fig = makePlot(cfg, **plot_args)
+
 
 
                     plt.close()
@@ -128,7 +128,8 @@ def doPlots(varList, cutList, debug=False):
                 #
                 # Comp Regions
                 #
-                fig = makePlot(cfg.hists[0], cutList, cfg.plotConfig, var=v,
+                fig = makePlot(cfg,
+                               var=v,
                                cut="passPreSel",
                                region=["SR", "SB"],
                                process=process,
@@ -157,4 +158,4 @@ if __name__ == '__main__':
     cfg.axisLabels, cfg.cutList = read_axes_and_cuts(cfg.hists, cfg.plotConfig)
 
     varList = list(cfg.hists[0]['hists'].keys())
-    doPlots(varList, cfg.cutList, debug=args.debug)
+    doPlots(varList, debug=args.debug)

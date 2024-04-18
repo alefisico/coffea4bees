@@ -10,6 +10,9 @@ import warnings
 from datetime import datetime
 from typing import TYPE_CHECKING
 from copy import copy
+from tqdm import tqdm
+from time import sleep
+import psutil
 
 import dask
 import fsspec
@@ -52,6 +55,26 @@ def list_of_files(ifile, allowlist_sites=['T3_US_FNALLPC'], test=False, test_fil
 def _friend_merge_name(path1: str, path0: str, name: str, **_):
     return f'{path1}/{path0.replace("picoAOD", name)}'
 
+# inner psutil function
+def process_memory():
+    process = psutil.Process(os.getpid())
+    mem_info = process.memory_info()
+    return mem_info.rss
+
+# decorator function
+def profile(func):
+    def wrapper(*args, **kwargs):
+
+        mem_before = process_memory()
+        result = func(*args, **kwargs)
+        mem_after = process_memory()
+        logging.info("{}:consumed memory (before, after, diff): {:,}".format(
+            func.__name__,
+            mem_before, mem_after, mem_after - mem_before))
+
+        return result
+    return wrapper
+
 
 if __name__ == '__main__':
 
@@ -78,6 +101,8 @@ if __name__ == '__main__':
                         'HH4b', 'ZZ4b', 'ZH4b'], help="Name of dataset to run. Example if more than one: -d HH4b ZZ4b")
     parser.add_argument('-e', '--era', nargs='+', dest='era', default=['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
                         help="For data only. To run only on one data era.")
+    parser.add_argument('--systematics', dest="systematics", action="store_true",
+                        default=False, help='Run Systematics for analysis processor')
     parser.add_argument('-s', '--skimming', dest="skimming", action="store_true",
                         default=False, help='Run skimming instead of analysis')
     parser.add_argument('--dask', dest="run_dask",
@@ -115,8 +140,12 @@ if __name__ == '__main__':
                              'analysis/', 'base_class/', 'data/', 'skimmer/'])
     config_runner.setdefault('min_workers', 1)
     config_runner.setdefault('max_workers', 100)
+    config_runner.setdefault('workers', 2)
     config_runner.setdefault('skipbadfiles', False)
     config_runner.setdefault('dashboard_address', 10200)
+    if args.systematics:
+        logging.info("\nRunning with systematics")
+        configs['config']['run_systematics'] = True
 
     if 'all' in args.datasets:
         metadata['datasets'].pop("mixeddata")   # AGE: this is temporary
@@ -327,9 +356,9 @@ if __name__ == '__main__':
         executor_args["status"] = False
         executor = processor.dask_executor
     else:
-        logging.info(f"\nRunning futures executor (Dask client is launch for performance report only) ")
+        logging.info(f"\nRunning futures executor")
         # to run with processor futures_executor ()
-        executor_args['workers'] = config_runner['condor_cores']
+        executor_args['workers'] = config_runner['workers']
         executor = processor.futures_executor
     logging.info(f"\nExecutor arguments:")
     logging.info(pretty_repr(executor_args))
@@ -350,6 +379,7 @@ if __name__ == '__main__':
     #
     # Running the job
     #
+    @profile
     def run_job():
         output, metrics = processor.run_uproot_job(
             fileset,
@@ -475,4 +505,5 @@ if __name__ == '__main__':
         with performance_report(filename=dask_report_file):
             run_job()
         logging.info(f'Dask performace report saved in {dask_report_file}')
-    else: run_job()
+    else:
+        run_job()

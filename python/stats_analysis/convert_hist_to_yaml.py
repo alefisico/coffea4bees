@@ -64,9 +64,9 @@ if __name__ == '__main__':
             yml_dict[ih][iprocess] = {}
             for iy in coffea_hists[ih].axes[1]:
                 yml_dict[ih][iprocess][iy] = {}
-                for itag in range(len(coffea_hists[ih].axes[2])):
+                for itag in range(len(coffea_hists[ih].axes[3])):
                     yml_dict[ih][iprocess][iy][codes['tag'][itag]] = {}
-                    for iregion in range(len(coffea_hists[ih].axes[3])):
+                    for iregion in range(len(coffea_hists[ih].axes[4])):
                         this_hist = {
                             'process' : iprocess,
                             'year' : iy,

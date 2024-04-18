@@ -1,46 +1,25 @@
 hists:
-        data:
-                process: data
+        mix_v0:
+                process: mix_v0
                 tag: fourTag
                 year: RunII
-                label: Four-tag Data
+                label: Mixed Data (v0)
                 edgecolor: k
                 fillcolor: k            
 
-        HH4b:
-                process: HH4b
+
+        mix_v1:
+                process: mix_v1
                 tag: fourTag
                 year: RunII
-                label: HH4b (x100)
+                label: Mixed Data (v1)
                 edgecolor: r
                 fillcolor: r            
-                histtype: step
-                scalefactor: 100
-                
-        ZH4b:
-                process: ZH4b
-                tag: fourTag
-                year: RunII
-                label: ZH4b (x100)
-                edgecolor: b
-                fillcolor: b            
-                histtype: step
-                scalefactor: 100
-                
-        ZZ4b:
-                process: ZZ4b
-                tag: fourTag
-                year: RunII
-                label: ZZ4b (x100)
-                edgecolor: g
-                fillcolor: g            
-                histtype: step
-                scalefactor: 100
 
 
 stack:
         TTTo2L2Nu:
-                process: TTTo2L2Nu
+                process: TTTo2L2Nu_for_mixed
                 tag: fourTag
                 year: RunII
                 fillcolor: xkcd:light blue
@@ -48,7 +27,7 @@ stack:
                 label: None
 
         TTToSemiLeptonic:
-                process: TTToSemiLeptonic
+                process: TTToSemiLeptonic_for_mixed
                 tag: fourTag
                 year: RunII
                 fillcolor: xkcd:light blue
@@ -56,7 +35,7 @@ stack:
                 label: None
 
         TTToHadronic:
-                process: TTToHadronic
+                process: TTToHadronic_for_mixed
                 tag: fourTag
                 year: RunII
                 fillcolor: xkcd:light blue
@@ -64,7 +43,7 @@ stack:
                 label: TTbar
 
         Multijet:
-                process: data
+                process: data_3b_for_mixed
                 tag: threeTag
                 year: RunII
                 fillcolor: xkcd:bright yellow
@@ -72,16 +51,28 @@ stack:
                 label: Multijet
 
 ratios:
-        dataToBkg:
+        v0ToBkg:
                 numerator:
                         type: hists
-                        key: data
+                        key: mix_v0
                 denominator:
                         type: stack
                 uncertianty:
                         nominal
                 color: k
                 marker: "o"
+
+        v1ToBkg:
+                numerator:
+                        type: hists
+                        key: mix_v1
+                denominator:
+                        type: stack
+                uncertianty:
+                        nominal
+                color: r
+                marker: "o"
+
 
 codes:
    region:
@@ -95,4 +86,4 @@ codes:
 
 doRatio:
     1
-
+    
