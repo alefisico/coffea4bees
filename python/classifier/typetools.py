@@ -5,11 +5,13 @@ from typing import (
     Any,
     Callable,
     Generic,
+    Iterable,
     Mapping,
     MutableMapping,
     ParamSpec,
     Protocol,
     TypeVar,
+    runtime_checkable,
 )
 from uuid import uuid4
 
@@ -73,3 +75,24 @@ class dict_proxy(MutableMapping):
 
 def enum_dict(enum: type[Enum]):
     return {i.name: i.value for i in enum}
+
+
+@runtime_checkable
+class FilenameProtocol(Protocol):
+    def __filename__(self) -> str: ...
+
+
+def filename(obj: Any) -> str:
+    if isinstance(obj, FilenameProtocol):
+        return obj.__filename__()
+    elif isinstance(obj, Mapping):
+        name = []
+        for k, v in obj.items():
+            name.append(f"{filename(k)}_{filename(v)}")
+        return "__".join(name)
+    elif isinstance(obj, str):
+        return obj
+    elif isinstance(obj, Iterable):
+        return "-".join(map(filename, obj))
+    else:
+        return repr(obj)

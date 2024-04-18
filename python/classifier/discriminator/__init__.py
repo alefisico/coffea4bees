@@ -18,7 +18,7 @@ from ..nn.dataset import mp_loader
 from ..nn.schedule import Schedule
 from ..process.device import Device
 from ..task.special import interface
-from ..typetools import WithUUID
+from ..typetools import WithUUID, filename
 
 
 @dataclass
@@ -65,7 +65,7 @@ class Classifier(WithUUID, ABC):
     def __init__(self, **kwargs):
         super().__init__()
         self.metadata = kwargs
-        self.name = "__".join(f"{k}_{v}" for k, v in kwargs.items())
+        self.name = filename(kwargs)
         self.device: torch.device = None
         self.dataset: Dataset = None
 

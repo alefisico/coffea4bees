@@ -453,7 +453,7 @@ class Recorder(Proxy):
 
     @classmethod
     def dump(cls):
-        if (_Status.now() == _Status.Monitor) and (cfg.IO.monitor.path is not None):
+        if (_Status.now() == _Status.Monitor) and (not cfg.IO.monitor.is_null):
             for file, func in cls._data:
                 if file is not None:
                     with fsspec.open(cfg.IO.monitor / file, "wb") as f:

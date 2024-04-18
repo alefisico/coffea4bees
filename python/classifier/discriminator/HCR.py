@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Callable
 
@@ -182,12 +183,15 @@ class HCRClassifier(Classifier):
             )
             self._HCR.ghost_batch = self._ghost_batch
             layers.setLayerRequiresGrad(requires_grad=True)
-        with fsspec.open(cfg.IO.output / f"{self.name}_{self.uuid}.pkl", "wb") as f:
-            torch.save(
-                {
-                    "model": self._HCR.module.state_dict(),
-                    "metadata": self.metadata,
-                    "uuid": self.uuid,
-                },
-                f,
-            )
+        output = cfg.IO.output / f"{self.name}__{self.uuid}.pkl"
+        if not output.is_null:
+            logging.info(f"Saving model to {output}")
+            with fsspec.open(output, "wb") as f:
+                torch.save(
+                    {
+                        "model": self._HCR.module.state_dict(),
+                        "metadata": self.metadata,
+                        "uuid": self.uuid,
+                    },
+                    f,
+                )
