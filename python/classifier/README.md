@@ -91,7 +91,7 @@ Which port to use:
 
 ##### Cache preprocessed datasets to speed up loading (Optional)
 
-We use a predefined example workflow to cache the `HCR.FvT_picoAOD` dataset and connect to the monitor we started before:
+Cache the `HCR.FvT_picoAOD` dataset using a pre-defined workflow and connect to the monitor we started above:
 
 ```bash
 export WFS="classifier/config/workflows/examples"
@@ -100,33 +100,33 @@ python run_classifier.py from ${WFS}/cache_training_set.yml --setting Monitor "{
 
 By default, it will write to `root://cmseos.fnal.gov//store/user/{user}/HH4b/classifier/cache/` in LPC, which can be changed by appending `--setting IO "output: /path/to/save/"`.
 
-> **_NOTE:_** Check what files is used by
+> **_NOTE:_** Check what files are cached:
 
 ```bash
 python run_classifier.py debug --dataset HCR.FvT_picoAOD
 ```
 
-> **_NOTE:_** Use `expand` to recover the command line arguments from workflows,
+> **_NOTE:_** Use `expand` to recover the command line arguments from workflows:
 
 ```bash
 python run_classifier.py expand ${WFS}/cache_training_set.yml
 ```
 
-> **_NOTE:_** Use `workflow` to generate the workflow file from command line,
+> **_NOTE:_** Use `workflow` to generate the workflow file from command line:
 
 ```bash
 python run_classifier.py workflow ${WFS}/test.yml train --max-loaders 4 --max-trainers 1  --dataset ... --model ... --setting torch.DataLoader "yaml:##{batch_skim: 65536, num_workers: 2}"
 ```
 
-##### Train HCR architecture FvT classifier from cached datasets
+##### Train FvT classifier with HCR architecture using cached datasets
 
-Load the dataset from cache and train the classifier using example workflow:
+Load the dataset from cache and train the classifier using the example workflow:
 
 ```bash
-python run_classifier.py from ${WFS}/train_model_from_cached_dataset.yml --template "user: "${USER} ${WFS}/template/load_cached_dataset.yml --setting Monitor ... --setting IO ...
+python run_classifier.py from ${WFS}/train_hcr_fvt.yml --template "user: "${USER} ${WFS}/template/load_cached_dataset.yml --setting Monitor ... --setting IO ...
 ```
 
-> **_NOTE:_** By using `--template` with a mapping followed by files, it will use Python's `str.format` to replace the keys in the files. e.g. replace `{user}` by current `${USER}`. To escape, use `{{` and `}}`.
+> **_NOTE:_** By using `--template` with a mapping followed by files, it will replace the keys in the files with Python's `str.format`. e.g. replace `{user}` by current `${USER}`. ([Escape](https://docs.python.org/3/library/string.html#format-string-syntax) by `{{` and `}}`)
 
 #### Evaluate
 
