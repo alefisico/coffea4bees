@@ -48,7 +48,7 @@ class EntryPoint:
         "dataset": Dataset,
         "model": Model,
     }
-    _preserved = [*(f"--{k}" for k in _keys), f"--{_FROM}"]
+    _preserved = [*(f"--{k}" for k in _keys), f"--{_FROM}", f"--{_TEMPLATE}"]
 
     @classmethod
     def _fetch_subargs(cls, args: deque):
@@ -147,7 +147,7 @@ class EntryPoint:
             if cat == _FROM:
                 self._expand(mod, *opts)
             elif cat == _TEMPLATE:
-                self._expand(opts, fetch_main=True, formatter=mod)
+                self._expand(*opts, fetch_main=True, formatter=mod)
             else:
                 self.args[cat].append((mod, opts))
 

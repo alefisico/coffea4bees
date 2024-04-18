@@ -21,9 +21,19 @@ class Main(main.Main):
         nargs="+",
         help="list of files to expand",
     )
+    argparser.add_argument(
+        "--as-template",
+        action="store_true",
+        help="expand as template",
+    )
 
     def run(self, parser: EntryPoint):
-        parser._expand(*self.opts.files, fetch_main=True)
+        if self.opts.as_template:
+            parser._expand(
+                *self.opts.files[1:], fetch_main=True, formatter=self.opts.files[0]
+            )
+        else:
+            parser._expand(*self.opts.files, fetch_main=True)
         print(_print_mod(None, parser.args["main"][0], parser.args["main"][1]))
         for cat in parser._keys:
             for mod, opts in parser.args[cat]:
