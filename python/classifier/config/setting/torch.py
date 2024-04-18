@@ -12,3 +12,7 @@ class DataLoader(Cascade):
 class KFold(Cascade):
     offset: str = "offset"
     offset_dtype: str = "uint64"
+
+
+class Training(Cascade):
+    disable_benchmark: bool = False

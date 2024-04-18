@@ -103,7 +103,7 @@ class Monitor(Cascade):
 
     progress_enable: bool = True
 
-    usage_enable: bool = True
+    usage_enable: bool = False
     usage_update_interval: float = 1.0  # seconds
     usage_gpu: bool = True
     usage_gpu_force_torch: bool = False

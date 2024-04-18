@@ -4,6 +4,7 @@ import gc
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from datetime import datetime
 from functools import cached_property
 from typing import Iterable
 
@@ -11,7 +12,7 @@ import torch
 from torch import Tensor, nn
 from torch.utils.data import Dataset
 
-from ..config.setting.torch import DataLoader as cfg
+from ..config.setting import torch as cfg
 from ..monitor.progress import Progress
 from ..nn.dataset import mp_loader
 from ..nn.schedule import Schedule
@@ -127,6 +128,7 @@ class Classifier(WithUUID, ABC):
         benchmark = []
         epoch_p = Progress.new(schedule.epoch, f"epoch")
         logging.info(f"Start {stage.name}")
+        start = datetime.now()
         for epoch in range(schedule.epoch):
             self.cleanup()
             model.module.train()
@@ -137,7 +139,11 @@ class Classifier(WithUUID, ABC):
                 loss.backward()
                 optimizer.step()
                 batch_p.update(i + 1, f"batch|loss={loss.item():.4g}")
-            if stage.do_benchmark and model.validate is not NotImplemented:
+            if (
+                (not cfg.Training.disable_benchmark)
+                and stage.do_benchmark
+                and (model.validate is not NotImplemented)
+            ):
                 benchmark.append(
                     {
                         "training": self._validate(model, stage.training),
@@ -148,6 +154,9 @@ class Classifier(WithUUID, ABC):
             if model.step is not NotImplemented:
                 model.step()
             epoch_p.update(epoch + 1)
+        logging.info(
+            f"{stage.name}: run {schedule.epoch} epochs in {datetime.now() - start}"
+        )
         return benchmark
 
     @torch.no_grad()
@@ -160,7 +169,7 @@ class Classifier(WithUUID, ABC):
         return model.validate(
             mp_loader(
                 dataset,
-                batch_size=cfg.batch_eval,
+                batch_size=cfg.DataLoader.batch_eval,
                 shuffle=False,
                 drop_last=False,
                 pin_memory=True,
