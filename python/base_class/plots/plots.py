@@ -89,6 +89,19 @@ def print_list_debug_info(process, tag, cut, region):
           f"_reg={region}")
 
 
+def get_hist(input_data, var, process):
+
+    if type(input_data) is list:
+        for _input_data in input_data:
+            if process in _input_data['hists'][var].axes["process"]:
+                return _input_data['hists'][var]
+
+    return input_data['hists'][var]
+
+
+
+
+
 def makeRatio(numValues, denValues, **kwargs):
 
     denValues[denValues == 0] = _epsilon
@@ -345,7 +358,7 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
         input_hist_File = cfg.hists
     else:
         input_hist_File = cfg.hists[0]
-        
+
     rebin = kwargs.get("rebin", 1)
     plotConfig = cfg.plotConfig
     codes = cfg.plotConfig["codes"]
@@ -400,7 +413,7 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
         if type(codes["region"][region]) is list:
             region_dict = {"region": [hist.loc(_r) for _r in codes["region"][region]] }
         else:
-            region_dict = {"region": hist.loc(codes["region"][region])} 
+            region_dict = {"region": hist.loc(codes["region"][region])}
 
 
     if type(var) is list:
@@ -610,15 +623,16 @@ def makePlot(cfg, var='selJets.pt',
         'rebin'    : int (1),
     """
     process = kwargs.get("process", None)
+    rebin = kwargs.get("rebin", 1)
 
     if len(cfg.hists) > 1:
         input_data = cfg.hists
     else:
         input_data = cfg.hists[0]
-        
+
     plotConfig = cfg.plotConfig
 
-    if (type(cut) is list) or (type(region) is list) or (type(input_data) is list) or (type(var) is list): # or (type(process) is list) \
+    if (type(cut) is list) or (type(region) is list) or (type(input_data) is list and not cfg.combine_input_files) or (type(var) is list): # or (type(process) is list) \
         return _makeHistsFromList(cfg, var, cut, region, **kwargs)
 
     ### Converts process to list and sends thru same broken mechanism???
@@ -626,13 +640,12 @@ def makePlot(cfg, var='selJets.pt',
         process = [process]
         kwargs["process"] = process
 
-    hist_to_plot = input_data['hists'][var]
-        
-    varName = hist_to_plot.axes[-1].name
-    rebin = kwargs.get("rebin", 1)
-    var_dict = {varName: hist.rebin(rebin)}
-
     codes = plotConfig["codes"]
+
+    #
+    #  Lets you plot different variables for differnet processes
+    #
+    var_over_ride = kwargs.get("var_over_ride", {})
 
     if cut not in cfg.cutList:
         raise AttributeError(f"{cut} not in cutList {cfg.cutList}")
@@ -653,45 +666,83 @@ def makePlot(cfg, var='selJets.pt',
     hist_config = plotConfig["hists"]
     if process is not None:
         hist_config = {key: hist_config[key] for key in process if key in hist_config}
+
     hist_colors_fill = []
     hist_colors_edge = []
     hist_labels = []
     hist_types = []
     hist_index = {}
 
-    for k, v in hist_config.items():
-        hist_index[k] = len(hists)
-        this_process = v["process"]
-        this_year = sum if v["year"] == "RunII" else v["year"]
-        tagNames.append(v["tag"])
-        this_tag = plotConfig["codes"]["tag"][v["tag"]]
-        hist_colors_fill.append(v.get('fillcolor'))
-        hist_colors_edge.append(v.get('edgecolor'))
-        hist_labels.append(v.get("label"))
-        hist_types. append(v.get("histtype", "errorbar"))
+    #
+    #  Loop of hists in config file
+    #
+    for _proc_name, _proc_config in hist_config.items():
+
+        #
+        #  Needed for ratio
+        #
+        hist_index[_proc_name] = len(hists)
+
+        #
+        #  Used for naming output pdf
+        #
+        tagNames.append(_proc_config["tag"])
+
+
+        #
+        #  Plotting Style
+        #
+        hist_colors_fill.append(_proc_config.get('fillcolor', 'k'))
+        hist_colors_edge.append(_proc_config.get('edgecolor', 'k'))
+        hist_labels     .append(_proc_config.get("label", ""))
+        hist_types     . append(_proc_config.get("histtype", "errorbar"))
+
+        var_to_plot = var_over_ride.get(_proc_name, var)
+        _year = sum if _proc_config["year"] == "RunII" else _proc_config["year"]
+        _tag = plotConfig["codes"]["tag"][_proc_config["tag"]]
 
         if kwargs.get("debug", False):
-            print(f" hist process={this_process}, "
-                f"tag={this_tag}, year={this_year}")
+            print(f" hist process={_proc_config['process']}, "
+                  f"tag={_tag}, year={_year}, var={var_to_plot}")
 
-        this_hist_dict = {"process": this_process,
-                        "year":    this_year,
-                        "tag":     hist.loc(this_tag),
+
+        _hist_config = {"process": _proc_config['process'],
+                        "year":  _year,
+                        "tag":   hist.loc(_tag),
                         }
 
-        this_hist_dict = this_hist_dict | var_dict | region_dict | cut_dict
+        _hist_config = _hist_config | region_dict | cut_dict
+
+        #
+        #  Get the hist object from the input data file(s)
+        #
+        _hist_obj = get_hist(input_data, var_to_plot, _proc_config['process'])
+
+        #
+        #  Add rebin Options
+        #
+        varName = _hist_obj.axes[-1].name
+        var_dict = {varName: hist.rebin(rebin)}
+        _hist_config = _hist_config | var_dict
+
+        #
+        #  Do the hist selection/binngin
+        #
+        _hist     = _hist_obj[_hist_config]
 
         #
         # Catch list vs hist
         #  Shape give (nregion, nBins)
         #
-        this_hist = input_data['hists'][var][this_hist_dict]
-        
-        if len(this_hist.shape) == 2:
-            this_hist = this_hist[sum,:]
+        if len(_hist.shape) == 2:
+            _hist = _hist[sum,:]
 
-        hists.append(this_hist)
-        hists[-1] *= v.get("scalefactor", 1.0)
+        hists.append(_hist)
+
+        #
+        # Apply Scale factor
+        #
+        hists[-1] *= _proc_config.get("scalefactor", 1.0)
 
     #
     # Add args
@@ -714,71 +765,120 @@ def makePlot(cfg, var='selJets.pt',
     stack_colors_edge = []
     stack_labels = []
 
-    for k, v in stack_config.items():  ### k is the process
-        this_year = sum if v["year"] == "RunII" else v["year"]
-        year_dict = {"year": this_year}
+    #
+    #  Loop processes in the stack config
+    #
+    for _proc_name, _proc_config in stack_config.items():
 
-        stack_labels.append(v.get('label'))
-        stack_colors_fill.append(v.get('fillcolor'))
-        stack_colors_edge.append(v.get('edgecolor'))
+        _year = sum if _proc_config["year"] == "RunII" else _proc_config["year"]
+        year_dict = {"year": _year}
 
-        if v.get("process", None):
-            this_process = v['process']
-            tagNames.append(v["tag"])
+        stack_labels     .append(_proc_config.get('label'))
+        stack_colors_fill.append(_proc_config.get('fillcolor'))
+        stack_colors_edge.append(_proc_config.get('edgecolor'))
 
-            this_tag = plotConfig["codes"]["tag"][v["tag"]]
+        var_to_plot = var_over_ride.get(_proc_name, var)
+
+        if kwargs.get("debug", False): print(f"stack_process is {_proc_name} var is {var_to_plot}")
+
+        #
+        #  If this compoent is a process in the hist_obj
+        #
+        if _proc_config.get("process", None):
+
+            tagNames.append(_proc_config["tag"])
+
+            _tag = plotConfig["codes"]["tag"][_proc_config["tag"]]
 
             if kwargs.get("debug", False):
                 print("Drawing")
-                print(f" stack_config process={this_process},"
-                    f"tag={this_tag}, year={this_year}")
+                print(f" stack_config process={_proc_config['process']},"
+                    f"tag={_tag}, year={_year}")
 
-            this_hist_opts = {"process": this_process,
-                            "tag": hist.loc(this_tag),
+            _hist_config = {"process": _proc_config['process'],
+                            "tag": hist.loc(_tag),
                             }
 
-            this_hist_opts = this_hist_opts | var_dict | region_dict | year_dict | cut_dict
+            _hist_config = _hist_config | region_dict | year_dict | cut_dict
+
+            #
+            #  Get the hist object from the input data file(s)
+            #
+            _hist_obj = get_hist(input_data, var_to_plot, _proc_config['process'])
+
+            #
+            #  Add rebin Options
+            #
+            varName = _hist_obj.axes[-1].name
+            var_dict = {varName: hist.rebin(rebin)}
+            _hist_config = _hist_config | var_dict
+
+            #
+            #  Do the hist selection/binngin
+            #
+            _hist     = _hist_obj[_hist_config]
 
             #
             # Catch list vs hist
             #  Shape give (nregion, nBins)
             #
-            this_hist = hist_to_plot[this_hist_opts]
-            if len(this_hist.shape) == 2:
-                this_hist = this_hist[sum,:]
+            if len(_hist.shape) == 2:
+                _hist = _hist[sum,:]
 
-            stack_dict[k] = this_hist
+            stack_dict[_proc_name] = _hist
 
-        elif v.get("sum", None):
+        #
+        #  If this compoent is a sum of processes in the hist_obj
+        #
+        elif _proc_config.get("sum", None):
 
             hist_sum = None
-            for sum_k, sum_v in v.get("sum").items():
+            for sum_proc_name, sum_proc_config in _proc_config.get("sum").items():
 
-                this_process = sum_v['process']
-                tagNames.append(sum_v["tag"])
-                this_tag = plotConfig["codes"]["tag"][sum_v["tag"]]
+                tagNames.append(sum_proc_config["tag"])
+                _tag = plotConfig["codes"]["tag"][sum_proc_config["tag"]]
 
-                this_hist_opts = {"process": this_process,
-                                "tag": hist.loc(this_tag),
+                var_to_plot = var_over_ride.get(sum_proc_name, var)
+
+                _hist_opts = {"process": sum_proc_config['process'],
+                                  "tag": hist.loc(_tag),
                                 }
 
-                this_hist_opts = this_hist_opts | var_dict | region_dict | year_dict | cut_dict
+                _hist_config = _hist_config | region_dict | year_dict | cut_dict
+
+                #
+                #  Get the hist object from the input data file(s)
+                #
+                _hist_obj = get_hist(input_data, var_to_plot, sum_proc_config['process'])
+
+                #
+                #  Add rebin Options
+                #
+                varName = _hist_obj.axes[-1].name
+                var_dict = {varName: hist.rebin(rebin)}
+                _hist_config = _hist_config | var_dict
+
+                #
+                #  Do the hist selection/binngin
+                #
+                _hist     = _hist_obj[_hist_config]
+
 
                 #
                 # Catch list vs hist
                 #  Shape give (nregion, nBins)
                 #
-                this_hist = hist_to_plot[this_hist_opts]
-                if len(this_hist.shape) == 2:
-                    this_hist = this_hist[sum,:]
+                if len(_hist.shape) == 2:
+                    _hist = _hist[sum,:]
 
-                this_hist *= sum_v.get("scalefactor", 1.0)
+                _hist *= sum_proc_config.get("scalefactor", 1.0)
+
                 if hist_sum:
-                    hist_sum += this_hist
+                    hist_sum += _hist
                 else:
-                    hist_sum = this_hist
+                    hist_sum = _hist
 
-            stack_dict[k] = hist_sum
+            stack_dict[_proc_name] = hist_sum
 
         else:
             raise Exception("Error need to config either process or sum")
@@ -789,6 +889,10 @@ def makePlot(cfg, var='selJets.pt',
     kwargs["stack_colors_edge"] = stack_colors_edge
     kwargs["stack_labels"]      = stack_labels
 
+
+    #
+    #  Config Ratios
+    #
     if kwargs.get("doRatio", False):
         ratio_config = plotConfig["ratios"]
         ratio_plots = []
@@ -952,6 +1056,7 @@ def parse_args():
 
     parser.add_argument('--doTest', action="store_true", help='Metadata file.')
     parser.add_argument('--debug', action="store_true", help='')
+    parser.add_argument('--combine_input_files', action="store_true", help='')
 
     args = parser.parse_args()
     return args
