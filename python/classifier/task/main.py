@@ -25,6 +25,7 @@ _CLASSIFIER = "classifier"
 _CONFIG = "config"
 _MAIN = "main"
 _FROM = "from"
+_TEMPLATE = "template"
 
 _MODULE = "module"
 _OPTION = "option"
@@ -102,11 +103,11 @@ class EntryPoint:
                 opts.append(parse.escape(opt))
         return mod, opts
 
-    def _expand(self, *files: str, fetch_main: bool = False):
+    def _expand(self, *files: str, fetch_main: bool = False, formatter: str = None):
         from . import parse
 
         for file in files:
-            args = parse.mapping(file, "file")
+            args = parse.mapping(file, "file", formatter)
             if fetch_main and _MAIN in args:
                 self.args[_MAIN] = self._expand_module(args[_MAIN])
             for cat in self._keys:
@@ -133,12 +134,20 @@ class EntryPoint:
         self.args[_MAIN] = arg, self._fetch_subargs(args)
         if arg == _FROM:
             self._expand(*self.args[_MAIN][1], fetch_main=True)
+        elif arg == _TEMPLATE:
+            self._expand(
+                *self.args[_MAIN][1][1:],
+                fetch_main=True,
+                formatter=self.args[_MAIN][1][0],
+            )
         while len(args) > 0:
             cat = args.popleft().removeprefix("--")
             mod = args.popleft()
             opts = self._fetch_subargs(args)
             if cat == _FROM:
-                self._expand(mod)
+                self._expand(mod, *opts)
+            elif cat == _TEMPLATE:
+                self._expand(opts, fetch_main=True, formatter=mod)
             else:
                 self.args[cat].append((mod, opts))
 

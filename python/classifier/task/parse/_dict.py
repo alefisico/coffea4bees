@@ -62,7 +62,7 @@ def _deserialize(data: str, protocol: str):
 
 
 @cache
-def _deserialize_file(path: str):
+def _deserialize_file(path: str, formatter: str):
     suffix = Path(path).suffix
     match suffix:
         case ".yml":
@@ -73,7 +73,10 @@ def _deserialize_file(path: str):
             raise DeserializationError(f'Unsupported file "{path}"')
     try:
         with fsspec.open(path, "rt") as f:
-            return _deserialize(f.read(), protocol)
+            data = f.read()
+            if formatter is not None:
+                data = formatter.format(**mapping(formatter))
+            return _deserialize(data, protocol)
     except:
         raise DeserializationError(f'Failed to read file "{path}"')
 
@@ -86,7 +89,7 @@ def escape(obj) -> str:
     return obj
 
 
-def mapping(arg: str, default: str = "yaml"):
+def mapping(arg: str, default: str = "yaml", formatter: str = None):
     """
     - `{data}`: parse as yaml
     - `yaml:##{data}`: parse as yaml
@@ -113,7 +116,7 @@ def mapping(arg: str, default: str = "yaml"):
         data, keys = _mapping_nested_keys(data)
     try:
         if protocol == "file":
-            result = _deserialize_file(data)
+            result = _deserialize_file(data, formatter)
         else:
             result = _deserialize(data, protocol)
     except DeserializationError as e:

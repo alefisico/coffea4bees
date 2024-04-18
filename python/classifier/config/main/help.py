@@ -15,6 +15,7 @@ from ..setting import IO as IOSetting
 
 _NOTES = [
     f"A special task/flag [blue]{main._FROM}[/blue]/[blue]--{main._FROM}[/blue] [yellow]file \[file ...][/yellow] can be used to load and merge workflows from files. If an option is marked as {parse.EMBED}, it can directly read the jsonable object embedded in the workflow configuration file.",
+    f"A special task/flag [blue ]{main._TEMPLATE}[/blue] [yellow]formatter file \[file ...][/yellow] can be used to load and merge workflows and replace the keys by the formatter.",
 ]
 
 
