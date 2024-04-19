@@ -18,9 +18,24 @@ np.seterr(divide='ignore', invalid='ignore')
 
 def doPlots(debug=False):
 
+    #
+    #  Try to get averages
+    #
+    var_to_plot "SvB_MA_FvT_3bDvTMix4bDvT_v1_newSBDef.ps_hh"
+    _hist_config = {"process": "data_3b_for_mixed",
+                    "year":  sum,
+                    "tag":   hist.loc("threeTag"),
+                    }
+    region_dict = {"region":  hist.loc(codes["region"][region])}
+    cut_dict    = get_cut_dict(cut, cfg.cutList)
+    _hist_obj   = get_hist(input_data, var_to_plot, "data_3b_for_mixed")
+
+    
+    #
+    #  SvB mixed v0 and v1 vs v2 bkg
+    #
     var_list = ["SvB_MA.ps_hh", "SvB_MA.ps_zh", "SvB_MA.ps_zz", "SvB_MA.ps_hh_fine", "SvB_MA.ps_zh_fine", "SvB_MA.ps_zz_fine", ]
     rebin_list = [20, 10, 8, 20, 10, 8] 
-    
 
     for var, rebin in zip(var_list, rebin_list):
         print(f"{var} (rebin {rebin})" )
@@ -38,6 +53,9 @@ def doPlots(debug=False):
         plt.close()
 
 
+
+
+    
 
 if __name__ == '__main__':
 
