@@ -440,7 +440,8 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
     rebin = kwargs.get("rebin", 1)
     plotConfig = cfg.plotConfig
     codes = cfg.plotConfig["codes"]
-
+    var_over_ride = kwargs.get("var_over_ride", {})
+    
     #
     #  Get the year
     #    (Got to be a better way to do this....)
@@ -481,7 +482,8 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
         tag_dict = {"tag": hist.loc(this_tag)}
         process_dict = {"process": process_config["process"]}
         label = process if process_config.get("label").lower() == "none" else process_config.get("label")
-
+        var_to_plot = var_over_ride.get(process, var)
+    
     if type(region) is list:
         region_dict = None
         regionName = "_vs_".join(region)
@@ -504,8 +506,9 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
             varName  = cfg.hists[0]['hists'][var].axes[-1].name
         var_dict = {varName: hist.rebin(rebin)}
 
-    var_over_ride = kwargs.get("var_over_ride", {})
-    var_to_plot = var_over_ride.get(process, var)
+
+    
+
 
     #
     #  cut list
@@ -582,31 +585,22 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
     #
     elif type(process) is list:
         for _, _proc_conf in enumerate(process_config):
-            label = _proc_conf.get("process") if _proc_conf.get("label").lower() == "none" else _proc_conf.get("label")
-
-            _tagName = _proc_conf.get("tag", "fourTag")
-            this_tag = plotConfig["codes"]["tag"][_tagName]
 
             if kwargs.get("debug", False):
                 print_list_debug_info(_proc_conf["process"], this_tag, cut, region)
+            
+            _process_config = copy.copy(_proc_conf)
+            _process_config["fillcolor"] = _proc_conf.get("fillcolor", None).replace("yellow", "orange")
+            _process_config["histtype"]  = "errorbar"
 
-            hist_colors_fill.append(_proc_conf.get("fillcolor", None).replace("yellow", "orange"))
-            hist_labels.append(label)
-            hist_types. append("errorbar")
+            var_to_plot = var_over_ride.get(_proc_conf["process"], var)
+            
+            _hist = get_hist(cfg, _process_config,
+                             var=var_to_plot, region=region, cut=cut, rebin=rebin,
+                             debug=kwargs.get("debug", False))
 
-            this_process_dict = {"process": _proc_conf["process"]}
-            this_tag_dict     = {"tag":     hist.loc(this_tag)}
+            hists.append( (_hist, _process_config) )
 
-            this_hist_dict = this_process_dict | this_tag_dict | region_dict | year_dict | var_dict | cut_dict
-
-            this_hist = input_hist_File['hists'][var][this_hist_dict]
-            if len(this_hist.shape) == 2:
-                this_hist = this_hist[sum,:]
-
-            hists.append(this_hist)
-
-            # hists.append(input_hist_File['hists'][var][this_hist_dict])
-            hists[-1] *= _proc_conf.get("scalefactor", 1.0)
 
     #
     #  var list
@@ -687,13 +681,13 @@ def makePlot(cfg, var='selJets.pt',
     process = kwargs.get("process", None)
     rebin   = kwargs.get("rebin", 1)
 
-    if (type(cut) is list) or (type(region) is list) or (len(cfg.hists) > 1 and not cfg.combine_input_files) or (type(var) is list): # or (type(process) is list) \
+    if (type(cut) is list) or (type(region) is list) or (len(cfg.hists) > 1 and not cfg.combine_input_files) or (type(var) is list)  or (type(process) is list):
         return _makeHistsFromList(cfg, var, cut, region, **kwargs)
 
-    ### Converts process to list and sends thru same broken mechanism???
-    if process and type(process) is not list:
+    # Make process a list if it exits and isnt one already
+    if process is not None and type(process) is not list:
         process = [process]
-        kwargs["process"] = process
+        #kwargs["process"] = process
 
     #
     #  Lets you plot different variables for differnet processes
