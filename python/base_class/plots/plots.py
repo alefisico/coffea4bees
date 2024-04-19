@@ -63,9 +63,8 @@ def get_values_centers_from_dict(hist_config, hists, stack_dict):
 
         print(f"ERROR: input to ratio of key {hist_config['key']} not found in hists")
 
-            
     if hist_config["type"] == "stack":
-        stack_dict_for_hist = {k : v[0] for k, v in stack_dict.items() }
+        stack_dict_for_hist = {k: v[0] for k, v in stack_dict.items() }
         hStackHists = list(stack_dict_for_hist.values())
         return_values = [h.values() for h in hStackHists]
         return_values = np.sum(return_values, axis=0)
@@ -75,12 +74,20 @@ def get_values_centers_from_dict(hist_config, hists, stack_dict):
 
 
 def _savefig(fig, var, *args):
-    outputPath = "/".join(args)
+
+    args_str = []
+    for _arg in args:
+        if type(_arg) is list:
+            args_str.append( "_vs_".join(_arg) )
+        else:
+            args_str.append(_arg)
+
+    outputPath = "/".join(args_str)
 
     if not os.path.exists(outputPath):
         os.makedirs(outputPath)
 
-    varStr = var if type(var) == str else "_vs_".join(var)
+    varStr = var if type(var) is str else "_vs_".join(var)
     fig.savefig(outputPath + "/" + varStr.replace(".", '_') + ".pdf")
     return
 
@@ -105,15 +112,14 @@ def print_list_debug_info(process, tag, cut, region):
 def get_hist(cfg, config, var, region, cut, rebin, file_index=None, debug=False):
 
     codes = cfg.plotConfig["codes"]
-    
+
     year     = sum if config["year"] == "RunII" else config["year"]
     tag_code = codes["tag"][config["tag"]]
-    
+
     if debug:
         print(f" hist process={config['process']}, "
               f"tag={tag_code}, year={year}, var={var}")
 
-    
     hist_opts = {"process": config['process'],
                  "year":  year,
                  "tag":   hist.loc(tag_code),
@@ -123,28 +129,28 @@ def get_hist(cfg, config, var, region, cut, rebin, file_index=None, debug=False)
         region_dict = {"region":  [hist.loc(r) for r in codes["region"][region]]}
     else:
         region_dict = {"region":  hist.loc(codes["region"][region])}
-    
+
     cut_dict = get_cut_dict(cut, cfg.cutList)
 
     hist_opts = hist_opts | region_dict | cut_dict
-    
+
     if len(cfg.hists) > 1 and not cfg.combine_input_files:
         if file_index is None:
             print("ERROR must give file_index if running with more than one input file without using the  --combine_input_files option")
-        hist_obj = cfg.hists[file_index]['hists'][var]            
+        hist_obj = cfg.hists[file_index]['hists'][var]
 
     else:
         for _input_data in cfg.hists:
             if var in _input_data['hists'] and config['process'] in _input_data['hists'][var].axes["process"]:
                 hist_obj = _input_data['hists'][var]
-        
+
     #
     #  Add rebin Options
     #
     varName = hist_obj.axes[-1].name
     var_dict = {varName: hist.rebin(rebin)}
     hist_opts = hist_opts | var_dict
-    
+
     #
     #  Do the hist selection/binngin
     #
@@ -155,7 +161,7 @@ def get_hist(cfg, config, var, region, cut, rebin, file_index=None, debug=False)
     #  Shape give (nregion, nBins)
     #
     if len(selected_hist.shape) == 2:
-        selected_hist = hist[sum,:]
+        selected_hist = hist[sum, :]
 
     #
     # Apply Scale factor
@@ -163,7 +169,7 @@ def get_hist(cfg, config, var, region, cut, rebin, file_index=None, debug=False)
     selected_hist *= config.get("scalefactor", 1.0)
 
     return selected_hist
-    
+
 
 def makeRatio(numValues, denValues, **kwargs):
 
@@ -210,7 +216,7 @@ def _draw_plot(hist_list, stack_dict, **kwargs):
     #
     #  Draw the stack
     #
-    stack_dict_for_hist = {k : v[0] for k, v in stack_dict.items() }
+    stack_dict_for_hist = {k: v[0] for k, v in stack_dict.items() }
     stack_colors_fill   = [ v[1].get("fillcolor") for _, v in stack_dict.items() ]
     stack_colors_edge   = [ v[1].get("edgecolor") for _, v in stack_dict.items() ]
 
@@ -242,8 +248,6 @@ def _draw_plot(hist_list, stack_dict, **kwargs):
         stack_patches.append(mpatches.Patch(facecolor=proc_config.get("fillcolor"),
                                             edgecolor=proc_config.get("edgecolor"),
                                             label=_label))
-
-    
 
     #
     #  Draw the hists
@@ -431,84 +435,22 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
         print(f" hist process={process}, "
               f"cut={cut}")
 
-        
-##    if len(cfg.hists) > 1:
-##        input_hist_File = cfg.hists
-##    else:
-##        input_hist_File = cfg.hists[0]
-
     rebin = kwargs.get("rebin", 1)
-    plotConfig = cfg.plotConfig
-    codes = cfg.plotConfig["codes"]
     var_over_ride = kwargs.get("var_over_ride", {})
-    
-    #
-    #  Get the year
-    #    (Got to be a better way to do this....)
-    #
-    yearStr = get_value_nested_dict(plotConfig, "year", default="RunII")
-    year = sum if yearStr == "RunII" else yearStr
-    year_dict = {"year": year}
 
     #
     #  Unstacked hists
     #
     hists = []
-###    hist_colors_fill = []
-###    hist_colors_edge = []
-###    hist_labels = []
-###    hist_types = []
 
     #
     #  Parse the Lists
     #
-    if type(cut) is list:
-        cutName = "_vs_".join(cut)
-        cut_dict = None
-    else:
-        cutName = cut
-        cut_dict = get_cut_dict(cut, cfg.cutList)
-
     if type(process) is list:
-        process_config = [get_value_nested_dict(plotConfig, p) for p in process]
-        this_tagName = "_vs_".join(process)
-        process_dict = None
-        tag_dict = None
-        label = None
+        process_config = [get_value_nested_dict(cfg.plotConfig, p) for p in process]
     else:
-        process_config = get_value_nested_dict(plotConfig, process)
-        this_tagName = process_config.get("tag", "fourTag")
-        this_tag = plotConfig["codes"]["tag"][this_tagName]
-        tag_dict = {"tag": hist.loc(this_tag)}
-        process_dict = {"process": process_config["process"]}
-        label = process if process_config.get("label").lower() == "none" else process_config.get("label")
+        process_config = get_value_nested_dict(cfg.plotConfig, process)
         var_to_plot = var_over_ride.get(process, var)
-    
-    if type(region) is list:
-        region_dict = None
-        regionName = "_vs_".join(region)
-    else:
-        regionName = region
-
-        if type(codes["region"][region]) is list:
-            region_dict = {"region": [hist.loc(_r) for _r in codes["region"][region]] }
-        else:
-            region_dict = {"region": hist.loc(codes["region"][region])}
-
-
-    if type(var) is list:
-        varName  = None
-        var_dict = None
-    else:
-        if len(cfg.hists) > 1:
-            varName = cfg.hists[0]['hists'][var].axes[-1].name
-        else:
-            varName  = cfg.hists[0]['hists'][var].axes[-1].name
-        var_dict = {varName: hist.rebin(rebin)}
-
-
-    
-
 
     #
     #  cut list
@@ -517,7 +459,7 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
         for ic, _cut in enumerate(cut):
 
             if kwargs.get("debug", False):
-                print_list_debug_info(process, this_tag, _cut, region)
+                print_list_debug_info(process, process_config.get("tag"), _cut, region)
 
             _process_config = copy.copy(process_config)
             _process_config["fillcolor"] = _colors[ic]
@@ -537,11 +479,11 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
         for ir, _reg in enumerate(region):
 
             if kwargs.get("debug", False):
-                print_list_debug_info(process, this_tag, cut, _reg)
+                print_list_debug_info(process, process_config.get("tag"), cut, _reg)
 
             _process_config = copy.copy(process_config)
             _process_config["fillcolor"] = _colors[ir]
-            _process_config["label"]     = f"{label} {_reg}"
+            _process_config["label"]     = f"{_process_config['label']} {_reg}"
             _process_config["histtype"]  = "errorbar"
 
             _hist = get_hist(cfg, _process_config,
@@ -550,13 +492,12 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
 
             hists.append( (_hist, _process_config) )
 
-
     #
     #  input file list
     #
     elif len(cfg.hists) > 1:
         if kwargs.get("debug", False):
-            print_list_debug_info(process, this_tag, cut, region)
+            print_list_debug_info(process, process_config.get("tag"), cut, region)
 
         fileLabels = kwargs.get("fileLabels", [])
 
@@ -566,19 +507,18 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
             _process_config["fillcolor"] = _colors[iF]
 
             if iF < len(fileLabels):
-                _process_config["label"] = label + " " + fileLabels[iF]
+                _process_config["label"] = _process_config["label"] + " " + fileLabels[iF]
             else:
-                _process_config["label"] = label + " file" + str(iF + 1)
+                _process_config["label"] = _process_config["label"] + " file" + str(iF + 1)
 
             _process_config["histtype"]  = "errorbar"
 
             _hist = get_hist(cfg, _process_config,
                              var=var_to_plot, region=region, cut=cut, rebin=rebin,
-                             file_index = iF,
+                             file_index=iF,
                              debug=kwargs.get("debug", False))
 
             hists.append( (_hist, _process_config) )
-
 
     #
     #  process list
@@ -587,20 +527,19 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
         for _, _proc_conf in enumerate(process_config):
 
             if kwargs.get("debug", False):
-                print_list_debug_info(_proc_conf["process"], this_tag, cut, region)
-            
+                print_list_debug_info(_proc_conf["process"], _proc_conf.get("tag"), cut, region)
+
             _process_config = copy.copy(_proc_conf)
             _process_config["fillcolor"] = _proc_conf.get("fillcolor", None).replace("yellow", "orange")
             _process_config["histtype"]  = "errorbar"
 
             var_to_plot = var_over_ride.get(_proc_conf["process"], var)
-            
+
             _hist = get_hist(cfg, _process_config,
                              var=var_to_plot, region=region, cut=cut, rebin=rebin,
                              debug=kwargs.get("debug", False))
 
             hists.append( (_hist, _process_config) )
-
 
     #
     #  var list
@@ -609,11 +548,11 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
         for iv, _var in enumerate(var):
 
             if kwargs.get("debug", False):
-                print_list_debug_info(process, this_tag, cut, region)
-            
+                print_list_debug_info(process, process_config.get("tag"), cut, region)
+
             _process_config = copy.copy(process_config)
             _process_config["fillcolor"] = _colors[iv]
-            _process_config["label"]     = f"{label} {_var}"
+            _process_config["label"]     = f"{_process_config['label']} {_var}"
             _process_config["histtype"]  = "errorbar"
 
             _hist = get_hist(cfg, _process_config,
@@ -628,8 +567,8 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
     #
     # Add args
     #
+    yearStr = get_value_nested_dict(cfg.plotConfig, "year", default="RunII")
     kwargs["year"] = yearStr
-    kwargs["stack_labels"] = []
 
     if kwargs.get("doRatio", False):
 
@@ -650,14 +589,19 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
             ratios, ratio_uncert = makeRatio(numValues, denValues, **kwargs)
             ratio_plots.append((denCenters, ratios, ratio_uncert, ratio_config))
 
-
         fig, main_ax, ratio_ax = _plot_ratio(hists, {}, ratio_plots, **kwargs)
         ax = (main_ax, ratio_ax)
     else:
-        fig, ax = _plot(hists, {}, plotConfig, **kwargs)
+        fig, ax = _plot(hists, {}, cfg.plotConfig, **kwargs)
 
     if kwargs.get("outputFolder", None):
-        _savefig(fig, var, kwargs.get("outputFolder"), yearStr, cutName, this_tagName, regionName, process)
+
+        if type(process) is list:
+            tagName = "_vs_".join(process)
+        else:
+            tagName = process_config.get("tag", "fourTag")
+
+        _savefig(fig, var, kwargs.get("outputFolder"), yearStr, cut, tagName, region, process)
 
     return fig, ax
 
@@ -681,13 +625,12 @@ def makePlot(cfg, var='selJets.pt',
     process = kwargs.get("process", None)
     rebin   = kwargs.get("rebin", 1)
 
-    if (type(cut) is list) or (type(region) is list) or (len(cfg.hists) > 1 and not cfg.combine_input_files) or (type(var) is list)  or (type(process) is list):
+    if (type(cut) is list) or (type(region) is list) or (len(cfg.hists) > 1 and not cfg.combine_input_files) or (type(var) is list) or (type(process) is list):
         return _makeHistsFromList(cfg, var, cut, region, **kwargs)
 
     # Make process a list if it exits and isnt one already
     if process is not None and type(process) is not list:
         process = [process]
-        #kwargs["process"] = process
 
     #
     #  Lets you plot different variables for differnet processes
@@ -733,7 +676,6 @@ def makePlot(cfg, var='selJets.pt',
 
         hists.append( (_hist, _proc_config) )
 
-
     #
     # Add args
     #
@@ -755,7 +697,8 @@ def makePlot(cfg, var='selJets.pt',
 
         var_to_plot = var_over_ride.get(_proc_name, var)
 
-        if kwargs.get("debug", False): print(f"stack_process is {_proc_name} var is {var_to_plot}")
+        if kwargs.get("debug", False):
+            print(f"stack_process is {_proc_name} var is {var_to_plot}")
 
         #
         #  If this component is a process in the hist_obj
@@ -782,7 +725,7 @@ def makePlot(cfg, var='selJets.pt',
             for sum_proc_name, sum_proc_config in _proc_config.get("sum").items():
 
                 sum_proc_config["year"] = _proc_config["year"]
-                
+
                 var_to_plot = var_over_ride.get(sum_proc_name, var)
 
                 #
@@ -801,7 +744,6 @@ def makePlot(cfg, var='selJets.pt',
 
         else:
             raise Exception("Error need to config either process or sum")
-
 
     #
     #  Config Ratios
@@ -891,14 +833,12 @@ def make2DPlot(cfg, process, var='selJets.pt',
 
     # region_selection = sum if region in ["sum", sum] else hist.loc(codes["region"][region])
 
-    if region in ["sum",sum]:
+    if region in ["sum", sum]:
         region_selection = sum
     elif type(codes["region"][region]) is list:
         region_selection = [hist.loc(_r) for _r in codes["region"][region]]
     else:
         region_selection = hist.loc(codes["region"][region])
-
-
 
     if kwargs.get("debug", False):
         print(f" hist process={process}, "
@@ -910,13 +850,11 @@ def make2DPlot(cfg, process, var='selJets.pt',
                  "region":  region_selection,
                  varName:   hist.rebin(rebin)}
 
-
     hist_dict = hist_dict | cut_dict
     _hist = hist_to_plot[hist_dict]
 
-
-    if len(_hist.shape) == 3:  ## for 2D plots
-        _hist = _hist[sum,:,:]
+    if len(_hist.shape) == 3:  # for 2D plots
+        _hist = _hist[sum, :, :]
     #
     # Add args
     #
@@ -991,7 +929,6 @@ def read_axes_and_cuts(hists, plotConfig):
             continue
 
         if isinstance(a, hist.axis.Boolean):
-            #print(f"Adding cut\t{axisName}")
             cutList.append(axisName)
             continue
 
@@ -999,7 +936,6 @@ def read_axes_and_cuts(hists, plotConfig):
             continue   # HACK to skip the variable bins FIX
 
         axisLabels[axisName] = []
-        #print(axisName)
 
         for iBin in range(a.extent):
 
@@ -1008,15 +944,15 @@ def read_axes_and_cuts(hists, plotConfig):
             else:
                 value = a.value(iBin)
 
-            #print(f"\t{value}")
             axisLabels[axisName].append(value)
 
     return axisLabels, cutList
 
+
 def print_cfg(cfg):
     print("Regions...")
     for reg in cfg.plotConfig["codes"]["region"].keys():
-        if type(reg) == str:
+        if type(reg) is str:
             print(f"\t{reg}")
 
     print("Cuts...")
