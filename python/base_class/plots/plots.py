@@ -134,6 +134,7 @@ def get_hist(cfg, config, var, region, cut, rebin, file_index=None, debug=False)
 
     hist_opts = hist_opts | region_dict | cut_dict
 
+    hist_obj = None
     if len(cfg.hists) > 1 and not cfg.combine_input_files:
         if file_index is None:
             print("ERROR must give file_index if running with more than one input file without using the  --combine_input_files option")
@@ -144,6 +145,9 @@ def get_hist(cfg, config, var, region, cut, rebin, file_index=None, debug=False)
             if var in _input_data['hists'] and config['process'] in _input_data['hists'][var].axes["process"]:
                 hist_obj = _input_data['hists'][var]
 
+    if hist_obj is None:
+        print(f"ERROR did not find var {var} with process {config['process']} in inputs")
+                
     #
     #  Add rebin Options
     #
