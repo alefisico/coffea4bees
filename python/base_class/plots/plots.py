@@ -1,6 +1,7 @@
 import os
 import hist
 import yaml
+import copy
 import argparse
 from coffea.util import load
 from hist.intervals import ratio_uncertainty
@@ -56,7 +57,6 @@ def get_values_centers_from_dict(hist_config, hists, stack_dict):
     if hist_config["type"] == "hists":
 
         for h_data, h_config in hists:
-            #h_data, h_config   = h
 
             if h_config["name"] == hist_config["key"]:
                 return h_data.values(), h_data.axes[0].centers
@@ -65,7 +65,6 @@ def get_values_centers_from_dict(hist_config, hists, stack_dict):
 
             
     if hist_config["type"] == "stack":
-
         stack_dict_for_hist = {k : v[0] for k, v in stack_dict.items() }
         hStackHists = list(stack_dict_for_hist.values())
         return_values = [h.values() for h in hStackHists]
@@ -249,7 +248,6 @@ def _draw_plot(hist_list, stack_dict, **kwargs):
     hist_artists = []
 
     for hist_data in hist_list:
-        print(hist_data)
         hist_obj    = hist_data[0]
         hist_config = hist_data[1]
         _plot_options = {"density":  norm,
@@ -430,10 +428,11 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
         print(f" hist process={process}, "
               f"cut={cut}")
 
-    if len(cfg.hists) > 1:
-        input_hist_File = cfg.hists
-    else:
-        input_hist_File = cfg.hists[0]
+        
+##    if len(cfg.hists) > 1:
+##        input_hist_File = cfg.hists
+##    else:
+##        input_hist_File = cfg.hists[0]
 
     rebin = kwargs.get("rebin", 1)
     plotConfig = cfg.plotConfig
@@ -451,10 +450,10 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
     #  Unstacked hists
     #
     hists = []
-    hist_colors_fill = []
-    hist_colors_edge = []
-    hist_labels = []
-    hist_types = []
+###    hist_colors_fill = []
+###    hist_colors_edge = []
+###    hist_labels = []
+###    hist_types = []
 
     #
     #  Parse the Lists
@@ -496,12 +495,13 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
         varName  = None
         var_dict = None
     else:
-        if type(input_hist_File) is list:
-            varName = input_hist_File[0]['hists'][var].axes[-1].name
+        if len(cfg.hists) > 1:
+            varName = cfg.hists[0]['hists'][var].axes[-1].name
         else:
-            varName  = input_hist_File['hists'][var].axes[-1].name
+            varName  = cfg.hists[0]['hists'][var].axes[-1].name
         var_dict = {varName: hist.rebin(rebin)}
 
+    var_over_ride = kwargs.get("var_over_ride", {})
 
     #
     #  cut list
@@ -512,19 +512,19 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
             if kwargs.get("debug", False):
                 print_list_debug_info(process, this_tag, _cut, region)
 
-            hist_colors_fill.append(_colors[ic])
-            hist_labels.append(label + " " + _cut)
-            hist_types. append("errorbar")
+            var_to_plot = var_over_ride.get(process, var)
 
-            this_cut_dict = get_cut_dict(_cut, cfg.cutList)
-            this_hist_dict = process_dict | tag_dict | region_dict | year_dict | var_dict | this_cut_dict
+            _process_config = copy.copy(process_config)
+            _process_config["fillcolor"] = _colors[ic]
+            _process_config["label"]     = process_config["label"] + " " + _cut
+            _process_config["histtype"]  = "errorbar"
+            
 
-            this_hist = input_hist_File['hists'][var][this_hist_dict]
-            if len(this_hist.shape) == 2:
-                this_hist = this_hist[sum,:]
+            _hist = get_hist(cfg, _process_config,
+                             var=var_to_plot, region=region, cut=_cut, rebin=rebin,
+                             debug=kwargs.get("debug", False))
 
-            hists.append(this_hist)
-            hists[-1] *= process_config.get("scalefactor", 1.0)
+            hists.append( (_hist, _process_config) )
 
     #
     #  region list
@@ -644,9 +644,9 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
     # Add args
     #
     kwargs["year"] = yearStr
-    kwargs["hist_fill_colors"] = hist_colors_fill
-    kwargs["hist_labels"] = hist_labels
-    kwargs["hist_types"] = hist_types
+###    kwargs["hist_fill_colors"] = hist_colors_fill
+###    kwargs["hist_labels"] = hist_labels
+###    kwargs["hist_types"] = hist_types
     kwargs["stack_labels"] = []
     if kwargs.get("doRatio", False):
 
@@ -802,6 +802,8 @@ def makePlot(cfg, var='selJets.pt',
             hist_sum = None
             for sum_proc_name, sum_proc_config in _proc_config.get("sum").items():
 
+                sum_proc_config["year"] = _proc_config["year"]
+                
                 var_to_plot = var_over_ride.get(sum_proc_name, var)
 
                 #
