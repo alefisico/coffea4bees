@@ -502,6 +502,7 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
         var_dict = {varName: hist.rebin(rebin)}
 
     var_over_ride = kwargs.get("var_over_ride", {})
+    var_to_plot = var_over_ride.get(process, var)
 
     #
     #  cut list
@@ -512,13 +513,10 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
             if kwargs.get("debug", False):
                 print_list_debug_info(process, this_tag, _cut, region)
 
-            var_to_plot = var_over_ride.get(process, var)
-
             _process_config = copy.copy(process_config)
             _process_config["fillcolor"] = _colors[ic]
             _process_config["label"]     = process_config["label"] + " " + _cut
             _process_config["histtype"]  = "errorbar"
-            
 
             _hist = get_hist(cfg, _process_config,
                              var=var_to_plot, region=region, cut=_cut, rebin=rebin,
@@ -531,26 +529,21 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
     #
     elif type(region) is list:
         for ir, _reg in enumerate(region):
+
             if kwargs.get("debug", False):
                 print_list_debug_info(process, this_tag, cut, _reg)
 
-            hist_colors_fill.append(_colors[ir])
-            hist_labels.append(f"{label} {_reg}")
-            hist_types. append("errorbar")
+            _process_config = copy.copy(process_config)
+            _process_config["fillcolor"] = _colors[ir]
+            _process_config["label"]     = f"{label} {_reg}"
+            _process_config["histtype"]  = "errorbar"
 
-            if type(codes["region"][_reg]) is list:
-                this_region_dict = {"region": [hist.loc(_r) for _r in codes["region"][_reg]] }
-            else:
-                this_region_dict = {"region": hist.loc(codes["region"][_reg])} ### check this is a list
+            _hist = get_hist(cfg, _process_config,
+                             var=var_to_plot, region=_reg, cut=cut, rebin=rebin,
+                             debug=kwargs.get("debug", False))
 
-            this_hist_dict = process_dict | tag_dict | this_region_dict | year_dict | var_dict | cut_dict
+            hists.append( (_hist, _process_config) )
 
-            this_hist = input_hist_File['hists'][var][this_hist_dict]
-            if len(this_hist.shape) == 2:
-                this_hist = this_hist[sum,:]
-
-            hists.append(this_hist)
-            hists[-1] *= process_config.get("scalefactor", 1.0)
 
     #
     #  input file list
@@ -644,33 +637,27 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
     # Add args
     #
     kwargs["year"] = yearStr
-###    kwargs["hist_fill_colors"] = hist_colors_fill
-###    kwargs["hist_labels"] = hist_labels
-###    kwargs["hist_types"] = hist_types
     kwargs["stack_labels"] = []
+
     if kwargs.get("doRatio", False):
 
         ratio_plots = []
-        ratio_colors = []
-        ratio_markers = []
 
-        denValues = hists[-1].values()
+        denValues = hists[-1][0].values()
 
         denValues[denValues == 0] = _epsilon
-        denCenters = hists[-1].axes[0].centers
+        denCenters = hists[-1][0].axes[0].centers
 
         for iH in range(len(hists) - 1):
 
-            numValues = hists[iH].values()
+            numValues = hists[iH][0].values()
 
+            ratio_config = {"color": _colors[iH],
+                            "marker": "o",
+                            }
             ratios, ratio_uncert = makeRatio(numValues, denValues, **kwargs)
+            ratio_plots.append((denCenters, ratios, ratio_uncert, ratio_config))
 
-            ratio_plots.append((denCenters, ratios, ratio_uncert))
-            ratio_colors.append(_colors[iH])
-            ratio_markers.append("o")
-
-        kwargs["ratio_colors"]  = ratio_colors
-        kwargs["ratio_markers"] = ratio_markers
 
         fig, main_ax, ratio_ax = _plot_ratio(hists, {}, ratio_plots, **kwargs)
         ax = (main_ax, ratio_ax)
