@@ -111,7 +111,7 @@ def get_hist(cfg, config, var, region, cut, rebin, debug=False):
     
     if debug:
         print(f" hist process={config['process']}, "
-              f"tag={tag_code}, year={year}, var={var_to_plot}")
+              f"tag={tag_code}, year={year}, var={var}")
 
     
     hist_opts = {"process": config['process'],
@@ -548,7 +548,7 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
     #
     #  input file list
     #
-    elif type(input_hist_File) is list:
+    elif len(cfg.hists) > 1:
         if kwargs.get("debug", False):
             print_list_debug_info(process, this_tag, cut, region)
 
@@ -609,26 +609,19 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
     elif type(var) is list:
         for iv, _var in enumerate(var):
 
-            varName = input_hist_File['hists'][_var].axes[-1].name
-
             if kwargs.get("debug", False):
                 print_list_debug_info(process, this_tag, cut, region)
+            
+            _process_config = copy.copy(process_config)
+            _process_config["fillcolor"] = _colors[iv]
+            _process_config["label"]     = f"{label} {_var}"
+            _process_config["histtype"]  = "errorbar"
 
-            hist_colors_fill.append(_colors[iv])
+            _hist = get_hist(cfg, _process_config,
+                             var=_var, region=region, cut=cut, rebin=rebin,
+                             debug=kwargs.get("debug", False))
 
-            hist_labels.append(label + " " + _var)
-            hist_types. append("errorbar")
-
-            this_var_dict = {varName: hist.rebin(rebin)}
-
-            this_hist_dict = process_dict | tag_dict | region_dict | year_dict | this_var_dict | cut_dict
-
-            this_hist = input_hist_File['hists'][_var][this_hist_dict]
-            if len(this_hist.shape) == 2:
-                this_hist = this_hist[sum,:]
-
-            hists.append(this_hist)
-            hists[-1] *= process_config.get("scalefactor", 1.0)
+            hists.append( (_hist, _process_config) )
 
     else:
         raise Exception("Error something needs to be a list!")
