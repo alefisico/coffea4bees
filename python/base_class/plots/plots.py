@@ -102,7 +102,7 @@ def print_list_debug_info(process, tag, cut, region):
 #
 #  Get hist from input file(s)
 #
-def get_hist(cfg, config, var, region, cut, rebin, debug=False):
+def get_hist(cfg, config, var, region, cut, rebin, file_index=None, debug=False):
 
     codes = cfg.plotConfig["codes"]
     
@@ -128,12 +128,15 @@ def get_hist(cfg, config, var, region, cut, rebin, debug=False):
 
     hist_opts = hist_opts | region_dict | cut_dict
     
-    if type(cfg.hists) is list:
+    if len(cfg.hists) > 1 and not cfg.combine_input_files:
+        if file_index is None:
+            print("ERROR must give file_index if running with more than one input file without using the  --combine_input_files option")
+        hist_obj = cfg.hists[file_index]['hists'][var]            
+
+    else:
         for _input_data in cfg.hists:
             if var in _input_data['hists'] and config['process'] in _input_data['hists'][var].axes["process"]:
                 hist_obj = _input_data['hists'][var]
-    else:
-        hist_obj = cfg.hists['hists'][var]
         
     #
     #  Add rebin Options
@@ -552,25 +555,27 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
         if kwargs.get("debug", False):
             print_list_debug_info(process, this_tag, cut, region)
 
-        this_hist_dict = process_dict | tag_dict | region_dict | year_dict | var_dict | cut_dict
-
         fileLabels = kwargs.get("fileLabels", [])
 
-        for iF, _input_File in enumerate(input_hist_File):
+        for iF, _input_File in enumerate(cfg.hists):
 
-            hist_colors_fill.append(_colors[iF])
+            _process_config = copy.copy(process_config)
+            _process_config["fillcolor"] = _colors[iF]
+
             if iF < len(fileLabels):
-                hist_labels.append(label + " " + fileLabels[iF])
+                _process_config["label"] = label + " " + fileLabels[iF]
             else:
-                hist_labels.append(label + " file" + str(iF + 1))
-            hist_types. append("errorbar")
+                _process_config["label"] = label + " file" + str(iF + 1)
 
-            this_hist = input_hist_File[iF]['hists'][var][this_hist_dict]
-            if len(this_hist.shape) == 2:
-                this_hist = this_hist[sum,:]
+            _process_config["histtype"]  = "errorbar"
 
-            hists.append(this_hist)
-            hists[-1] *= process_config.get("scalefactor", 1.0)
+            _hist = get_hist(cfg, _process_config,
+                             var=var_to_plot, region=region, cut=cut, rebin=rebin,
+                             file_index = iF,
+                             debug=kwargs.get("debug", False))
+
+            hists.append( (_hist, _process_config) )
+
 
     #
     #  process list
