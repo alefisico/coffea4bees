@@ -21,7 +21,7 @@ from analysis.helpers.cutflow import cutFlow
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
 
 from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
-from analysis.helpers.common import init_jet_factory, apply_btag_sf
+from analysis.helpers.common import init_jet_factory, apply_btag_sf, update_events
 from analysis.helpers.selection_basic_4b import apply_event_selection_4b, apply_object_selection_4b
 import logging
 
@@ -57,13 +57,6 @@ def setSvBVars(SvBName, event):
     this_ps_hh[getattr(event, SvBName).hh] = getattr(event, SvBName).phh[getattr(event, SvBName).hh]
     event[SvBName, 'ps_hh'] = this_ps_hh
 
-
-def update(events, collections):
-    """Return a shallow copy of events array with some collections swapped out"""
-    out = events
-    for name, value in collections.items():
-        out = ak.with_field(out, value, name)
-    return out
 
 
 class analysis(processor.ProcessorABC):
@@ -239,7 +232,7 @@ class analysis(processor.ProcessorABC):
             ])
             logging.info(f'\nJet variations {[name for _, name in shifts]}')
 
-        return processor.accumulate(self.process_shift(update(event, collections), name, weights) for collections, name in shifts)
+        return processor.accumulate(self.process_shift(update_events(event, collections), name, weights) for collections, name in shifts)
 
     def process_shift(self, event, shift_name, weights):
         '''For different jet variations. It computes event variations for the nominal case.'''
