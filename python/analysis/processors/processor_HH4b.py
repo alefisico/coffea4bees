@@ -98,16 +98,6 @@ class analysis(processor.ProcessorABC):
         isTTForMixed = not (dataset.find("TTTo" ) == -1) and not(dataset.find("_for_mixed") == -1)
         nEvent = len(event)
         weights = Weights(len(event), storeIndividual=True)
-        selections = PackedSelection()
-
-        #
-        #  Cut Flows
-        #
-        self.processOutput = {}
-        self.processOutput['nEvent'] = {}
-        self.processOutput['nEvent'][event.metadata['dataset']] = nEvent
-
-        self._cutFlow = cutFlow(self.cutFlowCuts)
 
         logging.debug(fname)
         logging.debug(f'{chunk}Process {nEvent} Events')
@@ -209,10 +199,6 @@ class analysis(processor.ProcessorABC):
                 if 'GluGlu' in dataset:
                     weights.add( 'trigWeight', np.full(len(event), 1) )
 
-#                    fname   = event.metadata['filename']
-#                    estart  = event.metadata['entrystart']
-#                    estop   = event.metadata['entrystop']
-##                    path = fname.replace(fname.split('/')[-1], '')
 ##                    event['trigWeight']    = NanoEventsFactory.from_root(f'{path}{"trigWeights.root"}',
 ##                                                              entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events()
 #                    import uproot
@@ -307,13 +293,6 @@ class analysis(processor.ProcessorABC):
         #
         event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year])
 
-        event['weight'] = weights.weight()   ### this is for _cutflow
-        selections.add( 'lumimask', event.lumimask )
-        selections.add( 'passNoiseFilter', event.passNoiseFilter )
-        selections.add( 'passHLT', np.full(len(event), True) if (isMC or isMixedData or isTTForMixed or isDataForMixed) else event.passHLT )
-        self._cutFlow.fill("all",  event[selections.require(lumimask=True)], allTag=True)
-        self._cutFlow.fill("passNoiseFilter",  event[ selections.require(lumimask=True, passNoiseFilter=True) ], allTag=True)
-        self._cutFlow.fill("passHLT",  event[ selections.require(lumimask=True, passNoiseFilter=True, passHLT=True) ], allTag=True)
 
         #
         # Calculate and apply Jet Energy Calibration
@@ -341,10 +320,10 @@ class analysis(processor.ProcessorABC):
             ])
             logging.info(f'\nJet variations {[name for _, name in shifts]}')
 
+        return processor.accumulate(self.process_shift(update_events(event, collections), name, weights) for collections, name in shifts)
 
-        return processor.accumulate(self.process_shift(update_events(event, collections), name, selections, weights) for collections, name in shifts)
 
-    def process_shift(self, event, shift_name, selections, weights):
+    def process_shift(self, event, shift_name, weights):
         '''For different jet variations. It computes event variations for the nominal case.'''
 
         dataset = event.metadata['dataset']
@@ -357,14 +336,30 @@ class analysis(processor.ProcessorABC):
         isTTForMixed = not (dataset.find("TTTo" ) == -1) and not(dataset.find("_for_mixed") == -1)
         nEvent = len(event)
 
-
         # Apply object selection (function does not remove events, adds content to objects)
         event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year], isMixedData=isMixedData, isTTForMixed=isTTForMixed, isDataForMixed=isDataForMixed)
 
-        event['weight'] = weights.weight()   ### this is for _cutflow
+        selections = PackedSelection()
+        selections.add( 'lumimask', event.lumimask )
+        selections.add( 'passNoiseFilter', event.passNoiseFilter )
+        selections.add( 'passHLT', np.full(len(event), True) if (isMC or isMixedData or isTTForMixed or isDataForMixed) else event.passHLT )
         selections.add( 'passJetMult', event.passJetMult )
         allcuts = [ 'lumimask', 'passNoiseFilter', 'passHLT', 'passJetMult' ]
-        if not shift_name: self._cutFlow.fill("passJetMult", event[selections.all(*allcuts)], allTag=True)
+        event['weight'] = weights.weight()   ### this is for _cutflow
+
+        #
+        #  Cut Flows
+        #
+        processOutput = {}
+        if not shift_name:
+            processOutput['nEvent'] = {}
+            processOutput['nEvent'][event.metadata['dataset']] = nEvent
+
+            self._cutFlow = cutFlow(self.cutFlowCuts)
+            self._cutFlow.fill("all",  event[selections.require(lumimask=True)], allTag=True)
+            self._cutFlow.fill("passNoiseFilter",  event[ selections.require(lumimask=True, passNoiseFilter=True) ], allTag=True)
+            self._cutFlow.fill("passHLT",  event[ selections.require(lumimask=True, passNoiseFilter=True, passHLT=True) ], allTag=True)
+            self._cutFlow.fill("passJetMult", event[selections.all(*allcuts)], allTag=True)
 
         #
         # Calculate and apply btag scale factors
@@ -677,7 +672,7 @@ class analysis(processor.ProcessorABC):
                 self._cutFlow.fill("passSvB",       selev[selev.passSvB])
                 self._cutFlow.fill("failSvB",       selev[selev.failSvB])
 
-            self._cutFlow.addOutput(self.processOutput, event.metadata['dataset'])
+            self._cutFlow.addOutput(processOutput, event.metadata['dataset'])
 
         #
         # Hists
@@ -831,7 +826,7 @@ class analysis(processor.ProcessorABC):
                     *selections,
                 )
 
-            output = hist.output | self.processOutput | friends
+            output = hist.output | processOutput | friends
         #
         # Run systematics
         #
@@ -874,7 +869,7 @@ class analysis(processor.ProcessorABC):
                     for ih in hist_SvB.output['hists'].keys():
                         hist_SvB.output['hists'][ih] = hist_SvB.output['hists'][ih] + dict_hist_SvB[ivar].output['hists'][ih]
 
-            output = hist_SvB.output | self.processOutput
+            output = hist_SvB.output | processOutput
 
         return output
 

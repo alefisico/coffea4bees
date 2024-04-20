@@ -12,8 +12,6 @@ dataset:
   - ZH4b 
   - HH4b  
 dataset_systematics:
-  - ZZ4b 
-  - ZH4b 
   - HH4b  
   - GluGluToHHTo4B_cHHH1
 dataset_for_mixed:
