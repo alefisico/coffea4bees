@@ -6,10 +6,10 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 import fsspec
-from classifier.nn.dataset import io_loader
+from classifier.nn.dataset import skim_loader
 from classifier.task import ArgParser, EntryPoint, converter
 
-from ..setting.default import IO as IOSetting
+from ..setting import IO as IOSetting
 from ._utils import LoadTrainingSets
 
 if TYPE_CHECKING:
@@ -53,6 +53,8 @@ class Main(LoadTrainingSets):
         default=1,
         help="the maximum number of files to write in parallel",
     )
+    argparser.remove_argument("--save-state")
+    defaults = {"save_state": True}
 
     def run(self, parser: EntryPoint):
         from concurrent.futures import ProcessPoolExecutor as Pool
@@ -73,6 +75,7 @@ class Main(LoadTrainingSets):
             chunksize = size
         chunks = [chunks[i : i + chunksize] for i in range(0, size, chunksize)]
 
+        logging.info("Caching datasets...")
         timer = datetime.now()
         with Pool(
             max_workers=self.opts.max_writers,
@@ -107,7 +110,7 @@ class _save_cache:
 
         chunk, indices = args
         subset = Subset(self.dataset, indices)
-        chunks = [*io_loader(subset)]
+        chunks = [*skim_loader(subset)]
         data = {k: torch.cat([c[k] for c in chunks]) for k in self.dataset.datasets}
         with fsspec.open(
             self.path / f"chunk{chunk}.pt", "wb", compression=self.compression

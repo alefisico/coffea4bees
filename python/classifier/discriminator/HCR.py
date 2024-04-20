@@ -1,18 +1,20 @@
 from __future__ import annotations
 
-from collections import defaultdict
+import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Callable
 
+import fsspec
 import torch
 
+from ..config import setting as cfg
 from ..config.scheduler import SkimStep
 from ..config.setting.HCR import Input, InputBranch, Output
 from ..config.state.label import MultiClass
 from ..nn.blocks import HCR
 from ..nn.schedule import MilestoneStep
-from ..utils import noop
 from . import Classifier, Model, TrainingStage
+from .skimmer import Skimmer, Splitter
 
 if TYPE_CHECKING:
     from torch import Tensor
@@ -38,25 +40,33 @@ class GBN(MilestoneStep):
         self.reset()
 
 
-class _HCRSkim(Model):
-    def __init__(self):
-        self.tensors = defaultdict(list)
+def _HCRInput(batch: dict[str, Tensor], device: torch.device, selection: Tensor = None):
+    CanJet = batch.pop(Input.CanJet)
+    NotCanJet = batch.pop(Input.NotCanJet)
+    ancillary = batch.pop(Input.ancillary)
+    if selection is not None:
+        CanJet = CanJet[selection]
+        NotCanJet = NotCanJet[selection]
+        ancillary = ancillary[selection]
+    return CanJet.to(device), NotCanJet.to(device), ancillary.to(device)
 
-    @property
-    def n_parameters(self) -> int:
-        return 0
 
-    @property
-    def module(self):
-        return noop()
+class _HCRSkim(Skimmer):
+    def __init__(
+        self,
+        nn: HCR,
+        device: torch.device,
+        splitter: Splitter,
+    ):
+        self._nn = nn
+        self._device = device
+        self._splitter = splitter
 
-    def forward(self, batch: dict[str, Tensor]):
-        for k in [Input.CanJet, Input.NotCanJet, Input.ancillary]:
-            self.tensors[k].append(batch[k])
-        return {}
-
-    def loss(self, _):
-        return noop()
+    def train(self, batch: dict[str, Tensor]):
+        training, _ = self._splitter.step(batch)
+        self._nn.updateMeanStd(*_HCRInput(batch, self._device, training))
+        # TODO compute die loss
+        return super().train(batch)
 
 
 class HCRModel(Model):
@@ -88,31 +98,19 @@ class HCRModel(Model):
             self._nn.setGhostBatches(0, False)
         else:
             self._gbn.reset()
-            self._nn.setGhostBatches(
-                self._gbn.n_batches, True
-            )  # TODO check what the subset do
+            self._nn.setGhostBatches(self._gbn.n_batches, True)  # TODO check subset
 
     @property
     def module(self):
         return self._nn
 
-    def forward(self, batch: dict[str, Tensor]) -> dict[str, Tensor]:
-        CanJet = batch.pop(Input.CanJet)
-        NotCanJet = batch.pop(Input.NotCanJet)
-        ancillary = batch.pop(Input.ancillary)
-        c, p = self._nn(
-            CanJet.to(self._device),
-            NotCanJet.to(self._device),
-            ancillary.to(self._device),
-        )
+    def train(self, batch: dict[str, Tensor]) -> dict[str, Tensor]:
+        c, p = self._nn(*_HCRInput(batch, self._device))
         batch[Output.quadjet_score] = p
         batch[Output.class_score] = c
         for k, v in batch.items():
             batch[k] = v.to(self._device, non_blocking=True)
-        return batch
-
-    def loss(self, pred: dict[str, Tensor]) -> Tensor:
-        return self._loss(self, pred)
+        return self._loss(batch)
 
     def step(self, epoch: int = None):
         if self.ghost_batch is not None and self.ghost_batch.step(epoch):
@@ -130,6 +128,7 @@ class HCRClassifier(Classifier):
         self,
         arch: HCRArch,
         ghost_batch: GBN,
+        cross_validation: Splitter,
         training_schedule: Schedule,
         finetuning_schedule: Schedule = None,
         **kwargs,
@@ -137,36 +136,62 @@ class HCRClassifier(Classifier):
         super().__init__(**kwargs)
         self._arch = arch
         self._ghost_batch = ghost_batch
+        self._splitter = cross_validation
         self._training = training_schedule
         self._finetuning = finetuning_schedule
         self._HCR: HCRModel = None
 
     def training_stages(self):
-        skim = _HCRSkim()
+        self._HCR = HCRModel(
+            arch=self._arch,
+            device=self.device,
+        )
+        self._HCR.ghost_batch = self._ghost_batch
+        self._HCR.to(self.device)
+        self._splitter.setup(self.dataset)
+        skim = _HCRSkim(self._HCR._nn, self.device, self._splitter)
         yield TrainingStage(
-            name="Setup GBN",
+            name="Initialization",
             model=skim,
             schedule=SkimStep(),
+            training=self.dataset,
             do_benchmark=False,
         )
-        if self._HCR is None:
-            self._HCR = HCRModel(
-                arch=self._arch,
-                device=self.device,
-            )
-            self._HCR.ghost_batch = self._ghost_batch
-            self._HCR.to(self.device)
-            self._HCR.module.setMeanStd(
-                torch.cat(skim.tensors[Input.CanJet]),
-                torch.cat(skim.tensors[Input.NotCanJet]),
-                torch.cat(skim.tensors[Input.ancillary]),
-            )
-            skim = None
+        self._HCR.module.initMeanStd()
+        training, validation = self._splitter.get()
         yield TrainingStage(
             name="Training",
             model=self._HCR,
             schedule=self._training,
+            training=training,
+            validation=validation,
             do_benchmark=True,
         )
         self._HCR.ghost_batch = None
-        # TODO finetuning
+        if self._finetuning is not None:
+            layers = self._HCR._nn.layers
+            layers.setLayerRequiresGrad(
+                requires_grad=False, index=sorted(layers.layers.keys())[:-1]
+            )
+            yield TrainingStage(
+                name="Finetuning",
+                model=self._HCR,
+                schedule=self._finetuning,
+                training=training,
+                validation=validation,
+                do_benchmark=True,
+            )
+            self._HCR.ghost_batch = self._ghost_batch
+            layers.setLayerRequiresGrad(requires_grad=True)
+        output = cfg.IO.output / f"{self.name}__{self.uuid}.pkl"
+        if not output.is_null:
+            logging.info(f"Saving model to {output}")
+            with fsspec.open(output, "wb") as f:
+                torch.save(
+                    {
+                        "model": self._HCR.module.state_dict(),
+                        "metadata": self.metadata,
+                        "uuid": self.uuid,
+                    },
+                    f,
+                )

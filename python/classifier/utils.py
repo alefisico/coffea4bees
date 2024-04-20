@@ -1,46 +1,39 @@
+from __future__ import annotations
+
 import importlib
 import logging
-from functools import cache
-from typing import Callable, Iterable, TypeVar
+from fractions import Fraction
+from typing import TypeVar
 
-_GroupT = TypeVar("_GroupT", bound=Iterable)
+import yaml
+
 _ItemT = TypeVar("_ItemT")
 
 
-def _subgroup(group: list, left: int, remain: int):
-    if remain == 0:
-        yield group
-    else:
-        size = len(group)
-        for i in range(size, left, -1):
-            yield from _subgroup(group[: i - 1] + group[i:], i - 1, remain - 1)
-
-
-def subgroups(group: _GroupT, new: Callable[[Iterable], _GroupT] = None):
-    if new is None:
-        new = type(group)
-    group = [*group]
-    for i in range(len(group)):
-        for sub in _subgroup(group, 0, i):
-            yield new(sub)
-    yield new(())
-
-
-@cache
-def _subsets_cached(group):
-    return tuple(subgroups(group, frozenset))
-
-
-def subsets(group: frozenset[_ItemT]) -> frozenset[frozenset[_ItemT]]:
-    return _subsets_cached(group)
-
-
-class noop:
+class NOOP:
     def __getattr__(self, _):
         return self
 
     def __call__(self, *_, **__):
         return self
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_):
+        return False
+
+    def __repr__(self):
+        return "N/A"
+
+    def __format__(self, _):
+        return repr(self)
+
+
+class _NoopMeta(NOOP, type): ...
+
+
+class noop(metaclass=_NoopMeta): ...
 
 
 def import_(modname: str, clsname: str):
@@ -50,14 +43,14 @@ def import_(modname: str, clsname: str):
     except ModuleNotFoundError:
         ...
     except Exception as e:
-        logging.error(e)
+        logging.error(e, exc_info=e)
     if _mod is not None and clsname != "*":
         try:
             _cls = getattr(_mod, clsname)
         except AttributeError:
             ...
         except Exception as e:
-            logging.error(e)
+            logging.error(e, exc_info=e)
     return _mod, _cls
 
 
@@ -71,3 +64,14 @@ def append_unique_instance(collection: list[_ItemT], item: _ItemT | type[_ItemT]
         return collection
     collection.append(item)
     return collection
+
+
+def keep_fraction(fraction: Fraction, indices):
+    return (indices % fraction.denominator) < fraction.numerator
+
+
+class YamlIndentSequence(yaml.Dumper):
+    "https://stackoverflow.com/questions/25108581/python-yaml-dump-bad-indentation"
+
+    def increase_indent(self, flow=False, indentless=False):
+        return super().increase_indent(flow, False)
