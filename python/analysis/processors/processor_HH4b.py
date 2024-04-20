@@ -82,7 +82,11 @@ class analysis(processor.ProcessorABC):
     def process(self, event):
 
         tstart = time.time()
+        fname   = event.metadata['filename']
         dataset = event.metadata['dataset']
+        estart  = event.metadata['entrystart']
+        estop   = event.metadata['entrystop']
+        chunk   = f'{dataset}::{estart:6d}:{estop:6d} >>> '
         year    = event.metadata['year']
         processName = event.metadata['processName']
         isMC    = True if event.run[0] == 1 else False
@@ -92,12 +96,104 @@ class analysis(processor.ProcessorABC):
         isMixedData = not (dataset.find("mix_v") == -1)
         isDataForMixed = not (dataset.find("data_3b_for_mixed") == -1)
         isTTForMixed = not (dataset.find("TTTo" ) == -1) and not(dataset.find("_for_mixed") == -1)
+        nEvent = len(event)
         weights = Weights(len(event), storeIndividual=True)
+        selections = PackedSelection()
 
         #
-        # Event selection
+        #  Cut Flows
         #
-        event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year])
+        self.processOutput = {}
+        self.processOutput['nEvent'] = {}
+        self.processOutput['nEvent'][event.metadata['dataset']] = nEvent
+
+        self._cutFlow = cutFlow(self.cutFlowCuts)
+
+        logging.debug(fname)
+        logging.debug(f'{chunk}Process {nEvent} Events')
+
+        #
+        # Reading SvB friend trees
+        #
+        path = fname.replace(fname.split('/')[-1], '')
+        if self.apply_FvT:
+            if isMixedData:
+
+                FvT_name = event.metadata["FvT_name"]
+                event['FvT']    = getattr(NanoEventsFactory.from_root(f'{event.metadata["FvT_file"]}',
+                                                                      entry_start=estart, entry_stop=estop,
+                                                                      schemaclass=FriendTreeSchema).events(), FvT_name)
+
+                event['FvT', 'FvT']    = getattr(event['FvT'], FvT_name)
+
+                #
+                # Dummies
+                #
+                event['FvT', 'q_1234'] = np.full(len(event), -1, dtype=int)
+                event['FvT', 'q_1324'] = np.full(len(event), -1, dtype=int)
+                event['FvT', 'q_1423'] = np.full(len(event), -1, dtype=int)
+
+
+            elif (isDataForMixed or isTTForMixed):
+
+                #
+                # Use the first to define the FvT weights
+                #
+                event['FvT']    = getattr(NanoEventsFactory.from_root(f'{event.metadata["FvT_files"][0]}',
+                                                                      entry_start=estart, entry_stop=estop,
+                                                                      schemaclass=FriendTreeSchema).events(), event.metadata["FvT_names"][0])
+
+                event['FvT', 'FvT']    = getattr(event['FvT'], event.metadata["FvT_names"][0])
+
+                #
+                # Dummies
+                #
+                event['FvT', 'q_1234'] = np.full(len(event), -1, dtype=int)
+                event['FvT', 'q_1324'] = np.full(len(event), -1, dtype=int)
+                event['FvT', 'q_1423'] = np.full(len(event), -1, dtype=int)
+
+
+                for _FvT_name, _FvT_file in zip(event.metadata["FvT_names"], event.metadata["FvT_files"]):
+
+
+                    event[_FvT_name]    = getattr(NanoEventsFactory.from_root(f'{_FvT_file}',
+                                                                              entry_start=estart, entry_stop=estop,
+                                                                              schemaclass=FriendTreeSchema).events(), _FvT_name)
+
+                    event[_FvT_name, _FvT_name]    = getattr(event[_FvT_name], _FvT_name)
+
+            else:
+                event['FvT']    = NanoEventsFactory.from_root(f'{path}{"FvT.root"}',
+                                                              entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().FvT
+
+            event['FvT', 'frac_err'] = event['FvT'].std / event['FvT'].FvT
+            if not ak.all(event.FvT.event == event.event):
+                raise ValueError('ERROR: FvT events do not match events ttree')
+
+        if self.run_SvB:
+            if (self.classifier_SvB is None) | (self.classifier_SvB_MA is None):
+                event['SvB']    = NanoEventsFactory.from_root(f'{path}{"SvB_newSBDef.root" if "mix" in dataset else "SvB.root"}',
+                                                          entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().SvB
+                if not ak.all(event.SvB.event == event.event):
+                    raise ValueError('ERROR: SvB events do not match events ttree')
+
+                event['SvB_MA'] = NanoEventsFactory.from_root(f'{path}{"SvB_MA_newSBDef.root" if "mix" in dataset else "SvB_MA.root"}',
+                                                          entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().SvB_MA
+                if not ak.all(event.SvB_MA.event == event.event):
+                    raise ValueError('ERROR: SvB_MA events do not match events ttree')
+
+                # defining SvB for different SR
+                setSvBVars("SvB",    event)
+                setSvBVars("SvB_MA", event)
+
+
+        if isDataForMixed:
+            #
+            # Load the different JCMs
+            #
+            JCM_array = TreeReader(lambda x: [s for s in x if s.startswith("pseudoTagWeight_3bDvTMix4bDvT_v")]).arrays(Chunk.from_coffea_events(event))
+            for _JCM_load in event.metadata["JCM_loads"]:
+                event[_JCM_load] = JCM_array[_JCM_load]
 
         #
         # general event weights
@@ -207,6 +303,19 @@ class analysis(processor.ProcessorABC):
         logging.debug(f"Weight Statistics {weights.weightStatistics}")
 
         #
+        # Event selection
+        #
+        event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year])
+
+        event['weight'] = weights.weight()   ### this is for _cutflow
+        selections.add( 'lumimask', event.lumimask )
+        selections.add( 'passNoiseFilter', event.passNoiseFilter )
+        selections.add( 'passHLT', np.full(len(event), True) if (isMC or isMixedData or isTTForMixed or isDataForMixed) else event.passHLT )
+        self._cutFlow.fill("all",  event[selections.require(lumimask=True)], allTag=True)
+        self._cutFlow.fill("passNoiseFilter",  event[ selections.require(lumimask=True, passNoiseFilter=True) ], allTag=True)
+        self._cutFlow.fill("passHLT",  event[ selections.require(lumimask=True, passNoiseFilter=True, passHLT=True) ], allTag=True)
+
+        #
         # Calculate and apply Jet Energy Calibration
         #
         if (isMixedData or isDataForMixed or isTTForMixed or not isMC):  #### AGE: data corrections are not applied. Should be changed
@@ -232,16 +341,13 @@ class analysis(processor.ProcessorABC):
             ])
             logging.info(f'\nJet variations {[name for _, name in shifts]}')
 
-        return processor.accumulate(self.process_shift(update_events(event, collections), name, weights) for collections, name in shifts)
 
-    def process_shift(self, event, shift_name, weights):
+        return processor.accumulate(self.process_shift(update_events(event, collections), name, selections, weights) for collections, name in shifts)
+
+    def process_shift(self, event, shift_name, selections, weights):
         '''For different jet variations. It computes event variations for the nominal case.'''
 
-        fname   = event.metadata['filename']
         dataset = event.metadata['dataset']
-        estart  = event.metadata['entrystart']
-        estop   = event.metadata['entrystop']
-        chunk   = f'{dataset}::{estart:6d}:{estop:6d} >>> '
         year    = event.metadata['year']
         processName = event.metadata['processName']
         isMC    = True if event.run[0] == 1 else False
@@ -250,116 +356,12 @@ class analysis(processor.ProcessorABC):
         isDataForMixed = not (dataset.find("data_3b_for_mixed") == -1)
         isTTForMixed = not (dataset.find("TTTo" ) == -1) and not(dataset.find("_for_mixed") == -1)
         nEvent = len(event)
-        selections = PackedSelection()
 
-        #
-        #  Cut Flows
-        #
-        processOutput = {}
-        processOutput['nEvent'] = {}
-        processOutput['nEvent'][event.metadata['dataset']] = nEvent
-
-        if not shift_name: self._cutFlow = cutFlow(self.cutFlowCuts)
-
-        logging.debug(fname)
-        logging.debug(f'{chunk}Process {nEvent} Events')
-
-        #
-        # Reading SvB friend trees
-        #
-        path = fname.replace(fname.split('/')[-1], '')
-        if self.apply_FvT:
-            if isMixedData:
-
-                FvT_name = event.metadata["FvT_name"]
-                event['FvT']    = getattr(NanoEventsFactory.from_root(f'{event.metadata["FvT_file"]}',
-                                                                      entry_start=estart, entry_stop=estop,
-                                                                      schemaclass=FriendTreeSchema).events(), FvT_name)
-
-                event['FvT', 'FvT']    = getattr(event['FvT'], FvT_name)
-
-                #
-                # Dummies
-                #
-                event['FvT', 'q_1234'] = np.full(len(event), -1, dtype=int)
-                event['FvT', 'q_1324'] = np.full(len(event), -1, dtype=int)
-                event['FvT', 'q_1423'] = np.full(len(event), -1, dtype=int)
-
-
-            elif (isDataForMixed or isTTForMixed):
-
-                #
-                # Use the first to define the FvT weights
-                #
-                event['FvT']    = getattr(NanoEventsFactory.from_root(f'{event.metadata["FvT_files"][0]}',
-                                                                      entry_start=estart, entry_stop=estop,
-                                                                      schemaclass=FriendTreeSchema).events(), event.metadata["FvT_names"][0])
-
-                event['FvT', 'FvT']    = getattr(event['FvT'], event.metadata["FvT_names"][0])
-
-                #
-                # Dummies
-                #
-                event['FvT', 'q_1234'] = np.full(len(event), -1, dtype=int)
-                event['FvT', 'q_1324'] = np.full(len(event), -1, dtype=int)
-                event['FvT', 'q_1423'] = np.full(len(event), -1, dtype=int)
-
-
-                for _FvT_name, _FvT_file in zip(event.metadata["FvT_names"], event.metadata["FvT_files"]):
-
-
-                    event[_FvT_name]    = getattr(NanoEventsFactory.from_root(f'{_FvT_file}',
-                                                                              entry_start=estart, entry_stop=estop,
-                                                                              schemaclass=FriendTreeSchema).events(), _FvT_name)
-
-                    event[_FvT_name, _FvT_name]    = getattr(event[_FvT_name], _FvT_name)
-
-            else:
-                event['FvT']    = NanoEventsFactory.from_root(f'{path}{"FvT.root"}',
-                                                              entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().FvT
-
-            event['FvT', 'frac_err'] = event['FvT'].std / event['FvT'].FvT
-            if not ak.all(event.FvT.event == event.event):
-                raise ValueError('ERROR: FvT events do not match events ttree')
-
-        if self.run_SvB:
-            if (self.classifier_SvB is None) | (self.classifier_SvB_MA is None):
-                event['SvB']    = NanoEventsFactory.from_root(f'{path}{"SvB_newSBDef.root" if "mix" in dataset else "SvB.root"}',
-                                                          entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().SvB
-                if not ak.all(event.SvB.event == event.event):
-                    raise ValueError('ERROR: SvB events do not match events ttree')
-
-                event['SvB_MA'] = NanoEventsFactory.from_root(f'{path}{"SvB_MA_newSBDef.root" if "mix" in dataset else "SvB_MA.root"}',
-                                                          entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().SvB_MA
-                if not ak.all(event.SvB_MA.event == event.event):
-                    raise ValueError('ERROR: SvB_MA events do not match events ttree')
-
-                # defining SvB for different SR
-                setSvBVars("SvB",    event)
-                setSvBVars("SvB_MA", event)
-
-
-        if isDataForMixed:
-            #
-            # Load the different JCMs
-            #
-            JCM_array = TreeReader(lambda x: [s for s in x if s.startswith("pseudoTagWeight_3bDvTMix4bDvT_v")]).arrays(Chunk.from_coffea_events(event))
-            for _JCM_load in event.metadata["JCM_loads"]:
-                event[_JCM_load] = JCM_array[_JCM_load]
-
-        event['weight'] = weights.weight()   ### this is for _cutflow
-
-        selections.add( 'lumimask', event.lumimask )
-        selections.add( 'passNoiseFilter', event.passNoiseFilter )
-        selections.add( 'passHLT', np.full(len(event), True) if (isMC or isMixedData or isTTForMixed or isDataForMixed) else event.passHLT )
-        if not shift_name:
-            self._cutFlow.fill("all",  event[selections.require(lumimask=True)], allTag=True)
-            self._cutFlow.fill("passNoiseFilter",  event[ selections.require(lumimask=True, passNoiseFilter=True) ], allTag=True)
-            self._cutFlow.fill("passHLT",  event[ selections.require(lumimask=True, passNoiseFilter=True, passHLT=True) ], allTag=True)
 
         # Apply object selection (function does not remove events, adds content to objects)
         event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year], isMixedData=isMixedData, isTTForMixed=isTTForMixed, isDataForMixed=isDataForMixed)
 
+        event['weight'] = weights.weight()   ### this is for _cutflow
         selections.add( 'passJetMult', event.passJetMult )
         allcuts = [ 'lumimask', 'passNoiseFilter', 'passHLT', 'passJetMult' ]
         if not shift_name: self._cutFlow.fill("passJetMult", event[selections.all(*allcuts)], allTag=True)
@@ -675,7 +677,7 @@ class analysis(processor.ProcessorABC):
                 self._cutFlow.fill("passSvB",       selev[selev.passSvB])
                 self._cutFlow.fill("failSvB",       selev[selev.failSvB])
 
-            self._cutFlow.addOutput(processOutput, event.metadata['dataset'])
+            self._cutFlow.addOutput(self.processOutput, event.metadata['dataset'])
 
         #
         # Hists
@@ -829,7 +831,7 @@ class analysis(processor.ProcessorABC):
                     *selections,
                 )
 
-            output = hist.output | processOutput | friends
+            output = hist.output | self.processOutput | friends
         #
         # Run systematics
         #
@@ -872,7 +874,7 @@ class analysis(processor.ProcessorABC):
                     for ih in hist_SvB.output['hists'].keys():
                         hist_SvB.output['hists'][ih] = hist_SvB.output['hists'][ih] + dict_hist_SvB[ivar].output['hists'][ih]
 
-            output = hist_SvB.output | processOutput
+            output = hist_SvB.output | self.processOutput
 
         return output
 
