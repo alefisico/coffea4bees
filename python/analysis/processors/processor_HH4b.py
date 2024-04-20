@@ -466,7 +466,7 @@ class analysis(processor.ProcessorABC):
             logging.info(f"\nJet variations {[name for _, name in shifts]}")
 
         return processor.accumulate(
-            self.process_shift(update(event, collections), name, weights)
+            self.process_shift(update_events(event, collections), name, weights)
             for collections, name in shifts
         )
 
@@ -521,6 +521,7 @@ class analysis(processor.ProcessorABC):
             processOutput['nEvent'] = {}
             processOutput['nEvent'][event.metadata['dataset']] = nEvent
 
+            self._cutFlow = cutFlow(self.cutFlowCuts)
             self._cutFlow.fill(
                 "all", event[selections.require(lumimask=True)], allTag=True
             )
