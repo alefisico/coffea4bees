@@ -219,3 +219,10 @@ def drClean(coll1,coll2,cone=0.4):
     jets_noleptons = coll1[nolepton_mask]
     return [jets_noleptons, nolepton_mask]
 
+def update_events(events, collections):
+    """Return a shallow copy of events array with some collections swapped out"""
+    out = events
+    for name, value in collections.items():
+        out = ak.with_field(out, value, name)
+    return out
+
