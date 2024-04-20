@@ -115,6 +115,6 @@ def dump_JCM_weight(
         events=events,
         output=output,
         name=name,
-        data={"pseudoTagWeight": weight},
+        data=ak.Array({"pseudoTagWeight": weight}),
         dump_naming=dump_naming,
     )

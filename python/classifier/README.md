@@ -57,7 +57,7 @@ or use [mamba](https://mamba.readthedocs.io/en/latest/installation/mamba-install
 mamba env create -f env.yml
 ```
 
-### Run Command Line Interface
+### Run Command Line Interface by examples
 
 #### Help
 
@@ -67,25 +67,66 @@ To list all available commands and options:
 python run_classifier.py help --all
 ```
 
-#### Train
+#### Monitor
 
-##### Simple HCR FvT
+Start a monitor using port 10200 and save the logs to a local directory named by the current timestamp:
 
-Check what files will be used:
+```bash
+python run_classifier.py monitor --setting Monitor "port: 10200" --setting IO "output: ./logs-{timestamp}/"
+```
+
+It will print the IP address and port number that the monitor is listening to. e.g.
+  
+```console
+[04/18/24 13:36:18] [ main] INFO     Started Monitor at 127.0.1.1:10200
+```
+
+Which port to use:
+
+- LPC: 10000-10200 is usally safe to use
+- PSC: TBD
+- LXPLUS: TBD
+
+#### Training in two steps
+
+##### Cache preprocessed datasets to speed up loading (Optional)
+
+Cache the `HCR.FvT_picoAOD` dataset using a pre-defined workflow and connect to the monitor we started above:
+
+```bash
+export WFS="classifier/config/workflows/examples"
+python run_classifier.py from ${WFS}/cache_training_set.yml --setting Monitor "{address: 127.0.1.1, port: 10200}"
+```
+
+By default, it will write to `root://cmseos.fnal.gov//store/user/{user}/HH4b/classifier/cache/` in LPC, which can be changed by appending `--setting IO "output: /path/to/save/"`.
+
+> **_NOTE:_** Check what files are cached:
 
 ```bash
 python run_classifier.py debug --dataset HCR.FvT_picoAOD
 ```
 
-Train with default datasets and settings:
+> **_NOTE:_** Use `expand` to recover the command line arguments from workflows:
 
 ```bash
-python run_classifier.py train --max-trainers 3 \
---dataset HCR.FvT_picoAOD \
---friends data,friend path/to/friend.metadata.json@@friend.data \
---friends ttbar,friend path/to/friend.metadata.json@@friend.ttbar \
---model HCR.FvT
+python run_classifier.py expand ${WFS}/cache_training_set.yml
 ```
+
+> **_NOTE:_** Use `workflow` to generate the workflow file from command line:
+
+```bash
+python run_classifier.py workflow ${WFS}/test.yml train --max-loaders 4 --max-trainers 1  --dataset ... --model ... --setting torch.DataLoader "yaml:##{batch_skim: 65536, num_workers: 2}"
+```
+
+##### Train FvT classifier with HCR architecture using cached datasets
+
+Load the dataset from cache and train the classifier using the example workflow:
+
+```bash
+python run_classifier.py from ${WFS}/train_hcr_fvt.yml --template "user: "${USER} ${WFS}/template/load_cached_dataset.yml --setting Monitor ... --setting IO ...
+```
+
+> **_NOTE:_** By using `--template` with a mapping followed by files, it will replace the keys in the files with Python's [`str.format`](https://docs.python.org/3/library/string.html#format-string-syntax) (escaped by `{{` and `}}`). e.g. replace `{user}` by current `${USER}`.
 
 #### Evaluate
 
@@ -96,15 +137,11 @@ TODO
 TODO
 
 ## TODO
+
 - HCR:
-  - Add fine-tuning
   - Add die loss?
-  - rewrite setMeanStd to accumulate chunks
-  - JCM weight 3b ttbar, 3b data
 - main:
   - Add evaluation
-  - Add logging, benchmark, plotting
-- FvT
-  - SR ?
+  - Add plotting
 - Add SvB
 - Add DvT

@@ -57,8 +57,8 @@ class _load_datasets:
 
 class LoadTrainingSets(SetupMultiprocessing):
     _workflow = [
-        ("main", "call [blue]dataset.train()[/blue]"),
-        ("sub", "load [blue]dataset[/blue]"),
+        ("main", "[blue]\[loader, ...]=dataset.train()[/blue] initialize datasets"),
+        ("sub", "[blue]loader()[/blue] load datasets"),
     ]
     argparser = ArgParser()
     argparser.add_argument(

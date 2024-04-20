@@ -1,17 +1,20 @@
 from __future__ import annotations
 
+import logging
 from abc import ABC, abstractmethod
-from functools import cached_property, reduce
+from functools import cached_property, partial, reduce
 from itertools import chain
 from typing import TYPE_CHECKING, Callable
 
 from base_class.utils import unique
+from classifier.monitor.progress import Progress
 from classifier.task import ArgParser, Dataset, converter, parse
 
 if TYPE_CHECKING:
     import pandas as pd
     from base_class.root import Friend
     from classifier.df.io import FromRoot, ToTensor
+    from classifier.monitor.progress import ProgressTracker
 
 # basic
 
@@ -75,7 +78,7 @@ class LoadRoot(ABC, Dataframe):
         action="extend",
         nargs="+",
         default=[],
-        help="the paths to the filelists",
+        help=f"the paths to the filelists {parse.EMBED}",
     )
     argparser.add_argument(
         "--friends",
@@ -106,7 +109,7 @@ class LoadRoot(ABC, Dataframe):
         return unique(
             reduce(
                 list.__add__,
-                (parse.mapping(f"file:///{f}") for f in filelists),
+                (parse.mapping(f, "file") for f in filelists),
                 files.copy(),
             )
         )
@@ -114,7 +117,7 @@ class LoadRoot(ABC, Dataframe):
     def _parse_friends(self, friends: list[str]) -> list[Friend]:
         from base_class.root import Friend
 
-        return [Friend.from_json(parse.mapping(f"file:///{f}")) for f in friends]
+        return [Friend.from_json(parse.mapping(f, "file")) for f in friends]
 
     def _from_root(self):
         yield self.from_root(), self.files
@@ -158,7 +161,7 @@ class LoadGroupedRoot(LoadRoot):
         nargs="+",
         metavar=("GROUPS", "PATHS"),
         default=[],
-        help="comma-separated groups and paths to the filelist",
+        help=f"comma-separated groups and paths to the filelist {parse.EMBED}",
     )
     argparser.add_argument(
         "--friends",
@@ -194,6 +197,19 @@ class LoadGroupedRoot(LoadRoot):
     def from_root(self, groups: frozenset[str]) -> FromRoot: ...
 
 
+class _fetch:
+    def __init__(self, tree: str, progress: ProgressTracker):
+        self._tree = tree
+        self._progress = progress
+
+    def __call__(self, path: str):
+        from base_class.root import Chunk
+
+        chunk = Chunk(source=path, name=self._tree, fetch=True)
+        self._progress.advance(1)
+        return chunk
+
+
 class _load_df_from_root(_load_df):
     def __init__(
         self,
@@ -214,20 +230,36 @@ class _load_df_from_root(_load_df):
         from base_class.root import Chunk
         from classifier.process import status
 
+        chunks = []
         dfs = []
         with ProcessPoolExecutor(
             max_workers=self._max_workers,
             mp_context=status.context,
             initializer=status.initializer,
         ) as pool:
-            chunks = []
+            progress = Progress.new(
+                total=sum(map(lambda x: len(x[1]), self._from_root)),
+                msg="Fetching metadata of ROOT files",
+            )
             for _, files in self._from_root:
                 chunks.append(
-                    pool.map(Chunk._fetch, (Chunk(f, self._tree) for f in files))
+                    pool.map(_fetch(tree=self._tree, progress=progress), files)
                 )
+            chunks = [list(c) for c in chunks]
+            progress.complete()
+            progress = Progress.new(
+                total=sum(map(len, chain(*chunks))), msg="Loading ROOT files "
+            )
             for i in range(len(chunks)):
                 balanced = Chunk.balance(
                     self._chunksize, *chunks[i], common_branches=True
                 )
-                dfs.append(pool.map(self._from_root[i][0].read, balanced))
-        return pd.concat(chain(*dfs), ignore_index=True, copy=False)
+                dfs.append(
+                    pool.map(
+                        partial(self._from_root[i][0].read, progress=progress), balanced
+                    )
+                )
+        progress.complete()
+        return pd.concat(
+            filter(lambda x: x is not None, chain(*dfs)), ignore_index=True, copy=False
+        )

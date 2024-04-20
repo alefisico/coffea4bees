@@ -1,7 +1,7 @@
 import logging
 
 
-def intervals(arg: str, max: int = None) -> list[int]:
+def intervals(arg: list[str], max: int = None) -> list[int]:
     result = []
     for r in arg:
         rs = r.split("-")
@@ -13,8 +13,10 @@ def intervals(arg: str, max: int = None) -> list[int]:
                     result.extend(range(int(rs[0]), int(rs[1]) + 1))
                 case _:
                     raise ValueError
-        except ValueError:
-            logging.error(f"Invalid range {r}")
+        except ValueError as e:
+            logging.error(f"Invalid range {r}", exc_info=e)
     return sorted(
-        filter(lambda x: 0 <= x if max is None else lambda x: 0 <= x < max, set(result))
+        filter(
+            (lambda x: 0 <= x) if max is None else (lambda x: 0 <= x < max), set(result)
+        )
     )

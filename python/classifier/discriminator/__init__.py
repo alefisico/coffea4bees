@@ -1,9 +1,10 @@
-# TODO multiprocessing
 from __future__ import annotations
 
 import gc
+import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from datetime import datetime
 from functools import cached_property
 from typing import Iterable
 
@@ -11,11 +12,13 @@ import torch
 from torch import Tensor, nn
 from torch.utils.data import Dataset
 
-from ..config.setting.default import DataLoader as DLSetting
+from ..config.setting import torch as cfg
+from ..monitor.progress import Progress
 from ..nn.dataset import mp_loader
 from ..nn.schedule import Schedule
 from ..process.device import Device
-from ..typetools import WithUUID
+from ..task.special import interface
+from ..typetools import WithUUID, filename
 
 
 @dataclass
@@ -23,16 +26,14 @@ class TrainingStage:
     name: str
     model: Model
     schedule: Schedule
+
+    training: Dataset
+    validation: Dataset = None
+
     do_benchmark: bool = True
 
 
 class Model(ABC):
-    def eval(self):
-        self.module.eval()
-
-    def train(self):
-        self.module.train()
-
     def parameters(self):
         return self.module.parameters()
 
@@ -47,22 +48,26 @@ class Model(ABC):
     @abstractmethod
     def module(self) -> nn.Module: ...
 
-    @abstractmethod
-    def forward(self, batch: dict[str, Tensor]) -> dict[str, Tensor]: ...
+    @interface
+    def train(self, batch: dict[str, Tensor]) -> Tensor: ...
 
-    @abstractmethod
-    def loss(self, pred: dict[str, Tensor]) -> Tensor: ...
+    @interface(optional=True)
+    def validate(self, batches: Iterable[dict[str, Tensor]]) -> dict: ...
 
+    @interface
+    def evaluate(self, batch: dict[str, Tensor]) -> dict[str, Tensor]: ...
+
+    @interface(optional=True)
     def step(self, epoch: int = None): ...
 
 
 class Classifier(WithUUID, ABC):
-    device: torch.device
-
     def __init__(self, **kwargs):
         super().__init__()
         self.metadata = kwargs
-        self.name = "__".join(f"{k}_{v}" for k, v in kwargs.items())
+        self.name = filename(kwargs)
+        self.device: torch.device = None
+        self.dataset: Dataset = None
 
     def cleanup(self):
         if self.device.type == "cuda":
@@ -80,11 +85,11 @@ class Classifier(WithUUID, ABC):
 
     def train(
         self,
-        training: Dataset,
-        validation: Dataset,
+        dataset: Dataset,
         device: Device,
     ):
         self.device = device.get(self.min_memory)
+        self.dataset = dataset
         result = {
             "uuid": str(self.uuid),
             "name": self.name,
@@ -96,23 +101,16 @@ class Classifier(WithUUID, ABC):
             result["parameters"][stage.name] = stage.model.n_parameters
             result["benchmark"][stage.name] = self._train(
                 stage=stage,
-                training=training,
-                validation=validation,
             )
         return result
 
-    def eval(
+    def evaluate(
         self,
     ): ...  # TODO evaluataion
-
-    def _benchmark(self, epoch: int, pred: dict[str, Tensor], *group: str):
-        return {}  # TODO monitor
 
     def _train(
         self,
         stage: TrainingStage,
-        training: Dataset,
-        validation: Dataset,
     ):
         model = stage.model
         schedule = stage.schedule
@@ -120,53 +118,63 @@ class Classifier(WithUUID, ABC):
         optimizer = schedule.optimizer(model.parameters())
         lr = schedule.lr_scheduler(optimizer)
         bs = schedule.bs_scheduler(
-            training,
+            stage.training,
             shuffle=True,
             drop_last=True,
+            pin_memory=True,
         )
 
         # training
         benchmark = []
-        datasets = {"training": training, "validation": validation}
+        epoch_p = Progress.new(schedule.epoch, f"epoch")
+        logging.info(f"Start {stage.name}")
+        start = datetime.now()
         for epoch in range(schedule.epoch):
             self.cleanup()
-            model.train()
-            for batch in bs.dataloader:
+            model.module.train()
+            batch_p = Progress.new(len(bs.dataloader), "batch")
+            for i, batch in enumerate(bs.dataloader):
                 optimizer.zero_grad()
-                pred = model.forward(batch)
-                # TODO monitor pred
-                loss = model.loss(pred)
+                loss = model.train(batch)
                 loss.backward()
                 optimizer.step()
-            if stage.do_benchmark:
+                batch_p.update(i + 1, f"batch|loss={loss.item():.4g}")
+            if (
+                (not cfg.Training.disable_benchmark)
+                and stage.do_benchmark
+                and (model.validate is not NotImplemented)
+            ):
                 benchmark.append(
                     {
-                        k: self._benchmark(
-                            epoch,
-                            self._evaluate(model, datasets[k]),
-                            stage.name,
-                            f"{k} set",
-                        )
-                        for k in datasets
+                        "training": self._validate(model, stage.training),
+                        "validation": self._validate(model, stage.validation),
                     }
-                )  # TODO monitor
-            lr.step()
-            bs.step()
-            model.step()
+                )
+            lr.step(), bs.step()
+            if model.step is not NotImplemented:
+                model.step()
+            epoch_p.update(epoch + 1)
+        logging.info(
+            f"{stage.name}: run {schedule.epoch} epochs in {datetime.now() - start}"
+        )
         return benchmark
 
     @torch.no_grad()
-    def _evaluate(
+    def _validate(
         self,
         model: Model,
         dataset: Dataset,
     ):
-        loader = mp_loader(
-            dataset,
-            batch_size=DLSetting.batch_eval,
-            shuffle=False,
-            drop_last=False,
+        model.module.eval()
+        return model.validate(
+            mp_loader(
+                dataset,
+                batch_size=cfg.DataLoader.batch_eval,
+                shuffle=False,
+                drop_last=False,
+                pin_memory=True,
+            )
         )
-        model.eval()
-        preds = [model.forward(batch) for batch in loader]
-        return {k: torch.cat([p[k] for p in preds], dim=0) for k in preds[0]}
+
+    @torch.no_grad()
+    def _evaluate(self, model: Model): ...  # TODO evaluation
