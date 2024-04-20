@@ -19,19 +19,16 @@ def _str_to_entropy(__str: str) -> list[np.uint32]:
     return np.frombuffer(hashlib.md5(__str.encode()).digest(), dtype=np.uint32).tolist()
 
 
-def _seed(entropy: SeedLike):
-    if isinstance(entropy, str):
-        return _str_to_entropy(entropy)
-    elif isinstance(entropy, Iterable):
-        seeds = []
-        for i in entropy:
-            if isinstance(i, str):
-                seeds.extend(_str_to_entropy(i))
-            else:
-                seeds.append(i)
-        return seeds
-    else:
-        return entropy
+def _seed(*entropy: SeedLike):
+    seeds = []
+    for e in entropy:
+        if isinstance(e, str):
+            seeds.extend(_str_to_entropy(e))
+        elif isinstance(e, Iterable):
+            seeds.extend(_seed(*e))
+        else:
+            seeds.append(e)
+    return seeds
 
 
 class CBRNG(ABC):
@@ -79,6 +76,26 @@ class CBRNG(ABC):
             case _:
                 raise NotImplementedError
 
+    def reduce(self, counters: npt.ArrayLike) -> npt.NDArray[np.uint64]:
+        """
+        Generate a random sequence by reducing the last dimension of the counters.
+        """
+        while True:
+            counters = np.asarray(counters, dtype=np.uint64)
+            shape = counters.shape[-1]
+            if shape == 1:
+                return self.uint(counters).reshape(counters.shape[:-1])
+            elif shape % 2 == 0:
+                counters = self.uint(counters, 32).view(np.uint64)
+            else:
+                counters = np.concatenate(
+                    [
+                        self.uint(counters[..., :-1], 32).view(np.uint64),
+                        counters[..., -1:],
+                    ],
+                    axis=-1,
+                )
+
 
 class Squares(CBRNG):
     """
@@ -88,8 +105,8 @@ class Squares(CBRNG):
     """
 
     @classmethod
-    def _generate_key(cls, seed: SeedLike) -> np.uint64:
-        gen = np.random.Generator(np.random.MT19937(_seed(seed)))
+    def _generate_key(cls, *seeds: SeedLike) -> np.uint64:
+        gen = np.random.Generator(np.random.MT19937(_seed(*seeds)))
         bits = np.arange(1, 16, dtype=np.uint64)
         offsets = np.arange(0, 29, 4, dtype=np.uint64)
         lower8 = gen.choice(bits, 8, replace=False)
@@ -98,7 +115,7 @@ class Squares(CBRNG):
                 lower8 = np.roll(lower8, -i)
                 break
         higher8 = np.zeros(8, dtype=np.uint64)
-        higher8[0] = gen.choice(np.delete(bits, int(lower8[-1]) - 1), 1)
+        higher8[0:1] = gen.choice(np.delete(bits, int(lower8[-1]) - 1), 1)
         higher8[1:] = gen.choice(np.delete(bits, int(higher8[0]) - 1), 7, replace=False)
         return np.sum(lower8 << offsets) + (np.sum(higher8 << offsets) << _UINT64_32)
 

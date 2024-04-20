@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from abc import abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 from classifier.task import ArgParser, parse
 
@@ -10,47 +9,44 @@ from ..state.label import MultiClass
 from ._kfold import KFoldClassifier
 
 if TYPE_CHECKING:
-    from classifier.discriminator.HCR import HCRModel
+    from classifier.discriminator.skimmer import Splitter
     from torch import Tensor
 
 _SCHEDULER = "classifier.config.scheduler"
 
 
 class _HCR(KFoldClassifier):
+    loss: Callable[[dict[str, Tensor]], Tensor]
+
     argparser = ArgParser()
     argparser.add_argument(
         "--architecture",
         type=parse.mapping,
         default="",
-        help="HCR architecture",
+        help=f"HCR architecture {parse.EMBED}",
     )
     argparser.add_argument(
         "--ghost-batch",
         type=parse.mapping,
         default="",
-        help="ghost batch normalization configuration",
+        help=f"ghost batch normalization configuration {parse.EMBED}",
     )
     argparser.add_argument(
         "--training",
         nargs="+",
         default=["FixedStep"],
         metavar=("CLASS", "KWARGS"),
-        help="training scheduler",
+        help=f"training scheduler {parse.EMBED}",
     )
     argparser.add_argument(
         "--finetuning",
         nargs="+",
         default=[],
         metavar=("CLASS", "KWARGS"),
-        help="fine-tuning scheduler",
+        help=f"fine-tuning scheduler {parse.EMBED}",
     )
 
-    @staticmethod
-    @abstractmethod
-    def loss(model: HCRModel, batch: dict[str, Tensor]) -> Tensor:
-        pass
-
-    def initializer(self, kfolds: int, offset: int):
+    def initializer(self, splitter: Splitter, **kwargs):
         from classifier.discriminator.HCR import GBN, HCRArch, HCRClassifier
 
         arch = HCRArch(**({"loss": self.loss} | self.opts.architecture))
@@ -61,16 +57,16 @@ class _HCR(KFoldClassifier):
         return HCRClassifier(
             arch=arch,
             ghost_batch=gbn,
+            cross_validation=splitter,
             training_schedule=training,
             finetuning_schedule=finetuning,
-            kfolds=kfolds,
-            offset=offset,
+            **kwargs,
         )
 
 
 class FvT(_HCR):
     @staticmethod
-    def loss(model: HCRModel, batch: dict[str, Tensor]):
+    def loss(batch: dict[str, Tensor]):
         import torch
         import torch.nn.functional as F
 

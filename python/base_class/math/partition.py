@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from functools import cache
+from functools import cache, cached_property
 from itertools import combinations
 from math import comb, perm, prod
 from typing import Iterable, overload
@@ -8,53 +8,61 @@ from typing import Iterable, overload
 import numpy as np
 import numpy.typing as npt
 
+from .jit import Compilable, allow_jit
+
 __all__ = ["Partition"]
 
 
-class Partition:
+class Partition(Compilable):
     @overload
     def __init__(self, size: int, groups: int, members: int): ...
     @overload
     def __init__(self, size: int, groups: Iterable[int]): ...
     def __init__(self, size: int, groups: int | Iterable[int], members: int = None):
-        self.size = size
+        self._size = size
         if isinstance(groups, Iterable):
-            self.members, self.groups = np.unique(
+            self._members, self._groups = np.unique(
                 np.asarray(groups, int), return_counts=True
             )
         else:
-            self.members = np.array([members], dtype=int)
-            self.groups = np.array([groups], dtype=int)
-        if size < np.sum(self.groups * self.members):
-            self.count = 0
+            self._members = np.array([members], dtype=int)
+            self._groups = np.array([groups], dtype=int)
+        if size < np.sum(self._groups * self._members):
+            self._n_combs = 0
         else:
-            if len(self.groups) == 1:
-                self.count = Partition._count(
-                    self.size, self.groups[0], self.members[0]
+            if len(self._groups) == 1:
+                self._n_combs = Partition._count(
+                    self._size, self._groups[0], self._members[0]
                 )
             else:
-                self._subs, self.count, size = list[Partition](), 1, self.size
-                for i in range(0, len(self.groups)):
-                    self._subs.append(Partition(size, self.groups[i], self.members[i]))
-                    self.count *= self._subs[i].count
-                    size -= self.groups[i] * self.members[i]
+                self._subs, self._n_combs, size = list[Partition](), 1, self._size
+                for i in range(0, len(self._groups)):
+                    self._subs.append(
+                        Partition(size, self._groups[i], self._members[i])
+                    )
+                    self._n_combs *= self._subs[i]._n_combs
+                    size -= self._groups[i] * self._members[i]
 
     @property
-    def combination(self) -> list[npt.NDArray[np.int_]]:
-        if self.count == 0:
+    def n_combinations(self) -> int:
+        return self._n_combs
+
+    @cached_property
+    def combinations(self) -> list[npt.NDArray[np.int_]]:
+        if self.n_combinations == 0:
             return list(
-                np.empty((0, self.groups[i], self.members[i]), dtype=int)
-                for i in range(len(self.groups))
+                np.empty((0, self._groups[i], self._members[i]), dtype=int)
+                for i in range(len(self._groups))
             )
-        result = [Partition._combination(self.size, self.groups[0], self.members[0])]
-        for i in range(1, len(self.groups)):
+        result = [Partition._combination(self._size, self._groups[0], self._members[0])]
+        for i in range(1, len(self._groups)):
             result.append(
-                Partition._setdiff2d(np.arange(self.size), *result[:i])[
-                    :, self._subs[i].combination[0]
-                ].reshape((-1, self.groups[i], self.members[i]))
+                Partition.__setdiff2d(np.arange(self._size), *result[:i])[
+                    :, self._subs[i].combinations[0]
+                ].reshape((-1, self._groups[i], self._members[i]))
             )
             for j in range(i):
-                result[j] = np.repeat(result[j], self._subs[i].count, axis=0)
+                result[j] = np.repeat(result[j], self._subs[i]._n_combs, axis=0)
         return result
 
     @staticmethod
@@ -86,14 +94,14 @@ class Partition:
         for c in combs:
             remain = np.setdiff1d(np.arange(c[0], size), c)
             partition = Partition(remain.shape[0], groups - 1, members)
-            end = start + partition.count
+            end = start + partition._n_combs
             partitions[start:end, 0, :] = c
-            partitions[start:end, 1:, :] = remain[partition.combination]
+            partitions[start:end, 1:, :] = remain[partition.combinations]
             start = end
         return partitions
 
-    @staticmethod
-    def _setdiff2d(index: npt.NDArray, *exclude: npt.NDArray):
+    @allow_jit
+    def __setdiff2d(index: npt.NDArray, *exclude: npt.NDArray):
         n_exclude, n_index = 0, len(exclude[0])
         for i in np.arange(len(exclude)):
             n_exclude += exclude[i].shape[1]
@@ -109,9 +117,3 @@ class Partition:
                     result[i, count] = index[j]
                     count += 1
         return result
-
-    @staticmethod
-    def accelerate():
-        from numba import njit
-
-        Partition._setdiff2d = njit(Partition._setdiff2d)

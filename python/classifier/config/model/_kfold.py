@@ -1,89 +1,110 @@
 from __future__ import annotations
 
-import argparse
 from abc import ABC, abstractmethod
 from functools import cached_property
 from typing import TYPE_CHECKING
 
-from classifier.nn.dataset import io_loader
-from classifier.task import ArgParser, Model, converter
+from classifier.task import ArgParser, Model, converter, parse
 
 if TYPE_CHECKING:
     from classifier.discriminator import Classifier
+    from classifier.discriminator.skimmer import Splitter
     from classifier.process.device import Device
-    from torch.utils.data import Dataset, StackDataset
+    from torch.utils.data import StackDataset
 
 
-class KFoldClassifier(ABC, Model):
+class _KFold(Model):
     argparser = ArgParser()
     argparser.add_argument(
         "--kfolds",
-        type=converter.int_pos,
+        type=converter.bounded(int, lower=2),
         default=3,
         help="total number of folds",
     )
     argparser.add_argument(
-        "--kfold-max-folds",
-        type=converter.int_pos,
-        default=argparse.SUPPRESS,
-        help="the maximum number of folds to use",
+        "--kfold-offsets",
+        action="extend",
+        nargs="+",
+        default=[],
+        help="selected offsets, e.g. [yellow]--kfold-offsets 0-3 5[/yellow]",
     )
     argparser.add_argument(
-        "--kfold-split-key",
-        default="offset",
-        help="the key used to split the dataset",
+        "--kfold-seed",
+        action="extend",
+        nargs="+",
+        default=["kfold"],
+        help="the random seed to shuffle the dataset",
+    )
+    argparser.add_argument(
+        "--kfold-seed-offsets",
+        action="extend",
+        nargs="+",
+        default=[],
+        help="the offsets to generate new seeds, e.g. [yellow]--kfold-seed-offsets 0-3 5[/yellow]. If not given, the dataset will not be shuffled.",
     )
 
-    @abstractmethod
-    def initializer(self, kfolds: int, offset: int) -> Classifier: ...
+    def _get_offsets(self, name: str, max: int = None) -> list[int]:
+        offsets = getattr(self.opts, name)
+        if not offsets:
+            return [*range(max)] if max else []
+        else:
+            return parse.intervals(offsets, max)
 
     @cached_property
     def kfolds(self) -> int:
         return self.opts.kfolds
 
-    def train(self, dataset: StackDataset):
-        if self.kfolds == 1:
+    @cached_property
+    def offsets(self) -> list[int]:
+        return self._get_offsets("kfold_offsets", self.kfolds)
+
+    @cached_property
+    def seeds(self) -> list[tuple[str]]:
+        seed = self.opts.kfold_seed
+        offsets = self._get_offsets("kfold_seed_offsets")
+        if not offsets:
+            return []
+        return [(*seed, offset) for offset in offsets]
+
+
+class KFoldClassifier(ABC, _KFold):
+    @abstractmethod
+    def initializer(self, splitter: Splitter, **kwargs) -> Classifier: ...
+
+    def train(self):
+        if not self.seeds:
+            from classifier.discriminator.skimmer import KFold
+
             return [
                 _train_classifier(
-                    self.initializer(kfolds=self.kfolds, offset=0), dataset, dataset
+                    self.initializer(
+                        KFold(self.kfolds, offset),
+                        kfolds=self.kfolds,
+                        offset=offset,
+                    )
                 )
+                for offset in self.offsets
             ]
         else:
-            import numpy as np
-            from torch.utils.data import ConcatDataset, Subset
+            from classifier.discriminator.skimmer import RandomKFold
 
-            key = dataset.datasets[self.opts.kfold_split_key]
-            offset = []
-            for i in io_loader(key):
-                offset.append(i.numpy() % self.kfolds)
-            offset = np.concatenate(offset)
-            indices = np.arange(len(offset))
-            folds = [Subset(dataset, indices[offset == i]) for i in range(self.kfolds)]
-            max_folds = min(
-                self.kfolds, getattr(self.opts, "kfold_max_folds", self.kfolds)
-            )
             return [
                 _train_classifier(
-                    self.initializer(kfolds=self.kfolds, offset=i),
-                    ConcatDataset(folds[:i] + folds[i + 1 :]),
-                    folds[i],
+                    self.initializer(
+                        RandomKFold(seed, self.kfolds, offset),
+                        kfolds=self.kfolds,
+                        offset=offset,
+                        seed=seed,
+                    )
                 )
-                for i in range(max_folds)
+                for seed in self.seeds
+                for offset in self.offsets
             ]
 
 
 class _train_classifier:
-    def __init__(
-        self,
-        classifier: Classifier,
-        training: Dataset,
-        validation: Dataset,
-    ):
+    def __init__(self, classifier: Classifier):
         self._classifier = classifier
-        self._training = training
-        self._validation = validation
 
-    def __call__(self, device: Device):
-        return self._classifier.train(
-            training=self._training, validation=self._validation, device=device
-        )
+    def __call__(self, device: Device, dataset: StackDataset):
+        return self._classifier.train(dataset=dataset, device=device)

@@ -24,21 +24,31 @@ def _is_state(var: tuple[str, Any]):
     return not _is_special(name) and not isinstance(value, classmethod)
 
 
-class _CachedStateMeta(type):
+class _ClassPropertyMeta(type):
     __cached_states__ = {}
 
-    def __getattribute__(self, __name: str):
+    def __getattribute__(cls, __name: str):
         if not _is_private(__name):
-            value = vars(self).get(__name)
-            parser = vars(self).get(f"_{__name}")
+            value = vars(cls).get(__name)
+            parser = vars(cls).get(f"get__{__name}")
             if isinstance(parser, classmethod):
-                if __name not in self.__cached_states__:
-                    self.__cached_states__[__name] = parser.__func__(self, value)
-                return self.__cached_states__[__name]
+                if __name not in cls.__cached_states__:
+                    cls.__cached_states__[__name] = parser.__func__(cls, value)
+                return cls.__cached_states__[__name]
         return super().__getattribute__(__name)
 
+    def __setattr__(cls, __name: str, __value: Any):
+        __new = None
+        if not _is_private(__name):
+            parser = vars(cls).get(f"set__{__name}")
+            if isinstance(parser, classmethod):
+                __new = parser.__func__(cls, __value)
+        if __new is not None:
+            __value = __new
+        super().__setattr__(__name, __value)
 
-class GlobalState(metaclass=_CachedStateMeta):
+
+class GlobalState:
     _states: list[type[GlobalState]] = []
 
     def __init_subclass__(cls):
@@ -70,7 +80,13 @@ class _share_global_state:
 status.initializer.add_unique(_share_global_state)
 
 
-class Cascade(GlobalState, Static):
+class Cascade(GlobalState, Static, metaclass=_ClassPropertyMeta):
+    def __init_subclass__(cls):
+        super().__init_subclass__()
+        for k, v in vars(cls).items():
+            if _is_state((k, v)):
+                setattr(cls, k, v)
+
     @classmethod
     def __mod_name__(cls):
         return ".".join(f"{cls.__module__}.{cls.__name__}".split(".")[3:])
@@ -94,6 +110,7 @@ class Cascade(GlobalState, Static):
         from base_class.typetools import get_partial_type_hints, type_name
         from rich.markup import escape
 
+        from . import parse
         from .task import _INDENT
 
         try:
@@ -105,7 +122,7 @@ class Cascade(GlobalState, Static):
         if cls.__doc__:
             doc = filter(None, (l.strip() for l in cls.__doc__.split("\n")))
             infos.extend([*doc, ""])
-        infos.append("options:")
+        infos.append(f"options: {parse.EMBED}")
         for k, v in keys.items():
             info = k
             if k in annotations:
