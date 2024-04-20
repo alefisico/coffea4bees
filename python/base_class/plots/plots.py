@@ -15,7 +15,8 @@ import inspect
 _phi = (1 + np.sqrt(5)) / 2
 _epsilon = 0.001
 _colors = ["xkcd:blue", "xkcd:red", "xkcd:off green",
-           "xkcd:orange", "xkcd:violet", "xkcd:grey"]
+           "xkcd:orange", "xkcd:violet", "xkcd:grey",
+           "xkcd:black", "xkcd:pink" , "xkcd:pale blue"]
 
 
 def load_config(metadata):
@@ -801,7 +802,6 @@ def make2DPlot(cfg, process, var='selJets.pt',
        region   : "SR",
 
        plotting opts
-        'doRatio'  : bool (False)
         'rebin'    : int (1),
     """
 
@@ -812,10 +812,6 @@ def make2DPlot(cfg, process, var='selJets.pt',
 
     hist_to_plot = input_data['hists'][var]
     varName = hist_to_plot.axes[-1].name
-    rebin = kwargs.get("rebin", 1)
-    plotConfig = cfg.plotConfig
-    codes = plotConfig["codes"]
-
     cut_dict = get_cut_dict(cut, cfg.cutList)
 
     #
@@ -828,10 +824,9 @@ def make2DPlot(cfg, process, var='selJets.pt',
     #
     #  Unstacked hists
     #
-    process_config = get_value_nested_dict(plotConfig, process)
-
+    process_config = get_value_nested_dict(cfg.plotConfig, process)
     tagName = process_config.get("tag", "fourTag")
-    tag = plotConfig["codes"]["tag"][tagName]
+    tag = cfg.plotConfig["codes"]["tag"][tagName]
     # labels.append(v.get("label"))
     # hist_types. append(v.get("histtype", "errorbar"))
 
@@ -839,10 +834,10 @@ def make2DPlot(cfg, process, var='selJets.pt',
 
     if region in ["sum", sum]:
         region_selection = sum
-    elif type(codes["region"][region]) is list:
-        region_selection = [hist.loc(_r) for _r in codes["region"][region]]
+    elif type(cfg.plotConfig["codes"]["region"][region]) is list:
+        region_selection = [hist.loc(_r) for _r in cfg.plotConfig["codes"]["region"][region]]
     else:
-        region_selection = hist.loc(codes["region"][region])
+        region_selection = hist.loc(cfg.plotConfig["codes"]["region"][region])
 
     if kwargs.get("debug", False):
         print(f" hist process={process}, "
@@ -852,13 +847,14 @@ def make2DPlot(cfg, process, var='selJets.pt',
                  "year":    year,
                  "tag":     hist.loc(tag),
                  "region":  region_selection,
-                 varName:   hist.rebin(rebin)}
+                 varName:   hist.rebin(kwargs.get("rebin", 1))}
 
     hist_dict = hist_dict | cut_dict
     _hist = hist_to_plot[hist_dict]
 
     if len(_hist.shape) == 3:  # for 2D plots
         _hist = _hist[sum, :, :]
+
     #
     # Add args
     #
@@ -867,7 +863,7 @@ def make2DPlot(cfg, process, var='selJets.pt',
     #
     # Make the plot
     #
-    fig, ax = _plot2d(_hist, plotConfig, **kwargs)
+    fig, ax = _plot2d(_hist, cfg.plotConfig, **kwargs)
 
     #
     # Save Fig

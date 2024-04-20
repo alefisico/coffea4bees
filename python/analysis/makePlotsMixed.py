@@ -12,11 +12,11 @@ from coffea.util import load
 import numpy as np
 
 sys.path.insert(0, os.getcwd())
-from base_class.plots.plots import makePlot, make2DPlot, load_config, load_hists, read_axes_and_cuts, parse_args, get_value_nested_dict, get_hist, _plot, _savefig
+from base_class.plots.plots import makePlot, make2DPlot, load_config, load_hists, read_axes_and_cuts, parse_args, get_value_nested_dict, get_hist, _plot, _savefig, _colors, makeRatio, _plot_ratio
 import base_class.plots.iPlot_config as cfg
 
 np.seterr(divide='ignore', invalid='ignore')
-
+_epsilon = 0.001
 
 def doPlots(debug=False):
 
@@ -42,15 +42,16 @@ def doPlots(debug=False):
             hist_sum = _hist
 
         
-    print(hist_sum)
-    hist_ave = hist_sum * 1/15
-    print(hist_ave)    
 
+    hist_ave = hist_sum * 1/15
+
+    n_sub_samples = 8
+    
     hists = []
-    for i in range(2):
+    for i in range(n_sub_samples):
         hist_config_vX = copy.copy(get_value_nested_dict(cfg.plotConfig, "Multijet"))
         hist_config_vX["name"] = f"bkg_v{i}"
-        hist_config_vX["fillcolor"] = "k"
+        hist_config_vX["fillcolor"] = _colors[i],
         hist_config_vX["histtype"] = "errorbar"
         hist_config_vX["label"] = f"bkg_v{i}"
          
@@ -67,11 +68,31 @@ def doPlots(debug=False):
     kwargs = {"year" : "RunII",
               "outputFolder" : args.outputFolder,
               #"histtype" : "errorbar",
-              #"yscale" : "log",
+              "yscale" : "log",
+              "rlim": [0.8,1.2],
               }
 
-    fig, ax = _plot(hists, stack_dict, cfg.plotConfig, **kwargs)
+#    fig, ax = _plot(hists, stack_dict, cfg.plotConfig, **kwargs)
 
+
+    ratio_plots = []
+
+    denValues = hist_ave.values()
+
+    denValues[denValues == 0] = _epsilon
+    denCenters = hist_ave.axes[0].centers
+
+    for iH, _h in enumerate(hists):
+        numValues = _h[0].values()
+
+        ratio_config = {"color": _colors[iH],
+                        "marker": "o",
+                        }
+        ratios, ratio_uncert = makeRatio(numValues, denValues, **kwargs)
+        ratio_plots.append((denCenters, ratios, ratio_uncert, ratio_config))
+
+    fig, main_ax, ratio_ax = _plot_ratio(hists, stack_dict, ratio_plots, **kwargs)
+    ax = (main_ax, ratio_ax)
 
     _savefig(fig, var_to_plot, kwargs.get("outputFolder"), kwargs["year"], cut, "threeTag", region)
 
