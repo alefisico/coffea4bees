@@ -50,6 +50,7 @@ def _walk_packages(base):
 
 class Main(main.Main):
     _no_monitor = True
+    _no_state = True
 
     _keys = " ".join(f"--{k}" for k in EntryPoint._keys)
     argparser = ArgParser(
@@ -59,7 +60,6 @@ class Main(main.Main):
             ("main", f"[blue]task.help()[/blue] print help information"),
         ],
     )
-    argparser.remove_argument("--save-state")
     argparser.add_argument(
         "--all",
         action="store_true",

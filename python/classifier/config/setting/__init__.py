@@ -54,8 +54,8 @@ class IO(Cascade):
     monitor: EOS = "diagnostics"
     profiler: EOS = "profiling"
 
-    file_states: str = "states.pkl"
-    file_metadata: str = "metadata.json"
+    states: EOS = "states.pkl"
+    metadata: EOS = "metadata.json"
 
     @classmethod
     def _generate_path(cls, value: str):
@@ -86,6 +86,14 @@ class IO(Cascade):
     @classmethod
     def get__profiler(cls, value: str):
         return cls._generate_path(value)
+
+    @classmethod
+    def get__states(cls, value: str):
+        return cls.output / value
+
+    @classmethod
+    def get__metadata(cls, value: str):
+        return cls.output / value
 
 
 class Monitor(Cascade):

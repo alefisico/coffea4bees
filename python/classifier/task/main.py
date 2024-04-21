@@ -193,21 +193,18 @@ class EntryPoint:
         meta = self.main.run(self)
         wait_for_monitor()
 
-        if self.main.flag("save_state"):
-            save.parse([IO.output / IO.file_states])
+        if (not self.main._no_state) and (not IO.states.is_null):
+            save.parse([IO.states])
         Recorder.dump()
 
-        if meta is not None:
+        if (meta is not None) and (not IO.metadata.is_null):
             from base_class.utils.json import DefaultEncoder
 
             meta |= {
                 "command": self.cmd,
                 "reproducible": reproducible(),
             }
-            with fsspec.open(
-                IO.output / IO.file_metadata,
-                "wt",
-            ) as f:
+            with fsspec.open(IO.metadata, "wt") as f:
                 json.dump(meta, f, cls=DefaultEncoder)
 
 
@@ -216,14 +213,8 @@ class EntryPoint:
 
 class Main(Task):
     _no_monitor = False
+    _no_state = False
     _no_load = False
-
-    argparser = ArgParser()
-    argparser.add_argument(
-        "--save-state",
-        action="store_true",
-        help="save global states to the output directory",
-    )
 
     @interface
     def run(self, parser: EntryPoint) -> Optional[dict[str]]: ...

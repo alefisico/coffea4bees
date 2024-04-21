@@ -53,8 +53,6 @@ class Main(LoadTrainingSets):
         default=1,
         help="the maximum number of files to write in parallel",
     )
-    argparser.remove_argument("--save-state")
-    defaults = {"save_state": True}
 
     def run(self, parser: EntryPoint):
         from concurrent.futures import ProcessPoolExecutor as Pool
