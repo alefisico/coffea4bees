@@ -162,7 +162,7 @@ class EntryPoint:
         if cls is None:
             raise AttributeError(f'Task "{self.args[_MAIN][0]}" not found')
 
-        if not cls._no_load:
+        if not cls._no_init:
             self._fetch_all()
 
         self.main: Main = new(cls, self.args[_MAIN][1])
@@ -214,7 +214,7 @@ class EntryPoint:
 class Main(Task):
     _no_monitor = False
     _no_state = False
-    _no_load = False
+    _no_init = False
 
     @interface
     def run(self, parser: EntryPoint) -> Optional[dict[str]]: ...

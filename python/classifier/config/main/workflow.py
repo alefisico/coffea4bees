@@ -33,7 +33,7 @@ def _merge_args(opts: list[str]) -> list[str]:
 class Main(main.Main):
     _no_monitor = True
     _no_state = True
-    _no_load = True
+    _no_init = True
 
     argparser = ArgParser(
         prog="workflow",
