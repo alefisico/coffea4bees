@@ -10,7 +10,6 @@ if TYPE_CHECKING:
 
 class Columns(Cascade):
     event: str = "event"
-    event_offset: str = "event_offset"
     weight: str = "weight"
     weight_normalized: str = "weight_normalized"
 

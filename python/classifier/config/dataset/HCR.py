@@ -6,7 +6,7 @@ from functools import cache, cached_property
 from typing import TYPE_CHECKING, Callable, Iterable
 
 from classifier.df.tools import (
-    add_event_offset,
+    add_columns,
     add_label_index,
     add_label_index_from_column,
     drop_columns,
@@ -15,10 +15,10 @@ from classifier.df.tools import (
 )
 from classifier.task import ArgParser
 from classifier.typetools import enum_dict
-from classifier.utils import subgroups
 
 from ..setting.df import Columns
 from ..setting.HCR import Input, InputBranch, MassRegion, NTag
+from ..setting.torch import KFold
 from ._df import LoadGroupedRoot
 
 if TYPE_CHECKING:
@@ -42,6 +42,7 @@ class _Common(LoadGroupedRoot):
         "fourTag",
         "threeTag",
         "passHLT",
+        "pseudoTagWeight",
         Columns.event,
         Columns.weight,
     ]
@@ -51,7 +52,7 @@ class _Common(LoadGroupedRoot):
         # fmt: off
         (
             self.to_tensor
-            .add(Input.offset, Columns.index_dtype).columns(Columns.event_offset)
+            .add(KFold.offset, KFold.offset_dtype).columns(Columns.event)
             .add(Input.label, Columns.index_dtype).columns(Columns.label_index)
             .add(Input.region, Columns.index_dtype).columns(_Derived.region_index)
             .add(Input.weight, "float32").columns(Columns.weight)
@@ -61,7 +62,6 @@ class _Common(LoadGroupedRoot):
         )
         self.preprocessors.extend(
             [
-                add_event_offset(60),  # 1, 2, 3, 4, 5, 6 folds
                 map_selection_to_index(
                     **enum_dict(MassRegion)
                 ).set(selection=_Derived.region_index, op="|"),
@@ -70,8 +70,8 @@ class _Common(LoadGroupedRoot):
                 ).set(selection=_Derived.ntag_index),
                 drop_columns(
                     "ZZSR", "ZHSR", "HHSR", "SR", "SB",
-                    "fourTag", "threeTag",
-                    "passHLT", Columns.event,
+                    "fourTag", "threeTag", "pseudoTagWeight",
+                    "passHLT",
                 ),
             ]
         )
@@ -91,33 +91,28 @@ class _Common(LoadGroupedRoot):
     def from_root(self, groups: frozenset[str]):
         from classifier.df.io import FromRoot
 
-        subs = {*subgroups(groups)}
-
-        friends = None
-        for g in subs:
-            if g in self.friends:
-                friends = self.friends[g]
-                break
+        friends = []
+        for k, v in self.friends.items():
+            if k <= groups:
+                friends.extend(v)
 
         pres = []
         for gs, ps in self._preprocessor_by_label:
-            if gs.intersection(subs):
+            if any(map(lambda g: g <= groups, gs)):
                 pres.extend(ps)
         pres.extend(self.preprocessors)
 
-        metadata = {}
         year = self._get_year(groups)
-        if year:
-            metadata["year"] = year
+        if year is not None:
+            pres.append(add_columns(year=year))
         label = self._get_label(groups)
-        if label:
+        if label is not None:
             pres.append(add_label_index(label))
 
         return FromRoot(
             friends=friends,
             branches=self._branches.intersection,
             preprocessors=pres,
-            metadata=metadata,
         )
 
     @cached_property
@@ -127,8 +122,7 @@ class _Common(LoadGroupedRoot):
     @cached_property
     def _preprocessor_by_label(self):
         return [
-            (set(frozenset(g) for g in gs), [*ps])
-            for gs, ps in self.preprocessor_by_label
+            ([frozenset(g) for g in gs], [*ps]) for gs, ps in self.preprocessor_by_label
         ]
 
     @cached_property
@@ -151,6 +145,11 @@ class _Common(LoadGroupedRoot):
     ) -> Iterable[
         tuple[Iterable[Iterable[str]], Iterable[Callable[[pd.DataFrame], pd.DataFrame]]]
     ]: ...
+
+
+def _FvT_apply_JCM(df):
+    df.loc[df["threeTag"], "weight"] *= df.loc[df["threeTag"], "pseudoTagWeight"]
+    return df
 
 
 def _FvT_data_selection(df):
@@ -178,8 +177,7 @@ class FvT(_Common):
     argparser = ArgParser()
     argparser.add_argument(
         "--ttbar-3b-prescale",
-        type=float,
-        default=10.0,
+        default="10",
         help="prescale 3b ttbar events",
     )
 
@@ -191,24 +189,28 @@ class FvT(_Common):
     def preprocessor_by_label(self):
         return [
             (
-                [
-                    ("data",),
-                ],
+                [("data",)],
                 [
                     _FvT_data_selection,
                     add_label_index_from_column(threeTag="d3", fourTag="d4"),
                 ],
             ),
             (
-                [
-                    ("ttbar",),
-                ],
+                [("ttbar",)],
                 [
                     _FvT_ttbar_selection,
                     prescale(
-                        self.opts.ttbar_3b_prescale, selection=_FvT_ttbar_3b_prescale
+                        scale=self.opts.ttbar_3b_prescale,
+                        selection=_FvT_ttbar_3b_prescale,
+                        seed=("ttbar", 0),
                     ),
                     add_label_index_from_column(threeTag="t3", fourTag="t4"),
+                ],
+            ),
+            (
+                [()],
+                [
+                    _FvT_apply_JCM,
                 ],
             ),
         ]
@@ -239,13 +241,13 @@ class FvT_picoAOD(FvT):
         ttbar = ["TTTo2L2Nu", "TTToHadronic", "TTToSemiLeptonic"]
         filelists = []
         for k, v in year.items():
-            files = [f"data,{k},friend"]
+            files = [f"data,{k}"]
             for y in v:
                 for e in era[y]:
                     files.append(base.format(dataset="data", year=y, era=f".{e}"))
             filelists.append(files)
         for k, v in year.items():
-            files = [f"ttbar,{k},friend"]
+            files = [f"ttbar,{k}"]
             for y in v:
                 for tt in ttbar:
                     files.append(base.format(dataset=tt, year=y, era=""))

@@ -68,7 +68,6 @@ stack:
                 fillcolor: xkcd:bright yellow
                 edgecolor: k
                 label: Multijet
-                year: RunII
                 sum:
                     data_3tag:
                             process: data

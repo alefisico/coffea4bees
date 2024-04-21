@@ -107,11 +107,14 @@ class PlotTestCase(unittest.TestCase):
         hist_mock = MagicMock()
         hist_mock.values.return_value = np.array([1, 2, 3])
         hist_mock.axes[0].centers = np.array([0.5, 1.5, 2.5])
+
+        # Mocking histogram config
+        hist_config = {"name": "hist1"}
         
         # Setting up inputs
         input_dict = {"type": "hists", "key": "hist1"}
         hist_index = {"hist1": 0}
-        hists = [hist_mock]
+        hists = [(hist_mock, hist_config)]
         stack_dict = {}
         
         # Expected values
@@ -119,7 +122,7 @@ class PlotTestCase(unittest.TestCase):
         expected_centers = np.array([0.5, 1.5, 2.5])
         
         # Test
-        values, centers = get_values_centers_from_dict(input_dict, hist_index, hists, stack_dict)
+        values, centers = get_values_centers_from_dict(input_dict, hists, stack_dict)
         np.testing.assert_array_equal(values, expected_values)
         np.testing.assert_array_equal(centers, expected_centers)
 
@@ -129,7 +132,7 @@ class PlotTestCase(unittest.TestCase):
         hist_mock = MagicMock()
         hist_mock.values.return_value = np.array([1, 2, 3])
         hist_mock.axes[0].centers = np.array([0.5, 1.5, 2.5])
-        stack_dict = {"stack1": hist_mock, "stack2": hist_mock}
+        stack_dict = {"stack1": (hist_mock, {}), "stack2": (hist_mock, {})}
 
         # Setting up inputs
         input_dict = {"type": "stack"}
@@ -141,7 +144,7 @@ class PlotTestCase(unittest.TestCase):
         expected_centers = np.array([0.5, 1.5, 2.5])
         
         # Test
-        values, centers = get_values_centers_from_dict(input_dict, hist_index, hists, stack_dict)
+        values, centers = get_values_centers_from_dict(input_dict, hists, stack_dict)
         np.testing.assert_array_equal(values, expected_values)
         np.testing.assert_array_equal(centers, expected_centers)        
 

@@ -4,12 +4,21 @@ import bisect
 from collections import defaultdict, deque
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
+from itertools import chain
 from logging import Logger
-from typing import TYPE_CHECKING, Callable, Generator, Literal, Protocol, overload
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    Generator,
+    Iterable,
+    Literal,
+    Protocol,
+    overload,
+)
 
 from ..dask.delayed import delayed
 from ..system.eos import EOS, PathLike
-from ._backend import concat_record, merge_record, rename_record
+from ._backend import merge_record, rename_record
 from .chunk import Chunk
 from .io import TreeReader, TreeWriter
 from .merge import move, resize
@@ -250,64 +259,19 @@ class Friend:
             self._check_item(item)
         self._insert(key, item)
 
-    @overload
-    def arrays(
-        self,
-        target: Chunk,
-        filter: Callable[[set[str]], set[str]] = None,
-        library: Literal["ak"] = "ak",
-        reader_options: dict = None,
-    ) -> ak.Array: ...
+    def _new_reader(self, reader_options: dict):
+        reader_options = dict(reader_options or {})
+        branch_filter = reader_options.pop("branch_filter", None)
+        branches = (
+            self._branches if branch_filter is None else branch_filter(self._branches)
+        )
+        reader_options["branch_filter"] = branches.intersection
+        return TreeReader(**reader_options)
 
-    @overload
-    def arrays(
-        self,
-        target: Chunk,
-        filter: Callable[[set[str]], set[str]] = None,
-        library: Literal["pd"] = "pd",
-        reader_options: dict = None,
-    ) -> pd.DataFrame: ...
-
-    @overload
-    def arrays(
-        self,
-        target: Chunk,
-        filter: Callable[[set[str]], set[str]] = None,
-        library: Literal["np"] = "np",
-        reader_options: dict = None,
-    ) -> dict[str, np.ndarray]: ...
-
-    @_on_disk
-    def arrays(
-        self,
-        target: Chunk,
-        filter: Callable[[set[str]], set[str]] = None,
-        library: Literal["ak", "pd", "np"] = "ak",
-        reader_options: dict = None,
-    ) -> RecordLike:
-        """
-        Fetch the friend :class:`TTree` for ``target`` into array.
-
-        Parameters
-        ----------
-        target : Chunk
-            A chunk of :class:`TTree`.
-        filter : ~typing.Callable[[set[str]], set[str]], optional
-            A function to select branches. If not given, all branches will be read.
-        library : ~typing.Literal['ak', 'np', 'pd'], optional, default='ak'
-            The library used to represent arrays.
-        reader_options : dict, optional
-            Additional options passed to :class:`~.io.TreeReader`.
-
-        Returns
-        -------
-        RecordLike
-            Data from friend :class:`TTree`.
-        """
+    def _match_chunks(self, target: Chunk) -> Generator[Chunk, None, None]:
         series = self._data[target]
         start = target.entry_start
         stop = target.entry_stop
-        chunks = []
         for i in range(
             bisect.bisect_left(
                 series, _FriendItem(target.entry_start, target.entry_stop)
@@ -325,44 +289,82 @@ class Friend:
                 chunk_start = start - item.start
                 start = min(stop, item.stop)
                 chunk_stop = start - item.start
-                chunks.append(item.chunk.slice(chunk_start, chunk_stop))
-        branches = self._branches if filter is None else filter(self._branches)
-        reader_options = reader_options or {}
-        reader_options["filter"] = branches.__and__
-        return TreeReader(**reader_options).concat(*chunks, library=library)
+                yield item.chunk.slice(chunk_start, chunk_stop)
 
     @overload
-    def concat(
+    def arrays(
         self,
-        *targets: Chunk,
-        filter: Callable[[set[str]], set[str]] = None,
+        target: Chunk,
         library: Literal["ak"] = "ak",
         reader_options: dict = None,
     ) -> ak.Array: ...
-
     @overload
-    def concat(
+    def arrays(
         self,
-        *targets: Chunk,
-        filter: Callable[[set[str]], set[str]] = None,
+        target: Chunk,
         library: Literal["pd"] = "pd",
         reader_options: dict = None,
     ) -> pd.DataFrame: ...
+    @overload
+    def arrays(
+        self,
+        target: Chunk,
+        library: Literal["np"] = "np",
+        reader_options: dict = None,
+    ) -> dict[str, np.ndarray]: ...
+    @_on_disk
+    def arrays(
+        self,
+        target: Chunk,
+        library: Literal["ak", "pd", "np"] = "ak",
+        reader_options: dict = None,
+    ) -> RecordLike:
+        """
+        Fetch the friend :class:`TTree` for ``target`` into array.
+
+        Parameters
+        ----------
+        target : Chunk
+            A chunk of :class:`TTree`.
+        library : ~typing.Literal['ak', 'np', 'pd'], optional, default='ak'
+            The library used to represent arrays.
+        reader_options : dict, optional
+            Additional options passed to :class:`~.io.TreeReader`.
+
+        Returns
+        -------
+        RecordLike
+            Data from friend :class:`TTree`.
+        """
+        return self._new_reader(reader_options).concat(
+            *self._match_chunks(target), library=library
+        )
 
     @overload
     def concat(
         self,
         *targets: Chunk,
-        filter: Callable[[set[str]], set[str]] = None,
+        library: Literal["ak"] = "ak",
+        reader_options: dict = None,
+    ) -> ak.Array: ...
+    @overload
+    def concat(
+        self,
+        *targets: Chunk,
+        library: Literal["pd"] = "pd",
+        reader_options: dict = None,
+    ) -> pd.DataFrame: ...
+    @overload
+    def concat(
+        self,
+        *targets: Chunk,
         library: Literal["np"] = "np",
         reader_options: dict = None,
     ) -> dict[str, np.ndarray]: ...
-
     @_on_disk
     def concat(
         self,
         *targets: Chunk,
-        filter: Callable[[set[str]], set[str]] = None,
         library: Literal["ak", "pd", "np"] = "ak",
         reader_options: dict = None,
     ) -> RecordLike:
@@ -373,8 +375,6 @@ class Friend:
         ----------
         targets : tuple[Chunk]
             One or more chunks of :class:`TTree`.
-        filter : ~typing.Callable[[set[str]], set[str]], optional
-            A function to select branches. If not given, all branches will be read.
         library : ~typing.Literal['ak', 'np', 'pd'], optional, default='ak'
             The library used to represent arrays.
         reader_options : dict, optional
@@ -385,40 +385,28 @@ class Friend:
         RecordLike
             Concatenated data.
         """
-        if len(targets) == 1:
-            return self.arrays(targets[0], filter, library, reader_options)
-        else:
-            return concat_record(
-                [
-                    self.arrays(target, filter, library, reader_options)
-                    for target in targets
-                ],
-                library=library,
-            )
+        return self._new_reader(reader_options).concat(
+            *chain(*map(self._match_chunks, targets)), library=library
+        )
 
     @overload
     def dask(
         self,
         *targets: Chunk,
-        filter: Callable[[set[str]], set[str]] = None,
         library: Literal["ak"] = "ak",
         reader_options: dict = None,
     ) -> dak.Array: ...
-
     @overload
     def dask(
         self,
         *targets: Chunk,
-        filter: Callable[[set[str]], set[str]] = None,
         library: Literal["np"] = "np",
         reader_options: dict = None,
     ) -> dict[str, da.Array]: ...
-
     @_on_disk
     def dask(
         self,
         *targets: Chunk,
-        filter: Callable[[set[str]], set[str]] = None,
         library: Literal["ak", "np"] = "ak",
         reader_options: dict = None,
     ) -> DelayedRecordLike:
@@ -429,8 +417,6 @@ class Friend:
         ----------
         targets : tuple[Chunk]
             Partitions of target :class:`TTree`.
-        filter : ~typing.Callable[[set[str]], set[str]], optional
-            A function to select branches. If not given, all branches will be read.
         library : ~typing.Literal['ak', 'np'], optional, default='ak'
             The library used to represent arrays.
         reader_options : dict, optional
@@ -461,10 +447,7 @@ class Friend:
                 )
             else:
                 friends.append(item.chunk.slice(start - item.start, stop - item.start))
-        branches = self._branches if filter is None else filter(self._branches)
-        reader_options = reader_options or {}
-        reader_options["filter"] = branches.__and__
-        return TreeReader(**reader_options).dask(*friends, library=library)
+        return self._new_reader(reader_options).dask(*friends, library=library)
 
     def dump(
         self,
@@ -962,9 +945,15 @@ class Chain:
         elif isinstance(other, Friend):
             return self.add_friend(other)
         elif isinstance(other, Chain):
-            return self.add_chunk(*other._chunks).add_friend(*other._friends.values())
+            self.add_chunk(*other._chunks)
+            for name, friend in other._friends.items():
+                self.add_friend(friend, renaming=other._rename.get(name))
+        elif isinstance(other, Iterable):
+            for item in other:
+                self += item
         else:
             return NotImplemented
+        return self
 
     def __add__(self, other) -> Chain:
         if isinstance(other, Chain):
@@ -976,6 +965,101 @@ class Chain:
     def _rename_wrapper(self, branch: str, friend: str) -> str:
         return _apply_naming(self._rename[friend], {"friend": friend, "branch": branch})
 
+    def _fetch(
+        self,
+        *chunks: Chunk,
+        library: Literal["ak", "pd", "np"],
+        reader_options: dict,
+        friend_only: bool = False,
+        awkward_nested: bool = True,
+    ) -> RecordLike:
+        reader_options = reader_options or {}
+        friends = {}
+        for name, friend in self._friends.items():
+            friend = friend.concat(
+                *chunks,
+                library=library,
+                reader_options=reader_options,
+            )
+            if name in self._rename:
+                friend = rename_record(
+                    friend,
+                    partial(self._rename_wrapper, friend=name),
+                    library=library,
+                )
+            friends[name] = friend
+        if library == "ak":
+            friends = {k: v for k, v in friends.items() if len(v.fields) > 0}
+        if friend_only:
+            if library == "ak" and awkward_nested:
+                import awkward as ak
+
+                return ak.Array(friends)
+            return merge_record([*friends.values()], library=library)
+        else:
+            main = TreeReader(**reader_options).concat(*chunks, library=library)
+            if library == "ak" and awkward_nested:
+                for name, friend in friends.items():
+                    main[name] = friend
+                return main
+            return merge_record([main, *friends.values()], library=library)
+
+    @overload
+    def concat(
+        self,
+        library: Literal["ak"] = "ak",
+        reader_options: dict = None,
+        friend_only: bool = False,
+        awkward_nested: bool = True,
+    ) -> ak.Array: ...
+    @overload
+    def concat(
+        self,
+        library: Literal["pd"] = "pd",
+        reader_options: dict = None,
+        friend_only: bool = False,
+    ) -> pd.DataFrame: ...
+    @overload
+    def concat(
+        self,
+        library: Literal["np"] = "np",
+        reader_options: dict = None,
+        friend_only: bool = False,
+    ) -> dict[str, np.ndarray]: ...
+    def concat(
+        self,
+        library: Literal["ak", "pd", "np"] = "ak",
+        reader_options: dict = None,
+        friend_only: bool = False,
+        awkward_nested: bool = True,
+    ) -> RecordLike:
+        """
+        Read all chunks and friend trees into one record.
+
+        Parameters
+        ----------
+        library : ~typing.Literal['ak', 'np', 'pd'], optional, default='ak'
+            The library used to represent arrays.
+        reader_options : dict, optional
+            Additional options passed to :class:`~.io.TreeReader`.
+        friend_only : bool, optional, default=False
+            If ``True``, only read friend trees.
+        awkward_nested: bool, optional, default=True
+            If ``True``, the output will be a nested array. Only works for ``library='ak'``.
+
+        Returns
+        -------
+        RecordLike
+            Concatenated data.
+        """
+        return self._fetch(
+            *self._chunks,
+            library=library,
+            reader_options=reader_options,
+            friend_only=friend_only,
+            awkward_nested=awkward_nested,
+        )
+
     @overload
     def iterate(
         self,
@@ -983,6 +1067,7 @@ class Chain:
         library: Literal["ak"] = "ak",
         mode: Literal["balance", "partition"] = "partition",
         reader_options: dict = None,
+        awkward_nested: bool = True,
     ) -> Generator[ak.Array, None, None]: ...
     @overload
     def iterate(
@@ -1006,6 +1091,7 @@ class Chain:
         library: Literal["ak", "pd", "np"] = "ak",
         mode: Literal["balance", "partition"] = "partition",
         reader_options: dict = None,
+        awkward_nested: bool = True,
     ) -> Generator[RecordLike, None, None]:
         """
         Iterate over chunks and friend trees.
@@ -1020,6 +1106,8 @@ class Chain:
             The mode to generate iteration steps. See :meth:`~.io.TreeReader.iterate` for details.
         reader_options : dict, optional
             Additional options passed to :class:`~.io.TreeReader`.
+        awkward_nested: bool, optional, default=True
+            If ``True``, the output will be a nested array. Only works for ``library='ak'``.
 
         Yields
         ------
@@ -1034,34 +1122,16 @@ class Chain:
             chunks = Chunk.balance(step, *self._chunks, common_branches=True)
         else:
             raise ValueError(f'Unknown mode "{mode}"')
-        reader_options = reader_options or {}
-        reader = TreeReader(**reader_options)
         for chunk in chunks:
             if not isinstance(chunk, list):
                 chunk = (chunk,)
-            main = reader.concat(*chunk, library=library)
-            friends = {}
-            for name, friend in self._friends.items():
-                friend = friend.concat(
-                    *chunk,
-                    filter=reader_options.get("filter"),
-                    library=library,
-                    reader_options=reader_options,
-                )
-                if name in self._rename:
-                    friend = rename_record(
-                        friend,
-                        partial(self._rename_wrapper, friend=name),
-                        library=library,
-                    )
-                friends[name] = friend
-            if library == "ak":
-                for name, friend in friends.items():
-                    if len(friend.fields) > 0:
-                        main[name] = friend
-                yield main
-            else:
-                yield merge_record([main, *friends.values()], library=library)
+            yield self._fetch(
+                *chunk,
+                library=library,
+                reader_options=reader_options,
+                friend_only=False,
+                awkward_nested=awkward_nested,
+            )
 
     @overload
     def dask(
@@ -1110,13 +1180,11 @@ class Chain:
                 *Chunk.balance(partition, *self._chunks, common_branches=True)
             ]
         reader_options = reader_options or {}
-        reader = TreeReader(**reader_options)
-        main = reader.dask(*partitions, library=library)
+        main = TreeReader(**reader_options).dask(*partitions, library=library)
         friends = {}
         for name, friend in self._friends.items():
             friend = friend.dask(
                 *partitions,
-                filter=reader_options.get("filter"),
                 library=library,
                 reader_options=reader_options,
             )

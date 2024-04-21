@@ -87,6 +87,9 @@ class Task(TaskBase):
                     setattr(self.opts, k, v)
         return self
 
+    def flag(self, opt: str):
+        return hasattr(self.opts, opt) and getattr(self.opts, opt)
+
     @classmethod
     def help(cls):
         if cls.argparser is NotImplemented:

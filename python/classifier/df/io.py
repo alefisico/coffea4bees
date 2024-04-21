@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable, Iterable, Mapping, Optional
+from typing import Any, Callable, Iterable, Optional
 
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
 import torch
 from base_class.root import Chain, Chunk, Friend
+
+from ..monitor.progress import ProgressTracker
 
 
 class FromRoot:
@@ -16,27 +18,24 @@ class FromRoot:
         friends: Iterable[Friend] = None,
         branches: Callable[[set[str]], set[str]] = None,
         preprocessors: Iterable[Callable[[pd.DataFrame], pd.DataFrame]] = None,
-        metadata: Mapping[str, Any] = None,
     ):
         self.chain = Chain()
         self.branches = branches
         self.preprocessors = [*(preprocessors or ())]
-        self.metadata = {**(metadata or {})}
 
-        for friend in friends or ():
-            self.chain.add_friend(friend)
+        if friends:
+            self.chain += friends
 
-    def read(self, chunk: Chunk):
+    def read(self, chunk: Chunk, progress: ProgressTracker = None):
         chain = self.chain.copy()
         chain += chunk
-        df = None
-        for df in chain.iterate(library="pd", reader_options={"filter": self.branches}):
-            for preprocessor in self.preprocessors:
-                if len(df) == 0:  # TODO test
-                    return df
-                df = preprocessor(df)
-        for k, v in self.metadata.items():
-            df[k] = v
+        df = chain.concat(library="pd", reader_options={"branch_filter": self.branches})
+        for preprocessor in self.preprocessors:
+            if len(df) == 0:
+                return None
+            df = preprocessor(df)
+        if progress is not None:
+            progress.advance(len(chunk))
         return df
 
 
@@ -103,6 +102,10 @@ class ToTensor:
             if len(arrays) == 1:
                 to_tensor = arrays[0]
             else:
-                to_tensor = np.concatenate(arrays, axis=1)
+                to_tensor = np.concatenate(arrays, axis=-1)
+            if to_tensor.dtype == np.uint64:  # workaround for no "uint64" in torch
+                to_tensor = to_tensor.view(np.int64)
+            if to_tensor.dtype == np.uint32:  # workaround for no "uint32" in torch
+                to_tensor = to_tensor.view(np.int32)
             dataset[name] = torch.from_numpy(to_tensor)
         return dataset

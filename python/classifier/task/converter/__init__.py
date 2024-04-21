@@ -1,4 +1,4 @@
-from .number import bounded, int_neg, int_pos
+from ._number import bounded, int_neg, int_pos
 
 __all__ = [
     "bounded",

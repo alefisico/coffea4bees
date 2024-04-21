@@ -27,7 +27,6 @@ class _initializer:
 class status:
     context: Context = None
     initializer = _initializer()
-    is_main: bool = True
 
 
 class _inherit_context_initializer:
@@ -40,7 +39,6 @@ class _inherit_context_initializer:
     def __call__(self):
         status.context = self._context
         status.initializer = self._initializer
-        status.is_main = False
 
 
 status.initializer.add_unique(_inherit_context_initializer)

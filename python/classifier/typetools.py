@@ -1,13 +1,36 @@
 import builtins
-import uuid
 from enum import Enum
 from functools import partial
-from typing import Mapping, MutableMapping
+from typing import (
+    Any,
+    Callable,
+    Generic,
+    Iterable,
+    Mapping,
+    MutableMapping,
+    ParamSpec,
+    Protocol,
+    TypeVar,
+    runtime_checkable,
+)
+from uuid import uuid4
+
+_MethodP = ParamSpec("_MethodP")
+_MethodReturnT = TypeVar("_MethodReturnT")
+
+
+class Method(Protocol, Generic[_MethodP, _MethodReturnT]):
+    def __get__(
+        self, instance: Any, owner: type | None = None
+    ) -> Callable[_MethodP, _MethodReturnT]: ...
+    def __call__(
+        self_, self: Any, *args: _MethodP.args, **kwargs: _MethodP.kwargs
+    ) -> _MethodReturnT: ...
 
 
 class WithUUID:
     def __init__(self):
-        self.uuid = uuid.uuid4()
+        self.uuid = uuid4()
 
 
 class dict_proxy(MutableMapping):
@@ -52,3 +75,24 @@ class dict_proxy(MutableMapping):
 
 def enum_dict(enum: type[Enum]):
     return {i.name: i.value for i in enum}
+
+
+@runtime_checkable
+class FilenameProtocol(Protocol):
+    def __filename__(self) -> str: ...
+
+
+def filename(obj: Any) -> str:
+    if isinstance(obj, FilenameProtocol):
+        return obj.__filename__()
+    elif isinstance(obj, Mapping):
+        name = []
+        for k, v in obj.items():
+            name.append(f"{filename(k)}_{filename(v)}")
+        return "__".join(name)
+    elif isinstance(obj, str):
+        return obj
+    elif isinstance(obj, Iterable):
+        return "-".join(map(filename, obj))
+    else:
+        return repr(obj)
