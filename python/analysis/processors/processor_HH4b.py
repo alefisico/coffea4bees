@@ -5,6 +5,7 @@ import numpy as np
 import correctionlib
 import yaml
 import warnings
+import uproot
 
 from analysis.helpers.networks import HCREnsemble
 from analysis.helpers.topCandReconstruction import (
@@ -302,36 +303,43 @@ class analysis(processor.ProcessorABC):
                 event[_JCM_load] = JCM_array[_JCM_load]
 
         #
+        # Event selection
+        #
+        event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year])
+
+        #
         # general event weights
         #
         if isMC:
             # genWeight
             genEventSumw = event.metadata["genEventSumw"]
             weights.add(
-                "genweight", event.genWeight * (lumi * xs * kFactor / genEventSumw)
+                "genweight_", event.genWeight * (lumi * xs * kFactor / genEventSumw)
             )
             logging.debug(
-                f"genweight {weights.partial_weight(include=['genweight'])}\n"
+                f"genweight {weights.partial_weight(include=['genweight_'])}\n"
             )
 
             # trigger Weight (to be updated)
             if self.apply_trigWeight:
                 if "GluGlu" in dataset:
-                    weights.add("trigWeight", np.full(len(event), 1))
+                    ### this is temporary until trigWeight is computed in new code
+                    trigWeight_raw = uproot.open(f'{path}{"trigWeights.root"}')['Events'].arrays()
+                    trigWeight = trigWeight_raw[ np.isin( trigWeight_raw['event'], event.event) ]
 
-##                    event['trigWeight']    = NanoEventsFactory.from_root(f'{path}{"trigWeights.root"}',
-##                                                              entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events()
-#                    import uproot
-#                    path = fname.replace(fname.split('/')[-1], '')
-#                    trigWeight = uproot.open(f'{path}{"trigWeights.root"}')['Events'].arrays(entry_start=estart, entry_stop=estop)
-#
-#                    #if not ak.all(trigWeight.event == event.event):
-#                    #    raise ValueError('trigWeight events do not match events ttree')
-#                    #weights.add( 'trigWeight', trigWeight["trigWeight_Data"], trigWeight["trigWeight_MC"], ak.where(event.passHLT, 1., 0.) )
+                    if not ak.all(trigWeight.event == event.event):
+                        raise ValueError('trigWeight events do not match events ttree')
+
+                    weights.add( 'trigWeight_',
+                                trigWeight["trigWeight_Data"],
+                                trigWeight["trigWeight_MC"],
+                                ak.where(event.passHLT, 1., 0.)
+                                )
+
 
                 else:
                     weights.add(
-                        "trigWeight",
+                        "trigWeight_",
                         event.trigWeight.Data,
                         event.trigWeight.MC,
                         ak.where(event.passHLT, 1.0, 0.0),
@@ -345,7 +353,7 @@ class analysis(processor.ProcessorABC):
                     ).values()
                 )[0]
                 weights.add(
-                    "PU",
+                    "PU_",
                     puWeight.evaluate(event.Pileup.nTrueInt.to_numpy(), "nominal"),
                     puWeight.evaluate(event.Pileup.nTrueInt.to_numpy(), "up"),
                     puWeight.evaluate(event.Pileup.nTrueInt.to_numpy(), "down"),
@@ -356,7 +364,7 @@ class analysis(processor.ProcessorABC):
                 "L1PreFiringWeight" in event.fields
             ):  #### AGE: this should be temprorary (field exists in UL)
                 weights.add(
-                    "L1PreFiring",
+                    "L1PreFiring_",
                     event.L1PreFiringWeight.Nom,
                     event.L1PreFiringWeight.Up,
                     event.L1PreFiringWeight.Dn,
@@ -383,8 +391,8 @@ class analysis(processor.ProcessorABC):
                         f"PS weight vector has length {len(event.PSWeight[0])}"
                     )
 
-                weights.add("ISR", nom, up_isr, down_isr)
-                weights.add("FSR", nom, up_fsr, down_fsr)
+                weights.add("ISR_", nom, up_isr, down_isr)
+                weights.add("FSR_", nom, up_fsr, down_fsr)
 
             if "LHEPdfWeight" in event.fields:
 
@@ -403,35 +411,30 @@ class analysis(processor.ProcessorABC):
                     )
                     summed = ak.sum(np.square(arg), axis=1)
                     pdf_unc = np.sqrt((1.0 / 99.0) * summed)
-                    weights.add("PDF", nom, pdf_unc + nom)
+                    weights.add("PDF_", nom, pdf_unc + nom)
 
                     # alpha_S weights
                     # Eq. 27 of same ref
                     as_unc = 0.5 * (
                         event.LHEPdfWeight[:, 102] - event.LHEPdfWeight[:, 101]
                     )
-                    weights.add("aS", nom, as_unc + nom)
+                    weights.add("aS_", nom, as_unc + nom)
 
                     # PDF + alpha_S weights
                     # Eq. 28 of same ref
                     pdfas_unc = np.sqrt(np.square(pdf_unc) + np.square(as_unc))
-                    weights.add("PDFaS", nom, pdfas_unc + nom)
+                    weights.add("PDFaS_", nom, pdfas_unc + nom)
 
                 else:
-                    weights.add("aS", nom, up, down)
-                    weights.add("PDF", nom, up, down)
-                    weights.add("PDFaS", nom, up, down)
+                    weights.add("aS_", nom, up, down)
+                    weights.add("PDF_", nom, up, down)
+                    weights.add("PDFaS_", nom, up, down)
 
         else:
             weights.add("data", np.ones(len(event)))
 
         logging.debug(f"weights {weights.weight()}")
         logging.debug(f"Weight Statistics {weights.weightStatistics}")
-
-        #
-        # Event selection
-        #
-        event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year])
 
 
         #
@@ -553,7 +556,7 @@ class analysis(processor.ProcessorABC):
         #
         if isMC and self.apply_btagSF:
             weights.add(
-                "btagSF",
+                "btagSF_",
                 apply_btag_sf(
                     event.selJet,
                     correction_file=self.corrections_metadata[year]["btagSF"],
@@ -570,7 +573,7 @@ class analysis(processor.ProcessorABC):
                     ],
                 )
                 weights.add_multivariation(
-                    f"btagSF",
+                    f"btagSF_",
                     btag_SF_weights["btagSF_central"],
                     self.corrections_metadata[year]["btag_uncertainties"],
                     [
@@ -660,10 +663,10 @@ class analysis(processor.ProcessorABC):
             f"noJCM_noFVT {weights.weight()[ selections.all(*allcuts ) ][:10]}"
         )
         logging.debug(
-            f"noJCM_noFVT partial {weights.partial_weight(include=['genweight', 'trigWeight', 'PU' ,'btagSF'])[ selections.all(*allcuts) ][:10]}"
+            f"noJCM_noFVT partial {weights.partial_weight(include=['genweight_', 'trigWeight_', 'PU_' ,'btagSF_'])[ selections.all(*allcuts) ][:10]}"
         )
         selev["weight_noJCM_noFvT"] = weights.partial_weight(
-            include=["genweight", "trigWeight", "PU", "btagSF"]
+            include=["genweight_", "trigWeight_", "PU_", "btagSF_"]
         )[selections.all(*allcuts)]
         if self.JCM:
             selev["Jet_untagged_loose"] = selev.Jet[
@@ -720,12 +723,12 @@ class analysis(processor.ProcessorABC):
                     )
                     tmp_weight = np.full(len(event), 1.0)
                     tmp_weight[selections.all(*allcuts) & event.threeTag] = weight
-                    weights.add("FvT", tmp_weight)
+                    weights.add("FvT_", tmp_weight)
 
             else:
                 tmp_weight = np.full(len(event), 1.0)
                 tmp_weight[selections.all(*allcuts)] = weight_noFvT
-                weights.add("no_FvT", tmp_weight)
+                weights.add("no_FvT_", tmp_weight)
 
         #
         # Build diJets, indexed by diJet[event,pairing,0/1]
