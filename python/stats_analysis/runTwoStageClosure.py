@@ -95,7 +95,7 @@ CMSSW = getCMSSW()
 basePath = '/uscms/home/%s/nobackup/%s/src'%(USER, CMSSW)
 
 #mixName = '3bMix4b_rWbW2'
-mixName = '3bDvTMix4bDvT'
+
 ttAverage = False
 
 doSpuriousSignal = True
@@ -129,7 +129,7 @@ region = 'SR'
 
 # closureFileName = 'ZZ4b/nTupleAnalysis/combine/hists_closure_'+mixName+'_'+region+'_weights_newSBDef_vs_nJet_normalized.root'
 
-mixes = [mixName+'_v%d'%i for i in range(nMixes)]
+#mixes = [mixName+'_v%d'%i for i in range(nMixes)]
 
 probThreshold = 0.05 #0.045500263896 #0.682689492137 # 1sigma 
 
@@ -160,12 +160,74 @@ def addYearsOLD(f, directory, processes=['ttbar','multijet','data_obs']):
             f.cd(directory)
             hists[-1].Write()
 
+
+def addYears(f, input_file_bkg, input_file_data, var, mix, channel):
+    hists = []
+
+    directory = f"{mix}/{channel}"
+    f.mkdir(directory)
+
+    #
+    # data_obs
+    #
+    var_name = var.replace("XXX",channel)
+
+    mix_number = mix.replace(f"{mixName}_v","")
+
+    hists.append(  input_file_data.Get(f"{var_name}_mix_v{mix_number}_{'UL16_preVFP'}_fourTag_SR") )
+    hists[-1].Add( input_file_data.Get(f"{var_name}_mix_v{mix_number}_{'UL17'}_fourTag_SR") )
+    hists[-1].Add( input_file_data.Get(f"{var_name}_mix_v{mix_number}_{'UL18'}_fourTag_SR") )
+
+    f.cd(directory)
+    hists[-1].SetName("data_obs")
+    hists[-1].Write()
+
+
+    #
+    # multijet
+    #
+    var_name_multijet = var_name.replace("SvB_ps", f"SvB_FvT_{mix}_newSBDef_ps")
+    var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDef_ps")
+
+    hists.append(  input_file_bkg.Get(f"{var_name_multijet}_data_3b_for_mixed_{'UL16_preVFP'}_threeTag_SR") )
+    hists[-1].Add( input_file_bkg.Get(f"{var_name_multijet}_data_3b_for_mixed_{'UL17'}_threeTag_SR") )
+    hists[-1].Add( input_file_bkg.Get(f"{var_name_multijet}_data_3b_for_mixed_{'UL18'}_threeTag_SR") )
+
+    f.cd(directory)
+    hists[-1].SetName("multijet")
+    hists[-1].Write()
+
+
+    #
+    #
+    #
+    ttbar_procs = ["TTTo2L2Nu", "TTToHadronic", "TTToSemiLeptonic"]
+
+    hists.append(  input_file_bkg.Get(f"{var_name}_TTTo2L2Nu_for_mixed_{'UL16_preVFP'}_fourTag_SR") )
+    hists[-1].Add( input_file_bkg.Get(f"{var_name}_TTTo2L2Nu_for_mixed_{'UL17'}_fourTag_SR") )
+    hists[-1].Add( input_file_bkg.Get(f"{var_name}_TTTo2L2Nu_for_mixed_{'UL18'}_fourTag_SR") )
+
+    hists[-1].Add( input_file_bkg.Get(f"{var_name}_TTToHadronic_for_mixed_{'UL16_preVFP'}_fourTag_SR") )
+    hists[-1].Add( input_file_bkg.Get(f"{var_name}_TTToHadronic_for_mixed_{'UL17'}_fourTag_SR") )
+    hists[-1].Add( input_file_bkg.Get(f"{var_name}_TTToHadronic_for_mixed_{'UL18'}_fourTag_SR") )
+
+    hists[-1].Add( input_file_bkg.Get(f"{var_name}_TTToSemiLeptonic_for_mixed_{'UL16_preVFP'}_fourTag_SR") )
+    hists[-1].Add( input_file_bkg.Get(f"{var_name}_TTToSemiLeptonic_for_mixed_{'UL17'}_fourTag_SR") )
+    hists[-1].Add( input_file_bkg.Get(f"{var_name}_TTToSemiLeptonic_for_mixed_{'UL18'}_fourTag_SR") )
+
+    f.cd(directory)
+    hists[-1].SetName("ttbar")
+    hists[-1].Write()
+
+
+
 def addMixesOLD(f, directory):
     hists = []
     for process in ['ttbar','multijet','data_obs']:
         try:
             f.Get('%s/%s'%(directory,process)).IsZombie()
         except ReferenceError:
+            print("getting "+mixes[0]+'/'+directory+'/'+process) 
             hists.append( f.Get(mixes[0]+'/'+directory+'/'+process) )
 
             if ttAverage and process=='ttbar': # skip averaging if ttAverage and process=='ttbar'
@@ -226,20 +288,53 @@ def prepInputOLD(closureFileName):
     
     f.Close()
 
+def prepInput(input_file_name_bkg, input_file_name_data, output_file_name_root):
 
-def prepInput(inputFileNames, outputROOTFile):
-    print(closureFileNames)
-#    for i 
-    f=ROOT.TFile(outputROOTFile, 'RECREATE')    
+    #
+    # Read inputs
+    #
+    print(f"Reading {input_file_name_bkg}")
+    input_file_bkg  = ROOT.TFile(input_file_name_bkg, 'READ')
+    input_file_data = ROOT.TFile(input_file_name_data, 'READ')
+
+    #
+    # Make output
+    #
+    f = ROOT.TFile(output_file_name_root, 'RECREATE')    
+    
+    var = "SvB_MA_ps_XXX_fine"
     
     for channel in channels:
         for mix in mixes:
-           addYears(f, mix+'/'+channel)
+           addYears(f, input_file_bkg, input_file_data, var=var, mix=mix, channel=channel)
     
     for channel in channels:
        addMixesOLD(f, channel)
-       for year in ['2016', '2017', '2018']:
-           addMixesOLD(f, channel+year)
+
+
+###       for year in ['2016', '2017', '2018']:
+###           addMixesOLD(f, input_root_files, channel+year)
+###
+
+
+    # Get Signal templates for spurious signal fits
+    zzFile = ROOT.TFile('/uscms/home/%s/nobackup/ZZ4b/ZZ4bRunII/hists.root'%(USER), 'READ')
+    zhFile = ROOT.TFile('/uscms/home/%s/nobackup/ZZ4b/bothZH4bRunII/hists.root'%(USER), 'READ')
+    hhFile = ROOT.TFile('/uscms/home/%s/nobackup/ZZ4b/HH4bRunII/hists.root'%(USER), 'READ')
+    for ch in channels:
+        var = '%s_ps_%s'%(classifier, ch)
+        histPath = 'passPreSel/fourTag/mainView/%s/%s'%(region,var)
+        signal =   zzFile.Get(histPath)
+        signal.Add(zhFile.Get(histPath))
+        signal.Add(hhFile.Get(histPath))
+        signal.SetName('signal')
+        f.cd(ch)
+        signal.Write()
+    zzFile.Close()
+    zhFile.Close()
+    hhFile.Close()
+    
+    f.Close()
 
 
 
@@ -1969,11 +2064,13 @@ def run(closureFileName):
         
 if __name__ == "__main__":
 
-    old_inputs = True
+    old_inputs = False
+    mixName = '3bDvTMix4bDvT'
 
     if old_inputs: 
         closureFileName = "hists_closure_3bDvTMix4bDvT_SR_weights_newSBDef.root"
         outputPath = "closureFits"
+        mixes = [mixName+'_v%d'%i for i in range(nMixes)]
 
         if 'MA' in classifier:
             closureFileName = closureFileName.replace('weights_', 'weights_MA_')
@@ -1981,10 +2078,15 @@ if __name__ == "__main__":
         prepInputOLD(closureFileName)
 
     else:
-        closureFileNames = ["../analysis/hists/testMixedBkg_master.root",
-                            "../analysis/hists/testMixedData_master.root"]
-        
+
+        closure_file_bkg  = "../analysis/hists/testMixedBkg_master.root"
+        closure_file_data = "../analysis/hists/testMixedData_master.root"
+        closure_file_out  = "hists_closure_3bDvTMix4bDvT_New.root"
+        closureFileName = closure_file_out
         outputPath = "closureFitsNew"
-        prepInput(closureFileNames,"hists_closure_3bDvTMix4bDvT_New.root")
+
+        mixes = [f'{mixName}_v{i}' for i in range(nMixes)]
+        print(mixes)
+        prepInput(closure_file_bkg, closure_file_data, closure_file_out) 
 
     run(closureFileName)

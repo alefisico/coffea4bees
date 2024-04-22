@@ -16,6 +16,11 @@ def hist_to_yml( coffea_hist ):
         'variances' : coffea_hist.variances().tolist(),
     }
 
+
+#    ### in case of negative values
+#    yhist['values'] = np.where( yhist['values']<0, 0, yhist['values'] ).tolist()
+#    yhist['variances'] = np.where( yhist['variances']<0, 0, yhist['variances'] ).tolist()
+
     return yhist
 
 
@@ -60,7 +65,14 @@ if __name__ == '__main__':
 
     coffea_hists = load(args.input_file)["hists"]
 
+    
+    save_dict = {}
+
+    for sub_sample in range(15):
+        save_dict[f"mix_v{sub_sample}"] = [('fourTag','SR')]
+
     yml_dict = {}
+
     if not args.systematics_file:
         for ih in args.histos:
             yml_dict[ih] = {}
