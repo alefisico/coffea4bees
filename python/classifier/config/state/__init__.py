@@ -7,6 +7,9 @@ from base_class.system.eos import EOS, PathLike
 from classifier.task import GlobalState
 
 
+FILE = ("python", "classifier", "config", "state", "__init__.py")
+
+
 class RunInfo(GlobalState):
     main_task: str = None
     startup_time: datetime = datetime.now()
@@ -24,9 +27,15 @@ class RepoInfo:
     @classmethod
     def get_url(cls, path: PathLike) -> str:
         if cls._local is None:
-            cls._local = EOS(__file__)
-            for _ in range(5):
-                cls._local = cls._local.parent
+            local = EOS(__file__)
+            for i in range(len(FILE)):
+                if local.name != FILE[-i - 1]:
+                    i -= 1
+                    break
+                local = local.parent
+            cls._local = local, cls.url + "".join(
+                map(lambda x: x + "/", FILE[: -i - 1])
+            )
         path = EOS(path)
         if not path.isin(cls._local):
             return str(path)
