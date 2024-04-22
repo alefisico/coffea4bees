@@ -21,7 +21,7 @@ def setup_reporter():
     if cfg.log_enable:
         _common()
         return logging.basicConfig(
-            handlers=[MultiPlatformHandler(level=cfg.logging_level)],
+            handlers=[MultiPlatformHandler()],
             level=cfg.logging_level,
         )
     _disable_logging()
@@ -41,11 +41,7 @@ def setup_monitor():
             handlers.append(ConsoleHandler.new(_CD.console))
         if handlers:
             return logging.basicConfig(
-                handlers=[
-                    MultiPlatformHandler.init(
-                        level=cfg.logging_level, handlers=handlers
-                    )
-                ],
+                handlers=[MultiPlatformHandler.init(handlers=handlers)],
                 level=cfg.logging_level,
             )
     _disable_logging()

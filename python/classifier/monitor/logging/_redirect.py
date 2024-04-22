@@ -19,10 +19,8 @@ class MultiPlatformLogRecord(logging.LogRecord):
 class MultiPlatformHandler(logging.Handler):
     __instance: MultiPlatformHandler = None
 
-    def __init__(
-        self, level: int | str = 0, handlers: Iterable[logging.Handler] = None
-    ):
-        super().__init__(level)
+    def __init__(self, handlers: Iterable[logging.Handler] = None):
+        super().__init__()
         self._handlers = [*(handlers or ())]
 
     @classmethod

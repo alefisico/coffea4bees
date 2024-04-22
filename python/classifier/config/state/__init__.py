@@ -36,11 +36,12 @@ class RepoInfo:
             cls._local = local, cls.url + "".join(
                 map(lambda x: x + "/", FILE[: -i - 1])
             )
+        local, url = cls._local
         path = EOS(path)
-        if not path.isin(cls._local):
+        if not path.isin(local):
             return str(path)
-        path = path.relative_to(cls._local)
-        return f"{cls.url}{path}"
+        path = path.relative_to(local)
+        return f"{url}{path}"
 
 
 class MonitorInfo:
