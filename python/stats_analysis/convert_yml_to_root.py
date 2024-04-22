@@ -27,13 +27,15 @@ def yml_to_TH1( coffea_hist, iname, rebin ):
     return rHist
 
 def create_root_file(file_to_convert, histos, output_dir):
-
+    print "in create_root_file"
     coffea_hists = yaml.safe_load(open(file_to_convert, 'r'))
+    print "leaded coffea_hists"
 
     root_hists = {}
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
+    print "made dirs"
     output = output_dir + "/" + (file_to_convert.split("/")
                                  [-1].replace(".yml", "")) + ".root"
 
@@ -48,6 +50,7 @@ def create_root_file(file_to_convert, histos, output_dir):
                             coffea_hists[ih][iprocess][iy][itag][iregion],
                             ih.replace(".", "_") + "_" + iprocess + "_" + iy + "_" + itag + "_" + iregion,
                             1)
+                        print 'Converting hist', ih, ih.replace(".", "_") + "_" + iprocess + "_" + iy + "_" + itag + "_" + iregion
                         this_hist.Write()
 
     root_file.Close()

@@ -27,8 +27,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser( description='Convert yml hist to root TH1F',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--histos', dest="histos", nargs="+",
-                        default=['SvB.ps_zz', 'SvB.ps_zh', 'SvB.ps_hh', 'SvB_MA.ps_zz', 'SvB_MA.ps_zh',
-                                 'SvB_MA.ps_hh' ], help='List of histograms to convert')
+                        default=['SvB.ps_zz', 'SvB.ps_zh', 'SvB.ps_hh', 
+                                 'SvB.ps_zz_fine', 'SvB.ps_zh_fine', 'SvB.ps_hh_fine', 
+                                 'SvB_MA.ps_zz', 'SvB_MA.ps_zh', 'SvB_MA.ps_hh',
+                                 'SvB_MA.ps_zz_fine', 'SvB_MA.ps_zh_fine', 'SvB_MA.ps_hh_fine' ], 
+                        help='List of histograms to convert')
+                             
+                                 
     parser.add_argument('-o', '--output', dest="output",
                         default="./histos/histAll.yml", help='Output file and directory.')
     parser.add_argument('-i', '--input_file', dest='input_file',
