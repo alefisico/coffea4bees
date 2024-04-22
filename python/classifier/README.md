@@ -72,7 +72,7 @@ python run_classifier.py help --all
 Start a monitor using port 10200 and save the logs to a local directory named by the current timestamp:
 
 ```bash
-python run_classifier.py monitor --setting Monitor "port: 10200" --setting IO "output: ./logs-{timestamp}/"
+python run_classifier.py monitor --setting Monitor "address: 10200" --setting IO "output: ./logs-{timestamp}/"
 ```
 
 It will print the IP address and port number that the monitor is listening to. e.g.
@@ -95,7 +95,7 @@ Cache the `HCR.FvT_picoAOD` dataset using a pre-defined workflow and connect to 
 
 ```bash
 export WFS="classifier/config/workflows/examples"
-python run_classifier.py from ${WFS}/cache_training_set.yml --setting Monitor "{address: 127.0.1.1, port: 10200}"
+python run_classifier.py from ${WFS}/cache_training_set.yml --setting Monitor "address: 127.0.1.1:10200"
 ```
 
 By default, it will write to `root://cmseos.fnal.gov//store/user/{user}/HH4b/classifier/cache/` in LPC, which can be changed by appending `--setting IO "output: /path/to/save/"`.

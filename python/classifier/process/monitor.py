@@ -44,11 +44,6 @@ def _get_host():
     return socket.gethostbyname(socket.gethostname())
 
 
-def _parse_url(url: str):
-    host, port = url.rsplit(":", 1)
-    return host, int(port)
-
-
 class _start_reporter:
     def __getstate__(self):
         match _Status.now():
@@ -235,11 +230,12 @@ class Monitor(_Singleton):
         self._lock = Lock()
 
         # listener
-        if cfg.Monitor.port is None:
+        _, port = cfg.Monitor.address
+        if port is None:
             uuid = f"monitor-{uuid4()}"
             self._address = f"/tmp/{uuid}" if is_poxis() else rf"\\.\pipe\{uuid}"
         else:
-            self._address = (_get_host(), cfg.Monitor.port)
+            self._address = (_get_host(), port)
         self._listener: tuple[Listener, Thread] = None
         self._runner: Thread = None
 
@@ -332,8 +328,11 @@ class Monitor(_Singleton):
 class Reporter(_Singleton):
     __allowed_process__ = _Status.Fresh
 
-    def __init__(self, address: str):
-        self._address = address
+    def __init__(self, address: tuple[str, int | None]):
+        if address[1] is None:
+            self._address = address[0]
+        else:
+            self._address = address
 
         self._lock = Lock()
         self._jobs: PriorityQueue[_Packet] = PriorityQueue()
@@ -460,12 +459,8 @@ class Recorder(Proxy):
                         f.write(func())
 
 
-def connect_to_monitor(address: str | tuple = None):
-    if address is None:
-        address = (cfg.Monitor.address, cfg.Monitor.port)
-    elif not isinstance(address, tuple):
-        address = _parse_url(address)
-    Reporter.init(address)
+def connect_to_monitor():
+    Reporter.init(cfg.Monitor.address)
     status.initializer.add_unique(_start_reporter)
     atexit.register(Reporter.current().send_atexit)
 

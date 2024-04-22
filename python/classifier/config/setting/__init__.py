@@ -98,22 +98,21 @@ class IO(Cascade):
 
 class Monitor(Cascade):
     enable: bool = True
-    address: str = None
-    port: int = 10200
+    address: tuple[str, int] = ":10200"
 
     # backends
     console_enable: bool = True
     console_update_interval: float = 1.0  # seconds
     console_fps: int = 10
 
-    web_enable: bool = False
+    web_enable: bool = False  # TODO placeholder
 
     # components
     log_enable: bool = True
 
     progress_enable: bool = True
 
-    usage_enable: bool = False
+    usage_enable: bool = True
     usage_update_interval: float = 1.0  # seconds
     usage_gpu: bool = True
     usage_gpu_force_torch: bool = False
@@ -146,3 +145,19 @@ class Monitor(Cascade):
             warnings.filterwarnings("ignore")
         else:
             warnings.filterwarnings("default")
+
+    @classmethod
+    def get__address(cls, value: int | str):
+        if isinstance(value, int):
+            return None, value
+        if value is None:
+            return None, None
+        parts = value.rsplit(":", 1)
+        if len(parts) == 2:
+            try:
+                port = int(parts[1])
+                host = parts[0] or None
+                return host, port
+            except:
+                pass
+        return value or None, None

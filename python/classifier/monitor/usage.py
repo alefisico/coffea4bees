@@ -46,9 +46,9 @@ class Usage(Proxy):
         cls._tracker.start()
 
     @classmethod
-    def checkpoint(cls, name: str):
+    def checkpoint(cls, *tags):
         if cfg.usage_enable:
-            checkpoint = {"time": time.time(), "name": name}
+            checkpoint = {"time": time.time(), "name": tags}
             end = len(cls._records_local)
             records = cls._records_local[cls._head : end]
             cls._head = end
