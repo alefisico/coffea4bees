@@ -142,7 +142,7 @@ analysis-plot-job:
 analysis-plot-job-unsup:    
   stage: plot 
   needs: 
-    - analysis-test-job
+    - analysis-test-job-unsup
   image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
   tags:
     - k8s-cvmfs
