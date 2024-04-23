@@ -324,8 +324,7 @@ class analysis(processor.ProcessorABC):
             if self.apply_trigWeight:
                 if "GluGlu" in dataset:
                     ### this is temporary until trigWeight is computed in new code
-                    trigWeight_raw = uproot.open(f'{path}{"trigWeights.root"}')['Events'].arrays()
-                    trigWeight = trigWeight_raw[ np.isin( trigWeight_raw['event'], event.event) ]
+                    trigWeight = uproot.open(f'{fname.replace("picoAOD", "trigWeights")}')['Events'].arrays()
 
                     if not ak.all(trigWeight.event == event.event):
                         raise ValueError('trigWeight events do not match events ttree')

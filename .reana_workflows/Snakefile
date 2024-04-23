@@ -13,8 +13,8 @@ rule all:
         expand("output/histmixed_{samplemixed}-{iymixed}.coffea", samplemixed=config['dataset_for_mixed'], iymixed=config['year']),
         expand("output/histmixeddata_{samplemixeddata}-{iymixeddata}.coffea", samplemixeddata=config['dataset_mixeddata'], iymixeddata=config['year_mixed']),
         'output/histAll_syst.coffea',
-        #'output/histAll_mixeddata.coffea',
-        'output/histAll_for_mixed.coffea',
+        'output/histAll_mixedBkg.coffea',
+        'output/histAll_mixedData.tar.gz',
         "output/RunII/passPreSel/fourTag/SB/nPVs.pdf",
         "output/datacards/hists_SvB.root"
 
@@ -136,7 +136,7 @@ rule merging_coffea_files_mixeddata:
     input:
         files = expand(['output/histmixeddata_mixeddata-{iyear}.coffea'], iyear=config['year_mixed'])
     output:
-        "output/histAll_mixeddata.coffea"
+        "output/histAll_mixedData.tar.gz"
     container:
         "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
     resources:
@@ -145,17 +145,15 @@ rule merging_coffea_files_mixeddata:
         kubernetes_memory_limit="9.5Gi"
     shell:
         """
-mprof run -C -o python/mprofile_merge_mixeddata.dat python python/analysis/merge_coffea_files.py -f {input.files} -o {output}
-mprof plot -o output/mprofile_merge_mixeddata.png python/mprofile_merge_mixeddata.dat
-xrdcp {output} root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/histAll_mixeddata.coffea
-cp {output} /eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/histAll_mixeddata.coffea
+tar -czvf {output} {input.files}
+cp {output} /eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/histAll_mixedData.tar.gz
         """
 
-rule merging_coffea_files_for_mixed:
+rule merging_coffea_files_mixedBkg:
     input:
         files = expand(['output/histmixed_{idatmix}-{iyear}.coffea'], idatmix=config['dataset_for_mixed'], iyear=config['year'])
     output:
-        "output/histAll_for_mixed.coffea"
+        "output/histAll_mixedBkg.coffea"
     container:
         "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
     resources:
@@ -164,10 +162,10 @@ rule merging_coffea_files_for_mixed:
         kubernetes_memory_limit="8Gi"
     shell:
         """
-mprof run -C -o python/mprofile_merge_for_mixed.dat python python/analysis/merge_coffea_files.py -f {input.files} -o {output}
+mprof run -C -o python/mprofile_merge_for_mixed.dat python python/analysis/merge_coffea_files.py -f {input.files} output/histmixeddata_data* -o {output}
 mprof plot -o output/mprofile_merge_for_mixed.png python/mprofile_merge_for_mixed.dat
-xrdcp {output} root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/histAll_for_mixed.coffea
-cp {output} /eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/histAll_for_mixed.coffea
+xrdcp {output} root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/histAll_mixedBkg.coffea
+cp {output} /eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/histAll_mixedBkg.coffea
         """
 
 rule make_plots:
