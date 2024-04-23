@@ -9,8 +9,7 @@ import operator
 sys.path.insert(0, 'PlotTools/python/') #https://github.com/patrickbryant/PlotTools
 import collections
 import PlotTools
-sys.path.insert(0, 'nTupleAnalysis/python/') #https://github.com/patrickbryant/nTupleAnalysis
-#from commandLineHelpers import mkpath, getUSER
+
 from array import array
 import numpy as np
 import scipy.stats
@@ -292,6 +291,7 @@ def prepInputOLD(closureFileName):
            addMixes(f, channel+year)
         
     # Get Signal templates for spurious signal fits
+    from commandLineHelpers import getUSER
     USER = getUSER()
     zzFile = ROOT.TFile('/uscms/home/%s/nobackup/ZZ4b/ZZ4bRunII/hists.root'%(USER), 'READ')
     zhFile = ROOT.TFile('/uscms/home/%s/nobackup/ZZ4b/bothZH4bRunII/hists.root'%(USER), 'READ')
@@ -393,13 +393,12 @@ class multijetEnsemble:
     def __init__(self, f, channel):
         self.channel = channel
         self.rebin = rebin[channel]
-        #mkpath('%s/%s/%s/rebin%i/%s/%s'%(outputPath, mixName, classifier, self.rebin, region, self.channel))
         mkpath(f'{outputPath}/{mixName}/{classifier}/rebin{self.rebin}/{region}/{self.channel}')
 
-        self.data_minus_ttbar = f.Get('%s/ttbar'%self.channel)
-        self.data_minus_ttbar.SetName('%s_average_%s'%('data_minus_ttbar', self.channel))
+        self.data_minus_ttbar = f.Get(f'{self.channel}/ttbar')
+        self.data_minus_ttbar.SetName(f'data_minus_ttbar_average_{self.channel}')
         self.data_minus_ttbar.Scale(-1)
-        self.data_minus_ttbar.Add(f.Get('%s/data_obs'%self.channel))
+        self.data_minus_ttbar.Add( f.Get(f'{self.channel}/data_obs') )
         self.data_minus_ttbar.Rebin(self.rebin)
 
         self.average = f.Get('%s/multijet'%self.channel)
@@ -407,7 +406,6 @@ class multijetEnsemble:
         self.models  = [f.Get('%s/%s/multijet'%(mix, self.channel)) for mix in mixes]
         for m, model in enumerate(self.models): model.SetName('%s_%s_%s'%(model.GetName(), mixes[m], self.channel))
         self.nBins   = self.average.GetSize()-2 # size includes under/overflow bins
-
 
         print(f"Reading {self.channel}/signal")
         self.signal = f.Get('%s/signal'%self.channel)
@@ -425,16 +423,14 @@ class multijetEnsemble:
         for model in self.models_rebin: model.Rebin(self.rebin)
         self.nBins_rebin = self.average_rebin.GetSize()-2
 
-
-
         self.f.cd(self.channel)
         self.nBins_ensemble = self.nBins_rebin * nMixes
         self.bin_width = 1./self.nBins_rebin
         self.fit_bin_min = int(1 + closure_fit_x_min//self.bin_width)
         self.nBins_fit = self.nBins_rebin - int(closure_fit_x_min//self.bin_width)
-        self.multijet_ensemble_average = ROOT.TH1F('multijet_ensemble_average', '', self.nBins_ensemble, 0.5, 0.5+self.nBins_ensemble)
-        self.multijet_ensemble         = ROOT.TH1F('multijet_ensemble'        , '', self.nBins_ensemble, 0.5, 0.5+self.nBins_ensemble)
-        self.data_minus_ttbar_ensemble         = ROOT.TH1F('data_minus_ttbar_ensemble'        , '', self.nBins_ensemble, 0.5, 0.5+self.nBins_ensemble)
+        self.multijet_ensemble_average  = ROOT.TH1F('multijet_ensemble_average', '', self.nBins_ensemble, 0.5, 0.5+self.nBins_ensemble)
+        self.multijet_ensemble          = ROOT.TH1F('multijet_ensemble'        , '', self.nBins_ensemble, 0.5, 0.5+self.nBins_ensemble)
+        self.data_minus_ttbar_ensemble  = ROOT.TH1F('data_minus_ttbar_ensemble', '', self.nBins_ensemble, 0.5, 0.5+self.nBins_ensemble)
 
         for m in range(nMixes):
             for b in range(self.nBins_rebin):
@@ -457,9 +453,11 @@ class multijetEnsemble:
         self.multijet_ensemble        .Write()
         self.data_minus_ttbar_ensemble.Write()
 
-
         self.bases = range(0, maxBasisEnsemble+1, 1)
+
+        #
         # Make kernel for basis orthogonalization
+        #
         h = np.array([self.average_rebin.GetBinContent(bin) for bin in range(1,self.nBins_rebin+1)])
         h_no_rebin = np.array([self.average.GetBinContent(bin) for bin in range(1,self.nBins+1)])
         h_err = np.array([self.multijet_ensemble_average.GetBinError(bin) for bin in range(1,self.nBins_rebin+1)])
@@ -630,7 +628,7 @@ class multijetEnsemble:
                 print('Eigenvalues',m)
                 eigenVal[m].Print()
 
-        self.eigenVars[basis] = [np.zeros((n,n), dtype=np.float) for m in range(nMixes)]
+        self.eigenVars[basis] = [np.zeros((n,n), dtype=float) for m in range(nMixes)]
         for m in range(nMixes):
             for i in range(n):
                 for j in range(n):
@@ -645,9 +643,9 @@ class multijetEnsemble:
 
     def getParameterDistribution(self, basis):
         n = basis+1
-        parMean    = np.array([0 for i in range(n)], dtype=np.float)
-        parMeanErr = np.array([0 for i in range(n)], dtype=np.float)
-        parMean2   = np.array([0 for i in range(n)], dtype=np.float)
+        parMean    = np.array([0 for i in range(n)], dtype=float)
+        parMeanErr = np.array([0 for i in range(n)], dtype=float)
+        parMean2   = np.array([0 for i in range(n)], dtype=float)
         for m in range(nMixes):
             parMean    += self.fit_parameters[basis][m]    / nMixes
             parMean2   += self.fit_parameters[basis][m]**2 / nMixes
@@ -760,11 +758,11 @@ class multijetEnsemble:
 
         rebin_name = '' if rebin else '_no_rebin'
         if type(self.rebin) is list:
-            figname = '%s/%s/%s/variable_rebin/%s/%s/%s_basis%s%i.pdf'%(outputPath, mixName, classifier, region, self.channel, name, rebin_name, basis)
-            #figname = f'{outputPath}/{mixName}/{classifier}/variable_rebin/{region}/{self.channel}/{name}_basis{rebin_name}{basis}.pdf'
+            #figname = '%s/%s/%s/variable_rebin/%s/%s/%s_basis%s%i.pdf'%(outputPath, mixName, classifier, region, self.channel, name, rebin_name, basis)
+            figname = f'{outputPath}/{mixName}/{classifier}/variable_rebin/{region}/{self.channel}/{name}_basis{rebin_name}{basis}.pdf'
         else:
-            figname = '%s/%s/%s/rebin%i/%s/%s/%s_basis%s%i.pdf'%(outputPath, mixName, classifier, self.rebin, region, self.channel, name, rebin_name, basis)
-            #figname = f'{outputPath}/{mixName}/{classifier}/rebin{self.rebin}/{region}/{self.channel}/{name}_basis{rebin_name}{basis}.pdf'
+            #figname = '%s/%s/%s/rebin%i/%s/%s/%s_basis%s%i.pdf'%(outputPath, mixName, classifier, self.rebin, region, self.channel, name, rebin_name, basis)
+            figname = f'{outputPath}/{mixName}/{classifier}/rebin{self.rebin}/{region}/{self.channel}/{name}_basis{rebin_name}{basis}.pdf'
 
         print('fig.savefig( '+figname+' )')
         plt.tight_layout()
@@ -796,11 +794,11 @@ class multijetEnsemble:
         ax.legend(fontsize='small', loc='best')
 
         if type(self.rebin) is list:
-            figname = '%s/%s/%s/variable_rebin/%s/%s/%s_additive_basis%s%i.pdf'%(outputPath, mixName, classifier, region, self.channel, name, rebin_name, basis)
-            #figname = f'{outputPath}/{mixName}/{classifier}/variable_rebin/{region}/{self.channel}/{name}_additive_basis{rebin_name}{basis}.pdf'
+            #figname = '%s/%s/%s/variable_rebin/%s/%s/%s_additive_basis%s%i.pdf'%(outputPath, mixName, classifier, region, self.channel, name, rebin_name, basis)
+            figname = f'{outputPath}/{mixName}/{classifier}/variable_rebin/{region}/{self.channel}/{name}_additive_basis{rebin_name}{basis}.pdf'
         else:
-            figname = '%s/%s/%s/rebin%i/%s/%s/%s_additive_basis%s%i.pdf'%(outputPath, mixName, classifier, self.rebin, region, self.channel, name, rebin_name, basis)
-            #figname = f'{outputPath}/{mixName}/{classifier}/rebin{self.rebin}/{region}/{self.channel}/{name}_additive_basis{rebin_name}{basis}.pdf'
+            #figname = '%s/%s/%s/rebin%i/%s/%s/%s_additive_basis%s%i.pdf'%(outputPath, mixName, classifier, self.rebin, region, self.channel, name, rebin_name, basis)
+            figname = f'{outputPath}/{mixName}/{classifier}/rebin{self.rebin}/{region}/{self.channel}/{name}_additive_basis{rebin_name}{basis}.pdf'
         print('fig.savefig( '+figname+' )')
         plt.tight_layout()
         fig.savefig( figname )
@@ -937,8 +935,8 @@ class multijetEnsemble:
 
                 ax.annotate('c$_{%d}$'%(d), [thisx, 100*down-0.5], ha='center', va='center', bbox=bbox)
 
-        maxr=np.zeros((2, len(x)), dtype=np.float)
-        minr=np.zeros((2, len(x)), dtype=np.float)
+        maxr=np.zeros((2, len(x)), dtype=float)
+        minr=np.zeros((2, len(x)), dtype=float)
         if n>1:
             #generate a ton of random points on a hypersphere in dim=n so surface is dim=n-1.
             points  = np.random.randn(n, min(100**(n-1),10**7)) # random points in a hypercube
@@ -1186,8 +1184,8 @@ class closure:
         self.closure_ss_zero_TH1 = {}
         self.closure_ss_TH1 = {}
         self.signal_orthogonal_TH1 = {}
-        # self.signal = f.Get('%s/signal'%self.channel)
-        # self.signal.Rebin(rebin)
+        #self.signal = f.Get('%s/signal'%self.channel)
+        #self.signal.Rebin(rebin)
         
         self.f = f
         self.f.cd(self.channel)
@@ -1400,7 +1398,7 @@ class closure:
             print('Eigenvalues')
             eigenVal.Print()
 
-        eigenVars = np.zeros((n,n), dtype=np.float)
+        eigenVars = np.zeros((n,n), dtype=float)
         for i in range(n):
             for j in range(n):
                 eigenVars[i,j] = eigenVec[i][j] * eigenVal[j]**0.5
@@ -1686,8 +1684,8 @@ class closure:
                 except IndexError:
                     pass # there is no variance term for this basis
 
-        maxr=np.zeros((2, len(x)), dtype=np.float)
-        minr=np.zeros((2, len(x)), dtype=np.float)
+        maxr=np.zeros((2, len(x)), dtype=float)
+        minr=np.zeros((2, len(x)), dtype=float)
         if n>1:
             #generate a ton of random points on a hypersphere in dim=n so surface is dim=n-1.
             points  = np.random.randn(n, min(100**(n-1),10**7)) # random points in a hypercube
@@ -2024,23 +2022,27 @@ class closure:
 def run(closureFileName):
     f=ROOT.TFile(closureFileName, 'UPDATE')
 
+    #
     # make multijet ensembles and perform fits
+    #
     multijetEnsembles = {}
     for channel in channels:
         if type(rebin[channel]) is list:
-            #mkpath(f'{basePath}/{outputPath}/{mixName}/{classifier}/variable_rebin/{region}/{channel}')
             mkpath(f'{outputPath}/{mixName}/{classifier}/variable_rebin/{region}/{channel}')
         else:
-            #mkpath(f'{basePath}/{outputPath}/{mixName}/{classifier}/rebin{rebin[channel]}/{region}/{channel}')
             mkpath(f'{outputPath}/{mixName}/{classifier}/rebin{rebin[channel]}/{region}/{channel}')
         multijetEnsembles[channel] = multijetEnsemble(f, channel)
 
+    #
     # run closure fits using average multijet model 
+    #
     closures = {}
     for channel in channels:
         closures[channel] = closure(f, channel, multijetEnsembles[channel])
-    
+
+    #
     # close input file and make plots 
+    #
     f.Close()
     for channel in channels:
         for basis in multijetEnsembles[channel].bases:
