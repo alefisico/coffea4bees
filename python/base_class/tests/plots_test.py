@@ -86,7 +86,7 @@ class PlotTestCase(unittest.TestCase):
         
     def test_counts(self):        
 
-        default_args = {"doRatio":0, "rebin":4, "norm":0}
+        default_args = {"doRatio":0, "rebin":4, "norm":0, "process":"Multijet"}
 
         for k, v  in self.knownCounts.items():
             print(f"testing...{k}")
@@ -98,7 +98,13 @@ class PlotTestCase(unittest.TestCase):
             fig, ax = makePlot(cfg, var=var, cut=cut, region=region,
                                outputFolder=cfg.outputFolder, **default_args)
 
-            y_plot = ax.lines[-1].get_ydata()
+
+            for i in range(len(ax.lines)):
+            
+                if hasattr(ax.lines[i], "get_label") and ax.lines[i].get_label() == '_nolegend_':
+                    y_plot = ax.lines[i].get_ydata()
+                    break
+            
             np.testing.assert_array_equal(y_plot, counts)
 
 
