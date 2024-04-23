@@ -32,7 +32,7 @@ year = 'RunII'
 # lumi = 138.0
 lumi = 132.8
 classifier = 'SvB_MA'
-rebin = {'zz': 4, 'zh': 5, 'hh': 10}
+#rebin = {'zz': 4, 'zh': 5, 'hh': 10}
 #rebin = {'zz': 4, 'zh': 5, 'hh': 6}
 #rebin = {'zz': 4, 'zh': 5, 'hh': 4}
 closure_fit_x_min = 0#0.01
@@ -44,7 +44,7 @@ maxBasisClosure  = 5
 #            'hh',
 #            ]
 
-channels = ['hh']
+channels = ['zz','zh','hh']
 
 # New VarAll (15)
 #rebin = {'zz': 5, 'zh': 5, 'hh': 10}
@@ -199,7 +199,7 @@ def addYears(f, input_file_bkg, input_file_data, var, mix, channel):
 
 
     #
-    #
+    # TTBar
     #
     ttbar_procs = ["TTTo2L2Nu", "TTToHadronic", "TTToSemiLeptonic"]
 
@@ -219,6 +219,9 @@ def addYears(f, input_file_bkg, input_file_data, var, mix, channel):
     hists[-1].SetName("ttbar")
     hists[-1].Write()
 
+
+
+    return 
 
 
 def addMixesOLD(f, directory):
@@ -288,51 +291,61 @@ def prepInputOLD(closureFileName):
     
     f.Close()
 
-def prepInput(input_file_name_bkg, input_file_name_data, output_file_name_root):
+def prepInput(input_file_name_bkg, input_file_name_data, input_file_name_sig, output_file_name_root):
 
     #
     # Read inputs
     #
     print(f"Reading {input_file_name_bkg}")
-    input_file_bkg  = ROOT.TFile(input_file_name_bkg, 'READ')
+    input_file_bkg  = ROOT.TFile(input_file_name_bkg,  'READ')
     input_file_data = ROOT.TFile(input_file_name_data, 'READ')
+    input_file_sig  = ROOT.TFile(input_file_name_sig,  'READ')
 
     #
     # Make output
     #
     f = ROOT.TFile(output_file_name_root, 'RECREATE')    
     
-    var = "SvB_MA_ps_XXX_fine"
     
     for channel in channels:
         for mix in mixes:
            addYears(f, input_file_bkg, input_file_data, var=var, mix=mix, channel=channel)
     
+    hists = []
     for channel in channels:
-       addMixesOLD(f, channel)
+        addMixesOLD(f, channel)
 
+        var_name = var.replace("XXX",channel)
+    
+        #
+        #  Signal
+        #
+        signal_procs = ["ZZ4b", "ZH4b", "HH4b"]
+
+        hists.append(  input_file_sig.Get(f"{var_name}_ZZ4b_{'UL16_preVFP'}_fourTag_SR") )
+        hists[-1].Add( input_file_sig.Get(f"{var_name}_ZZ4b_{'UL16_postVFP'}_fourTag_SR") )
+        hists[-1].Add( input_file_sig.Get(f"{var_name}_ZZ4b_{'UL17'}_fourTag_SR") )
+        hists[-1].Add( input_file_sig.Get(f"{var_name}_ZZ4b_{'UL18'}_fourTag_SR") )
+                                  
+        hists[-1].Add( input_file_sig.Get(f"{var_name}_ZH4b_{'UL16_preVFP'}_fourTag_SR") )
+        hists[-1].Add( input_file_sig.Get(f"{var_name}_ZH4b_{'UL16_postVFP'}_fourTag_SR") )
+        hists[-1].Add( input_file_sig.Get(f"{var_name}_ZH4b_{'UL17'}_fourTag_SR") )
+        hists[-1].Add( input_file_sig.Get(f"{var_name}_ZH4b_{'UL18'}_fourTag_SR") )
+    
+        hists[-1].Add( input_file_sig.Get(f"{var_name}_HH4b_{'UL16_preVFP'}_fourTag_SR") )
+        hists[-1].Add( input_file_sig.Get(f"{var_name}_HH4b_{'UL16_postVFP'}_fourTag_SR") )
+        hists[-1].Add( input_file_sig.Get(f"{var_name}_HH4b_{'UL17'}_fourTag_SR") )
+        hists[-1].Add( input_file_sig.Get(f"{var_name}_HH4b_{'UL18'}_fourTag_SR") )
+    
+        f.cd(channel)
+        hists[-1].SetName("signal")
+        hists[-1].Write()
+    
 
 ###       for year in ['2016', '2017', '2018']:
 ###           addMixesOLD(f, input_root_files, channel+year)
 ###
 
-
-    # Get Signal templates for spurious signal fits
-    zzFile = ROOT.TFile('/uscms/home/%s/nobackup/ZZ4b/ZZ4bRunII/hists.root'%(USER), 'READ')
-    zhFile = ROOT.TFile('/uscms/home/%s/nobackup/ZZ4b/bothZH4bRunII/hists.root'%(USER), 'READ')
-    hhFile = ROOT.TFile('/uscms/home/%s/nobackup/ZZ4b/HH4bRunII/hists.root'%(USER), 'READ')
-    for ch in channels:
-        var = '%s_ps_%s'%(classifier, ch)
-        histPath = 'passPreSel/fourTag/mainView/%s/%s'%(region,var)
-        signal =   zzFile.Get(histPath)
-        signal.Add(zhFile.Get(histPath))
-        signal.Add(hhFile.Get(histPath))
-        signal.SetName('signal')
-        f.cd(ch)
-        signal.Write()
-    zzFile.Close()
-    zhFile.Close()
-    hhFile.Close()
     
     f.Close()
 
@@ -383,18 +396,15 @@ class multijetEnsemble:
         self.data_minus_ttbar.Scale(-1)
         self.data_minus_ttbar.Add(f.Get('%s/data_obs'%self.channel))
         self.data_minus_ttbar.Rebin(self.rebin)
+
         self.average = f.Get('%s/multijet'%self.channel)
         self.average.SetName('%s_average_%s'%(self.average.GetName(), self.channel))
         self.models  = [f.Get('%s/%s/multijet'%(mix, self.channel)) for mix in mixes]
         for m, model in enumerate(self.models): model.SetName('%s_%s_%s'%(model.GetName(), mixes[m], self.channel))
         self.nBins   = self.average.GetSize()-2 # size includes under/overflow bins
 
-        try:
-            self.allMixFvT = f.Get('%s/%s/multijet'%(mixName+'_vAll_oneFit', self.channel))
-            self.allMixFvT.SetName('%s_allMixFvT_%s'%(self.allMixFvT.GetName(), self.channel))
-        except:
-            self.allMixFvT = None
 
+        print(f"Reading {self.channel}/signal")
         self.signal = f.Get('%s/signal'%self.channel)
         self.signal.Rebin(self.rebin)
         
@@ -410,12 +420,6 @@ class multijetEnsemble:
         for model in self.models_rebin: model.Rebin(self.rebin)
         self.nBins_rebin = self.average_rebin.GetSize()-2
 
-        if self.allMixFvT is not None:
-            self.allMixFvT_rebin = self.allMixFvT.Clone()
-            self.allMixFvT_rebin.SetName('%s_rebin'%self.allMixFvT.GetName())
-            self.allMixFvT_rebin.Rebin(self.rebin)
-        else:
-            self.allMixFvT_rebin = None
 
 
         self.f.cd(self.channel)
@@ -425,10 +429,6 @@ class multijetEnsemble:
         self.nBins_fit = self.nBins_rebin - int(closure_fit_x_min//self.bin_width)
         self.multijet_ensemble_average = ROOT.TH1F('multijet_ensemble_average', '', self.nBins_ensemble, 0.5, 0.5+self.nBins_ensemble)
         self.multijet_ensemble         = ROOT.TH1F('multijet_ensemble'        , '', self.nBins_ensemble, 0.5, 0.5+self.nBins_ensemble)
-        if self.allMixFvT is not None:
-            self.allMixFvT_ensemble    = ROOT.TH1F('allMixFvT_ensemble'       , '', self.nBins_ensemble, 0.5, 0.5+self.nBins_ensemble)
-        else:
-            self.allMixFvT_ensemble    = None
         self.data_minus_ttbar_ensemble         = ROOT.TH1F('data_minus_ttbar_ensemble'        , '', self.nBins_ensemble, 0.5, 0.5+self.nBins_ensemble)
 
         for m in range(nMixes):
@@ -444,18 +444,12 @@ class multijetEnsemble:
                 #self.multijet_ensemble        .SetBinError  (ensemble_bin, self.models_rebin[m].GetBinError  (local_bin))
                 self.multijet_ensemble        .SetBinError  (ensemble_bin, 0.0)
 
-                if self.allMixFvT_ensemble is not None:
-                    self.allMixFvT_ensemble.SetBinContent(ensemble_bin, self.allMixFvT_rebin.GetBinContent(local_bin))
-                    #self.allMixFvT_ensemble.SetBinError  (ensemble_bin, self.allMixFvT_rebin.GetBinError(local_bin))
-                    self.allMixFvT_ensemble.SetBinError  (ensemble_bin, 0.0)
                 self.data_minus_ttbar_ensemble.SetBinContent(ensemble_bin, self.data_minus_ttbar.GetBinContent(local_bin))
                 self.data_minus_ttbar_ensemble.SetBinError  (ensemble_bin, self.data_minus_ttbar.GetBinError  (local_bin))
 
         self.f.cd(self.channel)
         self.multijet_ensemble_average.Write()
         self.multijet_ensemble        .Write()
-        if self.allMixFvT_ensemble is not None:
-            self.allMixFvT_ensemble   .Write()
         self.data_minus_ttbar_ensemble.Write()
 
 
@@ -1122,11 +1116,6 @@ class multijetEnsemble:
             'legend': 4,
             'ratio' : 'numer A',
             'color' : 'ROOT.kBlue'}
-        # samples[closureFileName]['%s/allMixFvT_ensemble'%self.channel] = {
-        #     'label' : 'FvT Fit to all Mixes',
-        #     'legend': 5,
-        #     'ratio' : 'numer A',
-        #     'color' : 'ROOT.kGray+2'}
 
         xTitle = 'P(Signal) #(Bin) + #(Bins)#(Mix) #cbar P(%s) is largest'%(self.channel.upper())
             
@@ -2041,7 +2030,7 @@ def run(closureFileName):
             mkpath('%s/%s/%s/%s/rebin%i/%s/%s'%(basePath, outputPath, mixName, classifier, rebin[channel], region, channel))
             #mkpath(f'{basePath}/{outputPath}/{mixName}/{classifier}/rebin{rebin[channel]}/{region}/{channel}')
         multijetEnsembles[channel] = multijetEnsemble(f, channel)
-    
+
     # run closure fits using average multijet model 
     closures = {}
     for channel in channels:
@@ -2072,6 +2061,8 @@ if __name__ == "__main__":
         outputPath = "closureFits"
         mixes = [mixName+'_v%d'%i for i in range(nMixes)]
 
+        rebin = {'zz': 4, 'zh': 5, 'hh': 10}
+
         if 'MA' in classifier:
             closureFileName = closureFileName.replace('weights_', 'weights_MA_')
 
@@ -2081,12 +2072,17 @@ if __name__ == "__main__":
 
         closure_file_bkg  = "../analysis/hists/testMixedBkg_master.root"
         closure_file_data = "../analysis/hists/testMixedData_master.root"
+        closure_file_sig  = "../analysis/hists/histAll_signal.root"
+
         closure_file_out  = "hists_closure_3bDvTMix4bDvT_New.root"
         closureFileName = closure_file_out
         outputPath = "closureFitsNew"
 
+        var = "SvB_MA_ps_XXX"
+        rebin = {'zz': 8, 'zh': 10, 'hh': 20}
+
         mixes = [f'{mixName}_v{i}' for i in range(nMixes)]
         print(mixes)
-        prepInput(closure_file_bkg, closure_file_data, closure_file_out) 
+        prepInput(closure_file_bkg, closure_file_data, closure_file_sig, closure_file_out) 
 
     run(closureFileName)

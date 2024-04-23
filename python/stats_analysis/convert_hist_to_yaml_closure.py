@@ -27,6 +27,7 @@ if __name__ == '__main__':
                         default="../analysis/hists/histAll.coffea", help="File with coffea hists")
 
     parser.add_argument("--debug", action="store_true")
+    #parser.add_argument("--signal", action="store_true")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
@@ -69,10 +70,13 @@ if __name__ == '__main__':
     for sub_sample in range(15):
         save_dict[f"mix_v{sub_sample}"] = [('fourTag','SR')]
 
-    save_dict["data_3b_for_mixed"] = [('threeTag','SR')]
-    save_dict["TTTo2L2Nu_for_mixed"] = [('fourTag','SR')]
+    save_dict["data_3b_for_mixed"]          = [('threeTag','SR')]
+    save_dict["TTTo2L2Nu_for_mixed"]        = [('fourTag','SR')]
     save_dict["TTToSemiLeptonic_for_mixed"] = [('fourTag','SR')]
-    save_dict["TTToHadronic_for_mixed"] = [('fourTag','SR')]
+    save_dict["TTToHadronic_for_mixed"]     = [('fourTag','SR')]
+    save_dict["ZZ4b"]     = [('fourTag','SR')]
+    save_dict["ZH4b"]     = [('fourTag','SR')]
+    save_dict["HH4b"]     = [('fourTag','SR')]
 
 
     yml_dict = {}
