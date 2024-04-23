@@ -10,7 +10,7 @@ import base_class.plots.iPlot_config as cfg
 import numpy as np
 from base_class.tests.parser import wrapper
 from unittest.mock import MagicMock
-
+import matplotlib.pyplot as plt
 
 #
 # python3 analysis/tests/plot_test.py   --inputFile analysis/hists/test.coffea --knownCounts base_class/tests/plotCounts.yml 
@@ -107,6 +107,7 @@ class PlotTestCase(unittest.TestCase):
             
             np.testing.assert_allclose(y_plot, counts,
                                        rtol=1e-10, atol=0)
+            plt.close()
 
     def test_get_values_centers_from_dict_hists_type(self):
         # Mocking histogram objects
