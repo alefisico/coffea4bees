@@ -203,16 +203,6 @@ analysis-iplot-job:
   script:
     - source .ci-workflows/analysis-iplot-job.sh
 
-analysis-iplot-job-unsup:    
-  stage: plot 
-  needs: 
-    - analysis-test-job
-  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
-  tags:
-    - k8s-cvmfs
-  script:
-    - source .ci-workflows/analysis-iplot-job-unsup.sh
-
 baseclass-test-job:   
   stage: plot
   image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
