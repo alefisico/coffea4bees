@@ -2094,4 +2094,4 @@ if __name__ == "__main__":
         print(mixes)
         prepInput(closure_file_bkg, closure_file_data, closure_file_sig, closure_file_out) 
 
-    #run(closureFileName)
+    run(closureFileName)
