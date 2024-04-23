@@ -6,7 +6,7 @@ import numpy as np
 sys.path.insert(0, os.getcwd())
 from base_class.plots.plots import get_value_nested_dict, makePlot, load_config, load_hists, read_axes_and_cuts
 import base_class.plots.iPlot_config as cfg
-
+import matplotlib.pyplot as plt
 
 def print_counts_yaml(var, cut, region, counts):
 
@@ -36,7 +36,7 @@ if __name__ == '__main__':
     cfg.hists = load_hists([args.inputFile])
     cfg.axisLabels, cfg.cutList = read_axes_and_cuts(cfg.hists, cfg.plotConfig)
 
-    default_args = {"doRatio":0, "rebin":4, "norm":0}    
+    default_args = {"doRatio":0, "rebin":4, "norm":0, "process":"Multijet"}    
 
     test_vectors = [("SvB_MA.ps", "passPreSel", "SR"),
                     ("SvB_MA.ps", "passPreSel", "SB"),
@@ -44,6 +44,29 @@ if __name__ == '__main__':
                     ("SvB_MA.ps", "passSvB",    "SB"),
                     ("SvB_MA.ps", "failSvB",    "SR"),
                     ("SvB_MA.ps", "failSvB",    "SB"),
+
+                    ("SvB_MA.ps_hh", "passPreSel", "SR"),
+                    ("SvB_MA.ps_hh", "passPreSel", "SB"),
+                    ("SvB_MA.ps_hh", "passSvB",    "SR"),
+                    ("SvB_MA.ps_hh", "passSvB",    "SB"),
+                    ("SvB_MA.ps_hh", "failSvB",    "SR"),
+                    ("SvB_MA.ps_hh", "failSvB",    "SB"),
+
+                    ("SvB_MA.ps_zh", "passPreSel", "SR"),
+                    ("SvB_MA.ps_zh", "passPreSel", "SB"),
+                    ("SvB_MA.ps_zh", "passSvB",    "SR"),
+                    ("SvB_MA.ps_zh", "passSvB",    "SB"),
+                    ("SvB_MA.ps_zh", "failSvB",    "SR"),
+                    ("SvB_MA.ps_zh", "failSvB",    "SB"),
+
+                    ("SvB_MA.ps_zz", "passPreSel", "SR"),
+                    ("SvB_MA.ps_zz", "passPreSel", "SB"),
+                    ("SvB_MA.ps_zz", "passSvB",    "SR"),
+                    ("SvB_MA.ps_zz", "passSvB",    "SB"),
+                    ("SvB_MA.ps_zz", "failSvB",    "SR"),
+                    ("SvB_MA.ps_zz", "failSvB",    "SB"),
+                    
+                    
                     ]
     
     for tv in test_vectors:
@@ -52,13 +75,17 @@ if __name__ == '__main__':
         cut    = tv[1]
         region = tv[2]
         print(f"testing {var}, {cut}, {region}")
-        fig, ax = makePlot(cfg.hists[0], cfg.cutList, cfg.plotConfig,
-                           var=var, cut=cut, region=region,
+        fig, ax = makePlot(cfg, var=var, cut=cut, region=region,
                            outputFolder=cfg.outputFolder, **default_args)
-        
-        counts = ax.lines[-1].get_ydata()
 
+        for i in range(len(ax.lines)):
+            
+            if hasattr(ax.lines[i], "get_label") and ax.lines[i].get_label() == '_nolegend_':
+                counts = ax.lines[i].get_ydata()
+                break
+            
         print_counts_yaml(var, cut, region, counts)
+        plt.close()
 
 
 

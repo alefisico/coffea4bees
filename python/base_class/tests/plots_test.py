@@ -10,7 +10,7 @@ import base_class.plots.iPlot_config as cfg
 import numpy as np
 from base_class.tests.parser import wrapper
 from unittest.mock import MagicMock
-
+import matplotlib.pyplot as plt
 
 #
 # python3 analysis/tests/plot_test.py   --inputFile analysis/hists/test.coffea --knownCounts base_class/tests/plotCounts.yml 
@@ -86,7 +86,7 @@ class PlotTestCase(unittest.TestCase):
         
     def test_counts(self):        
 
-        default_args = {"doRatio":0, "rebin":4, "norm":0}
+        default_args = {"doRatio":0, "rebin":4, "norm":0, "process":"Multijet"}
 
         for k, v  in self.knownCounts.items():
             print(f"testing...{k}")
@@ -98,9 +98,16 @@ class PlotTestCase(unittest.TestCase):
             fig, ax = makePlot(cfg, var=var, cut=cut, region=region,
                                outputFolder=cfg.outputFolder, **default_args)
 
-            y_plot = ax.lines[-1].get_ydata()
-            np.testing.assert_array_equal(y_plot, counts)
 
+            for i in range(len(ax.lines)):
+            
+                if hasattr(ax.lines[i], "get_label") and ax.lines[i].get_label() == '_nolegend_':
+                    y_plot = ax.lines[i].get_ydata()
+                    break
+            
+            np.testing.assert_allclose(y_plot, counts,
+                                       rtol=1e-10, atol=0)
+            plt.close()
 
     def test_get_values_centers_from_dict_hists_type(self):
         # Mocking histogram objects
