@@ -232,7 +232,7 @@ def addYears(f, input_file_bkg, input_file_data, var, mix, channel):
 
     hist_ttbar = combine_hists(input_file_bkg,
                                f"{var_name}_PROC_YEAR_fourTag_SR",
-                               years=["UL16_preVFP", "UL17", "UL18"],
+                               years=["UL16_preVFP", "UL16_postVFP", "UL17", "UL18"],
                                procs=["TTTo2L2Nu_for_mixed", "TTToHadronic_for_mixed", "TTToSemiLeptonic_for_mixed"])
 
     f.cd(directory)
@@ -525,6 +525,7 @@ class multijetEnsemble:
         self.basis = None
         self.exit_message = ['--- None (%s) --- Multijet Ensemble'%self.channel.upper()]
         min_r = 1.0
+
         for basis in self.bases:
 
             self.makeFitFunction(basis)
@@ -2093,4 +2094,4 @@ if __name__ == "__main__":
         print(mixes)
         prepInput(closure_file_bkg, closure_file_data, closure_file_sig, closure_file_out) 
 
-    run(closureFileName)
+    #run(closureFileName)
