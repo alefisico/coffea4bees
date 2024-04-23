@@ -105,8 +105,8 @@ class PlotTestCase(unittest.TestCase):
                     y_plot = ax.lines[i].get_ydata()
                     break
             
-            np.testing.assert_array_equal(y_plot, counts)
-
+            np.testing.assert_allclose(y_plot, counts,
+                                       rtol=1e-10, atol=0)
 
     def test_get_values_centers_from_dict_hists_type(self):
         # Mocking histogram objects

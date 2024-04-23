@@ -191,9 +191,11 @@ python .php-plots/bin/pb_deploy_plots.py ../output/RunII/ /eos/user/a/algomez/wo
         
 rule convert_hist_to_yml:
     input:
-        "output/histAll.coffea"
+        inall = "output/histAll.coffea",
+        insyst = "output/histAll_syst.coffea"
     output:
-        "output/histAll.yml"
+        outall = "output/histAll.yml",
+        outsyst = "output/histAll_systematics.yml"
     container:
         "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
     resources:
@@ -201,7 +203,8 @@ rule convert_hist_to_yml:
         kubernetes_memory_limit="8Gi"
     shell:
         """
-python python/stats_analysis/convert_hist_to_yaml.py -o {output} -i {input}
+python python/stats_analysis/convert_hist_to_yaml.py -o {output.outall} -i {input.inall}
+python python/stats_analysis/convert_hist_to_yaml.py -o {output.outsyst} -i {input.insyst} -s
         """
 
 rule convert_yml_to_hist:
