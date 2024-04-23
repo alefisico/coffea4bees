@@ -1,5 +1,6 @@
 from __future__ import print_function
 import ROOT
+import os
 ROOT.gROOT.SetBatch(True)
 #ROOT.Math.MinimizerOptions.SetDefaultMinimizer("Minuit2")
 import sys
@@ -9,7 +10,7 @@ sys.path.insert(0, 'PlotTools/python/') #https://github.com/patrickbryant/PlotTo
 import collections
 import PlotTools
 sys.path.insert(0, 'nTupleAnalysis/python/') #https://github.com/patrickbryant/nTupleAnalysis
-from commandLineHelpers import *
+#from commandLineHelpers import mkpath, getUSER
 from array import array
 import numpy as np
 import scipy.stats
@@ -28,7 +29,7 @@ COLORS=['xkcd:purple', 'xkcd:green', 'xkcd:blue', 'xkcd:teal', 'xkcd:orange', 'x
         'xkcd:pine', 'xkcd:magenta', 'xkcd:cerulean', 'xkcd:eggplant', 'xkcd:coral', 'xkcd:blue purple',
         'xkcd:tea', 'xkcd:burple', 'xkcd:deep aqua', 'xkcd:orange pink', 'xkcd:terracota']
 
-year = 'RunII'
+#year = 'RunII'
 # lumi = 138.0
 lumi = 132.8
 classifier = 'SvB_MA'
@@ -44,7 +45,7 @@ maxBasisClosure  = 5
 #            'hh',
 #            ]
 
-channels = ['zz','zh','hh']
+
 
 # New VarAll (15)
 #rebin = {'zz': 5, 'zh': 5, 'hh': 10}
@@ -90,11 +91,9 @@ BE = []
 for i, s in enumerate(BEs): 
     BE.append( ROOT.TF1('BE%d'%i, s, 0, 1) )
 
-USER = getUSER()
-CMSSW = getCMSSW()
-basePath = '/uscms/home/%s/nobackup/%s/src'%(USER, CMSSW)
 
-#mixName = '3bMix4b_rWbW2'
+#CMSSW = getCMSSW()
+#basePath = '/uscms/home/%s/nobackup/%s/src'%(USER, CMSSW)
 
 ttAverage = False
 
@@ -102,34 +101,6 @@ doSpuriousSignal = True
 dataAverage = True
 nMixes = 15
 region = 'SR'
-#region = 'SRNoHH'
-#region = 'notSR'
-#hists_closure_MixedToUnmixed_3bMix4b_rWbW2_b0p60p3_SRNoHH_e25_os012.root
-#hists_closure_MixedToUnmixed_3bMix4b_rWbW2_b0p60p3_SRNoHH.root
-#closureFileName = 'ZZ4b/nTupleAnalysis/combine/hists_closure_MixedToUnmixed_'+mixName+'_b0p60p3_'+region+'.root'
-#closureFileName = 'ZZ4b/nTupleAnalysis/combine/hists_closure_'+mixName+'_b0p60p3_'+region+'.root'
-
-#closureFileName = 'ZZ4b/nTupleAnalysis/combine/hists_closure_'+mixName+'_'+region+'_weights_newSBDef.root'
-#closureFileName = "hists_closure_3bDvTMix4bDvT_SR_weights_newSBDef.root"
-#outputPath = "closureFits"
-
-#closureFileName = 'ZZ4b/nTupleAnalysis/combine/hists_closure_'+mixName+'_'+region+'_weights_newSBDefVarAll.root'
-#outputPath = "closureFitsVarAll"
-
-#closureFileName = 'ZZ4b/nTupleAnalysis/combine/hists_closure_'+mixName+'_'+region+'_weights_newSBDefSeedAll.root'
-#outputPath = "closureFitsSeedAll"
-
-#closureFileName = 'ZZ4b/nTupleAnalysis/combine/hists_closure_'+mixName+'_'+region+'_weights_newSBDefSeedAll45.root'
-#outputPath = "closureFitsSeedAll45"
-
-
-#closureFileName = 'ZZ4b/nTupleAnalysis/combine/hists_closure_'+mixName+'_'+region+'_weights_newSBDefSeedAllSingleOffsets.root'
-#outputPath = "closureFitsSeedAllSingleOffsets"
-
-
-# closureFileName = 'ZZ4b/nTupleAnalysis/combine/hists_closure_'+mixName+'_'+region+'_weights_newSBDef_vs_nJet_normalized.root'
-
-#mixes = [mixName+'_v%d'%i for i in range(nMixes)]
 
 probThreshold = 0.05 #0.045500263896 #0.682689492137 # 1sigma 
 
@@ -139,9 +110,49 @@ regionName = {'SB': 'Sideband',
               'notSR': 'Sideband',
               'SRNoHH': 'Signal Region (Veto HH)',
           }
-
-
         
+
+def exists(path):
+    if "root://" in path:
+        url, path = parseXRD(path)
+        fs=client.FileSystem(url)
+        return not fs.stat(path)[0]['status'] # status is 0 if file exists
+    else:
+        return os.path.exists(path)
+    
+
+def mkdir(directory, doExecute=True, xrd=False, url="root://cmseos.fnal.gov/", debug=False):
+    if exists(directory) and debug: 
+        print("#",directory,"already exists")
+        return
+        
+    if "root://" in directory or xrd:
+        url, path = parseXRD(directory)
+        cmd = "xrdfs "+url+" mkdir "+path
+        execute(cmd, doExecute)
+    else:
+        if not os.path.isdir(directory):
+            print("mkdir",directory)
+            if doExecute: os.mkdir(directory)
+
+
+def mkpath(path, doExecute=True, debug=False):
+    if exists(path) and debug:
+        print("#",path,"already exists")
+        return
+        
+    url = ''
+    if "root://" in path:
+        url, path = parseXRD(path)
+    dirs = [x for x in path.split("/") if x]
+    thisDir = url+'/' if url else ''
+    if not url and path[0]=='/':
+        thisDir = '/'+thisDir
+    for d in dirs:
+        thisDir = thisDir+d+"/"
+        mkdir(thisDir, doExecute)
+
+
 def addYearsOLD(f, directory, processes=['ttbar','multijet','data_obs']):
     hists = []
     for process in processes:        
@@ -180,7 +191,6 @@ def combine_hists(input_file, hist_template, procs, years):
     return hist
 
 def addYears(f, input_file_bkg, input_file_data, var, mix, channel):
-    hists = []
 
     directory = f"{mix}/{channel}"
     f.mkdir(directory)
@@ -201,7 +211,6 @@ def addYears(f, input_file_bkg, input_file_data, var, mix, channel):
     hist_data_obs.SetName("data_obs")
     hist_data_obs.Write()
 
-
     #
     # multijet
     #
@@ -217,7 +226,6 @@ def addYears(f, input_file_bkg, input_file_data, var, mix, channel):
     hist_multijet.SetName("multijet")
     hist_multijet.Write()
 
-
     #
     # TTBar
     #
@@ -232,12 +240,10 @@ def addYears(f, input_file_bkg, input_file_data, var, mix, channel):
     hist_ttbar.SetName("ttbar")
     hist_ttbar.Write()
 
-
-
     return 
 
 
-def addMixesOLD(f, directory):
+def addMixes(f, directory):
     hists = []
     for process in ['ttbar','multijet','data_obs']:
         try:
@@ -281,11 +287,12 @@ def prepInputOLD(closureFileName):
             print('Do not have '+mixName+'_vAll_oneFit/'+channel)
     
     for channel in channels:
-       addMixesOLD(f, channel)
+       addMixes(f, channel)
        for year in ['2016', '2017', '2018']:
-           addMixesOLD(f, channel+year)
+           addMixes(f, channel+year)
         
     # Get Signal templates for spurious signal fits
+    USER = getUSER()
     zzFile = ROOT.TFile('/uscms/home/%s/nobackup/ZZ4b/ZZ4bRunII/hists.root'%(USER), 'READ')
     zhFile = ROOT.TFile('/uscms/home/%s/nobackup/ZZ4b/bothZH4bRunII/hists.root'%(USER), 'READ')
     hhFile = ROOT.TFile('/uscms/home/%s/nobackup/ZZ4b/HH4bRunII/hists.root'%(USER), 'READ')
@@ -319,44 +326,29 @@ def prepInput(input_file_name_bkg, input_file_name_data, input_file_name_sig, ou
     #
     f = ROOT.TFile(output_file_name_root, 'RECREATE')    
     
-    
     for channel in channels:
         for mix in mixes:
            addYears(f, input_file_bkg, input_file_data, var=var, mix=mix, channel=channel)
     
-    hists = []
     for channel in channels:
-        addMixesOLD(f, channel)
+        addMixes(f, channel)
 
         var_name = var.replace("XXX",channel)
     
         #
         #  Signal
         #
-        signal_procs = ["ZZ4b", "ZH4b", "HH4b"]
+        hist_signal = combine_hists(input_file_sig,
+                               f"{var_name}_PROC_YEAR_fourTag_SR",
+                               years=["UL16_preVFP", "UL16_postVFP", "UL17", "UL18"],
+                               procs=["ZZ4b", "ZH4b", "HH4b"])
 
-        hists.append(  input_file_sig.Get(f"{var_name}_ZZ4b_{'UL16_preVFP'}_fourTag_SR") )
-        hists[-1].Add( input_file_sig.Get(f"{var_name}_ZZ4b_{'UL16_postVFP'}_fourTag_SR") )
-        hists[-1].Add( input_file_sig.Get(f"{var_name}_ZZ4b_{'UL17'}_fourTag_SR") )
-        hists[-1].Add( input_file_sig.Get(f"{var_name}_ZZ4b_{'UL18'}_fourTag_SR") )
-                                  
-        hists[-1].Add( input_file_sig.Get(f"{var_name}_ZH4b_{'UL16_preVFP'}_fourTag_SR") )
-        hists[-1].Add( input_file_sig.Get(f"{var_name}_ZH4b_{'UL16_postVFP'}_fourTag_SR") )
-        hists[-1].Add( input_file_sig.Get(f"{var_name}_ZH4b_{'UL17'}_fourTag_SR") )
-        hists[-1].Add( input_file_sig.Get(f"{var_name}_ZH4b_{'UL18'}_fourTag_SR") )
-    
-        hists[-1].Add( input_file_sig.Get(f"{var_name}_HH4b_{'UL16_preVFP'}_fourTag_SR") )
-        hists[-1].Add( input_file_sig.Get(f"{var_name}_HH4b_{'UL16_postVFP'}_fourTag_SR") )
-        hists[-1].Add( input_file_sig.Get(f"{var_name}_HH4b_{'UL17'}_fourTag_SR") )
-        hists[-1].Add( input_file_sig.Get(f"{var_name}_HH4b_{'UL18'}_fourTag_SR") )
-    
         f.cd(channel)
-        hists[-1].SetName("signal")
-        hists[-1].Write()
-    
+        hist_signal.SetName("signal")
+        hist_signal.Write()
 
 ###       for year in ['2016', '2017', '2018']:
-###           addMixesOLD(f, input_root_files, channel+year)
+###           addMixes(f, input_root_files, channel+year)
 ###
 
     
@@ -401,8 +393,8 @@ class multijetEnsemble:
     def __init__(self, f, channel):
         self.channel = channel
         self.rebin = rebin[channel]
-        mkpath('%s/%s/%s/rebin%i/%s/%s'%(outputPath, mixName, classifier, self.rebin, region, self.channel))
-        #mkpath(f'{outputPath}/{mixName}/{classifier}/rebin{self.rebin}/{region}/{self.channel}')
+        #mkpath('%s/%s/%s/rebin%i/%s/%s'%(outputPath, mixName, classifier, self.rebin, region, self.channel))
+        mkpath(f'{outputPath}/{mixName}/{classifier}/rebin{self.rebin}/{region}/{self.channel}')
 
         self.data_minus_ttbar = f.Get('%s/ttbar'%self.channel)
         self.data_minus_ttbar.SetName('%s_average_%s'%('data_minus_ttbar', self.channel))
@@ -2032,16 +2024,15 @@ class closure:
 def run(closureFileName):
     f=ROOT.TFile(closureFileName, 'UPDATE')
 
-
     # make multijet ensembles and perform fits
     multijetEnsembles = {}
     for channel in channels:
         if type(rebin[channel]) is list:
-            mkpath('%s/%s/%s/%s/variable_rebin/%s/%s'%(basePath, outputPath, mixName, classifier, region, channel))
             #mkpath(f'{basePath}/{outputPath}/{mixName}/{classifier}/variable_rebin/{region}/{channel}')
+            mkpath(f'{outputPath}/{mixName}/{classifier}/variable_rebin/{region}/{channel}')
         else:
-            mkpath('%s/%s/%s/%s/rebin%i/%s/%s'%(basePath, outputPath, mixName, classifier, rebin[channel], region, channel))
             #mkpath(f'{basePath}/{outputPath}/{mixName}/{classifier}/rebin{rebin[channel]}/{region}/{channel}')
+            mkpath(f'{outputPath}/{mixName}/{classifier}/rebin{rebin[channel]}/{region}/{channel}')
         multijetEnsembles[channel] = multijetEnsemble(f, channel)
 
     # run closure fits using average multijet model 
@@ -2068,6 +2059,8 @@ if __name__ == "__main__":
 
     old_inputs = False
     mixName = '3bDvTMix4bDvT'
+    #channels = ['zz','zh','hh']
+    channels = ['hh']
 
     if old_inputs: 
         closureFileName = "hists_closure_3bDvTMix4bDvT_SR_weights_newSBDef.root"
@@ -2098,4 +2091,4 @@ if __name__ == "__main__":
         print(mixes)
         prepInput(closure_file_bkg, closure_file_data, closure_file_sig, closure_file_out) 
 
-    #run(closureFileName)
+    run(closureFileName)
