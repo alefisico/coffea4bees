@@ -18,6 +18,6 @@ python3 stats_analysis/convert_yml_to_root.py -f analysis/hists/histAll_signal.y
 
 # runTwoStage closure
 python3 runTwoStageClosure.py
-
-
+#python3 stats_analysis/tests/dumpTwoStageInputs.py --input stats_analysis/hists_closure_3bDvTMix4bDvT_New.root --output stats_analysis/tests/twoStageClosureInputsCounts.yml
+python3 stats_analysis/tests/test_runTwoStageClosure.py 
 

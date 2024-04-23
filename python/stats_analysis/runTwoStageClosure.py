@@ -161,6 +161,24 @@ def addYearsOLD(f, directory, processes=['ttbar','multijet','data_obs']):
             hists[-1].Write()
 
 
+def combine_hists(input_file, hist_template, procs, years):
+    hist = None
+    
+    for p in procs:
+        hist_name_proc = hist_template.replace("PROC", p)
+        
+        for y in years:
+            hist_name = hist_name_proc.replace("YEAR", y)
+            
+            if hist is None:
+                #print(f"reading {hist_name}")
+                hist =  input_file.Get(hist_name).Clone()
+            else:
+                #print(f"reading {hist_name}")
+                hist.Add( input_file.Get(hist_name).Clone() )
+                
+    return hist
+
 def addYears(f, input_file_bkg, input_file_data, var, mix, channel):
     hists = []
 
@@ -174,13 +192,14 @@ def addYears(f, input_file_bkg, input_file_data, var, mix, channel):
 
     mix_number = mix.replace(f"{mixName}_v","")
 
-    hists.append(  input_file_data.Get(f"{var_name}_mix_v{mix_number}_{'UL16_preVFP'}_fourTag_SR") )
-    hists[-1].Add( input_file_data.Get(f"{var_name}_mix_v{mix_number}_{'UL17'}_fourTag_SR") )
-    hists[-1].Add( input_file_data.Get(f"{var_name}_mix_v{mix_number}_{'UL18'}_fourTag_SR") )
+    hist_data_obs = combine_hists(input_file_data,
+                                  f"{var_name}_PROC_YEAR_fourTag_SR", 
+                                  years=["UL16_preVFP", "UL17", "UL18"], 
+                                  procs=[f"mix_v{mix_number}"])
 
     f.cd(directory)
-    hists[-1].SetName("data_obs")
-    hists[-1].Write()
+    hist_data_obs.SetName("data_obs")
+    hist_data_obs.Write()
 
 
     #
@@ -2085,4 +2104,4 @@ if __name__ == "__main__":
         print(mixes)
         prepInput(closure_file_bkg, closure_file_data, closure_file_sig, closure_file_out) 
 
-    run(closureFileName)
+    #run(closureFileName)
