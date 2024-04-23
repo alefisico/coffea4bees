@@ -194,7 +194,7 @@ def addYears(f, input_file_bkg, input_file_data, var, mix, channel):
 
     hist_data_obs = combine_hists(input_file_data,
                                   f"{var_name}_PROC_YEAR_fourTag_SR", 
-                                  years=["UL16_preVFP", "UL17", "UL18"], 
+                                  years=["UL16_preVFP", "UL17", "UL18"],
                                   procs=[f"mix_v{mix_number}"])
 
     f.cd(directory)
@@ -208,13 +208,14 @@ def addYears(f, input_file_bkg, input_file_data, var, mix, channel):
     var_name_multijet = var_name.replace("SvB_ps", f"SvB_FvT_{mix}_newSBDef_ps")
     var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDef_ps")
 
-    hists.append(  input_file_bkg.Get(f"{var_name_multijet}_data_3b_for_mixed_{'UL16_preVFP'}_threeTag_SR") )
-    hists[-1].Add( input_file_bkg.Get(f"{var_name_multijet}_data_3b_for_mixed_{'UL17'}_threeTag_SR") )
-    hists[-1].Add( input_file_bkg.Get(f"{var_name_multijet}_data_3b_for_mixed_{'UL18'}_threeTag_SR") )
+    hist_multijet = combine_hists(input_file_bkg,
+                                  f"{var_name_multijet}_PROC_YEAR_threeTag_SR",
+                                  years=["UL16_preVFP", "UL17", "UL18"],
+                                  procs=["data_3b_for_mixed"])
 
     f.cd(directory)
-    hists[-1].SetName("multijet")
-    hists[-1].Write()
+    hist_multijet.SetName("multijet")
+    hist_multijet.Write()
 
 
     #
@@ -222,21 +223,14 @@ def addYears(f, input_file_bkg, input_file_data, var, mix, channel):
     #
     ttbar_procs = ["TTTo2L2Nu", "TTToHadronic", "TTToSemiLeptonic"]
 
-    hists.append(  input_file_bkg.Get(f"{var_name}_TTTo2L2Nu_for_mixed_{'UL16_preVFP'}_fourTag_SR") )
-    hists[-1].Add( input_file_bkg.Get(f"{var_name}_TTTo2L2Nu_for_mixed_{'UL17'}_fourTag_SR") )
-    hists[-1].Add( input_file_bkg.Get(f"{var_name}_TTTo2L2Nu_for_mixed_{'UL18'}_fourTag_SR") )
-
-    hists[-1].Add( input_file_bkg.Get(f"{var_name}_TTToHadronic_for_mixed_{'UL16_preVFP'}_fourTag_SR") )
-    hists[-1].Add( input_file_bkg.Get(f"{var_name}_TTToHadronic_for_mixed_{'UL17'}_fourTag_SR") )
-    hists[-1].Add( input_file_bkg.Get(f"{var_name}_TTToHadronic_for_mixed_{'UL18'}_fourTag_SR") )
-
-    hists[-1].Add( input_file_bkg.Get(f"{var_name}_TTToSemiLeptonic_for_mixed_{'UL16_preVFP'}_fourTag_SR") )
-    hists[-1].Add( input_file_bkg.Get(f"{var_name}_TTToSemiLeptonic_for_mixed_{'UL17'}_fourTag_SR") )
-    hists[-1].Add( input_file_bkg.Get(f"{var_name}_TTToSemiLeptonic_for_mixed_{'UL18'}_fourTag_SR") )
+    hist_ttbar = combine_hists(input_file_bkg,
+                               f"{var_name}_PROC_YEAR_fourTag_SR",
+                               years=["UL16_preVFP", "UL17", "UL18"],
+                               procs=["TTTo2L2Nu_for_mixed", "TTToHadronic_for_mixed", "TTToSemiLeptonic_for_mixed"])
 
     f.cd(directory)
-    hists[-1].SetName("ttbar")
-    hists[-1].Write()
+    hist_ttbar.SetName("ttbar")
+    hist_ttbar.Write()
 
 
 
