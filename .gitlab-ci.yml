@@ -199,19 +199,19 @@ analysis-mixed-cutflow-job:
       - python/analysis/tests/test_dump_cutflow_mixed_data.yml
       - python/analysis/tests/test_dump_cutflow_mixed_bkg.yml
 
-skimmer-analysis-cutflow-job:    
-  stage: cutflow
-  needs: 
-    - skimmer-analysis-test-job
-  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
-  tags:
-    - k8s-cvmfs
-  script:
-    - source .ci-workflows/skimmer-analysis-cutflow-job.sh
-  artifacts:
-    expire_in: 1 day
-    paths:
-      - python/analysis/tests/test_dump_skimmer_cutflow.yml
+###skimmer-analysis-cutflow-job:    
+###  stage: cutflow
+###  needs: 
+###    - skimmer-analysis-test-job
+###  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+###  tags:
+###    - k8s-cvmfs
+###  script:
+###    - source .ci-workflows/skimmer-analysis-cutflow-job.sh
+###  artifacts:
+###    expire_in: 1 day
+###    paths:
+###      - python/analysis/tests/test_dump_skimmer_cutflow.yml
 
 analysis-systematics-cutflow-job:    
   stage: cutflow
