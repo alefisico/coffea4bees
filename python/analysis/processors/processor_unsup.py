@@ -371,9 +371,10 @@ class analysis(processor.ProcessorABC):
         fill += QuadJetHistsUnsup(('quadJet_selected_no3to4DtoM', 'Selected Quad Jet no3to4DtoM'), 'quadJet_selected', weight = "wNo3to4DtoM")  
         
         
-        # fill += Jet.plot(('selJets', 'Selected Jets'),        'selJet',           skip=['deepjet_c'])
-        # fill += Jet.plot(('tagJets', 'Tag Jets'),             'tagJet',           skip=['deepjet_c'])
-        # fill += Jet.plot(('canJets', 'Higgs Candidate Jets'), 'canJet',           skip=['deepjet_c'])
+        fill += Jet.plot(('selJets', 'Selected Jets'),        'selJet',           skip=['deepjet_c'])
+        fill += Jet.plot(('tagJets', 'Tag Jets'),             'tagJet',           skip=['deepjet_c'])
+        fill += Jet.plot(('othJets', 'Other Jets'),           'notCanJet_coffea', skip=['deepjet_c'])
+        fill += Jet.plot(('canJets', 'Candidate Jets'),        'canJet',           skip=['deepjet_c'])
 
         
         ### fill histograms ###

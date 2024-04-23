@@ -188,18 +188,30 @@ datasets:
         FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
   
   data_3b_for_mixed:
-    'UL16_preVFP':
-      picoAOD: 
-        files: 
-          - 'root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig/data2016_3b/picoAOD_3b_wJCM_newSBDef.root'
-    'UL17':
-      picoAOD: 
-        files: 
-          - 'root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig/data2017_3b/picoAOD_3b_wJCM_newSBDef.root'
-    'UL18':
-      picoAOD: 
+    nSamples: 1
+    UL18:
+      picoAOD:
         files:
-          - 'root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig/data2018_3b/picoAOD_3b_wJCM_newSBDef.root'
+        - root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//data2018_3b/picoAOD_3b_wJCM_newSBDef.root
+        FvT_file_template: root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//data2018_3b/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
+        FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
+        JCM_load_template: 3bDvTMix4bDvT_vXXX
+
+    UL17:
+      picoAOD:
+        files:
+        - root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//data2017_3b/picoAOD_3b_wJCM_newSBDef.root
+        FvT_file_template: root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//data2017_3b/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
+        FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
+        JCM_load_template: 3bDvTMix4bDvT_vXXX
+
+    UL16_preVFP:
+      picoAOD:
+        files:
+        - root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//data2016_3b/picoAOD_3b_wJCM_newSBDef.root
+        FvT_file_template: root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//data2016_3b/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
+        FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
+        JCM_load_template: 3bDvTMix4bDvT_vXXX
 
   # TTToHadronic:
   #   xs: 377.9607353256 #313.9 from McM. NNLO tt xs = 831.76, W hadronic BR = 0.6741 => NNLO = 831.76*0.6741^2 = 377.9607353256
