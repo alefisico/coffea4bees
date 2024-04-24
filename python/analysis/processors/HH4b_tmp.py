@@ -268,7 +268,7 @@ class analysis(processor.ProcessorABC):
             ):  #### AGE: this should be temprorary (field exists in UL)
                 event["weight"] = event.weight * event.L1PreFiringWeight.Nom
         else:
-            event["weight"] = 1
+            event["weight"] = 1.0
 
         logging.debug(f"event['weight'] = {event.weight}")
 

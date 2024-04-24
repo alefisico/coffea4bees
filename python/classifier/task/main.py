@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import sys
 from collections import deque
@@ -23,6 +24,13 @@ if TYPE_CHECKING:
 _CLASSIFIER = "classifier"
 _CONFIG = "config"
 _MAIN = "main"
+_FROM = "from"
+_TEMPLATE = "template"
+
+_MODULE = "module"
+_OPTION = "option"
+
+_DASH = "-"
 
 
 class EntryPoint:
@@ -40,7 +48,7 @@ class EntryPoint:
         "dataset": Dataset,
         "model": Model,
     }
-    _preserved = [f"--{k}" for k in _keys]
+    _preserved = [*(f"--{k}" for k in _keys), f"--{_FROM}", f"--{_TEMPLATE}"]
 
     @classmethod
     def _fetch_subargs(cls, args: deque):
@@ -78,42 +86,116 @@ class EntryPoint:
                     else:
                         self.mods[cat].append(new(cls, opts))
 
-    def __init__(self):
-        self.entrypoint = Path(sys.argv[0]).name
-        self.cmd = " ".join(sys.argv)
+    @classmethod
+    def _expand_module(cls, data: dict):
+        import shlex
+
+        from . import parse
+
+        mod = data[_MODULE]
+        opts = []
+        for opt in data.get(_OPTION, []):
+            if opt is None:
+                opts.append("")
+            elif isinstance(opt, str):
+                opts.extend(shlex.split(opt))
+            else:
+                opts.append(parse.escape(opt))
+        return mod, opts
+
+    def _expand(self, *files: str, fetch_main: bool = False, formatter: str = None):
+        from . import parse
+
+        for file in files:
+            args = parse.mapping(file, "file", formatter)
+            if fetch_main and _MAIN in args:
+                self.args[_MAIN] = self._expand_module(args[_MAIN])
+            for cat in self._keys:
+                if cat in args:
+                    for arg in args[cat]:
+                        self.args[cat].append(self._expand_module(arg))
+
+    def __init__(self, argv: list[str] = None, initializer: Callable[[], None] = None):
+        from ..config.state import RunInfo
+
+        if initializer is not None:
+            initializer()
+        if argv is None:
+            argv = sys.argv.copy()
+
+        self.entrypoint = Path(argv[0]).name
+        self.cmd = " ".join(argv)
         self.args: dict[str, list[tuple[str, list[str]]]] = {k: [] for k in self._keys}
 
-        args = deque(sys.argv[1:])
+        args = deque(argv[1:])
         if len(args) == 0:
             raise ValueError(f"No task specified")
         arg = args.popleft()
-        if arg not in self._tasks:
-            raise ValueError(
-                f'The first argument must be one of {self._tasks}, got "{arg}"'
+        self.args[_MAIN] = arg, self._fetch_subargs(args)
+        if arg == _FROM:
+            self._expand(*self.args[_MAIN][1], fetch_main=True)
+        elif arg == _TEMPLATE:
+            self._expand(
+                *self.args[_MAIN][1][1:],
+                fetch_main=True,
+                formatter=self.args[_MAIN][1][0],
             )
-        else:
-            self.args[_MAIN] = arg, self._fetch_subargs(args)
         while len(args) > 0:
             cat = args.popleft().removeprefix("--")
             mod = args.popleft()
             opts = self._fetch_subargs(args)
-            self.args[cat].append((mod, opts))
+            if cat == _FROM:
+                self._expand(mod, *opts)
+            elif cat == _TEMPLATE:
+                self._expand(*opts, fetch_main=True, formatter=mod)
+            else:
+                self.args[cat].append((mod, opts))
 
-        _, cls = self._fetch_module(f"{self.args[_MAIN][0]}.Main", _MAIN)
+        main: str = self.args[_MAIN][0]
+        if main not in self._tasks:
+            raise ValueError(
+                f'The first argument must be one of {self._tasks}, got "{main}"'
+            )
+        RunInfo.main_task = main
+
+        cls: type[Main] = self._fetch_module(f"{self.args[_MAIN][0]}.Main", _MAIN)[1]
         if cls is None:
             raise AttributeError(f'Task "{self.args[_MAIN][0]}" not found')
+
+        if not cls._no_load:
+            self._fetch_all()
+
         self.main: Main = new(cls, self.args[_MAIN][1])
 
+        from ..config.setting import Monitor as cfg
+
+        if not cls._no_monitor and cfg.enable:
+            if cfg.address is None:
+                from ..monitor import setup_monitor
+                from ..process.monitor import Monitor
+
+                Monitor().start()
+                setup_monitor()
+                address, port = Monitor.current()._address
+                logging.info(f"Started Monitor at {address}:{port}")
+            else:
+                from ..monitor import setup_reporter
+                from ..process.monitor import connect_to_monitor
+
+                connect_to_monitor()
+                setup_reporter()
+                logging.info(f"Connecting to Monitor {cfg.address}:{cfg.port}")
+
     def run(self, reproducible: Callable):
-        from ..config.setting.default import IO as IOSetting
+        from ..config.setting import IO, save
+        from ..process.monitor import Recorder, wait_for_monitor
 
-        self._fetch_all()
         meta = self.main.run(self)
+        wait_for_monitor()
 
-        if hasattr(self.main.opts, "save_state") and self.main.opts.save_state:
-            from ..config.setting.cache import save
-
-            save.parse([IOSetting.output / "state.pkl"])
+        if self.main.flag("save_state"):
+            save.parse([IO.output / IO.file_states])
+        Recorder.dump()
 
         if meta is not None:
             from base_class.utils.json import DefaultEncoder
@@ -123,7 +205,8 @@ class EntryPoint:
                 "reproducible": reproducible(),
             }
             with fsspec.open(
-                IOSetting.output / f"{self.args[_MAIN][0]}.json", "wt"
+                IO.output / IO.file_metadata,
+                "wt",
             ) as f:
                 json.dump(meta, f, cls=DefaultEncoder)
 
@@ -132,6 +215,9 @@ class EntryPoint:
 
 
 class Main(Task):
+    _no_monitor = False
+    _no_load = False
+
     argparser = ArgParser()
     argparser.add_argument(
         "--save-state",

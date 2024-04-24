@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+from fractions import Fraction
 from functools import cached_property
 from typing import TYPE_CHECKING, Callable, Iterable, Literal
 
+from base_class.math.random import SeedLike, Squares
+
 from ..config.setting.df import Columns
 from ..config.state.label import MultiClass
+from ..utils import keep_fraction
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -51,21 +55,6 @@ class add_label_flag:
         return df
 
 
-class add_event_offset:
-    """
-    a workaround for no ``uint64`` support in :class:`torch.Tensor`
-    """
-
-    def __init__(self, modulus: int):
-        self._modulus = modulus
-
-    def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
-        df.loc[:, (Columns.event_offset,)] = (df[Columns.event] % self._modulus).astype(
-            Columns.index_dtype
-        )
-        return df
-
-
 class map_selection_to_index:
     def __init__(self, *args: str, **kwargs: int):
         self._indices = dict(zip(args, range(len(args))))
@@ -104,6 +93,16 @@ class map_selection_to_index:
         return df
 
 
+class add_columns:
+    def __init__(self, **columns: str):
+        self.columns = columns
+
+    def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
+        for k, v in self.columns.items():
+            df.loc[:, (k,)] = v
+        return df
+
+
 class drop_columns:
     def __init__(self, *columns: str):
         self.columns = [*columns]
@@ -124,41 +123,34 @@ class rename_columns:
 class prescale:
     def __init__(
         self,
-        scale: float,
+        scale: str | Fraction,
         selection: Callable[[pd.DataFrame], npt.ArrayLike] = None,
-        shuffle: bool = False,
-        scale_columns: Iterable[str] = None,
+        seed: SeedLike = (0,),
+        additional_columns: Iterable[str] = None,
     ):
+        scale = Fraction(scale)
         if scale < 1:
             raise ValueError(f"Scale must be greater than 1, got {scale}")
-        self._scale = 1.0 / scale
+        self._scale = 1 / scale
         self._selection = selection
-        self._shuffle = shuffle
-        self._scale_columns = set(scale_columns or ())
-        self._scale_columns.add(Columns.weight)
+        self._columns = set(additional_columns or ())
+        self._rng = Squares((type(self).__name__, *seed))
 
     def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
-        if self._scale == 1.0:
+        if self._scale == 1:
             return df
-
         import numpy as np
-        import pandas as pd
 
+        columns = [*(self._columns | {Columns.weight})]
         if self._selection is not None:
-            mask = np.asarray(self._selection(df))
+            prescaled = np.asarray(self._selection(df))
         else:
-            mask = np.full(len(df), True)
-        index = df.index[mask]
-        if self._shuffle:
-            np.random.shuffle(index)
-
-        weight = np.abs(df.loc[index, Columns.weight].to_numpy())
-        summed = np.cumsum(weight)
-        last = np.searchsorted(summed, self._scale * summed[-1])
-        scale = summed[last] / summed[-1]
-        df.loc[index[: last + 1], [*self._scale_columns]] /= scale
-
-        kept = pd.Series(False, index=df.index)
-        kept.loc[~mask] = True
-        kept.loc[index[: last + 1]] = True
-        return df[kept]
+            prescaled = np.full(len(df), True)
+        unprescaled = ~prescaled
+        sumw = df.loc[prescaled, columns].sum(axis=0)
+        prescaled[prescaled] = keep_fraction(
+            self._scale, self._rng.uint(df.loc[prescaled, Columns.event])
+        )
+        sumw_kept = df.loc[prescaled, columns].sum(axis=0)
+        df.loc[prescaled, columns] *= sumw / sumw_kept
+        return df[prescaled | unprescaled]

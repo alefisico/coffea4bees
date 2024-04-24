@@ -10,7 +10,7 @@ import base_class.plots.iPlot_config as cfg
 import numpy as np
 from base_class.tests.parser import wrapper
 from unittest.mock import MagicMock
-
+import matplotlib.pyplot as plt
 
 #
 # python3 analysis/tests/plot_test.py   --inputFile analysis/hists/test.coffea --knownCounts base_class/tests/plotCounts.yml 
@@ -86,7 +86,7 @@ class PlotTestCase(unittest.TestCase):
         
     def test_counts(self):        
 
-        default_args = {"doRatio":0, "rebin":4, "norm":0}
+        default_args = {"doRatio":0, "rebin":4, "norm":0, "process":"Multijet"}
 
         for k, v  in self.knownCounts.items():
             print(f"testing...{k}")
@@ -98,20 +98,30 @@ class PlotTestCase(unittest.TestCase):
             fig, ax = makePlot(cfg, var=var, cut=cut, region=region,
                                outputFolder=cfg.outputFolder, **default_args)
 
-            y_plot = ax.lines[-1].get_ydata()
-            np.testing.assert_array_equal(y_plot, counts)
 
+            for i in range(len(ax.lines)):
+            
+                if hasattr(ax.lines[i], "get_label") and ax.lines[i].get_label() == '_nolegend_':
+                    y_plot = ax.lines[i].get_ydata()
+                    break
+            
+            np.testing.assert_allclose(y_plot, counts,
+                                       rtol=1e-10, atol=0)
+            plt.close()
 
     def test_get_values_centers_from_dict_hists_type(self):
         # Mocking histogram objects
         hist_mock = MagicMock()
         hist_mock.values.return_value = np.array([1, 2, 3])
         hist_mock.axes[0].centers = np.array([0.5, 1.5, 2.5])
+
+        # Mocking histogram config
+        hist_config = {"name": "hist1"}
         
         # Setting up inputs
         input_dict = {"type": "hists", "key": "hist1"}
         hist_index = {"hist1": 0}
-        hists = [hist_mock]
+        hists = [(hist_mock, hist_config)]
         stack_dict = {}
         
         # Expected values
@@ -119,7 +129,7 @@ class PlotTestCase(unittest.TestCase):
         expected_centers = np.array([0.5, 1.5, 2.5])
         
         # Test
-        values, centers = get_values_centers_from_dict(input_dict, hist_index, hists, stack_dict)
+        values, centers = get_values_centers_from_dict(input_dict, hists, stack_dict)
         np.testing.assert_array_equal(values, expected_values)
         np.testing.assert_array_equal(centers, expected_centers)
 
@@ -129,7 +139,7 @@ class PlotTestCase(unittest.TestCase):
         hist_mock = MagicMock()
         hist_mock.values.return_value = np.array([1, 2, 3])
         hist_mock.axes[0].centers = np.array([0.5, 1.5, 2.5])
-        stack_dict = {"stack1": hist_mock, "stack2": hist_mock}
+        stack_dict = {"stack1": (hist_mock, {}), "stack2": (hist_mock, {})}
 
         # Setting up inputs
         input_dict = {"type": "stack"}
@@ -141,7 +151,7 @@ class PlotTestCase(unittest.TestCase):
         expected_centers = np.array([0.5, 1.5, 2.5])
         
         # Test
-        values, centers = get_values_centers_from_dict(input_dict, hist_index, hists, stack_dict)
+        values, centers = get_values_centers_from_dict(input_dict, hists, stack_dict)
         np.testing.assert_array_equal(values, expected_values)
         np.testing.assert_array_equal(centers, expected_centers)        
 

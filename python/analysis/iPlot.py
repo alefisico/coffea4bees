@@ -173,7 +173,8 @@ if __name__ == '__main__':
     args = parse_args()
     cfg.plotConfig = load_config(args.metadata)
     cfg.outputFolder = args.outputFolder
-
+    cfg.combine_input_files = args.combine_input_files
+    
     if cfg.outputFolder:
         if not os.path.exists(cfg.outputFolder):
             os.makedirs(cfg.outputFolder)
