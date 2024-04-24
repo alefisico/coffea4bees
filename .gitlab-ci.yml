@@ -81,19 +81,19 @@ analysis-test-job:
     paths:
       - python/analysis/hists/test.coffea
 
-analysis-plot-job-unsup:    
-  stage: plot 
-  needs: 
-    - analysis-test-job-unsup
+analysis-test-job-unsup:   
+  stage: analysis-test   
+  needs:
+    - voms_proxy
   image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
-    - source .ci-workflows/analysis-plot-job-unsup.sh
-  artifacts:
+    - source .ci-workflows/analysis-test-job-unsup.sh
+  artifacts: 
     expire_in: 1 day
     paths:
-      - python/analysis/testCoffeaPlots/RunII/
+      - python/analysis/hists/test_unsup.coffea
 
 analysis-test-mixed-job:   
   stage: analysis-test   
