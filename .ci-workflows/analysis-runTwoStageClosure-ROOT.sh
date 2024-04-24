@@ -1,7 +1,5 @@
 
 # In coffea envi
-echo "############### Checking ls"
-ls
 echo "############### Moving to python folder"
 cd python/
 #echo "############### Hist --> YML"
@@ -17,6 +15,6 @@ cd python/
 
 
 # runTwoStage closure
-time python3 stats_analysis/runTwoStageClosure.py --channels hh  --classifier SvB_MA
+time python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 20 --outputPath stats_analysis/closureFitsNew
 #python3 stats_analysis/tests/dumpTwoStageInputs.py --input stats_analysis/hists_closure_3bDvTMix4bDvT_New.root --output stats_analysis/tests/twoStageClosureInputsCounts.yml
-python3 stats_analysis/tests/test_runTwoStageClosure.py --knownCounts stats_analysis/tests/twoStageClosureInputsCounts.yml --input stats_analysis/hists_closure_3bDvTMix4bDvT_New.root 
+python3 stats_analysis/tests/test_runTwoStageClosure.py --knownCounts stats_analysis/tests/twoStageClosureInputsCounts.yml --input stats_analysis/closureFitsNew/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin20.root

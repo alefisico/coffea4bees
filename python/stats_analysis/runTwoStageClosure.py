@@ -74,9 +74,6 @@ def mkpath(path, doExecute=True, debug=False):
         thisDir = thisDir+d+"/"
         mkdir(thisDir, doExecute)
 
-
-
-
 def combine_hists(input_file, hist_template, procs, years):
     hist = None
 
@@ -95,7 +92,7 @@ def combine_hists(input_file, hist_template, procs, years):
 
     return hist
 
-def addYears(f, input_file_bkg, input_file_data, var, mix, channel):
+def addYears(f, input_file_bkg, input_file_data, mix, channel):
 
     directory = f"{mix}/{channel}"
     f.mkdir(directory)
@@ -103,7 +100,7 @@ def addYears(f, input_file_bkg, input_file_data, var, mix, channel):
     #
     # data_obs
     #
-    var_name = var.replace("XXX",channel)
+    var_name = args.var.replace("XXX",channel)
 
     mix_number = mix.replace(f"{args.mix_name}_v","")
 
@@ -178,51 +175,44 @@ def addMixes(f, directory):
             hists[-1].Write()
 
 
-
-def prepInput(input_file_name_bkg, input_file_name_data, input_file_name_sig, output_file_name_root):
+def prepInput():
 
     #
     # Read inputs
     #
-    print(f"Reading {input_file_name_bkg}")
-    input_file_bkg  = ROOT.TFile(input_file_name_bkg,  'READ')
-    input_file_data = ROOT.TFile(input_file_name_data, 'READ')
-    input_file_sig  = ROOT.TFile(input_file_name_sig,  'READ')
+    input_file_bkg  = ROOT.TFile(args.input_file_bkg,  'READ')
+    input_file_data = ROOT.TFile(args.input_file_data, 'READ')
+    input_file_sig  = ROOT.TFile(args.input_file_sig,  'READ')
 
     #
     # Make output
     #
-    f = ROOT.TFile(output_file_name_root, 'RECREATE')
+    f = ROOT.TFile(closure_file_out, 'RECREATE')
 
-    for channel in args.channels:
-        for mix in mixes:
-           addYears(f, input_file_bkg, input_file_data, var=var, mix=mix, channel=channel)
+    for mix in mixes:
+        addYears(f, input_file_bkg, input_file_data, mix=mix, channel=channel)
 
-    for channel in args.channels:
-        addMixes(f, channel)
+    addMixes(f, channel)
 
-        var_name = var.replace("XXX",channel)
+    var_name = args.var.replace("XXX",channel)
 
-        #
-        #  Signal
-        #
-        hist_signal = combine_hists(input_file_sig,
-                               f"{var_name}_PROC_YEAR_fourTag_SR",
-                               years=["UL16_preVFP", "UL16_postVFP", "UL17", "UL18"],
-                               procs=["ZZ4b", "ZH4b", "HH4b"])
+    #
+    #  Signal
+    #
+    hist_signal = combine_hists(input_file_sig,
+                           f"{var_name}_PROC_YEAR_fourTag_SR",
+                           years=["UL16_preVFP", "UL16_postVFP", "UL17", "UL18"],
+                           procs=["ZZ4b", "ZH4b", "HH4b"])
 
-        f.cd(channel)
-        hist_signal.SetName("signal")
-        hist_signal.Write()
+    f.cd(channel)
+    hist_signal.SetName("signal")
+    hist_signal.Write()
 
 ###       for year in ['2016', '2017', '2018']:
 ###           addMixes(f, input_root_files, channel+year)
 ###
 
-
     f.Close()
-
-
 
 
 def pearsonr(x,y,n=None):
@@ -254,16 +244,14 @@ def fTest(chi2_1, chi2_2, ndf_1, ndf_2):
     return fProb
 
 
-
-
 class multijetEnsemble:
     def __init__(self, f, channel):
 
         self.channel = channel
-        self.rebin = rebin[channel]
-        mkpath(f'{outputPath}/{args.mix_name}/{args.classifier}/rebin{self.rebin}/{args.region}/{self.channel}')
+        self.rebin = rebin
+        mkpath(f'{args.outputPath}/{args.mix_name}/{classifier}/rebin{self.rebin}/{args.region}/{self.channel}')
 
-        self.output_yml = open(f'{outputPath}/{args.mix_name}/{args.classifier}/rebin{self.rebin}/{args.region}/{self.channel}/0_variance_results.yml', 'w')
+        self.output_yml = open(f'{args.outputPath}/{args.mix_name}/{classifier}/rebin{self.rebin}/{args.region}/{self.channel}/0_variance_results.yml', 'w')
 
         self.data_minus_ttbar = f.Get(f'{self.channel}/ttbar')
         self.data_minus_ttbar.SetName(f'data_minus_ttbar_average_{self.channel}')
@@ -547,6 +535,7 @@ class multijetEnsemble:
         self.fit_result[basis] = self.multijet_ensemble_average.Fit(self.multijet_TF1[basis], 'N0SQ')
         self.getEigenvariations(basis)
         self.pvalue[basis], self.chi2[basis], self.ndf[basis] = self.multijet_TF1[basis].GetProb(), self.multijet_TF1[basis].GetChisquare(), self.multijet_TF1[basis].GetNDF()
+        print("="*50)
         print('Fit multijet ensemble %s at basis %d'%(self.channel, basis))
         print('chi2/ndf = %3.2f/%3d = %2.2f'%(self.chi2[basis], self.ndf[basis], self.chi2[basis]/self.ndf[basis]))
         print(' p-value = %0.2f'%self.pvalue[basis])
@@ -642,11 +631,11 @@ class multijetEnsemble:
 
         rebin_name = '' if rebin else '_no_rebin'
         if type(self.rebin) is list:
-            figname = f'{outputPath}/{args.mix_name}/{args.classifier}/variable_rebin/{args.region}/{self.channel}/{name}_basis{rebin_name}{basis}.pdf'
+            figname = f'{args.outputPath}/{args.mix_name}/{classifier}/variable_rebin/{args.region}/{self.channel}/{name}_basis{rebin_name}{basis}.pdf'
         else:
-            figname = f'{outputPath}/{args.mix_name}/{args.classifier}/rebin{self.rebin}/{args.region}/{self.channel}/{name}_basis{rebin_name}{basis}.pdf'
+            figname = f'{args.outputPath}/{args.mix_name}/{classifier}/rebin{self.rebin}/{args.region}/{self.channel}/{name}_basis{rebin_name}{basis}.pdf'
 
-        print('fig.savefig( '+figname+' )')
+        #print('fig.savefig( '+figname+' )')
         plt.tight_layout()
         fig.savefig( figname )
         plt.close(fig)
@@ -676,10 +665,10 @@ class multijetEnsemble:
         ax.legend(fontsize='small', loc='best')
 
         if type(self.rebin) is list:
-            figname = f'{outputPath}/{args.mix_name}/{args.classifier}/variable_rebin/{args.region}/{self.channel}/{name}_additive_basis{rebin_name}{basis}.pdf'
+            figname = f'{args.outputPath}/{args.mix_name}/{classifier}/variable_rebin/{args.region}/{self.channel}/{name}_additive_basis{rebin_name}{basis}.pdf'
         else:
-            figname = f'{outputPath}/{args.mix_name}/{args.classifier}/rebin{self.rebin}/{args.region}/{self.channel}/{name}_additive_basis{rebin_name}{basis}.pdf'
-        print('fig.savefig( '+figname+' )')
+            figname = f'{args.outputPath}/{args.mix_name}/{classifier}/rebin{self.rebin}/{args.region}/{self.channel}/{name}_additive_basis{rebin_name}{basis}.pdf'
+        #print('fig.savefig( '+figname+' )')
         plt.tight_layout()
         fig.savefig( figname )
         plt.close(fig)
@@ -721,10 +710,10 @@ class multijetEnsemble:
         plt.legend(fontsize='small', loc='best')
 
         if type(self.rebin) is list:
-            name = f'{outputPath}/{args.mix_name}/{args.classifier}/variable_rebin/{args.region}/{self.channel}/0_variance_pearsonr_multijet_variance.pdf'
+            name = f'{args.outputPath}/{args.mix_name}/{classifier}/variable_rebin/{args.region}/{self.channel}/0_variance_pearsonr_multijet_variance.pdf'
         else:
-            name = f'{outputPath}/{args.mix_name}/{args.classifier}/rebin{self.rebin}/{args.region}/{self.channel}/0_variance_pearsonr_multijet_variance.pdf'
-        print('fig.savefig( '+name+' )')
+            name = f'{args.outputPath}/{args.mix_name}/{classifier}/rebin{self.rebin}/{args.region}/{self.channel}/0_variance_pearsonr_multijet_variance.pdf'
+        #print('fig.savefig( '+name+' )')
         plt.tight_layout()
         fig.savefig( name )
         plt.close(fig)
@@ -889,10 +878,10 @@ class multijetEnsemble:
 
         projection = '_'.join([str(d) for d in projection])
         if type(self.rebin) is list:
-            name = f'{outputPath}/{args.mix_name}/{args.classifier}/variable_rebin/{args.region}/{self.channel}/0_variance_parameters_basis{basis}_projection_{projection}.pdf'
+            name = f'{args.outputPath}/{args.mix_name}/{classifier}/variable_rebin/{args.region}/{self.channel}/0_variance_parameters_basis{basis}_projection_{projection}.pdf'
         else:
-            name = f'{outputPath}/{args.mix_name}/{args.classifier}/rebin{self.rebin}/{args.region}/{self.channel}/0_variance_parameters_basis{basis}_projection_{projection}.pdf'
-        print('fig.savefig( '+name+' )')
+            name = f'{args.outputPath}/{args.mix_name}/{classifier}/rebin{self.rebin}/{args.region}/{self.channel}/0_variance_parameters_basis{basis}_projection_{projection}.pdf'
+        #print('fig.savefig( '+name+' )')
         try:
             fig.savefig( name )
             plt.close(fig)
@@ -958,37 +947,37 @@ class multijetEnsemble:
         plt.legend(fontsize='small', loc='upper left', ncol=2, title='Overall r=%0.2f (%2.0f%s)'%(r,p*100,'\%'))
 
         if type(self.rebin) is list:
-            name = f'{outputPath}/{args.mix_name}/{args.classifier}/variable_rebin/{args.region}/{self.channel}/0_variance_pull_correlation_basis{basis}.pdf'
+            name = f'{args.outputPath}/{args.mix_name}/{classifier}/variable_rebin/{args.region}/{self.channel}/0_variance_pull_correlation_basis{basis}.pdf'
         else:
-            name = f'{outputPath}/{args.mix_name}/{args.classifier}/rebin{self.rebin}/{args.region}/{self.channel}/0_variance_pull_correlation_basis{basis}.pdf'
-        print('fig.savefig( '+name+' )')
+            name = f'{args.outputPath}/{args.mix_name}/{classifier}/rebin{self.rebin}/{args.region}/{self.channel}/0_variance_pull_correlation_basis{basis}.pdf'
+        #print('fig.savefig( '+name+' )')
         fig.savefig( name )
         plt.close(fig)
 
 
     def plotFit(self, basis):
         samples=collections.OrderedDict()
-        samples[closureFileName] = collections.OrderedDict()
-        # samples[closureFileName]['%s/data_minus_ttbar_ensemble'%self.channel] = {
+        samples[closure_file_out] = collections.OrderedDict()
+        # samples[closure_file_out]['%s/data_minus_ttbar_ensemble'%self.channel] = {
         #     'label' : '#LTMixed Data#GT - #lower[0.10]{t#bar{t}}',
         #     'legend': 1,
         #     'ratioDrawOptions' : 'P ex0',
         #     'isData' : True,
         #     'ratio' : 'numer A',
         #     'color' : 'ROOT.kBlack'}
-        samples[closureFileName]['%s/multijet_ensemble_average'%self.channel] = {
+        samples[closure_file_out]['%s/multijet_ensemble_average'%self.channel] = {
             'label' : '#LTMultijet Model#GT',
             'legend': 2,
             'isData' : True,
             'ratio' : 'denom A',
             'color' : 'ROOT.kBlack'}
-        samples[closureFileName]['%s/multijet_ensemble'%self.channel] = {
+        samples[closure_file_out]['%s/multijet_ensemble'%self.channel] = {
             'label' : 'Multijet Models',
             'legend': 3,
             'stack' : 1,
             'ratio' : 'numer A',
             'color' : 'ROOT.kYellow'}
-        samples[closureFileName]['%s/multijet_ensemble_TH1_basis%d'%(self.channel, basis)] = {
+        samples[closure_file_out]['%s/multijet_ensemble_TH1_basis%d'%(self.channel, basis)] = {
             'label' : 'Fit (%d parameter%s)'%(basis+1, 's' if basis else ''),
             'legend': 4,
             'ratio' : 'numer A',
@@ -1029,9 +1018,9 @@ class multijetEnsemble:
         parameters['ratioLines'] = [[self.nBins_rebin*m+0.5, parameters['rMin'], self.nBins_rebin*m+0.5, parameters['rMax']] for m in range(1,nMixes+1)]
 
         if type(self.rebin) is list:
-            parameters['outputDir'] = f'{outputPath}/{args.mix_name}/{args.classifier}/variable_rebin/{args.region}/{self.channel}/'
+            parameters['outputDir'] = f'{args.outputPath}/{args.mix_name}/{classifier}/variable_rebin/{args.region}/{self.channel}/'
         else:
-            parameters['outputDir'] = f'{outputPath}/{args.mix_name}/{args.classifier}/rebin{self.rebin}/{args.region}/{self.channel}/'
+            parameters['outputDir'] = f'{args.outputPath}/{args.mix_name}/{classifier}/rebin{self.rebin}/{args.region}/{self.channel}/'
 
         print('make ',parameters['outputDir']+parameters['outputName']+'.pdf')
         ROOTPlotTools.plot(samples, parameters, debug=False)
@@ -1042,7 +1031,7 @@ class multijetEnsemble:
 class closure:
     def __init__(self, f, channel, multijet):
         self.channel = channel
-        self.rebin = rebin[channel]
+        self.rebin = rebin
         self.multijet = multijet
         self.ttbar = f.Get('%s/ttbar'%self.channel)
         self.ttbar.SetName('%s_average_%s'%(self.ttbar.GetName(), self.channel))
@@ -1050,7 +1039,7 @@ class closure:
         self.data_obs.SetName('%s_average_%s'%(self.data_obs.GetName(), self.channel))
         self.nBins = self.data_obs.GetSize()-2 # GetSize includes under/overflow bins
 
-        self.output_yml = open(f'{outputPath}/{args.mix_name}/{args.classifier}/rebin{self.rebin}/{args.region}/{self.channel}/1_bias_results.yml', 'w')
+        self.output_yml = open(f'{args.outputPath}/{args.mix_name}/{classifier}/rebin{self.rebin}/{args.region}/{self.channel}/1_bias_results.yml', 'w')
 
         self.doSpuriousSignal = False
         self.spuriousSignal = {}
@@ -1324,6 +1313,8 @@ class closure:
         nConstrained = max(self.multijet.basis-basis, 0)
         nUnconstrained = n - nConstrained
         fit_x_max = self.nBins_rebin+0.5+nConstrained
+
+        print("="*50)
         self.fit_result[basis] = self.data_obs_closure.Fit(self.closure_TF1[basis], 'N0S','', self.fit_x_min, fit_x_max)
         self.getEigenvariations(basis)
         self.pvalue[basis], self.chi2[basis], self.ndf[basis] = self.closure_TF1[basis].GetProb(), self.closure_TF1[basis].GetChisquare(), self.closure_TF1[basis].GetNDF()
@@ -1400,11 +1391,11 @@ class closure:
         if basis is None: basis = self.basis
         max_basis = max(self.multijet.basis, basis)
         nBEs = max_basis+1
-        #closureResults = 'ZZ4b/nTupleAnalysis/combine/closureResults_%s_%s.pkl'%(args.classifier,self.channel)
-        closureResults = 'closureResults_%s_%s.pkl'%(args.classifier,self.channel)
+        #closureResults = 'ZZ4b/nTupleAnalysis/combine/closureResults_%s_%s.pkl'%(classifier,self.channel)
+        #closureResults = 'closureResults_%s_%s.pkl'%(classifier,self.channel)
         #closureResultsRoot = ROOT.TFile(closureResults.replace('.txt', '.root'), 'RECREATE')
         # closureResultsFile = open(closureResults, 'w')
-        print('Write Closure Results File: \n>> %s'%(closureResults))
+        print('Write Closure Results File: \n>> %s'%(closure_file_out_pkl))
         for i in range(nBEs):
             nuissance = 'basis%i'%i
             print(i,"vs",len(self.multijet.cUp  [self.multijet.basis]) )
@@ -1431,16 +1422,6 @@ class closure:
             if cDown_bias:
                 systematics['%s_bias_%sDown'%(nuissance, self.channel)] = 1+cDown_bias*self.basis_element[i]
 
-            # BE_string  = ', '.join('%7.4f'%BE_i for BE_i in self.basis_element[i])
-            # systUp     = '1+(%9.6f)*np.array([%s])'%(cUp,   BE_string)
-            # systDown   = '1+(%9.6f)*np.array([%s])'%(cDown, BE_string)
-            # systUp     = '%s_%sUp   %s'%(nuissance, channel, systUp)
-            # systDown   = '%s_%sDown %s'%(nuissance, channel, systDown)
-            # print(systUp)
-            # print(systDown)
-            # closureResultsFile.write(systUp+'\n')
-            # closureResultsFile.write(systDown+'\n')
-
         if self.fProb_ss[basis] >= 0.95:
             nuissance = 'spurious_signal'
             ssUp   = self.spuriousSignal[basis]+self.spuriousSignalError[basis]
@@ -1464,7 +1445,7 @@ class closure:
         #     closureResultsFile.write(systDown+'\n')
         # closureResultsFile.close()
 
-        with open(closureResults,'wb') as sfile:
+        with open(closure_file_out_pkl,'wb') as sfile:
             pickle.dump(systematics, sfile, protocol=1)
 
 
@@ -1650,16 +1631,16 @@ class closure:
 
         if not doSpuriousSignal:
             if type(self.rebin) is list:
-                name = f'{outputPath}/{args.mix_name}/{args.classifier}/variable_rebin/{args.region}/{self.channel}/1_bais_parameters_basis{basis}_projection_{projection}.pdf'
+                name = f'{args.outputPath}/{args.mix_name}/{classifier}/variable_rebin/{args.region}/{self.channel}/1_bais_parameters_basis{basis}_projection_{projection}.pdf'
             else:
-                name = f'{outputPath}/{args.mix_name}/{args.classifier}/rebin{self.rebin}/{args.region}/{self.channel}/1_bias_parameters_basis{basis}_projection_{projection}.pdf'
+                name = f'{args.outputPath}/{args.mix_name}/{classifier}/rebin{self.rebin}/{args.region}/{self.channel}/1_bias_parameters_basis{basis}_projection_{projection}.pdf'
         else:
             if type(self.rebin) is list:
-                name = f'{outputPath}/{args.mix_name}/{args.classifier}/variable_rebin/{args.region}/{self.channel}/2_spurious_signal_parameters_basis{basis}_projection_{projection}.pdf'
+                name = f'{args.outputPath}/{args.mix_name}/{classifier}/variable_rebin/{args.region}/{self.channel}/2_spurious_signal_parameters_basis{basis}_projection_{projection}.pdf'
             else:
-                name = f'{outputPath}/{args.mix_name}/{args.classifier}/rebin{self.rebin}/{args.region}/{self.channel}/2_spurious_signal_parameters_basis{basis}_projection_{projection}.pdf'
+                name = f'{args.outputPath}/{args.mix_name}/{classifier}/rebin{self.rebin}/{args.region}/{self.channel}/2_spurious_signal_parameters_basis{basis}_projection_{projection}.pdf'
 
-        print('fig.savefig( '+name+' )')
+        # print('fig.savefig( '+name+' )')
         plt.tight_layout()
         fig.savefig( name )
         plt.close(fig)
@@ -1667,30 +1648,30 @@ class closure:
 
     def plotPValues(self):
         fig, (ax) = plt.subplots(nrows=1)
-        x = np.array(sorted(self.pvalue.keys()))+1
+        x = np.array(sorted(self.pvalue.keys())) + 1
         ax.set_ylim(0,1)
-        xlim = [x[0]-0.5, x[-1]+.5]
+        xlim = [x[0] - 0.5, x[-1] + .5]
         ax.set_xlim(xlim[0], xlim[1])
         ax.set_xticks(x)
-        #plt.yscale('log')
+        # plt.yscale('log')
 
-        y = [self.pvalue[i-1] for i in x]
+        y = [self.pvalue[i - 1] for i in x]
         ax.set_title('Multijet Model Bias Fit (%s)'%self.channel.upper())
-        ax.plot(xlim, [probThreshold,probThreshold], color='b', alpha=0.5, linestyle='--', linewidth=0.5)
-        ax.plot(xlim, [0.95, 0.95],                  color='k', alpha=0.5, linestyle='--', linewidth=0.5)
+        ax.plot(xlim, [probThreshold, probThreshold], color='b', alpha=0.5, linestyle='--', linewidth=0.5)
+        ax.plot(xlim, [0.95, 0.95],                   color='k', alpha=0.5, linestyle='--', linewidth=0.5)
         ax.plot(x, y, label='p-value', color='b', linewidth=2)
         if self.basis is not None:
-            ax.plot([self.basis+1, self.basis+1], [0,1], color='k', alpha=0.5, linestyle='--', linewidth=0.5)
-            ax.scatter(self.basis+1, self.pvalue[self.basis], color='k', marker='*', s=100, zorder=10)
+            ax.plot([self.basis + 1, self.basis + 1], [0, 1], color='k', alpha=0.5, linestyle='--', linewidth=0.5)
+            ax.scatter(self.basis + 1, self.pvalue[self.basis], color='k', marker='*', s=100, zorder=10)
 
-        x = np.array(sorted(self.fProb.keys()))+1
-        y = [self.fProb[i-1] for i in x]
-        marker = '' if len(x)>1 else 'o'
+        x = np.array(sorted(self.fProb.keys())) + 1
+        y = [self.fProb[i - 1] for i in x]
+        marker = '' if len(x) > 1 else 'o'
         ax.plot(x, y, label='f-test', color='k', linewidth=2, marker=marker)
 
-        x = np.array(sorted(self.fProb_ss.keys()))+1
-        y = [self.fProb_ss[i-1] for i in x]
-        marker = '' if len(x)>1 else 'o'
+        x = np.array(sorted(self.fProb_ss.keys())) + 1
+        y = [self.fProb_ss[i - 1] for i in x]
+        marker = '' if len(x) > 1 else 'o'
         ax.plot(x, y, label='f-test Spurious Signal', color='k', linestyle='--', linewidth=2, marker=marker)
 
         ax.set_xlabel('Unconstrained Parameters')
@@ -1698,67 +1679,65 @@ class closure:
         ax.legend(loc='upper left', fontsize='small')
 
         if type(self.rebin) is list:
-            name = f'{outputPath}/{args.mix_name}/{args.classifier}/variable_rebin/{args.region}/{self.channel}/1_bias_pvalues.pdf'
+            name = f'{args.outputPath}/{args.mix_name}/{classifier}/variable_rebin/{args.region}/{self.channel}/1_bias_pvalues.pdf'
         else:
-            name = f'{outputPath}/{args.mix_name}/{args.classifier}/rebin{self.rebin}/{args.region}/{self.channel}/1_bias_pvalues.pdf'
+            name = f'{args.outputPath}/{args.mix_name}/{classifier}/rebin{self.rebin}/{args.region}/{self.channel}/1_bias_pvalues.pdf'
 
-        print('fig.savefig( '+name+' )')
+        # print('fig.savefig( '+name+' )')
         plt.tight_layout()
         fig.savefig( name )
         plt.close(fig)
 
-
-
     def plotMix(self, mix):
-        samples=collections.OrderedDict()
-        samples[closureFileName] = collections.OrderedDict()
-        if type(mix)==int:
-            samples[closureFileName]['%s/%s/data_obs'%(mixes[mix], self.channel)] = {
+        samples = collections.OrderedDict()
+        samples[closure_file_out] = collections.OrderedDict()
+        if type(mix) is int:
+            samples[closure_file_out]['%s/%s/data_obs' % (mixes[mix], self.channel)] = {
                 'label' : f'Mixed Data Set {mix}, {lumi}/fb',
                 'legend': 1,
                 'isData' : True,
-                #'drawOptions': 'P ex0',
+                # 'drawOptions': 'P ex0',
                 'ratio' : 'numer A',
                 'color' : 'ROOT.kBlack'}
         else:
-            samples[closureFileName]['%s/data_obs'%(self.channel)] = {
+            samples[closure_file_out]['%s/data_obs' % (self.channel)] = {
                 'label' : f'#LTMixed Data#GT {lumi}/fb',
                 'legend': 1,
                 'isData' : True,
-                #'drawOptions': 'P ex0',
+                # 'drawOptions': 'P ex0',
                 'ratio' : 'numer A',
                 'color' : 'ROOT.kBlack'}
-            # samples[closureFileName]['%s/ratio_c0_up'%(self.channel)] = {
+            # samples[closure_file_out]['%s/ratio_c0_up'%(self.channel)] = {
             #     'pad': 'rPad',
             #     'drawOptions': 'HIST',
             #     'color' : 'ROOT.kYellow'}
-        if type(mix)==int:
-            samples[closureFileName]['%s/%s/multijet'%(mixes[mix], self.channel)] = {
-                'label' : 'Multijet Model %d'%mix,
+        if type(mix) is int:
+            samples[closure_file_out]['%s/%s/multijet' % (mixes[mix], self.channel)] = {
+                'label' : 'Multijet Model %d' % mix,
                 'legend': 2,
                 'stack' : 3,
                 'ratio' : 'denom A',
                 'color' : 'ROOT.kYellow'}
         else:
-            samples[closureFileName]['%s/multijet'%self.channel] = {
+            samples[closure_file_out]['%s/multijet' % self.channel] = {
                 'label' : '#LTMultijet#GT',
                 'legend': 2,
                 'stack' : 3,
                 'ratio' : 'denom A',
                 'color' : 'ROOT.kYellow'}
-        samples[closureFileName]['%s/ttbar'%self.channel] = {
+        samples[closure_file_out]['%s/ttbar' % self.channel] = {
             'label' : '#lower[0.10]{t#bar{t}}',
             'legend': 3,
             'stack' : 2,
             'ratio' : 'denom A',
             'color' : 'ROOT.kAzure-9'}
-        samples[closureFileName]['%s/signal'%self.channel] = {
+        samples[closure_file_out]['%s/signal' % self.channel] = {
             'label' : 'ZZ+ZH+HH(#times100)',
             'legend': 4,
             'weight': 100,
             'color' : 'ROOT.kViolet'}
 
-        xTitle = args.classifier+' P(Signal) #cbar P('+self.channel.upper()+') is largest'
+        xTitle = f'{classifier} P(Signal) #cbar P({self.channel.upper()}) is largest'
 
         parameters = {'titleLeft'   : '#bf{CMS} Internal',
                       'titleCenter' : regionName[args.region],
@@ -1772,91 +1751,90 @@ class closure:
                       'rTitle'    : 'Data / Bkgd.',
                       'xTitle'    : xTitle,
                       'yTitle'    : 'Events',
-                      'yMax'      : 1.4*(self.ymax[0]),#*ymaxScale, # make room to show fit parameters
-                      #'xleg'      : [0.13, 0.13+0.5] if 'SR' in region else ,
-                      # 'legendSubText' : ['#bf{Fit:}',
-                      #                    '#chi^{2}/DoF = %2.1f/%d = %1.2f'%(self.chi2[basis],self.ndf[basis],self.chi2[basis]/self.ndf[basis]),
-                      #                    'p-value = %2.0f%%'%(self.pvalue[basis]*100),
-                      #                    ],
+                      'yMax'      : 1.4 * (self.ymax[0]),  # *ymaxScale, # make room to show fit parameters
+                      # 'xleg'      : [0.13, 0.13+0.5] if 'SR' in region else ,
+                      #  'legendSubText' : ['#bf{Fit:}',
+                      #                     '#chi^{2}/DoF = %2.1f/%d = %1.2f'%(self.chi2[basis],self.ndf[basis],self.chi2[basis]/self.ndf[basis]),
+                      #                     'p-value = %2.0f%%'%(self.pvalue[basis]*100),
+                      #                     ],
                       'lstLocation' : 'right',
-                      'outputName': 'mix_%s'%(str(mix))}
+                      'outputName': 'mix_%s' % (str(mix))}
 
         if type(self.rebin) is list:
-            parameters['outputDir'] = f'{outputPath}/{args.mix_name}/{args.classifier}/variable_rebin/{args.region}/{self.channel}/'
+            parameters['outputDir'] = f'{args.outputPath}/{args.mix_name}/{classifier}/variable_rebin/{args.region}/{self.channel}/'
         else:
-            parameters['outputDir'] = f'{outputPath}/{args.mix_name}/{args.classifier}/rebin{self.rebin}/{args.region}/{self.channel}/'
+            parameters['outputDir'] = f'{args.outputPath}/{args.mix_name}/{classifier}/rebin{self.rebin}/{args.region}/{self.channel}/'
 
-        print('make ',parameters['outputDir']+parameters['outputName']+'.pdf')
+        # print('make ',parameters['outputDir'] + parameters['outputName']+'.pdf')
         ROOTPlotTools.plot(samples, parameters, debug=False)
 
-
     def plotFit(self, basis, plotSpuriousSignal=False):
-        samples=collections.OrderedDict()
-        samples[closureFileName] = collections.OrderedDict()
-        samples[closureFileName]['%s/data_obs_closure'%self.channel] = {
+        samples = collections.OrderedDict()
+        samples[closure_file_out] = collections.OrderedDict()
+        samples[closure_file_out]['%s/data_obs_closure' % self.channel] = {
             'label' : f'#LTMixed Data#GT {lumi}/fb',
             'legend': 1,
             'isData' : True,
-            #'ratioDrawOptions': 'P ex0',
+            # 'ratioDrawOptions': 'P ex0',
             'ratio' : 'numer A',
             'color' : 'ROOT.kBlack'}
-        samples[closureFileName]['%s/multijet_closure'%self.channel] = {
+        samples[closure_file_out]['%s/multijet_closure' % self.channel] = {
             'label' : '#LTMultijet#GT',
             'legend': 2,
             'stack' : 3,
             'ratio' : 'denom A',
             'color' : 'ROOT.kYellow'}
-        samples[closureFileName]['%s/ttbar_closure'%self.channel] = {
+        samples[closure_file_out]['%s/ttbar_closure' % self.channel] = {
             'label' : '#lower[0.10]{t#bar{t}}',
             'legend': 3,
             'stack' : 2,
             'ratio' : 'denom A',
             'color' : 'ROOT.kAzure-9'}
         if not plotSpuriousSignal:
-            samples[closureFileName]['%s/closure_TH1_basis%d'%(self.channel, basis)] = {
-                'label' : 'Fit (%d unconstrained parameter%s)'%(basis+1, 's' if basis else ''),
+            samples[closure_file_out]['%s/closure_TH1_basis%d' % (self.channel, basis)] = {
+                'label' : 'Fit (%d unconstrained parameter%s)' % (basis + 1, 's' if basis else ''),
                 'legend': 4,
                 'ratio': 'denom A',
                 'color' : 'ROOT.kRed'}
         if plotSpuriousSignal:
-            samples[closureFileName]['%s/closure_ss_zero_TH1_basis%d'%(self.channel, basis)] = {
+            samples[closure_file_out]['%s/closure_ss_zero_TH1_basis%d' % (self.channel, basis)] = {
                 'label' : 'Fit #zeta=0',
                 'legend': 5,
                 'ratio': 'denom A',
                 'color' : 'ROOT.kGreen+3'}
-            samples[closureFileName]['%s/closure_ss_TH1_basis%d'%(self.channel, basis)] = {
-                'label' : 'Fit #zeta=%1.1f#pm%1.1f'%(self.spuriousSignal[basis], self.spuriousSignalError[basis]),
+            samples[closure_file_out]['%s/closure_ss_TH1_basis%d' % (self.channel, basis)] = {
+                'label' : 'Fit #zeta=%1.1f#pm%1.1f' % (self.spuriousSignal[basis], self.spuriousSignalError[basis]),
                 'legend': 6,
                 'ratio': 'denom A',
                 'color' : 'ROOT.kViolet'}
-            samples[closureFileName]['%s/signal_closure'%self.channel] = {
+            samples[closure_file_out][f'{self.channel}/signal_closure'] = {
                 'label' : 'ZZ+ZH+HH(#times100)',
                 'legend': 7,
                 'weight': 100,
                 'color' : 'ROOT.kViolet+7'}
-            # samples[closureFileName]['%s/signal_orthogonal_TH1_basis%d'%(self.channel, basis)] = {
+            # samples[closure_file_out]['%s/signal_orthogonal_TH1_basis%d'%(self.channel, basis)] = {
             #     'label' : 'Orthogonalized Signal(#times100)',
             #     'legend': 8,
             #     'weight': 100,
             #     'color' : 'ROOT.kViolet-6'}
 
-        xTitle = args.classifier+' P(Signal) Bin #cbar P('+self.channel.upper()+') is largest'
+        xTitle = f'{classifier} P(Signal) Bin #cbar P({self.channel.upper()}) is largest'
 
-        ymaxScale = 1.4 #+ max(0, (basis-2)/4.0)
+        ymaxScale = 1.4  # + max(0, (basis-2)/4.0)
         if doSpuriousSignal:
-            ymaxScale = 1.7 #+ max(0, (basis-2)/4.0)
+            ymaxScale = 1.7  # + max(0, (basis-2)/4.0)
 
         parameters = {'titleLeft'   : '#bf{CMS} Internal',
                       'titleCenter' : regionName[args.region],
                       'titleRight'  : 'Pass #DeltaR(j,j)',
                       'maxDigits'   : 4,
-                      'drawLines'   : [[self.fit_x_min,        0,self.fit_x_min,      self.ymax[0]/2],
-                                       [self.nBins_rebin+0.5,  0,self.nBins_rebin+0.5,self.ymax[0]/2]],
+                      'drawLines'   : [[self.fit_x_min,          0, self.fit_x_min,         self.ymax[0] / 2],
+                                       [self.nBins_rebin + 0.5,  0, self.nBins_rebin + 0.5, self.ymax[0] / 2]],
                       'ratioErrors': False,
-                      'ratio'     : 'significance',#True,
-                      'rMin'      : -5,#0.9,
-                      'rMax'      : 5,#1.1,
-                      'rTitle'    : 'Pulls',#'Data / Bkgd.',
+                      'ratio'     : 'significance',  # True,
+                      'rMin'      : -5,  # 0.9,
+                      'rMax'      : 5,  # 1.1,
+                      'rTitle'    : 'Pulls',  # 'Data / Bkgd.',
                       # 'ratioErrors': True,
                       # 'ratio'      : True,
                       # 'rMin'       : 0.9,
@@ -1864,107 +1842,103 @@ class closure:
                       # 'rTitle'     : 'Model / Average',
                       'xTitle'    : xTitle,
                       'yTitle'    : 'Events',
-                      'yMax'      : self.ymax[0]*ymaxScale,#*ymaxScale, # make room to show fit parameters
-                      'xleg'      : [0.13, 0.13+0.42],
-                      'lstLocation' : 'right',
-                      'outputName': '%s_basis%d'%('2_spurious_signal' if plotSpuriousSignal else '1_bias', basis)}
+                      'yMax'      : self.ymax[0] * ymaxScale,   # *ymaxScale, # make room to show fit parameters
+                      'xleg'      : [0.13, 0.13 + 0.42],
+                      'lstLocation': 'right',
+                      'outputName': '%s_basis%d' % ('2_spurious_signal' if plotSpuriousSignal else '1_bias', basis)}
 
-        n = max(self.multijet.basis, basis)+1
+        n = max(self.multijet.basis, basis) + 1
         if plotSpuriousSignal:
             parameters['legendSubText'] = ['#bf{Spurious Signal Fit:}',
-                                           '#chi^{2}/DoF = %2.1f/%d = %1.2f (#zeta=0)'%(self.chi2_ss_zero[basis],self.ndf_ss_zero[basis],self.chi2_ss_zero[basis]/self.ndf_ss_zero[basis]),
-                                           '#chi^{2}/DoF = %2.1f/%d = %1.2f'%(self.chi2_ss[basis],self.ndf_ss[basis],self.chi2_ss[basis]/self.ndf_ss[basis]),
-                                           'p-value = %2.0f%% (f-test = %2.0f%%)'%(self.pvalue_ss[basis]*100, self.fProb_ss[basis]*100)]
+                                           '#chi^{2}/DoF = %2.1f/%d = %1.2f (#zeta=0)' % (self.chi2_ss_zero[basis], self.ndf_ss_zero[basis], self.chi2_ss_zero[basis] / self.ndf_ss_zero[basis]),
+                                           '#chi^{2}/DoF = %2.1f/%d = %1.2f' % (self.chi2_ss[basis], self.ndf_ss[basis], self.chi2_ss[basis] / self.ndf_ss[basis]),
+                                           'p-value = %2.0f%% (f-test = %2.0f%%)' % (self.pvalue_ss[basis] * 100, self.fProb_ss[basis] * 100)]
             for i in range(n):
-                parameters['legendSubText'] += ['#font[82]{c_{%i} =%4.1f%% : %3.1f}#sigma'%(i, self.fit_parameters_ss[basis][i]*100, abs(self.fit_parameters_ss[basis][i])/self.fit_parameters_error_ss[basis][i])]
+                parameters['legendSubText'] += ['#font[82]{c_{%i} =%4.1f%% : %3.1f}#sigma' % (i, self.fit_parameters_ss[basis][i] * 100, abs(self.fit_parameters_ss[basis][i]) / self.fit_parameters_error_ss[basis][i])]
         else:
             parameters['legendSubText'] = ['#bf{Fit:}',
-                                         '#chi^{2}/DoF = %2.1f/%d = %1.2f'%(self.chi2[basis],self.ndf[basis],self.chi2[basis]/self.ndf[basis]),
-                                         'p-value = %2.0f%%'%(self.pvalue[basis]*100)]
+                                           '#chi^{2}/DoF = %2.1f/%d = %1.2f' % (self.chi2[basis], self.ndf[basis], self.chi2[basis] / self.ndf[basis]),
+                                           'p-value = %2.0f%%' % (self.pvalue[basis] * 100)]
             for i in range(n):
-                parameters['legendSubText'] += ['#color[%d]{#font[82]{c_{%i} =%4.1f%% : %3.1f}#sigma}'%(4 if i>basis else 2, i, self.fit_parameters[basis][i]*100, abs(self.fit_parameters[basis][i])/self.fit_parameters_error[basis][i])]
+                parameters['legendSubText'] += ['#color[%d]{#font[82]{c_{%i} =%4.1f%% : %3.1f}#sigma}' % (4 if i > basis else 2, i, self.fit_parameters[basis][i] * 100, abs(self.fit_parameters[basis][i]) / self.fit_parameters_error[basis][i])]
 
-        parameters['ratioLines'] = [[self.fit_x_min,       parameters['rMin'], self.fit_x_min,       parameters['rMax']],
-                                    [self.nBins_rebin+0.5, parameters['rMin'], self.nBins_rebin+0.5, parameters['rMax']]]
-        #parameters['xMax'] = self.nBins_rebin+self.multijet.basis+1.5 if not plotSpuriousSignal else self.nBins_rebin+basis+1.5
+        parameters['ratioLines'] = [[self.fit_x_min,         parameters['rMin'], self.fit_x_min,         parameters['rMax']],
+                                    [self.nBins_rebin + 0.5, parameters['rMin'], self.nBins_rebin + 0.5, parameters['rMax']]]
+        # parameters['xMax'] = self.nBins_rebin+self.multijet.basis+1.5 if not plotSpuriousSignal else self.nBins_rebin+basis+1.5
         if plotSpuriousSignal:
-            parameters['xMax'] = self.nBins_rebin+0.5+max(self.multijet.basis, basis)+1
+            parameters['xMax'] = self.nBins_rebin + 0.5 + max(self.multijet.basis, basis) + 1
         else:
-            parameters['xMax'] = self.nBins_rebin+0.5+max(self.multijet.basis-basis, 0)
+            parameters['xMax'] = self.nBins_rebin + 0.5 + max(self.multijet.basis - basis, 0)
 
         if type(self.rebin) is list:
-            parameters['outputDir'] = f'{outputPath}/{args.mix_name}/{args.classifier}/variable_rebin/{args.region}/{self.channel}/'
+            parameters['outputDir'] = f'{args.outputPath}/{args.mix_name}/{classifier}/variable_rebin/{args.region}/{self.channel}/'
         else:
-            parameters['outputDir'] = f'{outputPath}/{args.mix_name}/{args.classifier}/rebin{self.rebin}/{args.region}/{self.channel}/'
+            parameters['outputDir'] = f'{args.outputPath}/{args.mix_name}/{classifier}/rebin{self.rebin}/{args.region}/{self.channel}/'
 
-        print('make ',parameters['outputDir']+parameters['outputName']+'.pdf')
+        # print(f'make {parameters["outputDir"]}{parameters["outputName"]}.pdf')
         ROOTPlotTools.plot(samples, parameters, debug=False)
 
     def print_exit_message(self):
         self.output_yml.close()
-        for line in self.exit_message: print(line)
+        for line in self.exit_message:
+            print(line)
 
 
-def run(closureFileName):
-    f=ROOT.TFile(closureFileName, 'UPDATE')
+def run():
+
+    f = ROOT.TFile(closure_file_out, 'UPDATE')
 
     #
     # make multijet ensembles and perform fits
     #
     multijetEnsembles = {}
-    for channel in args.channels:
-        if type(rebin[channel]) is list:
-            mkpath(f'{outputPath}/{args.mix_name}/{args.classifier}/variable_rebin/{args.region}/{channel}')
-        else:
-            mkpath(f'{outputPath}/{args.mix_name}/{args.classifier}/rebin{rebin[channel]}/{args.region}/{channel}')
-        multijetEnsembles[channel] = multijetEnsemble(f, channel)
+    if type(rebin) is list:
+        mkpath(f'{args.outputPath}/{args.mix_name}/{classifier}/variable_rebin/{args.region}/{channel}')
+    else:
+        mkpath(f'{args.outputPath}/{args.mix_name}/{classifier}/rebin{rebin}/{args.region}/{channel}')
+    multijetEnsembles[channel] = multijetEnsemble(f, channel)
 
     #
     # run closure fits using average multijet model
     #
     closures = {}
-    for channel in args.channels:
-        closures[channel] = closure(f, channel, multijetEnsembles[channel])
+    closures[channel] = closure(f, channel, multijetEnsembles[channel])
 
     #
     # close input file and make plots
     #
     f.Close()
 
-    for channel in args.channels:
-        for basis in multijetEnsembles[channel].bases:
-            multijetEnsembles[channel].plotFit(basis)
-        for basis in closures[channel].bases:
-            closures[channel].plotFit(basis)
-            closures[channel].plotFit(basis, plotSpuriousSignal=True)
-        for m in range(nMixes):
-            closures[channel].plotMix(m)
-        closures[channel].plotMix('ave')
+    for basis in multijetEnsembles[channel].bases:
+        multijetEnsembles[channel].plotFit(basis)
+    for basis in closures[channel].bases:
+        closures[channel].plotFit(basis)
+        closures[channel].plotFit(basis, plotSpuriousSignal=True)
+    for m in range(nMixes):
+        closures[channel].plotMix(m)
+    closures[channel].plotMix('ave')
 
-    for channel in args.channels:
-        multijetEnsembles[channel].print_exit_message()
-        closures[channel].print_exit_message()
+    multijetEnsembles[channel].print_exit_message()
+    closures[channel].print_exit_message()
 
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='make JCM weights', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('-c', '--channels', dest="channels", nargs="+", help="hh, zh, or zz ")
     parser.add_argument('--debug',                 action="store_true")
     parser.add_argument('-l', '--lumi',                 dest="lumi",          default="133",    help="Luminosity for MC normalization: units [pb]")
     parser.add_argument('--mix_name', default="3bDvTMix4bDvT")
     parser.add_argument('--classifier', help="SvB or SvB_MA")
     parser.add_argument('--region', default="SR", help="SR or SB")
-##    parser.add_argument(--
-##    input_file_bkg  = "analysis/hists/testMixedBkg_master.root"
-##    input_file_data = "analysis/hists/testMixedData_master.root"
-##    input_file_sig  = "analysis/hists/histAll_signal.root"
+    parser.add_argument('--input_file_bkg', default="analysis/hists/testMixedBkg_master.root")
+    parser.add_argument('--input_file_data', default="analysis/hists/testMixedData_master.root")
+    parser.add_argument('--input_file_sig', default="analysis/hists/histAll_signal.root")
+    parser.add_argument('--var', default="SvB_MA_ps_hh", help="SvB_MA_ps_XX or SvB_MA_ps_XX_fine")
+    parser.add_argument('--rebin', default=1)
+    parser.add_argument('--outputPath', default="stats_analysis/closureFitsNew")
+    parser.add_argument('--reuse_inputs', action="store_true")
+    # parser.add_argument('--output_file_name' closure_file_out  = "stats_analysis/hists_closure_3bDvTMix4bDvT_New.root"
 
-
-#    parser.add_argument('-i', '--inputFile',  dest="inputFile", default='hists.pkl', help='Input File. Default: hists.pkl')
-#    parser.add_argument('-w', '--weightSet', dest="weightSet", default="")
-#    parser.add_argument('-r', dest="weightRegion", default="SB")
-#
 #
 #    parser.add_argument('-o', '--outputDir', dest='outputDir', default="")
 #    parser.add_argument('--ROOTInputs', action="store_true")
@@ -1974,37 +1948,71 @@ if __name__ == "__main__":
 #                        help='Metadata file.')
 
     args = parser.parse_args()
-    # o, a = parser.parse_args()
 
-    print(f"\nRunning with channels {args.channels}\n")
+    #
+    #  Parse channel
+    #
+    if not args.var.find("hh") == -1:
+        channel = "hh"
+    elif not args.var.find("zh") == -1:
+        channel = "zh"
+    elif not args.var.find("zz") == -1:
+        channel = "zz"
+    else:
+        print(f"ERROR cannot parse chanel from {args.var}")
+        sys.exit(-1)
+
+    #
+    #  Parse classifier
+    #
+    if not args.var.find("SvB_MA") == -1:
+        classifier = "SvB_MA"
+    elif not args.var.find("SvB") == -1:
+        classifier = "SvB"
+    else:
+        print(f"ERROR cannot parse classifier from {args.var}")
+        sys.exit(-1)
+
+    rebin = int(args.rebin)
+
+    closure_file_out = f"{args.outputPath}/hists_closure_{args.mix_name}_{args.var}_rebin{rebin}.root"
+    closure_file_out_pkl = closure_file_out.replace("root", "pkl")
+
+    print(f"\nRunning with channel {channel} and rebin {rebin}")
+    print(f"   creating:\n\t{closure_file_out}\n\t{closure_file_out_pkl}")
+
+    doPrepInputs = True
+    if args.reuse_inputs:
+        if os.path.exists(closure_file_out):
+            doPrepInputs = False
+            print("   reusing inputs from {closure_file_out}")
+        else:
+            print("WARNING: cannot reuse inputs because {closure_file_out} does not exist")
 
     lumi = args.lumi
 
     #
     #  Settings
     #
-    closure_fit_x_min = 0#0.01
-    maxBasisEnsemble = 5
-    maxBasisClosure  = 5
+    closure_fit_x_min = 0  # 0.01
+    maxBasisEnsemble  = 5
+    maxBasisClosure   = 5
 
     ttAverage = False
     doSpuriousSignal = True
     dataAverage = True
     nMixes = 15
 
-
-    probThreshold = 0.05 #0.045500263896 #0.682689492137 # 1sigma
+    probThreshold = 0.05  # 0.045500263896 #0.682689492137 # 1sigma
 
     regionName = {'SB': 'Sideband',
                   'CR': 'Control Region',
                   'SR': 'Signal Region',
                   'notSR': 'Sideband',
                   'SRNoHH': 'Signal Region (Veto HH)',
-              }
+                  }
 
-
-
-    #BEs = [                                                 '1',
+    # BEs = [                                                 '1',
     #                                                    '2*x-1',
     #                                             '6*x^2 -6*x+1',
     #                                    '20*x^3 -30*x^2+12*x-1',
@@ -2017,33 +2025,26 @@ if __name__ == "__main__":
     #     '184756*x^10-923780*x^9+1969110*x^8-2333760*x^7+1681680*x^6-756756*x^5+210210*x^4-34320*x^3+2970*x^2-110*x+1',
     #        ]
 
-    BEs = ['1',           # 0
-           'sin(1*pi*x)', # 1
-           'cos(1*pi*x)', # 2
-           'sin(2*pi*x)', # 3
-           'cos(2*pi*x)', # 4
-           'sin(3*pi*x)', # 5
-           'cos(3*pi*x)', # 6
-           'sin(4*pi*x)', # 7
-           'cos(4*pi*x)', # 8
-           'sin(5*pi*x)', # 9
-           'cos(5*pi*x)', #10
-    ]
+    BEs = ['1',             # 0
+           'sin(1*pi*x)',   # 1
+           'cos(1*pi*x)',   # 2
+           'sin(2*pi*x)',   # 3
+           'cos(2*pi*x)',   # 4
+           'sin(3*pi*x)',   # 5
+           'cos(3*pi*x)',   # 6
+           'sin(4*pi*x)',   # 7
+           'cos(4*pi*x)',   # 8
+           'sin(5*pi*x)',   # 9
+           'cos(5*pi*x)',   # 10
+           ]
 
     BE = []
     for i, s in enumerate(BEs):
-        BE.append( ROOT.TF1('BE%d'%i, s, 0, 1) )
-
-
-    closure_file_out  = "stats_analysis/hists_closure_3bDvTMix4bDvT_New.root"
-    closureFileName = closure_file_out
-    outputPath = "stats_analysis/closureFitsNew"
-
-    var = "SvB_MA_ps_XXX"
-    rebin = {'zz': 8, 'zh': 10, 'hh': 20}
+        BE.append( ROOT.TF1('BE%d' % i, s, 0, 1) )
 
     mixes = [f'{args.mix_name}_v{i}' for i in range(nMixes)]
 
-    prepInput(input_file_bkg, input_file_data, input_file_sig, closure_file_out)
+    if doPrepInputs:
+        prepInput()
 
-    run(closureFileName)
+    run()
