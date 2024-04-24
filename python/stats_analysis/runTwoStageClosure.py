@@ -239,7 +239,7 @@ def fTest(chi2_1, chi2_2, ndf_1, ndf_2):
     fProb = scipy.stats.f.cdf(fStat, d1, d2)
     expectedFStat = scipy.stats.distributions.f.isf(0.05, d1, d2)
     print('    f(%i,%i) = %f (expected at 95%%: %f)'%(d1,d2,fStat,expectedFStat))
-    print('f.cdf(%i,%i) = %3.0f%%'%(d1,d2,100*fProb))
+    print('f.cdf(%i,%i) = %3.0f%%'%(d1,d2,100 * fProb))
     print()
     return fProb
 
@@ -401,7 +401,7 @@ class multijetEnsemble:
                 self.exit_message.append('-'*50)
                 self.exit_message.append('%s channel'%self.channel.upper())
                 self.exit_message.append('Satisfied adjacent bin de-correlation p-value for multijet ensemble variance at basis %d:'%self.basis)
-                self.exit_message.append('>> p-value, r-value = %2.0f%%, %0.2f '%(100*self.pearsonr[self.basis]['total'][1], self.pearsonr[self.basis]['total'][0]))
+                self.exit_message.append('>> p-value, r-value = %2.0f%%, %0.2f '%(100 * self.pearsonr[self.basis]['total'][1], self.pearsonr[self.basis]['total'][0]))
                 self.exit_message.append('-'*50)
 
         if self.basis is None:
@@ -410,7 +410,7 @@ class multijetEnsemble:
             self.exit_message.append('-'*50)
             self.exit_message.append('%s channel'%self.channel.upper())
             self.exit_message.append('Minimized adjacent bin correlation abs(r) for multijet ensemble variance at basis %d:'%self.basis)
-            self.exit_message.append('>> p-value, r-value = %2.0f%%, %0.2f '%(100*self.pearsonr[self.basis]['total'][1], self.pearsonr[self.basis]['total'][0]))
+            self.exit_message.append('>> p-value, r-value = %2.0f%%, %0.2f '%(100 * self.pearsonr[self.basis]['total'][1], self.pearsonr[self.basis]['total'][0]))
             self.exit_message.append('-'*50)
 
         self.plotPearson()
@@ -721,7 +721,7 @@ class multijetEnsemble:
 
     def plotFitResults(self, basis, projection=(0,1)):
         n = basis+1
-        if n>1:
+        if n > 1:
             dims = tuple(list(projection) + [d for d in range(n) if d not in projection])
         else:
             dims = (0,1)
@@ -729,15 +729,15 @@ class multijetEnsemble:
         #plot fit parameters
         x,y,s,c = [],[],[],[]
         for m in range(nMixes):
-            x.append( 100*self.fit_parameters[basis][m][dims[0]] )
+            x.append( 100 * self.fit_parameters[basis][m][dims[0]] )
             if n==1:
                 y.append( 0 )
-            if n>1:
-                y.append( 100*self.fit_parameters[basis][m][dims[1]] )
-            if n>2:
-                c.append( 100*self.fit_parameters[basis][m][dims[2]] )
-            if n>3:
-                s.append( 100*self.fit_parameters[basis][m][dims[3]] )
+            if n > 1:
+                y.append( 100 * self.fit_parameters[basis][m][dims[1]] )
+            if n > 2:
+                c.append( 100 * self.fit_parameters[basis][m][dims[2]] )
+            if n > 3:
+                s.append( 100 * self.fit_parameters[basis][m][dims[3]] )
 
         x = np.array(x)
         y = np.array(y)
@@ -749,10 +749,10 @@ class multijetEnsemble:
                   'c': 'k',
                   'zorder': 2,
                   }
-        if n>2:
+        if n > 2:
             kwargs['c'] = c
             kwargs['cmap'] = 'BuPu'
-        if n>3:
+        if n > 3:
             s = np.array(s)
             smin = s.min()
             smax = s.max()
@@ -762,7 +762,7 @@ class multijetEnsemble:
             s = (s+5.0/25)*25 #shift and scale so that min is 5.0 and max is 25+5.0
             kwargs['s'] = s
 
-        fig, (ax) = plt.subplots(nrows=1, figsize=(7,6)) if n>2 else plt.subplots(nrows=1, figsize=(6,6))
+        fig, (ax) = plt.subplots(nrows=1, figsize=(7,6)) if n > 2 else plt.subplots(nrows=1, figsize=(6,6))
         ax.set_aspect(1)
         ax.set_title('Multijet Model Variance Fits (%s)'%self.channel.upper())
         ax.set_xlabel('c$_'+str(dims[0])+'$ (\%)')
@@ -778,11 +778,11 @@ class multijetEnsemble:
         ax.set_xticks(xticks)
         ax.set_yticks(yticks)
 
-        if n>1:
+        if n > 1:
             # draw 1\sigma ellipse
             ellipse = Ellipse((0,0),
-                              width =100*(self.cUp[basis][dims[0]]-self.cDown[basis][dims[0]]),
-                              height=100*(self.cUp[basis][dims[1]]-self.cDown[basis][dims[1]]),
+                              width =100 * (self.cUp[basis][dims[0]]-self.cDown[basis][dims[0]]),
+                              height=100 * (self.cUp[basis][dims[1]]-self.cDown[basis][dims[1]]),
                               facecolor = 'none',
                               edgecolor = 'b', # CMURED,
                               linestyle = '-',
@@ -792,28 +792,28 @@ class multijetEnsemble:
             ax.add_patch(ellipse)
 
         bbox = dict(boxstyle='round', facecolor='w', alpha=0.8, linewidth=0, pad=0)
-        if n>2:
+        if n > 2:
             # draw range bars for other priors
             for i, d in enumerate(dims[2:]):
                 thisx = xlim[-1] - 0.5*(n-2) + 0.5*i
                 up, down = self.cUp[basis][d], self.cDown[basis][d]
-                ax.quiver(thisx, 0, 0, 100*up,   color='b', scale_units='xy', angles='xy', scale=1, width=0.002, headlength=0, headaxislength=0, zorder=2)
-                ax.quiver(thisx, 0, 0, 100*down, color='b', scale_units='xy', angles='xy', scale=1, width=0.002, headlength=0, headaxislength=0, zorder=2)
+                ax.quiver(thisx, 0, 0, 100 * up,   color='b', scale_units='xy', angles='xy', scale=1, width=0.002, headlength=0, headaxislength=0, zorder=2)
+                ax.quiver(thisx, 0, 0, 100 * down, color='b', scale_units='xy', angles='xy', scale=1, width=0.002, headlength=0, headaxislength=0, zorder=2)
 
-                ax.annotate('c$_{%d}$'%(d), [thisx, 100*down-0.5], ha='center', va='center', bbox=bbox)
+                ax.annotate('c$_{%d}$'%(d), [thisx, 100 * down-0.5], ha='center', va='center', bbox=bbox)
 
         maxr=np.zeros((2, len(x)), dtype=float)
         minr=np.zeros((2, len(x)), dtype=float)
-        if n>1:
+        if n > 1:
             #generate a ton of random points on a hypersphere in dim=n so surface is dim=n-1.
-            points  = np.random.randn(n, min(100**(n-1),10**7)) # random points in a hypercube
+            points  = np.random.randn(n, min(100 * (n-1),10**7)) # random points in a hypercube
             points /= np.linalg.norm(points, axis=0) # normalize them to the hypersphere surface
 
             # for each model, find the point which maximizes the change in c_0**2 + c_1**2
             for m in range(nMixes):
                 plane = np.matmul( self.eigenVars[basis][m][dims[:2],:], points )
                 r2 = plane[0]**2
-                if n>1:
+                if n > 1:
                     r2 += plane[1]**2
 
                 maxr[:,m] = plane[:,r2==r2.max()].T[0]
@@ -850,11 +850,11 @@ class multijetEnsemble:
             x_offset, y_offset = (maxr[0,m]+minr[0,m])/2, (maxr[1,m]+minr[1,m])/2
             ax.annotate('v$_{%d}$'%m, (x[m]+x_offset, y[m]+y_offset), bbox=bbox)
 
-        if n>2:
+        if n > 2:
             plt.colorbar(label='c$_'+str(dims[2])+'$ (\%)')#, cax=cax)
             plt.subplots_adjust(right=1)
 
-        if n>3:
+        if n > 3:
             l1 = plt.scatter([],[], s=(0.0/3+10.0/30)*30, lw=1, edgecolors='black', facecolors='none')
             l2 = plt.scatter([],[], s=(1.0/3+10.0/30)*30, lw=1, edgecolors='black', facecolors='none')
             l3 = plt.scatter([],[], s=(2.0/3+10.0/30)*30, lw=1, edgecolors='black', facecolors='none')
@@ -1022,7 +1022,7 @@ class multijetEnsemble:
         else:
             parameters['outputDir'] = f'{args.outputPath}/{args.mix_name}/{classifier}/rebin{self.rebin}/{args.region}/{self.channel}/'
 
-        print('make ',parameters['outputDir']+parameters['outputName']+'.pdf')
+        # print('make ',parameters['outputDir']+parameters['outputName']+'.pdf')
         ROOTPlotTools.plot(samples, parameters, debug=False)
 
 
@@ -1149,12 +1149,12 @@ class closure:
                 self.exit_message.append('%s channel'%self.channel.upper())
                 self.exit_message.append('Satisfied goodness of fit and f-test')
                 self.exit_message.append('>> %d, %d basis elements (variance, bias)'%(self.multijet.basis, self.basis))
-                self.exit_message.append('>> p-value, f-test = %2.0f%%, %2.0f%% with %d basis elements (p-value above threshold and f-test prefers this fit over previous)'%(100*self.pvalue[basis], 100*self.fProb[basis], basis))
-                self.exit_message.append('>> p-value, f-test = %2.0f%%, %2.0f%% with %d basis elements (f-test does not prefer this over previous fit at greater than 95%%)'%(100*self.pvalue[next_basis], 100*self.fProb[next_basis], next_basis))
+                self.exit_message.append('>> p-value, f-test = %2.0f%%, %2.0f%% with %d basis elements (p-value above threshold and f-test prefers this fit over previous)'%(100 * self.pvalue[basis], 100 * self.fProb[basis], basis))
+                self.exit_message.append('>> p-value, f-test = %2.0f%%, %2.0f%% with %d basis elements (f-test does not prefer this over previous fit at greater than 95%%)'%(100 * self.pvalue[next_basis], 100 * self.fProb[next_basis], next_basis))
                 if self.fProb_ss[basis] < 0.95:
-                    self.exit_message.append('>> SS f-test = %2.0f%%. Do not need to include spurious signal systematic :)'%(100*self.fProb_ss[basis]))
+                    self.exit_message.append('>> SS f-test = %2.0f%%. Do not need to include spurious signal systematic :)'%(100 * self.fProb_ss[basis]))
                 else:
-                    self.exit_message.append('>> SS f-test = %2.0f%%! STRONG EVIDENCE FOR SPURIOUS SIGNAL SYSTEMATIC'%(100*self.fProb_ss[basis]))
+                    self.exit_message.append('>> SS f-test = %2.0f%%! STRONG EVIDENCE FOR SPURIOUS SIGNAL SYSTEMATIC'%(100 * self.fProb_ss[basis]))
                 self.exit_message.append('-'*50)
 
         self.plotPValues()
@@ -1326,7 +1326,7 @@ class closure:
         print('expected ndfs = ',self.nBins_rebin-nUnconstrained)
 
         self.ymax[basis] = self.closure_TF1[basis].GetMaximum(1,self.nBins_closure)
-        #self.ymax[basis] = max(self.closure_TF1[basis].GetMaximum(1,self.nBins_closure), 100*self.signal.GetMaximum())
+        #self.ymax[basis] = max(self.closure_TF1[basis].GetMaximum(1,self.nBins_closure), 100 * self.signal.GetMaximum())
         self.fit_parameters[basis], self.fit_parameters_error[basis] = [], []
         self.fit_parameters      [basis] = np.array([self.closure_TF1[basis].GetParameter(b) for b in range(n)])
         self.fit_parameters_error[basis] = np.array([self.closure_TF1[basis].GetParError (b) for b in range(n)])
@@ -1454,7 +1454,7 @@ class closure:
         n = max_basis+1
         d_ss = n
         if doSpuriousSignal: n+=1
-        if n>1:
+        if n > 1:
             dims = tuple(list(projection) + [d for d in range(n) if d not in projection])
         else:
             dims = (0,1)
@@ -1468,11 +1468,11 @@ class closure:
         x.append( parameters[dims[0]] * (1 if dims[0]==d_ss else 100) )
         if n==1:
             y.append( 0 )
-        if n>1:
+        if n > 1:
             y.append( parameters[dims[1]] * (1 if dims[1]==d_ss else 100) )
-        if n>2:
+        if n > 2:
             c.append( parameters[dims[2]] * (1 if dims[2]==d_ss else 100) )
-        if n>3:
+        if n > 3:
             s.append( parameters[dims[3]] * (1 if dims[3]==d_ss else 100) )
 
         x = np.array(x)
@@ -1505,7 +1505,7 @@ class closure:
         ax.set_xticks(xticks)
         ax.set_yticks(yticks)
 
-        if n>1 and not doSpuriousSignal:
+        if n > 1 and not doSpuriousSignal:
             # draw 1\sigma ellipses
             try:
                 width = self.multijet.cUp[self.multijet.basis][dims[0]]-self.multijet.cDown[self.multijet.basis][dims[0]]
@@ -1516,8 +1516,8 @@ class closure:
             except IndexError:
                 height = 0.0
             ellipse_self_consistency = Ellipse((0,0),
-                                               width =100*width,
-                                               height=100*height,
+                                               width =100 * width,
+                                               height=100 * height,
                                                facecolor = 'none',
                                                edgecolor = 'b', #CMURED,
                                                linestyle = '-',
@@ -1527,70 +1527,72 @@ class closure:
             ax.add_patch(ellipse_self_consistency)
 
             ellipse_closure = Ellipse((0,0),
-                                      width =100*(self.cUp[basis][dims[0]]-self.cDown[basis][dims[0]]),
-                                      height=100*(self.cUp[basis][dims[1]]-self.cDown[basis][dims[1]]),
-                                      facecolor = 'none',
-                                      edgecolor = 'r', #CMURED,
-                                      linestyle = '-',
-                                      linewidth = 0.75,
+                                      width =100 * (self.cUp[basis][dims[0]]-self.cDown[basis][dims[0]]),
+                                      height=100 * (self.cUp[basis][dims[1]]-self.cDown[basis][dims[1]]),
+                                      facecolor='none',
+                                      edgecolor='r',  # CMURED,
+                                      linestyle='-',
+                                      linewidth=0.75,
                                       zorder=1,
-            )
+                                      )
+
             ax.add_patch(ellipse_closure)
 
         bbox = dict(boxstyle='round', facecolor='w', alpha=0.8, linewidth=0)
-        if n>2 and not doSpuriousSignal:
+        if n > 2 and not doSpuriousSignal:
             # draw range bars for other priors
             for i, d in enumerate(dims[2:]):
                 up, down = self.cUp[basis][d], self.cDown[basis][d]
-                thisx = xlim[-1] - 0.5*(n-2) + 0.5*i
-                ax.quiver(thisx, 0, 0, 100*up,   color='r', scale_units='xy', angles='xy', scale=1, width=0.002, headlength=0, headaxislength=0, zorder=2)
-                ax.quiver(thisx, 0, 0, 100*down, color='r', scale_units='xy', angles='xy', scale=1, width=0.002, headlength=0, headaxislength=0, zorder=2)
+                thisx = xlim[-1] - 0.5 * (n - 2) + 0.5 * i
+                ax.quiver(thisx, 0, 0, 100 * up,   color='r', scale_units='xy', angles='xy', scale=1, width=0.002, headlength=0, headaxislength=0, zorder=2)
+                ax.quiver(thisx, 0, 0, 100 * down, color='r', scale_units='xy', angles='xy', scale=1, width=0.002, headlength=0, headaxislength=0, zorder=2)
 
-                ax.annotate(labels[i+2], [thisx, 100*down-0.5], ha='center', va='center', bbox=bbox)
+                ax.annotate(labels[i + 2], [thisx, 100 * down - 0.5], ha='center', va='center', bbox=bbox)
 
             for i, d in enumerate(dims[2:]):
                 try:
                     up, down = self.multijet.cUp[self.multijet.basis][d], self.multijet.cDown[self.multijet.basis][d]
-                    thisx = xlim[-1] - 0.5*(n-2) + 0.5*i
-                    ax.quiver(thisx, 0, 0, 100*up,   color='b', scale_units='xy', angles='xy', scale=1, width=0.002, headlength=0, headaxislength=0, zorder=2)
-                    ax.quiver(thisx, 0, 0, 100*down, color='b', scale_units='xy', angles='xy', scale=1, width=0.002, headlength=0, headaxislength=0, zorder=2)
+                    thisx = xlim[-1] - 0.5 * (n - 2) + 0.5 * i
+                    ax.quiver(thisx, 0, 0, 100 * up,   color='b', scale_units='xy', angles='xy', scale=1, width=0.002, headlength=0, headaxislength=0, zorder=2)
+                    ax.quiver(thisx, 0, 0, 100 * down, color='b', scale_units='xy', angles='xy', scale=1, width=0.002, headlength=0, headaxislength=0, zorder=2)
                 except IndexError:
-                    pass # there is no variance term for this basis
+                    pass  # there is no variance term for this basis
 
-        maxr=np.zeros((2, len(x)), dtype=float)
-        minr=np.zeros((2, len(x)), dtype=float)
-        if n>1:
-            #generate a ton of random points on a hypersphere in dim=n so surface is dim=n-1.
-            points  = np.random.randn(n, min(100**(n-1),10**7)) # random points in a hypercube
-            points /= np.linalg.norm(points, axis=0) # normalize them to the hypersphere surface
+        maxr = np.zeros((2, len(x)), dtype=float)
+        minr = np.zeros((2, len(x)), dtype=float)
+
+        if n > 1:
+            # generate a ton of random points on a hypersphere in dim=n so surface is dim=n-1.
+            points  = np.random.randn(n, min(100 * (n - 1), 10**7))  # random points in a hypercube
+            points /= np.linalg.norm(points, axis=0)  # normalize them to the hypersphere surface
 
             # find the point which maximizes the change in c_0**2 + c_1**2
             for i in range(len(x)):
                 eigenVars = self.eigenVars[basis] if not doSpuriousSignal else self.eigenVars_ss[basis]
-                plane = np.matmul( eigenVars[dims[0:2],:], points )
+                plane = np.matmul( eigenVars[dims[0:2], :], points )
                 r2 = plane[0]**2
-                if n>1:
+                if n > 1:
                     r2 += plane[1]**2
 
-                maxr[:,i] = plane[:,r2==r2.max()].T[0]
+                maxr[:, i] = plane[:, r2 == r2.max()].T[0]
 
-                #construct orthogonal unit vector to maxr
-                minrvec = np.copy(maxr[::-1,i])
+                # construct orthogonal unit vector to maxr
+                minrvec = np.copy(maxr[::-1, i])
                 minrvec[0] *= -1
                 minrvec /= np.linalg.norm(minrvec)
 
-                #find maxr along minrvec to get minr
+                # find maxr along minrvec to get minr
                 dr2 = np.matmul( minrvec, plane )**2
-                #minr[:,i] = plane[:,dr2==dr2.max()].T[0]#this guy is the ~right length but might be slightly off orthogonal
-                minr[:,i] = minrvec * dr2.max()**0.5#this guy is the ~right length and is orthogonal by construction
+                # minr[:, i] = plane[:,dr2==dr2.max()].T[0]#this guy is the ~right length but might be slightly off orthogonal
+                minr[:, i] = minrvec * dr2.max()**0.5  # this guy is the ~right length and is orthogonal by construction
         else:
             for i in range(len(x)):
-                maxr[0,i] = self.eigenVars[basis][dims[0]]
+                maxr[0, i] = self.eigenVars[basis][dims[0]]
 
-        if dims[0]!=d_ss:
+        if dims[0] != d_ss:
             minr[0] *= 100
             maxr[0] *= 100
-        if dims[1]!=d_ss:
+        if dims[1] != d_ss:
             minr[1] *= 100
             maxr[1] *= 100
 
@@ -1602,12 +1604,11 @@ class closure:
         ax.quiver(x, y,  minr[0],  minr[1], scale_units='xy', angles='xy', scale=1, width=0.002, headlength=0, headaxislength=0, zorder=2)
         ax.quiver(x, y, -minr[0], -minr[1], scale_units='xy', angles='xy', scale=1, width=0.002, headlength=0, headaxislength=0, zorder=2)
 
-
         plt.scatter(x, y, **kwargs)
 
-        if n>2:
+        if n > 2:
             for i in range(len(x)):
-                label = '\n'.join(['%s = %2.1f%s'%(labels[dims.index(d)], parameters[d]*(1 if d==d_ss else 100), '' if d==d_ss else '\%') for d in dims[2:]])
+                label = '\n'.join(['%s = %2.1f%s' % (labels[dims.index(d)], parameters[d] * (1 if d == d_ss else 100), '' if d == d_ss else '\%') for d in dims[2:]])
                 # xy = np.array([x[i],y[i]])
                 # xy = [xy+minr[:,i]+maxr[:,i],
                 #       xy+minr[:,i]-maxr[:,i],
@@ -1622,8 +1623,8 @@ class closure:
                 #     verticalalignment = 'bottom'
                 # else:
                 #     verticalalignment = 'top'
-                xy = [xlim[-1]-3, ylim[-1]-1]
-                ax.annotate(label, xy,# label,
+                xy = [xlim[-1] - 3, ylim[-1] - 1]
+                ax.annotate(label, xy,  # label,
                             ha='left', va='top',
                             bbox=bbox)
 
@@ -1645,18 +1646,17 @@ class closure:
         fig.savefig( name )
         plt.close(fig)
 
-
     def plotPValues(self):
         fig, (ax) = plt.subplots(nrows=1)
         x = np.array(sorted(self.pvalue.keys())) + 1
-        ax.set_ylim(0,1)
+        ax.set_ylim(0, 1)
         xlim = [x[0] - 0.5, x[-1] + .5]
         ax.set_xlim(xlim[0], xlim[1])
         ax.set_xticks(x)
         # plt.yscale('log')
 
         y = [self.pvalue[i - 1] for i in x]
-        ax.set_title('Multijet Model Bias Fit (%s)'%self.channel.upper())
+        ax.set_title('Multijet Model Bias Fit (%s)' % self.channel.upper())
         ax.plot(xlim, [probThreshold, probThreshold], color='b', alpha=0.5, linestyle='--', linewidth=0.5)
         ax.plot(xlim, [0.95, 0.95],                   color='k', alpha=0.5, linestyle='--', linewidth=0.5)
         ax.plot(x, y, label='p-value', color='b', linewidth=2)
