@@ -151,7 +151,8 @@ cp {output} /eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/histAll_mixedDat
 
 rule merging_coffea_files_mixedBkg:
     input:
-        files = expand(['output/histmixed_{idatmix}-{iyear}.coffea'], idatmix=config['dataset_for_mixed'], iyear=config['year'])
+        files_TT = expand(['output/histmixed_{idatmix}-{iyear}.coffea'], idatmix=config['dataset_for_mixed'], iyear=config['year']),
+        files_data3b = expand(['output/histmixeddata_data_3b_for_mixed-{iyear}.coffea'], iyear=config['year'])
     output:
         "output/histAll_mixedBkg.coffea"
     container:
@@ -162,7 +163,7 @@ rule merging_coffea_files_mixedBkg:
         kubernetes_memory_limit="8Gi"
     shell:
         """
-mprof run -C -o python/mprofile_merge_for_mixed.dat python python/analysis/merge_coffea_files.py -f {input.files} output/histmixeddata_data* -o {output}
+mprof run -C -o python/mprofile_merge_for_mixed.dat python python/analysis/merge_coffea_files.py -f {input.files_TT} {input.files_data3b} -o {output}
 mprof plot -o output/mprofile_merge_for_mixed.png python/mprofile_merge_for_mixed.dat
 xrdcp {output} root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/histAll_mixedBkg.coffea
 cp {output} /eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/histAll_mixedBkg.coffea
