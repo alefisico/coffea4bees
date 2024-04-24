@@ -152,7 +152,7 @@ cp {output} /eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/histAll_mixedDat
 rule merging_coffea_files_mixedBkg:
     input:
         files_TT = expand(['output/histmixed_{idatmix}-{iyear}.coffea'], idatmix=config['dataset_for_mixed'], iyear=config['year']),
-        files_data3b = expand(['output/histmixeddata_data_3b_for_mixed-{iyear}.coffea'], iyear=config['year'])
+        files_data3b = expand(['output/histmixeddata_data_3b_for_mixed-{iyear}.coffea'], iyear=config['year_mixed'])
     output:
         "output/histAll_mixedBkg.coffea"
     container:
