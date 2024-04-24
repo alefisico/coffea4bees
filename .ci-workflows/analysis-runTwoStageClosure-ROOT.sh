@@ -17,8 +17,6 @@ cd python/
 
 
 # runTwoStage closure
-cd stats_analysis
-time python3 runTwoStageClosure.py
-cd ../
+time python3 stats_analysis/runTwoStageClosure.py --channels hh  --classifier SvB_MA
 #python3 stats_analysis/tests/dumpTwoStageInputs.py --input stats_analysis/hists_closure_3bDvTMix4bDvT_New.root --output stats_analysis/tests/twoStageClosureInputsCounts.yml
 python3 stats_analysis/tests/test_runTwoStageClosure.py --knownCounts stats_analysis/tests/twoStageClosureInputsCounts.yml --input stats_analysis/hists_closure_3bDvTMix4bDvT_New.root 

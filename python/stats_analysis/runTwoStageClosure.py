@@ -5,22 +5,23 @@ ROOT.gROOT.SetBatch(True)
 #ROOT.Math.MinimizerOptions.SetDefaultMinimizer("Minuit2")
 import sys
 import pickle
-import operator
+#import operator
 #sys.path.insert(0, 'PlotTools/python/') #https://github.com/patrickbryant/PlotTools
 sys.path.insert(0, os.getcwd())
 import base_class.plots.ROOTPlotTools as ROOTPlotTools
+import argparse
 
 import collections
 #import PlotTools
 
-from array import array
+#from array import array
 import numpy as np
 import scipy.stats
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
-import matplotlib.transforms as transforms
+#import matplotlib.transforms as transforms
 #import mpl_toolkits
 #from mpl_toolkits.axes_grid1 import make_axes_locatable
 plt.rc('text', usetex=True)
@@ -31,88 +32,7 @@ COLORS=['xkcd:purple', 'xkcd:green', 'xkcd:blue', 'xkcd:teal', 'xkcd:orange', 'x
         'xkcd:pine', 'xkcd:magenta', 'xkcd:cerulean', 'xkcd:eggplant', 'xkcd:coral', 'xkcd:blue purple',
         'xkcd:tea', 'xkcd:burple', 'xkcd:deep aqua', 'xkcd:orange pink', 'xkcd:terracota']
 
-#year = 'RunII'
-# lumi = 138.0
-lumi = 132.8
-classifier = 'SvB_MA'
-#rebin = {'zz': 4, 'zh': 5, 'hh': 10}
-#rebin = {'zz': 4, 'zh': 5, 'hh': 6}
-#rebin = {'zz': 4, 'zh': 5, 'hh': 4}
-closure_fit_x_min = 0#0.01
-#rebin = [0, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0]
-maxBasisEnsemble = 5
-maxBasisClosure  = 5
-#channels = ['zz',
-#            'zh',
-#            'hh',
-#            ]
 
-
-
-# New VarAll (15)
-#rebin = {'zz': 5, 'zh': 5, 'hh': 10}
-#channels = ['zz',
-#            ]
-#rebin = {'zz': 5}
-#channels = ['hh',
-#            ]
-#rebin = {'hh': 8}
-
-
-# one kFold
-#channels = ['hh',
-#            ]
-#rebin = {'hh': 6}
-
-# BEs = [                                                '1',
-#                                                    '2*x-1',
-#                                             '6*x^2 -6*x+1',
-#                                    '20*x^3 -30*x^2+12*x-1',
-#                           '70*x^4 -140*x^3 +90*x^2-20*x+1',
-#                 '252*x^5 -630*x^4 +560*x^3-210*x^2+30*x-1',
-#        '924*x^6-2772*x^5+3150*x^4-1680*x^3+420*x^2-42*x+1',
-#                                           '3432*x^7-  12012*x^6+ 16632*x^5- 11550*x^4+ 4200*x^3- 756*x^2+ 56*x-1',
-#                              '12870*x^8-  51480*x^7+  84084*x^6- 72072*x^5+ 34650*x^4- 9240*x^3+1260*x^2- 72*x+1',
-#                  '48620*x^9- 218790*x^8+ 411840*x^7- 420420*x^6+252252*x^5- 90090*x^4+18480*x^3-1980*x^2+ 90*x-1',
-#     '184756*x^10-923780*x^9+1969110*x^8-2333760*x^7+1681680*x^6-756756*x^5+210210*x^4-34320*x^3+2970*x^2-110*x+1',
-#        ]
-BEs = ['1',           # 0
-       'sin(1*pi*x)', # 1
-       'cos(1*pi*x)', # 2
-       'sin(2*pi*x)', # 3
-       'cos(2*pi*x)', # 4
-       'sin(3*pi*x)', # 5
-       'cos(3*pi*x)', # 6
-       'sin(4*pi*x)', # 7
-       'cos(4*pi*x)', # 8
-       'sin(5*pi*x)', # 9
-       'cos(5*pi*x)', #10
-]
-
-BE = []
-for i, s in enumerate(BEs): 
-    BE.append( ROOT.TF1('BE%d'%i, s, 0, 1) )
-
-
-#CMSSW = getCMSSW()
-#basePath = '/uscms/home/%s/nobackup/%s/src'%(USER, CMSSW)
-
-ttAverage = False
-
-doSpuriousSignal = True
-dataAverage = True
-nMixes = 15
-region = 'SR'
-
-probThreshold = 0.05 #0.045500263896 #0.682689492137 # 1sigma 
-
-regionName = {'SB': 'Sideband',
-              'CR': 'Control Region',
-              'SR': 'Signal Region',
-              'notSR': 'Sideband',
-              'SRNoHH': 'Signal Region (Veto HH)',
-          }
-        
 
 def exists(path):
     if "root://" in path:
@@ -121,13 +41,13 @@ def exists(path):
         return not fs.stat(path)[0]['status'] # status is 0 if file exists
     else:
         return os.path.exists(path)
-    
+
 
 def mkdir(directory, doExecute=True, xrd=False, url="root://cmseos.fnal.gov/", debug=False):
-    if exists(directory) and debug: 
+    if exists(directory) and debug:
         print("#",directory,"already exists")
         return
-        
+
     if "root://" in directory or xrd:
         url, path = parseXRD(directory)
         cmd = "xrdfs "+url+" mkdir "+path
@@ -142,7 +62,7 @@ def mkpath(path, doExecute=True, debug=False):
     if exists(path) and debug:
         print("#",path,"already exists")
         return
-        
+
     url = ''
     if "root://" in path:
         url, path = parseXRD(path)
@@ -155,41 +75,24 @@ def mkpath(path, doExecute=True, debug=False):
         mkdir(thisDir, doExecute)
 
 
-def addYearsOLD(f, directory, processes=['ttbar','multijet','data_obs']):
-    hists = []
-    for process in processes:        
-        try:
-            f.Get('%s/%s'%(directory,process)).IsZombie()
-            # already exists, don't need to make it
-        except ReferenceError:
-            # make sum of years
-            hists.append( f.Get(directory+'2016/'+process) )
-            hists[-1].Add(f.Get(directory+'2017/'+process))
-            hists[-1].Add(f.Get(directory+'2018/'+process))
-            try:
-                f.Get(directory).IsZombie()
-            except ReferenceError:
-                f.mkdir(directory)
-            f.cd(directory)
-            hists[-1].Write()
 
 
 def combine_hists(input_file, hist_template, procs, years):
     hist = None
-    
+
     for p in procs:
         hist_name_proc = hist_template.replace("PROC", p)
-        
+
         for y in years:
             hist_name = hist_name_proc.replace("YEAR", y)
-            
+
             if hist is None:
                 #print(f"reading {hist_name}")
                 hist =  input_file.Get(hist_name).Clone()
             else:
                 #print(f"reading {hist_name}")
                 hist.Add( input_file.Get(hist_name).Clone() )
-                
+
     return hist
 
 def addYears(f, input_file_bkg, input_file_data, var, mix, channel):
@@ -202,10 +105,10 @@ def addYears(f, input_file_bkg, input_file_data, var, mix, channel):
     #
     var_name = var.replace("XXX",channel)
 
-    mix_number = mix.replace(f"{mixName}_v","")
+    mix_number = mix.replace(f"{args.mix_name}_v","")
 
     hist_data_obs = combine_hists(input_file_data,
-                                  f"{var_name}_PROC_YEAR_fourTag_SR", 
+                                  f"{var_name}_PROC_YEAR_fourTag_SR",
                                   years=["UL16_preVFP", "UL17", "UL18"],
                                   procs=[f"mix_v{mix_number}"])
 
@@ -242,16 +145,16 @@ def addYears(f, input_file_bkg, input_file_data, var, mix, channel):
     hist_ttbar.SetName("ttbar")
     hist_ttbar.Write()
 
-    return 
+    return
 
 
 def addMixes(f, directory):
     hists = []
     for process in ['ttbar','multijet','data_obs']:
         try:
-            f.Get('%s/%s'%(directory,process)).IsZombie()
+            f.Get(f'{directory}/{process}').IsZombie()
         except ReferenceError:
-            print("getting "+mixes[0]+'/'+directory+'/'+process) 
+            print("getting "+mixes[0]+'/'+directory+'/'+process)
             hists.append( f.Get(mixes[0]+'/'+directory+'/'+process) )
 
             if ttAverage and process=='ttbar': # skip averaging if ttAverage and process=='ttbar'
@@ -276,43 +179,6 @@ def addMixes(f, directory):
 
 
 
-def prepInputOLD(closureFileName):
-    print(closureFileName)
-    f=ROOT.TFile(closureFileName, 'UPDATE')
-    
-    for channel in channels:
-        for mix in mixes:
-           addYearsOLD(f, mix+'/'+channel)
-        try:
-            addYearsOLD(f, mixName+'_vAll_oneFit/'+channel, processes=['multijet'])
-        except:
-            print('Do not have '+mixName+'_vAll_oneFit/'+channel)
-    
-    for channel in channels:
-       addMixes(f, channel)
-       for year in ['2016', '2017', '2018']:
-           addMixes(f, channel+year)
-        
-    # Get Signal templates for spurious signal fits
-    USER = os.getenv('USER')
-    zzFile = ROOT.TFile('/uscms/home/%s/nobackup/ZZ4b/ZZ4bRunII/hists.root'%(USER), 'READ')
-    zhFile = ROOT.TFile('/uscms/home/%s/nobackup/ZZ4b/bothZH4bRunII/hists.root'%(USER), 'READ')
-    hhFile = ROOT.TFile('/uscms/home/%s/nobackup/ZZ4b/HH4bRunII/hists.root'%(USER), 'READ')
-    for ch in channels:
-        var = '%s_ps_%s'%(classifier, ch)
-        histPath = 'passPreSel/fourTag/mainView/%s/%s'%(region,var)
-        signal =   zzFile.Get(histPath)
-        signal.Add(zhFile.Get(histPath))
-        signal.Add(hhFile.Get(histPath))
-        signal.SetName('signal')
-        f.cd(ch)
-        signal.Write()
-    zzFile.Close()
-    zhFile.Close()
-    hhFile.Close()
-    
-    f.Close()
-
 def prepInput(input_file_name_bkg, input_file_name_data, input_file_name_sig, output_file_name_root):
 
     #
@@ -326,17 +192,17 @@ def prepInput(input_file_name_bkg, input_file_name_data, input_file_name_sig, ou
     #
     # Make output
     #
-    f = ROOT.TFile(output_file_name_root, 'RECREATE')    
-    
-    for channel in channels:
+    f = ROOT.TFile(output_file_name_root, 'RECREATE')
+
+    for channel in args.channels:
         for mix in mixes:
            addYears(f, input_file_bkg, input_file_data, var=var, mix=mix, channel=channel)
-    
-    for channel in channels:
+
+    for channel in args.channels:
         addMixes(f, channel)
 
         var_name = var.replace("XXX",channel)
-    
+
         #
         #  Signal
         #
@@ -353,7 +219,7 @@ def prepInput(input_file_name_bkg, input_file_name_data, input_file_name_sig, ou
 ###           addMixes(f, input_root_files, channel+year)
 ###
 
-    
+
     f.Close()
 
 
@@ -361,25 +227,24 @@ def prepInput(input_file_name_bkg, input_file_name_data, input_file_name_sig, ou
 
 def pearsonr(x,y,n=None):
     r, p_raw = scipy.stats.pearsonr(x,y)
-    if n is None: 
+    if n is None:
         return (r, p_raw)
     # if n <= 2: # pearson r cdf is not well defined for n<=2
     #     return (r, 1.)
     # corrected p-value using different number of degrees of freedom than just the number of samples (array length)
     dist = scipy.stats.beta(n/2. - 1, n/2. - 1, loc=-1, scale=2)
     p_cor = 2*dist.cdf(-abs(r))
-    # print('p_raw = %2.0f%%'%(p_raw*100))
-    # print('p_cor = %2.0f%%'%(p_cor*100)) # p_cor should always be larger than p_raw
+
     return (r, p_cor)
 
 def fTest(chi2_1, chi2_2, ndf_1, ndf_2):
-    print('chi2_1, chi2_2, ndf_1, ndf_2 = %f, %f, %d, %d'%(chi2_1, chi2_2, ndf_1, ndf_2))
+    print(f'chi2_1, chi2_2, ndf_1, ndf_2 = {chi2_1}, {chi2_2}, {ndf_1}, {ndf_2}')
     d1 = (ndf_1-ndf_2)
     d2 = ndf_2
-    print('d1, d2 = %d, %d'%(d1, d2))
+    print(f'd1, d2 = {d1}, {d2}')
     N = (chi2_1-chi2_2)/d1
     D = chi2_2/d2
-    print('N, D = %f, %f'%(N, D))
+    print('N, D = {N}, {D}')
     fStat = N/D
     fProb = scipy.stats.f.cdf(fStat, d1, d2)
     expectedFStat = scipy.stats.distributions.f.isf(0.05, d1, d2)
@@ -396,9 +261,9 @@ class multijetEnsemble:
 
         self.channel = channel
         self.rebin = rebin[channel]
-        mkpath(f'{outputPath}/{mixName}/{classifier}/rebin{self.rebin}/{region}/{self.channel}')
+        mkpath(f'{outputPath}/{args.mix_name}/{args.classifier}/rebin{self.rebin}/{args.region}/{self.channel}')
 
-        self.output_yml = open(f'{outputPath}/{mixName}/{classifier}/rebin{self.rebin}/{region}/{self.channel}/0_variance_results.yml', 'w')
+        self.output_yml = open(f'{outputPath}/{args.mix_name}/{args.classifier}/rebin{self.rebin}/{args.region}/{self.channel}/0_variance_results.yml', 'w')
 
         self.data_minus_ttbar = f.Get(f'{self.channel}/ttbar')
         self.data_minus_ttbar.SetName(f'data_minus_ttbar_average_{self.channel}')
@@ -415,7 +280,7 @@ class multijetEnsemble:
         print(f"Reading {self.channel}/signal")
         self.signal = f.Get('%s/signal'%self.channel)
         self.signal.Rebin(self.rebin)
-        
+
         self.f = f
         self.f.cd(self.channel)
 
@@ -445,7 +310,7 @@ class multijetEnsemble:
                 error = (self.models_rebin[m].GetBinError(local_bin)**2 + (2/nMixes)**2)**0.5
                 self.multijet_ensemble_average.SetBinContent(ensemble_bin, self.average_rebin.GetBinContent(local_bin))
                 self.multijet_ensemble_average.SetBinError  (ensemble_bin, error)
-                
+
                 self.multijet_ensemble        .SetBinContent(ensemble_bin, self.models_rebin[m].GetBinContent(local_bin))
                 #self.multijet_ensemble        .SetBinError  (ensemble_bin, self.models_rebin[m].GetBinError  (local_bin))
                 self.multijet_ensemble        .SetBinError  (ensemble_bin, 0.0)
@@ -486,9 +351,9 @@ class multijetEnsemble:
 
         # Subtract off cross correlation from higher order basis elements
         for i in range(1,len(B)):
-            c = (B[i-1]*h**1.0*B[i-1]).sum() 
+            c = (B[i-1]*h**1.0*B[i-1]).sum()
             B[i:] = B[i:] - (B[i-1]*h**1.0*B[i:]).sum(axis=1, keepdims=True)*B[i-1]/c # make each b_i orthogonal to those before it
-            c_no_rebin = (B_no_rebin[i-1]*h_no_rebin**1.0*B_no_rebin[i-1]).sum() 
+            c_no_rebin = (B_no_rebin[i-1]*h_no_rebin**1.0*B_no_rebin[i-1]).sum()
             B_no_rebin[i:] = B_no_rebin[i:] - (B_no_rebin[i-1]*h_no_rebin**1.0*B_no_rebin[i:]).sum(axis=1, keepdims=True)*B_no_rebin[i-1]/c_no_rebin # make each b_i orthogonal to those before it
 
         for i in range(0,len(B)):
@@ -539,7 +404,7 @@ class multijetEnsemble:
             for i in range(1,basis):
                 self.plotFitResults(basis, projection=(i,i+1))
             self.plotPulls(basis)
-            
+
             #if abs(self.pearsonr[basis]['total'][0]) < min_r:
             if self.basis is None and abs(self.pearsonr[basis]['total'][1]) > probThreshold:
                 min_r = abs(self.pearsonr[basis]['total'][0])
@@ -576,7 +441,7 @@ class multijetEnsemble:
 
             l, u = self.average_rebin.GetBinLowEdge(local_bin), self.average_rebin.GetXaxis().GetBinUpEdge(local_bin)
 
-            p = 1.0                
+            p = 1.0
             for BE_idx in range(basis+1):
                 par_idx = m*(basis+1)+BE_idx
                 p += pars[par_idx] * self.basis_element[BE_idx][local_bin-1]
@@ -598,7 +463,7 @@ class multijetEnsemble:
     def getEigenvariations(self, basis=None, debug=False):
         if basis is None: basis = self.basis
         n = basis+1
-        
+
         if n == 1:
             self.eigenVars[basis] = [np.array([[self.multijet_TF1[basis].GetParError(m*n)]]) for m in range(nMixes)]
             return
@@ -618,10 +483,10 @@ class multijetEnsemble:
                 cov[m].Print()
                 print('Correlation Matrix:',m)
                 cor[m].Print()
-        
+
         eigenVal = [ROOT.TVectorD(n) for m in range(nMixes)]
         eigenVec = [cov[m].EigenVectors(eigenVal[m]) for m in range(nMixes)]
-        
+
         for m in range(nMixes):
             # define relative sign of eigen-basis such that the first coordinate is always positive
             for j in range(n):
@@ -658,7 +523,7 @@ class multijetEnsemble:
             parMean2   += self.fit_parameters[basis][m]**2 / nMixes
             parMeanErr += self.fit_parameters_error[basis][m] / nMixes
         var = parMean2 - parMean**2
-        parStd  = var**0.5 
+        parStd  = var**0.5
         parStd *= nMixes / (nMixes-1) # bessel's correction https://en.wikipedia.org/wiki/Bessel's_correction
         print('Parameter Mean:',parMean)
         print('Parameter  Std:',parStd)
@@ -777,9 +642,9 @@ class multijetEnsemble:
 
         rebin_name = '' if rebin else '_no_rebin'
         if type(self.rebin) is list:
-            figname = f'{outputPath}/{mixName}/{classifier}/variable_rebin/{region}/{self.channel}/{name}_basis{rebin_name}{basis}.pdf'
+            figname = f'{outputPath}/{args.mix_name}/{args.classifier}/variable_rebin/{args.region}/{self.channel}/{name}_basis{rebin_name}{basis}.pdf'
         else:
-            figname = f'{outputPath}/{mixName}/{classifier}/rebin{self.rebin}/{region}/{self.channel}/{name}_basis{rebin_name}{basis}.pdf'
+            figname = f'{outputPath}/{args.mix_name}/{args.classifier}/rebin{self.rebin}/{args.region}/{self.channel}/{name}_basis{rebin_name}{basis}.pdf'
 
         print('fig.savefig( '+figname+' )')
         plt.tight_layout()
@@ -811,14 +676,14 @@ class multijetEnsemble:
         ax.legend(fontsize='small', loc='best')
 
         if type(self.rebin) is list:
-            figname = f'{outputPath}/{mixName}/{classifier}/variable_rebin/{region}/{self.channel}/{name}_additive_basis{rebin_name}{basis}.pdf'
+            figname = f'{outputPath}/{args.mix_name}/{args.classifier}/variable_rebin/{args.region}/{self.channel}/{name}_additive_basis{rebin_name}{basis}.pdf'
         else:
-            figname = f'{outputPath}/{mixName}/{classifier}/rebin{self.rebin}/{region}/{self.channel}/{name}_additive_basis{rebin_name}{basis}.pdf'
+            figname = f'{outputPath}/{args.mix_name}/{args.classifier}/rebin{self.rebin}/{args.region}/{self.channel}/{name}_additive_basis{rebin_name}{basis}.pdf'
         print('fig.savefig( '+figname+' )')
         plt.tight_layout()
         fig.savefig( figname )
         plt.close(fig)
-        
+
 
     def plotPearson(self):
         fig, (ax) = plt.subplots(nrows=1)
@@ -848,7 +713,7 @@ class multijetEnsemble:
             ax.plot(x, r, color=COLORS[m], linewidth=1, alpha=0.5, label=label)#underscore tells pyplot to not show this in the legend
             # ax.plot(x, r, color=colors[m], linewidth=1, alpha=0.3, linestyle='dotted', label='_'+label)#underscore tells pyplot to not show this in the legend
             # ax.plot(x, p, color=colors[m], linewidth=1, alpha=0.3, label=label)
-        
+
         ax.plot(xlim, [probThreshold,probThreshold], color='r', alpha=0.5, linestyle='--', linewidth=0.5)
 
         ax.set_xlabel('Parameters')
@@ -856,9 +721,9 @@ class multijetEnsemble:
         plt.legend(fontsize='small', loc='best')
 
         if type(self.rebin) is list:
-            name = f'{outputPath}/{mixName}/{classifier}/variable_rebin/{region}/{self.channel}/0_variance_pearsonr_multijet_variance.pdf'
+            name = f'{outputPath}/{args.mix_name}/{args.classifier}/variable_rebin/{args.region}/{self.channel}/0_variance_pearsonr_multijet_variance.pdf'
         else:
-            name = f'{outputPath}/{mixName}/{classifier}/rebin{self.rebin}/{region}/{self.channel}/0_variance_pearsonr_multijet_variance.pdf'
+            name = f'{outputPath}/{args.mix_name}/{args.classifier}/rebin{self.rebin}/{args.region}/{self.channel}/0_variance_pearsonr_multijet_variance.pdf'
         print('fig.savefig( '+name+' )')
         plt.tight_layout()
         fig.savefig( name )
@@ -887,7 +752,7 @@ class multijetEnsemble:
 
         x = np.array(x)
         y = np.array(y)
-    
+
         kwargs = {'lw': 0.5,
                   'marker': 'o',
                   'edgecolors': 'k',
@@ -925,8 +790,8 @@ class multijetEnsemble:
         ax.set_yticks(yticks)
 
         if n>1:
-            # draw 1\sigma ellipse 
-            ellipse = Ellipse((0,0), 
+            # draw 1\sigma ellipse
+            ellipse = Ellipse((0,0),
                               width =100*(self.cUp[basis][dims[0]]-self.cDown[basis][dims[0]]),
                               height=100*(self.cUp[basis][dims[1]]-self.cDown[basis][dims[1]]),
                               facecolor = 'none',
@@ -976,7 +841,7 @@ class multijetEnsemble:
         else:
             for m in range(nMixes):
                 maxr[0,m] = self.eigenVars[basis][m][dims[0]]
-        
+
         minr *= 100
         maxr *= 100
 
@@ -988,7 +853,7 @@ class multijetEnsemble:
         ax.quiver(x, y,  minr[0],  minr[1], scale_units='xy', angles='xy', scale=1, width=0.002, headlength=0, headaxislength=0, zorder=2)
         ax.quiver(x, y, -minr[0], -minr[1], scale_units='xy', angles='xy', scale=1, width=0.002, headlength=0, headaxislength=0, zorder=2)
 
-        
+
         plt.scatter(x, y, **kwargs)
         plt.tight_layout()
 
@@ -997,7 +862,7 @@ class multijetEnsemble:
             ax.annotate('v$_{%d}$'%m, (x[m]+x_offset, y[m]+y_offset), bbox=bbox)
 
         if n>2:
-            plt.colorbar(label='c$_'+str(dims[2])+'$ (\%)')#, cax=cax) 
+            plt.colorbar(label='c$_'+str(dims[2])+'$ (\%)')#, cax=cax)
             plt.subplots_adjust(right=1)
 
         if n>3:
@@ -1015,20 +880,18 @@ class multijetEnsemble:
                       '%0.2f'%(smin+srange*2.0/3),
                       '%0.2f'%smax]
 
-            leg = plt.legend(handles, labels, 
-                             ncol=1, 
+            leg = plt.legend(handles, labels,
+                             ncol=1,
                              fontsize='medium',
                              loc='best',
-                             title='c$_'+str(dims[3])+'$ (\%)', 
+                             title='c$_'+str(dims[3])+'$ (\%)',
                              scatterpoints = 1)
-        
+
         projection = '_'.join([str(d) for d in projection])
         if type(self.rebin) is list:
-            name = '%s/%s/%s/variable_rebin/%s/%s/0_variance_parameters_basis%d_projection_%s.pdf'%(outputPath, mixName, classifier, region, self.channel, basis, projection)
-            #name = f'{outputPath}/{mixName}/{classifier}/variable_rebin/{region}/{self.channel}/0_variance_parameters_basis{basis}_projection_{projection}.pdf'
+            name = f'{outputPath}/{args.mix_name}/{args.classifier}/variable_rebin/{args.region}/{self.channel}/0_variance_parameters_basis{basis}_projection_{projection}.pdf'
         else:
-            name = '%s/%s/%s/rebin%i/%s/%s/0_variance_parameters_basis%d_projection_%s.pdf'%(outputPath, mixName, classifier, self.rebin, region, self.channel, basis, projection)
-            #name = f'{outputPath}/{mixName}/{classifier}/rebin{self.rebin}/{region}/{self.channel}/0_variance_parameters_basis{basis}_projection_{projection}.pdf'
+            name = f'{outputPath}/{args.mix_name}/{args.classifier}/rebin{self.rebin}/{args.region}/{self.channel}/0_variance_parameters_basis{basis}_projection_{projection}.pdf'
         print('fig.savefig( '+name+' )')
         try:
             fig.savefig( name )
@@ -1091,15 +954,13 @@ class multijetEnsemble:
         #x, y = xs.flatten(), ys.flatten()
         #r, p = scipy.stats.pearsonr(x,y)
         (r, p) = self.pearsonr[basis]['total']
-    
+
         plt.legend(fontsize='small', loc='upper left', ncol=2, title='Overall r=%0.2f (%2.0f%s)'%(r,p*100,'\%'))
-        
+
         if type(self.rebin) is list:
-            name = '%s/%s/%s/variable_rebin/%s/%s/0_variance_pull_correlation_basis%d.pdf'%(outputPath, mixName, classifier, region, self.channel, basis)
-            #name = f'{outputPath}/{mixName}/{classifier}/variable_rebin/{region}/{self.channel}/0_variance_pull_correlation_basis{basis}.pdf'
+            name = f'{outputPath}/{args.mix_name}/{args.classifier}/variable_rebin/{args.region}/{self.channel}/0_variance_pull_correlation_basis{basis}.pdf'
         else:
-            name = '%s/%s/%s/rebin%i/%s/%s/0_variance_pull_correlation_basis%d.pdf'%(outputPath, mixName, classifier, self.rebin, region, self.channel, basis)            
-            #name = f'{outputPath}/{mixName}/{classifier}/rebin{self.rebin}/{region}/{self.channel}/0_variance_pull_correlation_basis{basis}.pdf'
+            name = f'{outputPath}/{args.mix_name}/{args.classifier}/rebin{self.rebin}/{args.region}/{self.channel}/0_variance_pull_correlation_basis{basis}.pdf'
         print('fig.savefig( '+name+' )')
         fig.savefig( name )
         plt.close(fig)
@@ -1134,9 +995,9 @@ class multijetEnsemble:
             'color' : 'ROOT.kBlue'}
 
         xTitle = 'P(Signal) #(Bin) + #(Bins)#(Mix) #cbar P(%s) is largest'%(self.channel.upper())
-            
+
         parameters = {'titleLeft'   : '#bf{CMS} Internal',
-                      'titleCenter' : regionName[region],
+                      'titleCenter' : regionName[args.region],
                       'titleRight'  : 'Pass #DeltaR(j,j)',
                       'maxDigits'   : 4,
                       'drawLines'   : [[self.nBins_rebin*m+0.5,  0,self.nBins_rebin*m+0.5,self.ymax[0]*1.1] for m in range(1,nMixes+1)],
@@ -1168,11 +1029,9 @@ class multijetEnsemble:
         parameters['ratioLines'] = [[self.nBins_rebin*m+0.5, parameters['rMin'], self.nBins_rebin*m+0.5, parameters['rMax']] for m in range(1,nMixes+1)]
 
         if type(self.rebin) is list:
-            parameters['outputDir'] = '%s/%s/%s/variable_rebin/%s/%s/'%(outputPath, mixName, classifier, region, self.channel)
-            #parameters['outputDir'] = f'{outputPath}/{mixName}/{classifier}/variable_rebin/{region}/{self.channel}/'
+            parameters['outputDir'] = f'{outputPath}/{args.mix_name}/{args.classifier}/variable_rebin/{args.region}/{self.channel}/'
         else:
-            parameters['outputDir'] = '%s/%s/%s/rebin%i/%s/%s/'%(outputPath, mixName, classifier, self.rebin, region, self.channel)
-            #parameters['outputDir'] = f'{outputPath}/{mixName}/{classifier}/rebin{self.rebin}/{region}/{self.channel}/'
+            parameters['outputDir'] = f'{outputPath}/{args.mix_name}/{args.classifier}/rebin{self.rebin}/{args.region}/{self.channel}/'
 
         print('make ',parameters['outputDir']+parameters['outputName']+'.pdf')
         ROOTPlotTools.plot(samples, parameters, debug=False)
@@ -1191,7 +1050,7 @@ class closure:
         self.data_obs.SetName('%s_average_%s'%(self.data_obs.GetName(), self.channel))
         self.nBins = self.data_obs.GetSize()-2 # GetSize includes under/overflow bins
 
-        self.output_yml = open(f'{outputPath}/{mixName}/{classifier}/rebin{self.rebin}/{region}/{self.channel}/1_bias_results.yml', 'w')
+        self.output_yml = open(f'{outputPath}/{args.mix_name}/{args.classifier}/rebin{self.rebin}/{args.region}/{self.channel}/1_bias_results.yml', 'w')
 
         self.doSpuriousSignal = False
         self.spuriousSignal = {}
@@ -1201,7 +1060,7 @@ class closure:
         self.signal_orthogonal_TH1 = {}
         #self.signal = f.Get('%s/signal'%self.channel)
         #self.signal.Rebin(rebin)
-        
+
         self.f = f
         self.f.cd(self.channel)
 
@@ -1324,7 +1183,7 @@ class closure:
         nUnconstrained = n - nConstrained
 
         write_pairs = [("chi2",self.chi2[basis]), ("ndf",self.ndf[basis]), ("pvalue",self.pvalue[basis]),
-                       ("nConstrained",nConstrained), ("nUnconstrained",nUnconstrained), ("expected_ndfs", self.nBins_rebin-nUnconstrained), 
+                       ("nConstrained",nConstrained), ("nUnconstrained",nUnconstrained), ("expected_ndfs", self.nBins_rebin-nUnconstrained),
                        ("variance", self.cUp[basis])]
 
         for wp in write_pairs:
@@ -1345,7 +1204,7 @@ class closure:
                     if BE_idx > max_basis: # do nothing with extra bins
                         return 0.0
 
-                    BE_coefficient = pars[BE_idx]                
+                    BE_coefficient = pars[BE_idx]
                     if BE_coefficient > 0:
                         return -BE_coefficient/abs(self.cUp  [basis][BE_idx])
                     else:
@@ -1354,9 +1213,9 @@ class closure:
                 BE_idx += basis+1 # only apply priors to higher order terms
                 if BE_idx > self.multijet.basis:
                     return 0.0
-                
+
                 # use variance priors
-                BE_coefficient = pars[BE_idx]                
+                BE_coefficient = pars[BE_idx]
                 if BE_coefficient>0:
                     #return -BE_coefficient/(0.2581988897471611*abs(self.multijet.cUp  [self.multijet.basis][BE_idx]))
                     return -BE_coefficient/abs(self.multijet.cUp  [self.multijet.basis][BE_idx])
@@ -1375,7 +1234,7 @@ class closure:
             background = p*mj + self.ttbar_rebin.GetBinContent(bin)
             spuriousSignal = pars[n] * self.multijet.signal.GetBinContent(bin)
             #spuriousSignal = pars[n] * mj * self.multijet.basis_signal[max_basis][bin-1]
-  
+
             return background + spuriousSignal
 
         self.f.cd(self.channel)
@@ -1415,10 +1274,10 @@ class closure:
             cov.Print()
             print('Correlation Matrix:')
             cor.Print()
-        
+
         eigenVal = ROOT.TVectorD(n)
         eigenVec = cov.EigenVectors(eigenVal)
-        
+
         # define relative sign of eigen-basis such that the first coordinate is always positive
         for j in range(n):
             if eigenVec[0][j] >= 0: continue
@@ -1486,7 +1345,7 @@ class closure:
             self.closure_TH1[basis].SetBinContent(bin, self.closure_TF1[basis].Eval(bin))
             #self.closure_TH1[basis].SetBinError  (bin, self.data_obs_closure.GetBinError(bin))
             self.closure_TH1[basis].SetBinError  (bin, 0.0)
-            
+
         self.f.cd(self.channel)
         self.closure_TH1[basis].Write()
 
@@ -1530,7 +1389,7 @@ class closure:
         self.f.cd(self.channel)
         self.closure_ss_TH1[basis].Write()
         self.signal_orthogonal_TH1[basis].Write()
- 
+
         self.closure_TF1[basis].FixParameter(n, 0)
         self.doSpuriousSignal = False
         print('spurious signal = %2.2f +/- %f'%(self.spuriousSignal[basis], self.spuriousSignalError[basis]))
@@ -1541,8 +1400,8 @@ class closure:
         if basis is None: basis = self.basis
         max_basis = max(self.multijet.basis, basis)
         nBEs = max_basis+1
-        #closureResults = 'ZZ4b/nTupleAnalysis/combine/closureResults_%s_%s.pkl'%(classifier,self.channel)
-        closureResults = 'closureResults_%s_%s.pkl'%(classifier,self.channel)
+        #closureResults = 'ZZ4b/nTupleAnalysis/combine/closureResults_%s_%s.pkl'%(args.classifier,self.channel)
+        closureResults = 'closureResults_%s_%s.pkl'%(args.classifier,self.channel)
         #closureResultsRoot = ROOT.TFile(closureResults.replace('.txt', '.root'), 'RECREATE')
         # closureResultsFile = open(closureResults, 'w')
         print('Write Closure Results File: \n>> %s'%(closureResults))
@@ -1563,10 +1422,10 @@ class closure:
                 cUp_bias   =  (cUp  **2 - cUp_vari  **2)**0.5
             if cDown != cDown_vari:
                 cDown_bias = -(cDown**2 - cDown_vari**2)**0.5
-            
+
             systematics['%s_vari_%sUp'  %(nuissance, self.channel)] = 1+cUp_vari  *self.basis_element[i]
             systematics['%s_vari_%sDown'%(nuissance, self.channel)] = 1+cDown_vari*self.basis_element[i]
-            
+
             if cUp_bias:
                 systematics['%s_bias_%sUp'  %(nuissance, self.channel)] = 1+cUp_bias  *self.basis_element[i]
             if cDown_bias:
@@ -1602,7 +1461,7 @@ class closure:
         #     print(systUp)
         #     print(systDown)
         #     closureResultsFile.write(systUp+'\n')
-        #     closureResultsFile.write(systDown+'\n')        
+        #     closureResultsFile.write(systDown+'\n')
         # closureResultsFile.close()
 
         with open(closureResults,'wb') as sfile:
@@ -1637,7 +1496,7 @@ class closure:
 
         x = np.array(x)
         y = np.array(y)
-    
+
         kwargs = {'lw': 0.5,
                   'marker': 'o',
                   'edgecolors': 'k',
@@ -1675,7 +1534,7 @@ class closure:
                 height = self.multijet.cUp[self.multijet.basis][dims[1]]-self.multijet.cDown[self.multijet.basis][dims[1]]
             except IndexError:
                 height = 0.0
-            ellipse_self_consistency = Ellipse((0,0), 
+            ellipse_self_consistency = Ellipse((0,0),
                                                width =100*width,
                                                height=100*height,
                                                facecolor = 'none',
@@ -1686,7 +1545,7 @@ class closure:
             )
             ax.add_patch(ellipse_self_consistency)
 
-            ellipse_closure = Ellipse((0,0), 
+            ellipse_closure = Ellipse((0,0),
                                       width =100*(self.cUp[basis][dims[0]]-self.cDown[basis][dims[0]]),
                                       height=100*(self.cUp[basis][dims[1]]-self.cDown[basis][dims[1]]),
                                       facecolor = 'none',
@@ -1762,7 +1621,7 @@ class closure:
         ax.quiver(x, y,  minr[0],  minr[1], scale_units='xy', angles='xy', scale=1, width=0.002, headlength=0, headaxislength=0, zorder=2)
         ax.quiver(x, y, -minr[0], -minr[1], scale_units='xy', angles='xy', scale=1, width=0.002, headlength=0, headaxislength=0, zorder=2)
 
-        
+
         plt.scatter(x, y, **kwargs)
 
         if n>2:
@@ -1788,20 +1647,18 @@ class closure:
                             bbox=bbox)
 
         projection = '_'.join([str(d) for d in projection])
+
         if not doSpuriousSignal:
             if type(self.rebin) is list:
-                name = '%s/%s/%s/variable_rebin/%s/%s/1_bias_parameters_basis%d_projection_%s.pdf'%(outputPath, mixName, classifier, region, self.channel, basis, projection)
-                #name = f'{outputPath}/{mixName}/{classifier}/variable_rebin/{region}/{self.channel}/1_bais_parameters_basis{basis}_projection_{projection}.pdf'
+                name = f'{outputPath}/{args.mix_name}/{args.classifier}/variable_rebin/{args.region}/{self.channel}/1_bais_parameters_basis{basis}_projection_{projection}.pdf'
             else:
-                name = '%s/%s/%s/rebin%i/%s/%s/1_bias_parameters_basis%d_projection_%s.pdf'%(outputPath, mixName, classifier, self.rebin, region, self.channel, basis, projection)            
-                #name = f'{outputPath}/{mixName}/{classifier}/rebin{self.rebin}/{region}/{self.channel}/1_bias_parameters_basis{bias}_projection_{projection}.pdf'
+                name = f'{outputPath}/{args.mix_name}/{args.classifier}/rebin{self.rebin}/{args.region}/{self.channel}/1_bias_parameters_basis{basis}_projection_{projection}.pdf'
         else:
             if type(self.rebin) is list:
-                name = '%s/%s/%s/variable_rebin/%s/%s/2_spurious_signal_parameters_basis%d_projection_%s.pdf'%(outputPath, mixName, classifier, region, self.channel, basis, projection)
-                #name = f'{outputPath}/{mixName}/{classifier}/variable_rebin/{region}/{self.channel}/2_spurious_signal_parameters_basis{bias}_projection_{projection}.pdf'
+                name = f'{outputPath}/{args.mix_name}/{args.classifier}/variable_rebin/{args.region}/{self.channel}/2_spurious_signal_parameters_basis{basis}_projection_{projection}.pdf'
             else:
-                name = '%s/%s/%s/rebin%i/%s/%s/2_spurious_signal_parameters_basis%d_projection_%s.pdf'%(outputPath, mixName, classifier, self.rebin, region, self.channel, basis, projection)            
-                #name = f'{outputPath}/{mixName}/{classifier}/rebin{self.rebin}/{region}/{self.channel}/2_spurious_signal_parameters_basis{bais}_projection_{projection}.pdf'
+                name = f'{outputPath}/{args.mix_name}/{args.classifier}/rebin{self.rebin}/{args.region}/{self.channel}/2_spurious_signal_parameters_basis{basis}_projection_{projection}.pdf'
+
         print('fig.savefig( '+name+' )')
         plt.tight_layout()
         fig.savefig( name )
@@ -1825,7 +1682,7 @@ class closure:
         if self.basis is not None:
             ax.plot([self.basis+1, self.basis+1], [0,1], color='k', alpha=0.5, linestyle='--', linewidth=0.5)
             ax.scatter(self.basis+1, self.pvalue[self.basis], color='k', marker='*', s=100, zorder=10)
-        
+
         x = np.array(sorted(self.fProb.keys()))+1
         y = [self.fProb[i-1] for i in x]
         marker = '' if len(x)>1 else 'o'
@@ -1841,11 +1698,10 @@ class closure:
         ax.legend(loc='upper left', fontsize='small')
 
         if type(self.rebin) is list:
-            name = '%s/%s/%s/variable_rebin/%s/%s/1_bias_pvalues.pdf'%(outputPath, mixName, classifier, region, self.channel)
-            #name = f'{outputPath}/{mixName}/{classifier}/variable_rebin/{region}/{self.channel}/1_bias_pvalues.pdf'
+            name = f'{outputPath}/{args.mix_name}/{args.classifier}/variable_rebin/{args.region}/{self.channel}/1_bias_pvalues.pdf'
         else:
-            name = '%s/%s/%s/rebin%i/%s/%s/1_bias_pvalues.pdf'%(outputPath, mixName, classifier, self.rebin, region, self.channel)
-            #name = f'{outputPath}/{mixName}/{classifier}/rebin{self.rebin}/{region}/{self.channel}/1_bias_pvalues.pdf'
+            name = f'{outputPath}/{args.mix_name}/{args.classifier}/rebin{self.rebin}/{args.region}/{self.channel}/1_bias_pvalues.pdf'
+
         print('fig.savefig( '+name+' )')
         plt.tight_layout()
         fig.savefig( name )
@@ -1858,7 +1714,7 @@ class closure:
         samples[closureFileName] = collections.OrderedDict()
         if type(mix)==int:
             samples[closureFileName]['%s/%s/data_obs'%(mixes[mix], self.channel)] = {
-                'label' : 'Mixed Data Set %d, %.1f/fb'%(mix, lumi),
+                'label' : f'Mixed Data Set {mix}, {lumi}/fb',
                 'legend': 1,
                 'isData' : True,
                 #'drawOptions': 'P ex0',
@@ -1866,7 +1722,7 @@ class closure:
                 'color' : 'ROOT.kBlack'}
         else:
             samples[closureFileName]['%s/data_obs'%(self.channel)] = {
-                'label' : '#LTMixed Data#GT %.1f/fb'%(lumi),
+                'label' : f'#LTMixed Data#GT {lumi}/fb',
                 'legend': 1,
                 'isData' : True,
                 #'drawOptions': 'P ex0',
@@ -1902,10 +1758,10 @@ class closure:
             'weight': 100,
             'color' : 'ROOT.kViolet'}
 
-        xTitle = classifier+' P(Signal) #cbar P('+self.channel.upper()+') is largest'
-            
+        xTitle = args.classifier+' P(Signal) #cbar P('+self.channel.upper()+') is largest'
+
         parameters = {'titleLeft'   : '#bf{CMS} Internal',
-                      'titleCenter' : regionName[region],
+                      'titleCenter' : regionName[args.region],
                       'titleRight'  : 'Pass #DeltaR(j,j)',
                       'maxDigits'   : 4,
                       'ratioErrors': True,
@@ -1926,11 +1782,9 @@ class closure:
                       'outputName': 'mix_%s'%(str(mix))}
 
         if type(self.rebin) is list:
-            parameters['outputDir'] = '%s/%s/%s/variable_rebin/%s/%s/'%(outputPath, mixName, classifier, region, self.channel)
-            #parameters['outputDir'] = f'{outputPath}/{mixName}/{classifier}/variable_rebin/{region}/{self.channel}/'
+            parameters['outputDir'] = f'{outputPath}/{args.mix_name}/{args.classifier}/variable_rebin/{args.region}/{self.channel}/'
         else:
-            parameters['outputDir'] = '%s/%s/%s/rebin%i/%s/%s/'%(outputPath, mixName, classifier, self.rebin, region, self.channel)
-            #parameters['outputDir'] = f'{outputPath}/{mixName}/{classifier}/rebin{self.rebin}/{region}/{self.channel}/'
+            parameters['outputDir'] = f'{outputPath}/{args.mix_name}/{args.classifier}/rebin{self.rebin}/{args.region}/{self.channel}/'
 
         print('make ',parameters['outputDir']+parameters['outputName']+'.pdf')
         ROOTPlotTools.plot(samples, parameters, debug=False)
@@ -1940,7 +1794,7 @@ class closure:
         samples=collections.OrderedDict()
         samples[closureFileName] = collections.OrderedDict()
         samples[closureFileName]['%s/data_obs_closure'%self.channel] = {
-            'label' : '#LTMixed Data#GT %.1f/fb'%lumi,
+            'label' : f'#LTMixed Data#GT {lumi}/fb',
             'legend': 1,
             'isData' : True,
             #'ratioDrawOptions': 'P ex0',
@@ -1962,18 +1816,18 @@ class closure:
             samples[closureFileName]['%s/closure_TH1_basis%d'%(self.channel, basis)] = {
                 'label' : 'Fit (%d unconstrained parameter%s)'%(basis+1, 's' if basis else ''),
                 'legend': 4,
-                'ratio': 'denom A', 
+                'ratio': 'denom A',
                 'color' : 'ROOT.kRed'}
         if plotSpuriousSignal:
             samples[closureFileName]['%s/closure_ss_zero_TH1_basis%d'%(self.channel, basis)] = {
                 'label' : 'Fit #zeta=0',
                 'legend': 5,
-                'ratio': 'denom A', 
+                'ratio': 'denom A',
                 'color' : 'ROOT.kGreen+3'}
             samples[closureFileName]['%s/closure_ss_TH1_basis%d'%(self.channel, basis)] = {
                 'label' : 'Fit #zeta=%1.1f#pm%1.1f'%(self.spuriousSignal[basis], self.spuriousSignalError[basis]),
                 'legend': 6,
-                'ratio': 'denom A', 
+                'ratio': 'denom A',
                 'color' : 'ROOT.kViolet'}
             samples[closureFileName]['%s/signal_closure'%self.channel] = {
                 'label' : 'ZZ+ZH+HH(#times100)',
@@ -1983,17 +1837,17 @@ class closure:
             # samples[closureFileName]['%s/signal_orthogonal_TH1_basis%d'%(self.channel, basis)] = {
             #     'label' : 'Orthogonalized Signal(#times100)',
             #     'legend': 8,
-            #     'weight': 100, 
+            #     'weight': 100,
             #     'color' : 'ROOT.kViolet-6'}
 
-        xTitle = classifier+' P(Signal) Bin #cbar P('+self.channel.upper()+') is largest'
-            
+        xTitle = args.classifier+' P(Signal) Bin #cbar P('+self.channel.upper()+') is largest'
+
         ymaxScale = 1.4 #+ max(0, (basis-2)/4.0)
         if doSpuriousSignal:
             ymaxScale = 1.7 #+ max(0, (basis-2)/4.0)
 
         parameters = {'titleLeft'   : '#bf{CMS} Internal',
-                      'titleCenter' : regionName[region],
+                      'titleCenter' : regionName[args.region],
                       'titleRight'  : 'Pass #DeltaR(j,j)',
                       'maxDigits'   : 4,
                       'drawLines'   : [[self.fit_x_min,        0,self.fit_x_min,      self.ymax[0]/2],
@@ -2039,11 +1893,9 @@ class closure:
             parameters['xMax'] = self.nBins_rebin+0.5+max(self.multijet.basis-basis, 0)
 
         if type(self.rebin) is list:
-            parameters['outputDir'] = '%s/%s/%s/variable_rebin/%s/%s/'%(outputPath, mixName, classifier, region, self.channel)
-            #parameters['outputDir'] = f'{outputPath}/{mixName}/{classifier}/variable_rebin/{region}/{self.channel}/'
+            parameters['outputDir'] = f'{outputPath}/{args.mix_name}/{args.classifier}/variable_rebin/{args.region}/{self.channel}/'
         else:
-            parameters['outputDir'] = '%s/%s/%s/rebin%i/%s/%s/'%(outputPath, mixName, classifier, self.rebin, region, self.channel)
-            #parameters['outputDir'] = f'{outputPath}/{mixName}/{classifier}/rebin{self.rebin}/{region}/{self.channel}/'
+            parameters['outputDir'] = f'{outputPath}/{args.mix_name}/{args.classifier}/rebin{self.rebin}/{args.region}/{self.channel}/'
 
         print('make ',parameters['outputDir']+parameters['outputName']+'.pdf')
         ROOTPlotTools.plot(samples, parameters, debug=False)
@@ -2060,26 +1912,26 @@ def run(closureFileName):
     # make multijet ensembles and perform fits
     #
     multijetEnsembles = {}
-    for channel in channels:
+    for channel in args.channels:
         if type(rebin[channel]) is list:
-            mkpath(f'{outputPath}/{mixName}/{classifier}/variable_rebin/{region}/{channel}')
+            mkpath(f'{outputPath}/{args.mix_name}/{args.classifier}/variable_rebin/{args.region}/{channel}')
         else:
-            mkpath(f'{outputPath}/{mixName}/{classifier}/rebin{rebin[channel]}/{region}/{channel}')
+            mkpath(f'{outputPath}/{args.mix_name}/{args.classifier}/rebin{rebin[channel]}/{args.region}/{channel}')
         multijetEnsembles[channel] = multijetEnsemble(f, channel)
 
     #
-    # run closure fits using average multijet model 
+    # run closure fits using average multijet model
     #
     closures = {}
-    for channel in channels:
+    for channel in args.channels:
         closures[channel] = closure(f, channel, multijetEnsembles[channel])
 
     #
-    # close input file and make plots 
+    # close input file and make plots
     #
     f.Close()
 
-    for channel in channels:
+    for channel in args.channels:
         for basis in multijetEnsembles[channel].bases:
             multijetEnsembles[channel].plotFit(basis)
         for basis in closures[channel].bases:
@@ -2089,44 +1941,109 @@ def run(closureFileName):
             closures[channel].plotMix(m)
         closures[channel].plotMix('ave')
 
-    for channel in channels:
+    for channel in args.channels:
         multijetEnsembles[channel].print_exit_message()
         closures[channel].print_exit_message()
-        
+
+
 if __name__ == "__main__":
 
-    old_inputs = False
-    mixName = '3bDvTMix4bDvT'
-    #channels = ['zz','zh','hh']
-    channels = ['hh']
+    parser = argparse.ArgumentParser(description='make JCM weights', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('-c', '--channels', dest="channels", nargs="+", help="hh, zh, or zz ")
+    parser.add_argument('--debug',                 action="store_true")
+    parser.add_argument('-l', '--lumi',                 dest="lumi",          default="133",    help="Luminosity for MC normalization: units [pb]")
+    parser.add_argument('--mix_name', default="3bDvTMix4bDvT")
+    parser.add_argument('--classifier', help="SvB or SvB_MA")
+    parser.add_argument('--region', default="SR", help="SR or SB")
+##    parser.add_argument(--
+##    input_file_bkg  = "analysis/hists/testMixedBkg_master.root"
+##    input_file_data = "analysis/hists/testMixedData_master.root"
+##    input_file_sig  = "analysis/hists/histAll_signal.root"
 
-    if old_inputs: 
-        closureFileName = "hists_closure_3bDvTMix4bDvT_SR_weights_newSBDef.root"
-        outputPath = "closureFits"
-        mixes = [mixName+'_v%d'%i for i in range(nMixes)]
 
-        rebin = {'zz': 4, 'zh': 5, 'hh': 10}
+#    parser.add_argument('-i', '--inputFile',  dest="inputFile", default='hists.pkl', help='Input File. Default: hists.pkl')
+#    parser.add_argument('-w', '--weightSet', dest="weightSet", default="")
+#    parser.add_argument('-r', dest="weightRegion", default="SB")
+#
+#
+#    parser.add_argument('-o', '--outputDir', dest='outputDir', default="")
+#    parser.add_argument('--ROOTInputs', action="store_true")
+#    parser.add_argument('-y', '--year',                 dest="year",          default="RunII",  help="Year specifies trigger (and lumiMask for data)")
+#    parser.add_argument('-m', '--metadata', dest="metadata",
+#                        default="analysis/metadata/plotsJCM.yml",
+#                        help='Metadata file.')
 
-        if 'MA' in classifier:
-            closureFileName = closureFileName.replace('weights_', 'weights_MA_')
+    args = parser.parse_args()
+    # o, a = parser.parse_args()
 
-        prepInputOLD(closureFileName)
+    print(f"\nRunning with channels {args.channels}\n")
 
-    else:
+    lumi = args.lumi
 
-        closure_file_bkg  = "analysis/hists/testMixedBkg_master.root"
-        closure_file_data = "analysis/hists/testMixedData_master.root"
-        closure_file_sig  = "analysis/hists/histAll_signal.root"
+    #
+    #  Settings
+    #
+    closure_fit_x_min = 0#0.01
+    maxBasisEnsemble = 5
+    maxBasisClosure  = 5
 
-        closure_file_out  = "hists_closure_3bDvTMix4bDvT_New.root"
-        closureFileName = closure_file_out
-        outputPath = "closureFitsNew"
+    ttAverage = False
+    doSpuriousSignal = True
+    dataAverage = True
+    nMixes = 15
 
-        var = "SvB_MA_ps_XXX"
-        rebin = {'zz': 8, 'zh': 10, 'hh': 20}
 
-        mixes = [f'{mixName}_v{i}' for i in range(nMixes)]
-        print(mixes)
-        prepInput(closure_file_bkg, closure_file_data, closure_file_sig, closure_file_out) 
+    probThreshold = 0.05 #0.045500263896 #0.682689492137 # 1sigma
+
+    regionName = {'SB': 'Sideband',
+                  'CR': 'Control Region',
+                  'SR': 'Signal Region',
+                  'notSR': 'Sideband',
+                  'SRNoHH': 'Signal Region (Veto HH)',
+              }
+
+
+
+    #BEs = [                                                 '1',
+    #                                                    '2*x-1',
+    #                                             '6*x^2 -6*x+1',
+    #                                    '20*x^3 -30*x^2+12*x-1',
+    #                           '70*x^4 -140*x^3 +90*x^2-20*x+1',
+    #                 '252*x^5 -630*x^4 +560*x^3-210*x^2+30*x-1',
+    #        '924*x^6-2772*x^5+3150*x^4-1680*x^3+420*x^2-42*x+1',
+    #                                           '3432*x^7-  12012*x^6+ 16632*x^5- 11550*x^4+ 4200*x^3- 756*x^2+ 56*x-1',
+    #                              '12870*x^8-  51480*x^7+  84084*x^6- 72072*x^5+ 34650*x^4- 9240*x^3+1260*x^2- 72*x+1',
+    #                  '48620*x^9- 218790*x^8+ 411840*x^7- 420420*x^6+252252*x^5- 90090*x^4+18480*x^3-1980*x^2+ 90*x-1',
+    #     '184756*x^10-923780*x^9+1969110*x^8-2333760*x^7+1681680*x^6-756756*x^5+210210*x^4-34320*x^3+2970*x^2-110*x+1',
+    #        ]
+
+    BEs = ['1',           # 0
+           'sin(1*pi*x)', # 1
+           'cos(1*pi*x)', # 2
+           'sin(2*pi*x)', # 3
+           'cos(2*pi*x)', # 4
+           'sin(3*pi*x)', # 5
+           'cos(3*pi*x)', # 6
+           'sin(4*pi*x)', # 7
+           'cos(4*pi*x)', # 8
+           'sin(5*pi*x)', # 9
+           'cos(5*pi*x)', #10
+    ]
+
+    BE = []
+    for i, s in enumerate(BEs):
+        BE.append( ROOT.TF1('BE%d'%i, s, 0, 1) )
+
+
+    closure_file_out  = "stats_analysis/hists_closure_3bDvTMix4bDvT_New.root"
+    closureFileName = closure_file_out
+    outputPath = "stats_analysis/closureFitsNew"
+
+    var = "SvB_MA_ps_XXX"
+    rebin = {'zz': 8, 'zh': 10, 'hh': 20}
+
+    mixes = [f'{args.mix_name}_v{i}' for i in range(nMixes)]
+
+    prepInput(input_file_bkg, input_file_data, input_file_sig, closure_file_out)
 
     run(closureFileName)
