@@ -6,9 +6,12 @@ ROOT.gROOT.SetBatch(True)
 import sys
 import pickle
 import operator
-sys.path.insert(0, 'PlotTools/python/') #https://github.com/patrickbryant/PlotTools
+#sys.path.insert(0, 'PlotTools/python/') #https://github.com/patrickbryant/PlotTools
+sys.path.insert(0, os.getcwd())
+import base_class.plots.ROOTPlotTools as ROOTPlotTools
+
 import collections
-import PlotTools
+#import PlotTools
 
 from array import array
 import numpy as np
@@ -291,8 +294,7 @@ def prepInputOLD(closureFileName):
            addMixes(f, channel+year)
         
     # Get Signal templates for spurious signal fits
-    from commandLineHelpers import getUSER
-    USER = getUSER()
+    USER = os.getenv('USER')
     zzFile = ROOT.TFile('/uscms/home/%s/nobackup/ZZ4b/ZZ4bRunII/hists.root'%(USER), 'READ')
     zhFile = ROOT.TFile('/uscms/home/%s/nobackup/ZZ4b/bothZH4bRunII/hists.root'%(USER), 'READ')
     hhFile = ROOT.TFile('/uscms/home/%s/nobackup/ZZ4b/HH4bRunII/hists.root'%(USER), 'READ')
@@ -391,9 +393,12 @@ def fTest(chi2_1, chi2_2, ndf_1, ndf_2):
 
 class multijetEnsemble:
     def __init__(self, f, channel):
+
         self.channel = channel
         self.rebin = rebin[channel]
         mkpath(f'{outputPath}/{mixName}/{classifier}/rebin{self.rebin}/{region}/{self.channel}')
+
+        self.output_yml = open(f'{outputPath}/{mixName}/{classifier}/rebin{self.rebin}/{region}/{self.channel}/0_variance_results.yml', 'w')
 
         self.data_minus_ttbar = f.Get(f'{self.channel}/ttbar')
         self.data_minus_ttbar.SetName(f'data_minus_ttbar_average_{self.channel}')
@@ -401,7 +406,7 @@ class multijetEnsemble:
         self.data_minus_ttbar.Add( f.Get(f'{self.channel}/data_obs') )
         self.data_minus_ttbar.Rebin(self.rebin)
 
-        self.average = f.Get('%s/multijet'%self.channel)
+        self.average = f.Get(f'{self.channel}/multijet')
         self.average.SetName('%s_average_%s'%(self.average.GetName(), self.channel))
         self.models  = [f.Get('%s/%s/multijet'%(mix, self.channel)) for mix in mixes]
         for m, model in enumerate(self.models): model.SetName('%s_%s_%s'%(model.GetName(), mixes[m], self.channel))
@@ -511,7 +516,6 @@ class multijetEnsemble:
             self.plotBasis('normalized', basis, rebin=False)
 
 
-
         self.fit_result = {}
         self.eigenVars = {}
         self.multijet_TF1, self.multijet_TH1 = {}, {}
@@ -530,11 +534,12 @@ class multijetEnsemble:
 
             self.makeFitFunction(basis)
             self.fit(basis)
+            self.write_to_yml(basis)
             self.plotFitResults(basis)
             for i in range(1,basis):
                 self.plotFitResults(basis, projection=(i,i+1))
             self.plotPulls(basis)
-
+            
             #if abs(self.pearsonr[basis]['total'][0]) < min_r:
             if self.basis is None and abs(self.pearsonr[basis]['total'][1]) > probThreshold:
                 min_r = abs(self.pearsonr[basis]['total'][0])
@@ -558,6 +563,7 @@ class multijetEnsemble:
         self.plotPearson()
 
     def print_exit_message(self):
+        self.output_yml.close()
         for line in self.exit_message: print(line)
 
     def makeFitFunction(self, basis):
@@ -672,7 +678,7 @@ class multijetEnsemble:
     def fit(self, basis):
         #print(self.multijet_TF1[basis])
         #print(type(self.multijet_TF1[basis]))
-        self.multijet_ensemble_average.Fit(self.multijet_TF1[basis], 'N0SQ')
+        #self.multijet_ensemble_average.Fit(self.multijet_TF1[basis], 'N0SQ')
         self.fit_result[basis] = self.multijet_ensemble_average.Fit(self.multijet_TF1[basis], 'N0SQ')
         self.getEigenvariations(basis)
         self.pvalue[basis], self.chi2[basis], self.ndf[basis] = self.multijet_TF1[basis].GetProb(), self.multijet_TF1[basis].GetChisquare(), self.multijet_TF1[basis].GetNDF()
@@ -728,6 +734,18 @@ class multijetEnsemble:
         self.multijet_TH1[basis].Write()
 
 
+    def write_to_yml(self, basis):
+        self.output_yml.write(str(basis) + ":\n")
+
+        write_pairs = [("chi2",self.chi2[basis]), ("ndf",self.ndf[basis]), ("pvalue",self.pvalue[basis]),
+                       ("pearson_r",self.pearsonr[basis]['total'][0]), ("pearson_pvalue",self.pearsonr[basis]['total'][0]),
+                       ("variance", self.cUp[basis])]
+
+        for wp in write_pairs:
+            self.output_yml.write(" "*4 + f"{wp[0]}:\n")
+            self.output_yml.write(" "*8 + f"{str(wp[1])}\n")
+
+
     def plotBasis(self, name, basis, rebin=True):
         fig, (ax) = plt.subplots(nrows=1)
         if rebin:
@@ -759,10 +777,8 @@ class multijetEnsemble:
 
         rebin_name = '' if rebin else '_no_rebin'
         if type(self.rebin) is list:
-            #figname = '%s/%s/%s/variable_rebin/%s/%s/%s_basis%s%i.pdf'%(outputPath, mixName, classifier, region, self.channel, name, rebin_name, basis)
             figname = f'{outputPath}/{mixName}/{classifier}/variable_rebin/{region}/{self.channel}/{name}_basis{rebin_name}{basis}.pdf'
         else:
-            #figname = '%s/%s/%s/rebin%i/%s/%s/%s_basis%s%i.pdf'%(outputPath, mixName, classifier, self.rebin, region, self.channel, name, rebin_name, basis)
             figname = f'{outputPath}/{mixName}/{classifier}/rebin{self.rebin}/{region}/{self.channel}/{name}_basis{rebin_name}{basis}.pdf'
 
         print('fig.savefig( '+figname+' )')
@@ -795,10 +811,8 @@ class multijetEnsemble:
         ax.legend(fontsize='small', loc='best')
 
         if type(self.rebin) is list:
-            #figname = '%s/%s/%s/variable_rebin/%s/%s/%s_additive_basis%s%i.pdf'%(outputPath, mixName, classifier, region, self.channel, name, rebin_name, basis)
             figname = f'{outputPath}/{mixName}/{classifier}/variable_rebin/{region}/{self.channel}/{name}_additive_basis{rebin_name}{basis}.pdf'
         else:
-            #figname = '%s/%s/%s/rebin%i/%s/%s/%s_additive_basis%s%i.pdf'%(outputPath, mixName, classifier, self.rebin, region, self.channel, name, rebin_name, basis)
             figname = f'{outputPath}/{mixName}/{classifier}/rebin{self.rebin}/{region}/{self.channel}/{name}_additive_basis{rebin_name}{basis}.pdf'
         print('fig.savefig( '+figname+' )')
         plt.tight_layout()
@@ -842,11 +856,9 @@ class multijetEnsemble:
         plt.legend(fontsize='small', loc='best')
 
         if type(self.rebin) is list:
-            name = '%s/%s/%s/variable_rebin/%s/%s/0_variance_pearsonr_multijet_variance.pdf'%(outputPath, mixName, classifier, region, self.channel)
-            #name = f'{outputPath}/{mixName}/{classifier}/variable_rebin/{region}/{self.channel}/0_variance_pearsonr_multijet_variance.pdf'
+            name = f'{outputPath}/{mixName}/{classifier}/variable_rebin/{region}/{self.channel}/0_variance_pearsonr_multijet_variance.pdf'
         else:
-            name = '%s/%s/%s/rebin%i/%s/%s/0_variance_pearsonr_multijet_variance.pdf'%(outputPath, mixName, classifier, self.rebin, region, self.channel)
-            #name = f'{outputPath}/{mixName}/{classifier}/rebin{self.rebin}/{region}/{self.channel}/0_variance_pearsonr_multijet_variance.pdf'
+            name = f'{outputPath}/{mixName}/{classifier}/rebin{self.rebin}/{region}/{self.channel}/0_variance_pearsonr_multijet_variance.pdf'
         print('fig.savefig( '+name+' )')
         plt.tight_layout()
         fig.savefig( name )
@@ -1163,7 +1175,7 @@ class multijetEnsemble:
             #parameters['outputDir'] = f'{outputPath}/{mixName}/{classifier}/rebin{self.rebin}/{region}/{self.channel}/'
 
         print('make ',parameters['outputDir']+parameters['outputName']+'.pdf')
-        PlotTools.plot(samples, parameters, debug=False)
+        ROOTPlotTools.plot(samples, parameters, debug=False)
 
 
 
@@ -1178,6 +1190,8 @@ class closure:
         self.data_obs = f.Get('%s/data_obs'%self.channel)
         self.data_obs.SetName('%s_average_%s'%(self.data_obs.GetName(), self.channel))
         self.nBins = self.data_obs.GetSize()-2 # GetSize includes under/overflow bins
+
+        self.output_yml = open(f'{outputPath}/{mixName}/{classifier}/rebin{self.rebin}/{region}/{self.channel}/1_bias_results.yml', 'w')
 
         self.doSpuriousSignal = False
         self.spuriousSignal = {}
@@ -1259,6 +1273,7 @@ class closure:
         for basis in self.bases:
             self.makeFitFunction(basis)
             self.fit(basis)
+            self.write_to_yml(basis)
             self.fitSpuriousSignal(basis)
             #self.writeClosureResults(basis)
             self.plotFitResults(basis)
@@ -1299,6 +1314,23 @@ class closure:
             self.basis = self.bases[-1]
 
         self.writeClosureResults(self.basis)
+
+
+    def write_to_yml(self, basis):
+        self.output_yml.write(str(basis) + ":\n")
+
+        n = max(self.multijet.basis, basis)+1
+        nConstrained = max(self.multijet.basis-basis, 0)
+        nUnconstrained = n - nConstrained
+
+        write_pairs = [("chi2",self.chi2[basis]), ("ndf",self.ndf[basis]), ("pvalue",self.pvalue[basis]),
+                       ("nConstrained",nConstrained), ("nUnconstrained",nUnconstrained), ("expected_ndfs", self.nBins_rebin-nUnconstrained), 
+                       ("variance", self.cUp[basis])]
+
+        for wp in write_pairs:
+            self.output_yml.write(" "*4 + f"{wp[0]}:\n")
+            self.output_yml.write(" "*8 + f"{str(wp[1])}\n")
+
 
     def makeFitFunction(self, basis):
 
@@ -1901,7 +1933,7 @@ class closure:
             #parameters['outputDir'] = f'{outputPath}/{mixName}/{classifier}/rebin{self.rebin}/{region}/{self.channel}/'
 
         print('make ',parameters['outputDir']+parameters['outputName']+'.pdf')
-        PlotTools.plot(samples, parameters, debug=False)
+        ROOTPlotTools.plot(samples, parameters, debug=False)
 
 
     def plotFit(self, basis, plotSpuriousSignal=False):
@@ -2014,9 +2046,10 @@ class closure:
             #parameters['outputDir'] = f'{outputPath}/{mixName}/{classifier}/rebin{self.rebin}/{region}/{self.channel}/'
 
         print('make ',parameters['outputDir']+parameters['outputName']+'.pdf')
-        PlotTools.plot(samples, parameters, debug=False)
+        ROOTPlotTools.plot(samples, parameters, debug=False)
 
     def print_exit_message(self):
+        self.output_yml.close()
         for line in self.exit_message: print(line)
 
 
@@ -2045,6 +2078,7 @@ def run(closureFileName):
     # close input file and make plots 
     #
     f.Close()
+
     for channel in channels:
         for basis in multijetEnsembles[channel].bases:
             multijetEnsembles[channel].plotFit(basis)
@@ -2054,6 +2088,7 @@ def run(closureFileName):
         for m in range(nMixes):
             closures[channel].plotMix(m)
         closures[channel].plotMix('ave')
+
     for channel in channels:
         multijetEnsembles[channel].print_exit_message()
         closures[channel].print_exit_message()
@@ -2079,9 +2114,9 @@ if __name__ == "__main__":
 
     else:
 
-        closure_file_bkg  = "../analysis/hists/testMixedBkg_master.root"
-        closure_file_data = "../analysis/hists/testMixedData_master.root"
-        closure_file_sig  = "../analysis/hists/histAll_signal.root"
+        closure_file_bkg  = "analysis/hists/testMixedBkg_master.root"
+        closure_file_data = "analysis/hists/testMixedData_master.root"
+        closure_file_sig  = "analysis/hists/histAll_signal.root"
 
         closure_file_out  = "hists_closure_3bDvTMix4bDvT_New.root"
         closureFileName = closure_file_out

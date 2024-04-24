@@ -30,7 +30,6 @@ class TestRunTwoStageClosure(unittest.TestCase):
         print(self.knownCounts.keys())
 
 
-
     def test_input_counts(self):
 
 
@@ -57,6 +56,49 @@ class TestRunTwoStageClosure(unittest.TestCase):
                 intput_counts.append(input_hist.GetBinContent(ibin))
 
             np.testing.assert_array_equal(intput_counts, expected_counts)
+
+
+
+    def check_dict_for_differences(self, lhs, rhs, k):
+        if type(lhs[k]) == list:
+            for listIdx in range(len(lhs[k])):
+                self.assertAlmostEqual(lhs[k][listIdx], rhs[k][listIdx], delta=0.001, msg=f"Failed match {k}... {lhs[k]} vs {rhs[k]} ... Diff: {lhs[k][listIdx]-rhs[k][listIdx]}")
+        else:
+            self.assertAlmostEqual(lhs[k], rhs[k], delta=0.001, msg=f"Failed match {k}... {lhs[k]} vs {rhs[k]} ... Diff: {lhs[k]-rhs[k]}")
+
+
+
+
+
+    def test_yaml_content(self):
+        
+        for test_pair in [
+                ('stats_analysis/tests/0_variance_results.yml', 'stats_analysis/closureFitsNew/3bDvTMix4bDvT/SvB_MA/rebin20/SR/hh/0_variance_results.yml'),
+                ('stats_analysis/tests/1_bias_results.yml',     'stats_analysis/closureFitsNew/3bDvTMix4bDvT/SvB_MA/rebin20/SR/hh/1_bias_results.yml')
+        ]:
+            
+            test_file      = test_pair[0]
+            reference_file = test_pair[1]
+            print("\ntesting",test_file)
+            
+            # Load the content of the test YAML file
+            with open(test_file, 'r') as file:
+                test_data = yaml.safe_load(file)
+        
+            # Load the content of the reference YAML file
+            with open(reference_file, 'r') as file:
+                reference_data = yaml.safe_load(file)
+
+            for k, v in test_data.items():
+
+                if type(v) is dict:
+                    for k1, v1 in v.items():                    
+                        self.check_dict_for_differences(test_data[k], reference_data[k], k1)
+
+                else:
+                    self.check_dict_for_differences(test_data, reference_data, k)
+
+
 
 
 
