@@ -334,6 +334,17 @@ ymltoroot-test-job:
       - python/stats_analysis/datacards/test_plot_SvB_hh.png
 
 
+twoStageClosure-test-job:   
+  stage: fits
+#  needs: 
+#    - histtoyml-test-job
+  image: gitlab-registry.cern.ch/cms-cloud/cmssw-docker/cc7-cms 
+  tags:
+    - k8s-cvmfs
+  script:
+    - source /cvmfs/sft.cern.ch/lcg/views/LCG_104/x86_64-centos7-gcc12-opt/setup.sh
+    - source .ci-workflows/analysis-runTwoStageClosure-ROOT.sh
+
 
 reana-job:
   stage: reana
