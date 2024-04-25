@@ -1933,15 +1933,6 @@ if __name__ == "__main__":
     parser.add_argument('--var', default="SvB_MA_ps_hh", help="SvB_MA_ps_XX or SvB_MA_ps_XX_fine")
     parser.add_argument('--rebin', default=1)
     parser.add_argument('--outputPath', default="stats_analysis/closureFitsNew")
-    # parser.add_argument('--output_file_name' closure_file_out  = "stats_analysis/hists_closure_3bDvTMix4bDvT_New.root"
-
-#
-#    parser.add_argument('-o', '--outputDir', dest='outputDir', default="")
-#    parser.add_argument('--ROOTInputs', action="store_true")
-#    parser.add_argument('-y', '--year',                 dest="year",          default="RunII",  help="Year specifies trigger (and lumiMask for data)")
-#    parser.add_argument('-m', '--metadata', dest="metadata",
-#                        default="analysis/metadata/plotsJCM.yml",
-#                        help='Metadata file.')
 
     args = parser.parse_args()
 
