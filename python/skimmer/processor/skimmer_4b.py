@@ -17,7 +17,8 @@ class Skimmer(PicoAOD):
         events = apply_event_selection_4b( events, isMC, self.corrections_metadata[year] )
         events = apply_object_selection_4b( events, year, isMC, dataset, self.corrections_metadata[year]  )
 
-        selection = events.lumimask & events.passNoiseFilter & events.passHLT & events.passJetMult & events.passPreSel
+        selection = events.lumimask & events.passNoiseFilter & events.passJetMult & events.passPreSel
+        if not isMC: selection = selection & events.passHLT
 
         return selection
 

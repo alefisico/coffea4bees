@@ -8,6 +8,7 @@ from coffea.nanoevents.methods import vector
 ak.behavior.update(vector.behavior)
 from coffea import processor, util
 import correctionlib
+import pickle
 import cachetools
 import logging
 import copy
@@ -129,25 +130,22 @@ def mask_event_decision(event, decision='OR', branch='HLT', list_to_mask=[''], l
 
     return decision_array
 
-def apply_btag_sf( events, jets,
+def apply_btag_sf( jets,
                   correction_file='data/JEC/BTagSF2016/btagging_legacy16_deepJet_itFit.json.gz',
                   correction_type="deepJet_shape",
-                  btag_var=['central'],
-                  btagSF_norm=1.,
-                  weight=1.,
+                  btag_uncertainties = None,
+                  dataset = '',
+                  btagSF_norm_file='ZZ4b/nTupleAnalysis/weights/btagSF_norm.pkl',
                   ):
     '''
-    This nees a work to make it more generic
+    Can be replace with coffea.btag_tools if official WP are used
     '''
 
     btagSF = correctionlib.CorrectionSet.from_file(correction_file)[correction_type]
 
-    selev = {}
-    #central = 'central'
-    use_central = True
-    btag_jes = []
-    cj, nj = ak.flatten(jets), ak.num(jets)
-    hf, eta, pt, tag = np.array(cj.hadronFlavour), np.array(abs(cj.eta)), np.array(cj.pt), np.array(cj.btagDeepFlavB)
+    weights = {}
+    j, nj = ak.flatten(jets), ak.num(jets)
+    hf, eta, pt, tag = np.array(j.hadronFlavour), np.array(abs(j.eta)), np.array(j.pt), np.array(j.btagDeepFlavB)
 
     cj_bl = jets[jets.hadronFlavour!=4]
     nj_bl = ak.num(cj_bl)
@@ -165,7 +163,18 @@ def apply_btag_sf( events, jets,
     SF_c = ak.unflatten(SF_c, nj_c)
     SF_c = np.prod(SF_c, axis=1)
 
-    for sf in btag_var+btag_jes:
+    ### btag norm
+    try:
+        with open(btagSF_norm_file, 'rb') as f:
+            btagSF_norm = pickle.load(f)[dataset]
+            logging.info(f'btagSF_norm {btagSF_norm}')
+    except FileNotFoundError:
+        btagSF_norm = 1.0
+
+    btag_var = [ 'central' ]
+    if btag_uncertainties:
+        btag_var += [ f'{updown}_{btagvar}' for updown in ['up', 'down',] for btagvar in btag_uncertainties ]
+    for sf in btag_var:
         if sf == 'central':
             SF = btagSF.evaluate('central', hf, eta, pt, tag)
             SF = ak.unflatten(SF, nj)
@@ -187,10 +196,10 @@ def apply_btag_sf( events, jets,
             SF = ak.unflatten(SF, nj_bl)
             SF = SF_c * np.prod(SF, axis=1) # use central value for charm jets
 
-        selev[f'btagSF_{sf}'] = SF * btagSF_norm
-        selev[f'weight_btagSF_{sf}'] = weight * SF * btagSF_norm
+        weights[f'btagSF_{sf}'] = SF * btagSF_norm
 
-    return selev[f'weight_btagSF_{"central" if use_central else btag_jes[0]}']
+    logging.debug(weights)
+    return weights
 
 
 def drClean(coll1,coll2,cone=0.4):
@@ -209,4 +218,11 @@ def drClean(coll1,coll2,cone=0.4):
     nolepton_mask = ~ak.any(dr < cone, axis=2)
     jets_noleptons = coll1[nolepton_mask]
     return [jets_noleptons, nolepton_mask]
+
+def update_events(events, collections):
+    """Return a shallow copy of events array with some collections swapped out"""
+    out = events
+    for name, value in collections.items():
+        out = ak.with_field(out, value, name)
+    return out
 

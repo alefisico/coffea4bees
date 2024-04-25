@@ -7,13 +7,13 @@ import fsspec
 from classifier.task import ArgParser, Dataset, parse
 
 
-class Torch(Dataset):
+class cache(Dataset):
     argparser = ArgParser(description="Load datasets saved by [blue]cache[/blue].")
     argparser.add_argument(
         "--input",
         default=argparse.SUPPRESS,
         required=True,
-        help="the input directory",
+        help="a json file containing the metadata of the cached dataset",
     )
     argparser.add_argument(
         "--chunk",
@@ -26,8 +26,9 @@ class Torch(Dataset):
     def train(self):
         from base_class.system.eos import EOS
 
-        base = EOS(self.opts.input)
-        with fsspec.open(base / "cache.json") as f:
+        metafile = EOS(self.opts.input)
+        base = metafile.parent
+        with fsspec.open(metafile) as f:
             metadata = json.load(f)
         total = math.ceil(metadata["size"] / metadata["chunksize"])
         if self.opts.chunk:

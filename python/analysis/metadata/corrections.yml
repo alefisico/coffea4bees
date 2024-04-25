@@ -6,6 +6,18 @@
     - '* * data/JEC/Summer19UL16APV_V7_MC/RegroupedV2_Summer19UL16APV_V7_MC_UncertaintySources_AK4PFchs.junc.txt'
     - '* * data/JEC/Summer20UL16APV_JRV3_MC/Summer20UL16APV_JRV3_MC_PtResolution_AK4PFchs.jr.txt'
     - '* * data/JEC/Summer20UL16APV_JRV3_MC/Summer20UL16APV_JRV3_MC_SF_AK4PFchs.jersf.txt'
+  JES_uncertainties:
+    - Absolute
+    - Absolute_2016
+    - BBEC1
+    - BBEC1_2016
+    - EC2
+    - EC2_2016
+    - FlavorQCD
+    - HF
+    - HF_2016
+    - RelativeBal
+    - RelativeSample_2016
   btagSF: '/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/2016preVFP_UL/btagging.json.gz'
   btagWP:
     #L: 0.0508
@@ -13,6 +25,15 @@
     #T: 0.6502
     L: 0.3
     M: 0.6
+  btag_uncertainties:
+    - cferr1
+    - cferr2
+    - hf
+    - hfstats1
+    - hfstats2
+    - lf
+    - lfstats1
+    - lfstats2
   NoiseFilter:
     - goodVertices
     - globalSuperTightHalo2016Filter
@@ -34,6 +55,18 @@
     - '* * data/JEC/Summer19UL16_V7_MC/RegroupedV2_Summer19UL16_V7_MC_UncertaintySources_AK4PFchs.junc.txt'
     - '* * data/JEC/Summer20UL16_JRV3_MC/Summer20UL16_JRV3_MC_PtResolution_AK4PFchs.jr.txt'
     - '* * data/JEC/Summer20UL16_JRV3_MC/Summer20UL16_JRV3_MC_SF_AK4PFchs.jersf.txt'
+  JES_uncertainties:
+    - Absolute
+    - Absolute_2016
+    - BBEC1
+    - BBEC1_2016
+    - EC2
+    - EC2_2016
+    - FlavorQCD
+    - HF
+    - HF_2016
+    - RelativeBal
+    - RelativeSample_2016
   btagSF: '/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/2016postVFP_UL/btagging.json.gz'
   btagWP:
     #L: 0.0480
@@ -41,6 +74,15 @@
     #T: 0.6377
     L: 0.3
     M: 0.6
+  btag_uncertainties:
+    - cferr1
+    - cferr2
+    - hf
+    - hfstats1
+    - hfstats2
+    - lf
+    - lfstats1
+    - lfstats2
   NoiseFilter:
     - goodVertices
     - globalSuperTightHalo2016Filter
@@ -61,6 +103,18 @@
     - '* * data/JEC/Summer19UL17_V5_MC/RegroupedV2_Summer19UL17_V5_MC_UncertaintySources_AK4PFchs.junc.txt'
     - '* * data/JEC/Summer19UL17_JRV2_MC/Summer19UL17_JRV2_MC_PtResolution_AK4PFchs.jr.txt'
     - '* * data/JEC/Summer19UL17_JRV2_MC/Summer19UL17_JRV2_MC_SF_AK4PFchs.jersf.txt'
+  JES_uncertainties:
+    - Absolute
+    - Absolute_2017
+    - BBEC1
+    - BBEC1_2017
+    - EC2
+    - EC2_2017
+    - FlavorQCD
+    - HF
+    - HF_2017
+    - RelativeBal
+    - RelativeSample_2017
   btagSF: '/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/2017_UL/btagging.json.gz'
   btagWP:
     #L: 0.0532
@@ -68,6 +122,15 @@
     #T: 0.7476
     L: 0.3
     M: 0.6
+  btag_uncertainties:
+    - cferr1
+    - cferr2
+    - hf
+    - hfstats1
+    - hfstats2
+    - lf
+    - lfstats1
+    - lfstats2
   NoiseFilter:
     - goodVertices
     - globalSuperTightHalo2016Filter
@@ -88,6 +151,18 @@
     - '* * data/JEC/Summer19UL18_V5_MC/RegroupedV2_Summer19UL18_V5_MC_UncertaintySources_AK4PFchs.junc.txt'
     - '* * data/JEC/Summer19UL18_JRV2_MC/Summer19UL18_JRV2_MC_PtResolution_AK4PFchs.jr.txt'
     - '* * data/JEC/Summer19UL18_JRV2_MC/Summer19UL18_JRV2_MC_SF_AK4PFchs.jersf.txt'
+  JES_uncertainties:
+    - Absolute
+    - Absolute_2018
+    - BBEC1
+    - BBEC1_2018
+    - EC2
+    - EC2_2018
+    - FlavorQCD
+    - HF
+    - HF_2018
+    - RelativeBal
+    - RelativeSample_2018
   btagSF: '/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/2018_UL/btagging.json.gz'
   btagWP:
     #L: 0.0490
@@ -95,6 +170,15 @@
     #T: 0.7100
     L: 0.3
     M: 0.6
+  btag_uncertainties:
+    - cferr1
+    - cferr2
+    - hf
+    - hfstats1
+    - hfstats2
+    - lf
+    - lfstats1
+    - lfstats2
   NoiseFilter:
     - goodVertices
     - globalSuperTightHalo2016Filter
@@ -129,6 +213,15 @@
     - '* * data/JEC/Summer16_25nsV1b_MC/Summer16_25nsV1b_MC_PtResolution_AK4PFchs.jr.txt'
     - '* * data/JEC/Summer16_25nsV1b_MC/Summer16_25nsV1b_MC_SF_AK4PFchs.jersf.txt'
   btagSF: 'data/JEC/BTagSF2016/btagging_legacy16_deepJet_itFit.json.gz' 
+  btag_uncertainties:
+    - cferr1
+    - cferr2
+    - hf
+    - hfstats1
+    - hfstats2
+    - lf
+    - lfstats1
+    - lfstats2
   NoiseFilter:
     - goodVertices
     - globalSuperTightHalo2016Filter
