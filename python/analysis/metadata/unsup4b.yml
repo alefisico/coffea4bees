@@ -1,5 +1,5 @@
 runner:
-  condor_cores: 4
+  condor_cores: 6
   condor_memory: 8GB
 
 config:
