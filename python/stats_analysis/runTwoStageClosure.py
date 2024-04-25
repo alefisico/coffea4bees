@@ -424,7 +424,7 @@ class multijetEnsemble:
         def background_UserFunction(xArray, pars):
             ensemble_bin = int(xArray[0])
             m = (ensemble_bin - 1)//self.nBins_rebin
-            local_bin = 1 + ((ensemble_bin - 1)%self.nBins_rebin)
+            local_bin = 1 + ((ensemble_bin - 1) % self.nBins_rebin)
             model = self.models[m]
 
             l, u = self.average_rebin.GetBinLowEdge(local_bin), self.average_rebin.GetXaxis().GetBinUpEdge(local_bin)
@@ -438,38 +438,37 @@ class multijetEnsemble:
 
         self.f.cd(self.channel)
         self.pycallable = background_UserFunction
-        self.multijet_TF1[basis] = ROOT.TF1 ('multijet_ensemble_TF1_basis%d' % basis, self.pycallable, 0.5, 0.5 + self.nBins_ensemble, nMixes*(basis + 1))
+        self.multijet_TF1[basis] = ROOT.TF1 ('multijet_ensemble_TF1_basis%d' % basis, self.pycallable, 0.5, 0.5 + self.nBins_ensemble, nMixes * (basis + 1))
         self.multijet_TH1[basis] = ROOT.TH1F('multijet_ensemble_TH1_basis%d' % basis, '', self.nBins_ensemble, 0.5, 0.5 + self.nBins_ensemble)
 
         for m in range(nMixes):
             for o in range(basis + 1):
-                self.multijet_TF1[basis].SetParName  (m*(basis + 1)+o, 'v%d c_%d' % (m, o))
-                self.multijet_TF1[basis].SetParameter(m*(basis + 1)+o, 0.0)
-
-
+                self.multijet_TF1[basis].SetParName  (m * (basis + 1) + o, 'v%d c_%d' % (m, o))
+                self.multijet_TF1[basis].SetParameter(m * (basis + 1) + o, 0.0)
 
     def getEigenvariations(self, basis=None, debug=False):
-        if basis is None: basis = self.basis
+        if basis is None:
+            basis = self.basis
         n = basis + 1
 
         if n == 1:
-            self.eigenVars[basis] = [np.array([[self.multijet_TF1[basis].GetParError(m*n)]]) for m in range(nMixes)]
+            self.eigenVars[basis] = [np.array([[self.multijet_TF1[basis].GetParError(m * n)]]) for m in range(nMixes)]
             return
 
-        cov = [ROOT.TMatrixD(n,n) for m in range(nMixes)]
-        cor = [ROOT.TMatrixD(n,n) for m in range(nMixes)]
+        cov = [ROOT.TMatrixD(n, n) for m in range(nMixes)]
+        cor = [ROOT.TMatrixD(n, n) for m in range(nMixes)]
 
         for m in range(nMixes):
             for i in range(n):
-                for j in range(n): # full fit is block diagonal in nMixes blocks since there is no correlation between fit parameters of different multijet models
-                    cov[m][i][j] = self.fit_result[basis].CovMatrix  (m*n + i, m*n + j)
-                    cor[m][i][j] = self.fit_result[basis].Correlation(m*n + i, m*n + j)
+                for j in range(n):  # full fit is block diagonal in nMixes blocks since there is no correlation between fit parameters of different multijet models
+                    cov[m][i][j] = self.fit_result[basis].CovMatrix  (m * n + i, m * n + j)
+                    cor[m][i][j] = self.fit_result[basis].Correlation(m * n + i, m * n + j)
 
         if debug:
             for m in range(nMixes):
-                print('Covariance Matrix:',m)
+                print('Covariance Matrix:', m)
                 cov[m].Print()
-                print('Correlation Matrix:',m)
+                print('Correlation Matrix:', m)
                 cor[m].Print()
 
         eigenVal = [ROOT.TVectorD(n) for m in range(nMixes)]
@@ -478,28 +477,28 @@ class multijetEnsemble:
         for m in range(nMixes):
             # define relative sign of eigen-basis such that the first coordinate is always positive
             for j in range(n):
-                if eigenVec[m][0][j] >= 0: continue
+                if eigenVec[m][0][j] >= 0:
+                    continue
                 for i in range(n):
                     eigenVec[m][i][j] *= -1
 
             if debug:
-                print('Eigenvectors (columns)',m)
+                print('Eigenvectors (columns)', m)
                 eigenVec[m].Print()
-                print('Eigenvalues',m)
+                print('Eigenvalues', m)
                 eigenVal[m].Print()
 
-        self.eigenVars[basis] = [np.zeros((n,n), dtype=float) for m in range(nMixes)]
+        self.eigenVars[basis] = [np.zeros((n, n), dtype=float) for m in range(nMixes)]
         for m in range(nMixes):
             for i in range(n):
                 for j in range(n):
-                    self.eigenVars[basis][m][i,j] = eigenVec[m][i][j] * eigenVal[m][j]**0.5
+                    self.eigenVars[basis][m][i, j] = eigenVec[m][i][j] * eigenVal[m][j]**0.5
 
         if debug:
             for m in range(nMixes):
-                print('Eigenvariations',m)
+                print('Eigenvariations', m)
                 for j in range(n):
-                    print(j, self.eigenVars[basis][m][:,j])
-
+                    print(j, self.eigenVars[basis][m][:, j])
 
     def getParameterDistribution(self, basis):
         n = basis + 1
@@ -512,13 +511,13 @@ class multijetEnsemble:
             parMeanErr += self.fit_parameters_error[basis][m] / nMixes
         var = parMean2 - parMean**2
         parStd  = var**0.5
-        parStd *= nMixes / (nMixes-1) # bessel's correction https://en.wikipedia.org/wiki/Bessel's_correction
-        print('Parameter Mean:',parMean)
-        print('Parameter  Std:',parStd)
+        parStd *= nMixes / (nMixes - 1)  # bessel's correction https://en.wikipedia.org/wiki/Bessel's_correction
+        print('Parameter Mean:', parMean)
+        print('Parameter  Std:', parStd)
 
         for i in range(n):
-            #cUp   =  ( (abs(parMean[i])+parStd[i])**2 + parMeanErr[i]**2 )**0.5 # * n**0.5 # add scaling term so that 1 sigma corresponds to quadrature sum over i of (abs(parMean[i])+parStd[i])
-            cUp   =  abs(parMean[i])+parStd[i]
+            # cUp   =  ( (abs(parMean[i])+parStd[i])**2 + parMeanErr[i]**2 )**0.5 # * n**0.5 # add scaling term so that 1 sigma corresponds to quadrature sum over i of (abs(parMean[i])+parStd[i])
+            cUp   =  abs(parMean[i]) + parStd[i]
             cDown = -cUp
             try:
                 self.cUp  [basis].append( cUp )
@@ -527,42 +526,42 @@ class multijetEnsemble:
                 self.cUp  [basis] = [cUp  ]
                 self.cDown[basis] = [cDown]
 
-
     def fit(self, basis):
-        #print(self.multijet_TF1[basis])
-        #print(type(self.multijet_TF1[basis]))
-        #self.multijet_ensemble_average.Fit(self.multijet_TF1[basis], 'N0SQ')
+        # print(self.multijet_TF1[basis])
+        # print(type(self.multijet_TF1[basis]))
+        # self.multijet_ensemble_average.Fit(self.multijet_TF1[basis], 'N0SQ')
         self.fit_result[basis] = self.multijet_ensemble_average.Fit(self.multijet_TF1[basis], 'N0SQ')
         self.getEigenvariations(basis)
         self.pvalue[basis], self.chi2[basis], self.ndf[basis] = self.multijet_TF1[basis].GetProb(), self.multijet_TF1[basis].GetChisquare(), self.multijet_TF1[basis].GetNDF()
-        print("="*50)
+        print("=" * 50)
         print('Fit multijet ensemble %s at basis %d' % (self.channel, basis))
         print('chi2/ndf = %3.2f/%3d = %2.2f' % (self.chi2[basis], self.ndf[basis], self.chi2[basis] / self.ndf[basis]))
         print(' p-value = %0.2f' % self.pvalue[basis])
 
-        self.ymax[basis] = self.multijet_TF1[basis].GetMaximum(1,self.nBins_ensemble)
+        self.ymax[basis] = self.multijet_TF1[basis].GetMaximum(1, self.nBins_ensemble)
         self.fit_parameters[basis], self.fit_parameters_error[basis] = [], []
         n = basis + 1
+
         for m in range(nMixes):
-            self.fit_parameters      [basis].append( np.array([self.multijet_TF1[basis].GetParameter(m*n + o) for o in range(basis + 1)]) )
-            self.fit_parameters_error[basis].append( np.array([self.multijet_TF1[basis].GetParError (m*n + o) for o in range(basis + 1)]) )
+            self.fit_parameters      [basis].append( np.array([self.multijet_TF1[basis].GetParameter(m * n + o) for o in range(basis + 1)]) )
+            self.fit_parameters_error[basis].append( np.array([self.multijet_TF1[basis].GetParError (m * n + o) for o in range(basis + 1)]) )
         self.getParameterDistribution(basis)
 
-        for bin in range(1,self.nBins_ensemble + 1):
-            self.multijet_TH1[basis].SetBinContent(bin, self.multijet_TF1[basis].Eval(bin))
-            #self.multijet_TH1[basis].SetBinError  (bin, self.multijet_ensemble.GetBinError(bin))
-            self.multijet_TH1[basis].SetBinError  (bin, 0.0)
+        for _bin in range(1, self.nBins_ensemble + 1):
+            self.multijet_TH1[basis].SetBinContent(_bin, self.multijet_TF1[basis].Eval(_bin))
+            # self.multijet_TH1[basis].SetBinError  (_bin, self.multijet_ensemble.GetBinError(bin))
+            self.multijet_TH1[basis].SetBinError  (_bin, 0.0)
 
         pulls = []
-        bins = range(self.fit_bin_min,self.nBins_ensemble + 1)
+        bins = range(self.fit_bin_min, self.nBins_ensemble + 1)
         for _bin in bins:
             error = self.multijet_ensemble_average.GetBinError(_bin)
-            pull = (self.multijet_TF1[basis].Eval(_bin) - self.multijet_ensemble_average.GetBinContent(_bin))/error if error>0 else 0
+            pull = (self.multijet_TF1[basis].Eval(_bin) - self.multijet_ensemble_average.GetBinContent(_bin)) / error if error > 0 else 0
             pulls.append(pull)
         self.pulls[basis] = np.array(pulls)
 
         # check bin to bin correlations using pearson R test
-        xs = np.array([self.pulls[basis][m * self.nBins_fit  : (m + 1) * self.nBins_fit-1] for m in range(nMixes)])
+        xs = np.array([self.pulls[basis][m * self.nBins_fit  : (m + 1) * self.nBins_fit - 1] for m in range(nMixes)])
         ys = np.array([self.pulls[basis][m * self.nBins_fit + 1: (m + 1) * self.nBins_fit  ] for m in range(nMixes)])
         # x1s = np.array([self.pulls[basis][m * self.nBins_fit  : (m + 1) * self.nBins_fit-1] for m in range(nMixes)])
         # y1s = np.array([self.pulls[basis][m * self.nBins_fit + 1: (m + 1) * self.nBins_fit  ] for m in range(nMixes)])
@@ -572,10 +571,11 @@ class multijetEnsemble:
         # y3s = np.array([self.pulls[basis][m * self.nBins_fit+3: (m + 1) * self.nBins_fit  ] for m in range(nMixes)])
         # xs, ys = np.concatenate((x1s,x2s,x3s), axis=1), np.concatenate((y1s,y2s,y3s), axis=1)
         x, y = xs.flatten(), ys.flatten()
-        r, p = pearsonr(x,y, n=len(x)-nMixes*(basis + 1))
+        r, p = pearsonr(x, y, n=len(x) - nMixes * (basis + 1))
+
         self.pearsonr[basis] = {'total': (r, p),
-                                #'mixes': [pearsonr(xs[m],ys[m], n=self.nBins_fit-1 - basis-1) for m in range(nMixes)]}
-                                'mixes': [pearsonr(xs[m],ys[m],n=len(xs[m])-basis-1) for m in range(nMixes)]}
+                                'mixes': [pearsonr(xs[m], ys[m], n=len(xs[m]) - basis - 1) for m in range(nMixes)]}
+
         print('-------------------------')
         print('>> r, prob = %0.2f, %0.2f' % self.pearsonr[basis]['total'])
         print('-------------------------')
@@ -587,18 +587,16 @@ class multijetEnsemble:
         self.f.cd(self.channel)
         self.multijet_TH1[basis].Write()
 
-
     def write_to_yml(self, basis):
         self.output_yml.write(str(basis) + ":\n")
 
-        write_pairs = [("chi2",self.chi2[basis]), ("ndf",self.ndf[basis]), ("pvalue",self.pvalue[basis]),
-                       ("pearson_r",self.pearsonr[basis]['total'][0]), ("pearson_pvalue",self.pearsonr[basis]['total'][0]),
+        write_pairs = [("chi2", self.chi2[basis]), ("ndf", self.ndf[basis]), ("pvalue", self.pvalue[basis]),
+                       ("pearson_r", self.pearsonr[basis]['total'][0]), ("pearson_pvalue", self.pearsonr[basis]['total'][0]),
                        ("variance", self.cUp[basis])]
 
         for wp in write_pairs:
-            self.output_yml.write(" "*4 + f"{wp[0]}:\n")
-            self.output_yml.write(" "*8 + f"{str(wp[1])}\n")
-
+            self.output_yml.write(" " * 4 + f"{wp[0]}:\n")
+            self.output_yml.write(" " * 8 + f"{str(wp[1])}\n")
 
     def plotBasis(self, name, basis, rebin=True):
         fig, (ax) = plt.subplots(nrows=1)
@@ -606,12 +604,12 @@ class multijetEnsemble:
             x = [self.average_rebin.GetBinCenter(_bin) for _bin in range(1, self.nBins_rebin + 1)]
         else:
             x = [self.average.GetBinCenter(_bin) for _bin in range(1, self.nBins + 1)]
-        xlim = [0,1]
-        ax.set_xlim(xlim[0],xlim[1])
-        ax.set_xticks(np.arange(0,1.1,0.1))
+        xlim = [0, 1]
+        ax.set_xlim(xlim[0], xlim[1])
+        ax.set_xticks(np.arange(0, 1.1, 0.1))
         ax.set_title('%s Multiplicitive Basis (%s)' % (name[0].upper() + name[1:], self.channel.upper()))
 
-        ax.plot(xlim, [0,0], color='k', alpha=0.5, linestyle='--', linewidth=0.5)
+        ax.plot(xlim, [0, 0], color='k', alpha=0.5, linestyle='--', linewidth=0.5)
         if rebin:
             for i, y in enumerate(self.basis_element[:basis + 1]):
                 ax.plot(x, y, label='b$_{%i}$' % i, linewidth=1)
@@ -635,18 +633,18 @@ class multijetEnsemble:
         else:
             figname = f'{args.outputPath}/{args.mix_name}/{classifier}/rebin{self.rebin}/{args.region}/{self.channel}/{name}_basis{rebin_name}{basis}.pdf'
 
-        #print('fig.savefig( '+figname+' )')
+        # print('fig.savefig( '+figname+' )')
         plt.tight_layout()
         fig.savefig( figname )
         plt.close(fig)
 
         fig, (ax) = plt.subplots(nrows=1)
-        ax.set_xlim(xlim[0],xlim[1])
-        ax.set_xticks(np.arange(0,1.1,0.1))
+        ax.set_xlim(xlim[0], xlim[1])
+        ax.set_xticks(np.arange(0, 1.1, 0.1))
 
         ax.set_title('%s Additive Basis (%s)' % (name[0].upper() + name[1:], self.channel.upper()))
 
-        ax.plot(xlim, [0,0], color='k', alpha=0.5, linestyle='--', linewidth=0.5)
+        ax.plot(xlim, [0, 0], color='k', alpha=0.5, linestyle='--', linewidth=0.5)
         if rebin:
             for i, y in enumerate(self.basis_element[:basis + 1]):
                 ax.plot(x, y * self.h, label='b$_{%i}$' % i, linewidth=1)
@@ -668,42 +666,41 @@ class multijetEnsemble:
             figname = f'{args.outputPath}/{args.mix_name}/{classifier}/variable_rebin/{args.region}/{self.channel}/{name}_additive_basis{rebin_name}{basis}.pdf'
         else:
             figname = f'{args.outputPath}/{args.mix_name}/{classifier}/rebin{self.rebin}/{args.region}/{self.channel}/{name}_additive_basis{rebin_name}{basis}.pdf'
-        #print('fig.savefig( '+figname+' )')
+        # print('fig.savefig( '+figname+' )')
         plt.tight_layout()
         fig.savefig( figname )
         plt.close(fig)
 
-
     def plotPearson(self):
         fig, (ax) = plt.subplots(nrows=1)
-        #ax.set_ylim(0.001,1)
-        #plt.yscale('log')
+        # ax.set_ylim(0.001,1)
+        # plt.yscale('log')
         x = np.array(sorted(self.pearsonr.keys())) + 1
-        ax.set_ylim(-1,1)
+        ax.set_ylim(-1, 1)
         ax.set_xticks(x)
-        xlim = [x[0]-0.5, x[-1] + 0.5]
-        ax.set_xlim(xlim[0],xlim[1])
-        ax.plot(xlim, [0,0], color='k', alpha=0.5, linestyle='--', linewidth=0.5)
+        xlim = [x[0] - 0.5, x[-1] + 0.5]
+        ax.set_xlim(xlim[0], xlim[1])
+        ax.plot(xlim, [0, 0], color='k', alpha=0.5, linestyle='--', linewidth=0.5)
 
-        r = np.array([self.pearsonr[o]['total'][0] for o in x-1])
-        p = np.array([self.pearsonr[o]['total'][1] for o in x-1])
+        r = np.array([self.pearsonr[o]['total'][0] for o in x - 1])
+        p = np.array([self.pearsonr[o]['total'][1] for o in x - 1])
         ax.set_title('Multijet Model Variance Fits (%s)' % self.channel.upper())
         ax.plot(x, r, label='Combined', color='k', linewidth=2)
         ax.plot(x, p, label='p-value',  color='r', linewidth=2)
 
         if self.basis is not None:
-            ax.plot([self.basis + 1, self.basis + 1], [-1,1], color='k', alpha=0.5, linestyle='--', linewidth=0.5)
+            ax.plot([self.basis + 1, self.basis + 1], [-1, 1], color='k', alpha=0.5, linestyle='--', linewidth=0.5)
             ax.scatter(self.basis + 1, p[x == (self.basis + 1)], color='k', marker='*', s=100, zorder=10)
 
         for m in range(nMixes):
-            r = [self.pearsonr[o]['mixes'][m][0] for o in x-1]
-            #p = [self.pearsonr[o]['mixes'][m][1] for o in x]
+            r = [self.pearsonr[o]['mixes'][m][0] for o in x - 1]
+            # p = [self.pearsonr[o]['mixes'][m][1] for o in x]
             label = 'v$_{%d}$' % m
-            ax.plot(x, r, color=COLORS[m], linewidth=1, alpha=0.5, label=label)#underscore tells pyplot to not show this in the legend
+            ax.plot(x, r, color=COLORS[m], linewidth=1, alpha=0.5, label=label)  # underscore tells pyplot to not show this in the legend
             # ax.plot(x, r, color=colors[m], linewidth=1, alpha=0.3, linestyle='dotted', label='_'+label)#underscore tells pyplot to not show this in the legend
             # ax.plot(x, p, color=colors[m], linewidth=1, alpha=0.3, label=label)
 
-        ax.plot(xlim, [probThreshold,probThreshold], color='r', alpha=0.5, linestyle='--', linewidth=0.5)
+        ax.plot(xlim, [probThreshold, probThreshold], color='r', alpha=0.5, linestyle='--', linewidth=0.5)
 
         ax.set_xlabel('Parameters')
         ax.set_ylabel('Adjacent Bin Pearson Correlation (r) and p-value')
@@ -713,21 +710,20 @@ class multijetEnsemble:
             name = f'{args.outputPath}/{args.mix_name}/{classifier}/variable_rebin/{args.region}/{self.channel}/0_variance_pearsonr_multijet_variance.pdf'
         else:
             name = f'{args.outputPath}/{args.mix_name}/{classifier}/rebin{self.rebin}/{args.region}/{self.channel}/0_variance_pearsonr_multijet_variance.pdf'
-        #print('fig.savefig( ' + name+' )')
+        # print('fig.savefig( ' + name+' )')
         plt.tight_layout()
         fig.savefig( name )
         plt.close(fig)
 
-
-    def plotFitResults(self, basis, projection=(0,1)):
+    def plotFitResults(self, basis, projection=(0, 1)):
         n = basis + 1
         if n > 1:
             dims = tuple(list(projection) + [d for d in range(n) if d not in projection])
         else:
-            dims = (0,1)
+            dims = (0, 1)
 
-        #plot fit parameters
-        x,y,s,c = [],[],[],[]
+        # plot fit parameters
+        x, y, s, c = [], [], [], []
         for m in range(nMixes):
             x.append( 100 * self.fit_parameters[basis][m][dims[0]] )
             if n == 1:
@@ -756,13 +752,13 @@ class multijetEnsemble:
             s = np.array(s)
             smin = s.min()
             smax = s.max()
-            srange = smax-smin
-            s = s-s.min() #shift so that min is at zero
-            s = s / s.max() #scale so that max is 1
-            s = (s + 5.0/25)*25 #shift and scale so that min is 5.0 and max is 25+5.0
+            srange = smax - smin
+            s = s - s.min()  # shift so that min is at zero
+            s = s / s.max()  # scale so that max is 1
+            s = (s + 5.0 / 25) * 25  # shift and scale so that min is 5.0 and max is 25+5.0
             kwargs['s'] = s
 
-        fig, (ax) = plt.subplots(nrows=1, figsize=(7,6)) if n > 2 else plt.subplots(nrows=1, figsize=(6,6))
+        fig, (ax) = plt.subplots(nrows=1, figsize=(7, 6)) if n > 2 else plt.subplots(nrows=1, figsize=(6, 6))
         ax.set_aspect(1)
         ax.set_title('Multijet Model Variance Fits (%s)' % self.channel.upper())
         ax.set_xlabel('c$_' + str(dims[0]) + '$ (\%)')
