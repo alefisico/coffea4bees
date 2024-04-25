@@ -38,6 +38,11 @@ In addition, dont forget to run your voms-proxy to have access to remote files:
 voms-proxy-init -rfc -voms cms --valid 168:00
 ```
 
+#### Conda environment
+
+In case you want to run the package using a conda environmnent, you can use the [environment.yml](environment.yml) file. Notice however that there are some libraries missing in case you want to run the full framework.
+
+
 ### How to run the src files
 
 To be used inside CMSSW. More info later.
