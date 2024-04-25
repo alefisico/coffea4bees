@@ -1399,11 +1399,25 @@ class analysis(processor.ProcessorABC):
                 }
             )
 
+            largest_name = np.array(["None", "ZZ", "ZH", "HH"])
             SvB["ps"] = SvB.pzz + SvB.pzh + SvB.phh
             SvB["passMinPs"] = (SvB.pzz > 0.01) | (SvB.pzh > 0.01) | (SvB.phh > 0.01)
-            SvB["ps_zz"] = (SvB.pzz > SvB.pzh) & (SvB.pzz > SvB.phh)
-            SvB["ps_zh"] = (SvB.pzh > SvB.pzz) & (SvB.pzh > SvB.phh)
-            SvB["ps_hh"] = (SvB.phh > SvB.pzz) & (SvB.phh > SvB.pzh)
+            SvB["zz"] = (SvB.pzz > SvB.pzh) & (SvB.pzz > SvB.phh)
+            SvB["zh"] = (SvB.pzh > SvB.pzz) & (SvB.pzh > SvB.phh)
+            SvB["hh"] = (SvB.phh > SvB.pzz) & (SvB.phh > SvB.pzh)
+            SvB["largest"] = largest_name[ SvB.passMinPs * ( 1 * SvB.zz + 2* SvB.zh + 3*SvB.hh ) ]
+
+            this_ps_zz = np.full(len(event), -1, dtype=float)
+            this_ps_zz[ SvB.zz ] = SvB.pzz[ SvB.zz ]
+            SvB['ps_zz'] = this_ps_zz
+
+            this_ps_zh = np.full(len(event), -1, dtype=float)
+            this_ps_zh[ SvB.zh ] = SvB.pzh[ SvB.zh ]
+            SvB['ps_zh'] = this_ps_zh
+
+            this_ps_hh = np.full(len(event), -1, dtype=float)
+            this_ps_hh[ SvB.hh ] = SvB.phh[ SvB.hh ]
+            SvB['ps_hh'] = this_ps_hh
 
             if classifier in event.fields:
                 error = ~np.isclose(event[classifier].ps, SvB.ps, atol=1e-5, rtol=1e-3)

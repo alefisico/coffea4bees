@@ -240,19 +240,19 @@ analysis-systematics-cutflow-job:
       - python/analysis/tests/test_systematics_dump_cutflow.yml
   allow_failure: true   ##### needs fix
 
-#analysis-cutflow-job-unsup:    
-#  stage: cutflow
-#  needs: 
-#    - analysis-test-job-unsup
-#  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
-#  tags:
-#    - k8s-cvmfs
-#  script:
-#    - source .ci-workflows/analysis-cutflow-job-unsup.sh
-#  artifacts:
-#    expire_in: 1 day
-#    paths:
-#      - python/analysis/tests/test_dump_cutflow_job-unsup.yml
+analysis-cutflow-job-unsup:    
+ stage: cutflow
+ needs: 
+   - analysis-test-job-unsup
+ image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+ tags:
+   - k8s-cvmfs
+ script:
+   - source .ci-workflows/analysis-cutflow-job-unsup.sh
+ artifacts:
+   expire_in: 1 day
+   paths:
+     - python/analysis/tests/test_dump_cutflow_job_unsup.yml
 
 analysis-cutflow-job:    
   stage: cutflow
@@ -291,15 +291,6 @@ analysis-helpers-job:
   script:
     - source .ci-workflows/analysis-helpers-job.sh
 
-# skimmer-analysis-cutflow-job:    
-#   stage: cutflow
-#   needs: 
-#     - skimmer-analysis-test-job
-#   image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
-#   tags:
-#     - k8s-cvmfs
-#   script:
-#     - source .ci-workflows/skimmer-analysis-cutflow-job.sh
 
 analysis-iplot-job:    
   stage: plot 
@@ -351,6 +342,18 @@ ymltoroot-test-job:
     paths:
       - python/stats_analysis/datacards/test_plot_SvB_MA_hh.png
       - python/stats_analysis/datacards/test_plot_SvB_hh.png
+
+
+twoStageClosure-test-job:   
+  stage: fits
+#  needs: 
+#    - histtoyml-test-job
+  image: gitlab-registry.cern.ch/cms-cloud/cmssw-docker/cc7-cms 
+  tags:
+    - k8s-cvmfs
+  script:
+    - source /cvmfs/sft.cern.ch/lcg/views/LCG_104/x86_64-centos7-gcc12-opt/setup.sh
+    - source .ci-workflows/analysis-runTwoStageClosure-ROOT.sh
 
 reana-job:
   stage: reana

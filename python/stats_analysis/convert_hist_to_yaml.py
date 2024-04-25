@@ -16,6 +16,11 @@ def hist_to_yml( coffea_hist ):
         'variances' : coffea_hist.variances().tolist(),
     }
 
+
+#    ### in case of negative values
+#    yhist['values'] = np.where( yhist['values']<0, 0, yhist['values'] ).tolist()
+#    yhist['variances'] = np.where( yhist['variances']<0, 0, yhist['variances'] ).tolist()
+
     return yhist
 
 
@@ -27,8 +32,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser( description='Convert yml hist to root TH1F',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--histos', dest="histos", nargs="+",
-                        default=['SvB.ps_zz', 'SvB.ps_zh', 'SvB.ps_hh', 'SvB_MA.ps_zz', 'SvB_MA.ps_zh',
-                                 'SvB_MA.ps_hh' ], help='List of histograms to convert')
+                        default=['SvB.ps_zz', 'SvB.ps_zh', 'SvB.ps_hh', 
+                                 'SvB.ps_zz_fine', 'SvB.ps_zh_fine', 'SvB.ps_hh_fine', 
+                                 'SvB_MA.ps_zz', 'SvB_MA.ps_zh', 'SvB_MA.ps_hh',
+                                 'SvB_MA.ps_zz_fine', 'SvB_MA.ps_zh_fine', 'SvB_MA.ps_hh_fine' ], 
+                        help='List of histograms to convert')
+                             
+                                 
     parser.add_argument('-o', '--output', dest="output",
                         default="./histos/histAll.yml", help='Output file and directory.')
     parser.add_argument('-i', '--input_file', dest='input_file',
@@ -55,7 +65,14 @@ if __name__ == '__main__':
 
     coffea_hists = load(args.input_file)["hists"]
 
+    
+    save_dict = {}
+
+    for sub_sample in range(15):
+        save_dict[f"mix_v{sub_sample}"] = [('fourTag','SR')]
+
     yml_dict = {}
+
     if not args.systematics_file:
         for ih in args.histos:
             yml_dict[ih] = {}
