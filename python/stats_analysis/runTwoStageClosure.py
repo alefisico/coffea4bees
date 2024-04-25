@@ -13,7 +13,7 @@ from matplotlib.patches import Ellipse
 sys.path.insert(0, os.getcwd())
 import base_class.plots.ROOTPlotTools as ROOTPlotTools
 
-plt.rc('text', usetex=True)
+#plt.rc('text', usetex=True)
 plt.rc('font', family='serif')
 CMURED = '#d34031'
 # https://xkcd.com/color/rgb/
@@ -333,9 +333,10 @@ class multijetEnsemble:
         self.basis_signal  = S
         self.basis_element_no_rebin = B_no_rebin
 
-        for basis in self.bases[1:]:
-            self.plotBasis('initial', basis)
-            self.plotBasis('initial', basis, rebin=False)
+        if args.do_plots:
+            for basis in self.bases[1:]:
+                self.plotBasis('initial', basis)
+                self.plotBasis('initial', basis, rebin=False)
 
         # Subtract off cross correlation from higher order basis elements
         for i in range(1, len(B)):
@@ -350,9 +351,10 @@ class multijetEnsemble:
             c = (B[i] * h**1.0 * B[i]).sum()
             S[i:] = S[i:] - (B[i] * h**1.0 * S[i:]).sum(axis=1, keepdims=True) * B[i] / c  # make each s_i orthogonal to the b_j where j<=i
 
-        for basis in self.bases[1:]:
-            self.plotBasis('diagonalized', basis)
-            self.plotBasis('diagonalized', basis, rebin=False)
+        if args.do_plots:
+            for basis in self.bases[1:]:
+                self.plotBasis('diagonalized', basis)
+                self.plotBasis('diagonalized', basis, rebin=False)
 
         # scale dynamic range of each element to 1
         for i in range(1, len(B)):
@@ -364,9 +366,10 @@ class multijetEnsemble:
         for i in range(len(S)):
             S[i] = S[i] / S[i, -1] * self.signal.GetBinContent(self.nBins_rebin) / h[-1]
 
-        for basis in self.bases[1:]:
-            self.plotBasis('normalized', basis)
-            self.plotBasis('normalized', basis, rebin=False)
+        if args.do_plots:
+            for basis in self.bases[1:]:
+                self.plotBasis('normalized', basis)
+                self.plotBasis('normalized', basis, rebin=False)
 
         self.fit_result = {}
         self.eigenVars = {}
@@ -387,10 +390,12 @@ class multijetEnsemble:
             self.makeFitFunction(basis)
             self.fit(basis)
             self.write_to_yml(basis)
-            self.plotFitResults(basis)
-            for i in range(1, basis):
-                self.plotFitResults(basis, projection=(i, i + 1))
-            self.plotPulls(basis)
+
+            if args.do_plots:
+                self.plotFitResults(basis)
+                for i in range(1, basis):
+                    self.plotFitResults(basis, projection=(i, i + 1))
+                self.plotPulls(basis)
 
             # if abs(self.pearsonr[basis]['total'][0]) < min_r:
             if self.basis is None and abs(self.pearsonr[basis]['total'][1]) > probThreshold:
@@ -412,7 +417,8 @@ class multijetEnsemble:
             self.exit_message.append('>> p-value, r-value = %2.0f%%, %0.2f ' % (100 * self.pearsonr[self.basis]['total'][1], self.pearsonr[self.basis]['total'][0]))
             self.exit_message.append('-' * 50)
 
-        self.plotPearson()
+        if args.do_plots:
+            self.plotPearson()
 
     def print_exit_message(self):
         self.output_yml.close()
@@ -1938,6 +1944,7 @@ if __name__ == "__main__":
     parser.add_argument('--outputPath', default="stats_analysis/closureFitsNew")
     parser.add_argument('--reuse_inputs', action="store_true")
     parser.add_argument('--skip_closure', dest="run_closure", action="store_false")
+    parser.add_argument('--skip_plots',   dest="do_plots",    action="store_false")
 
     args = parser.parse_args()
 
