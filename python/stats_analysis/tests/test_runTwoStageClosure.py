@@ -19,7 +19,8 @@ class TestRunTwoStageClosure(unittest.TestCase):
         # This is the output from runTwoStageClosure
         #    time python3 runTwoStageClosure.py
         #
-        inputFileName = wrapper.args["inputFile"]
+        self.output_path = wrapper.args["output_path"] 
+        inputFileName = self.output_path+"/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin20.root"
         self.inputROOTFile = ROOT.TFile(inputFileName, "READ")
 
         #  Make these numbers with:
@@ -28,6 +29,8 @@ class TestRunTwoStageClosure(unittest.TestCase):
         knownCountFile = wrapper.args["knownCounts"] 
         self.knownCounts = yaml.safe_load(open(knownCountFile, 'r'))
         print(self.knownCounts.keys())
+
+
 
 
     def test_input_counts(self):
@@ -73,13 +76,13 @@ class TestRunTwoStageClosure(unittest.TestCase):
     def test_yaml_content(self):
         
         for test_pair in [
-                ('stats_analysis/tests/0_variance_results.yml', 'stats_analysis/closureFitsNew/3bDvTMix4bDvT/SvB_MA/rebin20/SR/hh/0_variance_results.yml'),
-                ('stats_analysis/tests/1_bias_results.yml',     'stats_analysis/closureFitsNew/3bDvTMix4bDvT/SvB_MA/rebin20/SR/hh/1_bias_results.yml')
+                ('stats_analysis/tests/known_0_variance_results_SvB_MA_ps_hh_rebin20.yml', f'{self.output_path}/3bDvTMix4bDvT/SvB_MA/rebin20/SR/hh/0_variance_results.yml'),
+                ('stats_analysis/tests/known_1_bias_results_SvB_MA_ps_hh_rebin20.yml',     f'{self.output_path}/3bDvTMix4bDvT/SvB_MA/rebin20/SR/hh/1_bias_results.yml')
         ]:
             
-            test_file      = test_pair[0]
-            reference_file = test_pair[1]
-            print("\ntesting",test_file)
+            reference_file = test_pair[0]
+            test_file      = test_pair[1]
+            print("\ntesting",test_file, "vs", reference_file)
             
             # Load the content of the test YAML file
             with open(test_file, 'r') as file:
@@ -97,9 +100,6 @@ class TestRunTwoStageClosure(unittest.TestCase):
 
                 else:
                     self.check_dict_for_differences(test_data, reference_data, k)
-
-
-
 
 
 if __name__ == '__main__':
