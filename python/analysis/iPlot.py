@@ -90,7 +90,6 @@ def plot(var='selJets.pt', *, cut="passPreSel", region="SR", **kwargs):
     r"""
     Plot
 
-
     Takes Options:
 
        debug    : False,
@@ -102,20 +101,21 @@ def plot(var='selJets.pt', *, cut="passPreSel", region="SR", **kwargs):
         'doRatio'  : bool (False)
         'rebin'    : int (1),
     """
-
+    
     if kwargs.get("debug", False):
         print(f'kwargs = {kwargs}')
-
+    
     if type(var) is not list and var.find("*") != -1:
         ls(match=var.replace("*", ""))
         return
-
+    
     if len(cfg.hists) > 1:
         fig, ax = makePlot(cfg, var=var, cut=cut, region=region,
                            outputFolder=cfg.outputFolder, fileLabels=cfg.fileLabels, **kwargs)
     else:
         fig, ax = makePlot(cfg, var=var, cut=cut, region=region,
                            outputFolder=cfg.outputFolder, **kwargs)
+    
 
     fileName = "test.pdf"
     fig.savefig(fileName)
@@ -170,13 +170,11 @@ def plot2d(var='quadJet_selected.lead_vs_subl_m', process="HH4b",
 
 
 if __name__ == '__main__':
-
     args = parse_args()
-
     cfg.plotConfig = load_config(args.metadata)
     cfg.outputFolder = args.outputFolder
     cfg.combine_input_files = args.combine_input_files
-    
+
     if cfg.outputFolder:
         if not os.path.exists(cfg.outputFolder):
             os.makedirs(cfg.outputFolder)
@@ -184,6 +182,5 @@ if __name__ == '__main__':
     cfg.hists = load_hists(args.inputFile)
     cfg.fileLabels = args.fileLabels
     cfg.axisLabels, cfg.cutList = read_axes_and_cuts(cfg.hists, cfg.plotConfig)
-
     print_cfg(cfg)
 

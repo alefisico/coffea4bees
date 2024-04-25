@@ -81,6 +81,21 @@ analysis-test-job:
     paths:
       - python/analysis/hists/test.coffea
 
+
+analysis-test-job-unsup:   
+  stage: analysis-test   
+  needs:
+    - voms_proxy
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  tags:
+    - k8s-cvmfs
+  script:
+    - source .ci-workflows/analysis-test-job-unsup.sh
+  artifacts: 
+    expire_in: 1 day
+    paths:
+      - python/analysis/hists/test_unsup.coffea
+
 analysis-test-mixed-job:   
   stage: analysis-test   
   needs:
@@ -109,6 +124,7 @@ analysis-systematics-test-job:
     expire_in: 1 day
     paths:
       - python/analysis/hists/test_systematics.coffea
+
 
 skimmer-test-job:   
   stage: skimmer-test   
@@ -140,6 +156,7 @@ skimmer-analysis-test-job:
     paths:
       - python/analysis/hists/test_skimmer.coffea
 
+
 ## needs to move unsup weight files to work
 #analysis-test-unsup-job:   
 #  stage: analysis-test   
@@ -165,6 +182,20 @@ analysis-plot-job:
     - k8s-cvmfs
   script:
     - source .ci-workflows/analysis-plot-job.sh
+  artifacts:
+    expire_in: 1 day
+    paths:
+      - python/analysis/testCoffeaPlots/RunII/
+
+analysis-plot-job-unsup:    
+  stage: plot 
+  needs: 
+    - analysis-test-job-unsup
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  tags:
+    - k8s-cvmfs
+  script:
+    - source .ci-workflows/analysis-plot-job-unsup.sh
   artifacts:
     expire_in: 1 day
     paths:
@@ -280,7 +311,6 @@ analysis-helpers-job:
     - source .ci-workflows/analysis-helpers-job.sh
 
 
-
 analysis-iplot-job:    
   stage: plot 
   needs: 
@@ -290,7 +320,6 @@ analysis-iplot-job:
     - k8s-cvmfs
   script:
     - source .ci-workflows/analysis-iplot-job.sh
-
 
 baseclass-test-job:   
   stage: plot
@@ -344,7 +373,6 @@ twoStageClosure-test-job:
   script:
     - source /cvmfs/sft.cern.ch/lcg/views/LCG_104/x86_64-centos7-gcc12-opt/setup.sh
     - source .ci-workflows/analysis-runTwoStageClosure-ROOT.sh
-
 
 reana-job:
   stage: reana
