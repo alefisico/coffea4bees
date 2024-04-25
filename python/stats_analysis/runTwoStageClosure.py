@@ -398,32 +398,33 @@ class multijetEnsemble:
                 min_r = abs(self.pearsonr[basis]['total'][0])
                 self.basis = basis # store first basis to satisfy min threshold. Will be used in closure fits
                 self.exit_message = []
-                self.exit_message.append('-'*50)
+                self.exit_message.append('-' * 50)
                 self.exit_message.append('%s channel' % self.channel.upper())
                 self.exit_message.append('Satisfied adjacent bin de-correlation p-value for multijet ensemble variance at basis %d:' % self.basis)
                 self.exit_message.append('>> p-value, r-value = %2.0f%%, %0.2f ' % (100 * self.pearsonr[self.basis]['total'][1], self.pearsonr[self.basis]['total'][0]))
-                self.exit_message.append('-'*50)
+                self.exit_message.append('-' * 50)
 
         if self.basis is None:
             self.basis = self.bases[ np.argmin([abs(self.pearsonr[basis]['total'][0]) for basis in self.bases]) ]
             self.exit_message = []
-            self.exit_message.append('-'*50)
+            self.exit_message.append('-' * 50)
             self.exit_message.append('%s channel' % self.channel.upper())
             self.exit_message.append('Minimized adjacent bin correlation abs(r) for multijet ensemble variance at basis %d:' % self.basis)
             self.exit_message.append('>> p-value, r-value = %2.0f%%, %0.2f ' % (100 * self.pearsonr[self.basis]['total'][1], self.pearsonr[self.basis]['total'][0]))
-            self.exit_message.append('-'*50)
+            self.exit_message.append('-' * 50)
 
         self.plotPearson()
 
     def print_exit_message(self):
         self.output_yml.close()
-        for line in self.exit_message: print(line)
+        for line in self.exit_message: 
+            print(line)
 
     def makeFitFunction(self, basis):
 
         def background_UserFunction(xArray, pars):
             ensemble_bin = int(xArray[0])
-            m = (ensemble_bin - 1)//self.nBins_rebin
+            m = (ensemble_bin - 1) // self.nBins_rebin
             local_bin = 1 + ((ensemble_bin - 1) % self.nBins_rebin)
             model = self.models[m]
 
@@ -431,7 +432,7 @@ class multijetEnsemble:
 
             p = 1.0
             for BE_idx in range(basis + 1):
-                par_idx = m*(basis + 1)+BE_idx
+                par_idx = m * (basis + 1) + BE_idx
                 p += pars[par_idx] * self.basis_element[BE_idx][local_bin - 1]
 
             return p * self.multijet_ensemble.GetBinContent(ensemble_bin)
