@@ -1250,8 +1250,8 @@ class closure:
             self.eigenVars[basis] = np.array([self.closure_TF1[basis].GetParError(0)])
             return
 
-        cov = ROOT.TMatrixD(n,n)
-        cor = ROOT.TMatrixD(n,n)
+        cov = ROOT.TMatrixD(n, n)
+        cor = ROOT.TMatrixD(n, n)
         fit_result = self.fit_result[basis] if not doSpuriousSignal else self.fit_result_ss[basis]
         for i in range(n):
             for j in range(n):
@@ -1269,7 +1269,8 @@ class closure:
 
         # define relative sign of eigen-basis such that the first coordinate is always positive
         for j in range(n):
-            if eigenVec[0][j] >= 0: continue
+            if eigenVec[0][j] >= 0: 
+                continue
             for i in range(n):
                 eigenVec[i][j] *= -1
 
@@ -1279,10 +1280,10 @@ class closure:
             print('Eigenvalues')
             eigenVal.Print()
 
-        eigenVars = np.zeros((n,n), dtype=float)
+        eigenVars = np.zeros((n, n), dtype=float)
         for i in range(n):
             for j in range(n):
-                eigenVars[i,j] = eigenVec[i][j] * eigenVal[j]**0.5
+                eigenVars[i, j] = eigenVec[i][j] * eigenVal[j]**0.5
         if not doSpuriousSignal:
             self.eigenVars[basis] = eigenVars
         else:
@@ -1291,17 +1292,16 @@ class closure:
         if debug:
             print('Eigenvariations')
             for j in range(n):
-                print(j, self.eigenVars[basis][:,j])
-
+                print(j, self.eigenVars[basis][:, j])
 
     def getParameterDistribution(self, basis):
 
         n = max(self.multijet.basis, basis) + 1
         self.cUp[basis], self.cDown[basis] = {}, {}
         for i in range(n):
-            if i <= self.multijet.basis: # use variance and bias
+            if i <= self.multijet.basis:  # use variance and bias
                 cUp = (self.multijet.cUp[self.multijet.basis][i]**2 + self.fit_parameters[basis][i]**2 + self.fit_parameters_error[basis][i]**2)**0.5
-            else: # only have bias
+            else:  # only have bias
                 cUp = (self.fit_parameters[basis][i]**2 + self.fit_parameters_error[basis][i]**2)**0.5
             cDown = -cUp
             self.cUp  [basis][i] = cUp
