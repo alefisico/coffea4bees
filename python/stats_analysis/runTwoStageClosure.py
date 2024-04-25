@@ -1933,7 +1933,6 @@ if __name__ == "__main__":
     parser.add_argument('--var', default="SvB_MA_ps_hh", help="SvB_MA_ps_XX or SvB_MA_ps_XX_fine")
     parser.add_argument('--rebin', default=1)
     parser.add_argument('--outputPath', default="stats_analysis/closureFitsNew")
-    parser.add_argument('--reuse_inputs', action="store_true")
     # parser.add_argument('--output_file_name' closure_file_out  = "stats_analysis/hists_closure_3bDvTMix4bDvT_New.root"
 
 #
@@ -1978,13 +1977,6 @@ if __name__ == "__main__":
     print(f"\nRunning with channel {channel} and rebin {rebin}")
     print(f"   creating:\n\t{closure_file_out}\n\t{closure_file_out_pkl}")
 
-    doPrepInputs = True
-    if args.reuse_inputs:
-        if os.path.exists(closure_file_out):
-            doPrepInputs = False
-            print("   reusing inputs from {closure_file_out}")
-        else:
-            print("WARNING: cannot reuse inputs because {closure_file_out} does not exist")
 
     lumi = args.lumi
 
@@ -2041,7 +2033,6 @@ if __name__ == "__main__":
 
     mixes = [f'{args.mix_name}_v{i}' for i in range(nMixes)]
 
-    if doPrepInputs:
-        prepInput()
+    prepInput()
 
     run()
