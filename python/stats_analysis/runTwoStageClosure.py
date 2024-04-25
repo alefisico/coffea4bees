@@ -1165,7 +1165,10 @@ class closure:
 
         for wp in write_pairs:
             self.output_yml.write(" " * 4 + f"{wp[0]}:\n")
-            self.output_yml.write(" " * 8 + f"{str(wp[1])}\n")
+            if type(wp[1]) is dict:
+                self.output_yml.write(" " * 8 + f"{list(wp[1].values())}\n")
+            else:
+                self.output_yml.write(" " * 8 + f"{str(wp[1])}\n")
 
     def makeFitFunction(self, basis):
 
@@ -1933,6 +1936,8 @@ if __name__ == "__main__":
     parser.add_argument('--var', default="SvB_MA_ps_hh", help="SvB_MA_ps_XX or SvB_MA_ps_XX_fine")
     parser.add_argument('--rebin', default=1)
     parser.add_argument('--outputPath', default="stats_analysis/closureFitsNew")
+    parser.add_argument('--reuse_inputs', action="store_true")
+    parser.add_argument('--skip_closure', dest="run_closure", action="store_false")
 
     args = parser.parse_args()
 
@@ -1966,7 +1971,19 @@ if __name__ == "__main__":
     closure_file_out_pkl = closure_file_out.replace("root", "pkl")
 
     print(f"\nRunning with channel {channel} and rebin {rebin}")
-    print(f"   creating:\n\t{closure_file_out}\n\t{closure_file_out_pkl}")
+    print(f"   creating:\n")
+    print(f"\t{closure_file_out}")
+    if args.run_closure:
+        print(f"\t{closure_file_out_pkl}")
+
+    doPrepInputs = True
+    if args.reuse_inputs:
+        if os.path.exists(closure_file_out):
+            doPrepInputs = False
+            print(f"   reusing inputs from {closure_file_out}")
+        else:
+            print(f"WARNING: cannot reuse inputs because {closure_file_out} does not exist")
+
 
 
     lumi = args.lumi
@@ -2024,6 +2041,12 @@ if __name__ == "__main__":
 
     mixes = [f'{args.mix_name}_v{i}' for i in range(nMixes)]
 
-    prepInput()
+    if doPrepInputs:
+        print("\nPreparing the input \n")
+        prepInput()
 
-    run()
+    if args.run_closure:
+        print("\nRunning the closure \n")
+        run()
+    else:
+        print("\nSkipping the closure \n")

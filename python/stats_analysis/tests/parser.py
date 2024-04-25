@@ -14,6 +14,7 @@ class UnitTestParser(object):
         parser = argparse.ArgumentParser()
         parser.add_argument('-i','--inputFile',     help='file to be tested')
         parser.add_argument('-c','--knownCounts',   help='yaml file with known counts')
+        parser.add_argument(     '--output_path',   help='')
         ns, args = parser.parse_known_args()
         self.args = vars(ns)
 
