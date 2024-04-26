@@ -12,7 +12,7 @@ from functools import wraps
 from multiprocessing.connection import Client, Connection, Listener
 from queue import PriorityQueue
 from threading import Lock, Thread
-from typing import Any, Callable, Concatenate, ParamSpec, TypeVar, overload
+from typing import Any, Callable, Concatenate, NamedTuple, ParamSpec, TypeVar, overload
 from uuid import uuid4
 
 import fsspec
@@ -31,6 +31,11 @@ __all__ = [
     "callback",
     "connect_to_monitor",
 ]
+
+
+class Node(NamedTuple):
+    ip: str
+    pid: int
 
 
 def _close_connection(connection: Connection):
@@ -413,7 +418,8 @@ class Proxy(_Singleton, metaclass=_ProxyMeta):
 
 
 class Recorder(Proxy):
-    _name = f"{_get_host()}/pid-{os.getpid()}/{mp.current_process().name}"
+    _node = (_get_host(), os.getpid())
+    _name = f"{_node[0]}/pid-{_node[1]}/{mp.current_process().name}"
 
     _reporters: dict[str, str]
     _data: list[tuple[str, Callable[[], bytes]]]
@@ -432,6 +438,10 @@ class Recorder(Proxy):
     @classmethod
     def name(cls):
         return cls._name
+
+    @classmethod
+    def node(cls) -> Node:
+        return cls._node
 
     @classmethod
     def registered(cls, name: str):
