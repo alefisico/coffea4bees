@@ -38,6 +38,7 @@ cd python/
 echo "Running {wildcards.sample} {wildcards.iy} - output ../{output}"
 mprof run -C -o mprofile_databkgs_{wildcards.sample}_{wildcards.iy}.dat python runner.py -d {wildcards.sample} -p analysis/processors/processor_HH4b.py -y {wildcards.iy} -o ../{output} -op ../output/ -m metadata/datasets_HH4b_cernbox.yml --githash {params.hash} --gitdiff {params.diff}  #--dask
 mprof plot -o ../output/mprofile_databkgs_{wildcards.sample}_{wildcards.iy}.png mprofile_databkgs_{wildcards.sample}_{wildcards.iy}.dat
+cp ../gitdiff.txt ../output/   ### only one time
 #cp /tmp/coffea4bees-dask-report-* ../output/coffea4bees-dask-report_{wildcards.sample}_{wildcards.iy}.html
         """
 

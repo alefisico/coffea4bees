@@ -11,6 +11,7 @@ inputs:
   parameters:
     input: .reana_workflows/inputs.yaml
   files:
+    - gitdiff.txt
     - python/runner.py
     - .reana_workflows/Snakefile
     - .reana_workflows/input.yaml
