@@ -133,9 +133,11 @@ class analysis(processor.ProcessorABC):
         year    = event.metadata['year']
         processName = event.metadata['processName']
         isMC    = True if event.run[0] == 1 else False
+
         lumi    = event.metadata.get('lumi',    1.0)
         xs      = event.metadata.get('xs',      1.0)
         kFactor = event.metadata.get('kFactor', 1.0)
+
         isMixedData    = not (dataset.find("mix_v") == -1)
         isDataForMixed = not (dataset.find("data_3b_for_mixed") == -1)
         isTTForMixed   = not (dataset.find("TTTo") == -1) and not ( dataset.find("_for_mixed") == -1 )
@@ -174,9 +176,7 @@ class analysis(processor.ProcessorABC):
                 event["FvT"] = getattr( NanoEventsFactory.from_root( f'{event.metadata["FvT_files"][0]}', entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema, ).events(), 
                                         event.metadata["FvT_names"][0], )
 
-                event["FvT", "FvT"] = getattr(
-                    event["FvT"], event.metadata["FvT_names"][0]
-                )
+                event["FvT", "FvT"] = getattr( event["FvT"], event.metadata["FvT_names"][0] )
 
                 #
                 # Dummies
@@ -249,7 +249,6 @@ class analysis(processor.ProcessorABC):
                     trigWeight_file = uproot.open(f'{fname.replace("picoAOD", "trigWeights")}')['Events']
                     trigWeight = trigWeight_file.arrays(['event', 'trigWeight_Data', 'trigWeight_MC'], entry_start=estart,entry_stop=estop)
                                                         
-
                     if not ak.all(trigWeight.event == event.event):
                         raise ValueError('trigWeight events do not match events ttree')
 
@@ -360,24 +359,19 @@ class analysis(processor.ProcessorABC):
             
             logging.info(f"\nJet variations {[name for _, name in shifts]}")
 
-        return processor.accumulate(
-            self.process_shift(update_events(event, collections), name, weights)
-            for collections, name in shifts
-        )
+        return processor.accumulate( self.process_shift(update_events(event, collections), name, weights) for collections, name in shifts )
 
     def process_shift(self, event, shift_name, weights):
         """For different jet variations. It computes event variations for the nominal case."""
 
-        dataset = event.metadata['dataset']
-        year    = event.metadata['year']
+        dataset     = event.metadata['dataset']
+        year        = event.metadata['year']
         processName = event.metadata['processName']
-        isMC    = True if event.run[0] == 1 else False
+        isMC        = True if event.run[0] == 1 else False
 
         isMixedData = not (dataset.find("mix_v") == -1)
         isDataForMixed = not (dataset.find("data_3b_for_mixed") == -1)
-        isTTForMixed = not (dataset.find("TTTo") == -1) and not (
-            dataset.find("_for_mixed") == -1
-        )
+        isTTForMixed = not (dataset.find("TTTo") == -1) and not ( dataset.find("_for_mixed") == -1 )
         nEvent = len(event)
 
         # Apply object selection (function does not remove events, adds content to objects)
@@ -833,30 +827,8 @@ class analysis(processor.ProcessorABC):
 
                 fill += SvBHists(("SvB", "SvB Classifier"), "SvB")
                 fill += SvBHists(("SvB_MA", "SvB MA Classifier"), "SvB_MA")
-                fill += hist.add(
-                    "quadJet_selected_SvB_q_score",
-                    (
-                        100,
-                        0,
-                        1,
-                        (
-                            "quadJet_selected.SvB_q_score",
-                            "Selected Quad Jet Diboson SvB q score",
-                        ),
-                    ),
-                )
-                fill += hist.add(
-                    "quadJet_min_SvB_MA_q_score",
-                    (
-                        100,
-                        0,
-                        1,
-                        (
-                            "quadJet_min_dr.SvB_MA_q_score",
-                            "Min dR Quad Jet Diboson SvB MA q score",
-                        ),
-                    ),
-                )
+                fill += hist.add( "quadJet_selected_SvB_q_score", ( 100, 0, 1, ( "quadJet_selected.SvB_q_score", "Selected Quad Jet Diboson SvB q score", ), ), )
+                fill += hist.add( "quadJet_min_SvB_MA_q_score", ( 100, 0, 1, ( "quadJet_min_dr.SvB_MA_q_score", "Min dR Quad Jet Diboson SvB MA q score", ), ), )
                 if isDataForMixed:
                     for _FvT_name in event.metadata["FvT_names"]:
                         fill += SvBHists( (f"SvB_{_FvT_name}",    "SvB Classifier"), "SvB", weight=f"weight_{_FvT_name}", )
@@ -954,10 +926,10 @@ class analysis(processor.ProcessorABC):
         j[:, 3, :] = torch.tensor(event.canJet.mass)
 
         o = torch.zeros(n, 5, 8)
-        o[:, 0, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(event.notCanJet_coffea.pt, target=8, clip=True) ), 0, ) )
-        o[:, 1, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(event.notCanJet_coffea.eta, target=8, clip=True) ), 0, ) )
-        o[:, 2, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(event.notCanJet_coffea.phi,      target=8, clip=True) ), 0, ) )
-        o[:, 3, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(event.notCanJet_coffea.mass,     target=8, clip=True) ), 0, ) )
+        o[:, 0, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(event.notCanJet_coffea.pt,       target=8, clip=True) ),  0, ) )
+        o[:, 1, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(event.notCanJet_coffea.eta,      target=8, clip=True) ),  0, ) )
+        o[:, 2, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(event.notCanJet_coffea.phi,      target=8, clip=True) ),  0, ) )
+        o[:, 3, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(event.notCanJet_coffea.mass,     target=8, clip=True) ),  0, ) )
         o[:, 4, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(event.notCanJet_coffea.isSelJet, target=8, clip=True) ), -1, ) )
 
         a = torch.zeros(n, 4)
@@ -969,8 +941,10 @@ class analysis(processor.ProcessorABC):
         e = torch.tensor(event.event) % 3
 
         for classifier in ["SvB", "SvB_MA"]:
+
             if classifier == "SvB":
                 c_logits, q_logits = self.classifier_SvB(j, o, a, e)
+
             if classifier == "SvB_MA":
                 c_logits, q_logits = self.classifier_SvB_MA(j, o, a, e)
 
