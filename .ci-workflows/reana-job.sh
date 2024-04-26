@@ -6,7 +6,7 @@ else
     export REANA_SERVER_URL=https://reana.cern.ch
     export REANA_ACCESS_TOKEN="${REANA_TOKEN}"
     export workflow_name="coffea4bees"
-    reana-client ping
+    #reana-client ping
     echo """
     ##########################################################
     #### THIS JOB WILL FAILED IF YOU DONT HAVE A REANA ACCOUNT
