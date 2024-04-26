@@ -60,13 +60,16 @@ class Usage(Proxy):
             cls._records_local = []
 
     @classmethod
-    def checkpoint(cls, *tags):
+    def checkpoint(cls, *tags: str):
         if cfg.usage_enable and cls._running:
-            checkpoint = {"time": time.time_ns(), "name": tags}
+            start_t = time.time_ns()
             end = len(cls._records_local)
             records = cls._records_local[cls._head : end]
             cls._head = end
-            cls._checkpoint(Recorder.node(), checkpoint, records)
+            end_t = time.time_ns()
+            cls._checkpoint(
+                Recorder.node(), {"time": (start_t + end_t) // 2, "name": tags}, records
+            )
 
     @callback
     def _checkpoint(self, node: Node, checkpoint: Checkpoint, records: list[Resource]):
@@ -76,7 +79,7 @@ class Usage(Proxy):
     @classmethod
     def _track(cls):
         while cls._running:
-            now = time.time_ns()
+            start_t = time.time_ns()
             p = psutil.Process()
             # CPU, memory
             cpu = {p.pid: p.cpu_percent(cfg.usage_update_interval)}
@@ -99,10 +102,13 @@ class Usage(Proxy):
                         gpu = cls._gpu_torch(p.pid)
             else:
                 gpu = {}
+            end_t = time.time_ns()
             cls._records_local.append(
-                {"time": now, "cpu": cpu, "memory": mem, "gpu": gpu}
+                {"time": (start_t + end_t) // 2, "cpu": cpu, "memory": mem, "gpu": gpu}
             )
-            time.sleep(cfg.usage_update_interval)
+            remain_t = cfg.usage_update_interval - (end_t - start_t) / 1e9
+            if remain_t > 0:
+                time.sleep(remain_t)
 
     @classmethod
     def _gpu_nvml(cls, *pids: int) -> dict[int, float]:
