@@ -439,7 +439,7 @@ if __name__ == '__main__':
                         'date': datetime.today().strftime('%Y-%m-%d %H:%M:%S'),
                         'hash': args.githash if args.githash else get_git_revision_hash(),
                         'args': str(args),
-                        'diff': args.gitdiff if args.fitdiff else str(get_git_diff()),
+                        'diff': args.gitdiff if args.gitdiff else str(get_git_diff()),
                     }
 
             args.output_file = 'picoaod_datasets.yml' if args.output_file.endswith(
