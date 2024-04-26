@@ -133,9 +133,11 @@ class analysis(processor.ProcessorABC):
         year    = event.metadata['year']
         processName = event.metadata['processName']
         isMC    = True if event.run[0] == 1 else False
+
         lumi    = event.metadata.get('lumi',    1.0)
         xs      = event.metadata.get('xs',      1.0)
         kFactor = event.metadata.get('kFactor', 1.0)
+
         isMixedData    = not (dataset.find("mix_v") == -1)
         isDataForMixed = not (dataset.find("data_3b_for_mixed") == -1)
         isTTForMixed   = not (dataset.find("TTTo") == -1) and not ( dataset.find("_for_mixed") == -1 )
@@ -174,9 +176,7 @@ class analysis(processor.ProcessorABC):
                 event["FvT"] = getattr( NanoEventsFactory.from_root( f'{event.metadata["FvT_files"][0]}', entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema, ).events(), 
                                         event.metadata["FvT_names"][0], )
 
-                event["FvT", "FvT"] = getattr(
-                    event["FvT"], event.metadata["FvT_names"][0]
-                )
+                event["FvT", "FvT"] = getattr( event["FvT"], event.metadata["FvT_names"][0] )
 
                 #
                 # Dummies
@@ -249,7 +249,6 @@ class analysis(processor.ProcessorABC):
                     trigWeight_file = uproot.open(f'{fname.replace("picoAOD", "trigWeights")}')['Events']
                     trigWeight = trigWeight_file.arrays(['event', 'trigWeight_Data', 'trigWeight_MC'], entry_start=estart,entry_stop=estop)
                                                         
-
                     if not ak.all(trigWeight.event == event.event):
                         raise ValueError('trigWeight events do not match events ttree')
 
@@ -360,24 +359,19 @@ class analysis(processor.ProcessorABC):
             
             logging.info(f"\nJet variations {[name for _, name in shifts]}")
 
-        return processor.accumulate(
-            self.process_shift(update_events(event, collections), name, weights)
-            for collections, name in shifts
-        )
+        return processor.accumulate( self.process_shift(update_events(event, collections), name, weights) for collections, name in shifts )
 
     def process_shift(self, event, shift_name, weights):
         """For different jet variations. It computes event variations for the nominal case."""
 
-        dataset = event.metadata['dataset']
-        year    = event.metadata['year']
+        dataset     = event.metadata['dataset']
+        year        = event.metadata['year']
         processName = event.metadata['processName']
-        isMC    = True if event.run[0] == 1 else False
+        isMC        = True if event.run[0] == 1 else False
 
         isMixedData = not (dataset.find("mix_v") == -1)
         isDataForMixed = not (dataset.find("data_3b_for_mixed") == -1)
-        isTTForMixed = not (dataset.find("TTTo") == -1) and not (
-            dataset.find("_for_mixed") == -1
-        )
+        isTTForMixed = not (dataset.find("TTTo") == -1) and not ( dataset.find("_for_mixed") == -1 )
         nEvent = len(event)
 
         # Apply object selection (function does not remove events, adds content to objects)
@@ -760,16 +754,16 @@ class analysis(processor.ProcessorABC):
             #
             if isDataForMixed:
                 for _FvT_name in event.metadata["FvT_names"]:
-                    fill += SvBHists( (f"SvB_{_FvT_name}", "SvB Classifier"), "SvB", weight=f"weight_{_FvT_name}")
-                    fill += SvBHists( (f"SvB_MA_{_FvT_name}", "SvB MA Classifier"), "SvB_MA", weight=f"weight_{_FvT_name}", )
+                    fill += SvBHists( (f"SvB_{_FvT_name}",    "SvB Classifier"),    "SvB",    weight=f"weight_{_FvT_name}" )
+                    fill += SvBHists( (f"SvB_MA_{_FvT_name}", "SvB MA Classifier"), "SvB_MA", weight=f"weight_{_FvT_name}" )
 
             #
             # Jets
             #
-            fill += Jet.plot(("selJets", "Selected Jets"), "selJet", skip=["deepjet_c"])
-            fill += Jet.plot( ("canJets", "Higgs Candidate Jets"), "canJet", skip=["deepjet_c"] )
-            fill += Jet.plot( ("othJets", "Other Jets"), "notCanJet_coffea", skip=["deepjet_c"] )
-            fill += Jet.plot(("tagJets", "Tag Jets"), "tagJet", skip=["deepjet_c"])
+            fill += Jet.plot(("selJets", "Selected Jets"),        "selJet",           skip=["deepjet_c"])
+            fill += Jet.plot(("canJets", "Higgs Candidate Jets"), "canJet",           skip=["deepjet_c"])
+            fill += Jet.plot(("othJets", "Other Jets"),           "notCanJet_coffea", skip=["deepjet_c"])
+            fill += Jet.plot(("tagJets", "Tag Jets"),             "tagJet",           skip=["deepjet_c"])
 
             #
             #  Make quad jet hists
@@ -787,24 +781,17 @@ class analysis(processor.ProcessorABC):
                     FvT_skip = ["pt", "pm3", "pm4"]
 
                 fill += FvTHists(("FvT", "FvT Classifier"), "FvT", skip=FvT_skip)
+
                 fill += hist.add("quadJet_selected_FvT_score", (100, 0, 1, ("quadJet_selected.FvT_q_score", "Selected Quad Jet Diboson FvT q score") ) )
-                fill += hist.add("quadJet_min_FvT_score",(100, 0, 1, ("quadJet_min_dr.FvT_q_score","Min dR Quad Jet Diboson FvT q score",),),)
+                fill += hist.add("quadJet_min_FvT_score",      (100, 0, 1, ("quadJet_min_dr.FvT_q_score",   "Min dR Quad Jet Diboson FvT q score"  ) ) )
                 
                 if self.JCM:
                     fill += hist.add("FvT_noFvT", (100, 0, 5, ("FvT.FvT", "FvT reweight")), weight="weight_noFvT")
 
-            #
-            # Jets
-            #
-            fill += Jet.plot(("selJets", "Selected Jets"), "selJet", skip=["deepjet_c"])
-            fill += Jet.plot(("canJets", "Higgs Candidate Jets"), "canJet", skip=["deepjet_c"])
-            fill += Jet.plot(("othJets", "Other Jets"), "notCanJet_coffea", skip=["deepjet_c"])
-            fill += Jet.plot(("tagJets", "Tag Jets"), "tagJet", skip=["deepjet_c"])
-
             skip_all_but_n = ["deepjet_b", "energy", "eta", "id_jet", "id_pileup", "mass", "phi", "pt", "pz", "deepjet_c", ]
 
-            fill += Jet.plot( ("selJets_noJCM", "Selected Jets"), "selJet", weight="weight_noJCM_noFvT", skip=skip_all_but_n, )
-            fill += Jet.plot( ("tagJets_noJCM", "Tag Jets"), "tagJet", weight="weight_noJCM_noFvT", skip=skip_all_but_n, )
+            fill += Jet.plot( ("selJets_noJCM", "Selected Jets"),        "selJet",       weight="weight_noJCM_noFvT", skip=skip_all_but_n, )
+            fill += Jet.plot( ("tagJets_noJCM", "Tag Jets"),             "tagJet",       weight="weight_noJCM_noFvT", skip=skip_all_but_n, )
             fill += Jet.plot( ("tagJets_loose_noJCM", "Loose Tag Jets"), "tagJet_loose", weight="weight_noJCM_noFvT", skip=skip_all_but_n, )
 
             for iJ in range(4):
@@ -831,35 +818,13 @@ class analysis(processor.ProcessorABC):
 
             if self.run_SvB:
 
-                fill += SvBHists(("SvB", "SvB Classifier"), "SvB")
+                fill += SvBHists(("SvB",    "SvB Classifier"),    "SvB")
                 fill += SvBHists(("SvB_MA", "SvB MA Classifier"), "SvB_MA")
-                fill += hist.add(
-                    "quadJet_selected_SvB_q_score",
-                    (
-                        100,
-                        0,
-                        1,
-                        (
-                            "quadJet_selected.SvB_q_score",
-                            "Selected Quad Jet Diboson SvB q score",
-                        ),
-                    ),
-                )
-                fill += hist.add(
-                    "quadJet_min_SvB_MA_q_score",
-                    (
-                        100,
-                        0,
-                        1,
-                        (
-                            "quadJet_min_dr.SvB_MA_q_score",
-                            "Min dR Quad Jet Diboson SvB MA q score",
-                        ),
-                    ),
-                )
+                fill += hist.add( "quadJet_selected_SvB_q_score", ( 100, 0, 1, ( "quadJet_selected.SvB_q_score",  "Selected Quad Jet Diboson SvB q score") ) )
+                fill += hist.add( "quadJet_min_SvB_MA_q_score",   ( 100, 0, 1, ( "quadJet_min_dr.SvB_MA_q_score", "Min dR Quad Jet Diboson SvB MA q score") ) )
                 if isDataForMixed:
                     for _FvT_name in event.metadata["FvT_names"]:
-                        fill += SvBHists( (f"SvB_{_FvT_name}",    "SvB Classifier"), "SvB", weight=f"weight_{_FvT_name}", )
+                        fill += SvBHists( (f"SvB_{_FvT_name}",    "SvB Classifier"),    "SvB",    weight=f"weight_{_FvT_name}", )
                         fill += SvBHists( (f"SvB_MA_{_FvT_name}", "SvB MA Classifier"), "SvB_MA", weight=f"weight_{_FvT_name}", )
 
             #
@@ -901,8 +866,8 @@ class analysis(processor.ProcessorABC):
                                    )
             
             fill_SvB = Fill( process=processName, year=year, variation=shift_name, weight="weight" )
-            fill_SvB += SvBHists(("SvB", "SvB Classifier"), "SvB", skip=["ps", "ptt"])
-            fill_SvB += SvBHists( ("SvB_MA", "SvB MA Classifier"), "SvB_MA", skip=["ps", "ptt"] )
+            fill_SvB += SvBHists(("SvB",    "SvB Classifier"),    "SvB",    skip=["ps", "ptt"])
+            fill_SvB += SvBHists(("SvB_MA", "SvB MA Classifier"), "SvB_MA", skip=["ps", "ptt"])
 
             fill_SvB(selev)
 
@@ -922,8 +887,10 @@ class analysis(processor.ProcessorABC):
                                                   
                     selev[f"weight_{ivar}"] = weights.weight(modifier=ivar)[ selections.all(*allcuts) ]
                     fill_SvB_ivar = Fill( process=processName, year=year, variation=ivar, weight=f"weight_{ivar}", )
+
                     logging.debug(f"{ivar} {selev['weight']}")
-                    fill_SvB_ivar += SvBHists( ("SvB", "SvB Classifier"), "SvB", skip=["ps", "ptt"] )
+
+                    fill_SvB_ivar += SvBHists( ("SvB",    "SvB Classifier"),    "SvB",    skip=["ps", "ptt"] )
                     fill_SvB_ivar += SvBHists( ("SvB_MA", "SvB MA Classifier"), "SvB_MA", skip=["ps", "ptt"] )
 
                     fill_SvB_ivar(selev, dict_hist_SvB[ivar])
@@ -954,10 +921,10 @@ class analysis(processor.ProcessorABC):
         j[:, 3, :] = torch.tensor(event.canJet.mass)
 
         o = torch.zeros(n, 5, 8)
-        o[:, 0, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(event.notCanJet_coffea.pt, target=8, clip=True) ), 0, ) )
-        o[:, 1, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(event.notCanJet_coffea.eta, target=8, clip=True) ), 0, ) )
-        o[:, 2, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(event.notCanJet_coffea.phi,      target=8, clip=True) ), 0, ) )
-        o[:, 3, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(event.notCanJet_coffea.mass,     target=8, clip=True) ), 0, ) )
+        o[:, 0, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(event.notCanJet_coffea.pt,       target=8, clip=True) ),  0, ) )
+        o[:, 1, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(event.notCanJet_coffea.eta,      target=8, clip=True) ),  0, ) )
+        o[:, 2, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(event.notCanJet_coffea.phi,      target=8, clip=True) ),  0, ) )
+        o[:, 3, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(event.notCanJet_coffea.mass,     target=8, clip=True) ),  0, ) )
         o[:, 4, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(event.notCanJet_coffea.isSelJet, target=8, clip=True) ), -1, ) )
 
         a = torch.zeros(n, 4)
@@ -969,8 +936,10 @@ class analysis(processor.ProcessorABC):
         e = torch.tensor(event.event) % 3
 
         for classifier in ["SvB", "SvB_MA"]:
+
             if classifier == "SvB":
                 c_logits, q_logits = self.classifier_SvB(j, o, a, e)
+
             if classifier == "SvB_MA":
                 c_logits, q_logits = self.classifier_SvB_MA(j, o, a, e)
 
