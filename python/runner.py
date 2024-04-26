@@ -43,7 +43,7 @@ def list_of_files(ifile, allowlist_sites=['T3_US_FNALLPC'], test=False, test_fil
         return ifile
     elif ifile.endswith('.txt'):
         file_list = [
-            f'root://cmseos.fnal.gov/{jfile.rstrip()}' for jfile in open(ifile).readlines()]
+            jfile if jfile.startswith(('root','file')) else f'root://cmseos.fnal.gov/{jfile.rstrip()}' for jfile in open(ifile).readlines()]
         return file_list
     else:
         rucio_client = rucio_utils.get_rucio_client()

@@ -7,7 +7,7 @@ config:
   JCM: 'analysis/weights/JCM/2023/dataRunII/jetCombinatoricModel_SB_00-00-02.yml'
   threeTag: true
   apply_FvT: false
-  apply_trigWeight: false
+  apply_trigWeight: true
   apply_btagSF: true
   run_SvB: true
   run_systematics: true
