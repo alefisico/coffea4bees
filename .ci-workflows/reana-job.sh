@@ -1,6 +1,7 @@
 if [[ $(hostname) = *lxplus* ]]; then
     echo """Running local in lxplus"""
     export workflow_name="workflow"
+    export CMD='reana-client'
 else
     export REANA_SERVER_URL=https://reana.cern.ch
     export REANA_ACCESS_TOKEN="${REANA_TOKEN}"
@@ -15,8 +16,10 @@ else
     #### ALLOWED TO FAILED FOR MERGE REQUEST
     ##########################################################
     """
+    docker pull docker.io/reanahub/reana-client:0.9.3
+    export CMD="docker run -it --env REANA_SERVER_URL --env REANA_ACCESS_TOKEN docker.io/reanahub/reana-client:0.9.3"
 fi
 sed -e "#hash:.*#hash: "$(git rev-parse HEAD)"#" -i .reana_workflows/inputs.yaml
 git diff HEAD > gitdiff.txt
 cat .reana_workflows/inputs.yaml
-reana-client run -f reana.yaml -w ${workflow_name}
+$CMD run -f reana.yaml -w ${workflow_name}

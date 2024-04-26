@@ -16,6 +16,7 @@ workflow:
     - if: $CI_COMMIT_BRANCH
 
 stages:          
+  - reana
   - build
   - proxy
   - code 
@@ -24,7 +25,6 @@ stages:
   - fits
   - plot
   - cutflow
-  - reana
 
 voms_proxy:
   stage: proxy
@@ -366,7 +366,7 @@ twoStageClosure-test-job:
 
 reana-job:
   stage: reana
-  image: docker.io/reanahub/reana-client:0.9.3
+  #image: docker.io/reanahub/reana-client:0.9.3
   tags:
     - k8s-cvmfs
   script:
