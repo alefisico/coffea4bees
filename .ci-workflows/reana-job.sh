@@ -10,6 +10,7 @@ echo """
 #### ALLOWED TO FAILED FOR MERGE REQUEST
 ##########################################################
 """
-sed -e "s#condor_cores.*#condor_cores: 6#" -e "s#condor_memory.*#condor_memory: 8#" -i python/analysis/metadata/HH4b.yml
-cat python/analysis/metadata/HH4b.yml
+sed -e 's/hash:.*/hash: '"$(git rev-parse HEAD)"'/' -i .reana_workflows/inputs.yaml
+sed -e 's/diff:.*/diff: '"$(git diff HEAD)"'/' -i .reana_workflows/inputs.yaml
+cat .reana_workflows/inputs.yaml
 reana-client run -f reana.yaml -w coffea4bees

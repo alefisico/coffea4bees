@@ -24,6 +24,9 @@ rule analysis_databkgs:
         "output/histdatabkgs_{sample}-{iy}.coffea"
     container:
         "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
+    params:
+        hash=config['hash'],
+        diff=config['diff']
     resources:
         voms_proxy=True,
         kerberos=True,
@@ -33,7 +36,7 @@ rule analysis_databkgs:
         """
 cd python/ 
 echo "Running {wildcards.sample} {wildcards.iy} - output ../{output}"
-mprof run -C -o mprofile_databkgs_{wildcards.sample}_{wildcards.iy}.dat python runner.py -d {wildcards.sample} -p analysis/processors/processor_HH4b.py -y {wildcards.iy} -o ../{output} -op ../output/ -m metadata/datasets_HH4b_cernbox.yml #--dask
+mprof run -C -o mprofile_databkgs_{wildcards.sample}_{wildcards.iy}.dat python runner.py -d {wildcards.sample} -p analysis/processors/processor_HH4b.py -y {wildcards.iy} -o ../{output} -op ../output/ -m metadata/datasets_HH4b_cernbox.yml --githash {params.hash} --gitdiff {params.diff}  #--dask
 mprof plot -o ../output/mprofile_databkgs_{wildcards.sample}_{wildcards.iy}.png mprofile_databkgs_{wildcards.sample}_{wildcards.iy}.dat
 #cp /tmp/coffea4bees-dask-report-* ../output/coffea4bees-dask-report_{wildcards.sample}_{wildcards.iy}.html
         """
@@ -43,6 +46,9 @@ rule analysis_systematics:
         "output/histsyst_{samplesyst}-{iysyst}.coffea"
     container:
         "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
+    params:
+        hash=config['hash'],
+        diff=config['diff']
     resources:
         voms_proxy=True,
         kerberos=True,
@@ -52,7 +58,7 @@ rule analysis_systematics:
         """
 cd python/ 
 echo "Running {wildcards.samplesyst} {wildcards.iysyst} - output ../{output}"
-mprof run -C -o mprofile_syst_{wildcards.samplesyst}_{wildcards.iysyst}.dat python runner.py -d {wildcards.samplesyst} -p analysis/processors/processor_HH4b.py -y {wildcards.iysyst} -o ../{output} -op ../output/ -m metadata/datasets_HH4b_cernbox.yml -c analysis/metadata/HH4b_systematics.yml #--dask
+mprof run -C -o mprofile_syst_{wildcards.samplesyst}_{wildcards.iysyst}.dat python runner.py -d {wildcards.samplesyst} -p analysis/processors/processor_HH4b.py -y {wildcards.iysyst} -o ../{output} -op ../output/ -m metadata/datasets_HH4b_cernbox.yml -c analysis/metadata/HH4b_systematics.yml  --githash {params.hash} --gitdiff {params.diff} #--dask
 mprof plot -o ../output/mprofile_syst_{wildcards.samplesyst}_{wildcards.iysyst}.png mprofile_syst_{wildcards.samplesyst}_{wildcards.iysyst}.dat
 #cp /tmp/coffea4bees-dask-report-* ../output/coffea4bees-dask-report_{wildcards.samplesyst}_{wildcards.iysyst}.html
         """
@@ -62,6 +68,9 @@ rule analysis_for_mixed:
         "output/histmixed_{samplemixed}-{iymixed}.coffea"
     container:
         "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
+    params:
+        hash=config['hash'],
+        diff=config['diff']
     resources:
         voms_proxy=True,
         kerberos=True,
@@ -71,7 +80,7 @@ rule analysis_for_mixed:
         """
 cd python/ 
 echo "Running {wildcards.samplemixed} {wildcards.iymixed}"
-mprof run -C -o mprofile_formixed_{wildcards.samplemixed}_{wildcards.iymixed}.dat python runner.py -d {wildcards.samplemixed} -p analysis/processors/processor_HH4b.py -y {wildcards.iymixed} -o ../{output} -op ../output/ -m metadata/datasets_HH4b_cernbox.yml -c analysis/metadata/HH4b.yml #--dask
+mprof run -C -o mprofile_formixed_{wildcards.samplemixed}_{wildcards.iymixed}.dat python runner.py -d {wildcards.samplemixed} -p analysis/processors/processor_HH4b.py -y {wildcards.iymixed} -o ../{output} -op ../output/ -m metadata/datasets_HH4b_cernbox.yml -c analysis/metadata/HH4b.yml  --githash {params.hash} --gitdiff {params.diff} #--dask
 mprof plot -o ../output/mprofile_formixed_{wildcards.samplemixed}_{wildcards.iymixed}.png mprofile_formixed_{wildcards.samplemixed}_{wildcards.iymixed}.dat
 #cp /tmp/coffea4bees-dask-report-* ../output/coffea4bees-dask-report_{wildcards.samplemixed}_{wildcards.iymixed}.html
         """
@@ -81,6 +90,9 @@ rule analysis_mixeddata:
         "output/histmixeddata_{samplemixeddata}-{iymixeddata}.coffea"
     container:
         "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
+    params:
+        hash=config['hash'],
+        diff=config['diff']
     resources:
         voms_proxy=True,
         kerberos=True,
@@ -90,7 +102,7 @@ rule analysis_mixeddata:
         """
 cd python/ 
 echo "Running {wildcards.samplemixeddata} {wildcards.iymixeddata}"
-mprof run -C -o mprofile_mixeddata_{wildcards.samplemixeddata}_{wildcards.iymixeddata}.dat python runner.py -d {wildcards.samplemixeddata} -p analysis/processors/processor_HH4b.py -y {wildcards.iymixeddata} -o ../{output} -op ../output/ -m metadata/datasets_HH4b_cernbox.yml -c analysis/metadata/HH4b.yml #--dask
+mprof run -C -o mprofile_mixeddata_{wildcards.samplemixeddata}_{wildcards.iymixeddata}.dat python runner.py -d {wildcards.samplemixeddata} -p analysis/processors/processor_HH4b.py -y {wildcards.iymixeddata} -o ../{output} -op ../output/ -m metadata/datasets_HH4b_cernbox.yml -c analysis/metadata/HH4b.yml  --githash {params.hash} --gitdiff {params.diff} #--dask
 mprof plot -o ../output/mprofile_mixeddata_{wildcards.samplemixeddata}_{wildcards.iymixeddata}.png mprofile_mixeddata_{wildcards.samplemixeddata}_{wildcards.iymixeddata}.dat
 #cp /tmp/coffea4bees-dask-report-* ../output/coffea4bees-dask-report_{wildcards.samplemixeddata}_{wildcards.iymixeddata}.html
         """
