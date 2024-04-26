@@ -1,19 +1,22 @@
 version: 0.9.3
 inputs:
   directories:
-    - python/analysis/
-    - python/base_class/
-    - python/data/
-    - python/metadata/
-    - python/.php-plots/
-    - python/skimmer/processor/
-    - python/stats_analysis/
+    - .ci-workflows/
+    - .dockerfiles/
+    - .reana_workflows/
+    - python/
+    - src/
+    - .git/
+  files:
+    - .gitignore
+    - .gitlab-ci.yml
+    - .gitmodules
+    - README.md
+    - environment.yml
+    - reana.yaml
+    - set_shell.sh
   parameters:
     input: .reana_workflows/inputs.yaml
-  files:
-    - python/runner.py
-    - .reana_workflows/Snakefile
-    - .reana_workflows/input.yaml
 workflow:
   type: snakemake
   file: .reana_workflows/Snakefile
@@ -23,8 +26,9 @@ workflow:
 workspace:
   retention_days:
     python/*: 1
+    .git/*: 1
     output/*: 30
 outputs:
-  files:
-    - output/histAll.coffea
+  directories:
+    - output/
 
