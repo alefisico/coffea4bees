@@ -4,20 +4,35 @@ echo "############### Checking ls"
 ls
 echo "############### Moving to python folder"
 cd python/
+
+echo "############### Merging"
+python analysis/merge_coffea_files.py -f \
+    analysis/hists/histmixeddata_data_3b_for_mixed-UL16_preVFP.coffea \
+    analysis/hists/histmixeddata_data_3b_for_mixed-UL17.coffea \
+    analysis/hists/histmixeddata_data_3b_for_mixed-UL18.coffea \
+    -o analysis/hists/histmixeddata_data_3b_for_mixed.coffea
+
+python analysis/merge_coffea_files.py -f \
+    analysis/hists/histmixed_TTTo2L2Nu_for_mixed-UL16_preVFP.coffea \
+    analysis/hists/histmixed_TTTo2L2Nu_for_mixed-UL16_postVFP.coffea \
+    analysis/hists/histmixed_TTTo2L2Nu_for_mixed-UL17.coffea \
+    analysis/hists/histmixed_TTTo2L2Nu_for_mixed-UL18.coffea \
+    analysis/hists/histmixed_TTToSemiLeptonic_for_mixed-UL16_preVFP.coffea \
+    analysis/hists/histmixed_TTToSemiLeptonic_for_mixed-UL16_postVFP.coffea \
+    analysis/hists/histmixed_TTToSemiLeptonic_for_mixed-UL17.coffea \
+    analysis/hists/histmixed_TTToSemiLeptonic_for_mixed-UL18.coffea \
+    analysis/hists/histmixed_TTToHadronic_for_mixed-UL16_preVFP.coffea \
+    analysis/hists/histmixed_TTToHadronic_for_mixed-UL16_postVFP.coffea \
+    analysis/hists/histmixed_TTToHadronic_for_mixed-UL17.coffea \
+    analysis/hists/histmixed_TTToHadronic_for_mixed-UL18.coffea \
+    -o analysis/hists/histmixeddata_TTbar_3b_for_mixed.coffea
+
 echo "############### Hist --> YML"
-python stats_analysis/convert_hist_to_yaml_closure.py --input analysis/hists/testMixedData_master.coffea  --output analysis/hists/testMixedData_master.yml
-python stats_analysis/convert_hist_to_yaml_closure.py --input analysis/hists/testMixedBkg_master.coffea   --output analysis/hists/testMixedBkg_master.yml 
-python stats_analysis/convert_hist_to_yaml_closure.py --input analysis/hists/histAll.coffea               --output analysis/hists/histAll_signal.yml
 
-
-# In root envirornment
-python3 stats_analysis/convert_yml_to_root.py -f analysis/hists/testMixedData_master.yml --output analysis/hists/
-python3 stats_analysis/convert_yml_to_root.py -f analysis/hists/testMixedBkg_master.yml --output analysis/hists/
-python3 stats_analysis/convert_yml_to_root.py -f analysis/hists/histAll_signal.yml --output analysis/hists/
-
-
-# runTwoStage closure
-python3 runTwoStageClosure.py
-#python3 stats_analysis/tests/dumpTwoStageInputs.py --input stats_analysis/hists_closure_3bDvTMix4bDvT_New.root --output stats_analysis/tests/twoStageClosureInputsCounts.yml
-python3 stats_analysis/tests/test_runTwoStageClosure.py --knownCounts 
+python stats_analysis/convert_hist_to_yaml_closure.py --input analysis/hists/histmixeddata_mixeddata-UL16_preVFP.coffea
+python stats_analysis/convert_hist_to_yaml_closure.py --input analysis/hists/histmixeddata_mixeddata-UL17.coffea
+python stats_analysis/convert_hist_to_yaml_closure.py --input analysis/hists/histmixeddata_mixeddata-UL18.coffea
+python stats_analysis/convert_hist_to_yaml_closure.py --input analysis/hists/histmixeddata_TTbar_3b_for_mixed.coffea
+python stats_analysis/convert_hist_to_yaml_closure.py --input analysis/hists/histmixeddata_data_3b_for_mixed.coffea
+python stats_analysis/convert_hist_to_yaml_closure.py --input analysis/hists/histAll.coffea
 

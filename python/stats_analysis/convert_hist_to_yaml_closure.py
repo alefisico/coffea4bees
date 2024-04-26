@@ -21,7 +21,7 @@ if __name__ == '__main__':
                         help='List of histograms to convert')
                              
     parser.add_argument('-o', '--output', dest="output",
-                        default="./histos/histAll.yml", help='Output file and directory.')
+                        default=None, help='Output file and directory.')
 
     parser.add_argument('-i', '--input_file', dest='input_file',
                         default="../analysis/hists/histAll.coffea", help="File with coffea hists")
@@ -48,6 +48,7 @@ if __name__ == '__main__':
 
     
     coffea_hists = load(args.input_file)["hists"]
+
 
     #
     # Collect the histogram names
@@ -117,8 +118,13 @@ if __name__ == '__main__':
                         logging.info(f"Converting hist {ih} {this_hist}")
                         yml_dict[ih][iprocess][iy][codes['tag'][itag]][codes['region'][iregion]] = hist_to_yml( coffea_hists[ih][this_hist] )
 
-    logging.info(f"Saving histos in yml format in {args.output}")
-    output_dir = '/'.join( args.output.split('/')[:-1] )
+    if args.output is None:
+        output = args.input_file.replace(".coffea",".yml")
+    else:
+        output = args.output
+
+    logging.info(f"Saving histos in yml format in {output}")
+    output_dir = '/'.join( output.split('/')[:-1] )
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-    yaml.dump(yml_dict, open(f'{args.output}', 'w'), default_flow_style=False )
+    yaml.dump(yml_dict, open(f'{output}', 'w'), default_flow_style=False )
