@@ -5,9 +5,6 @@ else
     export REANA_SERVER_URL=https://reana.cern.ch
     export REANA_ACCESS_TOKEN="${REANA_TOKEN}"
     export workflow_name="coffea4bees"
-    virtualenv ~/.virtualenvs/reana
-    source ~/.virtualenvs/reana/bin/activate
-    pip install reana-client
     reana-client ping
     echo """
     ##########################################################

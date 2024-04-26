@@ -366,8 +366,7 @@ twoStageClosure-test-job:
 
 reana-job:
   stage: reana
-  #image: docker.io/reanahub/reana-client:0.9.3
-  image: docker.io/ubuntu:latest
+  image: gitlab-registry.cern.ch/algomez/coffea4bees:test
   tags:
     - k8s-cvmfs
   script:
