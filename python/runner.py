@@ -213,7 +213,7 @@ if __name__ == '__main__':
 
                 nMixedSamples = metadata['datasets'][dataset]["nSamples"]
                 mixed_config = metadata['datasets'][dataset][year][config_runner['data_tier']]
-                logging.info("\nNumber of mixed samples is {nMixedSamples}")
+                logging.info(f"\nNumber of mixed samples is {nMixedSamples}")
                 for v in range(nMixedSamples):
 
                     mixed_name = f"mix_v{v}"
@@ -238,7 +238,7 @@ if __name__ == '__main__':
 
                 nMixedSamples = metadata['datasets'][dataset]["nSamples"]
                 data_3b_mix_config = metadata['datasets'][dataset][year][config_runner['data_tier']]
-                logging.info("\nNumber of mixed samples is {nMixedSamples}")
+                logging.info(f"\nNumber of mixed samples is {nMixedSamples}")
 
                 idataset = f'{dataset}_{year}'
 
@@ -260,7 +260,7 @@ if __name__ == '__main__':
 
                 nMixedSamples = metadata['datasets'][dataset]["nSamples"]
                 TT_3b_mix_config = metadata['datasets'][dataset][year][config_runner['data_tier']]
-                logging.info("\nNumber of mixed samples is {nMixedSamples}")
+                logging.info(f"\nNumber of mixed samples is {nMixedSamples}")
 
                 idataset = f'{dataset}_{year}'
 
