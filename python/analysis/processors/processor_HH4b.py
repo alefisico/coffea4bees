@@ -232,7 +232,7 @@ class analysis(processor.ProcessorABC):
         #
         # Event selection
         #
-        event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year])
+        event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year], isMixedData)
 
         #
         # general event weights
@@ -374,6 +374,8 @@ class analysis(processor.ProcessorABC):
         isDataForMixed = not (dataset.find("data_3b_for_mixed") == -1)
         isTTForMixed   = not (dataset.find("TTTo") == -1) and not ( dataset.find("_for_mixed") == -1 )
         nEvent = len(event)
+
+
 
         # Apply object selection (function does not remove events, adds content to objects)
         event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year],
@@ -704,17 +706,37 @@ class analysis(processor.ProcessorABC):
         #
         # Example of how to write out event numbers
         #
-        # passSR = (selev.passDiJetMass & selev["quadJet_selected"].SR)
-        #
-        # out_data = {}
-        # out_data["SvB"    ] = selev["SvB_MA"].ps[passSR]
-        # out_data["event"  ] = selev["event"][passSR]
-        # out_data["run"    ] = selev["run"][passSR]
-        # out_data["canJet0"] = selev["canJet"].pt[passSR][:,0]
-        #
-        # for out_k, out_v in out_data.items():
-        #     processOutput[out_k] = {}
-        #     processOutput[out_k][event.metadata['dataset']] = list(out_v)
+        #passSR = (selev.passDiJetMass & selev["quadJet_selected"].SR)
+        #passSR = (selev["quadJet_selected"].SR)
+#        passSR = (selev["SR"])
+#        
+#        out_data = {}
+#        out_data["SvB"    ] = selev["SvB_MA"].ps[passSR]
+#        out_data["event"  ] = selev["event"][passSR]
+#        out_data["run"    ] = selev["run"][passSR]
+#        out_data["canJet0"] = selev["canJet"].pt[passSR][:,0]
+#
+##        logging.info(f'\n event is {selev["event"]} \n')
+##        logging.info(f'\n event is {selev["event"] == 322164883} \n')
+##        logging.info(f'\n event is {selev["event"] == 198348749} \n')
+#        
+#        debug_mask = ((event["event"] == 84140033  ) |
+#                      (event["event"] == 231432199 ) |
+#                      (event["event"] == 151068682 ) |
+#                      (event["event"] == 119750685 ) |
+#                      (event["event"] == 215425074 ) )
+#
+#        logging.info(f'\n mas is {debug_mask}\n')
+#        out_data["debug_event"  ] = event["event"][debug_mask]
+#        out_data["debug_run"    ] = event["run"][debug_mask]
+#        out_data["debug_lumimask"    ] = event["lumimask"][debug_mask]
+#        out_data["debug_passHLT"    ] = event["passHLT"][debug_mask]
+#        out_data["debug_passNoiseFilter"    ] = event["passNoiseFilter"][debug_mask]
+#        out_data["debug_passJetMult"    ] = event["passJetMult"][debug_mask]
+#        
+#        for out_k, out_v in out_data.items():
+#            processOutput[out_k] = {}
+#            processOutput[out_k][event.metadata['dataset']] = list(out_v)
 
         if self.run_SvB:
             selev["passSvB"] = selev["SvB_MA"].ps > 0.80
