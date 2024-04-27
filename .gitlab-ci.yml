@@ -323,6 +323,8 @@ analysis-iplot-job:
 
 baseclass-test-job:   
   stage: plot
+  needs: 
+    - analysis-test-job
   image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
   tags:
     - k8s-cvmfs
