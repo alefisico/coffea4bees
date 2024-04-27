@@ -108,8 +108,15 @@ analysis-test-mixed-job:
   artifacts: 
     expire_in: 1 day
     paths:
-      - python/analysis/hists/testMixedBkg.coffea
+      - python/analysis/hists/testMixedBkg_TT.coffea
+      - python/analysis/hists/testMixedBkg_data_3b_for_mixed.coffea
       - python/analysis/hists/testMixedData.coffea
+      - python/analysis/hists/testSignal.coffae
+      - python/analysis/hists/testMixedBkg_TT.yml
+      - python/analysis/hists/testMixedBkg_data_3b_for_mixed.yml
+      - python/analysis/hists/testMixedData.yml
+      - python/analysis/hists/testSignal.yml
+
 
 analysis-systematics-test-job:   
   stage: analysis-test   

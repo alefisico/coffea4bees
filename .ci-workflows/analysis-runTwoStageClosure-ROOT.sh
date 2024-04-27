@@ -20,7 +20,7 @@ python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 20 --o
     --input_file_data3b analysis/hists/testMixedBkg_data_3b_for_mixed.root \
     --input_file_TT     analysis/hists/testMixedBkg_TT.root \
     --input_file_mix    analysis/hists/testMixedData.root \
-    --input_file_sig   analysis/hists/testSignal.root
+    --input_file_sig    analysis/hists/testSignal.root
 
 
 
