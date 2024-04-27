@@ -1991,6 +1991,8 @@ if __name__ == "__main__":
     if args.run_closure:
         print(f"\t{closure_file_out_pkl}")
 
+    mkpath(f'{args.outputPath}')
+
     doPrepInputs = True
     if args.reuse_inputs:
         if os.path.exists(closure_file_out):

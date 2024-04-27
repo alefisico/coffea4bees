@@ -17,7 +17,7 @@ echo "############### Running test processor"
 python runner.py -t -o testMixedBkg_TT.coffea -d   TTTo2L2Nu_for_mixed TTToHadronic_for_mixed TTToSemiLeptonic_for_mixed   -p analysis/processors/processor_HH4b.py -y UL17 UL18 UL16_preVFP UL16_postVFP  -op analysis/hists/ -m $DATASETS
 python runner.py -t -o testMixedBkg_data_3b_for_mixed.coffea -d   data_3b_for_mixed  -p analysis/processors/processor_HH4b.py -y UL17 UL18 UL16_preVFP   -op analysis/hists/ -m $DATASETS
 python runner.py -t -o testMixedData.coffea -d    mixeddata  -p analysis/processors/processor_HH4b.py -y UL17 UL18 UL16_preVFP    -op analysis/hists/ -m $DATASETS
-python runner.py -t -o testMixedSignal.coffea -d    HH4b ZH4b ZZ4b  -p analysis/processors/processor_HH4b.py -y UL17 UL18 UL16_preVFP UL16_postVFP    -op analysis/hists/ -m $DATASETS
+python runner.py -t -o testSignal.coffea -d    HH4b ZH4b ZZ4b  -p analysis/processors/processor_HH4b.py -y UL17 UL18 UL16_preVFP UL16_postVFP    -op analysis/hists/ -m $DATASETS
 ls
 
 echo "############### Hist --> YML"
