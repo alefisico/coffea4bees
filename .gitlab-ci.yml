@@ -81,7 +81,6 @@ analysis-test-job:
     paths:
       - python/analysis/hists/test.coffea
 
-
 analysis-test-job-unsup:   
   stage: analysis-test   
   needs:
@@ -125,7 +124,6 @@ analysis-systematics-test-job:
     paths:
       - python/analysis/hists/test_systematics.coffea
 
-
 skimmer-test-job:   
   stage: skimmer-test   
   needs:
@@ -155,23 +153,6 @@ skimmer-analysis-test-job:
     expire_in: 1 day
     paths:
       - python/analysis/hists/test_skimmer.coffea
-
-
-## needs to move unsup weight files to work
-#analysis-test-unsup-job:   
-#  stage: analysis-test   
-#  needs:
-#    - voms_proxy
-#  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
-#  tags:
-#    - k8s-cvmfs
-#  script:
-#    - source .ci-workflows/analysis-test-unsup-job.sh
-#  artifacts: 
-#    expire_in: 1 day
-#    paths:
-#      - python/analysis/hists/test_unsup.coffea
-
 
 analysis-plot-job:    
   stage: plot 
@@ -259,19 +240,19 @@ analysis-systematics-cutflow-job:
       - python/analysis/tests/test_systematics_dump_cutflow.yml
   allow_failure: true   ##### needs fix
 
-#analysis-cutflow-unsup-job:    
-#  stage: cutflow
-#  needs: 
-#    - analysis-test-unsup-job
-#  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
-#  tags:
-#    - k8s-cvmfs
-#  script:
-#    - source .ci-workflows/analysis-cutflow-unsup-job.sh
-#  artifacts:
-#    expire_in: 1 day
-#    paths:
-#      - python/analysis/tests/test_dump_cutflow_unsup.yml
+analysis-cutflow-job-unsup:    
+ stage: cutflow
+ needs: 
+   - analysis-test-job-unsup
+ image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+ tags:
+   - k8s-cvmfs
+ script:
+   - source .ci-workflows/analysis-cutflow-job-unsup.sh
+ artifacts:
+   expire_in: 1 day
+   paths:
+     - python/analysis/tests/test_dump_cutflow_job_unsup.yml
 
 analysis-cutflow-job:    
   stage: cutflow
