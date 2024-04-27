@@ -603,7 +603,7 @@ class analysis(processor.ProcessorABC):
             # sort the jets by btagging
             selev.selJet = selev.selJet[ ak.argsort(selev.selJet.btagDeepFlavB, axis=1, ascending=False) ]
 
-            if self.top_reconstruction is "slow":
+            if self.top_reconstruction == "slow":
                 top_cands = find_tops_slow(selev.selJet)
             else:
                 top_cands = find_tops(selev.selJet)
@@ -638,6 +638,7 @@ class analysis(processor.ProcessorABC):
                 selev["delta_xbW"] = selev.xbW - selev.xbW_reco
                 selev["delta_xW"] = selev.xW - selev.xW_reco
 
+
         if self.apply_FvT:
             quadJet["FvT_q_score"] = np.concatenate( ( np.reshape(np.array(selev.FvT.q_1234), (-1, 1)),
                                                        np.reshape(np.array(selev.FvT.q_1324), (-1, 1)),
@@ -647,6 +648,11 @@ class analysis(processor.ProcessorABC):
         if self.run_SvB:
 
             if (self.classifier_SvB is not None) | (self.classifier_SvB_MA is not None):
+
+                if "xbW_reco" not in selev.fields:
+                    selev["xbW_reco"] = selev["xbW"]
+                    selev["xW_reco"]  = selev["xW"]
+
                 self.compute_SvB(selev)  ### this computes both
 
             quadJet["SvB_q_score"] = np.concatenate( ( np.reshape(np.array(selev.SvB.q_1234), (-1, 1)),
@@ -867,8 +873,11 @@ class analysis(processor.ProcessorABC):
                     selev[k] = selev["quadJet_selected"][k]
 
                 selev["nSelJets"] = ak.num(selev.selJet)
-                selev["xbW"] = selev["xbW_reco"]
-                selev["xW"] = selev["xW_reco"]
+                
+                if "xbW_reco" in selev.fields:  #### AGE: this should be temporary
+                    selev["xbW"] = selev["xbW_reco"]
+                    selev["xW"]  = selev["xW_reco"]
+
                 ####
                 from ..helpers.classifier.HCR import dump_input_friend, dump_JCM_weight
 
