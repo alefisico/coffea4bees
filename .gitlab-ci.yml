@@ -367,8 +367,8 @@ ymltoroot-test-job:
 
 twoStageClosure-test-job:   
   stage: fits
-#  needs: 
-#    - histtoyml-test-job
+  needs: 
+    - analysis-test-mixed-job
   image: gitlab-registry.cern.ch/cms-cloud/cmssw-docker/cc7-cms 
   tags:
     - k8s-cvmfs
