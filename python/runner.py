@@ -111,6 +111,10 @@ if __name__ == '__main__':
                         action="store_true", default=False, help='Run in condor')
     parser.add_argument('--debug', help="Print lots of debugging statements",
                         action="store_true", dest="debug", default=False)
+    parser.add_argument('--githash', dest="githash",
+                        default="", help='Overwrite git hash for reproducible')
+    parser.add_argument('--gitdiff', dest="gitdiff",
+                        default="", help='Overwrite git diff for reproducible')
     args = parser.parse_args()
     logging_level = logging.DEBUG if args.debug else logging.INFO
     logging.basicConfig(
@@ -433,9 +437,9 @@ if __name__ == '__main__':
                     metadata[ikey].update(output[ikey])
                     metadata[ikey]['reproducible'] = {
                         'date': datetime.today().strftime('%Y-%m-%d %H:%M:%S'),
-                        'hash': get_git_revision_hash(),
+                        'hash': args.githash if args.githash else get_git_revision_hash(),
                         'args': str(args),
-                        'diff': str(get_git_diff()),
+                        'diff': args.gitdiff if args.gitdiff else str(get_git_diff()),
                     }
 
             args.output_file = 'picoaod_datasets.yml' if args.output_file.endswith(
@@ -450,9 +454,9 @@ if __name__ == '__main__':
             #
             output['reproducible'] = {
                 'date': datetime.today().strftime('%Y-%m-%d %H:%M:%S'),
-                'hash': get_git_revision_hash(),
+                'hash': args.githash if args.githash else get_git_revision_hash(),
                 'args': args,
-                'diff': get_git_diff(),
+                'diff': args.gitdiff if args.gitdiff else get_git_diff(),
             }
 
             #
