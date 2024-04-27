@@ -90,7 +90,7 @@ def combine_hists(input_file, hist_template, procs, years):
     return hist
 
 
-def addYears(f, input_file_data3b, input_file_TT, input_file_mix16, input_file_mix17, input_file_mix18, mix, channel):
+def addYears(f, input_file_data3b, input_file_TT, input_file_mix, mix, channel):
 
     directory = f"{mix}/{channel}"
     f.mkdir(directory)
@@ -102,7 +102,7 @@ def addYears(f, input_file_data3b, input_file_TT, input_file_mix16, input_file_m
 
     mix_number = mix.replace(f"{args.mix_name}_v", "")
 
-    hist_data_obs = combine_hists([input_file_mix16, input_file_mix17, input_file_mix18],
+    hist_data_obs = combine_hists(input_file_mix,
                                   f"{var_name}_PROC_YEAR_fourTag_SR",
                                   years=["UL16_preVFP", "UL17", "UL18"],
                                   procs=[f"mix_v{mix_number}"])
@@ -180,17 +180,13 @@ def prepInput():
     #
     input_file_data3b = ROOT.TFile(args.input_file_data3b, 'READ')
     input_file_TT     = ROOT.TFile(args.input_file_TT,     'READ')
-    input_file_mix16  = ROOT.TFile(args.input_file_mix16,  'READ')
-    input_file_mix17  = ROOT.TFile(args.input_file_mix17,  'READ')
-    input_file_mix18  = ROOT.TFile(args.input_file_mix18,  'READ')
+    input_file_mix    = ROOT.TFile(args.input_file_mix,    'READ')
     input_file_sig    = ROOT.TFile(args.input_file_sig,    'READ')
 
     if args.debug:
         print(input_file_data3b)
         print(input_file_TT)
-        print(input_file_mix16)
-        print(input_file_mix17)
-        print(input_file_mix18)
+        print(input_file_mix)
         print(input_file_sig)
 
     #
@@ -199,7 +195,7 @@ def prepInput():
     f = ROOT.TFile(closure_file_out, 'RECREATE')
 
     for mix in mixes:
-        addYears(f, input_file_data3b, input_file_TT, input_file_mix16, input_file_mix17, input_file_mix18, mix=mix, channel=channel)
+        addYears(f, input_file_data3b, input_file_TT, input_file_mix, mix=mix, channel=channel)
 
     addMixes(f, channel)
 
@@ -1946,12 +1942,10 @@ if __name__ == "__main__":
     parser.add_argument('--mix_name', default="3bDvTMix4bDvT")
     parser.add_argument('--classifier', help="SvB or SvB_MA")
     parser.add_argument('--region', default="SR", help="SR or SB")
-    parser.add_argument('--input_file_data3b',default="analysis/hists/histmixeddata_data_3b_for_mixed.root")
-    parser.add_argument('--input_file_TT',    default="analysis/hists/histmixeddata_TTbar_3b_for_mixed.root")
-    parser.add_argument('--input_file_mix16', default="analysis/hists/histmixeddata_mixeddata-UL16_preVFP.root")
-    parser.add_argument('--input_file_mix17', default="analysis/hists/histmixeddata_mixeddata-UL17.root")
-    parser.add_argument('--input_file_mix18', default="analysis/hists/histmixeddata_mixeddata-UL18.root")
-    parser.add_argument('--input_file_sig',    default="analysis/hists/histAll.root")
+    parser.add_argument('--input_file_data3b',default="analysis/hists/histMixedBkg_data_3b_for_mixed.root")
+    parser.add_argument('--input_file_TT',    default="analysis/hists/histMixedBkg_TT.root")
+    parser.add_argument('--input_file_mix',   default="analysis/hists/histMixedData.root")
+    parser.add_argument('--input_file_sig',   default="analysis/hists/histSignal.root")
     parser.add_argument('--var', default="SvB_MA_ps_hh", help="SvB_MA_ps_XX or SvB_MA_ps_XX_fine")
     parser.add_argument('--rebin', default=1)
     parser.add_argument('--outputPath', default="stats_analysis/closureFitsNew")
