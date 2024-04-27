@@ -111,7 +111,7 @@ analysis-test-mixed-job:
       - python/analysis/hists/testMixedBkg_TT.coffea
       - python/analysis/hists/testMixedBkg_data_3b_for_mixed.coffea
       - python/analysis/hists/testMixedData.coffea
-      - python/analysis/hists/testSignal.coffae
+      - python/analysis/hists/testSignal.coffea
       - python/analysis/hists/testMixedBkg_TT.yml
       - python/analysis/hists/testMixedBkg_data_3b_for_mixed.yml
       - python/analysis/hists/testMixedData.yml

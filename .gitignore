@@ -176,3 +176,9 @@ proxy/
 python/analysis/hists/
 runCITests.sh
 .bashrc
+
+.local/
+set_ROOT.sh
+python/stats_analysis/closureFits/
+python/stats_analysis/testsCI/
+python/stats_analysis/testsFull/
