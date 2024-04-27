@@ -174,11 +174,15 @@ if __name__ == '__main__':
             else:
                 xsec = eval(metadata['datasets'][dataset]['xs'])
 
+            top_reconstruction = metadata['datasets'][dataset]['top_reconstruction'] if "top_reconstruction" in metadata['datasets'][dataset] else None
+            logging.info(f"\n top construction configured as {top_reconstruction} ")
+
             metadata_dataset[dataset] = {'year': year,
                                          'processName': dataset,
                                          'xs': xsec,
                                          'lumi': float(metadata['datasets']['data'][year]['lumi']),
                                          'trigger':  metadata['datasets']['data'][year]['trigger'],
+                                         'top_reconstruction':  top_reconstruction
                                          }
             isData = (dataset == 'data')
             isMixedData = (dataset == 'mixeddata')
