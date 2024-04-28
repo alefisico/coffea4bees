@@ -45,7 +45,7 @@ def setSvBVars(SvBName, event):
                                     | (getattr(event, SvBName).phh > 0.01) )
 
     event[SvBName, "zz"] = ( getattr(event, SvBName).pzz >  getattr(event, SvBName).pzh ) & (getattr(event, SvBName).pzz > getattr(event, SvBName).phh)
-    
+
     event[SvBName, "zh"] = ( getattr(event, SvBName).pzh >  getattr(event, SvBName).pzz ) & (getattr(event, SvBName).pzh > getattr(event, SvBName).phh)
 
     event[SvBName, "hh"] = ( getattr(event, SvBName).phh >= getattr(event, SvBName).pzz ) & (getattr(event, SvBName).phh >= getattr(event, SvBName).pzh)
@@ -56,13 +56,13 @@ def setSvBVars(SvBName, event):
     #
     this_ps_zz = np.full(len(event), -1, dtype=float)
     this_ps_zz[getattr(event, SvBName).zz] = getattr(event, SvBName).pzz[ getattr(event, SvBName).zz ]
-    
+
     this_ps_zz[getattr(event, SvBName).passMinPs == False] = -2
     event[SvBName, "ps_zz"] = this_ps_zz
 
     this_ps_zh = np.full(len(event), -1, dtype=float)
     this_ps_zh[getattr(event, SvBName).zh] = getattr(event, SvBName).pzh[ getattr(event, SvBName).zh ]
-    
+
     this_ps_zh[getattr(event, SvBName).passMinPs == False] = -2
     event[SvBName, "ps_zh"] = this_ps_zh
 
@@ -156,7 +156,7 @@ class analysis(processor.ProcessorABC):
             if isMixedData:
 
                 FvT_name = event.metadata["FvT_name"]
-                event["FvT"] = getattr( NanoEventsFactory.from_root( f'{event.metadata["FvT_file"]}', entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema, ).events(), 
+                event["FvT"] = getattr( NanoEventsFactory.from_root( f'{event.metadata["FvT_file"]}', entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema, ).events(),
                                         FvT_name )
 
                 event["FvT", "FvT"] = getattr(event["FvT"], FvT_name)
@@ -173,7 +173,7 @@ class analysis(processor.ProcessorABC):
                 #
                 # Use the first to define the FvT weights
                 #
-                event["FvT"] = getattr( NanoEventsFactory.from_root( f'{event.metadata["FvT_files"][0]}', entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema, ).events(), 
+                event["FvT"] = getattr( NanoEventsFactory.from_root( f'{event.metadata["FvT_files"][0]}', entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema, ).events(),
                                         event.metadata["FvT_names"][0], )
 
                 event["FvT", "FvT"] = getattr( event["FvT"], event.metadata["FvT_names"][0] )
@@ -187,14 +187,14 @@ class analysis(processor.ProcessorABC):
 
                 for _FvT_name, _FvT_file in zip( event.metadata["FvT_names"], event.metadata["FvT_files"] ):
 
-                    event[_FvT_name] = getattr( NanoEventsFactory.from_root( f"{_FvT_file}", entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema, ).events(), 
+                    event[_FvT_name] = getattr( NanoEventsFactory.from_root( f"{_FvT_file}", entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema, ).events(),
                                                 _FvT_name, )
-                        
+
                     event[_FvT_name, _FvT_name] = getattr(event[_FvT_name], _FvT_name)
 
             else:
                 event["FvT"] = ( NanoEventsFactory.from_root( f'{path}{"FvT.root"}', entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().FvT )
-                
+
 
             event["FvT", "frac_err"] = event["FvT"].std / event["FvT"].FvT
             if not ak.all(event.FvT.event == event.event):
@@ -202,15 +202,15 @@ class analysis(processor.ProcessorABC):
 
         if self.run_SvB:
             if (self.classifier_SvB is None) | (self.classifier_SvB_MA is None):
-                event["SvB"] = ( NanoEventsFactory.from_root( f'{path}{"SvB_newSBDef.root" if "mix" in dataset else "SvB.root"}', 
+                event["SvB"] = ( NanoEventsFactory.from_root( f'{path}{"SvB_newSBDef.root" if "mix" in dataset else "SvB.root"}',
                                                               entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().SvB )
 
                 if not ak.all(event.SvB.event == event.event):
                     raise ValueError("ERROR: SvB events do not match events ttree")
 
-                event["SvB_MA"] = ( NanoEventsFactory.from_root( f'{path}{"SvB_MA_newSBDef.root" if "mix" in dataset else "SvB_MA.root"}', 
+                event["SvB_MA"] = ( NanoEventsFactory.from_root( f'{path}{"SvB_MA_newSBDef.root" if "mix" in dataset else "SvB_MA.root"}',
                                                                  entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema ).events().SvB_MA )
-                
+
                 if not ak.all(event.SvB_MA.event == event.event):
                     raise ValueError("ERROR: SvB_MA events do not match events ttree")
 
@@ -224,7 +224,7 @@ class analysis(processor.ProcessorABC):
             # Load the different JCMs
             #
             JCM_array = TreeReader( lambda x: [ s for s in x if s.startswith("pseudoTagWeight_3bDvTMix4bDvT_v") ] ).arrays(Chunk.from_coffea_events(event))
-            
+
             for _JCM_load in event.metadata["JCM_loads"]:
                 event[_JCM_load] = JCM_array[_JCM_load]
 
@@ -248,7 +248,7 @@ class analysis(processor.ProcessorABC):
                     ### this is temporary until trigWeight is computed in new code
                     trigWeight_file = uproot.open(f'{fname.replace("picoAOD", "trigWeights")}')['Events']
                     trigWeight = trigWeight_file.arrays(['event', 'trigWeight_Data', 'trigWeight_MC'], entry_start=estart,entry_stop=estop)
-                                                        
+
                     if not ak.all(trigWeight.event == event.event):
                         raise ValueError('trigWeight events do not match events ttree')
 
@@ -256,22 +256,22 @@ class analysis(processor.ProcessorABC):
 
                 else:
                     weights.add( "trigWeight_", event.trigWeight.Data, event.trigWeight.MC, ak.where(event.passHLT, 1.0, 0.0), )
-                    
+
 
             # puWeight (to be checked)
             if not isTTForMixed:
                 puWeight = list( correctionlib.CorrectionSet.from_file( self.corrections_metadata[year]["PU"] ).values() )[0]
-                weights.add( "PU_", 
-                             puWeight.evaluate(event.Pileup.nTrueInt.to_numpy(), "nominal"), 
-                             puWeight.evaluate(event.Pileup.nTrueInt.to_numpy(), "up"), 
+                weights.add( "PU_",
+                             puWeight.evaluate(event.Pileup.nTrueInt.to_numpy(), "nominal"),
+                             puWeight.evaluate(event.Pileup.nTrueInt.to_numpy(), "up"),
                              puWeight.evaluate(event.Pileup.nTrueInt.to_numpy(), "down"), )
-                
+
 
             # L1 prefiring weight
             if ( "L1PreFiringWeight" in event.fields ):  #### AGE: this should be temprorary (field exists in UL)
-                weights.add( "L1PreFiring_", 
-                             event.L1PreFiringWeight.Nom, 
-                             event.L1PreFiringWeight.Up, 
+                weights.add( "L1PreFiring_",
+                             event.L1PreFiringWeight.Nom,
+                             event.L1PreFiringWeight.Up,
                              event.L1PreFiringWeight.Dn, )
 
             if ( "PSWeight" in event.fields ):  #### AGE: this should be temprorary (field exists in UL)
@@ -306,7 +306,7 @@ class analysis(processor.ProcessorABC):
                     # Hessian PDF weights
                     # Eq. 21 of https://arxiv.org/pdf/1510.03865v1.pdf
                     arg = event.LHEPdfWeight[:, 1:-2] - np.ones( (len(weights.weight()), 100) )
-                    
+
                     summed = ak.sum(np.square(arg), axis=1)
                     pdf_unc = np.sqrt((1.0 / 99.0) * summed)
                     weights.add("PDF_", nom, pdf_unc + nom)
@@ -314,7 +314,7 @@ class analysis(processor.ProcessorABC):
                     # alpha_S weights
                     # Eq. 27 of same ref
                     as_unc = 0.5 * ( event.LHEPdfWeight[:, 102] - event.LHEPdfWeight[:, 101] )
-                    
+
                     weights.add("aS_", nom, as_unc + nom)
 
                     # PDF + alpha_S weights
@@ -341,9 +341,9 @@ class analysis(processor.ProcessorABC):
             jets = event.Jet
 
         else:
-            juncWS = [ self.corrections_metadata[year]["JERC"][0].replace("STEP", istep) 
+            juncWS = [ self.corrections_metadata[year]["JERC"][0].replace("STEP", istep)
                        for istep in ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"] ] + self.corrections_metadata[year]["JERC"][2:]
-                
+
             if self.run_systematics:
                 juncWS += [self.corrections_metadata[year]["JERC"][1]]
             jets = init_jet_factory(juncWS, event, isMC)
@@ -351,12 +351,12 @@ class analysis(processor.ProcessorABC):
         shifts = [({"Jet": jets}, None)]
         if self.run_systematics:
             for jesunc in self.corrections_metadata[year]["JES_uncertainties"]:
-                shifts.extend( [ ({"Jet": jets[f"JES_{jesunc}"].up}, f"JES_{jesunc}_Up"), 
+                shifts.extend( [ ({"Jet": jets[f"JES_{jesunc}"].up}, f"JES_{jesunc}_Up"),
                                  ({"Jet": jets[f"JES_{jesunc}"].down}, f"JES_{jesunc}_Down"), ] )
-                
+
             shifts.extend( [({"Jet": jets.JER.up}, "JER_Up"), ({"Jet": jets.JER.down}, "JER_Down")] )
-                
-            
+
+
             logging.info(f"\nJet variations {[name for _, name in shifts]}")
 
         return processor.accumulate( self.process_shift(update_events(event, collections), name, weights) for collections, name in shifts )
@@ -375,7 +375,7 @@ class analysis(processor.ProcessorABC):
         nEvent = len(event)
 
         # Apply object selection (function does not remove events, adds content to objects)
-        event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year], 
+        event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year],
                                            isMixedData=isMixedData, isTTForMixed=isTTForMixed, isDataForMixed=isDataForMixed, )
 
         selections = PackedSelection()
@@ -406,16 +406,16 @@ class analysis(processor.ProcessorABC):
         #### AGE to add btag JES
         #
         if isMC and self.apply_btagSF:
-            weights.add( "btagSF_", 
+            weights.add( "btagSF",
                          apply_btag_sf( event.selJet, correction_file=self.corrections_metadata[year]["btagSF"], btag_uncertainties=None, )["btagSF_central"], )
 
             if (not shift_name) & self.run_systematics:
-                btag_SF_weights = apply_btag_sf( event.selJet, correction_file=self.corrections_metadata[year]["btagSF"], 
+                btag_SF_weights = apply_btag_sf( event.selJet, correction_file=self.corrections_metadata[year]["btagSF"],
                                                  btag_uncertainties=self.corrections_metadata[year][ "btag_uncertainties" ], )
 
-                weights.add_multivariation( f"btagSF_", btag_SF_weights["btagSF_central"], 
-                                            self.corrections_metadata[year]["btag_uncertainties"], 
-                                            [ var.to_numpy() for name, var in btag_SF_weights.items() if "_up" in name ], 
+                weights.add_multivariation( f"btagSF", btag_SF_weights["btagSF_central"],
+                                            self.corrections_metadata[year]["btag_uncertainties"],
+                                            [ var.to_numpy() for name, var in btag_SF_weights.items() if "_up" in name ],
                                             [ var.to_numpy() for name, var in btag_SF_weights.items() if "_down" in name ], )
 
             event["weight"] = weights.weight()
@@ -511,8 +511,8 @@ class analysis(processor.ProcessorABC):
                     #
                     for _JCM_load, _FvT_name in zip( event.metadata["JCM_loads"], event.metadata["FvT_names"] ):
                         _weight = np.array(selev.weight.to_numpy(), dtype=float)
-                        _weight[selev.threeTag] = ( selev.weight[selev.threeTag] 
-                                                    * getattr(selev, f"{_JCM_load}")[selev.threeTag] 
+                        _weight[selev.threeTag] = ( selev.weight[selev.threeTag]
+                                                    * getattr(selev, f"{_JCM_load}")[selev.threeTag]
                                                     * getattr(getattr(selev, _FvT_name), _FvT_name)[ selev.threeTag ] )
                         selev[f"weight_{_FvT_name}"] = _weight
 
@@ -607,8 +607,8 @@ class analysis(processor.ProcessorABC):
         selev["top_cand", "p"] = bReg_p + selev.top_cand.j + selev.top_cand.l
 
         # mW, mt = 80.4, 173.0
-        selev["top_cand", "W"] = ak.zip( { "p": selev.top_cand.j + selev.top_cand.l, 
-                                           "j": selev.top_cand.j, 
+        selev["top_cand", "W"] = ak.zip( { "p": selev.top_cand.j + selev.top_cand.l,
+                                           "j": selev.top_cand.j,
                                            "l": selev.top_cand.l, } )
 
         selev["top_cand", "W", "pW"] = selev.top_cand.W.p * ( mW / selev.top_cand.W.p.mass )
@@ -631,9 +631,9 @@ class analysis(processor.ProcessorABC):
             selev["delta_xW"] = selev.xW - selev.xW_reco
 
         if self.apply_FvT:
-            quadJet["FvT_q_score"] = np.concatenate( ( np.reshape(np.array(selev.FvT.q_1234), (-1, 1)), 
-                                                       np.reshape(np.array(selev.FvT.q_1324), (-1, 1)), 
-                                                       np.reshape(np.array(selev.FvT.q_1423), (-1, 1)), ), 
+            quadJet["FvT_q_score"] = np.concatenate( ( np.reshape(np.array(selev.FvT.q_1234), (-1, 1)),
+                                                       np.reshape(np.array(selev.FvT.q_1324), (-1, 1)),
+                                                       np.reshape(np.array(selev.FvT.q_1423), (-1, 1)), ),
                                                      axis=1, )
 
         if self.run_SvB:
@@ -641,13 +641,13 @@ class analysis(processor.ProcessorABC):
             if (self.classifier_SvB is not None) | (self.classifier_SvB_MA is not None):
                 self.compute_SvB(selev)  ### this computes both
 
-            quadJet["SvB_q_score"] = np.concatenate( ( np.reshape(np.array(selev.SvB.q_1234), (-1, 1)), 
-                                                       np.reshape(np.array(selev.SvB.q_1324), (-1, 1)), 
-                                                       np.reshape(np.array(selev.SvB.q_1423), (-1, 1)), ), 
+            quadJet["SvB_q_score"] = np.concatenate( ( np.reshape(np.array(selev.SvB.q_1234), (-1, 1)),
+                                                       np.reshape(np.array(selev.SvB.q_1324), (-1, 1)),
+                                                       np.reshape(np.array(selev.SvB.q_1423), (-1, 1)), ),
                                                      axis=1, )
 
-            quadJet["SvB_MA_q_score"] = np.concatenate( ( np.reshape(np.array(selev.SvB_MA.q_1234), (-1, 1)), 
-                                                          np.reshape(np.array(selev.SvB_MA.q_1324), (-1, 1)), 
+            quadJet["SvB_MA_q_score"] = np.concatenate( ( np.reshape(np.array(selev.SvB_MA.q_1234), (-1, 1)),
+                                                          np.reshape(np.array(selev.SvB_MA.q_1324), (-1, 1)),
                                                           np.reshape(np.array(selev.SvB_MA.q_1423), (-1, 1)), ), axis=1, )
         #
         # Compute Signal Regions
@@ -719,13 +719,13 @@ class analysis(processor.ProcessorABC):
 
             fill = Fill(process=processName, year=year, weight="weight")
 
-            hist = Collection( process=[processName], 
-                               year=[year], 
-                               tag=[3, 4, 0],  # 3 / 4/ Other 
-                               region=[2, 1, 0],  # SR / SB / Other 
+            hist = Collection( process=[processName],
+                               year=[year],
+                               tag=[3, 4, 0],  # 3 / 4/ Other
+                               region=[2, 1, 0],  # SR / SB / Other
                                **dict((s, ...) for s in self.histCuts)
                                )
-            
+
             #
             # To Add
             #
@@ -784,7 +784,7 @@ class analysis(processor.ProcessorABC):
 
                 fill += hist.add("quadJet_selected_FvT_score", (100, 0, 1, ("quadJet_selected.FvT_q_score", "Selected Quad Jet Diboson FvT q score") ) )
                 fill += hist.add("quadJet_min_FvT_score",      (100, 0, 1, ("quadJet_min_dr.FvT_q_score",   "Min dR Quad Jet Diboson FvT q score"  ) ) )
-                
+
                 if self.JCM:
                     fill += hist.add("FvT_noFvT", (100, 0, 5, ("FvT.FvT", "FvT reweight")), weight="weight_noFvT")
 
@@ -857,19 +857,20 @@ class analysis(processor.ProcessorABC):
         else:
 
             shift_name = "nominal" if not shift_name else shift_name
-            hist_SvB = Collection( process=[processName], 
-                                   year=[year], 
-                                   variation=[shift_name], 
+            hist_SvB = Collection( process=[processName],
+                                   year=[year],
+                                   variation=[shift_name],
                                    tag=[4],  # 3 / 4/ Other
                                    region=[2],  # SR / SB / Other
                                    **dict((s, ...) for s in self.histCuts),
                                    )
-            
+
+            selev[f"weight"] = weights.weight()[ selections.all(*allcuts) ]
             fill_SvB = Fill( process=processName, year=year, variation=shift_name, weight="weight" )
             fill_SvB += SvBHists(("SvB",    "SvB Classifier"),    "SvB",    skip=["ps", "ptt"])
             fill_SvB += SvBHists(("SvB_MA", "SvB MA Classifier"), "SvB_MA", skip=["ps", "ptt"])
 
-            fill_SvB(selev)
+            fill_SvB(selev, hist_SvB)
 
             if "nominal" in shift_name:
                 logging.info(f"Weight variations {weights.variations}")
@@ -883,8 +884,8 @@ class analysis(processor.ProcessorABC):
                                                       tag=[4],  # 3 / 4/ Other
                                                       region=[2],  # SR / SB / Other
                                                       **dict((s, ...) for s in self.histCuts) )
-                    
-                                                  
+
+
                     selev[f"weight_{ivar}"] = weights.weight(modifier=ivar)[ selections.all(*allcuts) ]
                     fill_SvB_ivar = Fill( process=processName, year=year, variation=ivar, weight=f"weight_{ivar}", )
 
@@ -984,7 +985,7 @@ class analysis(processor.ProcessorABC):
                     worst = np.max(delta) == delta
                     worst_event = event[worst][0]
 
-                    logging.warning( f"WARNING: Calculated {classifier} does not agree " f"within tolerance for some events ({np.sum(error)}/{len(error)})", 
+                    logging.warning( f"WARNING: Calculated {classifier} does not agree " f"within tolerance for some events ({np.sum(error)}/{len(error)})",
                                      delta[worst], )
 
                     logging.warning("----------")
