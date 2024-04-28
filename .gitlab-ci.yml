@@ -81,7 +81,6 @@ analysis-test-job:
     paths:
       - python/analysis/hists/test.coffea
 
-
 analysis-test-job-unsup:   
   stage: analysis-test   
   needs:
@@ -108,8 +107,15 @@ analysis-test-mixed-job:
   artifacts: 
     expire_in: 1 day
     paths:
-      - python/analysis/hists/testMixedBkg.coffea
+      - python/analysis/hists/testMixedBkg_TT.coffea
+      - python/analysis/hists/testMixedBkg_data_3b_for_mixed.coffea
       - python/analysis/hists/testMixedData.coffea
+      - python/analysis/hists/testSignal.coffea
+      - python/analysis/hists/testMixedBkg_TT.yml
+      - python/analysis/hists/testMixedBkg_data_3b_for_mixed.yml
+      - python/analysis/hists/testMixedData.yml
+      - python/analysis/hists/testSignal.yml
+
 
 analysis-systematics-test-job:   
   stage: analysis-test   
@@ -124,7 +130,6 @@ analysis-systematics-test-job:
     expire_in: 1 day
     paths:
       - python/analysis/hists/test_systematics.coffea
-
 
 skimmer-test-job:   
   stage: skimmer-test   
@@ -155,23 +160,6 @@ skimmer-analysis-test-job:
     expire_in: 1 day
     paths:
       - python/analysis/hists/test_skimmer.coffea
-
-
-## needs to move unsup weight files to work
-#analysis-test-unsup-job:   
-#  stage: analysis-test   
-#  needs:
-#    - voms_proxy
-#  image: gitlab-registry.cern.ch/algomez/coffea4bees:test
-#  tags:
-#    - k8s-cvmfs
-#  script:
-#    - source .ci-workflows/analysis-test-unsup-job.sh
-#  artifacts: 
-#    expire_in: 1 day
-#    paths:
-#      - python/analysis/hists/test_unsup.coffea
-
 
 analysis-plot-job:    
   stage: plot 
@@ -259,19 +247,19 @@ analysis-systematics-cutflow-job:
       - python/analysis/tests/test_systematics_dump_cutflow.yml
   allow_failure: true   ##### needs fix
 
-#analysis-cutflow-unsup-job:    
-#  stage: cutflow
-#  needs: 
-#    - analysis-test-unsup-job
-#  image: gitlab-registry.cern.ch/algomez/coffea4bees:test
-#  tags:
-#    - k8s-cvmfs
-#  script:
-#    - source .ci-workflows/analysis-cutflow-unsup-job.sh
-#  artifacts:
-#    expire_in: 1 day
-#    paths:
-#      - python/analysis/tests/test_dump_cutflow_unsup.yml
+analysis-cutflow-job-unsup:    
+ stage: cutflow
+ needs: 
+   - analysis-test-job-unsup
+ image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+ tags:
+   - k8s-cvmfs
+ script:
+   - source .ci-workflows/analysis-cutflow-job-unsup.sh
+ artifacts:
+   expire_in: 1 day
+   paths:
+     - python/analysis/tests/test_dump_cutflow_job_unsup.yml
 
 analysis-cutflow-job:    
   stage: cutflow
@@ -324,6 +312,8 @@ analysis-iplot-job:
 baseclass-test-job:   
   stage: plot
   image: gitlab-registry.cern.ch/algomez/coffea4bees:test
+  needs: 
+    - analysis-test-job
   tags:
     - k8s-cvmfs
   script:
@@ -365,8 +355,8 @@ ymltoroot-test-job:
 
 twoStageClosure-test-job:   
   stage: fits
-#  needs: 
-#    - histtoyml-test-job
+  needs: 
+    - analysis-test-mixed-job
   image: gitlab-registry.cern.ch/cms-cloud/cmssw-docker/cc7-cms 
   tags:
     - k8s-cvmfs
@@ -376,7 +366,7 @@ twoStageClosure-test-job:
 
 reana-job:
   stage: reana
-  image: docker.io/reanahub/reana-client:0.9.3
+  image: gitlab-registry.cern.ch/algomez/coffea4bees:test
   tags:
     - k8s-cvmfs
   script:

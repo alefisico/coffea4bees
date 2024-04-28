@@ -55,19 +55,19 @@ def setSvBVars(SvBName, event):
     #  Set ps_{bb}
     #
     this_ps_zz = np.full(len(event), -1, dtype=float)
-    this_ps_zz[getattr(event, SvBName).zz] = getattr(event, SvBName).pzz[ getattr(event, SvBName).zz ]
+    this_ps_zz[getattr(event, SvBName).zz] = getattr(event, SvBName).ps[ getattr(event, SvBName).zz ]
 
     this_ps_zz[getattr(event, SvBName).passMinPs == False] = -2
     event[SvBName, "ps_zz"] = this_ps_zz
 
     this_ps_zh = np.full(len(event), -1, dtype=float)
-    this_ps_zh[getattr(event, SvBName).zh] = getattr(event, SvBName).pzh[ getattr(event, SvBName).zh ]
+    this_ps_zh[getattr(event, SvBName).zh] = getattr(event, SvBName).ps[ getattr(event, SvBName).zh ]
 
     this_ps_zh[getattr(event, SvBName).passMinPs == False] = -2
     event[SvBName, "ps_zh"] = this_ps_zh
 
     this_ps_hh = np.full(len(event), -1, dtype=float)
-    this_ps_hh[getattr(event, SvBName).hh] = getattr(event, SvBName).phh[ getattr(event, SvBName).hh ]
+    this_ps_hh[getattr(event, SvBName).hh] = getattr(event, SvBName).ps[ getattr(event, SvBName).hh ]
 
     this_ps_hh[getattr(event, SvBName).passMinPs == False] = -2
     event[SvBName, "ps_hh"] = this_ps_hh
@@ -137,6 +137,7 @@ class analysis(processor.ProcessorABC):
         lumi    = event.metadata.get('lumi',    1.0)
         xs      = event.metadata.get('xs',      1.0)
         kFactor = event.metadata.get('kFactor', 1.0)
+        self.top_reconstruction = event.metadata.get("top_reconstruction", None)
 
         isMixedData    = not (dataset.find("mix_v") == -1)
         isDataForMixed = not (dataset.find("data_3b_for_mixed") == -1)
@@ -369,9 +370,9 @@ class analysis(processor.ProcessorABC):
         processName = event.metadata['processName']
         isMC        = True if event.run[0] == 1 else False
 
-        isMixedData = not (dataset.find("mix_v") == -1)
+        isMixedData    = not (dataset.find("mix_v") == -1)
         isDataForMixed = not (dataset.find("data_3b_for_mixed") == -1)
-        isTTForMixed = not (dataset.find("TTTo") == -1) and not ( dataset.find("_for_mixed") == -1 )
+        isTTForMixed   = not (dataset.find("TTTo") == -1) and not ( dataset.find("_for_mixed") == -1 )
         nEvent = len(event)
 
         # Apply object selection (function does not remove events, adds content to objects)
@@ -381,7 +382,7 @@ class analysis(processor.ProcessorABC):
         selections = PackedSelection()
         selections.add( "lumimask", event.lumimask)
         selections.add( "passNoiseFilter", event.passNoiseFilter)
-        selections.add( "passHLT", ( np.full(len(event), True) if (isMC or isMixedData or isTTForMixed or isDataForMixed) else event.passHLT ) )
+        selections.add( "passHLT", ( np.full(len(event), True) if (isMC or isMixedData or isTTForMixed) else event.passHLT ) )
         selections.add( 'passJetMult', event.passJetMult )
         allcuts = [ 'lumimask', 'passNoiseFilter', 'passHLT', 'passJetMult' ]
         event['weight'] = weights.weight()   ### this is for _cutflow
@@ -597,38 +598,46 @@ class analysis(processor.ProcessorABC):
         #
         # dumpTopCandidateTestVectors(selev, logging, chunk, 15)
 
-        # sort the jets by btagging
-        selev.selJet = selev.selJet[ ak.argsort(selev.selJet.btagDeepFlavB, axis=1, ascending=False) ]
-        top_cands = find_tops_slow(selev.selJet)
-        rec_top_cands = buildTop(selev.selJet, top_cands)
+        if self.top_reconstruction in ["slow","fast"]:
 
-        selev["top_cand"] = rec_top_cands[:, 0]
-        bReg_p = selev.top_cand.b * selev.top_cand.b.bRegCorr
-        selev["top_cand", "p"] = bReg_p + selev.top_cand.j + selev.top_cand.l
+            # sort the jets by btagging
+            selev.selJet = selev.selJet[ ak.argsort(selev.selJet.btagDeepFlavB, axis=1, ascending=False) ]
 
-        # mW, mt = 80.4, 173.0
-        selev["top_cand", "W"] = ak.zip( { "p": selev.top_cand.j + selev.top_cand.l,
-                                           "j": selev.top_cand.j,
-                                           "l": selev.top_cand.l, } )
+            if self.top_reconstruction == "slow":
+                top_cands = find_tops_slow(selev.selJet)
+            else:
+                top_cands = find_tops(selev.selJet)
 
-        selev["top_cand", "W", "pW"] = selev.top_cand.W.p * ( mW / selev.top_cand.W.p.mass )
-        selev["top_cand", "mbW"] = (bReg_p + selev.top_cand.W.pW).mass
-        selev["top_cand", "xt"] = (selev.top_cand.p.mass - mt) / ( 0.10 * selev.top_cand.p.mass )
-        selev["top_cand", "xWt"] = np.sqrt(selev.top_cand.xW**2 + selev.top_cand.xt**2)
-        selev["top_cand", "mbW"] = (bReg_p + selev.top_cand.W.pW).mass
-        selev["top_cand", "xWbW"] = np.sqrt( selev.top_cand.xW**2 + selev.top_cand.xbW**2 )
+            rec_top_cands = buildTop(selev.selJet, top_cands)
 
-        #
-        # after minimizing, the ttbar distribution is centered around ~(0.5, 0.25) with surfaces of constant density approximiately constant radii
-        #
-        selev["top_cand", "rWbW"] = np.sqrt( (selev.top_cand.xbW - 0.25) ** 2 + (selev.top_cand.xW - 0.5) ** 2 )
+            selev["top_cand"] = rec_top_cands[:, 0]
+            bReg_p = selev.top_cand.b * selev.top_cand.b.bRegCorr
+            selev["top_cand", "p"] = bReg_p + selev.top_cand.j + selev.top_cand.l
 
-        selev["xbW_reco"] = selev.top_cand.xbW
-        selev["xW_reco"] = selev.top_cand.xW
+            # mW, mt = 80.4, 173.0
+            selev["top_cand", "W"] = ak.zip( { "p": selev.top_cand.j + selev.top_cand.l,
+                                               "j": selev.top_cand.j,
+                                               "l": selev.top_cand.l, } )
 
-        if "xbW" in selev.fields:  #### AGE: this should be temporary
-            selev["delta_xbW"] = selev.xbW - selev.xbW_reco
-            selev["delta_xW"] = selev.xW - selev.xW_reco
+            selev["top_cand", "W", "pW"] = selev.top_cand.W.p * ( mW / selev.top_cand.W.p.mass )
+            selev["top_cand", "mbW"] = (bReg_p + selev.top_cand.W.pW).mass
+            selev["top_cand", "xt"] = (selev.top_cand.p.mass - mt) / ( 0.10 * selev.top_cand.p.mass )
+            selev["top_cand", "xWt"] = np.sqrt(selev.top_cand.xW**2 + selev.top_cand.xt**2)
+            selev["top_cand", "mbW"] = (bReg_p + selev.top_cand.W.pW).mass
+            selev["top_cand", "xWbW"] = np.sqrt( selev.top_cand.xW**2 + selev.top_cand.xbW**2 )
+
+            #
+            # after minimizing, the ttbar distribution is centered around ~(0.5, 0.25) with surfaces of constant density approximiately constant radii
+            #
+            selev["top_cand", "rWbW"] = np.sqrt( (selev.top_cand.xbW - 0.25) ** 2 + (selev.top_cand.xW - 0.5) ** 2 )
+
+            selev["xbW_reco"] = selev.top_cand.xbW
+            selev["xW_reco"] = selev.top_cand.xW
+
+            if "xbW" in selev.fields:  #### AGE: this should be temporary
+                selev["delta_xbW"] = selev.xbW - selev.xbW_reco
+                selev["delta_xW"] = selev.xW - selev.xW_reco
+
 
         if self.apply_FvT:
             quadJet["FvT_q_score"] = np.concatenate( ( np.reshape(np.array(selev.FvT.q_1234), (-1, 1)),
@@ -639,6 +648,11 @@ class analysis(processor.ProcessorABC):
         if self.run_SvB:
 
             if (self.classifier_SvB is not None) | (self.classifier_SvB_MA is not None):
+
+                if "xbW_reco" not in selev.fields:
+                    selev["xbW_reco"] = selev["xbW"]
+                    selev["xW_reco"]  = selev["xW"]
+
                 self.compute_SvB(selev)  ### this computes both
 
             quadJet["SvB_q_score"] = np.concatenate( ( np.reshape(np.array(selev.SvB.q_1234), (-1, 1)),
@@ -649,6 +663,7 @@ class analysis(processor.ProcessorABC):
             quadJet["SvB_MA_q_score"] = np.concatenate( ( np.reshape(np.array(selev.SvB_MA.q_1234), (-1, 1)),
                                                           np.reshape(np.array(selev.SvB_MA.q_1324), (-1, 1)),
                                                           np.reshape(np.array(selev.SvB_MA.q_1423), (-1, 1)), ), axis=1, )
+
         #
         # Compute Signal Regions
         #
@@ -685,6 +700,21 @@ class analysis(processor.ProcessorABC):
         selev["passDiJetMass"] = ak.any(quadJet.passDiJetMass, axis=1)
 
         selev["region"] = ( selev["quadJet_selected"].SR * 0b10 + selev["quadJet_selected"].SB * 0b01 )
+
+        #
+        # Example of how to write out event numbers
+        #
+        # passSR = (selev.passDiJetMass & selev["quadJet_selected"].SR)
+        #
+        # out_data = {}
+        # out_data["SvB"    ] = selev["SvB_MA"].ps[passSR]
+        # out_data["event"  ] = selev["event"][passSR]
+        # out_data["run"    ] = selev["run"][passSR]
+        # out_data["canJet0"] = selev["canJet"].pt[passSR][:,0]
+        #
+        # for out_k, out_v in out_data.items():
+        #     processOutput[out_k] = {}
+        #     processOutput[out_k][event.metadata['dataset']] = list(out_v)
 
         if self.run_SvB:
             selev["passSvB"] = selev["SvB_MA"].ps > 0.80
@@ -744,10 +774,10 @@ class analysis(processor.ProcessorABC):
                 if isMixedData or isDataForMixed or isTTForMixed:
                     FvT_skip = ["pt", "pm3", "pm4"]
 
-                if "xbW" in selev.fields:  ### AGE: this should be temporary
-                    fill += hist.add("xW", (100, 0, 12, ("xW", "xW")))
-                    fill += hist.add("delta_xW", (100, -5, 5, ("delta_xW", "delta xW")))
-                    fill += hist.add("delta_xW_l", (100, -15, 15, ("delta_xW", "delta xW")))
+            if "xbW" in selev.fields:  ### AGE: this should be temporary
+                fill += hist.add("xW", (100, 0, 12, ("xW", "xW")))
+                #fill += hist.add("delta_xW", (100, -5, 5, ("delta_xW", "delta xW")))
+                #fill += hist.add("delta_xW_l", (100, -15, 15, ("delta_xW", "delta xW")))
 
             #
             # Separate reweighting for the different mixed samples
@@ -814,7 +844,8 @@ class analysis(processor.ProcessorABC):
             #
             # Top Candidates
             #
-            fill += TopCandHists(("top_cand", "Top Candidate"), "top_cand")
+            if self.top_reconstruction in ["slow","fast"]:
+                fill += TopCandHists(("top_cand", "Top Candidate"), "top_cand")
 
             if self.run_SvB:
 
@@ -842,8 +873,11 @@ class analysis(processor.ProcessorABC):
                     selev[k] = selev["quadJet_selected"][k]
 
                 selev["nSelJets"] = ak.num(selev.selJet)
-                selev["xbW"] = selev["xbW_reco"]
-                selev["xW"] = selev["xW_reco"]
+
+                if "xbW_reco" in selev.fields:  #### AGE: this should be temporary
+                    selev["xbW"] = selev["xbW_reco"]
+                    selev["xW"]  = selev["xW_reco"]
+
                 ####
                 from ..helpers.classifier.HCR import dump_input_friend, dump_JCM_weight
 
@@ -967,15 +1001,18 @@ class analysis(processor.ProcessorABC):
             SvB["largest"] = largest_name[ SvB.passMinPs * ( 1 * SvB.zz + 2* SvB.zh + 3*SvB.hh ) ]
 
             this_ps_zz = np.full(len(event), -1, dtype=float)
-            this_ps_zz[ SvB.zz ] = SvB.pzz[ SvB.zz ]
+            this_ps_zz[ SvB.zz ] = SvB.ps[ SvB.zz ]
+            this_ps_zz[ SvB.passMinPs == False ] = -2
             SvB['ps_zz'] = this_ps_zz
 
             this_ps_zh = np.full(len(event), -1, dtype=float)
-            this_ps_zh[ SvB.zh ] = SvB.pzh[ SvB.zh ]
+            this_ps_zh[ SvB.zh ] = SvB.ps[ SvB.zh ]
+            this_ps_zh[ SvB.passMinPs == False ] = -2
             SvB['ps_zh'] = this_ps_zh
 
             this_ps_hh = np.full(len(event), -1, dtype=float)
-            this_ps_hh[ SvB.hh ] = SvB.phh[ SvB.hh ]
+            this_ps_hh[ SvB.hh ] = SvB.ps[ SvB.hh ]
+            this_ps_hh[ SvB.passMinPs == False ] = -2
             SvB['ps_hh'] = this_ps_hh
 
             if classifier in event.fields:
