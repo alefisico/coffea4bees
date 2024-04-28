@@ -407,8 +407,6 @@ class analysis(processor.ProcessorABC):
         #### AGE to add btag JES
         #
         if isMC and self.apply_btagSF:
-            weights.add( "btagSF",
-                         apply_btag_sf( event.selJet, correction_file=self.corrections_metadata[year]["btagSF"], btag_uncertainties=None, )["btagSF_central"], )
 
             if (not shift_name) & self.run_systematics:
                 btag_SF_weights = apply_btag_sf( event.selJet, correction_file=self.corrections_metadata[year]["btagSF"],
@@ -418,6 +416,9 @@ class analysis(processor.ProcessorABC):
                                             self.corrections_metadata[year]["btag_uncertainties"],
                                             [ var.to_numpy() for name, var in btag_SF_weights.items() if "_up" in name ],
                                             [ var.to_numpy() for name, var in btag_SF_weights.items() if "_down" in name ], )
+            else:
+                weights.add( "btagSF",
+                         apply_btag_sf( event.selJet, correction_file=self.corrections_metadata[year]["btagSF"], btag_uncertainties=None, )["btagSF_central"], )
 
             event["weight"] = weights.weight()
             if not shift_name:
@@ -485,8 +486,8 @@ class analysis(processor.ProcessorABC):
         # calculate pseudoTagWeight for threeTag events
         #
         logging.debug( f"noJCM_noFVT {weights.weight()[ selections.all(*allcuts ) ][:10]}" )
-        logging.debug( f"noJCM_noFVT partial {weights.partial_weight(include=['genweight_', 'trigWeight_', 'PU_' ,'btagSF_'])[ selections.all(*allcuts) ][:10]}" )
-        selev["weight_noJCM_noFvT"] = weights.partial_weight( include=["genweight_", "trigWeight_", "PU_", "btagSF_"] )[selections.all(*allcuts)]
+        logging.debug( f"noJCM_noFVT partial {weights.partial_weight(include=['genweight_', 'trigWeight_', 'PU_' ,'btagSF'])[ selections.all(*allcuts) ][:10]}" )
+        selev["weight_noJCM_noFvT"] = weights.partial_weight( include=["genweight_", "trigWeight_", "PU_", "btagSF"] )[selections.all(*allcuts)]
 
         if self.JCM:
             selev["Jet_untagged_loose"] = selev.Jet[ selev.Jet.selected & ~selev.Jet.tagged_loose ]
@@ -899,7 +900,6 @@ class analysis(processor.ProcessorABC):
                                    **dict((s, ...) for s in self.histCuts),
                                    )
 
-            selev[f"weight"] = weights.weight()[ selections.all(*allcuts) ]
             fill_SvB = Fill( process=processName, year=year, variation=shift_name, weight="weight" )
             fill_SvB += SvBHists(("SvB",    "SvB Classifier"),    "SvB",    skip=["ps", "ptt"])
             fill_SvB += SvBHists(("SvB_MA", "SvB MA Classifier"), "SvB_MA", skip=["ps", "ptt"])
