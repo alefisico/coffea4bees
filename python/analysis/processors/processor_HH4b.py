@@ -407,17 +407,18 @@ class analysis(processor.ProcessorABC):
         #### AGE to add btag JES
         #
         if isMC and self.apply_btagSF:
-            weights.add( "btagSF_",
-                         apply_btag_sf( event.selJet, correction_file=self.corrections_metadata[year]["btagSF"], btag_uncertainties=None, )["btagSF_central"], )
 
             if (not shift_name) & self.run_systematics:
                 btag_SF_weights = apply_btag_sf( event.selJet, correction_file=self.corrections_metadata[year]["btagSF"],
                                                  btag_uncertainties=self.corrections_metadata[year][ "btag_uncertainties" ], )
 
-                weights.add_multivariation( f"btagSF_", btag_SF_weights["btagSF_central"],
+                weights.add_multivariation( f"btagSF", btag_SF_weights["btagSF_central"],
                                             self.corrections_metadata[year]["btag_uncertainties"],
                                             [ var.to_numpy() for name, var in btag_SF_weights.items() if "_up" in name ],
                                             [ var.to_numpy() for name, var in btag_SF_weights.items() if "_down" in name ], )
+            else:
+                weights.add( "btagSF",
+                         apply_btag_sf( event.selJet, correction_file=self.corrections_metadata[year]["btagSF"], btag_uncertainties=None, )["btagSF_central"], )
 
             event["weight"] = weights.weight()
             if not shift_name:
@@ -485,8 +486,8 @@ class analysis(processor.ProcessorABC):
         # calculate pseudoTagWeight for threeTag events
         #
         logging.debug( f"noJCM_noFVT {weights.weight()[ selections.all(*allcuts ) ][:10]}" )
-        logging.debug( f"noJCM_noFVT partial {weights.partial_weight(include=['genweight_', 'trigWeight_', 'PU_' ,'btagSF_'])[ selections.all(*allcuts) ][:10]}" )
-        selev["weight_noJCM_noFvT"] = weights.partial_weight( include=["genweight_", "trigWeight_", "PU_", "btagSF_"] )[selections.all(*allcuts)]
+        logging.debug( f"noJCM_noFVT partial {weights.partial_weight(include=['genweight_', 'trigWeight_', 'PU_' ,'btagSF'])[ selections.all(*allcuts) ][:10]}" )
+        selev["weight_noJCM_noFvT"] = weights.partial_weight( include=["genweight_", "trigWeight_", "PU_", "btagSF"] )[selections.all(*allcuts)]
 
         if self.JCM:
             selev["Jet_untagged_loose"] = selev.Jet[ selev.Jet.selected & ~selev.Jet.tagged_loose ]
@@ -873,7 +874,7 @@ class analysis(processor.ProcessorABC):
                     selev[k] = selev["quadJet_selected"][k]
 
                 selev["nSelJets"] = ak.num(selev.selJet)
-                
+
                 if "xbW_reco" in selev.fields:  #### AGE: this should be temporary
                     selev["xbW"] = selev["xbW_reco"]
                     selev["xW"]  = selev["xW_reco"]
@@ -903,7 +904,7 @@ class analysis(processor.ProcessorABC):
             fill_SvB += SvBHists(("SvB",    "SvB Classifier"),    "SvB",    skip=["ps", "ptt"])
             fill_SvB += SvBHists(("SvB_MA", "SvB MA Classifier"), "SvB_MA", skip=["ps", "ptt"])
 
-            fill_SvB(selev)
+            fill_SvB(selev, hist_SvB)
 
             if "nominal" in shift_name:
                 logging.info(f"Weight variations {weights.variations}")
@@ -1000,15 +1001,18 @@ class analysis(processor.ProcessorABC):
             SvB["largest"] = largest_name[ SvB.passMinPs * ( 1 * SvB.zz + 2* SvB.zh + 3*SvB.hh ) ]
 
             this_ps_zz = np.full(len(event), -1, dtype=float)
-            this_ps_zz[ SvB.zz ] = SvB.pzz[ SvB.zz ]
+            this_ps_zz[ SvB.zz ] = SvB.ps[ SvB.zz ]
+            this_ps_zz[ SvB.passMinPs == False ] = -2
             SvB['ps_zz'] = this_ps_zz
 
             this_ps_zh = np.full(len(event), -1, dtype=float)
-            this_ps_zh[ SvB.zh ] = SvB.pzh[ SvB.zh ]
+            this_ps_zh[ SvB.zh ] = SvB.ps[ SvB.zh ]
+            this_ps_zh[ SvB.passMinPs == False ] = -2
             SvB['ps_zh'] = this_ps_zh
 
             this_ps_hh = np.full(len(event), -1, dtype=float)
-            this_ps_hh[ SvB.hh ] = SvB.phh[ SvB.hh ]
+            this_ps_hh[ SvB.hh ] = SvB.ps[ SvB.hh ]
+            this_ps_hh[ SvB.passMinPs == False ] = -2
             SvB['ps_hh'] = this_ps_hh
 
             if classifier in event.fields:
