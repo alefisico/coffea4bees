@@ -68,8 +68,6 @@ if __name__ == '__main__':
                         default="./datacards/", help='Output directory.')
     parser.add_argument('--histos', dest="histos", nargs="+",
                         default=[ ], help='List of histograms to convert')
-    parser.add_argument('--classifier', dest="classifier", nargs="+",
-                        default=["SvB_MA", "SvB"], help='Classifier to make histograms.')
     parser.add_argument('-f', '--file', dest='file_to_convert',
                         default="histos/histAll.json", help="File with coffea hists")
     args = parser.parse_args()
