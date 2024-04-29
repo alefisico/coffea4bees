@@ -362,7 +362,7 @@ twoStageClosure-test-job:
     - source /cvmfs/cms.cern.ch/cmsset_default.sh
     - cd /home/cmsusr/CMSSW_11_3_4/
     - cmsenv || true
-    - cd $HOME
+    - cd /builds/${$CI_REGISTRY_USER}/coffea4bees/
   tags:
     - k8s-cvmfs
   script:
