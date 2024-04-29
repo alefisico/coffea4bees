@@ -1,15 +1,6 @@
 counts4:
-    ZZ4b_UL18:
-        passJetMult: 0.09
-        passPreSel: 0.0
-        passDiJetMass: 0.0
-        SR: 0.0
-        SB: 0.0
-        passSvB: 0.0
-        failSvB: 0.0
-
-    ZH4b_UL18:
-        passJetMult: 0.21
+    HH4b_UL18:
+        passJetMult: 0.65
         passPreSel: 0.0
         passDiJetMass: 0.0
         SR: 0.0
@@ -29,17 +20,8 @@ counts4:
 
 
 counts3:
-    ZZ4b_UL18:
-        passJetMult: 0.09
-        passPreSel: 0.0
-        passDiJetMass: 0.0
-        SR: 0.0
-        SB: 0.0
-        passSvB: 0.0
-        failSvB: 0.0
-
-    ZH4b_UL18:
-        passJetMult: 0.21
+    HH4b_UL18:
+        passJetMult: 0.65
         passPreSel: 0.0
         passDiJetMass: 0.0
         SR: 0.0
@@ -59,23 +41,14 @@ counts3:
 
 
 counts4_unit:
-    ZZ4b_UL18:
-        passJetMult: 907.0
-        passPreSel: 113.0
-        passDiJetMass: 103.0
-        SR: 79.0
+    HH4b_UL18:
+        passJetMult: 945.0
+        passPreSel: 209.0
+        passDiJetMass: 189.0
+        SR: 165.0
         SB: 24.0
-        passSvB: 33.0
-        failSvB: 8.0
-
-    ZH4b_UL18:
-        passJetMult: 915.0
-        passPreSel: 164.0
-        passDiJetMass: 155.0
-        SR: 117.0
-        SB: 38.0
-        passSvB: 44.0
-        failSvB: 7.0
+        passSvB: 64.0
+        failSvB: 10.0
 
     GluGluToHHTo4B_cHHH1_UL18:
         passJetMult: 1006.0
@@ -89,23 +62,14 @@ counts4_unit:
 
 
 counts3_unit:
-    ZZ4b_UL18:
-        passJetMult: 907.0
-        passPreSel: 777.0
-        passDiJetMass: 496.0
-        SR: 306.0
-        SB: 190.0
-        passSvB: 70.0
-        failSvB: 167.0
-
-    ZH4b_UL18:
-        passJetMult: 915.0
-        passPreSel: 741.0
-        passDiJetMass: 553.0
-        SR: 361.0
-        SB: 192.0
-        passSvB: 106.0
-        failSvB: 138.0
+    HH4b_UL18:
+        passJetMult: 945.0
+        passPreSel: 722.0
+        passDiJetMass: 400.0
+        SR: 278.0
+        SB: 122.0
+        passSvB: 79.0
+        failSvB: 214.0
 
     GluGluToHHTo4B_cHHH1_UL18:
         passJetMult: 1006.0
