@@ -1,12 +1,12 @@
 import os, sys
 import argparse
 import logging
-import json
+import yaml
 import numpy as np
 from coffea.util import load
 
 
-def hist_to_json( coffea_hist ):
+def hist_to_yml( coffea_hist ):
     """docstring for hist_to_root"""
 
     yhist = {
@@ -14,7 +14,6 @@ def hist_to_json( coffea_hist ):
         'centers' : coffea_hist.axes[0].centers.tolist(),
         'values' : coffea_hist.values().tolist(),
         'variances' : coffea_hist.variances().tolist(),
-        #'counts' : np.sum( coffea_hist.counts() )
     }
 
 
@@ -30,24 +29,22 @@ if __name__ == '__main__':
     #
     # input parameters
     #
-    parser = argparse.ArgumentParser( description='Convert json hist to root TH1F',
+    parser = argparse.ArgumentParser( description='Convert yml hist to root TH1F',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--histos', dest="histos", nargs="+",
-                        default=['SvB.ps_zz', 'SvB.ps_zh', 'SvB.ps_hh',
-                                 'SvB.ps_zz_fine', 'SvB.ps_zh_fine', 'SvB.ps_hh_fine',
+                        default=['SvB.ps_zz', 'SvB.ps_zh', 'SvB.ps_hh', 
+                                 'SvB.ps_zz_fine', 'SvB.ps_zh_fine', 'SvB.ps_hh_fine', 
                                  'SvB_MA.ps_zz', 'SvB_MA.ps_zh', 'SvB_MA.ps_hh',
-                                 'SvB_MA.ps_zz_fine', 'SvB_MA.ps_zh_fine', 'SvB_MA.ps_hh_fine' ],
+                                 'SvB_MA.ps_zz_fine', 'SvB_MA.ps_zh_fine', 'SvB_MA.ps_hh_fine' ], 
                         help='List of histograms to convert')
-
-
+                             
+                                 
     parser.add_argument('-o', '--output', dest="output",
-                        default="./histos/histAll.json", help='Output file and directory.')
+                        default="./histos/histAll.yml", help='Output file and directory.')
     parser.add_argument('-i', '--input_file', dest='input_file',
                         default="../analysis/hists/histAll.coffea", help="File with coffea hists")
     parser.add_argument('-s', '--syst_file', dest='systematics_file', action='store_true',
                         default=False, help="File contain systematic variations")
-    parser.add_argument('--process', dest="process", nargs="+",
-                        default=[], help='List of process to convert')
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
@@ -68,23 +65,23 @@ if __name__ == '__main__':
 
     coffea_hists = load(args.input_file)["hists"]
 
-
+    
     save_dict = {}
 
     for sub_sample in range(15):
         save_dict[f"mix_v{sub_sample}"] = [('fourTag','SR')]
 
-    json_dict = {}
+    yml_dict = {}
 
     if not args.systematics_file:
         for ih in args.histos:
-            json_dict[ih] = {}
+            yml_dict[ih] = {}
             for iprocess in coffea_hists[ih].axes[0]:
-                json_dict[ih][iprocess] = {}
+                yml_dict[ih][iprocess] = {}
                 for iy in coffea_hists[ih].axes[1]:
-                    json_dict[ih][iprocess][iy] = {}
+                    yml_dict[ih][iprocess][iy] = {}
                     for itag in range(len(coffea_hists[ih].axes[2])):
-                        json_dict[ih][iprocess][iy][codes['tag'][itag]] = {}
+                        yml_dict[ih][iprocess][iy][codes['tag'][itag]] = {}
                         for iregion in range(len(coffea_hists[ih].axes[3])):
                             this_hist = {
                                 'process' : iprocess,
@@ -96,25 +93,18 @@ if __name__ == '__main__':
                                 'failSvB' : sum
                             }
                             logging.info(f"Converting hist {ih} {this_hist}")
-                            json_dict[ih][iprocess][iy][codes['tag'][itag]][codes['region'][iregion]] = hist_to_json( coffea_hists[ih][this_hist] )
-
-        logging.info(f"Saving histos in json format in {args.output}")
-        output_dir = '/'.join( args.output.split('/')[:-1] )
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
-        json.dump(json_dict, open(f'{args.output}', 'w') )
-
+                            yml_dict[ih][iprocess][iy][codes['tag'][itag]][codes['region'][iregion]] = hist_to_yml( coffea_hists[ih][this_hist] )
     else:
         for ih in args.histos:
-            json_dict[ih] = {}
+            yml_dict[ih] = {}
             for iprocess in coffea_hists[ih].axes[0]:
-                json_dict[ih][iprocess] = {}
+                yml_dict[ih][iprocess] = {}
                 for iy in coffea_hists[ih].axes[1]:
-                    json_dict[ih][iprocess][iy] = {}
+                    yml_dict[ih][iprocess][iy] = {}
                     for ivar in coffea_hists[ih].axes[2]:
-                        json_dict[ih][iprocess][iy][ivar] = {}
+                        yml_dict[ih][iprocess][iy][ivar] = {}
                         for itag in range(len(coffea_hists[ih].axes[3])):
-                            json_dict[ih][iprocess][iy][ivar][codes['tag'][itag]] = {}
+                            yml_dict[ih][iprocess][iy][ivar][codes['tag'][itag]] = {}
                             for iregion in range(len(coffea_hists[ih].axes[4])):
                                 this_hist = {
                                     'process' : iprocess,
@@ -127,10 +117,10 @@ if __name__ == '__main__':
                                     'failSvB' : sum
                                 }
                                 logging.info(f"Converting hist {ih} {this_hist}")
-                                json_dict[ih][iprocess][iy][ivar][codes['tag'][itag]][codes['region'][iregion]] = hist_to_json( coffea_hists[ih][this_hist] )
+                                yml_dict[ih][iprocess][iy][ivar][codes['tag'][itag]][codes['region'][iregion]] = hist_to_yml( coffea_hists[ih][this_hist] )
 
-        logging.info(f"Saving histos in json format in {args.output}")
-        output_dir = '/'.join( args.output.split('/')[:-1] )
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
-        json.dump(json_dict, open(f'{args.output}', 'w') )
+    logging.info(f"Saving histos in yml format in {args.output}")
+    output_dir = '/'.join( args.output.split('/')[:-1] )
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    yaml.dump(yml_dict, open(f'{args.output}', 'w'), default_flow_style=False )

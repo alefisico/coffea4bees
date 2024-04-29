@@ -8,4 +8,3 @@ echo "############### Running dump cutflow test"
 python analysis/tests/dumpCutFlow.py --input analysis/hists/test_unsup.coffea -o analysis/tests/test_dump_cutflow_unsup.yml
 ls analysis/tests/test_dump_cutflow_unsup.yml
 cd ../
-

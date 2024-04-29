@@ -166,7 +166,7 @@ def get_hist(cfg, config, var, region, cut, rebin, file_index=None, debug=False)
     #  Shape give (nregion, nBins)
     #
     if len(selected_hist.shape) == 2:
-        selected_hist = hist[sum, :]
+        selected_hist = selected_hist[sum, :]
 
     #
     # Apply Scale factor
