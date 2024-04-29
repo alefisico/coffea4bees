@@ -384,7 +384,7 @@ class analysis(processor.ProcessorABC):
         selections = PackedSelection()
         selections.add( "lumimask", event.lumimask)
         selections.add( "passNoiseFilter", event.passNoiseFilter)
-        selections.add( "passHLT", ( np.full(len(event), True) if (isMC or isMixedData or isTTForMixed) else event.passHLT ) )
+        selections.add( "passHLT", ( np.full(len(event), True) if (isMC or isMixedData or isTTForMixed or isDataForMixed) else event.passHLT ) )
         selections.add( 'passJetMult', event.passJetMult )
         allcuts = [ 'lumimask', 'passNoiseFilter', 'passHLT', 'passJetMult' ]
         event['weight'] = weights.weight()   ### this is for _cutflow
@@ -706,37 +706,29 @@ class analysis(processor.ProcessorABC):
         #
         # Example of how to write out event numbers
         #
-        #passSR = (selev.passDiJetMass & selev["quadJet_selected"].SR)
-        #passSR = (selev["quadJet_selected"].SR)
-#        passSR = (selev["SR"])
-#        
-#        out_data = {}
-#        out_data["SvB"    ] = selev["SvB_MA"].ps[passSR]
-#        out_data["event"  ] = selev["event"][passSR]
-#        out_data["run"    ] = selev["run"][passSR]
-#        out_data["canJet0"] = selev["canJet"].pt[passSR][:,0]
-#
-##        logging.info(f'\n event is {selev["event"]} \n')
-##        logging.info(f'\n event is {selev["event"] == 322164883} \n')
-##        logging.info(f'\n event is {selev["event"] == 198348749} \n')
-#        
-#        debug_mask = ((event["event"] == 84140033  ) |
-#                      (event["event"] == 231432199 ) |
-#                      (event["event"] == 151068682 ) |
-#                      (event["event"] == 119750685 ) |
-#                      (event["event"] == 215425074 ) )
-#
-#        logging.info(f'\n mas is {debug_mask}\n')
-#        out_data["debug_event"  ] = event["event"][debug_mask]
-#        out_data["debug_run"    ] = event["run"][debug_mask]
-#        out_data["debug_lumimask"    ] = event["lumimask"][debug_mask]
-#        out_data["debug_passHLT"    ] = event["passHLT"][debug_mask]
-#        out_data["debug_passNoiseFilter"    ] = event["passNoiseFilter"][debug_mask]
-#        out_data["debug_passJetMult"    ] = event["passJetMult"][debug_mask]
-#        
-#        for out_k, out_v in out_data.items():
-#            processOutput[out_k] = {}
-#            processOutput[out_k][event.metadata['dataset']] = list(out_v)
+        #  passSR = (selev["quadJet_selected"].SR)
+        #  passSR = (selev["SR"])
+        #
+        #  out_data = {}
+        #  out_data["SvB"    ] = selev["SvB_MA"].ps[passSR]
+        #  out_data["event"  ] = selev["event"][passSR]
+        #  out_data["run"    ] = selev["run"][passSR]
+        #
+        #  debug_mask = ((event["event"] ==  1334181889 ) |
+        #                (event["event"] ==  39845890   ) |
+        #                (event["event"] ==  27918354   ) |
+        #                (event["event"] ==  1751253011 ) |
+        #                (event["event"] ==  629014548  ) )
+        #  out_data["debug_event"  ] = event["event"][debug_mask]
+        #  out_data["debug_run"    ] = event["run"][debug_mask]
+        #  out_data["debug_lumimask"    ] = event["lumimask"][debug_mask]
+        #  out_data["debug_passHLT"    ] = event["passHLT"][debug_mask]
+        #  out_data["debug_passNoiseFilter"    ] = event["passNoiseFilter"][debug_mask]
+        #  out_data["debug_passJetMult"    ] = event["passJetMult"][debug_mask]
+        #
+        #  for out_k, out_v in out_data.items():
+        #      processOutput[out_k] = {}
+        #      processOutput[out_k][event.metadata['dataset']] = list(out_v)
 
         if self.run_SvB:
             selev["passSvB"] = selev["SvB_MA"].ps > 0.80
@@ -895,7 +887,7 @@ class analysis(processor.ProcessorABC):
                     selev[k] = selev["quadJet_selected"][k]
 
                 selev["nSelJets"] = ak.num(selev.selJet)
-                
+
                 if "xbW_reco" in selev.fields:  #### AGE: this should be temporary
                     selev["xbW"] = selev["xbW_reco"]
                     selev["xW"]  = selev["xW_reco"]
