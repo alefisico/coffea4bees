@@ -5,15 +5,15 @@ cd python/
 
 ## In root envirornment
 #
-python3 stats_analysis/convert_yml_to_root.py -f analysis/hists/histMixedData.yml                  --output analysis/hists/
-python3 stats_analysis/convert_yml_to_root.py -f analysis/hists/histMixedBkg_TT.yml                --output analysis/hists/
-python3 stats_analysis/convert_yml_to_root.py -f analysis/hists/histMixedBkg_data_3b_for_mixed.yml --output analysis/hists/
-python3 stats_analysis/convert_yml_to_root.py -f analysis/hists/histSignal.yml                     --output analysis/hists/
+python3 stats_analysis/convert_json_to_root.py -f analysis/hists/histMixedData.json                  --output analysis/hists/
+python3 stats_analysis/convert_json_to_root.py -f analysis/hists/histMixedBkg_TT.json                --output analysis/hists/
+python3 stats_analysis/convert_json_to_root.py -f analysis/hists/histMixedBkg_data_3b_for_mixed.json --output analysis/hists/
+python3 stats_analysis/convert_json_to_root.py -f analysis/hists/histSignal.json                     --output analysis/hists/
 
 
 
 #
-# Make the input with 
+# Make the input with
 #
 #  python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 20 --outputPath stats_analysis/tests --skip_closure
 
