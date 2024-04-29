@@ -4,11 +4,11 @@ from coffea.nanoevents import NanoEventsFactory, NanoAODSchema, BaseSchema
 from analysis.helpers.common import init_jet_factory, jet_corrections, mask_event_decision, drClean
 from coffea.lumi_tools import LumiMask
 
-def apply_event_selection_4b( event, isMC, corrections_metadata):
+def apply_event_selection_4b( event, isMC, corrections_metadata, isMixedData = False):
 
     lumimask = LumiMask(corrections_metadata['goldenJSON'])
     event['lumimask'] = np.full(len(event), True) \
-            if isMC else np.array( lumimask(event.run, event.luminosityBlock) )
+            if (isMC or isMixedData) else np.array( lumimask(event.run, event.luminosityBlock) )
 
     event['passHLT'] = np.full(len(event), True) \
             if 'HLT' not in event.fields else mask_event_decision( event,

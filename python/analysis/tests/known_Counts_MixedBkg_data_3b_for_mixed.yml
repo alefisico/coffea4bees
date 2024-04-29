@@ -1,6 +1,6 @@
 counts4:
     data_3b_for_mixed_UL18:
-        passJetMult: 920.0
+        passJetMult: 999.0
         passPreSel: 0.0
         passDiJetMass: 0.0
         SR: 0.0
@@ -9,7 +9,7 @@ counts4:
         failSvB: 0.0
 
     data_3b_for_mixed_UL17:
-        passJetMult: 892.0
+        passJetMult: 998.0
         passPreSel: 0.0
         passDiJetMass: 0.0
         SR: 0.0
@@ -18,7 +18,7 @@ counts4:
         failSvB: 0.0
 
     data_3b_for_mixed_UL16_preVFP:
-        passJetMult: 948.0
+        passJetMult: 1001.0
         passPreSel: 0.0
         passDiJetMass: 0.0
         SR: 0.0
@@ -30,37 +30,37 @@ counts4:
 
 counts3:
     data_3b_for_mixed_UL18:
-        passJetMult: 920.0
-        passPreSel: 920.0
-        passDiJetMass: 301.0
-        SR: 120.0
-        SB: 181.0
+        passJetMult: 999.0
+        passPreSel: 999.0
+        passDiJetMass: 321.0
+        SR: 135.0
+        SB: 186.0
         passSvB: 6.0
-        failSvB: 585.0
+        failSvB: 636.0
 
     data_3b_for_mixed_UL17:
-        passJetMult: 892.0
-        passPreSel: 892.0
-        passDiJetMass: 327.0
-        SR: 115.0
-        SB: 212.0
+        passJetMult: 998.0
+        passPreSel: 998.0
+        passDiJetMass: 352.0
+        SR: 127.0
+        SB: 225.0
         passSvB: 9.0
-        failSvB: 548.0
+        failSvB: 611.0
 
     data_3b_for_mixed_UL16_preVFP:
-        passJetMult: 948.0
-        passPreSel: 948.0
-        passDiJetMass: 401.0
+        passJetMult: 1001.0
+        passPreSel: 1001.0
+        passDiJetMass: 413.0
         SR: 149.0
-        SB: 252.0
-        passSvB: 3.0
-        failSvB: 606.0
+        SB: 264.0
+        passSvB: 4.0
+        failSvB: 635.0
 
 
 
 counts4_unit:
     data_3b_for_mixed_UL18:
-        passJetMult: 920.0
+        passJetMult: 999.0
         passPreSel: 0.0
         passDiJetMass: 0.0
         SR: 0.0
@@ -69,7 +69,7 @@ counts4_unit:
         failSvB: 0.0
 
     data_3b_for_mixed_UL17:
-        passJetMult: 892.0
+        passJetMult: 998.0
         passPreSel: 0.0
         passDiJetMass: 0.0
         SR: 0.0
@@ -78,7 +78,7 @@ counts4_unit:
         failSvB: 0.0
 
     data_3b_for_mixed_UL16_preVFP:
-        passJetMult: 948.0
+        passJetMult: 1001.0
         passPreSel: 0.0
         passDiJetMass: 0.0
         SR: 0.0
@@ -90,31 +90,31 @@ counts4_unit:
 
 counts3_unit:
     data_3b_for_mixed_UL18:
-        passJetMult: 920.0
-        passPreSel: 920.0
-        passDiJetMass: 301.0
-        SR: 120.0
-        SB: 181.0
+        passJetMult: 999.0
+        passPreSel: 999.0
+        passDiJetMass: 321.0
+        SR: 135.0
+        SB: 186.0
         passSvB: 6.0
-        failSvB: 585.0
+        failSvB: 636.0
 
     data_3b_for_mixed_UL17:
-        passJetMult: 892.0
-        passPreSel: 892.0
-        passDiJetMass: 327.0
-        SR: 115.0
-        SB: 212.0
+        passJetMult: 998.0
+        passPreSel: 998.0
+        passDiJetMass: 352.0
+        SR: 127.0
+        SB: 225.0
         passSvB: 9.0
-        failSvB: 548.0
+        failSvB: 611.0
 
     data_3b_for_mixed_UL16_preVFP:
-        passJetMult: 948.0
-        passPreSel: 948.0
-        passDiJetMass: 401.0
+        passJetMult: 1001.0
+        passPreSel: 1001.0
+        passDiJetMass: 413.0
         SR: 149.0
-        SB: 252.0
-        passSvB: 3.0
-        failSvB: 606.0
+        SB: 264.0
+        passSvB: 4.0
+        failSvB: 635.0
 
 
 
