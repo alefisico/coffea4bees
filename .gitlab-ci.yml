@@ -357,11 +357,15 @@ twoStageClosure-test-job:
   stage: fits
   needs: 
     - analysis-test-mixed-job
-  image: gitlab-registry.cern.ch/cms-cloud/cmssw-docker/cc7-cms 
+  image: gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0
+  before_script:
+    - source /cvmfs/cms.cern.ch/cmsset_default.sh
+    - cd /home/cmsusr/CMSSW_11_3_4/
+    - cmsenv || true
+    - cd $HOME
   tags:
     - k8s-cvmfs
   script:
-    - source /cvmfs/sft.cern.ch/lcg/views/LCG_104/x86_64-centos7-gcc12-opt/setup.sh
     - source .ci-workflows/analysis-runTwoStageClosure-ROOT.sh
 
 reana-job:
