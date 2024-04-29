@@ -20,12 +20,12 @@ python runner.py -t -o testMixedData.coffea -d    mixeddata  -p analysis/process
 python runner.py -t -o testSignal.coffea -d    HH4b ZH4b ZZ4b  -p analysis/processors/processor_HH4b.py -y UL17 UL18 UL16_preVFP UL16_postVFP    -op analysis/hists/ -m $DATASETS
 ls
 
-echo "############### Hist --> YML"
+echo "############### Hist --> JSON"
 
-python stats_analysis/convert_hist_to_yaml_closure.py --input analysis/hists/testMixedBkg_TT.coffea
-python stats_analysis/convert_hist_to_yaml_closure.py --input analysis/hists/testMixedBkg_data_3b_for_mixed.coffea
-python stats_analysis/convert_hist_to_yaml_closure.py --input analysis/hists/testMixedData.coffea
-python stats_analysis/convert_hist_to_yaml_closure.py --input analysis/hists/testSignal.coffea
+python stats_analysis/convert_hist_to_json_closure.py --input analysis/hists/testMixedBkg_TT.coffea
+python stats_analysis/convert_hist_to_json_closure.py --input analysis/hists/testMixedBkg_data_3b_for_mixed.coffea
+python stats_analysis/convert_hist_to_json_closure.py --input analysis/hists/testMixedData.coffea
+python stats_analysis/convert_hist_to_json_closure.py --input analysis/hists/testSignal.coffea
 
 
 cd ../

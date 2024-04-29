@@ -111,10 +111,10 @@ analysis-test-mixed-job:
       - python/analysis/hists/testMixedBkg_data_3b_for_mixed.coffea
       - python/analysis/hists/testMixedData.coffea
       - python/analysis/hists/testSignal.coffea
-      - python/analysis/hists/testMixedBkg_TT.yml
-      - python/analysis/hists/testMixedBkg_data_3b_for_mixed.yml
-      - python/analysis/hists/testMixedData.yml
-      - python/analysis/hists/testSignal.yml
+      - python/analysis/hists/testMixedBkg_TT.json
+      - python/analysis/hists/testMixedBkg_data_3b_for_mixed.json
+      - python/analysis/hists/testMixedData.json
+      - python/analysis/hists/testSignal.json
 
 
 analysis-systematics-test-job:   
@@ -320,22 +320,21 @@ baseclass-test-job:
   script:
     - source .ci-workflows/baseclass-test-job.sh
 
-## WILL BE FIX IN THE NEXT COMBINE MERGE
-##histtoyml-test-job:   
-##  stage: plot
-##  needs: 
-##    - analysis-test-job
-##  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
-##  tags:
-##    - k8s-cvmfs
-##  script:
-##    - cd python/stats_analysis/
-##    - python convert_hist_to_yaml.py -o hists/histAll.yml -i ../analysis/hists/test.coffea
-##  artifacts: 
-##    expire_in: 1 day
-##    paths:
-##      - python/stats_analysis/hists/histAll.yml
-##
+histtoyml-test-job:   
+  stage: plot
+  needs: 
+    - analysis-test-job
+  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  tags:
+    - k8s-cvmfs
+  script:
+    - cd python/stats_analysis/
+    - python convert_hist_to_json.py -o hists/histAll.json -i ../analysis/hists/test.coffea
+  artifacts: 
+    expire_in: 1 day
+    paths:
+      - python/stats_analysis/hists/histAll.json
+
 ##ymltoroot-test-job:   
 ##  stage: plot
 ##  needs: 
