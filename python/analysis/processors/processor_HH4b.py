@@ -190,7 +190,7 @@ class analysis(processor.ProcessorABC):
                     event[_FvT_name, _FvT_name] = getattr(event[_FvT_name], _FvT_name)
 
             else:
-                event["FvT"] = ( NanoEventsFactory.from_root( f'{path}{"FvT.root"}', entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().FvT )
+                event["FvT"] = ( NanoEventsFactory.from_root( f'{fname.replace("picoAOD", "FvT")}', entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().FvT )
 
 
             event["FvT", "frac_err"] = event["FvT"].std / event["FvT"].FvT
@@ -199,13 +199,13 @@ class analysis(processor.ProcessorABC):
 
         if self.run_SvB:
             if (self.classifier_SvB is None) | (self.classifier_SvB_MA is None):
-                event["SvB"] = ( NanoEventsFactory.from_root( f'{path}{"SvB_newSBDef.root" if "mix" in dataset else "SvB.root"}',
+                event["SvB"] = ( NanoEventsFactory.from_root( f'{fname.replace("picoAOD", "SvB_newSBDef" if "mix" in dataset else "SvB")}',
                                                               entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().SvB )
 
                 if not ak.all(event.SvB.event == event.event):
                     raise ValueError("ERROR: SvB events do not match events ttree")
 
-                event["SvB_MA"] = ( NanoEventsFactory.from_root( f'{path}{"SvB_MA_newSBDef.root" if "mix" in dataset else "SvB_MA.root"}',
+                event["SvB_MA"] = ( NanoEventsFactory.from_root( f'{fname.replace("picoAOD", "SvB_MA_newSBDef" if "mix" in dataset else "SvB_MA")}',
                                                                  entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema ).events().SvB_MA )
 
                 if not ak.all(event.SvB_MA.event == event.event):
@@ -260,7 +260,11 @@ class analysis(processor.ProcessorABC):
     def process_shift(self, event, shift_name):
         """For different jet variations. It computes event variations for the nominal case."""
 
-        dataset     = event.metadata['dataset']
+        fname   = event.metadata['filename']
+        dataset = event.metadata['dataset']
+        estart  = event.metadata['entrystart']
+        estop   = event.metadata['entrystop']
+        chunk   = f'{dataset}::{estart:6d}:{estop:6d} >>> '
         year        = event.metadata['year']
         processName = event.metadata['processName']
         isMC        = True if event.run[0] == 1 else False
