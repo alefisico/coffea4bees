@@ -111,6 +111,10 @@ if __name__ == '__main__':
                         action="store_true", default=False, help='Run in condor')
     parser.add_argument('--debug', help="Print lots of debugging statements",
                         action="store_true", dest="debug", default=False)
+    parser.add_argument('--githash', dest="githash",
+                        default="", help='Overwrite git hash for reproducible')
+    parser.add_argument('--gitdiff', dest="gitdiff",
+                        default="", help='Overwrite git diff for reproducible')
     args = parser.parse_args()
     logging_level = logging.DEBUG if args.debug else logging.INFO
     logging.basicConfig(
@@ -174,11 +178,15 @@ if __name__ == '__main__':
             else:
                 xsec = eval(metadata['datasets'][dataset]['xs'])
 
+            top_reconstruction = metadata['datasets'][dataset]['top_reconstruction'] if "top_reconstruction" in metadata['datasets'][dataset] else None
+            logging.info(f"\n top construction configured as {top_reconstruction} ")
+
             metadata_dataset[dataset] = {'year': year,
                                          'processName': dataset,
                                          'xs': xsec,
                                          'lumi': float(metadata['datasets']['data'][year]['lumi']),
                                          'trigger':  metadata['datasets']['data'][year]['trigger'],
+                                         'top_reconstruction':  top_reconstruction
                                          }
             isData = (dataset == 'data')
             isMixedData = (dataset == 'mixeddata')
@@ -209,7 +217,7 @@ if __name__ == '__main__':
 
                 nMixedSamples = metadata['datasets'][dataset]["nSamples"]
                 mixed_config = metadata['datasets'][dataset][year][config_runner['data_tier']]
-                logging.info("\nNumber of mixed samples is {nMixedSamples}")
+                logging.info(f"\nNumber of mixed samples is {nMixedSamples}")
                 for v in range(nMixedSamples):
 
                     mixed_name = f"mix_v{v}"
@@ -234,7 +242,7 @@ if __name__ == '__main__':
 
                 nMixedSamples = metadata['datasets'][dataset]["nSamples"]
                 data_3b_mix_config = metadata['datasets'][dataset][year][config_runner['data_tier']]
-                logging.info("\nNumber of mixed samples is {nMixedSamples}")
+                logging.info(f"\nNumber of mixed samples is {nMixedSamples}")
 
                 idataset = f'{dataset}_{year}'
 
@@ -256,7 +264,7 @@ if __name__ == '__main__':
 
                 nMixedSamples = metadata['datasets'][dataset]["nSamples"]
                 TT_3b_mix_config = metadata['datasets'][dataset][year][config_runner['data_tier']]
-                logging.info("\nNumber of mixed samples is {nMixedSamples}")
+                logging.info(f"\nNumber of mixed samples is {nMixedSamples}")
 
                 idataset = f'{dataset}_{year}'
 
@@ -429,9 +437,9 @@ if __name__ == '__main__':
                     metadata[ikey].update(output[ikey])
                     metadata[ikey]['reproducible'] = {
                         'date': datetime.today().strftime('%Y-%m-%d %H:%M:%S'),
-                        'hash': get_git_revision_hash(),
+                        'hash': args.githash if args.githash else get_git_revision_hash(),
                         'args': str(args),
-                        'diff': str(get_git_diff()),
+                        'diff': args.gitdiff if args.gitdiff else str(get_git_diff()),
                     }
 
             args.output_file = 'picoaod_datasets.yml' if args.output_file.endswith(
@@ -446,9 +454,9 @@ if __name__ == '__main__':
             #
             output['reproducible'] = {
                 'date': datetime.today().strftime('%Y-%m-%d %H:%M:%S'),
-                'hash': get_git_revision_hash(),
+                'hash': args.githash if args.githash else get_git_revision_hash(),
                 'args': args,
-                'diff': get_git_diff(),
+                'diff': args.gitdiff if args.gitdiff else get_git_diff(),
             }
 
             #

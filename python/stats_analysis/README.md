@@ -2,9 +2,25 @@
 
 This part of the analysis uses [coffea](https://coffeateam.github.io/coffea/), [ROOT](https://root.cern/) and the cms package [combine](https://cms-analysis.github.io/HiggsAnalysis-CombinedLimit/latest/). Therefore we need different environments to run the different steps.
 
-## Install in machines with cvmfs 
+We need two sets of environemnts. One with `coffea` to take the outputs of analysis and convert them into a json format and another with `root` and `combine`. For the first one, you can use the `coffea4bees` container. For the second follow the next instructions.
 
-We need two sets of environemnts. One with `coffea` to take the outputs of analysis and convert them into a yaml format and another with `root` and `combine`. For the first one, you can use the `coffea4bees` container.
+## Install Combine and CombineHarvester
+
+### With container
+
+We can use the combine/combineHarvester container. For that you can run:
+```
+cd coffea4bees/  ### if you are not there
+./shell_combine
+```
+And after that you **must** run the following script inside the container:
+```
+cd coffea4bees/python/stats_analysis/   #### if you are not there
+source set_cmssw.sh
+```
+
+### In sl7 machines
+
 
 For the second part ( with `root` and `combine`), we will set a `CMSSW` environment. You can run the next lines outside your `coffea4bees` directory if you want to. 
 
@@ -27,20 +43,20 @@ This steps follow the environment recommended for the combine team,  [here](http
 This setup you have to do it only once, however **you need to set this environment anytime you want to use root or combine**.
 
 
-## Convert hist to yml
+## Convert hist to json
 
 Using the coffea4bees container:
 ```
 cd python/stats_analysis/
-python convert_hist_to_yaml.py -o histos/histAll.yml -i ../analysis/hists/histAll.coffea
+python convert_hist_to_json.py -o histos/histAll.json -i ../analysis/hists/histAll.coffea
 ```
 
-## Convert yml to root (for combine)
+## Convert json to root (for combine)
 
 Using the CMSSW environment described before:
 ```
 cd $CMSSW_BASE/src/                       ##### directory where CMSSW is located
 cmsenv
 cd ~/coffea4bees/python/stats_analysis/   ##### directory where coffea4bees is located
-python convert_yml_to_root.py --classifier SvB_MA SvB -f histos/histAll.yml --merge2016 --output_dir datacards/ --plot
+python convert_json_to_root.py --classifier SvB_MA SvB -f histos/histAll.json --merge2016 --output_dir datacards/ --plot
 ```
