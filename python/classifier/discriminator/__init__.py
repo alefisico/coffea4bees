@@ -14,6 +14,7 @@ from torch.utils.data import Dataset
 
 from ..config.setting import torch as cfg
 from ..monitor.progress import Progress
+from ..monitor.usage import Usage
 from ..nn.dataset import mp_loader
 from ..nn.schedule import Schedule
 from ..process.device import Device
@@ -97,11 +98,14 @@ class Classifier(WithUUID, ABC):
             "parameters": {},
             "benchmark": {},
         }
+        Usage.checkpoint("classifier", "init")
         for stage in self.training_stages():
+            Usage.checkpoint("classifier", stage.name, "start")
             result["parameters"][stage.name] = stage.model.n_parameters
             result["benchmark"][stage.name] = self._train(
                 stage=stage,
             )
+            Usage.checkpoint("classifier", stage.name, "finish")
         return result
 
     def evaluate(
@@ -131,6 +135,7 @@ class Classifier(WithUUID, ABC):
         start = datetime.now()
         for epoch in range(schedule.epoch):
             self.cleanup()
+            Usage.checkpoint("classifier", stage.name, f"epoch{epoch}", "optimize")
             model.module.train()
             batch_p = Progress.new(len(bs.dataloader), "batch")
             for i, batch in enumerate(bs.dataloader):
@@ -144,6 +149,7 @@ class Classifier(WithUUID, ABC):
                 and stage.do_benchmark
                 and (model.validate is not NotImplemented)
             ):
+                Usage.checkpoint("classifier", stage.name, f"epoch{epoch}", "validate")
                 benchmark.append(
                     {
                         "training": self._validate(model, stage.training),
@@ -154,6 +160,7 @@ class Classifier(WithUUID, ABC):
             if model.step is not NotImplemented:
                 model.step()
             epoch_p.update(epoch + 1)
+            Usage.checkpoint("classifier", stage.name, f"epoch{epoch}", "finish")
         logging.info(
             f"{stage.name}: run {schedule.epoch} epochs in {datetime.now() - start}"
         )
