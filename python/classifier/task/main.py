@@ -190,7 +190,7 @@ class EntryPoint:
                 address = host if port is None else f"{host}:{port}"
                 logging.info(f"Connecting to Monitor {address}")
 
-    def run(self, reproducible: Callable):
+    def run(self, reproducible: Callable = None):
         from ..config.setting import IO, save
         from ..process.monitor import Recorder, wait_for_monitor
 
@@ -204,10 +204,10 @@ class EntryPoint:
         if (meta is not None) and (not IO.metadata.is_null):
             from base_class.utils.json import DefaultEncoder
 
-            meta |= {
-                "command": self.cmd,
-                "reproducible": reproducible(),
-            }
+            meta["command"] = self.cmd
+            if reproducible is not None:
+                meta["reproducible"] = reproducible()
+
             with fsspec.open(IO.metadata, "wt") as f:
                 json.dump(meta, f, cls=DefaultEncoder)
 
