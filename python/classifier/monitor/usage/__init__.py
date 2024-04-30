@@ -26,8 +26,17 @@ class Checkpoint(TypedDict):
     pids: list[int]
 
 
+class ProcessInfo(TypedDict):
+    pid: int
+    parent: int
+    start: float  # s
+    cmd: list[str]
+
+
 class Usage(Proxy):
     _records_local: list[Resource] = []
+    _processes_local: set[int] = set()
+
     _tracker: Thread = None
     _head: int = 0
 
@@ -42,6 +51,7 @@ class Usage(Proxy):
 
     def __init__(self):
         self._records: dict[Node, list[Resource]] = defaultdict(list)
+        self._processes: dict[str, list[ProcessInfo]] = defaultdict(list)
         self._checkpoints: dict[Node, list[Checkpoint]] = defaultdict(list)
 
     @classmethod
@@ -76,16 +86,34 @@ class Usage(Proxy):
         self._records[node].extend(records)
         self._checkpoints[node].append(checkpoint)
 
+    @callback
+    def _send_pinfo(self, ip: str, info: ProcessInfo):
+        self._processes[ip].append(info)
+
+    @classmethod
+    def _pinfo(self, process: psutil.Process):
+        if process.pid not in self._processes_local:
+            self._processes_local.add(process.pid)
+            info = {
+                "pid": process.pid,
+                "parent": process.ppid(),
+                "start": process.create_time(),
+                "cmd": process.cmdline(),
+            }
+            self._send_pinfo(Recorder.node()[0], info)
+
     @classmethod
     def _track(cls):
         while cls._running:
             start_t = time.time_ns()
             p = psutil.Process()
+            cls._pinfo(p)
             # CPU, memory
             cpu = {p.pid: p.cpu_percent(cfg.usage_update_interval)}
             mem = {p.pid: p.memory_info().rss / _MIB}
             for c in p.children(recursive=True):
                 try:
+                    cls._pinfo(c)
                     cpu[c.pid] = c.cpu_percent(cfg.usage_update_interval)
                     mem[c.pid] = c.memory_info().rss / _MIB
                 except psutil.NoSuchProcess:
@@ -156,13 +184,13 @@ class Usage(Proxy):
     def serialize(cls):
         import json
 
-        output = defaultdict(defaultdict[dict])
+        usage = defaultdict(defaultdict[dict])
         for node in set(cls._checkpoints).intersection(cls._records):
-            output[node[0]][node[1]] = {
+            usage[node[0]][node[1]] = {
                 "checkpoints": cls._checkpoints[node],
                 "records": cls._records[node],
             }
-        return json.dumps(output).encode()
+        return json.dumps({"usage": usage, "process": cls._processes}).encode()
 
 
 def setup_reporter():
