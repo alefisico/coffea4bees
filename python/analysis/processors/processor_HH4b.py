@@ -228,7 +228,7 @@ class analysis(processor.ProcessorABC):
         #
         # Event selection
         #
-        event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year])
+        event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year], isMixedData)
 
         #
         # Calculate and apply Jet Energy Calibration
@@ -389,7 +389,7 @@ class analysis(processor.ProcessorABC):
         selections = PackedSelection()
         selections.add( "lumimask", event.lumimask)
         selections.add( "passNoiseFilter", event.passNoiseFilter)
-        selections.add( "passHLT", ( np.full(len(event), True) if (isMC or isMixedData or isTTForMixed) else event.passHLT ) )
+        selections.add( "passHLT", ( np.full(len(event), True) if (isMC or isMixedData or isTTForMixed or isDataForMixed) else event.passHLT ) )
         selections.add( 'passJetMult', event.passJetMult )
         allcuts = [ 'lumimask', 'passNoiseFilter', 'passHLT', 'passJetMult' ]
         event['weight'] = weights.weight()   ### this is for _cutflow
@@ -717,17 +717,29 @@ class analysis(processor.ProcessorABC):
         #
         # Example of how to write out event numbers
         #
-        # passSR = (selev.passDiJetMass & selev["quadJet_selected"].SR)
+        #  passSR = (selev["quadJet_selected"].SR)
+        #  passSR = (selev["SR"])
         #
-        # out_data = {}
-        # out_data["SvB"    ] = selev["SvB_MA"].ps[passSR]
-        # out_data["event"  ] = selev["event"][passSR]
-        # out_data["run"    ] = selev["run"][passSR]
-        # out_data["canJet0"] = selev["canJet"].pt[passSR][:,0]
+        #  out_data = {}
+        #  out_data["SvB"    ] = selev["SvB_MA"].ps[passSR]
+        #  out_data["event"  ] = selev["event"][passSR]
+        #  out_data["run"    ] = selev["run"][passSR]
         #
-        # for out_k, out_v in out_data.items():
-        #     processOutput[out_k] = {}
-        #     processOutput[out_k][event.metadata['dataset']] = list(out_v)
+        #  debug_mask = ((event["event"] ==  1334181889 ) |
+        #                (event["event"] ==  39845890   ) |
+        #                (event["event"] ==  27918354   ) |
+        #                (event["event"] ==  1751253011 ) |
+        #                (event["event"] ==  629014548  ) )
+        #  out_data["debug_event"  ] = event["event"][debug_mask]
+        #  out_data["debug_run"    ] = event["run"][debug_mask]
+        #  out_data["debug_lumimask"    ] = event["lumimask"][debug_mask]
+        #  out_data["debug_passHLT"    ] = event["passHLT"][debug_mask]
+        #  out_data["debug_passNoiseFilter"    ] = event["passNoiseFilter"][debug_mask]
+        #  out_data["debug_passJetMult"    ] = event["passJetMult"][debug_mask]
+        #
+        #  for out_k, out_v in out_data.items():
+        #      processOutput[out_k] = {}
+        #      processOutput[out_k][event.metadata['dataset']] = list(out_v)
 
         if self.run_SvB:
             selev["passSvB"] = selev["SvB_MA"].ps > 0.80
