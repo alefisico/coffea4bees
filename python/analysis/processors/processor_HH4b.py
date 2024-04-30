@@ -134,9 +134,6 @@ class analysis(processor.ProcessorABC):
         processName = event.metadata['processName']
         isMC    = True if event.run[0] == 1 else False
 
-        lumi    = event.metadata.get('lumi',    1.0)
-        xs      = event.metadata.get('xs',      1.0)
-        kFactor = event.metadata.get('kFactor', 1.0)
         self.top_reconstruction = event.metadata.get("top_reconstruction", None)
 
         isMixedData    = not (dataset.find("mix_v") == -1)
@@ -144,7 +141,6 @@ class analysis(processor.ProcessorABC):
         isTTForMixed   = not (dataset.find("TTTo") == -1) and not ( dataset.find("_for_mixed") == -1 )
 
         nEvent = len(event)
-        weights = Weights(len(event), storeIndividual=True)
 
         logging.debug(fname)
         logging.debug(f'{chunk}Process {nEvent} Events')
@@ -194,7 +190,7 @@ class analysis(processor.ProcessorABC):
                     event[_FvT_name, _FvT_name] = getattr(event[_FvT_name], _FvT_name)
 
             else:
-                event["FvT"] = ( NanoEventsFactory.from_root( f'{path}{"FvT.root"}', entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().FvT )
+                event["FvT"] = ( NanoEventsFactory.from_root( f'{fname.replace("picoAOD", "FvT")}', entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().FvT )
 
 
             event["FvT", "frac_err"] = event["FvT"].std / event["FvT"].FvT
@@ -235,13 +231,61 @@ class analysis(processor.ProcessorABC):
         event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year], isMixedData)
 
         #
+        # Calculate and apply Jet Energy Calibration
+        #
+        if ( isMixedData or isDataForMixed or isTTForMixed or not isMC ):  #### AGE: data corrections are not applied. Should be changed
+            jets = event.Jet
+
+        else:
+            juncWS = [ self.corrections_metadata[year]["JERC"][0].replace("STEP", istep)
+                       for istep in ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"] ] + self.corrections_metadata[year]["JERC"][2:]
+
+            if self.run_systematics:
+                juncWS += [self.corrections_metadata[year]["JERC"][1]]
+            jets = init_jet_factory(juncWS, event, isMC)
+
+        shifts = [({"Jet": jets}, None)]
+        if self.run_systematics:
+            for jesunc in self.corrections_metadata[year]["JES_uncertainties"]:
+                shifts.extend( [ ({"Jet": jets[f"JES_{jesunc}"].up}, f"JES_{jesunc}_Up"),
+                                 ({"Jet": jets[f"JES_{jesunc}"].down}, f"JES_{jesunc}_Down"), ] )
+
+            shifts.extend( [({"Jet": jets.JER.up}, "JER_Up"), ({"Jet": jets.JER.down}, "JER_Down")] )
+
+
+            logging.info(f"\nJet variations {[name for _, name in shifts]}")
+
+        return processor.accumulate( self.process_shift(update_events(event, collections), name) for collections, name in shifts )
+
+    def process_shift(self, event, shift_name):
+        """For different jet variations. It computes event variations for the nominal case."""
+
+        fname   = event.metadata['filename']
+        dataset = event.metadata['dataset']
+        estart  = event.metadata['entrystart']
+        estop   = event.metadata['entrystop']
+        chunk   = f'{dataset}::{estart:6d}:{estop:6d} >>> '
+        year        = event.metadata['year']
+        processName = event.metadata['processName']
+        isMC        = True if event.run[0] == 1 else False
+        lumi    = event.metadata.get('lumi',    1.0)
+        xs      = event.metadata.get('xs',      1.0)
+        kFactor = event.metadata.get('kFactor', 1.0)
+
+        isMixedData    = not (dataset.find("mix_v") == -1)
+        isDataForMixed = not (dataset.find("data_3b_for_mixed") == -1)
+        isTTForMixed   = not (dataset.find("TTTo") == -1) and not ( dataset.find("_for_mixed") == -1 )
+        nEvent = len(event)
+        weights = Weights(len(event), storeIndividual=True)
+
+        #
         # general event weights
         #
         if isMC:
             # genWeight
             genEventSumw = event.metadata["genEventSumw"]
             weights.add( "genweight_", event.genWeight * (lumi * xs * kFactor / genEventSumw) )
-            logging.debug( f"genweight {weights.partial_weight(include=['genweight_'])}\n" )
+            logging.debug( f"genweight {weights.partial_weight(include=['genweight_'])[:10]}\n" )
 
             # trigger Weight (to be updated)
             if self.apply_trigWeight:
@@ -257,6 +301,7 @@ class analysis(processor.ProcessorABC):
 
                 else:
                     weights.add( "trigWeight_", event.trigWeight.Data, event.trigWeight.MC, ak.where(event.passHLT, 1.0, 0.0), )
+                logging.debug( f"trigWeight {weights.partial_weight(include=['trigWeight_'])[:10]}\n" )
 
 
             # puWeight (to be checked)
@@ -266,6 +311,7 @@ class analysis(processor.ProcessorABC):
                              puWeight.evaluate(event.Pileup.nTrueInt.to_numpy(), "nominal"),
                              puWeight.evaluate(event.Pileup.nTrueInt.to_numpy(), "up"),
                              puWeight.evaluate(event.Pileup.nTrueInt.to_numpy(), "down"), )
+                logging.debug( f"PU weight {weights.partial_weight(include=['PU_'])[:10]}\n" )
 
 
             # L1 prefiring weight
@@ -274,6 +320,7 @@ class analysis(processor.ProcessorABC):
                              event.L1PreFiringWeight.Nom,
                              event.L1PreFiringWeight.Up,
                              event.L1PreFiringWeight.Dn, )
+                logging.debug( f"L1Prefire weight {weights.partial_weight(include=['L1Prefiring_'])[:10]}\n" )
 
             if ( "PSWeight" in event.fields ):  #### AGE: this should be temprorary (field exists in UL)
                 nom      = np.ones(len(weights.weight()))
@@ -331,50 +378,8 @@ class analysis(processor.ProcessorABC):
         else:
             weights.add("data", np.ones(len(event)))
 
-        logging.debug(f"weights {weights.weight()}")
+        logging.debug(f"weights event {weights.weight()[:10]}")
         logging.debug(f"Weight Statistics {weights.weightStatistics}")
-
-
-        #
-        # Calculate and apply Jet Energy Calibration
-        #
-        if ( isMixedData or isDataForMixed or isTTForMixed or not isMC ):  #### AGE: data corrections are not applied. Should be changed
-            jets = event.Jet
-
-        else:
-            juncWS = [ self.corrections_metadata[year]["JERC"][0].replace("STEP", istep)
-                       for istep in ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"] ] + self.corrections_metadata[year]["JERC"][2:]
-
-            if self.run_systematics:
-                juncWS += [self.corrections_metadata[year]["JERC"][1]]
-            jets = init_jet_factory(juncWS, event, isMC)
-
-        shifts = [({"Jet": jets}, None)]
-        if self.run_systematics:
-            for jesunc in self.corrections_metadata[year]["JES_uncertainties"]:
-                shifts.extend( [ ({"Jet": jets[f"JES_{jesunc}"].up}, f"JES_{jesunc}_Up"),
-                                 ({"Jet": jets[f"JES_{jesunc}"].down}, f"JES_{jesunc}_Down"), ] )
-
-            shifts.extend( [({"Jet": jets.JER.up}, "JER_Up"), ({"Jet": jets.JER.down}, "JER_Down")] )
-
-
-            logging.info(f"\nJet variations {[name for _, name in shifts]}")
-
-        return processor.accumulate( self.process_shift(update_events(event, collections), name, weights) for collections, name in shifts )
-
-    def process_shift(self, event, shift_name, weights):
-        """For different jet variations. It computes event variations for the nominal case."""
-
-        dataset     = event.metadata['dataset']
-        year        = event.metadata['year']
-        processName = event.metadata['processName']
-        isMC        = True if event.run[0] == 1 else False
-
-        isMixedData    = not (dataset.find("mix_v") == -1)
-        isDataForMixed = not (dataset.find("data_3b_for_mixed") == -1)
-        isTTForMixed   = not (dataset.find("TTTo") == -1) and not ( dataset.find("_for_mixed") == -1 )
-        nEvent = len(event)
-
 
 
         # Apply object selection (function does not remove events, adds content to objects)
@@ -414,14 +419,17 @@ class analysis(processor.ProcessorABC):
                 btag_SF_weights = apply_btag_sf( event.selJet, correction_file=self.corrections_metadata[year]["btagSF"],
                                                  btag_uncertainties=self.corrections_metadata[year][ "btag_uncertainties" ], )
 
-                weights.add_multivariation( f"btagSF", btag_SF_weights["btagSF_central"],
-                                            self.corrections_metadata[year]["btag_uncertainties"],
-                                            [ var.to_numpy() for name, var in btag_SF_weights.items() if "_up" in name ],
-                                            [ var.to_numpy() for name, var in btag_SF_weights.items() if "_down" in name ], )
+                weights.add( "btagSF",
+                         apply_btag_sf( event.selJet, correction_file=self.corrections_metadata[year]["btagSF"], btag_uncertainties=None, )["btagSF_central"], )
+#                weights.add_multivariation( f"btagSF", btag_SF_weights["btagSF_central"],
+#                                            self.corrections_metadata[year]["btag_uncertainties"],
+#                                            [ var.to_numpy() for name, var in btag_SF_weights.items() if "_up" in name ],
+#                                            [ var.to_numpy() for name, var in btag_SF_weights.items() if "_down" in name ], )
             else:
                 weights.add( "btagSF",
                          apply_btag_sf( event.selJet, correction_file=self.corrections_metadata[year]["btagSF"], btag_uncertainties=None, )["btagSF_central"], )
 
+            logging.debug( f"Btag weight {weights.partial_weight(include=['btagSF'])[:10]}\n" )
             event["weight"] = weights.weight()
             if not shift_name:
                 self._cutFlow.fill( "passJetMult_btagSF", event[selections.all(*allcuts)], allTag=True )
@@ -487,9 +495,9 @@ class analysis(processor.ProcessorABC):
         #
         # calculate pseudoTagWeight for threeTag events
         #
-        logging.debug( f"noJCM_noFVT {weights.weight()[ selections.all(*allcuts ) ][:10]}" )
-        logging.debug( f"noJCM_noFVT partial {weights.partial_weight(include=['genweight_', 'trigWeight_', 'PU_' ,'btagSF'])[ selections.all(*allcuts) ][:10]}" )
-        selev["weight_noJCM_noFvT"] = weights.partial_weight( include=["genweight_", "trigWeight_", "PU_", "btagSF"] )[selections.all(*allcuts)]
+        all_weights = ['genweight_', 'trigWeight_', 'PU_' ,'btagSF']
+        logging.debug( f"noJCM_noFVT partial {weights.partial_weight(include=all_weights)[ selections.all(*allcuts) ][:10]}" )
+        selev["weight_noJCM_noFvT"] = weights.partial_weight( include=all_weights )[selections.all(*allcuts)]
 
         if self.JCM:
             selev["Jet_untagged_loose"] = selev.Jet[ selev.Jet.selected & ~selev.Jet.tagged_loose ]
@@ -530,11 +538,13 @@ class analysis(processor.ProcessorABC):
                     tmp_weight = np.full(len(event), 1.0)
                     tmp_weight[selections.all(*allcuts) & event.threeTag] = weight
                     weights.add("FvT_", tmp_weight)
+                    logging.debug( f"FvT {weights.partial_weight(include=['FvT_'])[:10]}\n" )
 
             else:
                 tmp_weight = np.full(len(event), 1.0)
                 tmp_weight[selections.all(*allcuts)] = weight_noFvT
                 weights.add("no_FvT_", tmp_weight)
+                logging.debug( f"no_FvT {weights.partial_weight(include=['no_FvT_'])[:10]}\n" )
 
         #
         # Build diJets, indexed by diJet[event,pairing,0/1]
@@ -744,6 +754,7 @@ class analysis(processor.ProcessorABC):
         #
         # CutFlow
         #
+        logging.debug(f"final weight {weights.weight()[:10]}")
         selev["weight"] = weights.weight()[selections.all(*allcuts)]
         if not shift_name:
             self._cutFlow.fill("passPreSel", selev)
