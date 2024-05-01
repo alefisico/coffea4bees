@@ -201,7 +201,7 @@ datasets:
         sumw2: 372000.0
         total_events: 372000.0
     UL18:
-      nanoAOD: /dataset/dataset/NANOAODSIM
+      nanoAOD: /GluGluToHHTo4B_node_SM_TuneCP5_PSWeights_13TeV-madgraph-pythia8/RunIIAutumn18NanoAODv7-Nano02Apr2020_102X_upgrade2018_realistic_v21-v1/NANOAODSIM
       picoAOD:
         files:
         - root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/HH4b2018/picoAOD.root

@@ -1,0 +1,7 @@
+runner:
+  workers: 4
+  condor_memory: 8GB
+  data_tier: nanoAOD
+
+config:
+  corrections_metadata: "analysis/metadata/corrections.yml"
