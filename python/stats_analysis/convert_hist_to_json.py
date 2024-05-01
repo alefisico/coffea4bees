@@ -95,6 +95,17 @@ if __name__ == '__main__':
                             logging.info(f"Converting hist {ih} {this_hist}")
                             json_dict[ih][iprocess][iy][codes['tag'][itag]][codes['region'][iregion]] = hist_to_json( coffea_hists[ih][this_hist] )
     else:
+        codes = {
+            'region' : {
+                2 : 'other',
+                1 : 'SB',
+                0 : 'SR'
+            },
+            'tag' : {
+                1 : 'threeTag',
+                0 : 'fourTag',
+            }
+        }
         for ih in args.histos:
             json_dict[ih] = {}
             for iprocess in coffea_hists[ih].axes[0]:
