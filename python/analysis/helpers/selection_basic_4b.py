@@ -1,5 +1,6 @@
 import numpy as np
 import awkward as ak
+import logging
 from coffea.nanoevents import NanoEventsFactory, NanoAODSchema, BaseSchema
 from analysis.helpers.common import init_jet_factory, jet_corrections, mask_event_decision, drClean
 from coffea.lumi_tools import LumiMask
@@ -84,5 +85,24 @@ def apply_object_selection_4b( event, year, isMC, dataset, corrections_metadata,
     tagCode[event.fourTag]  = 4
     tagCode[event.threeTag] = 3
     event['tag'] = tagCode
+
+    return event
+
+def apply_object_selection_boosted_4b( event ):
+    """docstring for apply_basic_selection_4b. This fuction is not modifying the content of anything in events. it is just adding it"""
+
+    event['FatJet'] = event.FatJet[ ak.argsort( event.FatJet.particleNetMD_Xbb, axis=1, ascending=False )  ]
+    event['FatJet', 'selected'] = (event.FatJet.pt > 300) & (np.abs(event.FatJet.eta) < 2.4)
+    event['nFatJet_selected'] = ak.sum(event.FatJet.selected, axis=1)
+
+    event['passBoostedKin'] = event.nFatJet_selected >=2
+    tmp_selev = event[ event.passBoostedKin ]
+    candJet1 = (tmp_selev.FatJet[:,0].msoftdrop > 50) & (tmp_selev.FatJet[:,0].particleNetMD_Xbb > 0.8)
+    candJet2 = (tmp_selev.FatJet[:,1].particleNet_mass > 50)
+
+    passBoostedSel = np.full( len(event), False )
+    passBoostedSel[event.passBoostedKin] = (candJet1 & candJet2)
+    event['passBoostedSel'] = passBoostedSel
+
 
     return event
