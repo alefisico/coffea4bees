@@ -8,7 +8,7 @@ from rich.progress import BarColumn
 from rich.progress import Progress as _Bar
 from rich.progress import ProgressColumn, SpinnerColumn, TimeElapsedColumn
 
-from ..config.setting import Monitor as cfg
+from ..config.setting import monitor as cfg
 from ..process.monitor import Proxy, Recorder, callback
 from ..typetools import WithUUID
 from ..utils import noop
@@ -69,7 +69,7 @@ class ProgressTracker(WithUUID):
         return self._completed >= self.total
 
 
-class _EstimateColumn(ProgressColumn):
+class TimeRemainColumn(ProgressColumn):
     def render(self, task):
         estimate = task.fields.get("estimate")
         text = _UNKNOWN
@@ -87,27 +87,26 @@ class Progress(Proxy):
 
     def __init__(self):
         self._jobs = {}
-        if cfg.console_enable:
-            self._console_bar = _Bar(
-                SpinnerColumn(),
-                TimeElapsedColumn(),
-                _EstimateColumn(),
-                BarColumn(bar_width=None),
-                "{task.completed}/{task.total} {task.description}",
-                "\[{task.fields[source]}]",
-                expand=True,
-            )
-            self._console_ids = {}
+        self._console_bar = _Bar(
+            SpinnerColumn(),
+            TimeElapsedColumn(),
+            TimeRemainColumn(),
+            BarColumn(bar_width=None),
+            "{task.completed}/{task.total} {task.description}",
+            "\[{task.fields[source]}]",
+            expand=True,
+        )
+        self._console_ids = {}
 
     @classmethod
+    @cfg.check(cfg.Progress, default=noop)
     def new(cls, total: int, msg: str = "") -> ProgressTracker:
-        if cfg.progress_enable:
-            job = ProgressTracker(msg=msg, total=total)
-            cls._update(job)
-            return job
-        return noop
+        job = ProgressTracker(msg=msg, total=total)
+        cls._update(job)
+        return job
 
     @callback(max_retry=1)
+    @cfg.check(cfg.Progress)
     def _update(self, new: ProgressTracker):
         uuid = (new.source, new.uuid)
         old = self._jobs.get(uuid)
@@ -144,10 +143,10 @@ class Progress(Proxy):
                 ...
 
 
+@cfg.check(cfg.Progress)
 def setup_monitor():
-    if cfg.progress_enable:
-        if cfg.console_enable:
-            from .backends.console import Dashboard as _CD
+    if cfg.Console.enable:
+        from .backends.console import Dashboard as _CD
 
-            _CD.layout.add_row(Progress._console_bar)
-            _CD.add(Progress._console_callback)
+        _CD.layout.add_row(Progress._console_bar)
+        _CD.add(Progress._console_callback)

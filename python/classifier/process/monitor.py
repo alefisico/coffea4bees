@@ -128,7 +128,7 @@ class _Packet:
     def __post_init__(self):
         self._timestamp = time.time_ns()
         self._n_retried = 0
-        self.retry = self.retry or cfg.Monitor.max_resend
+        self.retry = self.retry or cfg.Monitor.retry_max
 
     def __call__(self):
         lock = self.cls.lock() if self.lock else noop
@@ -426,7 +426,7 @@ class Recorder(Proxy):
 
     def __init__(self):
         self._reporters = {self._name: "main"}
-        self._data = [(cfg.Monitor.file_meta, Recorder.serialize)]
+        self._data = [(cfg.Monitor.file, Recorder.serialize)]
 
     @callback
     def register(self, name: str):

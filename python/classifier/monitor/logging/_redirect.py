@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Iterable
 
-from ...config.setting import Monitor as cfg
+from ...config.setting import monitor as cfg
 from ...config.state import RepoInfo
 from ...process.monitor import Recorder, callback
 from ..backends import Platform
@@ -29,14 +29,15 @@ class MultiPlatformHandler(logging.Handler):
             cls.__instance = cls(**kwargs)
         return cls.__instance
 
+    @cfg.check(cfg.Log)
     def emit(self, record: logging.LogRecord):
-        if cfg.log_enable:
-            record.__class__ = MultiPlatformLogRecord
-            record.name = Recorder.name()
-            record.pathname = RepoInfo.get_url(record.pathname)
-            self._emit(record)
+        record.__class__ = MultiPlatformLogRecord
+        record.name = Recorder.name()
+        record.pathname = RepoInfo.get_url(record.pathname)
+        self._emit(record)
 
     @callback(max_retry=1)
+    @cfg.check(cfg.Log)
     def _emit(self, record: MultiPlatformLogRecord):
         record.name = Recorder.registered(record.name)
         for handler in self._handlers:

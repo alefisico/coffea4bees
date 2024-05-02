@@ -5,7 +5,7 @@ from typing import TypedDict
 
 import psutil
 
-from ...config.setting import Monitor as cfg
+from ...config.setting import monitor as cfg
 from ...config.state import RunInfo
 from ...process.monitor import Node, Proxy, Recorder, callback
 
@@ -55,11 +55,11 @@ class Usage(Proxy):
         self._checkpoints: dict[Node, list[Checkpoint]] = defaultdict(list)
 
     @classmethod
+    @cfg.check(cfg.Usage)
     def start(cls):
-        if cfg.usage_enable:
-            cls._running = True
-            cls._tracker = Thread(target=cls._track, daemon=True)
-            cls._tracker.start()
+        cls._running = True
+        cls._tracker = Thread(target=cls._track, daemon=True)
+        cls._tracker.start()
 
     @classmethod
     def stop(cls):
@@ -70,23 +70,27 @@ class Usage(Proxy):
             cls._records_local = []
 
     @classmethod
+    @cfg.check(cfg.Usage)
     def checkpoint(cls, *tags: str):
-        if cfg.usage_enable and cls._running:
-            start_t = time.time_ns()
-            end = len(cls._records_local)
-            records = cls._records_local[cls._head : end]
-            cls._head = end
-            end_t = time.time_ns()
-            cls._checkpoint(
-                Recorder.node(), {"time": (start_t + end_t) // 2, "name": tags}, records
-            )
+        if not cls._running:
+            return
+        start_t = time.time_ns()
+        end = len(cls._records_local)
+        records = cls._records_local[cls._head : end]
+        cls._head = end
+        end_t = time.time_ns()
+        cls._checkpoint(
+            Recorder.node(), {"time": (start_t + end_t) // 2, "name": tags}, records
+        )
 
     @callback
+    @cfg.check(cfg.Usage)
     def _checkpoint(self, node: Node, checkpoint: Checkpoint, records: list[Resource]):
         self._records[node].extend(records)
         self._checkpoints[node].append(checkpoint)
 
     @callback
+    @cfg.check(cfg.Usage)
     def _send_pinfo(self, ip: str, info: ProcessInfo):
         self._processes[ip].append(info)
 
@@ -109,19 +113,19 @@ class Usage(Proxy):
             p = psutil.Process()
             cls._pinfo(p)
             # CPU, memory
-            cpu = {p.pid: p.cpu_percent(cfg.usage_update_interval)}
+            cpu = {p.pid: p.cpu_percent(cfg.Usage.interval)}
             mem = {p.pid: p.memory_info().rss / _MIB}
             for c in p.children(recursive=True):
                 try:
                     cls._pinfo(c)
-                    cpu[c.pid] = c.cpu_percent(cfg.usage_update_interval)
+                    cpu[c.pid] = c.cpu_percent(cfg.Usage.interval)
                     mem[c.pid] = c.memory_info().rss / _MIB
                 except psutil.NoSuchProcess:
                     cpu.pop(c.pid, None)
                     mem.pop(c.pid, None)
             # GPU
-            if cfg.usage_gpu:
-                if cfg.usage_gpu_force_torch or cls._pynvml_unavailable:
+            if cfg.Usage.gpu:
+                if cfg.Usage.gpu_force_torch or cls._pynvml_unavailable:
                     gpu = cls._gpu_torch(p.pid)
                 else:
                     gpu = cls._gpu_nvml(p.pid, *cpu)
@@ -134,7 +138,7 @@ class Usage(Proxy):
             cls._records_local.append(
                 {"time": (start_t + end_t) // 2, "cpu": cpu, "memory": mem, "gpu": gpu}
             )
-            remain_t = cfg.usage_update_interval - (end_t - start_t) / 1e9
+            remain_t = cfg.Usage.interval - (end_t - start_t) / 1e9
             if remain_t > 0:
                 time.sleep(remain_t)
 
@@ -193,12 +197,12 @@ class Usage(Proxy):
         return json.dumps({"usage": usage, "process": cls._processes}).encode()
 
 
+@cfg.check(cfg.Usage)
 def setup_reporter():
-    if cfg.usage_enable:
-        Usage.start()
+    Usage.start()
 
 
+@cfg.check(cfg.Usage)
 def setup_monitor():
-    if cfg.usage_enable:
-        Usage.start()
-        Recorder.to_dump(cfg.file_usage, Usage.serialize)
+    Usage.start()
+    Recorder.to_dump(cfg.Usage.file, Usage.serialize)

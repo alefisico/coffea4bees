@@ -103,36 +103,14 @@ class IO(Cascade):
 
 class Monitor(Cascade):
     enable: bool = True
+    file: str = "meta.json"
     address: tuple[str, int] = ":10200"
 
-    # backends
-    console_enable: bool = True
-    console_update_interval: float = 1.0  # seconds
-    console_fps: int = 10
-
-    web_enable: bool = False  # TODO placeholder
-
-    # components
-    log_enable: bool = True
-
-    progress_enable: bool = True
-
-    usage_enable: bool = True
-    usage_update_interval: float = 1.0  # seconds
-    usage_gpu: bool = True
-    usage_gpu_force_torch: bool = False
-
-    # records
-    file_meta: str = "meta.json"
-    file_log: str = "logs.html"
-    file_usage: str = "usage.json"
-
     # performance
-    max_resend: int = 1
+    retry_max: int = 1
     reconnect_delay: float = 0.1  # seconds
 
     # builtins
-    logging_level: int = 20
     socket_timeout: float = None
     warnings_ignore: bool = True
 
