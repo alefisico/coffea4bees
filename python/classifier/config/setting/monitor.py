@@ -1,3 +1,5 @@
+from functools import wraps
+from types import MethodType
 from typing import Callable, Protocol, TypeVar
 
 from classifier.task.state import Cascade
@@ -18,10 +20,16 @@ class _monitor_status_checker:
         default=None,
         is_callable=False,
     ):
+        wraps(func)(self)
         self.func = func
         self.cfgs = dependencies + (Monitor,)
         self.default = default
         self.is_callable = is_callable
+
+    def __get__(self, instance, _):
+        if instance is None:
+            return self
+        return MethodType(self, instance)
 
     def __call__(self, *args, **kwargs):
         if all(cfg.enable for cfg in self.cfgs):
