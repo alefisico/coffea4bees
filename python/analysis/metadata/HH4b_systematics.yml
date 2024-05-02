@@ -6,7 +6,7 @@ config:
   corrections_metadata: 'analysis/metadata/corrections.yml'
   JCM: 'analysis/weights/JCM/2023/dataRunII/jetCombinatoricModel_SB_00-00-02.yml'
   threeTag: true
-  apply_FvT: false
+  apply_FvT: true
   apply_trigWeight: true
   apply_btagSF: true
   run_SvB: true
