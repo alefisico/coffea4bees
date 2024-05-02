@@ -52,6 +52,7 @@ class IO(Cascade):
 
     output: EOS = "./{main}-{timestamp}/"
     monitor: EOS = "diagnostics"
+    report: EOS = "report"
     profiler: EOS = "profiling"
 
     states: EOS = "states.pkl"
@@ -81,6 +82,10 @@ class IO(Cascade):
 
     @classmethod
     def get__monitor(cls, value: str):
+        return cls._generate_path(value)
+
+    @classmethod
+    def get__report(cls, value: str):
         return cls._generate_path(value)
 
     @classmethod
