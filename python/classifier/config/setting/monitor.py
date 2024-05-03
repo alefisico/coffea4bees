@@ -1,7 +1,6 @@
-from functools import wraps
-from types import MethodType
 from typing import Callable, Protocol, TypeVar
 
+from base_class.utils.wrapper import MethodDecorator
 from classifier.task.state import Cascade
 
 from . import Monitor
@@ -9,42 +8,37 @@ from . import Monitor
 
 class MonitorComponentConfig(Protocol):
     enable: bool
-    file: str
 
 
-class _monitor_status_checker:
+class _monitor_status_checker(MethodDecorator):
     def __init__(
         self,
-        func,
+        func: Callable,
         dependencies: tuple[MonitorComponentConfig],
         default=None,
-        is_callable=False,
+        is_callable: bool = False,
     ):
-        wraps(func)(self)
-        self.func = func
-        self.cfgs = dependencies + (Monitor,)
-        self.default = default
-        self.is_callable = is_callable
-
-    def __get__(self, instance, _):
-        if instance is None:
-            return self
-        return MethodType(self, instance)
+        super().__init__(func)
+        self._cfgs = dependencies + (Monitor,)
+        self._default = default
+        self._is_callable = is_callable
 
     def __call__(self, *args, **kwargs):
-        if all(cfg.enable for cfg in self.cfgs):
-            return self.func(*args, **kwargs)
-        if self.is_callable:
-            return self.default()
+        if all(cfg.enable for cfg in self._cfgs):
+            return self._func(*args, **kwargs)
+        if self._is_callable:
+            return self._default()
         else:
-            return self.default
+            return self._default
 
 
 _FuncT = TypeVar("_FuncT")
 
 
 def check(
-    *dependencies: MonitorComponentConfig, default=None, is_callable=False
+    *dependencies: MonitorComponentConfig,
+    default=None,
+    is_callable: bool = False,
 ) -> Callable[[_FuncT], _FuncT]:
     return lambda func: _monitor_status_checker(
         func, dependencies, default, is_callable
@@ -54,6 +48,7 @@ def check(
 # backends
 class Console(Cascade):
     enable: bool = True
+
     interval: float = 1.0  # seconds
     fps: int = 10
 
