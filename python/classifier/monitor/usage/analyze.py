@@ -173,7 +173,7 @@ def _plot_process_tree(ps: list[ProcessInfo], start_t: int):
         G.add_node(
             p,
             label=f"{p}",
-            title=f"PID:{p}\nStart:Unknown\nCommand:Unknown",
+            title=f"Unknown",
             group="unknown",
             **_GRAPH_KWARGS,
         )

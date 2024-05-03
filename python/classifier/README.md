@@ -141,6 +141,7 @@ TODO
 - HCR:
   - Add die loss?
 - main:
+  - batch size not increased?
   - Add evaluation
   - Add plotting
 - Add SvB
