@@ -196,6 +196,12 @@ class analysis(processor.ProcessorABC):
             else:
                 event["FvT"] = ( NanoEventsFactory.from_root( f'{path}{"FvT.root"}', entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().FvT )
 
+            if "std" not in event.FvT.fields:
+                event["FvT", "std"] = np.ones(len(event)) 
+                event["FvT", "pt4"] = np.ones(len(event)) 
+                event["FvT", "pt3"] = np.ones(len(event)) 
+                event["FvT", "pd4"] = np.ones(len(event)) 
+                event["FvT", "pd3"] = np.ones(len(event)) 
 
             event["FvT", "frac_err"] = event["FvT"].std / event["FvT"].FvT
             if not ak.all(event.FvT.event == event.event):
