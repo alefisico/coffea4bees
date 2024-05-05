@@ -65,7 +65,7 @@ class MilestoneStep:
         return changed
 
 
-class MultiStepBS(BSScheduler, MilestoneStep):
+class MultiStepBS(MilestoneStep, BSScheduler):
     def __init__(
         self,
         dataset: Dataset,
@@ -92,5 +92,5 @@ class MultiStepBS(BSScheduler, MilestoneStep):
         return self._dataloader
 
     def step(self, epoch: int = None):
-        super().step(epoch)
+        super(MultiStepBS, self).step(epoch)
         self._bs = int(self.batch_size * (self.gamma**self.milestone))
