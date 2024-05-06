@@ -200,7 +200,6 @@ class analysis(processor.ProcessorABC):
         if self.run_SvB:
             if (self.classifier_SvB is None) | (self.classifier_SvB_MA is None):
                 SvB_file = f'{path}/SvB_newSBDef.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB")}'
-                logging.info(f"{SvB_file} {path} {fname}")
                 event["SvB"] = ( NanoEventsFactory.from_root( SvB_file,
                                                               entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().SvB )
 

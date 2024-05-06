@@ -1,12 +1,12 @@
 counts4:
-    HH4b_UL18:
-        passJetMult: 0.65
+    HH4b_2018:
+        passJetMult: 0.64
         passPreSel: 0.16
         passDiJetMass: 0.14
-        SR: 0.13
+        SR: 0.12
         SB: 0.02
         passSvB: 0.06
-        failSvB: 0.01
+        failSvB: 0.0
 
     GluGluToHHTo4B_cHHH1_UL18:
         passJetMult: 0.2
@@ -20,13 +20,13 @@ counts4:
 
 
 counts3:
-    HH4b_UL18:
-        passJetMult: 0.65
+    HH4b_2018:
+        passJetMult: 0.64
         passPreSel: 0.02
         passDiJetMass: 0.01
         SR: 0.01
         SB: 0.0
-        passSvB: 0.01
+        passSvB: 0.0
         failSvB: 0.0
 
     GluGluToHHTo4B_cHHH1_UL18:
@@ -41,14 +41,14 @@ counts3:
 
 
 counts4_unit:
-    HH4b_UL18:
+    HH4b_2018:
         passJetMult: 945.0
-        passPreSel: 209.0
-        passDiJetMass: 189.0
+        passPreSel: 207.0
+        passDiJetMass: 188.0
         SR: 165.0
-        SB: 24.0
-        passSvB: 64.0
-        failSvB: 10.0
+        SB: 23.0
+        passSvB: 67.0
+        failSvB: 8.0
 
     GluGluToHHTo4B_cHHH1_UL18:
         passJetMult: 1006.0
@@ -62,14 +62,14 @@ counts4_unit:
 
 
 counts3_unit:
-    HH4b_UL18:
+    HH4b_2018:
         passJetMult: 945.0
-        passPreSel: 722.0
-        passDiJetMass: 400.0
+        passPreSel: 724.0
+        passDiJetMass: 405.0
         SR: 278.0
-        SB: 122.0
+        SB: 127.0
         passSvB: 79.0
-        failSvB: 214.0
+        failSvB: 211.0
 
     GluGluToHHTo4B_cHHH1_UL18:
         passJetMult: 1006.0
