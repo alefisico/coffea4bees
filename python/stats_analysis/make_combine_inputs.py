@@ -39,7 +39,6 @@ class Column:
         self.name = channel.name
         self.closure_systs = closureSysts
         self.mc_systs = mcSysts
-        # self.lumi = '%s'%(str(uncert_lumi[self.channel.era]) if int(process.index)<1 else '-') # only signals have lumi uncertainty
 
         self.closureSysts = {}
         for nuisance in self.closure_systs:
@@ -56,11 +55,11 @@ class Column:
                 if self.channel.era not in nuisance: continue
             self.mcSysts[nuisance] = '%3s'%'1'
 
-        uncert_lumi_corr = {'6': '1.006', '7': '1.009', '8': '1.020'}
-        uncert_lumi_1718 = {              '7': '1.006', '8': '1.002'}
-        uncert_lumi_2016 = {'6': '1.010'                            }
-        uncert_lumi_2017 = {              '7': '1.020'              }
-        uncert_lumi_2018 = {                            '8': '1.015'}
+        uncert_lumi_corr = {'UL16': '1.006', 'UL17': '1.009', 'UL18': '1.020'}
+        uncert_lumi_1718 = {              'UL17': '1.006', 'UL18': '1.002'}
+        uncert_lumi_2016 = {'UL16': '1.010'                            }
+        uncert_lumi_2017 = {              'UL17': '1.020'              }
+        uncert_lumi_2018 = {                            'UL18': '1.015'}
         uncert_br = {'ZH': '1.013', 'HH': '1.025'} # https://gitlab.cern.ch/hh/naming-conventions https://twiki.cern.ch/twiki/bin/view/LHCPhysics/CERNYellowReportPageBR?rev=22#Higgs_2_fermions
         uncert_pdf_HH = {'HH': '1.030'} #https://gitlab.cern.ch/hh/naming-conventions
         uncert_pdf_ZH = {'ZH': '1.013'}
@@ -130,8 +129,10 @@ def create_combine_root_file( file_to_convert, rebin, classifier, output_dir, pl
                     if systematics_file and 'HH4b' in iprocess:
                         root_hists[channel+"_"+iyear][iprocess] = {}
                         for ivar in coffea_hists_syst[ih][iprocess][iyear].keys():
+                            ip = 'GluGluToHHTo4B_cHHH1' #iprocess
                             root_hists[channel+"_"+iyear][iprocess][ivar] = json_to_TH1(
-                                coffea_hists_syst[ih][iprocess][iyear][ivar]['fourTag']['SR'], iprocess.split('4b')[0] +"_"+ivar+"_"+iyear, rebin[channel] )
+                                coffea_hists_syst[ih][ip][iyear][ivar]['fourTag']['SR'], iprocess.split('4b')[0] +"_"+ivar+"_"+iyear, rebin[channel] )
+                    elif iprocess.startswith(('ZZ', 'ZH')): continue
                     else:
                         root_hists[channel+"_"+iyear][iprocess] = json_to_TH1(
                             coffea_hists[ih][iprocess][iyear]['fourTag']['SR'], iprocess.split('4b')[0]+"_"+iyear, rebin[channel] )
@@ -188,7 +189,7 @@ def create_combine_root_file( file_to_convert, rebin, classifier, output_dir, pl
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
 
-        output = output_dir+"/hists_"+iclass+('_oldbkg' if add_old_bkg else '' )+".root"
+        output = output_dir+"/hists_"+iclass+".root"
 
         root_file = ROOT.TFile(output, 'recreate')
 
@@ -241,30 +242,18 @@ def create_combine_root_file( file_to_convert, rebin, classifier, output_dir, pl
         #### make datacard
         metadata = yaml.safe_load(open('metadata/HH4b.yml', 'r'))
 
-        closureSysts = [ i.replace('Up', '') for i in root_hists[next(iter(root_hists))]['mj'].keys() if 'Up' in i ]
-
-        btagSysts = []
-        juncSysts = []
-        mcSysts = []
-#        if mcSystsfile:
-#            print('btag, trigger, JEC systematics from', mcSystsfile, classifier)
-#            with open(mcSystsfile,'rb') as sfile:
-#                mcSysts = pickle.load(sfile)[classifier]
-#                keys = []
-#                for systs in mcSysts.values():
-#                    keys += systs.keys()
-#                mcSysts = sorted(set(keys))
-#                mcSysts = [s.replace('Up', '') for s in mcSysts if 'Up' in s and 'Total' not in s]
-#                for s in mcSysts:
-#                    if 'btag' in s: btagSysts.append(s)
-#                    if 'junc' in s: juncSysts.append(s)
+        closureSysts = [ i.replace('Up', '') for i in root_hists[next(iter(root_hists))]['mj'].keys() if i.endswith('Up') ]
+        mcSysts = [ s.replace('_Up', '') for s in root_hists[next(iter(root_hists))]['HH4b'].keys() if s.endswith('Up') ]
+        juncSysts = [ s for s in mcSysts if s.startswith('JES') ]
 
         channels = []
         for era in metadata['eras']:
             for SR in metadata['SR']:
+                print(era, SR)
                 channels.append( Channel(SR, era) )
 
-        processes = [Process('ZZ', -2), Process('ZH', -1), Process('HH', 0), Process('mj', 1), Process('tt', 2)]
+        processes = [Process('HH', 0), Process('mj', 1), Process('tt', 2)]
+        #processes = [Process('ZZ', -2), Process('ZH', -1), Process('HH', 0), Process('mj', 1), Process('tt', 2)]
 
         columns = []
         for channel in channels:
@@ -275,7 +264,7 @@ def create_combine_root_file( file_to_convert, rebin, classifier, output_dir, pl
         hline = '-'*hline
         lines = []
         lines.append('imax %d number of channels'%(len(metadata['SR'])*len(metadata['eras'])))
-        lines.append('jmax 4 number of processes minus one') # zz, zh, hh, mj, tt is five processes, so jmax is 4
+        lines.append('jmax 2 number of processes minus one') # zz, zh, hh, mj, tt is five processes, so jmax is 4
         lines.append('kmax * number of systematics')
         lines.append(hline)
         lines.append('shapes * * '+output+' $CHANNEL/$PROCESS $CHANNEL/$PROCESS_$SYSTEMATIC')
@@ -290,29 +279,29 @@ def create_combine_root_file( file_to_convert, rebin, classifier, output_dir, pl
         lines.append(hline)
         for nuisance in closureSysts:
             lines.append('%-35s %5s %s'%(nuisance, 'shape', ' '.join([column.closureSysts[nuisance] for column in columns])))
-#    for nuisance in mcSysts:
-#        lines.append('%-35s %5s %s'%(nuisance, 'shape', ' '.join([column.     mcSysts[nuisance] for column in columns])))
+        for nuisance in mcSysts:
+            lines.append('%-35s %5s %s'%(nuisance, 'shape', ' '.join([column.     mcSysts[nuisance] for column in columns])))
         lines.append('%-35s %5s %s'%('BR_hbb',   'lnN', ' '.join([column.br        for column in columns])))
         lines.append('%-35s %5s %s'%('xs',       'lnN', ' '.join([column.xs        for column in columns])))
-#        lines.append('%-35s %5s %s'%('lumi_corr','lnN', ' '.join([column.lumi_corr for column in columns])))
-#        lines.append('%-35s %5s %s'%('lumi_1718','lnN', ' '.join([column.lumi_1718 for column in columns])))
-#        lines.append('%-35s %5s %s'%('lumi_2016','lnN', ' '.join([column.lumi_2016 for column in columns])))
-#        lines.append('%-35s %5s %s'%('lumi_2017','lnN', ' '.join([column.lumi_2017 for column in columns])))
-#        lines.append('%-35s %5s %s'%('lumi_2018','lnN', ' '.join([column.lumi_2018 for column in columns])))
+        lines.append('%-35s %5s %s'%('lumi_corr','lnN', ' '.join([column.lumi_corr for column in columns])))
+        lines.append('%-35s %5s %s'%('lumi_1718','lnN', ' '.join([column.lumi_1718 for column in columns])))
+        lines.append('%-35s %5s %s'%('lumi_2016','lnN', ' '.join([column.lumi_2016 for column in columns])))
+        lines.append('%-35s %5s %s'%('lumi_2017','lnN', ' '.join([column.lumi_2017 for column in columns])))
+        lines.append('%-35s %5s %s'%('lumi_2018','lnN', ' '.join([column.lumi_2018 for column in columns])))
 #        if not stat_only:
-#            lines.append(hline)
-#            lines.append('* autoMCStats 0 1 1')
-#        lines.append(hline)
-        if closureSysts:
-            lines.append('multijet group = %s'%(' '.join(closureSysts)))
+        lines.append(hline)
+        lines.append('* autoMCStats 0 1 1')
+        lines.append(hline)
+#        if closureSysts:
+        lines.append('multijet group = %s'%(' '.join(closureSysts)))
 ##    if mcSysts:
 ##        lines.append('btag     group = %s'%(' '.join(   btagSysts)))
-##        lines.append('junc     group = %s'%(' '.join(   juncSysts)))
+        lines.append('junc     group = %s'%(' '.join(   juncSysts)))
 ##        lines.append('trig     group = trigger_emulation')
-#        lines.append('lumi     group = lumi_corr lumi_1718 lumi_2016 lumi_2017 lumi_2018')
-#        lines.append('theory   group = BR_hbb xs')
+        lines.append('lumi     group = lumi_corr lumi_1718 lumi_2016 lumi_2017 lumi_2018')
+        lines.append('theory   group = BR_hbb xs')
 #        if not stat_only:
-#            lines.append('others   group = trigger_emulation lumi_corr lumi_1718 lumi_2016 lumi_2017 lumi_2018 BR_hbb xs pileup prefire %s'%(' '.join(juncSysts)))
+        lines.append('others   group = trigger_emulation lumi_corr lumi_1718 lumi_2016 lumi_2017 lumi_2018 BR_hbb xs pileup prefire %s'%(' '.join(juncSysts)))
 
 
         with open(output.replace('hists', 'combine').replace('root', 'txt'), 'w') as ofile:

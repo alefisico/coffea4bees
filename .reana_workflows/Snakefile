@@ -9,7 +9,9 @@ TIMESTAMP = datetime.now().strftime('%Y%m%d_%H%M%S')
 rule all:
     input:
         expand("output/histdatabkgs_{sample}-{iy}.coffea", sample=config['dataset'], iy=config['year']),
+        expand("output/histdatabkgspreUL_{samplepreUL}-{iypreUL}.coffea", samplepreUL=config['dataset_preUL'], iypreUL=config['year_preUL']),
         expand("output/histsyst_{samplesyst}-{iysyst}.coffea", samplesyst=config['dataset_systematics'], iysyst=config['year']),
+        expand("output/histsystpreUL_{samplesystpreUL}-{iysystpreUL}.coffea", samplesystpreUL=config['dataset_preUL'], iysystpreUL=config['year_preUL']),
         "output/histMixedBkg_data_3b_for_mixed.coffea",
         "output/histMixedBkg_TT.coffea",
         "output/histMixedData.coffea",
@@ -47,13 +49,23 @@ cp gitdiff.txt output/   ### only one time
 #cp /tmp/coffea4bees-dask-report-* ../output/coffea4bees-dask-report_{params.logname}_{params.iy}.html
         """
 
+use rule analysis_databkgs as analysis_databkgs_preUL with:
+    output: "output/histdatabkgspreUL_{samplepreUL}-{iypreUL}.coffea"
+    params:
+        hash=config['hash'],
+        diff=config['diff'],
+        isam="{samplepreUL}",
+        iy="{iypreUL}",
+        output="histdatabkgspreUL_{samplepreUL}-{iypreUL}.coffea",
+        logname="databkgs_{samplepreUL}_{iypreUL}"
+
 use rule analysis_databkgs as analysis_mixedbkg_data3b with:
     output: "output/histMixedBkg_data_3b_for_mixed.coffea"
     params:
         hash=config['hash'],
         diff=config['diff'],
         isam="data_3b_for_mixed",
-        iy=config['year_mixed'],
+        iy=config['year_preUL'],
         output="histMixedBkg_data_3b_for_mixed.coffea",
         logname="mixedbkg_data3b"
 
@@ -73,7 +85,7 @@ use rule analysis_databkgs as analysis_mixeddata with:
         hash=config['hash'],
         diff=config['diff'],
         isam="mixeddata",
-        iy=config['year_mixed'],
+        iy=config['year_preUL'],
         output="histMixedData.coffea",
         logname="mixeddata"
 
@@ -105,10 +117,20 @@ mprof plot -o output/mprofile_{params.logname}.png python/mprofile_{params.logna
 xrdcp {output} root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/{params.output}
         """
 
+use rule analysis_systematics as analysis_systematics_preUL with:
+    output:
+        "output/histsystpreUL_{samplesystpreUL}-{iysystpreUL}.coffea"
+    params:
+        hash=config['hash'],
+        diff=config['diff'],
+        isam="{samplesystpreUL}",
+        iy="{iysystpreUL}",
+        output="histsystpreUL_{samplesystpreUL}-{iysystpreUL}.coffea",
+        logname="syst_preUL_{samplesystpreUL}-{iysystpreUL}"
 
 rule merging_coffea_files_databkgs:
     input:
-        files = expand(['output/histdatabkgs_{idat}-{iyear}.coffea'], idat=config['dataset'], iyear=config['year'])
+        files = expand(['output/histdatabkgs_{idat}-{iyear}.coffea'], idat=config['dataset'], iyear=config['year']) + expand(['output/histdatabkgspreUL_{idat}-{iyear}.coffea'], idat=config['dataset_preUL'], iyear=config['year_preUL'])
     output: "output/histAll.coffea"
     container: "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
     params:
@@ -128,7 +150,8 @@ cp {output} /eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/{params.output}
 
 use rule merging_coffea_files_databkgs as merging_coffea_files_syst with:
     input:
-        files = expand(['output/histsyst_{idatsyst}-{iyear}.coffea'], idatsyst=config['dataset_systematics'], iyear=config['year'])
+        files = expand(['output/histsyst_{idatsyst}-{iyear}.coffea'], idatsyst=config['dataset_systematics'], iyear=config['year']) + expand(['output/histsystpreUL_{idat}-{iyear}.coffea'], idat=config['dataset_preUL'], iyear=config['year_preUL'])
+
     output:
         "output/histAll_syst.coffea"
     params:

@@ -148,7 +148,7 @@ def get_hist(cfg, config, var, region, cut, rebin, file_index=None, debug=False)
 
     if hist_obj is None:
         print(f"ERROR did not find var {var} with process {config['process']} in inputs")
-                
+
     #
     #  Add rebin Options
     #
@@ -897,6 +897,10 @@ def parse_args():
     parser.add_argument('--modifiers', dest="modifiers",
                         default="analysis/metadata/plotModifiers.yml",
                         help='Metadata file.')
+
+    parser.add_argument('-s', '--skip', dest="skip_hists",
+                        default=[], nargs='+',
+                        help='Name of hists to skip')
 
     parser.add_argument('--doTest', action="store_true", help='Metadata file.')
     parser.add_argument('--debug', action="store_true", help='')
