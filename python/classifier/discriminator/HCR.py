@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Callable, Iterable
 
 import fsspec
 import torch
@@ -104,7 +104,7 @@ class HCRModel(Model):
     def module(self):
         return self._nn
 
-    def train(self, batch: dict[str, Tensor]) -> dict[str, Tensor]:
+    def train(self, batch: dict[str, Tensor]) -> Tensor:
         c, p = self._nn(*_HCRInput(batch, self._device))
         batch[Output.quadjet_score] = p
         batch[Output.class_score] = c
