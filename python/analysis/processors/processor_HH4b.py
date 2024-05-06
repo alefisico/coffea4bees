@@ -199,13 +199,15 @@ class analysis(processor.ProcessorABC):
 
         if self.run_SvB:
             if (self.classifier_SvB is None) | (self.classifier_SvB_MA is None):
-                event["SvB"] = ( NanoEventsFactory.from_root( f'{path}{"SvB_newSBDef.root" if "mix" in dataset else "SvB.root"}',
+                SvB_file = f'{path}/SvB_newSBDef.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB")}'
+                event["SvB"] = ( NanoEventsFactory.from_root( SvB_file,
                                                               entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().SvB )
 
                 if not ak.all(event.SvB.event == event.event):
                     raise ValueError("ERROR: SvB events do not match events ttree")
 
-                event["SvB_MA"] = ( NanoEventsFactory.from_root( f'{path}{"SvB_MA_newSBDef.root" if "mix" in dataset else "SvB_MA.root"}',
+                SvB_MA_file = f'{path}/SvB_MA_newSBDef.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_MA")}'
+                event["SvB_MA"] = ( NanoEventsFactory.from_root( SvB_MA_file,
                                                                  entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema ).events().SvB_MA )
 
                 if not ak.all(event.SvB_MA.event == event.event):
@@ -419,12 +421,10 @@ class analysis(processor.ProcessorABC):
                 btag_SF_weights = apply_btag_sf( event.selJet, correction_file=self.corrections_metadata[year]["btagSF"],
                                                  btag_uncertainties=self.corrections_metadata[year][ "btag_uncertainties" ], )
 
-                weights.add( "btagSF",
-                         apply_btag_sf( event.selJet, correction_file=self.corrections_metadata[year]["btagSF"], btag_uncertainties=None, )["btagSF_central"], )
-#                weights.add_multivariation( f"btagSF", btag_SF_weights["btagSF_central"],
-#                                            self.corrections_metadata[year]["btag_uncertainties"],
-#                                            [ var.to_numpy() for name, var in btag_SF_weights.items() if "_up" in name ],
-#                                            [ var.to_numpy() for name, var in btag_SF_weights.items() if "_down" in name ], )
+                weights.add_multivariation( f"btagSF", btag_SF_weights["btagSF_central"],
+                                            self.corrections_metadata[year]["btag_uncertainties"],
+                                            [ var.to_numpy() for name, var in btag_SF_weights.items() if "_up" in name ],
+                                            [ var.to_numpy() for name, var in btag_SF_weights.items() if "_down" in name ], )
             else:
                 weights.add( "btagSF",
                          apply_btag_sf( event.selJet, correction_file=self.corrections_metadata[year]["btagSF"], btag_uncertainties=None, )["btagSF_central"], )

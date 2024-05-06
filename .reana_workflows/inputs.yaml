@@ -10,9 +10,9 @@ dataset:
   - TTTo2L2Nu 
   - ZZ4b 
   - ZH4b 
+dataset_preUL:
   - HH4b  
 dataset_systematics:
-  - HH4b  
   - GluGluToHHTo4B_cHHH1
 dataset_for_mixed:
   - TTToSemiLeptonic_for_mixed
@@ -21,9 +21,9 @@ dataset_for_mixed:
 dataset_mixeddata:
   - data_3b_for_mixed
   - mixeddata
-year_mixed:
-  - UL16_preVFP
-  - UL17
-  - UL18
+year_preUL:
+  - '2016'
+  - '2017'
+  - '2018'
 hash: b095d6ab143d990ad0edc2b294dc099e06422a02
 diff: "In_gitdiff.txt_file"

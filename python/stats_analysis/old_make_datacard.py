@@ -2,7 +2,8 @@ from __future__ import print_function
 import os, sys, pickle
 from copy import copy
 
-SRs = ['zz', 'zh', 'hh']
+SRs = ['hh']
+#SRs = ['zz', 'zh', 'hh']
 eras = ['6', '7', '8']
 # https://twiki.cern.ch/twiki/bin/view/CMS/TWikiLUM?rev=167#LumiComb  # https://gitlab.cern.ch/hh/naming-conventions
 uncert_lumi_corr = {'6': '1.006', '7': '1.009', '8': '1.020'}

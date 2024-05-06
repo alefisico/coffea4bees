@@ -3,7 +3,7 @@
 inputdir="./" #"root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/"
 classifiers=( "SvB" "SvB_MA" )
 years=( "2016" "2017" "2018" )
-channel=( "hh:10" "zz:4" "zh:5" )
+channel=( "hh:10" ) # "zz:4" "zh:5" )
 signals=( "HH:HH4b" "ZZ:ZZ4b" "ZH:bothZH4b" )
 mixFile=${inputdir}"files_HIG-20-011/hists_closure_3bDvTMix4bDvT_SR_weights_newSBDef.root"
 
