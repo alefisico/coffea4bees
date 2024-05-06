@@ -1,7 +1,7 @@
 import json
 import time
 from collections import defaultdict
-from threading import Thread
+from threading import Lock, Thread
 from typing import TypedDict
 
 import psutil
@@ -37,9 +37,8 @@ class ProcessInfo(TypedDict):
 class Usage(Proxy):
     _records_local: list[Resource] = []
     _processes_local: set[int] = set()
-
+    _lock = Lock()
     _tracker: Thread = None
-    _head: int = 0
 
     # GPU
     _n_gpu: int = None
@@ -76,9 +75,9 @@ class Usage(Proxy):
         if not cls._running:
             return
         start_t = time.time_ns()
-        end = len(cls._records_local)
-        records = cls._records_local[cls._head : end]
-        cls._head = end
+        with cls._lock:
+            records = cls._records_local
+            cls._records_local = []
         end_t = time.time_ns()
         cls._checkpoint(
             Recorder.node(), {"time": (start_t + end_t) // 2, "name": tags}, records
@@ -136,9 +135,15 @@ class Usage(Proxy):
             else:
                 gpu = {}
             end_t = time.time_ns()
-            cls._records_local.append(
-                {"time": (start_t + end_t) // 2, "cpu": cpu, "memory": mem, "gpu": gpu}
-            )
+            with cls._lock:
+                cls._records_local.append(
+                    {
+                        "time": (start_t + end_t) // 2,
+                        "cpu": cpu,
+                        "memory": mem,
+                        "gpu": gpu,
+                    }
+                )
             remain_t = cfg.Usage.interval - (end_t - start_t) / 1e9
             if remain_t > 0:
                 time.sleep(remain_t)

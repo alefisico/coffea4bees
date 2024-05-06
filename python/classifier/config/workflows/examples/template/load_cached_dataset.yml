@@ -4,8 +4,3 @@ dataset:
       - --input
       - root://cmseos.fnal.gov//store/user/{user}/HH4b/classifier/cache/result.json
       - --chunk 1-3 # use 3 chunks out of 10 for testing
-
-setting:
-  - module: load
-    option:
-      - root://cmseos.fnal.gov//store/user/{user}/HH4b/classifier/cache/states.pkl # the labels are dynamically set when initializing the dataset, need to be retrieved

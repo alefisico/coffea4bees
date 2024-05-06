@@ -4,7 +4,7 @@ import logging
 import math
 
 import fsspec
-from classifier.task import ArgParser, Dataset, parse
+from classifier.task import ArgParser, Dataset, EntryPoint, parse
 
 
 class cache(Dataset):
@@ -30,6 +30,15 @@ class cache(Dataset):
         base = metafile.parent
         with fsspec.open(metafile) as f:
             metadata = json.load(f)
+        # load states
+        states = metadata["states"]
+        if states:
+            logging.info(f"The following states will be loaded {sorted(states)}")
+            for state in states:
+                mod, var = state.rsplit(".", 1)
+                mod = EntryPoint._fetch_module(mod, "state")[1]
+                setattr(mod, var, states[state])
+        # load datasets
         total = math.ceil(metadata["size"] / metadata["chunksize"])
         if self.opts.chunk:
             chunks = parse.intervals(self.opts.chunk, total)
