@@ -8,9 +8,10 @@ from typing import TYPE_CHECKING
 
 from base_class.utils import unique
 from classifier.task import ArgParser, EntryPoint, Main, converter
+from classifier.utils import call
 
 if TYPE_CHECKING:
-    from classifier.task.dataset import Dataset, TrainingSetLoader
+    from classifier.task.dataset import Dataset
 
 
 class SetupMultiprocessing(Main):
@@ -50,11 +51,6 @@ class SelectDevice(Main):
         return Device(*self.opts.device)
 
 
-class _load_datasets:
-    def __call__(self, loader: TrainingSetLoader):
-        return loader()
-
-
 class LoadTrainingSets(SetupMultiprocessing):
     _workflow = [
         ("main", "[blue]\[loader, ...]=dataset.train()[/blue] initialize datasets"),
@@ -75,23 +71,23 @@ class LoadTrainingSets(SetupMultiprocessing):
         from torch.utils.data import ConcatDataset, StackDataset
 
         # load datasets in parallel
-        d_mods: list[Dataset] = parser.mods["dataset"]
-        d_loaders = [*chain(*(k.train() for k in d_mods))]
-        if len(d_loaders) == 0:
+        mods: list[Dataset] = parser.mods["dataset"]
+        loaders = [*chain(*(k.train() for k in mods))]
+        if len(loaders) == 0:
             raise ValueError("No dataset to load")
-        logging.info(f"Loading {len(d_loaders)} datasets")
+        logging.info(f"Loading {len(loaders)} datasets")
         timer = datetime.now()
         with Pool(
             max_workers=self.opts.max_loaders,
             mp_context=status.context,
             initializer=status.initializer,
         ) as pool:
-            datasets = [*pool.map(_load_datasets(), d_loaders)]
-        logging.info(f"Loaded {len(d_loaders)} datasets in {datetime.now() - timer}")
+            datasets = [*pool.map(call, loaders)]
+        logging.info(f"Loaded {len(loaders)} datasets in {datetime.now() - timer}")
         # concatenate datasets
-        d_keys = [set(d.keys()) for d in datasets]
-        kept = set.intersection(*d_keys)
-        ignored = set.union(*d_keys) - kept
+        keys = [set(d.keys()) for d in datasets]
+        kept = set.intersection(*keys)
+        ignored = set.union(*keys) - kept
         kept = sorted(kept)
         logging.info(f"The following keys will be kept: {kept}")
         if ignored:

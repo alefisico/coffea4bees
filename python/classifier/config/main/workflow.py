@@ -8,6 +8,8 @@ from classifier.task.parse._dict import _mapping_scheme, mapping
 from classifier.utils import YamlIndentSequence
 from yaml.representer import Representer
 
+from ..setting import Monitor
+
 _MAX_WIDTH = 10
 
 
@@ -31,7 +33,6 @@ def _merge_args(opts: list[str]) -> list[str]:
 
 
 class Main(main.Main):
-    _no_monitor = True
     _no_state = True
     _no_init = True
 
@@ -55,6 +56,10 @@ class Main(main.Main):
         "main",
         help="main task",
     )
+
+    @classmethod
+    def prelude(cls):
+        Monitor.enable = False
 
     def run(self, parser: EntryPoint):
         from base_class.system.eos import EOS

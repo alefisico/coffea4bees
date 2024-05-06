@@ -1,11 +1,11 @@
 from classifier.task import ArgParser, EntryPoint, main
 from rich import print
 
+from ..setting import Monitor
 from .help import _print_mod
 
 
 class Main(main.Main):
-    _no_monitor = True
     _no_state = True
     _no_init = True
 
@@ -27,6 +27,10 @@ class Main(main.Main):
         action="store_true",
         help="expand as template",
     )
+
+    @classmethod
+    def prelude(cls):
+        Monitor.enable = False
 
     def run(self, parser: EntryPoint):
         if self.opts.as_template:

@@ -6,7 +6,6 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 import fsspec
-from classifier.nn.dataset import skim_loader
 from classifier.task import ArgParser, EntryPoint, converter
 
 from ..setting import IO as IOSetting
@@ -104,6 +103,7 @@ class _save_cache:
 
     def __call__(self, args: tuple[int, npt.ArrayLike]):
         import torch
+        from classifier.nn.dataset import skim_loader
         from torch.utils.data import Subset
 
         chunk, indices = args

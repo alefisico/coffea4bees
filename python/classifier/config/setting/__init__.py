@@ -56,7 +56,7 @@ class IO(Cascade):
     profiler: EOS = "profiling"
 
     states: EOS = "states.pkl"
-    metadata: EOS = "metadata.json"
+    result: EOS = "result.json"
 
     @classmethod
     def _generate_path(cls, value: str):
@@ -144,3 +144,7 @@ class Monitor(Cascade):
             except:
                 pass
         return value or None, None
+
+
+class Analysis:
+    max_workers: int = 1

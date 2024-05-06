@@ -10,7 +10,7 @@ class MonitorComponentConfig(Protocol):
     enable: bool
 
 
-class _monitor_status_checker(MethodDecorator):
+class MonitorComponentStatus(MethodDecorator):
     def __init__(
         self,
         func: Callable,
@@ -40,9 +40,7 @@ def check(
     default=None,
     is_callable: bool = False,
 ) -> Callable[[_FuncT], _FuncT]:
-    return lambda func: _monitor_status_checker(
-        func, dependencies, default, is_callable
-    )
+    return lambda func: MonitorComponentStatus(func, dependencies, default, is_callable)
 
 
 # backends

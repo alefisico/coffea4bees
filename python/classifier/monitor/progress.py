@@ -16,10 +16,12 @@ from ..utils import noop
 _FORMAT = "%H:%M:%S"
 _UNKNOWN = "+--:--:--"
 
+MessageType = str | tuple[str, ...]
+
 
 @dataclass
 class ProgressTracker(WithUUID):
-    msg: str
+    msg: MessageType
     total: int
 
     def __post_init__(self):
@@ -30,7 +32,7 @@ class ProgressTracker(WithUUID):
         self._step = None
         super().__init__()
 
-    def _update(self, msg: str = None, updated: bool = False, step: int = None):
+    def _update(self, msg: MessageType = None, updated: bool = False, step: int = None):
         if (msg is not None) and (msg != self.msg):
             self.msg = msg
             updated = True
@@ -39,14 +41,14 @@ class ProgressTracker(WithUUID):
             new._step = step
             Progress._update(new)
 
-    def update(self, completed: int, msg: str = None):
+    def update(self, completed: int, msg: MessageType = None):
         updated = completed > self._completed
         if updated:
             self.updated_t = time.time()
             self._completed = completed
         self._update(msg, updated)
 
-    def advance(self, step: int, msg: str = None):
+    def advance(self, step: int, msg: MessageType = None):
         updated = step > 0
         if updated:
             self.updated_t = time.time()
@@ -100,7 +102,7 @@ class Progress(Proxy):
 
     @classmethod
     @cfg.check(cfg.Progress, default=noop)
-    def new(cls, total: int, msg: str = "") -> ProgressTracker:
+    def new(cls, total: int, msg: MessageType = "") -> ProgressTracker:
         job = ProgressTracker(msg=msg, total=total)
         cls._update(job)
         return job
@@ -119,13 +121,19 @@ class Progress(Proxy):
             self._jobs.pop(uuid)
 
     @classmethod
+    def _format_msg(cls, msg: MessageType):
+        if isinstance(msg, str):
+            return msg
+        return "|".join(msg)
+
+    @classmethod
     def _console_callback(cls):
         with cls.lock():
             jobs = cls._jobs.copy()
 
         for uuid, job in jobs.items():
             kwargs = {
-                "description": job.msg,
+                "description": cls._format_msg(job.msg),
                 "completed": job._completed,
                 "estimate": job.estimate,
                 "source": Recorder.registered(job.source),

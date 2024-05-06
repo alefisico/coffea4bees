@@ -1,3 +1,4 @@
+import json
 import time
 from collections import defaultdict
 from threading import Thread
@@ -185,16 +186,19 @@ class Usage(Proxy):
         return {}
 
     @classmethod
-    def serialize(cls):
-        import json
-
+    @cfg.check(cfg.Usage)
+    def _serialize(cls):
         usage = defaultdict(defaultdict[dict])
         for node in set(cls._checkpoints).intersection(cls._records):
             usage[node[0]][node[1]] = {
                 "checkpoints": cls._checkpoints[node],
                 "records": cls._records[node],
             }
-        return json.dumps({"usage": usage, "process": cls._processes}).encode()
+        return {"usage": usage, "process": cls._processes}
+
+    @classmethod
+    def serialize(cls):
+        return json.dumps(cls._serialize()).encode()
 
 
 @cfg.check(cfg.Usage)
