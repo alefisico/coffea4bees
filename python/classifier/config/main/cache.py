@@ -63,7 +63,7 @@ class Main(LoadTrainingSets):
         from classifier.process import status
 
         # cache states
-        states = dict.fromkeys(self.opts.state, None)
+        states = dict.fromkeys(self.opts.states, None)
         if states:
             logging.info(f"The following states will be cached {sorted(states)}")
             for state in states:

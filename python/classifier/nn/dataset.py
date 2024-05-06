@@ -26,6 +26,7 @@ def simple_loader(
     dataset: Dataset, report_progress: MessageType = None, **kwargs
 ) -> DataLoader:
     kwargs.setdefault("num_workers", cfg.num_workers)
+    kwargs.setdefault("persistent_workers", cfg.persistent_workers)
     loader = DataLoaderWithProgress(dataset, **kwargs)
     loader._progress_msg = report_progress
     if loader.num_workers != 0:

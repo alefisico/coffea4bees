@@ -97,7 +97,7 @@ class IO(Cascade):
         return cls.output / value
 
     @classmethod
-    def get__metadata(cls, value: str):
+    def get__result(cls, value: str):
         return cls.output / value
 
 
