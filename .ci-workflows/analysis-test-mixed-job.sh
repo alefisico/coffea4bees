@@ -15,8 +15,8 @@ fi
 echo "############### Running datasets from " $DATASETS
 echo "############### Running test processor"
 python runner.py -t -o testMixedBkg_TT.coffea -d   TTTo2L2Nu_for_mixed TTToHadronic_for_mixed TTToSemiLeptonic_for_mixed   -p analysis/processors/processor_HH4b.py -y UL17 UL18 UL16_preVFP UL16_postVFP  -op analysis/hists/ -m $DATASETS
-python runner.py -t -o testMixedBkg_data_3b_for_mixed.coffea -d   data_3b_for_mixed  -p analysis/processors/processor_HH4b.py -y UL17 UL18 UL16_preVFP   -op analysis/hists/ -m $DATASETS
-python runner.py -t -o testMixedData.coffea -d    mixeddata  -p analysis/processors/processor_HH4b.py -y UL17 UL18 UL16_preVFP    -op analysis/hists/ -m $DATASETS
+python runner.py -t -o testMixedBkg_data_3b_for_mixed.coffea -d   data_3b_for_mixed  -p analysis/processors/processor_HH4b.py -y 2017 2018 2016  -op analysis/hists/ -m $DATASETS
+python runner.py -t -o testMixedData.coffea -d    mixeddata  -p analysis/processors/processor_HH4b.py -y 2016 2017 2018 -op analysis/hists/ -m $DATASETS
 python runner.py -t -o testSignal_UL.coffea -d    ZH4b ZZ4b  -p analysis/processors/processor_HH4b.py -y UL17 UL18 UL16_preVFP UL16_postVFP    -op analysis/hists/ -m $DATASETS
 python runner.py -t -o testSignal_preUL.coffea -d HH4b -p analysis/processors/processor_HH4b.py -y 2016 2017 2018 -op analysis/hists/ -m $DATASETS
 ls

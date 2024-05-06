@@ -104,7 +104,7 @@ def addYears(f, input_file_data3b, input_file_TT, input_file_mix, mix, channel):
 
     hist_data_obs = combine_hists(input_file_mix,
                                   f"{var_name}_PROC_YEAR_fourTag_SR",
-                                  years=["UL16_preVFP", "UL17", "UL18"],
+                                  years=["2016", "2017", "2018"],
                                   procs=[f"mix_v{mix_number}"])
 
     f.cd(directory)
@@ -119,7 +119,7 @@ def addYears(f, input_file_data3b, input_file_TT, input_file_mix, mix, channel):
 
     hist_multijet = combine_hists(input_file_data3b,
                                   f"{var_name_multijet}_PROC_YEAR_threeTag_SR",
-                                  years=["UL16_preVFP", "UL17", "UL18"],
+                                  years=["2016", "2017", "2018"],
                                   procs=["data_3b_for_mixed"])
 
     f.cd(directory)

@@ -599,21 +599,21 @@ datasets:
       trigger:
       - PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepCSV_4p5
   data_3b_for_mixed:
-    UL16_preVFP:
+    '2016':
       picoAOD:
         FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//data2016_3b/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
         FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
         JCM_load_template: 3bDvTMix4bDvT_vXXX
         files:
         - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//data2016_3b/picoAOD_3b_wJCM_newSBDef.root
-    UL17:
+    '2017':
       picoAOD:
         FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//data2017_3b/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
         FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
         JCM_load_template: 3bDvTMix4bDvT_vXXX
         files:
         - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//data2017_3b/picoAOD_3b_wJCM_newSBDef.root
-    UL18:
+    '2018':
       picoAOD:
         FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//data2018_3b/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
         FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
@@ -656,19 +656,19 @@ datasets:
         total_events: 4673877.0
     xs: 0.1227*0.5824*0.1512
   mixeddata:
-    UL16_preVFP:
+    '2016':
       picoAOD:
         FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//mixed2016_3bDvTMix4bDvT_vXXX/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
         FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
         files_template:
         - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115/mixed2016_3bDvTMix4bDvT_vXXX/picoAOD_3bDvTMix4bDvT_4b_wJCM_vXXX_newSBDef.root
-    UL17:
+    '2017':
       picoAOD:
         FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//mixed2017_3bDvTMix4bDvT_vXXX/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
         FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
         files_template:
         - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115/mixed2017_3bDvTMix4bDvT_vXXX/picoAOD_3bDvTMix4bDvT_4b_wJCM_vXXX_newSBDef.root
-    UL18:
+    '2018':
       picoAOD:
         FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//mixed2018_3bDvTMix4bDvT_vXXX/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
         FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
