@@ -110,11 +110,12 @@ analysis-test-mixed-job:
       - python/analysis/hists/testMixedBkg_TT.coffea
       - python/analysis/hists/testMixedBkg_data_3b_for_mixed.coffea
       - python/analysis/hists/testMixedData.coffea
-      - python/analysis/hists/testSignal.coffea
       - python/analysis/hists/testMixedBkg_TT.json
       - python/analysis/hists/testMixedBkg_data_3b_for_mixed.json
       - python/analysis/hists/testMixedData.json
+      - python/analysis/hists/testSignal_preUL.coffea
       - python/analysis/hists/testSignal_preUL.json
+      - python/analysis/hists/testSignal_UL.coffea
       - python/analysis/hists/testSignal_UL.json
 
 
