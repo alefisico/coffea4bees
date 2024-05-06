@@ -114,7 +114,8 @@ analysis-test-mixed-job:
       - python/analysis/hists/testMixedBkg_TT.json
       - python/analysis/hists/testMixedBkg_data_3b_for_mixed.json
       - python/analysis/hists/testMixedData.json
-      - python/analysis/hists/testSignal.json
+      - python/analysis/hists/testSignal_preUL.json
+      - python/analysis/hists/testSignal_UL.json
 
 
 analysis-systematics-test-job:   

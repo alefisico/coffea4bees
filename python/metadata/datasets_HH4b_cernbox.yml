@@ -243,6 +243,45 @@ datasets:
         sumw2: 784670307914.478
         total_events: 148470000.0
     xs: 88.3419033256
+  TTTo2L2Nu_for_mixed:
+    UL16_postVFP:
+      picoAOD:
+        FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTTo2L2Nu2016_postVFP_4b_noPSData_wTrigW/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
+        FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
+        files:
+        - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTTo2L2Nu2016_postVFP_4b_noPSData_wTrigW/picoAOD_4b_wJCM_newSBDef.root
+        sumw: 3478035558.1184
+        sumw2: 254908185433.63046
+        total_events: 48232000.0
+    UL16_preVFP:
+      picoAOD:
+        FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTTo2L2Nu2016_preVFP_4b_noPSData_wTrigW/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
+        FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
+        files:
+        - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTTo2L2Nu2016_preVFP_4b_noPSData_wTrigW/picoAOD_4b_wJCM_newSBDef.root
+        sumw: 2982812557.569401
+        sumw2: 218610511326.022
+        total_events: 41364000.0
+    UL17:
+      picoAOD:
+        FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTTo2L2Nu2017_4b_noPSData_wTrigW/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
+        FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
+        files:
+        - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTTo2L2Nu2017_4b_noPSData_wTrigW/picoAOD_4b_wJCM_newSBDef.root
+        sumw: 7714155902.942803
+        sumw2: 565383311107.1262
+        total_events: 106978000.0
+    UL18:
+      picoAOD:
+        FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTTo2L2Nu2018_4b_noPSData_wTrigW/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
+        FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
+        files:
+        - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTTo2L2Nu2018_4b_noPSData_wTrigW/picoAOD_4b_wJCM_newSBDef.root
+        sumw: 10706355119.611603
+        sumw2: 784670307914.478
+        total_events: 148470000.0
+    nSamples: 15
+    xs: 88.3419033256
   TTToHadronic:
     UL16_postVFP:
       nanoAOD: /TTToHadronic_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM
@@ -277,6 +316,45 @@ datasets:
         sumw2: 34454655050080.375
         total_events: 344028000.0
     xs: 377.9607353256
+  TTToHadronic_for_mixed:
+    UL16_postVFP:
+      picoAOD:
+        FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTToHadronic2016_postVFP_4b_noPSData_wTrigW/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
+        FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
+        files:
+        - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTToHadronic2016_postVFP_4b_noPSData_wTrigW/picoAOD_4b_wJCM_newSBDef.root
+        sumw: 35343160229.5
+        sumw2: 11276170897132.355
+        total_events: 112592000.0
+    UL16_preVFP:
+      picoAOD:
+        FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTToHadronic2016_preVFP_4b_noPSData_wTrigW/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
+        FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
+        files:
+        - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTToHadronic2016_preVFP_4b_noPSData_wTrigW/picoAOD_4b_wJCM_newSBDef.root
+        sumw: 30707687784.444016
+        sumw2: 9797044778227.39
+        total_events: 97823000.0
+    UL17:
+      picoAOD:
+        FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTToHadronic2017_4b_noPSData_wTrigW/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
+        FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
+        files:
+        - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTToHadronic2017_4b_noPSData_wTrigW/picoAOD_4b_wJCM_newSBDef.root
+        sumw: 78241054724.27798
+        sumw2: 24962368840523.953
+        total_events: 249247999.0
+    UL18:
+      picoAOD:
+        FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTToHadronic2018_4b_noPSData_wTrigW/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
+        FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
+        files:
+        - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTToHadronic2018_4b_noPSData_wTrigW/picoAOD_4b_wJCM_newSBDef.root
+        sumw: 107993527547.176
+        sumw2: 34454655050080.375
+        total_events: 344028000.0
+    nSamples: 15
+    xs: 377.9607353256
   TTToSemiLeptonic:
     UL16_postVFP:
       nanoAOD: /TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v1/NANOAODSIM
@@ -310,6 +388,45 @@ datasets:
         sumw: 146472193017.084
         sumw2: 44795533094350.31
         total_events: 486770000.0
+    xs: 365.7826460496
+  TTToSemiLeptonic_for_mixed:
+    UL16_postVFP:
+      picoAOD:
+        FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTToSemiLeptonic2016_postVFP_4b_noPSData_wTrigW/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
+        FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
+        files:
+        - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTToSemiLeptonic2016_postVFP_4b_noPSData_wTrigW/picoAOD_4b_wJCM_newSBDef.root
+        sumw: 47722670335.73602
+        sumw2: 14594783523153.422
+        total_events: 158594000.0
+    UL16_preVFP:
+      picoAOD:
+        FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTToSemiLeptonic2016_preVFP_4b_noPSData_wTrigW/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
+        FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
+        files:
+        - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTToSemiLeptonic2016_preVFP_4b_noPSData_wTrigW/picoAOD_4b_wJCM_newSBDef.root
+        sumw: 41574965146.440025
+        sumw2: 12715150917503.73
+        total_events: 138169000.0
+    UL17:
+      picoAOD:
+        FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTToSemiLeptonic2017_4b_noPSData_wTrigW/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
+        FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
+        files:
+        - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTToSemiLeptonic2017_4b_noPSData_wTrigW/picoAOD_4b_wJCM_newSBDef.root
+        sumw: 107070989977.07205
+        sumw2: 32745270577131.477
+        total_events: 355826000.0
+    UL18:
+      picoAOD:
+        FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTToSemiLeptonic2018_4b_noPSData_wTrigW/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
+        FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
+        files:
+        - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTToSemiLeptonic2018_4b_noPSData_wTrigW/picoAOD_4b_wJCM_newSBDef.root
+        sumw: 146472193017.084
+        sumw2: 44795533094350.31
+        total_events: 486770000.0
+    nSamples: 15
     xs: 365.7826460496
   ZH4b:
     UL16_postVFP:
@@ -347,7 +464,7 @@ datasets:
     xs: 0.7612*0.5824*0.1512
   ZZ4b:
     UL16_postVFP:
-      nanoAOD: /dataset/dataset/NANOAODSIM
+      nanoAOD: /ZZTo4B01j_5f_TuneCP5_13TeV-amcatnloFXFX-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v2/NANOAODSIM
       picoAOD:
         files:
         - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115/ZZ4b2016_postVFP/picoAOD.root
@@ -363,7 +480,7 @@ datasets:
         sumw2: 16982111.667165413
         total_events: 21046873.0
     UL17:
-      nanoAOD: /dataset/dataset/NANOAODSIM
+      nanoAOD: /ZZTo4B01j_5f_TuneCP5_13TeV-amcatnloFXFX-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v1/NANOAODSIM
       picoAOD:
         files:
         - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115/ZZ4b2017/picoAOD.root
@@ -371,7 +488,7 @@ datasets:
         sumw2: 31176969.732390407
         total_events: 38639348.0
     UL18:
-      nanoAOD: /dataset/dataset/NANOAODSIM
+      nanoAOD: /ZZTo4B01j_5f_TuneCP5_13TeV-amcatnloFXFX-pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v2/NANOAODSIM
       picoAOD:
         files:
         - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115/ZZ4b2018/picoAOD.root
@@ -424,7 +541,7 @@ datasets:
       - QuadJet45_TripleBTagCSV_p087
       - DoubleJet90_Double30_TripleBTagCSV_p087
     UL17:
-      lumi: 36.7e3
+      lumi: 41.5e3
       nanoAOD:
         B: /BtagCSV/Run2017B-UL2017_MiniAODv2_NanoAODv9-v1/NANOAOD
         C: /BtagCSV/Run2017C-UL2017_MiniAODv2_NanoAODv9-v1/NANOAOD
@@ -481,8 +598,29 @@ datasets:
       lumi: 59.8e3
       trigger:
       - PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepCSV_4p5
-
-
+  data_3b_for_mixed:
+    UL16_preVFP:
+      picoAOD:
+        FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//data2016_3b/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
+        FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
+        JCM_load_template: 3bDvTMix4bDvT_vXXX
+        files:
+        - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//data2016_3b/picoAOD_3b_wJCM_newSBDef.root
+    UL17:
+      picoAOD:
+        FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//data2017_3b/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
+        FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
+        JCM_load_template: 3bDvTMix4bDvT_vXXX
+        files:
+        - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//data2017_3b/picoAOD_3b_wJCM_newSBDef.root
+    UL18:
+      picoAOD:
+        FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//data2018_3b/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
+        FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
+        JCM_load_template: 3bDvTMix4bDvT_vXXX
+        files:
+        - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//data2018_3b/picoAOD_3b_wJCM_newSBDef.root
+    nSamples: 15
   ggZH4b:
     UL16_postVFP:
       nanoAOD: /dataset/dataset/NANOAODSIM
@@ -517,188 +655,23 @@ datasets:
         sumw2: 8720.35532751438
         total_events: 4673877.0
     xs: 0.1227*0.5824*0.1512
-
   mixeddata:
-    nSamples: 15
     UL16_preVFP:
       picoAOD:
-        files_template:
-        - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115/mixed2016_3bDvTMix4bDvT_vXXX/picoAOD_3bDvTMix4bDvT_4b_wJCM_vXXX_newSBDef.root
         FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//mixed2016_3bDvTMix4bDvT_vXXX/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
         FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
+        files_template:
+        - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115/mixed2016_3bDvTMix4bDvT_vXXX/picoAOD_3bDvTMix4bDvT_4b_wJCM_vXXX_newSBDef.root
     UL17:
       picoAOD:
-        files_template:
-        - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115/mixed2017_3bDvTMix4bDvT_vXXX/picoAOD_3bDvTMix4bDvT_4b_wJCM_vXXX_newSBDef.root
         FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//mixed2017_3bDvTMix4bDvT_vXXX/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
         FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
+        files_template:
+        - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115/mixed2017_3bDvTMix4bDvT_vXXX/picoAOD_3bDvTMix4bDvT_4b_wJCM_vXXX_newSBDef.root
     UL18:
       picoAOD:
-        files_template:
-        - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115/mixed2018_3bDvTMix4bDvT_vXXX/picoAOD_3bDvTMix4bDvT_4b_wJCM_vXXX_newSBDef.root
         FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//mixed2018_3bDvTMix4bDvT_vXXX/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
         FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
-
-  data_3b_for_mixed:
+        files_template:
+        - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115/mixed2018_3bDvTMix4bDvT_vXXX/picoAOD_3bDvTMix4bDvT_4b_wJCM_vXXX_newSBDef.root
     nSamples: 15
-    UL18:
-      picoAOD:
-        files:
-        - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//data2018_3b/picoAOD_3b_wJCM_newSBDef.root
-        FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//data2018_3b/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
-        FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
-        JCM_load_template: 3bDvTMix4bDvT_vXXX
-
-    UL17:
-      picoAOD:
-        files:
-        - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//data2017_3b/picoAOD_3b_wJCM_newSBDef.root
-        FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//data2017_3b/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
-        FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
-        JCM_load_template: 3bDvTMix4bDvT_vXXX
-
-    UL16_preVFP:
-      picoAOD:
-        files:
-        - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//data2016_3b/picoAOD_3b_wJCM_newSBDef.root
-        FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//data2016_3b/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
-        FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
-        JCM_load_template: 3bDvTMix4bDvT_vXXX
-
-
-
-  TTTo2L2Nu_for_mixed:
-    nSamples: 15
-    UL16_postVFP:
-      picoAOD:
-        files:
-        - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTTo2L2Nu2016_postVFP_4b_noPSData_wTrigW/picoAOD_4b_wJCM_newSBDef.root
-        FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTTo2L2Nu2016_postVFP_4b_noPSData_wTrigW/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
-        FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
-        sumw: 3478035558.1184
-        sumw2: 254908185433.63046
-        total_events: 48232000.0
-
-    UL16_preVFP:
-      picoAOD:
-        files:
-        - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTTo2L2Nu2016_preVFP_4b_noPSData_wTrigW/picoAOD_4b_wJCM_newSBDef.root
-        FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTTo2L2Nu2016_preVFP_4b_noPSData_wTrigW/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
-        FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
-        sumw: 2982812557.569401
-        sumw2: 218610511326.022
-        total_events: 41364000.0
-
-    UL17:
-      picoAOD:
-        files:
-        - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTTo2L2Nu2017_4b_noPSData_wTrigW/picoAOD_4b_wJCM_newSBDef.root
-        FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTTo2L2Nu2017_4b_noPSData_wTrigW/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
-        FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
-        sumw: 7714155902.942803
-        sumw2: 565383311107.1262
-        total_events: 106978000.0
-
-    UL18:
-      picoAOD:
-        files:
-        - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTTo2L2Nu2018_4b_noPSData_wTrigW/picoAOD_4b_wJCM_newSBDef.root
-        FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTTo2L2Nu2018_4b_noPSData_wTrigW/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
-        FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
-        sumw: 10706355119.611603
-        sumw2: 784670307914.478
-        total_events: 148470000.0
-
-    xs: 88.3419033256
-
-
-  TTToHadronic_for_mixed:
-    nSamples: 15
-    UL16_postVFP:
-      picoAOD:
-        files:
-        - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTToHadronic2016_postVFP_4b_noPSData_wTrigW/picoAOD_4b_wJCM_newSBDef.root
-        FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTToHadronic2016_postVFP_4b_noPSData_wTrigW/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
-        FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
-        sumw: 35343160229.5
-        sumw2: 11276170897132.355
-        total_events: 112592000.0
-
-    UL16_preVFP:
-      picoAOD:
-        files:
-        - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTToHadronic2016_preVFP_4b_noPSData_wTrigW/picoAOD_4b_wJCM_newSBDef.root
-        FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTToHadronic2016_preVFP_4b_noPSData_wTrigW/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
-        FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
-        sumw: 30707687784.444016
-        sumw2: 9797044778227.39
-        total_events: 97823000.0
-
-    UL17:
-      picoAOD:
-        files:
-        - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTToHadronic2017_4b_noPSData_wTrigW/picoAOD_4b_wJCM_newSBDef.root
-        FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTToHadronic2017_4b_noPSData_wTrigW/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
-        FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
-        sumw: 78241054724.27798
-        sumw2: 24962368840523.953
-        total_events: 249247999.0
-
-    UL18:
-      picoAOD:
-        files:
-        - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTToHadronic2018_4b_noPSData_wTrigW/picoAOD_4b_wJCM_newSBDef.root
-        FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTToHadronic2018_4b_noPSData_wTrigW/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
-        FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
-        sumw: 107993527547.176
-        sumw2: 34454655050080.375
-        total_events: 344028000.0
-
-    xs: 377.9607353256
-
-
-  TTToSemiLeptonic_for_mixed:
-    nSamples: 15
-    UL16_postVFP:
-      picoAOD:
-        files:
-        - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTToSemiLeptonic2016_postVFP_4b_noPSData_wTrigW/picoAOD_4b_wJCM_newSBDef.root
-        FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTToSemiLeptonic2016_postVFP_4b_noPSData_wTrigW/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
-        FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
-        sumw: 47722670335.73602
-        sumw2: 14594783523153.422
-        total_events: 158594000.0
-
-    UL16_preVFP:
-      picoAOD:
-        files:
-        - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTToSemiLeptonic2016_preVFP_4b_noPSData_wTrigW/picoAOD_4b_wJCM_newSBDef.root
-        FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTToSemiLeptonic2016_preVFP_4b_noPSData_wTrigW/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
-        FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
-        sumw: 41574965146.440025
-        sumw2: 12715150917503.73
-        total_events: 138169000.0
-
-    UL17:
-      picoAOD:
-        files:
-        - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTToSemiLeptonic2017_4b_noPSData_wTrigW/picoAOD_4b_wJCM_newSBDef.root
-        FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTToSemiLeptonic2017_4b_noPSData_wTrigW/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
-        FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
-        sumw: 107070989977.07205
-        sumw2: 32745270577131.477
-        total_events: 355826000.0
-
-    UL18:
-      picoAOD:
-        files:
-        - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTToSemiLeptonic2018_4b_noPSData_wTrigW/picoAOD_4b_wJCM_newSBDef.root
-        FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//TTToSemiLeptonic2018_4b_noPSData_wTrigW/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
-        FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
-        sumw: 146472193017.084
-        sumw2: 44795533094350.31
-        total_events: 486770000.0
-
-    xs: 365.7826460496
-
-
