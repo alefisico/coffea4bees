@@ -1,5 +1,18 @@
+from typing import TYPE_CHECKING
+
 import torch
 from base_class.math.statistics import Variance
+
+if TYPE_CHECKING:
+    import numpy.typing as npt
+
+
+def to_num(tensor: torch.Tensor):
+    return tensor.detach().cpu().item()
+
+
+def to_arr(tensor: torch.Tensor) -> npt.NDArray:
+    return tensor.detach().cpu().numpy()
 
 
 class MeanVariance(Variance[torch.Tensor]):

@@ -20,3 +20,8 @@ class SkimStep(Schedule):
 
     def bs_scheduler(self, dataset, **__):
         return _SkimBS(dataset)
+
+
+class BenchmarkStep(SkimStep):
+    def bs_scheduler(self, _, **__):
+        return noop

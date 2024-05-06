@@ -154,7 +154,8 @@ class Classifier(WithUUID, ABC):
             self.cleanup()
             Usage.checkpoint("classifier", stage.name, f"epoch{epoch}", "optimize")
             model.module.train()
-            progress_batch = Progress.new(len(bs.dataloader), "batch")
+            if len(bs.dataloader) > 0:
+                progress_batch = Progress.new(len(bs.dataloader), "batch")
             for i, batch in enumerate(bs.dataloader):
                 optimizer.zero_grad()
                 loss = model.train(batch)

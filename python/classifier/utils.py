@@ -11,6 +11,9 @@ _ItemT = TypeVar("_ItemT")
 
 
 class NOOP:
+    def __len__(self):
+        return 0
+
     def __getattr__(self, _):
         return self
 
