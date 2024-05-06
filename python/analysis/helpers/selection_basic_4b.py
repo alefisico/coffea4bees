@@ -39,7 +39,7 @@ def apply_object_selection_4b( event, year, isMC, dataset, corrections_metadata,
     # https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedElectronIdentificationRun2
     #
     if 'Electron' in event.fields:
-        event['Electron', 'selected'] = (event.Electron.pt > 15) & (abs(event.Electron.eta) < 2.5) & (event.Electron.pfRelIso03_all < 0.15) & getattr(event.Electron, ('mvaFall17V2Iso_WP90' if year.startswith('UL') else 'mvaIso_WP90' ) )
+        event['Electron', 'selected'] = (event.Electron.pt > 15) & (abs(event.Electron.eta) < 2.5) & (event.Electron.pfRelIso03_all < 0.15) & getattr(event.Electron, 'mvaFall17V2Iso_WP90' )
         event['nElectron_selected'] = ak.sum(event.Electron.selected, axis=1)
         event['selElec'] = event.Electron[event.Electron.selected]
         selLepton = ak.concatenate( [event.selElec, event.selMuon], axis=1 )
