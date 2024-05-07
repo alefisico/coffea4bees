@@ -12,6 +12,7 @@ from analysis.helpers.topCandReconstruction import find_tops, dumpTopCandidateTe
 
 from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
 from coffea import processor
+from coffea.util import load
 from coffea.analysis_tools import Weights, PackedSelection
 
 from base_class.hist import Collection, Fill
@@ -25,7 +26,10 @@ from analysis.helpers.FriendTreeSchema import FriendTreeSchema
 from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
 from analysis.helpers.common import init_jet_factory, apply_btag_sf, update_events
 
-from analysis.helpers.selection_basic_4b import apply_event_selection_4b, apply_object_selection_4b
+from analysis.helpers.selection_basic_4b import (
+    apply_event_selection_4b,
+    apply_object_selection_4b
+)
 
 import logging
 
@@ -85,6 +89,7 @@ class analysis(processor.ProcessorABC):
         apply_trigWeight=True,
         apply_btagSF=True,
         apply_FvT=True,
+        apply_boosted_veto=False,
         run_SvB=True,
         corrections_metadata="analysis/metadata/corrections.yml",
         run_systematics=[],
@@ -98,6 +103,7 @@ class analysis(processor.ProcessorABC):
         self.apply_btagSF = apply_btagSF
         self.apply_FvT = apply_FvT
         self.run_SvB = run_SvB
+        self.apply_boosted_veto = apply_boosted_veto
         self.classifier_SvB = HCREnsemble(SvB) if SvB else None
         self.classifier_SvB_MA = HCREnsemble(SvB_MA) if SvB_MA else None
         self.corrections_metadata = yaml.safe_load(open(corrections_metadata, "r"))
@@ -231,6 +237,14 @@ class analysis(processor.ProcessorABC):
         # Event selection
         #
         event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year], isMixedData)
+
+        #
+        # Checking boosted selection (should change in the future)
+        #
+        if self.apply_boosted_veto:
+            boosted_file = load("analysis/hists/counts_boosted.coffea")['boosted']
+            boosted_events = boosted_file[dataset]['event'] if dataset in boosted_file.keys() else event.event
+            event['vetoBoostedSel'] = ~np.isin( event.event.to_numpy(), boosted_events )
 
         #
         # Calculate and apply Jet Energy Calibration
@@ -689,7 +703,7 @@ class analysis(processor.ProcessorABC):
         max_xHH = 1.9
         quadJet["ZZSR"] = quadJet.xZZ < max_xZZ
         quadJet["ZHSR"] = quadJet.xZH < max_xZH
-        quadJet["HHSR"] = quadJet.xHH < max_xHH
+        quadJet["HHSR"] = (quadJet.xHH < max_xHH) & selev.vetoBoostedSel
         quadJet["SR"] = quadJet.ZZSR | quadJet.ZHSR | quadJet.HHSR
         quadJet["SB"] = quadJet.passDiJetMass & ~quadJet.SR
 
@@ -907,7 +921,6 @@ class analysis(processor.ProcessorABC):
                 ####
                 from ..helpers.classifier.HCR import dump_input_friend, dump_JCM_weight
 
-                # AGE: this should be temporary
                 friends["friends"] = dump_input_friend( selev, self.make_classifier_input, "HCR_input", *selections, weight="weight" if isMC else "weight_noJCM_noFvT", NotCanJet="notCanJet_coffea") | dump_JCM_weight( selev, self.make_classifier_input, "JCM_weight", *selections, )
 
             output = hist.output | processOutput | friends
