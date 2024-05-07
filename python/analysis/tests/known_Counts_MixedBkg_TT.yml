@@ -9,13 +9,13 @@ counts4:
         failSvB: 16.25
 
     TTToSemiLeptonic_for_mixed_UL17:
-        passJetMult: 29.14
-        passPreSel: 24.78
-        passDiJetMass: 10.28
-        SR: 4.07
-        SB: 6.22
-        passSvB: 0.23
-        failSvB: 13.58
+        passJetMult: 32.95
+        passPreSel: 28.02
+        passDiJetMass: 11.63
+        SR: 4.6
+        SB: 7.03
+        passSvB: 0.26
+        failSvB: 15.36
 
     TTToSemiLeptonic_for_mixed_UL16_preVFP:
         passJetMult: 51.21
@@ -45,13 +45,13 @@ counts4:
         failSvB: 23.09
 
     TTToHadronic_for_mixed_UL17:
-        passJetMult: 44.09
-        passPreSel: 36.91
-        passDiJetMass: 18.27
-        SR: 8.77
-        SB: 9.5
-        passSvB: 0.35
-        failSvB: 16.71
+        passJetMult: 49.85
+        passPreSel: 41.73
+        passDiJetMass: 20.66
+        SR: 9.92
+        SB: 10.74
+        passSvB: 0.39
+        failSvB: 18.89
 
     TTToHadronic_for_mixed_UL16_preVFP:
         passJetMult: 74.27
@@ -81,13 +81,13 @@ counts4:
         failSvB: 13.2
 
     TTTo2L2Nu_for_mixed_UL17:
-        passJetMult: 20.95
-        passPreSel: 17.69
-        passDiJetMass: 5.94
-        SR: 2.18
-        SB: 3.76
-        passSvB: 0.08
-        failSvB: 11.23
+        passJetMult: 23.68
+        passPreSel: 20.0
+        passDiJetMass: 6.72
+        SR: 2.46
+        SB: 4.25
+        passSvB: 0.09
+        failSvB: 12.7
 
     TTTo2L2Nu_for_mixed_UL16_preVFP:
         passJetMult: 40.73
@@ -120,7 +120,7 @@ counts3:
         failSvB: 0.0
 
     TTToSemiLeptonic_for_mixed_UL17:
-        passJetMult: 29.14
+        passJetMult: 32.95
         passPreSel: 0.0
         passDiJetMass: 0.0
         SR: 0.0
@@ -156,7 +156,7 @@ counts3:
         failSvB: 0.0
 
     TTToHadronic_for_mixed_UL17:
-        passJetMult: 44.09
+        passJetMult: 49.85
         passPreSel: 0.0
         passDiJetMass: 0.0
         SR: 0.0
@@ -192,7 +192,7 @@ counts3:
         failSvB: 0.0
 
     TTTo2L2Nu_for_mixed_UL17:
-        passJetMult: 20.95
+        passJetMult: 23.68
         passPreSel: 0.0
         passDiJetMass: 0.0
         SR: 0.0
