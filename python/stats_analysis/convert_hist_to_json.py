@@ -4,7 +4,7 @@ import logging
 import json
 import numpy as np
 from coffea.util import load
-
+import hist
 
 def hist_to_json( coffea_hist ):
     """docstring for hist_to_root"""
@@ -14,6 +14,10 @@ def hist_to_json( coffea_hist ):
         'centers' : coffea_hist.axes[0].centers.tolist(),
         'values' : coffea_hist.values().tolist(),
         'variances' : coffea_hist.variances().tolist(),
+        'underflow_value' : coffea_hist[hist.loc(-np.inf)].value,
+        'underflow_variance' : coffea_hist[hist.loc(-np.inf)].variance,
+        'overflow_value' : coffea_hist[hist.loc(+np.inf)].value,
+        'overflow_variance' : coffea_hist[hist.loc(+np.inf)].variance,
     }
 
 
