@@ -14,13 +14,24 @@ def json_to_TH1( coffea_hist, iname, rebin ):
     centers   = coffea_hist['centers']
     values    = coffea_hist['values']
     variances = coffea_hist['variances']
+    underflow_value      = coffea_hist['underflow_value']
+    underflow_variance   = coffea_hist['underflow_variance']
+    overflow_value       = coffea_hist['overflow_value']  
+    overflow_variance    = coffea_hist['overflow_variance']
 
     rHist = ROOT.TH1F(iname, iname, len(centers), edges[0], edges[-1])
     rHist.Sumw2()
 
-    for ibin in range(1, len(centers) ):
+
+    rHist.SetBinContent(0, underflow_value)
+    rHist.SetBinError(0, ROOT.TMath.Sqrt(underflow_variance))
+
+    for ibin in range(1, len(centers)+1 ):
         rHist.SetBinContent(ibin, values[ibin-1])
         rHist.SetBinError(ibin, ROOT.TMath.Sqrt(variances[ibin-1]))
+
+    rHist.SetBinContent( len(centers)+1, overflow_value)
+    rHist.SetBinError( len(centers)+1, ROOT.TMath.Sqrt(overflow_variance))
 
     rHist.Rebin( rebin )
 
