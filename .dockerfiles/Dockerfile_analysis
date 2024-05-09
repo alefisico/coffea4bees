@@ -1,4 +1,4 @@
-FROM coffeateam/coffea-dask:0.7.22-py3.10-ga998f
+FROM coffeateam/coffea-base-almalinux8:0.7.22-py3.10
 
 RUN apt-get update && apt-get -y install poppler-utils snakemake
 RUN pip install --upgrade pip

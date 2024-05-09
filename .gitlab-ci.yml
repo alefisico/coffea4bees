@@ -71,7 +71,7 @@ analysis-test-job:
   stage: analysis-test   
   needs:
     - voms_proxy
-  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  image: gitlab-registry.cern.ch/algomez/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -85,7 +85,7 @@ analysis-test-job-unsup:
   stage: analysis-test   
   needs:
     - voms_proxy
-  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  image: gitlab-registry.cern.ch/algomez/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -99,7 +99,7 @@ analysis-test-mixed-job:
   stage: analysis-test   
   needs:
     - voms_proxy
-  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  image: gitlab-registry.cern.ch/algomez/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -123,7 +123,7 @@ analysis-systematics-test-job:
   stage: analysis-test   
   needs:
     - voms_proxy
-  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  image: gitlab-registry.cern.ch/algomez/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -137,7 +137,7 @@ skimmer-test-job:
   stage: skimmer-test   
   needs:
     - voms_proxy
-  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  image: gitlab-registry.cern.ch/algomez/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -153,7 +153,7 @@ skimmer-analysis-test-job:
   needs: 
     - voms_proxy
     - skimmer-test-job
-  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  image: gitlab-registry.cern.ch/algomez/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -167,7 +167,7 @@ analysis-plot-job:
   stage: plot 
   needs: 
     - analysis-test-job
-  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  image: gitlab-registry.cern.ch/algomez/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -181,7 +181,7 @@ analysis-plot-job-unsup:
   stage: plot 
   needs: 
     - analysis-test-job-unsup
-  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  image: gitlab-registry.cern.ch/algomez/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -195,7 +195,7 @@ analysis-cutflow-job:
   stage: cutflow
   needs: 
     - analysis-test-job
-  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  image: gitlab-registry.cern.ch/algomez/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -209,7 +209,7 @@ analysis-mixed-cutflow-job:
   stage: cutflow
   needs: 
     - analysis-test-mixed-job
-  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  image: gitlab-registry.cern.ch/algomez/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -224,7 +224,7 @@ analysis-mixed-cutflow-job:
 ###  stage: cutflow
 ###  needs: 
 ###    - skimmer-analysis-test-job
-###  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+###  image: gitlab-registry.cern.ch/algomez/coffea4bees:latest
 ###  tags:
 ###    - k8s-cvmfs
 ###  script:
@@ -238,7 +238,7 @@ analysis-systematics-cutflow-job:
   stage: cutflow
   needs: 
     - analysis-systematics-test-job
-  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  image: gitlab-registry.cern.ch/algomez/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -253,7 +253,7 @@ analysis-cutflow-job-unsup:
  stage: cutflow
  needs: 
    - analysis-test-job-unsup
- image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+ image: gitlab-registry.cern.ch/algomez/coffea4bees:latest
  tags:
    - k8s-cvmfs
  script:
@@ -267,7 +267,7 @@ analysis-cutflow-job:
   stage: cutflow
   needs: 
     - analysis-test-job
-  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  image: gitlab-registry.cern.ch/algomez/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -281,7 +281,7 @@ analysis-makeweights-job:
   stage: fits
   needs: 
     - analysis-test-job
-  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  image: gitlab-registry.cern.ch/algomez/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -295,7 +295,7 @@ analysis-helpers-job:
   stage: code
   needs: 
     - voms_proxy
-  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  image: gitlab-registry.cern.ch/algomez/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -306,7 +306,7 @@ analysis-iplot-job:
   stage: plot 
   needs: 
     - analysis-test-job
-  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  image: gitlab-registry.cern.ch/algomez/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -314,7 +314,7 @@ analysis-iplot-job:
 
 baseclass-test-job:   
   stage: plot
-  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  image: gitlab-registry.cern.ch/algomez/coffea4bees:latest
   needs: 
     - analysis-test-job
   tags:
@@ -326,7 +326,7 @@ histtoyml-test-job:
   stage: plot
   needs: 
     - analysis-test-job
-  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  image: gitlab-registry.cern.ch/algomez/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -372,7 +372,7 @@ twoStageClosure-test-job:
 
 reana-job:
   stage: reana
-  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  image: gitlab-registry.cern.ch/algomez/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
