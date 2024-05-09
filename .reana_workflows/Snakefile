@@ -64,8 +64,8 @@ use rule analysis_databkgs as analysis_signal with:
         diff=config['diff'],
         isam=config['dataset_signal'],
         iy=config['year'],
-        output="histAll_signals.coffea",
-        logname="histAll_signals"
+        output="histAll_signal.coffea",
+        logname="histAll_signal"
 
 use rule analysis_databkgs as analysis_mixedbkg_data3b with:
     output: "output/histMixedBkg_data_3b_for_mixed.coffea"
@@ -138,7 +138,7 @@ use rule analysis_systematics as analysis_systematics_preUL with:
 
 rule merging_coffea_files_databkgs:
     input:
-        files = ['output/histAll_bkgsdata.coffea', 'output/histAll_signal_preUL.coffea', 'output/histAll_signals.coffea']
+        files = ['output/histAll_bkgsdata.coffea', 'output/histAll_signal_preUL.coffea', 'output/histAll_signal.coffea']
     output: "output/histAll.coffea"
     container: "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
     params:
