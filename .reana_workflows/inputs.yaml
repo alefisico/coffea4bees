@@ -12,6 +12,11 @@ dataset:
   - ZH4b 
 dataset_systematics:
   - GluGluToHHTo4B_cHHH1
+dataset_signal:
+  - GluGluToHHTo4B_cHHH0
+  - GluGluToHHTo4B_cHHH1
+  - GluGluToHHTo4B_cHHH2p45
+  - GluGluToHHTo4B_cHHH5
 dataset_preUL:
   - HH4b  
 dataset_for_mixed:

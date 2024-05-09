@@ -8,28 +8,30 @@ TIMESTAMP = datetime.now().strftime('%Y%m%d_%H%M%S')
 #
 rule all:
     input:
+        expand("output/histdatabkgs_{sample}-{iy}.coffea", sample=config['dataset'], iy=config['year']),
+        expand("output/histsignalpreUL_{samplepreUL}-{iypreUL}.coffea", samplepreUL=config['datasetpreUL'], iypreUL=config['year_preUL']),
         expand("output/histsyst_{samplesyst}-{iysyst}.coffea", samplesyst=config['dataset_systematics'], iysyst=config['year']),
-        expand("output/histsystpreUL_{samplesystpreUL}-{iysystpreUL}.coffea", samplesystpreUL=config['dataset_preUL'], iysystpreUL=config['year_preUL']),
+        expand("output/histsystpreUL_{samplesystpreUL}-{iysystpreUL}.coffea", samplesystpreUL=config['datasetpreUL'], iysystpreUL=config['year_preUL']),
         "output/histMixedBkg_data_3b_for_mixed.coffea",
         "output/histMixedBkg_TT.coffea",
         "output/histMixedData.coffea",
         'output/histAll.coffea',
         'output/histAll_syst.coffea',
-        #'output/histSignal.coffea',
+        'output/histSignal.coffea',
         "output/RunII/passPreSel/fourTag/SB/nPVs.pdf"
         #"output/datacards/hists_SvB.root"
 
 
 rule analysis_databkgs:
-    output: "output/histAll_bkgsdata.coffea"
+    output: "output/histdatabkgs_{sample}-{iy}.coffea"
     container: "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
     params:
         hash=config['hash'],
         diff=config['diff'],
-        isam=config['dataset'],
-        iy=config['year'],
-        output="histAll_bkgsdata.coffea",
-        logname="histAll_bkgsdata"
+        isam="{sample}",
+        iy="{iy}",
+        output="histdatabkgs_{sample}-{iy}.coffea",
+        logname="databkgs_{sample}_{iy}"
     resources:
         voms_proxy=True,
         kerberos=True,
@@ -48,24 +50,14 @@ cp gitdiff.txt output/   ### only one time
         """
 
 use rule analysis_databkgs as analysis_signals_preUL with:
-    output: "output/histAll_signal_preUL.coffea"
+    output: "output/histsignalpreUL_{samplepreUL}-{iypreUL}.coffea"
     params:
         hash=config['hash'],
         diff=config['diff'],
-        isam=config['dataset_preUL'],
-        iy=config['year_preUL'],
-        output="histAll_signal_preUL.coffea",
-        logname="histAll_signal_preUL"
-
-use rule analysis_databkgs as analysis_signal with:
-    output: "output/histAll_signal.coffea"
-    params:
-        hash=config['hash'],
-        diff=config['diff'],
-        isam=config['dataset_signal'],
-        iy=config['year'],
-        output="histAll_signals.coffea",
-        logname="histAll_signals"
+        isam="{samplepreUL}",
+        iy="{iypreUL}",
+        output="histsignalpreUL_{samplepreUL}-{iypreUL}.coffea",
+        logname="databkgspreUL_{samplepreUL}_{iypreUL}"
 
 use rule analysis_databkgs as analysis_mixedbkg_data3b with:
     output: "output/histMixedBkg_data_3b_for_mixed.coffea"
@@ -138,7 +130,7 @@ use rule analysis_systematics as analysis_systematics_preUL with:
 
 rule merging_coffea_files_databkgs:
     input:
-        files = ['output/histAll_bkgsdata.coffea', 'output/histAll_signal_preUL.coffea', 'output/histAll_signals.coffea']
+        files = expand(['output/histdatabkgs_{idat}-{iyear}.coffea'], idat=config['dataset'], iyear=config['year']) + expand(['output/histsignalpreUL_{idat}-{iyear}.coffea'], idat=config['datasetpreUL'], iyear=config['year_preUL'])
     output: "output/histAll.coffea"
     container: "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
     params:
@@ -158,7 +150,7 @@ cp {output} /eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/{params.output}
 
 use rule merging_coffea_files_databkgs as merging_coffea_files_syst with:
     input:
-        files = expand(['output/histsyst_{idatsyst}-{iyear}.coffea'], idatsyst=config['dataset_systematics'], iyear=config['year']) + expand(['output/histsystpreUL_{idat}-{iyear}.coffea'], idat=config['dataset_preUL'], iyear=config['year_preUL'])
+        files = expand(['output/histsyst_{idatsyst}-{iyear}.coffea'], idatsyst=config['dataset_systematics'], iyear=config['year']) + expand(['output/histsystpreUL_{idat}-{iyear}.coffea'], idat=config['datasetpreUL'], iyear=config['year_preUL'])
 
     output:
         "output/histAll_syst.coffea"
