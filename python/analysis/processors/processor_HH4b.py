@@ -739,11 +739,17 @@ class analysis(processor.ProcessorABC):
         #  out_data["event"  ] = selev["event"][passSR]
         #  out_data["run"    ] = selev["run"][passSR]
         #
-        #  debug_mask = ((event["event"] ==  1334181889 ) |
-        #                (event["event"] ==  39845890   ) |
-        #                (event["event"] ==  27918354   ) |
-        #                (event["event"] ==  1751253011 ) |
-        #                (event["event"] ==  629014548  ) )
+        #  debug_mask = ((event["event"] == 66688  ) |
+        #                (event["event"] == 249987 ) |
+        #                (event["event"] == 121603 ) |
+        #                (event["event"] == 7816   ) |
+        #                (event["event"] == 25353  ) |
+        #                (event["event"] == 165389 ) |
+        #                (event["event"] == 293138 ) |
+        #                (event["event"] == 150164 ) |
+        #                (event["event"] == 262806 ) |
+        #                (event["event"] == 281111 ) )
+        #
         #  out_data["debug_event"  ] = event["event"][debug_mask]
         #  out_data["debug_run"    ] = event["run"][debug_mask]
         #  out_data["debug_lumimask"    ] = event["lumimask"][debug_mask]
