@@ -703,7 +703,7 @@ class analysis(processor.ProcessorABC):
         max_xHH = 1.9
         quadJet["ZZSR"] = quadJet.xZZ < max_xZZ
         quadJet["ZHSR"] = quadJet.xZH < max_xZH
-        quadJet["HHSR"] = (quadJet.xHH < max_xHH) & selev.vetoBoostedSel
+        quadJet["HHSR"] = ((quadJet.xHH < max_xHH) & selev.vetoBoostedSel ) if self.apply_boosted_veto else (quadJet.xHH < max_xHH)
         quadJet["SR"] = quadJet.ZZSR | quadJet.ZHSR | quadJet.HHSR
         quadJet["SB"] = quadJet.passDiJetMass & ~quadJet.SR
 
