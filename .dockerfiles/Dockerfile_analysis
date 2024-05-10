@@ -1,10 +1,10 @@
 FROM coffeateam/coffea-base-almalinux8:0.7.22-py3.10
 
-RUN dnf update -y && dnf install -y poppler-utils 
-RUN pip install --upgrade pip
+#RUN dnf update -y && dnf install -y poppler-utils 
+#RUN pip install --upgrade pip
 RUN pip install rucio-clients pycodestyle 
-RUN pip install reana-client
-RUN pip install memory-profiler
+#RUN pip install reana-client
+#RUN pip install memory-profiler
 
 RUN mkdir -p /home/user/coffea4bees/python/
 COPY python/ /home/user/coffea4bees/python/
