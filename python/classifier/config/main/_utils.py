@@ -41,7 +41,7 @@ class SelectDevice(Main):
         "--device",
         nargs="+",
         default=["cuda"],
-        help="the [green]torch.device[/green] used for training",
+        help="the device used for training",
     )
 
     @cached_property

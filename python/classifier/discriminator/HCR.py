@@ -2,24 +2,24 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Callable, Iterable
+from typing import Callable, Iterable
 
 import fsspec
+import numpy as np
 import torch
+import torch.nn.functional as F
+import torch.types as tt
+from torch import Tensor
 
+from ..algorithm.utils import to_arr, to_num
 from ..config import setting as cfg
 from ..config.scheduler import SkimStep
 from ..config.setting.HCR import Input, InputBranch, Output
 from ..config.state.label import MultiClass
-from ..nn.blocks import HCR
-from ..nn.schedule import MilestoneStep
+from ..nn.HCR_blocks import HCR
+from ..nn.schedule import MilestoneStep, Schedule
 from . import Classifier, Model, TrainingStage
 from .skimmer import Skimmer, Splitter
-
-if TYPE_CHECKING:
-    from torch import Tensor
-
-    from ..nn.schedule import Schedule
 
 
 @dataclass
@@ -40,7 +40,7 @@ class GBN(MilestoneStep):
         self.reset()
 
 
-def _HCRInput(batch: dict[str, Tensor], device: torch.device, selection: Tensor = None):
+def _HCRInput(batch: dict[str, Tensor], device: tt.Device, selection: Tensor = None):
     CanJet = batch.pop(Input.CanJet)
     NotCanJet = batch.pop(Input.NotCanJet)
     ancillary = batch.pop(Input.ancillary)
@@ -55,13 +55,14 @@ class _HCRSkim(Skimmer):
     def __init__(
         self,
         nn: HCR,
-        device: torch.device,
+        device: tt.Device,
         splitter: Splitter,
     ):
         self._nn = nn
         self._device = device
         self._splitter = splitter
 
+    @torch.no_grad()
     def train(self, batch: dict[str, Tensor]):
         training, _ = self._splitter.step(batch)
         self._nn.updateMeanStd(*_HCRInput(batch, self._device, training))
@@ -73,7 +74,7 @@ class HCRModel(Model):
     def __init__(
         self,
         arch: HCRArch,
-        device: torch.device,
+        device: tt.Device,
     ):
         self._loss = arch.loss
         self._device = device
@@ -192,6 +193,7 @@ class HCRClassifier(Classifier):
                         "model": self._HCR.module.state_dict(),
                         "metadata": self.metadata,
                         "uuid": self.uuid,
+                        "label": MultiClass.labels,
                     },
                     f,
                 )

@@ -10,7 +10,7 @@ import torch.nn.functional as F
 from rich import box as BoxStyle
 from rich.table import Table
 
-from .utils import MeanVariance
+from ..algorithm.statistics import MeanVariance
 
 
 class Lin_View(nn.Module):

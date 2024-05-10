@@ -9,6 +9,7 @@ from functools import cached_property
 from typing import Iterable
 
 import torch
+import torch.types as tt
 from torch import Tensor, nn
 from torch.utils.data import Dataset
 
@@ -38,7 +39,7 @@ class Model(ABC):
     def parameters(self):
         return self.module.parameters()
 
-    def to(self, device: torch.device):
+    def to(self, device: tt.Device):
         self.module.to(device)
 
     @property
@@ -67,7 +68,7 @@ class Classifier(WithUUID, ABC):
         super().__init__()
         self.metadata = kwargs
         self.name = filename(kwargs)
-        self.device: torch.device = None
+        self.device: tt.Device = None
         self.dataset: Dataset = None
 
     def cleanup(self):
