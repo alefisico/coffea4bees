@@ -47,6 +47,13 @@ class ROCFixedThreshold:
         return FPR, TPR
 
     @staticmethod
+    def _monotonic(new: torch.Tensor, old: torch.Tensor):
+        new = new >= torch.cummax(new, dim=0)[0]
+        if old is not None:
+            new &= old
+        return new
+
+    @staticmethod
     def _check_shape(**tensors):
         sizes = {k: len(v) for k, v in tensors.items()}
         if not len(set(sizes.values())) == 1:
@@ -79,8 +86,12 @@ class ROCFixedThreshold:
         FPR = torch.cumsum(self._FP, dim=0) / self._N
         TPR = torch.cumsum(self._TP, dim=0) / self._P
         # deal with negative weights
+        monotonic = None
         if torch.any(self._FP < 0.0):
-            monotonic = FPR >= torch.cummax(FPR, dim=0)[0]
+            monotonic = self._monotonic(FPR, monotonic)
+        if torch.any(self._TP < 0.0):
+            monotonic = self._monotonic(TPR, monotonic)
+        if monotonic is not None:
             FPR, TPR = FPR[monotonic], TPR[monotonic]
         # add missing (0,0) or (1,1)
         FPR, TPR = self._bounded(1 - FPR, 1 - TPR)
