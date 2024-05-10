@@ -52,7 +52,7 @@ class Column:
             if self.process.name != 'HH' and 'VFP' not in nuisance and   '6' in nuisance: continue # only apply 2016 systematics to HH
             if 'prefire' in nuisance and '8' in self.channel.era: continue # no prefire in 2018
             if '201' in nuisance: # years are uncorrelated
-                if self.channel.era not in nuisance: continue
+                if self.channel.era[-1] not in nuisance: continue
             self.mcSysts[nuisance] = '%3s'%'1'
 
         uncert_lumi_corr = {'UL16': '1.006', 'UL17': '1.009', 'UL18': '1.020'}
@@ -100,7 +100,16 @@ class Column:
         for nuisance in self.mc_systs:
             self.mcSysts[nuisance] = self.mcSysts[nuisance]+s
 
-def create_combine_root_file( file_to_convert, rebin, classifier, output_dir, plot, systematics_file, add_old_bkg=False, merge_2016=False, stat_only=False ):
+def create_combine_root_file( file_to_convert,
+                             rebin,
+                             classifier,
+                             output_dir,
+                             plot,
+                             systematics_file,
+                             use_preUL=False,
+                             add_old_bkg=False,
+                             merge_2016=False,
+                             stat_only=False ):
 
     logging.info(f"Reading {file_to_convert}")
     coffea_hists = json.load(open(file_to_convert, 'r'))
@@ -124,19 +133,26 @@ def create_combine_root_file( file_to_convert, rebin, classifier, output_dir, pl
                 root_hists[channel+"_"+iyear]['mj']['nominal'] = json_to_TH1(
                     coffea_hists[ih]['data'][iyear]['threeTag']['SR'], "mj_"+iyear, rebin[channel] )
 
-                ### SR 4b
+                ### For ZH ZZ
                 for iprocess in coffea_hists[ih].keys():
-                    if systematics_file and 'HH4b' in iprocess:
-                        root_hists[channel+"_"+iyear][iprocess] = {}
-                        for ivar in coffea_hists_syst[ih][iprocess][iyear].keys():
-                            ip = 'GluGluToHHTo4B_cHHH1' #iprocess
-                            root_hists[channel+"_"+iyear][iprocess][ivar] = json_to_TH1(
-                                coffea_hists_syst[ih][ip][iyear][ivar]['fourTag']['SR'], iprocess.split('4b')[0] +"_"+ivar+"_"+iyear, rebin[channel] )
-                    elif iprocess.startswith(('ZZ', 'ZH')): continue
-                    else:
-                        root_hists[channel+"_"+iyear][iprocess] = json_to_TH1(
-                            coffea_hists[ih][iprocess][iyear]['fourTag']['SR'], iprocess.split('4b')[0]+"_"+iyear, rebin[channel] )
+                    root_hists[channel+"_"+iyear][iprocess] = json_to_TH1(
+                        coffea_hists[ih][iprocess][iyear]['fourTag']['SR'], iprocess.split('4b')[0]+"_"+iyear, rebin[channel] )
 
+                if systematics_file and not use_preUL:
+                    iprocess = 'GluGluToHHTo4B_cHHH1'
+                    root_hists[channel+"_"+iyear]['HH'] = {}
+                    for ivar in coffea_hists_syst[ih][iprocess][iyear].keys():
+                        root_hists[channel+"_"+iyear]['HH'][ivar.replace('_Up', 'Up').replace('_Down', 'Down')] = json_to_TH1(
+                            coffea_hists_syst[ih][iprocess][iyear][ivar]['fourTag']['SR'], "HH_"+ivar+"_"+iyear, rebin[channel] )
+
+            if systematics_file and use_preUL:
+                iprocess = 'HH4b'
+                for iyear in coffea_hists_syst[ih]['HH4b'].keys():
+                    tmpname=channel+"_"+iyear.replace('20', 'UL') + ('_preVFP' if '16' in iyear else '')
+                    root_hists[tmpname][iprocess] = {}
+                    for ivar in coffea_hists_syst[ih][iprocess][iyear].keys():
+                        root_hists[tmpname][iprocess][ivar] = json_to_TH1(
+                            coffea_hists_syst[ih][iprocess][iyear][ivar]['fourTag']['SR'], iprocess+"_"+ivar+"_"+iyear, rebin[channel] )
 
         for iy in root_hists.keys():
             root_hists[iy]['tt'] = root_hists[iy]['data'].Clone()
@@ -165,9 +181,12 @@ def create_combine_root_file( file_to_convert, rebin, classifier, output_dir, pl
             for iy in list(root_hists.keys()):
                 if 'UL16_preVFP' in iy:
                     for ip, _ in list(root_hists[iy].items()):
-                        if 'mj' in ip:
-                            root_hists[iy][ip]['nominal'].Add( root_hists[iy.replace('pre', 'post')][ip]['nominal'] )
-                        elif not 'HH4b' in ip:   ### AGE: temporary, HH4b is preUL
+                        if ip.startswith(('mj', 'HH')):
+                            for iv, _ in list(root_hists[iy][ip].items()):
+                                root_hists[iy][ip][iv].Add( root_hists[iy.replace('pre', 'post')][ip][iv] )
+                        elif 'HH4b' in ip:   ### AGE: temporary, HH4b is preUL
+                            continue
+                        else:
                             root_hists[iy][ip].Add( root_hists[iy.replace('pre', 'post')][ip] )
                     del root_hists[iy.replace('pre', 'post')]
                     root_hists['_'.join(iy.split('_')[:-1])] = root_hists.pop(iy)
@@ -242,9 +261,12 @@ def create_combine_root_file( file_to_convert, rebin, classifier, output_dir, pl
         #### make datacard
         metadata = yaml.safe_load(open('metadata/HH4b.yml', 'r'))
 
-        closureSysts = [ i.replace('Up', '') for i in root_hists[next(iter(root_hists))]['mj'].keys() if i.endswith('Up') ]
-        mcSysts = [ s.replace('_Up', '') for s in root_hists[next(iter(root_hists))]['HH4b'].keys() if s.endswith('Up') ]
-        juncSysts = [ s for s in mcSysts if s.startswith('JES') ]
+        closureSysts, mcSysts, juncSysts, btagSyst = [], [], [], []
+        if not stat_only:
+            closureSysts = [ i.replace('Up', '') for i in root_hists[next(iter(root_hists))]['mj'].keys() if i.endswith('Up') ]
+            mcSysts = [ s.replace('_Up', '').replace('Up', '') for s in root_hists[next(iter(root_hists))]['HH'].keys() if s.endswith('Up') ]
+            juncSysts = [ s for s in mcSysts if s.startswith('JES') ]
+            btagSysts = [ s for s in mcSysts if s.startswith('btag') ]
 
         channels = []
         for era in metadata['eras']:
@@ -264,7 +286,7 @@ def create_combine_root_file( file_to_convert, rebin, classifier, output_dir, pl
         hline = '-'*hline
         lines = []
         lines.append('imax %d number of channels'%(len(metadata['SR'])*len(metadata['eras'])))
-        lines.append('jmax 2 number of processes minus one') # zz, zh, hh, mj, tt is five processes, so jmax is 4
+        lines.append(f'jmax {len(processes)-1} number of processes minus one') # zz, zh, hh, mj, tt is five processes, so jmax is 4
         lines.append('kmax * number of systematics')
         lines.append(hline)
         lines.append('shapes * * '+output+' $CHANNEL/$PROCESS $CHANNEL/$PROCESS_$SYSTEMATIC')
@@ -280,28 +302,29 @@ def create_combine_root_file( file_to_convert, rebin, classifier, output_dir, pl
         for nuisance in closureSysts:
             lines.append('%-35s %5s %s'%(nuisance, 'shape', ' '.join([column.closureSysts[nuisance] for column in columns])))
         for nuisance in mcSysts:
+            if 'trig' in nuisance: continue
             lines.append('%-35s %5s %s'%(nuisance, 'shape', ' '.join([column.     mcSysts[nuisance] for column in columns])))
         lines.append('%-35s %5s %s'%('BR_hbb',   'lnN', ' '.join([column.br        for column in columns])))
         lines.append('%-35s %5s %s'%('xs',       'lnN', ' '.join([column.xs        for column in columns])))
-        lines.append('%-35s %5s %s'%('lumi_corr','lnN', ' '.join([column.lumi_corr for column in columns])))
-        lines.append('%-35s %5s %s'%('lumi_1718','lnN', ' '.join([column.lumi_1718 for column in columns])))
-        lines.append('%-35s %5s %s'%('lumi_2016','lnN', ' '.join([column.lumi_2016 for column in columns])))
-        lines.append('%-35s %5s %s'%('lumi_2017','lnN', ' '.join([column.lumi_2017 for column in columns])))
-        lines.append('%-35s %5s %s'%('lumi_2018','lnN', ' '.join([column.lumi_2018 for column in columns])))
-#        if not stat_only:
+        lines.append('%-35s %5s %s'%('lumi_13TeV_corr','lnN', ' '.join([column.lumi_corr for column in columns])))
+        lines.append('%-35s %5s %s'%('lumi_13TeV_1718','lnN', ' '.join([column.lumi_1718 for column in columns])))
+        lines.append('%-35s %5s %s'%('lumi_13TeV_2016','lnN', ' '.join([column.lumi_2016 for column in columns])))
+        lines.append('%-35s %5s %s'%('lumi_13TeV_2017','lnN', ' '.join([column.lumi_2017 for column in columns])))
+        lines.append('%-35s %5s %s'%('lumi_13TeV_2018','lnN', ' '.join([column.lumi_2018 for column in columns])))
+        if not stat_only:
+            lines.append(hline)
+            lines.append('* autoMCStats 0 1 1')
         lines.append(hline)
-        lines.append('* autoMCStats 0 1 1')
-        lines.append(hline)
-#        if closureSysts:
-        lines.append('multijet group = %s'%(' '.join(closureSysts)))
-##    if mcSysts:
-##        lines.append('btag     group = %s'%(' '.join(   btagSysts)))
-        lines.append('junc     group = %s'%(' '.join(   juncSysts)))
-##        lines.append('trig     group = trigger_emulation')
-        lines.append('lumi     group = lumi_corr lumi_1718 lumi_2016 lumi_2017 lumi_2018')
+        if closureSysts:
+            lines.append('multijet group = %s'%(' '.join(closureSysts)))
+        if mcSysts:
+            lines.append('btag     group = %s'%(' '.join(   btagSysts)))
+            lines.append('junc     group = %s'%(' '.join(   juncSysts)))
+            #lines.append('trig     group = trigger_emulation')
+        lines.append('lumi     group = lumi_13TeV_corr lumi_13TeV_1718 lumi_13TeV_2016 lumi_13TeV_2017 lumi_13TeV_2018')
         lines.append('theory   group = BR_hbb xs')
-#        if not stat_only:
-        lines.append('others   group = trigger_emulation lumi_corr lumi_1718 lumi_2016 lumi_2017 lumi_2018 BR_hbb xs pileup prefire %s'%(' '.join(juncSysts)))
+        if not stat_only:
+            lines.append('others   group = lumi_13TeV_corr lumi_13TeV_1718 lumi_13TeV_2016 lumi_13TeV_2017 lumi_13TeV_2018 BR_hbb xs PU L1PreFiring %s'%(' '.join(juncSysts)))
 
 
         with open(output.replace('hists', 'combine').replace('root', 'txt'), 'w') as ofile:
@@ -335,6 +358,8 @@ if __name__ == '__main__':
                         default='', help="File contain systematic variations")
     parser.add_argument('--merge2016', dest='merge_2016', action="store_true",
                         default=False, help="(Temporary. Merge 2016 datasets)")
+    parser.add_argument('--use_preUL', dest='use_preUL', action="store_true",
+                        default=False, help="(Temporary. Use preUL samples)")
     parser.add_argument('--add_old_bkg', dest='add_old_bkg', action="store_true",
                         default=False, help="(Temporary. Add Bkgs from HIG-22-011)")
     parser.add_argument('--stat_only', dest='stat_only', action="store_true",
@@ -354,6 +379,7 @@ if __name__ == '__main__':
         args.output_dir,
         args.plot,
         args.systematics_file,
+        use_preUL=args.use_preUL,
         add_old_bkg=args.add_old_bkg,
         merge_2016=args.merge_2016,
         stat_only=args.stat_only
