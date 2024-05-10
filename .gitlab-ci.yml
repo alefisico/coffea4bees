@@ -19,6 +19,7 @@ variables:
   CONTAINER_HOST: cms-cmu
 
 stages:          
+  - reana
   - build
   - proxy
   - code 
@@ -27,7 +28,6 @@ stages:
   - fits
   - plot
   - cutflow
-  - reana
 
 voms_proxy:
   stage: proxy
@@ -390,7 +390,7 @@ reana-job:
   tags:
     - k8s-cvmfs
   before_script:
-    - pip install reana-client 
+    - pip install reana-client  --user
   script:
     - source .ci-workflows/reana-job.sh
   allow_failure: true
