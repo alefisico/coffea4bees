@@ -34,14 +34,13 @@ class ROCFixedThreshold:
         # -inf < b[0] < t[0] <= b[1] < t[1] <= ... < t[-1] <= b[-1] < inf
         hist.index_add_(0, torch.searchsorted(self._threshold, x, right=True), weight)
 
-    @staticmethod
-    def _bounded(FPR: torch.Tensor, TPR: torch.Tensor):
+    def _bounded(self, FPR: torch.Tensor, TPR: torch.Tensor):
         f, t = [FPR], [TPR]
         if FPR[0] != 1.0:
-            f.insert(0, torch.tensor([1.0], dtype=FPR.dtype))
+            f.insert(0, torch.tensor([1.0], **self.__f))
             t.insert(0, f[0])
         if FPR[-1] != 0.0:
-            f.append(torch.tensor([0.0], dtype=FPR.dtype))
+            f.append(torch.tensor([0.0], **self.__f))
             t.append(f[-1])
         if len(f) > 1:
             return torch.cat(f), torch.cat(t)
