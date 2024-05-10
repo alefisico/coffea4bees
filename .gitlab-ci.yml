@@ -19,7 +19,6 @@ variables:
   CONTAINER_HOST: cms-cmu
 
 stages:          
-  - reana
   - build
   - proxy
   - code 
@@ -28,6 +27,7 @@ stages:
   - fits
   - plot
   - cutflow
+  - reana
 
 voms_proxy:
   stage: proxy
@@ -80,6 +80,16 @@ build_container_lpccondor:
       DOCKER_FILE: $CI_PROJECT_DIR/.dockerfiles/Dockerfile_analysis
       IMAGE_DESTINATION_LATEST: ${CI_REGISTRY_IMAGE}:latest
       IMAGE_DESTINATION: ${CI_REGISTRY_IMAGE}:$CI_COMMIT_SHORT_SHA
+
+build_container_reana:
+  extends:
+    - .base_build_container
+  variables:
+      # To push to a specific docker tag other than latest(the default), amend the --destination parameter, e.g. --destination $CI_REGISTRY_IMAGE:$CI_BUILD_REF_NAME
+      # See https://docs.gitlab.com/ee/ci/variables/predefined_variables.html#variables-reference for available variables
+      DOCKER_FILE: $CI_PROJECT_DIR/.dockerfiles/Dockerfile_analysis
+      IMAGE_DESTINATION_LATEST: ${CI_REGISTRY_IMAGE}:reana_latest
+      IMAGE_DESTINATION: ${CI_REGISTRY_IMAGE}:reana_$CI_COMMIT_SHORT_SHA
 
 analysis-test-job:   
   stage: analysis-test   
@@ -386,11 +396,9 @@ twoStageClosure-test-job:
 
 reana-job:
   stage: reana
-  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:latest
+  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:reana_latest
   tags:
     - k8s-cvmfs
-  before_script:
-    - pip install reana-client  --user
   script:
     - source .ci-workflows/reana-job.sh
   allow_failure: true
