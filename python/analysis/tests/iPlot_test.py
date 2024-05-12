@@ -29,7 +29,7 @@ class iPlotTestCase(unittest.TestCase):
         logy    = {"yscale": "log"}
         rlim    = {"rlim": [0, 2]}
         rebin   = {"rebin": 4}
-        
+
         print(f"plot with {args}")
         plot(**args)
         args["var"] = "v4j.mass"
@@ -78,7 +78,7 @@ class iPlotTestCase(unittest.TestCase):
         plot2d(**(args2d | full))
 
         manyProcs = {"cut": "passPreSel",
-                     "process": ["data","HH4b","TTToHadronic"]}
+                     "process": ["data","GluGluToHHTo4B_cHHH1","TTToHadronic"]}
         print(f"plot with {args | doRatio | norm | rlim | manyProcs}")
         plot(**(args | doRatio | norm | rlim | manyProcs))
 
@@ -87,7 +87,7 @@ class iPlotTestCase(unittest.TestCase):
                     "process": "data"}
         print(f"plot with {args | doRatio | norm | rlim | manyVars}")
         plot(**(args | doRatio | norm | rlim | manyVars))
-        
+
         args["var"] = "v4j.mass"
         invalid_region = {"region": "InvalidRegion"}
         print(f"plot with {args | invalid_region}")
@@ -97,7 +97,7 @@ class iPlotTestCase(unittest.TestCase):
         print(f"plot with {args | invalid_cut}")
         self.assertRaises(AttributeError, plot, **(args | invalid_cut))
 
-        
+
     def test_singleFile(self):
 
         metadata = "analysis/metadata/plotsAll.yml"
@@ -112,7 +112,7 @@ class iPlotTestCase(unittest.TestCase):
         self.do_plots()
 
 
-        
+
     def test_multipleFiles(self):
 
         metadata = "analysis/metadata/plotsAll.yml"
@@ -170,7 +170,7 @@ class iPlotTestCase(unittest.TestCase):
 
         self.do_plots()
 
-        
+
 
 if __name__ == '__main__':
     wrapper.parse_args()

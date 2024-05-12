@@ -10,7 +10,7 @@ echo "############### Convert json to root"
 python3 stats_analysis/convert_json_to_root.py -f analysis/hists/testMixedData.json                  --output analysis/hists/
 python3 stats_analysis/convert_json_to_root.py -f analysis/hists/testMixedBkg_TT.json                --output analysis/hists/
 python3 stats_analysis/convert_json_to_root.py -f analysis/hists/testMixedBkg_data_3b_for_mixed.json --output analysis/hists/
-python3 stats_analysis/convert_json_to_root.py -f analysis/hists/testSignal_preUL.json               --output analysis/hists/
+#python3 stats_analysis/convert_json_to_root.py -f analysis/hists/testSignal_preUL.json               --output analysis/hists/
 python3 stats_analysis/convert_json_to_root.py -f analysis/hists/testSignal_UL.json                  --output analysis/hists/
 
 
@@ -24,7 +24,7 @@ python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 20 --o
     --input_file_TT     analysis/hists/testMixedBkg_TT.root \
     --input_file_mix    analysis/hists/testMixedData.root \
     --input_file_sig    analysis/hists/testSignal_UL.root \
-    --input_file_sig_preUL    analysis/hists/testSignal_preUL.root
+#    --input_file_sig_preUL    analysis/hists/testSignal_preUL.root
 
 
 
