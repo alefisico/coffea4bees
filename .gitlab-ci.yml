@@ -91,17 +91,24 @@ build_container_reana:
       IMAGE_DESTINATION_LATEST: ${CI_REGISTRY_IMAGE}:reana_latest
       IMAGE_DESTINATION: ${CI_REGISTRY_IMAGE}:reana_$CI_COMMIT_SHORT_SHA
 
-analysis-test-job:   
-  stage: analysis-test   
+.base_analysis:
   needs:
     - voms_proxy
   image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:latest
   tags:
     - k8s-cvmfs
+  artifacts: 
+    expire_in: 1 day
+    paths:
+      - 'template'
+
+analysis-test-job:   
+  stage: analysis-test   
+  extends:
+    - .base_analysis
   script:
     - source .ci-workflows/analysis-test-job.sh
   artifacts: 
-    expire_in: 1 day
     paths:
       - python/analysis/hists/test.coffea
 
@@ -346,7 +353,7 @@ baseclass-test-job:
   script:
     - source .ci-workflows/baseclass-test-job.sh
 
-histtoyml-test-job:   
+histtojson-test-job:   
   stage: plot
   needs: 
     - analysis-test-job
@@ -364,7 +371,7 @@ histtoyml-test-job:
 ##ymltoroot-test-job:   
 ##  stage: plot
 ##  needs: 
-##    - histtoyml-test-job
+##    - histtojson-test-job
 ##  image: gitlab-registry.cern.ch/cms-cloud/cmssw-docker/cc7-cms 
 ##  tags:
 ##    - k8s-cvmfs
