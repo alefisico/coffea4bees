@@ -1,4 +1,5 @@
 'UL16_preVFP':
+  year_label: '2016'
   goldenJSON: 'data/goldenJSON/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt'
   PU: '/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/LUM/2016preVFP_UL/puWeights.json.gz'
   JERC:
@@ -48,6 +49,7 @@
 
 
 'UL16_postVFP': 
+  year_label: '2016'
   goldenJSON: 'data/goldenJSON/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt'
   PU: '/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/LUM/2016postVFP_UL/puWeights.json.gz'
   JERC:
@@ -96,6 +98,7 @@
   rochesterCorrections: data/Muon/RoccoR2016UL.txt
 
 'UL17': 
+  year_label: '2017'
   goldenJSON: 'data/goldenJSON/Cert_294927-306462_13TeV_UL2017_Collisions17_GoldenJSON.txt'
   PU: '/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/LUM/2017_UL/puWeights.json.gz'
   JERC:
@@ -144,6 +147,7 @@
     - ecalBadCalibFilter
 
 'UL18': 
+  year_label: '2017'
   goldenJSON: 'data/goldenJSON/Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt'
   PU: '/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/LUM/2018_UL/puWeights.json.gz'
   JERC: 
@@ -206,6 +210,7 @@
 
 # legacy for non UL HH4b sample
 '2016': 
+  year_label: '2016'
   goldenJSON: 'data/goldenJSON/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt'  ## placeholder
   PU: 'data/PU/puWeights_legacy16.json.gz'
   JERC: 
@@ -253,6 +258,7 @@
     - hfNoisyHitsFilter
 
 '2017': 
+  year_label: '2017'
   goldenJSON: 'data/goldenJSON/Cert_294927-306462_13TeV_UL2017_Collisions17_GoldenJSON.txt'  ### placeholder
   PU: 'data/PU/puWeights_legacy17.json.gz'
   JERC:
@@ -301,6 +307,7 @@
     - ecalBadCalibFilter
 
 '2018': 
+  year_label: '2018'
   goldenJSON: 'data/goldenJSON/Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt'
   PU: 'data/PU/puWeights_legacy18.json.gz'
   JERC:

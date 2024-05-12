@@ -8,7 +8,7 @@ hists:
                 fillcolor: k            
 
         HH4b:
-                process: HH4b
+                process: GluGluToHHTo4B_cHHH1
                 tag: fourTag
                 year: RunII
                 label: HH4b (x100)

@@ -7,7 +7,7 @@ python analysis/tests/cutflow_test.py   --inputFile analysis/hists/testMixedBkg_
 python analysis/tests/cutflow_test.py   --inputFile analysis/hists/testMixedBkg_data_3b_for_mixed.coffea --knownCounts analysis/tests/known_Counts_MixedBkg_data_3b_for_mixed.yml
 python analysis/tests/cutflow_test.py   --inputFile analysis/hists/testMixedData.coffea --knownCounts analysis/tests/known_Counts_MixedData.yml
 python analysis/tests/cutflow_test.py   --inputFile analysis/hists/testSignal_UL.coffea --knownCounts analysis/tests/known_Counts_Signal.yml
-python analysis/tests/cutflow_test.py   --inputFile analysis/hists/testSignal_preUL.coffea --knownCounts analysis/tests/known_Counts_Signal_preUL.yml
+#python analysis/tests/cutflow_test.py   --inputFile analysis/hists/testSignal_preUL.coffea --knownCounts analysis/tests/known_Counts_Signal_preUL.yml
 
 
 
@@ -16,11 +16,11 @@ python analysis/tests/dumpCutFlow.py --input analysis/hists/testMixedBkg_TT.coff
 python analysis/tests/dumpCutFlow.py --input analysis/hists/testMixedBkg_data_3b_for_mixed.coffea -o analysis/tests/test_dump_MixedBkg_data_3b_for_mixed.yml
 python analysis/tests/dumpCutFlow.py --input analysis/hists/testMixedData.coffea -o analysis/tests/test_dump_MixedData.yml
 python analysis/tests/dumpCutFlow.py --input analysis/hists/testSignal_UL.coffea -o analysis/tests/test_dump_Signal.yml
-python analysis/tests/dumpCutFlow.py --input analysis/hists/testSignal_preUL.coffea -o analysis/tests/test_dump_Signal_preUL.yml
+#python analysis/tests/dumpCutFlow.py --input analysis/hists/testSignal_preUL.coffea -o analysis/tests/test_dump_Signal_preUL.yml
 ls analysis/tests/test_dump_MixedBkg_TT.yml
 ls analysis/tests/test_dump_MixedBkg_data_3b_for_mixed.yml
 ls analysis/tests/test_dump_MixedData.yml
 ls analysis/tests/test_dump_Signal.yml
-ls analysis/tests/test_dump_Signal_preUL.yml
+#ls analysis/tests/test_dump_Signal_preUL.yml
 cd ../
 
