@@ -267,7 +267,7 @@ class analysis(processor.ProcessorABC):
                 shifts.extend( [ ({"Jet": jets[f"JES_{jesunc}"].up}, f"CMS_scale_j_{jesunc}Up"),
                                  ({"Jet": jets[f"JES_{jesunc}"].down}, f"CMS_scale_j_{jesunc}Down"), ] )
 
-            shifts.extend( [({"Jet": jets.JER.up}, f"CMS_res_j_{year_label}_Up"), ({"Jet": jets.JER.down}, f"CMS_res_j_{year_label}Down")] )
+            shifts.extend( [({"Jet": jets.JER.up}, f"CMS_res_j_{year_label}Up"), ({"Jet": jets.JER.down}, f"CMS_res_j_{year_label}Down")] )
 
 
             logging.info(f"\nJet variations {[name for _, name in shifts]}")
