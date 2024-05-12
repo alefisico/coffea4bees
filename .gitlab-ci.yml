@@ -297,6 +297,8 @@ analysis-iplot-job:
   stage: plot 
   extends:
     - .base_analysis
+  needs:
+    - analysis-test-job
   script:
     - source .ci-workflows/analysis-iplot-job.sh
 
