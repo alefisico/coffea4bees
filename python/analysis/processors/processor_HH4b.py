@@ -137,6 +137,7 @@ class analysis(processor.ProcessorABC):
         estop   = event.metadata['entrystop']
         chunk   = f'{dataset}::{estart:6d}:{estop:6d} >>> '
         year    = event.metadata['year']
+        year_label = self.corrections_metadata[year]['year_label']
         processName = event.metadata['processName']
         isMC    = True if event.run[0] == 1 else False
 
@@ -205,14 +206,14 @@ class analysis(processor.ProcessorABC):
 
         if self.run_SvB:
             if (self.classifier_SvB is None) | (self.classifier_SvB_MA is None):
-                SvB_file = f'{path}/SvB_newSBDef.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB")}'
+                SvB_file = f'{path}/SvB_newSBDef.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_ULHH")}'
                 event["SvB"] = ( NanoEventsFactory.from_root( SvB_file,
                                                               entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().SvB )
 
                 if not ak.all(event.SvB.event == event.event):
                     raise ValueError("ERROR: SvB events do not match events ttree")
 
-                SvB_MA_file = f'{path}/SvB_MA_newSBDef.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_MA")}'
+                SvB_MA_file = f'{path}/SvB_MA_newSBDef.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_MA_ULHH")}'
                 event["SvB_MA"] = ( NanoEventsFactory.from_root( SvB_MA_file,
                                                                  entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema ).events().SvB_MA )
 
@@ -263,10 +264,10 @@ class analysis(processor.ProcessorABC):
         shifts = [({"Jet": jets}, None)]
         if self.run_systematics:
             for jesunc in self.corrections_metadata[year]["JES_uncertainties"]:
-                shifts.extend( [ ({"Jet": jets[f"JES_{jesunc}"].up}, f"JES_{jesunc}_Up"),
-                                 ({"Jet": jets[f"JES_{jesunc}"].down}, f"JES_{jesunc}_Down"), ] )
+                shifts.extend( [ ({"Jet": jets[f"JES_{jesunc}"].up}, f"CMS_scale_j_{jesunc}Up"),
+                                 ({"Jet": jets[f"JES_{jesunc}"].down}, f"CMS_scale_j_{jesunc}Down"), ] )
 
-            shifts.extend( [({"Jet": jets.JER.up}, "JER_Up"), ({"Jet": jets.JER.down}, "JER_Down")] )
+            shifts.extend( [({"Jet": jets.JER.up}, f"CMS_res_j_{year_label}_Up"), ({"Jet": jets.JER.down}, f"CMS_res_j_{year_label}Down")] )
 
 
             logging.info(f"\nJet variations {[name for _, name in shifts]}")
@@ -282,6 +283,7 @@ class analysis(processor.ProcessorABC):
         estop   = event.metadata['entrystop']
         chunk   = f'{dataset}::{estart:6d}:{estop:6d} >>> '
         year        = event.metadata['year']
+        year_label = self.corrections_metadata[year]['year_label']
         processName = event.metadata['processName']
         isMC        = True if event.run[0] == 1 else False
         lumi    = event.metadata.get('lumi',    1.0)
@@ -313,30 +315,30 @@ class analysis(processor.ProcessorABC):
                     if not ak.all(trigWeight.event == event.event):
                         raise ValueError('trigWeight events do not match events ttree')
 
-                    weights.add( 'trigWeight_', trigWeight["trigWeight_Data"], trigWeight["trigWeight_MC"], ak.where(event.passHLT, 1., 0.) )
+                    weights.add( 'CMS_bbbb_resolved_ggf_triggerEffSF', trigWeight["trigWeight_Data"], trigWeight["trigWeight_MC"], ak.where(event.passHLT, 1., 0.) )
 
                 else:
-                    weights.add( "trigWeight_", event.trigWeight.Data, event.trigWeight.MC, ak.where(event.passHLT, 1.0, 0.0), )
-                logging.debug( f"trigWeight {weights.partial_weight(include=['trigWeight_'])[:10]}\n" )
+                    weights.add( "CMS_bbbb_resolved_ggf_triggerEffSF", event.trigWeight.Data, event.trigWeight.MC, ak.where(event.passHLT, 1.0, 0.0), )
+                logging.debug( f"trigWeight {weights.partial_weight(include=['CMS_bbbb_resolved_ggf_triggerEffSF'])[:10]}\n" )
 
 
             # puWeight (to be checked)
             if not isTTForMixed:
                 puWeight = list( correctionlib.CorrectionSet.from_file( self.corrections_metadata[year]["PU"] ).values() )[0]
-                weights.add( "PU_",
+                weights.add( f"CMS_pileup_{year_label}",
                              puWeight.evaluate(event.Pileup.nTrueInt.to_numpy(), "nominal"),
                              puWeight.evaluate(event.Pileup.nTrueInt.to_numpy(), "up"),
                              puWeight.evaluate(event.Pileup.nTrueInt.to_numpy(), "down"), )
-                logging.debug( f"PU weight {weights.partial_weight(include=['PU_'])[:10]}\n" )
+                logging.debug( f"PU weight {weights.partial_weight(include=[f'CMS_pileup_{year_label}'])[:10]}\n" )
 
 
             # L1 prefiring weight
             if ( "L1PreFiringWeight" in event.fields ):  #### AGE: this should be temprorary (field exists in UL)
-                weights.add( "L1PreFiring_",
+                weights.add( f"CMS_prefire_{year_label}",
                              event.L1PreFiringWeight.Nom,
                              event.L1PreFiringWeight.Up,
                              event.L1PreFiringWeight.Dn, )
-                logging.debug( f"L1Prefire weight {weights.partial_weight(include=['L1Prefiring_'])[:10]}\n" )
+                logging.debug( f"L1Prefire weight {weights.partial_weight(include=[f'CMS_prefire_{year_label}'])[:10]}\n" )
 
             if ( "PSWeight" in event.fields ):  #### AGE: this should be temprorary (field exists in UL)
                 nom      = np.ones(len(weights.weight()))
@@ -354,8 +356,8 @@ class analysis(processor.ProcessorABC):
                 else:
                     logging.warning( f"PS weight vector has length {len(event.PSWeight[0])}" )
 
-                weights.add("ISR_", nom, up_isr, down_isr)
-                weights.add("FSR_", nom, up_fsr, down_fsr)
+                weights.add("ps_isr", nom, up_isr, down_isr)
+                weights.add("ps_fsr", nom, up_fsr, down_fsr)
 
             if "LHEPdfWeight" in event.fields:
 
@@ -373,13 +375,13 @@ class analysis(processor.ProcessorABC):
 
                     summed = ak.sum(np.square(arg), axis=1)
                     pdf_unc = np.sqrt((1.0 / 99.0) * summed)
-                    weights.add("PDF_", nom, pdf_unc + nom)
+                    weights.add("pdf_Higgs_ggHH", nom, pdf_unc + nom)
 
                     # alpha_S weights
                     # Eq. 27 of same ref
                     as_unc = 0.5 * ( event.LHEPdfWeight[:, 102] - event.LHEPdfWeight[:, 101] )
 
-                    weights.add("aS_", nom, as_unc + nom)
+                    weights.add("alpha_s", nom, as_unc + nom)
 
                     # PDF + alpha_S weights
                     # Eq. 28 of same ref
@@ -387,8 +389,8 @@ class analysis(processor.ProcessorABC):
                     weights.add("PDFaS_", nom, pdfas_unc + nom)
 
                 else:
-                    weights.add("aS_", nom, up, down)
-                    weights.add("PDF_", nom, up, down)
+                    weights.add("alpha_s", nom, up, down)
+                    weights.add("pdf_Higgs_ggHH", nom, up, down)
                     weights.add("PDFaS_", nom, up, down)
 
         else:
@@ -435,15 +437,15 @@ class analysis(processor.ProcessorABC):
                 btag_SF_weights = apply_btag_sf( event.selJet, correction_file=self.corrections_metadata[year]["btagSF"],
                                                  btag_uncertainties=self.corrections_metadata[year][ "btag_uncertainties" ], )
 
-                weights.add_multivariation( f"btagSF", btag_SF_weights["btagSF_central"],
+                weights.add_multivariation( f"CMS_btag", btag_SF_weights["btagSF_central"],
                                             self.corrections_metadata[year]["btag_uncertainties"],
                                             [ var.to_numpy() for name, var in btag_SF_weights.items() if "_up" in name ],
                                             [ var.to_numpy() for name, var in btag_SF_weights.items() if "_down" in name ], )
             else:
-                weights.add( "btagSF",
+                weights.add( "CMS_btag",
                          apply_btag_sf( event.selJet, correction_file=self.corrections_metadata[year]["btagSF"], btag_uncertainties=None, )["btagSF_central"], )
 
-            logging.debug( f"Btag weight {weights.partial_weight(include=['btagSF'])[:10]}\n" )
+            logging.debug( f"Btag weight {weights.partial_weight(include=['CMS_btag'])[:10]}\n" )
             event["weight"] = weights.weight()
             if not shift_name:
                 self._cutFlow.fill( "passJetMult_btagSF", event[selections.all(*allcuts)], allTag=True )
@@ -509,7 +511,7 @@ class analysis(processor.ProcessorABC):
         #
         # calculate pseudoTagWeight for threeTag events
         #
-        all_weights = ['genweight_', 'trigWeight_', 'PU_' ,'btagSF']
+        all_weights = ['genweight_', 'CMS_bbbb_resolved_ggf_triggerEffSF', f'CMS_pileup_{year_label}' ,'CMS_btag']
         logging.debug( f"noJCM_noFVT partial {weights.partial_weight(include=all_weights)[ selections.all(*allcuts) ][:10]}" )
         selev["weight_noJCM_noFvT"] = weights.partial_weight( include=all_weights )[selections.all(*allcuts)]
 
