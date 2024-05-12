@@ -206,13 +206,32 @@
 
 # legacy for non UL HH4b sample
 '2016': 
-  PU: 'data/JEC/PUWeight/puWeights_legacy16.json.gz'
+  goldenJSON: 'data/goldenJSON/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt'  ## placeholder
+  PU: 'data/PU/puWeights_legacy16.json.gz'
   JERC: 
     - '* * data/JEC/Summer16_07Aug2017_V11_MC/Summer16_07Aug2017_V11_MC_STEP_AK4PFchs.txt'
     - '* * data/JEC/Summer16_07Aug2017_V11_MC/RegroupedV2_Summer16_07Aug2017_V11_MC_UncertaintySources_AK4PFchs.junc.txt'
     - '* * data/JEC/Summer16_25nsV1b_MC/Summer16_25nsV1b_MC_PtResolution_AK4PFchs.jr.txt'
     - '* * data/JEC/Summer16_25nsV1b_MC/Summer16_25nsV1b_MC_SF_AK4PFchs.jersf.txt'
-  btagSF: 'data/JEC/BTagSF2016/btagging_legacy16_deepJet_itFit.json.gz' 
+  JES_uncertainties:
+    - Absolute
+    - Absolute_2016
+    - BBEC1
+    - BBEC1_2016
+    - EC2
+    - EC2_2016
+    - FlavorQCD
+    - HF
+    - HF_2016
+    - RelativeBal
+    - RelativeSample_2016
+  btagSF: 'data/Btag/btagging_legacy16_deepJet_itFit.json.gz' 
+  btagWP:
+    #L: 0.0480
+    #M: 0.2489
+    #T: 0.6377
+    L: 0.3
+    M: 0.6
   btag_uncertainties:
     - cferr1
     - cferr2
@@ -234,13 +253,41 @@
     - hfNoisyHitsFilter
 
 '2017': 
-  PU: 'data/JEC/PUWeight/puWeights_legacy17.json.gz'
+  goldenJSON: 'data/goldenJSON/Cert_294927-306462_13TeV_UL2017_Collisions17_GoldenJSON.txt'  ### placeholder
+  PU: 'data/PU/puWeights_legacy17.json.gz'
   JERC:
     - '* * data/JEC/Fall17_17Nov2017_V32_MC/Fall17_17Nov2017_V32_MC_STEP_AK4PFchs.txt'
     - '* * data/JEC/Fall17_17Nov2017_V32_MC/RegroupedV2_Fall17_17Nov2017_V32_MC_UncertaintySources_AK4PFchs.junc.txt'
     - '* * data/JEC/Fall17_V3b_MC/Fall17_V3b_MC_PtResolution_AK4PFchs.jr.txt'
     - '* * data/JEC/Fall17_V3b_MC/Fall17_V3b_MC_SF_AK4PFchs.jersf.txt'
-  btagSF: 'data/JEC/BTagSF2017/btagging_legacy17_deepJet.json.gz'
+  JES_uncertainties:
+    - Absolute
+    - Absolute_2017
+    - BBEC1
+    - BBEC1_2017
+    - EC2
+    - EC2_2017
+    - FlavorQCD
+    - HF
+    - HF_2017
+    - RelativeBal
+    - RelativeSample_2017
+  btagSF: 'data/Btag/btagging_legacy17_deepJet.json.gz'
+  btagWP:
+    #L: 0.0532
+    #M: 0.3040
+    #T: 0.7476
+    L: 0.3
+    M: 0.6
+  btag_uncertainties:
+    - cferr1
+    - cferr2
+    - hf
+    - hfstats1
+    - hfstats2
+    - lf
+    - lfstats1
+    - lfstats2
   NoiseFilter:
     - goodVertices
     - globalSuperTightHalo2016Filter
@@ -254,13 +301,41 @@
     - ecalBadCalibFilter
 
 '2018': 
-  PU: 'data/JEC/PUWeight/puWeights_legacy18.json.gz'
+  goldenJSON: 'data/goldenJSON/Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt'
+  PU: 'data/PU/puWeights_legacy18.json.gz'
   JERC:
     - '* * data/JEC/Autumn18_V19_MC/Autumn18_V19_MC_STEP_AK4PFchs.txt'
     - '* * data/JEC/Autumn18_V19_MC/RegroupedV2_Autumn18_V19_MC_UncertaintySources_AK4PFchs.junc.txt'
     - '* * data/JEC/Autumn18_V7b_MC/Autumn18_V7b_MC_PtResolution_AK4PFchs.jr.txt'
     - '* * data/JEC/Autumn18_V7b_MC/Autumn18_V7b_MC_SF_AK4PFchs.jersf.txt'
-  btagSF: 'data/JEC/BTagSF2018/btagging_legacy18_deepJet.json.gz'
+  JES_uncertainties:
+    - Absolute
+    - Absolute_2018
+    - BBEC1
+    - BBEC1_2018
+    - EC2
+    - EC2_2018
+    - FlavorQCD
+    - HF
+    - HF_2018
+    - RelativeBal
+    - RelativeSample_2018
+  btagSF: 'data/Btag/btagging_legacy18_deepJet.json.gz'
+  btagWP:
+    #L: 0.0490
+    #M: 0.2783
+    #T: 0.7100
+    L: 0.3
+    M: 0.6
+  btag_uncertainties:
+    - cferr1
+    - cferr2
+    - hf
+    - hfstats1
+    - hfstats2
+    - lf
+    - lfstats1
+    - lfstats2
   NoiseFilter:
     - goodVertices
     - globalSuperTightHalo2016Filter

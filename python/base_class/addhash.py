@@ -19,5 +19,5 @@ def get_git_diff_master() -> str:
     else: return 'Not run locally.'
 
 def get_git_diff() -> str:
-    if is_git_directory(): return subprocess.check_output(['git', 'diff', 'HEAD']).decode('ascii')
+    if is_git_directory(): return subprocess.check_output(['git', 'diff', 'HEAD'])#.decode('ascii')
     else: return 'Not run locally.'

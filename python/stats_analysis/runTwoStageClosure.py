@@ -70,20 +70,27 @@ def combine_hists(input_file, hist_template, procs, years):
     for p in procs:
         hist_name_proc = hist_template.replace("PROC", p)
 
-        for y in years:
+        for iy, y in enumerate(years):
             hist_name = hist_name_proc.replace("YEAR", y)
 
             if hist is None:
                 # print(f"reading {hist_name}")
-                hist =  input_file.Get(hist_name).Clone()
+                if type(input_file) is list:
+                    hist =  input_file[iy].Get(hist_name).Clone()
+                else:
+                    if args.debug: print(f"getting {hist_name} from {input_file}")
+                    hist =  input_file.Get(hist_name).Clone()
             else:
                 # print(f"reading {hist_name}")
-                hist.Add( input_file.Get(hist_name).Clone() )
+                if type(input_file) is list:
+                    hist.Add( input_file[iy].Get(hist_name).Clone() )
+                else:
+                    hist.Add( input_file.Get(hist_name).Clone() )
 
     return hist
 
 
-def addYears(f, input_file_bkg, input_file_data, mix, channel):
+def addYears(f, input_file_data3b, input_file_TT, input_file_mix, mix, channel):
 
     directory = f"{mix}/{channel}"
     f.mkdir(directory)
@@ -95,9 +102,9 @@ def addYears(f, input_file_bkg, input_file_data, mix, channel):
 
     mix_number = mix.replace(f"{args.mix_name}_v", "")
 
-    hist_data_obs = combine_hists(input_file_data,
+    hist_data_obs = combine_hists(input_file_mix,
                                   f"{var_name}_PROC_YEAR_fourTag_SR",
-                                  years=["UL16_preVFP", "UL17", "UL18"],
+                                  years=["2016", "2017", "2018"],
                                   procs=[f"mix_v{mix_number}"])
 
     f.cd(directory)
@@ -110,9 +117,9 @@ def addYears(f, input_file_bkg, input_file_data, mix, channel):
     var_name_multijet = var_name.replace("SvB_ps", f"SvB_FvT_{mix}_newSBDef_ps")
     var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDef_ps")
 
-    hist_multijet = combine_hists(input_file_bkg,
+    hist_multijet = combine_hists(input_file_data3b,
                                   f"{var_name_multijet}_PROC_YEAR_threeTag_SR",
-                                  years=["UL16_preVFP", "UL17", "UL18"],
+                                  years=["2016", "2017", "2018"],
                                   procs=["data_3b_for_mixed"])
 
     f.cd(directory)
@@ -124,7 +131,7 @@ def addYears(f, input_file_bkg, input_file_data, mix, channel):
     #
     ttbar_procs = ["TTTo2L2Nu", "TTToHadronic", "TTToSemiLeptonic"]
 
-    hist_ttbar = combine_hists(input_file_bkg,
+    hist_ttbar = combine_hists(input_file_TT,
                                f"{var_name}_PROC_YEAR_fourTag_SR",
                                years=["UL16_preVFP", "UL16_postVFP", "UL17", "UL18"],
                                procs=["TTTo2L2Nu_for_mixed", "TTToHadronic_for_mixed", "TTToSemiLeptonic_for_mixed"])
@@ -171,9 +178,18 @@ def prepInput():
     #
     # Read inputs
     #
-    input_file_bkg  = ROOT.TFile(args.input_file_bkg,  'READ')
-    input_file_data = ROOT.TFile(args.input_file_data, 'READ')
-    input_file_sig  = ROOT.TFile(args.input_file_sig,  'READ')
+    input_file_data3b = ROOT.TFile(args.input_file_data3b, 'READ')
+    input_file_TT     = ROOT.TFile(args.input_file_TT,     'READ')
+    input_file_mix    = ROOT.TFile(args.input_file_mix,    'READ')
+    input_file_sig    = ROOT.TFile(args.input_file_sig,    'READ')
+    input_file_sig_preUL    = ROOT.TFile(args.input_file_sig_preUL,    'READ')
+
+    if args.debug:
+        print(input_file_data3b)
+        print(input_file_TT)
+        print(input_file_mix)
+        print(input_file_sig)
+        print(input_file_sig_preUL)
 
     #
     # Make output
@@ -181,7 +197,7 @@ def prepInput():
     f = ROOT.TFile(closure_file_out, 'RECREATE')
 
     for mix in mixes:
-        addYears(f, input_file_bkg, input_file_data, mix=mix, channel=channel)
+        addYears(f, input_file_data3b, input_file_TT, input_file_mix, mix=mix, channel=channel)
 
     addMixes(f, channel)
 
@@ -190,10 +206,18 @@ def prepInput():
     #
     #  Signal
     #
-    hist_signal = combine_hists(input_file_sig,
+    hist_signal_UL = combine_hists(input_file_sig,
                                 f"{var_name}_PROC_YEAR_fourTag_SR",
                                 years=["UL16_preVFP", "UL16_postVFP", "UL17", "UL18"],
-                                procs=["ZZ4b", "ZH4b", "HH4b"])
+                                procs=["ZZ4b", "ZH4b"])
+
+    hist_signal_preUL = combine_hists(input_file_sig_preUL,
+                                f"{var_name}_PROC_YEAR_fourTag_SR",
+                                years=["2016", "2017", "2018"],
+                                procs=["HH4b"])
+
+    hist_signal = hist_signal_UL.Clone()
+    hist_signal.Add(hist_signal_preUL)
 
     f.cd(channel)
     hist_signal.SetName("signal")
@@ -1928,9 +1952,11 @@ if __name__ == "__main__":
     parser.add_argument('--mix_name', default="3bDvTMix4bDvT")
     parser.add_argument('--classifier', help="SvB or SvB_MA")
     parser.add_argument('--region', default="SR", help="SR or SB")
-    parser.add_argument('--input_file_bkg', default="analysis/hists/testMixedBkg_master.root")
-    parser.add_argument('--input_file_data', default="analysis/hists/testMixedData_master.root")
-    parser.add_argument('--input_file_sig', default="analysis/hists/histAll_signal.root")
+    parser.add_argument('--input_file_data3b',default="analysis/hists/histMixedBkg_data_3b_for_mixed.root")
+    parser.add_argument('--input_file_TT',    default="analysis/hists/histMixedBkg_TT.root")
+    parser.add_argument('--input_file_mix',   default="analysis/hists/histMixedData.root")
+    parser.add_argument('--input_file_sig',   default="analysis/hists/histSignal.root")
+    parser.add_argument('--input_file_sig_preUL',   default="analysis/hists/histSignal_preUL.root")
     parser.add_argument('--var', default="SvB_MA_ps_hh", help="SvB_MA_ps_XX or SvB_MA_ps_XX_fine")
     parser.add_argument('--rebin', default=1)
     parser.add_argument('--outputPath', default="stats_analysis/closureFitsNew")
@@ -1975,6 +2001,8 @@ if __name__ == "__main__":
     print(f"\t{closure_file_out}")
     if args.run_closure:
         print(f"\t{closure_file_out_pkl}")
+
+    mkpath(f'{args.outputPath}')
 
     doPrepInputs = True
     if args.reuse_inputs:

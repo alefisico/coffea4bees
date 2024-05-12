@@ -15,6 +15,9 @@ workflow:
     # it runs with any branch
     - if: $CI_COMMIT_BRANCH
 
+variables:
+  CONTAINER_HOST: cms-cmu
+
 stages:          
   - build
   - proxy
@@ -28,7 +31,7 @@ stages:
 
 voms_proxy:
   stage: proxy
-  image: gitlab-registry.cern.ch/cms-cloud/cmssw-docker/cc7-cms 
+  image: gitlab-registry.cern.ch/cms-cloud/cmssw-docker/cc7-cms:2024-04-30-3de95a51
   artifacts:
     paths:
       - proxy
@@ -45,13 +48,14 @@ voms_proxy:
 
 
 #### from https://gitlab.cern.ch/gitlabci-examples/build_docker_image/-/blob/master/.gitlab-ci.yml?ref_type=heads
-build_kaniko_command:
+.base_build_container:
     stage: build
     variables:
       # To push to a specific docker tag other than latest(the default), amend the --destination parameter, e.g. --destination $CI_REGISTRY_IMAGE:$CI_BUILD_REF_NAME
       # See https://docs.gitlab.com/ee/ci/variables/predefined_variables.html#variables-reference for available variables
-      IMAGE_DESTINATION_LATEST: ${CI_REGISTRY_IMAGE}:latest
-      IMAGE_DESTINATION: ${CI_REGISTRY_IMAGE}:$CI_COMMIT_SHORT_SHA
+      DOCKER_FILE: 'DOCKER_FILE'
+      IMAGE_DESTINATION_LATEST: 'IMAGELATEST'
+      IMAGE_DESTINATION: 'IMAGE'
     image: 
         # The kaniko debug image is recommended because it has a shell, and a shell is required for an image to be used with GitLab CI/CD.
         name: gcr.io/kaniko-project/executor:debug
@@ -60,18 +64,38 @@ build_kaniko_command:
         # Prepare Kaniko configuration file
         - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
         # Build and push the image from the Dockerfile at the root of the project.
-        - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/.dockerfiles/Dockerfile_analysis --destination $IMAGE_DESTINATION --destination $IMAGE_DESTINATION_LATEST
+        - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $DOCKER_FILE --destination $IMAGE_DESTINATION --destination $IMAGE_DESTINATION_LATEST
         # Print the full registry path of the pushed image
         - echo "Image pushed successfully to ${IMAGE_DESTINATION}"
     rules:
       - if: $CI_COMMIT_BRANCH =~ /^container.*/ 
       - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^container.*/'
 
+build_container_lpccondor:
+  extends:
+    - .base_build_container
+  variables:
+      # To push to a specific docker tag other than latest(the default), amend the --destination parameter, e.g. --destination $CI_REGISTRY_IMAGE:$CI_BUILD_REF_NAME
+      # See https://docs.gitlab.com/ee/ci/variables/predefined_variables.html#variables-reference for available variables
+      DOCKER_FILE: $CI_PROJECT_DIR/.dockerfiles/Dockerfile_analysis
+      IMAGE_DESTINATION_LATEST: ${CI_REGISTRY_IMAGE}:latest
+      IMAGE_DESTINATION: ${CI_REGISTRY_IMAGE}:$CI_COMMIT_SHORT_SHA
+
+build_container_reana:
+  extends:
+    - .base_build_container
+  variables:
+      # To push to a specific docker tag other than latest(the default), amend the --destination parameter, e.g. --destination $CI_REGISTRY_IMAGE:$CI_BUILD_REF_NAME
+      # See https://docs.gitlab.com/ee/ci/variables/predefined_variables.html#variables-reference for available variables
+      DOCKER_FILE: $CI_PROJECT_DIR/.dockerfiles/Dockerfile_analysis_reana
+      IMAGE_DESTINATION_LATEST: ${CI_REGISTRY_IMAGE}:reana_latest
+      IMAGE_DESTINATION: ${CI_REGISTRY_IMAGE}:reana_$CI_COMMIT_SHORT_SHA
+
 analysis-test-job:   
   stage: analysis-test   
   needs:
     - voms_proxy
-  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -85,7 +109,7 @@ analysis-test-job-unsup:
   stage: analysis-test   
   needs:
     - voms_proxy
-  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -99,7 +123,7 @@ analysis-test-mixed-job:
   stage: analysis-test   
   needs:
     - voms_proxy
-  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -107,14 +131,23 @@ analysis-test-mixed-job:
   artifacts: 
     expire_in: 1 day
     paths:
-      - python/analysis/hists/testMixedBkg.coffea
+      - python/analysis/hists/testMixedBkg_TT.coffea
+      - python/analysis/hists/testMixedBkg_data_3b_for_mixed.coffea
       - python/analysis/hists/testMixedData.coffea
+      - python/analysis/hists/testMixedBkg_TT.json
+      - python/analysis/hists/testMixedBkg_data_3b_for_mixed.json
+      - python/analysis/hists/testMixedData.json
+      - python/analysis/hists/testSignal_preUL.coffea
+      - python/analysis/hists/testSignal_preUL.json
+      - python/analysis/hists/testSignal_UL.coffea
+      - python/analysis/hists/testSignal_UL.json
+
 
 analysis-systematics-test-job:   
   stage: analysis-test   
   needs:
     - voms_proxy
-  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -128,7 +161,7 @@ skimmer-test-job:
   stage: skimmer-test   
   needs:
     - voms_proxy
-  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -144,7 +177,7 @@ skimmer-analysis-test-job:
   needs: 
     - voms_proxy
     - skimmer-test-job
-  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -158,7 +191,7 @@ analysis-plot-job:
   stage: plot 
   needs: 
     - analysis-test-job
-  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -172,7 +205,7 @@ analysis-plot-job-unsup:
   stage: plot 
   needs: 
     - analysis-test-job-unsup
-  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -186,7 +219,7 @@ analysis-cutflow-job:
   stage: cutflow
   needs: 
     - analysis-test-job
-  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -200,7 +233,7 @@ analysis-mixed-cutflow-job:
   stage: cutflow
   needs: 
     - analysis-test-mixed-job
-  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -215,7 +248,7 @@ analysis-mixed-cutflow-job:
 ###  stage: cutflow
 ###  needs: 
 ###    - skimmer-analysis-test-job
-###  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+###  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:latest
 ###  tags:
 ###    - k8s-cvmfs
 ###  script:
@@ -229,7 +262,7 @@ analysis-systematics-cutflow-job:
   stage: cutflow
   needs: 
     - analysis-systematics-test-job
-  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -244,7 +277,7 @@ analysis-cutflow-job-unsup:
  stage: cutflow
  needs: 
    - analysis-test-job-unsup
- image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+ image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:latest
  tags:
    - k8s-cvmfs
  script:
@@ -258,7 +291,7 @@ analysis-cutflow-job:
   stage: cutflow
   needs: 
     - analysis-test-job
-  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -267,11 +300,12 @@ analysis-cutflow-job:
     expire_in: 1 day
     paths:
       - python/analysis/tests/test_dump_cutflow.yml
+
 analysis-makeweights-job:    
   stage: fits
   needs: 
     - analysis-test-job
-  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -285,7 +319,7 @@ analysis-helpers-job:
   stage: code
   needs: 
     - voms_proxy
-  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -296,7 +330,7 @@ analysis-iplot-job:
   stage: plot 
   needs: 
     - analysis-test-job
-  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
@@ -304,60 +338,65 @@ analysis-iplot-job:
 
 baseclass-test-job:   
   stage: plot
-  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:latest
+  needs: 
+    - analysis-test-job
   tags:
     - k8s-cvmfs
   script:
     - source .ci-workflows/baseclass-test-job.sh
 
-
 histtoyml-test-job:   
   stage: plot
   needs: 
     - analysis-test-job
-  image: gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest
+  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:latest
   tags:
     - k8s-cvmfs
   script:
     - cd python/stats_analysis/
-    - python convert_hist_to_yaml.py -o hists/histAll.yml -i ../analysis/hists/test.coffea
+    - python convert_hist_to_json.py -o hists/histAll.json -i ../analysis/hists/test.coffea
   artifacts: 
     expire_in: 1 day
     paths:
-      - python/stats_analysis/hists/histAll.yml
+      - python/stats_analysis/hists/histAll.json
 
-ymltoroot-test-job:   
-  stage: plot
-  needs: 
-    - histtoyml-test-job
-  image: gitlab-registry.cern.ch/cms-cloud/cmssw-docker/cc7-cms 
-  tags:
-    - k8s-cvmfs
-  script:
-    - source /cvmfs/sft.cern.ch/lcg/views/LCG_104/x86_64-centos7-gcc12-opt/setup.sh
-    - cd python/stats_analysis/
-    - python convert_yml_to_root.py --classifier SvB_MA SvB -f hists/histAll.yml --merge2016 --output_dir datacards/ --plot --make_combine_inputs
-  artifacts: 
-    expire_in: 1 day
-    paths:
-      - python/stats_analysis/datacards/test_plot_SvB_MA_hh.png
-      - python/stats_analysis/datacards/test_plot_SvB_hh.png
+##ymltoroot-test-job:   
+##  stage: plot
+##  needs: 
+##    - histtoyml-test-job
+##  image: gitlab-registry.cern.ch/cms-cloud/cmssw-docker/cc7-cms 
+##  tags:
+##    - k8s-cvmfs
+##  script:
+##    - source /cvmfs/sft.cern.ch/lcg/views/LCG_104/x86_64-centos7-gcc12-opt/setup.sh
+##    - cd python/stats_analysis/
+##    - python convert_yml_to_root.py --classifier SvB_MA SvB -f hists/histAll.yml --merge2016 --output_dir datacards/ --plot --make_combine_inputs
+##  artifacts: 
+##    expire_in: 1 day
+##    paths:
+##      - python/stats_analysis/datacards/test_plot_SvB_MA_hh.png
+##      - python/stats_analysis/datacards/test_plot_SvB_hh.png
 
 
 twoStageClosure-test-job:   
   stage: fits
-#  needs: 
-#    - histtoyml-test-job
-  image: gitlab-registry.cern.ch/cms-cloud/cmssw-docker/cc7-cms 
+  needs: 
+    - analysis-test-mixed-job
+  image: gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0
+  before_script:
+    - source /cvmfs/cms.cern.ch/cmsset_default.sh
+    - cd /home/cmsusr/CMSSW_11_3_4/
+    - cmsenv || true
+    - cd -
   tags:
     - k8s-cvmfs
   script:
-    - source /cvmfs/sft.cern.ch/lcg/views/LCG_104/x86_64-centos7-gcc12-opt/setup.sh
     - source .ci-workflows/analysis-runTwoStageClosure-ROOT.sh
 
 reana-job:
   stage: reana
-  image: docker.io/reanahub/reana-client:0.9.3
+  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:reana_latest
   tags:
     - k8s-cvmfs
   script:

@@ -1,8 +1,8 @@
-FROM coffeateam/coffea-dask:0.7.22-py3.10-ga998f
+FROM coffeateam/coffea-base-almalinux8:0.7.22-py3.10
 
-RUN apt-get update && apt-get -y install poppler-utils 
+RUN dnf update -y && dnf install -y poppler-utils 
 RUN pip install --upgrade pip
-RUN pip install rucio-clients pycodestyle 
+RUN pip install pycodestyle 
 RUN pip install memory-profiler
 
 RUN mkdir -p /home/user/coffea4bees/python/

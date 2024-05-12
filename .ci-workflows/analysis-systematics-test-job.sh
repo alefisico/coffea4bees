@@ -17,6 +17,8 @@ else
 fi
 echo "############### Running datasets from " $DATASETS
 echo "############### Running test processor"
-python runner.py -t -o test_systematics.coffea -d GluGluToHHTo4B_cHHH1 ZH4b ZZ4b -p analysis/processors/processor_HH4b.py -y UL18 -op analysis/hists/ -m $DATASETS -c analysis/metadata/HH4b_systematics_ci.yml
+python runner.py -t -o test_systematics_UL.coffea -d GluGluToHHTo4B_cHHH1 -p analysis/processors/processor_HH4b.py -y UL18 -op analysis/hists/ -m $DATASETS -c analysis/metadata/HH4b_systematics_ci.yml
+python runner.py -t -o test_systematics_preUL.coffea -d HH4b -p analysis/processors/processor_HH4b.py -y 2018 -op analysis/hists/ -m $DATASETS -c analysis/metadata/HH4b_systematics_ci.yml
+python analysis/merge_coffea_files.py -f analysis/hists/test_systematics_UL.coffea analysis/hists/test_systematics_preUL.coffea -o analysis/hists/test_systematics.coffea
 ls
 cd ../
