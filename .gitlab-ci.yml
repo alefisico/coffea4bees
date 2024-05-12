@@ -114,29 +114,21 @@ analysis-test-job:
 
 analysis-test-job-unsup:   
   stage: analysis-test   
-  needs:
-    - voms_proxy
-  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:latest
-  tags:
-    - k8s-cvmfs
+  extends:
+    - .base_analysis
   script:
     - source .ci-workflows/analysis-test-job-unsup.sh
   artifacts: 
-    expire_in: 1 day
     paths:
       - python/analysis/hists/test_unsup.coffea
 
 analysis-test-mixed-job:   
   stage: analysis-test   
-  needs:
-    - voms_proxy
-  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:latest
-  tags:
-    - k8s-cvmfs
+  extends:
+    - .base_analysis
   script:
     - source .ci-workflows/analysis-test-mixed-job.sh
   artifacts: 
-    expire_in: 1 day
     paths:
       - python/analysis/hists/testMixedBkg_TT.coffea
       - python/analysis/hists/testMixedBkg_data_3b_for_mixed.coffea
@@ -152,219 +144,181 @@ analysis-test-mixed-job:
 
 analysis-systematics-test-job:   
   stage: analysis-test   
-  needs:
-    - voms_proxy
-  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:latest
-  tags:
-    - k8s-cvmfs
+  extends:
+    - .base_analysis
   script:
     - source .ci-workflows/analysis-systematics-test-job.sh
   artifacts: 
-    expire_in: 1 day
     paths:
       - python/analysis/hists/test_systematics.coffea
 
 skimmer-test-job:   
   stage: skimmer-test   
-  needs:
-    - voms_proxy
-  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:latest
-  tags:
-    - k8s-cvmfs
+  extends:
+    - .base_analysis
   script:
     - source .ci-workflows/skimmer-test-job.sh
   artifacts: 
-    expire_in: 1 day
     paths:
       - python/skimmer/metadata/picoaod_datasets_TTToSemiLeptonic_UL18.yml
       - python/skimmer/TTToSemiLeptonic_UL18/picoAOD.root
 
 skimmer-analysis-test-job:   
   stage: analysis-test   
+  extends:
+    - .base_analysis
   needs: 
     - voms_proxy
     - skimmer-test-job
-  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:latest
-  tags:
-    - k8s-cvmfs
   script:
     - source .ci-workflows/skimmer-analysis-test-job.sh
   artifacts: 
-    expire_in: 1 day
     paths:
       - python/analysis/hists/test_skimmer.coffea
 
 analysis-plot-job:    
   stage: plot 
+  extends:
+    - .base_analysis
   needs: 
     - analysis-test-job
-  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:latest
-  tags:
-    - k8s-cvmfs
   script:
     - source .ci-workflows/analysis-plot-job.sh
   artifacts:
-    expire_in: 1 day
     paths:
       - python/analysis/testCoffeaPlots/RunII/
 
 analysis-plot-job-unsup:    
   stage: plot 
+  extends:
+    - .base_analysis
   needs: 
     - analysis-test-job-unsup
-  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:latest
-  tags:
-    - k8s-cvmfs
   script:
     - source .ci-workflows/analysis-plot-job-unsup.sh
   artifacts:
-    expire_in: 1 day
     paths:
       - python/analysis/testCoffeaPlots/RunII/
 
 analysis-cutflow-job:    
   stage: cutflow
+  extends:
+    - .base_analysis
   needs: 
     - analysis-test-job
-  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:latest
-  tags:
-    - k8s-cvmfs
   script:
     - source .ci-workflows/analysis-cutflow-job.sh
   artifacts:
-    expire_in: 1 day
     paths:
       - python/analysis/tests/test_dump_cutflow.yml
 
 analysis-mixed-cutflow-job:    
   stage: cutflow
+  extends:
+    - .base_analysis
   needs: 
     - analysis-test-mixed-job
-  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:latest
-  tags:
-    - k8s-cvmfs
   script:
     - source .ci-workflows/analysis-mixed-cutflow-job.sh
   artifacts:
-    expire_in: 1 day
     paths:
       - python/analysis/tests/test_dump_cutflow_mixed_data.yml
       - python/analysis/tests/test_dump_cutflow_mixed_bkg.yml
 
 ###skimmer-analysis-cutflow-job:    
 ###  stage: cutflow
+###  extends:
+###    - .base_analysis
 ###  needs: 
 ###    - skimmer-analysis-test-job
-###  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:latest
-###  tags:
-###    - k8s-cvmfs
 ###  script:
 ###    - source .ci-workflows/skimmer-analysis-cutflow-job.sh
 ###  artifacts:
-###    expire_in: 1 day
 ###    paths:
 ###      - python/analysis/tests/test_dump_skimmer_cutflow.yml
 
 analysis-systematics-cutflow-job:    
   stage: cutflow
+  extends:
+    - .base_analysis
   needs: 
     - analysis-systematics-test-job
-  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:latest
-  tags:
-    - k8s-cvmfs
   script:
     - source .ci-workflows/analysis-systematics-cutflow-job.sh
   artifacts:
-    expire_in: 1 day
     paths:
       - python/analysis/tests/test_systematics_dump_cutflow.yml
-  allow_failure: true   ##### needs fix
 
 analysis-cutflow-job-unsup:    
  stage: cutflow
+ extends:
+   - .base_analysis
  needs: 
    - analysis-test-job-unsup
- image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:latest
- tags:
-   - k8s-cvmfs
  script:
    - source .ci-workflows/analysis-cutflow-job-unsup.sh
  artifacts:
-   expire_in: 1 day
    paths:
      - python/analysis/tests/test_dump_cutflow_job_unsup.yml
 
 analysis-cutflow-job:    
   stage: cutflow
+  extends:
+    - .base_analysis
   needs: 
     - analysis-test-job
-  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:latest
-  tags:
-    - k8s-cvmfs
   script:
     - source .ci-workflows/analysis-cutflow-job.sh
   artifacts:
-    expire_in: 1 day
     paths:
       - python/analysis/tests/test_dump_cutflow.yml
 
 analysis-makeweights-job:    
   stage: fits
+  extends:
+    - .base_analysis
   needs: 
     - analysis-test-job
-  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:latest
-  tags:
-    - k8s-cvmfs
   script:
     - source .ci-workflows/analysis-makeweights-job.sh
   artifacts:
-    expire_in: 1 day
     paths:
       - python/testJCM_Coffea/
 
 analysis-helpers-job:    
   stage: code
-  needs: 
-    - voms_proxy
-  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:latest
-  tags:
-    - k8s-cvmfs
+  extends:
+    - .base_analysis
   script:
     - source .ci-workflows/analysis-helpers-job.sh
 
 
 analysis-iplot-job:    
   stage: plot 
-  needs: 
-    - analysis-test-job
-  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:latest
-  tags:
-    - k8s-cvmfs
+  extends:
+    - .base_analysis
   script:
     - source .ci-workflows/analysis-iplot-job.sh
 
 baseclass-test-job:   
   stage: plot
-  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:latest
+  extends:
+    - .base_analysis
   needs: 
     - analysis-test-job
-  tags:
-    - k8s-cvmfs
   script:
     - source .ci-workflows/baseclass-test-job.sh
 
 histtojson-test-job:   
   stage: plot
+  extends:
+    - .base_analysis
   needs: 
     - analysis-test-job
-  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:latest
-  tags:
-    - k8s-cvmfs
   script:
     - cd python/stats_analysis/
     - python convert_hist_to_json.py -o hists/histAll.json -i ../analysis/hists/test.coffea
   artifacts: 
-    expire_in: 1 day
     paths:
       - python/stats_analysis/hists/histAll.json
 
@@ -386,10 +340,7 @@ histtojson-test-job:
 ##      - python/stats_analysis/datacards/test_plot_SvB_hh.png
 
 
-twoStageClosure-test-job:   
-  stage: fits
-  needs: 
-    - analysis-test-mixed-job
+.base_combine:
   image: gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0
   before_script:
     - source /cvmfs/cms.cern.ch/cmsset_default.sh
@@ -398,6 +349,13 @@ twoStageClosure-test-job:
     - cd -
   tags:
     - k8s-cvmfs
+
+twoStageClosure-test-job:   
+  stage: fits
+  extends:
+    - .base_combine
+  needs: 
+    - analysis-test-mixed-job
   script:
     - source .ci-workflows/analysis-runTwoStageClosure-ROOT.sh
 

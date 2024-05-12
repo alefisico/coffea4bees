@@ -10,12 +10,14 @@ rule all:
     input:
         expand("output/histsyst_{samplesyst}-{iysyst}.coffea", samplesyst=config['dataset_systematics'], iysyst=config['year']),
         expand("output/histsystpreUL_{samplesystpreUL}-{iysystpreUL}.coffea", samplesystpreUL=config['dataset_preUL'], iysystpreUL=config['year_preUL']),
+        expand("output/histsignal_{samplesignal}-{iysignal}.coffea", samplesignal=config['dataset_signal'], iysignal=config['year']),
         "output/histMixedBkg_data_3b_for_mixed.coffea",
         "output/histMixedBkg_TT.coffea",
         "output/histMixedData.coffea",
         'output/histAll.coffea',
         'output/histAll_syst.coffea',
-        #'output/histSignal.coffea',
+        "output/histAll_signals_cHHHX.coffea",
+        'output/histSignal_UL.coffea',
         "output/RunII/passPreSel/fourTag/SB/nPVs.pdf"
         #"output/datacards/hists_SvB.root"
 
@@ -57,15 +59,25 @@ use rule analysis_databkgs as analysis_signals_preUL with:
         output="histAll_signal_preUL.coffea",
         logname="histAll_signal_preUL"
 
-use rule analysis_databkgs as analysis_signal with:
-    output: "output/histAll_signal.coffea"
+use rule analysis_databkgs as analysis_signals_mix with:
+    output: "output/histSignal_UL.coffea"
     params:
         hash=config['hash'],
         diff=config['diff'],
-        isam=config['dataset_signal'],
+        isam=['ZZ4b', 'ZH4b'],
         iy=config['year'],
-        output="histAll_signal.coffea",
-        logname="histAll_signal"
+        output="histSignal_UL.coffea",
+        logname="histSignal_UL"
+
+use rule analysis_databkgs as analysis_signal with:
+    output: "output/histsignal_{samplesignal}-{iysignal}.coffea"
+    params:
+        hash=config['hash'],
+        diff=config['diff'],
+        isam="{samplesignal}",
+        iy="{iysignal}",
+        output="histsignal_{samplesignal}-{iysignal}.coffea",
+        logname="histsignal_{samplesignal}-{iysignal}"
 
 use rule analysis_databkgs as analysis_mixedbkg_data3b with:
     output: "output/histMixedBkg_data_3b_for_mixed.coffea"
@@ -138,7 +150,7 @@ use rule analysis_systematics as analysis_systematics_preUL with:
 
 rule merging_coffea_files_databkgs:
     input:
-        files = ['output/histAll_bkgsdata.coffea', 'output/histAll_signal_preUL.coffea', 'output/histAll_signal.coffea']
+        files = ['output/histAll_bkgsdata.coffea', 'output/histAll_signal_preUL.coffea']
     output: "output/histAll.coffea"
     container: "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
     params:
@@ -166,14 +178,15 @@ use rule merging_coffea_files_databkgs as merging_coffea_files_syst with:
         output= "histAll_syst.coffea",
         logname= "syst"
 
-use rule merging_coffea_files_databkgs as merging_coffea_files_signal with:
+use rule merging_coffea_files_databkgs as merging_coffea_files_signal_diffHHH with:
     input:
-        files = expand(['output/histdatabkgs_{idat}-{iyear}.coffea'], idat=['HH4b', 'ZH4b', 'ZZ4b'], iyear=config['year'])
+        files = expand(['output/histsignal_{idatsignal}-{iyear}.coffea'], idatsignal=config['dataset_signal'], iyear=config['year']) 
+
     output:
-        "output/histSignal.coffea"
+        "output/histAll_signals_cHHHX.coffea"
     params:
-        output= "histSignal.coffea",
-        logname= "signal"
+        output= "histAll_signals_cHHHX.coffea",
+        logname= "signals_cHHHX"
 
 
 rule make_plots:
