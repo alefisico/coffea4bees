@@ -26,8 +26,8 @@ from analysis.helpers.hist_templates import (
 
 from analysis.helpers.cutflow import cutFlow
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
-from analysis.helpers.correctionFunctions import btagVariations
-from analysis.helpers.correctionFunctions import btagSF_norm as btagSF_norm_file
+# from analysis.helpers.correctionFunctions import btagVariations
+# from analysis.helpers.correctionFunctions import btagSF_norm as btagSF_norm_file
 
 
 from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
@@ -118,9 +118,9 @@ class analysis(processor.ProcessorABC):
         self.apply_trigWeight = apply_trigWeight
         self.apply_btagSF = apply_btagSF
         self.apply_FvT = apply_FvT
-        self.btagVar = btagVariations(
-            systematics=addbtagVariations
-        )  #### AGE: these two need to be review later
+        # self.btagVar = btagVariations(
+        #     systematics=addbtagVariations
+        # )  #### AGE: these two need to be review later
         self.run_SvB = run_SvB
         self.run_topreco = run_topreco  #### AGE: this is temporary topreco is memory consuming (needs fix)
         self.classifier_SvB = None
@@ -315,8 +315,8 @@ class analysis(processor.ProcessorABC):
                 selev,
                 selev.selJet,
                 correction_file=self.corrections_metadata[year]["btagSF"],
-                btag_var=self.btagVar,
-                btagSF_norm=btagSF_norm_file(dataset),
+                # btag_var=self.btagVar,
+                # btagSF_norm=btagSF_norm_file(dataset),
                 weight=selev.weight,
             )
 

@@ -112,7 +112,8 @@ if __name__ == '__main__':
     parser.add_argument('--debug', help="Print lots of debugging statements",
                         action="store_true", dest="debug", default=False)
     args = parser.parse_args()
-    logging_level = logging.DEBUG if args.debug else logging.INFO
+    # logging_level = logging.DEBUG if args.debug else logging.INFO
+    logging_level = logging.INFO
     logging.basicConfig(
         level=logging_level,
         handlers=[RichHandler(level=logging_level, markup=True)],
