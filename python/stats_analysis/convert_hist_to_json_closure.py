@@ -77,7 +77,7 @@ if __name__ == '__main__':
     save_dict["TTToHadronic_for_mixed"]     = [('fourTag','SR')]
     save_dict["ZZ4b"]     = [('fourTag','SR')]
     save_dict["ZH4b"]     = [('fourTag','SR')]
-    save_dict["HH4b"]     = [('fourTag','SR')]
+    save_dict["GluGluToHHTo4B_cHHH1"]     = [('fourTag','SR')]
 
 
     json_dict = {}

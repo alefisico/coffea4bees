@@ -10,8 +10,8 @@ echo "############### Convert json to root"
 python3 stats_analysis/convert_json_to_root.py -f analysis/hists/testMixedData.json                  --output analysis/hists/
 python3 stats_analysis/convert_json_to_root.py -f analysis/hists/testMixedBkg_TT.json                --output analysis/hists/
 python3 stats_analysis/convert_json_to_root.py -f analysis/hists/testMixedBkg_data_3b_for_mixed.json --output analysis/hists/
-#python3 stats_analysis/convert_json_to_root.py -f analysis/hists/testSignal_preUL.json               --output analysis/hists/
 python3 stats_analysis/convert_json_to_root.py -f analysis/hists/testSignal_UL.json                  --output analysis/hists/
+#python3 stats_analysis/convert_json_to_root.py -f analysis/hists/testSignal_preUL.json               --output analysis/hists/
 
 
 

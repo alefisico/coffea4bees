@@ -283,7 +283,7 @@ analysis-makeweights-job:
     - source .ci-workflows/analysis-makeweights-job.sh
   artifacts:
     paths:
-      - python/testJCM_Coffea/
+      - python/analysis/testJCM_Coffea/
 
 analysis-helpers-job:    
   stage: code
