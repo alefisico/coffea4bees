@@ -1993,7 +1993,7 @@ if __name__ == "__main__":
 
     rebin = int(args.rebin)
 
-    closure_file_out = f"{args.outputPath}/hists_closure_{args.mix_name}_{args.var}_rebin{rebin}.root"
+    closure_file_out = f"{args.outputPath}/{args.mix_name}/{classifier}/rebin{rebin}/{args.region}/{channel}/hists_closure_{args.mix_name}_{args.var}_rebin{rebin}.root"
     closure_file_out_pkl = closure_file_out.replace("root", "pkl")
 
     print(f"\nRunning with channel {channel} and rebin {rebin}")
@@ -2001,6 +2001,14 @@ if __name__ == "__main__":
     print(f"\t{closure_file_out}")
     if args.run_closure:
         print(f"\t{closure_file_out_pkl}")
+
+    print(f"\nInputs are ")
+    print(f"\t input_file_data3b {args.input_file_data3b}")
+    print(f"\t input_file_TT     {args.input_file_TT}")
+    print(f"\t input_file_mix    {args.input_file_mix}")
+    print(f"\t input_file_sig    {args.input_file_sig}")
+
+
 
     mkpath(f'{args.outputPath}')
 
