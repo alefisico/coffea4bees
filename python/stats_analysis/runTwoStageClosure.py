@@ -115,8 +115,9 @@ def addYears(f, input_file_data3b, input_file_TT, input_file_mix, mix, channel):
     # multijet
     #
     var_name_multijet = var_name.replace("SvB_ps", f"SvB_FvT_{mix}_newSBDef_ps")
-    var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDef_ps")
-
+    #var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDef_ps")
+    var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDefSeedAve_ps")
+    
     hist_multijet = combine_hists(input_file_data3b,
                                   f"{var_name_multijet}_PROC_YEAR_threeTag_SR",
                                   years=["2016", "2017", "2018"],
