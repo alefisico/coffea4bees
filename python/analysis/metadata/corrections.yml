@@ -147,7 +147,7 @@
     - ecalBadCalibFilter
 
 'UL18': 
-  year_label: '2017'
+  year_label: '2018'
   goldenJSON: 'data/goldenJSON/Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt'
   PU: '/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/LUM/2018_UL/puWeights.json.gz'
   JERC: 
