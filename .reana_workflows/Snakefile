@@ -248,7 +248,7 @@ rule make_combine_inputs:
         "output/datacards/combine_SvB.txt",
         "output/datacards/combine_SvB_MA.txt"
     container:
-        "gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0"
+        "docker://gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0"
     resources:
         compute_backend="kubernetes"
     shell:
@@ -267,7 +267,7 @@ rule run_combine:
         "output/datacards/combine_SvB_MA.root",
         'output/limits.txt'
     container:
-        "gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0"
+        "docker://gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0"
     resources:
         compute_backend="kubernetes"
     shell:

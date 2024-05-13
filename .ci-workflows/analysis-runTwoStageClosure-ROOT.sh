@@ -27,6 +27,8 @@ python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 20 --o
 #    --input_file_sig_preUL    analysis/hists/testSignal_preUL.root
 
 
+#python old_make_combine_hists.py -i ./files_HIG-20-011/hists_closure_3bDvTMix4bDvT_SR_weights_newSBDef.root -o HIG-20-011/hist_closure_SvB_MA.root --TDirectory 3bDvTMix4bDvT_v0/hh2018 --var multijet --channel hh2018 -n mj --rebin 10 --systematics ./files_HIG-20-011/closureResults_SvB_MA_hh.pkl
+#python old_make_combine_hists.py -i ./files_HIG-20-011/data2018/hists_j_r.root -o HIG-20-011/hist_SvB_MA.root  -r SR --var SvB_MA_ps_hh --channel hh2018 -n mj --tag three --cut passPreSel --rebin 10 --systematics ./files_HIG-20-011/closureResults_SvB_MA_hh.pkl
 
 #
 # Test it with full inputs
@@ -42,7 +44,6 @@ python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 20 --o
 python3 stats_analysis/tests/test_runTwoStageClosure.py --knownCounts stats_analysis/tests/known_twoStageClosure_counts_SvB_MA_ps_hh_rebin20.yml --output_path stats_analysis/tests/
 
 python3 stats_analysis/tests/dumpTwoStageInputs.py --input stats_analysis/tests/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin20.root  --output stats_analysis/tests/test_dump_twoStageClosureInputsCounts.yml
-
 
 
 cd ../
