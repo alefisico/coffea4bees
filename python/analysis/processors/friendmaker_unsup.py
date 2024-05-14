@@ -38,8 +38,8 @@ def dump_input_friend(
 ):
     data = ak.zip(
         {   
-            # 'run':events[run], 
-            # 'event': events[event],
+            'run':events['run'], 
+            'event': events['event'],
             "m4j":  events["m4j"],
             "leadStM":  events["leadStM"], 
             "sublStM":  events["sublStM"], 
@@ -49,6 +49,8 @@ def dump_input_friend(
             "lumimask": events["lumimask"], 
             "passNoiseFilter": events["passNoiseFilter"],
             "passJetMult" :events["passJetMult"],
+            "fourTag" :events["fourTag"],
+            "threeTag" :events["threeTag"],
         }
     )
     selection = _build_cutflow(*selections)

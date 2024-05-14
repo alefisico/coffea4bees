@@ -63,7 +63,7 @@ ak.behavior.update(vector.behavior)
 
 
 class analysis(processor.ProcessorABC):
-    def __init__(self, JCM='', threeTag = True, corrections_metadata='analysis/metadata/corrections.yml', run_systematics=[], SRno = '4'):
+    def __init__(self, JCM='', threeTag = True, corrections_metadata='analysis/metadata/corrections.yml', run_systematics=[], SRno = '4',make_classifier_input=None):
         logging.debug('\nInitialize Analysis Processor')
         self.cutFlowCuts = ["all", "passHLT", "passNoiseFilter", "passJetMult", "passJetMult_btagSF", "passPreSel"]
         self.histCuts = ['passPreSel']
@@ -113,8 +113,10 @@ class analysis(processor.ProcessorABC):
 
 
         if 'picoAOD_3b_wJCM_newSBDef' in fname:
-            fname_w3to4 = f"/smurthy/condor/unsupervised4b/randPair/w3to4hist/data20{year[2:4]}_picoAOD_3b_wJCM_newSBDef_w3to4_hist.root"
-            fname_wDtoM = f"/smurthy/condor/unsupervised4b/randPair/wDtoMwJMC/data20{year[2:4]}_picoAOD_3b_wJCM_newSBDef_wDtoM.root"
+            # fname_w3to4 = f"/smurthy/condor/unsupervised4b/randPair/w3to4hist/data20{year[2:4]}_picoAOD_3b_wJCM_newSBDef_w3to4_hist.root"
+            # fname_wDtoM = f"/smurthy/condor/unsupervised4b/randPair/wDtoMwJMC/data20{year[2:4]}_picoAOD_3b_wJCM_newSBDef_wDtoM.root"
+            fname_w3to4 = f"/smurthy/condor/unsup4b_coff/w3to4/data20{year[2:4]}_picoAOD_3b_wJCM_newSBDef_w3to4.root"
+            fname_wDtoM = f"/smurthy/condor/unsup4b_coff/wDtoM/data20{year[2:4]}_picoAOD_3b_wJCM_newSBDef_wDtoM.root"
             event['w3to4'] = NanoEventsFactory.from_root(f'{path}{fname_w3to4}',
                             entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().w3to4.w3to4
 

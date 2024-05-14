@@ -397,14 +397,7 @@ class analysis(processor.ProcessorABC):
         logging.debug(f'{chunk}{nEvent/elapsed:,.0f} events/s New')
         self._cutFlow.addOutput(processOutput, event.metadata['dataset'])
 
-
-        
-        logging.info('selections')
-        logging.info(selections)
         friends = {}
-        logging.info(len(selev["m4j"]))
-    
-
         if self.make_classifier_input is not None:
             from analysis.processors.friendmaker_unsup import dump_input_friend
             friends["friends"] = dump_input_friend(
