@@ -30,7 +30,7 @@ class TestJCM(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-    
+
         #
         # make output
         #
@@ -38,28 +38,28 @@ class TestJCM(unittest.TestCase):
         #os.system("python analysis/make_weights_ROOT.py -o testJCM_Coffea_tests -c passPreSel -r SB ")
 
         #
-        #  > From python analysis/tests/dumpROOTToHist.py -o analysis/tests/HistsFromROOTFile.coffea -c passPreSel -r SB 
+        #  > From python analysis/tests/dumpROOTToHist.py -o analysis/tests/HistsFromROOTFile.coffea -c passPreSel -r SB
         #
         pass
 
     def test_yaml_content(self):
-        
-        for test_pair in [#('testJCM_ROOT_tests/jetCombinatoricModel_SB_.yml', 'analysis/tests/jetCombinatoricModel_SB_ROOT.yml'),
-                          #('testJCM_Coffea_tests/jetCombinatoricModel_SB_.yml', 'analysis/tests/jetCombinatoricModel_SB_Coffea.yml'),
-                          
-                          ('testJCM_ROOT/jetCombinatoricModel_SB_.yml',   'analysis/tests/jetCombinatoricModel_SB_ROOT_new.yml'),
-                          ('testJCM_Coffea/jetCombinatoricModel_SB_.yml', 'analysis/tests/jetCombinatoricModel_SB_Coffea_new.yml'),
-                
+
+        for test_pair in [#('analysis/testJCM_ROOT_tests/jetCombinatoricModel_SB_.yml', 'analysis/tests/jetCombinatoricModel_SB_ROOT.yml'),
+                          #('analysis/testJCM_Coffea_tests/jetCombinatoricModel_SB_.yml', 'analysis/tests/jetCombinatoricModel_SB_Coffea.yml'),
+
+                          ('analysis/testJCM_ROOT/jetCombinatoricModel_SB_.yml',   'analysis/tests/jetCombinatoricModel_SB_ROOT_new.yml'),
+                          ('analysis/testJCM_Coffea/jetCombinatoricModel_SB_.yml', 'analysis/tests/jetCombinatoricModel_SB_Coffea_new.yml'),
+
                           ]:
 
             test_file      = test_pair[0]
             reference_file = test_pair[1]
             print("testing",test_file)
-            
+
             # Load the content of the test YAML file
             with open(test_file, 'r') as file:
                 test_data = yaml.safe_load(file)
-        
+
             # Load the content of the reference YAML file
             with open(reference_file, 'r') as file:
                 reference_data = yaml.safe_load(file)
