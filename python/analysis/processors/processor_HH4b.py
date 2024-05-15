@@ -212,14 +212,16 @@ class analysis(processor.ProcessorABC):
 
         if self.run_SvB:
             if (self.classifier_SvB is None) | (self.classifier_SvB_MA is None):
-                SvB_file = f'{path}/SvB_newSBDef.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_ULHH")}'
+                #SvB_file = f'{path}/SvB_newSBDef.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_ULHH")}'
+                SvB_file = f'{path}/SvB_ULHH.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_ULHH")}'
                 event["SvB"] = ( NanoEventsFactory.from_root( SvB_file,
                                                               entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().SvB )
 
                 if not ak.all(event.SvB.event == event.event):
                     raise ValueError("ERROR: SvB events do not match events ttree")
 
-                SvB_MA_file = f'{path}/SvB_MA_newSBDef.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_MA_ULHH")}'
+                #SvB_MA_file = f'{path}/SvB_MA_newSBDef.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_MA_ULHH")}'
+                SvB_MA_file = f'{path}/SvB_MA_ULHH.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_MA_ULHH")}'
                 event["SvB_MA"] = ( NanoEventsFactory.from_root( SvB_MA_file,
                                                                  entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema ).events().SvB_MA )
 
