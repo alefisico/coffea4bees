@@ -1,4 +1,3 @@
-z
 # In coffea envi
 echo "############### Moving to python folder"
 cd python/
