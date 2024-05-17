@@ -13,6 +13,7 @@ from base_class.root import Chunk, TreeReader, TreeWriter, merge
 from base_class.system.eos import EOS, PathLike
 from base_class.utils.wrapper import retry
 from coffea.processor import ProcessorABC
+from analysis.helpers.cutflow import cutFlow
 
 _PICOAOD = 'picoAOD'
 _ROOT = '.root'
@@ -42,6 +43,7 @@ class PicoAOD(ProcessorABC):
             skip_branches)
         self._filter_branches = re.compile(f'^(?!({"|".join(skipped)})$).*$')
         self._transform = NanoAOD(regular=False, jagged=True)
+        self.cutFlowCuts = []
 
     def _filter(self, branches: set[str]):
         return {*filter(self._filter_branches.match, branches)}
@@ -54,9 +56,11 @@ class PicoAOD(ProcessorABC):
     @retry(1, handler=_return_empty)
     def process(self, events: ak.Array):
         EOS.set_retry(3, 10)  # 3 retries with 10 seconds interval
+        self._cutFlow = cutFlow(self.cutFlowCuts)
         selected = self.select(events)
         chunk = Chunk.from_coffea_events(events)
         dataset = events.metadata['dataset']
+
         result = {dataset: {
             'total_events': len(events),
             'saved_events': int(ak.sum(selected)),
@@ -65,10 +69,14 @@ class PicoAOD(ProcessorABC):
                 str(chunk.path): [(chunk.entry_start, chunk.entry_stop)]
             }
         }}
+
+        self._cutFlow.addOutputSkim(result, dataset)
+
         if result[dataset]['saved_events'] > 0:
             filename = f'{dataset}/{_PICOAOD}_{chunk.uuid}_{chunk.entry_start}_{chunk.entry_stop}{_ROOT}'
             path = self._base / filename
             reader = TreeReader(self._filter, self._transform)
+
             with TreeWriter()(path) as writer:
                 for i, chunks in enumerate(Chunk.partition(self._step, chunk, common_branches=True)):
                     _selected = selected[i*self._step:(i+1)*self._step]
@@ -82,6 +90,7 @@ class PicoAOD(ProcessorABC):
                     writer.extend(data[_selected])
             if writer.tree is not None:
                 result[dataset]['files'].append(writer.tree)
+
         return result
 
     def postprocess(self, accumulator):
@@ -98,7 +107,7 @@ def _fetch_metadata(dataset: str, path: PathLike, dask: bool = False):
                 return {
                     dataset: {
                         'count': float(ak.sum(data['genEventCount'])),
-                        'sumw': float(ak.sum(data['genEventSumw'])),
+                        'sumw':  float(ak.sum(data['genEventSumw'])),
                         'sumw2': float(ak.sum(data['genEventSumw2'])),
                     }
                 }
