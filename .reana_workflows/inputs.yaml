@@ -10,6 +10,7 @@ dataset:
   - TTTo2L2Nu 
   - ZZ4b 
   - ZH4b 
+  - GluGluToHHTo4B_cHHH1
 dataset_systematics:
   - GluGluToHHTo4B_cHHH1
 dataset_signal:
@@ -17,8 +18,6 @@ dataset_signal:
   - GluGluToHHTo4B_cHHH1
   - GluGluToHHTo4B_cHHH2p45
   - GluGluToHHTo4B_cHHH5
-dataset_preUL:
-  - HH4b  
 dataset_for_mixed:
   - TTToSemiLeptonic_for_mixed
   - TTToHadronic_for_mixed
@@ -26,6 +25,8 @@ dataset_for_mixed:
 dataset_mixeddata:
   - data_3b_for_mixed
   - mixeddata
+dataset_preUL:
+  - HH4b  
 year_preUL:
   - '2016'
   - '2017'

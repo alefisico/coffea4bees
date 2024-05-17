@@ -12,6 +12,9 @@ cmsenv  # Ignore errors
 cd /home/cmsusr/coffea4bees/python/stats_analysis/
 EOF
 
+echo "Do not forget to run:
+source python/stats_analysis/set_cmssw.sh"
+
 APPTAINER_SHELL=$(which bash) apptainer exec -B ${PWD}:/home/cmsusr/coffea4bees --pwd /home/cmsusr/coffea4bees/  \
   /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0 \
   /bin/bash 

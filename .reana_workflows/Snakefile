@@ -9,27 +9,30 @@ TIMESTAMP = datetime.now().strftime('%Y%m%d_%H%M%S')
 rule all:
     input:
         expand("output/histsyst_{samplesyst}-{iysyst}.coffea", samplesyst=config['dataset_systematics'], iysyst=config['year']),
-        expand("output/histsystpreUL_{samplesystpreUL}-{iysystpreUL}.coffea", samplesystpreUL=config['dataset_preUL'], iysystpreUL=config['year_preUL']),
+        #expand("output/histsystpreUL_{samplesystpreUL}-{iysystpreUL}.coffea", samplesystpreUL=config['dataset_preUL'], iysystpreUL=config['year_preUL']),
+        expand("output/histsignal_{samplesignal}-{iysignal}.coffea", samplesignal=config['dataset_signal'], iysignal=config['year']),
         "output/histMixedBkg_data_3b_for_mixed.coffea",
         "output/histMixedBkg_TT.coffea",
         "output/histMixedData.coffea",
         'output/histAll.coffea',
         'output/histAll_syst.coffea',
-        #'output/histSignal.coffea',
-        "output/RunII/passPreSel/fourTag/SB/nPVs.pdf"
-        #"output/datacards/hists_SvB.root"
+        "output/histAll_signals_cHHHX.coffea",
+        'output/histSignal_UL.coffea',
+        "output/RunII/passPreSel/fourTag/SB/nPVs.pdf",
+        "output/datacards/hists_SvB.root",
+        'output/limits.txt'
 
 
 rule analysis_databkgs:
-    output: "output/histAll_bkgsdata.coffea"
+    output: "output/histAll.coffea"
     container: "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
     params:
         hash=config['hash'],
         diff=config['diff'],
         isam=config['dataset'],
         iy=config['year'],
-        output="histAll_bkgsdata.coffea",
-        logname="histAll_bkgsdata"
+        output="histAll.coffea",
+        logname="histAll"
     resources:
         voms_proxy=True,
         kerberos=True,
@@ -47,25 +50,35 @@ cp gitdiff.txt output/   ### only one time
 #cp /tmp/coffea4bees-dask-report-* ../output/coffea4bees-dask-report_{params.logname}_{params.iy}.html
         """
 
-use rule analysis_databkgs as analysis_signals_preUL with:
-    output: "output/histAll_signal_preUL.coffea"
+#use rule analysis_databkgs as analysis_signals_preUL with:
+#    output: "output/histAll_signal_preUL.coffea"
+#    params:
+#        hash=config['hash'],
+#        diff=config['diff'],
+#        isam=config['dataset_preUL'],
+#        iy=config['year_preUL'],
+#        output="histAll_signal_preUL.coffea",
+#        logname="histAll_signal_preUL"
+
+use rule analysis_databkgs as analysis_signals_mix with:
+    output: "output/histSignal_UL.coffea"
     params:
         hash=config['hash'],
         diff=config['diff'],
-        isam=config['dataset_preUL'],
-        iy=config['year_preUL'],
-        output="histAll_signal_preUL.coffea",
-        logname="histAll_signal_preUL"
+        isam=['ZZ4b', 'ZH4b'],
+        iy=config['year'],
+        output="histSignal_UL.coffea",
+        logname="histSignal_UL"
 
 use rule analysis_databkgs as analysis_signal with:
-    output: "output/histAll_signal.coffea"
+    output: "output/histsignal_{samplesignal}-{iysignal}.coffea"
     params:
         hash=config['hash'],
         diff=config['diff'],
-        isam=config['dataset_signal'],
-        iy=config['year'],
-        output="histAll_signal.coffea",
-        logname="histAll_signal"
+        isam="{samplesignal}",
+        iy="{iysignal}",
+        output="histsignal_{samplesignal}-{iysignal}.coffea",
+        logname="histsignal_{samplesignal}-{iysignal}"
 
 use rule analysis_databkgs as analysis_mixedbkg_data3b with:
     output: "output/histMixedBkg_data_3b_for_mixed.coffea"
@@ -125,25 +138,46 @@ mprof plot -o output/mprofile_{params.logname}.png python/mprofile_{params.logna
 xrdcp {output} root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/{params.output}
         """
 
-use rule analysis_systematics as analysis_systematics_preUL with:
-    output:
-        "output/histsystpreUL_{samplesystpreUL}-{iysystpreUL}.coffea"
-    params:
-        hash=config['hash'],
-        diff=config['diff'],
-        isam="{samplesystpreUL}",
-        iy="{iysystpreUL}",
-        output="histsystpreUL_{samplesystpreUL}-{iysystpreUL}.coffea",
-        logname="syst_preUL_{samplesystpreUL}-{iysystpreUL}"
+#use rule analysis_systematics as analysis_systematics_preUL with:
+#    output:
+#        "output/histsystpreUL_{samplesystpreUL}-{iysystpreUL}.coffea"
+#    params:
+#        hash=config['hash'],
+#        diff=config['diff'],
+#        isam="{samplesystpreUL}",
+#        iy="{iysystpreUL}",
+#        output="histsystpreUL_{samplesystpreUL}-{iysystpreUL}.coffea",
+#        logname="syst_preUL_{samplesystpreUL}-{iysystpreUL}"
 
-rule merging_coffea_files_databkgs:
+#rule merging_coffea_files_databkgs:
+#    input:
+#        files = ['output/histAll_bkgsdata.coffea', 'output/histAll_signal_preUL.coffea']
+#    output: "output/histAll.coffea"
+#    container: "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
+#    params:
+#        output= "histAll.coffea",
+#        logname= "databkgs"
+#    resources:
+#        kerberos=True,
+#        compute_backend="kubernetes",
+#        kubernetes_memory_limit="9.5Gi"
+#    shell:
+#        """
+#mprof run -C -o python/mprofile_merge_{params.logname}.dat python python/analysis/merge_coffea_files.py -f {input.files} -o {output}
+#mprof plot -o output/mprofile_merge_{params.logname}.png python/mprofile_merge_{params.logname}.dat
+#xrdcp {output} root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/{params.output}
+#cp {output} /eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/{params.output}
+#        """
+
+rule merging_coffea_files_syst:
     input:
-        files = ['output/histAll_bkgsdata.coffea', 'output/histAll_signal_preUL.coffea', 'output/histAll_signal.coffea']
-    output: "output/histAll.coffea"
+        files = expand(['output/histsyst_{idatsyst}-{iyear}.coffea'], idatsyst=config['dataset_systematics'], iyear=config['year']) #+ expand(['output/histsystpreUL_{idat}-{iyear}.coffea'], idat=config['dataset_preUL'], iyear=config['year_preUL'])
     container: "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
+    output:
+        "output/histAll_syst.coffea"
     params:
-        output= "histAll.coffea",
-        logname= "databkgs"
+        output= "histAll_syst.coffea",
+        logname= "syst"
     resources:
         kerberos=True,
         compute_backend="kubernetes",
@@ -156,24 +190,15 @@ xrdcp {output} root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/reana/{T
 cp {output} /eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/{params.output}
         """
 
-use rule merging_coffea_files_databkgs as merging_coffea_files_syst with:
+use rule merging_coffea_files_syst as merging_coffea_files_signal_diffHHH with:
     input:
-        files = expand(['output/histsyst_{idatsyst}-{iyear}.coffea'], idatsyst=config['dataset_systematics'], iyear=config['year']) + expand(['output/histsystpreUL_{idat}-{iyear}.coffea'], idat=config['dataset_preUL'], iyear=config['year_preUL'])
+        files = expand(['output/histsignal_{idatsignal}-{iyear}.coffea'], idatsignal=config['dataset_signal'], iyear=config['year']) 
 
     output:
-        "output/histAll_syst.coffea"
+        "output/histAll_signals_cHHHX.coffea"
     params:
-        output= "histAll_syst.coffea",
-        logname= "syst"
-
-use rule merging_coffea_files_databkgs as merging_coffea_files_signal with:
-    input:
-        files = expand(['output/histdatabkgs_{idat}-{iyear}.coffea'], idat=['HH4b', 'ZH4b', 'ZZ4b'], iyear=config['year'])
-    output:
-        "output/histSignal.coffea"
-    params:
-        output= "histSignal.coffea",
-        logname= "signal"
+        output= "histAll_signals_cHHHX.coffea",
+        logname= "signals_cHHHX"
 
 
 rule make_plots:
@@ -195,34 +220,63 @@ mprof plot -o mprofile_makeplots.png ../output/mprofile_makeplots.dat
 python .php-plots/bin/pb_deploy_plots.py ../output/RunII/ /eos/user/a/algomez/work/HH4b/reana/{TIMESTAMP}/ -r -c
         """
         
-#rule convert_hist_to_yml:
-#    input:
-#        inall = "output/histAll.coffea",
-#        insyst = "output/histAll_syst.coffea"
-#    output:
-#        outall = "output/histAll.yml",
-#        outsyst = "output/histAll_systematics.yml"
-#    container:
-#        "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
-#    resources:
-#        compute_backend="kubernetes",
-#        kubernetes_memory_limit="8Gi"
-#    shell:
-#        """
-#python python/stats_analysis/convert_hist_to_yaml.py -o {output.outall} -i {input.inall}
-#python python/stats_analysis/convert_hist_to_yaml.py -o {output.outsyst} -i {input.insyst} -s
-#        """
-#
-#rule convert_yml_to_hist:
-#    input:
-#        "output/histAll.yml"
-#    output:
-#        "output/datacards/hists_SvB.root"
-#    container:
-#        "gitlab-registry.cern.ch/cms-cloud/combine-standalone:v9.2.0"
-#    resources:
-#        compute_backend="kubernetes"
-#    shell:
-#        """
-#python python/stats_analysis/convert_yml_to_root.py --classifier SvB_MA SvB -f output/histAll.yml --merge2016 --output_dir output/datacards/ --plot --make_combine_inputs
-#        """
+rule convert_hist_to_json:
+    input:
+        inall = "output/histAll.coffea",
+        insyst = "output/histAll_syst.coffea"
+    output:
+        outall = "output/histAll.json",
+        outsyst = "output/histAll_syst.json"
+    container:
+        "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
+    resources:
+        compute_backend="kubernetes",
+        kubernetes_memory_limit="8Gi"
+    shell:
+        """
+python python/stats_analysis/convert_hist_to_json.py -o {output.outall} -i {input.inall}
+python python/stats_analysis/convert_hist_to_json.py -o {output.outsyst} -i {input.insyst} -s
+        """
+
+rule make_combine_inputs:
+    input:
+        injson = "output/histAll.json",
+        injsonsyst = "output/histAll_syst.json"
+    output:
+        "output/datacards/hists_SvB.root",
+        "output/datacards/hists_SvB_MA.root",
+        "output/datacards/combine_SvB.txt",
+        "output/datacards/combine_SvB_MA.txt"
+    container:
+        "docker://gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0"
+    resources:
+        compute_backend="kubernetes"
+    shell:
+        """
+source /cvmfs/cms.cern.ch/cmsset_default.sh
+cd /home/cmsusr/CMSSW_11_3_4/
+cmsenv || true
+cd -
+python3 python/stats_analysis/make_combine_inputs.py --classifier SvB_MA SvB -f {input.injson} --merge2016 --output_dir output/datacards/ --make_combine_inputs --syst_file {input.injsonsyst} --stat_only
+        """
+
+rule run_combine:
+    input:
+        "output/datacards/combine_SvB_MA.txt"
+    output:
+        "output/datacards/combine_SvB_MA.root",
+        'output/limits.txt'
+    container:
+        "docker://gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0"
+    resources:
+        compute_backend="kubernetes"
+    shell:
+        """
+source /cvmfs/cms.cern.ch/cmsset_default.sh
+cd /home/cmsusr/CMSSW_11_3_4/
+cmsenv || true
+cd -
+cat {input}
+echo "RUNNING COMBINE"
+source python/stats_analysis/run_combine.sh output/datacards/ > output/limits.txt
+        """
