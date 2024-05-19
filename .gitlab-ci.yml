@@ -324,24 +324,6 @@ histtojson-test-job:
     paths:
       - python/stats_analysis/hists/histAll.json
 
-##ymltoroot-test-job:   
-##  stage: plot
-##  needs: 
-##    - histtojson-test-job
-##  image: gitlab-registry.cern.ch/cms-cloud/cmssw-docker/cc7-cms 
-##  tags:
-##    - k8s-cvmfs
-##  script:
-##    - source /cvmfs/sft.cern.ch/lcg/views/LCG_104/x86_64-centos7-gcc12-opt/setup.sh
-##    - cd python/stats_analysis/
-##    - python convert_yml_to_root.py --classifier SvB_MA SvB -f hists/histAll.yml --merge2016 --output_dir datacards/ --plot --make_combine_inputs
-##  artifacts: 
-##    expire_in: 1 day
-##    paths:
-##      - python/stats_analysis/datacards/test_plot_SvB_MA_hh.png
-##      - python/stats_analysis/datacards/test_plot_SvB_hh.png
-
-
 .base_combine:
   image: gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0
   before_script:
