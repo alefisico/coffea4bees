@@ -200,11 +200,11 @@ class analysis(processor.ProcessorABC):
                 event["FvT"] = ( NanoEventsFactory.from_root( f'{fname.replace("picoAOD", "FvT")}', entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().FvT )
 
             if "std" not in event.FvT.fields:
-                event["FvT", "std"] = np.ones(len(event)) 
-                event["FvT", "pt4"] = np.ones(len(event)) 
-                event["FvT", "pt3"] = np.ones(len(event)) 
-                event["FvT", "pd4"] = np.ones(len(event)) 
-                event["FvT", "pd3"] = np.ones(len(event)) 
+                event["FvT", "std"] = np.ones(len(event))
+                event["FvT", "pt4"] = np.ones(len(event))
+                event["FvT", "pt3"] = np.ones(len(event))
+                event["FvT", "pd4"] = np.ones(len(event))
+                event["FvT", "pd3"] = np.ones(len(event))
 
             event["FvT", "frac_err"] = event["FvT"].std / event["FvT"].FvT
             if not ak.all(event.FvT.event == event.event):
@@ -247,6 +247,51 @@ class analysis(processor.ProcessorABC):
         #
         event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year], isMixedData)
 
+        #error = ((event["event"] == 393973 ) |
+        #         (event["event"] ==  27025 ) |
+        #         (event["event"] ==  33477 ) |
+        #         (event["event"] ==  67884 ) |
+        #         (event["event"] ==  31894 ) |
+        #         (event["event"] ==  32328 ) |
+        #         (event["event"] ==  57908 ) |
+        #         (event["event"] == 111840 ) |
+        #         (event["event"] == 113544 ) |
+        #         (event["event"] == 122604 ) )
+
+
+        error = ((event["event"] ==    409 ) |
+                 (event["event"] ==    798 ) |
+                 (event["event"] == 150236 ) |
+                 (event["event"] == 325496 ) |
+                 (event["event"] == 334807 ) |
+                 (event["event"] == 354068 ) |
+                 (event["event"] == 354245 ) |
+                 (event["event"] == 354795 ) |
+                 (event["event"] ==   2412 ) |
+                 (event["event"] == 200846 ) )
+
+
+        if np.any(error):
+            logging.warning("Before---------\n")
+    
+            #selev.Jet[selev.Jet.selected_loose].pt
+            event['Jet', 'selected_eta'] = (np.abs(event.Jet.eta) <= 2.4) & (event.Jet.jetId>=2)
+            logging.warning(f"eta{event.Jet[event.Jet.selected_eta].eta[error]}")
+            logging.warning(f"pt {event.Jet[event.Jet.selected_eta].pt[error][0:10]}")
+            for i in range(10):
+                logging.warning(f"pt {event.Jet[event.Jet.selected_eta].pt[error][i]}   {event.run[error][i]} {event.event[error][i]}")            
+            
+            #event['Jet', 'selected_pt'] = (event.Jet.pt >= 40)
+            
+            event['Jet', 'selected_pt_eta'] = (event.Jet.pt >= 40) & (np.abs(event.Jet.eta) <= 2.4) #& ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
+            event['nJet_selected_pt_eta'] = ak.sum(event.Jet.selected_pt_eta, axis=1)
+            logging.warning(f"pt_eta{event.nJet_selected_pt_eta[error]}")
+            
+            logging.warning("----------\n")
+
+        
+
+        
         #
         # Checking boosted selection (should change in the future)
         #
@@ -305,6 +350,40 @@ class analysis(processor.ProcessorABC):
         weights = Weights(len(event), storeIndividual=True)
         list_weight_names = []
 
+
+        error = ((event["event"] ==    409 ) |
+                 (event["event"] ==    798 ) |
+                 (event["event"] == 150236 ) |
+                 (event["event"] == 325496 ) |
+                 (event["event"] == 334807 ) |
+                 (event["event"] == 354068 ) |
+                 (event["event"] == 354245 ) |
+                 (event["event"] == 354795 ) |
+                 (event["event"] ==   2412 ) |
+                 (event["event"] == 200846 ) )
+
+
+        if np.any(error):
+            logging.warning("After---------\n")
+    
+            #selev.Jet[selev.Jet.selected_loose].pt
+            event['Jet', 'selected_eta'] = (np.abs(event.Jet.eta) <= 2.4) & (event.Jet.jetId>=2)
+            logging.warning(f"eta{event.Jet[event.Jet.selected_eta].eta[error]}")
+            logging.warning(f"pt {event.Jet[event.Jet.selected_eta].pt[error][0:10]}")
+            for i in range(10):
+                logging.warning(f"pt {event.Jet[event.Jet.selected_eta].pt[error][i]}   {event.run[error][i]} {event.event[error][i]}")            
+            
+            #event['Jet', 'selected_pt'] = (event.Jet.pt >= 40)
+            
+            event['Jet', 'selected_pt_eta'] = (event.Jet.pt >= 40) & (np.abs(event.Jet.eta) <= 2.4) #& ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
+            event['nJet_selected_pt_eta'] = ak.sum(event.Jet.selected_pt_eta, axis=1)
+            logging.warning(f"pt_eta{event.nJet_selected_pt_eta[error]}")
+            
+            logging.warning("----------\n")
+
+
+
+        
         #
         # general event weights
         #
@@ -421,7 +500,7 @@ class analysis(processor.ProcessorABC):
 
         # Apply object selection (function does not remove events, adds content to objects)
         event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year],
-                                           isMixedData=isMixedData, isTTForMixed=isTTForMixed, isDataForMixed=isDataForMixed, )
+                                           isMixedData=isMixedData, isTTForMixed=isTTForMixed, isDataForMixed=isDataForMixed, debugProc=True)
 
         selections = PackedSelection()
         selections.add( "lumimask", event.lumimask)
