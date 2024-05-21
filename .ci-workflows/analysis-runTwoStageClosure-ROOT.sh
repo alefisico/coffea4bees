@@ -41,7 +41,7 @@ python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 20 --o
 #  python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 20 --outputPath stats_analysis/tests --skip_closure
 
 python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 20 --outputPath stats_analysis/tests --reuse_inputs --do_CI
-python3 stats_analysis/tests/test_runTwoStageClosure.py --knownCounts stats_analysis/tests/known_twoStageClosure_counts_SvB_MA_ps_hh_rebin20.yml --output_path stats_analysis/tests/
+python3 stats_analysis/tests/test_runTwoStageClosure.py --knownCounts stats_analysis/tests/known_twoStageClosure_counts_SvB_MA_ps_hh_rebin20.yml --output_path stats_analysis/tests/ --inputFile stats_analysis/tests/3bDvTMix4bDvT/SvB_MA/rebin20/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin20.root
 
 python3 stats_analysis/tests/dumpTwoStageInputs.py --input stats_analysis/tests/3bDvTMix4bDvT/SvB_MA/rebin20/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin20.root   --output stats_analysis/tests/test_dump_twoStageClosureInputsCounts.yml
 
