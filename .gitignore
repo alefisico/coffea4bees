@@ -183,3 +183,8 @@ python/stats_analysis/closureFits/
 python/stats_analysis/testsCI/
 python/stats_analysis/testsFull/
 python/skimmer/*root
+
+
+python/skimmer/test/
+python/stats_analysis/closureFitsNew/
+python/.sites_map.json

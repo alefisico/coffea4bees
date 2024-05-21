@@ -46,7 +46,7 @@ def apply_object_selection_4b( event, year, isMC, dataset, corrections_metadata,
     else: selLepton = event.selMuon
 
 
-    if isMixedData or isTTForMixed or isDataForMixed:   #### AGE: to simplify
+    if isMixedData or isTTForMixed or isDataForMixed:
         event['Jet', 'pileup'] = ((event.Jet.puId < 0b110) & (event.Jet.pt < 50)) | ((np.abs(event.Jet.eta) > 2.4) & (event.Jet.pt < 40))
         event['Jet', 'selected_loose'] = (event.Jet.pt >= 20) & ~event.Jet.pileup & (event.Jet.jetId>=2)
         event['Jet', 'selected'] = (event.Jet.pt >= 40) & (np.abs(event.Jet.eta) <= 2.4) & ~event.Jet.pileup & (event.Jet.jetId>=2)
