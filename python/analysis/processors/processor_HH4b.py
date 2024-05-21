@@ -199,6 +199,12 @@ class analysis(processor.ProcessorABC):
             else:
                 event["FvT"] = ( NanoEventsFactory.from_root( f'{fname.replace("picoAOD", "FvT")}', entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().FvT )
 
+            if "std" not in event.FvT.fields:
+                event["FvT", "std"] = np.ones(len(event)) 
+                event["FvT", "pt4"] = np.ones(len(event)) 
+                event["FvT", "pt3"] = np.ones(len(event)) 
+                event["FvT", "pd4"] = np.ones(len(event)) 
+                event["FvT", "pd3"] = np.ones(len(event)) 
 
             event["FvT", "frac_err"] = event["FvT"].std / event["FvT"].FvT
             if not ak.all(event.FvT.event == event.event):
@@ -206,14 +212,16 @@ class analysis(processor.ProcessorABC):
 
         if self.run_SvB:
             if (self.classifier_SvB is None) | (self.classifier_SvB_MA is None):
-                SvB_file = f'{path}/SvB_newSBDef.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_ULHH")}'
+                #SvB_file = f'{path}/SvB_newSBDef.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_ULHH")}'
+                SvB_file = f'{path}/SvB_ULHH.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_ULHH")}'
                 event["SvB"] = ( NanoEventsFactory.from_root( SvB_file,
                                                               entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().SvB )
 
                 if not ak.all(event.SvB.event == event.event):
                     raise ValueError("ERROR: SvB events do not match events ttree")
 
-                SvB_MA_file = f'{path}/SvB_MA_newSBDef.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_MA_ULHH")}'
+                #SvB_MA_file = f'{path}/SvB_MA_newSBDef.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_MA_ULHH")}'
+                SvB_MA_file = f'{path}/SvB_MA_ULHH.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_MA_ULHH")}'
                 event["SvB_MA"] = ( NanoEventsFactory.from_root( SvB_MA_file,
                                                                  entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema ).events().SvB_MA )
 
