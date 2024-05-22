@@ -152,6 +152,11 @@ class analysis(processor.ProcessorABC):
                                 (event.matchedGenJet[:,0] + event.matchedGenJet[:,1] + event.matchedGenJet[:,2] + event.matchedGenJet[:,3]).mass,
                                 -999 )
 
+        event['Jet', 'selected'] = (event.Jet.pt >= 40) & (np.abs(event.Jet.eta) <= 2.4)
+        event['selJet'] = event.Jet[ event.Jet.selected ]
+        event['matchedRecoJet'] = event.bfromH.nearest( event.selJet, threshold=0.2 )
+        event['matchedRecoJet'] = event.matchedRecoJet[ ak.argsort(event.matchedRecoJet.pt, axis=1, ascending=False) ]
+
         hist = { 'hists': {} }
         process_axis = hist2.axis.StrCategory([], name='process', growth=True)
         sel_axis = hist2.axis.StrCategory([], name='selection', growth=True)
@@ -189,6 +194,12 @@ class analysis(processor.ProcessorABC):
             hist2.storage.Weight()
         )
 
+        hist['hists']['puId'] = hist2.Hist(
+            process_axis, sel_axis,
+            hist2.axis.Regular( 10, 0, 10, name='puId' ),
+            hist2.storage.Double()
+        )
+
         cuts = {
             'noselection' : [],
             'reco_fourtag' : ['passFourTag'],
@@ -198,7 +209,7 @@ class analysis(processor.ProcessorABC):
         for iname, icut in cuts.items():
             icut = selections.all(*icut)
             hist['hists']['numGenJets'].fill(
-                process=processName,
+                process=dataset,
                 selection=iname,
                 n=ak.num(event.selGenJet[icut]),
                 weight=weights.weight()[icut]
@@ -206,83 +217,88 @@ class analysis(processor.ProcessorABC):
 
             event['selGenJet'] = ak.pad_none( event.selGenJet, 4, axis=1 )
             hist['hists']['genJet1_pt'].fill(
-                process=processName,
+                process=dataset,
                 selection=iname,
                 pt=ak.to_numpy(ak.fill_none(event['selGenJet'][icut][:,0].pt, np.nan)),
                 weight=weights.weight()[icut]
             )
             hist['hists']['genJet4_pt'].fill(
-                process=processName,
+                process=dataset,
                 selection=iname,
                 pt=ak.to_numpy(ak.fill_none(event['selGenJet'][icut][:,3].pt, np.nan)),
                 weight=weights.weight()[icut]
             )
             hist['hists']['genJet1_eta'].fill(
-                process=processName,
+                process=dataset,
                 selection=iname,
                 eta=ak.to_numpy(ak.fill_none(event['selGenJet'][icut][:,0].eta, np.nan)),
                 weight=weights.weight()[icut]
             )
             hist['hists']['genJet4_eta'].fill(
-                process=processName,
+                process=dataset,
                 selection=iname,
                 eta=ak.to_numpy(ak.fill_none(event['selGenJet'][icut][:,3].eta, np.nan)),
                 weight=weights.weight()[icut]
             )
 
             hist['hists']['matchgenJet1_pt'].fill(
-                process=processName,
+                process=dataset,
                 selection=iname,
                 pt=ak.to_numpy(ak.fill_none(event['matchedGenJet'][icut][:,0].pt, np.nan)),
                 weight=weights.weight()[icut]
             )
             hist['hists']['matchgenJet1_eta'].fill(
-                process=processName,
+                process=dataset,
                 selection=iname,
                 eta=ak.to_numpy(ak.fill_none(event['matchedGenJet'][icut][:,0].eta, np.nan)),
                 weight=weights.weight()[icut]
             )
             hist['hists']['matchgenJet2_pt'].fill(
-                process=processName,
+                process=dataset,
                 selection=iname,
                 pt=ak.to_numpy(ak.fill_none(event['matchedGenJet'][icut][:,1].pt, np.nan)),
                 weight=weights.weight()[icut]
             )
             hist['hists']['matchgenJet2_eta'].fill(
-                process=processName,
+                process=dataset,
                 selection=iname,
                 eta=ak.to_numpy(ak.fill_none(event['matchedGenJet'][icut][:,1].eta, np.nan)),
                 weight=weights.weight()[icut]
             )
             hist['hists']['matchgenJet3_pt'].fill(
-                process=processName,
+                process=dataset,
                 selection=iname,
                 pt=ak.to_numpy(ak.fill_none(event['matchedGenJet'][icut][:,2].pt, np.nan)),
                 weight=weights.weight()[icut]
             )
             hist['hists']['matchgenJet3_eta'].fill(
-                process=processName,
+                process=dataset,
                 selection=iname,
                 eta=ak.to_numpy(ak.fill_none(event['matchedGenJet'][icut][:,2].eta, np.nan)),
                 weight=weights.weight()[icut]
             )
             hist['hists']['matchgenJet4_pt'].fill(
-                process=processName,
+                process=dataset,
                 selection=iname,
                 pt=ak.to_numpy(ak.fill_none(event['matchedGenJet'][icut][:,3].pt, np.nan)),
                 weight=weights.weight()[icut]
             )
             hist['hists']['matchgenJet4_eta'].fill(
-                process=processName,
+                process=dataset,
                 selection=iname,
                 eta=ak.to_numpy(ak.fill_none(event['matchedGenJet'][icut][:,3].eta, np.nan)),
                 weight=weights.weight()[icut]
             )
             hist['hists']['m4j'].fill(
-                process=processName,
+                process=dataset,
                 selection=iname,
                 mass=ak.to_numpy(ak.fill_none(event['m4j'][icut], np.nan)),
                 weight=weights.weight()[icut]
+            )
+            hist['hists']['puId'].fill(
+                process=dataset,
+                selection=iname,
+                puId=ak.to_numpy(ak.fill_none(ak.flatten(event['matchedRecoJet'][icut].puId), np.nan)),
             )
 
         self._cutFlow = cutFlow(self.cutFlowCuts)

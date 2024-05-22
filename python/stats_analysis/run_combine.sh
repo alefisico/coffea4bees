@@ -4,6 +4,8 @@ for iclass in SvB_MA;
 do
     text2workspace.py ${datacard_folder}/combine_${iclass}.txt -P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel --PO verbose --PO 'map=.*/HH:rHH[1,-10,10]' #--PO 'map=.*/ZH:rZH[1,-10,10]' --PO 'map=.*/ZZ:rZZ[1,-10,10]'
     combine -M AsymptoticLimits ${datacard_folder}/combine_${iclass}.root --redefineSignalPOIs rHH -n _${iclass} > ${datacard_folder}/limits.txt
+    cat ${datacard_folder}/limits.txt
+    combineTool.py -M CollectLimits higgsCombine_${iclass}.AsymptoticLimits.mH120.root -o ${datacard_folder}/limits.json
 
     if [ $# -eq 2 ]
       then
