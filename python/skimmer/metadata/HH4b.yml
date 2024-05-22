@@ -17,8 +17,8 @@ runner:
     - T2_US_Purdue
 
 config:
-  base_path: root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v1/
-  #base_path: /srv/python/skimmer/test/   ### local
+  #base_path: root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v1/
+  base_path: /srv/python/skimmer/test/   ### local
   step: 100000
   skip_collections:
     - Photon

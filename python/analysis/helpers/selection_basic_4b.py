@@ -23,7 +23,7 @@ def apply_event_selection_4b( event, isMC, corrections_metadata, isMixedData = F
 
     return event
 
-def apply_object_selection_4b( event, year, isMC, dataset, corrections_metadata, *, isMixedData=False, isTTForMixed=False, isDataForMixed=False, doLeptonRemoval=True  ):
+def apply_object_selection_4b( event, year, isMC, dataset, corrections_metadata, *, isMixedData=False, isTTForMixed=False, isDataForMixed=False, doLeptonRemoval=True, loosePtForSkim=False  ):
     """docstring for apply_basic_selection_4b. This fuction is not modifying the content of anything in events. it is just adding it"""
 
     #
@@ -88,6 +88,17 @@ def apply_object_selection_4b( event, year, isMC, dataset, corrections_metadata,
     tagCode[event.fourTag]  = 4
     tagCode[event.threeTag] = 3
     event['tag'] = tagCode
+
+
+    # Only need 30 GeV jets for signal systematics
+    if loosePtForSkim:
+        event['Jet', 'selected30'] = (event.Jet.pt >= 30) & (np.abs(event.Jet.eta) <= 2.4) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
+        event['nJet_selected30'] = ak.sum(event.Jet.selected30, axis=1)
+        event['Jet', 'tagged30']     = event.Jet.selected30 & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['M'])
+        event['passJetMult30'] = event.nJet_selected30 >= 4
+        event['nJet_tagged30']       = ak.num(event.Jet[event.Jet.tagged30])
+        event["fourTag30"]  = (event['nJet_tagged30']     >= 4)
+        event['passPreSel30'] = event.threeTag | event.fourTag30
 
     return event
 

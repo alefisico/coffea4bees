@@ -70,7 +70,10 @@ class PicoAOD(ProcessorABC):
             }
         }}
 
-        self._cutFlow.addOutputSkim(result, dataset)
+        lumi    = events.metadata.get('lumi',    1.0)
+        xs      = events.metadata.get('xs',      1.0)
+        kFactor = events.metadata.get('kFactor', 1.0)
+        self._cutFlow.addOutputSkim(result, dataset, lumi=lumi, xs=xs, kFactor=kFactor)
 
         if result[dataset]['saved_events'] > 0:
             filename = f'{dataset}/{_PICOAOD}_{chunk.uuid}_{chunk.entry_start}_{chunk.entry_stop}{_ROOT}'
