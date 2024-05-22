@@ -797,7 +797,7 @@ class analysis(processor.ProcessorABC):
                     selev["xbW_reco"] = selev["xbW"]
                     selev["xW_reco"]  = selev["xW"]
 
-                self.compute_SvB(selev)  ### this computes both
+                self.compute_SvB(selev)
 
             quadJet["SvB_q_score"] = np.concatenate( ( np.reshape(np.array(selev.SvB.q_1234), (-1, 1)),
                                                        np.reshape(np.array(selev.SvB.q_1324), (-1, 1)),
@@ -1197,18 +1197,17 @@ class analysis(processor.ProcessorABC):
                     worst = np.max(delta) == delta
                     worst_event = event[worst][0]
 
-                    logging.warning( f"WARNING: Calculated {classifier} does not agree " f"within tolerance for some events ({np.sum(error)}/{len(error)})",
-                                     delta[worst], )
+                    logging.warning( f"WARNING: Calculated {classifier} does not agree within tolerance for some events ({np.sum(error)}/{len(error)}) {delta[worst]}" )
 
                     logging.warning("----------")
 
                     for field in event[classifier].fields:
-                        logging.warning(field, worst_event[classifier][field])
+                        logging.warning(f"{field} {worst_event[classifier][field]}")
 
                     logging.warning("----------")
 
                     for field in SvB.fields:
-                        logging.warning(f"{field}, {SvB[worst][field]}")
+                        logging.warning(f"{field} {SvB[worst][field]}")
 
             # del event[classifier]
             event[classifier] = SvB
