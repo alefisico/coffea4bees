@@ -259,39 +259,39 @@ class analysis(processor.ProcessorABC):
         #         (event["event"] == 122604 ) )
 
 
-        error = ((event["event"] ==    409 ) |
-                 (event["event"] ==    798 ) |
-                 (event["event"] == 150236 ) |
-                 (event["event"] == 325496 ) |
-                 (event["event"] == 334807 ) |
-                 (event["event"] == 354068 ) |
-                 (event["event"] == 354245 ) |
-                 (event["event"] == 354795 ) |
-                 (event["event"] ==   2412 ) |
-                 (event["event"] == 200846 ) )
+#        error = ((event["event"] ==    409 ) |
+#                 (event["event"] ==    798 ) |
+#                 (event["event"] == 150236 ) |
+#                 (event["event"] == 325496 ) |
+#                 (event["event"] == 334807 ) |
+#                 (event["event"] == 354068 ) |
+#                 (event["event"] == 354245 ) |
+#                 (event["event"] == 354795 ) |
+#                 (event["event"] ==   2412 ) |
+#                 (event["event"] == 200846 ) )
+#
+#
+#        if np.any(error):
+#            logging.warning("Before---------\n")
+#
+#            #selev.Jet[selev.Jet.selected_loose].pt
+#            event['Jet', 'selected_eta'] = (np.abs(event.Jet.eta) <= 2.4) & (event.Jet.jetId>=2)
+#            logging.warning(f"eta{event.Jet[event.Jet.selected_eta].eta[error]}")
+#            logging.warning(f"pt {event.Jet[event.Jet.selected_eta].pt[error][0:10]}")
+#            for i in range(10):
+#                logging.warning(f"pt {event.Jet[event.Jet.selected_eta].pt[error][i]}   {event.run[error][i]} {event.event[error][i]}")
+#
+#            #event['Jet', 'selected_pt'] = (event.Jet.pt >= 40)
+#
+#            event['Jet', 'selected_pt_eta'] = (event.Jet.pt >= 40) & (np.abs(event.Jet.eta) <= 2.4) #& ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
+#            event['nJet_selected_pt_eta'] = ak.sum(event.Jet.selected_pt_eta, axis=1)
+#            logging.warning(f"pt_eta{event.nJet_selected_pt_eta[error]}")
+#
+#            logging.warning("----------\n")
 
 
-        if np.any(error):
-            logging.warning("Before---------\n")
-    
-            #selev.Jet[selev.Jet.selected_loose].pt
-            event['Jet', 'selected_eta'] = (np.abs(event.Jet.eta) <= 2.4) & (event.Jet.jetId>=2)
-            logging.warning(f"eta{event.Jet[event.Jet.selected_eta].eta[error]}")
-            logging.warning(f"pt {event.Jet[event.Jet.selected_eta].pt[error][0:10]}")
-            for i in range(10):
-                logging.warning(f"pt {event.Jet[event.Jet.selected_eta].pt[error][i]}   {event.run[error][i]} {event.event[error][i]}")            
-            
-            #event['Jet', 'selected_pt'] = (event.Jet.pt >= 40)
-            
-            event['Jet', 'selected_pt_eta'] = (event.Jet.pt >= 40) & (np.abs(event.Jet.eta) <= 2.4) #& ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
-            event['nJet_selected_pt_eta'] = ak.sum(event.Jet.selected_pt_eta, axis=1)
-            logging.warning(f"pt_eta{event.nJet_selected_pt_eta[error]}")
-            
-            logging.warning("----------\n")
 
-        
 
-        
         #
         # Checking boosted selection (should change in the future)
         #
@@ -351,39 +351,39 @@ class analysis(processor.ProcessorABC):
         list_weight_names = []
 
 
-        error = ((event["event"] ==    409 ) |
-                 (event["event"] ==    798 ) |
-                 (event["event"] == 150236 ) |
-                 (event["event"] == 325496 ) |
-                 (event["event"] == 334807 ) |
-                 (event["event"] == 354068 ) |
-                 (event["event"] == 354245 ) |
-                 (event["event"] == 354795 ) |
-                 (event["event"] ==   2412 ) |
-                 (event["event"] == 200846 ) )
+#        error = ((event["event"] ==    409 ) |
+#                 (event["event"] ==    798 ) |
+#                 (event["event"] == 150236 ) |
+#                 (event["event"] == 325496 ) |
+#                 (event["event"] == 334807 ) |
+#                 (event["event"] == 354068 ) |
+#                 (event["event"] == 354245 ) |
+#                 (event["event"] == 354795 ) |
+#                 (event["event"] ==   2412 ) |
+#                 (event["event"] == 200846 ) )
+#
+#
+#        if np.any(error):
+#            logging.warning("After---------\n")
+#
+#            #selev.Jet[selev.Jet.selected_loose].pt
+#            event['Jet', 'selected_eta'] = (np.abs(event.Jet.eta) <= 2.4) & (event.Jet.jetId>=2)
+#            logging.warning(f"eta{event.Jet[event.Jet.selected_eta].eta[error]}")
+#            logging.warning(f"pt {event.Jet[event.Jet.selected_eta].pt[error][0:10]}")
+#            for i in range(10):
+#                logging.warning(f"pt {event.Jet[event.Jet.selected_eta].pt[error][i]}   {event.run[error][i]} {event.event[error][i]}")
+#
+#            #event['Jet', 'selected_pt'] = (event.Jet.pt >= 40)
+#
+#            event['Jet', 'selected_pt_eta'] = (event.Jet.pt >= 40) & (np.abs(event.Jet.eta) <= 2.4) #& ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
+#            event['nJet_selected_pt_eta'] = ak.sum(event.Jet.selected_pt_eta, axis=1)
+#            logging.warning(f"pt_eta{event.nJet_selected_pt_eta[error]}")
+#
+#            logging.warning("----------\n")
 
 
-        if np.any(error):
-            logging.warning("After---------\n")
-    
-            #selev.Jet[selev.Jet.selected_loose].pt
-            event['Jet', 'selected_eta'] = (np.abs(event.Jet.eta) <= 2.4) & (event.Jet.jetId>=2)
-            logging.warning(f"eta{event.Jet[event.Jet.selected_eta].eta[error]}")
-            logging.warning(f"pt {event.Jet[event.Jet.selected_eta].pt[error][0:10]}")
-            for i in range(10):
-                logging.warning(f"pt {event.Jet[event.Jet.selected_eta].pt[error][i]}   {event.run[error][i]} {event.event[error][i]}")            
-            
-            #event['Jet', 'selected_pt'] = (event.Jet.pt >= 40)
-            
-            event['Jet', 'selected_pt_eta'] = (event.Jet.pt >= 40) & (np.abs(event.Jet.eta) <= 2.4) #& ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
-            event['nJet_selected_pt_eta'] = ak.sum(event.Jet.selected_pt_eta, axis=1)
-            logging.warning(f"pt_eta{event.nJet_selected_pt_eta[error]}")
-            
-            logging.warning("----------\n")
 
 
-
-        
         #
         # general event weights
         #

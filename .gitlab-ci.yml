@@ -31,7 +31,7 @@ stages:
 
 voms_proxy:
   stage: proxy
-  image: gitlab-registry.cern.ch/cms-cloud/cmssw-docker/cc7-cms:2024-04-30-3de95a51
+  image: gitlab-registry.cern.ch/clange/grid-proxy-test:latest
   artifacts:
     paths:
       - proxy
