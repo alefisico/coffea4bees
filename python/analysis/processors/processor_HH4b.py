@@ -308,7 +308,7 @@ class analysis(processor.ProcessorABC):
 
         else:
             juncWS = [ self.corrections_metadata[year]["JERC"][0].replace("STEP", istep)
-                       for istep in ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"] ] + self.corrections_metadata[year]["JERC"][2:]
+                       for istep in ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"] ] #+ self.corrections_metadata[year]["JERC"][2:]
 
             if self.run_systematics:
                 juncWS += [self.corrections_metadata[year]["JERC"][1]]

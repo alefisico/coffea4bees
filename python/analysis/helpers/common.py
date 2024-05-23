@@ -30,20 +30,20 @@ def init_jet_factory(weight_sets, event, isMC):   #### AGE: this is temporary, i
     extract.finalize()
     evaluator = extract.make_evaluator()
 
-    from coffea.jetmet_tools import CorrectedJetsFactory, CorrectedMETFactory, JECStack, JetResolution, JetResolutionScaleFactor
+    from coffea.jetmet_tools import CorrectedJetsFactory, CorrectedMETFactory, JECStack
     jec_stack_names = []
     for key in evaluator.keys():
         jec_stack_names.append(key)
         if 'UncertaintySources' in key:
             jec_stack_names.append(key)
 
-    # print(jec_stack_names)
+    logging.debug(jec_stack_names)
     jec_inputs = {name: evaluator[name] for name in jec_stack_names}
-    # print('jec_inputs:')
-    # print(jec_inputs)
+    logging.debug('jec_inputs:')
+    logging.debug(jec_inputs)
     jec_stack = JECStack(jec_inputs)
-    # print('jec_stack')
-    # print(jec_stack.__dict__)
+    logging.debug('jec_stack')
+    logging.debug(jec_stack.__dict__)
     name_map = jec_stack.blank_name_map
     name_map["JetPt"]    = "pt"
     name_map["JetMass"]  = "mass"
@@ -53,7 +53,7 @@ def init_jet_factory(weight_sets, event, isMC):   #### AGE: this is temporary, i
     name_map['ptRaw']    = 'pt_raw'
     name_map['massRaw']  = 'mass_raw'
     name_map['Rho']      = 'rho'
-    # print(name_map)
+    logging.debug(name_map)
 
     jet_factory = CorrectedJetsFactory(name_map, jec_stack)
     uncertainties = jet_factory.uncertainties()

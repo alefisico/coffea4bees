@@ -31,7 +31,7 @@ stages:
 
 voms_proxy:
   stage: proxy
-  image: gitlab-registry.cern.ch/clange/grid-proxy-test:latest
+  image: gitlab-registry.cern.ch/cms-cloud/cmssw-docker/cc7-cms:2024-04-30-3de95a51
   artifacts:
     paths:
       - proxy
@@ -261,18 +261,6 @@ analysis-cutflow-job-unsup:
  artifacts:
    paths:
      - python/analysis/tests/test_dump_cutflow_job_unsup.yml
-
-analysis-cutflow-job:    
-  stage: cutflow
-  extends:
-    - .base_analysis
-  needs: 
-    - analysis-test-job
-  script:
-    - source .ci-workflows/analysis-cutflow-job.sh
-  artifacts:
-    paths:
-      - python/analysis/tests/test_dump_cutflow.yml
 
 analysis-makeweights-job:    
   stage: fits
