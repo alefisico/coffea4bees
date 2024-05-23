@@ -182,9 +182,15 @@ set_ROOT.sh
 python/stats_analysis/closureFits/
 python/stats_analysis/testsCI/
 python/stats_analysis/testsFull/
+python/stats_analysis/tests/3bDvTMix4bDvT/SvB_MA/*/*/*/*pdf
+python/stats_analysis/tests/3bDvTMix4bDvT/SvB_MA/*/*/*/*C
+python/stats_analysis/tests/3bDvTMix4bDvT/SvB_MA/*/*/*/0*yml
+python/stats_analysis/tests/3bDvTMix4bDvT/SvB_MA/*/*/*/1*yml
+python/stats_analysis/tests/3bDvTMix4bDvT/SvB_MA/*/*/*/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin20.pkl
+python/stats_analysis/tests/test_dump_twoStageClosureInputsCounts.yml
 python/skimmer/*root
 
-
+python/analysis/tests/test_dump*.yml
 python/skimmer/test/
 python/stats_analysis/closureFitsNew/
 python/.sites_map.json
