@@ -262,18 +262,6 @@ analysis-cutflow-job-unsup:
    paths:
      - python/analysis/tests/test_dump_cutflow_job_unsup.yml
 
-analysis-cutflow-job:    
-  stage: cutflow
-  extends:
-    - .base_analysis
-  needs: 
-    - analysis-test-job
-  script:
-    - source .ci-workflows/analysis-cutflow-job.sh
-  artifacts:
-    paths:
-      - python/analysis/tests/test_dump_cutflow.yml
-
 analysis-makeweights-job:    
   stage: fits
   extends:
