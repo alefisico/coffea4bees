@@ -10,7 +10,7 @@ import torch.nn.functional as F
 from rich import box as BoxStyle
 from rich.table import Table
 
-from .utils import MeanVariance
+from ..algorithm.statistics.variance import TensorVariance
 
 
 class Lin_View(nn.Module):
@@ -370,7 +370,7 @@ class GhostBatchNorm1d(
             self.gamma = nn.Parameter(torch.ones(self.features))
             if bias:
                 self.bias = nn.Parameter(torch.zeros(self.features))
-        self._mean_var = MeanVariance()
+        self._mean_var = TensorVariance()
         self.runningStats = True
         self.initialized = False
 
@@ -413,7 +413,7 @@ class GhostBatchNorm1d(
             x = x[mask == 0, :, :]
         # this won't work for any layers with stride!=1
         x = x.view(-1, 1, self.stride, self.features)
-        self._mean_var += MeanVariance(x)
+        self._mean_var += TensorVariance(x)
 
     @torch.no_grad()
     def initMeanStd(self):

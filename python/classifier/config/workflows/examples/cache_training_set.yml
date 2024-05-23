@@ -4,6 +4,7 @@ main:
     - --max-writers 10
     - --nchunks 10
     - --shuffle # shuffle the dataset before splitting into chunks
+    - --states label.MultiClass.labels
 
 dataset:
   - module: HCR.FvT_picoAOD

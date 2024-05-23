@@ -11,11 +11,12 @@ from typing import TYPE_CHECKING, Callable, Optional
 import fsspec
 
 from ..utils import import_
+from .analysis import Analysis
 from .dataset import Dataset
 from .model import Model
 from .special import interface, new
 from .state import Cascade, _is_private
-from .task import ArgParser, Task
+from .task import Task
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -47,6 +48,7 @@ class EntryPoint:
         "setting": Cascade,
         "dataset": Dataset,
         "model": Model,
+        "analysis": Analysis,
     }
     _preserved = [*(f"--{k}" for k in _keys), f"--{_FROM}", f"--{_TEMPLATE}"]
 
@@ -162,68 +164,76 @@ class EntryPoint:
         if cls is None:
             raise AttributeError(f'Task "{self.args[_MAIN][0]}" not found')
 
-        if not cls._no_load:
+        if cls.prelude is not NotImplemented:
+            cls.prelude()
+
+        if not cls._no_init:
             self._fetch_all()
 
         self.main: Main = new(cls, self.args[_MAIN][1])
 
-        from ..config.setting import Monitor as cfg
+        from ..config import setting as cfg
 
-        if not cls._no_monitor and cfg.enable:
-            if cfg.address is None:
+        if cfg.Monitor.enable:
+            host, port = cfg.Monitor.address
+            if host is None:
                 from ..monitor import setup_monitor
                 from ..process.monitor import Monitor
 
                 Monitor().start()
                 setup_monitor()
-                address, port = Monitor.current()._address
-                logging.info(f"Started Monitor at {address}:{port}")
+                address = Monitor.current()._address
+                if isinstance(address, tuple):
+                    address = f"{address[0]}:{address[1]}"
+                logging.info(f"Started Monitor at {address}")
             else:
                 from ..monitor import setup_reporter
                 from ..process.monitor import connect_to_monitor
 
                 connect_to_monitor()
                 setup_reporter()
-                logging.info(f"Connecting to Monitor {cfg.address}:{cfg.port}")
+                address = host if port is None else f"{host}:{port}"
+                logging.info(f"Connecting to Monitor {address}")
 
-    def run(self, reproducible: Callable):
-        from ..config.setting import IO, save
+    def run(self, reproducible: Callable = None):
+        from ..config import setting as cfg
+        from ..config.main.analyze import run_analyzer
         from ..process.monitor import Recorder, wait_for_monitor
 
-        meta = self.main.run(self)
+        result = self.main.run(self)
         wait_for_monitor()
 
-        if self.main.flag("save_state"):
-            save.parse([IO.output / IO.file_states])
+        if (not self.main._no_state) and (not cfg.IO.states.is_null):
+            cfg.save.parse([cfg.IO.states])
+
+        analysis = run_analyzer(self, result)
+        if analysis:
+            result = result or {}
+            result["analysis"] = analysis
+
         Recorder.dump()
 
-        if meta is not None:
+        if (result is not None) and (not cfg.IO.result.is_null):
             from base_class.utils.json import DefaultEncoder
 
-            meta |= {
-                "command": self.cmd,
-                "reproducible": reproducible(),
-            }
-            with fsspec.open(
-                IO.output / IO.file_metadata,
-                "wt",
-            ) as f:
-                json.dump(meta, f, cls=DefaultEncoder)
+            result["command"] = self.cmd
+            if reproducible is not None:
+                result["reproducible"] = reproducible()
+
+            with fsspec.open(cfg.IO.result, "wt") as f:
+                json.dump(result, f, cls=DefaultEncoder)
 
 
 # main
 
 
 class Main(Task):
-    _no_monitor = False
-    _no_load = False
+    _no_state = False
+    _no_init = False
 
-    argparser = ArgParser()
-    argparser.add_argument(
-        "--save-state",
-        action="store_true",
-        help="save global states to the output directory",
-    )
+    @classmethod
+    @interface(optional=True)
+    def prelude(cls): ...
 
     @interface
     def run(self, parser: EntryPoint) -> Optional[dict[str]]: ...

@@ -49,16 +49,16 @@ class Main(SelectDevice, LoadTrainingSets):
         # load datasets in parallel
         datasets = self.load_training_sets(parser)
         # initialize datasets
-        m_initializer: list[Model] = parser.mods["model"]
+        models: list[Model] = parser.mods["model"]
         timer = datetime.now()
-        models = [*chain(*(m.train() for m in m_initializer))]
-        logging.info(f"Initialized {len(models)} models in {datetime.now() - timer}")
+        trainers = [*chain(*(m.train() for m in models))]
+        logging.info(f"Initialized {len(trainers)} models in {datetime.now() - timer}")
         # train models in parallel
         with Pool(
             max_workers=self.opts.max_trainers,
             mp_context=status.context,
             initializer=status.initializer,
         ) as pool:
-            results = [*pool.map(_train_model(self.device, datasets), models)]
+            results = [*pool.map(_train_model(self.device, datasets), trainers)]
 
         return {"models": results}

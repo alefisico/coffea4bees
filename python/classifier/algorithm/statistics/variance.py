@@ -2,7 +2,7 @@ import torch
 from base_class.math.statistics import Variance
 
 
-class MeanVariance(Variance[torch.Tensor]):
+class TensorVariance(Variance[torch.Tensor]):
     _t = torch.float32  # round-off error: ~1e-7
     _k = {"dim": 0, "keepdim": True, "dtype": _t}
 
