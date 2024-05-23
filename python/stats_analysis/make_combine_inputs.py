@@ -1,10 +1,12 @@
 import os, sys
 import ROOT
+import cmsstyle as CMS
 import argparse
 import logging
 import json
 import yaml
 import numpy as np
+import pickle
 from copy import copy
 from convert_json_to_root import json_to_TH1
 ROOT.gROOT.SetBatch(True)
@@ -50,7 +52,6 @@ class Column:
             if int(self.process.index)>0: continue
             if self.process.name == 'HH' and 'VFP'     in nuisance:                       continue # only apply 2016_*VFP systematics to ZZ and ZH
             if self.process.name != 'HH' and 'VFP' not in nuisance and   '6' in nuisance: continue # only apply 2016 systematics to HH
-            if 'prefire' in nuisance and '8' in self.channel.era: continue # no prefire in 2018
             if '201' in nuisance: # years are uncorrelated
                 if self.channel.era[-1] not in nuisance: continue
             self.mcSysts[nuisance] = '%3s'%'1'
@@ -100,12 +101,39 @@ class Column:
         for nuisance in self.mc_systs:
             self.mcSysts[nuisance] = self.mcSysts[nuisance]+s
 
+
+def make_trigger_syst( json_input, root_output, iyear, rebin ):
+
+    hData = json_input['nominal']['fourTag']['SR']
+    hMC = json_input['CMS_bbbb_resolved_ggf_triggerEffSFUp']['fourTag']['SR']
+    nominal = json_input['CMS_bbbb_resolved_ggf_triggerEffSFDown']['fourTag']['SR']
+
+    for num, denom, ivar in [ (nominal, hData, 'Up'), (nominal, hMC, 'Down')]:
+        n_sumw, n_sumw2 = np.array(num['values']), np.array(num['variances'])
+        d_sumw, d_sumw2 = np.array(denom['values']), np.array(denom['variances'])
+        ratio = np.divide(n_sumw, d_sumw, out=np.ones(len(n_sumw)), where=d_sumw!=0)
+        htrig = copy(hData)
+        htrig['values'] *= ratio
+        htrig['variances'] *= ratio*ratio
+        root_output[f'CMS_bbbb_resolved_ggf_triggerEffSF{ivar}'] = json_to_TH1( htrig, "HH_"+ivar+"_"+iyear, rebin )
+
+#    can = ROOT.TCanvas('test', 'test', 500, 500)
+#    root_output['nominal'].Draw()
+#    root_output['nominal'].SetLineColor(ROOT.kRed)
+#    root_output[f'CMS_bbbb_resolved_ggf_triggerEffSFUp'].Draw('same')
+#    root_output['CMS_bbbb_resolved_ggf_triggerEffSFUp'].SetLineColor(ROOT.kBlue)
+#    root_output[f'CMS_bbbb_resolved_ggf_triggerEffSFDown'].Draw('same')
+#    root_output['CMS_bbbb_resolved_ggf_triggerEffSFDown'].SetLineColor(ROOT.kMagenta)
+#    can.SaveAs("test.png")
+
+
 def create_combine_root_file( file_to_convert,
                              rebin,
                              classifier,
                              output_dir,
-                             plot,
                              systematics_file,
+                             bkg_systematics_file,
+                             make_syst_plots=False,
                              use_preUL=False,
                              add_old_bkg=False,
                              merge_2016=False,
@@ -116,13 +144,18 @@ def create_combine_root_file( file_to_convert,
     if systematics_file:
         logging.info(f"Reading {systematics_file}")
         coffea_hists_syst = json.load(open(systematics_file, 'r'))
+    if bkg_systematics_file and not stat_only:
+        logging.info(f"Reading {bkg_systematics_file}")
+        bkg_syst_file = pickle.load(open(bkg_systematics_file, 'rb'))
+    else:
+        logging.info("Running bkg systematics needs bkg file. It is missing")
 
     for iclass in classifier:
 
         root_hists = {}
         for channel in rebin.keys():
 
-            ih = iclass+'.ps_'+channel
+            ih = iclass+'.ps_'+channel#+'_fine'
             full_histo = coffea_hists[ih]
             for iyear in coffea_hists[ih]['data'].keys():
                 root_hists[channel+"_"+iyear] = {}
@@ -135,15 +168,23 @@ def create_combine_root_file( file_to_convert,
 
                 ### For ZH ZZ
                 for iprocess in coffea_hists[ih].keys():
-                    root_hists[channel+"_"+iyear][iprocess] = json_to_TH1(
+                    root_hists[channel+"_"+iyear][('HH' if iprocess.startswith('GluGlu') else iprocess)] = json_to_TH1(
                         coffea_hists[ih][iprocess][iyear]['fourTag']['SR'], iprocess.split('4b')[0]+"_"+iyear, rebin[channel] )
 
                 if systematics_file and not use_preUL:
                     iprocess = 'GluGluToHHTo4B_cHHH1'
                     root_hists[channel+"_"+iyear]['HH'] = {}
                     for ivar in coffea_hists_syst[ih][iprocess][iyear].keys():
+                        tmpvar = ''.join(ivar.replace('_Up', '').replace('Up','').replace('_Down','').replace('Down', '')[-2:])
+                        if tmpvar.isdigit() and int(tmpvar) != int(iyear[2:4]): continue
+                        if 'triggerEffSFUp' in ivar:
+                            make_trigger_syst(coffea_hists_syst[ih][iprocess][iyear],
+                                              root_hists[channel+"_"+iyear]['HH'],
+                                              iyear, rebin[channel])
+                        elif 'triggerEffSFDown' in ivar: continue
                         root_hists[channel+"_"+iyear]['HH'][ivar.replace('_Up', 'Up').replace('_Down', 'Down')] = json_to_TH1(
                             coffea_hists_syst[ih][iprocess][iyear][ivar]['fourTag']['SR'], "HH_"+ivar+"_"+iyear, rebin[channel] )
+
 
             if systematics_file and use_preUL:
                 iprocess = 'HH4b'
@@ -153,6 +194,7 @@ def create_combine_root_file( file_to_convert,
                     for ivar in coffea_hists_syst[ih][iprocess][iyear].keys():
                         root_hists[tmpname][iprocess][ivar] = json_to_TH1(
                             coffea_hists_syst[ih][iprocess][iyear][ivar]['fourTag']['SR'], iprocess+"_"+ivar+"_"+iyear, rebin[channel] )
+
 
         for iy in root_hists.keys():
             root_hists[iy]['tt'] = root_hists[iy]['data'].Clone()
@@ -181,7 +223,7 @@ def create_combine_root_file( file_to_convert,
             for iy in list(root_hists.keys()):
                 if 'UL16_preVFP' in iy:
                     for ip, _ in list(root_hists[iy].items()):
-                        if ip.startswith(('mj', 'HH')):
+                        if ip.startswith(('mj', 'HH')) and isinstance(root_hists[iy][ip], dict):
                             for iv, _ in list(root_hists[iy][ip].items()):
                                 root_hists[iy][ip][iv].Add( root_hists[iy.replace('pre', 'post')][ip][iv] )
                         elif 'HH4b' in ip:   ### AGE: temporary, HH4b is preUL
@@ -191,18 +233,26 @@ def create_combine_root_file( file_to_convert,
                     del root_hists[iy.replace('pre', 'post')]
                     root_hists['_'.join(iy.split('_')[:-1])] = root_hists.pop(iy)
 
-        if add_old_bkg:
-            old_bkg_file = ROOT.TFile(f'HIG-20-011/hist_{iclass}.root', 'read' )
-            for channel in rebin.keys():
-                for iy in ['UL16', 'UL17', 'UL18']:
-                    root_hists[f"{channel}_{iy}"]['mj']['nominal'] = old_bkg_file.Get(f"hh{iy[-1]}/mj")
-                    for i in ['0', '1', '2']:
-                        for ivar in ['Up', 'Down']:
-                            root_hists[f"{channel}_{iy}"]['mj'][f'basis{i}_bias_hh{ivar}'] = old_bkg_file.Get(f"hh{iy[-1]}/mj_basis{i}_bias_hh{ivar}")
-                            root_hists[f"{channel}_{iy}"]['mj'][f'basis{i}_vari_hh{ivar}'] = old_bkg_file.Get(f"hh{iy[-1]}/mj_basis{i}_vari_hh{ivar}")
 
-                    root_hists[f"{channel}_{iy}"]['data_obs'] = old_bkg_file.Get(f"hh{iy[-1]}/data_obs")
-                    root_hists[f"{channel}_{iy}"]['tt'] = old_bkg_file.Get(f"hh{iy[-1]}/tt")
+        if not stat_only:
+            if add_old_bkg:
+                old_bkg_file = ROOT.TFile(f'HIG-20-011/hist_{iclass}.root', 'read' )
+                for channel in rebin.keys():
+                    for iy in ['UL16', 'UL17', 'UL18']:
+                        for i in ['0', '1', '2']:
+                            for ivar in ['Up', 'Down']:
+                                root_hists[f"{channel}_{iy}"]['mj'][f'basis{i}_bias_hh{ivar}'] = old_bkg_file.Get(f"hh{iy[-1]}/mj_basis{i}_bias_hh{ivar}")
+                                root_hists[f"{channel}_{iy}"]['mj'][f'basis{i}_vari_hh{ivar}'] = old_bkg_file.Get(f"hh{iy[-1]}/mj_basis{i}_vari_hh{ivar}")
+            else:
+                for channel in rebin.keys():
+                    for iy in ['UL16', 'UL17', 'UL18']:
+                        for ibin, ivalues in bkg_syst_file.items():
+                            root_hists[f"{channel}_{iy}"]['mj'][ibin] = root_hists[f"{channel}_{iy}"]['mj']['nominal'].Clone()
+                            root_hists[f"{channel}_{iy}"]['mj'][ibin].SetName(f'mj_{ibin}')
+                            for i in range(len(ivalues)):
+                                nom_val = root_hists[f"{channel}_{iy}"]['mj'][ibin].GetBinContent( i+1 )
+                                root_hists[f"{channel}_{iy}"]['mj'][ibin].SetBinContent( i+1, nom_val*ivalues[i]  )
+
 
 
         if not os.path.exists(output_dir):
@@ -231,32 +281,6 @@ def create_combine_root_file( file_to_convert,
 
         logging.info("\n File "+output+" created.")
 
-        #### minimal plot test
-        test_hists = root_hists
-        if plot:
-
-            can = ROOT.TCanvas('can', 'can', 800,500)
-
-            list_era = ['UL16', 'UL17'] if merge_2016 else ['UL16_preVFP', 'UL16_postVFP', 'UL17']
-            for iy in list_era:
-                test_hists['hh_UL18']['data_obs'].Add( test_hists['hh_'+iy]['data_obs'] )
-                test_hists['hh_UL18']['mj']['nominal'].Add( test_hists['hh_'+iy]['mj']['nominal'] )
-                test_hists['hh_UL18']['tt'].Add( test_hists['hh_'+iy]['tt'] )
-                test_hists['hh_UL18']['HH4b'].Add( test_hists['hh_'+iy]['HH4b'] )
-
-            stack = ROOT.THStack()
-            stack.Add(test_hists['hh_UL18']['tt'])
-            stack.Add(test_hists['hh_UL18']['mj']['nominal'])
-
-            stack.Draw("histe")
-            test_hists['hh_UL18']['data_obs'].Draw("histe same")
-            test_hists['hh_UL18']['HH4b'].Scale( 100 )
-            test_hists['hh_UL18']['HH4b'].Draw("histe same")
-
-            test_hists['hh_UL18']['data_obs'].SetLineColor(ROOT.kRed)
-            can.SaveAs(output_dir+"/test_plot_"+iclass+"_hh.png")
-
-
 
         #### make datacard
         metadata = yaml.safe_load(open('metadata/HH4b.yml', 'r'))
@@ -264,14 +288,13 @@ def create_combine_root_file( file_to_convert,
         closureSysts, mcSysts, juncSysts, btagSyst = [], [], [], []
         if not stat_only:
             closureSysts = [ i.replace('Up', '') for i in root_hists[next(iter(root_hists))]['mj'].keys() if i.endswith('Up') ]
-            mcSysts = [ s.replace('_Up', '').replace('Up', '') for s in root_hists[next(iter(root_hists))]['HH'].keys() if s.endswith('Up') ]
-            juncSysts = [ s for s in mcSysts if s.startswith('JES') ]
-            btagSysts = [ s for s in mcSysts if s.startswith('btag') ]
+            mcSysts = list(set([ s.replace('_Up', '').replace('Up', '') for c in root_hists.keys() for s in root_hists[c]['HH'].keys() if s.endswith('Up') ]))
+            juncSysts = [ s for s in mcSysts if s.startswith('CMS_scale_j') ]
+            btagSysts = [ s for s in mcSysts if s.startswith('CMS_btag') ]
 
         channels = []
         for era in metadata['eras']:
             for SR in metadata['SR']:
-                print(era, SR)
                 channels.append( Channel(SR, era) )
 
         processes = [Process('HH', 0), Process('mj', 1), Process('tt', 2)]
@@ -302,7 +325,6 @@ def create_combine_root_file( file_to_convert,
         for nuisance in closureSysts:
             lines.append('%-35s %5s %s'%(nuisance, 'shape', ' '.join([column.closureSysts[nuisance] for column in columns])))
         for nuisance in mcSysts:
-            if 'trig' in nuisance: continue
             lines.append('%-35s %5s %s'%(nuisance, 'shape', ' '.join([column.     mcSysts[nuisance] for column in columns])))
         lines.append('%-35s %5s %s'%('BR_hbb',   'lnN', ' '.join([column.br        for column in columns])))
         lines.append('%-35s %5s %s'%('xs',       'lnN', ' '.join([column.xs        for column in columns])))
@@ -320,11 +342,11 @@ def create_combine_root_file( file_to_convert,
         if mcSysts:
             lines.append('btag     group = %s'%(' '.join(   btagSysts)))
             lines.append('junc     group = %s'%(' '.join(   juncSysts)))
-            #lines.append('trig     group = trigger_emulation')
+            lines.append('trig     group = CMS_bbbb_resolved_ggf_triggerEffSF')
         lines.append('lumi     group = lumi_13TeV_corr lumi_13TeV_1718 lumi_13TeV_2016 lumi_13TeV_2017 lumi_13TeV_2018')
         lines.append('theory   group = BR_hbb xs')
         if not stat_only:
-            lines.append('others   group = lumi_13TeV_corr lumi_13TeV_1718 lumi_13TeV_2016 lumi_13TeV_2017 lumi_13TeV_2018 BR_hbb xs PU L1PreFiring %s'%(' '.join(juncSysts)))
+            lines.append('others   group = lumi_13TeV_corr lumi_13TeV_1718 lumi_13TeV_2016 lumi_13TeV_2017 lumi_13TeV_2018 BR_hbb xs CMS_pileup_2016 CMS_pileup_2017 CMS_pileup_2018 CMS_prefire_2016 CMS_prefire_2017 CMS_prefire_2018 %s'%(' '.join(juncSysts)))
 
 
         with open(output.replace('hists', 'combine').replace('root', 'txt'), 'w') as ofile:
@@ -332,6 +354,144 @@ def create_combine_root_file( file_to_convert,
                 print(line)
                 ofile.write(line+'\n')
 
+        if make_syst_plots:
+
+            if not systematics_file:
+                logging.info(f'For make_syst_plots it is require to provide syst_file.')
+                sys.exit(0)
+            if not os.path.exists(f"{output_dir}/plots/"):
+                os.makedirs(f"{output_dir}/plots/")
+
+            # Styling
+            CMS.SetExtraText("Preliminary")
+            iPos = 0
+            CMS.SetLumi("")
+            CMS.SetEnergy("13")
+            CMS.ResetAdditionalInfo()
+            nominal_can = CMS.cmsDiCanvas('nominal_can',0,1,0,2500,0.8,1.2,
+                                        "SvB MA Classifier Regressed P(Signal) | P(HH) is largest",
+                                        "Events", 'Data/Pred.',
+                                          square=CMS.kSquare, extraSpace=0.05, iPos=iPos)
+            nominal_can.cd(1)
+            leg = CMS.cmsLeg(0.81, 0.89 - 0.05 * 7, 0.99, 0.89, textSize=0.04)
+
+            nom_data = root_hists[next(iter(root_hists))]['data_obs'].Clone('data_obs')
+            nom_data.Reset()
+            nom_tt = nom_data.Clone('tt')
+            nom_mj = nom_data.Clone('mj')
+            nom_signal = nom_data.Clone('signal')
+            for ichannel in root_hists.keys():
+                nom_data.Add( root_hists[ichannel]['data_obs'] )
+                nom_tt.Add( root_hists[ichannel]['tt'] )
+                nom_mj.Add( root_hists[ichannel]['mj']['nominal'] )
+                nom_signal.Add( root_hists[ichannel]['HH']['nominal'] )
+            nom_signal.Scale( 100 )
+
+            stack = ROOT.THStack()
+            CMS.cmsDrawStack(stack, leg, {'ttbar': nom_tt, 'Multijet': nom_mj }, data= nom_data )
+            #CMS.GetcmsCanvasHist(nominal_can).GetYaxis().SetTitleOffset(1.6)
+            CMS.fixOverlay()
+
+            nominal_can.cd(2)
+
+            bkg = nom_mj.Clone()
+            bkg.Add( nom_tt )
+            ratio = ROOT.TGraphAsymmErrors()
+            ratio.Divide( nom_data, bkg, 'pois' )
+            CMS.cmsDraw( ratio, 'P', mcolor=ROOT.kBlack )
+
+            ref_line = ROOT.TLine(0, 1, 1, 1)
+            CMS.cmsDrawLine(ref_line, lcolor=ROOT.kBlack, lstyle=ROOT.kDotted)
+
+            CMS.SaveCanvas( nominal_can, f"{output_dir}/plots/{iclass}_nominal.pdf" )
+
+            for ichannel in root_hists.keys():
+
+                for isyst in closureSysts:
+                    logging.info(f"Plotting {ichannel} {isyst}")
+
+                    CMS.SetExtraText("Simulation Preliminary")
+                    iPos = 0
+                    CMS.SetLumi("")
+                    CMS.SetEnergy("13")
+                    CMS.ResetAdditionalInfo()
+                    bkg_syst_can = CMS.cmsDiCanvas('bkg_syst_can',0,1,0,1000,0.8,1.2,
+                                                "SvB MA Classifier Regressed P(Signal) | P(HH) is largest",
+                                                "Events", 'Var/Nom',
+                                                  square=CMS.kSquare, extraSpace=0.05, iPos=iPos)
+                    bkg_syst_can.cd(1)
+                    leg = CMS.cmsLeg(0.55, 0.89 - 0.05 * 3, 0.99, 0.89, textSize=0.04)
+
+                    mj_nominal = root_hists[ichannel]['mj']['nominal'].Clone()
+                    mj_var_up = root_hists[ichannel]['mj'][f"{isyst}Up"]
+                    mj_var_dn = root_hists[ichannel]['mj'][f"{isyst}Down"]
+
+                    leg.AddEntry( mj_nominal, 'Nominal Multijet', 'lp' )
+                    CMS.cmsDraw( mj_nominal, 'P', mcolor=ROOT.kBlack )
+                    leg.AddEntry( mj_var_up, f'{isyst} Up', 'lp' )
+                    CMS.cmsDraw( mj_var_up, 'hist', fstyle=0, marker=1, alpha=1, lcolor=ROOT.kBlue, fcolor=ROOT.kBlue )
+                    leg.AddEntry( mj_var_dn, f'{isyst} Down', 'lp' )
+                    CMS.cmsDraw( mj_var_dn, 'hist', fstyle=0,  marker=1, alpha=1, lcolor=ROOT.kRed, fcolor=ROOT.kRed )
+                    CMS.fixOverlay()
+
+                    bkg_syst_can.cd(2)
+
+                    ratio_up = ROOT.TGraphAsymmErrors()
+                    ratio_up.Divide( mj_nominal, mj_var_up, 'pois' )
+                    CMS.cmsDraw( ratio_up, 'hist', fstyle=0, marker=1, alpha=1, lcolor=ROOT.kBlue, fcolor=ROOT.kBlue )
+                    ratio_dn = ROOT.TGraphAsymmErrors()
+                    ratio_dn.Divide( mj_nominal, mj_var_dn, 'pois' )
+                    CMS.cmsDraw( ratio_dn, 'hist', fstyle=0,  marker=1, alpha=1, lcolor=ROOT.kRed, fcolor=ROOT.kRed )
+
+                    ref_line = ROOT.TLine(0, 1, 1, 1)
+                    CMS.cmsDrawLine(ref_line, lcolor=ROOT.kBlack, lstyle=ROOT.kDotted)
+
+                    CMS.SaveCanvas( bkg_syst_can, f"{output_dir}/plots/{iclass}_{isyst}_{ichannel}.pdf" )
+
+                for isyst in root_hists[ichannel]['HH'].keys():
+                    if ('nominal' in isyst) or ('Down' in isyst): continue
+                    isyst = isyst.replace('Up', '')
+                    logging.info(f"Plotting {ichannel} {isyst}")
+
+                    CMS.SetExtraText("Simulation Preliminary")
+                    iPos = 0
+                    CMS.SetLumi("")
+                    CMS.SetEnergy("13")
+                    CMS.ResetAdditionalInfo()
+                    mc_syst_can = CMS.cmsDiCanvas('bkg_syst_can',0,1,0,3.,0.9,1.1,
+                                                "SvB MA Classifier Regressed P(Signal) | P(HH) is largest",
+                                                "Events", 'Var/Nom',
+                                                  square=CMS.kSquare, extraSpace=0.05, iPos=iPos)
+                    mc_syst_can.cd(1)
+                    leg = CMS.cmsLeg(0.2, 0.89 - 0.05 * 3, 0.4, 0.89, textSize=0.04)
+
+                    HH_nominal = root_hists[ichannel]['HH']['nominal'].Clone()
+                    HH_var_up = root_hists[ichannel]['HH'][f"{isyst}Up"]
+                    HH_var_dn = root_hists[ichannel]['HH'][f"{isyst}Down"]
+
+                    leg.AddEntry( HH_nominal, 'Nominal HH', 'lp' )
+                    CMS.cmsDraw( HH_nominal, 'P', mcolor=ROOT.kBlack )
+                    leg.AddEntry( HH_var_up, f'{isyst} Up', 'lp' )
+                    CMS.cmsDraw( HH_var_up, 'hist', fstyle=0, marker=1, alpha=1, lcolor=ROOT.kBlue, fcolor=ROOT.kBlue )
+                    leg.AddEntry( HH_var_dn, f'{isyst} Down', 'lp' )
+                    CMS.cmsDraw( HH_var_dn, 'hist', fstyle=0,  marker=1, alpha=1, lcolor=ROOT.kRed, fcolor=ROOT.kRed )
+                    CMS.fixOverlay()
+
+                    mc_syst_can.cd(2)
+
+                    ratio_up = ROOT.TGraphAsymmErrors()
+                    ratio_up.Divide( HH_nominal, HH_var_up, 'pois' )
+                    CMS.cmsDraw( ratio_up, 'hist', fstyle=0, marker=1, alpha=1, lcolor=ROOT.kBlue )
+                    ratio_dn = ROOT.TGraphAsymmErrors()
+                    ratio_dn.Divide( HH_nominal, HH_var_dn, 'pois' )
+                    CMS.cmsDraw( ratio_dn, 'hist', fstyle=0,  marker=1, alpha=1, lcolor=ROOT.kRed )
+
+                    ref_line = ROOT.TLine(0, 1, 1, 1)
+                    CMS.cmsDrawLine(ref_line, lcolor=ROOT.kBlack, lstyle=ROOT.kDotted)
+
+                    CMS.SaveCanvas( mc_syst_can, f"{output_dir}/plots/{iclass}_{isyst}_{ichannel}.pdf" )
+
+                    del HH_nominal, HH_var_up, HH_var_dn, ratio_up, ratio_dn
 
 
 
@@ -350,12 +510,14 @@ if __name__ == '__main__':
                         default=["SvB_MA", "SvB"], help='Classifier to make histograms.')
     parser.add_argument('-f', '--file', dest='file_to_convert',
                         default="histos/histAll.json", help="File with coffea hists")
-    parser.add_argument('--make_combine_inputs', dest='make_combine_inputs', action="store_true",
-                        default=False, help="Make a combine output root files")
-    parser.add_argument('--plot', dest='plot', action="store_true",
-                        default=False, help="Make a test plot with root objects")
+    parser.add_argument('--make_syst_plots', dest='make_syst_plots', action="store_true",
+                        default=False, help="Make a plots for systematics with root objects")
+    parser.add_argument('-r', '--rebin', dest='rebin', type=int,
+                        default=15, help="Rebin")
     parser.add_argument('-s', '--syst_file', dest='systematics_file',
                         default='', help="File contain systematic variations")
+    parser.add_argument('-b', '--bkg_syst_file', dest='bkg_systematics_file',
+                        default='', help="File contain background systematic variations")
     parser.add_argument('--merge2016', dest='merge_2016', action="store_true",
                         default=False, help="(Temporary. Merge 2016 datasets)")
     parser.add_argument('--use_preUL', dest='use_preUL', action="store_true",
@@ -370,15 +532,16 @@ if __name__ == '__main__':
     logging.info("\nRunning with these parameters: ")
     logging.info(args)
 
-    rebin = { 'hh':20 }  #{'zz': 4, 'zh': 5, 'hh': 10}  # temp
+    rebin = { 'hh': args.rebin }  #{'zz': 4, 'zh': 5, 'hh': 10}  # temp
     logging.info("Creating root files for combine")
     create_combine_root_file(
         args.file_to_convert,
         rebin,
         args.classifier,
         args.output_dir,
-        args.plot,
         args.systematics_file,
+        args.bkg_systematics_file,
+        make_syst_plots=args.make_syst_plots,
         use_preUL=args.use_preUL,
         add_old_bkg=args.add_old_bkg,
         merge_2016=args.merge_2016,

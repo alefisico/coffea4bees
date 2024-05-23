@@ -17,7 +17,7 @@ class cutFlow:
             if wOverride:
                 sumw = wOverride
             else:
-                sumw = np.sum(event.weight)
+                sumw = float(np.sum(event.weight))
 
             sumn_3, sumn_4 = len(event), len(event)
             sumw_3, sumw_4 = sumw, sumw
@@ -54,3 +54,23 @@ class cutFlow:
 
         return
 
+
+    def addOutputSkim(self, o, dataset, lumi=1.0, xs=1.0, kFactor=1.0):
+
+        o[dataset]["lumi"]         = [lumi]
+        o[dataset]["xs"]           = [xs]
+        o[dataset]["kFactor"]      = [kFactor]
+
+        o[dataset]["cutFlowFourTag"]           = {}
+        o[dataset]["cutFlowFourTagUnitWeight"] = {}
+        for k, v in  self._cutFlowFourTag.items():
+            o[dataset]["cutFlowFourTag"][k]           = v[0]
+            o[dataset]["cutFlowFourTagUnitWeight"][k] = v[1]
+
+        o[dataset]["cutFlowThreeTag"] = {}
+        o[dataset]["cutFlowThreeTagUnitWeight"] = {}
+        for k, v in  self._cutFlowThreeTag.items():
+            o[dataset]["cutFlowThreeTag"][k] = v[0]
+            o[dataset]["cutFlowThreeTagUnitWeight"][k] = v[1]
+
+        return
