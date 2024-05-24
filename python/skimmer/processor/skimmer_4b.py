@@ -76,7 +76,7 @@ class Skimmer(PicoAOD):
         for cut in all_cuts:
             cumulative_cuts.append(cut)
             self._cutFlow.fill( cut, event[selections.all(*cumulative_cuts)], allTag=True )
-        
+
         if loosePtForSkim:
             selection = event.lumimask & event.passNoiseFilter & event.passJetMult30 & event.passPreSel30
         else:
