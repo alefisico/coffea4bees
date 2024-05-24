@@ -247,51 +247,6 @@ class analysis(processor.ProcessorABC):
         #
         event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year], isMixedData)
 
-        #error = ((event["event"] == 393973 ) |
-        #         (event["event"] ==  27025 ) |
-        #         (event["event"] ==  33477 ) |
-        #         (event["event"] ==  67884 ) |
-        #         (event["event"] ==  31894 ) |
-        #         (event["event"] ==  32328 ) |
-        #         (event["event"] ==  57908 ) |
-        #         (event["event"] == 111840 ) |
-        #         (event["event"] == 113544 ) |
-        #         (event["event"] == 122604 ) )
-
-
-        error = ((event["event"] ==    409 ) |
-                 (event["event"] ==    798 ) |
-                 (event["event"] == 150236 ) |
-                 (event["event"] == 325496 ) |
-                 (event["event"] == 334807 ) |
-                 (event["event"] == 354068 ) |
-                 (event["event"] == 354245 ) |
-                 (event["event"] == 354795 ) |
-                 (event["event"] ==   2412 ) |
-                 (event["event"] == 200846 ) )
-
-
-        if np.any(error):
-            logging.warning("Before---------\n")
-    
-            #selev.Jet[selev.Jet.selected_loose].pt
-            event['Jet', 'selected_eta'] = (np.abs(event.Jet.eta) <= 2.4) & (event.Jet.jetId>=2)
-            logging.warning(f"eta{event.Jet[event.Jet.selected_eta].eta[error]}")
-            logging.warning(f"pt {event.Jet[event.Jet.selected_eta].pt[error][0:10]}")
-            for i in range(10):
-                logging.warning(f"pt {event.Jet[event.Jet.selected_eta].pt[error][i]}   {event.run[error][i]} {event.event[error][i]}")            
-            
-            #event['Jet', 'selected_pt'] = (event.Jet.pt >= 40)
-            
-            event['Jet', 'selected_pt_eta'] = (event.Jet.pt >= 40) & (np.abs(event.Jet.eta) <= 2.4) #& ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
-            event['nJet_selected_pt_eta'] = ak.sum(event.Jet.selected_pt_eta, axis=1)
-            logging.warning(f"pt_eta{event.nJet_selected_pt_eta[error]}")
-            
-            logging.warning("----------\n")
-
-        
-
-        
         #
         # Checking boosted selection (should change in the future)
         #
@@ -308,7 +263,7 @@ class analysis(processor.ProcessorABC):
 
         else:
             juncWS = [ self.corrections_metadata[year]["JERC"][0].replace("STEP", istep)
-                       for istep in ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"] ] + self.corrections_metadata[year]["JERC"][2:]
+                       for istep in ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"] ] #+ self.corrections_metadata[year]["JERC"][2:]
 
             if self.run_systematics:
                 juncWS += [self.corrections_metadata[year]["JERC"][1]]
@@ -350,40 +305,6 @@ class analysis(processor.ProcessorABC):
         weights = Weights(len(event), storeIndividual=True)
         list_weight_names = []
 
-
-        error = ((event["event"] ==    409 ) |
-                 (event["event"] ==    798 ) |
-                 (event["event"] == 150236 ) |
-                 (event["event"] == 325496 ) |
-                 (event["event"] == 334807 ) |
-                 (event["event"] == 354068 ) |
-                 (event["event"] == 354245 ) |
-                 (event["event"] == 354795 ) |
-                 (event["event"] ==   2412 ) |
-                 (event["event"] == 200846 ) )
-
-
-        if np.any(error):
-            logging.warning("After---------\n")
-    
-            #selev.Jet[selev.Jet.selected_loose].pt
-            event['Jet', 'selected_eta'] = (np.abs(event.Jet.eta) <= 2.4) & (event.Jet.jetId>=2)
-            logging.warning(f"eta{event.Jet[event.Jet.selected_eta].eta[error]}")
-            logging.warning(f"pt {event.Jet[event.Jet.selected_eta].pt[error][0:10]}")
-            for i in range(10):
-                logging.warning(f"pt {event.Jet[event.Jet.selected_eta].pt[error][i]}   {event.run[error][i]} {event.event[error][i]}")            
-            
-            #event['Jet', 'selected_pt'] = (event.Jet.pt >= 40)
-            
-            event['Jet', 'selected_pt_eta'] = (event.Jet.pt >= 40) & (np.abs(event.Jet.eta) <= 2.4) #& ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
-            event['nJet_selected_pt_eta'] = ak.sum(event.Jet.selected_pt_eta, axis=1)
-            logging.warning(f"pt_eta{event.nJet_selected_pt_eta[error]}")
-            
-            logging.warning("----------\n")
-
-
-
-        
         #
         # general event weights
         #
@@ -501,6 +422,7 @@ class analysis(processor.ProcessorABC):
         # Apply object selection (function does not remove events, adds content to objects)
         event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year],
                                            isMixedData=isMixedData, isTTForMixed=isTTForMixed, isDataForMixed=isDataForMixed )
+
 
         selections = PackedSelection()
         selections.add( "lumimask", event.lumimask)
@@ -851,32 +773,35 @@ class analysis(processor.ProcessorABC):
         #  passSR = (selev["quadJet_selected"].SR)
         #  passSR = (selev["SR"])
         #
-        #  out_data = {}
-        #  out_data["SvB"    ] = selev["SvB_MA"].ps[passSR]
-        #  out_data["event"  ] = selev["event"][passSR]
-        #  out_data["run"    ] = selev["run"][passSR]
+        # out_data = {}
+        # out_data["SvB"    ] = selev["SvB_MA"].ps[passSR]
+        # out_data["event"  ] = selev["event"][passSR]
+        # out_data["run"    ] = selev["run"][passSR]
         #
-        #  debug_mask = ((event["event"] == 66688  ) |
-        #                (event["event"] == 249987 ) |
-        #                (event["event"] == 121603 ) |
-        #                (event["event"] == 7816   ) |
-        #                (event["event"] == 25353  ) |
-        #                (event["event"] == 165389 ) |
-        #                (event["event"] == 293138 ) |
-        #                (event["event"] == 150164 ) |
-        #                (event["event"] == 262806 ) |
-        #                (event["event"] == 281111 ) )
+        # debug_mask = ~event.passJetMult
+        # debug_mask = ((event["event"] == 66688  ) |
+        #               (event["event"] == 249987 ) |
+        #               (event["event"] == 121603 ) |
+        #               (event["event"] == 7816   ) |
+        #               (event["event"] == 25353  ) |
+        #               (event["event"] == 165389 ) |
+        #               (event["event"] == 293138 ) |
+        #               (event["event"] == 150164 ) |
+        #               (event["event"] == 262806 ) |
+        #               (event["event"] == 281111 ) )
         #
-        #  out_data["debug_event"  ] = event["event"][debug_mask]
-        #  out_data["debug_run"    ] = event["run"][debug_mask]
-        #  out_data["debug_lumimask"    ] = event["lumimask"][debug_mask]
-        #  out_data["debug_passHLT"    ] = event["passHLT"][debug_mask]
-        #  out_data["debug_passNoiseFilter"    ] = event["passNoiseFilter"][debug_mask]
-        #  out_data["debug_passJetMult"    ] = event["passJetMult"][debug_mask]
+        # out_data["debug_event"  ] = event["event"][debug_mask]
+        # out_data["debug_run"    ] = event["run"][debug_mask]
+        # out_data["debug_jet_pt"    ] = event.Jet[event.Jet.selected_eta].pt[debug_mask].to_list()
+        # out_data["debug_jet_eta"   ] = event.Jet[event.Jet.selected_eta].eta[debug_mask].to_list()
+        # out_data["debug_jet_phi"   ] = event.Jet[event.Jet.selected_eta].phi[debug_mask].to_list()
+        # out_data["debug_jet_pu"    ] = event.Jet[event.Jet.selected_eta].pileup[debug_mask].to_list()
+        # out_data["debug_jet_jetId" ] = event.Jet[event.Jet.selected_eta].jetId[debug_mask].to_list()
+        # out_data["debug_jet_lep"   ] = event.Jet[event.Jet.selected_eta].lepton_cleaned[debug_mask].to_list()
         #
-        #  for out_k, out_v in out_data.items():
-        #      processOutput[out_k] = {}
-        #      processOutput[out_k][event.metadata['dataset']] = list(out_v)
+        # for out_k, out_v in out_data.items():
+        #     processOutput[out_k] = {}
+        #     processOutput[out_k][event.metadata['dataset']] = list(out_v)
 
         if self.run_SvB:
             selev["passSvB"] = selev["SvB_MA"].ps > 0.80
