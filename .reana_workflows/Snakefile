@@ -249,6 +249,8 @@ rule make_combine_inputs:
     container:
         "docker://gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0"
     resources:
+        voms_proxy=True,
+        kerberos=True,
         compute_backend="kubernetes"
     shell:
         """
@@ -267,6 +269,8 @@ rule run_combine:
     container:
         "docker://gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0"
     resources:
+        voms_proxy=True,
+        kerberos=True,
         compute_backend="kubernetes"
     shell:
         """

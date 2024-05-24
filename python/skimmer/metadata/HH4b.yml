@@ -10,6 +10,10 @@ runner:
   data_tier: nanoAOD
   condor_cores: 1
   condor_memory: 4GB
+  condor_transfer_input_files:
+    - base_class
+    - analysis
+    - skimmer
   allowlist_sites:
     - T3_US_FNALLPC
     - T3_US_NotreDame
@@ -25,14 +29,11 @@ config:
     - LHEPart
     - LowPtElectron
     - Tau
-    - FatJet
     - L1
     - SoftActivityJet
     - IsoTrack
-    - SubGenJetAK8
     - boostedTau
     - SubJet
-    - GenJetAK8
     - GenDressedLepton
     - GenVtx
     - OtherPV

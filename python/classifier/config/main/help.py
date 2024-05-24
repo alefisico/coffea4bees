@@ -11,7 +11,7 @@ from classifier.task.special import WorkInProgress
 from classifier.task.task import _INDENT
 from rich.console import Console
 
-from ..setting import IO as IOSetting
+from .. import setting as cfg
 
 _NOTES = [
     f"A special task/flag [blue]{main._FROM}[/blue]/[blue]--{main._FROM}[/blue] [yellow]file \[file ...][/yellow] can be used to load and merge workflows from files. If an option is marked as {parse.EMBED}, it can directly read the jsonable object embedded in the workflow configuration file.",
@@ -49,7 +49,7 @@ def _walk_packages(base):
 
 
 class Main(main.Main):
-    _no_monitor = True
+    _no_state = True
 
     _keys = " ".join(f"--{k}" for k in EntryPoint._keys)
     argparser = ArgParser(
@@ -59,7 +59,6 @@ class Main(main.Main):
             ("main", f"[blue]task.help()[/blue] print help information"),
         ],
     )
-    argparser.remove_argument("--save-state")
     argparser.add_argument(
         "--all",
         action="store_true",
@@ -81,6 +80,10 @@ class Main(main.Main):
         help="list tasks that is still [red]Work In Progress[/red]",
         default=False,
     )
+
+    @classmethod
+    def prelude(cls):
+        cfg.Monitor.enable = False
 
     def __init__(self):
         super().__init__()
@@ -190,6 +193,4 @@ class Main(main.Main):
                                 self._print(indent(f"[green]{cls}[/green]", _INDENT))
                                 self._print_help(classes[cls], 2)
         if self.opts.html:
-            self._console.save_html(
-                IOSetting.output / "help.html", theme=themes.MONOKAI
-            )
+            self._console.save_html(cfg.IO.output / "help.html", theme=themes.MONOKAI)

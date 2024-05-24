@@ -20,10 +20,6 @@ class FixedStep(Schedule):
     lr_scale: float = 0.25
     lr_milestones: list[int] = (15, 16, 17, 18, 19, 20, 21, 22, 23, 24)
 
-    def __post_init__(self):
-        self.bs_milestones = sorted(self.bs_milestones)
-        self.lr_milestones = sorted(self.lr_milestones)
-
     def optimizer(self, parameters, **kwargs):
         import torch.optim as optim
 

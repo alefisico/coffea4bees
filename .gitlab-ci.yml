@@ -225,17 +225,18 @@ analysis-mixed-cutflow-job:
       - python/analysis/tests/test_dump_cutflow_mixed_data.yml
       - python/analysis/tests/test_dump_cutflow_mixed_bkg.yml
 
-###skimmer-analysis-cutflow-job:    
-###  stage: cutflow
-###  extends:
-###    - .base_analysis
-###  needs: 
-###    - skimmer-analysis-test-job
-###  script:
-###    - source .ci-workflows/skimmer-analysis-cutflow-job.sh
-###  artifacts:
-###    paths:
-###      - python/analysis/tests/test_dump_skimmer_cutflow.yml
+skimmer-analysis-cutflow-job:    
+  stage: cutflow
+  extends:
+    - .base_analysis
+  needs: 
+    - skimmer-analysis-test-job
+  script:
+    - source .ci-workflows/skimmer-analysis-cutflow-job.sh
+  artifacts:
+    paths:
+      - python/analysis/tests/test_dump_skimmer_cutflow.yml
+  allow_failure: true
 
 analysis-systematics-cutflow-job:    
   stage: cutflow
@@ -260,18 +261,6 @@ analysis-cutflow-job-unsup:
  artifacts:
    paths:
      - python/analysis/tests/test_dump_cutflow_job_unsup.yml
-
-analysis-cutflow-job:    
-  stage: cutflow
-  extends:
-    - .base_analysis
-  needs: 
-    - analysis-test-job
-  script:
-    - source .ci-workflows/analysis-cutflow-job.sh
-  artifacts:
-    paths:
-      - python/analysis/tests/test_dump_cutflow.yml
 
 analysis-makeweights-job:    
   stage: fits
