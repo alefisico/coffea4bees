@@ -1,6 +1,5 @@
 import os, sys
 import ROOT
-import cmsstyle as CMS
 import argparse
 import logging
 import json
@@ -356,6 +355,8 @@ def create_combine_root_file( file_to_convert,
 
         if make_syst_plots:
 
+            import cmsstyle as CMS
+            
             if not systematics_file:
                 logging.info(f'For make_syst_plots it is require to provide syst_file.')
                 sys.exit(0)

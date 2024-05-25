@@ -258,7 +258,7 @@ source /cvmfs/cms.cern.ch/cmsset_default.sh
 cd /home/cmsusr/CMSSW_11_3_4/
 cmsenv || true
 cd -
-python3 python/stats_analysis/make_combine_inputs.py --classifier SvB SvB_MA -f {input.injson} --merge2016 --syst_file {input.injsonsyst} --bkg_syst_file python/stats_analysis/hists/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin8.pkl --output_dir output/datacards/ --rebin 8 --make_syst_plots
+python3 python/stats_analysis/make_combine_inputs.py --classifier SvB SvB_MA -f {input.injson} --merge2016 --syst_file {input.injsonsyst} --bkg_syst_file python/stats_analysis/hists/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin8.pkl --output_dir output/datacards/ --rebin 8
         """
 
 rule run_combine:
