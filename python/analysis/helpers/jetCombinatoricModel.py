@@ -64,7 +64,7 @@ class jetCombinatoricModel:
         if event is None:
             prob = np.random.uniform(0, 1, size=nEvent)
         else:
-            prob = self._rng.float(event)
+            prob = self._rng.uniform(event, 0, 1)
         r = prob*w + nPseudoTagProb[0] # random number between nPseudoTagProb[0] and nPseudoTagProb.sum(axis=0)
         r = r.reshape(1,nEvent).repeat(maxPseudoTags+1,0)
         c = np.array([nPseudoTagProb[:npt+1].sum(axis=0) for npt in range(maxPseudoTags+1)]) # cumulative prob

@@ -87,12 +87,8 @@ class RandomSubSample(KFold):
 
     def _random_offset(self, batch: dict[str, Tensor]) -> npt.NDArray:
         offset = self._get_offset(batch)
-        shape = offset.shape
-        if len(shape) == 1:
-            return self._rng.uint(offset)
-        else:
-            offset = offset.reshape(shape[0], -1)
-            return self._rng.reduce(offset)
+        offset = offset.reshape(offset.shape[0], -1)
+        return self._rng.uint64(offset)
 
 
 class RandomKFold(RandomSubSample):
