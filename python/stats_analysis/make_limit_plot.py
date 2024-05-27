@@ -46,7 +46,7 @@ if __name__ == '__main__':
 
     ax.set_yticks( ticks )
     ax.set_yticklabels( ticks_labels )
-    ax.set_xlim([0, 20])
+    ax.set_xlim([0, 15])
     ax.set_ylim([0, len(ticks)+1])
     hep.cms.label("Preliminary", data = True)
     fig.tight_layout()
