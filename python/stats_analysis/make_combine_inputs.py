@@ -1,6 +1,5 @@
 import os, sys
 import ROOT
-import cmsstyle as CMS
 import argparse
 import logging
 import json
@@ -133,6 +132,7 @@ def create_combine_root_file( file_to_convert,
                              output_dir,
                              systematics_file,
                              bkg_systematics_file,
+                             metadata_file='metadata/HH4b.yml',
                              make_syst_plots=False,
                              use_preUL=False,
                              add_old_bkg=False,
@@ -283,7 +283,7 @@ def create_combine_root_file( file_to_convert,
 
 
         #### make datacard
-        metadata = yaml.safe_load(open('metadata/HH4b.yml', 'r'))
+        metadata = yaml.safe_load(open(metadata_file, 'r'))
 
         closureSysts, mcSysts, juncSysts, btagSyst = [], [], [], []
         if not stat_only:
@@ -356,6 +356,8 @@ def create_combine_root_file( file_to_convert,
 
         if make_syst_plots:
 
+            import cmsstyle as CMS
+            
             if not systematics_file:
                 logging.info(f'For make_syst_plots it is require to provide syst_file.')
                 sys.exit(0)
@@ -518,6 +520,8 @@ if __name__ == '__main__':
                         default='', help="File contain systematic variations")
     parser.add_argument('-b', '--bkg_syst_file', dest='bkg_systematics_file',
                         default='', help="File contain background systematic variations")
+    parser.add_argument('-m', '--metadata', dest='metadata',
+                        default='metadata/HH4b.yml', help="File contain systematic variations")
     parser.add_argument('--merge2016', dest='merge_2016', action="store_true",
                         default=False, help="(Temporary. Merge 2016 datasets)")
     parser.add_argument('--use_preUL', dest='use_preUL', action="store_true",
@@ -541,6 +545,7 @@ if __name__ == '__main__':
         args.output_dir,
         args.systematics_file,
         args.bkg_systematics_file,
+        metadata_file=args.metadata,
         make_syst_plots=args.make_syst_plots,
         use_preUL=args.use_preUL,
         add_old_bkg=args.add_old_bkg,
