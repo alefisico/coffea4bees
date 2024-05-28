@@ -7,6 +7,7 @@ cd python/
 python3 stats_analysis/convert_json_to_root.py -f analysis/hists/histMixedData.json                  --output analysis/hists/
 python3 stats_analysis/convert_json_to_root.py -f analysis/hists/histMixedBkg_TT.json                --output analysis/hists/
 python3 stats_analysis/convert_json_to_root.py -f analysis/hists/histMixedBkg_data_3b_for_mixed.json --output analysis/hists/
+python3 stats_analysis/convert_json_to_root.py -f analysis/hists/histMixedBkg_data_3b_for_mixed_kfold.json --output analysis/hists/
 python3 stats_analysis/convert_json_to_root.py -f analysis/hists/histSignal.json                     --output analysis/hists/
 
 
