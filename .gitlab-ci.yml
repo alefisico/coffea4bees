@@ -135,7 +135,8 @@ analysis-test-mixed-job:
       - python/analysis/hists/testMixedBkg_data_3b_for_mixed_kfold.coffea
       - python/analysis/hists/testMixedData.coffea
       - python/analysis/hists/testMixedBkg_TT.json
-      - python/analysis/hists/testMixedBkg_data_3b_for_mixed_kfold.json
+      - python/analysis/hists/testMixedBkg_data_3b_for_mixed.json
+      - python/analysis/hists/testMixedBkg_data_3b_for_mixed_kfold.json      
       - python/analysis/hists/testMixedData.json
       - python/analysis/hists/testSignal_preUL.coffea
       - python/analysis/hists/testSignal_preUL.json
