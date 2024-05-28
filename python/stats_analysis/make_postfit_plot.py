@@ -28,6 +28,7 @@ if __name__ == '__main__':
 
     hists = { }
     channels = [ 'hh_UL16', 'hh_UL17', 'hh_UL18' ]
+    # channels = [ 'hh6', 'hh7', 'hh8' ]
     infile = ROOT.TFile.Open(args.input_file)
     for i, ichannel in enumerate(channels):
         if i==0:
@@ -45,17 +46,19 @@ if __name__ == '__main__':
 
     # Rescaling histogram
     for _, ih in hists.items():
+        ih.Rebin(10)
         ax = ih.GetXaxis()
         ax.Set( ax.GetNbins(), 0, 1.0 )
         ih.ResetStats()
 
+    ymax = hists['data'].GetMaximum()*1.2
     # Styling
     CMS.SetExtraText("Preliminary")
     iPos = 0
     CMS.SetLumi("")
     CMS.SetEnergy("13")
     CMS.ResetAdditionalInfo()
-    nominal_can = CMS.cmsDiCanvas('nominal_can',0,1,0,500,0.7,1.3,
+    nominal_can = CMS.cmsDiCanvas('nominal_can',0,1,0,ymax,0.8,1.2,
                                   "SvB MA Classifier Regressed P(Signal) | P(HH) is largest",
                                   "Events", 'Data/Pred.',
                                   square=CMS.kSquare, extraSpace=0.05, iPos=iPos)
@@ -71,6 +74,10 @@ if __name__ == '__main__':
     CMS.cmsDraw( hists['HH'], 'hist', fstyle=0, marker=1, alpha=1, lcolor=ROOT.TColor.GetColor("#e42536" ), fcolor=ROOT.TColor.GetColor("#e42536"))
 
     nominal_can.cd(2)
+
+    bkg_syst= ROOT.TGraphAsymmErrors()
+    bkg_syst.Divide( hists['TotalBkg'].Clone(), hists['TotalBkg'].Clone(), 'pois' )
+    CMS.cmsDraw( bkg_syst, 'F3', fstyle=3004, lcolor=ROOT.kBlack, fcolor=ROOT.kBlack  )
 
     bkg = hists['TotalBkg'].Clone()
     ratio = ROOT.TGraphAsymmErrors()
