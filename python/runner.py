@@ -242,7 +242,7 @@ if __name__ == '__main__':
                 logging.info("\nConfig Data for Mixed ")
 
                 nMixedSamples = metadata['datasets'][dataset]["nSamples"]
-                use_kfold = metadata['datasets'][dataset]["use_kfold"]
+                use_kfold = metadata['datasets'][dataset].get("use_kfold", False)
                 data_3b_mix_config = metadata['datasets'][dataset][year][config_runner['data_tier']]
                 logging.info(f"\nNumber of mixed samples is {nMixedSamples}")
                 logging.info(f"\nUsing kfolding? {use_kfold}")

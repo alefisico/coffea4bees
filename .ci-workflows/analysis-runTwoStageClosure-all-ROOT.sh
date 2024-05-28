@@ -24,6 +24,22 @@ python3 stats_analysis/convert_json_to_root.py -f analysis/hists/histSignal.json
 # python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_zh  --rebin 10 --outputPath stats_analysis/closureFits/closureFixTrig
 # python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_zz  --rebin  8 --outputPath stats_analysis/closureFits/closureFixTrig
 
+python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 20 --outputPath stats_analysis/closureFits/ULHH
+python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 10 --outputPath stats_analysis/closureFits/ULHH
+python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 8 --outputPath stats_analysis/closureFits/ULHH
+python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 5 --outputPath stats_analysis/closureFits/ULHH
+python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 4 --outputPath stats_analysis/closureFits/ULHH
+python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 2 --outputPath stats_analysis/closureFits/ULHH
+python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 1 --outputPath stats_analysis/closureFits/ULHH
+
+
+python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 20 --outputPath stats_analysis/closureFits/ULHH_kfold --use_kfold --input_file_data3b analysis/hists/histMixedBkg_data_3b_for_mixed_kfold.root
+python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 10 --outputPath stats_analysis/closureFits/ULHH_kfold --use_kfold --input_file_data3b analysis/hists/histMixedBkg_data_3b_for_mixed_kfold.root
+python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 8  --outputPath stats_analysis/closureFits/ULHH_kfold --use_kfold --input_file_data3b analysis/hists/histMixedBkg_data_3b_for_mixed_kfold.root
+python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 5 --outputPath stats_analysis/closureFits/ULHH_kfold --use_kfold --input_file_data3b analysis/hists/histMixedBkg_data_3b_for_mixed_kfold.root 
+python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 4 --outputPath stats_analysis/closureFits/ULHH_kfold --use_kfold --input_file_data3b analysis/hists/histMixedBkg_data_3b_for_mixed_kfold.root 
+python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 2 --outputPath stats_analysis/closureFits/ULHH_kfold --use_kfold --input_file_data3b analysis/hists/histMixedBkg_data_3b_for_mixed_kfold.root 
+
 
 #python3 stats_analysis/tests/test_runTwoStageClosure.py --knownCounts stats_analysis/tests/twoStageClosure_counts_SvB_MA_ps_hh_rebin20.yml --output_path stats_analysis/tests/
 
