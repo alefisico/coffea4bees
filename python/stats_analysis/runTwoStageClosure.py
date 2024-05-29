@@ -2092,6 +2092,8 @@ if __name__ == "__main__":
     print_log(f"\t input_file_TT     {args.input_file_TT}")
     print_log(f"\t input_file_mix    {args.input_file_mix}")
     print_log(f"\t input_file_sig    {args.input_file_sig}")
+    if args.use_kfold:
+        print_log(f"\t Using kFolding")        
 
 
 
