@@ -601,6 +601,8 @@ datasets:
   data_3b_for_mixed:
     '2016':
       picoAOD:
+        FvT_file_kfold_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//data2016_3b/FvT_3bDvTMix4bDvT_vXXX_newSBDefSeedAll45.root
+        FvT_name_kfold_template: FvT_3bDvTMix4bDvT_vXXX_newSBDefSeedAve
         FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//data2016_3b/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
         FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
         JCM_load_template: 3bDvTMix4bDvT_vXXX
@@ -608,6 +610,8 @@ datasets:
         - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//data2016_3b/picoAOD_3b_wJCM_newSBDef.root
     '2017':
       picoAOD:
+        FvT_file_kfold_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//data2017_3b/FvT_3bDvTMix4bDvT_vXXX_newSBDefSeedAll45.root
+        FvT_name_kfold_template: FvT_3bDvTMix4bDvT_vXXX_newSBDefSeedAve
         FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//data2017_3b/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
         FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
         JCM_load_template: 3bDvTMix4bDvT_vXXX
@@ -615,6 +619,8 @@ datasets:
         - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//data2017_3b/picoAOD_3b_wJCM_newSBDef.root
     '2018':
       picoAOD:
+        FvT_file_kfold_template: root://cmseos.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115///data2018_3b/FvT_3bDvTMix4bDvT_vXXX_newSBDefSeedAll45.root
+        FvT_name_kfold_template: FvT_3bDvTMix4bDvT_vXXX_newSBDefSeedAve
         FvT_file_template: root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//data2018_3b/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
         FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
         JCM_load_template: 3bDvTMix4bDvT_vXXX
