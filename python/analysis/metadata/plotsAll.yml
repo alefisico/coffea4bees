@@ -12,8 +12,8 @@ hists:
                 tag: fourTag
                 year: RunII
                 label: HH4b (x100)
-                edgecolor: r
-                fillcolor: r            
+                edgecolor: "#e42536"
+                fillcolor: "#e42536"            
                 histtype: step
                 scalefactor: 100
                 
@@ -22,8 +22,8 @@ hists:
                 tag: fourTag
                 year: RunII
                 label: ZH4b (x100)
-                edgecolor: b
-                fillcolor: b            
+                edgecolor: "#964a8b"
+                fillcolor: "#964a8b"            
                 histtype: step
                 scalefactor: 100
                 
@@ -32,8 +32,8 @@ hists:
                 tag: fourTag
                 year: RunII
                 label: ZZ4b (x100)
-                edgecolor: g
-                fillcolor: g            
+                edgecolor: "#7a21dd"
+                fillcolor: "#7a21dd"            
                 histtype: step
                 scalefactor: 100
 
@@ -43,31 +43,31 @@ stack:
                 process: TTTo2L2Nu
                 tag: fourTag
                 year: RunII
-                fillcolor: xkcd:light blue
-                edgecolor: xkcd:light blue
+                fillcolor: "#5790fc"
+                edgecolor: "#5790fc"
                 label: None
 
         TTToSemiLeptonic:
                 process: TTToSemiLeptonic
                 tag: fourTag
                 year: RunII
-                fillcolor: xkcd:light blue
-                edgecolor: xkcd:light blue
+                fillcolor: "#5790fc"
+                edgecolor: "#5790fc"
                 label: None
 
         TTToHadronic:
                 process: TTToHadronic
                 tag: fourTag
                 year: RunII
-                fillcolor: xkcd:light blue
-                edgecolor: xkcd:blue
+                fillcolor: "#5790fc"
+                edgecolor: k
                 label: TTbar
 
         Multijet:
                 process: data
                 tag: threeTag
                 year: RunII
-                fillcolor: xkcd:bright yellow
+                fillcolor: "#f89c20"
                 edgecolor: k
                 label: Multijet
 
