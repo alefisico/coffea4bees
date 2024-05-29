@@ -621,7 +621,9 @@ datasets:
         files:
         - root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/20231115//data2018_3b/picoAOD_3b_wJCM_newSBDef.root
     nSamples: 15
-  ggZH4b:
+    use_kfold: True
+    
+ggZH4b:
     UL16_postVFP:
       nanoAOD: /dataset/dataset/NANOAODSIM
       picoAOD:

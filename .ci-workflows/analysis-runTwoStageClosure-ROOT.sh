@@ -31,7 +31,7 @@ python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 20 --o
     
 echo "############### Run test runTwoStageClosure kfold"
 ls -lrt analysis/hists/
-python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 20 --outputPath stats_analysis/testsLocal_kfold  --do_CI --use_kfold --debug \
+python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 20 --outputPath stats_analysis/testsLocal_kfold  --do_CI --use_kfold  \
     --input_file_data3b analysis/hists/testMixedBkg_data_3b_for_mixed_kfold.root \
     --input_file_TT     analysis/hists/testMixedBkg_TT.root \
     --input_file_mix    analysis/hists/testMixedData.root \
