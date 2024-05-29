@@ -85,6 +85,7 @@ def combine_hists(input_file, hist_template, procs, years):
                     hist =  input_file[iy].Get(hist_name).Clone()
                 else:
                     if args.debug: print(f"getting {hist_name} from {input_file}")
+                    if args.debug: input_file.ls()
                     hist =  input_file.Get(hist_name).Clone()
             else:
                 # print(f"reading {hist_name}")
