@@ -1,17 +1,19 @@
 import awkward as ak
 import numpy as np
-from coffea.nanoevents import NanoEventsFactory, NanoAODSchema, BaseSchema
+from coffea.nanoevents import NanoAODSchema
+
 NanoAODSchema.warn_missing_crossrefs = False
 import warnings
+
 warnings.filterwarnings("ignore")
 from coffea.nanoevents.methods import vector
+
 ak.behavior.update(vector.behavior)
-from coffea import processor, util
-import correctionlib
-import pickle
-import cachetools
 import logging
-import copy
+import pickle
+
+import correctionlib
+
 
 # following example here: https://github.com/CoffeaTeam/coffea/blob/master/tests/test_jetmet_tools.py#L529
 def init_jet_factory(weight_sets, event, isMC):   #### AGE: this is temporary, it should be updated with correctionlib
@@ -30,7 +32,8 @@ def init_jet_factory(weight_sets, event, isMC):   #### AGE: this is temporary, i
     extract.finalize()
     evaluator = extract.make_evaluator()
 
-    from coffea.jetmet_tools import CorrectedJetsFactory, CorrectedMETFactory, JECStack
+    from base_class.jetmet_tools import CorrectedJetsFactory
+    from coffea.jetmet_tools import JECStack
     jec_stack_names = []
     for key in evaluator.keys():
         jec_stack_names.append(key)
@@ -63,8 +66,7 @@ def init_jet_factory(weight_sets, event, isMC):   #### AGE: this is temporary, i
     else:
         logging.warning('WARNING: No uncertainties were loaded in the jet factory')
 
-    jec_cache = cachetools.Cache(np.inf)
-    jet_variations = jet_factory.build(nominal_jet, lazy_cache=jec_cache)
+    jet_variations = jet_factory.build(nominal_jet, event.event)
 
     return jet_variations
 

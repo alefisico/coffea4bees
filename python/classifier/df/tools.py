@@ -145,11 +145,11 @@ class prescale:
         if self._selection is not None:
             prescaled = np.asarray(self._selection(df))
         else:
-            prescaled = np.full(len(df), True)
+            prescaled = np.ones(len(df), dtype=np.bool_)
         unprescaled = ~prescaled
         sumw = df.loc[prescaled, columns].sum(axis=0)
         prescaled[prescaled] = keep_fraction(
-            self._scale, self._rng.uint(df.loc[prescaled, Columns.event])
+            self._scale, self._rng.uint64(df.loc[prescaled, Columns.event])
         )
         sumw_kept = df.loc[prescaled, columns].sum(axis=0)
         df.loc[prescaled, columns] *= sumw / sumw_kept
