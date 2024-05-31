@@ -47,10 +47,10 @@ class _HCR(KFoldClassifier):
     )
 
     def initializer(self, splitter: Splitter, **kwargs):
-        from classifier.discriminator.HCR import GBN, HCRArch, HCRClassifier
+        from classifier.discriminator.HCR import GBNSchedule, HCRArch, HCRClassifier
 
         arch = HCRArch(**({"loss": self.loss} | self.opts.architecture))
-        gbn = GBN(**self.opts.ghost_batch)
+        gbn = GBNSchedule(**self.opts.ghost_batch)
         training = parse.instance(self.opts.training, _SCHEDULER)
         finetuning = parse.instance(self.opts.finetuning, _SCHEDULER)
 
