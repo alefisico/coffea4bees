@@ -69,12 +69,6 @@ if __name__ == '__main__':
 
     coffea_hists = load(args.input_file)["hists"]
 
-
-    save_dict = {}
-
-    for sub_sample in range(15):
-        save_dict[f"mix_v{sub_sample}"] = [('fourTag','SR')]
-
     json_dict = {}
 
     if not args.systematics_file:
