@@ -3,19 +3,19 @@ from __future__ import annotations
 import warnings
 from typing import Callable, Iterable, overload
 
-import numpy as np
-import numpy.typing as npt
-import pandas as pd
-
-from ..typetools import check_type
-from ..utils import unpack
-
 warnings.filterwarnings(
     "ignore",
     module="pandas",
     category=UserWarning,
     message=r"Pandas requires version '[\d.]+' or newer of 'numexpr' \(version '[\d.]+' currently installed\)\.",
 )
+
+import numpy as np
+import numpy.typing as npt
+import pandas as pd
+
+from ..typetools import check_type
+from ..utils import unpack
 
 
 def _mesh(*xi: npt.NDArray) -> Iterable[npt.NDArray]:
