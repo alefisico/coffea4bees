@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from typing import Callable, Iterable, overload
 
 import numpy as np
@@ -8,7 +9,6 @@ import pandas as pd
 
 from ..typetools import check_type
 from ..utils import unpack
-import warnings
 
 warnings.filterwarnings(
     "ignore",
