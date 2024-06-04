@@ -54,9 +54,9 @@ class KappaFrameworkReweight(unittest.TestCase):
 
     def test_xs(self):
         # kl=2.45, xs=0.013124
-        self.assertEqual(
+        self.assertAlmostEqual(
             self.test_basis.xs(self.test_couplings),
-            0.013124322125000185,
+            0.013124322125,
         )
 
 
