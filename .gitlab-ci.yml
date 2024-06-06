@@ -340,3 +340,10 @@ reana-job:
   script:
     - source .ci-workflows/reana-job.sh
   allow_failure: true
+
+kappa-framework:
+  stage: code
+  extends:
+    - .base_analysis
+  script:
+    - source .ci-workflows/baseclass-kappa-framework.sh

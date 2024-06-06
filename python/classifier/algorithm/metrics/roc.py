@@ -7,11 +7,11 @@ from torch import Tensor
 from ..utils import to_arr, to_num
 
 
-def LinearInterpreter(pos: Tensor, neg: Tensor):
+def linear_differ(pos: Tensor, neg: Tensor):
     return (pos - neg) / 2 + 0.5
 
 
-class ROCFixedThreshold:
+class FixedThresholdROC:
     _value_type = torch.float32
     _index_type = torch.uint8
 
@@ -20,7 +20,7 @@ class ROCFixedThreshold:
         thresholds: Iterable[float],
         positive_classes: Iterable[int],
         negative_classes: Iterable[int] = None,
-        prediction_interpreter: Callable[[Tensor, Tensor], Tensor] = None,
+        score_interpretation: Callable[[Tensor, Tensor], Tensor] = None,
         device: tt.Device = None,
     ):
         self.__f = {"dtype": self._value_type, "device": device}
@@ -29,7 +29,7 @@ class ROCFixedThreshold:
         self._pos = self._classes(positive_classes)
         if negative_classes is not None:
             self._neg = self._classes(negative_classes)
-            self._map = prediction_interpreter
+            self._map = score_interpretation
         # count
         self._edge, _ = torch.sort(torch.as_tensor(thresholds, **self.__f))
         self.reset()
@@ -45,9 +45,10 @@ class ROCFixedThreshold:
         return hasattr(self, "_neg")
 
     def _classes(self, classes: Iterable[int]):
-        return torch.as_tensor(classes, **self.__i), [*classes]
+        classes = sorted(set(classes))
+        return torch.as_tensor(classes, **self.__i), classes
 
-    def _interpret(self, y_pred: Tensor):
+    def _score(self, y_pred: Tensor):
         pos = y_pred[:, self._pos[1]].sum(dim=-1)
         if (not self.__neg) or (self._map is None):
             return pos
@@ -96,7 +97,7 @@ class ROCFixedThreshold:
         y_true = torch.as_tensor(y_true, **self.__i)
         self._check_shape(y_pred=(y_pred, 2), y_true=(y_true, 1))
         if y_pred.dim() == 2:
-            y_pred = self._interpret(y_pred)
+            y_pred = self._score(y_pred)
         if weight is None:
             weight = torch.ones_like(y_true, **self.__f)
         else:
@@ -112,19 +113,19 @@ class ROCFixedThreshold:
 
     @torch.no_grad()
     def roc(self):
-        FPR = torch.cumsum(self._FP, dim=0) / self._N
-        TPR = torch.cumsum(self._TP, dim=0) / self._P
+        fpr = torch.cumsum(self._FP, dim=0) / self._N
+        tpr = torch.cumsum(self._TP, dim=0) / self._P
         # deal with negative weights
         monotonic = None
         if torch.any(self._FP < 0.0):
-            monotonic = self._monotonic(FPR, monotonic)
+            monotonic = self._monotonic(fpr, monotonic)
         if torch.any(self._TP < 0.0):
-            monotonic = self._monotonic(TPR, monotonic)
+            monotonic = self._monotonic(tpr, monotonic)
         if monotonic is not None:
-            FPR, TPR = FPR[monotonic], TPR[monotonic]
+            fpr, tpr = fpr[monotonic], tpr[monotonic]
         # add missing (0,0) or (1,1)
-        FPR, TPR = self._bounded(1 - FPR, 1 - TPR)
+        fpr, tpr = self._bounded(1 - fpr, 1 - tpr)
         # AUC
-        AUC = -torch.trapz(TPR, FPR)
+        auc = -torch.trapz(tpr, fpr)
         self.reset()
-        return to_arr(FPR), to_arr(TPR), to_num(AUC)
+        return to_arr(fpr), to_arr(tpr), to_num(auc)
