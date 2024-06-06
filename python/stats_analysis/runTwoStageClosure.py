@@ -85,6 +85,7 @@ def combine_hists(input_file, hist_template, procs, years):
                     hist =  input_file[iy].Get(hist_name).Clone()
                 else:
                     if args.debug: print(f"getting {hist_name} from {input_file}")
+                    if args.debug: input_file.ls()
                     hist =  input_file.Get(hist_name).Clone()
             else:
                 # print(f"reading {hist_name}")
@@ -126,8 +127,12 @@ def writeYears(f, input_file_data3b, input_file_TT, input_file_mix, mix, channel
         # multijet
         #
         var_name_multijet = var_name.replace("SvB_ps", f"SvB_FvT_{mix}_newSBDef_ps")
-        var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDef_ps")
-        #var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDefSeedAve_ps")
+        if args.use_kfold:
+            var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDefSeedAve_ps")
+        else:
+            var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDef_ps")
+        
+        
 
         hist_multijet = combine_hists(input_file_data3b,
                                       f"{var_name_multijet}_PROC_YEAR_threeTag_SR",
@@ -181,8 +186,11 @@ def addYears(f, input_file_data3b, input_file_TT, input_file_mix, mix, channel):
     # multijet
     #
     var_name_multijet = var_name.replace("SvB_ps", f"SvB_FvT_{mix}_newSBDef_ps")
-    var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDef_ps")
-    #var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDefSeedAve_ps")
+    if args.use_kfold:
+        var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDefSeedAve_ps")
+    else:
+        var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDef_ps")
+
 
     hist_multijet = combine_hists(input_file_data3b,
                                   f"{var_name_multijet}_PROC_YEAR_threeTag_SR",
@@ -2032,6 +2040,7 @@ if __name__ == "__main__":
     parser.add_argument('--outputPath', default="stats_analysis/closureFitsNew")
     parser.add_argument('--reuse_inputs', action="store_true")
     parser.add_argument('--skip_closure', dest="run_closure", action="store_false")
+    parser.add_argument('--use_kfold',    action="store_true")
     #parser.add_argument('--skip_plots',   dest="do_plots",    action="store_false")
     parser.add_argument('--do_CI',   action="store_true")
 
@@ -2084,6 +2093,8 @@ if __name__ == "__main__":
     print_log(f"\t input_file_TT     {args.input_file_TT}")
     print_log(f"\t input_file_mix    {args.input_file_mix}")
     print_log(f"\t input_file_sig    {args.input_file_sig}")
+    if args.use_kfold:
+        print_log(f"\t Using kFolding")        
 
 
 

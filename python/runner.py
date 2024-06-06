@@ -242,15 +242,21 @@ if __name__ == '__main__':
                 logging.info("\nConfig Data for Mixed ")
 
                 nMixedSamples = metadata['datasets'][dataset]["nSamples"]
+                use_kfold = metadata['datasets'][dataset].get("use_kfold", False)
                 data_3b_mix_config = metadata['datasets'][dataset][year][config_runner['data_tier']]
                 logging.info(f"\nNumber of mixed samples is {nMixedSamples}")
+                logging.info(f"\nUsing kfolding? {use_kfold}")
 
                 idataset = f'{dataset}_{year}'
 
                 metadata_dataset[idataset] = copy(metadata_dataset[dataset])
-                metadata_dataset[idataset]['FvT_files'] = [data_3b_mix_config['FvT_file_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
-                metadata_dataset[idataset]['FvT_names'] = [data_3b_mix_config['FvT_name_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
                 metadata_dataset[idataset]['JCM_loads'] = [data_3b_mix_config['JCM_load_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
+                if use_kfold:
+                    metadata_dataset[idataset]['FvT_files'] = [data_3b_mix_config['FvT_file_kfold_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
+                    metadata_dataset[idataset]['FvT_names'] = [data_3b_mix_config['FvT_name_kfold_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
+                else:
+                    metadata_dataset[idataset]['FvT_files'] = [data_3b_mix_config['FvT_file_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
+                    metadata_dataset[idataset]['FvT_names'] = [data_3b_mix_config['FvT_name_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
 
                 fileset[idataset] = {'files': list_of_files(data_3b_mix_config['files'],
                                                             test=args.test, test_files=config_runner['test_files'],
