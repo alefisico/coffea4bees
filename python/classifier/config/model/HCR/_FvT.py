@@ -62,6 +62,7 @@ class FvT(HCR):
     @property
     def rocs(self):
         import numpy as np
+        from classifier.discriminator.roc import MulticlassROC
 
         bins = np.linspace(0, 1, 1000)
         return (
