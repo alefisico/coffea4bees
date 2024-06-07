@@ -88,12 +88,14 @@ class TrainingStage(Stage):
                 Usage.checkpoint(self.name, f"epoch{epoch}", "benchmark")
                 self.model.nn.eval()
                 with torch.no_grad():
+                    bs = {}
+                    for k, v in validation.items():
+                        classifier.cleanup()
+                        bs[k] = self.model.validate(v)
                     benchmark.append(
                         {
                             "epoch": epoch,
-                            "benchmark": {
-                                k: self.model.validate(v) for k, v in validation.items()
-                            },
+                            "benchmark": bs,
                         }
                     )
             lr.step()
@@ -119,6 +121,12 @@ class TrainingStage(Stage):
             drop_last=False,
             pin_memory=True,
         )
+
+
+class EvaluationStage(Stage):  # TODO evaluation
+    def run(self, classifier: Classifier):
+        pass
+
 
 @dataclass
 class OutputStage(Stage):
