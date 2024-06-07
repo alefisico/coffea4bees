@@ -200,26 +200,27 @@ class EntryPoint:
         from ..config.main.analyze import run_analyzer
         from ..process.monitor import Recorder, wait_for_monitor
 
+        # run main task
         result = self.main.run(self)
-        wait_for_monitor()
-
-        if (not self.main._no_state) and (not cfg.IO.states.is_null):
-            cfg.save.parse([cfg.IO.states])
-
+        # run analysis on result
         analysis = run_analyzer(self, result)
         if analysis:
             result = result or {}
             result["analysis"] = analysis
-
+        # wait for monitor
+        wait_for_monitor()
+        # dump state
+        if (not self.main._no_state) and (not cfg.IO.states.is_null):
+            cfg.save.parse([cfg.IO.states])
+        # dump diagnostics
         Recorder.dump()
-
+        # dump result
         if (result is not None) and (not cfg.IO.result.is_null):
             from base_class.utils.json import DefaultEncoder
 
             result["command"] = self.cmd
             if reproducible is not None:
                 result["reproducible"] = reproducible()
-
             with fsspec.open(cfg.IO.result, "wt") as f:
                 json.dump(result, f, cls=DefaultEncoder)
 

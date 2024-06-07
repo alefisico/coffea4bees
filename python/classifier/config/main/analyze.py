@@ -35,10 +35,14 @@ def run_analyzer(parser: EntryPoint, output: dict):
     analyzers = [*chain(*(a.analyze(output) for a in analysis))]
     if not analyzers:
         return []
-    with ProcessPoolExecutor(
-        max_workers=cfg.Analysis.max_workers,
-        mp_context=status.context,
-        initializer=status.initializer,
-    ) as pool:
-        results = [*pool.map(call, analyzers)]
+
+    if status.context is not None:
+        with ProcessPoolExecutor(
+            max_workers=cfg.Analysis.max_workers,
+            mp_context=status.context,
+            initializer=status.initializer,
+        ) as pool:
+            results = [*pool.map(call, analyzers)]
+    else:
+        results = [*map(call, analyzers)]
     return [*filter(lambda x: x is not None, results)]

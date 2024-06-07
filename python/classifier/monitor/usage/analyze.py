@@ -188,6 +188,7 @@ def _plot_process_tree(ps: list[ProcessInfo], start_t: int):
 
 
 def _plot_stack(fig: figure, data: pd.DataFrame):
+    data.rename(columns=str, inplace=True)
     return fig.varea_stack(
         sorted(set(data.columns) - {"time"}),
         x="time",
