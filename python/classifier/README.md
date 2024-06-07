@@ -141,6 +141,7 @@ TODO
 - HCR:
   - Add die loss?
 - main:
+  - Add train/plot from saved model
   - Add evaluation
   - Add plotting
 - Add SvB
