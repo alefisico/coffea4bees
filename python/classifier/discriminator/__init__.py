@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 BatchType = dict[str, Tensor]
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Stage(ABC):
     name: str
 
@@ -36,9 +36,50 @@ class Stage(ABC):
     def run(self, classifier: Classifier) -> dict[str]: ...
 
 
-@dataclass
-class TrainingStage(Stage):
+@dataclass(kw_only=True)
+class BenchmarkStage(Stage):
     model: Model
+    validation: dict[str, Dataset]
+
+    @staticmethod
+    def _loader_benchmark(dataset: Dataset, msg: MessageType = None):
+        return simple_loader(
+            dataset,
+            report_progress=msg,
+            batch_size=cfg.DataLoader.batch_eval,
+            shuffle=False,
+            drop_last=False,
+            pin_memory=True,
+        )
+
+    def _init_benchmark(self):
+        return {
+            k: self._loader_benchmark(v, ("batch", "benchmark", k))
+            for k, v in self.validation.items()
+        }
+
+    def _iter_benchmark(
+        self, classifier: Classifier, loaders: dict[str, Iterable[BatchType]]
+    ):
+        benchmark = {}
+        self.model.nn.eval()
+        with torch.no_grad():
+            for k, v in loaders.items():
+                classifier.cleanup()
+                Usage.checkpoint(self.name, "benchmark", k, "start")
+                benchmark[k] = self.model.validate(v)
+                Usage.checkpoint(self.name, "benchmark", k, "finish")
+        return benchmark
+
+    def run(self, classifier: Classifier):
+        return {
+            "name": self.name,
+            "benchmarks": self._iter_benchmark(classifier, self._init_benchmark()),
+        }
+
+
+@dataclass(kw_only=True)
+class TrainingStage(BenchmarkStage):
     schedule: Schedule
     training: Dataset
     validation: dict[str, Dataset] = None
@@ -62,10 +103,7 @@ class TrainingStage(Stage):
             and (self.model.validate is not NotImplemented)
         ):
             benchmark = []
-            validation = {
-                k: self._validation(v, ("batch", "validation", k))
-                for k, v in self.validation.items()
-            }
+            validation = self._init_benchmark()
         else:
             benchmark = None
         # training
@@ -85,19 +123,12 @@ class TrainingStage(Stage):
                 opt.step()
                 p_batch.update(i + 1, ("batch", "training", f"loss={loss.item():.4g}"))
             if benchmark is not None:
-                Usage.checkpoint(self.name, f"epoch{epoch}", "benchmark")
-                self.model.nn.eval()
-                with torch.no_grad():
-                    bs = {}
-                    for k, v in validation.items():
-                        classifier.cleanup()
-                        bs[k] = self.model.validate(v)
-                    benchmark.append(
-                        {
-                            "epoch": epoch,
-                            "benchmark": bs,
-                        }
-                    )
+                benchmark.append(
+                    {
+                        "epoch": epoch,
+                        "benchmarks": self._iter_benchmark(classifier, validation),
+                    }
+                )
             lr.step()
             bs.step()
             if self.model.step is not NotImplemented:
@@ -111,24 +142,13 @@ class TrainingStage(Stage):
             history["training"] = benchmark
         return history
 
-    @staticmethod
-    def _validation(dataset: Dataset, msg: MessageType = None):
-        return simple_loader(
-            dataset,
-            report_progress=msg,
-            batch_size=cfg.DataLoader.batch_eval,
-            shuffle=False,
-            drop_last=False,
-            pin_memory=True,
-        )
-
 
 class EvaluationStage(Stage):  # TODO evaluation
     def run(self, classifier: Classifier):
         pass
 
 
-@dataclass
+@dataclass(kw_only=True)
 class OutputStage(Stage):
     path: PathLike
 

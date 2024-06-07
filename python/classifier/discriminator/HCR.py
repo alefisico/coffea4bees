@@ -17,7 +17,7 @@ from ..config.setting.HCR import Input, InputBranch, Output
 from ..config.state.label import MultiClass
 from ..nn.HCR_blocks import HCR
 from ..nn.schedule import MilestoneStep, Schedule
-from . import BatchType, Classifier, Model, OutputStage, TrainingStage
+from . import BatchType, BenchmarkStage, Classifier, Model, OutputStage, TrainingStage
 from .roc import MulticlassROC
 from .skimmer import Skimmer, Splitter
 
@@ -119,7 +119,7 @@ class HCRModel(Model):
 
     def validate(self, batches: Iterable[BatchType]) -> dict[str]:
         loss, weight = 0.0, 0.0
-        rocs = (r.copy() for r in self._benchmarks.rocs)
+        rocs = [r.copy() for r in self._benchmarks.rocs]
         for batch in batches:
             c, p = self._nn(*_HCRInput(batch, self._device))
             batch |= {
@@ -183,15 +183,21 @@ class HCRTraining(Classifier):
         )
         self._HCR.nn.initMeanStd()
         training, validation = self._splitter.get()
+        validation = {
+            "training": training,
+            "validation": validation,
+        }
+        yield BenchmarkStage(
+            name="Random",
+            model=self._HCR,
+            validation=validation,
+        )
         yield TrainingStage(
             name="Training",
             model=self._HCR,
             schedule=self._training,
             training=training,
-            validation={
-                "training": training,
-                "validation": validation,
-            },
+            validation=validation,
         )
         self._HCR.ghost_batch = None
         if self._finetuning is not None:
@@ -204,10 +210,7 @@ class HCRTraining(Classifier):
                 model=self._HCR,
                 schedule=self._finetuning,
                 training=training,
-                validation={
-                    "training": training,
-                    "validation": validation,
-                },
+                validation=validation,
             )
             self._HCR.ghost_batch = self._ghost_batch
             layers.setLayerRequiresGrad(requires_grad=True)
