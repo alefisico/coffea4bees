@@ -37,7 +37,7 @@ def json_to_TH1( coffea_hist, iname, rebin ):
 
     return rHist
 
-def create_root_file(file_to_convert, histos, output_dir):
+def create_root_file(file_to_convert, _, output_dir):
     logging.info( "in create_root_file")
     coffea_hists = json.load(open(file_to_convert, 'r'))
     logging.info( "leaded coffea_hists")
