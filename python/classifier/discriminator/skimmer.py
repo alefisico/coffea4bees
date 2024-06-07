@@ -10,11 +10,11 @@ from torch.utils.data import Dataset, Subset
 
 from ..config.setting import torch as cfg
 from ..utils import keep_fraction, noop
-from . import Model
+from . import BatchType, Model
 
 if TYPE_CHECKING:
     import numpy.typing as npt
-    from torch import BoolTensor, Tensor
+    from torch import BoolTensor
 
 
 class Skimmer(Model):
@@ -23,7 +23,7 @@ class Skimmer(Model):
         return 0
 
     @property
-    def module(self):
+    def nn(self):
         return noop
 
     def train(self, _):
@@ -32,13 +32,13 @@ class Skimmer(Model):
 
 class Splitter(ABC):
     @abstractmethod
-    def split(self, batch: dict[str, Tensor]) -> tuple[BoolTensor, ...]: ...
+    def split(self, batch: BatchType) -> tuple[BoolTensor, ...]: ...
 
     def setup(self, dataset: Dataset):
         self.reset()
         self._dataset = dataset
 
-    def step(self, batch: dict[str, Tensor]) -> tuple[BoolTensor, ...]:
+    def step(self, batch: BatchType) -> tuple[BoolTensor, ...]:
         selected = self.split(batch)
         size = len(selected[0])
         if self._selected is None:
@@ -67,12 +67,12 @@ class KFold(Splitter):
         self._k = k
         self._i = offset
 
-    def split(self, batch: dict[str, Tensor]) -> tuple[BoolTensor, ...]:
+    def split(self, batch: BatchType) -> tuple[BoolTensor, ...]:
         validation = torch.from_numpy((self._get_offset(batch) % self._k) == self._i)
         return ~validation, validation
 
     @classmethod
-    def _get_offset(cls, batch: dict[str, Tensor]) -> npt.NDArray:
+    def _get_offset(cls, batch: BatchType) -> npt.NDArray:
         return batch[cfg.KFold.offset].numpy().view(cfg.KFold.offset_dtype)
 
 
@@ -81,11 +81,11 @@ class RandomSubSample(KFold):
         self._rng = Squares(seed)
         self._r = Fraction(fraction)
 
-    def split(self, batch: dict[str, Tensor]) -> tuple[BoolTensor, ...]:
+    def split(self, batch: BatchType) -> tuple[BoolTensor, ...]:
         training = torch.from_numpy(keep_fraction(self._r, self._random_offset(batch)))
         return training, ~training
 
-    def _random_offset(self, batch: dict[str, Tensor]) -> npt.NDArray:
+    def _random_offset(self, batch: BatchType) -> npt.NDArray:
         offset = self._get_offset(batch)
         offset = offset.reshape(offset.shape[0], -1)
         return self._rng.uint64(offset)
@@ -97,6 +97,6 @@ class RandomKFold(RandomSubSample):
         self._k = k
         self._i = offset
 
-    def split(self, batch: dict[str, Tensor]) -> tuple[BoolTensor, ...]:
+    def split(self, batch: BatchType) -> tuple[BoolTensor, ...]:
         validation = torch.from_numpy((self._random_offset(batch) % self._k) == self._i)
         return ~validation, validation

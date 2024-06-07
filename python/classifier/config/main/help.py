@@ -182,7 +182,7 @@ class Main(main.Main):
                             if (
                                 issubclass(obj, target)
                                 and not main._is_private(name)
-                                and obj.__module__ == modname
+                                and obj.__module__.startswith(modname)
                             ):
                                 fullname = f"{imp}{name}"
                                 if self.opts.filter.fullmatch(fullname) is not None:
