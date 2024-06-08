@@ -112,6 +112,17 @@ analysis-test-job:
     paths:
       - python/analysis/hists/test.coffea
 
+analysis-test-truthStudy:   
+  stage: analysis-test   
+  extends:
+    - .base_analysis
+  script:
+    - source .ci-workflows/analysis-test-job-truthStudy.sh
+  artifacts: 
+    paths:
+      - python/analysis/hists/testTruth.coffea
+
+
 analysis-test-job-unsup:   
   stage: analysis-test   
   extends:
