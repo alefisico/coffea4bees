@@ -9,14 +9,29 @@ hists:
                 label: ZH4b
    
         HH4b:
-                process: HH4b
+                process: GluGluToHHTo4B_cHHH1
                 tag: fourTag
                 year: RunII
                 histtype: step
                 fillcolor: r
                 edgecolor: r
                 label: HH4b
-   
+
+
+ratios:
+        dataToBkg:
+                numerator:
+                        type: hists
+                        key: ZH4b
+                denominator:
+                        type: hists
+                        key: HH4b
+                uncertianty:
+                        nominal
+                color: k
+                marker: "o"
+
+
 codes:
    region:
       SR: 2
