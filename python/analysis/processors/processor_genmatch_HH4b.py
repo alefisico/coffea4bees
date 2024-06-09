@@ -87,11 +87,16 @@ class analysis(processor.ProcessorABC):
             "all",
             "pass4GenBJets00",    "pass4GenBJets20",    "pass4GenBJets40",
             "pass4GenBJets00_1j", "pass4GenBJets20_1j", "pass4GenBJets40_1j",
+            "pass4GenBJetsb203b40_1j_i",  "pass4GenBJetsb203b40_1j_e",
+            "pass4GenBJets2b202b40_2j_i", "pass4GenBJets2b202b40_2j_e",
             "passHLT",
         ]
 
         self.histCuts = ["pass4GenBJets00",    "pass4GenBJets20",    "pass4GenBJets40",
-                         "pass4GenBJets00_1j", "pass4GenBJets20_1j", "pass4GenBJets40_1j"]
+                         "pass4GenBJets00_1j", "pass4GenBJets20_1j", "pass4GenBJets40_1j",
+                         "pass4GenBJetsb203b40_1j_i", "pass4GenBJetsb203b40_1j_e",
+                         "pass4GenBJets2b202b40_2j_i", "pass4GenBJets2b202b40_2j_e",
+                         ]
 
 
 
@@ -156,7 +161,8 @@ class analysis(processor.ProcessorABC):
         event['pass4GenBJets20'] = ak.num(event.matchedGenBJet20) >= 4
         event['pass4GenBJets30'] = ak.num(event.matchedGenBJet30) >= 4
         event['pass4GenBJets40'] = ak.num(event.matchedGenBJet40) >= 4
-
+        event['pass3GenBJets40'] = ak.num(event.matchedGenBJet40) >= 3
+        event['pass2GenBJets40'] = ak.num(event.matchedGenBJet40) >= 2
         event['weight'] = weights.weight()   ### this is for _cutflow
 
         #
@@ -201,13 +207,23 @@ class analysis(processor.ProcessorABC):
         #
         #  Other Jets
         #
-        selev['GenJet', 'other40'] = (selev.GenJet.pt >= 40) & (np.abs(selev.GenJet.eta) <= 2.4) & (~selev.GenJet.selectedBs00)
-        selev['otherGenJets40'] = selev.GenJet[selev.GenJet.other40]
+        selev['GenJet', 'other00'] = (np.abs(selev.GenJet.eta) <= 2.4) & (~selev.GenJet.selectedBs00)
+        selev['otherGenJets00'] = selev.GenJet[selev.GenJet.other00]
+        selev['otherGenJets40'] = selev.otherGenJets00[selev.otherGenJets00.pt > 40]
+
         selev['pass1OtherJet40'] = ak.num(selev.otherGenJets40) >= 1
+        selev['pass2OtherJet40'] = ak.num(selev.otherGenJets40) >= 2
 
         selev['pass4GenBJets00_1j'] = selev.pass4GenBJets00 & selev.pass1OtherJet40
         selev['pass4GenBJets20_1j'] = selev.pass4GenBJets20 & selev.pass1OtherJet40
         selev['pass4GenBJets40_1j'] = selev.pass4GenBJets40 & selev.pass1OtherJet40
+
+        selev['pass4GenBJetsb203b40_1j_i'] = selev.pass4GenBJets20 & selev.pass3GenBJets40 & selev.pass1OtherJet40
+        selev['pass4GenBJetsb203b40_1j_e'] = selev.pass4GenBJetsb203b40_1j_i & ~selev.pass4GenBJets40
+
+        selev['pass4GenBJets2b202b40_2j_i'] = selev.pass4GenBJets20 & selev.pass2GenBJets40 & selev.pass2OtherJet40
+        selev['pass4GenBJets2b202b40_2j_e'] = selev.pass4GenBJets2b202b40_2j_i & ~selev.pass4GenBJets40 & ~selev.pass4GenBJetsb203b40_1j_i
+
 
         # selev['Jet', 'selected'] = (selev.Jet.pt >= 40) & (np.abs(selev.Jet.eta) <= 2.4)
         # selev['selJet'] = selev.Jet[ selev.Jet.selected ]
@@ -225,12 +241,20 @@ class analysis(processor.ProcessorABC):
         selections.add( "pass4GenBJets00",    event.pass4GenBJets00)
         selections.add( "pass4GenBJets20",    event.pass4GenBJets20)
         selections.add( "pass4GenBJets40",    event.pass4GenBJets40)
+        selections.add( "pass3GenBJets40",    event.pass3GenBJets40)
+        selections.add( "pass2GenBJets40",    event.pass2GenBJets40)
 
         event_pass1OtherJet40 = np.full(len(event), False)
         event_pass1OtherJet40[event.pass4GenBJets00] = selev.pass1OtherJet40
         event["pass1OtherJet40"] = event_pass1OtherJet40
 
+        event_pass2OtherJet40 = np.full(len(event), False)
+        event_pass2OtherJet40[event.pass4GenBJets00] = selev.pass2OtherJet40
+        event["pass2OtherJet40"] = event_pass2OtherJet40
+
+
         selections.add( "pass1OtherJet40",    event.pass1OtherJet40)
+        selections.add( "pass2OtherJet40",    event.pass2OtherJet40)
 
         self._cutFlow = cutFlow(self.cutFlowCuts)
         self._cutFlow.fill( "all", event, allTag=True)
@@ -240,9 +264,10 @@ class analysis(processor.ProcessorABC):
         self._cutFlow.fill( "pass4GenBJets00_1j", event[selections.require(pass4GenBJets00=True, pass1OtherJet40=True)], allTag=True)
         self._cutFlow.fill( "pass4GenBJets20_1j", event[selections.require(pass4GenBJets20=True, pass1OtherJet40=True)], allTag=True)
         self._cutFlow.fill( "pass4GenBJets40_1j", event[selections.require(pass4GenBJets40=True, pass1OtherJet40=True)], allTag=True)
-
-
-
+        self._cutFlow.fill( "pass4GenBJetsb203b40_1j_i", event[selections.require(pass4GenBJets20=True, pass3GenBJets40=True, pass1OtherJet40=True)], allTag=True)
+        self._cutFlow.fill( "pass4GenBJetsb203b40_1j_e", event[selections.require(pass4GenBJets20=True, pass3GenBJets40=True, pass1OtherJet40=True, pass4GenBJets40=False)], allTag=True)
+        self._cutFlow.fill( "pass4GenBJets2b202b40_2j_i", event[selections.require(pass4GenBJets20=True, pass2GenBJets40=True, pass2OtherJet40=True)], allTag=True)
+        self._cutFlow.fill( "pass4GenBJets2b202b40_2j_e", event[selections.require(pass4GenBJets20=True, pass2GenBJets40=True, pass2OtherJet40=True, pass4GenBJets40=False, pass3GenBJets40=False)], allTag=True)
 
         fill = Fill(process=processName, year=year, weight="weight")
 
@@ -259,6 +284,7 @@ class analysis(processor.ProcessorABC):
         fill += LorentzVector.plot(('matchedGenBJet20', 'Selected Gen Candidate'), 'matchedGenBJet20')
         fill += LorentzVector.plot(('matchedGenBJet40', 'Selected Gen Candidate'), 'matchedGenBJet40')
 
+        fill += LorentzVector.plot(('otherGenJet00', 'Non matched Gen Candidate'), 'otherGenJets00')
         fill += LorentzVector.plot(('otherGenJet40', 'Non matched Gen Candidate'), 'otherGenJets40')
 
 
