@@ -226,9 +226,8 @@ class Classifier(WithUUID, ABC):
             "history": [],
         }
         history: list[dict] = result["history"]
-        Usage.checkpoint("classifier", "init")
         for stage in self.stages():
-            Usage.checkpoint("classifier", stage.name, "start")
+            Usage.checkpoint("stage", stage.name, "start")
             history.append(stage.run(self))
-            Usage.checkpoint("classifier", stage.name, "finish")
+            Usage.checkpoint("stage", stage.name, "finish")
         return result

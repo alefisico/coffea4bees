@@ -194,7 +194,7 @@ class HCRTraining(Classifier):
             "validation": validation,
         }
         yield BenchmarkStage(
-            name="Random",
+            name="Baseline",
             model=self._HCR,
             validation=validation,
         )
