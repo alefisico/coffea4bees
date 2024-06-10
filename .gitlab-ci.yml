@@ -38,8 +38,9 @@ voms_proxy:
     paths:
       - proxy
   script:
-    - sudo cp -rf /cvmfs/grid.cern.ch/etc/grid-security/ /etc/grid-security/
-    - ls -lR /etc/grid-security/
+    - sudo cp -rf /cvmfs/grid.cern.ch/etc/grid-security/certificates/ /etc/grid-security/certificates/
+    - sudo cp -rf /cvmfs/grid.cern.ch/etc/grid-security/vomsdir/cms/ /etc/grid-security/vomsdir/cms/
+    - ls /etc/grid-security/vomsdir/cms/
     - sudo cp -rf /cvmfs/grid.cern.ch/etc/grid-security/vomses/ /etc/vomses/
     - ls -lR /etc/vomses/
     - mkdir -p ${HOME}/.globus
