@@ -22,7 +22,7 @@ python3 stats_analysis/convert_json_to_root.py -f analysis/hists/histAll.json   
 # Test it with
 #
 
-python3 stats_analysis/runFitBiasData.py  --var SvB_MA_ps_hh  --rebin 20 --outputPath stats_analysis/fitBiasData/ULHH --bkg_syst_file stats_analysis/closureFits/ULHH/3bDvTMix4bDvT/SvB_MA/rebin8/SR/zz/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_zz_rebin8.pk
-
+#python3 stats_analysis/runFitBiasData.py  --var SvB_MA_ps_hh  --rebin 20 --outputPath stats_analysis/fitBiasData/ULHH --bkg_syst_file stats_analysis/closureFits/ULHH/3bDvTMix4bDvT/SvB_MA/rebin8/SR/zz/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_zz_rebin8.pk
+python3 stats_analysis/runFitBiasData.py  --var SvB_MA_ps_zz   --rebin 8 --outputPath stats_analysis/fitBiasData/ULHH --bkg_syst_file stats_analysis/closureFits/ULHH/3bDvTMix4bDvT/SvB_MA/rebin8/SR/zz/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_zz_rebin8.pkl  
 
 cd ../
