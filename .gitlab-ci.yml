@@ -40,6 +40,7 @@ voms_proxy:
   script:
     - sudo cp -rf /cvmfs/grid.cern.ch/etc/grid-security/ /etc/grid-security/
     - sudo cp -rf /cvmfs/grid.cern.ch/etc/grid-security/vomses/ /etc/vomses/
+    - ls -lR /etc/vomses/
     - mkdir -p ${HOME}/.globus
     - printf "${GRID_USERCERT}" | base64 -d > ${HOME}/.globus/usercert.pem
     - printf "${GRID_USERKEY}" | base64 -d > ${HOME}/.globus/userkey.pem
