@@ -46,7 +46,7 @@ voms_proxy:
     - printf "${GRID_USERKEY}" | base64 -d > ${HOME}/.globus/userkey.pem
     - chmod 400 ${HOME}/.globus/userkey.pem
     - printf "${GRID_PASSWORD}" | base64 -d | voms-proxy-init --voms cms --pwstdin
-    - voms-proxy-info --all
+    # - voms-proxy-info --all
     - export VOMSPROXY=$(voms-proxy-info -path)
     - mkdir proxy
     - cp ${VOMSPROXY} proxy/x509_proxy
