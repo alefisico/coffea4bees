@@ -442,6 +442,7 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
 
     rebin = kwargs.get("rebin", 1)
     var_over_ride = kwargs.get("var_over_ride", {})
+    label_override = kwargs.get("labels", None)
 
     #
     #  Unstacked hists
@@ -468,8 +469,8 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
 
             _process_config = copy.copy(process_config)
             _process_config["fillcolor"] = _colors[ic]
-            _process_config["label"]     = process_config["label"] + " " + _cut
-            _process_config["histtype"]  = "errorbar"
+            _process_config["label"]     = label_override[ic] if label_override else f"{process_config['label']} { _cut}"
+            _process_config["histtype"]  = kwargs.get("histtype","errorbar")
 
             _hist = get_hist(cfg, _process_config,
                              var=var_to_plot, region=region, cut=_cut, rebin=rebin,
@@ -488,8 +489,8 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
 
             _process_config = copy.copy(process_config)
             _process_config["fillcolor"] = _colors[ir]
-            _process_config["label"]     = f"{_process_config['label']} {_reg}"
-            _process_config["histtype"]  = "errorbar"
+            _process_config["label"]     = label_override[ir] if label_override else f"{_process_config['label']} {_reg}"
+            _process_config["histtype"]  = kwargs.get("histtype","errorbar")
 
             _hist = get_hist(cfg, _process_config,
                              var=var_to_plot, region=_reg, cut=cut, rebin=rebin,
@@ -511,12 +512,14 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
             _process_config = copy.copy(process_config)
             _process_config["fillcolor"] = _colors[iF]
 
-            if iF < len(fileLabels):
+            if label_override:
+                _process_config["label"] = label_override[iF]
+            elif iF < len(fileLabels):
                 _process_config["label"] = _process_config["label"] + " " + fileLabels[iF]
             else:
                 _process_config["label"] = _process_config["label"] + " file" + str(iF + 1)
 
-            _process_config["histtype"]  = "errorbar"
+            _process_config["histtype"]  = kwargs.get("histtype","errorbar")
 
             _hist = get_hist(cfg, _process_config,
                              var=var_to_plot, region=region, cut=cut, rebin=rebin,
@@ -536,7 +539,7 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
 
             _process_config = copy.copy(_proc_conf)
             _process_config["fillcolor"] = _proc_conf.get("fillcolor", None).replace("yellow", "orange")
-            _process_config["histtype"]  = "errorbar"
+            _process_config["histtype"]  = kwargs.get("histtype","errorbar")
 
             var_to_plot = var_over_ride.get(_proc_conf["process"], var)
 
@@ -557,8 +560,8 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
 
             _process_config = copy.copy(process_config)
             _process_config["fillcolor"] = _colors[iv]
-            _process_config["label"]     = f"{_process_config['label']} {_var}"
-            _process_config["histtype"]  = "errorbar"
+            _process_config["label"]     = label_override[iv] if label_override else f"{_process_config['label']} {_var}"
+            _process_config["histtype"]  = kwargs.get("histtype","errorbar")
 
             _hist = get_hist(cfg, _process_config,
                              var=_var, region=region, cut=cut, rebin=rebin,
