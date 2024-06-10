@@ -107,7 +107,7 @@ class TrainingStage(BenchmarkStage):
         else:
             benchmark = None
         # training
-        p_epoch = Progress.new(self.schedule.epoch, f"epoch")
+        p_epoch = Progress.new(self.schedule.epoch, (f"epoch", self.name))
         logging.info(f"Start {self.name}")
         start = datetime.now()
         for epoch in range(self.schedule.epoch):
@@ -125,7 +125,12 @@ class TrainingStage(BenchmarkStage):
             if benchmark is not None:
                 benchmark.append(
                     {
-                        "epoch": epoch,
+                        "hyperparameters": {
+                            "epoch": epoch,
+                            "learning_rate": lr.get_last_lr(),
+                            "batch_size": bs.dataloader.batch_size,
+                        }
+                        | self.model.hyperparameters,
                         "benchmarks": self._iter_benchmark(classifier, validation),
                     }
                 )
@@ -169,6 +174,10 @@ class Model(ABC):
     @property
     def n_parameters(self) -> int:
         return sum(p.numel() for p in self.nn.parameters())
+
+    @property
+    def hyperparameters(self) -> dict[str]:
+        return {}
 
     @property
     @abstractmethod

@@ -37,7 +37,15 @@ class GBNSchedule(MilestoneStep):
 
     def __post_init__(self):
         self.milestones = sorted(self.milestones)
+        self._last_bs = self.n_batches
         self.reset()
+
+    def get_bs(self):
+        self._last_bs = int(self.n_batches * (self.gamma**self.milestone))
+        return self._last_bs
+
+    def get_last_bs(self):
+        return self._last_bs
 
 
 @dataclass
@@ -48,10 +56,10 @@ class HCRBenchmarks:
 def _HCRInput(batch: BatchType, device: tt.Device, selection: Tensor = None):
     for k, v in batch.items():
         batch[k] = v.to(device, non_blocking=True)
-    inputs = (batch.pop(k) for k in (Input.CanJet, Input.NotCanJet, Input.ancillary))
+    inputs = [batch.pop(k) for k in (Input.CanJet, Input.NotCanJet, Input.ancillary)]
     if selection is not None:
         selection = selection.to(device, non_blocking=True)
-        inputs = (i[selection] for i in inputs)
+        inputs = [i[selection] for i in inputs]
     return inputs
 
 
@@ -108,6 +116,10 @@ class HCRModel(Model):
             self._nn.setGhostBatches(self._gbn.n_batches, True)  # TODO check subset
 
     @property
+    def hyperparameters(self) -> dict[str]:
+        return {"n_ghost_batch": self.ghost_batch.get_last_bs()}
+
+    @property
     def nn(self):
         return self._nn
 
@@ -136,13 +148,7 @@ class HCRModel(Model):
 
     def step(self, epoch: int = None):
         if self.ghost_batch is not None and self.ghost_batch.step(epoch):
-            self._nn.setGhostBatches(
-                int(
-                    self.ghost_batch.n_batches
-                    * (self.ghost_batch.gamma**self.ghost_batch.milestone)
-                ),
-                True,
-            )
+            self._nn.setGhostBatches(self.ghost_batch.get_bs(), True)
 
 
 class HCRTraining(Classifier):
