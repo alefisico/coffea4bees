@@ -38,7 +38,7 @@ voms_proxy:
     paths:
       - proxy
   script:
-    - ln -s /cvmfs/grid.cern.ch/etc/grid-security /etc/grid-security
+    # - ln -s /cvmfs/grid.cern.ch/etc/grid-security /etc/grid-security
     - ln -s /cvmfs/grid.cern.ch/etc/grid-security/vomses /etc/vomses
     - mkdir -p ${HOME}/.globus
     - printf "${GRID_USERCERT}" | base64 -d > ${HOME}/.globus/usercert.pem
