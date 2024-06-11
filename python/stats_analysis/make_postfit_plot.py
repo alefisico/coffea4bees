@@ -4,7 +4,7 @@ import argparse
 import logging
 import ROOT
 import cmsstyle as CMS
-
+ROOT.gROOT.SetBatch(True)
 
 if __name__ == '__main__':
 
@@ -46,7 +46,7 @@ if __name__ == '__main__':
 
     # Rescaling histogram
     for _, ih in hists.items():
-        ih.Rebin(10)
+        ih.Rebin(2)
         ax = ih.GetXaxis()
         ax.Set( ax.GetNbins(), 0, 1.0 )
         ih.ResetStats()
@@ -66,7 +66,7 @@ if __name__ == '__main__':
     leg = CMS.cmsLeg(0.70, 0.89 - 0.05 * 4, 0.99, 0.89, textSize=0.04)
 
     stack = ROOT.THStack()
-    CMS.cmsDrawStack(stack, leg, {'ttbar': hists['tt'].Clone(), 'Multijet': hists['mj'].Clone() }, data= hists['data'] )
+    CMS.cmsDrawStack(stack, leg, {'ttbar': hists['tt'].Clone(), 'Multijet': hists['mj'].Clone() }, data= hists['data'], palette=['#85D1FBff', '#FFDF7Fff'] )
     #CMS.GetcmsCanvasHist(nominal_can).GetYaxis().SetTitleOffset(1.6)
     CMS.fixOverlay()
     hists['HH'].Scale( 100 )

@@ -281,7 +281,7 @@ cmsenv || true
 cd -
 cat {input}
 echo "RUNNING COMBINE"
-source python/stats_analysis/run_combine.sh output/datacards/ impacts
+source python/stats_analysis/run_combine.sh output/datacards/ --impacts
         """
 
 rule make_syst_plots:

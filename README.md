@@ -17,6 +17,8 @@ This repository assumes that you are running in a machine that has access to [cv
 git clone ssh://git@gitlab.cern.ch:7999/cms-cmu/coffea4bees.git
 ```
 
+#### To run at the CMSLPC
+
 This code has been tested at the cmslpc, and to simplify the setup, it can be used with the container needed to run on lpc condor computers. To set this container:
 ```
 curl -OL https://raw.githubusercontent.com/CoffeaTeam/lpcjobqueue/main/bootstrap.sh
@@ -37,6 +39,15 @@ In addition, dont forget to run your voms-proxy to have access to remote files:
 ```
 voms-proxy-init -rfc -voms cms --valid 168:00
 ```
+
+#### To run on lxplus
+
+The script `lxplus_shell.sh` can be run to run the code on lxplus. This script contains two options `--coffea4bees` and `--combine`, each one will setup the dedicated container need, as:
+
+```
+source lxplus_shell.sh --coffea4bees
+```
+
 
 #### Conda environment
 
