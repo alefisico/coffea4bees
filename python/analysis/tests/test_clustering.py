@@ -88,53 +88,62 @@ class topCandRecoTestCase(unittest.TestCase):
             behavior=vector.behavior,
         )
 
+        self.debug = False
 
         
     
-    def test_clustering_4jets(self):
-
-                
-        
-
-#        # Example usage
-#        particles = [
-#            {'pt': 50, 'eta': 0.3, 'phi': 1.2},
-#            {'pt': 30, 'eta': 0.1, 'phi': 1.5},
-#            {'pt': 20, 'eta': -0.4, 'phi': -1.2},
-#            {'pt': 10, 'eta': 0.3, 'phi': 1.1},
-#            # Add more particles as needed
-#        ]
-
-        #particles = copy(self.input_jets_4)
+    def test_kt_clustering_4jets(self):
         
         R = np.pi  # Jet size parameter
         clustered_jets = kt_clustering(self.input_jets_4, R)
 
-        #print(clustered_jets)
-        
-
-
-        #jetdef04 = fastjet.JetDefinition(fastjet.kt_algorithm, 0.4)
         jetdefAll = fastjet.JetDefinition(fastjet.kt_algorithm, R)
-        #cluster04 = fastjet.ClusterSequence(self.input_jets_4, jetdef04)
         clusterAll = fastjet.ClusterSequence(self.input_jets_4, jetdefAll)
-
-#        breakpoint()
-
+        
         for iEvent, jets in enumerate(clustered_jets):
-            print(f"Event {iEvent}")
+            if self.debug: print(f"Event {iEvent}")
             for i, jet in enumerate(jets):
-                #print(f"Jet {i+1}: pt = {jet['pt']:.2f}, eta = {jet['eta']:.2f}, phi = {jet['phi']:.2f}, mass = {jet.mass:.2f}")
-                print(f"Jet {i+1}: px = {jet.px:.2f}, py = {jet.py:.2f}, pz = {jet.pz:.2f}, E = {jet.E:.2f}, type = {jet.jet_flavor}")
 
-            for i_fj, jet_fj in enumerate(clusterAll.inclusive_jets()[iEvent]):
-                print(f"FJ  {i_fj+1}: px = {jet_fj.px:.2f}, py = {jet_fj.py:.2f}, pz = {jet_fj.pz:.2f}, E = {jet_fj.E:.2f}")
-#                print(f"Jet {i_fj+1}: pt = {jet_fj['pt']:.2f}, eta = {jet_fj['eta']:.2f}, phi = {jet_fj['phi']:.2f}, mass = {jet_fj.mass:.2f}")
+                hasFJMatch = False
+                if self.debug: print(f"Jet {i+1}: px = {jet.px:.2f}, py = {jet.py:.2f}, pz = {jet.pz:.2f}, E = {jet.E:.2f}, type = {jet.jet_flavor}")
+                for i_fj, jet_fj in enumerate(clusterAll.inclusive_jets()[iEvent]):
+                    if np.allclose( (jet.px, jet.py, jet.pz, jet.E),(jet_fj.px, jet_fj.py, jet_fj.pz, jet_fj.E), atol=1e-3 ):
+                        if self.debug: print("Has match!")
+                        hasFJMatch =True
 
-                
-        
-        #breakpoint()
-        
+                self.assertTrue(hasFJMatch, " Not all jets have a fastjet match")
+
+            if self.debug:                 
+                for i_fj, jet_fj in enumerate(clusterAll.inclusive_jets()[iEvent]):
+                    print(f"FJ  {i_fj+1}: px = {jet_fj.px:.2f}, py = {jet_fj.py:.2f}, pz = {jet_fj.pz:.2f}, E = {jet_fj.E:.2f}")
+
+
+
+#    def test_broken_kt_clustering_4jets(self):
+#        
+#        R = np.pi  # Jet size parameter
+#        clustered_jets = kt_clustering(self.input_jets_4, R)
+#
+#        jetdefAll = fastjet.JetDefinition(fastjet.cambridge_algorithm, 0.4)
+#        clusterAll = fastjet.ClusterSequence(self.input_jets_4, jetdefAll)
+#        
+#        for iEvent, jets in enumerate(clustered_jets):
+#            if self.debug: print(f"Event {iEvent}")
+#            for i, jet in enumerate(jets):
+#
+#                hasFJMatch = False
+#                if self.debug: print(f"Jet {i+1}: px = {jet.px:.2f}, py = {jet.py:.2f}, pz = {jet.pz:.2f}, E = {jet.E:.2f}, type = {jet.jet_flavor}")
+#                for i_fj, jet_fj in enumerate(clusterAll.inclusive_jets()[iEvent]):
+#                    if np.allclose( (jet.px, jet.py, jet.pz, jet.E),(jet_fj.px, jet_fj.py, jet_fj.pz, jet_fj.E), atol=1e-3 ):
+#                        if self.debug: print("Has match!")
+#                        hasFJMatch =True
+#
+#                self.assertTrue(hasFJMatch, " Not all jets have a fastjet match")                        
+#
+#            if self.debug:                 
+#                for i_fj, jet_fj in enumerate(clusterAll.inclusive_jets()[iEvent]):
+#                    print(f"FJ  {i_fj+1}: px = {jet_fj.px:.2f}, py = {jet_fj.py:.2f}, pz = {jet_fj.pz:.2f}, E = {jet_fj.E:.2f}")
+#                    
 
     
         
