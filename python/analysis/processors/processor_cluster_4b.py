@@ -16,6 +16,7 @@ from base_class.hist import Collection, Fill
 from base_class.physics.object import LorentzVector, Jet, Muon, Elec
 from analysis.helpers.hist_templates import SvBHists, FvTHists, QuadJetHists
 from analysis.helpers.topCandReconstruction import dumpTopCandidateTestVectors
+from analysis.helpers.clustering import cluster_bs
 
 from analysis.helpers.cutflow import cutFlow
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
@@ -157,6 +158,8 @@ class analysis(processor.ProcessorABC):
         notCanJet_idx = sorted_idx[:, 4:]
         canJet = selev.Jet[canJet_idx]
 
+
+        
         # apply bJES to canJets
         canJet = canJet * canJet.bRegCorr
         canJet["bRegCorr"] = selev.Jet.bRegCorr[canJet_idx]
@@ -197,29 +200,23 @@ class analysis(processor.ProcessorABC):
         #
         # Build diJets, indexed by diJet[event,pairing,0/1]
         #
-        canJet = selev["canJet"]
+        #canJet = selev["canJet"]
 
-        dRs = []
-        jet_pairs_idx_i = []
-        jet_pairs_idx_j = []
-        jet_pairs_idx = []
-        
-        for i in range(4):
-            for j in range(i+1,4):
-                print(i,j)
-                #_diJet = canJet[:, i] + canJet[:, j]
-                _dR = canJet[:, i].delta_r(canJet[:, j])
-                dRs.append(_dR)
-                jet_pairs_idx_i.append( i )
-                jet_pairs_idx_j.append( j )
-                jet_pairs_idx  .append( (i, j) ) 
 
-        import fastjet
-        jetdef = fastjet.JetDefinition(fastjet.cambridge_algorithm, 4*np.pi)
-        cluster = fastjet.ClusterSequence(canJet, jetdef)
-        print(cluster)
-        print(dir(cluster))
+        canJet["jet_flavor"] = "b"
+        print(f'{canJet[0]}')
+        print(f'{canJet[0][0]}')
+        print(f'{canJet[0][0].pt}')
+        print(f'{canJet[0][0].jet_flavor}')
         print()
+        clustered_jets = cluster_bs(canJet, debug=False)        
+        #selev.Jet
+        # import fastjet
+        # jetdef = fastjet.JetDefinition(fastjet.cambridge_algorithm, 4*np.pi)
+        # cluster = fastjet.ClusterSequence(canJet, jetdef)
+        # print(cluster)
+        # print(dir(cluster))
+        # print()
         print(f'canJet 0 "pt" : {canJet[0, 0].pt}, "eta" : {canJet[0, 0].eta}, "phi" : {canJet[0, 0].phi}, "E" : {canJet[0, 0].E} ')
         print(f'canJet 1 "pt" : {canJet[0, 1].pt}, "eta" : {canJet[0, 1].eta}, "phi" : {canJet[0, 1].phi}, "E" : {canJet[0, 1].E} ')
         print(f'canJet 2 "pt" : {canJet[0, 2].pt}, "eta" : {canJet[0, 2].eta}, "phi" : {canJet[0, 2].phi}, "E" : {canJet[0, 2].E} ')
@@ -232,30 +229,9 @@ class analysis(processor.ProcessorABC):
 
         print(f'{len(selev)}')
         print()
-        dumpTopCandidateTestVectors(selev, logging, chunk, 10)
+        # dumpTopCandidateTestVectors(selev, logging, chunk, 10)
         
-        print(f' n_exclusive_jets {cluster.n_exclusive_jets()[0]}')
-        print(cluster.inclusive_jets()[0])
-        print(cluster.constituents()[0])
-        print()
-#        pairing = [jet_pairs_idx_i, jet_pairs_idx_j]
-#        diJets = canJet[:, pairing[0]] + canJet[:, pairing[1]]
 #        
-#        logging.info( f"\n {chunk} can dRs {dRs[0]} {jet_pairs_idx[0]} \n")
-#        logging.info( f"\n {chunk} can dRs {dRs[1]} {jet_pairs_idx[1]} \n")
-#        logging.info( f"\n {chunk} can dRs {dRs[2]} {jet_pairs_idx[2]} \n")
-#        logging.info( f"\n {chunk} can dRs {dRs[3]} {jet_pairs_idx[3]} \n")
-#        logging.info( f"\n {chunk} can dRs {dRs[4]} {jet_pairs_idx[4]} \n")
-#        logging.info( f"\n {chunk} can dRs {dRs[5]} {jet_pairs_idx[5]} \n")
-#
-#
-#        
-#        all_dRs = canJet[:, pairing[0]].delta_r(canJet[:, pairing[1]])
-#        logging.info( f"\n {chunk} all can dRs {all_dRs} \n")
-#        logging.info( f"\n {chunk} shape {all_dRs.ndim} \n")
-#        dR_sorted_idx = ak.argsort( all_dRs, axis=1, ascending=True )
-#        logging.info( f"\n {chunk} sorted idx {dR_sorted_idx} \n")
-#
 
         
         #logging.info( f"\n {chunk} can dRs {len(dRs[3])} \n")
