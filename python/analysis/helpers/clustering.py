@@ -42,13 +42,70 @@ def combine_particles(part_i, part_j, debug=False):
             "eta": [part_comb.eta],
             "phi": [part_comb.phi],
             "mass": [part_comb.mass],
-            "jet_flavor": [part_comb_jet_flavor],                        
+            "jet_flavor": [part_comb_jet_flavor],
+            "part_i": [part_i],
+            "part_j": [part_j],            
         },
         with_name="PtEtaPhiMLorentzVector",
         behavior=vector.behavior,
     )
 
     return part_comb_array
+
+
+
+# Define the kt clustering algorithm
+def cluster_bs(event_jets, R, debug = False):
+    clustered_jets = []
+
+    nevents = len(event_jets)
+
+    for iEvent in range(nevents):
+        particles = copy(event_jets[iEvent])
+        if debug: print(particles)
+
+        if debug: print(f"iEvent {iEvent}")        
+
+        # Maybe later allow more than 4 bs
+        number_of_unclustered_bs = 4
+        
+        while number_of_unclustered_bs > 2:
+            
+            #
+            # Calculate the distance measures
+            #
+            distances = get_distances(particles, R)
+            
+            # Find the minimum distance
+            min_dist, idx_i, idx_j = min(distances)
+
+            if debug: print(f"clustering {idx_i} and {idx_j}")
+            if debug: print(f"size partilces {len(particles)}")
+            # If the minimum distance is dij, combine particles i and j
+            part_i = copy(particles[idx_i])
+            part_j = copy(particles[idx_j])
+
+            particles = remove_indices(particles, [idx_i, idx_j])
+            
+            if debug: print(f"size partilces {len(particles)}")
+
+            part_comb_array = combine_particles(part_i, part_j)
+
+            print(part_comb_array.jet_flavor)
+            match part_comb_array.jet_flavor:
+                case "g_bb" | "bstar":
+                    number_of_unclustered_bs -= 1
+                case _:
+                    print(f"ERROR: counting {part_comb_array.jet_flavor}")
+
+            
+            particles = ak.concatenate([particles, part_comb_array])
+            if debug: print(f"size partilces {len(particles)}")
+
+        clustered_jets.append(particles)
+    return clustered_jets
+
+
 
 # Define the kt clustering algorithm
 def kt_clustering(event_jets, R, debug = False):

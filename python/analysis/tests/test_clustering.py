@@ -12,7 +12,7 @@ import time
 from copy import copy
 import os
 sys.path.insert(0, os.getcwd())
-from analysis.helpers.clustering import kt_clustering
+from analysis.helpers.clustering import kt_clustering, cluster_bs
 #import vector
 #vector.register_awkward()
 
@@ -119,31 +119,18 @@ class topCandRecoTestCase(unittest.TestCase):
 
 
 
-#    def test_broken_kt_clustering_4jets(self):
-#        
-#        R = np.pi  # Jet size parameter
-#        clustered_jets = kt_clustering(self.input_jets_4, R)
-#
-#        jetdefAll = fastjet.JetDefinition(fastjet.cambridge_algorithm, 0.4)
-#        clusterAll = fastjet.ClusterSequence(self.input_jets_4, jetdefAll)
-#        
-#        for iEvent, jets in enumerate(clustered_jets):
-#            if self.debug: print(f"Event {iEvent}")
-#            for i, jet in enumerate(jets):
-#
-#                hasFJMatch = False
-#                if self.debug: print(f"Jet {i+1}: px = {jet.px:.2f}, py = {jet.py:.2f}, pz = {jet.pz:.2f}, E = {jet.E:.2f}, type = {jet.jet_flavor}")
-#                for i_fj, jet_fj in enumerate(clusterAll.inclusive_jets()[iEvent]):
-#                    if np.allclose( (jet.px, jet.py, jet.pz, jet.E),(jet_fj.px, jet_fj.py, jet_fj.pz, jet_fj.E), atol=1e-3 ):
-#                        if self.debug: print("Has match!")
-#                        hasFJMatch =True
-#
-#                self.assertTrue(hasFJMatch, " Not all jets have a fastjet match")                        
-#
-#            if self.debug:                 
-#                for i_fj, jet_fj in enumerate(clusterAll.inclusive_jets()[iEvent]):
-#                    print(f"FJ  {i_fj+1}: px = {jet_fj.px:.2f}, py = {jet_fj.py:.2f}, pz = {jet_fj.pz:.2f}, E = {jet_fj.E:.2f}")
-#                    
+    def test_cluster_bs_4jets(self):
+        
+        R = np.pi  # Jet size parameter
+        clustered_jets = cluster_bs(self.input_jets_4, R)
+
+        for iEvent, jets in enumerate(clustered_jets):
+            print(f"Event {iEvent}")
+            for i, jet in enumerate(jets):
+                print(f"Jet {i+1}: px = {jet.px:.2f}, py = {jet.py:.2f}, pz = {jet.pz:.2f}, E = {jet.E:.2f}, type = {jet.jet_flavor}")
+                if jet.jet_flavor in ["g_bb", "bstar"]:
+                    print(f"\tPart_i {jet.part_i}")
+                    print(f"\tPart_j {jet.part_j}")
 
     
         
