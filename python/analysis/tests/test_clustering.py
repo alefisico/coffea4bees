@@ -121,8 +121,8 @@ class topCandRecoTestCase(unittest.TestCase):
 
     def test_cluster_bs_4jets(self):
         
-        R = np.pi  # Jet size parameter
-        clustered_jets = cluster_bs(self.input_jets_4, R)
+        #R = 1.0  # Jet size parameter
+        clustered_jets = cluster_bs(self.input_jets_4, debug=False)
 
         for iEvent, jets in enumerate(clustered_jets):
             print(f"Event {iEvent}")

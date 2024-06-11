@@ -3,16 +3,19 @@ import awkward as ak
 from copy import copy
 from coffea.nanoevents.methods import vector
 
-
+# If R = 0 exlusive clustereing
 def get_distances(particles, R):
     distances = []
     for i, part_i in enumerate(particles):
-        diB = part_i.pt ** 2
         for j, part_j in enumerate(particles):
             if i < j:
-                dij = min(part_i.pt**2, part_j.pt**2) * part_i.delta_r(part_j)**2 / R**2
+                dij = min(part_i.pt**2, part_j.pt**2) * part_i.delta_r(part_j)**2
+                if R:
+                    dij = dij / R**2
                 distances.append((dij, i, j))
-        distances.append((diB, i, None))
+        if R:
+            diB = part_i.pt ** 2
+            distances.append((diB, i, None))
     return distances
 
 
@@ -55,7 +58,7 @@ def combine_particles(part_i, part_j, debug=False):
 
 
 # Define the kt clustering algorithm
-def cluster_bs(event_jets, R, debug = False):
+def cluster_bs(event_jets, debug = False):
     clustered_jets = []
 
     nevents = len(event_jets)
@@ -73,8 +76,8 @@ def cluster_bs(event_jets, R, debug = False):
             
             #
             # Calculate the distance measures
-            #
-            distances = get_distances(particles, R)
+            #  R=0 turns off clustering to the beam
+            distances = get_distances(particles, R=0)
             
             # Find the minimum distance
             min_dist, idx_i, idx_j = min(distances)
