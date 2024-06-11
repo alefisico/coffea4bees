@@ -71,16 +71,6 @@ use rule analysis_databkgs as analysis_signals_mix with:
         output="histSignal_UL.coffea",
         logname="histSignal_UL"
 
-use rule analysis_databkgs as analysis_signal with:
-    output: "output/histsignal_{samplesignal}-{iysignal}.coffea"
-    params:
-        hash=config['hash'],
-        diff=config['diff'],
-        isam="{samplesignal}",
-        iy="{iysignal}",
-        output="histsignal_{samplesignal}-{iysignal}.coffea",
-        logname="histsignal_{samplesignal}-{iysignal}"
-
 use rule analysis_databkgs as analysis_mixedbkg_data3b with:
     output: "output/histMixedBkg_data_3b_for_mixed.coffea"
     params:
@@ -139,6 +129,16 @@ mprof plot -o output/mprofile_{params.logname}.png python/mprofile_{params.logna
 xrdcp {output} root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/{params.output}
         """
 
+use rule analysis_systematics as analysis_signal with:
+    output: "output/histsignal_{samplesignal}-{iysignal}.coffea"
+    params:
+        hash=config['hash'],
+        diff=config['diff'],
+        isam="{samplesignal}",
+        iy="{iysignal}",
+        output="histsignal_{samplesignal}-{iysignal}.coffea",
+        logname="histsignal_{samplesignal}-{iysignal}"
+
 #use rule analysis_systematics as analysis_systematics_preUL with:
 #    output:
 #        "output/histsystpreUL_{samplesystpreUL}-{iysystpreUL}.coffea"
@@ -193,7 +193,7 @@ cp {output} /eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/{params.output}
 
 use rule merging_coffea_files_syst as merging_coffea_files_signal_diffHHH with:
     input:
-        files = expand(['output/histsignal_{idatsignal}-{iyear}.coffea'], idatsignal=config['dataset_signal'], iyear=config['year']) 
+        files = expand(['output/histsignal_{idatsignal}-{iyear}.coffea'],idatsignal=config['dataset_signal'], iyear=config['year']) + expand(['output/histsyst_{idatsyst}-{iyear}.coffea'], idatsyst=config['dataset_systematics'], iyear=config['year'])
 
     output:
         "output/histAll_signals_cHHHX.coffea"
