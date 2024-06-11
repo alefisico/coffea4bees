@@ -74,12 +74,15 @@ class topCandRecoTestCase(unittest.TestCase):
         self.input_jet_phi_4 = [[2.4931640625, -0.48309326171875, 2.66259765625, -1.79443359375], [-0.2913818359375, 2.51220703125, -2.73876953125, 0.58349609375], [-2.220703125, 0.6153564453125, 1.251708984375, -1.930908203125], [-1.36962890625, 1.342041015625, 1.99609375, 2.5849609375], [-0.1124420166015625, 2.6875, -2.44775390625, 0.168304443359375], [2.546875, 1.327392578125, -0.794189453125, -0.979248046875], [2.95556640625, 0.7203369140625, -1.276611328125, -0.4969482421875], [1.421630859375, -1.33935546875, -1.302978515625, -3.140625], [-2.45751953125, 0.27557373046875, 1.65087890625, -0.6121826171875], [-3.08984375, -0.14752197265625, 0.2174072265625, -2.95947265625]]
         self.input_jet_mass_4 = [[16.8125, 24.96875, 9.5390625, 6.18359375], [18.859375, 15.296875, 13.5, 7.7421875], [20.5, 16.96875, 11.7265625, 10.7421875], [20.421875, 16.921875, 16.46875, 9.1875], [32.3125, 18.015625, 10.4140625, 13.40625], [14.046875, 9.625, 12.3984375, 8.3515625], [19.3125, 22.875, 13.671875, 12.0234375], [32.15625, 11.8125, 17.25, 11.3828125], [17.0, 14.953125, 9.046875, 11.5], [15.65625, 16.890625, 17.640625, 7.9921875]]
 
+        self.jet_flavor_4 = [["b"] * 4] * len(self.input_jet_pt_4)
+        
         self.input_jets_4 = ak.zip(
             {
                 "pt": self.input_jet_pt_4,
                 "eta": self.input_jet_eta_4,
                 "phi": self.input_jet_phi_4,
                 "mass": self.input_jet_mass_4,
+                "jet_flavor": self.jet_flavor_4,                
             },
             with_name="PtEtaPhiMLorentzVector",
             behavior=vector.behavior,
@@ -122,7 +125,7 @@ class topCandRecoTestCase(unittest.TestCase):
             print(f"Event {iEvent}")
             for i, jet in enumerate(jets):
                 #print(f"Jet {i+1}: pt = {jet['pt']:.2f}, eta = {jet['eta']:.2f}, phi = {jet['phi']:.2f}, mass = {jet.mass:.2f}")
-                print(f"Jet {i+1}: px = {jet.px:.2f}, py = {jet.py:.2f}, pz = {jet.pz:.2f}, E = {jet.E:.2f}")
+                print(f"Jet {i+1}: px = {jet.px:.2f}, py = {jet.py:.2f}, pz = {jet.pz:.2f}, E = {jet.E:.2f}, type = {jet.jet_flavor}")
 
             for i_fj, jet_fj in enumerate(clusterAll.inclusive_jets()[iEvent]):
                 print(f"FJ  {i_fj+1}: px = {jet_fj.px:.2f}, py = {jet_fj.py:.2f}, pz = {jet_fj.pz:.2f}, E = {jet_fj.E:.2f}")

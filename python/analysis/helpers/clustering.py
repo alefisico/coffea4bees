@@ -14,6 +14,10 @@ def kt_clustering(event_jets, R):
         print(particles)
         clustered_jets.append([])
         print(f"iEvent {iEvent}")        
+
+        # Maybe allow 5 bs later
+        number_of_unclustered_bs = 4
+
         while ak.any(particles):
             
             #
@@ -56,12 +60,25 @@ def kt_clustering(event_jets, R):
                 
                 part_comb = part_i + part_j
 
+                jet_flavor_pair = (part_i.jet_flavor, part_j.jet_flavor)
+                
+                match jet_flavor_pair:
+                    case ("b","b"):
+                        part_comb_jet_flavor = "g_bb"
+                    case ("b","g_bb") | ("g_bb", "b") :
+                        part_comb_jet_flavor = "bstar"                        
+                    case _:
+                        print(f"ERROR: combining {jet_flavor_pair}")
+                        part_comb_jet_flavor = "ERROR"
+
+                
                 part_comb_array = ak.zip(
                     {
                         "pt": [part_comb.pt],
                         "eta": [part_comb.eta],
                         "phi": [part_comb.phi],
                         "mass": [part_comb.mass],
+                        "jet_flavor": [part_comb_jet_flavor],                        
                     },
                     with_name="PtEtaPhiMLorentzVector",
                     behavior=vector.behavior,
@@ -69,38 +86,6 @@ def kt_clustering(event_jets, R):
 
                 particles = ak.concatenate([particles, part_comb_array])
                 print(f"size partilces {len(particles)}")
-                
-                #particles = [part_comb] 
-                #
-                ## Combine particles using four-vector addition
-                #px_i = part_i['pt'] * np.cos(part_i['phi'])
-                #py_i = part_i['pt'] * np.sin(part_i['phi'])
-                #pz_i = part_i['pt'] * np.sinh(part_i['eta'])
-                #E_i = np.sqrt(px_i**2 + py_i**2 + pz_i**2 + part_i.mass**2)
-                #
-                #px_j = part_j['pt'] * np.cos(part_j['phi'])
-                #py_j = part_j['pt'] * np.sin(part_j['phi'])
-                #pz_j = part_j['pt'] * np.sinh(part_j['eta'])
-                #E_j = np.sqrt(px_j**2 + py_j**2 + pz_j**2 + part_j.mass**2)
-                #
-                #px = px_i + px_j
-                #py = py_i + py_j
-                #pz = pz_i + pz_j
-                #E = E_i + E_j
-                #
-                #pt = np.sqrt(px**2 + py**2)
-                #eta = 0.5 * np.log((E + pz) / (E - pz)) if E != pz else 0
-                #phi = np.arctan2(py, px)
-                #
-                #breakpoint()
-                #
-                #
-                #particles[idx_i] = {
-                #    'pt': pt,
-                #    'eta': eta,
-                #    'phi': phi,
-                #    'mass': np.sqrt(E**2 - px**2 - py**2 - pz**2)
-                #}
         
     return clustered_jets
 
