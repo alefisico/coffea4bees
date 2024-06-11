@@ -34,32 +34,34 @@ parse_arguments() {
 # Parse arguments
 parse_arguments "$@"
 
+currentDir=$PWD
 
 for iclass in SvB_MA;
 do
-    text2workspace.py ${datacard_folder}/combine_${iclass}.txt -P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel --PO verbose --PO 'map=.*/HH:rHH[1,-10,10]' #--PO 'map=.*/ZH:rZH[1,-10,10]' --PO 'map=.*/ZZ:rZZ[1,-10,10]'
-    combine -M AsymptoticLimits ${datacard_folder}/combine_${iclass}.root --redefineSignalPOIs rHH -n _${iclass} > ${datacard_folder}/limits.txt
-    cat ${datacard_folder}/limits.txt
-    combineTool.py -M CollectLimits higgsCombine_${iclass}.AsymptoticLimits.mH120.root -o ${datacard_folder}/limits.json
+    cd ${datacard_folder}/
+    text2workspace.py combine_${iclass}.txt -P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel --PO verbose --PO 'map=.*/ggHH4b_kl1_kt1_c20:rggHH4b_kl1_kt1_c20[1,-10,10]' #--PO 'map=.*/ZH:rZH[1,-10,10]' --PO 'map=.*/ZZ:rZZ[1,-10,10]'
+    combine -M AsymptoticLimits combine_${iclass}.root --redefineSignalPOIs rggHH4b_kl1_kt1_c20 -n _${iclass} > limits.txt
+    cat limits.txt
+    combineTool.py -M CollectLimits higgsCombine_${iclass}.AsymptoticLimits.mH120.root -o limits.json
 
     if [ "$impacts" = true ]; then
 
-        combineTool.py -M Impacts -d ${datacard_folder}/combine_${iclass}.root --doInitialFit --setParameterRanges rHH=-10,10 --setParameters rHH=1 --robustFit 1 -m 125 -n ${iclass} -t -1 ## expected -t -1
+        combineTool.py -M Impacts -d combine_${iclass}.root --doInitialFit --setParameterRanges rggHH4b_kl1_kt1_c20=-10,10 --setParameters rggHH4b_kl1_kt1_c20=1 --robustFit 1 -m 125 -n ${iclass} -t -1 ## expected -t -1
 
-        combineTool.py -M Impacts -d ${datacard_folder}/combine_${iclass}.root --doFits --setParameterRanges rHH=-10,10 --setParameters rHH=1 --robustFit 1 -m 125 --parallel 4 -n ${iclass} -t -1
+        combineTool.py -M Impacts -d combine_${iclass}.root --doFits --setParameterRanges rggHH4b_kl1_kt1_c20=-10,10 --setParameters rggHH4b_kl1_kt1_c20=1 --robustFit 1 -m 125 --parallel 4 -n ${iclass} -t -1
 
-        combineTool.py -M Impacts -d ${datacard_folder}/combine_${iclass}.root -o ${datacard_folder}/impacts_combine_${iclass}_exp.json -m 125 -n ${iclass}
+        combineTool.py -M Impacts -d combine_${iclass}.root -o impacts_combine_${iclass}_exp.json -m 125 -n ${iclass}
 
-        plotImpacts.py -i ${datacard_folder}/impacts_combine_${iclass}_exp.json -o ${datacard_folder}/impacts_combine_${iclass}_exp_HH --POI rHH --per-page 20 --left-margin 0.3 --height 400 --label-size 0.04 --translate nuisance_names.json
-        
+        plotImpacts.py -i impacts_combine_${iclass}_exp.json -o impacts_combine_${iclass}_exp_HH --POI rggHH4b_kl1_kt1_c20 --per-page 20 --left-margin 0.3 --height 400 --label-size 0.04 --translate nuisance_names.json
+
     elif [ "$postfit" = true ]; then
 
-        combine -M MultiDimFit --setParameters rZZ=1,rZH=1,rHH=1 --robustFit 1 -n _${iclass}_fit_s --saveWorkspace --saveFitResult -d ${datacard_folder}/combine_${iclass}.root
+        combine -M MultiDimFit --setParameters rZZ=1,rZH=1,rggHH4b_kl1_kt1_c20=1 --robustFit 1 -n _${iclass}_fit_s --saveWorkspace --saveFitResult -d combine_${iclass}.root
 
-        PostFitShapesFromWorkspace -w higgsCombine_${iclass}_fit_s.MultiDimFit.mH120.root -f multidimfit_${iclass}_fit_s.root:fit_mdf --total-shapes --postfit --output ${datacard_folder}/postfit_s.root
+        PostFitShapesFromWorkspace -w higgsCombine_${iclass}_fit_s.MultiDimFit.mH120.root -f multidimfit_${iclass}_fit_s.root:fit_mdf --total-shapes --postfit --output postfit_s.root
 
-        mv multidim*  ${datacard_folder}/
-    fi 
+    fi
 
-    mv higgsCombine_*  ${datacard_folder}/
+    cd $currentDir
+
 done
