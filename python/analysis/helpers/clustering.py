@@ -3,6 +3,7 @@ import awkward as ak
 from copy import copy
 from coffea.nanoevents.methods import vector
 
+
 # If R = 0 exlusive clustereing
 def get_distances(particles, R):
     distances = []
@@ -88,9 +89,9 @@ def cluster_bs(event_jets, debug = False):
             if debug: print(f"clustering {idx_i} and {idx_j}")
             if debug: print(f"size partilces {len(particles)}")
             # If the minimum distance is dij, combine particles i and j
+
             part_i = copy(particles[idx_i])
             part_j = copy(particles[idx_j])
-
             particles = remove_indices(particles, [idx_i, idx_j])
 
             if debug: print(f"size partilces {len(particles)}")
@@ -111,7 +112,56 @@ def cluster_bs(event_jets, debug = False):
 
         clustered_jets.append(particles)
 
-    return clustered_jets, splittings
+    # Create the PtEtaPhiMLorentzVectorArray with ndim=2
+    clustered_events = ak.zip(
+        {
+            "pt":         ak.Array([[v.pt for v in sublist] for sublist in clustered_jets]),
+            "eta":        ak.Array([[v.eta for v in sublist] for sublist in clustered_jets]),
+            "phi":        ak.Array([[v.phi for v in sublist] for sublist in clustered_jets]),
+            "mass":       ak.Array([[v.mass for v in sublist] for sublist in clustered_jets]),
+            "jet_flavor": ak.Array([[v.jet_flavor for v in sublist] for sublist in clustered_jets]),
+        },
+        with_name="PtEtaPhiMLorentzVector",
+        behavior=vector.behavior
+    )
+
+
+    # Create the PtEtaPhiMLorentzVectorArray with ndim=2
+    splittings_events = ak.zip(
+        {
+            "pt":  ak.Array([[v.pt  for v in sublist] for sublist in splittings]),
+            "eta": ak.Array([[v.eta for v in sublist] for sublist in splittings]),
+            "phi": ak.Array([[v.phi for v in sublist] for sublist in splittings]),
+            "mass": ak.Array([[v.mass for v in sublist] for sublist in splittings]),
+            "jet_flavor": ak.Array([[v.jet_flavor for v in sublist] for sublist in splittings]),
+            "part_i": ak.zip(
+                {
+                    "pt":         ak.Array([[v.part_i.pt  for v in sublist] for sublist in splittings]),
+                    "eta":        ak.Array([[v.part_i.eta for v in sublist] for sublist in splittings]),
+                    "phi":        ak.Array([[v.part_i.phi for v in sublist] for sublist in splittings]),
+                    "mass":       ak.Array([[v.part_i.mass for v in sublist] for sublist in splittings]),
+                    "jet_flavor": ak.Array([[v.part_i.jet_flavor for v in sublist] for sublist in splittings]),
+                    },
+                with_name="PtEtaPhiMLorentzVector",
+                behavior=vector.behavior
+            ),
+            "part_j": ak.zip(
+                {
+                    "pt":         ak.Array([[v.part_j.pt  for v in sublist] for sublist in splittings]),
+                    "eta":        ak.Array([[v.part_j.eta for v in sublist] for sublist in splittings]),
+                    "phi":        ak.Array([[v.part_j.phi for v in sublist] for sublist in splittings]),
+                    "mass":       ak.Array([[v.part_j.mass for v in sublist] for sublist in splittings]),
+                    "jet_flavor": ak.Array([[v.part_j.jet_flavor for v in sublist] for sublist in splittings]),
+                    },
+                with_name="PtEtaPhiMLorentzVector",
+                behavior=vector.behavior
+            ),
+        },
+        with_name="PtEtaPhiMLorentzVector",
+        behavior=vector.behavior
+    )
+
+    return clustered_events, splittings_events
 
 
 
@@ -162,4 +212,17 @@ def kt_clustering(event_jets, R, debug = False):
                 particles = ak.concatenate([particles, part_comb_array])
                 if debug: print(f"size partilces {len(particles)}")
 
-    return clustered_jets
+    # Create the PtEtaPhiMLorentzVectorArray with ndim=2
+    clustered_events = ak.zip(
+        {
+            "pt":         ak.Array([[v.pt for v in sublist] for sublist in clustered_jets]),
+            "eta":        ak.Array([[v.eta for v in sublist] for sublist in clustered_jets]),
+            "phi":        ak.Array([[v.phi for v in sublist] for sublist in clustered_jets]),
+            "mass":       ak.Array([[v.mass for v in sublist] for sublist in clustered_jets]),
+            "jet_flavor": ak.Array([[v.jet_flavor for v in sublist] for sublist in clustered_jets]),
+        },
+        with_name="PtEtaPhiMLorentzVector",
+        behavior=vector.behavior
+    )
+
+    return clustered_events

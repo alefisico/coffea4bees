@@ -97,6 +97,7 @@ class topCandRecoTestCase(unittest.TestCase):
         R = np.pi  # Jet size parameter
         clustered_jets = kt_clustering(self.input_jets_4, R)
 
+
         jetdefAll = fastjet.JetDefinition(fastjet.kt_algorithm, R)
         clusterAll = fastjet.ClusterSequence(self.input_jets_4, jetdefAll)
 
@@ -124,20 +125,26 @@ class topCandRecoTestCase(unittest.TestCase):
         #R = 1.0  # Jet size parameter
         clustered_jets, clustered_splittings = cluster_bs(self.input_jets_4, debug=False)
 
+
         for iEvent, jets in enumerate(clustered_jets):
             print(f"Event {iEvent}")
             for i, jet in enumerate(jets):
                 print(f"Jet {i+1}: px = {jet.px:.2f}, py = {jet.py:.2f}, pz = {jet.pz:.2f}, E = {jet.E:.2f}, type = {jet.jet_flavor}")
-                if jet.jet_flavor in ["g_bb", "bstar"]:
-                    print(f"\tPart_i {jet.part_i}")
-                    print(f"\tPart_j {jet.part_j}")
             print("...Splittings")
 
             for i, splitting in enumerate(clustered_splittings[iEvent]):
                 print(f"Split {i+1}: px = {splitting.px:.2f}, py = {splitting.py:.2f}, pz = {splitting.pz:.2f}, E = {splitting.E:.2f}, type = {splitting.jet_flavor}")
-                print(f"\tPart_i {jet.part_i}")
-                print(f"\tPart_j {jet.part_j}")
+                print(f"\tPart_i {splitting.part_i}")
+                print(f"\tPart_j {splitting.part_j}")
 
+
+        clustered_splittings_g_bb   = clustered_splittings[clustered_splittings.jet_flavor == "g_bb"]
+        clustered_splittings_b_star = clustered_splittings[clustered_splittings.jet_flavor == "b_star"]
+
+        #breakpoint()
+        type(clustered_splittings_g_bb.part_i)
+
+        clustered_splittings_g_bb.part_i.delta_r(clustered_splittings_g_bb.part_j)
 
 
 
