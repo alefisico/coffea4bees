@@ -28,17 +28,17 @@ def combine_particles(part_i, part_j, debug=False):
     part_comb = part_i + part_j
 
     jet_flavor_pair = (part_i.jet_flavor, part_j.jet_flavor)
-                
+
     match jet_flavor_pair:
         case ("b","b"):
             part_comb_jet_flavor = "g_bb"
         case ("b","g_bb") | ("g_bb", "b") :
-            part_comb_jet_flavor = "bstar"                        
+            part_comb_jet_flavor = "bstar"
         case _:
             if debug: print(f"ERROR: combining {jet_flavor_pair}")
             part_comb_jet_flavor = f"ERROR {part_i.jet_flavor} and {part_j.jet_flavor}"
 
-    
+
     part_comb_array = ak.zip(
         {
             "pt": [part_comb.pt],
@@ -47,7 +47,7 @@ def combine_particles(part_i, part_j, debug=False):
             "mass": [part_comb.mass],
             "jet_flavor": [part_comb_jet_flavor],
             "part_i": [part_i],
-            "part_j": [part_j],            
+            "part_j": [part_j],
         },
         with_name="PtEtaPhiMLorentzVector",
         behavior=vector.behavior,
@@ -60,6 +60,7 @@ def combine_particles(part_i, part_j, debug=False):
 # Define the kt clustering algorithm
 def cluster_bs(event_jets, debug = False):
     clustered_jets = []
+    splittings = []
 
     nevents = len(event_jets)
 
@@ -67,18 +68,20 @@ def cluster_bs(event_jets, debug = False):
         particles = copy(event_jets[iEvent])
         if debug: print(particles)
 
-        if debug: print(f"iEvent {iEvent}")        
+        if debug: print(f"iEvent {iEvent}")
 
         # Maybe later allow more than 4 bs
         number_of_unclustered_bs = 4
-        
+
+        splittings.append([])
+
         while number_of_unclustered_bs > 2:
-            
+
             #
             # Calculate the distance measures
             #  R=0 turns off clustering to the beam
             distances = get_distances(particles, R=0)
-            
+
             # Find the minimum distance
             min_dist, idx_i, idx_j = min(distances)
 
@@ -89,24 +92,26 @@ def cluster_bs(event_jets, debug = False):
             part_j = copy(particles[idx_j])
 
             particles = remove_indices(particles, [idx_i, idx_j])
-            
+
             if debug: print(f"size partilces {len(particles)}")
 
             part_comb_array = combine_particles(part_i, part_j)
 
-            print(part_comb_array.jet_flavor)
+            if debug: print(part_comb_array.jet_flavor)
             match part_comb_array.jet_flavor:
                 case "g_bb" | "bstar":
                     number_of_unclustered_bs -= 1
                 case _:
                     print(f"ERROR: counting {part_comb_array.jet_flavor}")
 
-            
+            splittings[-1].append(part_comb_array[0])
+
             particles = ak.concatenate([particles, part_comb_array])
             if debug: print(f"size partilces {len(particles)}")
 
         clustered_jets.append(particles)
-    return clustered_jets
+
+    return clustered_jets, splittings
 
 
 
@@ -120,15 +125,15 @@ def kt_clustering(event_jets, R, debug = False):
         particles = copy(event_jets[iEvent])
         if debug: print(particles)
         clustered_jets.append([])
-        if debug: print(f"iEvent {iEvent}")        
+        if debug: print(f"iEvent {iEvent}")
 
         while ak.any(particles):
-            
+
             #
             # Calculate the distance measures
             #
             distances = get_distances(particles, R)
-            
+
             # Find the minimum distance
             min_dist, idx_i, idx_j = min(distances)
 
@@ -140,7 +145,7 @@ def kt_clustering(event_jets, R, debug = False):
                 particles = remove_indices(particles, [idx_i])
 
                 if debug: print(f"size partilces {len(particles)}")
-                
+
             else:
                 if debug: print(f"clustering {idx_i} and {idx_j}")
                 if debug: print(f"size partilces {len(particles)}")
@@ -149,13 +154,12 @@ def kt_clustering(event_jets, R, debug = False):
                 part_j = copy(particles[idx_j])
 
                 particles = remove_indices(particles, [idx_i, idx_j])
-                
+
                 if debug: print(f"size partilces {len(particles)}")
 
                 part_comb_array = combine_particles(part_i, part_j)
 
                 particles = ak.concatenate([particles, part_comb_array])
                 if debug: print(f"size partilces {len(particles)}")
-        
-    return clustered_jets
 
+    return clustered_jets
