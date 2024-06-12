@@ -63,7 +63,7 @@ class analysis(processor.ProcessorABC):
         ]
 
         self.histCuts = ["passPreSel"]
-        
+
 
     def process(self, event):
 
@@ -149,7 +149,7 @@ class analysis(processor.ProcessorABC):
         selev = event[selections.all(*allcuts)]
 
         logging.info( f"\n {chunk} Event:  nSelJets {selev['nJet_selected']}\n")
-        
+
         #
         # Build and select boson candidate jets with bRegCorr applied
         #
@@ -159,7 +159,7 @@ class analysis(processor.ProcessorABC):
         canJet = selev.Jet[canJet_idx]
 
 
-        
+
         # apply bJES to canJets
         canJet = canJet * canJet.bRegCorr
         canJet["bRegCorr"] = selev.Jet.bRegCorr[canJet_idx]
@@ -195,7 +195,7 @@ class analysis(processor.ProcessorABC):
         selev["notCanJet_coffea"] = notCanJet
         selev["nNotCanJet"] = ak.num(selev.notCanJet_coffea)
 
-        
+
 
         #
         # Build diJets, indexed by diJet[event,pairing,0/1]
@@ -204,12 +204,21 @@ class analysis(processor.ProcessorABC):
 
 
         canJet["jet_flavor"] = "b"
-        print(f'{canJet[0]}')
-        print(f'{canJet[0][0]}')
-        print(f'{canJet[0][0].pt}')
-        print(f'{canJet[0][0].jet_flavor}')
+        clustered_jets, clustered_splittings = cluster_bs(canJet, debug=False)
+
+        selev["g_bb"]   = clustered_splittings[clustered_splittings.jet_flavor == "g_bb"]
+        selev["b_star"] = clustered_splittings[clustered_splittings.jet_flavor == "b_star"]
+
+        selev["g_bb", "dr"] = selev.g_bb.part_i.delta_r(selev.g_bb.part_j)
+        selev["g_bb", "fz"] = selev.g_bb.part_j.pt/(selev.g_bb.part_i.pt + selev.g_bb.part_j.pt)
+        print(selev.g_bb.dr)
+        print(selev.g_bb.fz)
+        print(selev.g_bb.pt)
+        #print(selev.g_bb.part_i.delta_r(selev.g_bb.part_j))
+        #print(clustered_splittings_g_bb.part_j.pt/(clustered_splittings_g_bb.part_i.pt + clustered_splittings_g_bb.part_j.pt))
         print()
-        clustered_jets = cluster_bs(canJet, debug=False)        
+
+
         #selev.Jet
         # import fastjet
         # jetdef = fastjet.JetDefinition(fastjet.cambridge_algorithm, 4*np.pi)
@@ -217,26 +226,26 @@ class analysis(processor.ProcessorABC):
         # print(cluster)
         # print(dir(cluster))
         # print()
-        print(f'canJet 0 "pt" : {canJet[0, 0].pt}, "eta" : {canJet[0, 0].eta}, "phi" : {canJet[0, 0].phi}, "E" : {canJet[0, 0].E} ')
-        print(f'canJet 1 "pt" : {canJet[0, 1].pt}, "eta" : {canJet[0, 1].eta}, "phi" : {canJet[0, 1].phi}, "E" : {canJet[0, 1].E} ')
-        print(f'canJet 2 "pt" : {canJet[0, 2].pt}, "eta" : {canJet[0, 2].eta}, "phi" : {canJet[0, 2].phi}, "E" : {canJet[0, 2].E} ')
-        print(f'canJet 3 "pt" : {canJet[0, 3].pt}, "eta" : {canJet[0, 3].eta}, "phi" : {canJet[0, 3].phi}, "E" : {canJet[0, 3].E} ')        
-
-        print(f'{selev.Jet[0]}')
-        print(f'{selev.Jet[0][0]}')
-        print(f'{type(selev.Jet[0][0])}')
-        print()
-
-        print(f'{len(selev)}')
-        print()
+        # print(f'canJet 0 "pt" : {canJet[0, 0].pt}, "eta" : {canJet[0, 0].eta}, "phi" : {canJet[0, 0].phi}, "E" : {canJet[0, 0].E} ')
+        # print(f'canJet 1 "pt" : {canJet[0, 1].pt}, "eta" : {canJet[0, 1].eta}, "phi" : {canJet[0, 1].phi}, "E" : {canJet[0, 1].E} ')
+        # print(f'canJet 2 "pt" : {canJet[0, 2].pt}, "eta" : {canJet[0, 2].eta}, "phi" : {canJet[0, 2].phi}, "E" : {canJet[0, 2].E} ')
+        # print(f'canJet 3 "pt" : {canJet[0, 3].pt}, "eta" : {canJet[0, 3].eta}, "phi" : {canJet[0, 3].phi}, "E" : {canJet[0, 3].E} ')
+        #
+        # print(f'{selev.Jet[0]}')
+        # print(f'{selev.Jet[0][0]}')
+        # print(f'{type(selev.Jet[0][0])}')
+        # print()
+        #
+        # print(f'{len(selev)}')
+        # print()
         # dumpTopCandidateTestVectors(selev, logging, chunk, 10)
-        
-#        
 
-        
+#
+
+
         #logging.info( f"\n {chunk} can dRs {len(dRs[3])} \n")
-        
-                
+
+
         pairing = [([0, 2], [0, 1], [0, 1]), ([1, 3], [2, 3], [3, 2])]
         diJet = canJet[:, pairing[0]] + canJet[:, pairing[1]]
 
@@ -461,8 +470,8 @@ class analysis(processor.ProcessorABC):
         logging.debug(f"{chunk}{nEvent/elapsed:,.0f} events/s")
 
         output = hist.output | processOutput
-        
+
         return output
-    
+
     def postprocess(self, accumulator):
         return accumulator

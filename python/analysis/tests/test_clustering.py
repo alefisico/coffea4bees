@@ -142,9 +142,10 @@ class topCandRecoTestCase(unittest.TestCase):
         clustered_splittings_b_star = clustered_splittings[clustered_splittings.jet_flavor == "b_star"]
 
         #breakpoint()
-        type(clustered_splittings_g_bb.part_i)
 
         clustered_splittings_g_bb.part_i.delta_r(clustered_splittings_g_bb.part_j)
+        clustered_splittings_g_bb.part_j.pt/(clustered_splittings_g_bb.part_i.pt + clustered_splittings_g_bb.part_j.pt)
+        #clustered_splittings_g_bb.part_i.delta_r(clustered_splittings_g_bb.part_j)
 
 
 
