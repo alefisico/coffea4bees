@@ -259,7 +259,7 @@ cd /home/cmsusr/CMSSW_11_3_4/
 cmsenv || true
 cd -
 pip3 install cmsstyle
-python3 python/stats_analysis/make_combine_inputs.py --classifier SvB SvB_MA -f {input.injson} --merge2016 --syst_file {input.injsonsyst} --bkg_syst_file python/stats_analysis/hists/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin2.pkl --output_dir output/datacards/ --rebin 2 --metadata python/stats_analysis/metadata/HH4b.yml
+python3 python/stats_analysis/make_combine_inputs.py --classifier SvB SvB_MA -f {input.injson} --syst_file {input.injsonsyst} --bkg_syst_file python/stats_analysis/hists/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin2.pkl --output_dir output/datacards/ --rebin 2 --metadata python/stats_analysis/metadata/HH4b.yml
         """
 
 rule run_combine:

@@ -1,4 +1,5 @@
 import os, sys
+from tkinter import W
 import ROOT
 import argparse
 import logging
@@ -6,7 +7,7 @@ import json
 import yaml
 import numpy as np
 import pickle
-from copy import copy
+from copy import copy, deepcopy
 from convert_json_to_root import json_to_TH1
 ROOT.gROOT.SetBatch(True)
 
@@ -140,9 +141,10 @@ def create_combine_root_file( file_to_convert,
                              make_syst_plots=False,
                              use_preUL=False,
                              add_old_bkg=False,
-                             merge_2016=False,
                              stat_only=False ):
 
+    logging.info(f"Reading {metadata_file}")
+    metadata = yaml.safe_load(open(metadata_file, 'r'))
     logging.info(f"Reading {file_to_convert}")
     coffea_hists = json.load(open(file_to_convert, 'r'))
     if systematics_file:
@@ -157,81 +159,67 @@ def create_combine_root_file( file_to_convert,
     for iclass in classifier:
 
         root_hists = {}
-        for channel in rebin.keys():
+        mcSysts, closureSysts = [], []
+        ih = iclass+'.ps_hh'
+        for iyear in coffea_hists[ih]['data'].keys():
+            root_hists[iyear] = {}
 
-            ih = iclass+'.ps_'+channel#+'_fine'
-            full_histo = coffea_hists[ih]
-            for iyear in coffea_hists[ih]['data'].keys():
-                root_hists[channel+"_"+iyear] = {}
+            ### For multijets
 
-                ### For multijets
+            root_hists[iyear]['multijet'] = {}
+            root_hists[iyear]['multijet']['nominal'] = json_to_TH1(
+                coffea_hists[ih]['data'][iyear]['threeTag']['SR'], 'multijet_'+iyear+iclass, rebin )
 
-                root_hists[channel+"_"+iyear]['multijet'] = {}
-                root_hists[channel+"_"+iyear]['multijet']['nominal'] = json_to_TH1(
-                    coffea_hists[ih]['data'][iyear]['threeTag']['SR'], 'multijet_'+iyear, rebin[channel] )
+            ### For ZH ZZ
+            for iprocess in coffea_hists[ih].keys():
+                if iprocess not in metadata['processes']['signal']:
+                    root_hists[iyear][iprocess] = json_to_TH1( coffea_hists[ih][iprocess][iyear]['fourTag']['SR'], 
+                                                              f'{iprocess.split("4b")[0]}_{iyear}', rebin )
 
-                ### For ZH ZZ
-                for iprocess in coffea_hists[ih].keys():
-                    root_hists[channel+"_"+iyear][('ggHH_hbbhbb' if iprocess.startswith('GluGlu') else iprocess)] = json_to_TH1(
-                        coffea_hists[ih][iprocess][iyear]['fourTag']['SR'], iprocess.split('4b')[0]+"_"+iyear, rebin[channel] )
+            if systematics_file and not use_preUL:
+                for iprocess in metadata['processes']['signal']:
 
-                if systematics_file and not use_preUL:
-                    iprocess = 'GluGluToHHTo4B_cHHH1'
-                    root_hists[channel+"_"+iyear]['ggHH_hbbhbb'] = {}
+                    root_hists[iyear][iprocess] = {}
                     for ivar in coffea_hists_syst[ih][iprocess][iyear].keys():
+
                         ## renaming syst
                         if 'prefire' in ivar: namevar = ivar.replace("CMS_prefire", 'CMS_l1_ecal_prefiring')
                         else: namevar = ivar
+                        namevar = namevar.replace('_Up', 'Up').replace('_Down', 'Down')
 
-                        tmpvar = ''.join(ivar.replace('_Up', '').replace('Up','').replace('_Down','').replace('Down', '')[-2:])
+                        ### check for dedicated JESUnc per year, if not conitnue
+                        tmpvar = ivar.replace('_Up', '').replace('Up','').replace('_Down','').replace('Down', '')
+                        if tmpvar not in mcSysts: mcSysts.append( tmpvar )
+                        tmpvar = ''.join(tmpvar[-2:])
                         if tmpvar.isdigit() and int(tmpvar) != int(iyear[2:4]): continue
+
+                        ### trigger efficiency
                         if 'triggerEffSFUp' in ivar:
                             make_trigger_syst(coffea_hists_syst[ih][iprocess][iyear],
-                                              root_hists[channel+"_"+iyear]['ggHH_hbbhbb'],
-                                              iyear, rebin[channel])
+                                              root_hists[iyear][iprocess],
+                                              iyear, rebin)
                         elif 'triggerEffSFDown' in ivar: continue
-                        root_hists[channel+"_"+iyear]['ggHH_hbbhbb'][namevar.replace('_Up', 'Up').replace('_Down', 'Down')] = json_to_TH1(
-                            coffea_hists_syst[ih][iprocess][iyear][ivar]['fourTag']['SR'], 'ggHH_hbbhbb_'+ivar+"_"+iyear, rebin[channel] )
+
+                        root_hists[iyear][iprocess][namevar] = json_to_TH1(
+                                                        coffea_hists_syst[ih][iprocess][iyear][ivar]['fourTag']['SR'], 
+                                                        f'{iprocess}_{ivar}_{iyear}', rebin )
+
+        if systematics_file and use_preUL:
+            iprocess = 'HH4b'
+            for iyear in coffea_hists_syst[ih]['HH4b'].keys():
+                tmpname=iyear.replace('20', 'UL') + ('_preVFP' if '16' in iyear else '')
+                root_hists[tmpname][iprocess] = {}
+                for ivar in coffea_hists_syst[ih][iprocess][iyear].keys():
+                    root_hists[tmpname][iprocess][ivar] = json_to_TH1(
+                        coffea_hists_syst[ih][iprocess][iyear][ivar]['fourTag']['SR'], iprocess+"_"+ivar+"_"+iyear, rebin )
 
 
-            if systematics_file and use_preUL:
-                iprocess = 'HH4b'
-                for iyear in coffea_hists_syst[ih]['HH4b'].keys():
-                    tmpname=channel+"_"+iyear.replace('20', 'UL') + ('_preVFP' if '16' in iyear else '')
-                    root_hists[tmpname][iprocess] = {}
-                    for ivar in coffea_hists_syst[ih][iprocess][iyear].keys():
-                        root_hists[tmpname][iprocess][ivar] = json_to_TH1(
-                            coffea_hists_syst[ih][iprocess][iyear][ivar]['fourTag']['SR'], iprocess+"_"+ivar+"_"+iyear, rebin[channel] )
-
-
-        for iy in root_hists.keys():
-            root_hists[iy]['tt'] = root_hists[iy]['data'].Clone()
-            root_hists[iy]['tt'].SetName('tt')
-            root_hists[iy]['tt'].SetTitle('tt_'+iy)
-            root_hists[iy]['tt'].Reset()
-            for ip, _ in list(root_hists[iy].items()):
-                if 'TTTo' in ip:
-                    root_hists[iy]['tt'].Add( root_hists[iy][ip] )
-                    del root_hists[iy][ip]
-                elif 'data' in ip:
-                    root_hists[iy]['data_obs'] = root_hists[iy][ip]
-                    root_hists[iy]['data_obs'].SetName("data_obs")
-                    root_hists[iy]['data_obs'].SetTitle("data_obs_"+iy)
-                    del root_hists[iy][ip]
-                else:
-                    if isinstance(root_hists[iy][ip], ROOT.TH1F):
-                        root_hists[iy][ip].SetName(ip.split("_UL")[0])
-                    else:
-                        for ivar, _ in root_hists[iy][ip].items():
-                            if 'nominal' in ivar: root_hists[iy][ip][ivar].SetName(ip)
-                            else: root_hists[iy][ip][ivar].SetName(ip+'_'+ivar)
-
-        if merge_2016:
+        if "UL16_preVFP" not in metadata['bin']:
             logging.info("\n Merging UL16_preVFP and UL16_postVFP")
             for iy in list(root_hists.keys()):
                 if 'UL16_preVFP' in iy:
                     for ip, _ in list(root_hists[iy].items()):
-                        if ip.startswith(('multijet', 'ggHH')) and isinstance(root_hists[iy][ip], dict):
+                        if isinstance(root_hists[iy][ip], dict):
                             for iv, _ in list(root_hists[iy][ip].items()):
                                 root_hists[iy][ip][iv].Add( root_hists[iy.replace('pre', 'post')][ip][iv] )
                         elif 'HH4b' in ip:   ### AGE: temporary, HH4b is preUL
@@ -244,25 +232,59 @@ def create_combine_root_file( file_to_convert,
 
         if not stat_only:
             if add_old_bkg:
-                old_bkg_file = ROOT.TFile(f'HIG-20-011/hist_{iclass}.root', 'read' )
-                for channel in rebin.keys():
+                old_bkg_file = ROOT.TFile(f'HIG-22-011/hist_{iclass}.root', 'read' )
+                for channel in metadata['bin']:
                     for iy in ['UL16', 'UL17', 'UL18']:
                         for i in ['0', '1', '2']:
                             for ivar in ['Up', 'Down']:
                                 root_hists[f"{channel}_{iy}"]['multijet'][f'basis{i}_bias_hh{ivar}'] = old_bkg_file.Get(f"hh{iy[-1]}/mj_basis{i}_bias_hh{ivar}")
                                 root_hists[f"{channel}_{iy}"]['multijet'][f'basis{i}_vari_hh{ivar}'] = old_bkg_file.Get(f"hh{iy[-1]}/mj_basis{i}_vari_hh{ivar}")
             else:
-                for channel in rebin.keys():
-                    for iy in ['UL16', 'UL17', 'UL18']:
-                        for ibin, ivalues in bkg_syst_file.items():
-                            bkg_name_syst = f"CMS_bbbb_resolved_bkg_datadriven_{ibin.replace('_hh', '').replace('vari', 'variance')}"
-                            root_hists[f"{channel}_{iy}"]['multijet'][bkg_name_syst] = root_hists[f"{channel}_{iy}"]['multijet']['nominal'].Clone()
-                            root_hists[f"{channel}_{iy}"]['multijet'][bkg_name_syst].SetName(f'multijet_{bkg_name_syst}')
-                            for i in range(len(ivalues)):
-                                nom_val = root_hists[f"{channel}_{iy}"]['multijet'][bkg_name_syst].GetBinContent( i+1 )
-                                root_hists[f"{channel}_{iy}"]['multijet'][bkg_name_syst].SetBinContent( i+1, nom_val*ivalues[i]  )
+                for channel in metadata['bin']:
+                    for ibin, ivalues in bkg_syst_file.items():
+                        bkg_name_syst = f"CMS_bbbb_resolved_bkg_datadriven_{ibin.replace('_hh', '').replace('vari', 'variance')}"
+                        root_hists[channel]['multijet'][bkg_name_syst] = root_hists[channel]['multijet']['nominal'].Clone()
+                        root_hists[channel]['multijet'][bkg_name_syst].SetName(f'multijet_{bkg_name_syst}')
+                        for i in range(len(ivalues)):
+                            nom_val = root_hists[channel]['multijet'][bkg_name_syst].GetBinContent( i+1 )
+                            root_hists[channel]['multijet'][bkg_name_syst].SetBinContent( i+1, nom_val*ivalues[i]  )
 
+            closureSysts = [ i.replace('Up', '') for i in root_hists[next(iter(root_hists))]['multijet'].keys() if i.endswith('Up') ]
 
+        ### renaming histos for final combine inputs
+        for channel in root_hists.keys():
+            tt_label = metadata['processes']['background']['tt']['label']
+            root_hists[channel][tt_label] = root_hists[channel]['data'].Clone()
+            root_hists[channel][tt_label].SetName(tt_label)
+            root_hists[channel][tt_label].SetTitle('tt_'+channel)
+            root_hists[channel][tt_label].Reset()
+            for ip, _ in list(root_hists[channel].items()):
+                if 'TTTo' in ip:
+                    root_hists[channel][tt_label].Add( root_hists[channel][ip] )
+                    del root_hists[channel][ip]
+                elif 'data' in ip:
+                    root_hists[channel]['data_obs'] = root_hists[channel][ip]
+                    root_hists[channel]['data_obs'].SetName("data_obs")
+                    root_hists[channel]['data_obs'].SetTitle("data_obs_"+channel)
+                    del root_hists[channel][ip]
+                elif ip in list(metadata['processes']['signal'].keys()) + list(metadata['processes']['background'].keys()):
+                    label = metadata['processes']['signal'][ip]['label'] if ip in metadata['processes']['signal'].keys() else metadata['processes']['background'][ip]['label']
+                    root_hists[channel][label] = deepcopy(root_hists[channel][ip])
+                    if isinstance(root_hists[channel][label], ROOT.TH1F):
+                        root_hists[channel][label].SetName(label)
+                        root_hists[channel][label].SetTitle(f'{label}_{channel}')
+                    else:
+                        for ivar, _ in root_hists[channel][label].items():
+                            if 'nominal' in ivar: 
+                                root_hists[channel][label][ivar].SetName(label)
+                                root_hists[channel][label][ivar].SetTitle(f'{label}_{channel}')
+                            else: 
+                                root_hists[channel][label][ivar].SetName(f'{label}_{ivar}')
+                                root_hists[channel][label][ivar].SetTitle(f'{label}_{ivar}_{channel}')
+                    if not ip.startswith(label): del root_hists[channel][ip]
+                else: 
+                    logging.info(f"{ip} not in metadata processes, removing from root file.")
+                    del root_hists[channel][ip]
 
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
@@ -275,12 +297,12 @@ def create_combine_root_file( file_to_convert,
         for channel in root_hists.keys():
             root_file.cd()
             try:
-                directory = root_file.Get(channel.replace('hh_', ''))
+                directory = root_file.Get(channel)
                 directory.IsZombie()
             except ReferenceError:
-                directory = root_file.mkdir(channel.replace('hh_', ''))
+                directory = root_file.mkdir(channel)
 
-            root_file.cd(channel.replace('hh_', ''))
+            root_file.cd(channel)
             for ih_name, ih in root_hists[channel].items():
                 if isinstance(ih, dict):
                     for _, ih2 in root_hists[channel][ih_name].items():
@@ -293,18 +315,14 @@ def create_combine_root_file( file_to_convert,
 
 
         #### make datacard
-        metadata = yaml.safe_load(open(metadata_file, 'r'))
-
-        closureSysts, mcSysts, juncSysts, btagSyst = [], [], [], []
+        juncSysts, btagSyst = [], []
         if not stat_only:
-            closureSysts = [ i.replace('Up', '') for i in root_hists[next(iter(root_hists))]['multijet'].keys() if i.endswith('Up') ]
-            mcSysts = list(set([ s.replace('_Up', '').replace('Up', '') for c in root_hists.keys() for s in root_hists[c]['ggHH_hbbhbb'].keys() if s.endswith('Up') ]))
             juncSysts = [ s for s in mcSysts if s.startswith('CMS_scale_j') ]
             btagSysts = [ s for s in mcSysts if s.startswith('CMS_btag') ]
 
         channels = []
-        for era in metadata['eras']:
-            for SR in metadata['SR']:
+        for era in metadata['bin']:
+            for SR in metadata['processes']['signal']:
                 channels.append( Channel(SR, era) )
 
         processes = [Process('ggHH_hbbhbb', 0), Process('multijet', 1), Process('tt', 2)]
@@ -318,7 +336,7 @@ def create_combine_root_file( file_to_convert,
         hline = len(columns)*(4+1)+35+5+1+1
         hline = '-'*hline
         lines = []
-        lines.append('imax %d number of channels'%(len(metadata['SR'])*len(metadata['eras'])))
+        lines.append('imax %d number of channels'%(len(metadata['processes']['signal'])*len(metadata['bin'])))
         lines.append(f'jmax {len(processes)-1} number of processes minus one') # zz, zh, hh, mj, tt is five processes, so jmax is 4
         lines.append('kmax * number of systematics')
         lines.append(hline)
@@ -533,8 +551,6 @@ if __name__ == '__main__':
                         default='', help="File contain background systematic variations")
     parser.add_argument('-m', '--metadata', dest='metadata',
                         default='metadata/HH4b.yml', help="File contain systematic variations")
-    parser.add_argument('--merge2016', dest='merge_2016', action="store_true",
-                        default=False, help="(Temporary. Merge 2016 datasets)")
     parser.add_argument('--use_preUL', dest='use_preUL', action="store_true",
                         default=False, help="(Temporary. Use preUL samples)")
     parser.add_argument('--add_old_bkg', dest='add_old_bkg', action="store_true",
@@ -547,11 +563,10 @@ if __name__ == '__main__':
     logging.info("\nRunning with these parameters: ")
     logging.info(args)
 
-    rebin = { 'hh': args.rebin }  #{'zz': 4, 'zh': 5, 'hh': 10}  # temp
     logging.info("Creating root files for combine")
     create_combine_root_file(
         args.file_to_convert,
-        rebin,
+        args.rebin,
         args.classifier,
         args.output_dir,
         args.systematics_file,
@@ -560,7 +575,6 @@ if __name__ == '__main__':
         make_syst_plots=args.make_syst_plots,
         use_preUL=args.use_preUL,
         add_old_bkg=args.add_old_bkg,
-        merge_2016=args.merge_2016,
         stat_only=args.stat_only
     )
 

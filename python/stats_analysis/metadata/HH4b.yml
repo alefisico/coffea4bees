@@ -1,19 +1,26 @@
-SR:
-  #- zz
-  #- zh
-  - ggHH_kl_1_kt_1_hbbhbb
-eras:
+processes:
+  signal:
+    GluGluToHHTo4B_cHHH1:
+      label: ggHH_kl_1_kt_1_hbbhbb
+  background:
+    multijet:
+      label: 'multijet'
+    tt:
+      label: 'tt'
+bin:
   - UL16
   - UL17
   - UL18
 
 # https://twiki.cern.ch/twiki/bin/view/CMS/TWikiLUM?rev=167#LumiComb  # https://gitlab.cern.ch/hh/naming-conventions
-uncert_lumi_corr:
-  UL16: '1.006'
-  UL17: '1.009'
-  UL18: '1.020'
+uncertainty:
+  lumi_13TeV_correlated: &lumi_13TeV_correlated
+    type: 'lnN'
+    UL16: &lumi_13_correlated_16 '1.006'
+    UL17: &lumi_13_correlated_17 '1.009'
+    UL18: &lumi_13_correlated_18 '1.020'
 
-uncert_lumi_1718:
+lumi_13TeV_1718:
   UL17: '1.006'
   UL18: '1.002'
 
@@ -58,6 +65,8 @@ process:
     number: 0
     rate: -1 
     uncert_xs: 1.002
+    lumi_13TeV_correlated: *lumi_13TeV_correlated 
+    #"{{ uncertainty.lumi_13TeV_correlated }}"
 
   mj:
     name: mj
