@@ -15,6 +15,7 @@ sys.path.insert(0, os.getcwd())
 from analysis.helpers.clustering import kt_clustering, cluster_bs
 #import vector
 #vector.register_awkward()
+from coffea.nanoevents.methods.vector import ThreeVector
 
 
 
@@ -50,6 +51,7 @@ import fastjet
 #    #    ak.typetracer.length_zero_if_typetracer(events_jets.btagDeepFlavB) # force touching of the necessary data
 #    #    return ak.Array(ak.Array([[(0,0,0)]]).layout.to_typetracer(forget_length=True))
 #    return find_jet_pairs_kernel(events_jets, ak.ArrayBuilder()).snapshot()
+
 
 
 
@@ -125,7 +127,6 @@ class topCandRecoTestCase(unittest.TestCase):
         #R = 1.0  # Jet size parameter
         clustered_jets, clustered_splittings = cluster_bs(self.input_jets_4, debug=False)
 
-
         for iEvent, jets in enumerate(clustered_jets):
             print(f"Event {iEvent}")
             for i, jet in enumerate(jets):
@@ -138,16 +139,164 @@ class topCandRecoTestCase(unittest.TestCase):
                 print(f"\tPart_j {splitting.part_j}")
 
 
-        clustered_splittings_g_bb   = clustered_splittings[clustered_splittings.jet_flavor == "g_bb"]
-        clustered_splittings_b_star = clustered_splittings[clustered_splittings.jet_flavor == "b_star"]
-
-        #breakpoint()
-
-        clustered_splittings_g_bb.part_i.delta_r(clustered_splittings_g_bb.part_j)
-        clustered_splittings_g_bb.part_j.pt/(clustered_splittings_g_bb.part_i.pt + clustered_splittings_g_bb.part_j.pt)
-        #clustered_splittings_g_bb.part_i.delta_r(clustered_splittings_g_bb.part_j)
+        #
+        # Hack... for now only look at g->bb
+        #
+        clustered_splittings   = clustered_splittings[clustered_splittings.jet_flavor == "g_bb"]
+        #clustered_splittings_b_star = clustered_splittings[clustered_splittings.jet_flavor == "b_star"]
 
 
+
+        clustered_splittings["mA"]     = clustered_splittings.part_i.mass
+        clustered_splittings["mB"]     = clustered_splittings.part_j.mass
+
+        #
+        # phi
+        #
+        z_axis = ak.zip(
+            {
+                "x": 0,
+                "y": 0,
+                "z": 1,
+            },
+            with_name="ThreeVector",
+            behavior=vector.behavior,
+        )
+
+        #
+        #  De-Clustering
+        #
+        boost_vec_z = ak.zip(
+            {
+                "x": 0,
+                "y": 0,
+                "z": clustered_splittings.boostvec.dot(z_axis),
+            },
+            with_name="ThreeVector",
+            behavior=vector.behavior,
+        )
+        clustered_splittings_pz0 = clustered_splittings.boost(-boost_vec_z)
+        clustered_splittings_part_i_pz0 = clustered_splittings.part_i.boost(-boost_vec_z)
+        clustered_splittings_part_j_pz0 = clustered_splittings.part_j.boost(-boost_vec_z)                
+        clustered_splittings["zA"] = clustered_splittings_pz0.dot(clustered_splittings_part_i_pz0)/(clustered_splittings_pz0.pt**2)
+        clustered_splittings["thetaA"] = clustered_splittings_pz0.delta_r(clustered_splittings_part_i_pz0)
+        
+        comb_z_plane_hat = clustered_splittings_pz0.cross(z_axis).unit
+        decay_plane_hat = clustered_splittings_part_i_pz0.subtract(clustered_splittings_part_j_pz0).unit
+        clustered_splittings["decay_phi"] = decay_plane_hat.dot(comb_z_plane_hat)
+        
+        clustered_splittings.part_i.delta_r(clustered_splittings.part_j)
+        clustered_splittings.part_j.pt/(clustered_splittings.part_i.pt + clustered_splittings.part_j.pt)
+        #clustered_splittings.part_i.delta_r(clustered_splittings.part_j)
+
+        print(clustered_splittings.thetaA)
+        print(clustered_splittings.zA)
+
+
+
+
+        # Lookup thetaA and Z
+        # Lookup mA and mB
+        # Loopup phi  np.random.uniform(-np.pi, np.pi, len())
+
+        clustered_splittings_tanTa = np.tan(clustered_splittings.thetaA)
+        clustered_splittings_tanTb = clustered_splittings.zA/(1-clustered_splittings.zA) * clustered_splittings_tanTa
+
+        #
+        #  Before Rotation
+        #
+        pA_pz0_frame_px = clustered_splittings.zA*clustered_splittings_pz0.pt
+        pA_pz0_frame_py = 0
+        pA_pz0_frame_pz = -clustered_splittings.zA*clustered_splittings_pz0.pt*clustered_splittings_tanTa
+        pA_pz0_frame_E  = np.sqrt(pA_pz0_frame_px**2 + pA_pz0_frame_pz**2 + clustered_splittings.mA**2)
+        
+
+        pA_pz0_frame_noRot = ak.zip(
+            {
+                "x": pA_pz0_frame_px,
+                "y": pA_pz0_frame_py,
+                "z": pA_pz0_frame_pz,
+                "t": pA_pz0_frame_E,
+            },
+            with_name="LorentzVector",
+            behavior=vector.behavior,
+        )
+
+        pB_pz0_frame_px = (1 - clustered_splittings.zA) * clustered_splittings_pz0.pt
+        pB_pz0_frame_py = 0
+        pB_pz0_frame_pz = (1 - clustered_splittings.zA) * clustered_splittings_pz0.pt * clustered_splittings_tanTb
+        pB_pz0_frame_E  = np.sqrt(pB_pz0_frame_px**2 + pB_pz0_frame_pz**2 + clustered_splittings.mB**2)
+
+        
+        pB_pz0_frame_noRot = ak.zip(
+            {
+                "x": pB_pz0_frame_px,
+                "y": pB_pz0_frame_py,
+                "z": pB_pz0_frame_pz,
+                "t": pB_pz0_frame_E,
+            },
+            with_name="LorentzVector",
+            behavior=vector.behavior,
+        )
+
+        
+        
+
+        # 
+        # Do Rotation
+        # 
+        sin_decay_phi = np.sin(clustered_splittings.decay_phi)
+        cos_decay_phi = np.cos(clustered_splittings.decay_phi)
+        pA_pz0_frame_py_rotated = cos_decay_phi * pA_pz0_frame_py - sin_decay_phi * pA_pz0_frame_pz
+        pA_pz0_frame_pz_rotated = sin_decay_phi * pA_pz0_frame_py + cos_decay_phi * pA_pz0_frame_pz        
+
+        pB_pz0_frame_py_rotated = cos_decay_phi * pB_pz0_frame_py - sin_decay_phi * pB_pz0_frame_pz
+        pB_pz0_frame_pz_rotated = sin_decay_phi * pB_pz0_frame_py + cos_decay_phi * pB_pz0_frame_pz        
+
+        pA_pz0_frame = ak.zip(
+            {
+                "x": pA_pz0_frame_noRot.x,
+                "y": pA_pz0_frame_py_rotated,
+                "z": pA_pz0_frame_pz_rotated,
+                "t": pA_pz0_frame_E,
+            },
+            with_name="LorentzVector",
+            behavior=vector.behavior,
+        )
+
+        
+        pB_pz0_frame = ak.zip(
+            {
+                "x": pB_pz0_frame_px,
+                "y": pB_pz0_frame_py_rotated,
+                "z": pB_pz0_frame_pz_rotated,
+                "t": pB_pz0_frame_E,
+            },
+            with_name="LorentzVector",
+            behavior=vector.behavior,
+        )
+        
+        
+
+        #
+        #  Boost back
+        #
+        pA = pA_pz0_frame.boost(boost_vec_z)
+        pB = pB_pz0_frame.boost(boost_vec_z)
+
+
+        
+        
+        #
+        # Sanity checks
+        #
+        print(clustered_splittings.pt - (pA + pB).pt)
+        print(clustered_splittings.mass - (pA + pB).mass)
+
+        print(clustered_splittings_part_i_pz0.pt - pA_pz0_frame.pt)
+        breakpoint()
+        [print(i, j) for i, j in zip(clustered_splittings_part_i_pz0.pt, clustered_splittings_part_j_pz0.pt)]
+        
 
 if __name__ == '__main__':
     #wrapper.parse_args()
