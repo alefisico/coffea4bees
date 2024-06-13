@@ -35,8 +35,8 @@ parse_aruments() {
 parse_aruments "$@"
 
 currentDir=$PWD
-signallabel="HH"
-# signallabel="ggHH_hbbhbb"
+# signallabel="HH"
+signallabel="ggHH_hbbhbb"
 
 for iclass in SvB_MA;
 do
