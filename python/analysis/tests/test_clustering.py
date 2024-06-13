@@ -53,6 +53,43 @@ import fastjet
 #    return find_jet_pairs_kernel(events_jets, ak.ArrayBuilder()).snapshot()
 
 
+def rotateZ(particles, angle):
+    sinT = np.sin(angle)
+    cosT = np.cos(angle)
+    x_rotated = cosT * particles.x - sinT * particles.y
+    y_rotated = sinT * particles.x + cosT * particles.y
+
+    return ak.zip(
+        {
+            "x": x_rotated,
+            "y": y_rotated,
+            "z": particles.z,
+            "t": particles.t,
+        },
+        with_name="LorentzVector",
+        behavior=vector.behavior,
+    )
+
+
+def rotateX(particles, angle):
+    sinT = np.sin(angle)
+    cosT = np.cos(angle)
+    y_rotated = cosT * particles.y - sinT * particles.z
+    z_rotated = sinT * particles.y + cosT * particles.z
+
+    return ak.zip(
+        {
+            "x": particles.x,
+            "y": y_rotated,
+            "z": z_rotated,
+            "t": particles.t,
+        },
+        with_name="LorentzVector",
+        behavior=vector.behavior,
+    )
+
+
+
 
 
 class topCandRecoTestCase(unittest.TestCase):
@@ -145,24 +182,14 @@ class topCandRecoTestCase(unittest.TestCase):
         clustered_splittings   = clustered_splittings[clustered_splittings.jet_flavor == "g_bb"]
         #clustered_splittings_b_star = clustered_splittings[clustered_splittings.jet_flavor == "b_star"]
 
-
-
         clustered_splittings["mA"]     = clustered_splittings.part_i.mass
         clustered_splittings["mB"]     = clustered_splittings.part_j.mass
 
         #
-        # phi
+        # z-axis
         #
-        z_axis = ak.zip(
-            {
-                "x": 0,
-                "y": 0,
-                "z": 1,
-            },
-            with_name="ThreeVector",
-            behavior=vector.behavior,
-        )
-
+        z_axis = ak.zip({"x": 0, "y": 0, "z": 1,}, with_name="ThreeVector", behavior=vector.behavior,)
+                        
         #
         #  De-Clustering
         #
@@ -175,15 +202,32 @@ class topCandRecoTestCase(unittest.TestCase):
             with_name="ThreeVector",
             behavior=vector.behavior,
         )
-        clustered_splittings_pz0 = clustered_splittings.boost(-boost_vec_z)
+
+        #
+        #  Boost to pz0
+        # 
+        clustered_splittings_pz0        = clustered_splittings.boost(-boost_vec_z)
         clustered_splittings_part_i_pz0 = clustered_splittings.part_i.boost(-boost_vec_z)
         clustered_splittings_part_j_pz0 = clustered_splittings.part_j.boost(-boost_vec_z)                
-        clustered_splittings["zA"] = clustered_splittings_pz0.dot(clustered_splittings_part_i_pz0)/(clustered_splittings_pz0.pt**2)
-        clustered_splittings["thetaA"] = clustered_splittings_pz0.delta_r(clustered_splittings_part_i_pz0)
+
+        #
+        #  Rotate to phi=0
+        #
+        clustered_splittings_pz0_phi0        = rotateZ(clustered_splittings_pz0,        -clustered_splittings_pz0.phi)
+        clustered_splittings_part_i_pz0_phi0 = rotateZ(clustered_splittings_part_i_pz0, -clustered_splittings_pz0.phi)
+        clustered_splittings_part_j_pz0_phi0 = rotateZ(clustered_splittings_part_j_pz0, -clustered_splittings_pz0.phi)
         
-        comb_z_plane_hat = clustered_splittings_pz0.cross(z_axis).unit
-        decay_plane_hat = clustered_splittings_part_i_pz0.subtract(clustered_splittings_part_j_pz0).unit
-        clustered_splittings["decay_phi"] = decay_plane_hat.dot(comb_z_plane_hat)
+        clustered_splittings["zA"] = clustered_splittings_pz0.dot(clustered_splittings_part_i_pz0)/(clustered_splittings_pz0.pt**2)
+        #clustered_splittings["thetaA"] = clustered_splittings_pz0.delta_r(clustered_splittings_part_i_pz0)
+        clustered_splittings["thetaA"] = np.arccos(clustered_splittings_pz0_phi0.unit.dot(clustered_splittings_part_i_pz0_phi0.unit))
+
+        comb_z_plane_hat = z_axis.cross(clustered_splittings_pz0).unit
+        decay_plane_hat = clustered_splittings_part_i_pz0.cross(clustered_splittings_part_j_pz0).unit        
+        clustered_splittings["decay_phi"] = np.arccos(decay_plane_hat.dot(comb_z_plane_hat))
+
+        comb_z_plane_phi0_hat = z_axis.cross(clustered_splittings_pz0_phi0).unit
+        decay_plane_phi0_hat = clustered_splittings_part_i_pz0_phi0.cross(clustered_splittings_part_j_pz0_phi0).unit
+        clustered_splittings["decay_phi_phi0"] = np.arccos(decay_plane_phi0_hat.dot(comb_z_plane_phi0_hat))
         
         clustered_splittings.part_i.delta_r(clustered_splittings.part_j)
         clustered_splittings.part_j.pt/(clustered_splittings.part_i.pt + clustered_splittings.part_j.pt)
@@ -192,52 +236,56 @@ class topCandRecoTestCase(unittest.TestCase):
         print(clustered_splittings.thetaA)
         print(clustered_splittings.zA)
 
-
-
+        
 
         # Lookup thetaA and Z
         # Lookup mA and mB
         # Loopup phi  np.random.uniform(-np.pi, np.pi, len())
 
         clustered_splittings_tanTa = np.tan(clustered_splittings.thetaA)
-        clustered_splittings_tanTb = clustered_splittings.zA/(1-clustered_splittings.zA) * clustered_splittings_tanTa
+        clustered_splittings_tanTb = clustered_splittings.zA / (1-clustered_splittings.zA) * clustered_splittings_tanTa
 
         #
         #  Before Rotation
         #
-        pA_pz0_frame_px = clustered_splittings.zA*clustered_splittings_pz0.pt
-        pA_pz0_frame_py = 0
-        pA_pz0_frame_pz = -clustered_splittings.zA*clustered_splittings_pz0.pt*clustered_splittings_tanTa
-        pA_pz0_frame_E  = np.sqrt(pA_pz0_frame_px**2 + pA_pz0_frame_pz**2 + clustered_splittings.mA**2)
+        pA_pz0_px = clustered_splittings.zA * clustered_splittings_pz0.pt
+        pA_pz0_py = 0
+        pA_pz0_pz = -clustered_splittings.zA*clustered_splittings_pz0.pt*clustered_splittings_tanTa
+        pA_pz0_E  = np.sqrt(pA_pz0_px**2 + pA_pz0_pz**2 + clustered_splittings.mA**2)
         
 
-        pA_pz0_frame_noRot = ak.zip(
+        pA_pz0_phi0 = ak.zip(
             {
-                "x": pA_pz0_frame_px,
-                "y": pA_pz0_frame_py,
-                "z": pA_pz0_frame_pz,
-                "t": pA_pz0_frame_E,
+                "x": pA_pz0_px,
+                "y": pA_pz0_py,
+                "z": pA_pz0_pz,
+                "t": pA_pz0_E,
             },
             with_name="LorentzVector",
             behavior=vector.behavior,
         )
 
-        pB_pz0_frame_px = (1 - clustered_splittings.zA) * clustered_splittings_pz0.pt
-        pB_pz0_frame_py = 0
-        pB_pz0_frame_pz = (1 - clustered_splittings.zA) * clustered_splittings_pz0.pt * clustered_splittings_tanTb
-        pB_pz0_frame_E  = np.sqrt(pB_pz0_frame_px**2 + pB_pz0_frame_pz**2 + clustered_splittings.mB**2)
+        pB_pz0_px = (1 - clustered_splittings.zA) * clustered_splittings_pz0.pt
+        pB_pz0_py = 0
+        pB_pz0_pz = (1 - clustered_splittings.zA) * clustered_splittings_pz0.pt * clustered_splittings_tanTb
+        pB_pz0_E  = np.sqrt(pB_pz0_px**2 + pB_pz0_pz**2 + clustered_splittings.mB**2)
 
         
-        pB_pz0_frame_noRot = ak.zip(
+        pB_pz0_phi0 = ak.zip(
             {
-                "x": pB_pz0_frame_px,
-                "y": pB_pz0_frame_py,
-                "z": pB_pz0_frame_pz,
-                "t": pB_pz0_frame_E,
+                "x": pB_pz0_px,
+                "y": pB_pz0_py,
+                "z": pB_pz0_pz,
+                "t": pB_pz0_E,
             },
             with_name="LorentzVector",
             behavior=vector.behavior,
         )
+
+
+        #comb_z_plane_phi0_hat = clustered_splittings_pz0_phi0.cross(z_axis).unit
+        decay_plane_pAB_phi0 = pB_pz0_phi0.cross(pA_pz0_phi0).unit
+        clustered_splittings["decay_phi_pAB_phi0"] = np.arccos(decay_plane_pAB_phi0.dot(comb_z_plane_phi0_hat))
 
         
         
@@ -245,46 +293,18 @@ class topCandRecoTestCase(unittest.TestCase):
         # 
         # Do Rotation
         # 
-        sin_decay_phi = np.sin(clustered_splittings.decay_phi)
-        cos_decay_phi = np.cos(clustered_splittings.decay_phi)
-        pA_pz0_frame_py_rotated = cos_decay_phi * pA_pz0_frame_py - sin_decay_phi * pA_pz0_frame_pz
-        pA_pz0_frame_pz_rotated = sin_decay_phi * pA_pz0_frame_py + cos_decay_phi * pA_pz0_frame_pz        
+        pA_pz0 = rotateX(pA_pz0_phi0, clustered_splittings.decay_phi)
+        pB_pz0 = rotateX(pB_pz0_phi0, clustered_splittings.decay_phi)        
 
-        pB_pz0_frame_py_rotated = cos_decay_phi * pB_pz0_frame_py - sin_decay_phi * pB_pz0_frame_pz
-        pB_pz0_frame_pz_rotated = sin_decay_phi * pB_pz0_frame_py + cos_decay_phi * pB_pz0_frame_pz        
 
-        pA_pz0_frame = ak.zip(
-            {
-                "x": pA_pz0_frame_noRot.x,
-                "y": pA_pz0_frame_py_rotated,
-                "z": pA_pz0_frame_pz_rotated,
-                "t": pA_pz0_frame_E,
-            },
-            with_name="LorentzVector",
-            behavior=vector.behavior,
-        )
-
-        
-        pB_pz0_frame = ak.zip(
-            {
-                "x": pB_pz0_frame_px,
-                "y": pB_pz0_frame_py_rotated,
-                "z": pB_pz0_frame_pz_rotated,
-                "t": pB_pz0_frame_E,
-            },
-            with_name="LorentzVector",
-            behavior=vector.behavior,
-        )
-        
-        
+        decay_plane_pAB = pB_pz0.cross(pA_pz0).unit
+        clustered_splittings["decay_phi_pAB"] = np.arccos(decay_plane_pAB.dot(comb_z_plane_phi0_hat))
 
         #
         #  Boost back
         #
-        pA = pA_pz0_frame.boost(boost_vec_z)
-        pB = pB_pz0_frame.boost(boost_vec_z)
-
-
+        pA = pA_pz0.boost(boost_vec_z)
+        pB = pB_pz0.boost(boost_vec_z)
         
         
         #
@@ -293,7 +313,15 @@ class topCandRecoTestCase(unittest.TestCase):
         print(clustered_splittings.pt - (pA + pB).pt)
         print(clustered_splittings.mass - (pA + pB).mass)
 
-        print(clustered_splittings_part_i_pz0.pt - pA_pz0_frame.pt)
+        print(clustered_splittings_part_i_pz0.pt - pA_pz0.pt)
+
+        print("Check Pts")
+        [print(i) for i in clustered_splittings.pt - (pA + pB).pt]
+        
+        print("Check Masses")
+        [print(i) for i in clustered_splittings.mass - (pA + pB).mass]
+
+        
         breakpoint()
         [print(i, j) for i, j in zip(clustered_splittings_part_i_pz0.pt, clustered_splittings_part_j_pz0.pt)]
         
