@@ -226,3 +226,97 @@ def kt_clustering(event_jets, R, debug = False):
     )
 
     return clustered_events
+
+
+def rotateX(particles, angle):
+    sinT = np.sin(angle)
+    cosT = np.cos(angle)
+    y_rotated = cosT * particles.y - sinT * particles.z
+    z_rotated = sinT * particles.y + cosT * particles.z
+
+    return ak.zip(
+        {
+            "x": particles.x,
+            "y": y_rotated,
+            "z": z_rotated,
+            "t": particles.t,
+        },
+        with_name="LorentzVector",
+        behavior=vector.behavior,
+    )
+
+
+
+def decluster_combined_jets(input_jet, zA, thetaA, mA, mB, decay_phi):
+
+    combined_pt = input_jet.pt
+    tanThetaA = np.tan(thetaA)
+    tanThetaB = zA / (1 - zA) * tanThetaA
+
+    #
+    #  pA (in frame with pz=0 phi=0)
+    #
+    pA_pz0_px = zA * combined_pt
+    pA_pz0_py = 0
+    pA_pz0_pz = - zA * combined_pt * tanThetaA
+    pA_pz0_E  = np.sqrt(pA_pz0_px**2 + pA_pz0_pz**2 + mA**2)
+
+    pA_pz0_phi0 = ak.zip(
+        {
+            "x": pA_pz0_px,
+            "y": pA_pz0_py,
+            "z": pA_pz0_pz,
+            "t": pA_pz0_E,
+        },
+        with_name="LorentzVector",
+        behavior=vector.behavior,
+    )
+
+    pB_pz0_px = (1 - zA) * combined_pt
+    pB_pz0_py = 0
+    pB_pz0_pz = (1 - zA) * combined_pt * tanThetaB
+    pB_pz0_E  = np.sqrt(pB_pz0_px**2 + pB_pz0_pz**2 + mB**2)
+
+
+    pB_pz0_phi0 = ak.zip(
+        {
+            "x": pB_pz0_px,
+            "y": pB_pz0_py,
+            "z": pB_pz0_pz,
+            "t": pB_pz0_E,
+        },
+        with_name="LorentzVector",
+        behavior=vector.behavior,
+    )
+
+    #
+    # Do Rotation
+    #
+    pA_pz0 = rotateX(pA_pz0_phi0, decay_phi)
+    pB_pz0 = rotateX(pB_pz0_phi0, decay_phi)
+
+
+
+    #
+    #  De-Clustering
+    #
+    z_axis = ak.zip({"x": 0, "y": 0, "z": 1,}, with_name="ThreeVector", behavior=vector.behavior,)
+    boost_vec_z = ak.zip(
+        {
+            "x": 0,
+            "y": 0,
+            "z": input_jet.boostvec.dot(z_axis),
+        },
+        with_name="ThreeVector",
+        behavior=vector.behavior,
+    )
+
+
+    #
+    #  Boost back
+    #
+    pA = pA_pz0.boost(boost_vec_z)
+    pB = pB_pz0.boost(boost_vec_z)
+
+
+    return pA, pB
