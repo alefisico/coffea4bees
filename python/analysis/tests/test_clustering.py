@@ -12,9 +12,10 @@ import time
 from copy import copy
 import os
 sys.path.insert(0, os.getcwd())
-from analysis.helpers.clustering import kt_clustering, cluster_bs
+from analysis.helpers.clustering import kt_clustering, cluster_bs, decluster_combined_jets
 #import vector
 #vector.register_awkward()
+from coffea.nanoevents.methods.vector import ThreeVector
 
 
 
@@ -52,8 +53,30 @@ import fastjet
 #    return find_jet_pairs_kernel(events_jets, ak.ArrayBuilder()).snapshot()
 
 
+def rotateZ(particles, angle):
+    sinT = np.sin(angle)
+    cosT = np.cos(angle)
+    x_rotated = cosT * particles.x - sinT * particles.y
+    y_rotated = sinT * particles.x + cosT * particles.y
 
-class topCandRecoTestCase(unittest.TestCase):
+    return ak.zip(
+        {
+            "x": x_rotated,
+            "y": y_rotated,
+            "z": particles.z,
+            "t": particles.t,
+        },
+        with_name="LorentzVector",
+        behavior=vector.behavior,
+    )
+
+
+
+
+
+
+
+class clusteringTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
@@ -125,27 +148,113 @@ class topCandRecoTestCase(unittest.TestCase):
         #R = 1.0  # Jet size parameter
         clustered_jets, clustered_splittings = cluster_bs(self.input_jets_4, debug=False)
 
+        if self.debug:
+            for iEvent, jets in enumerate(clustered_jets):
+                print(f"Event {iEvent}")
+                for i, jet in enumerate(jets):
+                    print(f"Jet {i+1}: px = {jet.px:.2f}, py = {jet.py:.2f}, pz = {jet.pz:.2f}, E = {jet.E:.2f}, type = {jet.jet_flavor}")
+                print("...Splittings")
 
-        for iEvent, jets in enumerate(clustered_jets):
-            print(f"Event {iEvent}")
-            for i, jet in enumerate(jets):
-                print(f"Jet {i+1}: px = {jet.px:.2f}, py = {jet.py:.2f}, pz = {jet.pz:.2f}, E = {jet.E:.2f}, type = {jet.jet_flavor}")
-            print("...Splittings")
-
-            for i, splitting in enumerate(clustered_splittings[iEvent]):
-                print(f"Split {i+1}: px = {splitting.px:.2f}, py = {splitting.py:.2f}, pz = {splitting.pz:.2f}, E = {splitting.E:.2f}, type = {splitting.jet_flavor}")
-                print(f"\tPart_i {splitting.part_i}")
-                print(f"\tPart_j {splitting.part_j}")
+                for i, splitting in enumerate(clustered_splittings[iEvent]):
+                    print(f"Split {i+1}: px = {splitting.px:.2f}, py = {splitting.py:.2f}, pz = {splitting.pz:.2f}, E = {splitting.E:.2f}, type = {splitting.jet_flavor}")
+                    print(f"\tPart_i {splitting.part_i}")
+                    print(f"\tPart_j {splitting.part_j}")
 
 
-        clustered_splittings_g_bb   = clustered_splittings[clustered_splittings.jet_flavor == "g_bb"]
-        clustered_splittings_b_star = clustered_splittings[clustered_splittings.jet_flavor == "b_star"]
 
-        #breakpoint()
+        #clustered_splittings   = clustered_splittings[clustered_splittings.jet_flavor == "g_bb"]
+        #clustered_splittings_b_star = clustered_splittings[clustered_splittings.jet_flavor == "b_star"]
 
-        clustered_splittings_g_bb.part_i.delta_r(clustered_splittings_g_bb.part_j)
-        clustered_splittings_g_bb.part_j.pt/(clustered_splittings_g_bb.part_i.pt + clustered_splittings_g_bb.part_j.pt)
-        #clustered_splittings_g_bb.part_i.delta_r(clustered_splittings_g_bb.part_j)
+
+        #
+        # z-axis
+        #
+        z_axis = ak.zip({"x": 0, "y": 0, "z": 1,}, with_name="ThreeVector", behavior=vector.behavior,)
+
+        #
+        #  De-Clustering
+        #
+        boost_vec_z = ak.zip(
+            {
+                "x": 0,
+                "y": 0,
+                "z": clustered_splittings.boostvec.dot(z_axis),
+            },
+            with_name="ThreeVector",
+            behavior=vector.behavior,
+        )
+
+        #
+        #  Boost to pz0
+        #
+        clustered_splittings_pz0        = clustered_splittings.boost(-boost_vec_z)
+        clustered_splittings_part_i_pz0 = clustered_splittings.part_i.boost(-boost_vec_z)
+        clustered_splittings_part_j_pz0 = clustered_splittings.part_j.boost(-boost_vec_z)
+
+
+        comb_z_plane_hat = z_axis.cross(clustered_splittings_pz0).unit
+        decay_plane_hat = clustered_splittings_part_i_pz0.cross(clustered_splittings_part_j_pz0).unit
+
+        #
+        #  Clustering (calc variables to histogram)
+        #
+        clustered_splittings["mA"]        = clustered_splittings.part_i.mass
+        clustered_splittings["mB"]        = clustered_splittings.part_j.mass
+        clustered_splittings["zA"]        = clustered_splittings_pz0.dot(clustered_splittings_part_i_pz0)/(clustered_splittings_pz0.pt**2)
+        clustered_splittings["thetaA"]    = np.arccos(clustered_splittings_pz0.unit.dot(clustered_splittings_part_i_pz0.unit))
+        clustered_splittings["decay_phi"] = np.arccos(decay_plane_hat.dot(comb_z_plane_hat))
+
+
+        #
+        # Declustering
+        #
+
+        # Eventually will
+        #   Lookup thetaA and Z
+        #   Lookup mA and mB
+        #   Loopup phi  np.random.uniform(-np.pi, np.pi, len())
+
+        #
+        #  For now use known inputs
+        #   (should get exact jets back!)
+        input_jet       = clustered_splittings
+        input_thetaA    = clustered_splittings.thetaA
+        input_zA        = clustered_splittings.zA
+        input_mA        = clustered_splittings.mA
+        input_mB        = clustered_splittings.mB
+        input_decay_phi = clustered_splittings.decay_phi
+
+        pA, pB = decluster_combined_jets(input_jet,
+                                         input_zA,
+                                         input_thetaA,
+                                         input_mA,
+                                         input_mB,
+                                         input_decay_phi
+                                         )
+
+
+        #
+        # Sanity checks
+        #
+
+        #
+        # Check Masses
+        #
+        mass_check = [np.allclose(i, j, 1e-4) for i, j in zip(clustered_splittings.mass, (pA + pB).mass)]
+        if not all(mass_check):
+            [print(i) for i in clustered_splittings.mass - (pA + pB).mass]
+            [print(i, j) for i, j in zip(clustered_splittings.mass, (pA + pB).mass)]
+        self.assertTrue(all(mass_check), "All Masses should be the same")
+
+        #
+        # Check Masses
+        #
+        pt_check = [np.allclose(i, j, 1e-4) for i, j in zip(clustered_splittings.pt, (pA + pB).pt)]
+        if not all(pt_check):
+            [print(i) for i in clustered_splittings.pt - (pA + pB).pt]
+            [print(i, j) for i, j in zip(clustered_splittings.pt, (pA + pB).pt)]
+        self.assertTrue(all(pt_check), "All pt should be the same")
+
 
 
 
