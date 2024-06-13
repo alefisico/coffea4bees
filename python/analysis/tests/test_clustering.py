@@ -92,7 +92,7 @@ def rotateX(particles, angle):
 
 
 
-class topCandRecoTestCase(unittest.TestCase):
+class clusteringTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
@@ -164,22 +164,23 @@ class topCandRecoTestCase(unittest.TestCase):
         #R = 1.0  # Jet size parameter
         clustered_jets, clustered_splittings = cluster_bs(self.input_jets_4, debug=False)
 
-        for iEvent, jets in enumerate(clustered_jets):
-            print(f"Event {iEvent}")
-            for i, jet in enumerate(jets):
-                print(f"Jet {i+1}: px = {jet.px:.2f}, py = {jet.py:.2f}, pz = {jet.pz:.2f}, E = {jet.E:.2f}, type = {jet.jet_flavor}")
-            print("...Splittings")
-
-            for i, splitting in enumerate(clustered_splittings[iEvent]):
-                print(f"Split {i+1}: px = {splitting.px:.2f}, py = {splitting.py:.2f}, pz = {splitting.pz:.2f}, E = {splitting.E:.2f}, type = {splitting.jet_flavor}")
-                print(f"\tPart_i {splitting.part_i}")
-                print(f"\tPart_j {splitting.part_j}")
-
+        if self.debug:
+            for iEvent, jets in enumerate(clustered_jets):
+                print(f"Event {iEvent}")
+                for i, jet in enumerate(jets):
+                    print(f"Jet {i+1}: px = {jet.px:.2f}, py = {jet.py:.2f}, pz = {jet.pz:.2f}, E = {jet.E:.2f}, type = {jet.jet_flavor}")
+                print("...Splittings")
+    
+                for i, splitting in enumerate(clustered_splittings[iEvent]):
+                    print(f"Split {i+1}: px = {splitting.px:.2f}, py = {splitting.py:.2f}, pz = {splitting.pz:.2f}, E = {splitting.E:.2f}, type = {splitting.jet_flavor}")
+                    print(f"\tPart_i {splitting.part_i}")
+                    print(f"\tPart_j {splitting.part_j}")
+    
 
         #
         # Hack... for now only look at g->bb
         #
-        clustered_splittings   = clustered_splittings[clustered_splittings.jet_flavor == "g_bb"]
+        #clustered_splittings   = clustered_splittings[clustered_splittings.jet_flavor == "g_bb"]
         #clustered_splittings_b_star = clustered_splittings[clustered_splittings.jet_flavor == "b_star"]
 
         clustered_splittings["mA"]     = clustered_splittings.part_i.mass
@@ -213,30 +214,26 @@ class topCandRecoTestCase(unittest.TestCase):
         #
         #  Rotate to phi=0
         #
-        clustered_splittings_pz0_phi0        = rotateZ(clustered_splittings_pz0,        -clustered_splittings_pz0.phi)
-        clustered_splittings_part_i_pz0_phi0 = rotateZ(clustered_splittings_part_i_pz0, -clustered_splittings_pz0.phi)
-        clustered_splittings_part_j_pz0_phi0 = rotateZ(clustered_splittings_part_j_pz0, -clustered_splittings_pz0.phi)
+        # clustered_splittings_pz0_phi0        = rotateZ(clustered_splittings_pz0,        -clustered_splittings_pz0.phi)
+        # clustered_splittings_part_i_pz0_phi0 = rotateZ(clustered_splittings_part_i_pz0, -clustered_splittings_pz0.phi)
+        # clustered_splittings_part_j_pz0_phi0 = rotateZ(clustered_splittings_part_j_pz0, -clustered_splittings_pz0.phi)
         
         clustered_splittings["zA"] = clustered_splittings_pz0.dot(clustered_splittings_part_i_pz0)/(clustered_splittings_pz0.pt**2)
-        #clustered_splittings["thetaA"] = clustered_splittings_pz0.delta_r(clustered_splittings_part_i_pz0)
-        clustered_splittings["thetaA"] = np.arccos(clustered_splittings_pz0_phi0.unit.dot(clustered_splittings_part_i_pz0_phi0.unit))
-
+        clustered_splittings["thetaA"] = np.arccos(clustered_splittings_pz0.unit.dot(clustered_splittings_part_i_pz0.unit))        
+        
         comb_z_plane_hat = z_axis.cross(clustered_splittings_pz0).unit
         decay_plane_hat = clustered_splittings_part_i_pz0.cross(clustered_splittings_part_j_pz0).unit        
         clustered_splittings["decay_phi"] = np.arccos(decay_plane_hat.dot(comb_z_plane_hat))
 
-        comb_z_plane_phi0_hat = z_axis.cross(clustered_splittings_pz0_phi0).unit
-        decay_plane_phi0_hat = clustered_splittings_part_i_pz0_phi0.cross(clustered_splittings_part_j_pz0_phi0).unit
-        clustered_splittings["decay_phi_phi0"] = np.arccos(decay_plane_phi0_hat.dot(comb_z_plane_phi0_hat))
+        #comb_z_plane_phi0_hat = z_axis.cross(clustered_splittings_pz0_phi0).unit
+        #decay_plane_phi0_hat = clustered_splittings_part_i_pz0_phi0.cross(clustered_splittings_part_j_pz0_phi0).unit
+        #clustered_splittings["decay_phi_phi0"] = np.arccos(decay_plane_phi0_hat.dot(comb_z_plane_phi0_hat))
+
         
-        clustered_splittings.part_i.delta_r(clustered_splittings.part_j)
-        clustered_splittings.part_j.pt/(clustered_splittings.part_i.pt + clustered_splittings.part_j.pt)
+        # clustered_splittings.part_i.delta_r(clustered_splittings.part_j)
+        # clustered_splittings.part_j.pt/(clustered_splittings.part_i.pt + clustered_splittings.part_j.pt)
         #clustered_splittings.part_i.delta_r(clustered_splittings.part_j)
 
-        print(clustered_splittings.thetaA)
-        print(clustered_splittings.zA)
-
-        
 
         # Lookup thetaA and Z
         # Lookup mA and mB
@@ -283,9 +280,9 @@ class topCandRecoTestCase(unittest.TestCase):
         )
 
 
-        #comb_z_plane_phi0_hat = clustered_splittings_pz0_phi0.cross(z_axis).unit
-        decay_plane_pAB_phi0 = pB_pz0_phi0.cross(pA_pz0_phi0).unit
-        clustered_splittings["decay_phi_pAB_phi0"] = np.arccos(decay_plane_pAB_phi0.dot(comb_z_plane_phi0_hat))
+        # comb_z_plane_phi0_hat = clustered_splittings_pz0_phi0.cross(z_axis).unit
+        # decay_plane_pAB_phi0 = pB_pz0_phi0.cross(pA_pz0_phi0).unit
+        # clustered_splittings["decay_phi_pAB_phi0"] = np.arccos(decay_plane_pAB_phi0.dot(comb_z_plane_phi0_hat))
 
         
         
@@ -297,8 +294,8 @@ class topCandRecoTestCase(unittest.TestCase):
         pB_pz0 = rotateX(pB_pz0_phi0, clustered_splittings.decay_phi)        
 
 
-        decay_plane_pAB = pB_pz0.cross(pA_pz0).unit
-        clustered_splittings["decay_phi_pAB"] = np.arccos(decay_plane_pAB.dot(comb_z_plane_phi0_hat))
+        # decay_plane_pAB = pB_pz0.cross(pA_pz0).unit
+        # clustered_splittings["decay_phi_pAB"] = np.arccos(decay_plane_pAB.dot(comb_z_plane_phi0_hat))
 
         #
         #  Boost back
@@ -310,20 +307,27 @@ class topCandRecoTestCase(unittest.TestCase):
         #
         # Sanity checks
         #
-        print(clustered_splittings.pt - (pA + pB).pt)
-        print(clustered_splittings.mass - (pA + pB).mass)
-
-        print(clustered_splittings_part_i_pz0.pt - pA_pz0.pt)
-
-        print("Check Pts")
-        [print(i) for i in clustered_splittings.pt - (pA + pB).pt]
-        
-        print("Check Masses")
-        [print(i) for i in clustered_splittings.mass - (pA + pB).mass]
 
         
-        breakpoint()
-        [print(i, j) for i, j in zip(clustered_splittings_part_i_pz0.pt, clustered_splittings_part_j_pz0.pt)]
+        #
+        # Check Masses
+        #
+        mass_check = [np.allclose(i, j, 1e-4) for i, j in zip(clustered_splittings.mass, (pA + pB).mass)]
+        if not all(mass_check):
+            [print(i) for i in clustered_splittings.mass - (pA + pB).mass]
+            [print(i, j) for i, j in zip(clustered_splittings.mass, (pA + pB).mass)]
+        self.assertTrue(all(mass_check), "All Masses should be the same")
+
+        #
+        # Check Masses
+        #
+        pt_check = [np.allclose(i, j, 1e-4) for i, j in zip(clustered_splittings.pt, (pA + pB).pt)]
+        if not all(pt_check):
+            [print(i) for i in clustered_splittings.pt - (pA + pB).pt]
+            [print(i, j) for i, j in zip(clustered_splittings.pt, (pA + pB).pt)]
+        self.assertTrue(all(pt_check), "All pt should be the same")
+
+        
         
 
 if __name__ == '__main__':
