@@ -12,7 +12,7 @@ import time
 from copy import copy
 import os
 sys.path.insert(0, os.getcwd())
-from analysis.helpers.clustering import kt_clustering, cluster_bs, decluster_combined_jets
+from analysis.helpers.clustering import kt_clustering, cluster_bs, decluster_combined_jets, compute_decluster_variables
 #import vector
 #vector.register_awkward()
 from coffea.nanoevents.methods.vector import ThreeVector
@@ -71,11 +71,6 @@ def rotateZ(particles, angle):
     )
 
 
-
-
-
-
-
 class clusteringTestCase(unittest.TestCase):
 
     @classmethod
@@ -114,7 +109,6 @@ class clusteringTestCase(unittest.TestCase):
         self.debug = False
 
 
-
     def test_kt_clustering_4jets(self):
 
         R = np.pi  # Jet size parameter
@@ -145,8 +139,8 @@ class clusteringTestCase(unittest.TestCase):
 
     def test_cluster_bs_4jets(self):
 
-        #R = 1.0  # Jet size parameter
         clustered_jets, clustered_splittings = cluster_bs(self.input_jets_4, debug=False)
+        compute_decluster_variables(clustered_splittings)
 
         if self.debug:
             for iEvent, jets in enumerate(clustered_jets):
@@ -161,48 +155,8 @@ class clusteringTestCase(unittest.TestCase):
                     print(f"\tPart_j {splitting.part_j}")
 
 
-
         #clustered_splittings   = clustered_splittings[clustered_splittings.jet_flavor == "g_bb"]
-        #clustered_splittings_b_star = clustered_splittings[clustered_splittings.jet_flavor == "b_star"]
-
-
-        #
-        # z-axis
-        #
-        z_axis = ak.zip({"x": 0, "y": 0, "z": 1,}, with_name="ThreeVector", behavior=vector.behavior,)
-
-        #
-        #  De-Clustering
-        #
-        boost_vec_z = ak.zip(
-            {
-                "x": 0,
-                "y": 0,
-                "z": clustered_splittings.boostvec.dot(z_axis),
-            },
-            with_name="ThreeVector",
-            behavior=vector.behavior,
-        )
-
-        #
-        #  Boost to pz0
-        #
-        clustered_splittings_pz0        = clustered_splittings.boost(-boost_vec_z)
-        clustered_splittings_part_i_pz0 = clustered_splittings.part_i.boost(-boost_vec_z)
-        clustered_splittings_part_j_pz0 = clustered_splittings.part_j.boost(-boost_vec_z)
-
-
-        comb_z_plane_hat = z_axis.cross(clustered_splittings_pz0).unit
-        decay_plane_hat = clustered_splittings_part_i_pz0.cross(clustered_splittings_part_j_pz0).unit
-
-        #
-        #  Clustering (calc variables to histogram)
-        #
-        clustered_splittings["mA"]        = clustered_splittings.part_i.mass
-        clustered_splittings["mB"]        = clustered_splittings.part_j.mass
-        clustered_splittings["zA"]        = clustered_splittings_pz0.dot(clustered_splittings_part_i_pz0)/(clustered_splittings_pz0.pt**2)
-        clustered_splittings["thetaA"]    = np.arccos(clustered_splittings_pz0.unit.dot(clustered_splittings_part_i_pz0.unit))
-        clustered_splittings["decay_phi"] = np.arccos(decay_plane_hat.dot(comb_z_plane_hat))
+        #clustered_splittings_b_star = clustered_splittings[clustered_splittings.jet_flavor == "bstar"]
 
 
         #
@@ -210,9 +164,8 @@ class clusteringTestCase(unittest.TestCase):
         #
 
         # Eventually will
-        #   Lookup thetaA and Z
-        #   Lookup mA and mB
-        #   Loopup phi  np.random.uniform(-np.pi, np.pi, len())
+        #   Lookup thetaA, Z, mA, and mB
+        #   radom draw phi  (np.random.uniform(-np.pi, np.pi, len()) ? )
 
         #
         #  For now use known inputs

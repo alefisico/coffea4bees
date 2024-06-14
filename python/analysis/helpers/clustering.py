@@ -39,7 +39,6 @@ def combine_particles(part_i, part_j, debug=False):
             if debug: print(f"ERROR: combining {jet_flavor_pair}")
             part_comb_jet_flavor = f"ERROR {part_i.jet_flavor} and {part_j.jet_flavor}"
 
-
     part_comb_array = ak.zip(
         {
             "pt": [part_comb.pt],
@@ -246,6 +245,34 @@ def rotateX(particles, angle):
     )
 
 
+def compute_decluster_variables(clustered_splittings):
+
+    #
+    # z-axis
+    #
+    z_axis      = ak.zip({"x": 0, "y": 0, "z": 1,}, with_name="ThreeVector", behavior=vector.behavior,)
+    boost_vec_z = ak.zip({"x": 0, "y": 0, "z": clustered_splittings.boostvec.z,}, with_name="ThreeVector", behavior=vector.behavior,)
+
+    #
+    #  Boost to pz0
+    #
+    clustered_splittings_pz0        = clustered_splittings.boost(-boost_vec_z)
+    clustered_splittings_part_i_pz0 = clustered_splittings.part_i.boost(-boost_vec_z)
+    clustered_splittings_part_j_pz0 = clustered_splittings.part_j.boost(-boost_vec_z)
+
+    comb_z_plane_hat = z_axis.cross(clustered_splittings_pz0).unit
+    decay_plane_hat = clustered_splittings_part_i_pz0.cross(clustered_splittings_part_j_pz0).unit
+
+    #
+    #  Clustering (calc variables to histogram)
+    #
+    clustered_splittings["mA"]        = clustered_splittings.part_i.mass
+    clustered_splittings["mB"]        = clustered_splittings.part_j.mass
+    clustered_splittings["zA"]        = clustered_splittings_pz0.dot(clustered_splittings_part_i_pz0)/(clustered_splittings_pz0.pt**2)
+    clustered_splittings["thetaA"]    = np.arccos(clustered_splittings_pz0.unit.dot(clustered_splittings_part_i_pz0.unit))
+    clustered_splittings["decay_phi"] = np.arccos(decay_plane_hat.dot(comb_z_plane_hat))
+
+    return
 
 def decluster_combined_jets(input_jet, zA, thetaA, mA, mB, decay_phi):
 
@@ -277,7 +304,6 @@ def decluster_combined_jets(input_jet, zA, thetaA, mA, mB, decay_phi):
     pB_pz0_pz = (1 - zA) * combined_pt * tanThetaB
     pB_pz0_E  = np.sqrt(pB_pz0_px**2 + pB_pz0_pz**2 + mB**2)
 
-
     pB_pz0_phi0 = ak.zip(
         {
             "x": pB_pz0_px,
@@ -295,28 +321,23 @@ def decluster_combined_jets(input_jet, zA, thetaA, mA, mB, decay_phi):
     pA_pz0 = rotateX(pA_pz0_phi0, decay_phi)
     pB_pz0 = rotateX(pB_pz0_phi0, decay_phi)
 
-
-
     #
     #  De-Clustering
     #
-    z_axis = ak.zip({"x": 0, "y": 0, "z": 1,}, with_name="ThreeVector", behavior=vector.behavior,)
     boost_vec_z = ak.zip(
         {
             "x": 0,
             "y": 0,
-            "z": input_jet.boostvec.dot(z_axis),
+            "z": input_jet.boostvec.z,
         },
         with_name="ThreeVector",
         behavior=vector.behavior,
     )
-
 
     #
     #  Boost back
     #
     pA = pA_pz0.boost(boost_vec_z)
     pB = pB_pz0.boost(boost_vec_z)
-
 
     return pA, pB
