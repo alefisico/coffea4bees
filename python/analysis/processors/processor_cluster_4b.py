@@ -14,9 +14,10 @@ from coffea.analysis_tools import Weights, PackedSelection
 
 from base_class.hist import Collection, Fill
 from base_class.physics.object import LorentzVector, Jet, Muon, Elec
-from analysis.helpers.hist_templates import SvBHists, FvTHists, QuadJetHists
+#from analysis.helpers.hist_templates import SvBHists, FvTHists, QuadJetHists
+from analysis.helpers.clustering_hist_templates import ClusterHists
 from analysis.helpers.topCandReconstruction import dumpTopCandidateTestVectors
-from analysis.helpers.clustering import cluster_bs
+from analysis.helpers.clustering import cluster_bs, compute_decluster_variables
 
 from analysis.helpers.cutflow import cutFlow
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
@@ -38,7 +39,6 @@ from base_class.root import TreeReader, Chunk
 #
 NanoAODSchema.warn_missing_crossrefs = False
 warnings.filterwarnings("ignore")
-
 
 
 class analysis(processor.ProcessorABC):
@@ -103,7 +103,6 @@ class analysis(processor.ProcessorABC):
         logging.debug(f"weights event {weights.weight()[:10]}")
         logging.debug(f"Weight Statistics {weights.weightStatistics}")
 
-
         # Apply object selection (function does not remove events, adds content to objects)
         event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year] )
 
@@ -148,7 +147,7 @@ class analysis(processor.ProcessorABC):
         event['nJet_selected'] = ak.sum(event.Jet.selected, axis=1)
         selev = event[selections.all(*allcuts)]
 
-        logging.info( f"\n {chunk} Event:  nSelJets {selev['nJet_selected']}\n")
+        # logging.info( f"\n {chunk} Event:  nSelJets {selev['nJet_selected']}\n")
 
         #
         # Build and select boson candidate jets with bRegCorr applied
@@ -157,8 +156,6 @@ class analysis(processor.ProcessorABC):
         canJet_idx = sorted_idx[:, 0:4]
         notCanJet_idx = sorted_idx[:, 4:]
         canJet = selev.Jet[canJet_idx]
-
-
 
         # apply bJES to canJets
         canJet = canJet * canJet.bRegCorr
@@ -195,149 +192,20 @@ class analysis(processor.ProcessorABC):
         selev["notCanJet_coffea"] = notCanJet
         selev["nNotCanJet"] = ak.num(selev.notCanJet_coffea)
 
-
-
         #
         # Build diJets, indexed by diJet[event,pairing,0/1]
         #
         #canJet = selev["canJet"]
 
-
         canJet["jet_flavor"] = "b"
         clustered_jets, clustered_splittings = cluster_bs(canJet, debug=False)
+        compute_decluster_variables(clustered_splittings)
 
-        selev["g_bb"]   = clustered_splittings[clustered_splittings.jet_flavor == "g_bb"]
-        selev["b_star"] = clustered_splittings[clustered_splittings.jet_flavor == "b_star"]
+        selev["splitting_g_bb"]   = clustered_splittings[clustered_splittings.jet_flavor == "g_bb"]
+        selev["splitting_bstar"] = clustered_splittings[clustered_splittings.jet_flavor == "bstar"]
 
-        selev["g_bb", "dr"] = selev.g_bb.part_i.delta_r(selev.g_bb.part_j)
-        selev["g_bb", "fz"] = selev.g_bb.part_j.pt/(selev.g_bb.part_i.pt + selev.g_bb.part_j.pt)
-        print(selev.g_bb.dr)
-        print(selev.g_bb.fz)
-        print(selev.g_bb.pt)
-        #print(selev.g_bb.part_i.delta_r(selev.g_bb.part_j))
-        #print(clustered_splittings_g_bb.part_j.pt/(clustered_splittings_g_bb.part_i.pt + clustered_splittings_g_bb.part_j.pt))
-        print()
-
-
-        #selev.Jet
-        # import fastjet
-        # jetdef = fastjet.JetDefinition(fastjet.cambridge_algorithm, 4*np.pi)
-        # cluster = fastjet.ClusterSequence(canJet, jetdef)
-        # print(cluster)
-        # print(dir(cluster))
-        # print()
-        # print(f'canJet 0 "pt" : {canJet[0, 0].pt}, "eta" : {canJet[0, 0].eta}, "phi" : {canJet[0, 0].phi}, "E" : {canJet[0, 0].E} ')
-        # print(f'canJet 1 "pt" : {canJet[0, 1].pt}, "eta" : {canJet[0, 1].eta}, "phi" : {canJet[0, 1].phi}, "E" : {canJet[0, 1].E} ')
-        # print(f'canJet 2 "pt" : {canJet[0, 2].pt}, "eta" : {canJet[0, 2].eta}, "phi" : {canJet[0, 2].phi}, "E" : {canJet[0, 2].E} ')
-        # print(f'canJet 3 "pt" : {canJet[0, 3].pt}, "eta" : {canJet[0, 3].eta}, "phi" : {canJet[0, 3].phi}, "E" : {canJet[0, 3].E} ')
-        #
-        # print(f'{selev.Jet[0]}')
-        # print(f'{selev.Jet[0][0]}')
-        # print(f'{type(selev.Jet[0][0])}')
-        # print()
-        #
-        # print(f'{len(selev)}')
-        # print()
         # dumpTopCandidateTestVectors(selev, logging, chunk, 10)
-
-#
-
-
-        #logging.info( f"\n {chunk} can dRs {len(dRs[3])} \n")
-
-
-        pairing = [([0, 2], [0, 1], [0, 1]), ([1, 3], [2, 3], [3, 2])]
-        diJet = canJet[:, pairing[0]] + canJet[:, pairing[1]]
-
-        #logging.info( f"\n {chunk} {canJet[:, pairing[0]][0][0]} + {canJet[:, pairing[1]][0][0]}")
-        #logging.info( f"\n {chunk} {len(canJet[:, pairing[0]][0])}")
-        #logging.info( f"\n {chunk} {len(diJet[0])} ")
-        #logging.info( f"\n {chunk} di-jet0 pT {diJet[0][0].pt} ")
-
-
-        diJet["st"] = canJet[:, pairing[0]].pt + canJet[:, pairing[1]].pt
-        diJet["dr"] = canJet[:, pairing[0]].delta_r(canJet[:, pairing[1]])
-        diJet["dphi"] = canJet[:, pairing[0]].delta_phi(canJet[:, pairing[1]])
-        diJet["lead"] = canJet[:, pairing[0]]
-        diJet["subl"] = canJet[:, pairing[1]]
-        # Sort diJets within views to be lead st, subl st
-        diJet = diJet[ak.argsort(diJet.st, axis=2, ascending=False)]
-        diJetDr = diJet[ak.argsort(diJet.dr, axis=2, ascending=True)]
-        # Now indexed by diJet[event,pairing,lead/subl st]
-
-        # Compute diJetMass cut with independent min/max for lead/subl
-        minDiJetMass = np.array([[[52, 50]]])
-        maxDiJetMass = np.array([[[180, 173]]])
-        diJet["passDiJetMass"] = (minDiJetMass < diJet.mass) & ( diJet.mass < maxDiJetMass )
-
-        # Compute MDRs
-        min_m4j_scale = np.array([[360, 235]])
-        min_dr_offset = np.array([[-0.5, 0.0]])
-        max_m4j_scale = np.array([[650, 650]])
-        max_dr_offset = np.array([[0.5, 0.7]])
-        max_dr = np.array([[1.5, 1.5]])
-
-        #
-        # Compute consistency of diJet masses with boson masses
-        #
-        mZ = 91.0
-        mH = 125.0
-        st_bias = np.array([[[1.02, 0.98]]])
-        cZ = mZ * st_bias
-        cH = mH * st_bias
-
-        diJet["xZ"] = (diJet.mass - cZ) / (0.1 * diJet.mass)
-        diJet["xH"] = (diJet.mass - cH) / (0.1 * diJet.mass)
-
-        #
-        # Build quadJets
-        #
-        seeds = np.array(event.event)[[0, -1]].view(np.ulonglong)
-        randomstate = np.random.Generator(np.random.PCG64(seeds))
-        quadJet = ak.zip( { "lead": diJet[:, :, 0],
-                            "subl": diJet[:, :, 1],
-                            "close": diJetDr[:, :, 0],
-                            "other": diJetDr[:, :, 1],
-                            "passDiJetMass": ak.all(diJet.passDiJetMass, axis=2),
-                            "random": randomstate.uniform(
-                                low=0.1, high=0.9, size=(diJet.__len__(), 3)
-                            ), } )
-
-        quadJet["dr"] = quadJet["lead"].delta_r(quadJet["subl"])
-        quadJet["dphi"] = quadJet["lead"].delta_phi(quadJet["subl"])
-        quadJet["deta"] = quadJet["lead"].eta - quadJet["subl"].eta
-
-
-
-
-        #
-        # Compute Signal Regions
-        #
-        quadJet["xZZ"] = np.sqrt(quadJet.lead.xZ**2 + quadJet.subl.xZ**2)
-        quadJet["xHH"] = np.sqrt(quadJet.lead.xH**2 + quadJet.subl.xH**2)
-        quadJet["xZH"] = np.sqrt( np.minimum( quadJet.lead.xH**2 + quadJet.subl.xZ**2, quadJet.lead.xZ**2 + quadJet.subl.xH**2, ) )
-
-        max_xZZ = 2.6
-        max_xZH = 1.9
-        max_xHH = 1.9
-
-
-        #
-        #  Build the close dR and other quadjets
-        #    (There is Probably a better way to do this ...
-        #
-        arg_min_close_dr = np.argmin(quadJet.close.dr, axis=1)
-        arg_min_close_dr = arg_min_close_dr.to_numpy()
-        selev["quadJet_min_dr"] = quadJet[ np.array(range(len(quadJet))), arg_min_close_dr ]
-
-        #
-        # pick quadJet at random giving preference to ones which passDiJetMass and MDRs
-        #
-
-        selev["diJet"] = diJet
-        selev["quadJet"] = quadJet
-        selev["passDiJetMass"] = ak.any(quadJet.passDiJetMass, axis=1)
-
+        selev["region"] = 0b10
 
         #
         # Example of how to write out event numbers
@@ -395,26 +263,15 @@ class analysis(processor.ProcessorABC):
         hist = Collection( process=[processName],
                            year=[year],
                            tag=[3, 4, 0],  # 3 / 4/ Other
+                           region=[2, 1, 0],  # SR / SB / Other
                            **dict((s, ...) for s in self.histCuts)
                            )
 
         #
         # To Add
         #
-
-        #    m4j_vs_leadSt_dR = dir.make<TH2F>("m4j_vs_leadSt_dR", (name+"/m4j_vs_leadSt_dR; m_{4j} [GeV]; S_{T} leading boson candidate #DeltaR(j,j); Entries").c_str(), 40,100,1100, 25,0,5);
-        #    m4j_vs_sublSt_dR = dir.make<TH2F>("m4j_vs_sublSt_dR", (name+"/m4j_vs_sublSt_dR; m_{4j} [GeV]; S_{T} subleading boson candidate #DeltaR(j,j); Entries").c_str(), 40,100,1100, 25,0,5);
-
         fill += hist.add( "nPVs", (101, -0.5, 100.5, ("PV.npvs", "Number of Primary Vertices")) )
         fill += hist.add( "nPVsGood", (101, -0.5, 100.5, ("PV.npvsGood", "Number of Good Primary Vertices")), )
-
-
-
-        if "xbW" in selev.fields:  ### AGE: this should be temporary
-            fill += hist.add("xW", (100, 0, 12, ("xW", "xW")))
-            #fill += hist.add("delta_xW", (100, -5, 5, ("delta_xW", "delta xW")))
-            #fill += hist.add("delta_xW_l", (100, -15, 15, ("delta_xW", "delta xW")))
-
 
         #
         # Jets
@@ -425,33 +282,15 @@ class analysis(processor.ProcessorABC):
         fill += Jet.plot(("tagJets", "Tag Jets"),             "tagJet",           skip=["deepjet_c"])
 
         #
-        #  Make quad jet hists
-        #
-        #fill += LorentzVector.plot_pair( ("v4j", R"$HH_{4b}$"), "v4j", skip=["n", "dr", "dphi", "st"], bins={"mass": (120, 0, 1200)}, )
-        #fill += QuadJetHists( ("quadJet_selected", "Selected Quad Jet"), "quadJet_selected" )
-        fill += QuadJetHists( ("quadJet_min_dr", "Min dR Quad Jet"), "quadJet_min_dr" )
-
-        #
         #  Make Jet Hists
         #
         skip_all_but_n = ["deepjet_b", "energy", "eta", "id_jet", "id_pileup", "mass", "phi", "pt", "pz", "deepjet_c", ]
 
-
         for iJ in range(4):
             fill += Jet.plot( (f"canJet{iJ}", f"Higgs Candidate Jets {iJ}"), f"canJet{iJ}", skip=["n", "deepjet_c"], )
 
-        #
-        #  Leptons
-        #
-        skip_muons = ["charge"] + Muon.skip_detailed_plots
-        if not isMC:
-            skip_muons += ["genPartFlav"]
-        fill += Muon.plot( ("selMuons", "Selected Muons"), "selMuon", skip=skip_muons )
-
-        skip_elecs = ["charge"] + Elec.skip_detailed_plots
-        if not isMC:
-            skip_elecs += ["genPartFlav"]
-        fill += Elec.plot( ("selElecs", "Selected Elecs"), "selElec", skip=skip_elecs )
+        fill += ClusterHists( ("gbbs", "g_bb Splitting"), "splitting_g_bb" )
+        fill += ClusterHists( ("bstars", "bstar Splitting"), "splitting_bstar" )
 
         #
         # fill histograms
