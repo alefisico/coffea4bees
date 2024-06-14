@@ -265,11 +265,11 @@ def _draw_plot(hist_list, stack_dict, **kwargs):
         _plot_options = {"density":  norm,
                          "label":    hist_config.get("label", ""),
                          "color":    hist_config.get('fillcolor', 'k'),
-                         "histtype": hist_config.get("histtype", "errorbar"),
+                         "histtype": kwargs.get("histtype", hist_config.get("histtype", "errorbar")),
                          "yerr": False,
                          }
 
-        if hist_config.get("histtype", "errorbar") in ["errorbar"]:
+        if kwargs.get("histtype", hist_config.get("histtype", "errorbar")) in ["errorbar"]:
             _plot_options["markersize"] = 12
             _plot_options["yerr"] = True
 
