@@ -17,7 +17,7 @@ workflow:
 
 variables:
   CONTAINER_HOST: cms-cmu
-  RUN_REANA: false
+  RUN_REANA: "False"
 
 stages:          
   - reana
@@ -373,6 +373,6 @@ reana-job:
     - source .ci-workflows/reana-job.sh
   allow_failure: true
   rules:
-    if: $RUN_REANA
+    if: $RUN_REANA == "True"
       when: always
     - when: never
