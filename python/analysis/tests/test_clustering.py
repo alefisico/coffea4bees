@@ -12,13 +12,10 @@ import time
 from copy import copy
 import os
 sys.path.insert(0, os.getcwd())
-from analysis.helpers.clustering import kt_clustering, cluster_bs, decluster_combined_jets, compute_decluster_variables
+from analysis.helpers.clustering import kt_clustering, cluster_bs, decluster_combined_jets, compute_decluster_variables, cluster_bs_fast
 #import vector
 #vector.register_awkward()
 from coffea.nanoevents.methods.vector import ThreeVector
-
-
-
 import fastjet
 
 #def find_jet_pairs_kernel(events_jets, builder):
@@ -77,12 +74,6 @@ class clusteringTestCase(unittest.TestCase):
     def setUpClass(self):
 #        self.inputFile = wrapper.args["inputFile"]
 
-#        #
-#        # Test vectors from picos
-#        #   (All four jet events for now)
-#        self.input_jet_pt = [[243, 223, 71.8, 67.8], [181, 119, 116, 96.9], [208, 189, 62.4, 52.1],  [118, 64.6, 58.6, 44.1]]
-
-
         #
         # From 4jet events
         #   (from analysis.helpers.topCandReconstruction import dumpTopCandidateTestVectors
@@ -136,8 +127,7 @@ class clusteringTestCase(unittest.TestCase):
                     print(f"FJ  {i_fj+1}: px = {jet_fj.px:.2f}, py = {jet_fj.py:.2f}, pz = {jet_fj.pz:.2f}, E = {jet_fj.E:.2f}")
 
 
-
-    def test_cluster_bs_4jets(self):
+    def test_declustering(self):
 
         clustered_jets, clustered_splittings = cluster_bs(self.input_jets_4, debug=False)
         compute_decluster_variables(clustered_splittings)
@@ -151,12 +141,9 @@ class clusteringTestCase(unittest.TestCase):
 
                 for i, splitting in enumerate(clustered_splittings[iEvent]):
                     print(f"Split {i+1}: px = {splitting.px:.2f}, py = {splitting.py:.2f}, pz = {splitting.pz:.2f}, E = {splitting.E:.2f}, type = {splitting.jet_flavor}")
-                    print(f"\tPart_i {splitting.part_i}")
-                    print(f"\tPart_j {splitting.part_j}")
+                    print(f"\tPart_A {splitting.part_A}")
+                    print(f"\tPart_B {splitting.part_B}")
 
-
-        #clustered_splittings   = clustered_splittings[clustered_splittings.jet_flavor == "g_bb"]
-        #clustered_splittings_b_star = clustered_splittings[clustered_splittings.jet_flavor == "bstar"]
 
 
         #
@@ -200,13 +187,62 @@ class clusteringTestCase(unittest.TestCase):
         self.assertTrue(all(mass_check), "All Masses should be the same")
 
         #
-        # Check Masses
+        # Check Pts
         #
         pt_check = [np.allclose(i, j, 1e-4) for i, j in zip(clustered_splittings.pt, (pA + pB).pt)]
         if not all(pt_check):
             [print(i) for i in clustered_splittings.pt - (pA + pB).pt]
             [print(i, j) for i, j in zip(clustered_splittings.pt, (pA + pB).pt)]
         self.assertTrue(all(pt_check), "All pt should be the same")
+
+
+
+    def test_cluster_bs_fast_4jets(self):
+
+        start = time.perf_counter()
+        clustered_jets_fast, clustered_splittings_fast = cluster_bs_fast(self.input_jets_4, debug=False)
+        end = time.perf_counter()
+        elapsed_time_matrix_python = (end - start)
+        print(f"\nElapsed time fast Python = {elapsed_time_matrix_python}s")
+
+        start = time.perf_counter()
+        clustered_jets, clustered_splittings = cluster_bs(self.input_jets_4, debug=False)
+        end = time.perf_counter()
+        elapsed_time_loops_python = (end - start)
+        print(f"\nElapsed time loops Python = {elapsed_time_loops_python}s")
+
+        #
+        # Sanity checks
+        #
+
+        #
+        # Check Masses
+        #
+        mass_check = [np.allclose(i, j, 1e-4) for i, j in zip(clustered_splittings.mass, clustered_splittings_fast.mass)]
+        if not all(mass_check):
+            print("deltas")
+            [print(i) for i in clustered_splittings.mass - clustered_splittings_fast.mass]
+            print("values")
+            [print(i, j) for i, j in zip(clustered_splittings.mass, clustered_splittings_fast.mass)]
+        self.assertTrue(all(mass_check), "All Masses should be the same")
+
+
+        #
+        # Check Pts
+        #
+        pt_check = [np.allclose(i, j, 1e-4) for i, j in zip(clustered_splittings.pt, clustered_splittings_fast.pt)]
+        if not all(pt_check):
+            print("deltas")
+            [print(i) for i in clustered_splittings.pt - clustered_splittings_fast.pt]
+            print("values")
+            [print(i, j) for i, j in zip(clustered_splittings.pt, clustered_splittings_fast.pt)]
+        self.assertTrue(all(pt_check), "All Masses should be the same")
+
+
+
+
+
+
 
 
 

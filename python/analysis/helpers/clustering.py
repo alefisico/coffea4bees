@@ -3,21 +3,89 @@ import awkward as ak
 from copy import copy
 from coffea.nanoevents.methods import vector
 
+# anti kt
+# dij = min(1 / (part_A['pt']**2), 1 / (part_B['pt']**2)) * delta_r(part_A['eta'], part_A['phi'], part_B['eta'], part_B['phi'])**2 / R**2
+# diB = 1 / (part_A['pt'] ** 2)
+
+# C/A
+# dij = delta_r(part_A['eta'], part_A['phi'], part_B['eta'], part_B['phi'])**2 / R**2
+# diB = R**2
+
+# Speed this up by using avoiding loop...?
 
 # If R = 0 exlusive clustereing
 def get_distances(particles, R):
     distances = []
-    for i, part_i in enumerate(particles):
-        for j, part_j in enumerate(particles):
+    for i, part_A in enumerate(particles):
+        for j, part_B in enumerate(particles):
             if i < j:
-                dij = min(part_i.pt**2, part_j.pt**2) * part_i.delta_r(part_j)**2
+                dij = min(part_A.pt**2, part_B.pt**2) * part_A.delta_r(part_B)**2
                 if R:
                     dij = dij / R**2
                 distances.append((dij, i, j))
         if R:
-            diB = part_i.pt ** 2
+            diB = part_A.pt ** 2
             distances.append((diB, i, None))
     return distances
+
+
+# If R = 0 exlusive clustereing
+def get_min_indicies(particles, R):
+    distances = []
+    for i, part_A in enumerate(particles):
+        for j, part_B in enumerate(particles):
+            if i < j:
+                dij = min(part_A.pt**2, part_B.pt**2) * part_A.delta_r(part_B)**2
+                #dij = part_A.delta_r(part_B)**2            # KT
+                if R:
+                    dij = dij / R**2
+                distances.append((dij, i, j))
+        if R:
+            diB = part_A.pt ** 2
+            distances.append((diB, i, None))
+    # Find the minimum distance
+    _, idx_A, idx_B = min(distances)
+
+    return idx_A, idx_B
+
+
+
+def distance_matrix_kt(vectors):
+    pt1 = ak.values_astype(vectors.pt, np.float64)
+    eta1 = ak.values_astype(vectors.eta, np.float64)
+    phi1 = ak.values_astype(vectors.phi, np.float64)
+
+    pt2 = pt1[:, np.newaxis]
+    eta2 = eta1[:, np.newaxis]
+    phi2 = phi1[:, np.newaxis]
+
+    dphi = np.abs(phi1 - phi2)
+    dphi = np.where(dphi > np.pi, 2 * np.pi - dphi, dphi)
+    deta = eta1 - eta2
+
+    dr2 = deta**2 + dphi**2
+
+    dij = np.minimum(pt1**2, pt2**2) * dr2
+
+    dij = np.array(dij)
+    # Mask to ignore the diagonal elements (where ΔR = 0)
+    mask = np.eye(dij.shape[0], dtype=bool)
+
+    # Set the diagonal elements to a large value to ignore them
+    dij[mask] = np.inf
+    return dij
+
+def get_min_indicies_fast(particles, R):
+    distances = []
+
+    dij_matrix = distance_matrix_kt(particles)
+
+    dij_min_per_jet    = np.min(dij_matrix,axis=1)
+    dij_argmin_per_jet = np.argmin(dij_matrix,axis=1)
+
+    idx_A = np.argmin(dij_min_per_jet)
+    idx_B = dij_argmin_per_jet[idx_A]
+    return idx_A, idx_B
 
 
 def remove_indices(particles, indices_to_remove):
@@ -25,10 +93,10 @@ def remove_indices(particles, indices_to_remove):
     mask[indices_to_remove] = False
     return particles[mask]
 
-def combine_particles(part_i, part_j, debug=False):
-    part_comb = part_i + part_j
+def combine_particles(part_A, part_B, debug=False):
+    part_comb = part_A + part_B
 
-    jet_flavor_pair = (part_i.jet_flavor, part_j.jet_flavor)
+    jet_flavor_pair = (part_A.jet_flavor, part_B.jet_flavor)
 
     match jet_flavor_pair:
         case ("b","b"):
@@ -37,7 +105,7 @@ def combine_particles(part_i, part_j, debug=False):
             part_comb_jet_flavor = "bstar"
         case _:
             if debug: print(f"ERROR: combining {jet_flavor_pair}")
-            part_comb_jet_flavor = f"ERROR {part_i.jet_flavor} and {part_j.jet_flavor}"
+            part_comb_jet_flavor = f"ERROR {part_A.jet_flavor} and {part_B.jet_flavor}"
 
     part_comb_array = ak.zip(
         {
@@ -46,8 +114,8 @@ def combine_particles(part_i, part_j, debug=False):
             "phi": [part_comb.phi],
             "mass": [part_comb.mass],
             "jet_flavor": [part_comb_jet_flavor],
-            "part_i": [part_i],
-            "part_j": [part_j],
+            "part_A": [part_A],
+            "part_B": [part_B],
         },
         with_name="PtEtaPhiMLorentzVector",
         behavior=vector.behavior,
@@ -58,7 +126,7 @@ def combine_particles(part_i, part_j, debug=False):
 
 
 # Define the kt clustering algorithm
-def cluster_bs(event_jets, debug = False):
+def cluster_bs_core(event_jets, distance_function, debug = False):
     clustered_jets = []
     splittings = []
 
@@ -80,22 +148,21 @@ def cluster_bs(event_jets, debug = False):
             #
             # Calculate the distance measures
             #  R=0 turns off clustering to the beam
-            distances = get_distances(particles, R=0)
+            #distances = get_distances(particles, R=0)
+            #distances = distance_function(particles, R=0)
+            idx_A, idx_B = distance_function(particles, R=0)
 
-            # Find the minimum distance
-            min_dist, idx_i, idx_j = min(distances)
-
-            if debug: print(f"clustering {idx_i} and {idx_j}")
+            if debug: print(f"clustering {idx_A} and {idx_B}")
             if debug: print(f"size partilces {len(particles)}")
             # If the minimum distance is dij, combine particles i and j
 
-            part_i = copy(particles[idx_i])
-            part_j = copy(particles[idx_j])
-            particles = remove_indices(particles, [idx_i, idx_j])
+            part_A = copy(particles[idx_A])
+            part_B = copy(particles[idx_B])
+            particles = remove_indices(particles, [idx_A, idx_B])
 
             if debug: print(f"size partilces {len(particles)}")
 
-            part_comb_array = combine_particles(part_i, part_j)
+            part_comb_array = combine_particles(part_A, part_B)
 
             if debug: print(part_comb_array.jet_flavor)
             match part_comb_array.jet_flavor:
@@ -133,24 +200,24 @@ def cluster_bs(event_jets, debug = False):
             "phi": ak.Array([[v.phi for v in sublist] for sublist in splittings]),
             "mass": ak.Array([[v.mass for v in sublist] for sublist in splittings]),
             "jet_flavor": ak.Array([[v.jet_flavor for v in sublist] for sublist in splittings]),
-            "part_i": ak.zip(
+            "part_A": ak.zip(
                 {
-                    "pt":         ak.Array([[v.part_i.pt  for v in sublist] for sublist in splittings]),
-                    "eta":        ak.Array([[v.part_i.eta for v in sublist] for sublist in splittings]),
-                    "phi":        ak.Array([[v.part_i.phi for v in sublist] for sublist in splittings]),
-                    "mass":       ak.Array([[v.part_i.mass for v in sublist] for sublist in splittings]),
-                    "jet_flavor": ak.Array([[v.part_i.jet_flavor for v in sublist] for sublist in splittings]),
+                    "pt":         ak.Array([[v.part_A.pt  for v in sublist] for sublist in splittings]),
+                    "eta":        ak.Array([[v.part_A.eta for v in sublist] for sublist in splittings]),
+                    "phi":        ak.Array([[v.part_A.phi for v in sublist] for sublist in splittings]),
+                    "mass":       ak.Array([[v.part_A.mass for v in sublist] for sublist in splittings]),
+                    "jet_flavor": ak.Array([[v.part_A.jet_flavor for v in sublist] for sublist in splittings]),
                     },
                 with_name="PtEtaPhiMLorentzVector",
                 behavior=vector.behavior
             ),
-            "part_j": ak.zip(
+            "part_B": ak.zip(
                 {
-                    "pt":         ak.Array([[v.part_j.pt  for v in sublist] for sublist in splittings]),
-                    "eta":        ak.Array([[v.part_j.eta for v in sublist] for sublist in splittings]),
-                    "phi":        ak.Array([[v.part_j.phi for v in sublist] for sublist in splittings]),
-                    "mass":       ak.Array([[v.part_j.mass for v in sublist] for sublist in splittings]),
-                    "jet_flavor": ak.Array([[v.part_j.jet_flavor for v in sublist] for sublist in splittings]),
+                    "pt":         ak.Array([[v.part_B.pt  for v in sublist] for sublist in splittings]),
+                    "eta":        ak.Array([[v.part_B.eta for v in sublist] for sublist in splittings]),
+                    "phi":        ak.Array([[v.part_B.phi for v in sublist] for sublist in splittings]),
+                    "mass":       ak.Array([[v.part_B.mass for v in sublist] for sublist in splittings]),
+                    "jet_flavor": ak.Array([[v.part_B.jet_flavor for v in sublist] for sublist in splittings]),
                     },
                 with_name="PtEtaPhiMLorentzVector",
                 behavior=vector.behavior
@@ -162,6 +229,14 @@ def cluster_bs(event_jets, debug = False):
 
     return clustered_events, splittings_events
 
+
+
+def cluster_bs(event_jets, debug = False):
+    return cluster_bs_core(event_jets, get_min_indicies)
+
+
+def cluster_bs_fast(event_jets, debug = False):
+    return cluster_bs_core(event_jets, get_min_indicies_fast)
 
 
 # Define the kt clustering algorithm
@@ -184,29 +259,29 @@ def kt_clustering(event_jets, R, debug = False):
             distances = get_distances(particles, R)
 
             # Find the minimum distance
-            min_dist, idx_i, idx_j = min(distances)
+            min_dist, idx_A, idx_B = min(distances)
 
-            if idx_j is None:
-                # If the minimum distance is diB, declare part_i as a jet
+            if idx_B is None:
+                # If the minimum distance is diB, declare part_A as a jet
                 if debug: print("adding clustered jet")
-                clustered_jets[-1].append(copy(particles[idx_i]))
+                clustered_jets[-1].append(copy(particles[idx_A]))
 
-                particles = remove_indices(particles, [idx_i])
+                particles = remove_indices(particles, [idx_A])
 
                 if debug: print(f"size partilces {len(particles)}")
 
             else:
-                if debug: print(f"clustering {idx_i} and {idx_j}")
+                if debug: print(f"clustering {idx_A} and {idx_B}")
                 if debug: print(f"size partilces {len(particles)}")
                 # If the minimum distance is dij, combine particles i and j
-                part_i = copy(particles[idx_i])
-                part_j = copy(particles[idx_j])
+                part_A = copy(particles[idx_A])
+                part_B = copy(particles[idx_B])
 
-                particles = remove_indices(particles, [idx_i, idx_j])
+                particles = remove_indices(particles, [idx_A, idx_B])
 
                 if debug: print(f"size partilces {len(particles)}")
 
-                part_comb_array = combine_particles(part_i, part_j)
+                part_comb_array = combine_particles(part_A, part_B)
 
                 particles = ak.concatenate([particles, part_comb_array])
                 if debug: print(f"size partilces {len(particles)}")
@@ -257,21 +332,21 @@ def compute_decluster_variables(clustered_splittings):
     #  Boost to pz0
     #
     clustered_splittings_pz0        = clustered_splittings.boost(-boost_vec_z)
-    clustered_splittings_part_i_pz0 = clustered_splittings.part_i.boost(-boost_vec_z)
-    clustered_splittings_part_j_pz0 = clustered_splittings.part_j.boost(-boost_vec_z)
+    clustered_splittings_part_A_pz0 = clustered_splittings.part_A.boost(-boost_vec_z)
+    clustered_splittings_part_B_pz0 = clustered_splittings.part_B.boost(-boost_vec_z)
 
     comb_z_plane_hat = z_axis.cross(clustered_splittings_pz0).unit
-    decay_plane_hat = clustered_splittings_part_i_pz0.cross(clustered_splittings_part_j_pz0).unit
+    decay_plane_hat = clustered_splittings_part_A_pz0.cross(clustered_splittings_part_B_pz0).unit
 
     #
     #  Clustering (calc variables to histogram)
     #
-    clustered_splittings["mA"]        = clustered_splittings.part_i.mass
-    clustered_splittings["mB"]        = clustered_splittings.part_j.mass
-    clustered_splittings["zA"]        = clustered_splittings_pz0.dot(clustered_splittings_part_i_pz0)/(clustered_splittings_pz0.pt**2)
-    clustered_splittings["thetaA"]    = np.arccos(clustered_splittings_pz0.unit.dot(clustered_splittings_part_i_pz0.unit))
+    clustered_splittings["mA"]        = clustered_splittings.part_A.mass
+    clustered_splittings["mB"]        = clustered_splittings.part_B.mass
+    clustered_splittings["zA"]        = clustered_splittings_pz0.dot(clustered_splittings_part_A_pz0)/(clustered_splittings_pz0.pt**2)
+    clustered_splittings["thetaA"]    = np.arccos(clustered_splittings_pz0.unit.dot(clustered_splittings_part_A_pz0.unit))
     clustered_splittings["decay_phi"] = np.arccos(decay_plane_hat.dot(comb_z_plane_hat))
-
+    clustered_splittings["dr_AB"]      = clustered_splittings.part_A.delta_r(clustered_splittings.part_B)
     return
 
 def decluster_combined_jets(input_jet, zA, thetaA, mA, mB, decay_phi):
