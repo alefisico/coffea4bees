@@ -4,21 +4,43 @@ from base_class.hist import H, Template
 
 
 class ClusterHists(Template):
-    mA        = H((100, 0, 100, ('mA', "mA [GeV]")))
-    mB        = H((100, 0, 100, ('mB', "mB [GeV]")))
+    mA        = H((100, 0, 50, ('part_A.mass', "mA [GeV]")))
+    mB        = H((100, 0, 50, ('mB', "mB [GeV]")))
     mB_l      = H((100, 0, 300, ('mB', "mB [GeV]")))
-    zA        = H((100,  0, 5, ('zA', "z fraction")))
-    zA_l      = H((100,  -2, 10, ('zA', "z fraction")))
+
+    mA_vs_mB   = H((50, 0, 50, ('part_A.mass', 'Mass A [GeV]')),
+                   (50, 0, 50, ('part_B.mass', 'Mass A [GeV]')))
+
+    mA_vs_pTA   = H((50, 0, 50,  ('part_A.mass', 'Mass A [GeV]')),
+                    (50, 0, 250, ('part_A.pt', '$p_T$ A [GeV]')))
+
+    mB_vs_pTB   = H((50, 0, 50,  ('part_B.mass', 'Mass B [GeV]')),
+                    (50, 0, 250, ('part_B.pt', '$p_T$ B [GeV]')))
+
+    drAB      = H((100, 0, 5,   ('dr_AB', "$\Delta$ R AB")))
+
+    zA        = H((100,  0.5, 2, ('zA', "z fraction")))
+    zA_l      = H((100,  -4, 4, ('zA', "z fraction")))
 
     decay_phi = H((100, -0.1, 3.2, ('decay_phi', "decay angle")))
     thetaA    = H((100,  0, 2, ('thetaA',    "theta angle")))
-    thetaA_l  = H((100,  0, 3.2, ('thetaA',    "theta angle")))    
+    thetaA_l  = H((100,  0, 3.2, ('thetaA',    "theta angle")))
+
+
+    zA_vs_thetaA = H((50,  0.5, 2, ('zA', "z fraction")),
+                     (50,  0, 1.5, ('thetaA',    "theta angle")))
+
+    zA_vs_pT = H((50,  0.5, 2, ('zA', "z fraction")),
+                 (50,  50, 300, ('pt',    "pt")))
+
+    thetaA_vs_pT = H((50,  0, 1.5, ('thetaA',    "theta angle"))
+                     (50,  50, 300, ('pt',    "pt")))
+
+
+
+    decay_phi_vs_pT = H((50 , -0.1, 3.2, ('decay_phi', "decay angle")),
+                        (100,  50, 300, ('pt', "pT")))
 
     n         = H((0, 3,             ('n', 'Number')), n=ak.num)
-    
-    # mA vs pT_A
-    # mB vs pT_B
-    # z vs thetaA
 
     # vs Pt
-    

@@ -17,7 +17,7 @@ from base_class.physics.object import LorentzVector, Jet, Muon, Elec
 #from analysis.helpers.hist_templates import SvBHists, FvTHists, QuadJetHists
 from analysis.helpers.clustering_hist_templates import ClusterHists
 from analysis.helpers.topCandReconstruction import dumpTopCandidateTestVectors
-from analysis.helpers.clustering import cluster_bs, compute_decluster_variables
+from analysis.helpers.clustering import cluster_bs, compute_decluster_variables, cluster_bs_fast
 
 from analysis.helpers.cutflow import cutFlow
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
@@ -198,6 +198,7 @@ class analysis(processor.ProcessorABC):
         #canJet = selev["canJet"]
 
         canJet["jet_flavor"] = "b"
+        #clustered_jets, clustered_splittings = cluster_bs_fast(canJet, debug=False)
         clustered_jets, clustered_splittings = cluster_bs(canJet, debug=False)
         compute_decluster_variables(clustered_splittings)
 
@@ -207,41 +208,6 @@ class analysis(processor.ProcessorABC):
         # dumpTopCandidateTestVectors(selev, logging, chunk, 10)
         selev["region"] = 0b10
 
-        #
-        # Example of how to write out event numbers
-        #
-        #  passSR = (selev["quadJet_selected"].SR)
-        #  passSR = (selev["SR"])
-        #
-        # out_data = {}
-        # out_data["SvB"    ] = selev["SvB_MA"].ps[passSR]
-        # out_data["event"  ] = selev["event"][passSR]
-        # out_data["run"    ] = selev["run"][passSR]
-        #
-        # debug_mask = ~event.passJetMult
-        # debug_mask = ((event["event"] == 66688  ) |
-        #               (event["event"] == 249987 ) |
-        #               (event["event"] == 121603 ) |
-        #               (event["event"] == 7816   ) |
-        #               (event["event"] == 25353  ) |
-        #               (event["event"] == 165389 ) |
-        #               (event["event"] == 293138 ) |
-        #               (event["event"] == 150164 ) |
-        #               (event["event"] == 262806 ) |
-        #               (event["event"] == 281111 ) )
-        #
-        # out_data["debug_event"  ] = event["event"][debug_mask]
-        # out_data["debug_run"    ] = event["run"][debug_mask]
-        # out_data["debug_jet_pt"    ] = event.Jet[event.Jet.selected_eta].pt[debug_mask].to_list()
-        # out_data["debug_jet_eta"   ] = event.Jet[event.Jet.selected_eta].eta[debug_mask].to_list()
-        # out_data["debug_jet_phi"   ] = event.Jet[event.Jet.selected_eta].phi[debug_mask].to_list()
-        # out_data["debug_jet_pu"    ] = event.Jet[event.Jet.selected_eta].pileup[debug_mask].to_list()
-        # out_data["debug_jet_jetId" ] = event.Jet[event.Jet.selected_eta].jetId[debug_mask].to_list()
-        # out_data["debug_jet_lep"   ] = event.Jet[event.Jet.selected_eta].lepton_cleaned[debug_mask].to_list()
-        #
-        # for out_k, out_v in out_data.items():
-        #     processOutput[out_k] = {}
-        #     processOutput[out_k][event.metadata['dataset']] = list(out_v)
 
         #
         # CutFlow
@@ -289,8 +255,8 @@ class analysis(processor.ProcessorABC):
         for iJ in range(4):
             fill += Jet.plot( (f"canJet{iJ}", f"Higgs Candidate Jets {iJ}"), f"canJet{iJ}", skip=["n", "deepjet_c"], )
 
-        fill += ClusterHists( ("gbbs", "g_bb Splitting"), "splitting_g_bb" )
-        fill += ClusterHists( ("bstars", "bstar Splitting"), "splitting_bstar" )
+        fill += ClusterHists( ("gbbs", "$g_{bb}$ Splitting"), "splitting_g_bb" )
+        fill += ClusterHists( ("bstars", "$b^*$ Splitting"), "splitting_bstar" )
 
         #
         # fill histograms
