@@ -17,8 +17,10 @@ workflow:
 
 variables:
   CONTAINER_HOST: cms-cmu
+  RUN_REANA: false
 
 stages:          
+  - reana
   - build
   - proxy
   - code 
@@ -27,7 +29,6 @@ stages:
   - fits
   - plot
   - cutflow
-  - reana
 
 voms_proxy:
   stage: proxy
@@ -306,6 +307,12 @@ analysis-helpers-job:
   script:
     - source .ci-workflows/analysis-helpers-job.sh
 
+kappa-framework:
+  stage: code
+  extends:
+    - .base_analysis
+  script:
+    - source .ci-workflows/baseclass-kappa-framework.sh
 
 analysis-iplot-job:    
   stage: plot 
@@ -365,10 +372,7 @@ reana-job:
   script:
     - source .ci-workflows/reana-job.sh
   allow_failure: true
-
-kappa-framework:
-  stage: code
-  extends:
-    - .base_analysis
-  script:
-    - source .ci-workflows/baseclass-kappa-framework.sh
+  rules:
+    if: $RUN_REANA
+      when: always
+    - when: never
