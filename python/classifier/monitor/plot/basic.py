@@ -9,7 +9,7 @@ from bokeh.layouts import column, row
 from bokeh.models import ColumnDataSource, CustomJS, HoverTool, Toggle
 from bokeh.plotting import figure
 
-from .code_cache import Importer
+from ..template import SimpleImporter
 
 _NA = "N/A"
 _ARROW = " ⇒ "
@@ -26,7 +26,7 @@ _FIGURE_KWARGS = {
     "tools": "xpan,xwheel_zoom,reset,save",
 }
 
-code = Importer(__file__)
+code = SimpleImporter(__file__)
 
 
 class StyleDict(TypedDict):
@@ -126,13 +126,13 @@ def plot_multiphase_scalar(
                 x="index",
                 y=p,
                 legend_label=",".join(k),
-                **reduce(op.or_, (style["line"][k].get(s, {}) for s in k)),
+                **reduce(op.or_, (style["line"].get(tag, {}) for tag in k)),
             )
             s = fig.scatter(
                 source=ColumnDataSource(data=df),
                 x="index",
                 y=p,
-                **reduce(op.or_, (style["scatter"][k].get(s, {}) for s in k)),
+                **reduce(op.or_, (style["scatter"].get(tag, {}) for tag in k)),
                 size=_SCATTER_SIZE,
             )
             togs = [cat_toggles[kk] for kk in k]

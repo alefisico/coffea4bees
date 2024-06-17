@@ -3,7 +3,7 @@ from collections import defaultdict
 from pathlib import Path
 
 
-class Importer:
+class SimpleImporter:
     def __init__(self, file: str, cache: dict[str, dict[str, str]] = None):
         self._cache = defaultdict(dict, cache or {})
         self._file = file

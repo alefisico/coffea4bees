@@ -27,7 +27,7 @@ from bokeh.plotting import figure
 from bokeh.resources import CDN, INLINE
 from pyvis.network import Network
 
-from ..plot.code_cache import Importer
+from ..template import Index, SimpleImporter
 from . import Checkpoint, ProcessInfo, Resource
 
 _LABEL = {
@@ -64,19 +64,18 @@ _CODE = {
     "html": {},
 }
 
-code = Importer(__file__, _CODE)
+code = SimpleImporter(__file__, _CODE)
 
 
 @nb.jit(nopython=True)
 def _merge_step(time: np.ndarray, time_step: int) -> np.ndarray:
-    mask = np.zeros_like(time, dtype=np.bool_)
-    mask[0] = True
-    start = time[0]
+    group = np.zeros_like(time, dtype=np.int64)
+    group[0] = start = time[0]
     for i, t in enumerate(time[1:], 1):
         if (t - start) >= time_step:
-            mask[i] = True
             start = t
-    return time[mask]
+        group[i] = start
+    return group
 
 
 class UsageData(TypedDict):
@@ -222,8 +221,8 @@ def generate_report(
                 raw.fillna(0, inplace=True)
                 raw = pd.concat([r["time"], raw], axis=1)
                 if time_step is not None:
-                    raw.set_index("time", inplace=True)
-                    raw = raw.loc[_merge_step(raw.index.values, time_step)]
+                    raw["time"] = _merge_step(raw["time"].to_numpy(), time_step)
+                    raw = raw.groupby("time").max()
                     raw.reset_index(inplace=True)
                 records[ip][pid][col] = raw
     for ip in sorted(records):
@@ -291,8 +290,6 @@ def generate_report(
             timestamps = np.unique(
                 np.concatenate([data[k]["time"] for data in pids.values()])
             )
-            if time_step is not None:
-                timestamps = _merge_step(timestamps, time_step)
             merged = pd.DataFrame(index=pd.Series(timestamps, name="time"))
             for pid, data in pids.items():
                 data = data[k].copy(deep=False)
@@ -304,23 +301,26 @@ def generate_report(
                         merged.loc[:, col] = np.interp(
                             timestamps, data.index, data[col], left=0, right=0
                         )
+            if time_step is not None:
+                merged.reset_index(inplace=True, drop=True)
+                merged["time"] = _merge_step(timestamps, time_step)
+                merged = merged.groupby("time").max()
             merged.reset_index(inplace=True)
             summary[ip][k] = merged
+        page = file_html(
+            column(
+                [
+                    row([*resource_btns.values(), tree_btn, summary_btn]),
+                    row([*pid_btns.values()]),
+                    *figs,
+                ],
+                sizing_mode="stretch_width",
+            ),
+            title=f"Usage {ip}",
+            resources=resource,
+        )
         with fsspec.open(output / f"{ip}/usage.html", mode="wt") as f:
-            f.write(
-                file_html(
-                    column(
-                        [
-                            row([*resource_btns.values(), tree_btn, summary_btn]),
-                            row([*pid_btns.values()]),
-                            *figs,
-                        ],
-                        sizing_mode="stretch_width",
-                    ),
-                    title=f"Usage {ip}",
-                    resources=resource,
-                )
-            )
+            f.write(page)
     # generate summary page
     time_tick, crosshair, stack_tps, _, resource_btns = _init()
     ip_btn = {"all": Toggle(label="All", active=True)}
@@ -362,18 +362,20 @@ def generate_report(
 
             # plot
             stack_tps[unit].renderers.extend(_plot_stack(fig, data[k]))
-    with fsspec.open(output / "index.html", mode="wt") as f:
-        f.write(
-            file_html(
-                column(
-                    [
-                        row([*resource_btns.values()]),
-                        row([*ip_btn.values()]),
-                        *figs,
-                    ],
-                    sizing_mode="stretch_width",
-                ),
-                title="Usage Summary",
-                resources=resource,
-            )
-        )
+
+    index = output / "index.html"
+    page = file_html(
+        column(
+            [
+                row([*resource_btns.values()]),
+                row([*ip_btn.values()]),
+                *figs,
+            ],
+            sizing_mode="stretch_width",
+        ),
+        title="Usage Summary",
+        resources=resource,
+    )
+    with fsspec.open(index, mode="wt") as f:
+        f.write(page)
+    Index.add("Diagnostic", "Usage", index)

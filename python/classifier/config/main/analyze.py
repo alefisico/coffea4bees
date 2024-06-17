@@ -21,7 +21,7 @@ class Main(SetupMultiprocessing):
 
     @classmethod
     def prelude(cls):
-        cfg.Monitor.enable = False
+        cfg.IO.monitor = None
 
     def run(self, _): ...
 
@@ -29,6 +29,7 @@ class Main(SetupMultiprocessing):
 def run_analyzer(parser: EntryPoint, output: dict):
     from concurrent.futures import ProcessPoolExecutor
 
+    from classifier.monitor import Index
     from classifier.process import status
 
     analysis: list[Analysis] = parser.mods["analysis"]
@@ -45,4 +46,5 @@ def run_analyzer(parser: EntryPoint, output: dict):
             results = [*pool.map(call, analyzers)]
     else:
         results = [*map(call, analyzers)]
+    Index.render()
     return [*filter(lambda x: x is not None, results)]

@@ -83,6 +83,7 @@ class Main(main.Main):
 
     @classmethod
     def prelude(cls):
+        cfg.Analysis.enable = False
         cfg.Monitor.enable = False
 
     def __init__(self):

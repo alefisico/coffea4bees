@@ -1,7 +1,7 @@
 from classifier.task import ArgParser, EntryPoint, main
 from rich import print
 
-from ..setting import Monitor
+from .. import setting as cfg
 from .help import _print_mod
 
 
@@ -30,7 +30,8 @@ class Main(main.Main):
 
     @classmethod
     def prelude(cls):
-        Monitor.enable = False
+        cfg.Analysis.enable = False
+        cfg.Monitor.enable = False
 
     def run(self, parser: EntryPoint):
         if self.opts.as_template:

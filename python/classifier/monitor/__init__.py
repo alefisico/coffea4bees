@@ -3,9 +3,11 @@ import importlib
 from ..config.state import MonitorInfo
 from ..process import status
 from .backends import Platform
+from .template import Index
 
 __all__ = [
     "Platform",
+    "Index",
 ]
 _PKG = "classifier.monitor"
 

@@ -147,4 +147,5 @@ class Monitor(Cascade):
 
 
 class Analysis:
+    enable: bool = True
     max_workers: int = 1

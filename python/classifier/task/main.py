@@ -203,10 +203,11 @@ class EntryPoint:
         # run main task
         result = self.main.run(self)
         # run analysis on result
-        analysis = run_analyzer(self, result)
-        if analysis:
-            result = result or {}
-            result["analysis"] = analysis
+        if cfg.Analysis.enable:
+            analysis = run_analyzer(self, result)
+            if analysis:
+                result = result or {}
+                result["analysis"] = analysis
         # wait for monitor
         wait_for_monitor()
         # dump state
