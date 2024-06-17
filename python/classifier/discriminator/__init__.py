@@ -127,8 +127,8 @@ class TrainingStage(BenchmarkStage):
                     {
                         "hyperparameters": {
                             "epoch": epoch,
-                            "learning_rate": lr.get_last_lr(),
-                            "batch_size": bs.dataloader.batch_size,
+                            "learning rate": lr.get_last_lr(),
+                            "batch size": bs.dataloader.batch_size,
                         }
                         | self.model.hyperparameters,
                         "benchmarks": self._iter_benchmark(classifier, validation),

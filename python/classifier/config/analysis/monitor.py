@@ -13,6 +13,12 @@ class Usage(Analysis):
         help="the path to usage data in JSON format. If not provided, the current usage data will be used.",
         default=None,
     )
+    argparser.add_argument(
+        "--time-step",
+        help="the minimum plotting time step in seconds.",
+        type=float,
+        default=0,
+    )
 
     def analyze(self, _=None):
         path = self.opts.input
@@ -25,14 +31,15 @@ class Usage(Analysis):
         else:
             with fsspec.open(self.opts.input) as f:
                 data = json.load(f)
-        return [_usage_report(data)]
+        return [_usage_report(data, self.opts.time_step)]
 
 
 class _usage_report:
-    def __init__(self, data: dict):
+    def __init__(self, data: dict, step: float):
         self._data = data
+        self._step = step
 
     def __call__(self):
         from classifier.monitor.usage.analyze import generate_report
 
-        generate_report(self._data, IO.report / "usage")
+        generate_report(self._data, IO.report / "usage", time_step=self._step)
