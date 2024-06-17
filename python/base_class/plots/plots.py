@@ -265,11 +265,11 @@ def _draw_plot(hist_list, stack_dict, **kwargs):
         _plot_options = {"density":  norm,
                          "label":    hist_config.get("label", ""),
                          "color":    hist_config.get('fillcolor', 'k'),
-                         "histtype": hist_config.get("histtype", "errorbar"),
+                         "histtype": kwargs.get("histtype", hist_config.get("histtype", "errorbar")),
                          "yerr": False,
                          }
 
-        if hist_config.get("histtype", "errorbar") in ["errorbar"]:
+        if kwargs.get("histtype", hist_config.get("histtype", "errorbar")) in ["errorbar"]:
             _plot_options["markersize"] = 12
             _plot_options["yerr"] = True
 
@@ -340,6 +340,7 @@ def _plot(hist_list, stack_dict, plotConfig, **kwargs):
     ax = fig.gca()
     hep.cms.label("Internal", data=True,
                   year=kwargs['year'].replace("UL", "20"), loc=0, ax=ax)
+
 
     return fig, ax
 
@@ -437,7 +438,7 @@ def _plot_ratio(hist_list, stack_dict, ratio_list, **kwargs):
 def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
 
     if kwargs.get("debug", False):
-        print(f" hist process={process}, "
+        print(f" in _makeHistFromList hist process={process}, "
               f"cut={cut}")
 
     rebin = kwargs.get("rebin", 1)
