@@ -11,43 +11,19 @@ from coffea.nanoevents.methods import vector
 import time
 from copy import copy
 import os
-sys.path.insert(0, os.getcwd())
-from analysis.helpers.clustering import kt_clustering, cluster_bs, decluster_combined_jets, compute_decluster_variables, cluster_bs_fast
+
+try:
+    sys.path.insert(0, os.getcwd())
+    from analysis.helpers.clustering import kt_clustering, cluster_bs, decluster_combined_jets, compute_decluster_variables, cluster_bs_fast
+except:
+    sys.path.insert(0, os.getcwd()+"/../..")
+    print(sys.path)
+    from analysis.helpers.clustering import kt_clustering, cluster_bs, decluster_combined_jets, compute_decluster_variables, cluster_bs_fast
+    
 #import vector
 #vector.register_awkward()
 from coffea.nanoevents.methods.vector import ThreeVector
 import fastjet
-
-#def find_jet_pairs_kernel(events_jets, builder):
-#    """Search for valid 4-lepton combinations from an array of events * leptons {charge, ...}
-#
-#    A valid candidate has two pairs of leptons that each have balanced charge
-#    Outputs an array of events * candidates {indices 0..3} corresponding to all valid
-#    permutations of all valid combinations of unique leptons in each event
-#    (omitting permutations of the pairs)
-#    """
-#    for jets in events_jets:
-#        builder.begin_list()
-#        njet = len(events_jets)
-#        for i0 in range(njet):
-#            for i1 in range(i0 + 1, njet):
-#                builder.begin_tuple(2)
-#                builder.index(0).integer(i0)
-#                builder.index(1).integer(i1)
-#                builder.end_tuple()
-#        builder.end_list()
-#
-#    return builder
-#
-#def find_jet(events_jets):
-#
-#    # if ak.backend(events_jets) == "typetracer":
-#    #    raise Exception("typetracer")
-#    #    # here we fake the output of find_4lep_kernel since
-#    #    # operating on length-zero data returns the wrong layout!
-#    #    ak.typetracer.length_zero_if_typetracer(events_jets.btagDeepFlavB) # force touching of the necessary data
-#    #    return ak.Array(ak.Array([[(0,0,0)]]).layout.to_typetracer(forget_length=True))
-#    return find_jet_pairs_kernel(events_jets, ak.ArrayBuilder()).snapshot()
 
 
 def rotateZ(particles, angle):
@@ -240,7 +216,51 @@ class clusteringTestCase(unittest.TestCase):
 
 
 
-
+#    def test_sampling_hist(self):
+#
+#        import numpy as np
+#        import matplotlib.pyplot as plt
+#        
+#        # Example data
+#        data = np.random.normal(loc=0, scale=1, size=1000)
+#        
+#        # Create a histogram
+#        hist, bin_edges = np.histogram(data, bins=50, density=False)
+#        
+#        # Normalize the histogram counts to get probabilities
+#        probabilities = hist / hist.sum()
+#        
+#        # Compute bin centers
+#        bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+#        
+#        # Number of samples to draw
+#        num_samples = 1000
+#        
+#        # Draw samples
+#        samples = np.random.choice(bin_centers, size=num_samples, p=probabilities)
+#        
+#        # Print the sampled values
+#        print(samples)
+#        
+#        # Optional: Plot the original histogram and the sampled histogram
+#        plt.figure(figsize=(12, 6))
+#        
+#        plt.subplot(1, 2, 1)
+#        plt.hist(data, bins=50, alpha=0.7, label='Original Data')
+#        plt.title('Original Data Histogram')
+#        plt.xlabel('Value')
+#        plt.ylabel('Frequency')
+#        plt.legend()
+#        
+#        plt.subplot(1, 2, 2)
+#        plt.hist(samples, bins=50, alpha=0.7, label='Sampled Data')
+#        plt.title('Sampled Data Histogram')
+#        plt.xlabel('Value')
+#        plt.ylabel('Frequency')
+#        plt.legend()
+#        
+#        plt.show()
+        
 
 
 
