@@ -8,7 +8,7 @@ import psutil
 
 from ...config.setting import monitor as cfg
 from ...config.state import RunInfo
-from ...process.monitor import Node, Proxy, Recorder, callback
+from ...process.monitor import Node, Proxy, Recorder, post
 
 _MIB = 2**20
 _CUDA = {"12.1": 254}  # MiB
@@ -83,13 +83,13 @@ class Usage(Proxy):
             Recorder.node(), {"time": (start_t + end_t) // 2, "name": tags}, records
         )
 
-    @callback
+    @post
     @cfg.check(cfg.Usage)
     def _checkpoint(self, node: Node, checkpoint: Checkpoint, records: list[Resource]):
         self._records[node].extend(records)
         self._checkpoints[node].append(checkpoint)
 
-    @callback
+    @post
     @cfg.check(cfg.Usage)
     def _send_pinfo(self, ip: str, info: ProcessInfo):
         self._processes[ip].append(info)
