@@ -446,5 +446,4 @@ def decluster_combined_jets(input_jet):
 
     pB_masked = pB[input_jet.decluster_mask]
 
-    #return ak.concatenate([pA_masked, pB_masked], axis=1)
-    return pA_masked, pB_masked
+    return ak.concatenate([pA_masked, pB_masked], axis=1)

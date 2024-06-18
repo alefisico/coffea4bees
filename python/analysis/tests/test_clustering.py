@@ -133,12 +133,14 @@ class clusteringTestCase(unittest.TestCase):
         #  For now use known inputs
         #   (should get exact jets back!)
         clustered_splittings["decluster_mask"] = True
-        pA, pB = decluster_combined_jets(clustered_splittings)
+        declustered_jets = decluster_combined_jets(clustered_splittings)
 
 
         #
         # Sanity checks
         #
+        pA = declustered_jets[:,0:2]
+        pB = declustered_jets[:,2:]
 
         #
         # Check Masses
@@ -277,7 +279,11 @@ class clusteringTestCase(unittest.TestCase):
         clustered_jets["mA"]             = ak.unflatten(mA,        ak.num(clustered_jets))
         clustered_jets["mB"]             = ak.unflatten(mB,        ak.num(clustered_jets))
 
-        pA, pB = decluster_combined_jets(clustered_jets)
+        declustered_jets = decluster_combined_jets(clustered_jets)
+
+        pA = declustered_jets[:,0:2]
+        pB = declustered_jets[:,2:]
+
 
         #
         # Sanity checks
