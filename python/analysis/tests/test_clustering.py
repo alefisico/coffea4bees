@@ -205,16 +205,38 @@ class clusteringTestCase(unittest.TestCase):
 
 
 
-    def test_synthetic_datasets(self):
+    def test_synthetic_datasets_gbb_only(self):
 
-        clustered_jets, _ = cluster_bs(self.input_jets_4, debug=False)
+        clustered_jets, _clustered_splittings = cluster_bs(self.input_jets_4, debug=False)
+
+        g_bb_mask  = clustered_jets.jet_flavor == "g_bb"
+        bstar_mask = clustered_jets.jet_flavor == "bstar"
+
+        #
+        # 1st replace bstar splittings with their original jets (b, g_bb)
+        #
+        bstar_mask_splittings = _clustered_splittings.jet_flavor == "bstar"
+        bs_from_bstar = _clustered_splittings[bstar_mask_splittings].part_A
+        gbbs_from_bstar = _clustered_splittings[bstar_mask_splittings].part_B
+        jets_from_bstar = ak.concatenate([bs_from_bstar, gbbs_from_bstar], axis=1)
+
+        clustered_jets_nobStar = clustered_jets[~bstar_mask]
+        clustered_jets          = ak.concatenate([clustered_jets_nobStar, jets_from_bstar], axis=1)
+
+        # print(clustered_jets.jet_flavor)
+        # print(clustered_jets.pt)
+        # print(bs_from_bstar.pt)
+        # print(bs_from_bstar.jet_flavor)
+        # print(gbbs_from_bstar.pt)
+        # print(gbbs_from_bstar.jet_flavor)
+
 
         #
         # Declustering
         #
         g_bb_mask  = clustered_jets.jet_flavor == "g_bb"
         bstar_mask = clustered_jets.jet_flavor == "bstar"
-        #decluster_mask = g_bb_mask | b_star_mask
+        #decluster_mask = g_bb_mask | bstar_mask
         decluster_mask = g_bb_mask  # Just g_bb for now
 
         #
@@ -288,13 +310,15 @@ class clusteringTestCase(unittest.TestCase):
         #
         # Sanity checks
         #
+        print("Only after gbb declustering")
         print(f"clustered_jets.decluster_mask {clustered_jets.decluster_mask}")
         print(f"clustered_jets.jet_flavor     {clustered_jets.jet_flavor}")
         print(f"clustered_jets.pt             {clustered_jets.pt}")
         print(f"pA.pt                         {pA.pt}")
         print(f"pB.pt                         {pB.pt}")
 
-
+        print(f"declustered_jets.pt             {declustered_jets.pt}")
+        print(f"ak.num(declustered_jets)        {ak.num(declustered_jets)}")
 
 
 if __name__ == '__main__':
