@@ -349,19 +349,19 @@ def compute_decluster_variables(clustered_splittings):
     clustered_splittings["dr_AB"]      = clustered_splittings.part_A.delta_r(clustered_splittings.part_B)
     return
 
-def decluster_combined_jets(input_jet, zA, thetaA, mA, mB, decay_phi):
+def decluster_combined_jets(input_jet):
 
     combined_pt = input_jet.pt
-    tanThetaA = np.tan(thetaA)
-    tanThetaB = zA / (1 - zA) * tanThetaA
+    tanThetaA = np.tan(input_jet.thetaA)
+    tanThetaB = input_jet.zA / (1 - input_jet.zA) * tanThetaA
 
     #
     #  pA (in frame with pz=0 phi=0)
     #
-    pA_pz0_px = zA * combined_pt
+    pA_pz0_px = input_jet.zA * combined_pt
     pA_pz0_py = 0
-    pA_pz0_pz = - zA * combined_pt * tanThetaA
-    pA_pz0_E  = np.sqrt(pA_pz0_px**2 + pA_pz0_pz**2 + mA**2)
+    pA_pz0_pz = - input_jet.zA * combined_pt * tanThetaA
+    pA_pz0_E  = np.sqrt(pA_pz0_px**2 + pA_pz0_pz**2 + input_jet.mA**2)
 
     pA_pz0_phi0 = ak.zip(
         {
@@ -374,10 +374,10 @@ def decluster_combined_jets(input_jet, zA, thetaA, mA, mB, decay_phi):
         behavior=vector.behavior,
     )
 
-    pB_pz0_px = (1 - zA) * combined_pt
+    pB_pz0_px = (1 - input_jet.zA) * combined_pt
     pB_pz0_py = 0
-    pB_pz0_pz = (1 - zA) * combined_pt * tanThetaB
-    pB_pz0_E  = np.sqrt(pB_pz0_px**2 + pB_pz0_pz**2 + mB**2)
+    pB_pz0_pz = (1 - input_jet.zA) * combined_pt * tanThetaB
+    pB_pz0_E  = np.sqrt(pB_pz0_px**2 + pB_pz0_pz**2 + input_jet.mB**2)
 
     pB_pz0_phi0 = ak.zip(
         {
@@ -393,8 +393,8 @@ def decluster_combined_jets(input_jet, zA, thetaA, mA, mB, decay_phi):
     #
     # Do Rotation
     #
-    pA_pz0 = rotateX(pA_pz0_phi0, decay_phi)
-    pB_pz0 = rotateX(pB_pz0_phi0, decay_phi)
+    pA_pz0 = rotateX(pA_pz0_phi0, input_jet.decay_phi)
+    pB_pz0 = rotateX(pB_pz0_phi0, input_jet.decay_phi)
 
     #
     #  De-Clustering
@@ -415,4 +415,36 @@ def decluster_combined_jets(input_jet, zA, thetaA, mA, mB, decay_phi):
     pA = pA_pz0.boost(boost_vec_z)
     pB = pB_pz0.boost(boost_vec_z)
 
-    return pA, pB
+    pA_x_flat = np.array(ak.flatten(pA.x))
+    pA_y_flat = np.array(ak.flatten(pA.y))
+    pA_z_flat = np.array(ak.flatten(pA.z))
+    pA_t_flat = np.array(ak.flatten(pA.t))
+
+    input_jet_x = ak.flatten(input_jet.x)
+    input_jet_y = ak.flatten(input_jet.y)
+    input_jet_z = ak.flatten(input_jet.z)
+    input_jet_t = ak.flatten(input_jet.t)
+
+    original_jet_indicies = np.where(ak.flatten(~input_jet.decluster_mask))
+    original_jet_indicies_tuple = (original_jet_indicies[0].to_list())
+
+    pA_x_flat[original_jet_indicies_tuple] = input_jet_x[original_jet_indicies_tuple]
+    pA_y_flat[original_jet_indicies_tuple] = input_jet_y[original_jet_indicies_tuple]
+    pA_z_flat[original_jet_indicies_tuple] = input_jet_z[original_jet_indicies_tuple]
+    pA_t_flat[original_jet_indicies_tuple] = input_jet_t[original_jet_indicies_tuple]
+
+    pA_masked = ak.zip(
+        {
+            "x": ak.unflatten(pA_x_flat, ak.num(input_jet)),
+            "y": ak.unflatten(pA_y_flat, ak.num(input_jet)),
+            "z": ak.unflatten(pA_z_flat, ak.num(input_jet)),
+            "t": ak.unflatten(pA_t_flat, ak.num(input_jet)),
+        },
+        with_name="LorentzVector",
+        behavior=vector.behavior,
+    )
+
+    pB_masked = pB[input_jet.decluster_mask]
+
+    #return ak.concatenate([pA_masked, pB_masked], axis=1)
+    return pA_masked, pB_masked

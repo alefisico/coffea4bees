@@ -217,3 +217,4 @@ python/stats_analysis/tests/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin20.pkl
 python/stats_analysis/testsLocal/
 python/stats_analysis/testsLocal_kfold/
 python/stats_analysis/fitBiasData/
+python/analysis/plots_synthetic_datasets/

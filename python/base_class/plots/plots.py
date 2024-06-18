@@ -341,6 +341,7 @@ def _plot(hist_list, stack_dict, plotConfig, **kwargs):
     hep.cms.label("Internal", data=True,
                   year=kwargs['year'].replace("UL", "20"), loc=0, ax=ax)
 
+
     return fig, ax
 
 
@@ -437,7 +438,7 @@ def _plot_ratio(hist_list, stack_dict, ratio_list, **kwargs):
 def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
 
     if kwargs.get("debug", False):
-        print(f" hist process={process}, "
+        print(f" in _makeHistFromList hist process={process}, "
               f"cut={cut}")
 
     rebin = kwargs.get("rebin", 1)
