@@ -19,7 +19,7 @@ except:
     sys.path.insert(0, os.getcwd()+"/../..")
     print(sys.path)
     from analysis.helpers.clustering import kt_clustering, cluster_bs, decluster_combined_jets, compute_decluster_variables, cluster_bs_fast
-    
+
 #import vector
 #vector.register_awkward()
 from coffea.nanoevents.methods.vector import ThreeVector
@@ -129,24 +129,11 @@ class clusteringTestCase(unittest.TestCase):
         # Eventually will
         #   Lookup thetaA, Z, mA, and mB
         #   radom draw phi  (np.random.uniform(-np.pi, np.pi, len()) ? )
-
         #
         #  For now use known inputs
         #   (should get exact jets back!)
-        input_jet       = clustered_splittings
-        input_thetaA    = clustered_splittings.thetaA
-        input_zA        = clustered_splittings.zA
-        input_mA        = clustered_splittings.mA
-        input_mB        = clustered_splittings.mB
-        input_decay_phi = clustered_splittings.decay_phi
-
-        pA, pB = decluster_combined_jets(input_jet,
-                                         input_zA,
-                                         input_thetaA,
-                                         input_mA,
-                                         input_mB,
-                                         input_decay_phi
-                                         )
+        clustered_splittings["decluster_mask"] = True
+        pA, pB = decluster_combined_jets(clustered_splittings)
 
 
         #
@@ -216,53 +203,90 @@ class clusteringTestCase(unittest.TestCase):
 
 
 
-#    def test_sampling_hist(self):
-#
-#        import numpy as np
-#        import matplotlib.pyplot as plt
-#        
-#        # Example data
-#        data = np.random.normal(loc=0, scale=1, size=1000)
-#        
-#        # Create a histogram
-#        hist, bin_edges = np.histogram(data, bins=50, density=False)
-#        
-#        # Normalize the histogram counts to get probabilities
-#        probabilities = hist / hist.sum()
-#        
-#        # Compute bin centers
-#        bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
-#        
-#        # Number of samples to draw
-#        num_samples = 1000
-#        
-#        # Draw samples
-#        samples = np.random.choice(bin_centers, size=num_samples, p=probabilities)
-#        
-#        # Print the sampled values
-#        print(samples)
-#        
-#        # Optional: Plot the original histogram and the sampled histogram
-#        plt.figure(figsize=(12, 6))
-#        
-#        plt.subplot(1, 2, 1)
-#        plt.hist(data, bins=50, alpha=0.7, label='Original Data')
-#        plt.title('Original Data Histogram')
-#        plt.xlabel('Value')
-#        plt.ylabel('Frequency')
-#        plt.legend()
-#        
-#        plt.subplot(1, 2, 2)
-#        plt.hist(samples, bins=50, alpha=0.7, label='Sampled Data')
-#        plt.title('Sampled Data Histogram')
-#        plt.xlabel('Value')
-#        plt.ylabel('Frequency')
-#        plt.legend()
-#        
-#        plt.show()
-        
+    def test_synthetic_datasets(self):
+
+        clustered_jets, _ = cluster_bs(self.input_jets_4, debug=False)
+
+        #
+        # Declustering
+        #
+        g_bb_mask  = clustered_jets.jet_flavor == "g_bb"
+        bstar_mask = clustered_jets.jet_flavor == "bstar"
+        #decluster_mask = g_bb_mask | b_star_mask
+        decluster_mask = g_bb_mask  # Just g_bb for now
+
+        #
+        #   Lookup thetaA, Z, mA, and mB, decay_phi
+        #
+        #  Make with ../.ci-workflows/synthetic-dataset-plot-job.sh
+        input_pdf_file_name = "analysis/plots_synthetic_datasets/clustering_pdfs.yml"
+
+        n_jets = np.sum(ak.num(clustered_jets))
+        n_gbb = np.sum(ak.num(clustered_jets[g_bb_mask]))
+
+        #
+        #  Init the random vars
+        #
+        thetaA    = np.ones(n_jets)
+        zA        = np.ones(n_jets)
+        decay_phi = np.ones(n_jets)
+        mA        = np.ones(n_jets)
+        mB        = np.ones(n_jets)
+
+        gbb_indicies = np.where(ak.flatten(g_bb_mask))
+        gbb_indicies_tuple = (gbb_indicies[0].to_list())
+
+        bstar_indicies = np.where(ak.flatten(bstar_mask))
+        bstar_indicies_tuple = (bstar_indicies[0].to_list())
+
+        #
+        #  Read in the pdfs
+        #
+        with open(input_pdf_file_name, 'r') as input_file:
+            input_pdfs = yaml.safe_load(input_file)
+
+        num_samples_gbb   = np.sum(ak.num(clustered_jets[g_bb_mask]))
+        num_samples_bstar = np.sum(ak.num(clustered_jets[bstar_mask]))
+        varNames = [("gbbs.thetaA", num_samples_gbb), ("gbbs.mA", num_samples_gbb), ("gbbs.mB", num_samples_gbb), ("gbbs.zA", num_samples_gbb), ("gbbs.decay_phi", num_samples_gbb),
+                    # ("bstars.thetaA", num_samples_gbb), ("gbbs.mA", num_samples_gbb), ("gbbs.mB", num_samples_gbb), ("gbbs.zA", num_samples_gbb), ("gbbs.decay_phi", num_samples_gbb),
+                    ]
+        samples = {}
+        for _v, _num_samples in varNames:
+            probs   = np.array(input_pdfs[_v]["probs"], dtype=float)
+            centers = np.array(input_pdfs[_v]["bin_centers"], dtype=float)
+            samples[_v] = np.random.choice(centers, size=_num_samples, p=probs)
 
 
+        thetaA   [gbb_indicies_tuple]   = samples["gbbs.thetaA"]
+        zA       [gbb_indicies_tuple]   = samples["gbbs.zA"]
+        decay_phi[gbb_indicies_tuple]   = samples["gbbs.decay_phi"]
+        mA       [gbb_indicies_tuple]   = samples["gbbs.mA"]
+        mB       [gbb_indicies_tuple]   = samples["gbbs.mB"]
+
+
+        # thetaA   [bstar_indicies_tuple]   = samples["bstars.thetaA"]
+        # zA       [bstar_indicies_tuple]   = samples["bstars.zA"]
+        # decay_phi[bstar_indicies_tuple]   = samples["bstars.decay_phi"]
+        # mA       [bstar_indicies_tuple]   = samples["bstars.mA"]
+        # mB       [bstar_indicies_tuple]   = samples["bstars.mB"]
+
+        clustered_jets["decluster_mask"] = decluster_mask
+        clustered_jets["thetaA"]         = ak.unflatten(thetaA,    ak.num(clustered_jets))
+        clustered_jets["zA"]             = ak.unflatten(zA,        ak.num(clustered_jets))
+        clustered_jets["decay_phi"]      = ak.unflatten(decay_phi, ak.num(clustered_jets))
+        clustered_jets["mA"]             = ak.unflatten(mA,        ak.num(clustered_jets))
+        clustered_jets["mB"]             = ak.unflatten(mB,        ak.num(clustered_jets))
+
+        pA, pB = decluster_combined_jets(clustered_jets)
+
+        #
+        # Sanity checks
+        #
+        print(f"clustered_jets.decluster_mask {clustered_jets.decluster_mask}")
+        print(f"clustered_jets.jet_flavor     {clustered_jets.jet_flavor}")
+        print(f"clustered_jets.pt             {clustered_jets.pt}")
+        print(f"pA.pt                         {pA.pt}")
+        print(f"pB.pt                         {pB.pt}")
 
 
 

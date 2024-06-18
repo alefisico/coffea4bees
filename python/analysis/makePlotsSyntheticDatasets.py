@@ -34,7 +34,9 @@ def doPlots(debug=False):
     #
     #  Synthetic datasets
     #
-    varNames = ["gbbs.thetaA", "gbbs.mA", "gbbs.mB", "gbbs.zA", "gbbs.decay_phi"]
+    varNames = ["gbbs.thetaA", "gbbs.mA", "gbbs.mB", "gbbs.zA", "gbbs.decay_phi",
+                "bstar.thetaA", "gbbs.mA", "gbbs.mB", "gbbs.zA", "gbbs.decay_phi",
+                ]
     #varNames = ["gbbs.thetaA"]
 
     output_file_name = args.outputFolder+"/clustering_pdfs.yml"
