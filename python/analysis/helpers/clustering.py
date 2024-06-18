@@ -93,7 +93,7 @@ def remove_indices(particles, indices_to_remove):
     mask[indices_to_remove] = False
     return particles[mask]
 
-def combine_particles(part_A, part_B, debug=False):
+def combine_particles(part_A, part_B, *, remove_mass=True, debug=False):
     part_comb = part_A + part_B
 
     jet_flavor_pair = (part_A.jet_flavor, part_B.jet_flavor)
@@ -112,7 +112,7 @@ def combine_particles(part_A, part_B, debug=False):
             "pt": [part_comb.pt],
             "eta": [part_comb.eta],
             "phi": [part_comb.phi],
-            "mass": [part_comb.mass],
+            "mass": [0 if remove_mass else part_comb.mass],
             "jet_flavor": [part_comb_jet_flavor],
             "part_A": [part_A],
             "part_B": [part_B],
@@ -126,7 +126,7 @@ def combine_particles(part_A, part_B, debug=False):
 
 
 # Define the kt clustering algorithm
-def cluster_bs_core(event_jets, distance_function, debug = False):
+def cluster_bs_core(event_jets, distance_function, *, remove_mass=True, debug = False):
     clustered_jets = []
     splittings = []
 
@@ -162,7 +162,7 @@ def cluster_bs_core(event_jets, distance_function, debug = False):
 
             if debug: print(f"size partilces {len(particles)}")
 
-            part_comb_array = combine_particles(part_A, part_B)
+            part_comb_array = combine_particles(part_A, part_B, remove_mass=remove_mass)
 
             if debug: print(part_comb_array.jet_flavor)
             match part_comb_array.jet_flavor:
@@ -231,16 +231,16 @@ def cluster_bs_core(event_jets, distance_function, debug = False):
 
 
 
-def cluster_bs(event_jets, debug = False):
-    return cluster_bs_core(event_jets, get_min_indicies)
+def cluster_bs(event_jets, *, remove_mass=True, debug = False):
+    return cluster_bs_core(event_jets, get_min_indicies, remove_mass=remove_mass)
 
 
-def cluster_bs_fast(event_jets, debug = False):
-    return cluster_bs_core(event_jets, get_min_indicies_fast)
+def cluster_bs_fast(event_jets, *, remove_mass=True, debug = False):
+    return cluster_bs_core(event_jets, get_min_indicies_fast, remove_mass=remove_mass)
 
 
 # Define the kt clustering algorithm
-def kt_clustering(event_jets, R, debug = False):
+def kt_clustering(event_jets, R, *, remove_mass=True, debug = False):
     clustered_jets = []
 
     nevents = len(event_jets)
@@ -281,7 +281,7 @@ def kt_clustering(event_jets, R, debug = False):
 
                 if debug: print(f"size partilces {len(particles)}")
 
-                part_comb_array = combine_particles(part_A, part_B)
+                part_comb_array = combine_particles(part_A, part_B, remove_mass=remove_mass)
 
                 particles = ak.concatenate([particles, part_comb_array])
                 if debug: print(f"size partilces {len(particles)}")

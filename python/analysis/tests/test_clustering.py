@@ -79,7 +79,7 @@ class clusteringTestCase(unittest.TestCase):
     def test_kt_clustering_4jets(self):
 
         R = np.pi  # Jet size parameter
-        clustered_jets = kt_clustering(self.input_jets_4, R)
+        clustered_jets = kt_clustering(self.input_jets_4, R, remove_mass=False)
 
 
         jetdefAll = fastjet.JetDefinition(fastjet.kt_algorithm, R)
@@ -105,7 +105,7 @@ class clusteringTestCase(unittest.TestCase):
 
     def test_declustering(self):
 
-        clustered_jets, clustered_splittings = cluster_bs(self.input_jets_4, debug=False)
+        clustered_jets, clustered_splittings = cluster_bs(self.input_jets_4, remove_mass=False, debug=False)
         compute_decluster_variables(clustered_splittings)
 
         if self.debug:
