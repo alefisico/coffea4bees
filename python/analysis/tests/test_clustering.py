@@ -209,17 +209,18 @@ class clusteringTestCase(unittest.TestCase):
 
         clustered_jets, _clustered_splittings = cluster_bs(self.input_jets_4, debug=False)
 
-        g_bb_mask  = clustered_jets.jet_flavor == "g_bb"
-        bstar_mask = clustered_jets.jet_flavor == "bstar"
+
 
         #
         # 1st replace bstar splittings with their original jets (b, g_bb)
         #
+
         bstar_mask_splittings = _clustered_splittings.jet_flavor == "bstar"
         bs_from_bstar = _clustered_splittings[bstar_mask_splittings].part_A
         gbbs_from_bstar = _clustered_splittings[bstar_mask_splittings].part_B
         jets_from_bstar = ak.concatenate([bs_from_bstar, gbbs_from_bstar], axis=1)
 
+        bstar_mask = clustered_jets.jet_flavor == "bstar"
         clustered_jets_nobStar = clustered_jets[~bstar_mask]
         clustered_jets          = ak.concatenate([clustered_jets_nobStar, jets_from_bstar], axis=1)
 
