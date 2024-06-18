@@ -456,3 +456,76 @@ def decluster_combined_jets(input_jet):
     pB_masked = pB[input_jet.decluster_mask]
 
     return ak.concatenate([pA_masked, pB_masked], axis=1)
+
+
+def make_synthetic_event(input_jets, input_pdfs):
+
+    g_bb_mask  = input_jets.jet_flavor == "g_bb"
+    bstar_mask = input_jets.jet_flavor == "bstar"
+    decluster_mask = g_bb_mask | bstar_mask
+
+    #
+    #  Mask the jets to be declustered
+    #
+    input_jets["decluster_mask"] = decluster_mask
+
+
+    #
+    # Config
+    #  (Move this to the ymal!)
+    gbb_hist_name = {}
+    gbb_hist_name["thetaA"] = "gbbs.thetaA"
+    gbb_hist_name["mA"] = "gbbs.mA"
+    gbb_hist_name["mB"] = "gbbs.mB"
+    gbb_hist_name["zA"] = "gbbs.zA"
+    gbb_hist_name["decay_phi"] = "gbbs.decay_phi"
+
+    bstar_hist_name = {}
+    bstar_hist_name["thetaA"] = "bstars.thetaA_l"
+    bstar_hist_name["mA"] = "bstars.mA"
+    bstar_hist_name["mB"] = "bstars.mB"
+    bstar_hist_name["zA"] = "bstars.zA_l"
+    bstar_hist_name["decay_phi"] = "bstars.decay_phi"
+
+    splitting_hist_name = {}
+    splitting_hist_name["gbb"] = gbb_hist_name
+    splitting_hist_name["bstar"] = bstar_hist_name
+
+    var_names = ["thetaA", "mA", "mB", "zA", "decay_phi"]
+
+    # Pre compute these to save time
+    n_jets   = np.sum(ak.num(input_jets))
+
+    num_samples_gbb   = np.sum(ak.num(input_jets[g_bb_mask]))
+    gbb_indicies = np.where(ak.flatten(g_bb_mask))
+    gbb_indicies_tuple = (gbb_indicies[0].to_list())
+
+    num_samples_bstar = np.sum(ak.num(input_jets[bstar_mask]))
+    bstar_indicies = np.where(ak.flatten(bstar_mask))
+    bstar_indicies_tuple = (bstar_indicies[0].to_list())
+
+    splittings = [("gbb",   num_samples_gbb,   gbb_indicies_tuple),
+                  #("bstar", num_samples_bstar, bstar_indicies_tuple),
+                  ]
+
+
+    for _var_name in var_names:
+        _sampled_data = np.ones(n_jets)
+
+        # Sample the pdfs from the different splitting options
+        for _splitting_name, _num_samples, _indicies_tuple in splittings:
+
+            _hist_name = splitting_hist_name[_splitting_name][_var_name]
+
+            probs   = np.array(input_pdfs[_hist_name]["probs"], dtype=float)
+            centers = np.array(input_pdfs[_hist_name]["bin_centers"], dtype=float)
+            _sampled_data[_indicies_tuple] = np.random.choice(centers, size=_num_samples, p=probs)
+
+
+        #
+        # Save the sampled data to the jets to be uclustered for use in decluster_combined_jets
+        #
+        input_jets[_var_name]         = ak.unflatten(_sampled_data,    ak.num(input_jets))
+
+
+    return decluster_combined_jets(input_jets)
