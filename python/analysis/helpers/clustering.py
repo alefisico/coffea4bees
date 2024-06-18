@@ -97,12 +97,19 @@ def combine_particles(part_A, part_B, *, remove_mass=True, debug=False):
     part_comb = part_A + part_B
 
     jet_flavor_pair = (part_A.jet_flavor, part_B.jet_flavor)
+    new_part_A = part_A
+    new_part_B = part_B
 
     match jet_flavor_pair:
         case ("b","b"):
             part_comb_jet_flavor = "g_bb"
-        case ("b","g_bb") | ("g_bb", "b") :
+        case ("b","g_bb") :
             part_comb_jet_flavor = "bstar"
+        case("g_bb", "b") :
+            part_comb_jet_flavor = "bstar"
+            # for bstar splitting make sure g_bb is always "partB"
+            new_part_A = part_B
+            new_part_B = part_A
         case _:
             if debug: print(f"ERROR: combining {jet_flavor_pair}")
             part_comb_jet_flavor = f"ERROR {part_A.jet_flavor} and {part_B.jet_flavor}"
@@ -114,8 +121,8 @@ def combine_particles(part_A, part_B, *, remove_mass=True, debug=False):
             "phi": [part_comb.phi],
             "mass": [0 if remove_mass else part_comb.mass],
             "jet_flavor": [part_comb_jet_flavor],
-            "part_A": [part_A],
-            "part_B": [part_B],
+            "part_A": [new_part_A],
+            "part_B": [new_part_B],
         },
         with_name="PtEtaPhiMLorentzVector",
         behavior=vector.behavior,
@@ -342,7 +349,9 @@ def compute_decluster_variables(clustered_splittings):
     #  Clustering (calc variables to histogram)
     #
     clustered_splittings["mA"]        = clustered_splittings.part_A.mass
+    clustered_splittings["rhoA"]      = clustered_splittings.part_A.mass**2/clustered_splittings.part_A.pt**2
     clustered_splittings["mB"]        = clustered_splittings.part_B.mass
+    clustered_splittings["rhoB"]      = clustered_splittings.part_B.mass**2/clustered_splittings.part_B.pt**2
     clustered_splittings["zA"]        = clustered_splittings_pz0.dot(clustered_splittings_part_A_pz0)/(clustered_splittings_pz0.pt**2)
     clustered_splittings["thetaA"]    = np.arccos(clustered_splittings_pz0.unit.dot(clustered_splittings_part_A_pz0.unit))
     clustered_splittings["decay_phi"] = np.arccos(decay_plane_hat.dot(comb_z_plane_hat))
