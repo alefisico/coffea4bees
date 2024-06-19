@@ -34,8 +34,8 @@ def doPlots(debug=False):
     #
     #  Synthetic datasets
     #
-    varNames = ["gbbs.thetaA", "gbbs.mA", "gbbs.mB", "gbbs.zA", "gbbs.decay_phi",
-                "bstar.thetaA", "gbbs.mA", "gbbs.mB", "gbbs.zA", "gbbs.decay_phi",
+    varNames = [("gbbs.thetaA",1),      ("gbbs.mA",   1),   ("gbbs.mB",1),   ("gbbs.zA",1),     ("gbbs.decay_phi",  4),
+                ("bstars.thetaA_l", 1), ("bstars.mA", 1),   ("bstars.mB",1), ("bstars.zA_l",1), ("bstars.decay_phi",4),
                 ]
     #varNames = ["gbbs.thetaA"]
 
@@ -43,9 +43,9 @@ def doPlots(debug=False):
     with open(f'{output_file_name}', 'w') as output_file:
 
     
-        for _v in varNames:
+        for _v, _rebin in varNames:
     
-            fig, ax = plot(_v, region="SR", cut="passPreSel",doRatio=0,rebin=1,process="data")
+            fig, ax = plot(_v, region="SR", cut="passPreSel",doRatio=0,rebin=_rebin,process="data")
             bin_centers = ax.get_lines()[0].get_xdata()
             counts      = ax.get_lines()[0].get_ydata()    
 
@@ -58,7 +58,7 @@ def doPlots(debug=False):
 
         input_pdfs = yaml.safe_load(input_file)
         
-        for _v in varNames:
+        for _v, _ in varNames:
 
             probs   = np.array(input_pdfs[_v]["probs"], dtype=float)
             centers = np.array(input_pdfs[_v]["bin_centers"], dtype=float)
