@@ -161,15 +161,10 @@ def cluster_bs_core(event_jets, distance_function, *, remove_mass=True, debug = 
 
             if debug: print(f"clustering {idx_A} and {idx_B}")
             if debug: print(f"size partilces {len(particles)}")
-            # If the minimum distance is dij, combine particles i and j
-
-            part_A = copy(particles[idx_A])
-            part_B = copy(particles[idx_B])
-            particles = remove_indices(particles, [idx_A, idx_B])
 
             if debug: print(f"size partilces {len(particles)}")
 
-            part_comb_array = combine_particles(part_A, part_B, remove_mass=remove_mass)
+            part_comb_array = combine_particles(particles[idx_A], particles[idx_B], remove_mass=remove_mass)
 
             if debug: print(part_comb_array.jet_flavor)
             match part_comb_array.jet_flavor:
@@ -179,6 +174,8 @@ def cluster_bs_core(event_jets, distance_function, *, remove_mass=True, debug = 
                     print(f"ERROR: counting {part_comb_array.jet_flavor}")
 
             splittings[-1].append(part_comb_array[0])
+
+            particles = remove_indices(particles, [idx_A, idx_B])
 
             particles = ak.concatenate([particles, part_comb_array])
             if debug: print(f"size partilces {len(particles)}")
@@ -354,6 +351,7 @@ def compute_decluster_variables(clustered_splittings):
     clustered_splittings["rhoB"]      = clustered_splittings.part_B.mass**2/clustered_splittings.part_B.pt**2
     clustered_splittings["zA"]        = clustered_splittings_pz0.dot(clustered_splittings_part_A_pz0)/(clustered_splittings_pz0.pt**2)
     clustered_splittings["thetaA"]    = np.arccos(clustered_splittings_pz0.unit.dot(clustered_splittings_part_A_pz0.unit))
+    clustered_splittings["tan_thetaA"]    = np.tan(np.arccos(clustered_splittings_pz0.unit.dot(clustered_splittings_part_A_pz0.unit)))
     clustered_splittings["decay_phi"] = np.arccos(decay_plane_hat.dot(comb_z_plane_hat))
     clustered_splittings["dr_AB"]      = clustered_splittings.part_A.delta_r(clustered_splittings.part_B)
     return

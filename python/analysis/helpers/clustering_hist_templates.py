@@ -39,6 +39,8 @@ class ClusterHists(Template):
     thetaA    = H((100,  0, 2, ('thetaA',    "theta angle")))
     thetaA_l  = H((100,  0, 3.2, ('thetaA',    "theta angle")))
 
+    tan_thetaA    = H((100,  0, 10, ('tan_thetaA',    "tan (theta angle)")))
+
 
     zA_vs_thetaA = H((50,  0.5, 2, ('zA', "z fraction")),
                      (50,  0, 1.5, ('thetaA',    "theta angle")))

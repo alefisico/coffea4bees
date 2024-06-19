@@ -575,9 +575,9 @@ class analysis(processor.ProcessorABC):
             #
             #  Hack
             #
-            canJet["puId"] = selev.Jet.puId[canJet_idx]
-            canJet["jetId"] = selev.Jet.puId[canJet_idx]
-            canJet["btagDeepFlavB"] = selev.Jet.btagDeepFlavB[canJet_idx]
+            canJet["puId"] = 7
+            canJet["jetId"] = 7 # selev.Jet.puId[canJet_idx]
+            canJet["btagDeepFlavB"] = 1.0 # Set bs to 1 and ls to 0 
 
             
         #
