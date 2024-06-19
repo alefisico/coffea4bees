@@ -25,7 +25,7 @@ class TestSkimmer(PicoAOD):
         selection = events.event % 11 == 0
         events = events[selection]
         n_jet = ak.num(events.Jet)
-        total_jet = ak.sum(n_jet)
+        total_jet = int(ak.sum(n_jet))
         branches = ak.Array(
             {
                 # replace branch by using the same name as nanoAOD

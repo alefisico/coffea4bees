@@ -4,11 +4,13 @@ echo "############### Checking proxy"
 voms-proxy-info
 echo "############### Moving to python folder"
 cd python/
+export BASE=skimmer/tests/
 echo "############### Changing metadata"
-sed -e "s#base_.*#base_path: \/builds\/${CI_PROJECT_PATH}\/python\/skimmer\/#" > skimmer/tests/modify_branches.yml
-cat skimmer/tests/modify_branches.yml
-echo "############### Running skimmer test processor"
-python runner.py -s -p skimmer/tests/modify_branches.py -c skimmer/tests/modify_branches_skimmer.yml -y UL18 -d GluGluToHHTo4B_cHHH1 -op skimmer/tests/ -o picoAOD_modify_branches.yml -m metadata/datasets_HH4b.yml  -t
+sed -e "s#base_.*#base_path: \/builds\/${CI_PROJECT_PATH}\/python\/skimmer\/#" > ${BASE}modify_branches.yml
+cat ${BASE}modify_branches.yml
+echo "############### Skimming"
+python runner.py -s -p ${BASE}modify_branches.py -c ${BASE}modify_branches_skimmer.yml -y UL18 -d GluGluToHHTo4B_cHHH1 -op ${BASE} -o picoAOD_modify_branches.yml -m metadata/datasets_HH4b.yml  -t
 ls -R skimmer/
-echo "############### Running skimmer test processor"
-python runner.py -s -p skimmer/tests/modify_branches.py -c skimmer/tests/modify_branches_analysis.yml -y UL18 -d GluGluToHHTo4B_cHHH1 -op skimmer/tests/ -o picoAOD_modify_branches.coffea -m skimmer/tests/picoAOD_modify_branches.yml  -t
+echo "############### Checking skimmer output"
+python metadata/merge_yaml_datasets.py -m metadata/datasets_HH4b.yml -f ${BASE}picoAOD_modify_branches.yml -o ${BASE}picoAOD_modify_branches.yml
+python runner.py -s -p ${BASE}modify_branches.py -c ${BASE}modify_branches_analysis.yml -y UL18 -d GluGluToHHTo4B_cHHH1 -op ${BASE} -o picoAOD_modify_branches.coffea -m ${BASE}picoAOD_modify_branches.yml  -t
