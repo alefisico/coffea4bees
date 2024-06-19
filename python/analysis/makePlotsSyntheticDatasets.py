@@ -37,19 +37,19 @@ def doPlots(debug=False):
 
     gbb_hist_name = {}
     gbb_hist_name["thetaA"]    = ("gbbs.thetaA",    1)  # (hist_name, rebin)
-    # gbb_hist_name["mA"]        = ("gbbs.mA",        1)
-    # gbb_hist_name["mB"]        = ("gbbs.mB",        1)
-    gbb_hist_name["rhoA"]      = ("gbbs.rhoA",      1)
-    gbb_hist_name["rhoB"]      = ("gbbs.rhoB",      1)
+    gbb_hist_name["mA"]        = ("gbbs.mA",        1)
+    gbb_hist_name["mB"]        = ("gbbs.mB",        1)
+    # gbb_hist_name["rhoA"]      = ("gbbs.rhoA",      1)
+    # gbb_hist_name["rhoB"]      = ("gbbs.rhoB",      1)
     gbb_hist_name["zA"]        = ("gbbs.zA",        1)
     gbb_hist_name["decay_phi"] = ("gbbs.decay_phi", 4)
 
     bstar_hist_name = {}
     bstar_hist_name["thetaA"]    = ("bstars.thetaA_l" ,  1)
-    # bstar_hist_name["mA"]        = ("bstars.mA"       ,  1)
-    # bstar_hist_name["mB"]        = ("bstars.mB"       ,  1)
-    bstar_hist_name["rhoA"]      = ("bstars.rhoA"     ,  1)
-    bstar_hist_name["rhoB"]      = ("bstars.rhoB"     ,  1)
+    bstar_hist_name["mA"]        = ("bstars.mA"       ,  1)
+    bstar_hist_name["mB"]        = ("bstars.mB"       ,  1)
+    # bstar_hist_name["rhoA"]      = ("bstars.rhoA"     ,  1)
+    # bstar_hist_name["rhoB"]      = ("bstars.rhoB"     ,  1)
     bstar_hist_name["zA"]        = ("bstars.zA_l"     ,  1)
     bstar_hist_name["decay_phi"] = ("bstars.decay_phi",  4)
 

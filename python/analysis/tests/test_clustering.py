@@ -143,7 +143,7 @@ class clusteringTestCase(unittest.TestCase):
         eta_check = [np.allclose(i, j, 1e-4) for i, j in zip(clustered_splittings.eta, (pA + pB).eta)]
         if not all(eta_check):
             [print(i) for i in clustered_splittings.eta - (pA + pB).eta]
-            [print(i, j) for i, j in zip(clustered_splittings.pt, (pA + pB).eta)]
+            [print(i, j) for i, j in zip(clustered_splittings.eta, (pA + pB).eta)]
         self.assertTrue(all(eta_check), "All eta should be the same")
 
 
