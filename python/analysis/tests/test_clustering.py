@@ -209,8 +209,6 @@ class clusteringTestCase(unittest.TestCase):
 
         clustered_jets, _clustered_splittings = cluster_bs(self.input_jets_4, debug=False)
 
-
-
         #
         # 1st replace bstar splittings with their original jets (b, g_bb)
         #
