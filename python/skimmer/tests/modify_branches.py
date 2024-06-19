@@ -1,3 +1,4 @@
+import logging
 import warnings
 
 import awkward as ak
@@ -64,7 +65,7 @@ class TestAnalysis(TestSkimmer):
         assert ak.all(events.Jet.phi == branches.Jet_phi)
         assert ak.all(events.Jet.isGood == branches.Jet_isGood)
         assert ak.all(events.isBad == branches.isBad)
-
         # assert events.metadata["total_jet"] == result["total_jet"]
+        logging.debug("All tests passed.")
 
         return result
