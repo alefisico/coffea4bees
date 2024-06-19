@@ -306,6 +306,24 @@ def kt_clustering(event_jets, R, *, remove_mass=True, debug = False):
     return clustered_events
 
 
+def rotateZ(particles, angle):
+    sinT = np.sin(angle)
+    cosT = np.cos(angle)
+    x_rotated = cosT * particles.x - sinT * particles.y
+    y_rotated = sinT * particles.x + cosT * particles.y
+
+    return ak.zip(
+        {
+            "x": x_rotated,
+            "y": y_rotated,
+            "z": particles.z,
+            "t": particles.t,
+        },
+        with_name="LorentzVector",
+        behavior=vector.behavior,
+    )
+
+
 def rotateX(particles, angle):
     sinT = np.sin(angle)
     cosT = np.cos(angle)
@@ -363,14 +381,14 @@ def decluster_combined_jets(input_jet):
     tanThetaB = input_jet.zA / (1 - input_jet.zA) * tanThetaA
 
     #
-    #  pA (in frame with pz=0 phi=0)
+    #  pA (in frame with pz=0 phi=0 decay_phi = 0)
     #
     pA_pz0_px = input_jet.zA * combined_pt
     pA_pz0_py = 0
     pA_pz0_pz = - input_jet.zA * combined_pt * tanThetaA
     pA_pz0_E  = np.sqrt(pA_pz0_px**2 + pA_pz0_pz**2 + input_jet.mA**2)
 
-    pA_pz0_phi0 = ak.zip(
+    pA_pz0_phi0_decayPhi0 = ak.zip(
         {
             "x": pA_pz0_px,
             "y": pA_pz0_py,
@@ -386,7 +404,7 @@ def decluster_combined_jets(input_jet):
     pB_pz0_pz = (1 - input_jet.zA) * combined_pt * tanThetaB
     pB_pz0_E  = np.sqrt(pB_pz0_px**2 + pB_pz0_pz**2 + input_jet.mB**2)
 
-    pB_pz0_phi0 = ak.zip(
+    pB_pz0_phi0_decayPhi0 = ak.zip(
         {
             "x": pB_pz0_px,
             "y": pB_pz0_py,
@@ -398,10 +416,10 @@ def decluster_combined_jets(input_jet):
     )
 
     #
-    # Do Rotation
+    # Do Rotation of the decay plane
     #
-    pA_pz0 = rotateX(pA_pz0_phi0, input_jet.decay_phi)
-    pB_pz0 = rotateX(pB_pz0_phi0, input_jet.decay_phi)
+    pA_pz0_phi0 = rotateX(pA_pz0_phi0_decayPhi0, input_jet.decay_phi)
+    pB_pz0_phi0 = rotateX(pB_pz0_phi0_decayPhi0, input_jet.decay_phi)
 
     #
     #  De-Clustering
@@ -417,10 +435,17 @@ def decluster_combined_jets(input_jet):
     )
 
     #
-    #  Boost back
+    #  Boost back to jet pZ
     #
-    pA = pA_pz0.boost(boost_vec_z)
-    pB = pB_pz0.boost(boost_vec_z)
+    pA_phi0 = pA_pz0_phi0.boost(boost_vec_z)
+    pB_phi0 = pB_pz0_phi0.boost(boost_vec_z)
+
+    #
+    #  Rotate to jet phi
+    #
+    pA = rotateZ(pA_phi0, input_jet.phi)
+    pB = rotateZ(pB_phi0, input_jet.phi)
+
 
     pA_x_flat = np.array(ak.flatten(pA.x))
     pA_y_flat = np.array(ak.flatten(pA.y))
