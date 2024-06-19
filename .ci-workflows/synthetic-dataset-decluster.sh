@@ -14,7 +14,7 @@ else
 fi
 echo "############### Running datasets from " $DATASETS
 echo "############### Running test processor"
-python runner.py -t -o test_declustering_nominal.coffea     -d data  -p analysis/processors/processor_decluster_4b.py -y UL18  -op analysis/hists/ -m $DATASETS 
-python runner.py -t -o test_declustering_declustered.coffea -d data  -p analysis/processors/processor_decluster_4b.py -y UL18  -op analysis/hists/ -m $DATASETS -c analysis/metadata/decluster_gbb_only_4b.yml
+time python runner.py -t -o test_declustering_nominal.coffea     -d data  -p analysis/processors/processor_decluster_4b.py -y UL18  -op analysis/hists/ -m $DATASETS 
+time python runner.py -t -o test_declustering_declustered.coffea -d data  -p analysis/processors/processor_decluster_4b.py -y UL18  -op analysis/hists/ -m $DATASETS -c analysis/metadata/decluster_gbb_only_4b.yml
 ls
 cd ../

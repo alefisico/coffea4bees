@@ -418,8 +418,12 @@ def decluster_combined_jets(input_jet):
     #
     # Do Rotation of the decay plane
     #
-    pA_pz0_phi0 = rotateX(pA_pz0_phi0_decayPhi0, input_jet.decay_phi)
-    pB_pz0_phi0 = rotateX(pB_pz0_phi0_decayPhi0, input_jet.decay_phi)
+
+    # Pseudo-random number to decide if we rotate by phi or phi + pi
+    decay_phi = input_jet.decay_phi + np.pi*((input_jet.pt % 1) > 0.5)
+
+    pA_pz0_phi0 = rotateX(pA_pz0_phi0_decayPhi0, decay_phi)
+    pB_pz0_phi0 = rotateX(pB_pz0_phi0_decayPhi0, decay_phi)
 
     #
     #  De-Clustering
