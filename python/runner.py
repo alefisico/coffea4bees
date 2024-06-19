@@ -117,12 +117,16 @@ if __name__ == '__main__':
     parser.add_argument('--gitdiff', dest="gitdiff",
                         default="", help='Overwrite git diff for reproducible')
     args = parser.parse_args()
+    # configure default logger
     logging_level = logging.DEBUG if args.debug else logging.INFO
     logging.basicConfig(
         level=logging_level,
         handlers=[RichHandler(level=logging_level, markup=True)],
     )
+    # disable numba debug warnings
+    logging.getLogger('numba').setLevel(logging.WARNING)
 
+    
     logging.info(f"\nRunning with these parameters: {args}")
 
     #
