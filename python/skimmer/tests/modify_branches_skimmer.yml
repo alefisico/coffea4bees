@@ -4,7 +4,7 @@ runner:
   chunksize: 100000
   picosize: 100000
   basketsize: 10000
-  class_name: Skimmer
+  class_name: TestSkimmer
   data_tier: nanoAOD
   allowlist_sites:
     - T3_CH_PSI

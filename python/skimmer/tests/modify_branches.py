@@ -11,7 +11,7 @@ warnings.filterwarnings(
 )
 
 
-class Skim(PicoAOD):
+class TestSkimmer(PicoAOD):
     def __init__(self, base_path: PathLike, step: int, **_):
         super().__init__(
             base_path,
@@ -53,7 +53,7 @@ class Skim(PicoAOD):
         # return selection, None, result
 
 
-class Analysis(Skim):
+class TestAnalysis(TestSkimmer):
     def __init__(self, **_): ...
 
     def process(self, events):
