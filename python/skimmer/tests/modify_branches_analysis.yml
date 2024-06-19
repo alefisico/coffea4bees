@@ -6,3 +6,5 @@ runner:
   allowlist_sites:
     - T3_CH_PSI
     - T3_US_FNALLPC
+
+config:
