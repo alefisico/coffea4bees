@@ -25,6 +25,12 @@ def plot(var, **kwargs):
 
 def doPlots(debug=False):
 
+    # Fixes Needed !!!
+    plot("canJet3.pt", region="SB", cut="passPreSel",doRatio=1,rebin=1,process="data",histtype="step",debug=0,norm=1,labels=["De-clustered","Nominal"])
+    plot("canJets.eta", region="SB", cut="passPreSel",doRatio=1,rebin=1,process="data",histtype="step",debug=0,norm=1,labels=["De-clustered","Nominal"])
+    plot("quadJet_min_dr.close.dr", region="SB", cut="passPreSel",doRatio=1,rebin=1,process="data",histtype="step",debug=0,norm=1,labels=["De-clustered","Nominal"],xlim=[0,2])
+
+    
     #
     #  Jet Level
     #
