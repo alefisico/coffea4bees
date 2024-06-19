@@ -144,7 +144,6 @@ class analysis(processor.ProcessorABC):
         allcuts.append("passFourTag")
         allcuts.append("pass0OthJets")
 
-        event['nJet_selected'] = ak.sum(event.Jet.selected, axis=1)
         selev = event[selections.all(*allcuts)]
 
         # logging.info( f"\n {chunk} Event:  nSelJets {selev['nJet_selected']}\n")
