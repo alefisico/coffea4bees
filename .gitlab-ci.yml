@@ -30,7 +30,7 @@ stages:
   - reana
 
 include:
-  - local: '.ci-workflows/stage_*'
+  - local: '.ci-workflows/stages_*.yml'
 
 .base_analysis:
   needs:
