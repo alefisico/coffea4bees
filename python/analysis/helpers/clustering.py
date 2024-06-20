@@ -521,27 +521,50 @@ def make_synthetic_event(input_jets, input_pdfs):
         bstar_indicies = np.where(ak.flatten(bstar_mask))
         bstar_indicies_tuple = (bstar_indicies[0].to_list())
 
-        splittings = [("gbb",   num_samples_gbb,   gbb_indicies_tuple),
-                      ("bstar", num_samples_bstar, bstar_indicies_tuple),
+        splittings = [("gbbs",   num_samples_gbb,   gbb_indicies_tuple),
+                      ("bstars", num_samples_bstar, bstar_indicies_tuple),
                       ]
 
         #
         #  Sample the PDFs for the jets we will uncluster
         #
         for _var_name in input_pdfs["varNames"]:
-            _sampled_data = np.ones(n_jets)
+
+            if _var_name.find("_vs_") == -1:
+                is_1d_pdf = True
+                _sampled_data = np.ones(n_jets)
+            else:
+                is_1d_pdf = False
+                _sampled_data_x = np.ones(n_jets)
+                _sampled_data_y = np.ones(n_jets)
 
             # Sample the pdfs from the different splitting options
             for _splitting_name, _num_samples, _indicies_tuple in splittings:
 
-                probs   = np.array(input_pdfs[_splitting_name][_var_name]["probs"], dtype=float)
-                centers = np.array(input_pdfs[_splitting_name][_var_name]["bin_centers"], dtype=float)
-                _sampled_data[_indicies_tuple] = np.random.choice(centers, size=_num_samples, p=probs)
+                if is_1d_pdf:
+                    probs   = np.array(input_pdfs[_splitting_name][_var_name]["probs"], dtype=float)
+                    centers = np.array(input_pdfs[_splitting_name][_var_name]["bin_centers"], dtype=float)
+                    _sampled_data[_indicies_tuple] = np.random.choice(centers, size=_num_samples, p=probs)
+                else:
+                    probabilities_flat   = np.array(input_pdfs[_splitting_name][_var_name]["probabilities_flat"], dtype=float)
+                    xcenters_flat        = np.array(input_pdfs[_splitting_name][_var_name]["xcenters_flat"],      dtype=float)
+                    ycenters_flat        = np.array(input_pdfs[_splitting_name][_var_name]["ycenters_flat"],      dtype=float)
+
+                    sampled_indices = np.random.choice(len(probabilities_flat), size=_num_samples, p=probabilities_flat)
+                    #sampled_x = xcenters_flat[sampled_indices]
+                    #sampled_y = ycenters_flat[sampled_indices]
+                    _sampled_data_x[_indicies_tuple] = xcenters_flat[sampled_indices]
+                    _sampled_data_y[_indicies_tuple] = ycenters_flat[sampled_indices]
 
             #
             # Save the sampled data to the jets to be uclustered for use in decluster_combined_jets
             #
-            input_jets_decluster[_var_name]         = ak.unflatten(_sampled_data,    ak.num(input_jets_decluster))
+            if is_1d_pdf:
+                input_jets_decluster[_var_name]         = ak.unflatten(_sampled_data,    ak.num(input_jets_decluster))
+            else:
+                input_jets_decluster["zA"]         = ak.unflatten(_sampled_data_x,    ak.num(input_jets_decluster))
+                input_jets_decluster["thetaA"]     = ak.unflatten(_sampled_data_y,    ak.num(input_jets_decluster))
+
 
         #
         #  do the declustering
