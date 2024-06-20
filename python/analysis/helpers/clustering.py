@@ -363,16 +363,19 @@ def compute_decluster_variables(clustered_splittings):
     #
     #  Clustering (calc variables to histogram)
     #
+    clustered_splittings["zA"]        = clustered_splittings_pz0.dot(clustered_splittings_part_A_pz0) / (clustered_splittings_pz0.pt**2)
     clustered_splittings["mA"]        = clustered_splittings.part_A.mass
-    clustered_splittings["rhoA"]      = clustered_splittings.part_A.mass**2/clustered_splittings.part_A.pt**2
+    clustered_splittings["rhoA"]      = clustered_splittings.part_A.mass/(clustered_splittings.pt * clustered_splittings.zA)
+
     clustered_splittings["mB"]        = clustered_splittings.part_B.mass
-    clustered_splittings["rhoB"]      = clustered_splittings.part_B.mass**2/clustered_splittings.part_B.pt**2
-    clustered_splittings["zA"]        = clustered_splittings_pz0.dot(clustered_splittings_part_A_pz0)/(clustered_splittings_pz0.pt**2)
+    clustered_splittings["rhoB"]      = clustered_splittings.part_B.mass/(clustered_splittings.pt * (1 - clustered_splittings.zA))
+
     clustered_splittings["thetaA"]    = np.arccos(clustered_splittings_pz0.unit.dot(clustered_splittings_part_A_pz0.unit))
     clustered_splittings["tan_thetaA"]    = np.tan(np.arccos(clustered_splittings_pz0.unit.dot(clustered_splittings_part_A_pz0.unit)))
     clustered_splittings["decay_phi"] = np.arccos(decay_plane_hat.dot(comb_z_plane_hat))
     clustered_splittings["dr_AB"]      = clustered_splittings.part_A.delta_r(clustered_splittings.part_B)
     return
+
 
 def decluster_combined_jets(input_jet):
 
@@ -386,7 +389,8 @@ def decluster_combined_jets(input_jet):
     pA_pz0_px = input_jet.zA * combined_pt
     pA_pz0_py = 0
     pA_pz0_pz = - input_jet.zA * combined_pt * tanThetaA
-    pA_pz0_E  = np.sqrt(pA_pz0_px**2 + pA_pz0_pz**2 + input_jet.mA**2)
+    pA_mass   = input_jet.rhoA * input_jet.pt * input_jet.zA
+    pA_pz0_E  = np.sqrt(pA_pz0_px**2 + pA_pz0_pz**2 + pA_mass**2)
 
     pA_pz0_phi0_decayPhi0 = ak.zip(
         {
@@ -402,7 +406,8 @@ def decluster_combined_jets(input_jet):
     pB_pz0_px = (1 - input_jet.zA) * combined_pt
     pB_pz0_py = 0
     pB_pz0_pz = (1 - input_jet.zA) * combined_pt * tanThetaB
-    pB_pz0_E  = np.sqrt(pB_pz0_px**2 + pB_pz0_pz**2 + input_jet.mB**2)
+    pB_mass   = input_jet.rhoB * input_jet.pt * (1 - input_jet.zA)
+    pB_pz0_E  = np.sqrt(pB_pz0_px**2 + pB_pz0_pz**2 + pB_mass**2)
 
     pB_pz0_phi0_decayPhi0 = ak.zip(
         {
@@ -450,60 +455,61 @@ def decluster_combined_jets(input_jet):
     pA = rotateZ(pA_phi0, input_jet.phi)
     pB = rotateZ(pB_phi0, input_jet.phi)
 
-
-    pA_x_flat = np.array(ak.flatten(pA.x))
-    pA_y_flat = np.array(ak.flatten(pA.y))
-    pA_z_flat = np.array(ak.flatten(pA.z))
-    pA_t_flat = np.array(ak.flatten(pA.t))
-
-    input_jet_x = ak.flatten(input_jet.x)
-    input_jet_y = ak.flatten(input_jet.y)
-    input_jet_z = ak.flatten(input_jet.z)
-    input_jet_t = ak.flatten(input_jet.t)
-
-    original_jet_indicies = np.where(ak.flatten(~input_jet.decluster_mask))
-    original_jet_indicies_tuple = (original_jet_indicies[0].to_list())
-
-    pA_x_flat[original_jet_indicies_tuple] = input_jet_x[original_jet_indicies_tuple]
-    pA_y_flat[original_jet_indicies_tuple] = input_jet_y[original_jet_indicies_tuple]
-    pA_z_flat[original_jet_indicies_tuple] = input_jet_z[original_jet_indicies_tuple]
-    pA_t_flat[original_jet_indicies_tuple] = input_jet_t[original_jet_indicies_tuple]
-
-    pA_masked = ak.zip(
+    pA = ak.zip(
         {
-            "x": ak.unflatten(pA_x_flat, ak.num(input_jet)),
-            "y": ak.unflatten(pA_y_flat, ak.num(input_jet)),
-            "z": ak.unflatten(pA_z_flat, ak.num(input_jet)),
-            "t": ak.unflatten(pA_t_flat, ak.num(input_jet)),
+            "pt":  pA.pt,
+            "eta": pA.eta,
+            "phi": pA.phi,
+            "mass":pA.mass,
         },
-        with_name="LorentzVector",
+        with_name="PtEtaPhiMLorentzVector",
         behavior=vector.behavior,
     )
 
-    pB_masked = pB[input_jet.decluster_mask]
+    pB = ak.zip(
+        {
+            "pt":  pB.pt,
+            "eta": pB.eta,
+            "phi": pB.phi,
+            "mass":pB.mass,
+        },
+        with_name="PtEtaPhiMLorentzVector",
+        behavior=vector.behavior,
+    )
 
-    return ak.concatenate([pA_masked, pB_masked], axis=1)
+    return ak.concatenate([pA, pB], axis=1)
 
 
 def make_synthetic_event(input_jets, input_pdfs):
 
-    g_bb_mask  = input_jets.jet_flavor == "g_bb"
-    bstar_mask = input_jets.jet_flavor == "bstar"
-    decluster_mask = g_bb_mask | bstar_mask
+    g_bb_mask_all  = input_jets.jet_flavor == "g_bb"
+    bstar_mask_all = input_jets.jet_flavor == "bstar"
+    decluster_mask_all = g_bb_mask_all | bstar_mask_all
+
+
+    #
+    #  Save the jets that dont need to be declustered
+    #
+    input_jets_no_decluster = input_jets[~decluster_mask_all]
 
     #
     #  Mask the jets to be declustered
     #
-    input_jets["decluster_mask"] = decluster_mask
+    input_jets_decluster = input_jets[decluster_mask_all]
+    #input_jets_decluster["decluster_mask"] = True
+
+    g_bb_mask  = input_jets_decluster.jet_flavor == "g_bb"
+    bstar_mask = input_jets_decluster.jet_flavor == "bstar"
+
 
     # Pre compute these to save time
-    n_jets   = np.sum(ak.num(input_jets))
+    n_jets   = np.sum(ak.num(input_jets_decluster))
 
-    num_samples_gbb   = np.sum(ak.num(input_jets[g_bb_mask]))
+    num_samples_gbb   = np.sum(ak.num(input_jets_decluster[g_bb_mask]))
     gbb_indicies = np.where(ak.flatten(g_bb_mask))
     gbb_indicies_tuple = (gbb_indicies[0].to_list())
 
-    num_samples_bstar = np.sum(ak.num(input_jets[bstar_mask]))
+    num_samples_bstar = np.sum(ak.num(input_jets_decluster[bstar_mask]))
     bstar_indicies = np.where(ak.flatten(bstar_mask))
     bstar_indicies_tuple = (bstar_indicies[0].to_list())
 
@@ -524,7 +530,8 @@ def make_synthetic_event(input_jets, input_pdfs):
         #
         # Save the sampled data to the jets to be uclustered for use in decluster_combined_jets
         #
-        input_jets[_var_name]         = ak.unflatten(_sampled_data,    ak.num(input_jets))
+        input_jets_decluster[_var_name]         = ak.unflatten(_sampled_data,    ak.num(input_jets_decluster))
 
+    declustered_jets = decluster_combined_jets(input_jets_decluster)
 
-    return decluster_combined_jets(input_jets)
+    return ak.concatenate([input_jets_no_decluster, declustered_jets], axis=1)

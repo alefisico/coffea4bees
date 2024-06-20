@@ -266,12 +266,10 @@ class clusteringTestCase(unittest.TestCase):
         pA = declustered_jets[:,0:2]
         pB = declustered_jets[:,2:]
 
-
         #
         # Sanity checks
         #
         print("Only after gbb declustering")
-        print(f"clustered_jets.decluster_mask {clustered_jets.decluster_mask}")
         print(f"clustered_jets.jet_flavor     {clustered_jets.jet_flavor}")
         print(f"clustered_jets.pt             {clustered_jets.pt}")
         print(f"pA.pt                         {pA.pt}")
