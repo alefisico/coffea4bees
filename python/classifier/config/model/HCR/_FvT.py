@@ -64,24 +64,23 @@ class FvT(HCR):
         import numpy as np
         from classifier.discriminator.roc import MulticlassROC
 
-        bins = np.linspace(0, 1, 1000)
         return (
             MulticlassROC(
                 name="4b vs 3b data",
                 selection=_roc_data_selection,
-                bins=bins,
+                bins=(1000, 0, 1),
                 pos=("d4", "t4"),
             ),
             MulticlassROC(
                 name="4b vs 3b",
                 selection=_roc_nominal_selection,
-                bins=bins,
+                bins=(1000, 0, 1),
                 pos=("d4", "t4"),
             ),
             MulticlassROC(
                 name="ttbar vs data",
                 selection=_roc_nominal_selection,
-                bins=bins,
+                bins=(1000, 0, 1),
                 pos=("t4", "t3"),
             ),
         )

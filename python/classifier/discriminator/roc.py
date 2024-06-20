@@ -3,7 +3,7 @@ from typing import Callable, Iterable, Literal, TypedDict
 import base_class.numpy as npext
 from torch import Tensor
 
-from ..algorithm.metrics.roc import FixedThresholdROC, linear_differ
+from ..algorithm.metrics.roc import FixedThresholdROC, HistRegularAxis, linear_differ
 from ..config.state.label import MultiClass
 from . import BatchType
 
@@ -19,7 +19,7 @@ class MulticlassROC(FixedThresholdROC):
         self,
         name: str,
         selection: Callable[[BatchType], ROCInputType],
-        bins: Iterable[float],
+        bins: HistRegularAxis | Iterable[float],
         pos: Iterable[str],
         neg: Iterable[str] = None,
         score: Literal["differ"] | None = None,

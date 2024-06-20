@@ -1,11 +1,15 @@
+from numbers import Real
 from typing import Callable, Iterable
 
 import numpy as np
 import torch
 import torch.types as tt
+from base_class.typetools import check_type
 from torch import Tensor
 
 from ..utils import to_arr, to_num
+
+HistRegularAxis = tuple[int, Real, Real]
 
 
 def linear_differ(pos: Tensor, neg: Tensor):
@@ -15,12 +19,18 @@ def linear_differ(pos: Tensor, neg: Tensor):
 class FixedThresholdROC:
     def __init__(
         self,
-        thresholds: Iterable[float],
+        thresholds: HistRegularAxis | Iterable[float],
         positive_classes: Iterable[int],
         negative_classes: Iterable[int] = None,
         score_interpretation: Callable[[Tensor, Tensor], Tensor] = None,
     ):
-        self.edge = np.sort(thresholds)
+        self._is_regular = check_type(thresholds, HistRegularAxis)
+        if self._is_regular:
+            edge = thresholds
+            step = (edge[2] - edge[1]) / edge[0]
+            self.edge = (edge[0], step, edge[1] / step - 1)
+        else:
+            self.edge = np.sort(thresholds)
         self.pos = sorted(set(positive_classes))
         if negative_classes is not None:
             self.neg = sorted(set(negative_classes))
@@ -43,9 +53,14 @@ class FixedThresholdROC:
             self.__pos = torch.as_tensor(self.pos, dtype=i, device=d)
             if self._has_neg:
                 self.__neg = torch.as_tensor(self.neg, dtype=i, device=d)
-            self.__edge = torch.as_tensor(self.edge, **self.__t)
-            self.__FP = torch.zeros(len(self.__edge) + 1, **self.__t)
-            self.__TP = torch.zeros(len(self.__edge) + 1, **self.__t)
+            if not self._is_regular:
+                self.__edge = torch.as_tensor(self.edge, **self.__t)
+                bins = len(self.__edge) + 1
+            else:
+                self.__edge = torch.tensor(self.edge[1:], **self.__t)
+                bins = self.edge[0] + 2
+            self.__FP = torch.zeros(bins, **self.__t)
+            self.__TP = torch.zeros(bins, **self.__t)
             self.__P = torch.tensor(0, **self.__t)
             self.__N = torch.tensor(0, **self.__t)
 
@@ -63,7 +78,12 @@ class FixedThresholdROC:
 
     def _hist(self, x: Tensor, weight: Tensor, hist: Tensor):
         # -inf < b[0] < t[0] <= b[1] < t[1] <= ... < t[-1] <= b[-1] < inf
-        hist.index_add_(0, torch.searchsorted(self.__edge, x, right=True), weight)
+        e = self.__edge
+        if self._is_regular:
+            indices = torch.clip(x / e[0] - e[1], 0, self.edge[0] + 1).to(torch.int32)
+        else:
+            indices = torch.bucketize(x, e, right=True, out_int32=True)
+        hist.index_add_(0, indices, weight)
 
     def _bounded(self, FPR: Tensor, TPR: Tensor):
         f, t = [FPR], [TPR]
