@@ -85,7 +85,8 @@ class analysis(processor.ProcessorABC):
         JCM=None,
         SvB=None,
         SvB_MA=None,
-        threeTag=True,
+        threeTag=True,  ### this is not doing anything
+        blind=False,
         apply_trigWeight=True,
         apply_btagSF=True,
         apply_FvT=True,
@@ -97,7 +98,7 @@ class analysis(processor.ProcessorABC):
     ):
 
         logging.debug("\nInitialize Analysis Processor")
-        self.blind = False
+        self.blind = blind
         self.JCM = jetCombinatoricModel(JCM) if JCM else None
         self.apply_trigWeight = apply_trigWeight
         self.apply_btagSF = apply_btagSF
@@ -811,6 +812,10 @@ class analysis(processor.ProcessorABC):
         # Blind data in fourTag SR
         #
         if not (isMC or "mixed" in dataset) and self.blind:
+            blind_sel = np.full( len(event), True)
+            blind_sel[ selections.all(*allcuts) ] = ~(selev["quadJet_selected"].SR & selev.fourTag)
+            selections.add( 'blind', blind_sel )
+            allcuts.append( 'blind' )
             selev = selev[~(selev["quadJet_selected"].SR & selev.fourTag)]
 
         #
