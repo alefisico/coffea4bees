@@ -117,14 +117,14 @@ class clusteringTestCase(unittest.TestCase):
         #  For now use known inputs
         #   (should get exact jets back!)
         clustered_splittings["decluster_mask"] = True
-        declustered_jets = decluster_combined_jets(clustered_splittings)
-
+        # declustered_jets = decluster_combined_jets(clustered_splittings)
+        pA, pB = decluster_combined_jets(clustered_splittings)
 
         #
         # Sanity checks
         #
-        pA = declustered_jets[:,0:2]
-        pB = declustered_jets[:,2:]
+        # pA = declustered_jets[:,0:2]
+        # pB = declustered_jets[:,2:]
 
 
 

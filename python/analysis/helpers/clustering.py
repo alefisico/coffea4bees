@@ -477,7 +477,8 @@ def decluster_combined_jets(input_jet):
         behavior=vector.behavior,
     )
 
-    return ak.concatenate([pA, pB], axis=1)
+    return pA, pB
+    #return ak.concatenate([pA, pB], axis=1)
 
 
 def make_synthetic_event(input_jets, input_pdfs):
@@ -486,52 +487,66 @@ def make_synthetic_event(input_jets, input_pdfs):
     bstar_mask_all = input_jets.jet_flavor == "bstar"
     decluster_mask_all = g_bb_mask_all | bstar_mask_all
 
-
     #
     #  Save the jets that dont need to be declustered
     #
-    input_jets_no_decluster = input_jets[~decluster_mask_all]
+    unclustered_jets = input_jets[~decluster_mask_all]
 
     #
     #  Mask the jets to be declustered
     #
     input_jets_decluster = input_jets[decluster_mask_all]
-    #input_jets_decluster["decluster_mask"] = True
 
-    g_bb_mask  = input_jets_decluster.jet_flavor == "g_bb"
-    bstar_mask = input_jets_decluster.jet_flavor == "bstar"
+    while(ak.any(input_jets_decluster)):
+
+        g_bb_mask  = input_jets_decluster.jet_flavor == "g_bb"
+        bstar_mask = input_jets_decluster.jet_flavor == "bstar"
+
+        # Pre compute these to save time
+        n_jets   = np.sum(ak.num(input_jets_decluster))
+
+        num_samples_gbb   = np.sum(ak.num(input_jets_decluster[g_bb_mask]))
+        gbb_indicies = np.where(ak.flatten(g_bb_mask))
+        gbb_indicies_tuple = (gbb_indicies[0].to_list())
+
+        num_samples_bstar = np.sum(ak.num(input_jets_decluster[bstar_mask]))
+        bstar_indicies = np.where(ak.flatten(bstar_mask))
+        bstar_indicies_tuple = (bstar_indicies[0].to_list())
+
+        splittings = [("gbb",   num_samples_gbb,   gbb_indicies_tuple),
+                      ("bstar", num_samples_bstar, bstar_indicies_tuple),
+                      ]
+
+        for _var_name in input_pdfs["varNames"]:
+            _sampled_data = np.ones(n_jets)
+
+            # Sample the pdfs from the different splitting options
+            for _splitting_name, _num_samples, _indicies_tuple in splittings:
+
+                probs   = np.array(input_pdfs[_splitting_name][_var_name]["probs"], dtype=float)
+                centers = np.array(input_pdfs[_splitting_name][_var_name]["bin_centers"], dtype=float)
+                _sampled_data[_indicies_tuple] = np.random.choice(centers, size=_num_samples, p=probs)
+
+            #
+            # Save the sampled data to the jets to be uclustered for use in decluster_combined_jets
+            #
+            input_jets_decluster[_var_name]         = ak.unflatten(_sampled_data,    ak.num(input_jets_decluster))
+
+        # declustered_jets = decluster_combined_jets(input_jets_decluster)
+        declustered_jets_A, declustered_jets_B  = decluster_combined_jets(input_jets_decluster)
 
 
-    # Pre compute these to save time
-    n_jets   = np.sum(ak.num(input_jets_decluster))
-
-    num_samples_gbb   = np.sum(ak.num(input_jets_decluster[g_bb_mask]))
-    gbb_indicies = np.where(ak.flatten(g_bb_mask))
-    gbb_indicies_tuple = (gbb_indicies[0].to_list())
-
-    num_samples_bstar = np.sum(ak.num(input_jets_decluster[bstar_mask]))
-    bstar_indicies = np.where(ak.flatten(bstar_mask))
-    bstar_indicies_tuple = (bstar_indicies[0].to_list())
-
-    splittings = [("gbb",   num_samples_gbb,   gbb_indicies_tuple),
-                  ("bstar", num_samples_bstar, bstar_indicies_tuple),
-                  ]
-
-    for _var_name in input_pdfs["varNames"]:
-        _sampled_data = np.ones(n_jets)
-
-        # Sample the pdfs from the different splitting options
-        for _splitting_name, _num_samples, _indicies_tuple in splittings:
-
-            probs   = np.array(input_pdfs[_splitting_name][_var_name]["probs"], dtype=float)
-            centers = np.array(input_pdfs[_splitting_name][_var_name]["bin_centers"], dtype=float)
-            _sampled_data[_indicies_tuple] = np.random.choice(centers, size=_num_samples, p=probs)
 
         #
-        # Save the sampled data to the jets to be uclustered for use in decluster_combined_jets
+        # Sanity checks
         #
-        input_jets_decluster[_var_name]         = ak.unflatten(_sampled_data,    ak.num(input_jets_decluster))
+        fail_pt_mask  = (declustered_jets_A.pt < 40) | (declustered_jets_B.pt < 40)
+        fail_eta_mask = (np.abs(declustered_jets_A.eta) > 2.5) | (np.abs(declustered_jets_B.eta) > 2.5)
+        clustering_fail = fail_pt_mask | fail_eta_mask
 
-    declustered_jets = decluster_combined_jets(input_jets_decluster)
 
-    return ak.concatenate([input_jets_no_decluster, declustered_jets], axis=1)
+        unclustered_jets = ak.concatenate([unclustered_jets, declustered_jets_A[~clustering_fail], declustered_jets_B[~clustering_fail]], axis=1)
+
+        input_jets_decluster = input_jets_decluster[clustering_fail]
+
+    return unclustered_jets
