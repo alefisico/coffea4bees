@@ -497,6 +497,14 @@ def make_synthetic_event(input_jets, input_pdfs):
     #
     input_jets_decluster = input_jets[decluster_mask_all]
 
+    #
+    #  Need to iterate b/c
+    #   - Some unclusterings fail the jet pt and eta
+    #   - Some lead to dR too close (Not checked yet!)
+    #   - Some of the splittings are recursive (no implemented yet!)
+
+    num_trys = 0
+
     while(ak.any(input_jets_decluster)):
 
         g_bb_mask  = input_jets_decluster.jet_flavor == "g_bb"
@@ -517,6 +525,9 @@ def make_synthetic_event(input_jets, input_pdfs):
                       ("bstar", num_samples_bstar, bstar_indicies_tuple),
                       ]
 
+        #
+        #  Sample the PDFs for the jets we will uncluster
+        #
         for _var_name in input_pdfs["varNames"]:
             _sampled_data = np.ones(n_jets)
 
@@ -532,21 +543,35 @@ def make_synthetic_event(input_jets, input_pdfs):
             #
             input_jets_decluster[_var_name]         = ak.unflatten(_sampled_data,    ak.num(input_jets_decluster))
 
-        # declustered_jets = decluster_combined_jets(input_jets_decluster)
+        #
+        #  do the declustering
+        #
         declustered_jets_A, declustered_jets_B  = decluster_combined_jets(input_jets_decluster)
 
-
-
         #
-        # Sanity checks
+        #  Check for declustered jets vailing kinematic requirements
         #
         fail_pt_mask  = (declustered_jets_A.pt < 40) | (declustered_jets_B.pt < 40)
         fail_eta_mask = (np.abs(declustered_jets_A.eta) > 2.5) | (np.abs(declustered_jets_B.eta) > 2.5)
         clustering_fail = fail_pt_mask | fail_eta_mask
 
+        if num_trys > 4:
+            print(f"Bailing with {np.sum(ak.num(input_jets_decluster))}\n")
+            clustering_fail = ~(fail_pt_mask | ~fail_pt_mask)  #All False
 
+
+        #
+        #  Save unclustered jets that are OK
+        #
         unclustered_jets = ak.concatenate([unclustered_jets, declustered_jets_A[~clustering_fail], declustered_jets_B[~clustering_fail]], axis=1)
 
+        #
+        #  Try again with the other jets
+        #
+        #breakpoint()
+        print(f"Was {np.sum(ak.num(input_jets_decluster))}\n")
         input_jets_decluster = input_jets_decluster[clustering_fail]
+        print(f"Now {np.sum(ak.num(input_jets_decluster))}\n")
+        num_trys += 1
 
     return unclustered_jets
