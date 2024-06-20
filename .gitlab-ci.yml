@@ -19,7 +19,6 @@ variables:
   CONTAINER_HOST: cms-cmu
 
 stages:          
-  - reana
   - build
   - proxy
   - code 
@@ -28,6 +27,7 @@ stages:
   - fits
   - plot
   - cutflow
+  - reana
 
 voms_proxy:
   stage: proxy
