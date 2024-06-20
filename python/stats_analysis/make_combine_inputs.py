@@ -1,5 +1,6 @@
+from curses.ascii import isdigit
 import os, sys
-from tkinter import W
+from typing import OrderedDict
 import ROOT
 import argparse
 import logging
@@ -7,104 +8,10 @@ import json
 import yaml
 import numpy as np
 import pickle
+import pandas as pd
 from copy import copy, deepcopy
 from convert_json_to_root import json_to_TH1
 ROOT.gROOT.SetBatch(True)
-
-class Channel:
-    def __init__(self, SR, era, obs=-1):
-        self.name = f"{era}"
-        #self.name = f"{SR}_{era}"
-        self.SR   = SR
-        self.era  =    era
-        self.obs  = '%3d'%obs
-    def space(self, s='  '):
-        self.name = self.name+s
-        self.obs  = self.obs +s
-
-
-class Process:
-    def __init__(self, name, index, rate=-1):
-        self.name  = name
-        self.title = '%3s'%name
-        self.index = '%3d'%index
-        self.rate  = '%3d'%rate
-    def space(self, s='  '):
-        self.title = self.title+s
-        self.index = self.index+s
-        self.rate  = self.rate +s
-
-
-class Column:
-    def __init__(self, channel, process, closureSysts, mcSysts):
-        self.channel = copy(channel)
-        self.process = copy(process)
-        self.name = channel.name
-        self.closure_systs = closureSysts
-        self.mc_systs = mcSysts
-
-        self.closureSysts = {}
-        for nuisance in self.closure_systs:
-            self.closureSysts[nuisance] = '%3s'%('1' if 'bbbb' in nuisance and self.process.name == 'multijet' else '-')
-            #self.closureSysts[nuisance] = '%3s'%('1' if self.channel.SR in nuisance and self.process.name == 'multijet' else '-')
-
-        self.mcSysts = {}
-        for nuisance in self.mc_systs:
-            self.mcSysts[nuisance] = '%3s'%'-'
-            if int(self.process.index)>0: continue
-            if self.process.name == 'ggHH_hbbhbb' and 'VFP'     in nuisance:                       continue # only apply 2016_*VFP systematics to ZZ and ZH
-            if self.process.name != 'ggHH_hbbhbb' and 'VFP' not in nuisance and   '6' in nuisance: continue # only apply 2016 systematics to HH
-            if '201' in nuisance: # years are uncorrelated
-                if self.channel.era[-1] not in nuisance: continue
-            self.mcSysts[nuisance] = '%3s'%'1'
-
-        uncert_lumi_corr = {'UL16': '1.006', 'UL17': '1.009', 'UL18': '1.020'}
-        uncert_lumi_1718 = {              'UL17': '1.006', 'UL18': '1.002'}
-        uncert_lumi_2016 = {'UL16': '1.010'                            }
-        uncert_lumi_2017 = {              'UL17': '1.020'              }
-        uncert_lumi_2018 = {                            'UL18': '1.015'}
-        uncert_br = {'ZH': '1.013', 'ggHH_hbbhbb': '1.025'} # https://gitlab.cern.ch/hh/naming-conventions https://twiki.cern.ch/twiki/bin/view/LHCPhysics/CERNYellowReportPageBR?rev=22#Higgs_2_fermions
-        uncert_pdf_HH = {'ggHH_hbbhbb': '1.030'} #https://gitlab.cern.ch/hh/naming-conventions
-        uncert_pdf_ZH = {'ZH': '1.013'}
-        uncert_pdf_ZZ = {'ZZ': '1.001'} #https://twiki.cern.ch/twiki/bin/viewauth/CMS/StandardModelCrossSectionsat13TeV?rev=27
-        uncert_scale_ZZ = {'ZZ': '1.002'} #https://twiki.cern.ch/twiki/bin/viewauth/CMS/StandardModelCrossSectionsat13TeV?rev=27
-        uncert_scale_ZH = {'ZH': '0.97/1.038'} #https://gitlab.cern.ch/hh/naming-conventions
-        uncert_scale_HH = {'ggHH_hbbhbb': '0.95/1.022'}
-        uncert_mtop_HH = {'ggHH_hbbhbb': '0.77/1.06'}
-# all three signal processes have different production modes and so do not have shared pdf or scale nuisance parameters so they can be combined into a single parameter
-        uncert_xs = {'ZZ': '1.002', 'ZH': '0.966/1.041', 'ggHH_hbbhbb': '0.942/1.037'}
-
-        self.br = uncert_br.get(self.process.name, '-')
-        self.xs = uncert_xs.get(self.process.name, '-')
-        self.mtop = uncert_mtop_HH.get(self.process.name, '-')
-        self.lumi_corr = uncert_lumi_corr.get(self.channel.era, '-') if int(process.index)<1 else '-' # only signals have lumi uncertainty
-        self.lumi_1718 = uncert_lumi_1718.get(self.channel.era, '-') if int(process.index)<1 else '-'
-        self.lumi_2016 = uncert_lumi_2016.get(self.channel.era, '-') if int(process.index)<1 else '-'
-        self.lumi_2017 = uncert_lumi_2017.get(self.channel.era, '-') if int(process.index)<1 else '-'
-        self.lumi_2018 = uncert_lumi_2018.get(self.channel.era, '-') if int(process.index)<1 else '-'
-
-        if self.process.name == 'tt': # add space for easier legibility
-            self.space('     ')
-            if self.channel.SR == 'ggHH_hbbhbb': # add extra space for easier legibility
-                self.space('     ')
-                self.lumi_corr = self.lumi_corr + '              '
-                self.lumi_1718 = self.lumi_1718 + '       '
-                self.lumi_2016 = self.lumi_2016 + '       '
-                self.lumi_2017 = self.lumi_2017 + '       '
-                self.lumi_2018 = self.lumi_2018 + '       '
-                self.br   = self.br   + '       '
-                self.mtop   = self.mtop   + '       '
-                self.xs   = self.xs   + '       '
-
-    def space(self, s='  '):
-        self.channel.space(s)
-        self.name = self.channel.name
-        self.process.space(s)
-        for nuisance in self.closure_systs:
-            self.closureSysts[nuisance] = self.closureSysts[nuisance]+s
-        for nuisance in self.mc_systs:
-            self.mcSysts[nuisance] = self.mcSysts[nuisance]+s
-
 
 def make_trigger_syst( json_input, root_output, iyear, rebin ):
 
@@ -145,6 +52,7 @@ def create_combine_root_file( file_to_convert,
 
     logging.info(f"Reading {metadata_file}")
     metadata = yaml.safe_load(open(metadata_file, 'r'))
+    metadata['processes']['all'] = { **metadata['processes']['signal'], **metadata['processes']['background'] }
     logging.info(f"Reading {file_to_convert}")
     coffea_hists = json.load(open(file_to_convert, 'r'))
     if systematics_file:
@@ -188,17 +96,17 @@ def create_combine_root_file( file_to_convert,
                         namevar = namevar.replace('_Up', 'Up').replace('_Down', 'Down')
 
                         ### check for dedicated JESUnc per year, if not conitnue
-                        tmpvar = ivar.replace('_Up', '').replace('Up','').replace('_Down','').replace('Down', '')
-                        if tmpvar not in mcSysts: mcSysts.append( tmpvar )
+                        tmpvar = namevar.replace('Up','').replace('Down', '')
+                        if tmpvar not in mcSysts and not 'nominal' in tmpvar: mcSysts.append( tmpvar )
                         tmpvar = ''.join(tmpvar[-2:])
                         if tmpvar.isdigit() and int(tmpvar) != int(iyear[2:4]): continue
 
                         ### trigger efficiency
-                        if 'triggerEffSFUp' in ivar:
+                        if 'triggerEffSFUp' in namevar:
                             make_trigger_syst(coffea_hists_syst[ih][iprocess][iyear],
                                               root_hists[iyear][iprocess],
                                               iyear, rebin)
-                        elif 'triggerEffSFDown' in ivar: continue
+                        elif 'triggerEffSFDown' in namevar: continue
 
                         root_hists[iyear][iprocess][namevar] = json_to_TH1(
                                                         coffea_hists_syst[ih][iprocess][iyear][ivar]['fourTag']['SR'], 
@@ -267,7 +175,7 @@ def create_combine_root_file( file_to_convert,
                     root_hists[channel]['data_obs'].SetName("data_obs")
                     root_hists[channel]['data_obs'].SetTitle("data_obs_"+channel)
                     del root_hists[channel][ip]
-                elif ip in list(metadata['processes']['signal'].keys()) + list(metadata['processes']['background'].keys()):
+                elif ip in metadata['processes']['all'].keys():
                     label = metadata['processes']['signal'][ip]['label'] if ip in metadata['processes']['signal'].keys() else metadata['processes']['background'][ip]['label']
                     root_hists[channel][label] = deepcopy(root_hists[channel][ip])
                     if isinstance(root_hists[channel][label], ROOT.TH1F):
@@ -320,62 +228,73 @@ def create_combine_root_file( file_to_convert,
             juncSysts = [ s for s in mcSysts if s.startswith('CMS_scale_j') ]
             btagSysts = [ s for s in mcSysts if s.startswith('CMS_btag') ]
 
-        channels = []
-        for era in metadata['bin']:
-            for SR in metadata['processes']['signal']:
-                channels.append( Channel(SR, era) )
+        total_process = len( metadata["processes"]["all"].keys() ) 
 
-        processes = [Process('ggHH_hbbhbb', 0), Process('multijet', 1), Process('tt', 2)]
-        #processes = [Process('ZZ', -2), Process('ZH', -1), Process('HH', 0), Process('multijet', 1), Process('tt', 2)]
-
-        columns = []
-        for channel in channels:
-            for process in processes:
-                columns.append( Column(channel, process, closureSysts, mcSysts) )
-
-        hline = len(columns)*(4+1)+35+5+1+1
-        hline = '-'*hline
+        hline = '-'*30
         lines = []
         lines.append('imax %d number of channels'%(len(metadata['processes']['signal'])*len(metadata['bin'])))
-        lines.append(f'jmax {len(processes)-1} number of processes minus one') # zz, zh, hh, mj, tt is five processes, so jmax is 4
+        lines.append(f'jmax {total_process-1} number of processes minus one') # zz, zh, hh, mj, tt is five processes, so jmax is 4
         lines.append('kmax * number of systematics')
         lines.append(hline)
         lines.append('shapes * * '+output_file+' $CHANNEL/$PROCESS $CHANNEL/$PROCESS_$SYSTEMATIC')
         lines.append(hline)
-        lines.append('%-50s %10s %s'%('bin',         '', ' '.join([channel.name for channel in channels])))
-        lines.append('%-50s %10s %s'%('observation', '', ' '.join([channel.obs  for channel in channels])))
-        lines.append(hline)
-        lines.append('%-50s %10s %s'%('bin',         '', ' '.join([column.name for column in columns])))
-        lines.append('%-50s %10s %s'%('process',     '', ' '.join([column.process.title for column in columns])))
-        lines.append('%-50s %10s %s'%('process',     '', ' '.join([column.process.index for column in columns])))
-        lines.append('%-50s %10s %s'%('rate',        '', ' '.join([column.process.rate  for column in columns])))
-        lines.append(hline)
+
+        def make_lalign_formatter(df, cols=None):
+            if cols is None:
+                cols = df.columns[df.dtypes == 'object']
+
+            return {col: f'{{:<{df[col].str.len().max()}s}}'.format for col in cols}
+
+        size_datacard = len(metadata['bin'])*len(metadata['processes']['all'])
+        datacard = pd.DataFrame( columns=[f'col_{i}' for i in range( size_datacard + 2) ] )
+        datacard.loc[0] = [ 'bin', '' ] + metadata['bin'] + [ '' for ibin in metadata['bin'] for _ in range(len(metadata['bin'])-1) ] 
+        datacard.loc[1] = [ 'observation', '' ] + [ '-1' for _ in metadata['bin'] ] + [ '' for ibin in metadata['bin'] for _ in range(len(metadata['bin'])-1) ] 
+        datacard.loc[2] = [ 'bin', '' ] + [ ibin for ibin in metadata['bin'] for _ in range(len(metadata['bin'])) ] 
+        datacard.loc[3] = [ 'process', '' ] + [ metadata['processes']['all'][ibin]['label'] for ibin in metadata['processes']['all'] ] * len(metadata['bin'])
+        datacard.loc[4] = [ 'process', '' ] + [ metadata['processes']['all'][ibin]['process'] for ibin in metadata['processes']['all'] ] * len(metadata['bin'])
+        datacard.loc[5] = [ 'rate', '' ] + [ '-1' ] * len(metadata['bin']) * len(metadata['processes']['all'])
+
+        is_multijet = (datacard.loc[3,:] == metadata['processes']['background']['multijet']['label']).to_numpy()
         for nuisance in closureSysts:
-            lines.append('%-50s %10s %s'%(nuisance, 'shape', ' '.join([column.closureSysts[nuisance] for column in columns])))
-        for nuisance in mcSysts:
-            lines.append('%-50s %10s %s'%(nuisance, 'shape', ' '.join([column.     mcSysts[nuisance] for column in columns])))
-        lines.append('%-50s %10s %s'%('BR_hbb',   'lnN', ' '.join([column.br        for column in columns])))
-        lines.append('%-50s %10s %s'%('xs_hbbhbb',       'lnN', ' '.join([column.xs        for column in columns])))
-        #lines.append('%-50s %10s %s'%('mtop_ggH',       'lnN', ' '.join([column.mtop for column in columns])))
-        lines.append('%-50s %10s %s'%('lumi_13TeV_correlated','lnN', ' '.join([column.lumi_corr for column in columns])))
-        lines.append('%-50s %10s %s'%('lumi_13TeV_1718','lnN', ' '.join([column.lumi_1718 for column in columns])))
-        lines.append('%-50s %10s %s'%('lumi_2016','lnN', ' '.join([column.lumi_2016 for column in columns])))
-        lines.append('%-50s %10s %s'%('lumi_2017','lnN', ' '.join([column.lumi_2017 for column in columns])))
-        lines.append('%-50s %10s %s'%('lumi_2018','lnN', ' '.join([column.lumi_2018 for column in columns])))
+            row = pd.Series([ nuisance, 'shape'] + ['-'] * size_datacard, index=datacard.columns )
+            new_row = row.where(~is_multijet, '1')
+            datacard = datacard.append(new_row, ignore_index=True)
+        
+        for isignal in metadata['processes']['signal']:
+
+            is_signal = (datacard.loc[3,:] == metadata['processes']['signal'][isignal]['label']).to_numpy()
+            for nuisance in mcSysts:
+                iy = ''.join(nuisance[-2:])
+                row = pd.Series([ nuisance, 'shape'] + ['-'] * size_datacard, index=datacard.columns )
+                if iy.isdigit():
+                    is_year = (datacard.loc[2,:] == f'UL{iy}' ).to_numpy()
+                    new_row = row.where(~(is_signal & is_year), '1')
+                else:
+                    new_row = row.where(~is_signal, '1')
+                datacard = datacard.append(new_row, ignore_index=True)
+
+            for isyst in metadata['uncertainty']:
+                row = pd.Series([ isyst, metadata['uncertainty'][isyst]['type']] + ['-'] * size_datacard, index=datacard.columns )
+                for iy in metadata['uncertainty'][isyst]['years']:
+                    is_year = (datacard.loc[2,:] == iy ).to_numpy()
+                    row = row.where(~(is_signal & is_year), metadata['uncertainty'][isyst]['years'][iy])
+                datacard = datacard.append(row, ignore_index=True)
+
+        lines.append( datacard.to_string(justify='left', header=False, index=False ) )
         if not stat_only:
             lines.append(hline)
             lines.append('* autoMCStats 0 1 1')
         lines.append(hline)
-        if closureSysts:
-            lines.append('multijet group = %s'%(' '.join(closureSysts)))
-        if mcSysts:
-            lines.append('btag     group = %s'%(' '.join(   btagSysts)))
-            lines.append('junc     group = %s'%(' '.join(   juncSysts)))
-            lines.append('trig     group = CMS_bbbb_resolved_ggf_triggerEffSF')
-        lines.append('lumi     group = lumi_13TeV_correlated lumi_13TeV_1718 lumi_2016 lumi_2017 lumi_2018')
-        lines.append('theory   group = BR_hbb xs_hbbhbb') #mtop_ggH
-        if not stat_only:
-            lines.append('others   group = lumi_13TeV_correlated lumi_13TeV_1718 lumi_2016 lumi_2017 lumi_2018 BR_hbb xs_hbbhbb CMS_pileup_2016 CMS_pileup_2017 CMS_pileup_2018 CMS_l1_ecal_prefiring_2016 CMS_l1_ecal_prefiring_2017 CMS_l1_ecal_prefiring_2018 %s'%(' '.join(juncSysts)))
+        # if closureSysts:
+        #     lines.append('multijet group = %s'%(' '.join(closureSysts)))
+        # if mcSysts:
+        #     lines.append('btag     group = %s'%(' '.join(   btagSysts)))
+        #     lines.append('junc     group = %s'%(' '.join(   juncSysts)))
+        #     lines.append('trig     group = CMS_bbbb_resolved_ggf_triggerEffSF')
+        # lines.append(f'lumi     group = {" ".join([ isyst for isyst in metadata["uncertainty"] if "lumi" in isyst ])}')
+        # lines.append('theory   group = BR_hbb xs_hbbhbb') #mtop_ggH
+        # if not stat_only:
+        #     lines.append(f'others   group = lumi_13TeV_correlated lumi_13TeV_1718 lumi_2016 lumi_2017 lumi_2018 BR_hbb xs_hbbhbb CMS_pileup_2016 CMS_pileup_2017 CMS_pileup_2018 CMS_l1_ecal_prefiring_2016 CMS_l1_ecal_prefiring_2017 CMS_l1_ecal_prefiring_2018 %s'%(' '.join(juncSysts)))
 
 
         with open(output.replace('hists', 'combine').replace('root', 'txt'), 'w') as ofile:
