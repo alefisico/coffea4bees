@@ -224,7 +224,7 @@ def plot_multiphase_curve(
     # generate phases
     phases = {}
     for i, r in phase.astype(str).iterrows():
-        phases[i] = "\n".join(
+        phases[i + 1] = "\n".join(
             code.html("custom_tooltip", key=k, value=v) for k, v in r.items()
         )
     # plot data
@@ -235,7 +235,7 @@ def plot_multiphase_curve(
         if not all(len(v) == n_phase for v in curves.values()):
             raise ValueError("Number of phases and curves do not match.")
         # generate components
-        banner = Div(text=phases[0])
+        banner = Div(text=phases[n_phase])
         slider = Slider(
             end=n_phase,
             value=n_phase,

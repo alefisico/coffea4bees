@@ -84,7 +84,9 @@ class EntryPoint:
                     )
                 else:
                     if not issubclass(cls, target):
-                        raise TypeError(f'Class "{clsname}" is not a subclass of Task')
+                        raise TypeError(
+                            f'Class "{clsname}" is not a subclass of "{target.__name__}"'
+                        )
                     else:
                         self.mods[cat].append(new(cls, opts))
 

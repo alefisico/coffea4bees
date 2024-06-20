@@ -94,6 +94,8 @@ class _collect_result:
         # fetch variables
         plot = {"loss"}
         datasets = set()
+        # dtypes
+        int64 = {"epoch"}
         # grouped data
         g_phases: list[pd.DataFrame] = []
         g_classifiers = defaultdict(list)
@@ -123,7 +125,12 @@ class _collect_result:
                         )
                     _data[k].append({"loss": v["loss"]} | aucs)
                 _phases.append(hyperparameter)
+                for k, v in hyperparameter.items():
+                    if isinstance(v, int):
+                        int64.add(k)
             _phases = pd.DataFrame(_phases)
+            for k in int64:
+                _phases[k] = _phases[k].astype(pd.Int64Dtype())
             group = None
             for i, df in enumerate(g_phases):
                 if df.equals(_phases):
