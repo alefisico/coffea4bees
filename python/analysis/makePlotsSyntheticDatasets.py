@@ -51,23 +51,25 @@ def doPlots(debug=False):
     #
 
     gbb_hist_name = {}
-    gbb_hist_name["thetaA"]    = ("gbbs.thetaA",    1)  # (hist_name, rebin)
+    #gbb_hist_name["thetaA"]    = ("gbbs.thetaA",    1)  # (hist_name, rebin)
     #gbb_hist_name["mA"]        = ("gbbs.mA",        1)
     #gbb_hist_name["mB"]        = ("gbbs.mB",        1)
     gbb_hist_name["rhoA"]      = ("gbbs.rhoA",      1)
     gbb_hist_name["rhoB"]      = ("gbbs.rhoB",      1)
-    gbb_hist_name["zA"]        = ("gbbs.zA",        1)
+    #gbb_hist_name["zA"]        = ("gbbs.zA",        1)
     gbb_hist_name["decay_phi"] = ("gbbs.decay_phi", 4)
+    gbb_hist_name["zA_vs_thetaA"]        = ("gbbs.zA_vs_thetaA",        1)
 
     bstar_hist_name = {}
-    bstar_hist_name["thetaA"]    = ("bstars.thetaA_l" ,  1)
+    #bstar_hist_name["thetaA"]    = ("bstars.thetaA_l" ,  1)
     # bstar_hist_name["mA"]        = ("bstars.mA"       ,  1)
     # bstar_hist_name["mB"]        = ("bstars.mB"       ,  1)
     bstar_hist_name["rhoA"]      = ("bstars.rhoA"     ,  1)
     bstar_hist_name["rhoB"]      = ("bstars.rhoB"     ,  1)
-    bstar_hist_name["zA"]        = ("bstars.zA_l"     ,  1)
+    #bstar_hist_name["zA"]        = ("bstars.zA_l"     ,  1)
     bstar_hist_name["decay_phi"] = ("bstars.decay_phi",  4)
-
+    bstar_hist_name["zA_vs_thetaA"]        = ("gbbs.zA_vs_thetaA",        1)
+    
     splitting_hist_name = {}
     splitting_hist_name["gbbs"]   = gbb_hist_name
     splitting_hist_name["bstars"] = bstar_hist_name
@@ -92,39 +94,42 @@ def doPlots(debug=False):
 
             for _v in varNames:
 
-                _hist_name, _rebin = splitting_hist_name[_s][_v]
+                if _v.find("_vs_") == -1:
+                    is_1d_hist = True
+                else: 
+                    is_1d_hist = False
 
-                fig, ax = plot(_hist_name, region="SR", cut="passPreSel", doRatio=0, rebin=_rebin, process="data")
-                bin_centers = ax.get_lines()[0].get_xdata()
-                counts      = ax.get_lines()[0].get_ydata()
-
-                probs = counts / counts.sum()
-
-                write_1D_pdf(output_file, _v, bin_centers, probs)
-
-
-            #
-            # Trying 2d hists
-            #
-            _v = "zA_vs_thetaA"
-            hist_to_plot = cfg.hists[0]["hists"][f"{_s}.{_v}"]
-            _hist = hist_to_plot[{"process":"data", "year":sum, "tag":1,"region":0,"passPreSel":True}]
-            
-            counts = _hist.view(flow=False)
-            
-            xedges = _hist.axes[0].edges
-            yedges = _hist.axes[1].edges
-            probabilities = counts.value / counts.value.sum()
-            
-            xcenters = (xedges[:-1] + xedges[1:]) / 2
-            ycenters = (yedges[:-1] + yedges[1:]) / 2
-            
-            xcenters_flat = np.repeat(xcenters, len(ycenters))
-            ycenters_flat = np.tile(ycenters, len(xcenters))
-            probabilities_flat = probabilities.flatten()
-
-            write_2D_pdf(output_file, _v, xcenters_flat, ycenters_flat, probabilities_flat)    
+                if is_1d_hist:
+                    _hist_name, _rebin = splitting_hist_name[_s][_v]
     
+                    fig, ax = plot(_hist_name, region="SR", cut="passPreSel", doRatio=0, rebin=_rebin, process="data")
+                    bin_centers = ax.get_lines()[0].get_xdata()
+                    counts      = ax.get_lines()[0].get_ydata()
+    
+                    probs = counts / counts.sum()
+                    
+                    write_1D_pdf(output_file, _v, bin_centers, probs)
+
+                else:
+
+                    hist_to_plot = cfg.hists[0]["hists"][f"{_s}.{_v}"]
+                    _hist = hist_to_plot[{"process":"data", "year":sum, "tag":1,"region":0,"passPreSel":True}]
+                    
+                    counts = _hist.view(flow=False)
+                    
+                    xedges = _hist.axes[0].edges
+                    yedges = _hist.axes[1].edges
+                    probabilities = counts.value / counts.value.sum()
+                    
+                    xcenters = (xedges[:-1] + xedges[1:]) / 2
+                    ycenters = (yedges[:-1] + yedges[1:]) / 2
+                    
+                    xcenters_flat = np.repeat(xcenters, len(ycenters))
+                    ycenters_flat = np.tile(ycenters, len(xcenters))
+                    probabilities_flat = probabilities.flatten()
+        
+                    write_2D_pdf(output_file, _v, xcenters_flat, ycenters_flat, probabilities_flat)    
+            
 
                 
     with open(output_file_name, 'r') as input_file:
@@ -175,8 +180,6 @@ def doPlots(debug=False):
             sampled_indices = np.random.choice(len(probabilities_flat), size=num_samples, p=probabilities_flat)
             sampled_x = xcenters_flat[sampled_indices]
             sampled_y = ycenters_flat[sampled_indices]
-            
-            
             
             # Plot the original 2D histogram
             plt.figure(figsize=(12, 6))
