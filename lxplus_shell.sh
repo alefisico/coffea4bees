@@ -32,7 +32,11 @@ export APPTAINER_CACHEDIR="/tmp/$(whoami)/singularity"
 export APPTAINER_TMPDIR="/tmp/.apptainer/"
 
 if [ "$coffea4bees" = true ]; then
-    APPTAINER_SHELL=$(which bash) apptainer shell -B /afs -B /eos -B /cvmfs -B ${PWD}:/srv --pwd /srv  docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest 
+
+    echo "In lxplus you need to change the default version of python. Run before anything:
+alias python=python3.10"
+
+    APPTAINER_SHELL=$(which bash) apptainer shell -B /afs -B /eos -B /cvmfs -B ${PWD}:/srv --pwd /srv  /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest 
 
 elif [ "$combine" = true ]; then
 
@@ -44,7 +48,7 @@ cd /home/cmsusr/coffea4bees/python/stats_analysis/
 EOF
 
     echo "Do not forget to run:
-    source python/stats_analysis/set_cmssw.sh"
+source python/stats_analysis/set_cmssw.sh"
 
     APPTAINER_SHELL=$(which bash) apptainer shell -B /afs -B /eos -B /cvmfs -B ${PWD}:/home/cmsusr/coffea4bees --pwd /home/cmsusr/coffea4bees/ /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0 
 
