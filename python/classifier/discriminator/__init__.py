@@ -111,6 +111,7 @@ class TrainingStage(BenchmarkStage):
         logging.info(f"Start {self.name}")
         start = datetime.now()
         for epoch in range(self.schedule.epoch):
+            epoch = epoch + 1
             classifier.cleanup()
             Usage.checkpoint(self.name, f"epoch{epoch}", "optimize")
             self.model.nn.train()
@@ -138,7 +139,7 @@ class TrainingStage(BenchmarkStage):
             bs.step()
             if self.model.step is not NotImplemented:
                 self.model.step()
-            p_epoch.update(epoch + 1)
+            p_epoch.update(epoch)
             Usage.checkpoint(self.name, f"epoch{epoch}", "finish")
         logging.info(
             f"{self.name}: run {self.schedule.epoch} epochs in {datetime.now() - start}"

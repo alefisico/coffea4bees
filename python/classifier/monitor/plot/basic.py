@@ -4,9 +4,19 @@ from itertools import chain
 from typing import TypedDict
 
 import pandas as pd
+from base_class.hist import Label, LabelLike
 from base_class.utils import unique
 from bokeh.layouts import column, row
-from bokeh.models import ColumnDataSource, CustomJS, HoverTool, Toggle
+from bokeh.models import (
+    ColumnDataSource,
+    CustomJS,
+    Div,
+    HoverTool,
+    Legend,
+    LegendItem,
+    Slider,
+    Toggle,
+)
 from bokeh.plotting import figure
 
 from ..template import SimpleImporter
@@ -20,10 +30,27 @@ _VSPAN_KWARGS = {
     "color": "green",
     "alpha": 0.3,
 }
-_FIGURE_KWARGS = {
+_SIZE = {"sizing_mode": "stretch_width"}
+_SCALAR_FIGURE = {
     "height": 300,
-    "sizing_mode": "stretch_width",
+    "toolbar_location": "left",
     "tools": "xpan,xwheel_zoom,reset,save",
+    **_SIZE,
+}
+_CURVE_FIGURE = {
+    "toolbar_location": "left",
+    "tools": "pan,wheel_zoom,reset,save",
+}
+_SLIDER_KWARGS = {
+    "start": 1,
+    "step": 1,
+    "margin": (0, 20, 0, 20),
+    **_SIZE,
+}
+_LEGEND_KWARGS = {
+    "location": "top_center",
+    "orientation": "vertical",
+    "click_policy": "hide",
 }
 
 code = SimpleImporter(__file__)
@@ -59,13 +86,16 @@ def generate_toggles(keys: set[str], category: dict[str, list[str]]):
 def plot_multiphase_scalar(
     *,
     plot: list[str],
+    plot_data: dict[tuple[str, ...], pd.DataFrame],
     phase: pd.DataFrame,
-    data: dict[tuple[str, ...], pd.DataFrame],
+    phase_milestone: list[str],
     style: StyleDict,
     category: dict[str, list[str]] = None,
     shared_category_toggles: dict[str, Toggle] = None,
 ):
     layout = []
+    data = plot_data
+    milestone = phase_milestone
     # generate toggles
     if shared_category_toggles is not None:
         cat_toggles = shared_category_toggles
@@ -79,7 +109,7 @@ def plot_multiphase_scalar(
     # generate phase separator
     separators = {"x": [], "label": []}
     _nulls = phase.isnull()
-    _phase = phase.astype(str, copy=True)
+    _phase = phase.loc[:, milestone].astype(str, copy=True)
     # https://github.com/pandas-dev/pandas/issues/20442
     _phase[_nulls] = _NA
     _shifted = _phase.shift(1, fill_value=_NA)
@@ -113,35 +143,42 @@ def plot_multiphase_scalar(
         fig = figure(
             title=p,
             y_axis_label=p,
-            **_FIGURE_KWARGS,
+            **_SCALAR_FIGURE,
         )
         fig.add_tools(scatter_hover, phase_hover)
         if shared_x_range is None:
             shared_x_range = fig.x_range
         else:
             fig.x_range = shared_x_range
+        legends = []
         for k, df in dfs.items():
-            l = fig.line(
+            # glyph
+            curve = fig.line(
                 source=ColumnDataSource(data=df),
                 x="index",
                 y=p,
-                legend_label=",".join(k),
                 **reduce(op.or_, (style["line"].get(tag, {}) for tag in k)),
             )
-            s = fig.scatter(
+            scatter = fig.scatter(
                 source=ColumnDataSource(data=df),
                 x="index",
                 y=p,
                 **reduce(op.or_, (style["scatter"].get(tag, {}) for tag in k)),
                 size=_SCATTER_SIZE,
             )
+            legends.append(LegendItem(label=",".join(k), renderers=[curve, scatter]))
+            # widgets
             togs = [cat_toggles[kk] for kk in k]
-            activate = CustomJS(
-                args=dict(toggles=togs, curves=[l, s]), code=code.js("curve_visibility")
-            )
             for tog in togs:
-                tog.js_on_change("active", activate)
-            scatter_hover.renderers.append(s)
+                tog.js_on_change(
+                    "active",
+                    CustomJS(
+                        args=dict(toggles=togs.copy(), curves=[curve, scatter]),
+                        code=code.js("curve_toggle_visibility"),
+                    ),
+                )
+            scatter_hover.renderers.append(scatter)
+        fig.add_layout(Legend(items=legends, **_LEGEND_KWARGS), "right")
         vs = fig.vspan(
             x="x",
             width="width",
@@ -151,10 +188,115 @@ def plot_multiphase_scalar(
         phase_hover.renderers.append(vs)
         layout.append(fig)
 
-    return column(
-        *layout,
-        sizing_mode="stretch_width",
-    )
+    return column(*layout, **_SIZE)
 
 
-def plot_multiphase_curve(): ...
+def plot_multiphase_curve(
+    *,
+    phase: pd.DataFrame,
+    data: dict[str, dict[tuple[str, ...], list[pd.DataFrame]]],
+    style: StyleDict,
+    category: dict[str, list[str]] = None,
+    shared_category_toggles: dict[str, Toggle] = None,
+    x_axis: LabelLike = "x",
+    y_axis: LabelLike = "y",
+    figure_kwargs: dict[str] = None,
+):
+    x_axis = Label(x_axis)
+    y_axis = Label(y_axis)
+    figure_kwargs = figure_kwargs or {}
+    layout = []
+    # generate toggles
+    if shared_category_toggles is not None:
+        cat_toggles = shared_category_toggles
+    elif category is not None:
+        cat_toggles, toggle_row = generate_toggles(
+            set(
+                chain.from_iterable(
+                    chain.from_iterable(map(lambda x: x.keys(), data.values()))
+                )
+            ),
+            category,
+        )
+        layout.append(toggle_row)
+    else:
+        raise ValueError("Either category or shared_category_toggles must be provided.")
+    # generate phases
+    phases = {}
+    for i, r in phase.astype(str).iterrows():
+        phases[i] = "\n".join(
+            code.html("custom_tooltip", key=k, value=v) for k, v in r.items()
+        )
+    # plot data
+    shared_slider = None
+    for plot, curves in data.items():
+        n_phase = len(phases)
+        # sanity check
+        if not all(len(v) == n_phase for v in curves.values()):
+            raise ValueError("Number of phases and curves do not match.")
+        # generate components
+        banner = Div(text=phases[0])
+        slider = Slider(
+            end=n_phase,
+            value=n_phase,
+            title=f"{plot} step",
+            **_SLIDER_KWARGS,
+        )
+        if shared_slider is None:
+            shared_slider = slider
+        else:
+            slider.js_link("value", shared_slider, "value")
+            shared_slider.js_link("value", slider, "value")
+        fig = figure(
+            title=plot,
+            x_axis_label=x_axis.display,
+            y_axis_label=y_axis.display,
+            **_CURVE_FIGURE | figure_kwargs,
+        )
+        dfs = {
+            k: pd.concat(v, axis=1, keys=[*map(str, range(1, n_phase + 1))])
+            for k, v in curves.items()
+        }
+        slider.js_on_change(
+            "value",
+            CustomJS(
+                args=dict(source=phases, slider=slider, div=banner),
+                code=code.js("div_slider_switch_content"),
+            ),
+        )
+        legends = []
+        for k, df in dfs.items():
+            # glyph
+            source = ColumnDataSource(data=df)
+            source.data["x"] = source.data[f"{n_phase}_{x_axis.code}"]
+            source.data["y"] = source.data[f"{n_phase}_{y_axis.code}"]
+            curve = fig.line(
+                source=source,
+                x="x",
+                y="y",
+                **reduce(op.or_, (style["line"].get(tag, {}) for tag in k)),
+            )
+            legends.append(LegendItem(label=",".join(k), renderers=[curve]))
+            # widgets
+            slider.js_on_change(
+                "value",
+                CustomJS(
+                    args=dict(
+                        source=source, slider=slider, x=x_axis.code, y=y_axis.code
+                    ),
+                    code=code.js("curve_slider_switch_data"),
+                ),
+            )
+            togs = [cat_toggles[kk] for kk in k]
+            for tog in togs:
+                tog.js_on_change(
+                    "active",
+                    CustomJS(
+                        args=dict(toggles=togs.copy(), curves=[curve]),
+                        code=code.js("curve_toggle_visibility"),
+                    ),
+                )
+        fig.add_layout(Legend(items=legends, **_LEGEND_KWARGS), "right")
+        layout.append(column(slider, row(fig, banner), **_SIZE))
+
+    return column(*layout, **_SIZE)

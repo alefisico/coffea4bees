@@ -10,7 +10,7 @@ class Usage(Analysis):
     argparser = ArgParser()
     argparser.add_argument(
         "--input",
-        help="the path to usage data in JSON format. If not provided, the current usage data will be used.",
+        help="the path to usage data. If not provided, the current usage data will be used.",
         default=None,
     )
     argparser.add_argument(
