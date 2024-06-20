@@ -23,14 +23,29 @@ def plot(var, **kwargs):
     return fig, ax
 
 
+def plot2d(process, **kwargs):
+    fig, ax = make2DPlot(cfg, process, outputFolder= args.outputFolder, **kwargs)
+    plt.close()
+    return fig, ax
+
+
 def write_1D_pdf(output_file, varName, bin_centers, probs):
     output_file.write(f"    {varName}:\n")
     output_file.write(f"        bin_centers:  {bin_centers.tolist()}\n")
     output_file.write(f"        probs:  {probs.tolist()}\n")
 
 
-def doPlots(debug=False):
+def write_2D_pdf(output_file, varName, xcenters_flat, ycenters_flat, probabilities_flat):
+    output_file.write(f"    {varName}:\n")
+    output_file.write(f"        xcenters_flat:  {xcenters_flat.tolist()}\n")
+    output_file.write(f"        ycenters_flat:  {ycenters_flat.tolist()}\n")
+    output_file.write(f"        probabilities_flat:  {probabilities_flat.tolist()}\n")    
 
+    
+
+    
+def doPlots(debug=False):
+    
     #
     #  Synthetic datasets
     #
@@ -54,8 +69,8 @@ def doPlots(debug=False):
     bstar_hist_name["decay_phi"] = ("bstars.decay_phi",  4)
 
     splitting_hist_name = {}
-    splitting_hist_name["gbb"]   = gbb_hist_name
-    splitting_hist_name["bstar"] = bstar_hist_name
+    splitting_hist_name["gbbs"]   = gbb_hist_name
+    splitting_hist_name["bstars"] = bstar_hist_name
 
     varNames   = list(gbb_hist_name.keys())
     splittings = list(splitting_hist_name.keys())
@@ -70,7 +85,7 @@ def doPlots(debug=False):
         output_file.write(f"    {splittings}\n\n")
 
         #
-        #  Write the PDFs
+        #  Write the 1D PDFs
         #
         for _s in splittings:
             output_file.write(f"\n{_s}:\n")
@@ -88,6 +103,30 @@ def doPlots(debug=False):
                 write_1D_pdf(output_file, _v, bin_centers, probs)
 
 
+            #
+            # Trying 2d hists
+            #
+            _v = "zA_vs_thetaA"
+            hist_to_plot = cfg.hists[0]["hists"][f"{_s}.{_v}"]
+            _hist = hist_to_plot[{"process":"data", "year":sum, "tag":1,"region":0,"passPreSel":True}]
+            
+            counts = _hist.view(flow=False)
+            
+            xedges = _hist.axes[0].edges
+            yedges = _hist.axes[1].edges
+            probabilities = counts.value / counts.value.sum()
+            
+            xcenters = (xedges[:-1] + xedges[1:]) / 2
+            ycenters = (yedges[:-1] + yedges[1:]) / 2
+            
+            xcenters_flat = np.repeat(xcenters, len(ycenters))
+            ycenters_flat = np.tile(ycenters, len(xcenters))
+            probabilities_flat = probabilities.flatten()
+
+            write_2D_pdf(output_file, _v, xcenters_flat, ycenters_flat, probabilities_flat)    
+    
+
+                
     with open(output_file_name, 'r') as input_file:
 
         input_pdfs = yaml.safe_load(input_file)
@@ -121,6 +160,48 @@ def doPlots(debug=False):
 
                 plt.close()
 
+
+            #
+            # 2D Vars
+            #
+            _v = "zA_vs_thetaA"
+            probabilities_flat   = np.array(input_pdfs[_s][_v]["probabilities_flat"],       dtype=float)
+            xcenters_flat        = np.array(input_pdfs[_s][_v]["xcenters_flat"], dtype=float)
+            ycenters_flat        = np.array(input_pdfs[_s][_v]["ycenters_flat"], dtype=float)
+
+            num_samples = 10000
+        
+            # Draw samples
+            sampled_indices = np.random.choice(len(probabilities_flat), size=num_samples, p=probabilities_flat)
+            sampled_x = xcenters_flat[sampled_indices]
+            sampled_y = ycenters_flat[sampled_indices]
+            
+            
+            
+            # Plot the original 2D histogram
+            plt.figure(figsize=(12, 6))
+            plt.subplot(1, 2, 1)
+            
+            probs2d = probabilities_flat.reshape(50,50)
+            plt.imshow(probs2d.transpose(), cmap='Blues', origin='lower')
+
+            plt.title('Original Data Histogram')
+            
+            # Plot the sampled data
+            plt.subplot(1, 2, 2)
+            plt.hist2d(sampled_x, sampled_y, bins=[xedges, yedges], cmap='Blues')
+            plt.title('Sampled Data Histogram')
+            plt.xlabel('X')
+            plt.ylabel('Y')
+            
+
+            plt.savefig(args.outputFolder+f"/test_sampling_{_s}_{_v}.pdf")
+            
+            plt.close()
+
+            #plt.show()
+
+                
 
 
 if __name__ == '__main__':
