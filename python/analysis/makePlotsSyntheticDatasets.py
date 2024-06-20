@@ -18,81 +18,111 @@ import base_class.plots.iPlot_config as cfg
 np.seterr(divide='ignore', invalid='ignore')
 
 def plot(var, **kwargs):
-    fig, ax = makePlot(cfg, var, outputFolder= args.outputFolder, **kwargs) 
+    fig, ax = makePlot(cfg, var, outputFolder= args.outputFolder, **kwargs)
     plt.close()
     return fig, ax
 
 
 def write_1D_pdf(output_file, varName, bin_centers, probs):
-    output_file.write(f"{varName}:\n")
-    output_file.write(f"    bin_centers:  {bin_centers.tolist()}\n")
-    output_file.write(f"    probs:  {probs.tolist()}\n")
-    
+    output_file.write(f"    {varName}:\n")
+    output_file.write(f"        bin_centers:  {bin_centers.tolist()}\n")
+    output_file.write(f"        probs:  {probs.tolist()}\n")
+
 
 def doPlots(debug=False):
 
     #
     #  Synthetic datasets
     #
-    varNames = ["gbbs.thetaA", "gbbs.mA", "gbbs.mB", "gbbs.zA", "gbbs.decay_phi",
-                "bstar.thetaA", "gbbs.mA", "gbbs.mB", "gbbs.zA", "gbbs.decay_phi",
-                ]
-    #varNames = ["gbbs.thetaA"]
+
+    gbb_hist_name = {}
+    gbb_hist_name["thetaA"]    = ("gbbs.thetaA",    1)  # (hist_name, rebin)
+    #gbb_hist_name["mA"]        = ("gbbs.mA",        1)
+    #gbb_hist_name["mB"]        = ("gbbs.mB",        1)
+    gbb_hist_name["rhoA"]      = ("gbbs.rhoA",      1)
+    gbb_hist_name["rhoB"]      = ("gbbs.rhoB",      1)
+    gbb_hist_name["zA"]        = ("gbbs.zA",        1)
+    gbb_hist_name["decay_phi"] = ("gbbs.decay_phi", 4)
+
+    bstar_hist_name = {}
+    bstar_hist_name["thetaA"]    = ("bstars.thetaA_l" ,  1)
+    # bstar_hist_name["mA"]        = ("bstars.mA"       ,  1)
+    # bstar_hist_name["mB"]        = ("bstars.mB"       ,  1)
+    bstar_hist_name["rhoA"]      = ("bstars.rhoA"     ,  1)
+    bstar_hist_name["rhoB"]      = ("bstars.rhoB"     ,  1)
+    bstar_hist_name["zA"]        = ("bstars.zA_l"     ,  1)
+    bstar_hist_name["decay_phi"] = ("bstars.decay_phi",  4)
+
+    splitting_hist_name = {}
+    splitting_hist_name["gbb"]   = gbb_hist_name
+    splitting_hist_name["bstar"] = bstar_hist_name
+
+    varNames   = list(gbb_hist_name.keys())
+    splittings = list(splitting_hist_name.keys())
 
     output_file_name = args.outputFolder+"/clustering_pdfs.yml"
     with open(f'{output_file_name}', 'w') as output_file:
 
-    
-        for _v in varNames:
-    
-            fig, ax = plot(_v, region="SR", cut="passPreSel",doRatio=0,rebin=1,process="data")
-            bin_centers = ax.get_lines()[0].get_xdata()
-            counts      = ax.get_lines()[0].get_ydata()    
+        output_file.write("varNames:\n")
+        output_file.write(f"    {varNames}\n\n")
 
-            probs = counts / counts.sum()
-            
-            write_1D_pdf(output_file, _v, bin_centers, probs)
+        output_file.write("splittings:\n")
+        output_file.write(f"    {splittings}\n\n")
+
+        #
+        #  Write the PDFs
+        #
+        for _s in splittings:
+            output_file.write(f"\n{_s}:\n")
+
+            for _v in varNames:
+
+                _hist_name, _rebin = splitting_hist_name[_s][_v]
+
+                fig, ax = plot(_hist_name, region="SR", cut="passPreSel", doRatio=0, rebin=_rebin, process="data")
+                bin_centers = ax.get_lines()[0].get_xdata()
+                counts      = ax.get_lines()[0].get_ydata()
+
+                probs = counts / counts.sum()
+
+                write_1D_pdf(output_file, _v, bin_centers, probs)
 
 
     with open(output_file_name, 'r') as input_file:
 
         input_pdfs = yaml.safe_load(input_file)
-        
-        for _v in varNames:
 
-            probs   = np.array(input_pdfs[_v]["probs"], dtype=float)
-            centers = np.array(input_pdfs[_v]["bin_centers"], dtype=float)
-            
-            num_samples = 10000
-            samples = np.random.choice(centers, size=num_samples, p=probs)
+        for _s in splittings:
 
-            nBins = len(centers)
-            bin_half_width = 0.5*(centers[1]  - centers[0])
-            xMin  = centers[0]  - bin_half_width
-            xMax  = centers[-1] + bin_half_width
-            
-            sample_hist = hist.Hist.new.Reg(nBins, xMin, xMax).Double()
-            sample_hist.fill(samples)
-        
-            sample_pdf  = hist.Hist.new.Reg(nBins, xMin, xMax).Double()
-            sample_pdf[...] = probs * num_samples
-        
-            sample_hist.plot(label="samples")
-            sample_pdf.plot(label="pdf")    
-            plt.xlabel(_v)
-            plt.legend()
-            plt.savefig(args.outputFolder+f"/test_sample_{_v}.pdf")
+            for _v in varNames:
 
+                probs   = np.array(input_pdfs[_s][_v]["probs"],       dtype=float)
+                centers = np.array(input_pdfs[_s][_v]["bin_centers"], dtype=float)
 
-            #plt.legend()
-            plt.close()
-    
-    
+                num_samples = 10000
+                samples = np.random.choice(centers, size=num_samples, p=probs)
+
+                nBins = len(centers)
+                bin_half_width = 0.5*(centers[1]  - centers[0])
+                xMin  = centers[0]  - bin_half_width
+                xMax  = centers[-1] + bin_half_width
+
+                sample_hist = hist.Hist.new.Reg(nBins, xMin, xMax).Double()
+                sample_hist.fill(samples)
+
+                sample_pdf  = hist.Hist.new.Reg(nBins, xMin, xMax).Double()
+                sample_pdf[...] = probs * num_samples
+
+                sample_hist.plot(label="samples")
+                sample_pdf.plot(label="pdf")
+                plt.xlabel(_v)
+                plt.legend()
+                plt.savefig(args.outputFolder+f"/test_sampling_{_s}_{_v}.pdf")
+
+                plt.close()
 
 
-    #breakpoint()
-    
-        
+
 if __name__ == '__main__':
 
     args = parse_args()
@@ -109,6 +139,6 @@ if __name__ == '__main__':
     cfg.hists = load_hists(args.inputFile)
     cfg.fileLabels = args.fileLabels
     cfg.axisLabels, cfg.cutList = read_axes_and_cuts(cfg.hists, cfg.plotConfig)
-    
+
     #varList = [ h for h in cfg.hists[0]['hists'].keys() if not h in args.skip_hists ]
     doPlots(debug=args.debug)

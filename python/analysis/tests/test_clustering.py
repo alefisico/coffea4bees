@@ -26,22 +26,6 @@ from coffea.nanoevents.methods.vector import ThreeVector
 import fastjet
 
 
-def rotateZ(particles, angle):
-    sinT = np.sin(angle)
-    cosT = np.cos(angle)
-    x_rotated = cosT * particles.x - sinT * particles.y
-    y_rotated = sinT * particles.x + cosT * particles.y
-
-    return ak.zip(
-        {
-            "x": x_rotated,
-            "y": y_rotated,
-            "z": particles.z,
-            "t": particles.t,
-        },
-        with_name="LorentzVector",
-        behavior=vector.behavior,
-    )
 
 
 class clusteringTestCase(unittest.TestCase):
@@ -133,14 +117,36 @@ class clusteringTestCase(unittest.TestCase):
         #  For now use known inputs
         #   (should get exact jets back!)
         clustered_splittings["decluster_mask"] = True
-        declustered_jets = decluster_combined_jets(clustered_splittings)
-
+        # declustered_jets = decluster_combined_jets(clustered_splittings)
+        pA, pB = decluster_combined_jets(clustered_splittings)
 
         #
         # Sanity checks
         #
-        pA = declustered_jets[:,0:2]
-        pB = declustered_jets[:,2:]
+        # pA = declustered_jets[:,0:2]
+        # pB = declustered_jets[:,2:]
+
+
+
+        #
+        # Check Pts
+        #
+        pt_check = [np.allclose(i, j, 1e-4) for i, j in zip(clustered_splittings.pt, (pA + pB).pt)]
+        if not all(pt_check):
+            [print(i) for i in clustered_splittings.pt - (pA + pB).pt]
+            [print(i, j) for i, j in zip(clustered_splittings.pt, (pA + pB).pt)]
+        self.assertTrue(all(pt_check), "All pt should be the same")
+
+        #
+        # Check Eta
+        #
+        eta_check = [np.allclose(i, j, 1e-4) for i, j in zip(clustered_splittings.eta, (pA + pB).eta)]
+        if not all(eta_check):
+            [print(i) for i in clustered_splittings.eta - (pA + pB).eta]
+            [print(i, j) for i, j in zip(clustered_splittings.eta, (pA + pB).eta)]
+        self.assertTrue(all(eta_check), "All eta should be the same")
+
+
 
         #
         # Check Masses
@@ -152,13 +158,14 @@ class clusteringTestCase(unittest.TestCase):
         self.assertTrue(all(mass_check), "All Masses should be the same")
 
         #
-        # Check Pts
+        # Check Phis
         #
-        pt_check = [np.allclose(i, j, 1e-4) for i, j in zip(clustered_splittings.pt, (pA + pB).pt)]
-        if not all(pt_check):
-            [print(i) for i in clustered_splittings.pt - (pA + pB).pt]
-            [print(i, j) for i, j in zip(clustered_splittings.pt, (pA + pB).pt)]
-        self.assertTrue(all(pt_check), "All pt should be the same")
+        phi_check = [np.allclose(i, j, 1e-4) for i, j in zip(clustered_splittings.phi, (pA + pB).phi)]
+        if not all(phi_check):
+            [print(i) for i in clustered_splittings.phi - (pA + pB).phi]
+            [print(i, j) for i, j in zip(clustered_splittings.phi, (pA + pB).phi)]
+        self.assertTrue(all(phi_check), "All phis should be the same")
+
 
 
 
@@ -204,6 +211,19 @@ class clusteringTestCase(unittest.TestCase):
         self.assertTrue(all(pt_check), "All Masses should be the same")
 
 
+        #
+        # Check phis
+        #
+        phi_check = [np.allclose(i, j, 1e-4) for i, j in zip(clustered_splittings.phi, clustered_splittings_fast.phi)]
+        if not all(phi_check):
+            print("deltas")
+            [print(i) for i in clustered_splittings.phi - clustered_splittings_fast.phi]
+            print("values")
+            [print(i, j) for i, j in zip(clustered_splittings.phi, clustered_splittings_fast.phi)]
+        self.assertTrue(all(phi_check), "All phis should be the same")
+
+
+
 
     def test_synthetic_datasets_gbb_only(self):
 
@@ -246,12 +266,10 @@ class clusteringTestCase(unittest.TestCase):
         pA = declustered_jets[:,0:2]
         pB = declustered_jets[:,2:]
 
-
         #
         # Sanity checks
         #
         print("Only after gbb declustering")
-        print(f"clustered_jets.decluster_mask {clustered_jets.decluster_mask}")
         print(f"clustered_jets.jet_flavor     {clustered_jets.jet_flavor}")
         print(f"clustered_jets.pt             {clustered_jets.pt}")
         print(f"pA.pt                         {pA.pt}")
@@ -259,6 +277,16 @@ class clusteringTestCase(unittest.TestCase):
 
         print(f"declustered_jets.pt             {declustered_jets.pt}")
         print(f"ak.num(declustered_jets)        {ak.num(declustered_jets)}")
+
+        print(f"clustered_jets.phi             {clustered_jets.phi}")        
+
+        #
+        #  Checkphi
+        #
+        print(f"input phi {clustered_jets.phi[1]}")
+        print(f"Reco phi {(pA + pB).phi[1]}")
+
+
 
 
 if __name__ == '__main__':
