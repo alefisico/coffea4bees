@@ -11,61 +11,21 @@ from coffea.nanoevents.methods import vector
 import time
 from copy import copy
 import os
-sys.path.insert(0, os.getcwd())
-from analysis.helpers.clustering import kt_clustering, cluster_bs, decluster_combined_jets, compute_decluster_variables, cluster_bs_fast
+
+try:
+    sys.path.insert(0, os.getcwd())
+    from analysis.helpers.clustering import kt_clustering, cluster_bs, decluster_combined_jets, compute_decluster_variables, cluster_bs_fast, make_synthetic_event
+except:
+    sys.path.insert(0, os.getcwd()+"/../..")
+    print(sys.path)
+    from analysis.helpers.clustering import kt_clustering, cluster_bs, decluster_combined_jets, compute_decluster_variables, cluster_bs_fast, make_synthetic_event
+
 #import vector
 #vector.register_awkward()
 from coffea.nanoevents.methods.vector import ThreeVector
 import fastjet
 
-#def find_jet_pairs_kernel(events_jets, builder):
-#    """Search for valid 4-lepton combinations from an array of events * leptons {charge, ...}
-#
-#    A valid candidate has two pairs of leptons that each have balanced charge
-#    Outputs an array of events * candidates {indices 0..3} corresponding to all valid
-#    permutations of all valid combinations of unique leptons in each event
-#    (omitting permutations of the pairs)
-#    """
-#    for jets in events_jets:
-#        builder.begin_list()
-#        njet = len(events_jets)
-#        for i0 in range(njet):
-#            for i1 in range(i0 + 1, njet):
-#                builder.begin_tuple(2)
-#                builder.index(0).integer(i0)
-#                builder.index(1).integer(i1)
-#                builder.end_tuple()
-#        builder.end_list()
-#
-#    return builder
-#
-#def find_jet(events_jets):
-#
-#    # if ak.backend(events_jets) == "typetracer":
-#    #    raise Exception("typetracer")
-#    #    # here we fake the output of find_4lep_kernel since
-#    #    # operating on length-zero data returns the wrong layout!
-#    #    ak.typetracer.length_zero_if_typetracer(events_jets.btagDeepFlavB) # force touching of the necessary data
-#    #    return ak.Array(ak.Array([[(0,0,0)]]).layout.to_typetracer(forget_length=True))
-#    return find_jet_pairs_kernel(events_jets, ak.ArrayBuilder()).snapshot()
 
-
-def rotateZ(particles, angle):
-    sinT = np.sin(angle)
-    cosT = np.cos(angle)
-    x_rotated = cosT * particles.x - sinT * particles.y
-    y_rotated = sinT * particles.x + cosT * particles.y
-
-    return ak.zip(
-        {
-            "x": x_rotated,
-            "y": y_rotated,
-            "z": particles.z,
-            "t": particles.t,
-        },
-        with_name="LorentzVector",
-        behavior=vector.behavior,
-    )
 
 
 class clusteringTestCase(unittest.TestCase):
@@ -103,7 +63,7 @@ class clusteringTestCase(unittest.TestCase):
     def test_kt_clustering_4jets(self):
 
         R = np.pi  # Jet size parameter
-        clustered_jets = kt_clustering(self.input_jets_4, R)
+        clustered_jets = kt_clustering(self.input_jets_4, R, remove_mass=False)
 
 
         jetdefAll = fastjet.JetDefinition(fastjet.kt_algorithm, R)
@@ -129,7 +89,7 @@ class clusteringTestCase(unittest.TestCase):
 
     def test_declustering(self):
 
-        clustered_jets, clustered_splittings = cluster_bs(self.input_jets_4, debug=False)
+        clustered_jets, clustered_splittings = cluster_bs(self.input_jets_4, remove_mass=False, debug=False)
         compute_decluster_variables(clustered_splittings)
 
         if self.debug:
@@ -153,29 +113,40 @@ class clusteringTestCase(unittest.TestCase):
         # Eventually will
         #   Lookup thetaA, Z, mA, and mB
         #   radom draw phi  (np.random.uniform(-np.pi, np.pi, len()) ? )
-
         #
         #  For now use known inputs
         #   (should get exact jets back!)
-        input_jet       = clustered_splittings
-        input_thetaA    = clustered_splittings.thetaA
-        input_zA        = clustered_splittings.zA
-        input_mA        = clustered_splittings.mA
-        input_mB        = clustered_splittings.mB
-        input_decay_phi = clustered_splittings.decay_phi
-
-        pA, pB = decluster_combined_jets(input_jet,
-                                         input_zA,
-                                         input_thetaA,
-                                         input_mA,
-                                         input_mB,
-                                         input_decay_phi
-                                         )
-
+        clustered_splittings["decluster_mask"] = True
+        # declustered_jets = decluster_combined_jets(clustered_splittings)
+        pA, pB = decluster_combined_jets(clustered_splittings)
 
         #
         # Sanity checks
         #
+        # pA = declustered_jets[:,0:2]
+        # pB = declustered_jets[:,2:]
+
+
+
+        #
+        # Check Pts
+        #
+        pt_check = [np.allclose(i, j, 1e-4) for i, j in zip(clustered_splittings.pt, (pA + pB).pt)]
+        if not all(pt_check):
+            [print(i) for i in clustered_splittings.pt - (pA + pB).pt]
+            [print(i, j) for i, j in zip(clustered_splittings.pt, (pA + pB).pt)]
+        self.assertTrue(all(pt_check), "All pt should be the same")
+
+        #
+        # Check Eta
+        #
+        eta_check = [np.allclose(i, j, 1e-4) for i, j in zip(clustered_splittings.eta, (pA + pB).eta)]
+        if not all(eta_check):
+            [print(i) for i in clustered_splittings.eta - (pA + pB).eta]
+            [print(i, j) for i, j in zip(clustered_splittings.eta, (pA + pB).eta)]
+        self.assertTrue(all(eta_check), "All eta should be the same")
+
+
 
         #
         # Check Masses
@@ -187,13 +158,14 @@ class clusteringTestCase(unittest.TestCase):
         self.assertTrue(all(mass_check), "All Masses should be the same")
 
         #
-        # Check Pts
+        # Check Phis
         #
-        pt_check = [np.allclose(i, j, 1e-4) for i, j in zip(clustered_splittings.pt, (pA + pB).pt)]
-        if not all(pt_check):
-            [print(i) for i in clustered_splittings.pt - (pA + pB).pt]
-            [print(i, j) for i, j in zip(clustered_splittings.pt, (pA + pB).pt)]
-        self.assertTrue(all(pt_check), "All pt should be the same")
+        phi_check = [np.allclose(i, j, 1e-4) for i, j in zip(clustered_splittings.phi, (pA + pB).phi)]
+        if not all(phi_check):
+            [print(i) for i in clustered_splittings.phi - (pA + pB).phi]
+            [print(i, j) for i, j in zip(clustered_splittings.phi, (pA + pB).phi)]
+        self.assertTrue(all(phi_check), "All phis should be the same")
+
 
 
 
@@ -239,10 +211,80 @@ class clusteringTestCase(unittest.TestCase):
         self.assertTrue(all(pt_check), "All Masses should be the same")
 
 
+        #
+        # Check phis
+        #
+        phi_check = [np.allclose(i, j, 1e-4) for i, j in zip(clustered_splittings.phi, clustered_splittings_fast.phi)]
+        if not all(phi_check):
+            print("deltas")
+            [print(i) for i in clustered_splittings.phi - clustered_splittings_fast.phi]
+            print("values")
+            [print(i, j) for i, j in zip(clustered_splittings.phi, clustered_splittings_fast.phi)]
+        self.assertTrue(all(phi_check), "All phis should be the same")
 
 
 
 
+    def test_synthetic_datasets_gbb_only(self):
+
+        clustered_jets, _clustered_splittings = cluster_bs(self.input_jets_4, debug=False)
+
+        #
+        # 1st replace bstar splittings with their original jets (b, g_bb)
+        #
+
+        bstar_mask_splittings = _clustered_splittings.jet_flavor == "bstar"
+        bs_from_bstar = _clustered_splittings[bstar_mask_splittings].part_A
+        gbbs_from_bstar = _clustered_splittings[bstar_mask_splittings].part_B
+        jets_from_bstar = ak.concatenate([bs_from_bstar, gbbs_from_bstar], axis=1)
+
+        bstar_mask = clustered_jets.jet_flavor == "bstar"
+        clustered_jets_nobStar = clustered_jets[~bstar_mask]
+        clustered_jets          = ak.concatenate([clustered_jets_nobStar, jets_from_bstar], axis=1)
+
+        # print(clustered_jets.jet_flavor)
+        # print(clustered_jets.pt)
+        # print(bs_from_bstar.pt)
+        # print(bs_from_bstar.jet_flavor)
+        # print(gbbs_from_bstar.pt)
+        # print(gbbs_from_bstar.jet_flavor)
+
+
+        #
+        # Declustering
+        #
+
+        #
+        #  Read in the pdfs
+        #
+        #  Make with ../.ci-workflows/synthetic-dataset-plot-job.sh
+        input_pdf_file_name = "analysis/plots_synthetic_datasets/clustering_pdfs.yml"
+        with open(input_pdf_file_name, 'r') as input_file:
+            input_pdfs = yaml.safe_load(input_file)
+
+        declustered_jets = make_synthetic_event(clustered_jets, input_pdfs)
+        pA = declustered_jets[:,0:2]
+        pB = declustered_jets[:,2:]
+
+        #
+        # Sanity checks
+        #
+        print("Only after gbb declustering")
+        print(f"clustered_jets.jet_flavor     {clustered_jets.jet_flavor}")
+        print(f"clustered_jets.pt             {clustered_jets.pt}")
+        print(f"pA.pt                         {pA.pt}")
+        print(f"pB.pt                         {pB.pt}")
+
+        print(f"declustered_jets.pt             {declustered_jets.pt}")
+        print(f"ak.num(declustered_jets)        {ak.num(declustered_jets)}")
+
+        print(f"clustered_jets.phi             {clustered_jets.phi}")        
+
+        #
+        #  Checkphi
+        #
+        print(f"input phi {clustered_jets.phi[1]}")
+        print(f"Reco phi {(pA + pB).phi[1]}")
 
 
 
