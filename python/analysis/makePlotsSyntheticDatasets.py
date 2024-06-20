@@ -39,13 +39,13 @@ def write_2D_pdf(output_file, varName, xcenters_flat, ycenters_flat, probabiliti
     output_file.write(f"    {varName}:\n")
     output_file.write(f"        xcenters_flat:  {xcenters_flat.tolist()}\n")
     output_file.write(f"        ycenters_flat:  {ycenters_flat.tolist()}\n")
-    output_file.write(f"        probabilities_flat:  {probabilities_flat.tolist()}\n")    
+    output_file.write(f"        probabilities_flat:  {probabilities_flat.tolist()}\n")
 
-    
 
-    
+
+
 def doPlots(debug=False):
-    
+
     #
     #  Synthetic datasets
     #
@@ -69,7 +69,7 @@ def doPlots(debug=False):
     #bstar_hist_name["zA"]        = ("bstars.zA_l"     ,  1)
     bstar_hist_name["decay_phi"] = ("bstars.decay_phi",  4)
     bstar_hist_name["zA_vs_thetaA"]        = ("gbbs.zA_vs_thetaA",        1)
-    
+
     splitting_hist_name = {}
     splitting_hist_name["gbbs"]   = gbb_hist_name
     splitting_hist_name["bstars"] = bstar_hist_name
@@ -96,42 +96,42 @@ def doPlots(debug=False):
 
                 if _v.find("_vs_") == -1:
                     is_1d_hist = True
-                else: 
+                else:
                     is_1d_hist = False
 
                 if is_1d_hist:
                     _hist_name, _rebin = splitting_hist_name[_s][_v]
-    
+
                     fig, ax = plot(_hist_name, region="SR", cut="passPreSel", doRatio=0, rebin=_rebin, process="data")
                     bin_centers = ax.get_lines()[0].get_xdata()
                     counts      = ax.get_lines()[0].get_ydata()
-    
+
                     probs = counts / counts.sum()
-                    
+
                     write_1D_pdf(output_file, _v, bin_centers, probs)
 
                 else:
 
                     hist_to_plot = cfg.hists[0]["hists"][f"{_s}.{_v}"]
                     _hist = hist_to_plot[{"process":"data", "year":sum, "tag":1,"region":0,"passPreSel":True}]
-                    
+
                     counts = _hist.view(flow=False)
-                    
+
                     xedges = _hist.axes[0].edges
                     yedges = _hist.axes[1].edges
                     probabilities = counts.value / counts.value.sum()
-                    
+
                     xcenters = (xedges[:-1] + xedges[1:]) / 2
                     ycenters = (yedges[:-1] + yedges[1:]) / 2
-                    
+
                     xcenters_flat = np.repeat(xcenters, len(ycenters))
                     ycenters_flat = np.tile(ycenters, len(xcenters))
                     probabilities_flat = probabilities.flatten()
-        
-                    write_2D_pdf(output_file, _v, xcenters_flat, ycenters_flat, probabilities_flat)    
-            
 
-                
+                    write_2D_pdf(output_file, _v, xcenters_flat, ycenters_flat, probabilities_flat)
+
+
+
     with open(output_file_name, 'r') as input_file:
 
         input_pdfs = yaml.safe_load(input_file)
@@ -140,71 +140,77 @@ def doPlots(debug=False):
 
             for _v in varNames:
 
-                probs   = np.array(input_pdfs[_s][_v]["probs"],       dtype=float)
-                centers = np.array(input_pdfs[_s][_v]["bin_centers"], dtype=float)
+                if _v.find("_vs_") == -1:
+                    is_1d_hist = True
+                else:
+                    is_1d_hist = False
 
-                num_samples = 10000
-                samples = np.random.choice(centers, size=num_samples, p=probs)
+                if is_1d_hist:
+                    probs   = np.array(input_pdfs[_s][_v]["probs"],       dtype=float)
+                    centers = np.array(input_pdfs[_s][_v]["bin_centers"], dtype=float)
 
-                nBins = len(centers)
-                bin_half_width = 0.5*(centers[1]  - centers[0])
-                xMin  = centers[0]  - bin_half_width
-                xMax  = centers[-1] + bin_half_width
+                    num_samples = 10000
+                    samples = np.random.choice(centers, size=num_samples, p=probs)
 
-                sample_hist = hist.Hist.new.Reg(nBins, xMin, xMax).Double()
-                sample_hist.fill(samples)
+                    nBins = len(centers)
+                    bin_half_width = 0.5*(centers[1]  - centers[0])
+                    xMin  = centers[0]  - bin_half_width
+                    xMax  = centers[-1] + bin_half_width
 
-                sample_pdf  = hist.Hist.new.Reg(nBins, xMin, xMax).Double()
-                sample_pdf[...] = probs * num_samples
+                    sample_hist = hist.Hist.new.Reg(nBins, xMin, xMax).Double()
+                    sample_hist.fill(samples)
 
-                sample_hist.plot(label="samples")
-                sample_pdf.plot(label="pdf")
-                plt.xlabel(_v)
-                plt.legend()
-                plt.savefig(args.outputFolder+f"/test_sampling_{_s}_{_v}.pdf")
+                    sample_pdf  = hist.Hist.new.Reg(nBins, xMin, xMax).Double()
+                    sample_pdf[...] = probs * num_samples
 
-                plt.close()
+                    sample_hist.plot(label="samples")
+                    sample_pdf.plot(label="pdf")
+                    plt.xlabel(_v)
+                    plt.legend()
+                    plt.savefig(args.outputFolder+f"/test_sampling_{_s}_{_v}.pdf")
+
+                    plt.close()
+
+                else:
+                    #
+                    # 2D Vars
+                    #
+                    _v = "zA_vs_thetaA"
+                    probabilities_flat   = np.array(input_pdfs[_s][_v]["probabilities_flat"],       dtype=float)
+                    xcenters_flat        = np.array(input_pdfs[_s][_v]["xcenters_flat"], dtype=float)
+                    ycenters_flat        = np.array(input_pdfs[_s][_v]["ycenters_flat"], dtype=float)
+
+                    num_samples = 10000
+
+                    # Draw samples
+                    sampled_indices = np.random.choice(len(probabilities_flat), size=num_samples, p=probabilities_flat)
+                    sampled_x = xcenters_flat[sampled_indices]
+                    sampled_y = ycenters_flat[sampled_indices]
+
+                    # Plot the original 2D histogram
+                    plt.figure(figsize=(12, 6))
+                    plt.subplot(1, 2, 1)
+
+                    probs2d = probabilities_flat.reshape(50,50)
+                    plt.imshow(probs2d.transpose(), cmap='Blues', origin='lower')
+
+                    plt.title('Original Data Histogram')
+
+                    # Plot the sampled data
+                    plt.subplot(1, 2, 2)
+                    plt.hist2d(sampled_x, sampled_y, bins=[xedges, yedges], cmap='Blues')
+                    plt.title('Sampled Data Histogram')
+                    plt.xlabel('X')
+                    plt.ylabel('Y')
 
 
-            #
-            # 2D Vars
-            #
-            _v = "zA_vs_thetaA"
-            probabilities_flat   = np.array(input_pdfs[_s][_v]["probabilities_flat"],       dtype=float)
-            xcenters_flat        = np.array(input_pdfs[_s][_v]["xcenters_flat"], dtype=float)
-            ycenters_flat        = np.array(input_pdfs[_s][_v]["ycenters_flat"], dtype=float)
+                    plt.savefig(args.outputFolder+f"/test_sampling_{_s}_{_v}.pdf")
 
-            num_samples = 10000
-        
-            # Draw samples
-            sampled_indices = np.random.choice(len(probabilities_flat), size=num_samples, p=probabilities_flat)
-            sampled_x = xcenters_flat[sampled_indices]
-            sampled_y = ycenters_flat[sampled_indices]
-            
-            # Plot the original 2D histogram
-            plt.figure(figsize=(12, 6))
-            plt.subplot(1, 2, 1)
-            
-            probs2d = probabilities_flat.reshape(50,50)
-            plt.imshow(probs2d.transpose(), cmap='Blues', origin='lower')
+                    plt.close()
 
-            plt.title('Original Data Histogram')
-            
-            # Plot the sampled data
-            plt.subplot(1, 2, 2)
-            plt.hist2d(sampled_x, sampled_y, bins=[xedges, yedges], cmap='Blues')
-            plt.title('Sampled Data Histogram')
-            plt.xlabel('X')
-            plt.ylabel('Y')
-            
+                    #plt.show()
 
-            plt.savefig(args.outputFolder+f"/test_sampling_{_s}_{_v}.pdf")
-            
-            plt.close()
 
-            #plt.show()
-
-                
 
 
 if __name__ == '__main__':
