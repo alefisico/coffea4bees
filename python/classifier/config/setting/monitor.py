@@ -68,7 +68,7 @@ class Progress(Cascade):
 
 
 class Usage(Cascade):
-    enable: bool = True
+    enable: bool = False
     file: str = "usage.json"
 
     interval: float = 1.0  # seconds

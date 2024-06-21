@@ -5,50 +5,62 @@ from dataclasses import dataclass
 from typing import Callable, Iterable
 
 import fsspec
-import numpy as np
 import torch
 import torch.nn.functional as F
 import torch.types as tt
 from torch import Tensor
 
-from ..algorithm.utils import to_arr, to_num
+from ..algorithm.utils import to_num
 from ..config import setting as cfg
 from ..config.scheduler import SkimStep
 from ..config.setting.HCR import Input, InputBranch, Output
 from ..config.state.label import MultiClass
 from ..nn.HCR_blocks import HCR
 from ..nn.schedule import MilestoneStep, Schedule
-from . import Classifier, Model, TrainingStage
+from . import BatchType, BenchmarkStage, Classifier, Model, OutputStage, TrainingStage
+from .roc import MulticlassROC
 from .skimmer import Skimmer, Splitter
 
 
 @dataclass
 class HCRArch:
-    loss: Callable[[dict[str, Tensor]], Tensor]
+    loss: Callable[[BatchType], Tensor]
     n_features: int = 8
     use_attention_block: bool = True
 
 
 @dataclass
-class GBN(MilestoneStep):
+class GBNSchedule(MilestoneStep):
     n_batches: int = 64
     milestones: list[int] = (1, 3, 6, 10, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24)
     gamma: float = 0.25
 
     def __post_init__(self):
         self.milestones = sorted(self.milestones)
+        self._last_bs = self.n_batches
         self.reset()
 
+    def get_bs(self):
+        self._last_bs = int(self.n_batches * (self.gamma**self.milestone))
+        return self._last_bs
 
-def _HCRInput(batch: dict[str, Tensor], device: tt.Device, selection: Tensor = None):
-    CanJet = batch.pop(Input.CanJet)
-    NotCanJet = batch.pop(Input.NotCanJet)
-    ancillary = batch.pop(Input.ancillary)
+    def get_last_bs(self):
+        return self._last_bs
+
+
+@dataclass
+class HCRBenchmarks:
+    rocs: Iterable[MulticlassROC]
+
+
+def _HCRInput(batch: BatchType, device: tt.Device, selection: Tensor = None):
+    for k, v in batch.items():
+        batch[k] = v.to(device, non_blocking=True)
+    inputs = [batch.pop(k) for k in (Input.CanJet, Input.NotCanJet, Input.ancillary)]
     if selection is not None:
-        CanJet = CanJet[selection]
-        NotCanJet = NotCanJet[selection]
-        ancillary = ancillary[selection]
-    return CanJet.to(device), NotCanJet.to(device), ancillary.to(device)
+        selection = selection.to(device, non_blocking=True)
+        inputs = [i[selection] for i in inputs]
+    return inputs
 
 
 class _HCRSkim(Skimmer):
@@ -63,7 +75,7 @@ class _HCRSkim(Skimmer):
         self._splitter = splitter
 
     @torch.no_grad()
-    def train(self, batch: dict[str, Tensor]):
+    def train(self, batch: BatchType):
         training, _ = self._splitter.step(batch)
         self._nn.updateMeanStd(*_HCRInput(batch, self._device, training))
         # TODO compute die loss
@@ -73,8 +85,9 @@ class _HCRSkim(Skimmer):
 class HCRModel(Model):
     def __init__(
         self,
-        arch: HCRArch,
         device: tt.Device,
+        arch: HCRArch,
+        benchmarks: HCRBenchmarks,
     ):
         self._loss = arch.loss
         self._device = device
@@ -87,13 +100,14 @@ class HCRModel(Model):
             device=device,
             nClasses=len(MultiClass.labels),
         )
+        self._benchmarks = benchmarks
 
     @property
     def ghost_batch(self):
         return self._gbn
 
     @ghost_batch.setter
-    def ghost_batch(self, gbn: GBN):
+    def ghost_batch(self, gbn: GBNSchedule):
         self._gbn = gbn
         if gbn is None:
             self._nn.setGhostBatches(0, False)
@@ -102,36 +116,50 @@ class HCRModel(Model):
             self._nn.setGhostBatches(self._gbn.n_batches, True)  # TODO check subset
 
     @property
-    def module(self):
+    def hyperparameters(self) -> dict[str]:
+        return {"n ghost batch": self.ghost_batch.get_last_bs()}
+
+    @property
+    def nn(self):
         return self._nn
 
-    def train(self, batch: dict[str, Tensor]) -> Tensor:
+    def train(self, batch: BatchType) -> Tensor:
         c, p = self._nn(*_HCRInput(batch, self._device))
-        batch[Output.quadjet_score] = p
-        batch[Output.class_score] = c
-        for k, v in batch.items():
-            batch[k] = v.to(self._device, non_blocking=True)
+        batch[Output.quadjet_raw] = p
+        batch[Output.class_raw] = c
         return self._loss(batch)
+
+    def validate(self, batches: Iterable[BatchType]) -> dict[str]:
+        loss, weight = 0.0, 0.0
+        rocs = [r.copy() for r in self._benchmarks.rocs]
+        for batch in batches:
+            c, p = self._nn(*_HCRInput(batch, self._device))
+            batch |= {
+                Output.quadjet_raw: p,
+                Output.class_raw: c,
+                Output.class_prob: F.softmax(c, dim=1),
+            }
+            sumw = to_num(batch[Input.weight].sum())
+            loss += to_num(self._loss(batch)) * sumw
+            weight += sumw
+            for roc in rocs:
+                roc.update(batch)
+        return {"loss": loss / weight, "roc": [r.roc() for r in rocs]}
 
     def step(self, epoch: int = None):
         if self.ghost_batch is not None and self.ghost_batch.step(epoch):
-            self._nn.setGhostBatches(
-                int(
-                    self.ghost_batch.n_batches
-                    * (self.ghost_batch.gamma**self.ghost_batch.milestone)
-                ),
-                True,
-            )
+            self._nn.setGhostBatches(self.ghost_batch.get_bs(), True)
 
 
-class HCRClassifier(Classifier):
+class HCRTraining(Classifier):
     def __init__(
         self,
         arch: HCRArch,
-        ghost_batch: GBN,
+        ghost_batch: GBNSchedule,
         cross_validation: Splitter,
         training_schedule: Schedule,
         finetuning_schedule: Schedule = None,
+        benchmarks: HCRBenchmarks = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -140,12 +168,14 @@ class HCRClassifier(Classifier):
         self._splitter = cross_validation
         self._training = training_schedule
         self._finetuning = finetuning_schedule
+        self._benchmarks = benchmarks or HCRBenchmarks()
         self._HCR: HCRModel = None
 
-    def training_stages(self):
+    def stages(self):
         self._HCR = HCRModel(
-            arch=self._arch,
             device=self.device,
+            arch=self._arch,
+            benchmarks=self._benchmarks,
         )
         self._HCR.ghost_batch = self._ghost_batch
         self._HCR.to(self.device)
@@ -156,17 +186,24 @@ class HCRClassifier(Classifier):
             model=skim,
             schedule=SkimStep(),
             training=self.dataset,
-            do_benchmark=False,
         )
-        self._HCR.module.initMeanStd()
+        self._HCR.nn.initMeanStd()
         training, validation = self._splitter.get()
+        validation = {
+            "training": training,
+            "validation": validation,
+        }
+        yield BenchmarkStage(
+            name="Baseline",
+            model=self._HCR,
+            validation=validation,
+        )
         yield TrainingStage(
             name="Training",
             model=self._HCR,
             schedule=self._training,
             training=training,
             validation=validation,
-            do_benchmark=True,
         )
         self._HCR.ghost_batch = None
         if self._finetuning is not None:
@@ -180,7 +217,6 @@ class HCRClassifier(Classifier):
                 schedule=self._finetuning,
                 training=training,
                 validation=validation,
-                do_benchmark=True,
             )
             self._HCR.ghost_batch = self._ghost_batch
             layers.setLayerRequiresGrad(requires_grad=True)
@@ -190,10 +226,11 @@ class HCRClassifier(Classifier):
             with fsspec.open(output, "wb") as f:
                 torch.save(
                     {
-                        "model": self._HCR.module.state_dict(),
+                        "model": self._HCR.nn.state_dict(),
                         "metadata": self.metadata,
                         "uuid": self.uuid,
                         "label": MultiClass.labels,
                     },
                     f,
                 )
+            yield OutputStage(name="Final", path=output)

@@ -8,7 +8,7 @@ from classifier.task.parse._dict import _mapping_scheme, mapping
 from classifier.utils import YamlIndentSequence
 from yaml.representer import Representer
 
-from ..setting import Monitor
+from .. import setting as cfg
 
 _MAX_WIDTH = 10
 
@@ -59,7 +59,8 @@ class Main(main.Main):
 
     @classmethod
     def prelude(cls):
-        Monitor.enable = False
+        cfg.Analysis.enable = False
+        cfg.Monitor.enable = False
 
     def run(self, parser: EntryPoint):
         from base_class.system.eos import EOS

@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
 from functools import cached_property
-from typing import Iterable
+from typing import TYPE_CHECKING, Iterable
 
 import torch
 import torch.types as tt
@@ -22,42 +22,176 @@ from ..process.device import Device
 from ..task.special import interface
 from ..typetools import WithUUID, filename
 
+if TYPE_CHECKING:
+    from base_class.system.eos import PathLike
 
-@dataclass
-class TrainingStage:
+BatchType = dict[str, Tensor]
+
+
+@dataclass(kw_only=True)
+class Stage(ABC):
     name: str
+
+    @abstractmethod
+    def run(self, classifier: Classifier) -> dict[str]: ...
+
+
+@dataclass(kw_only=True)
+class BenchmarkStage(Stage):
     model: Model
+    validation: dict[str, Dataset]
+
+    @staticmethod
+    def _loader_benchmark(dataset: Dataset, msg: MessageType = None):
+        return simple_loader(
+            dataset,
+            report_progress=msg,
+            batch_size=cfg.DataLoader.batch_eval,
+            shuffle=False,
+            drop_last=False,
+            pin_memory=True,
+        )
+
+    def _init_benchmark(self):
+        return {
+            k: self._loader_benchmark(v, ("batch", "benchmark", k))
+            for k, v in self.validation.items()
+        }
+
+    def _iter_benchmark(
+        self, classifier: Classifier, loaders: dict[str, Iterable[BatchType]]
+    ):
+        benchmark = {}
+        self.model.nn.eval()
+        with torch.no_grad():
+            for k, v in loaders.items():
+                classifier.cleanup()
+                Usage.checkpoint(self.name, "benchmark", k, "start")
+                benchmark[k] = self.model.validate(v)
+                Usage.checkpoint(self.name, "benchmark", k, "finish")
+        return benchmark
+
+    def run(self, classifier: Classifier):
+        return {
+            "name": self.name,
+            "benchmarks": self._iter_benchmark(classifier, self._init_benchmark()),
+        }
+
+
+@dataclass(kw_only=True)
+class TrainingStage(BenchmarkStage):
     schedule: Schedule
-
     training: Dataset
-    validation: Dataset = None
+    validation: dict[str, Dataset] = None
 
-    do_benchmark: bool = True
+    def run(self, classifier: Classifier):
+        history = {
+            "name": self.name,
+            "parameters": self.model.n_parameters,
+        }
+        opt = self.schedule.optimizer(self.model.parameters())
+        lr = self.schedule.lr_scheduler(opt)
+        bs = self.schedule.bs_scheduler(
+            self.training,
+            shuffle=True,
+            drop_last=True,
+            pin_memory=True,
+        )
+        if (
+            (not cfg.Training.disable_benchmark)
+            and (self.validation is not None)
+            and (self.model.validate is not NotImplemented)
+        ):
+            benchmark = []
+            validation = self._init_benchmark()
+        else:
+            benchmark = None
+        # training
+        p_epoch = Progress.new(self.schedule.epoch, (f"epoch", self.name))
+        logging.info(f"Start {self.name}")
+        start = datetime.now()
+        for epoch in range(self.schedule.epoch):
+            epoch = epoch + 1
+            classifier.cleanup()
+            Usage.checkpoint(self.name, f"epoch{epoch}", "optimize")
+            self.model.nn.train()
+            if len(bs.dataloader) > 0:
+                p_batch = Progress.new(len(bs.dataloader), "batch")
+            for i, batch in enumerate(bs.dataloader):
+                opt.zero_grad()
+                loss = self.model.train(batch)
+                loss.backward()
+                opt.step()
+                p_batch.update(i + 1, ("batch", "training", f"loss={loss.item():.4g}"))
+            if benchmark is not None:
+                benchmark.append(
+                    {
+                        "hyperparameters": {
+                            "epoch": epoch,
+                            "learning rate": lr.get_last_lr(),
+                            "batch size": bs.dataloader.batch_size,
+                        }
+                        | self.model.hyperparameters,
+                        "benchmarks": self._iter_benchmark(classifier, validation),
+                    }
+                )
+            lr.step()
+            bs.step()
+            if self.model.step is not NotImplemented:
+                self.model.step()
+            p_epoch.update(epoch)
+            Usage.checkpoint(self.name, f"epoch{epoch}", "finish")
+        logging.info(
+            f"{self.name}: run {self.schedule.epoch} epochs in {datetime.now() - start}"
+        )
+        if benchmark is not None:
+            history["training"] = benchmark
+        return history
+
+
+class EvaluationStage(Stage):  # TODO evaluation
+    def run(self, classifier: Classifier):
+        pass
+
+
+@dataclass(kw_only=True)
+class OutputStage(Stage):
+    path: PathLike
+
+    def run(self, _):
+        return {
+            "name": self.name,
+            "path": str(self.path),
+        }
 
 
 class Model(ABC):
     def parameters(self):
-        return self.module.parameters()
+        return self.nn.parameters()
 
     def to(self, device: tt.Device):
-        self.module.to(device)
+        self.nn.to(device)
 
     @property
     def n_parameters(self) -> int:
-        return sum(p.numel() for p in self.module.parameters())
+        return sum(p.numel() for p in self.nn.parameters())
+
+    @property
+    def hyperparameters(self) -> dict[str]:
+        return {}
 
     @property
     @abstractmethod
-    def module(self) -> nn.Module: ...
+    def nn(self) -> nn.Module: ...
 
     @interface
-    def train(self, batch: dict[str, Tensor]) -> Tensor: ...
+    def train(self, batch: BatchType) -> Tensor: ...
 
     @interface(optional=True)
-    def validate(self, batches: Iterable[dict[str, Tensor]]) -> dict: ...
+    def validate(self, batches: Iterable[BatchType]) -> dict: ...
 
     @interface  # TODO evaluation
-    def evaluate(self, batch: dict[str, Tensor]) -> dict[str, Tensor]: ...
+    def evaluate(self, batch: BatchType) -> BatchType: ...
 
     @interface(optional=True)
     def step(self, epoch: int = None): ...
@@ -81,15 +215,9 @@ class Classifier(WithUUID, ABC):
         return 0
 
     @abstractmethod
-    def training_stages(
-        self,
-    ) -> Iterable[TrainingStage]: ...
+    def stages(self) -> Iterable[Stage]: ...
 
-    def train(
-        self,
-        dataset: Dataset,
-        device: Device,
-    ):
+    def train(self, dataset: Dataset, device: Device):
         self.device = device.get(self.min_memory)
         self.dataset = dataset
         result = {
@@ -98,102 +226,9 @@ class Classifier(WithUUID, ABC):
             "metadata": self.metadata,
             "history": [],
         }
-        Usage.checkpoint("classifier", "init")
-        for stage in self.training_stages():
-            Usage.checkpoint("classifier", stage.name, "start")
-            history = {
-                "name": stage.name,
-                "parameters": stage.model.n_parameters,
-            }
-            benchmark = self._train(stage=stage)
-            if benchmark:
-                history["benchmark"] = benchmark
-            result["history"].append(history)
-            Usage.checkpoint("classifier", stage.name, "finish")
+        history: list[dict] = result["history"]
+        for stage in self.stages():
+            Usage.checkpoint("stage", stage.name, "start")
+            history.append(stage.run(self))
+            Usage.checkpoint("stage", stage.name, "finish")
         return result
-
-    def evaluate(
-        self,
-    ): ...  # TODO evaluataion
-
-    def _train(
-        self,
-        stage: TrainingStage,
-    ):
-        model = stage.model
-        schedule = stage.schedule
-        # training preparation
-        optimizer = schedule.optimizer(model.parameters())
-        lr = schedule.lr_scheduler(optimizer)
-        bs = schedule.bs_scheduler(
-            stage.training,
-            shuffle=True,
-            drop_last=True,
-            pin_memory=True,
-        )
-        if (
-            (not cfg.Training.disable_benchmark)
-            and stage.do_benchmark
-            and (model.validate is not NotImplemented)
-        ):
-            benchmark = []
-            validation_set = {
-                "training": self._validation_loader(
-                    stage.training, ("batch", "validation", "training set")
-                ),
-                "validation": self._validation_loader(
-                    stage.validation, ("batch", "validation", "validation set")
-                ),
-            }
-        else:
-            benchmark = None
-        # training
-        progress_epoch = Progress.new(schedule.epoch, f"epoch")
-        logging.info(f"Start {stage.name}")
-        start = datetime.now()
-        for epoch in range(schedule.epoch):
-            self.cleanup()
-            Usage.checkpoint("classifier", stage.name, f"epoch{epoch}", "optimize")
-            model.module.train()
-            if len(bs.dataloader) > 0:
-                progress_batch = Progress.new(len(bs.dataloader), "batch")
-            for i, batch in enumerate(bs.dataloader):
-                optimizer.zero_grad()
-                loss = model.train(batch)
-                loss.backward()
-                optimizer.step()
-                progress_batch.update(
-                    i + 1, ("batch", "training", f"loss={loss.item():.4g}")
-                )
-            if benchmark is not None:
-                Usage.checkpoint("classifier", stage.name, f"epoch{epoch}", "validate")
-                model.module.eval()
-                with torch.no_grad():
-                    benchmark.append(
-                        {"epoch": epoch}
-                        | {k: model.validate(v) for k, v in validation_set.items()}
-                    )
-            lr.step()
-            bs.step()
-            if model.step is not NotImplemented:
-                model.step()
-            progress_epoch.update(epoch + 1)
-            Usage.checkpoint("classifier", stage.name, f"epoch{epoch}", "finish")
-        logging.info(
-            f"{stage.name}: run {schedule.epoch} epochs in {datetime.now() - start}"
-        )
-        return benchmark
-
-    @staticmethod
-    def _validation_loader(dataset: Dataset, msg: MessageType = None):
-        return simple_loader(
-            dataset,
-            report_progress=msg,
-            batch_size=cfg.DataLoader.batch_eval,
-            shuffle=False,
-            drop_last=False,
-            pin_memory=True,
-        )
-
-    @torch.no_grad()
-    def _evaluate(self, model: Model): ...  # TODO evaluation
