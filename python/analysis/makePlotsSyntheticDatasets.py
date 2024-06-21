@@ -35,16 +35,82 @@ def write_1D_pdf(output_file, varName, bin_centers, probs):
     output_file.write(f"        probs:  {probs.tolist()}\n")
 
 
-def write_2D_pdf(output_file, varName, xcenters_flat, ycenters_flat, probabilities_flat):
+def write_2D_pdf(output_file, varName, xcenters, ycenters, probabilities_flat):
     output_file.write(f"    {varName}:\n")
-    output_file.write(f"        xcenters_flat:  {xcenters_flat.tolist()}\n")
-    output_file.write(f"        ycenters_flat:  {ycenters_flat.tolist()}\n")
+    #output_file.write(f"        xcenters_flat:  {xcenters_flat.tolist()}\n")
+    #output_file.write(f"        ycenters_flat:  {ycenters_flat.tolist()}\n")
+    output_file.write(f"        xcenters:  {xcenters.tolist()}\n")
+    output_file.write(f"        ycenters:  {ycenters.tolist()}\n")
     output_file.write(f"        probabilities_flat:  {probabilities_flat.tolist()}\n")
 
 
+pt_names = {0: "$p_{T}$: < 140 GeV",
+            1: "$p_{T}$: 140 - 230",
+            2: "$p_{T}$: 230 - 320",
+            3: "$p_{T}$: 320 - 410",
+            4: "$p_{T}$: > 410 GeV",
+            }
 
 
 def doPlots(debug=False):
+
+
+    #
+    #  3Ds
+    #
+    # Plot the original 2D histogram
+    pt_vars = ["gbbs.zA_vs_thetaA_pT","gbbs.decay_phi_pT", "gbbs.rhoA_pT","gbbs.rhoB_pT",]
+
+
+    for _v in pt_vars:
+
+
+        if _v.find("_vs_") == -1:
+            is_1d_hist = True
+            plt.figure(figsize=(6, 6))
+        else:
+            is_1d_hist = False
+            plt.figure(figsize=(18, 12))
+
+        for i in range(5):
+
+            if is_1d_hist:
+                cfg.hists[0]["hists"][_v][{"process":"data","year":sum,"tag":1,"region":0,"passPreSel":True,"pt":i}].plot(label=f"{pt_names[i]}")
+            else:
+                plt.subplot(2, 3, i+1)
+                cfg.hists[0]["hists"][_v][{"process":"data","year":sum,"tag":1,"region":0,"passPreSel":True,"pt":i}].plot2d()
+                plt.title(f'{pt_names[i]}')
+        plt.legend()
+        plt.savefig(args.outputFolder+f"/test_pt_dependence_{_v}.pdf")
+
+#        # Plot the sampled data
+#        plt.subplot(2, 3, 2)
+#        cfg.hists[0]["hists"]["gbbs.zA_vs_thetaA_pT"][{"process":"data","year":sum,"tag":1,"region":0,"passPreSel":True,"pt":1}].plot2d()
+#        plt.title('pt 1')
+#
+#        plt.subplot(2, 3, 3)
+#        cfg.hists[0]["hists"]["gbbs.zA_vs_thetaA_pT"][{"process":"data","year":sum,"tag":1,"region":0,"passPreSel":True,"pt":2}].plot2d()
+#        plt.title('pt 2')
+#
+#        plt.subplot(2, 3, 4)
+#        cfg.hists[0]["hists"]["gbbs.zA_vs_thetaA_pT"][{"process":"data","year":sum,"tag":1,"region":0,"passPreSel":True,"pt":3}].plot2d()
+#        plt.title('pt 3')
+#
+#        plt.subplot(2, 3, 5)
+#        cfg.hists[0]["hists"]["gbbs.zA_vs_thetaA_pT"][{"process":"data","year":sum,"tag":1,"region":0,"passPreSel":True,"pt":4}].plot2d()
+#        plt.title('pt 4')
+#        #plt.subplot(2, 3, 6)
+#        #cfg.hists[0]["hists"]["gbbs.zA_vs_thetaA_pT"][{"process":"data","year":sum,"tag":1,"region":0,"passPreSel":True,"pt":5}].plot2d()
+#
+
+
+    #plt.xlabel('X')
+    #plt.ylabel('Y')
+
+
+
+
+
 
     #
     #  Synthetic datasets
@@ -124,11 +190,9 @@ def doPlots(debug=False):
                     xcenters = (xedges[:-1] + xedges[1:]) / 2
                     ycenters = (yedges[:-1] + yedges[1:]) / 2
 
-                    xcenters_flat = np.repeat(xcenters, len(ycenters))
-                    ycenters_flat = np.tile(ycenters, len(xcenters))
                     probabilities_flat = probabilities.flatten()
 
-                    write_2D_pdf(output_file, _v, xcenters_flat, ycenters_flat, probabilities_flat)
+                    write_2D_pdf(output_file, _v, xcenters, ycenters, probabilities_flat)
 
 
 
@@ -177,13 +241,17 @@ def doPlots(debug=False):
                     #
                     _v = "zA_vs_thetaA"
                     probabilities_flat   = np.array(input_pdfs[_s][_v]["probabilities_flat"],       dtype=float)
-                    xcenters_flat        = np.array(input_pdfs[_s][_v]["xcenters_flat"], dtype=float)
-                    ycenters_flat        = np.array(input_pdfs[_s][_v]["ycenters_flat"], dtype=float)
+                    xcenters        = np.array(input_pdfs[_s][_v]["xcenters"], dtype=float)
+                    ycenters        = np.array(input_pdfs[_s][_v]["ycenters"], dtype=float)
 
                     num_samples = 10000
 
                     # Draw samples
                     sampled_indices = np.random.choice(len(probabilities_flat), size=num_samples, p=probabilities_flat)
+
+                    xcenters_flat = np.repeat(xcenters, len(ycenters))
+                    ycenters_flat = np.tile(ycenters, len(xcenters))
+
                     sampled_x = xcenters_flat[sampled_indices]
                     sampled_y = ycenters_flat[sampled_indices]
 
