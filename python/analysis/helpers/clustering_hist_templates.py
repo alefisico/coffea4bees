@@ -8,7 +8,7 @@ class ClusterHists(Template):
     pt_l      = H((100,  0, 500, ('pt',    "pt [GeV]")))
 
     mA        = H((100, 0, 50, ('part_A.mass', "mA [GeV]")))
-    rhoA      = H((100, 0, 1,  ('rhoA', "rho A (mass/pt)")))
+    rhoA      = H((100, 0, 0.5,  ('rhoA', "rho A (mass/pt)")))
 
     mB        = H((100, 0, 50, ('mB', "mB [GeV]")))
     rhoB      = H((100, 0, 1,  ('rhoB', "rho B (mass/pt)")))
@@ -46,6 +46,22 @@ class ClusterHists(Template):
     zA_vs_thetaA = H((50,  0.5, 1.5, ('zA', "z fraction")),
                      (50,  0, 1.5, ('thetaA',    "theta angle")))
 
+    zA_vs_thetaA_pT = H((5, 50, 500, ("pt", "pT")),
+                        (50,  0.5, 1.3, ('zA', "z fraction")),
+                        (50,  0, 1.5, ('thetaA',    "theta angle")))
+
+
+    rhoA_pT = H((5, 50, 500, ("pt", "pT")),
+                (50, 0, 0.5,  ('rhoA', 'rho A')))
+
+    rhoB_pT = H((5, 50, 500, ("pt", "pT")),
+                (50, 0, 0.5,  ('rhoB', 'rho B')))
+
+    decay_phi_pT = H((5, 50, 500, ("pt", "pT")),
+                     (50 , -0.1, 3.2, ('decay_phi', "decay angle")))
+
+
+
     zA_vs_pT = H((50,  0.5, 2, ('zA', "z fraction")),
                  (50,  50, 300, ('pt',    "pt")))
 
@@ -58,4 +74,3 @@ class ClusterHists(Template):
                         (100,  50, 300, ('pt', "pT")))
 
     n         = H((0, 3,             ('n', 'Number')), n=ak.num)
-

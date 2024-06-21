@@ -547,12 +547,14 @@ def make_synthetic_event(input_jets, input_pdfs):
                     _sampled_data[_indicies_tuple] = np.random.choice(centers, size=_num_samples, p=probs)
                 else:
                     probabilities_flat   = np.array(input_pdfs[_splitting_name][_var_name]["probabilities_flat"], dtype=float)
-                    xcenters_flat        = np.array(input_pdfs[_splitting_name][_var_name]["xcenters_flat"],      dtype=float)
-                    ycenters_flat        = np.array(input_pdfs[_splitting_name][_var_name]["ycenters_flat"],      dtype=float)
+                    xcenters        = np.array(input_pdfs[_splitting_name][_var_name]["xcenters"],      dtype=float)
+                    ycenters        = np.array(input_pdfs[_splitting_name][_var_name]["ycenters"],      dtype=float)
+
+                    xcenters_flat = np.repeat(xcenters, len(ycenters))
+                    ycenters_flat = np.tile(ycenters, len(xcenters))
 
                     sampled_indices = np.random.choice(len(probabilities_flat), size=_num_samples, p=probabilities_flat)
-                    #sampled_x = xcenters_flat[sampled_indices]
-                    #sampled_y = ycenters_flat[sampled_indices]
+
                     _sampled_data_x[_indicies_tuple] = xcenters_flat[sampled_indices]
                     _sampled_data_y[_indicies_tuple] = ycenters_flat[sampled_indices]
 
