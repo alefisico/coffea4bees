@@ -93,7 +93,7 @@ def remove_indices(particles, indices_to_remove):
     mask[indices_to_remove] = False
     return particles[mask]
 
-def combine_particles(part_A, part_B, *, remove_mass=True, debug=False):
+def combine_particles(part_A, part_B, *, debug=False):
     part_comb = part_A + part_B
 
     jet_flavor_pair = (part_A.jet_flavor, part_B.jet_flavor)
@@ -119,7 +119,7 @@ def combine_particles(part_A, part_B, *, remove_mass=True, debug=False):
             "pt": [part_comb.pt],
             "eta": [part_comb.eta],
             "phi": [part_comb.phi],
-            "mass": [0 if remove_mass else part_comb.mass],
+            "mass": [part_comb.mass],
             "jet_flavor": [part_comb_jet_flavor],
             "part_A": [new_part_A],
             "part_B": [new_part_B],
@@ -133,7 +133,7 @@ def combine_particles(part_A, part_B, *, remove_mass=True, debug=False):
 
 
 # Define the kt clustering algorithm
-def cluster_bs_core(event_jets, distance_function, *, remove_mass=True, debug = False):
+def cluster_bs_core(event_jets, distance_function, *, debug = False):
     clustered_jets = []
     splittings = []
 
@@ -164,7 +164,7 @@ def cluster_bs_core(event_jets, distance_function, *, remove_mass=True, debug = 
 
             if debug: print(f"size partilces {len(particles)}")
 
-            part_comb_array = combine_particles(particles[idx_A], particles[idx_B], remove_mass=remove_mass)
+            part_comb_array = combine_particles(particles[idx_A], particles[idx_B])
 
             if debug: print(part_comb_array.jet_flavor)
             match part_comb_array.jet_flavor:
@@ -235,16 +235,16 @@ def cluster_bs_core(event_jets, distance_function, *, remove_mass=True, debug = 
 
 
 
-def cluster_bs(event_jets, *, remove_mass=True, debug = False):
-    return cluster_bs_core(event_jets, get_min_indicies, remove_mass=remove_mass)
+def cluster_bs(event_jets, *, debug = False):
+    return cluster_bs_core(event_jets, get_min_indicies)
 
 
-def cluster_bs_fast(event_jets, *, remove_mass=True, debug = False):
-    return cluster_bs_core(event_jets, get_min_indicies_fast, remove_mass=remove_mass)
+def cluster_bs_fast(event_jets, *, debug = False):
+    return cluster_bs_core(event_jets, get_min_indicies_fast)
 
 
 # Define the kt clustering algorithm
-def kt_clustering(event_jets, R, *, remove_mass=True, debug = False):
+def kt_clustering(event_jets, R, *, debug = False):
     clustered_jets = []
 
     nevents = len(event_jets)
@@ -285,7 +285,7 @@ def kt_clustering(event_jets, R, *, remove_mass=True, debug = False):
 
                 if debug: print(f"size partilces {len(particles)}")
 
-                part_comb_array = combine_particles(part_A, part_B, remove_mass=remove_mass)
+                part_comb_array = combine_particles(part_A, part_B)
 
                 particles = ak.concatenate([particles, part_comb_array])
                 if debug: print(f"size partilces {len(particles)}")
@@ -365,10 +365,11 @@ def compute_decluster_variables(clustered_splittings):
     #
     clustered_splittings["zA"]        = clustered_splittings_pz0.dot(clustered_splittings_part_A_pz0) / (clustered_splittings_pz0.pt**2)
     clustered_splittings["mA"]        = clustered_splittings.part_A.mass
-    clustered_splittings["rhoA"]      = clustered_splittings.part_A.mass/(clustered_splittings.pt * clustered_splittings.zA)
+    clustered_splittings["rhoA"]      = clustered_splittings.part_A.mass / (clustered_splittings.pt * clustered_splittings.zA)
+    clustered_splittings["abs_eta"]   = np.abs(clustered_splittings.eta)
 
     clustered_splittings["mB"]        = clustered_splittings.part_B.mass
-    clustered_splittings["rhoB"]      = clustered_splittings.part_B.mass/(clustered_splittings.pt * (1 - clustered_splittings.zA))
+    clustered_splittings["rhoB"]      = clustered_splittings.part_B.mass / (clustered_splittings.pt * (1 - clustered_splittings.zA))
 
     clustered_splittings["thetaA"]    = np.arccos(clustered_splittings_pz0.unit.dot(clustered_splittings_part_A_pz0.unit))
     clustered_splittings["tan_thetaA"]    = np.tan(np.arccos(clustered_splittings_pz0.unit.dot(clustered_splittings_part_A_pz0.unit)))
@@ -425,13 +426,13 @@ def decluster_combined_jets(input_jet):
     #
 
     # Pseudo-random number to decide if we rotate by phi or phi + pi
-    decay_phi = input_jet.decay_phi + np.pi*((input_jet.pt % 1) > 0.5)
+    decay_phi = input_jet.decay_phi + np.pi * ((input_jet.pt % 1) > 0.5)
 
     pA_pz0_phi0 = rotateX(pA_pz0_phi0_decayPhi0, decay_phi)
     pB_pz0_phi0 = rotateX(pB_pz0_phi0_decayPhi0, decay_phi)
 
     #
-    #  De-Clustering
+    #  Boost back to jet pZ
     #
     boost_vec_z = ak.zip(
         {
@@ -443,9 +444,6 @@ def decluster_combined_jets(input_jet):
         behavior=vector.behavior,
     )
 
-    #
-    #  Boost back to jet pZ
-    #
     pA_phi0 = pA_pz0_phi0.boost(boost_vec_z)
     pB_phi0 = pB_pz0_phi0.boost(boost_vec_z)
 
@@ -476,6 +474,7 @@ def decluster_combined_jets(input_jet):
         with_name="PtEtaPhiMLorentzVector",
         behavior=vector.behavior,
     )
+
 
     return pA, pB
     #return ak.concatenate([pA, pB], axis=1)
