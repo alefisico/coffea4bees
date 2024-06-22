@@ -110,11 +110,12 @@ def make_PDFs_vs_Pt(config, output_file_name_vs_pT):
                         write_1D_pdf(output_file_vs_pT, _iPt, bin_centers, probs, n_spaces=8)
                     else:
                         #_v = _v.replace(f"{_s}.","")
-                        hist_to_plot = cfg.hists[0]["hists"][f"{_s}.{_v}"]
-                        _hist = hist_to_plot[{"process":"data", "year":sum, "tag":1,"region":0,"passPreSel":True}]
+                        print(f"2D hist {_hist_name}")
+                        hist_to_plot = cfg.hists[0]["hists"][f"{_hist_name}"]
+                        _hist = hist_to_plot[{"process":"data", "year":sum, "tag":1,"region":0,"passPreSel":True, "pt":_iPt}]
 
                         write_2D_pdf(output_file_vs_pT, _iPt, _hist, n_spaces=8)
-#
+
 
 
 
@@ -133,7 +134,7 @@ def make_nominal_PDFs(config, output_file_name):
         output_file.write(f"    {splittings}\n\n")
 
         #
-        #  Write the 1D PDFs
+        #  Write the PDFs
         #
         for _s in splittings:
             output_file.write(f"\n{_s}:\n")
@@ -287,6 +288,7 @@ def doPlots(debug=False):
     #gbb_hist_name["zA"]        = ("gbbs.zA",        1)
     gbb_hist_name["decay_phi"] = ("gbbs.decay_phi", 4)
     gbb_hist_name["zA_vs_thetaA"]        = ("gbbs.zA_vs_thetaA",        1)
+    #gbb_hist_name["decay_phi_vs_eta"]        = ("gbbs.decay_phi_vs_eta",        1)
 
     bstar_hist_name = {}
     #bstar_hist_name["thetaA"]    = ("bstars.thetaA_l" ,  1)
@@ -296,7 +298,8 @@ def doPlots(debug=False):
     bstar_hist_name["rhoB"]      = ("bstars.rhoB"     ,  1)
     #bstar_hist_name["zA"]        = ("bstars.zA_l"     ,  1)
     bstar_hist_name["decay_phi"] = ("bstars.decay_phi",  4)
-    bstar_hist_name["zA_vs_thetaA"]        = ("gbbs.zA_vs_thetaA",        1)
+    bstar_hist_name["zA_vs_thetaA"]        = ("bstars.zA_vs_thetaA",        1)
+    #bstar_hist_name["decay_phi_vs_eta"]        = ("bstars.decay_phi_vs_eta",        1)
 
     splitting_hist_name = {}
     splitting_hist_name["gbbs"]   = gbb_hist_name
@@ -324,7 +327,7 @@ def doPlots(debug=False):
     varNames   = list(splitting_hist_name[splittings[0]].keys())
 
     pt_bins = [140,230,320,410]
-
+    #varNames += ["decay_phi_vs_eta"]
     with open(f'{output_file_name_vs_pT}', 'r') as output_file_vs_pT:
 
         for _s in splittings:
@@ -348,8 +351,35 @@ def doPlots(debug=False):
                         cfg.hists[0]["hists"][_hist_name][{"process":"data","year":sum,"tag":1,"region":0,"passPreSel":True,"pt":_iPt}].plot2d()
                         plt.title(f'{pt_names[_iPt]}')
                 plt.legend()
-                plt.savefig(args.outputFolder+f"/test_pt_dependence_{_v}.pdf")
+                plt.savefig(args.outputFolder+f"/test_pt_dependence_{_s}_{_v}.pdf")
 
+
+
+    #
+    #  Plots vs Eta
+    #
+    for _s in splittings:
+
+        for _v in varNames:
+            _hist_name = f"{_s}.{_v}_eta"
+
+            if _v.find("_vs_") == -1:
+                is_1d_hist = True
+                plt.figure(figsize=(6, 6))
+            else:
+                is_1d_hist = False
+                plt.figure(figsize=(18, 12))
+
+            for _iPt in range(len(pt_bins) + 1):
+
+                if is_1d_hist:
+                    cfg.hists[0]["hists"][_hist_name][{"process":"data","year":sum,"tag":1,"region":0,"passPreSel":True,"abs_eta":_iPt}].plot(label=f"{pt_names[_iPt]}")
+                else:
+                    plt.subplot(2, 3, _iPt + 1)
+                    cfg.hists[0]["hists"][_hist_name][{"process":"data","year":sum,"tag":1,"region":0,"passPreSel":True,"abs_eta":_iPt}].plot2d()
+                    plt.title(f'{pt_names[_iPt]}')
+            plt.legend()
+            plt.savefig(args.outputFolder+f"/test_eta_dependence_{_s}_{_v}.pdf")
 
 
 
