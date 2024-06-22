@@ -390,7 +390,8 @@ def decluster_combined_jets(input_jet):
     pA_pz0_px = input_jet.zA * combined_pt
     pA_pz0_py = 0
     pA_pz0_pz = - input_jet.zA * combined_pt * tanThetaA
-    pA_mass   = input_jet.rhoA * input_jet.pt * input_jet.zA
+    #pA_mass   = input_jet.rhoA * input_jet.pt * input_jet.zA
+    pA_mass   = input_jet.mA
     pA_pz0_E  = np.sqrt(pA_pz0_px**2 + pA_pz0_pz**2 + pA_mass**2)
 
     pA_pz0_phi0_decayPhi0 = ak.zip(
@@ -407,7 +408,8 @@ def decluster_combined_jets(input_jet):
     pB_pz0_px = (1 - input_jet.zA) * combined_pt
     pB_pz0_py = 0
     pB_pz0_pz = (1 - input_jet.zA) * combined_pt * tanThetaB
-    pB_mass   = input_jet.rhoB * input_jet.pt * (1 - input_jet.zA)
+    #pB_mass   = input_jet.rhoB * input_jet.pt * (1 - input_jet.zA)
+    pB_mass   = input_jet.mB
     pB_pz0_E  = np.sqrt(pB_pz0_px**2 + pB_pz0_pz**2 + pB_mass**2)
 
     pB_pz0_phi0_decayPhi0 = ak.zip(

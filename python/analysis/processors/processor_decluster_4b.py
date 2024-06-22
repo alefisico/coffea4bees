@@ -97,6 +97,7 @@ class analysis(processor.ProcessorABC):
             corrections_metadata="analysis/metadata/corrections.yml",
             clustering_pdfs_file="jet_clustering/clustering_PDFs/clustering_pdfs_vs_pT.yml",
             run_systematics=[],
+            blind = False,
             make_classifier_input: str = None,
     ):
 

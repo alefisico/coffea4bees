@@ -83,6 +83,20 @@ class ClusterHists(Template):
     rhoB_pT = H((5, 50, 500, ("pt", "pT")),
                 (50, 0, 1.0,  ('rhoB', 'rho B')))
 
+    mA_pT = H((5, 50, 500, ("pt", "pT")),
+                (50, 0, 50,  ('mA', 'mA [GeV]')))
+
+    mB_pT = H((5, 50, 500, ("pt", "pT")),
+                (50, 0, 50,  ('mB', 'mB [GeV]')))
+
+
+    zA_pT = H((5, 50, 500, ("pt", "pT")),
+              (50, 0.5, 1.3,  ('zA', 'z fraction')))
+
+    thetaA_pT = H((5, 50, 500, ("pt", "pT")),
+                  (50, 0.0, 1.5,  ('thetaA', 'theta angle')))
+
+
     decay_phi_pT = H((5, 50, 500, ("pt", "pT")),
                      (50 , -0.1, 3.2, ('decay_phi', "decay angle")))
 
@@ -100,6 +114,13 @@ class ClusterHists(Template):
 
     rhoB_eta = H((5, 0, 3, ("abs_eta", "eta")),
                 (50, 0, 0.5,  ('rhoB', 'rho B')))
+
+    mA_eta = H((5, 0, 3, ("abs_eta", "eta")),
+                (50, 0, 50,  ('mA', 'mA [GeV]')))
+
+    mB_eta = H((5, 0, 3, ("abs_eta", "eta")),
+                (50, 0, 50,  ('mB', 'mB [GeV]')))
+
 
     decay_phi_eta = H((5, 0, 3, ("abs_eta", "eta")),
                      (50 , -0.1, 3.2, ('decay_phi', "decay angle")))
