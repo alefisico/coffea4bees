@@ -63,7 +63,7 @@ class clusteringTestCase(unittest.TestCase):
     def test_kt_clustering_4jets(self):
 
         R = np.pi  # Jet size parameter
-        clustered_jets = kt_clustering(self.input_jets_4, R, remove_mass=False)
+        clustered_jets = kt_clustering(self.input_jets_4, R)
 
 
         jetdefAll = fastjet.JetDefinition(fastjet.kt_algorithm, R)
@@ -89,7 +89,7 @@ class clusteringTestCase(unittest.TestCase):
 
     def test_declustering(self):
 
-        clustered_jets, clustered_splittings = cluster_bs(self.input_jets_4, remove_mass=False, debug=False)
+        clustered_jets, clustered_splittings = cluster_bs(self.input_jets_4, debug=False)
         compute_decluster_variables(clustered_splittings)
 
         if self.debug:
@@ -259,7 +259,7 @@ class clusteringTestCase(unittest.TestCase):
         #
         #  Make with ../.ci-workflows/synthetic-dataset-plot-job.sh
         # input_pdf_file_name = "analysis/plots_synthetic_datasets/clustering_pdfs.yml"
-        input_pdf_file_name = "analysis/plots_synthetic_datasets/clustering_pdfs_vs_pT.yml"
+        input_pdf_file_name = "jet_clustering/clustering_PDFs/clustering_pdfs_vs_pT.yml"
         with open(input_pdf_file_name, 'r') as input_file:
             input_pdfs = yaml.safe_load(input_file)
 

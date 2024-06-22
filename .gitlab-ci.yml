@@ -372,3 +372,11 @@ kappa-framework:
     - .base_analysis
   script:
     - source .ci-workflows/baseclass-kappa-framework.sh
+
+
+jet-clustering:
+  stage: code
+  extends:
+    - .base_analysis
+  script:
+    - source .ci-workflows/jet-clustering-tests.sh
