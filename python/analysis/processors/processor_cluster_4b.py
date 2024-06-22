@@ -47,12 +47,14 @@ class analysis(processor.ProcessorABC):
             *,
             threeTag=False,
             corrections_metadata="analysis/metadata/corrections.yml",
+            clustering_pdfs_file="jet_clustering/clustering_PDFs/clustering_pdfs_vs_pT.yml",
             do_declustering=False,
             do_gbb_only=True
     ):
 
         logging.debug("\nInitialize Analysis Processor")
         self.corrections_metadata = yaml.safe_load(open(corrections_metadata, "r"))
+        self.clustering_pdfs = yaml.safe_load(open(clustering_pdfs_file, "r"))
         self.do_declustering = do_declustering
         self.do_gbb_only = do_gbb_only
 
@@ -235,13 +237,13 @@ class analysis(processor.ProcessorABC):
             #
             #  Read in the pdfs
             #
-            #  Make with ../.ci-workflows/synthetic-dataset-plot-job.sh
-            #input_pdf_file_name = "analysis/plots_synthetic_datasets/clustering_pdfs.yml"
-            input_pdf_file_name = "analysis/plots_synthetic_datasets/clustering_pdfs_vs_pT.yml"
-            with open(input_pdf_file_name, 'r') as input_file:
-                input_pdfs = yaml.safe_load(input_file)
+            #   Make with ../.ci-workflows/synthetic-dataset-plot-job.sh
+            # input_pdf_file_name = "analysis/plots_synthetic_datasets/clustering_pdfs.yml"
+            # input_pdf_file_name = "analysis/plots_synthetic_datasets/clustering_pdfs_vs_pT.yml"
+            # with open(input_pdf_file_name, 'r') as input_file:
+            #     input_pdfs = yaml.safe_load(input_file)
 
-            declustered_jets = make_synthetic_event(clustered_jets, input_pdfs)
+            declustered_jets = make_synthetic_event(clustered_jets, self.clustering_pdfs)
             canJet = declustered_jets
 
             #

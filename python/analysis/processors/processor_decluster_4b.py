@@ -95,6 +95,7 @@ class analysis(processor.ProcessorABC):
             do_gbb_only=True,
             do_declustering=False,
             corrections_metadata="analysis/metadata/corrections.yml",
+            clustering_pdfs_file="jet_clustering/clustering_PDFs/clustering_pdfs_vs_pT.yml",
             run_systematics=[],
             make_classifier_input: str = None,
     ):
@@ -112,7 +113,8 @@ class analysis(processor.ProcessorABC):
         self.corrections_metadata = yaml.safe_load(open(corrections_metadata, "r"))
         self.do_declustering = do_declustering
         self.do_gbb_only = do_gbb_only
-        
+        self.clustering_pdfs = yaml.safe_load(open(clustering_pdfs_file, "r"))
+
         self.cutFlowCuts = [
             "all",
             "passHLT",
@@ -149,7 +151,7 @@ class analysis(processor.ProcessorABC):
         isMC    = True if event.run[0] == 1 else False
 
         self.top_reconstruction = event.metadata.get("top_reconstruction", None)
-        logging.info(f"top_reconstruction is {self.top_reconstruction}")
+        logging.debug(f"top_reconstruction is {self.top_reconstruction}")
         isMixedData    = not (dataset.find("mix_v") == -1)
         isDataForMixed = not (dataset.find("data_3b_for_mixed") == -1)
         isTTForMixed   = not (dataset.find("TTTo") == -1) and not ( dataset.find("_for_mixed") == -1 )
@@ -566,11 +568,11 @@ class analysis(processor.ProcessorABC):
             #
             #  Make with ../.ci-workflows/synthetic-dataset-plot-job.sh
             #input_pdf_file_name = "analysis/plots_synthetic_datasets/clustering_pdfs.yml"
-            input_pdf_file_name = "analysis/plots_synthetic_datasets/clustering_pdfs_vs_pT.yml"
-            with open(input_pdf_file_name, 'r') as input_file:
-                input_pdfs = yaml.safe_load(input_file)
+            #input_pdf_file_name = "analysis/plots_synthetic_datasets/clustering_pdfs_vs_pT.yml"
+            #with open(self.clustering_pdfs, 'r') as input_file:
+            #    input_pdfs = yaml.safe_load(input_file)
     
-            declustered_jets = make_synthetic_event(clustered_jets, input_pdfs)
+            declustered_jets = make_synthetic_event(clustered_jets, self.clustering_pdfs)
             canJet = declustered_jets
     
             #
@@ -961,10 +963,10 @@ class analysis(processor.ProcessorABC):
             #
             # Jets
             #
-            fill += Jet.plot(("selJets", "Selected Jets"),        "selJet",           skip=["deepjet_c"])
-            fill += Jet.plot(("canJets", "Higgs Candidate Jets"), "canJet",           skip=["deepjet_c"])
-            fill += Jet.plot(("othJets", "Other Jets"),           "notCanJet_coffea", skip=["deepjet_c"])
-            fill += Jet.plot(("tagJets", "Tag Jets"),             "tagJet",           skip=["deepjet_c"])
+            fill += Jet.plot(("selJets", "Selected Jets"),        "selJet",           skip=["deepjet_c"], bins={"mass": (100, 0, 100)})
+            fill += Jet.plot(("canJets", "Higgs Candidate Jets"), "canJet",           skip=["deepjet_c"], bins={"mass": (100, 0, 100)})
+            fill += Jet.plot(("othJets", "Other Jets"),           "notCanJet_coffea", skip=["deepjet_c"], bins={"mass": (100, 0, 100)})
+            fill += Jet.plot(("tagJets", "Tag Jets"),             "tagJet",           skip=["deepjet_c"], bins={"mass": (100, 0, 100)})
 
             #
             #  Make quad jet hists
@@ -996,7 +998,7 @@ class analysis(processor.ProcessorABC):
             fill += Jet.plot( ("tagJets_loose_noJCM", "Loose Tag Jets"), "tagJet_loose", weight="weight_noJCM_noFvT", skip=skip_all_but_n, )
 
             for iJ in range(4):
-                fill += Jet.plot( (f"canJet{iJ}", f"Higgs Candidate Jets {iJ}"), f"canJet{iJ}", skip=["n", "deepjet_c"], )
+                fill += Jet.plot( (f"canJet{iJ}", f"Higgs Candidate Jets {iJ}"), f"canJet{iJ}", skip=["n", "deepjet_c"], bins={"mass": (100, 0, 100)})
 
             #
             #  Leptons

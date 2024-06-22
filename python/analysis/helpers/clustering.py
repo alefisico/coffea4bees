@@ -717,10 +717,9 @@ def make_synthetic_event(input_jets, input_pdfs):
         #
         #  Try again with the other jets
         #
-        #breakpoint()
-        print(f"Was {np.sum(ak.num(input_jets_decluster))}\n")
+        #print(f"Was {np.sum(ak.num(input_jets_decluster))}\n")
         input_jets_decluster = input_jets_decluster[clustering_fail]
-        print(f"Now {np.sum(ak.num(input_jets_decluster))}\n")
+        #print(f"Now {np.sum(ak.num(input_jets_decluster))}\n")
         num_trys += 1
 
     return unclustered_jets

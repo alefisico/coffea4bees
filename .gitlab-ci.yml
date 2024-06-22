@@ -52,3 +52,36 @@ stages:
     - cd -
   tags:
     - k8s-cvmfs
+
+twoStageClosure-test-job:   
+  stage: fits
+  extends:
+    - .base_combine
+  needs: 
+    - analysis-test-mixed-job
+  script:
+    - source .ci-workflows/analysis-runTwoStageClosure-ROOT.sh
+
+reana-job:
+  stage: reana
+  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:reana_latest
+  tags:
+    - k8s-cvmfs
+  script:
+    - source .ci-workflows/reana-job.sh
+  allow_failure: true
+
+kappa-framework:
+  stage: code
+  extends:
+    - .base_analysis
+  script:
+    - source .ci-workflows/baseclass-kappa-framework.sh
+
+
+jet-clustering:
+  stage: code
+  extends:
+    - .base_analysis
+  script:
+    - source .ci-workflows/jet-clustering-tests.sh

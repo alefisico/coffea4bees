@@ -38,19 +38,26 @@ def doPlots(debug=False):
     plot("canJets.eta", region="SB", cut="passPreSel",doRatio=1,rebin=1,process="data",histtype="step",debug=0,norm=1,labels=["De-clustered","Nominal"])
     plot("canJets.phi", region="SB", cut="passPreSel",doRatio=1,rebin=1,process="data",histtype="step",debug=0,norm=1,labels=["De-clustered","Nominal"])
     plot("canJets.energy", region="SB", cut="passPreSel",doRatio=1,rebin=1,process="data",histtype="step",debug=0,norm=1,labels=["De-clustered","Nominal"])
-    plot("canJets.energy", region="SB", cut="passPreSel",doRatio=1,rebin=1,process="data",histtype="step",debug=0,norm=1,labels=["De-clustered","Nominal"])
+    plot("canJets.mass", region="SB", cut="passPreSel",doRatio=1,rebin=1,process="data",histtype="step",debug=0,norm=1,labels=["De-clustered","Nominal"])
     plot("canJets.pz", region="SB", cut="passPreSel",doRatio=1,rebin=1,process="data",histtype="step",debug=0,norm=1,labels=["De-clustered","Nominal"])
 
     #
     #  Di-Jet Level
     #
-    plot("quadJet_min_dr.other.dphi", region="SB", cut="passPreSel",doRatio=1,rebin=1,process="data",histtype="step",debug=0,norm=1,labels=["De-clustered","Nominal"])
-    plot("quadJet_min_dr.close.dphi", region="SB", cut="passPreSel",doRatio=1,rebin=1,process="data",histtype="step",debug=0,norm=1,labels=["De-clustered","Nominal"])
+    quad_jets = ["quadJet_min_dr","quadJet_selected"]
+    di_jets = ["lead","subl","close","other"]
 
-    #
-    #  Quad Jet level
-    #
-    plot("quadJet_min_dr.lead.dphi", region="SB", cut="passPreSel",doRatio=1,rebin=1,process="data",histtype="step",debug=0,norm=1,labels=["De-clustered","Nominal"])
+    for q in quad_jets:
+        for d in di_jets:
+            plot(f"{q}.{d}.dphi", region="SB", cut="passPreSel",doRatio=1,rebin=1,process="data",histtype="step",debug=0,norm=1,labels=["De-clustered","Nominal"])
+            plot(f"{q}.{d}.dr", region="SB", cut="passPreSel",doRatio=1,rebin=1,process="data",histtype="step",debug=0,norm=1,labels=["De-clustered","Nominal"])
+            plot(f"{q}.{d}.eta", region="SB", cut="passPreSel",doRatio=1,rebin=1,process="data",histtype="step",debug=0,norm=1,labels=["De-clustered","Nominal"])
+            plot(f"{q}.{d}.mass", region="SB", cut="passPreSel",doRatio=1,rebin=1,process="data",histtype="step",debug=0,norm=1,labels=["De-clustered","Nominal"])
+            plot(f"{q}.{d}.phi", region="SB", cut="passPreSel",doRatio=1,rebin=1,process="data",histtype="step",debug=0,norm=1,labels=["De-clustered","Nominal"])
+            plot(f"{q}.{d}.pt", region="SB", cut="passPreSel",doRatio=1,rebin=1,process="data",histtype="step",debug=0,norm=1,labels=["De-clustered","Nominal"])
+            plot(f"{q}.{d}.pz", region="SB", cut="passPreSel",doRatio=1,rebin=1,process="data",histtype="step",debug=0,norm=1,labels=["De-clustered","Nominal"])
+            #plot(f"{q}.{d}.dphi", region="SB", cut="passPreSel",doRatio=1,rebin=1,process="data",histtype="step",debug=0,norm=1,labels=["De-clustered","Nominal"])
+
 
     plot("v4j.pt", region="SB", cut="passPreSel",doRatio=1,rebin=1,process="data",histtype="step",debug=0,norm=1,labels=["De-clustered","Nominal"])
     plot("v4j.phi", region="SB", cut="passPreSel",doRatio=1,rebin=1,process="data",histtype="step",debug=0,norm=1,labels=["De-clustered","Nominal"])
