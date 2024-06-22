@@ -5,4 +5,8 @@ reana-job:
     - k8s-cvmfs
   script:
     - source .ci-workflows/reana-job.sh
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_PIPELINE_SOURCE == "push"
+      when: never
   allow_failure: true
