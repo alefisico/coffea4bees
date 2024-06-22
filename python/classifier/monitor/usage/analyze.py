@@ -1,12 +1,11 @@
 import math
-import re
 from collections import defaultdict
 from itertools import cycle, islice
-from pathlib import Path
 from typing import TypedDict
 
 import fsspec
 import networkx as nx
+import numba as nb
 import numpy as np
 import pandas as pd
 from base_class.system.eos import EOS
@@ -28,6 +27,7 @@ from bokeh.plotting import figure
 from bokeh.resources import CDN, INLINE
 from pyvis.network import Network
 
+from ..template import Index, SimpleImporter
 from . import Checkpoint, ProcessInfo, Resource
 
 _LABEL = {
@@ -64,28 +64,18 @@ _CODE = {
     "html": {},
 }
 
-
-def _file(file: str, ext: str = "js", **kwargs) -> str:
-    if file not in _CODE[ext]:
-        with open(Path(__file__).parent / ext / f"{file}.{ext}") as f:
-            _CODE[ext][file] = f.read()
-    content = _CODE[ext][file]
-    if kwargs:
-        kwargs = {"{{ " + k + " }}": v for k, v in kwargs.items()}
-        content = re.sub(
-            "|".join(re.escape(k) for k in kwargs),
-            lambda match: kwargs.get(match.group(0)),
-            content,
-        )
-    return content
+code = SimpleImporter(__file__, _CODE)
 
 
-def _js(file: str, **kwargs):
-    return _file(file, "js", **kwargs)
-
-
-def _html(file: str, **kwargs):
-    return _file(file, "html", **kwargs)
+@nb.jit(nopython=True)
+def _merge_step(time: np.ndarray, time_step: int) -> np.ndarray:
+    group = np.zeros_like(time, dtype=np.int64)
+    group[0] = start = time[0]
+    for i, t in enumerate(time[1:], 1):
+        if (t - start) >= time_step:
+            start = t
+        group[i] = start
+    return group
 
 
 class UsageData(TypedDict):
@@ -109,7 +99,7 @@ def _time_format(t: float) -> str:
 
 def _init():
     # initialize formatters
-    time_tick = CustomJSTickFormatter(code=_js("time_formatter", timestamp="tick"))
+    time_tick = CustomJSTickFormatter(code=code.js("time_formatter", timestamp="tick"))
     # initialize plot tools
     crosshair = CrosshairTool(
         dimensions="height",
@@ -118,23 +108,23 @@ def _init():
     stack_tps: dict[str, HoverTool] = {}
     for unit in set(_UNIT.values()):
         stack_tp = HoverTool(
-            tooltips=_html("stack_tooltip"),
+            tooltips=code.html("stack_tooltip"),
             formatters={
                 "@time": CustomJSHover(
-                    code=_js("time_formatter", timestamp="special_vars.x")
+                    code=code.js("time_formatter", timestamp="special_vars.x")
                 ),
-                "$y": CustomJSHover(code=_js("y_formatter", unit=unit)),
+                "$y": CustomJSHover(code=code.js("y_formatter", unit=unit)),
                 "$sy": CustomJSHover(
-                    code=_js("stack_component_formatter", unit=unit)
+                    code=code.js("stack_component_formatter", unit=unit)
                 ),  # hacked
             },
         )
         stack_tp.renderers = []
         stack_tps[unit] = stack_tp
     checkpoints_tp = HoverTool(
-        tooltips=_html("checkpoint_tooltip"),
+        tooltips=code.html("checkpoint_tooltip"),
         formatters={
-            "@time": CustomJSHover(code=_js("time_formatter", timestamp="value")),
+            "@time": CustomJSHover(code=code.js("time_formatter", timestamp="value")),
         },
     )
     checkpoints_tp.renderers = []
@@ -188,6 +178,7 @@ def _plot_process_tree(ps: list[ProcessInfo], start_t: int):
 
 
 def _plot_stack(fig: figure, data: pd.DataFrame):
+    data.rename(columns=str, inplace=True)
     return fig.varea_stack(
         sorted(set(data.columns) - {"time"}),
         x="time",
@@ -196,7 +187,16 @@ def _plot_stack(fig: figure, data: pd.DataFrame):
     )
 
 
-def generate_report(dump: UsageDump, output: EOS, inline_resources: bool = False):
+def generate_report(
+    dump: UsageDump,
+    output: EOS,
+    inline_resources: bool = False,
+    time_step: float = None,
+):
+    if time_step is not None and time_step > 0:
+        time_step = int(time_step * 1e9)  # convert to ns
+    else:
+        time_step = None
     resource = INLINE if inline_resources else CDN
     # data
     summary: dict[str, dict[str, pd.DataFrame]] = defaultdict(dict)
@@ -219,7 +219,12 @@ def generate_report(dump: UsageDump, output: EOS, inline_resources: bool = False
             for col in _LABEL:
                 raw = pd.DataFrame(r[col].to_list())
                 raw.fillna(0, inplace=True)
-                records[ip][pid][col] = pd.concat([r["time"], raw], axis=1)
+                raw = pd.concat([r["time"], raw], axis=1)
+                if time_step is not None:
+                    raw["time"] = _merge_step(raw["time"].to_numpy(), time_step)
+                    raw = raw.groupby("time").max()
+                    raw.reset_index(inplace=True)
+                records[ip][pid][col] = raw
     for ip in sorted(records):
         pids = records[ip]
         # initialize utilities
@@ -228,7 +233,7 @@ def generate_report(dump: UsageDump, output: EOS, inline_resources: bool = False
         summary_btn = Button(label="Summary", button_type="success")
         summary_btn.js_on_event(
             "button_click",
-            CustomJS(code=_js("open_url", url="../index.html", mode="_self")),
+            CustomJS(code=code.js("open_url", url="../index.html", mode="_self")),
         )
         tree_btn = Button(label="Processes", button_type="warning")
         figs, links = [], {}
@@ -238,7 +243,7 @@ def generate_report(dump: UsageDump, output: EOS, inline_resources: bool = False
                 f.write(_plot_process_tree(dump["process"][ip], start_t))
             tree_btn.js_on_event(
                 "button_click",
-                CustomJS(code=_js("open_url", url=f"process.html", mode="_blank")),
+                CustomJS(code=code.js("open_url", url=f"process.html", mode="_blank")),
             )
         # plot usage by pid
         for pid in sorted(pids):
@@ -249,7 +254,7 @@ def generate_report(dump: UsageDump, output: EOS, inline_resources: bool = False
             for k in _LABEL:
                 unit = _UNIT[k]
                 # initialize figure
-                fig: figure = figure(
+                fig = figure(
                     title=f"{_LABEL[k]} PID:{pid}",
                     y_axis_label=f"{_LABEL[k]} ({unit})",
                     **_TIMELINE_KWARGS,
@@ -264,13 +269,14 @@ def generate_report(dump: UsageDump, output: EOS, inline_resources: bool = False
                 figs.append(fig)
                 activate = CustomJS(
                     args=dict(r=resource_btns[k], p=pid_btns[pid], fig=fig),
-                    code=_js("figure_visibility"),
+                    code=code.js("figure_visibility"),
                 )
                 resource_btns[k].js_on_change("active", activate)
                 pid_btns[pid].js_on_change("active", activate)
 
-                # plot
+                # calculate duration
                 data[k]["time"] -= start_t
+                # plot
                 stack_tps[unit].renderers.extend(_plot_stack(fig, data[k]))
                 checkpoint = fig.vspan(
                     x="time",
@@ -295,23 +301,26 @@ def generate_report(dump: UsageDump, output: EOS, inline_resources: bool = False
                         merged.loc[:, col] = np.interp(
                             timestamps, data.index, data[col], left=0, right=0
                         )
+            if time_step is not None:
+                merged.reset_index(inplace=True, drop=True)
+                merged["time"] = _merge_step(timestamps, time_step)
+                merged = merged.groupby("time").max()
             merged.reset_index(inplace=True)
             summary[ip][k] = merged
+        page = file_html(
+            column(
+                [
+                    row([*resource_btns.values(), tree_btn, summary_btn]),
+                    row([*pid_btns.values()]),
+                    *figs,
+                ],
+                sizing_mode="stretch_width",
+            ),
+            title=f"Usage {ip}",
+            resources=resource,
+        )
         with fsspec.open(output / f"{ip}/usage.html", mode="wt") as f:
-            f.write(
-                file_html(
-                    column(
-                        [
-                            row([*resource_btns.values(), tree_btn, summary_btn]),
-                            row([*pid_btns.values()]),
-                            *figs,
-                        ],
-                        sizing_mode="stretch_width",
-                    ),
-                    title=f"Usage {ip}",
-                    resources=resource,
-                )
-            )
+            f.write(page)
     # generate summary page
     time_tick, crosshair, stack_tps, _, resource_btns = _init()
     ip_btn = {"all": Toggle(label="All", active=True)}
@@ -319,10 +328,10 @@ def generate_report(dump: UsageDump, output: EOS, inline_resources: bool = False
     figs, links = [], {}
     for ip in sorted(summary):
         data = summary[ip]
-        detail_btn = Button(label=f"IP:{ip}", button_type="success")
+        detail_btn = Button(label=f"Detail IP:{ip}", button_type="success")
         detail_btn.js_on_event(
             "button_click",
-            CustomJS(code=_js("open_url", url=f"{ip}/usage.html", mode="_self")),
+            CustomJS(code=code.js("open_url", url=f"{ip}/usage.html", mode="_self")),
         )
         ip_btn[ip] = Toggle(label=f"IP:{ip}", active=True)
         ip_btn["all"].js_link("active", ip_btn[ip], "active")
@@ -331,7 +340,7 @@ def generate_report(dump: UsageDump, output: EOS, inline_resources: bool = False
         for k in _LABEL:
             unit = _UNIT[k]
             # initialize figure
-            fig: figure = figure(
+            fig = figure(
                 title=f"{_LABEL[k]} IP:{ip}",
                 y_axis_label=f"{_LABEL[k]} ({unit})",
                 **_TIMELINE_KWARGS,
@@ -346,25 +355,27 @@ def generate_report(dump: UsageDump, output: EOS, inline_resources: bool = False
             figs.append(fig)
             activate = CustomJS(
                 args=dict(r=resource_btns[k], p=ip_btn[ip], fig=fig),
-                code=_js("figure_visibility"),
+                code=code.js("figure_visibility"),
             )
             resource_btns[k].js_on_change("active", activate)
             ip_btn[ip].js_on_change("active", activate)
 
             # plot
             stack_tps[unit].renderers.extend(_plot_stack(fig, data[k]))
-    with fsspec.open(output / "index.html", mode="wt") as f:
-        f.write(
-            file_html(
-                column(
-                    [
-                        row([*resource_btns.values()]),
-                        row([*ip_btn.values()]),
-                        *figs,
-                    ],
-                    sizing_mode="stretch_width",
-                ),
-                title="Usage Summary",
-                resources=resource,
-            )
-        )
+
+    index = output / "index.html"
+    page = file_html(
+        column(
+            [
+                row([*resource_btns.values()]),
+                row([*ip_btn.values()]),
+                *figs,
+            ],
+            sizing_mode="stretch_width",
+        ),
+        title="Usage Summary",
+        resources=resource,
+    )
+    with fsspec.open(index, mode="wt") as f:
+        f.write(page)
+    Index.add("Diagnostic", "Usage", index)

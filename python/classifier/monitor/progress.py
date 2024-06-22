@@ -9,7 +9,7 @@ from rich.progress import Progress as _Bar
 from rich.progress import ProgressColumn, SpinnerColumn, TimeElapsedColumn
 
 from ..config.setting import monitor as cfg
-from ..process.monitor import Proxy, Recorder, callback
+from ..process.monitor import Proxy, Recorder, post
 from ..typetools import WithUUID
 from ..utils import noop
 
@@ -107,7 +107,7 @@ class Progress(Proxy):
         cls._update(job)
         return job
 
-    @callback(max_retry=1)
+    @post(max_retry=1)
     @cfg.check(cfg.Progress)
     def _update(self, new: ProgressTracker):
         uuid = (new.source, new.uuid)

@@ -8,18 +8,15 @@ from typing import TYPE_CHECKING, Callable, Iterable
 from classifier.df.tools import (
     add_columns,
     add_label_index,
-    add_label_index_from_column,
     drop_columns,
     map_selection_to_index,
-    prescale,
 )
-from classifier.task import ArgParser
 from classifier.typetools import enum_dict
 
-from ..setting.df import Columns
-from ..setting.HCR import Input, InputBranch, MassRegion, NTag
-from ..setting.torch import KFold
-from ._df import LoadGroupedRoot
+from ...setting.df import Columns
+from ...setting.HCR import Input, InputBranch, MassRegion, NTag
+from ...setting.torch import KFold
+from .._df import LoadGroupedRoot
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -30,7 +27,7 @@ class _Derived:
     ntag_index: str = "ntag_index"
 
 
-class _Common(LoadGroupedRoot):
+class Common(LoadGroupedRoot):
     _year_pattern = re.compile(r"20\d{2}")
 
     _other_branches = [
@@ -145,118 +142,3 @@ class _Common(LoadGroupedRoot):
     ) -> Iterable[
         tuple[Iterable[Iterable[str]], Iterable[Callable[[pd.DataFrame], pd.DataFrame]]]
     ]: ...
-
-
-def _FvT_apply_JCM(df):
-    df.loc[df["threeTag"], "weight"] *= df.loc[df["threeTag"], "pseudoTagWeight"]
-    return df
-
-
-def _FvT_data_selection(df):
-    return df[
-        df["passHLT"]  # trigger
-        & (df["SB"] | df["SR"])  # boson mass
-        & (df["fourTag"] | df["threeTag"])  # n-tag
-        & (~(df["SR"] & df["fourTag"]))  # blind
-    ]
-
-
-def _FvT_ttbar_selection(df):
-    return df[
-        df["passHLT"]  # trigger
-        & (df["SB"] | df["SR"])  # boson mass
-        & (df["fourTag"] | df["threeTag"])  # n-tag
-    ]
-
-
-def _FvT_ttbar_3b_prescale(df):
-    return df["threeTag"]
-
-
-class FvT(_Common):
-    argparser = ArgParser()
-    argparser.add_argument(
-        "--ttbar-3b-prescale",
-        default="10",
-        help="prescale 3b ttbar events",
-    )
-
-    @property
-    def allowed_labels(self):
-        return []
-
-    @property
-    def preprocessor_by_label(self):
-        return [
-            (
-                [("data",)],
-                [
-                    _FvT_data_selection,
-                    add_label_index_from_column(threeTag="d3", fourTag="d4"),
-                ],
-            ),
-            (
-                [("ttbar",)],
-                [
-                    _FvT_ttbar_selection,
-                    prescale(
-                        scale=self.opts.ttbar_3b_prescale,
-                        selection=_FvT_ttbar_3b_prescale,
-                        seed=("ttbar", 0),
-                    ),
-                    add_label_index_from_column(threeTag="t3", fourTag="t4"),
-                ],
-            ),
-            (
-                [()],
-                [
-                    _FvT_apply_JCM,
-                ],
-            ),
-        ]
-
-
-class FvT_picoAOD(FvT):
-    argparser = ArgParser()
-    argparser.remove_argument("--files", "--filelists")
-    defaults = {"files": [], "filelists": []}
-
-    def __init__(self):
-        super().__init__()
-        self.opts.filelists = self._filelists()
-
-    def _filelists(self):
-        base = "metadata/datasets_HH4b_2024_v1.yml@@datasets.{dataset}.{year}.picoAOD{era}.files"
-        year = {
-            "2016": ["UL16_preVFP", "UL16_postVFP"],
-            "2017": ["UL17"],
-            "2018": ["UL18"],
-        }
-        era = {
-            "UL16_preVFP": ["B", "C", "D", "E", "F"],
-            "UL16_postVFP": ["F", "G", "H"],
-            "UL17": ["B", "C", "D", "E", "F"],
-            "UL18": ["A", "B", "C", "D"],
-        }
-        ttbar = ["TTTo2L2Nu", "TTToHadronic", "TTToSemiLeptonic"]
-        filelists = []
-        for k, v in year.items():
-            files = [f"data,{k}"]
-            for y in v:
-                for e in era[y]:
-                    files.append(base.format(dataset="data", year=y, era=f".{e}"))
-            filelists.append(files)
-        for k, v in year.items():
-            files = [f"ttbar,{k}"]
-            for y in v:
-                for tt in ttbar:
-                    files.append(base.format(dataset=tt, year=y, era=""))
-            filelists.append(files)
-        return filelists
-
-    def debug(self):
-        import logging
-
-        from rich.pretty import pretty_repr
-
-        logging.debug(pretty_repr(self.files))

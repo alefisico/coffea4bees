@@ -29,8 +29,10 @@ class Input(Cascade):
 
 
 class Output(Cascade):
-    class_score: str = "class_score"
-    quadjet_score: str = "quadjet_score"
+    class_raw: str = "class_raw"
+    class_prob: str = "class_prob"
+    quadjet_raw: str = "quadjet_raw"
+    quadjet_prob: str = "quadjet_prob"
 
 
 class MassRegion(Enum):

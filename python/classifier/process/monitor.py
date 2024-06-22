@@ -28,7 +28,7 @@ __all__ = [
     "Monitor",
     "Reporter",
     "Proxy",
-    "callback",
+    "post",
     "connect_to_monitor",
 ]
 
@@ -156,7 +156,7 @@ class _Packet:
         return NotImplemented
 
 
-class _callback:
+class _post:
     def __init__(self, func, wait: bool, retry: int):
         wraps(func)(self)
         self._func = func
@@ -189,32 +189,32 @@ _CallbackReturnT = TypeVar("_CallbackReturnT")
 
 
 @overload
-def callback(
+def post(
     func: Callable[Concatenate[Any, _CallbackP], _CallbackReturnT], /
 ) -> Method[_CallbackP, _CallbackReturnT]: ...
 @overload
-def callback(
+def post(
     wait_for_return: bool = False,
     max_retry: int = None,
 ) -> Callable[
     [Callable[Concatenate[Any, _CallbackP], _CallbackReturnT]],
     Method[_CallbackP, _CallbackReturnT],
 ]: ...
-def callback(
+def post(
     func=None,
     *,
     wait_for_return: bool = False,
     max_retry: int = None,
 ):
     if func is None:
-        return lambda func: callback(
+        return lambda func: post(
             func,
             wait_for_return=wait_for_return,
             max_retry=max_retry,
         )
     else:
         return classmethod(
-            _callback(
+            _post(
                 func,
                 wait=wait_for_return,
                 retry=max_retry,
@@ -428,7 +428,7 @@ class Recorder(Proxy):
         self._reporters = {self._name: "main"}
         self._data = [(cfg.Monitor.file, Recorder.serialize)]
 
-    @callback
+    @post
     def register(self, name: str):
         index = f"#{len(self._reporters)}"
         self._reporters[name] = index

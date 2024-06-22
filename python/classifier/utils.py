@@ -11,6 +11,9 @@ _ItemT = TypeVar("_ItemT")
 
 
 class NOOP:
+    def __bool__(self):
+        return True
+
     def __len__(self):
         return 0
 

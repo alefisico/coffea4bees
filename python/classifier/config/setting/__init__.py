@@ -146,5 +146,6 @@ class Monitor(Cascade):
         return value or None, None
 
 
-class Analysis:
+class Analysis(Cascade):
+    enable: bool = True
     max_workers: int = 1
