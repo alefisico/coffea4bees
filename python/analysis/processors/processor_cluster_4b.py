@@ -17,7 +17,7 @@ from base_class.physics.object import LorentzVector, Jet, Muon, Elec
 #from analysis.helpers.hist_templates import SvBHists, FvTHists, QuadJetHists
 from analysis.helpers.clustering_hist_templates import ClusterHists
 from analysis.helpers.topCandReconstruction import dumpTopCandidateTestVectors
-from analysis.helpers.clustering import cluster_bs, compute_decluster_variables, cluster_bs_fast
+from analysis.helpers.clustering import cluster_bs, compute_decluster_variables, cluster_bs_fast, make_synthetic_event
 
 from analysis.helpers.cutflow import cutFlow
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
@@ -43,14 +43,18 @@ warnings.filterwarnings("ignore")
 
 class analysis(processor.ProcessorABC):
     def __init__(
-        self,
-        *,
-        threeTag=False,
-        corrections_metadata="analysis/metadata/corrections.yml",
+            self,
+            *,
+            threeTag=False,
+            corrections_metadata="analysis/metadata/corrections.yml",
+            do_declustering=False,
+            do_gbb_only=True
     ):
 
         logging.debug("\nInitialize Analysis Processor")
         self.corrections_metadata = yaml.safe_load(open(corrections_metadata, "r"))
+        self.do_declustering = do_declustering
+        self.do_gbb_only = do_gbb_only
 
         self.cutFlowCuts = [
             "all",
@@ -204,6 +208,57 @@ class analysis(processor.ProcessorABC):
         selev["splitting_g_bb"]   = clustered_splittings[clustered_splittings.jet_flavor == "g_bb"]
         selev["splitting_bstar"] = clustered_splittings[clustered_splittings.jet_flavor == "bstar"]
 
+
+        #
+        #  Declustering
+        #
+        if self.do_declustering:
+            if self.do_gbb_only:
+
+                #
+                # 1st replace bstar splittings with their original jets (b, g_bb)
+                #
+                bstar_mask_splittings = clustered_splittings.jet_flavor == "bstar"
+                bs_from_bstar = clustered_splittings[bstar_mask_splittings].part_A
+                gbbs_from_bstar = clustered_splittings[bstar_mask_splittings].part_B
+                jets_from_bstar = ak.concatenate([bs_from_bstar, gbbs_from_bstar], axis=1)
+
+                bstar_mask = clustered_jets.jet_flavor == "bstar"
+                clustered_jets_nobStar = clustered_jets[~bstar_mask]
+                clustered_jets          = ak.concatenate([clustered_jets_nobStar, jets_from_bstar], axis=1)
+
+
+            #
+            # Declustering
+            #
+
+            #
+            #  Read in the pdfs
+            #
+            #  Make with ../.ci-workflows/synthetic-dataset-plot-job.sh
+            #input_pdf_file_name = "analysis/plots_synthetic_datasets/clustering_pdfs.yml"
+            input_pdf_file_name = "analysis/plots_synthetic_datasets/clustering_pdfs_vs_pT.yml"
+            with open(input_pdf_file_name, 'r') as input_file:
+                input_pdfs = yaml.safe_load(input_file)
+
+            declustered_jets = make_synthetic_event(clustered_jets, input_pdfs)
+            canJet = declustered_jets
+
+            #
+            #  Recluster
+            #
+            canJet["jet_flavor"] = "b"
+            canJet = canJet[ak.argsort(canJet.pt, axis=1, ascending=False)]
+
+            clustered_jets_reclustered, clustered_splittings_reclustered = cluster_bs(canJet, debug=False)
+            compute_decluster_variables(clustered_splittings_reclustered)
+
+
+            selev["splitting_g_bb_reclustered"]   = clustered_splittings_reclustered[clustered_splittings_reclustered.jet_flavor == "g_bb"]
+            selev["splitting_bstar_reclustered"]  = clustered_splittings_reclustered[clustered_splittings_reclustered.jet_flavor == "bstar"]
+
+
+
         # dumpTopCandidateTestVectors(selev, logging, chunk, 10)
         selev["region"] = 0b10
 
@@ -256,6 +311,10 @@ class analysis(processor.ProcessorABC):
 
         fill += ClusterHists( ("gbbs", "$g_{bb}$ Splitting"), "splitting_g_bb" )
         fill += ClusterHists( ("bstars", "$b^*$ Splitting"), "splitting_bstar" )
+
+        if self.do_declustering:
+            fill += ClusterHists( ("gbbs_re", "$g_{bb}$ Splitting"), "splitting_g_bb_reclustered" )
+            fill += ClusterHists( ("bstars_re", "$b^*$ Splitting"), "splitting_bstar_reclustered" )
 
         #
         # fill histograms

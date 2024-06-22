@@ -93,7 +93,7 @@ def remove_indices(particles, indices_to_remove):
     mask[indices_to_remove] = False
     return particles[mask]
 
-def combine_particles(part_A, part_B, *, remove_mass=True, debug=False):
+def combine_particles(part_A, part_B, *, debug=False):
     part_comb = part_A + part_B
 
     jet_flavor_pair = (part_A.jet_flavor, part_B.jet_flavor)
@@ -119,7 +119,7 @@ def combine_particles(part_A, part_B, *, remove_mass=True, debug=False):
             "pt": [part_comb.pt],
             "eta": [part_comb.eta],
             "phi": [part_comb.phi],
-            "mass": [0 if remove_mass else part_comb.mass],
+            "mass": [part_comb.mass],
             "jet_flavor": [part_comb_jet_flavor],
             "part_A": [new_part_A],
             "part_B": [new_part_B],
@@ -133,7 +133,7 @@ def combine_particles(part_A, part_B, *, remove_mass=True, debug=False):
 
 
 # Define the kt clustering algorithm
-def cluster_bs_core(event_jets, distance_function, *, remove_mass=True, debug = False):
+def cluster_bs_core(event_jets, distance_function, *, debug = False):
     clustered_jets = []
     splittings = []
 
@@ -164,7 +164,7 @@ def cluster_bs_core(event_jets, distance_function, *, remove_mass=True, debug = 
 
             if debug: print(f"size partilces {len(particles)}")
 
-            part_comb_array = combine_particles(particles[idx_A], particles[idx_B], remove_mass=remove_mass)
+            part_comb_array = combine_particles(particles[idx_A], particles[idx_B])
 
             if debug: print(part_comb_array.jet_flavor)
             match part_comb_array.jet_flavor:
@@ -235,16 +235,16 @@ def cluster_bs_core(event_jets, distance_function, *, remove_mass=True, debug = 
 
 
 
-def cluster_bs(event_jets, *, remove_mass=True, debug = False):
-    return cluster_bs_core(event_jets, get_min_indicies, remove_mass=remove_mass)
+def cluster_bs(event_jets, *, debug = False):
+    return cluster_bs_core(event_jets, get_min_indicies)
 
 
-def cluster_bs_fast(event_jets, *, remove_mass=True, debug = False):
-    return cluster_bs_core(event_jets, get_min_indicies_fast, remove_mass=remove_mass)
+def cluster_bs_fast(event_jets, *, debug = False):
+    return cluster_bs_core(event_jets, get_min_indicies_fast)
 
 
 # Define the kt clustering algorithm
-def kt_clustering(event_jets, R, *, remove_mass=True, debug = False):
+def kt_clustering(event_jets, R, *, debug = False):
     clustered_jets = []
 
     nevents = len(event_jets)
@@ -285,7 +285,7 @@ def kt_clustering(event_jets, R, *, remove_mass=True, debug = False):
 
                 if debug: print(f"size partilces {len(particles)}")
 
-                part_comb_array = combine_particles(part_A, part_B, remove_mass=remove_mass)
+                part_comb_array = combine_particles(part_A, part_B)
 
                 particles = ak.concatenate([particles, part_comb_array])
                 if debug: print(f"size partilces {len(particles)}")
@@ -365,10 +365,11 @@ def compute_decluster_variables(clustered_splittings):
     #
     clustered_splittings["zA"]        = clustered_splittings_pz0.dot(clustered_splittings_part_A_pz0) / (clustered_splittings_pz0.pt**2)
     clustered_splittings["mA"]        = clustered_splittings.part_A.mass
-    clustered_splittings["rhoA"]      = clustered_splittings.part_A.mass/(clustered_splittings.pt * clustered_splittings.zA)
+    clustered_splittings["rhoA"]      = clustered_splittings.part_A.mass / (clustered_splittings.pt * clustered_splittings.zA)
+    clustered_splittings["abs_eta"]   = np.abs(clustered_splittings.eta)
 
     clustered_splittings["mB"]        = clustered_splittings.part_B.mass
-    clustered_splittings["rhoB"]      = clustered_splittings.part_B.mass/(clustered_splittings.pt * (1 - clustered_splittings.zA))
+    clustered_splittings["rhoB"]      = clustered_splittings.part_B.mass / (clustered_splittings.pt * (1 - clustered_splittings.zA))
 
     clustered_splittings["thetaA"]    = np.arccos(clustered_splittings_pz0.unit.dot(clustered_splittings_part_A_pz0.unit))
     clustered_splittings["tan_thetaA"]    = np.tan(np.arccos(clustered_splittings_pz0.unit.dot(clustered_splittings_part_A_pz0.unit)))
@@ -425,13 +426,13 @@ def decluster_combined_jets(input_jet):
     #
 
     # Pseudo-random number to decide if we rotate by phi or phi + pi
-    decay_phi = input_jet.decay_phi + np.pi*((input_jet.pt % 1) > 0.5)
+    decay_phi = input_jet.decay_phi + np.pi * ((input_jet.pt % 1) > 0.5)
 
     pA_pz0_phi0 = rotateX(pA_pz0_phi0_decayPhi0, decay_phi)
     pB_pz0_phi0 = rotateX(pB_pz0_phi0_decayPhi0, decay_phi)
 
     #
-    #  De-Clustering
+    #  Boost back to jet pZ
     #
     boost_vec_z = ak.zip(
         {
@@ -443,9 +444,6 @@ def decluster_combined_jets(input_jet):
         behavior=vector.behavior,
     )
 
-    #
-    #  Boost back to jet pZ
-    #
     pA_phi0 = pA_pz0_phi0.boost(boost_vec_z)
     pB_phi0 = pB_pz0_phi0.boost(boost_vec_z)
 
@@ -477,8 +475,170 @@ def decluster_combined_jets(input_jet):
         behavior=vector.behavior,
     )
 
+
     return pA, pB
     #return ak.concatenate([pA, pB], axis=1)
+
+
+
+def sample_PDFs(input_jets_decluster, input_pdfs, splittings):
+
+    n_jets   = np.sum(ak.num(input_jets_decluster))
+
+    #
+    #  Sample the PDFs for the jets we will uncluster
+    #
+    for _var_name in input_pdfs["varNames"]:
+
+        if _var_name.find("_vs_") == -1:
+            is_1d_pdf = True
+            _sampled_data = np.ones(n_jets)
+        else:
+            is_1d_pdf = False
+            _sampled_data_x = np.ones(n_jets)
+            _sampled_data_y = np.ones(n_jets)
+
+        # Sample the pdfs from the different splitting options
+        for _splitting_name, _num_samples, _indicies_tuple in splittings:
+
+            if is_1d_pdf:
+                probs   = np.array(input_pdfs[_splitting_name][_var_name]["probs"], dtype=float)
+                centers = np.array(input_pdfs[_splitting_name][_var_name]["bin_centers"], dtype=float)
+                _sampled_data[_indicies_tuple] = np.random.choice(centers, size=_num_samples, p=probs)
+            else:
+                probabilities_flat   = np.array(input_pdfs[_splitting_name][_var_name]["probabilities_flat"], dtype=float)
+                xcenters        = np.array(input_pdfs[_splitting_name][_var_name]["xcenters"],      dtype=float)
+                ycenters        = np.array(input_pdfs[_splitting_name][_var_name]["ycenters"],      dtype=float)
+
+                xcenters_flat = np.repeat(xcenters, len(ycenters))
+                ycenters_flat = np.tile(ycenters, len(xcenters))
+
+                sampled_indices = np.random.choice(len(probabilities_flat), size=_num_samples, p=probabilities_flat)
+
+                _sampled_data_x[_indicies_tuple] = xcenters_flat[sampled_indices]
+                _sampled_data_y[_indicies_tuple] = ycenters_flat[sampled_indices]
+
+        #
+        # Save the sampled data to the jets to be uclustered for use in decluster_combined_jets
+        #
+        if is_1d_pdf:
+            input_jets_decluster[_var_name]         = ak.unflatten(_sampled_data,    ak.num(input_jets_decluster))
+        else:
+            input_jets_decluster["zA"]         = ak.unflatten(_sampled_data_x,    ak.num(input_jets_decluster))
+            input_jets_decluster["thetaA"]     = ak.unflatten(_sampled_data_y,    ak.num(input_jets_decluster))
+
+
+
+def sample_PDFs_vs_pT(input_jets_decluster, input_pdfs, splittings):
+
+    n_jets   = np.sum(ak.num(input_jets_decluster))
+
+    pt_bin_0_mask = (input_jets_decluster.pt < 140)
+    pt_bin_1_mask = (input_jets_decluster.pt > 140) & (input_jets_decluster.pt < 230)
+    pt_bin_2_mask = (input_jets_decluster.pt > 230) & (input_jets_decluster.pt < 320)
+    pt_bin_3_mask = (input_jets_decluster.pt > 320) & (input_jets_decluster.pt < 410)
+    pt_bin_4_mask = (input_jets_decluster.pt > 410)
+
+    n_pt_bins = len(input_pdfs["pt_bins"])
+
+
+    #
+    #  Sample the PDFs for the jets we will uncluster
+    #
+    for _var_name in input_pdfs["varNames"]:
+
+        if _var_name.find("_vs_") == -1:
+            is_1d_pdf = True
+
+            _sampled_data = np.ones(n_jets)
+            _sampled_data_vs_pT = []
+            for _iPt in range(n_pt_bins + 1):
+                _sampled_data_vs_pT.append(np.ones(n_jets))
+        else:
+            is_1d_pdf = False
+
+            _sampled_data_x = np.ones(n_jets)
+            _sampled_data_y = np.ones(n_jets)
+            _sampled_data_x_vs_pT = []
+            _sampled_data_y_vs_pT = []
+            for _iPt in range(n_pt_bins + 1):
+                _sampled_data_x_vs_pT.append(np.ones(n_jets))
+                _sampled_data_y_vs_pT.append(np.ones(n_jets))
+
+        # Sample the pdfs from the different splitting options
+        for _splitting_name, _num_samples, _indicies_tuple in splittings:
+
+            for _iPt in range(n_pt_bins + 1):
+
+                if is_1d_pdf:
+                    probs   = np.array(input_pdfs[_splitting_name][_var_name][_iPt]["probs"], dtype=float)
+                    centers = np.array(input_pdfs[_splitting_name][_var_name][_iPt]["bin_centers"], dtype=float)
+                    _sampled_data_vs_pT[_iPt][_indicies_tuple] = np.random.choice(centers, size=_num_samples, p=probs)
+                else:
+                    probabilities_flat = np.array(input_pdfs[_splitting_name][_var_name][_iPt]["probabilities_flat"], dtype=float)
+                    xcenters           = np.array(input_pdfs[_splitting_name][_var_name][_iPt]["xcenters"],      dtype=float)
+                    ycenters           = np.array(input_pdfs[_splitting_name][_var_name][_iPt]["ycenters"],      dtype=float)
+
+                    xcenters_flat = np.repeat(xcenters, len(ycenters))
+                    ycenters_flat = np.tile(ycenters, len(xcenters))
+
+                    sampled_indices = np.random.choice(len(probabilities_flat), size=_num_samples, p=probabilities_flat)
+
+                    _sampled_data_x_vs_pT[_iPt][_indicies_tuple] = xcenters_flat[sampled_indices]
+                    _sampled_data_y_vs_pT[_iPt][_indicies_tuple] = ycenters_flat[sampled_indices]
+
+
+            #
+            #  Now work out which pT bins to use
+            #
+            if is_1d_pdf:
+                pt_0_indicies = np.where(ak.flatten(pt_bin_0_mask))[0]
+                _sampled_data[pt_0_indicies] = _sampled_data_vs_pT[0][pt_0_indicies]
+
+                pt_1_indicies = np.where(ak.flatten(pt_bin_1_mask))[0]
+                _sampled_data[pt_1_indicies] = _sampled_data_vs_pT[1][pt_1_indicies]
+
+                pt_2_indicies = np.where(ak.flatten(pt_bin_2_mask))[0]
+                _sampled_data[pt_2_indicies] = _sampled_data_vs_pT[2][pt_2_indicies]
+
+                pt_3_indicies = np.where(ak.flatten(pt_bin_3_mask))[0]
+                _sampled_data[pt_3_indicies] = _sampled_data_vs_pT[3][pt_3_indicies]
+
+                pt_4_indicies = np.where(ak.flatten(pt_bin_4_mask))[0]
+                _sampled_data[pt_4_indicies] = _sampled_data_vs_pT[4][pt_4_indicies]
+
+            else:
+                pt_0_indicies = np.where(ak.flatten(pt_bin_0_mask))[0]
+                _sampled_data_x[pt_0_indicies] = _sampled_data_x_vs_pT[0][pt_0_indicies]
+                _sampled_data_y[pt_0_indicies] = _sampled_data_y_vs_pT[0][pt_0_indicies]
+
+                pt_1_indicies = np.where(ak.flatten(pt_bin_1_mask))[0]
+                _sampled_data_x[pt_1_indicies] = _sampled_data_x_vs_pT[1][pt_1_indicies]
+                _sampled_data_y[pt_1_indicies] = _sampled_data_y_vs_pT[1][pt_1_indicies]
+
+                pt_2_indicies = np.where(ak.flatten(pt_bin_2_mask))[0]
+                _sampled_data_x[pt_2_indicies] = _sampled_data_x_vs_pT[2][pt_2_indicies]
+                _sampled_data_y[pt_2_indicies] = _sampled_data_y_vs_pT[2][pt_2_indicies]
+
+                pt_3_indicies = np.where(ak.flatten(pt_bin_3_mask))[0]
+                _sampled_data_x[pt_3_indicies] = _sampled_data_x_vs_pT[3][pt_3_indicies]
+                _sampled_data_y[pt_3_indicies] = _sampled_data_y_vs_pT[3][pt_3_indicies]
+
+                pt_4_indicies = np.where(ak.flatten(pt_bin_4_mask))[0]
+                _sampled_data_x[pt_4_indicies] = _sampled_data_x_vs_pT[4][pt_4_indicies]
+                _sampled_data_y[pt_4_indicies] = _sampled_data_y_vs_pT[4][pt_4_indicies]
+
+
+        #
+        # Save the sampled data to the jets to be uclustered for use in decluster_combined_jets
+        #
+        if is_1d_pdf:
+            input_jets_decluster[_var_name]         = ak.unflatten(_sampled_data,    ak.num(input_jets_decluster))
+        else:
+            input_jets_decluster["zA"]         = ak.unflatten(_sampled_data_x,    ak.num(input_jets_decluster))
+            input_jets_decluster["thetaA"]     = ak.unflatten(_sampled_data_y,    ak.num(input_jets_decluster))
+
+
 
 
 def make_synthetic_event(input_jets, input_pdfs):
@@ -511,8 +671,6 @@ def make_synthetic_event(input_jets, input_pdfs):
         bstar_mask = input_jets_decluster.jet_flavor == "bstar"
 
         # Pre compute these to save time
-        n_jets   = np.sum(ak.num(input_jets_decluster))
-
         num_samples_gbb   = np.sum(ak.num(input_jets_decluster[g_bb_mask]))
         gbb_indicies = np.where(ak.flatten(g_bb_mask))
         gbb_indicies_tuple = (gbb_indicies[0].to_list())
@@ -521,27 +679,18 @@ def make_synthetic_event(input_jets, input_pdfs):
         bstar_indicies = np.where(ak.flatten(bstar_mask))
         bstar_indicies_tuple = (bstar_indicies[0].to_list())
 
-        splittings = [("gbb",   num_samples_gbb,   gbb_indicies_tuple),
-                      ("bstar", num_samples_bstar, bstar_indicies_tuple),
+        splittings = [("gbbs",   num_samples_gbb,   gbb_indicies_tuple),
+                      ("bstars", num_samples_bstar, bstar_indicies_tuple),
                       ]
 
+
+        #breakpoint()
+
         #
-        #  Sample the PDFs for the jets we will uncluster
+        #  Sample the PDFs,  add sampled varibales to the jets to be declustered
         #
-        for _var_name in input_pdfs["varNames"]:
-            _sampled_data = np.ones(n_jets)
-
-            # Sample the pdfs from the different splitting options
-            for _splitting_name, _num_samples, _indicies_tuple in splittings:
-
-                probs   = np.array(input_pdfs[_splitting_name][_var_name]["probs"], dtype=float)
-                centers = np.array(input_pdfs[_splitting_name][_var_name]["bin_centers"], dtype=float)
-                _sampled_data[_indicies_tuple] = np.random.choice(centers, size=_num_samples, p=probs)
-
-            #
-            # Save the sampled data to the jets to be uclustered for use in decluster_combined_jets
-            #
-            input_jets_decluster[_var_name]         = ak.unflatten(_sampled_data,    ak.num(input_jets_decluster))
+        #sample_PDFs(input_jets_decluster, input_pdfs, splittings)
+        sample_PDFs_vs_pT(input_jets_decluster, input_pdfs, splittings)
 
         #
         #  do the declustering

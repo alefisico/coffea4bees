@@ -258,7 +258,8 @@ class clusteringTestCase(unittest.TestCase):
         #  Read in the pdfs
         #
         #  Make with ../.ci-workflows/synthetic-dataset-plot-job.sh
-        input_pdf_file_name = "analysis/plots_synthetic_datasets/clustering_pdfs.yml"
+        # input_pdf_file_name = "analysis/plots_synthetic_datasets/clustering_pdfs.yml"
+        input_pdf_file_name = "analysis/plots_synthetic_datasets/clustering_pdfs_vs_pT.yml"
         with open(input_pdf_file_name, 'r') as input_file:
             input_pdfs = yaml.safe_load(input_file)
 

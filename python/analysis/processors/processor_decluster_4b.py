@@ -149,7 +149,7 @@ class analysis(processor.ProcessorABC):
         isMC    = True if event.run[0] == 1 else False
 
         self.top_reconstruction = event.metadata.get("top_reconstruction", None)
-
+        logging.info(f"top_reconstruction is {self.top_reconstruction}")
         isMixedData    = not (dataset.find("mix_v") == -1)
         isDataForMixed = not (dataset.find("data_3b_for_mixed") == -1)
         isTTForMixed   = not (dataset.find("TTTo") == -1) and not ( dataset.find("_for_mixed") == -1 )
@@ -565,7 +565,8 @@ class analysis(processor.ProcessorABC):
             #  Read in the pdfs
             #
             #  Make with ../.ci-workflows/synthetic-dataset-plot-job.sh
-            input_pdf_file_name = "analysis/plots_synthetic_datasets/clustering_pdfs.yml"
+            #input_pdf_file_name = "analysis/plots_synthetic_datasets/clustering_pdfs.yml"
+            input_pdf_file_name = "analysis/plots_synthetic_datasets/clustering_pdfs_vs_pT.yml"
             with open(input_pdf_file_name, 'r') as input_file:
                 input_pdfs = yaml.safe_load(input_file)
     
@@ -579,6 +580,10 @@ class analysis(processor.ProcessorABC):
             canJet["jetId"] = 7 # selev.Jet.puId[canJet_idx]
             canJet["btagDeepFlavB"] = 1.0 # Set bs to 1 and ls to 0 
             canJet = canJet[ak.argsort(canJet.pt, axis=1, ascending=False)]
+
+
+
+
             
         #
         #   Proceed as normal
