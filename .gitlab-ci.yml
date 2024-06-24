@@ -22,6 +22,7 @@ include:
   - local: '.ci-workflows/stages_*.yml'
 
 stages:          
+  - reana
   - build
   - proxy
   - code 
@@ -30,7 +31,6 @@ stages:
   - fits
   - plot
   - cutflow
-  - reana
 
 .base_analysis:
   needs:
