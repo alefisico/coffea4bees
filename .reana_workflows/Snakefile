@@ -218,7 +218,7 @@ rule make_plots:
     shell:
         """
 cd python/ 
-mprof run -C -o mprofile_makeplots.dat python analysis/makePlots.py ../output/histAll.coffea -o ../output/ -m analysis/metadata/plotsAll.yml
+mprof run -C -o mprofile_makeplots.dat python analysis/makePlots.py ../output/histAll.coffea -o ../output/ -m analysis/metadata/plotsAll.yml -s xW
 mprof plot -o mprofile_makeplots.png ../output/mprofile_makeplots.dat
 python .php-plots/bin/pb_deploy_plots.py ../output/RunII/ /eos/user/a/algomez/work/HH4b/reana/{TIMESTAMP}/ -r -c -j 4
         """

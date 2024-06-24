@@ -108,10 +108,12 @@ def create_combine_root_file( file_to_convert,
                                               iyear, rebin)
                         elif 'triggerEffSFDown' in namevar: continue
 
+                        print(f'{iprocess}_{ivar}_{iyear}')
                         root_hists[iyear][iprocess][namevar] = json_to_TH1(
                                                         coffea_hists_syst[ih][iprocess][iyear][ivar]['fourTag']['SR'], 
                                                         f'{iprocess}_{ivar}_{iyear}', rebin )
-
+                        print(root_hists[iyear][iprocess][namevar])
+        
         if systematics_file and use_preUL:
             iprocess = 'HH4b'
             for iyear in coffea_hists_syst[ih]['HH4b'].keys():
@@ -197,7 +199,7 @@ def create_combine_root_file( file_to_convert,
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
 
-        output_file = "hists_"+iclass+".root"
+        output_file = "shapes.root" #"hists_"+iclass+".root"
         output = output_dir+"/"+output_file
 
         root_file = ROOT.TFile(output, 'recreate')
@@ -230,74 +232,75 @@ def create_combine_root_file( file_to_convert,
 
         total_process = len( metadata["processes"]["all"].keys() ) 
 
-        hline = '-'*30
+        hline = '-'*100
         lines = []
-        lines.append('imax %d number of channels'%(len(metadata['processes']['signal'])*len(metadata['bin'])))
+        lines.append('imax %d number of channels'%(len(metadata['bin'])))
         lines.append(f'jmax {total_process-1} number of processes minus one') # zz, zh, hh, mj, tt is five processes, so jmax is 4
         lines.append('kmax * number of systematics')
         lines.append(hline)
         lines.append('shapes * * '+output_file+' $CHANNEL/$PROCESS $CHANNEL/$PROCESS_$SYSTEMATIC')
         lines.append(hline)
 
-        def make_lalign_formatter(df, cols=None):
-            if cols is None:
-                cols = df.columns[df.dtypes == 'object']
-
-            return {col: f'{{:<{df[col].str.len().max()}s}}'.format for col in cols}
-
         size_datacard = len(metadata['bin'])*len(metadata['processes']['all'])
         datacard = pd.DataFrame( columns=[f'col_{i}' for i in range( size_datacard + 2) ] )
-        datacard.loc[0] = [ 'bin', '' ] + metadata['bin'] + [ '' for ibin in metadata['bin'] for _ in range(len(metadata['bin'])-1) ] 
-        datacard.loc[1] = [ 'observation', '' ] + [ '-1' for _ in metadata['bin'] ] + [ '' for ibin in metadata['bin'] for _ in range(len(metadata['bin'])-1) ] 
-        datacard.loc[2] = [ 'bin', '' ] + [ ibin for ibin in metadata['bin'] for _ in range(len(metadata['bin'])) ] 
-        datacard.loc[3] = [ 'process', '' ] + [ metadata['processes']['all'][ibin]['label'] for ibin in metadata['processes']['all'] ] * len(metadata['bin'])
-        datacard.loc[4] = [ 'process', '' ] + [ metadata['processes']['all'][ibin]['process'] for ibin in metadata['processes']['all'] ] * len(metadata['bin'])
-        datacard.loc[5] = [ 'rate', '' ] + [ '-1' ] * len(metadata['bin']) * len(metadata['processes']['all'])
+        datacard.loc[0] = [ 'bin', '' ] + metadata['bin'] + [ '' for _ in range( (size_datacard - len(metadata['bin']) ) ) ]  
+        datacard.loc[1] = [ 'observation', '' ] + [ '-1' for _ in metadata['bin'] ] + [ '' for _ in range( (size_datacard - len(metadata['bin']) ) ) ] 
+        datacard.loc[2] = [ '-'*50, '' ] + [ '' for _ in range( size_datacard ) ]
+        datacard.loc[3] = [ 'bin', '' ] + [ ibin for ibin in metadata['bin'] for _ in range(len(metadata['processes']['all'])) ] 
+        datacard.loc[4] = [ 'process', '' ] + [ metadata['processes']['all'][ibin]['label'] for ibin in metadata['processes']['all'] ] * len(metadata['bin'])
+        datacard.loc[5] = [ 'process', '' ] + [ metadata['processes']['all'][ibin]['process'] for ibin in metadata['processes']['all'] ] * len(metadata['bin'])
+        datacard.loc[6] = [ 'rate', '' ] + [ '-1' ] * len(metadata['bin']) * len(metadata['processes']['all'])
+        datacard.loc[7] = [ '-'*50, '' ] + [ '' for _ in range( size_datacard ) ]
 
-        is_multijet = (datacard.loc[3,:] == metadata['processes']['background']['multijet']['label']).to_numpy()
+        is_multijet = (datacard.loc[4,:] == metadata['processes']['background']['multijet']['label']).to_numpy()
         for nuisance in closureSysts:
             row = pd.Series([ nuisance, 'shape'] + ['-'] * size_datacard, index=datacard.columns )
             new_row = row.where(~is_multijet, '1')
             datacard = datacard.append(new_row, ignore_index=True)
         
-        for isignal in metadata['processes']['signal']:
+        for nuisance in mcSysts:
+            iy = ''.join(nuisance[-2:])
+            row = pd.Series([ nuisance, 'shape'] + ['-'] * size_datacard, index=datacard.columns )
 
-            is_signal = (datacard.loc[3,:] == metadata['processes']['signal'][isignal]['label']).to_numpy()
-            for nuisance in mcSysts:
-                iy = ''.join(nuisance[-2:])
-                row = pd.Series([ nuisance, 'shape'] + ['-'] * size_datacard, index=datacard.columns )
+            for isignal in metadata['processes']['signal']:
+
+                is_signal = (datacard.loc[4,:] == metadata['processes']['signal'][isignal]['label']).to_numpy()
                 if iy.isdigit():
-                    is_year = (datacard.loc[2,:] == f'UL{iy}' ).to_numpy()
+                    is_year = (datacard.loc[3,:] == f'UL{iy}' ).to_numpy()
                     new_row = row.where(~(is_signal & is_year), '1')
                 else:
                     new_row = row.where(~is_signal, '1')
-                datacard = datacard.append(new_row, ignore_index=True)
+                row = new_row
+            datacard = datacard.append(new_row, ignore_index=True)
 
-            for isyst in metadata['uncertainty']:
-                row = pd.Series([ isyst, metadata['uncertainty'][isyst]['type']] + ['-'] * size_datacard, index=datacard.columns )
+        for isyst in metadata['uncertainty']:
+            row = pd.Series([ isyst, metadata['uncertainty'][isyst]['type']] + ['-'] * size_datacard, index=datacard.columns )
+            for isignal in metadata['processes']['signal']:
+                is_signal = (datacard.loc[4,:] == metadata['processes']['signal'][isignal]['label']).to_numpy()
                 for iy in metadata['uncertainty'][isyst]['years']:
-                    is_year = (datacard.loc[2,:] == iy ).to_numpy()
+                    is_year = (datacard.loc[3,:] == iy ).to_numpy()
                     row = row.where(~(is_signal & is_year), metadata['uncertainty'][isyst]['years'][iy])
-                datacard = datacard.append(row, ignore_index=True)
+            datacard = datacard.append(row, ignore_index=True)
 
         lines.append( datacard.to_string(justify='left', header=False, index=False ) )
         if not stat_only:
             lines.append(hline)
             lines.append('* autoMCStats 0 1 1')
         lines.append(hline)
-        # if closureSysts:
-        #     lines.append('multijet group = %s'%(' '.join(closureSysts)))
-        # if mcSysts:
-        #     lines.append('btag     group = %s'%(' '.join(   btagSysts)))
-        #     lines.append('junc     group = %s'%(' '.join(   juncSysts)))
-        #     lines.append('trig     group = CMS_bbbb_resolved_ggf_triggerEffSF')
-        # lines.append(f'lumi     group = {" ".join([ isyst for isyst in metadata["uncertainty"] if "lumi" in isyst ])}')
-        # lines.append('theory   group = BR_hbb xs_hbbhbb') #mtop_ggH
-        # if not stat_only:
-        #     lines.append(f'others   group = lumi_13TeV_correlated lumi_13TeV_1718 lumi_2016 lumi_2017 lumi_2018 BR_hbb xs_hbbhbb CMS_pileup_2016 CMS_pileup_2017 CMS_pileup_2018 CMS_l1_ecal_prefiring_2016 CMS_l1_ecal_prefiring_2017 CMS_l1_ecal_prefiring_2018 %s'%(' '.join(juncSysts)))
+        if closureSysts:
+            lines.append(f"{metadata['processes']['background']['multijet']['label']} group = {' '.join(closureSysts)}")
+        if mcSysts:
+            lines.append('CMS_btag group = %s'%(' '.join(   btagSysts)))
+            lines.append('CMS_scale_j group = %s'%(' '.join(   juncSysts)))
+            # lines.append('trig     group = CMS_bbbb_resolved_ggf_triggerEffSF')
+        lines.append(f'CMS_lumi group = {" ".join([ isyst for isyst in metadata["uncertainty"] if "lumi" in isyst ])}')
+        lines.append('theory   group = BR_hbb xs_hbbhbb') #mtop_ggH
+        if not stat_only:
+            lines.append(f'others   group = {" ".join([ isyst for isyst in metadata["uncertainty"] if "lumi" in isyst ])} BR_hbb xs_hbbhbb CMS_pileup_2016 CMS_pileup_2017 CMS_pileup_2018 CMS_l1_ecal_prefiring_2016 CMS_l1_ecal_prefiring_2017 CMS_l1_ecal_prefiring_2018 {" ".join(juncSysts)}')
 
 
-        with open(output.replace('hists', 'combine').replace('root', 'txt'), 'w') as ofile:
+        output_datacard = 'datacard.txt' #output.replace('hists', 'combine').replace('root', 'txt')
+        with open(output_dir+"/"+output_datacard, 'w') as ofile:
             for line in lines:
                 print(line)
                 ofile.write(line+'\n')
