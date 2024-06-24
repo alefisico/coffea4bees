@@ -1,9 +1,8 @@
-import os, sys
+import os
 import ROOT
 import argparse
 import logging
 import json
-import numpy as np
 ROOT.gROOT.SetBatch(True)
 
 
@@ -21,7 +20,6 @@ def json_to_TH1( coffea_hist, iname, rebin ):
 
     rHist = ROOT.TH1F(iname, iname, len(centers), edges[0], edges[-1])
     rHist.Sumw2()
-
 
     rHist.SetBinContent(0, underflow_value)
     rHist.SetBinError(0, ROOT.TMath.Sqrt(underflow_variance))

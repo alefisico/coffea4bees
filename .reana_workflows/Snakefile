@@ -218,7 +218,7 @@ rule make_plots:
     shell:
         """
 cd python/ 
-mprof run -C -o mprofile_makeplots.dat python analysis/makePlots.py ../output/histAll.coffea -o ../output/ -m analysis/metadata/plotsAll.yml
+mprof run -C -o mprofile_makeplots.dat python analysis/makePlots.py ../output/histAll.coffea -o ../output/ -m analysis/metadata/plotsAll.yml -s xW
 mprof plot -o mprofile_makeplots.png ../output/mprofile_makeplots.dat
 python .php-plots/bin/pb_deploy_plots.py ../output/RunII/ /eos/user/a/algomez/work/HH4b/reana/{TIMESTAMP}/ -r -c -j 4
         """
@@ -227,9 +227,11 @@ rule convert_hist_to_json:
     input:
         inall = "output/histAll.coffea",
         insyst = "output/histAll_syst.coffea"
+        insyst = "output/histAll_signals_cHHHX.coffea"
     output:
         outall = "output/histAll.json",
         outsyst = "output/histAll_syst.json"
+        outsyst = "output/histAll_signals_cHHHX.json"
     container:
         "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
     resources:
@@ -239,6 +241,7 @@ rule convert_hist_to_json:
         """
 python python/stats_analysis/convert_hist_to_json.py -o {output.outall} -i {input.inall}
 python python/stats_analysis/convert_hist_to_json.py -o {output.outsyst} -i {input.insyst} -s
+python python/stats_analysis/convert_hist_to_json.py -o {output.outsystcHHHX} -i {input.insystcHHHX} -s
         """
 
 rule make_combine_inputs:
