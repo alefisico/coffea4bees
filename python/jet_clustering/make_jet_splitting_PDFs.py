@@ -110,7 +110,6 @@ def make_PDFs_vs_Pt(config, output_file_name_vs_pT):
                         write_1D_pdf(output_file_vs_pT, _iPt, bin_centers, probs, n_spaces=8)
                     else:
                         #_v = _v.replace(f"{_s}.","")
-                        print(f"2D hist {_hist_name}")
                         hist_to_plot = cfg.hists[0]["hists"][f"{_hist_name}"]
                         _hist = hist_to_plot[{"process":"data", "year":sum, "tag":1,"region":0,"passPreSel":True, "pt":_iPt}]
 
@@ -281,10 +280,10 @@ def doPlots(debug=False):
 
     gbb_hist_name = {}
     #gbb_hist_name["thetaA"]    = ("gbbs.thetaA",    1)  # (hist_name, rebin)
-    #gbb_hist_name["mA"]        = ("gbbs.mA",        1)
-    #gbb_hist_name["mB"]        = ("gbbs.mB",        1)
-    gbb_hist_name["rhoA"]      = ("gbbs.rhoA",      1)
-    gbb_hist_name["rhoB"]      = ("gbbs.rhoB",      1)
+    gbb_hist_name["mA"]        = ("gbbs.mA",        1)
+    gbb_hist_name["mB"]        = ("gbbs.mB",        1)
+    #gbb_hist_name["rhoA"]      = ("gbbs.rhoA",      1)
+    #gbb_hist_name["rhoB"]      = ("gbbs.rhoB",      1)
     #gbb_hist_name["zA"]        = ("gbbs.zA",        1)
     gbb_hist_name["decay_phi"] = ("gbbs.decay_phi", 4)
     gbb_hist_name["zA_vs_thetaA"]        = ("gbbs.zA_vs_thetaA",        1)
@@ -292,10 +291,10 @@ def doPlots(debug=False):
 
     bstar_hist_name = {}
     #bstar_hist_name["thetaA"]    = ("bstars.thetaA_l" ,  1)
-    # bstar_hist_name["mA"]        = ("bstars.mA"       ,  1)
-    # bstar_hist_name["mB"]        = ("bstars.mB"       ,  1)
-    bstar_hist_name["rhoA"]      = ("bstars.rhoA"     ,  1)
-    bstar_hist_name["rhoB"]      = ("bstars.rhoB"     ,  1)
+    bstar_hist_name["mA"]        = ("bstars.mA"       ,  1)
+    bstar_hist_name["mB"]        = ("bstars.mB"       ,  1)
+    #bstar_hist_name["rhoA"]      = ("bstars.rhoA"     ,  1)
+    #bstar_hist_name["rhoB"]      = ("bstars.rhoB"     ,  1)
     #bstar_hist_name["zA"]        = ("bstars.zA_l"     ,  1)
     bstar_hist_name["decay_phi"] = ("bstars.decay_phi",  4)
     bstar_hist_name["zA_vs_thetaA"]        = ("bstars.zA_vs_thetaA",        1)

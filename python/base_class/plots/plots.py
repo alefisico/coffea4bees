@@ -129,7 +129,10 @@ def get_hist(cfg, config, var, region, cut, rebin, file_index=None, debug=False)
     if type(codes["region"][region]) is list:
         region_dict = {"region":  [hist.loc(r) for r in codes["region"][region]]}
     else:
-        region_dict = {"region":  hist.loc(codes["region"][region])}
+        if region == "sum":
+            region_dict = {"region":  sum}
+        else:
+            region_dict = {"region":  hist.loc(codes["region"][region])}
 
     cut_dict = get_cut_dict(cut, cfg.cutList)
 
