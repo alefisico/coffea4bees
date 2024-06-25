@@ -30,8 +30,8 @@ def doPlots(debug=False):
     args = {"norm": True,
             "doRatio": 1,
             "labels":["De-clustered","Nominal"],
-            "norm": True,
-            "region":"SB",
+            "norm": False,
+            "region":"sum",
             "cut":"passPreSel",
             "doRatio":1,
             "rebin":1,
@@ -52,7 +52,7 @@ def doPlots(debug=False):
     plot("canJets.eta", **args, xlim=[-3,3])
     plot("canJets.phi", **args)
     plot("canJets.energy", **args)
-    plot("canJets.mass", **args,xlim=[0,60])
+    plot("canJets.mass", **args,xlim=[0,50])
     plot("canJets.pz", **args)#,yscale="log")
 
     #
@@ -62,6 +62,8 @@ def doPlots(debug=False):
     di_jets = ["lead","subl","close","other"]
 
     for q in quad_jets:
+        plot(f"{q}.xHH", **args)
+        plot(f"{q}.dr", **args)
         for d in di_jets:
             plot(f"{q}.{d}.dphi", **args)
             plot(f"{q}.{d}.dr", **args)
@@ -70,8 +72,8 @@ def doPlots(debug=False):
             plot(f"{q}.{d}.phi", **args)
             plot(f"{q}.{d}.pt", **args)
             plot(f"{q}.{d}.pz", **args)
-            #plot(f"{q}.{d}.dphi", **args)
 
+            #plot(f"{q}.{d}.dphi", **args)
 
     plot("v4j.pt", **args)
     plot("v4j.phi", **args)
@@ -81,7 +83,10 @@ def doPlots(debug=False):
     #
     #  Event Level
     #
-    plot("SvB_MA.ps", **args)
+    args["rebin"] = 4
+    plot("SvB_MA.ps_zh", **args, yscale="log")
+    plot("SvB_MA.ps_zz", **args, yscale="log")
+    plot("SvB_MA.ps_hh", **args, yscale="log")
     
 
         
