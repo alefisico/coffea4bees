@@ -105,11 +105,9 @@ def combine_particles(part_A, part_B, *, debug=False):
 
     match jet_flavor_pair:
         case ("b","b"):
-            part_comb_jet_flavor = "g_bb"
-        case ("b","g_bb") :
-            part_comb_jet_flavor = "bstar"
-        case("g_bb", "b") :
-            part_comb_jet_flavor = "bstar"
+            part_comb_jet_flavor = "bb"
+        case ("b","bb") | ("bb", "b"):
+            part_comb_jet_flavor = "b(bb)"
         case _:
             if debug: print(f"ERROR: combining {jet_flavor_pair}")
             part_comb_jet_flavor = f"ERROR {part_A.jet_flavor} and {part_B.jet_flavor}"
@@ -168,7 +166,7 @@ def cluster_bs_core(event_jets, distance_function, *, debug = False):
 
             if debug: print(part_comb_array.jet_flavor)
             match part_comb_array.jet_flavor:
-                case "g_bb" | "bstar":
+                case "bb" | "b(bb)":
                     number_of_unclustered_bs -= 1
                 case _:
                     print(f"ERROR: counting {part_comb_array.jet_flavor}")
@@ -624,8 +622,8 @@ def sample_PDFs_vs_pT(input_jets_decluster, input_pdfs, splittings):
 
 def make_synthetic_event(input_jets, input_pdfs):
 
-    g_bb_mask_all  = input_jets.jet_flavor == "g_bb"
-    bstar_mask_all = input_jets.jet_flavor == "bstar"
+    g_bb_mask_all  = input_jets.jet_flavor == "bb"
+    bstar_mask_all = input_jets.jet_flavor == "b(bb)"
     decluster_mask_all = g_bb_mask_all | bstar_mask_all
 
     #
@@ -647,8 +645,8 @@ def make_synthetic_event(input_jets, input_pdfs):
 
     while(ak.any(input_jets_decluster)):
 
-        g_bb_mask  = input_jets_decluster.jet_flavor == "g_bb"
-        bstar_mask = input_jets_decluster.jet_flavor == "bstar"
+        g_bb_mask  = input_jets_decluster.jet_flavor == "bb"
+        bstar_mask = input_jets_decluster.jet_flavor == "b(bb)"
 
         # Pre compute these to save time
         num_samples_gbb   = np.sum(ak.num(input_jets_decluster[g_bb_mask]))

@@ -550,12 +550,12 @@ class analysis(processor.ProcessorABC):
                 #
                 # 1st replace bstar splittings with their original jets (b, g_bb)
                 #
-                bstar_mask_splittings = _clustered_splittings.jet_flavor == "bstar"
+                bstar_mask_splittings = _clustered_splittings.jet_flavor == "b(bb)"
                 bs_from_bstar = _clustered_splittings[bstar_mask_splittings].part_A
                 gbbs_from_bstar = _clustered_splittings[bstar_mask_splittings].part_B
                 jets_from_bstar = ak.concatenate([bs_from_bstar, gbbs_from_bstar], axis=1)
     
-                bstar_mask = clustered_jets.jet_flavor == "bstar"
+                bstar_mask = clustered_jets.jet_flavor == "b(bb)"
                 clustered_jets_nobStar = clustered_jets[~bstar_mask]
                 clustered_jets          = ak.concatenate([clustered_jets_nobStar, jets_from_bstar], axis=1)
     

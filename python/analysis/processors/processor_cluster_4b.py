@@ -49,7 +49,9 @@ class analysis(processor.ProcessorABC):
             corrections_metadata="analysis/metadata/corrections.yml",
             clustering_pdfs_file="jet_clustering/clustering_PDFs/clustering_pdfs_vs_pT.yml",
             do_declustering=False,
-            do_gbb_only=True
+            do_gbb_only=True,
+            do_4jets=True,
+            do_5jets=False,
     ):
 
         logging.debug("\nInitialize Analysis Processor")
@@ -57,6 +59,8 @@ class analysis(processor.ProcessorABC):
         self.clustering_pdfs = yaml.safe_load(open(clustering_pdfs_file, "r"))
         self.do_declustering = do_declustering
         self.do_gbb_only = do_gbb_only
+        self.do_4jets = do_4jets
+        self.do_5jets = do_5jets
 
         self.cutFlowCuts = [
             "all",
@@ -66,6 +70,7 @@ class analysis(processor.ProcessorABC):
             "passJetMult_btagSF",
             "passFourTag",
             "pass0OthJets",
+            "pass1OthJets",
         ]
 
         self.histCuts = ["passPreSel"]
@@ -146,9 +151,15 @@ class analysis(processor.ProcessorABC):
         selections.add("passFourTag", event.fourTag)
 
         event['pass0OthJets'] = event.nJet_selected == 4
+        event['pass1OthJets'] = event.nJet_selected == 5
         selections.add("pass0OthJets", event.pass0OthJets)
+        selections.add("pass1OthJets", event.pass1OthJets)
         allcuts.append("passFourTag")
-        allcuts.append("pass0OthJets")
+
+        if self.do_4jets:
+            allcuts.append("pass0OthJets")
+        elif self.do_5jets:
+            allcuts.append("pass1OthJets")
 
         selev = event[selections.all(*allcuts)]
 
@@ -172,6 +183,7 @@ class analysis(processor.ProcessorABC):
             canJet["hadronFlavour"] = selev.Jet.hadronFlavour[canJet_idx]
         canJet["calibration"] = selev.Jet.calibration[canJet_idx]
 
+
         #
         # pt sort canJets
         #
@@ -192,10 +204,14 @@ class analysis(processor.ProcessorABC):
         notCanJet = selev.Jet[notCanJet_idx]
         notCanJet = notCanJet[notCanJet.selected_loose]
         notCanJet = notCanJet[ak.argsort(notCanJet.pt, axis=1, ascending=False)]
+        notCanJet_sel = notCanJet[notCanJet.selected]
 
         notCanJet["isSelJet"] = 1 * ( (notCanJet.pt > 40) & (np.abs(notCanJet.eta) < 2.4) )  # should have been defined as notCanJet.pt>=40, too late to fix this now...
         selev["notCanJet_coffea"] = notCanJet
         selev["nNotCanJet"] = ak.num(selev.notCanJet_coffea)
+
+
+        print(selev.nJet_selected, selev.nNotCanJet, ak.num(notCanJet_sel),"\n")
 
         #
         # Build diJets, indexed by diJet[event,pairing,0/1]
@@ -203,12 +219,17 @@ class analysis(processor.ProcessorABC):
         #canJet = selev["canJet"]
 
         canJet["jet_flavor"] = "b"
-        #clustered_jets, clustered_splittings = cluster_bs_fast(canJet, debug=False)
-        clustered_jets, clustered_splittings = cluster_bs(canJet, debug=False)
+        notCanJet_sel["jet_flavor"] = "j"
+
+        jets_for_clustering = ak.concatenate([canJet, notCanJet_sel], axis=1)
+        print("Jets for clustering", ak.num(jets_for_clustering),"\n")
+
+        #clustered_jets, clustered_splittings = cluster_bs_fast(jets_for_clustering, debug=False)
+        clustered_jets, clustered_splittings = cluster_bs(jets_for_clustering, debug=False)
         compute_decluster_variables(clustered_splittings)
 
-        selev["splitting_g_bb"]   = clustered_splittings[clustered_splittings.jet_flavor == "g_bb"]
-        selev["splitting_bstar"] = clustered_splittings[clustered_splittings.jet_flavor == "bstar"]
+        selev["splitting_g_bb"]   = clustered_splittings[clustered_splittings.jet_flavor == "bb"]
+        selev["splitting_bstar"] = clustered_splittings[clustered_splittings.jet_flavor == "b(bb)"]
 
 
         #
@@ -220,12 +241,12 @@ class analysis(processor.ProcessorABC):
                 #
                 # 1st replace bstar splittings with their original jets (b, g_bb)
                 #
-                bstar_mask_splittings = clustered_splittings.jet_flavor == "bstar"
+                bstar_mask_splittings = clustered_splittings.jet_flavor == "b(bb)"
                 bs_from_bstar = clustered_splittings[bstar_mask_splittings].part_A
                 gbbs_from_bstar = clustered_splittings[bstar_mask_splittings].part_B
                 jets_from_bstar = ak.concatenate([bs_from_bstar, gbbs_from_bstar], axis=1)
 
-                bstar_mask = clustered_jets.jet_flavor == "bstar"
+                bstar_mask = clustered_jets.jet_flavor == "b(bb)"
                 clustered_jets_nobStar = clustered_jets[~bstar_mask]
                 clustered_jets          = ak.concatenate([clustered_jets_nobStar, jets_from_bstar], axis=1)
 
@@ -256,8 +277,8 @@ class analysis(processor.ProcessorABC):
             compute_decluster_variables(clustered_splittings_reclustered)
 
 
-            selev["splitting_g_bb_reclustered"]   = clustered_splittings_reclustered[clustered_splittings_reclustered.jet_flavor == "g_bb"]
-            selev["splitting_bstar_reclustered"]  = clustered_splittings_reclustered[clustered_splittings_reclustered.jet_flavor == "bstar"]
+            selev["splitting_g_bb_reclustered"]   = clustered_splittings_reclustered[clustered_splittings_reclustered.jet_flavor == "bb"]
+            selev["splitting_bstar_reclustered"]  = clustered_splittings_reclustered[clustered_splittings_reclustered.jet_flavor == "b(bb)"]
 
 
 
@@ -273,6 +294,7 @@ class analysis(processor.ProcessorABC):
 
         self._cutFlow.fill("passFourTag", selev )
         self._cutFlow.fill("pass0OthJets",selev )
+        self._cutFlow.fill("pass1OthJets",selev )
 
         self._cutFlow.addOutput(processOutput, event.metadata["dataset"])
 
