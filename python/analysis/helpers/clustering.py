@@ -99,6 +99,9 @@ def combine_particles(part_A, part_B, *, debug=False):
     jet_flavor_pair = (part_A.jet_flavor, part_B.jet_flavor)
     new_part_A = part_A
     new_part_B = part_B
+    if part_A.pt < part_B.pt:
+        new_part_A = part_B
+        new_part_B = part_A
 
     match jet_flavor_pair:
         case ("b","b"):
@@ -107,9 +110,6 @@ def combine_particles(part_A, part_B, *, debug=False):
             part_comb_jet_flavor = "bstar"
         case("g_bb", "b") :
             part_comb_jet_flavor = "bstar"
-            # for bstar splitting make sure g_bb is always "partB"
-            new_part_A = part_B
-            new_part_B = part_A
         case _:
             if debug: print(f"ERROR: combining {jet_flavor_pair}")
             part_comb_jet_flavor = f"ERROR {part_A.jet_flavor} and {part_B.jet_flavor}"
@@ -535,13 +535,16 @@ def sample_PDFs_vs_pT(input_jets_decluster, input_pdfs, splittings):
 
     n_jets   = np.sum(ak.num(input_jets_decluster))
 
-    pt_bin_0_mask = (input_jets_decluster.pt < 140)
-    pt_bin_1_mask = (input_jets_decluster.pt > 140) & (input_jets_decluster.pt < 230)
-    pt_bin_2_mask = (input_jets_decluster.pt > 230) & (input_jets_decluster.pt < 320)
-    pt_bin_3_mask = (input_jets_decluster.pt > 320) & (input_jets_decluster.pt < 410)
-    pt_bin_4_mask = (input_jets_decluster.pt > 410)
+    n_pt_bins = len(input_pdfs["pt_bins"]) - 1
+    pt_masks = []
+    for iPt in range(n_pt_bins):
+        _min_pt = float(input_pdfs["pt_bins"][iPt])
+        _max_pt = float(input_pdfs["pt_bins"][iPt+1])
+        if _max_pt == "inf":
+            _max_pt = np.inf
 
-    n_pt_bins = len(input_pdfs["pt_bins"])
+        _this_mask = (input_jets_decluster.pt > _min_pt) & (input_jets_decluster.pt < _max_pt)
+        pt_masks.append( _this_mask )
 
 
     #
@@ -554,7 +557,7 @@ def sample_PDFs_vs_pT(input_jets_decluster, input_pdfs, splittings):
 
             _sampled_data = np.ones(n_jets)
             _sampled_data_vs_pT = []
-            for _iPt in range(n_pt_bins + 1):
+            for _iPt in range(n_pt_bins):
                 _sampled_data_vs_pT.append(np.ones(n_jets))
         else:
             is_1d_pdf = False
@@ -563,14 +566,14 @@ def sample_PDFs_vs_pT(input_jets_decluster, input_pdfs, splittings):
             _sampled_data_y = np.ones(n_jets)
             _sampled_data_x_vs_pT = []
             _sampled_data_y_vs_pT = []
-            for _iPt in range(n_pt_bins + 1):
+            for _iPt in range(n_pt_bins):
                 _sampled_data_x_vs_pT.append(np.ones(n_jets))
                 _sampled_data_y_vs_pT.append(np.ones(n_jets))
 
         # Sample the pdfs from the different splitting options
         for _splitting_name, _num_samples, _indicies_tuple in splittings:
 
-            for _iPt in range(n_pt_bins + 1):
+            for _iPt in range(n_pt_bins):
 
                 if is_1d_pdf:
                     probs   = np.array(input_pdfs[_splitting_name][_var_name][_iPt]["probs"], dtype=float)
@@ -594,41 +597,17 @@ def sample_PDFs_vs_pT(input_jets_decluster, input_pdfs, splittings):
             #  Now work out which pT bins to use
             #
             if is_1d_pdf:
-                pt_0_indicies = np.where(ak.flatten(pt_bin_0_mask))[0]
-                _sampled_data[pt_0_indicies] = _sampled_data_vs_pT[0][pt_0_indicies]
 
-                pt_1_indicies = np.where(ak.flatten(pt_bin_1_mask))[0]
-                _sampled_data[pt_1_indicies] = _sampled_data_vs_pT[1][pt_1_indicies]
-
-                pt_2_indicies = np.where(ak.flatten(pt_bin_2_mask))[0]
-                _sampled_data[pt_2_indicies] = _sampled_data_vs_pT[2][pt_2_indicies]
-
-                pt_3_indicies = np.where(ak.flatten(pt_bin_3_mask))[0]
-                _sampled_data[pt_3_indicies] = _sampled_data_vs_pT[3][pt_3_indicies]
-
-                pt_4_indicies = np.where(ak.flatten(pt_bin_4_mask))[0]
-                _sampled_data[pt_4_indicies] = _sampled_data_vs_pT[4][pt_4_indicies]
+                for iPt in range(n_pt_bins):
+                    _pt_indicies = np.where(ak.flatten(pt_masks[iPt]))[0]
+                    _sampled_data[_pt_indicies] = _sampled_data_vs_pT[iPt][_pt_indicies]
 
             else:
-                pt_0_indicies = np.where(ak.flatten(pt_bin_0_mask))[0]
-                _sampled_data_x[pt_0_indicies] = _sampled_data_x_vs_pT[0][pt_0_indicies]
-                _sampled_data_y[pt_0_indicies] = _sampled_data_y_vs_pT[0][pt_0_indicies]
 
-                pt_1_indicies = np.where(ak.flatten(pt_bin_1_mask))[0]
-                _sampled_data_x[pt_1_indicies] = _sampled_data_x_vs_pT[1][pt_1_indicies]
-                _sampled_data_y[pt_1_indicies] = _sampled_data_y_vs_pT[1][pt_1_indicies]
-
-                pt_2_indicies = np.where(ak.flatten(pt_bin_2_mask))[0]
-                _sampled_data_x[pt_2_indicies] = _sampled_data_x_vs_pT[2][pt_2_indicies]
-                _sampled_data_y[pt_2_indicies] = _sampled_data_y_vs_pT[2][pt_2_indicies]
-
-                pt_3_indicies = np.where(ak.flatten(pt_bin_3_mask))[0]
-                _sampled_data_x[pt_3_indicies] = _sampled_data_x_vs_pT[3][pt_3_indicies]
-                _sampled_data_y[pt_3_indicies] = _sampled_data_y_vs_pT[3][pt_3_indicies]
-
-                pt_4_indicies = np.where(ak.flatten(pt_bin_4_mask))[0]
-                _sampled_data_x[pt_4_indicies] = _sampled_data_x_vs_pT[4][pt_4_indicies]
-                _sampled_data_y[pt_4_indicies] = _sampled_data_y_vs_pT[4][pt_4_indicies]
+                for iPt in range(n_pt_bins):
+                    _pt_indicies = np.where(ak.flatten(pt_masks[iPt]))[0]
+                    _sampled_data_x[_pt_indicies] = _sampled_data_x_vs_pT[iPt][_pt_indicies]
+                    _sampled_data_y[_pt_indicies] = _sampled_data_y_vs_pT[iPt][_pt_indicies]
 
 
         #
@@ -664,7 +643,6 @@ def make_synthetic_event(input_jets, input_pdfs):
     #   - Some unclusterings fail the jet pt and eta
     #   - Some lead to dR too close (Not checked yet!)
     #   - Some of the splittings are recursive (no implemented yet!)
-
     num_trys = 0
 
     while(ak.any(input_jets_decluster)):
@@ -685,8 +663,6 @@ def make_synthetic_event(input_jets, input_pdfs):
                       ("bstars", num_samples_bstar, bstar_indicies_tuple),
                       ]
 
-
-        #breakpoint()
 
         #
         #  Sample the PDFs,  add sampled varibales to the jets to be declustered
