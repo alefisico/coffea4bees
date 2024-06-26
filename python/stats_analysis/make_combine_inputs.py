@@ -1,4 +1,3 @@
-from curses.ascii import isdigit
 import os, sys
 from typing import OrderedDict
 import ROOT
@@ -11,9 +10,10 @@ import pickle
 import pandas as pd
 from copy import copy, deepcopy
 from convert_json_to_root import json_to_TH1
+import CombineHarvester.CombineTools.ch as ch
 ROOT.gROOT.SetBatch(True)
 
-def make_trigger_syst( json_input, root_output, iyear, rebin ):
+def make_trigger_syst( json_input, root_output, name, rebin ):
 
     hData = json_input['nominal']['fourTag']['SR']
     hMC = json_input['CMS_bbbb_resolved_ggf_triggerEffSFUp']['fourTag']['SR']
@@ -26,17 +26,7 @@ def make_trigger_syst( json_input, root_output, iyear, rebin ):
         htrig = copy(hData)
         htrig['values'] *= ratio
         htrig['variances'] *= ratio*ratio
-        root_output[f'CMS_bbbb_resolved_ggf_triggerEffSF{ivar}'] = json_to_TH1( htrig, "HH_"+ivar+"_"+iyear, rebin )
-
-#    can = ROOT.TCanvas('test', 'test', 500, 500)
-#    root_output['nominal'].Draw()
-#    root_output['nominal'].SetLineColor(ROOT.kRed)
-#    root_output[f'CMS_bbbb_resolved_ggf_triggerEffSFUp'].Draw('same')
-#    root_output['CMS_bbbb_resolved_ggf_triggerEffSFUp'].SetLineColor(ROOT.kBlue)
-#    root_output[f'CMS_bbbb_resolved_ggf_triggerEffSFDown'].Draw('same')
-#    root_output['CMS_bbbb_resolved_ggf_triggerEffSFDown'].SetLineColor(ROOT.kMagenta)
-#    can.SaveAs("test.png")
-
+        root_output[f'CMS_bbbb_resolved_ggf_triggerEffSF{ivar}'] = json_to_TH1( htrig, name+ivar, rebin )
 
 def create_combine_root_file( file_to_convert,
                              rebin,
@@ -89,7 +79,7 @@ def create_combine_root_file( file_to_convert,
 
                     root_hists[iyear][iprocess] = {}
                     for ivar in coffea_hists_syst[ih][iprocess][iyear].keys():
-
+                        
                         ## renaming syst
                         if 'prefire' in ivar: namevar = ivar.replace("CMS_prefire", 'CMS_l1_ecal_prefiring')
                         else: namevar = ivar
@@ -105,12 +95,12 @@ def create_combine_root_file( file_to_convert,
                         if 'triggerEffSFUp' in namevar:
                             make_trigger_syst(coffea_hists_syst[ih][iprocess][iyear],
                                               root_hists[iyear][iprocess],
-                                              iyear, rebin)
+                                              f'{iprocess}_{ivar}_{iyear}', rebin)
                         elif 'triggerEffSFDown' in namevar: continue
-
-                        root_hists[iyear][iprocess][namevar] = json_to_TH1(
-                                                        coffea_hists_syst[ih][iprocess][iyear][ivar]['fourTag']['SR'], 
-                                                        f'{iprocess}_{ivar}_{iyear}', rebin )
+                        else:
+                            root_hists[iyear][iprocess][namevar] = json_to_TH1(
+                                                            coffea_hists_syst[ih][iprocess][iyear][ivar]['fourTag']['SR'], 
+                                                            f'{iprocess}_{ivar}_{iyear}', rebin )
         
         if systematics_file and use_preUL:
             iprocess = 'HH4b'
@@ -333,14 +323,14 @@ def create_combine_root_file( file_to_convert,
 
             nom_data = root_hists[next(iter(root_hists))]['data_obs'].Clone('data_obs')
             nom_data.Reset()
-            nom_tt = nom_data.Clone('tt')
-            nom_mj = nom_data.Clone('multijet')
-            nom_signal = nom_data.Clone('signal')
+            nom_tt = nom_data.Clone(metadata['processes']['all']['tt']['label'])
+            nom_mj = nom_data.Clone(metadata['processes']['all']['multijet']['label'])
+            nom_signal = nom_data.Clone(metadata['processes']['all']['GluGluToHHTo4B_cHHH1']['label'])
             for ichannel in root_hists.keys():
                 nom_data.Add( root_hists[ichannel]['data_obs'] )
-                nom_tt.Add( root_hists[ichannel]['tt'] )
-                nom_mj.Add( root_hists[ichannel]['multijet']['nominal'] )
-                nom_signal.Add( root_hists[ichannel]['HH']['nominal'] )
+                nom_tt.Add( root_hists[ichannel][metadata['processes']['all']['tt']['label']] )
+                nom_mj.Add( root_hists[ichannel][metadata['processes']['all']['multijet']['label']]['nominal'] )
+                nom_signal.Add( root_hists[ichannel][metadata['processes']['all']['GluGluToHHTo4B_cHHH1']['label']]['nominal'] )
             nom_signal.Scale( 100 )
 
             stack = ROOT.THStack()
@@ -378,9 +368,9 @@ def create_combine_root_file( file_to_convert,
                     bkg_syst_can.cd(1)
                     leg = CMS.cmsLeg(0.55, 0.89 - 0.05 * 3, 0.99, 0.89, textSize=0.04)
 
-                    mj_nominal = root_hists[ichannel]['multijet']['nominal'].Clone()
-                    mj_var_up = root_hists[ichannel]['multijet'][f"{isyst}Up"]
-                    mj_var_dn = root_hists[ichannel]['multijet'][f"{isyst}Down"]
+                    mj_nominal = root_hists[ichannel][metadata['processes']['all']['multijet']['label']]['nominal'].Clone()
+                    mj_var_up = root_hists[ichannel][metadata['processes']['all']['multijet']['label']][f"{isyst}Up"]
+                    mj_var_dn = root_hists[ichannel][metadata['processes']['all']['multijet']['label']][f"{isyst}Down"]
 
                     leg.AddEntry( mj_nominal, 'Nominal Multijet', 'lp' )
                     CMS.cmsDraw( mj_nominal, 'P', mcolor=ROOT.kBlack )
@@ -404,7 +394,7 @@ def create_combine_root_file( file_to_convert,
 
                     CMS.SaveCanvas( bkg_syst_can, f"{output_dir}/plots/{iclass}_{isyst}_{ichannel}.pdf" )
 
-                for isyst in root_hists[ichannel]['HH'].keys():
+                for isyst in root_hists[ichannel][metadata['processes']['all']['GluGluToHHTo4B_cHHH1']['label']].keys():
                     if ('nominal' in isyst) or ('Down' in isyst): continue
                     isyst = isyst.replace('Up', '')
                     logging.info(f"Plotting {ichannel} {isyst}")
@@ -421,9 +411,9 @@ def create_combine_root_file( file_to_convert,
                     mc_syst_can.cd(1)
                     leg = CMS.cmsLeg(0.2, 0.89 - 0.05 * 3, 0.4, 0.89, textSize=0.04)
 
-                    HH_nominal = root_hists[ichannel]['HH']['nominal'].Clone()
-                    HH_var_up = root_hists[ichannel]['HH'][f"{isyst}Up"]
-                    HH_var_dn = root_hists[ichannel]['HH'][f"{isyst}Down"]
+                    HH_nominal = root_hists[ichannel][metadata['processes']['all']['GluGluToHHTo4B_cHHH1']['label']]['nominal'].Clone()
+                    HH_var_up = root_hists[ichannel][metadata['processes']['all']['GluGluToHHTo4B_cHHH1']['label']][f"{isyst}Up"]
+                    HH_var_dn = root_hists[ichannel][metadata['processes']['all']['GluGluToHHTo4B_cHHH1']['label']][f"{isyst}Down"]
 
                     leg.AddEntry( HH_nominal, 'Nominal HH', 'lp' )
                     CMS.cmsDraw( HH_nominal, 'P', mcolor=ROOT.kBlack )

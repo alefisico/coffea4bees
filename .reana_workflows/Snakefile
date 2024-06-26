@@ -19,9 +19,10 @@ rule all:
         "output/histAll_signals_cHHHX.coffea",
         'output/histSignal_UL.coffea',
         "output/RunII/passPreSel/fourTag/SB/nPVs.pdf",
-        "output/datacards/hists_SvB_MA.root",
+        "output/datacards/shapes.root",
         "output/tmp.log",
-        'output/datacards/limits.txt'
+        'output/datacards/limits.json',
+        "output/datacards/plots/SvB_postfit.png"
 
 
 rule analysis_databkgs:
@@ -45,19 +46,12 @@ rule analysis_databkgs:
 # sed -i "s#blind.*#blind: True# python/analysis/metadata/HH4b.yml
 echo "Running {params.isam} {params.iy} - output {output}"
 cd python/ 
-<<<<<<< Updated upstream
 mprof run -C -o mprofile_{params.logname}.dat python runner.py -d {params.isam} -p analysis/processors/processor_HH4b.py -y {params.iy} -o ../{output} -op ../output/ -m metadata/datasets_HH4b_cernbox.yml --githash {params.hash} --gitdiff {params.diff}  #--dask
 cd ../
 mprof plot -o output/mprofile_{params.logname}.png python/mprofile_{params.logname}.dat
 xrdcp {output} root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/{params.output}
 cp gitdiff.txt output/   ### only one time
 #cp /tmp/coffea4bees-dask-report-* ../output/coffea4bees-dask-report_{params.logname}_{params.iy}.html
-=======
-echo "Running {wildcards.sample} {wildcards.iy}"
-mprof run -C -o mprofile_{wildcards.sample}_{wildcards.iy}.dat python runner.py -d {wildcards.sample} -p analysis/processors/processor_HH4b.py -y {wildcards.iy} -o histAll_{wildcards.sample}_{wildcards.iy}.coffea -op ../output/ -m metadata/datasets_HH4b_cernbox.yml #--dask
-mprof plot -o ../output/mprofile_{wildcards.sample}_{wildcards.iy}.png mprofile_{wildcards.sample}_{wildcards.iy}.dat 
-#cp /tmp/coffea4bees-dask-report-* ../output/coffea4bees-dask-report_{wildcards.sample}_{wildcards.iy}.html
->>>>>>> Stashed changes
         """
 
 #use rule analysis_databkgs as analysis_signals_preUL with:
@@ -233,12 +227,12 @@ python .php-plots/bin/pb_deploy_plots.py ../output/RunII/ /eos/user/a/algomez/wo
 rule convert_hist_to_json:
     input:
         inall = "output/histAll.coffea",
-        insyst = "output/histAll_syst.coffea"
-        insyst = "output/histAll_signals_cHHHX.coffea"
+        insyst = "output/histAll_syst.coffea",
+        insystcHHHX = "output/histAll_signals_cHHHX.coffea"
     output:
         outall = "output/histAll.json",
-        outsyst = "output/histAll_syst.json"
-        outsyst = "output/histAll_signals_cHHHX.json"
+        outsyst = "output/histAll_syst.json",
+        outsystcHHHX = "output/histAll_signals_cHHHX.json"
     container:
         "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
     resources:
@@ -254,10 +248,10 @@ python python/stats_analysis/convert_hist_to_json.py -o {output.outsystcHHHX} -i
 rule make_combine_inputs:
     input:
         injson = "output/histAll.json",
-        injsonsyst = "output/histAll_syst.json"
+        injsonsyst = "output/histAll_signals_cHHHX.json"
     output:
-        "output/datacards/hists_SvB_MA.root",
-        "output/datacards/combine_SvB_MA.txt"
+        "output/datacards/shapes.root",
+        "output/datacards/datacard.txt"
     container:
         "docker://gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0"
     resources:
@@ -270,15 +264,14 @@ source /cvmfs/cms.cern.ch/cmsset_default.sh
 cd /home/cmsusr/CMSSW_11_3_4/
 cmsenv || true
 cd -
-pip3 install cmsstyle
-python3 python/stats_analysis/make_combine_inputs.py --classifier SvB SvB_MA -f {input.injson} --syst_file {input.injsonsyst} --bkg_syst_file python/stats_analysis/hists/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin2.pkl --output_dir output/datacards/ --rebin 2 --metadata python/stats_analysis/metadata/HH4b.yml
+python3 python/stats_analysis/make_combine_inputs.py --classifier SvB_MA -f {input.injson} --syst_file {input.injsonsyst} --bkg_syst_file python/stats_analysis/hists/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin2.pkl --output_dir output/datacards/ --rebin 2 --metadata python/stats_analysis/metadata/HH4b.yml --make_syst_plots 
         """
 
 rule run_combine:
     input:
-        "output/datacards/combine_SvB_MA.txt"
+        "output/datacards/datacard.txt"
     output:
-        "output/datacards/limits.txt",
+        "output/datacards/limits.json"
     container:
         "docker://gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0"
     resources:
@@ -293,12 +286,36 @@ cmsenv || true
 cd -
 cat {input}
 echo "RUNNING COMBINE"
+source python/stats_analysis/run_combine.sh output/datacards/ 
 source python/stats_analysis/run_combine.sh output/datacards/ --impacts
+        """
+
+rule run_postfit:
+    input:
+        "output/datacards/datacard.txt"
+    output:
+        "output/datacards/plots/SvB_postfit.png"
+    container:
+        "docker://gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0"
+    resources:
+        voms_proxy=True,
+        kerberos=True,
+        compute_backend="kubernetes"
+    shell:
+        """
+source /cvmfs/cms.cern.ch/cmsset_default.sh
+cd /home/cmsusr/CMSSW_11_3_4/
+cmsenv || true
+cd -
+cat {input}
+echo "RUNNING COMBINE"
+source python/stats_analysis/run_combine.sh output/datacards/ --postfit
+python3 make_postfit_plot.py -i output/datacards/postfit_s.root -o {output} --do_postfit False
         """
 
 rule make_syst_plots:
     input:
-        "output/datacards/hists_SvB_MA.root",
+        "output/datacards/shapes.root",
     log:
         "output/tmp.log"
     container:
