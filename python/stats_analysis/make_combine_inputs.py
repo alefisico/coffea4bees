@@ -108,11 +108,9 @@ def create_combine_root_file( file_to_convert,
                                               iyear, rebin)
                         elif 'triggerEffSFDown' in namevar: continue
 
-                        print(f'{iprocess}_{ivar}_{iyear}')
                         root_hists[iyear][iprocess][namevar] = json_to_TH1(
                                                         coffea_hists_syst[ih][iprocess][iyear][ivar]['fourTag']['SR'], 
                                                         f'{iprocess}_{ivar}_{iyear}', rebin )
-                        print(root_hists[iyear][iprocess][namevar])
         
         if systematics_file and use_preUL:
             iprocess = 'HH4b'
@@ -124,20 +122,25 @@ def create_combine_root_file( file_to_convert,
                         coffea_hists_syst[ih][iprocess][iyear][ivar]['fourTag']['SR'], iprocess+"_"+ivar+"_"+iyear, rebin )
 
 
-        if "UL16_preVFP" not in metadata['bin']:
-            logging.info("\n Merging UL16_preVFP and UL16_postVFP")
-            for iy in list(root_hists.keys()):
-                if 'UL16_preVFP' in iy:
-                    for ip, _ in list(root_hists[iy].items()):
-                        if isinstance(root_hists[iy][ip], dict):
-                            for iv, _ in list(root_hists[iy][ip].items()):
-                                root_hists[iy][ip][iv].Add( root_hists[iy.replace('pre', 'post')][ip][iv] )
-                        elif 'HH4b' in ip:   ### AGE: temporary, HH4b is preUL
-                            continue
-                        else:
-                            root_hists[iy][ip].Add( root_hists[iy.replace('pre', 'post')][ip] )
-                    del root_hists[iy.replace('pre', 'post')]
-                    root_hists['_'.join(iy.split('_')[:-1])] = root_hists.pop(iy)
+        # if "UL16_preVFP" not in metadata['bin']:
+        logging.info("\n Merging UL16_preVFP and UL16_postVFP")
+        for iy in list(root_hists.keys()):
+            if 'UL16_preVFP' in iy:
+                for ip, _ in list(root_hists[iy].items()):
+                    if isinstance(root_hists[iy][ip], dict):
+                        for iv, _ in list(root_hists[iy][ip].items()):
+                            root_hists[iy][ip][iv].Add( root_hists[iy.replace('pre', 'post')][ip][iv] )
+                    elif 'HH4b' in ip:   ### AGE: temporary, HH4b is preUL
+                        continue
+                    else:
+                        root_hists[iy][ip].Add( root_hists[iy.replace('pre', 'post')][ip] )
+                del root_hists[iy.replace('pre', 'post')]
+                root_hists['_'.join(iy.split('_')[:-1])] = root_hists.pop(iy)
+
+        for iy in list(root_hists.keys()):
+            for jy in metadata['bin']:
+                if ''.join(iy[-2:]) == ''.join(jy[-2:]):
+                    root_hists[jy] = root_hists.pop(iy)
 
 
         if not stat_only:
@@ -234,25 +237,25 @@ def create_combine_root_file( file_to_convert,
 
         hline = '-'*100
         lines = []
-        lines.append('imax %d number of channels'%(len(metadata['bin'])))
-        lines.append(f'jmax {total_process-1} number of processes minus one') # zz, zh, hh, mj, tt is five processes, so jmax is 4
-        lines.append('kmax * number of systematics')
-        lines.append(hline)
-        lines.append('shapes * * '+output_file+' $CHANNEL/$PROCESS $CHANNEL/$PROCESS_$SYSTEMATIC')
-        lines.append(hline)
 
         size_datacard = len(metadata['bin'])*len(metadata['processes']['all'])
         datacard = pd.DataFrame( columns=[f'col_{i}' for i in range( size_datacard + 2) ] )
-        datacard.loc[0] = [ 'bin', '' ] + metadata['bin'] + [ '' for _ in range( (size_datacard - len(metadata['bin']) ) ) ]  
-        datacard.loc[1] = [ 'observation', '' ] + [ '-1' for _ in metadata['bin'] ] + [ '' for _ in range( (size_datacard - len(metadata['bin']) ) ) ] 
-        datacard.loc[2] = [ '-'*50, '' ] + [ '' for _ in range( size_datacard ) ]
-        datacard.loc[3] = [ 'bin', '' ] + [ ibin for ibin in metadata['bin'] for _ in range(len(metadata['processes']['all'])) ] 
-        datacard.loc[4] = [ 'process', '' ] + [ metadata['processes']['all'][ibin]['label'] for ibin in metadata['processes']['all'] ] * len(metadata['bin'])
-        datacard.loc[5] = [ 'process', '' ] + [ metadata['processes']['all'][ibin]['process'] for ibin in metadata['processes']['all'] ] * len(metadata['bin'])
-        datacard.loc[6] = [ 'rate', '' ] + [ '-1' ] * len(metadata['bin']) * len(metadata['processes']['all'])
-        datacard.loc[7] = [ '-'*50, '' ] + [ '' for _ in range( size_datacard ) ]
+        datacard.loc[0] = [ 'imax', len(metadata['bin']) ] + [ '' for _ in range( size_datacard ) ]
+        datacard.loc[1] = [ 'jmax', total_process-1 ] + [ '' for _ in range( size_datacard ) ]
+        datacard.loc[2] = [ 'kmax', '*' ] + [ '' for _ in range( size_datacard ) ]
+        datacard.loc[3] = [ '-'*50, '' ] + [ '' for _ in range( size_datacard ) ]
+        datacard.loc[4] = [ 'shapes', '*', '*', output_file, '$CHANNEL/$PROCESS', '$CHANNEL/$PROCESS_$SYSTEMATIC' ] + [ '' for _ in range( size_datacard-4 ) ]
+        datacard.loc[5] = [ '-'*50, '' ] + [ '' for _ in range( size_datacard ) ]
+        datacard.loc[6] = [ 'bin', '' ] + metadata['bin'] + [ '' for _ in range( (size_datacard - len(metadata['bin']) ) ) ]  
+        datacard.loc[7] = [ 'observation', '' ] + [ '-1' for _ in metadata['bin'] ] + [ '' for _ in range( (size_datacard - len(metadata['bin']) ) ) ] 
+        datacard.loc[8] = [ '-'*50, '' ] + [ '' for _ in range( size_datacard ) ]
+        datacard.loc[9] = [ 'bin', '' ] + [ ibin for ibin in metadata['bin'] for _ in range(len(metadata['processes']['all'])) ] 
+        datacard.loc[10] = [ 'process', '' ] + [ metadata['processes']['all'][ibin]['label'] for ibin in metadata['processes']['all'] ] * len(metadata['bin'])
+        datacard.loc[11] = [ 'process', '' ] + [ metadata['processes']['all'][ibin]['process'] for ibin in metadata['processes']['all'] ] * len(metadata['bin'])
+        datacard.loc[12] = [ 'rate', '' ] + [ '-1' ] * len(metadata['bin']) * len(metadata['processes']['all'])
+        datacard.loc[13] = [ '-'*50, '' ] + [ '' for _ in range( size_datacard ) ]
 
-        is_multijet = (datacard.loc[4,:] == metadata['processes']['background']['multijet']['label']).to_numpy()
+        is_multijet = (datacard.loc[10,:] == metadata['processes']['background']['multijet']['label']).to_numpy()
         for nuisance in closureSysts:
             row = pd.Series([ nuisance, 'shape'] + ['-'] * size_datacard, index=datacard.columns )
             new_row = row.where(~is_multijet, '1')
@@ -264,9 +267,9 @@ def create_combine_root_file( file_to_convert,
 
             for isignal in metadata['processes']['signal']:
 
-                is_signal = (datacard.loc[4,:] == metadata['processes']['signal'][isignal]['label']).to_numpy()
+                is_signal = (datacard.loc[10,:] == metadata['processes']['signal'][isignal]['label']).to_numpy()
                 if iy.isdigit():
-                    is_year = (datacard.loc[3,:] == f'UL{iy}' ).to_numpy()
+                    is_year = (datacard.loc[9,:] == f'HHbb_20{iy}' ).to_numpy()
                     new_row = row.where(~(is_signal & is_year), '1')
                 else:
                     new_row = row.where(~is_signal, '1')
@@ -276,13 +279,14 @@ def create_combine_root_file( file_to_convert,
         for isyst in metadata['uncertainty']:
             row = pd.Series([ isyst, metadata['uncertainty'][isyst]['type']] + ['-'] * size_datacard, index=datacard.columns )
             for isignal in metadata['processes']['signal']:
-                is_signal = (datacard.loc[4,:] == metadata['processes']['signal'][isignal]['label']).to_numpy()
+                is_signal = (datacard.loc[10,:] == metadata['processes']['signal'][isignal]['label']).to_numpy()
                 for iy in metadata['uncertainty'][isyst]['years']:
-                    is_year = (datacard.loc[3,:] == iy ).to_numpy()
+                    is_year = datacard.loc[9,:] == iy 
                     row = row.where(~(is_signal & is_year), metadata['uncertainty'][isyst]['years'][iy])
             datacard = datacard.append(row, ignore_index=True)
 
         lines.append( datacard.to_string(justify='left', header=False, index=False ) )
+        # datacard.to_csv(output_dir+"/"+output_datacard, header=False, index=False, sep='\t' ) 
         if not stat_only:
             lines.append(hline)
             lines.append('* autoMCStats 0 1 1')
@@ -297,7 +301,6 @@ def create_combine_root_file( file_to_convert,
         lines.append('theory   group = BR_hbb xs_hbbhbb') #mtop_ggH
         if not stat_only:
             lines.append(f'others   group = {" ".join([ isyst for isyst in metadata["uncertainty"] if "lumi" in isyst ])} BR_hbb xs_hbbhbb CMS_pileup_2016 CMS_pileup_2017 CMS_pileup_2018 CMS_l1_ecal_prefiring_2016 CMS_l1_ecal_prefiring_2017 CMS_l1_ecal_prefiring_2018 {" ".join(juncSysts)}')
-
 
         output_datacard = 'datacard.txt' #output.replace('hists', 'combine').replace('root', 'txt')
         with open(output_dir+"/"+output_datacard, 'w') as ofile:
