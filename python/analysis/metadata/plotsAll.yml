@@ -88,6 +88,7 @@ codes:
       SR: 2
       SB: 1
       other: 0
+      sum: "sum"
    tag:
       threeTag: 3
       fourTag: 4

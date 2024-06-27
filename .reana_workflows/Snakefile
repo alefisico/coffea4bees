@@ -19,9 +19,10 @@ rule all:
         "output/histAll_signals_cHHHX.coffea",
         'output/histSignal_UL.coffea',
         "output/RunII/passPreSel/fourTag/SB/nPVs.pdf",
-        "output/datacards/hists_SvB_MA.root",
+        "output/datacards/shapes.root",
         "output/tmp.log",
-        'output/datacards/limits.txt'
+        'output/datacards/limits.json',
+        "output/datacards/plots/SvB_postfit.png"
 
 
 rule analysis_databkgs:
@@ -218,7 +219,7 @@ rule make_plots:
     shell:
         """
 cd python/ 
-mprof run -C -o mprofile_makeplots.dat python analysis/makePlots.py ../output/histAll.coffea -o ../output/ -m analysis/metadata/plotsAll.yml
+mprof run -C -o mprofile_makeplots.dat python analysis/makePlots.py ../output/histAll.coffea -o ../output/ -m analysis/metadata/plotsAll.yml -s xW
 mprof plot -o mprofile_makeplots.png ../output/mprofile_makeplots.dat
 python .php-plots/bin/pb_deploy_plots.py ../output/RunII/ /eos/user/a/algomez/work/HH4b/reana/{TIMESTAMP}/ -r -c -j 4
         """
@@ -226,10 +227,12 @@ python .php-plots/bin/pb_deploy_plots.py ../output/RunII/ /eos/user/a/algomez/wo
 rule convert_hist_to_json:
     input:
         inall = "output/histAll.coffea",
-        insyst = "output/histAll_syst.coffea"
+        insyst = "output/histAll_syst.coffea",
+        insystcHHHX = "output/histAll_signals_cHHHX.coffea"
     output:
         outall = "output/histAll.json",
-        outsyst = "output/histAll_syst.json"
+        outsyst = "output/histAll_syst.json",
+        outsystcHHHX = "output/histAll_signals_cHHHX.json"
     container:
         "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
     resources:
@@ -239,15 +242,16 @@ rule convert_hist_to_json:
         """
 python python/stats_analysis/convert_hist_to_json.py -o {output.outall} -i {input.inall}
 python python/stats_analysis/convert_hist_to_json.py -o {output.outsyst} -i {input.insyst} -s
+python python/stats_analysis/convert_hist_to_json.py -o {output.outsystcHHHX} -i {input.insystcHHHX} -s
         """
 
 rule make_combine_inputs:
     input:
         injson = "output/histAll.json",
-        injsonsyst = "output/histAll_syst.json"
+        injsonsyst = "output/histAll_signals_cHHHX.json"
     output:
-        "output/datacards/hists_SvB_MA.root",
-        "output/datacards/combine_SvB_MA.txt"
+        "output/datacards/shapes.root",
+        "output/datacards/datacard.txt"
     container:
         "docker://gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0"
     resources:
@@ -260,15 +264,14 @@ source /cvmfs/cms.cern.ch/cmsset_default.sh
 cd /home/cmsusr/CMSSW_11_3_4/
 cmsenv || true
 cd -
-pip3 install cmsstyle
-python3 python/stats_analysis/make_combine_inputs.py --classifier SvB SvB_MA -f {input.injson} --syst_file {input.injsonsyst} --bkg_syst_file python/stats_analysis/hists/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin2.pkl --output_dir output/datacards/ --rebin 2 --metadata python/stats_analysis/metadata/HH4b.yml
+python3 python/stats_analysis/make_combine_inputs.py --classifier SvB_MA -f {input.injson} --syst_file {input.injsonsyst} --bkg_syst_file python/stats_analysis/hists/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin2.pkl --output_dir output/datacards/ --rebin 2 --metadata python/stats_analysis/metadata/HH4b.yml --make_syst_plots 
         """
 
 rule run_combine:
     input:
-        "output/datacards/combine_SvB_MA.txt"
+        "output/datacards/datacard.txt"
     output:
-        "output/datacards/limits.txt",
+        "output/datacards/limits.json"
     container:
         "docker://gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0"
     resources:
@@ -283,12 +286,36 @@ cmsenv || true
 cd -
 cat {input}
 echo "RUNNING COMBINE"
+source python/stats_analysis/run_combine.sh output/datacards/ 
 source python/stats_analysis/run_combine.sh output/datacards/ --impacts
+        """
+
+rule run_postfit:
+    input:
+        "output/datacards/datacard.txt"
+    output:
+        "output/datacards/plots/SvB_postfit.png"
+    container:
+        "docker://gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0"
+    resources:
+        voms_proxy=True,
+        kerberos=True,
+        compute_backend="kubernetes"
+    shell:
+        """
+source /cvmfs/cms.cern.ch/cmsset_default.sh
+cd /home/cmsusr/CMSSW_11_3_4/
+cmsenv || true
+cd -
+cat {input}
+echo "RUNNING COMBINE"
+source python/stats_analysis/run_combine.sh output/datacards/ --postfit
+python3 make_postfit_plot.py -i output/datacards/postfit_s.root -o {output} --do_postfit False
         """
 
 rule make_syst_plots:
     input:
-        "output/datacards/hists_SvB_MA.root",
+        "output/datacards/shapes.root",
     log:
         "output/tmp.log"
     container:

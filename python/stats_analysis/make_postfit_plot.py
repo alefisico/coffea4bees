@@ -1,5 +1,5 @@
 
-import json
+import yaml
 import argparse
 import logging
 import ROOT
@@ -26,23 +26,30 @@ if __name__ == '__main__':
 
     label = 'postfit' if args.do_postfit else 'prefit'
 
+    metadata_file = 'metadata/HH4b.yml'
+    logging.info(f"Reading {metadata_file}")
+    metadata = yaml.safe_load(open(metadata_file, 'r'))
+
     hists = { }
-    channels = [ 'hh_UL16', 'hh_UL17', 'hh_UL18' ]
+    channels = metadata['bin'] #[ 'hh_UL16', 'hh_UL17', 'hh_UL18' ]
     # channels = [ 'hh6', 'hh7', 'hh8' ]
+    mj = metadata['processes']['background']['multijet']['label']
+    tt = metadata['processes']['background']['tt']['label']
+    signal = metadata['processes']['signal']['GluGluToHHTo4B_cHHH1']['label']
     infile = ROOT.TFile.Open(args.input_file)
     for i, ichannel in enumerate(channels):
         if i==0:
-            hists[f'data'] = infile.Get(f'{ichannel}_{label}/data_obs')
-            hists[f'mj'] = infile.Get(f'{ichannel}_{label}/mj')
-            hists[f'tt'] = infile.Get(f'{ichannel}_{label}/tt')
-            hists[f'TotalBkg'] = infile.Get(f'{ichannel}_{label}/TotalBkg')
-            hists[f'HH'] = infile.Get(f'{ichannel}_{label}/HH')
+            hists['data'] = infile.Get(f'{ichannel}_{label}/data_obs')
+            hists[mj] = infile.Get(f'{ichannel}_{label}/{mj}')
+            hists[tt] = infile.Get(f'{ichannel}_{label}/{tt}')
+            hists['TotalBkg'] = infile.Get(f'{ichannel}_{label}/TotalBkg')
+            hists[signal] = infile.Get(f'{ichannel}_{label}/{signal}')
         else: 
-            hists[f'data'].Add( infile.Get(f'{ichannel}_{label}/data_obs') )
-            hists[f'mj'].Add( infile.Get(f'{ichannel}_{label}/mj') )
-            hists[f'tt'].Add( infile.Get(f'{ichannel}_{label}/tt') )
-            hists[f'TotalBkg'].Add( infile.Get(f'{ichannel}_{label}/TotalBkg') )
-            hists[f'HH'].Add( infile.Get(f'{ichannel}_{label}/HH') )
+            hists['data'].Add( infile.Get(f'{ichannel}_{label}/data_obs') )
+            hists[mj].Add( infile.Get(f'{ichannel}_{label}/{mj}') )
+            hists[tt].Add( infile.Get(f'{ichannel}_{label}/{tt}') )
+            hists['TotalBkg'].Add( infile.Get(f'{ichannel}_{label}/TotalBkg') )
+            hists[signal].Add( infile.Get(f'{ichannel}_{label}/{signal}') )
 
     # Rescaling histogram
     for _, ih in hists.items():
@@ -66,12 +73,12 @@ if __name__ == '__main__':
     leg = CMS.cmsLeg(0.70, 0.89 - 0.05 * 4, 0.99, 0.89, textSize=0.04)
 
     stack = ROOT.THStack()
-    CMS.cmsDrawStack(stack, leg, {'ttbar': hists['tt'].Clone(), 'Multijet': hists['mj'].Clone() }, data= hists['data'], palette=['#85D1FBff', '#FFDF7Fff'] )
+    CMS.cmsDrawStack(stack, leg, {'ttbar': hists[tt].Clone(), 'Multijet': hists[mj].Clone() }, data= hists['data'], palette=['#85D1FBff', '#FFDF7Fff'] )
     #CMS.GetcmsCanvasHist(nominal_can).GetYaxis().SetTitleOffset(1.6)
     CMS.fixOverlay()
-    hists['HH'].Scale( 100 )
-    leg.AddEntry( hists['HH'], 'HH4b (x100)', 'lp' )
-    CMS.cmsDraw( hists['HH'], 'hist', fstyle=0, marker=1, alpha=1, lcolor=ROOT.TColor.GetColor("#e42536" ), fcolor=ROOT.TColor.GetColor("#e42536"))
+    hists[signal].Scale( 100 )
+    leg.AddEntry( hists[signal], 'HH4b (x100)', 'lp' )
+    CMS.cmsDraw( hists[signal], 'hist', fstyle=0, marker=1, alpha=1, lcolor=ROOT.TColor.GetColor("#e42536" ), fcolor=ROOT.TColor.GetColor("#e42536"))
 
     nominal_can.cd(2)
 

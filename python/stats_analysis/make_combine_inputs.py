@@ -1,4 +1,3 @@
-from curses.ascii import isdigit
 import os, sys
 from typing import OrderedDict
 import ROOT
@@ -11,9 +10,10 @@ import pickle
 import pandas as pd
 from copy import copy, deepcopy
 from convert_json_to_root import json_to_TH1
+import CombineHarvester.CombineTools.ch as ch
 ROOT.gROOT.SetBatch(True)
 
-def make_trigger_syst( json_input, root_output, iyear, rebin ):
+def make_trigger_syst( json_input, root_output, name, rebin ):
 
     hData = json_input['nominal']['fourTag']['SR']
     hMC = json_input['CMS_bbbb_resolved_ggf_triggerEffSFUp']['fourTag']['SR']
@@ -26,17 +26,7 @@ def make_trigger_syst( json_input, root_output, iyear, rebin ):
         htrig = copy(hData)
         htrig['values'] *= ratio
         htrig['variances'] *= ratio*ratio
-        root_output[f'CMS_bbbb_resolved_ggf_triggerEffSF{ivar}'] = json_to_TH1( htrig, "HH_"+ivar+"_"+iyear, rebin )
-
-#    can = ROOT.TCanvas('test', 'test', 500, 500)
-#    root_output['nominal'].Draw()
-#    root_output['nominal'].SetLineColor(ROOT.kRed)
-#    root_output[f'CMS_bbbb_resolved_ggf_triggerEffSFUp'].Draw('same')
-#    root_output['CMS_bbbb_resolved_ggf_triggerEffSFUp'].SetLineColor(ROOT.kBlue)
-#    root_output[f'CMS_bbbb_resolved_ggf_triggerEffSFDown'].Draw('same')
-#    root_output['CMS_bbbb_resolved_ggf_triggerEffSFDown'].SetLineColor(ROOT.kMagenta)
-#    can.SaveAs("test.png")
-
+        root_output[f'CMS_bbbb_resolved_ggf_triggerEffSF{ivar}'] = json_to_TH1( htrig, name+ivar, rebin )
 
 def create_combine_root_file( file_to_convert,
                              rebin,
@@ -89,7 +79,7 @@ def create_combine_root_file( file_to_convert,
 
                     root_hists[iyear][iprocess] = {}
                     for ivar in coffea_hists_syst[ih][iprocess][iyear].keys():
-
+                        
                         ## renaming syst
                         if 'prefire' in ivar: namevar = ivar.replace("CMS_prefire", 'CMS_l1_ecal_prefiring')
                         else: namevar = ivar
@@ -105,13 +95,13 @@ def create_combine_root_file( file_to_convert,
                         if 'triggerEffSFUp' in namevar:
                             make_trigger_syst(coffea_hists_syst[ih][iprocess][iyear],
                                               root_hists[iyear][iprocess],
-                                              iyear, rebin)
+                                              f'{iprocess}_{ivar}_{iyear}', rebin)
                         elif 'triggerEffSFDown' in namevar: continue
-
-                        root_hists[iyear][iprocess][namevar] = json_to_TH1(
-                                                        coffea_hists_syst[ih][iprocess][iyear][ivar]['fourTag']['SR'], 
-                                                        f'{iprocess}_{ivar}_{iyear}', rebin )
-
+                        else:
+                            root_hists[iyear][iprocess][namevar] = json_to_TH1(
+                                                            coffea_hists_syst[ih][iprocess][iyear][ivar]['fourTag']['SR'], 
+                                                            f'{iprocess}_{ivar}_{iyear}', rebin )
+        
         if systematics_file and use_preUL:
             iprocess = 'HH4b'
             for iyear in coffea_hists_syst[ih]['HH4b'].keys():
@@ -122,20 +112,25 @@ def create_combine_root_file( file_to_convert,
                         coffea_hists_syst[ih][iprocess][iyear][ivar]['fourTag']['SR'], iprocess+"_"+ivar+"_"+iyear, rebin )
 
 
-        if "UL16_preVFP" not in metadata['bin']:
-            logging.info("\n Merging UL16_preVFP and UL16_postVFP")
-            for iy in list(root_hists.keys()):
-                if 'UL16_preVFP' in iy:
-                    for ip, _ in list(root_hists[iy].items()):
-                        if isinstance(root_hists[iy][ip], dict):
-                            for iv, _ in list(root_hists[iy][ip].items()):
-                                root_hists[iy][ip][iv].Add( root_hists[iy.replace('pre', 'post')][ip][iv] )
-                        elif 'HH4b' in ip:   ### AGE: temporary, HH4b is preUL
-                            continue
-                        else:
-                            root_hists[iy][ip].Add( root_hists[iy.replace('pre', 'post')][ip] )
-                    del root_hists[iy.replace('pre', 'post')]
-                    root_hists['_'.join(iy.split('_')[:-1])] = root_hists.pop(iy)
+        # if "UL16_preVFP" not in metadata['bin']:
+        logging.info("\n Merging UL16_preVFP and UL16_postVFP")
+        for iy in list(root_hists.keys()):
+            if 'UL16_preVFP' in iy:
+                for ip, _ in list(root_hists[iy].items()):
+                    if isinstance(root_hists[iy][ip], dict):
+                        for iv, _ in list(root_hists[iy][ip].items()):
+                            root_hists[iy][ip][iv].Add( root_hists[iy.replace('pre', 'post')][ip][iv] )
+                    elif 'HH4b' in ip:   ### AGE: temporary, HH4b is preUL
+                        continue
+                    else:
+                        root_hists[iy][ip].Add( root_hists[iy.replace('pre', 'post')][ip] )
+                del root_hists[iy.replace('pre', 'post')]
+                root_hists['_'.join(iy.split('_')[:-1])] = root_hists.pop(iy)
+
+        for iy in list(root_hists.keys()):
+            for jy in metadata['bin']:
+                if ''.join(iy[-2:]) == ''.join(jy[-2:]):
+                    root_hists[jy] = root_hists.pop(iy)
 
 
         if not stat_only:
@@ -197,7 +192,7 @@ def create_combine_root_file( file_to_convert,
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
 
-        output_file = "hists_"+iclass+".root"
+        output_file = "shapes.root" #"hists_"+iclass+".root"
         output = output_dir+"/"+output_file
 
         root_file = ROOT.TFile(output, 'recreate')
@@ -230,74 +225,75 @@ def create_combine_root_file( file_to_convert,
 
         total_process = len( metadata["processes"]["all"].keys() ) 
 
-        hline = '-'*30
+        hline = '-'*100
         lines = []
-        lines.append('imax %d number of channels'%(len(metadata['processes']['signal'])*len(metadata['bin'])))
-        lines.append(f'jmax {total_process-1} number of processes minus one') # zz, zh, hh, mj, tt is five processes, so jmax is 4
-        lines.append('kmax * number of systematics')
-        lines.append(hline)
-        lines.append('shapes * * '+output_file+' $CHANNEL/$PROCESS $CHANNEL/$PROCESS_$SYSTEMATIC')
-        lines.append(hline)
-
-        def make_lalign_formatter(df, cols=None):
-            if cols is None:
-                cols = df.columns[df.dtypes == 'object']
-
-            return {col: f'{{:<{df[col].str.len().max()}s}}'.format for col in cols}
 
         size_datacard = len(metadata['bin'])*len(metadata['processes']['all'])
         datacard = pd.DataFrame( columns=[f'col_{i}' for i in range( size_datacard + 2) ] )
-        datacard.loc[0] = [ 'bin', '' ] + metadata['bin'] + [ '' for ibin in metadata['bin'] for _ in range(len(metadata['bin'])-1) ] 
-        datacard.loc[1] = [ 'observation', '' ] + [ '-1' for _ in metadata['bin'] ] + [ '' for ibin in metadata['bin'] for _ in range(len(metadata['bin'])-1) ] 
-        datacard.loc[2] = [ 'bin', '' ] + [ ibin for ibin in metadata['bin'] for _ in range(len(metadata['bin'])) ] 
-        datacard.loc[3] = [ 'process', '' ] + [ metadata['processes']['all'][ibin]['label'] for ibin in metadata['processes']['all'] ] * len(metadata['bin'])
-        datacard.loc[4] = [ 'process', '' ] + [ metadata['processes']['all'][ibin]['process'] for ibin in metadata['processes']['all'] ] * len(metadata['bin'])
-        datacard.loc[5] = [ 'rate', '' ] + [ '-1' ] * len(metadata['bin']) * len(metadata['processes']['all'])
+        datacard.loc[0] = [ 'imax', len(metadata['bin']) ] + [ '' for _ in range( size_datacard ) ]
+        datacard.loc[1] = [ 'jmax', total_process-1 ] + [ '' for _ in range( size_datacard ) ]
+        datacard.loc[2] = [ 'kmax', '*' ] + [ '' for _ in range( size_datacard ) ]
+        datacard.loc[3] = [ '-'*50, '' ] + [ '' for _ in range( size_datacard ) ]
+        datacard.loc[4] = [ 'shapes', '*', '*', output_file, '$CHANNEL/$PROCESS', '$CHANNEL/$PROCESS_$SYSTEMATIC' ] + [ '' for _ in range( size_datacard-4 ) ]
+        datacard.loc[5] = [ '-'*50, '' ] + [ '' for _ in range( size_datacard ) ]
+        datacard.loc[6] = [ 'bin', '' ] + metadata['bin'] + [ '' for _ in range( (size_datacard - len(metadata['bin']) ) ) ]  
+        datacard.loc[7] = [ 'observation', '' ] + [ '-1' for _ in metadata['bin'] ] + [ '' for _ in range( (size_datacard - len(metadata['bin']) ) ) ] 
+        datacard.loc[8] = [ '-'*50, '' ] + [ '' for _ in range( size_datacard ) ]
+        datacard.loc[9] = [ 'bin', '' ] + [ ibin for ibin in metadata['bin'] for _ in range(len(metadata['processes']['all'])) ] 
+        datacard.loc[10] = [ 'process', '' ] + [ metadata['processes']['all'][ibin]['label'] for ibin in metadata['processes']['all'] ] * len(metadata['bin'])
+        datacard.loc[11] = [ 'process', '' ] + [ metadata['processes']['all'][ibin]['process'] for ibin in metadata['processes']['all'] ] * len(metadata['bin'])
+        datacard.loc[12] = [ 'rate', '' ] + [ '-1' ] * len(metadata['bin']) * len(metadata['processes']['all'])
+        datacard.loc[13] = [ '-'*50, '' ] + [ '' for _ in range( size_datacard ) ]
 
-        is_multijet = (datacard.loc[3,:] == metadata['processes']['background']['multijet']['label']).to_numpy()
+        is_multijet = (datacard.loc[10,:] == metadata['processes']['background']['multijet']['label']).to_numpy()
         for nuisance in closureSysts:
             row = pd.Series([ nuisance, 'shape'] + ['-'] * size_datacard, index=datacard.columns )
             new_row = row.where(~is_multijet, '1')
             datacard = datacard.append(new_row, ignore_index=True)
         
-        for isignal in metadata['processes']['signal']:
+        for nuisance in mcSysts:
+            iy = ''.join(nuisance[-2:])
+            row = pd.Series([ nuisance, 'shape'] + ['-'] * size_datacard, index=datacard.columns )
 
-            is_signal = (datacard.loc[3,:] == metadata['processes']['signal'][isignal]['label']).to_numpy()
-            for nuisance in mcSysts:
-                iy = ''.join(nuisance[-2:])
-                row = pd.Series([ nuisance, 'shape'] + ['-'] * size_datacard, index=datacard.columns )
+            for isignal in metadata['processes']['signal']:
+
+                is_signal = (datacard.loc[10,:] == metadata['processes']['signal'][isignal]['label']).to_numpy()
                 if iy.isdigit():
-                    is_year = (datacard.loc[2,:] == f'UL{iy}' ).to_numpy()
+                    is_year = (datacard.loc[9,:] == f'HHbb_20{iy}' ).to_numpy()
                     new_row = row.where(~(is_signal & is_year), '1')
                 else:
                     new_row = row.where(~is_signal, '1')
-                datacard = datacard.append(new_row, ignore_index=True)
+                row = new_row
+            datacard = datacard.append(new_row, ignore_index=True)
 
-            for isyst in metadata['uncertainty']:
-                row = pd.Series([ isyst, metadata['uncertainty'][isyst]['type']] + ['-'] * size_datacard, index=datacard.columns )
+        for isyst in metadata['uncertainty']:
+            row = pd.Series([ isyst, metadata['uncertainty'][isyst]['type']] + ['-'] * size_datacard, index=datacard.columns )
+            for isignal in metadata['processes']['signal']:
+                is_signal = (datacard.loc[10,:] == metadata['processes']['signal'][isignal]['label']).to_numpy()
                 for iy in metadata['uncertainty'][isyst]['years']:
-                    is_year = (datacard.loc[2,:] == iy ).to_numpy()
+                    is_year = datacard.loc[9,:] == iy 
                     row = row.where(~(is_signal & is_year), metadata['uncertainty'][isyst]['years'][iy])
-                datacard = datacard.append(row, ignore_index=True)
+            datacard = datacard.append(row, ignore_index=True)
 
         lines.append( datacard.to_string(justify='left', header=False, index=False ) )
+        # datacard.to_csv(output_dir+"/"+output_datacard, header=False, index=False, sep='\t' ) 
         if not stat_only:
             lines.append(hline)
             lines.append('* autoMCStats 0 1 1')
         lines.append(hline)
-        # if closureSysts:
-        #     lines.append('multijet group = %s'%(' '.join(closureSysts)))
-        # if mcSysts:
-        #     lines.append('btag     group = %s'%(' '.join(   btagSysts)))
-        #     lines.append('junc     group = %s'%(' '.join(   juncSysts)))
-        #     lines.append('trig     group = CMS_bbbb_resolved_ggf_triggerEffSF')
-        # lines.append(f'lumi     group = {" ".join([ isyst for isyst in metadata["uncertainty"] if "lumi" in isyst ])}')
-        # lines.append('theory   group = BR_hbb xs_hbbhbb') #mtop_ggH
-        # if not stat_only:
-        #     lines.append(f'others   group = lumi_13TeV_correlated lumi_13TeV_1718 lumi_2016 lumi_2017 lumi_2018 BR_hbb xs_hbbhbb CMS_pileup_2016 CMS_pileup_2017 CMS_pileup_2018 CMS_l1_ecal_prefiring_2016 CMS_l1_ecal_prefiring_2017 CMS_l1_ecal_prefiring_2018 %s'%(' '.join(juncSysts)))
+        if closureSysts:
+            lines.append(f"{metadata['processes']['background']['multijet']['label']} group = {' '.join(closureSysts)}")
+        if mcSysts:
+            lines.append('CMS_btag group = %s'%(' '.join(   btagSysts)))
+            lines.append('CMS_scale_j group = %s'%(' '.join(   juncSysts)))
+            # lines.append('trig     group = CMS_bbbb_resolved_ggf_triggerEffSF')
+        lines.append(f'CMS_lumi group = {" ".join([ isyst for isyst in metadata["uncertainty"] if "lumi" in isyst ])}')
+        lines.append('theory   group = BR_hbb xs_hbbhbb') #mtop_ggH
+        if not stat_only:
+            lines.append(f'others   group = {" ".join([ isyst for isyst in metadata["uncertainty"] if "lumi" in isyst ])} BR_hbb xs_hbbhbb CMS_pileup_2016 CMS_pileup_2017 CMS_pileup_2018 CMS_l1_ecal_prefiring_2016 CMS_l1_ecal_prefiring_2017 CMS_l1_ecal_prefiring_2018 {" ".join(juncSysts)}')
 
-
-        with open(output.replace('hists', 'combine').replace('root', 'txt'), 'w') as ofile:
+        output_datacard = 'datacard.txt' #output.replace('hists', 'combine').replace('root', 'txt')
+        with open(output_dir+"/"+output_datacard, 'w') as ofile:
             for line in lines:
                 print(line)
                 ofile.write(line+'\n')
@@ -327,14 +323,14 @@ def create_combine_root_file( file_to_convert,
 
             nom_data = root_hists[next(iter(root_hists))]['data_obs'].Clone('data_obs')
             nom_data.Reset()
-            nom_tt = nom_data.Clone('tt')
-            nom_mj = nom_data.Clone('multijet')
-            nom_signal = nom_data.Clone('signal')
+            nom_tt = nom_data.Clone(metadata['processes']['all']['tt']['label'])
+            nom_mj = nom_data.Clone(metadata['processes']['all']['multijet']['label'])
+            nom_signal = nom_data.Clone(metadata['processes']['all']['GluGluToHHTo4B_cHHH1']['label'])
             for ichannel in root_hists.keys():
                 nom_data.Add( root_hists[ichannel]['data_obs'] )
-                nom_tt.Add( root_hists[ichannel]['tt'] )
-                nom_mj.Add( root_hists[ichannel]['multijet']['nominal'] )
-                nom_signal.Add( root_hists[ichannel]['HH']['nominal'] )
+                nom_tt.Add( root_hists[ichannel][metadata['processes']['all']['tt']['label']] )
+                nom_mj.Add( root_hists[ichannel][metadata['processes']['all']['multijet']['label']]['nominal'] )
+                nom_signal.Add( root_hists[ichannel][metadata['processes']['all']['GluGluToHHTo4B_cHHH1']['label']]['nominal'] )
             nom_signal.Scale( 100 )
 
             stack = ROOT.THStack()
@@ -372,9 +368,9 @@ def create_combine_root_file( file_to_convert,
                     bkg_syst_can.cd(1)
                     leg = CMS.cmsLeg(0.55, 0.89 - 0.05 * 3, 0.99, 0.89, textSize=0.04)
 
-                    mj_nominal = root_hists[ichannel]['multijet']['nominal'].Clone()
-                    mj_var_up = root_hists[ichannel]['multijet'][f"{isyst}Up"]
-                    mj_var_dn = root_hists[ichannel]['multijet'][f"{isyst}Down"]
+                    mj_nominal = root_hists[ichannel][metadata['processes']['all']['multijet']['label']]['nominal'].Clone()
+                    mj_var_up = root_hists[ichannel][metadata['processes']['all']['multijet']['label']][f"{isyst}Up"]
+                    mj_var_dn = root_hists[ichannel][metadata['processes']['all']['multijet']['label']][f"{isyst}Down"]
 
                     leg.AddEntry( mj_nominal, 'Nominal Multijet', 'lp' )
                     CMS.cmsDraw( mj_nominal, 'P', mcolor=ROOT.kBlack )
@@ -398,7 +394,7 @@ def create_combine_root_file( file_to_convert,
 
                     CMS.SaveCanvas( bkg_syst_can, f"{output_dir}/plots/{iclass}_{isyst}_{ichannel}.pdf" )
 
-                for isyst in root_hists[ichannel]['HH'].keys():
+                for isyst in root_hists[ichannel][metadata['processes']['all']['GluGluToHHTo4B_cHHH1']['label']].keys():
                     if ('nominal' in isyst) or ('Down' in isyst): continue
                     isyst = isyst.replace('Up', '')
                     logging.info(f"Plotting {ichannel} {isyst}")
@@ -415,9 +411,9 @@ def create_combine_root_file( file_to_convert,
                     mc_syst_can.cd(1)
                     leg = CMS.cmsLeg(0.2, 0.89 - 0.05 * 3, 0.4, 0.89, textSize=0.04)
 
-                    HH_nominal = root_hists[ichannel]['HH']['nominal'].Clone()
-                    HH_var_up = root_hists[ichannel]['HH'][f"{isyst}Up"]
-                    HH_var_dn = root_hists[ichannel]['HH'][f"{isyst}Down"]
+                    HH_nominal = root_hists[ichannel][metadata['processes']['all']['GluGluToHHTo4B_cHHH1']['label']]['nominal'].Clone()
+                    HH_var_up = root_hists[ichannel][metadata['processes']['all']['GluGluToHHTo4B_cHHH1']['label']][f"{isyst}Up"]
+                    HH_var_dn = root_hists[ichannel][metadata['processes']['all']['GluGluToHHTo4B_cHHH1']['label']][f"{isyst}Down"]
 
                     leg.AddEntry( HH_nominal, 'Nominal HH', 'lp' )
                     CMS.cmsDraw( HH_nominal, 'P', mcolor=ROOT.kBlack )

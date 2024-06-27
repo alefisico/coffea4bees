@@ -35,30 +35,47 @@ parse_aruments() {
 parse_aruments "$@"
 
 currentDir=$PWD
-# signallabel="HH"
-signallabel="ggHH_hbbhbb"
+signallabel="ggHH_kl_1_kt_1"
+# signallabel="ggHH"
 
 for iclass in SvB_MA;
 do
+    datacard="datacard"
+    # datacard="combine_"${iclass}
     cd ${datacard_folder}/
-    text2workspace.py combine_${iclass}.txt -P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel --PO verbose --PO "map=.*/${signallabel}:r${signallabel}[1,-10,10]" #--PO 'map=.*/ZH:rZH[1,-10,10]' --PO 'map=.*/ZZ:rZZ[1,-10,10]'
-    combine -M AsymptoticLimits combine_${iclass}.root --redefineSignalPOIs r${signallabel} -n _${iclass} --run blind > limits.txt
+    text2workspace.py ${datacard}.txt -P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel --PO verbose --PO "map=.*/${signallabel}:r${signallabel}[1,-10,10]" \
+        --PO "map=.*/ggHH_kl_0_kt_1:rggHH_kl_0_kt_1[0,0,0]" \
+        --PO "map=.*/ggHH_kl_2p45_kt_1:rggHH_kl_2p45_kt_1[0,0,0]" \
+        --PO "map=.*/ggHH_kl_5_kt_1:rggHH_kl_5_kt_1[0,0,0]" 
+        # --PO 'map=.*/ZH:rZH[1,-10,10]' --PO 'map=.*/ZZ:rZZ[1,-10,10]'
+    combine -M AsymptoticLimits ${datacard}.root --redefineSignalPOIs r${signallabel} \
+        -n _${iclass} --run blind \
+        # --setParameters rggHH_kl_0_kt_1=0,rggHH_kl_2p45_kt_1=0,rggHH_kl_5_kt_1=0 \
+        > limits.txt
     cat limits.txt
     combineTool.py -M CollectLimits higgsCombine_${iclass}.AsymptoticLimits.mH120.root -o limits.json
 
     if [ "$impacts" = true ]; then
 
-        combineTool.py -M Impacts -d combine_${iclass}.root --doInitialFit --setParameterRanges r${signallabel}=-10,10 --setParameters r${signallabel}=1 --robustFit 1 -m 125 -n ${iclass} -t -1 ## expected -t -1
+        combineTool.py -M Impacts -d ${datacard}.root --doInitialFit \
+        --setParameterRanges r${signallabel}=-10,10:rggHH_kl_0_kt_1=0,0:rggHH_kl_2p45_kt_1=0,0:rggHH_kl_5_kt_1=0,0 \
+        --setParameters r${signallabel}=1,rggHH_kl_0_kt_1=0,rggHH_kl_2p45_kt_1=0,rggHH_kl_5_kt_1=0 \
+        --robustFit 1 -m 125 -n ${iclass} -t -1 ## expected -t -1
 
-        combineTool.py -M Impacts -d combine_${iclass}.root --doFits --setParameterRanges r${signallabel}=-10,10 --setParameters r${signallabel}=1 --robustFit 1 -m 125 --parallel 4 -n ${iclass} -t -1
+        combineTool.py -M Impacts -d ${datacard}.root --doFits \
+        --setParameterRanges r${signallabel}=-10,10:rggHH_kl_0_kt_1=0,0:rggHH_kl_2p45_kt_1=0,0:rggHH_kl_5_kt_1=0,0 \
+        --setParameters r${signallabel}=1,rggHH_kl_0_kt_1=0,rggHH_kl_2p45_kt_1=0,rggHH_kl_5_kt_1=0 \
+        --robustFit 1 -m 125 --parallel 4 -n ${iclass} -t -1
 
-        combineTool.py -M Impacts -d combine_${iclass}.root -o impacts_combine_${iclass}_exp.json -m 125 -n ${iclass}
+        combineTool.py -M Impacts -d ${datacard}.root -o impacts_combine_${iclass}_exp.json -m 125 -n ${iclass}
 
-        plotImpacts.py -i impacts_combine_${iclass}_exp.json -o impacts_combine_${iclass}_exp_HH --POI r${signallabel} --per-page 20 --left-marin 0.3 --height 400 --label-size 0.04 --translate nuisance_names.json
+        plotImpacts.py -i impacts_combine_${iclass}_exp.json -o impacts_combine_${iclass}_exp_HH --POI r${signallabel} --per-page 20 --left-margin 0.3 --height 400 --label-size 0.04 --translate ../nuisance_names.json
 
     elif [ "$postfit" = true ]; then
 
-        combine -M MultiDimFit --setParameters rZZ=1,rZH=1,r${signallabel}=1 --robustFit 1 -n _${iclass}_fit_s --saveWorkspace --saveFitResult -d combine_${iclass}.root
+        combine -M MultiDimFit \
+        --setParameters r${signallabel}=1,rggHH_kl_0_kt_1=0,rggHH_kl_2p45_kt_1=0,rggHH_kl_5_kt_1=0 \
+        --robustFit 1 -n _${iclass}_fit_s --saveWorkspace --saveFitResult -d ${datacard}.root
 
         PostFitShapesFromWorkspace -w higgsCombine_${iclass}_fit_s.MultiDimFit.mH120.root -f multidimfit_${iclass}_fit_s.root:fit_mdf --total-shapes --postfit --output postfit_s.root
 

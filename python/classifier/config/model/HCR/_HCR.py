@@ -10,8 +10,8 @@ _SCHEDULER = "classifier.config.scheduler"
 
 
 if TYPE_CHECKING:
-    from classifier.discriminator.roc import MulticlassROC
-    from classifier.discriminator.skimmer import BatchType, Splitter
+    from classifier.ml.roc import MulticlassROC
+    from classifier.ml.skimmer import BatchType, Splitter
     from torch import Tensor
 
 
@@ -48,7 +48,7 @@ class HCR(KFoldClassifier):
     )
 
     def initializer(self, splitter: Splitter, **kwargs):
-        from classifier.discriminator.HCR import (
+        from classifier.ml.HCR import (
             GBNSchedule,
             HCRArch,
             HCRBenchmarks,

@@ -210,7 +210,7 @@ class analysis(processor.ProcessorABC):
         selev["nNotCanJet"] = ak.num(selev.notCanJet_coffea)
 
 
-        print(selev.nJet_selected, selev.nNotCanJet, ak.num(notCanJet_sel),"\n")
+        # print(selev.nJet_selected, selev.nNotCanJet, ak.num(notCanJet_sel),"\n")
 
         #
         # Build diJets, indexed by diJet[event,pairing,0/1]
