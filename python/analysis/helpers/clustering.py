@@ -93,24 +93,84 @@ def remove_indices(particles, indices_to_remove):
     mask[indices_to_remove] = False
     return particles[mask]
 
+# Order by size of cluster then by flavour
+def comb_jet_flavor(flavor_A, flavor_B):
+
+    # Add Parens if the input is already clustered
+    if len(flavor_A) > 1:
+        flavor_A = f"({str(flavor_A)})"
+    if len(flavor_B) > 1:
+        flavor_B = f"({str(flavor_B)})"
+
+    if len(flavor_A) < len(flavor_B):
+        return flavor_A + flavor_B
+
+    if len(flavor_B) < len(flavor_A):
+        return flavor_A + flavor_B
+
+    _name_list = [flavor_A, flavor_B]
+    _name_list.sort()
+    return "".join(_name_list)
+
+
+def extract_all_parentheses_substrings(s):
+    substrings = []
+    start_indices = []
+    counter = 0
+
+    for i, char in enumerate(s):
+        if char == '(':
+            if counter == 0:
+                start_indices.append(i)
+            counter += 1
+        elif char == ')':
+            counter -= 1
+            if counter == 0:
+                start_index = start_indices.pop(0)
+                substrings.append(s[start_index:i+1])
+
+    return substrings
+
+
+def delta_bs(comb_flavor):
+    if len(comb_flavor) < 2:
+        print(f"ERROR len of combined flavor is too low {len(comb_flavor)}  {comb_flavor}")
+
+    sub_combs = extract_all_parentheses_substrings(comb_flavor)
+
+    if len(sub_combs) == 0:
+        child_A = comb_flavor[0]
+        child_B = comb_flavor[1]
+    elif len(sub_combs) == 1:
+        child_A = comb_flavor[0]
+        child_B = sub_combs[0]
+    elif len(sub_combs) == 2:
+        child_A = sub_combs[0]
+        child_B = sub_combs[1]
+    else:
+        print(f"ERROR comb_flavor is {comb_flavor} sub_combs is {sub_combs} len {len(sub_combs)}")
+
+    #print(f"children: {child_A} {child_A}")
+    #print(f"counts: {child_A.count('b')} {child_B.count('b')}")
+
+    if child_A.count("b") and child_B.count("b"):
+        return -1
+
+    return 0
+
+
+
+
 def combine_particles(part_A, part_B, *, debug=False):
     part_comb = part_A + part_B
 
-    jet_flavor_pair = (part_A.jet_flavor, part_B.jet_flavor)
     new_part_A = part_A
     new_part_B = part_B
     if part_A.pt < part_B.pt:
         new_part_A = part_B
         new_part_B = part_A
 
-    match jet_flavor_pair:
-        case ("b","b"):
-            part_comb_jet_flavor = "bb"
-        case ("b","bb") | ("bb", "b"):
-            part_comb_jet_flavor = "b(bb)"
-        case _:
-            if debug: print(f"ERROR: combining {jet_flavor_pair}")
-            part_comb_jet_flavor = f"ERROR {part_A.jet_flavor} and {part_B.jet_flavor}"
+    part_comb_jet_flavor = comb_jet_flavor(part_A.jet_flavor, part_B.jet_flavor)
 
     part_comb_array = ak.zip(
         {
@@ -142,7 +202,8 @@ def cluster_bs_core(event_jets, distance_function, *, debug = False):
         if debug: print(particles)
 
         if debug: print(f"iEvent {iEvent}")
-
+        if debug: print(f"==============================")
+        if debug: print(f"nParticles {len(particles)}")
         # Maybe later allow more than 4 bs
         number_of_unclustered_bs = 4
 
@@ -165,12 +226,12 @@ def cluster_bs_core(event_jets, distance_function, *, debug = False):
             part_comb_array = combine_particles(particles[idx_A], particles[idx_B])
 
             if debug: print(part_comb_array.jet_flavor)
-            match part_comb_array.jet_flavor:
-                case "bb" | "b(bb)":
-                    number_of_unclustered_bs -= 1
-                case _:
-                    print(f"ERROR: counting {part_comb_array.jet_flavor}")
+            if debug: print(f"{part_comb_array.jet_flavor}")
+            if debug: print(f"was {number_of_unclustered_bs}")
 
+            number_of_unclustered_bs += delta_bs(part_comb_array.jet_flavor[0])
+
+            if debug: print(f"now {number_of_unclustered_bs}")
             splittings[-1].append(part_comb_array[0])
 
             particles = remove_indices(particles, [idx_A, idx_B])

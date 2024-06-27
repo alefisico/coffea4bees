@@ -16,7 +16,6 @@ from base_class.hist import Collection, Fill
 from base_class.physics.object import LorentzVector, Jet, Muon, Elec
 #from analysis.helpers.hist_templates import SvBHists, FvTHists, QuadJetHists
 from analysis.helpers.clustering_hist_templates import ClusterHists
-from analysis.helpers.topCandReconstruction import dumpTopCandidateTestVectors
 from analysis.helpers.clustering import cluster_bs, compute_decluster_variables, cluster_bs_fast, make_synthetic_event
 
 from analysis.helpers.cutflow import cutFlow
@@ -223,6 +222,24 @@ class analysis(processor.ProcessorABC):
 
         jets_for_clustering = ak.concatenate([canJet, notCanJet_sel], axis=1)
         print("Jets for clustering", ak.num(jets_for_clustering),"\n")
+        print("  Less than 5", ak.num(jets_for_clustering[ak.num(jets_for_clustering) < 5]),"\n")
+        print("  Any Less than 5", ak.any(jets_for_clustering[ak.num(jets_for_clustering) < 5]),"\n")
+        jets_for_clustering = jets_for_clustering[ak.argsort(jets_for_clustering.pt, axis=1, ascending=False)]
+
+        #
+        #  To dump the testvectors
+        #
+        dumpTestVectors = False
+        if dumpTestVectors:
+            print(f'{chunk}\n\n')
+            print(f'{chunk} self.input_jet_pt  = {[jets_for_clustering[iE].pt.tolist() for iE in range(10)]}')
+            print(f'{chunk} self.input_jet_eta  = {[jets_for_clustering[iE].eta.tolist() for iE in range(10)]}')
+            print(f'{chunk} self.input_jet_phi  = {[jets_for_clustering[iE].phi.tolist() for iE in range(10)]}')
+            print(f'{chunk} self.input_jet_mass  = {[jets_for_clustering[iE].mass.tolist() for iE in range(10)]}')
+            print(f'{chunk} self.input_jet_flavor  = {[jets_for_clustering[iE].jet_flavor.tolist() for iE in range(10)]}')
+            print(f'{chunk}\n\n')
+
+
 
         #clustered_jets, clustered_splittings = cluster_bs_fast(jets_for_clustering, debug=False)
         clustered_jets, clustered_splittings = cluster_bs(jets_for_clustering, debug=False)
@@ -282,7 +299,6 @@ class analysis(processor.ProcessorABC):
 
 
 
-        # dumpTopCandidateTestVectors(selev, logging, chunk, 10)
         selev["region"] = 0b10
 
 

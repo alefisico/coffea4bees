@@ -15,10 +15,10 @@ fi
 echo "############### Running datasets from " $DATASETS
 echo "############### Running test processor"
 #python runner.py -t -o test_synthetic_datasets.coffea -d data  -p analysis/processors/processor_cluster_4b.py -y UL18  -op analysis/hists/ -m $DATASETS -c analysis/metadata/cluster_4b.yml
-python runner.py -t -o test_synthetic_datasets.coffea -d data  -p analysis/processors/processor_cluster_4b.py -y UL18  -op analysis/hists/ -m $DATASETS -c analysis/metadata/cluster_and_decluster_4b.yml
-#python runner.py -t -o test_synthetic_datasets.coffea -d data  -p analysis/processors/processor_cluster_4b.py -y UL18  -op analysis/hists/ -m $DATASETS -c analysis/metadata/cluster_and_decluster_4b_5j.yml
+#python runner.py -t -o test_synthetic_datasets.coffea -d data  -p analysis/processors/processor_cluster_4b.py -y UL18  -op analysis/hists/ -m $DATASETS -c analysis/metadata/cluster_and_decluster_4b.yml
+python runner.py -t -o test_synthetic_datasets.coffea -d data  -p analysis/processors/processor_cluster_4b.py -y UL18  -op analysis/hists/ -m $DATASETS -c analysis/metadata/cluster_and_decluster_4b_5j.yml
 # python  analysis/makePlotsSyntheticDatasets.py analysis/hists/test_synthetic_datasets.coffea  --out analysis/plots_synthetic_datasets
 
 #python runner.py -t -o test_synthetic_datasets.coffea -d data  -p analysis/processors/processor_HH4b.py -y UL17 UL18 UL16_preVFP UL16_postVFP -op analysis/hists/ -m $DATASETS
 ls
-cd ../
+#cd ../
