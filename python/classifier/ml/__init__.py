@@ -33,7 +33,7 @@ class Stage(ABC):
     name: str
 
     @abstractmethod
-    def run(self, classifier: Classifier) -> dict[str]: ...
+    def run(self, trainer: MultiStageTraining) -> dict[str]: ...
 
 
 @dataclass(kw_only=True)
@@ -59,22 +59,22 @@ class BenchmarkStage(Stage):
         }
 
     def _iter_benchmark(
-        self, classifier: Classifier, loaders: dict[str, Iterable[BatchType]]
+        self, trainer: MultiStageTraining, loaders: dict[str, Iterable[BatchType]]
     ):
         benchmark = {}
         self.model.nn.eval()
         with torch.no_grad():
             for k, v in loaders.items():
-                classifier.cleanup()
+                trainer.cleanup()
                 Usage.checkpoint(self.name, "benchmark", k, "start")
                 benchmark[k] = self.model.validate(v)
                 Usage.checkpoint(self.name, "benchmark", k, "finish")
         return benchmark
 
-    def run(self, classifier: Classifier):
+    def run(self, trainer: MultiStageTraining):
         return {
             "name": self.name,
-            "benchmarks": self._iter_benchmark(classifier, self._init_benchmark()),
+            "benchmarks": self._iter_benchmark(trainer, self._init_benchmark()),
         }
 
 
@@ -84,7 +84,7 @@ class TrainingStage(BenchmarkStage):
     training: Dataset
     validation: dict[str, Dataset] = None
 
-    def run(self, classifier: Classifier):
+    def run(self, trainer: MultiStageTraining):
         history = {
             "name": self.name,
             "parameters": self.model.n_parameters,
@@ -112,7 +112,7 @@ class TrainingStage(BenchmarkStage):
         start = datetime.now()
         for epoch in range(self.schedule.epoch):
             epoch = epoch + 1
-            classifier.cleanup()
+            trainer.cleanup()
             Usage.checkpoint(self.name, f"epoch{epoch}", "optimize")
             self.model.nn.train()
             if len(bs.dataloader) > 0:
@@ -132,7 +132,7 @@ class TrainingStage(BenchmarkStage):
                             "batch size": bs.dataloader.batch_size,
                         }
                         | self.model.hyperparameters,
-                        "benchmarks": self._iter_benchmark(classifier, validation),
+                        "benchmarks": self._iter_benchmark(trainer, validation),
                     }
                 )
             lr.step()
@@ -150,7 +150,7 @@ class TrainingStage(BenchmarkStage):
 
 
 class EvaluationStage(Stage):  # TODO evaluation
-    def run(self, classifier: Classifier):
+    def run(self):
         pass
 
 
@@ -197,7 +197,7 @@ class Model(ABC):
     def step(self, epoch: int = None): ...
 
 
-class Classifier(WithUUID, ABC):
+class MultiStageTraining(WithUUID, ABC):
     def __init__(self, **kwargs):
         super().__init__()
         self.metadata = kwargs
