@@ -23,7 +23,7 @@ def apply_event_selection_4b( event, isMC, corrections_metadata, isMixedData = F
 
     return event
 
-def apply_object_selection_4b( event, year, isMC, dataset, corrections_metadata, *, isMixedData=False, isTTForMixed=False, isDataForMixed=False, doLeptonRemoval=True, loosePtForSkim=False  ):
+def apply_object_selection_4b( event, year, isMC, dataset, corrections_metadata, *, isMixedData=False, isTTForMixed=False, isDataForMixed=False, doLeptonRemoval=True, loosePtForSkim=False,   ):
     """docstring for apply_basic_selection_4b. This fuction is not modifying the content of anything in events. it is just adding it"""
 
     #
@@ -61,6 +61,7 @@ def apply_object_selection_4b( event, year, isMC, dataset, corrections_metadata,
 
         event['Jet', 'pileup'] = ((event.Jet.puId < 7) & (event.Jet.pt < 50)) | ((np.abs(event.Jet.eta) > 2.4) & (event.Jet.pt < 40))
         event['Jet', 'selected_loose'] = (event.Jet.pt >= 20) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
+        event['Jet', 'skim_loose'] = (event.Jet.pt >= 15) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
         event['Jet', 'selected'] = (event.Jet.pt >= 40) & (np.abs(event.Jet.eta) <= 2.4) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
 
 
@@ -92,13 +93,13 @@ def apply_object_selection_4b( event, year, isMC, dataset, corrections_metadata,
 
     # Only need 30 GeV jets for signal systematics
     if loosePtForSkim:
-        event['Jet', 'selected30'] = (event.Jet.pt >= 30) & (np.abs(event.Jet.eta) <= 2.4) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
-        event['nJet_selected30'] = ak.sum(event.Jet.selected30, axis=1)
-        event['Jet', 'tagged30']     = event.Jet.selected30 & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['M'])
-        event['passJetMult30'] = event.nJet_selected30 >= 4
-        event['nJet_tagged30']       = ak.num(event.Jet[event.Jet.tagged30])
-        event["fourTag30"]  = (event['nJet_tagged30']     >= 4)
-        event['passPreSel30'] = event.threeTag | event.fourTag30
+        event['Jet', 'selected_lowpt_forskim'] = (event.Jet.pt >= 15) & (np.abs(event.Jet.eta) <= 2.4) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
+        event['nJet_selected_lowpt_forskim'] = ak.sum(event.Jet.selected_lowpt_forskim, axis=1)
+        event['Jet', 'tagged_lowpt_forskim']     = event.Jet.selected_lowpt_forskim & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['M'])
+        event['passJetMult_lowpt_forskim'] = event.nJet_selected_lowpt_forskim >= 4
+        event['nJet_tagged_lowpt_forskim']       = ak.num(event.Jet[event.Jet.tagged_lowpt_forskim])
+        event["fourTag_lowpt_forskim"]  = (event['nJet_tagged_lowpt_forskim']     >= 4)
+        event['passPreSel_lowpt_forskim'] = event.threeTag | event.fourTag_lowpt_forskim
 
     return event
 

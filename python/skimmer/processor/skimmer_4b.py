@@ -16,9 +16,9 @@ class Skimmer(PicoAOD):
             "all",
             "passHLT",
             "passNoiseFilter",
-            "passJetMult30",
+            "passJetMult_lowpt_forskim",
             "passJetMult",
-            "passPreSel30",
+            "passPreSel_lowpt_forskim",
             "passPreSel",
         ]
 
@@ -41,7 +41,7 @@ class Skimmer(PicoAOD):
         event["Jet"] = jets
 
 
-        loosePtForSkim = True
+        loosePtForSkim = False #True
         event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year], loosePtForSkim=loosePtForSkim  )
 
         weights = Weights(len(event), storeIndividual=True)
@@ -57,10 +57,10 @@ class Skimmer(PicoAOD):
         selections.add( "passNoiseFilter", event.passNoiseFilter)
         selections.add( "passHLT", ( np.full(len(event), True) if isMC else event.passHLT ) )
         if loosePtForSkim:
-            selections.add( 'passJetMult30', event.passJetMult30 )
+            selections.add( 'passJetMult_lowpt_forskim', event.passJetMult_lowpt_forskim )
         selections.add( 'passJetMult',   event.passJetMult )
         if loosePtForSkim:
-            selections.add( "passPreSel30",  event.passPreSel30)
+            selections.add( "passPreSel_lowpt_forskim",  event.passPreSel_lowpt_forskim)
         selections.add( "passPreSel",    event.passPreSel)
 
         event["weight"] = weights.weight()
@@ -69,7 +69,7 @@ class Skimmer(PicoAOD):
         self._cutFlow.fill( "all",             event[selections.all(*cumulative_cuts)], allTag=True )
 
         if loosePtForSkim:
-            all_cuts = ["passNoiseFilter", "passHLT", "passJetMult30", "passJetMult", "passPreSel30", "passPreSel"]
+            all_cuts = ["passNoiseFilter", "passHLT", "passJetMult_lowpt_forskim", "passJetMult", "passPreSel_lowpt_forskim", "passPreSel"]
         else:
             all_cuts = ["passNoiseFilter", "passHLT", "passJetMult", "passPreSel"]
 
@@ -78,7 +78,7 @@ class Skimmer(PicoAOD):
             self._cutFlow.fill( cut, event[selections.all(*cumulative_cuts)], allTag=True )
 
         if loosePtForSkim:
-            selection = event.lumimask & event.passNoiseFilter & event.passJetMult30 & event.passPreSel30
+            selection = event.lumimask & event.passNoiseFilter & event.passJetMult_lowpt_forskim & event.passPreSel_lowpt_forskim
         else:
             selection = event.lumimask & event.passNoiseFilter & event.passJetMult & event.passPreSel
         if not isMC: selection = selection & event.passHLT
