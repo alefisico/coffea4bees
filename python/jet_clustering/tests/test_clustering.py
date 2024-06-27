@@ -111,11 +111,14 @@ class clusteringTestCase(unittest.TestCase):
                     print(f"FJ  {i_fj+1}: px = {jet_fj.px:.2f}, py = {jet_fj.py:.2f}, pz = {jet_fj.pz:.2f}, E = {jet_fj.E:.2f}")
 
 
-    def _declustering_test(self, input_jets):
+    def _declustering_test(self, input_jets, debug=False):
 
         clustered_jets, clustered_splittings = cluster_bs(input_jets, debug=False)
         compute_decluster_variables(clustered_splittings)
 
+        if debug:
+            breakpoint()
+        
         if self.debug:
             for iEvent, jets in enumerate(clustered_jets):
                 print(f"Event {iEvent}")
@@ -186,7 +189,7 @@ class clusteringTestCase(unittest.TestCase):
         self._declustering_test(self.input_jets_4)
 
     def test_declustering_5jets(self):
-        self._declustering_test(self.input_jets_5)
+        self._declustering_test(self.input_jets_5, debug=False)
 
 
     def test_cluster_bs_fast_4jets(self):
@@ -241,7 +244,6 @@ class clusteringTestCase(unittest.TestCase):
             print("values")
             [print(i, j) for i, j in zip(clustered_splittings.phi, clustered_splittings_fast.phi)]
         self.assertTrue(all(phi_check), "All phis should be the same")
-
 
 
     def _synthetic_datasets_gbb_only_test(self, input_jets):

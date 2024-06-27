@@ -16,7 +16,7 @@ from base_class.hist import Collection, Fill
 from base_class.physics.object import LorentzVector, Jet, Muon, Elec
 #from analysis.helpers.hist_templates import SvBHists, FvTHists, QuadJetHists
 from analysis.helpers.clustering_hist_templates import ClusterHists
-from analysis.helpers.clustering import cluster_bs, compute_decluster_variables, cluster_bs_fast, make_synthetic_event
+from analysis.helpers.clustering import cluster_bs, compute_decluster_variables, cluster_bs_fast, make_synthetic_event, get_list_of_splitting_types
 
 from analysis.helpers.cutflow import cutFlow
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
@@ -221,9 +221,6 @@ class analysis(processor.ProcessorABC):
         notCanJet_sel["jet_flavor"] = "j"
 
         jets_for_clustering = ak.concatenate([canJet, notCanJet_sel], axis=1)
-        print("Jets for clustering", ak.num(jets_for_clustering),"\n")
-        print("  Less than 5", ak.num(jets_for_clustering[ak.num(jets_for_clustering) < 5]),"\n")
-        print("  Any Less than 5", ak.any(jets_for_clustering[ak.num(jets_for_clustering) < 5]),"\n")
         jets_for_clustering = jets_for_clustering[ak.argsort(jets_for_clustering.pt, axis=1, ascending=False)]
 
         #
@@ -245,8 +242,16 @@ class analysis(processor.ProcessorABC):
         clustered_jets, clustered_splittings = cluster_bs(jets_for_clustering, debug=False)
         compute_decluster_variables(clustered_splittings)
 
-        selev["splitting_g_bb"]   = clustered_splittings[clustered_splittings.jet_flavor == "bb"]
-        selev["splitting_bstar"] = clustered_splittings[clustered_splittings.jet_flavor == "b(bb)"]
+        #
+        #  get all splitting types
+        #
+        all_split_types = get_list_of_splitting_types(clustered_splittings)
+
+        #
+        # Sort clusterings by type
+        #
+        for _s_type in all_split_types:
+            selev[f"splitting_{_s_type}"]   = clustered_splittings[clustered_splittings.jet_flavor == _s_type]
 
 
         #
@@ -293,14 +298,13 @@ class analysis(processor.ProcessorABC):
             clustered_jets_reclustered, clustered_splittings_reclustered = cluster_bs(canJet, debug=False)
             compute_decluster_variables(clustered_splittings_reclustered)
 
+            all_split_types_re = get_list_of_splitting_types(clustered_splittings_reclustered)
 
-            selev["splitting_g_bb_reclustered"]   = clustered_splittings_reclustered[clustered_splittings_reclustered.jet_flavor == "bb"]
-            selev["splitting_bstar_reclustered"]  = clustered_splittings_reclustered[clustered_splittings_reclustered.jet_flavor == "b(bb)"]
-
+            for _s_type in all_split_types_re:
+                selev[f"splitting_{_s_type}_re"]  = clustered_splittings_reclustered[clustered_splittings_reclustered.jet_flavor == _s_type]
 
 
         selev["region"] = 0b10
-
 
         #
         # CutFlow
@@ -349,12 +353,14 @@ class analysis(processor.ProcessorABC):
         for iJ in range(4):
             fill += Jet.plot( (f"canJet{iJ}", f"Higgs Candidate Jets {iJ}"), f"canJet{iJ}", skip=["n", "deepjet_c"], )
 
-        fill += ClusterHists( ("gbbs", "$g_{bb}$ Splitting"), "splitting_g_bb" )
-        fill += ClusterHists( ("bstars", "$b^*$ Splitting"), "splitting_bstar" )
+
+        for _s_type in all_split_types:
+            fill += ClusterHists( (f"splitting_{_s_type}", f"{_s_type} Splitting"), f"splitting_{_s_type}" )
 
         if self.do_declustering:
-            fill += ClusterHists( ("gbbs_re", "$g_{bb}$ Splitting"), "splitting_g_bb_reclustered" )
-            fill += ClusterHists( ("bstars_re", "$b^*$ Splitting"), "splitting_bstar_reclustered" )
+            for _s_type in all_split_types_re:
+                fill += ClusterHists( (f"splitting_{_s_type}_re", f"${_s_type} Splitting"), f"splitting_{_s_type}_re" )
+
 
         #
         # fill histograms

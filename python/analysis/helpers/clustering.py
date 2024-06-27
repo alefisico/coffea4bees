@@ -132,31 +132,31 @@ def extract_all_parentheses_substrings(s):
     return substrings
 
 
-def delta_bs(comb_flavor):
-    if len(comb_flavor) < 2:
-        print(f"ERROR len of combined flavor is too low {len(comb_flavor)}  {comb_flavor}")
-
-    sub_combs = extract_all_parentheses_substrings(comb_flavor)
-
-    if len(sub_combs) == 0:
-        child_A = comb_flavor[0]
-        child_B = comb_flavor[1]
-    elif len(sub_combs) == 1:
-        child_A = comb_flavor[0]
-        child_B = sub_combs[0]
-    elif len(sub_combs) == 2:
-        child_A = sub_combs[0]
-        child_B = sub_combs[1]
-    else:
-        print(f"ERROR comb_flavor is {comb_flavor} sub_combs is {sub_combs} len {len(sub_combs)}")
-
-    #print(f"children: {child_A} {child_A}")
-    #print(f"counts: {child_A.count('b')} {child_B.count('b')}")
-
-    if child_A.count("b") and child_B.count("b"):
-        return -1
-
-    return 0
+#def delta_bs(comb_flavor):
+#    if len(comb_flavor) < 2:
+#        print(f"ERROR len of combined flavor is too low {len(comb_flavor)}  {comb_flavor}")
+#
+#    sub_combs = extract_all_parentheses_substrings(comb_flavor)
+#
+#    if len(sub_combs) == 0:
+#        child_A = comb_flavor[0]
+#        child_B = comb_flavor[1]
+#    elif len(sub_combs) == 1:
+#        child_A = comb_flavor[0]
+#        child_B = sub_combs[0]
+#    elif len(sub_combs) == 2:
+#        child_A = sub_combs[0]
+#        child_B = sub_combs[1]
+#    else:
+#        print(f"ERROR comb_flavor is {comb_flavor} sub_combs is {sub_combs} len {len(sub_combs)}")
+#
+#    #print(f"children: {child_A} {child_A}")
+#    #print(f"counts: {child_A.count('b')} {child_B.count('b')}")
+#
+#    if child_A.count("b") and child_B.count("b"):
+#        return -1
+#
+#    return 0
 
 
 
@@ -205,11 +205,11 @@ def cluster_bs_core(event_jets, distance_function, *, debug = False):
         if debug: print(f"==============================")
         if debug: print(f"nParticles {len(particles)}")
         # Maybe later allow more than 4 bs
-        number_of_unclustered_bs = 4
+        # number_of_unclustered_bs = 4
 
         splittings.append([])
 
-        while number_of_unclustered_bs > 2:
+        while True: # Break when try to combine more than 2 bs # number_of_unclustered_bs > 2:
 
             #
             # Calculate the distance measures
@@ -225,13 +225,21 @@ def cluster_bs_core(event_jets, distance_function, *, debug = False):
 
             part_comb_array = combine_particles(particles[idx_A], particles[idx_B])
 
+            #
+            #  Stop if going to combine 3 bs
+            #
+            if part_comb_array.jet_flavor[0].count("b") > 2:
+                if debug: print(f"breaking on {part_comb_array.jet_flavor[0]}")
+                break
+
+
             if debug: print(part_comb_array.jet_flavor)
             if debug: print(f"{part_comb_array.jet_flavor}")
-            if debug: print(f"was {number_of_unclustered_bs}")
+            #if debug: print(f"was {number_of_unclustered_bs}")
 
-            number_of_unclustered_bs += delta_bs(part_comb_array.jet_flavor[0])
+            # number_of_unclustered_bs += delta_bs(part_comb_array.jet_flavor[0])
 
-            if debug: print(f"now {number_of_unclustered_bs}")
+            # if debug: print(f"now {number_of_unclustered_bs}")
             splittings[-1].append(part_comb_array[0])
 
             particles = remove_indices(particles, [idx_A, idx_B])
@@ -760,3 +768,8 @@ def make_synthetic_event(input_jets, input_pdfs):
         num_trys += 1
 
     return unclustered_jets
+
+
+def get_list_of_splitting_types(splittings):
+    unique_splittings = set(ak.flatten(splittings.jet_flavor).to_list())
+    return list(unique_splittings)
