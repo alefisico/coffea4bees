@@ -49,9 +49,9 @@ def autocomplete():
                                 and (clsname := f"{imp}{name}").startswith(mod)
                             ):
                                 yield clsname
-                return
             else:
                 yield from ()  # TODO deal with "--from" and "--template"
+            return
         _ = m.EntryPoint._fetch_subargs(args)
         if len(args) == 0:
             yield from _subcomplete(m.EntryPoint._fetch_module(mod, cat)[1], subargs)
