@@ -467,6 +467,39 @@ def compute_decluster_variables(clustered_splittings):
 
 def decluster_combined_jets(input_jet):
 
+    #
+    #  Need a nested way to propogate the jet flavors
+    #
+    n_jets = np.sum(ak.num(input_jet))
+
+    jet_flav_flat = ak.flatten(input_jet.jet_flavor)
+    simple_comb_mask = (np.char.str_len(jet_flav_flat) == 2)
+
+    jet_flav_child_A = np.full(n_jets, "XXX")
+    jet_flav_child_B = np.full(n_jets, "XXX")
+
+    #
+    #  The simple combinations
+    #
+    _simple_flav_child_A = [s[0] for s in jet_flav_flat[simple_comb_mask]]
+    _simple_flav_child_B = [s[1] for s in jet_flav_flat[simple_comb_mask]]
+    jet_flav_child_A[simple_comb_mask] = _simple_flav_child_A
+    jet_flav_child_B[simple_comb_mask] = _simple_flav_child_B
+
+
+    #
+    #  The nested combinations
+    #
+    _nested_flav_child_A = [s.lstrip("(").split("(")[0] for s in jet_flav_flat[~simple_comb_mask]]
+    _nested_flav_child_B = [s.split("(")[1].rstrip(")") for s in jet_flav_flat[~simple_comb_mask]]
+
+    jet_flav_child_A[~simple_comb_mask] = _nested_flav_child_A
+    jet_flav_child_B[~simple_comb_mask] = _nested_flav_child_B
+
+    jet_flavor_A = ak.unflatten(jet_flav_child_A, ak.num(input_jet))
+    jet_flavor_B = ak.unflatten(jet_flav_child_B, ak.num(input_jet))
+
+
     combined_pt = input_jet.pt
     tanThetaA = np.tan(input_jet.thetaA)
     tanThetaB = input_jet.zA / (1 - input_jet.zA) * tanThetaA
@@ -548,6 +581,7 @@ def decluster_combined_jets(input_jet):
             "eta": pA.eta,
             "phi": pA.phi,
             "mass":pA.mass,
+            "jet_flavor":jet_flavor_A,
         },
         with_name="PtEtaPhiMLorentzVector",
         behavior=vector.behavior,
@@ -559,6 +593,7 @@ def decluster_combined_jets(input_jet):
             "eta": pB.eta,
             "phi": pB.phi,
             "mass":pB.mass,
+            "jet_flavor":jet_flavor_B,
         },
         with_name="PtEtaPhiMLorentzVector",
         behavior=vector.behavior,
@@ -707,23 +742,39 @@ def sample_PDFs_vs_pT(input_jets_decluster, input_pdfs, splittings):
             input_jets_decluster["thetaA"]     = ak.unflatten(_sampled_data_y,    ak.num(input_jets_decluster))
 
 
+def get_list_of_combined_jet_types(jets):
+    all_jet_types =  get_list_of_splitting_types(jets)
+    splitting_types = []
+    for _s in all_jet_types:
+
+        if len(_s) == 1:
+            continue
+
+        splitting_types.append(_s)
+
+    return splitting_types
 
 
-def make_synthetic_event(input_jets, input_pdfs):
+def decluster_splitting_types(input_jets, splitting_types, input_pdfs):
 
-    g_bb_mask_all  = input_jets.jet_flavor == "bb"
-    bstar_mask_all = input_jets.jet_flavor == "b(bb)"
-    decluster_mask_all = g_bb_mask_all | bstar_mask_all
+    #
+    #  Create a mask for all the jets that need declustered
+    #
+    input_jets['split_mask'] = False
+    for _s in splitting_types:
+        _split_mask  = input_jets.jet_flavor == _s
+        input_jets["split_mask"] = _split_mask | input_jets.split_mask
+
 
     #
     #  Save the jets that dont need to be declustered
     #
-    unclustered_jets = input_jets[~decluster_mask_all]
+    unclustered_jets = input_jets[~input_jets.split_mask]
 
     #
     #  Mask the jets to be declustered
     #
-    input_jets_decluster = input_jets[decluster_mask_all]
+    input_jets_to_decluster = input_jets[input_jets.split_mask]
 
     #
     #  Need to iterate b/c
@@ -732,35 +783,31 @@ def make_synthetic_event(input_jets, input_pdfs):
     #   - Some of the splittings are recursive (no implemented yet!)
     num_trys = 0
 
-    while(ak.any(input_jets_decluster)):
+    while(ak.any(input_jets_to_decluster)):
 
-        g_bb_mask  = input_jets_decluster.jet_flavor == "bb"
-        bstar_mask = input_jets_decluster.jet_flavor == "b(bb)"
+        splittings_info = []
 
-        # Pre compute these to save time
-        num_samples_gbb   = np.sum(ak.num(input_jets_decluster[g_bb_mask]))
-        gbb_indicies = np.where(ak.flatten(g_bb_mask))
-        gbb_indicies_tuple = (gbb_indicies[0].to_list())
+        for _s in splitting_types:
 
-        num_samples_bstar = np.sum(ak.num(input_jets_decluster[bstar_mask]))
-        bstar_indicies = np.where(ak.flatten(bstar_mask))
-        bstar_indicies_tuple = (bstar_indicies[0].to_list())
+            # Pre compute these to save time
+            _s_mask = input_jets_to_decluster.jet_flavor == _s
+            _num_samples   = np.sum(ak.num(input_jets_to_decluster[_s_mask]))
+            _indicies = np.where(ak.flatten(_s_mask))
+            _indicies_tuple = (_indicies[0].to_list())
 
-        splittings = [("gbbs",   num_samples_gbb,   gbb_indicies_tuple),
-                      ("bstars", num_samples_bstar, bstar_indicies_tuple),
-                      ]
+            splittings_info.append((_s, _num_samples, _indicies_tuple))
 
 
         #
         #  Sample the PDFs,  add sampled varibales to the jets to be declustered
         #
         #sample_PDFs(input_jets_decluster, input_pdfs, splittings)
-        sample_PDFs_vs_pT(input_jets_decluster, input_pdfs, splittings)
+        sample_PDFs_vs_pT(input_jets_to_decluster, input_pdfs, splittings_info)
 
         #
         #  do the declustering
         #
-        declustered_jets_A, declustered_jets_B  = decluster_combined_jets(input_jets_decluster)
+        declustered_jets_A, declustered_jets_B  = decluster_combined_jets(input_jets_to_decluster)
 
         #
         #  Check for declustered jets vailing kinematic requirements
@@ -782,22 +829,45 @@ def make_synthetic_event(input_jets, input_pdfs):
         #  Try again with the other jets
         #
         #print(f"Was {np.sum(ak.num(input_jets_decluster))}\n")
-        input_jets_decluster = input_jets_decluster[clustering_fail]
+        input_jets_to_decluster = input_jets_to_decluster[clustering_fail]
         #print(f"Now {np.sum(ak.num(input_jets_decluster))}\n")
         num_trys += 1
 
     return unclustered_jets
 
 
+
+
+def make_synthetic_event(input_jets, input_pdfs):
+
+
+    #
+    # This needs to be recurseive !!!
+    #
+
+    #
+    #  Get all the different types of splitted needed
+    #
+    splitting_types = get_list_of_combined_jet_types(input_jets)
+
+    while len(splitting_types):
+
+        input_jets = decluster_splitting_types(input_jets, splitting_types, input_pdfs)
+
+        splitting_types = get_list_of_combined_jet_types(input_jets)
+
+    return input_jets
+
+
+
 def get_list_of_splitting_types(splittings):
-    unique_splittings = set(ak.flatten(splittings.jet_flavor))#.to_list())
+    unique_splittings = set(ak.flatten(splittings.jet_flavor).to_list())
     return list(unique_splittings)
 
 
 def clean_ISR(clustered_jets, splittings):
 
     all_jet_types =  get_list_of_splitting_types(clustered_jets)
-
 
     ISR_splittings = []
     for _s in all_jet_types:

@@ -245,15 +245,16 @@ class clusteringTestCase(unittest.TestCase):
 
         clustered_jets, _clustered_splittings = cluster_bs(input_jets, debug=False)
 
-
         #
         #  Decluster the splitting that are 0b + >1 bs
         #
-        print("Before")
-        print(clustered_jets.jet_flavor)
-        clustered_jets_noISR = clean_ISR(clustered_jets, _clustered_splittings)
-        print("After")
-        print(clustered_jets_noISR.jet_flavor)
+        if debug: 
+            print("Jet flavour Before ISR cleaning")
+            print(clustered_jets.jet_flavor)
+        clustered_jets = clean_ISR(clustered_jets, _clustered_splittings)
+        if debug: 
+            print("Jet flavour after ISR cleaning")
+            print(clustered_jets.jet_flavor)
 
         #
         # Declustering
@@ -264,13 +265,14 @@ class clusteringTestCase(unittest.TestCase):
         #
         #  Make with ../.ci-workflows/synthetic-dataset-plot-job.sh
         # input_pdf_file_name = "analysis/plots_synthetic_datasets/clustering_pdfs.yml"
-        input_pdf_file_name = "jet_clustering/clustering_PDFs/clustering_pdfs_vs_pT.yml"
+        input_pdf_file_name = "jet_clustering/jet-splitting-PDFs-0jet-00-01-00_5j/clustering_pdfs_vs_pT.yml"
+        #input_pdf_file_name = "jet_clustering/clustering_PDFs/clustering_pdfs_vs_pT.yml"
         with open(input_pdf_file_name, 'r') as input_file:
             input_pdfs = yaml.safe_load(input_file)
 
         declustered_jets = make_synthetic_event(clustered_jets, input_pdfs)
-        pA = declustered_jets[:,0:2]
-        pB = declustered_jets[:,2:]
+        #pA = declustered_jets[:,0:2]
+        #pB = declustered_jets[:,2:]
 
         #
         # Sanity checks
@@ -283,8 +285,8 @@ class clusteringTestCase(unittest.TestCase):
             print("Only after gbb declustering")
             print(f"clustered_jets.jet_flavor     {clustered_jets.jet_flavor}")
             print(f"clustered_jets.pt             {clustered_jets.pt}")
-            print(f"pA.pt                         {pA.pt}")
-            print(f"pB.pt                         {pB.pt}")
+            #print(f"pA.pt                         {pA.pt}")
+            #print(f"pB.pt                         {pB.pt}")
 
             print(f"declustered_jets.pt             {declustered_jets.pt}")
             print(f"ak.num(declustered_jets)        {ak.num(declustered_jets)}")
@@ -293,8 +295,8 @@ class clusteringTestCase(unittest.TestCase):
             #
             #  Checkphi
             #
-            print(f"input phi {clustered_jets.phi[1]}")
-            print(f"Reco phi {(pA + pB).phi[1]}")
+            #print(f"input phi {clustered_jets.phi[1]}")
+            #print(f"Reco phi {(pA + pB).phi[1]}")
 
         self.assertTrue(all(match_n_jets), f"Should always get {n_jets_expected} jets")
 
@@ -304,10 +306,10 @@ class clusteringTestCase(unittest.TestCase):
         self._synthetic_datasets_gbb_only_test(self.input_jets_4, n_jets_expected = 4)
 
 
-#    def test_synthetic_datasets_gbb_only_5jets(self):
-#
-#        self._synthetic_datasets_gbb_only_test(self.input_jets_5, n_jets_expected = 5, debug=True)
-#
+    def test_synthetic_datasets_gbb_only_5jets(self):
+
+        self._synthetic_datasets_gbb_only_test(self.input_jets_5, n_jets_expected = 5, debug=True)
+
 
 if __name__ == '__main__':
     # wrapper.parse_args()
