@@ -120,7 +120,7 @@ class Cascade(GlobalState, Static, metaclass=_ClassPropertyMeta):
         keys = dict(filter(_is_state, vars(cls).items()))
         infos = [f"usage: {cls.__mod_name__()} OPTIONS [OPTIONS ...]", ""]
         if cls.__doc__:
-            doc = filter(None, (l.strip() for l in cls.__doc__.split("\n")))
+            doc = filter(None, (line.strip() for line in cls.__doc__.split("\n")))
             infos.extend([*doc, ""])
         infos.append(f"options: {parse.EMBED}")
         for k, v in keys.items():

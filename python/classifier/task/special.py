@@ -4,7 +4,7 @@ from typing import Any, Callable, Concatenate, Generator, ParamSpec, TypeVar, ov
 
 from ..typetools import Method
 
-__all__ = ["interface", "new", "TaskBase", "Static", "Unique"]
+__all__ = ["interface", "new", "TaskBase", "Static"]
 
 _InterfaceP = ParamSpec("_InterfaceP")
 _InterfaceReturnT = TypeVar("_InterfaceReturnT")

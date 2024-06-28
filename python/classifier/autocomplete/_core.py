@@ -1,3 +1,4 @@
+import glob
 import inspect
 import sys
 from collections import deque
@@ -13,6 +14,8 @@ def _subcomplete(cls: TaskBase, args: list[str]):
     yield from (i for i in m.EntryPoint._preserved if i.startswith(last))
     if cls is not None and cls.autocomplete is not NotImplemented:
         yield from cls.autocomplete(args)
+    else:
+        yield from glob.glob(f"{last}*")
 
 
 def autocomplete():

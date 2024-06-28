@@ -56,7 +56,7 @@ class Main(main.Main):
         prog="help",
         description="Print help information.",
         workflow=[
-            ("main", f"[blue]task.help()[/blue] print help information"),
+            ("main", "[blue]task.help()[/blue] print help information"),
         ],
     )
     argparser.add_argument(
@@ -65,7 +65,7 @@ class Main(main.Main):
         help=f"list all available modules for [blue]{_keys}[/blue]",
     )
     argparser.add_argument(
-        "--html", action="store_true", help=f'write "help.html" to output directory'
+        "--html", action="store_true", help='write "help.html" to output directory'
     )
     argparser.add_argument(
         "--filter",
@@ -134,7 +134,7 @@ class Main(main.Main):
             self._print(f"#{i}")
             self._print(indent(note, _INDENT))
         self._print("\n[orange3]\[Tasks][orange3]")
-        self._print(f"[blue]help[/blue]")
+        self._print("[blue]help[/blue]")
         self._print_help(self)
         for task in parser._tasks:
             if task != "help":

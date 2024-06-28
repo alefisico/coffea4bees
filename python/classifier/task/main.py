@@ -133,7 +133,7 @@ class EntryPoint:
 
         args = deque(argv[1:])
         if len(args) == 0:
-            raise ValueError(f"No task specified")
+            raise ValueError("No task specified")
         arg = args.popleft()
         self.args[_MAIN] = arg, self._fetch_subargs(args)
         if arg == _FROM:
