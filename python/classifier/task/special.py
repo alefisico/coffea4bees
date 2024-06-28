@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Concatenate, ParamSpec, TypeVar, overload
+from typing import Any, Callable, Concatenate, Generator, ParamSpec, TypeVar, overload
 
 from ..typetools import Method
 
@@ -54,6 +54,10 @@ def interface(func=None, *, optional: bool = False):
 class TaskBase:
     @interface
     def parse(self, opts: list[str]): ...
+
+    @classmethod
+    @interface(optional=True)
+    def autocomplete(cls, opts: list[str]) -> Generator[str, None, None]: ...
 
     @interface(optional=True)
     def debug(self): ...
