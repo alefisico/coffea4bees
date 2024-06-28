@@ -61,10 +61,10 @@ mamba env create -f env.yml
 
 #### Setup
 
-Setup autocomplete for ``run_classifier.py`` and make it executable:
+Setup autocomplete for ``run_classifier.py``:
 
 ```bash
-./classifier/init.sh
+source classifier/init.sh
 ```
 
 #### Help
