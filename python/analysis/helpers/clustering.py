@@ -93,26 +93,104 @@ def remove_indices(particles, indices_to_remove):
     mask[indices_to_remove] = False
     return particles[mask]
 
+# Order by size of cluster then by flavour
+def comb_jet_flavor(flavor_A, flavor_B):
+
+    # Add Parens if the input is already clustered
+    if len(flavor_A) > 1:
+        flavor_A = f"({str(flavor_A)})"
+    if len(flavor_B) > 1:
+        flavor_B = f"({str(flavor_B)})"
+
+    if len(flavor_A) < len(flavor_B):
+        return flavor_A + flavor_B
+
+    if len(flavor_B) < len(flavor_A):
+        return flavor_A + flavor_B
+
+    _name_list = [flavor_A, flavor_B]
+    _name_list.sort()
+    return "".join(_name_list)
+
+
+def extract_all_parentheses_substrings(s):
+    substrings = []
+    start_indices = []
+    counter = 0
+
+    for i, char in enumerate(s):
+        if char == '(':
+            if counter == 0:
+                start_indices.append(i)
+            counter += 1
+        elif char == ')':
+            counter -= 1
+            if counter == 0:
+                start_index = start_indices.pop(0)
+                substrings.append(s[start_index:i+1])
+
+    return substrings
+
+def children_jet_flavors(comb_flavor):
+
+    if len(comb_flavor) < 2:
+        print(f"ERROR len of combined flavor is too low {len(comb_flavor)}  {comb_flavor}")
+
+    sub_combs = extract_all_parentheses_substrings(comb_flavor)
+
+    if len(sub_combs) == 0:
+        child_A = comb_flavor[0]
+        child_B = comb_flavor[1]
+    elif len(sub_combs) == 1:
+        child_A = comb_flavor[0]
+        child_B = sub_combs[0]
+    elif len(sub_combs) == 2:
+        child_A = sub_combs[0]
+        child_B = sub_combs[1]
+    else:
+        print(f"ERROR comb_flavor is {comb_flavor} sub_combs is {sub_combs} len {len(sub_combs)}")
+
+    return child_A, child_B
+
+#def delta_bs(comb_flavor):
+#    if len(comb_flavor) < 2:
+#        print(f"ERROR len of combined flavor is too low {len(comb_flavor)}  {comb_flavor}")
+#
+#    sub_combs = extract_all_parentheses_substrings(comb_flavor)
+#
+#    if len(sub_combs) == 0:
+#        child_A = comb_flavor[0]
+#        child_B = comb_flavor[1]
+#    elif len(sub_combs) == 1:
+#        child_A = comb_flavor[0]
+#        child_B = sub_combs[0]
+#    elif len(sub_combs) == 2:
+#        child_A = sub_combs[0]
+#        child_B = sub_combs[1]
+#    else:
+#        print(f"ERROR comb_flavor is {comb_flavor} sub_combs is {sub_combs} len {len(sub_combs)}")
+#
+#    #print(f"children: {child_A} {child_A}")
+#    #print(f"counts: {child_A.count('b')} {child_B.count('b')}")
+#
+#    if child_A.count("b") and child_B.count("b"):
+#        return -1
+#
+#    return 0
+
+
+
+
 def combine_particles(part_A, part_B, *, debug=False):
     part_comb = part_A + part_B
 
-    jet_flavor_pair = (part_A.jet_flavor, part_B.jet_flavor)
     new_part_A = part_A
     new_part_B = part_B
+    if part_A.pt < part_B.pt:
+        new_part_A = part_B
+        new_part_B = part_A
 
-    match jet_flavor_pair:
-        case ("b","b"):
-            part_comb_jet_flavor = "g_bb"
-        case ("b","g_bb") :
-            part_comb_jet_flavor = "bstar"
-        case("g_bb", "b") :
-            part_comb_jet_flavor = "bstar"
-            # for bstar splitting make sure g_bb is always "partB"
-            new_part_A = part_B
-            new_part_B = part_A
-        case _:
-            if debug: print(f"ERROR: combining {jet_flavor_pair}")
-            part_comb_jet_flavor = f"ERROR {part_A.jet_flavor} and {part_B.jet_flavor}"
+    part_comb_jet_flavor = comb_jet_flavor(part_A.jet_flavor, part_B.jet_flavor)
 
     part_comb_array = ak.zip(
         {
@@ -144,13 +222,14 @@ def cluster_bs_core(event_jets, distance_function, *, debug = False):
         if debug: print(particles)
 
         if debug: print(f"iEvent {iEvent}")
-
+        if debug: print(f"==============================")
+        if debug: print(f"nParticles {len(particles)}")
         # Maybe later allow more than 4 bs
-        number_of_unclustered_bs = 4
+        # number_of_unclustered_bs = 4
 
         splittings.append([])
 
-        while number_of_unclustered_bs > 2:
+        while True: # Break when try to combine more than 2 bs # number_of_unclustered_bs > 2:
 
             #
             # Calculate the distance measures
@@ -166,13 +245,21 @@ def cluster_bs_core(event_jets, distance_function, *, debug = False):
 
             part_comb_array = combine_particles(particles[idx_A], particles[idx_B])
 
-            if debug: print(part_comb_array.jet_flavor)
-            match part_comb_array.jet_flavor:
-                case "g_bb" | "bstar":
-                    number_of_unclustered_bs -= 1
-                case _:
-                    print(f"ERROR: counting {part_comb_array.jet_flavor}")
+            #
+            #  Stop if going to combine 3 bs
+            #
+            if part_comb_array.jet_flavor[0].count("b") > 2:
+                if debug: print(f"breaking on {part_comb_array.jet_flavor[0]}")
+                break
 
+
+            if debug: print(part_comb_array.jet_flavor)
+            if debug: print(f"{part_comb_array.jet_flavor}")
+            #if debug: print(f"was {number_of_unclustered_bs}")
+
+            # number_of_unclustered_bs += delta_bs(part_comb_array.jet_flavor[0])
+
+            # if debug: print(f"now {number_of_unclustered_bs}")
             splittings[-1].append(part_comb_array[0])
 
             particles = remove_indices(particles, [idx_A, idx_B])
@@ -535,13 +622,16 @@ def sample_PDFs_vs_pT(input_jets_decluster, input_pdfs, splittings):
 
     n_jets   = np.sum(ak.num(input_jets_decluster))
 
-    pt_bin_0_mask = (input_jets_decluster.pt < 140)
-    pt_bin_1_mask = (input_jets_decluster.pt > 140) & (input_jets_decluster.pt < 230)
-    pt_bin_2_mask = (input_jets_decluster.pt > 230) & (input_jets_decluster.pt < 320)
-    pt_bin_3_mask = (input_jets_decluster.pt > 320) & (input_jets_decluster.pt < 410)
-    pt_bin_4_mask = (input_jets_decluster.pt > 410)
+    n_pt_bins = len(input_pdfs["pt_bins"]) - 1
+    pt_masks = []
+    for iPt in range(n_pt_bins):
+        _min_pt = float(input_pdfs["pt_bins"][iPt])
+        _max_pt = float(input_pdfs["pt_bins"][iPt+1])
+        if _max_pt == "inf":
+            _max_pt = np.inf
 
-    n_pt_bins = len(input_pdfs["pt_bins"])
+        _this_mask = (input_jets_decluster.pt > _min_pt) & (input_jets_decluster.pt < _max_pt)
+        pt_masks.append( _this_mask )
 
 
     #
@@ -554,7 +644,7 @@ def sample_PDFs_vs_pT(input_jets_decluster, input_pdfs, splittings):
 
             _sampled_data = np.ones(n_jets)
             _sampled_data_vs_pT = []
-            for _iPt in range(n_pt_bins + 1):
+            for _iPt in range(n_pt_bins):
                 _sampled_data_vs_pT.append(np.ones(n_jets))
         else:
             is_1d_pdf = False
@@ -563,14 +653,14 @@ def sample_PDFs_vs_pT(input_jets_decluster, input_pdfs, splittings):
             _sampled_data_y = np.ones(n_jets)
             _sampled_data_x_vs_pT = []
             _sampled_data_y_vs_pT = []
-            for _iPt in range(n_pt_bins + 1):
+            for _iPt in range(n_pt_bins):
                 _sampled_data_x_vs_pT.append(np.ones(n_jets))
                 _sampled_data_y_vs_pT.append(np.ones(n_jets))
 
         # Sample the pdfs from the different splitting options
         for _splitting_name, _num_samples, _indicies_tuple in splittings:
 
-            for _iPt in range(n_pt_bins + 1):
+            for _iPt in range(n_pt_bins):
 
                 if is_1d_pdf:
                     probs   = np.array(input_pdfs[_splitting_name][_var_name][_iPt]["probs"], dtype=float)
@@ -594,41 +684,17 @@ def sample_PDFs_vs_pT(input_jets_decluster, input_pdfs, splittings):
             #  Now work out which pT bins to use
             #
             if is_1d_pdf:
-                pt_0_indicies = np.where(ak.flatten(pt_bin_0_mask))[0]
-                _sampled_data[pt_0_indicies] = _sampled_data_vs_pT[0][pt_0_indicies]
 
-                pt_1_indicies = np.where(ak.flatten(pt_bin_1_mask))[0]
-                _sampled_data[pt_1_indicies] = _sampled_data_vs_pT[1][pt_1_indicies]
-
-                pt_2_indicies = np.where(ak.flatten(pt_bin_2_mask))[0]
-                _sampled_data[pt_2_indicies] = _sampled_data_vs_pT[2][pt_2_indicies]
-
-                pt_3_indicies = np.where(ak.flatten(pt_bin_3_mask))[0]
-                _sampled_data[pt_3_indicies] = _sampled_data_vs_pT[3][pt_3_indicies]
-
-                pt_4_indicies = np.where(ak.flatten(pt_bin_4_mask))[0]
-                _sampled_data[pt_4_indicies] = _sampled_data_vs_pT[4][pt_4_indicies]
+                for iPt in range(n_pt_bins):
+                    _pt_indicies = np.where(ak.flatten(pt_masks[iPt]))[0]
+                    _sampled_data[_pt_indicies] = _sampled_data_vs_pT[iPt][_pt_indicies]
 
             else:
-                pt_0_indicies = np.where(ak.flatten(pt_bin_0_mask))[0]
-                _sampled_data_x[pt_0_indicies] = _sampled_data_x_vs_pT[0][pt_0_indicies]
-                _sampled_data_y[pt_0_indicies] = _sampled_data_y_vs_pT[0][pt_0_indicies]
 
-                pt_1_indicies = np.where(ak.flatten(pt_bin_1_mask))[0]
-                _sampled_data_x[pt_1_indicies] = _sampled_data_x_vs_pT[1][pt_1_indicies]
-                _sampled_data_y[pt_1_indicies] = _sampled_data_y_vs_pT[1][pt_1_indicies]
-
-                pt_2_indicies = np.where(ak.flatten(pt_bin_2_mask))[0]
-                _sampled_data_x[pt_2_indicies] = _sampled_data_x_vs_pT[2][pt_2_indicies]
-                _sampled_data_y[pt_2_indicies] = _sampled_data_y_vs_pT[2][pt_2_indicies]
-
-                pt_3_indicies = np.where(ak.flatten(pt_bin_3_mask))[0]
-                _sampled_data_x[pt_3_indicies] = _sampled_data_x_vs_pT[3][pt_3_indicies]
-                _sampled_data_y[pt_3_indicies] = _sampled_data_y_vs_pT[3][pt_3_indicies]
-
-                pt_4_indicies = np.where(ak.flatten(pt_bin_4_mask))[0]
-                _sampled_data_x[pt_4_indicies] = _sampled_data_x_vs_pT[4][pt_4_indicies]
-                _sampled_data_y[pt_4_indicies] = _sampled_data_y_vs_pT[4][pt_4_indicies]
+                for iPt in range(n_pt_bins):
+                    _pt_indicies = np.where(ak.flatten(pt_masks[iPt]))[0]
+                    _sampled_data_x[_pt_indicies] = _sampled_data_x_vs_pT[iPt][_pt_indicies]
+                    _sampled_data_y[_pt_indicies] = _sampled_data_y_vs_pT[iPt][_pt_indicies]
 
 
         #
@@ -645,8 +711,8 @@ def sample_PDFs_vs_pT(input_jets_decluster, input_pdfs, splittings):
 
 def make_synthetic_event(input_jets, input_pdfs):
 
-    g_bb_mask_all  = input_jets.jet_flavor == "g_bb"
-    bstar_mask_all = input_jets.jet_flavor == "bstar"
+    g_bb_mask_all  = input_jets.jet_flavor == "bb"
+    bstar_mask_all = input_jets.jet_flavor == "b(bb)"
     decluster_mask_all = g_bb_mask_all | bstar_mask_all
 
     #
@@ -664,13 +730,12 @@ def make_synthetic_event(input_jets, input_pdfs):
     #   - Some unclusterings fail the jet pt and eta
     #   - Some lead to dR too close (Not checked yet!)
     #   - Some of the splittings are recursive (no implemented yet!)
-
     num_trys = 0
 
     while(ak.any(input_jets_decluster)):
 
-        g_bb_mask  = input_jets_decluster.jet_flavor == "g_bb"
-        bstar_mask = input_jets_decluster.jet_flavor == "bstar"
+        g_bb_mask  = input_jets_decluster.jet_flavor == "bb"
+        bstar_mask = input_jets_decluster.jet_flavor == "b(bb)"
 
         # Pre compute these to save time
         num_samples_gbb   = np.sum(ak.num(input_jets_decluster[g_bb_mask]))
@@ -685,8 +750,6 @@ def make_synthetic_event(input_jets, input_pdfs):
                       ("bstars", num_samples_bstar, bstar_indicies_tuple),
                       ]
 
-
-        #breakpoint()
 
         #
         #  Sample the PDFs,  add sampled varibales to the jets to be declustered
@@ -710,7 +773,6 @@ def make_synthetic_event(input_jets, input_pdfs):
             print(f"Bailing with {np.sum(ak.num(input_jets_decluster))}\n")
             clustering_fail = ~(fail_pt_mask | ~fail_pt_mask)  #All False
 
-
         #
         #  Save unclustered jets that are OK
         #
@@ -725,3 +787,52 @@ def make_synthetic_event(input_jets, input_pdfs):
         num_trys += 1
 
     return unclustered_jets
+
+
+def get_list_of_splitting_types(splittings):
+    unique_splittings = set(ak.flatten(splittings.jet_flavor))#.to_list())
+    return list(unique_splittings)
+
+
+def clean_ISR(clustered_jets, splittings):
+
+    all_jet_types =  get_list_of_splitting_types(clustered_jets)
+
+
+    ISR_splittings = []
+    for _s in all_jet_types:
+
+        if len(_s) == 1:
+            continue
+
+        child_A, child_B = children_jet_flavors(_s)
+
+        if child_A.count("b") == 0 and child_B.count("b") > 1:
+            ISR_splittings.append(_s)
+
+    #
+    #  Will need recusion here
+    #
+    clustered_jets_noISR = clustered_jets
+
+    for _isr_splitting in ISR_splittings:
+
+        ISR_mask = clustered_jets.jet_flavor == _isr_splitting
+        ISR_jets = clustered_jets[ISR_mask]
+
+        ISR_splittings_mask = splittings.jet_flavor == 'j(bb)'
+        ISR_splittings = splittings[ISR_splittings_mask]
+
+        match_splitting = (ISR_splittings.delta_r(ISR_jets) == 0)
+        declustered_A = ISR_splittings[match_splitting].part_A
+
+        # To ADd
+        #  detclustered_A_jets = decluster(detclustered_A) # recurseive deculstering
+
+        declustered_B = ISR_splittings[match_splitting].part_B
+        declustered_ISR_jets = ak.concatenate([declustered_A, declustered_B], axis=1)
+
+        clustered_jets_noISR = clustered_jets[~ISR_mask]
+        clustered_jets_noISR = ak.concatenate([clustered_jets_noISR, declustered_ISR_jets], axis=1)
+
+    return clustered_jets_noISR
