@@ -57,7 +57,8 @@ def autocomplete():
                     m.EntryPoint._fetch_module(mod, cat)[1], subargs
                 )
             else:
-                yield from ()  # TODO deal with "--from" and "--template"
+                # TODO deal with "--from" and "--template"
+                yield from _subcomplete(None, subargs)
             return
     yield from ()
 
