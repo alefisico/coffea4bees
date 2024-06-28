@@ -9,7 +9,8 @@ from ..task.special import TaskBase
 
 
 def _subcomplete(cls: TaskBase, args: list[str]):
-    yield from (i for i in m.EntryPoint._preserved if i.startswith(args[-1]))
+    last = args[-1] if args else ""
+    yield from (i for i in m.EntryPoint._preserved if i.startswith(last))
     if cls.autocomplete is not NotImplemented:
         yield from cls.autocomplete(args)
 
