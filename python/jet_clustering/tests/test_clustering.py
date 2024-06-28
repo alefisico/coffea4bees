@@ -12,13 +12,8 @@ import time
 from copy import copy
 import os
 
-try:
-    sys.path.insert(0, os.getcwd())
-    from analysis.helpers.clustering import kt_clustering, cluster_bs, decluster_combined_jets, compute_decluster_variables, cluster_bs_fast, make_synthetic_event
-except:
-    sys.path.insert(0, os.getcwd()+"/../..")
-    print(sys.path)
-    from analysis.helpers.clustering import kt_clustering, cluster_bs, decluster_combined_jets, compute_decluster_variables, cluster_bs_fast, make_synthetic_event
+sys.path.insert(0, os.getcwd())
+from analysis.helpers.clustering import kt_clustering, cluster_bs, decluster_combined_jets, compute_decluster_variables, cluster_bs_fast, make_synthetic_event, get_list_of_splitting_types, clean_ISR
 
 #import vector
 #vector.register_awkward()
@@ -118,7 +113,7 @@ class clusteringTestCase(unittest.TestCase):
 
         if debug:
             breakpoint()
-        
+
         if self.debug:
             for iEvent, jets in enumerate(clustered_jets):
                 print(f"Event {iEvent}")
@@ -246,23 +241,19 @@ class clusteringTestCase(unittest.TestCase):
         self.assertTrue(all(phi_check), "All phis should be the same")
 
 
-    def _synthetic_datasets_gbb_only_test(self, input_jets):
+    def _synthetic_datasets_gbb_only_test(self, input_jets, n_jets_expected, debug=False):
 
-        clustered_jets, _clustered_splittings = cluster_bs(self.input_jets_4, debug=False)
+        clustered_jets, _clustered_splittings = cluster_bs(input_jets, debug=False)
+
 
         #
-        # 1st replace bstar splittings with their original jets (b, g_bb)
+        #  Decluster the splitting that are 0b + >1 bs
         #
-
-        bstar_mask_splittings = _clustered_splittings.jet_flavor == "b(bb)"
-        bs_from_bstar = _clustered_splittings[bstar_mask_splittings].part_A
-        gbbs_from_bstar = _clustered_splittings[bstar_mask_splittings].part_B
-        jets_from_bstar = ak.concatenate([bs_from_bstar, gbbs_from_bstar], axis=1)
-
-        bstar_mask = clustered_jets.jet_flavor == "b(bb)"
-        clustered_jets_nobStar = clustered_jets[~bstar_mask]
-        clustered_jets          = ak.concatenate([clustered_jets_nobStar, jets_from_bstar], axis=1)
-
+        print("Before")
+        print(clustered_jets.jet_flavor)
+        clustered_jets_noISR = clean_ISR(clustered_jets, _clustered_splittings)
+        print("After")
+        print(clustered_jets_noISR.jet_flavor)
 
         #
         # Declustering
@@ -284,28 +275,39 @@ class clusteringTestCase(unittest.TestCase):
         #
         # Sanity checks
         #
-        print("Only after gbb declustering")
-        print(f"clustered_jets.jet_flavor     {clustered_jets.jet_flavor}")
-        print(f"clustered_jets.pt             {clustered_jets.pt}")
-        print(f"pA.pt                         {pA.pt}")
-        print(f"pB.pt                         {pB.pt}")
 
-        print(f"declustered_jets.pt             {declustered_jets.pt}")
-        print(f"ak.num(declustered_jets)        {ak.num(declustered_jets)}")
+        match_n_jets = ak.num(declustered_jets) == n_jets_expected
+        if not all(match_n_jets):
+            print("ERROR number of declustered_jets")
+            print(f"ak.num(declustered_jets)        {ak.num(declustered_jets)}")
+            print("Only after gbb declustering")
+            print(f"clustered_jets.jet_flavor     {clustered_jets.jet_flavor}")
+            print(f"clustered_jets.pt             {clustered_jets.pt}")
+            print(f"pA.pt                         {pA.pt}")
+            print(f"pB.pt                         {pB.pt}")
 
-        print(f"clustered_jets.phi             {clustered_jets.phi}")
+            print(f"declustered_jets.pt             {declustered_jets.pt}")
+            print(f"ak.num(declustered_jets)        {ak.num(declustered_jets)}")
+            print(f"clustered_jets.phi             {clustered_jets.phi}")
 
-        #
-        #  Checkphi
-        #
-        print(f"input phi {clustered_jets.phi[1]}")
-        print(f"Reco phi {(pA + pB).phi[1]}")
+            #
+            #  Checkphi
+            #
+            print(f"input phi {clustered_jets.phi[1]}")
+            print(f"Reco phi {(pA + pB).phi[1]}")
+
+        self.assertTrue(all(match_n_jets), f"Should always get {n_jets_expected} jets")
 
 
     def test_synthetic_datasets_gbb_only_4jets(self):
 
-        self._synthetic_datasets_gbb_only_test(self.input_jets_4)
+        self._synthetic_datasets_gbb_only_test(self.input_jets_4, n_jets_expected = 4)
 
+
+#    def test_synthetic_datasets_gbb_only_5jets(self):
+#
+#        self._synthetic_datasets_gbb_only_test(self.input_jets_5, n_jets_expected = 5, debug=True)
+#
 
 if __name__ == '__main__':
     # wrapper.parse_args()

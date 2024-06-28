@@ -209,7 +209,6 @@ class analysis(processor.ProcessorABC):
         selev["notCanJet_coffea"] = notCanJet
         selev["nNotCanJet"] = ak.num(selev.notCanJet_coffea)
 
-
         # print(selev.nJet_selected, selev.nNotCanJet, ak.num(notCanJet_sel),"\n")
 
         #
@@ -260,6 +259,10 @@ class analysis(processor.ProcessorABC):
         if self.do_declustering:
             if self.do_gbb_only:
 
+                #
+                # The following should not be needed...
+                #  
+                
                 #
                 # 1st replace bstar splittings with their original jets (b, g_bb)
                 #

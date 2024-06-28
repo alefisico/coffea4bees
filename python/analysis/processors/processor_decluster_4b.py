@@ -93,6 +93,8 @@ class analysis(processor.ProcessorABC):
             apply_boosted_veto=False,
             run_SvB=True,
             do_gbb_only=True,
+            do_4jets=True,
+            do_5jets=False,
             do_declustering=False,
             corrections_metadata="analysis/metadata/corrections.yml",
             clustering_pdfs_file="jet_clustering/clustering_PDFs/clustering_pdfs_vs_pT.yml",
@@ -125,6 +127,7 @@ class analysis(processor.ProcessorABC):
             "passPreSel",
             "passFourTag",
             "pass0OthJets",
+            "pass1OthJets",
             "passDiJetMass",
             "SR",
             "SB",
@@ -503,9 +506,15 @@ class analysis(processor.ProcessorABC):
 
 
         event['pass0OthJets'] = event.nJet_selected == 4
+        event['pass1OthJets'] = event.nJet_selected == 5
         selections.add("pass0OthJets", event.pass0OthJets)
+        selections.add("pass1OthJets", event.pass1OthJets)
         allcuts.append("passFourTag")
-        allcuts.append("pass0OthJets")
+
+        if self.do_4jets:
+            allcuts.append("pass0OthJets")
+        elif self.do_5jets:
+            allcuts.append("pass1OthJets")
 
         selev = event[selections.all(*allcuts)]
 
@@ -539,11 +548,19 @@ class analysis(processor.ProcessorABC):
         #
         canJet = canJet[ak.argsort(canJet.pt, axis=1, ascending=False)]
 
+        notCanJet = selev.Jet[notCanJet_idx]
+        notCanJet = notCanJet[notCanJet.selected_loose]
+        notCanJet = notCanJet[ak.argsort(notCanJet.pt, axis=1, ascending=False)]
+        notCanJet_sel = notCanJet[notCanJet.selected]
         
         if self.do_declustering:
             canJet["jet_flavor"] = "b"
-    
-            clustered_jets, _clustered_splittings = cluster_bs(canJet, debug=False)
+            notCanJet_sel["jet_flavor"] = "j"
+
+            jets_for_clustering = ak.concatenate([canJet, notCanJet_sel], axis=1)
+            jets_for_clustering = jets_for_clustering[ak.argsort(jets_for_clustering.pt, axis=1, ascending=False)]
+            
+            clustered_jets, _clustered_splittings = cluster_bs(jets_for_clustering, debug=False)
             
             if self.do_gbb_only:
     
@@ -575,7 +592,7 @@ class analysis(processor.ProcessorABC):
     
             declustered_jets = make_synthetic_event(clustered_jets, self.clustering_pdfs)
             canJet = declustered_jets
-    
+
             #
             #  Hack
             #
@@ -583,9 +600,6 @@ class analysis(processor.ProcessorABC):
             canJet["jetId"] = 7 # selev.Jet.puId[canJet_idx]
             canJet["btagDeepFlavB"] = 1.0 # Set bs to 1 and ls to 0 
             canJet = canJet[ak.argsort(canJet.pt, axis=1, ascending=False)]
-
-
-
 
             
         #
@@ -605,6 +619,10 @@ class analysis(processor.ProcessorABC):
         # selev['v4j', 'n'] = 1
         # print(selev.v4j.n)
         # selev['Jet', 'canJet'] = False
+
+        #
+        # Need to fix this...
+        #
         notCanJet = selev.Jet[notCanJet_idx]
         notCanJet = notCanJet[notCanJet.selected_loose]
         notCanJet = notCanJet[ak.argsort(notCanJet.pt, axis=1, ascending=False)]
