@@ -11,7 +11,7 @@ from ..task.special import TaskBase
 def _subcomplete(cls: TaskBase, args: list[str]):
     last = args[-1] if args else ""
     yield from (i for i in m.EntryPoint._preserved if i.startswith(last))
-    if cls.autocomplete is not NotImplemented:
+    if cls is not None and cls.autocomplete is not NotImplemented:
         yield from cls.autocomplete(args)
 
 
@@ -49,12 +49,16 @@ def autocomplete():
                                 and (clsname := f"{imp}{name}").startswith(mod)
                             ):
                                 yield clsname
+                return
+        subargs = m.EntryPoint._fetch_subargs(args)
+        if len(args) == 0:
+            if cat in m.EntryPoint._keys:
+                yield from _subcomplete(
+                    m.EntryPoint._fetch_module(mod, cat)[1], subargs
+                )
             else:
                 yield from ()  # TODO deal with "--from" and "--template"
             return
-        _ = m.EntryPoint._fetch_subargs(args)
-        if len(args) == 0:
-            yield from _subcomplete(m.EntryPoint._fetch_module(mod, cat)[1], subargs)
     yield from ()
 
 
