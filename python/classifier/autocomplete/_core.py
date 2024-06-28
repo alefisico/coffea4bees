@@ -32,23 +32,26 @@ def autocomplete():
         cat = args.popleft().removeprefix("--")
         mod = args.popleft() if args else ""
         if len(args) == 0:
-            target = m.EntryPoint._keys[cat]
-            for imp in _walk_packages(f"{m._CLASSIFIER}/{m._CONFIG}/{cat}/"):
-                if imp:
-                    imp = f"{imp}."
-                _imp = f"{imp}*"
-                modname, _ = m.EntryPoint._fetch_module_name(_imp, cat)
-                _mod, _ = m.EntryPoint._fetch_module(_imp, cat)
-                if _mod is not None:
-                    for name, obj in inspect.getmembers(_mod, inspect.isclass):
-                        if (
-                            issubclass(obj, target)
-                            and not m._is_private(name)
-                            and obj.__module__.startswith(modname)
-                            and (clsname := f"{imp}{name}").startswith(mod)
-                        ):
-                            yield clsname
-            return
+            if cat in m.EntryPoint._keys:
+                target = m.EntryPoint._keys[cat]
+                for imp in _walk_packages(f"{m._CLASSIFIER}/{m._CONFIG}/{cat}/"):
+                    if imp:
+                        imp = f"{imp}."
+                    _imp = f"{imp}*"
+                    modname, _ = m.EntryPoint._fetch_module_name(_imp, cat)
+                    _mod, _ = m.EntryPoint._fetch_module(_imp, cat)
+                    if _mod is not None:
+                        for name, obj in inspect.getmembers(_mod, inspect.isclass):
+                            if (
+                                issubclass(obj, target)
+                                and not m._is_private(name)
+                                and obj.__module__.startswith(modname)
+                                and (clsname := f"{imp}{name}").startswith(mod)
+                            ):
+                                yield clsname
+                return
+            else:
+                yield from ()  # TODO deal with "--from" and "--template"
         _ = m.EntryPoint._fetch_subargs(args)
         if len(args) == 0:
             yield from _subcomplete(m.EntryPoint._fetch_module(mod, cat)[1], subargs)
