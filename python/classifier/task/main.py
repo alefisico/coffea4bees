@@ -151,7 +151,7 @@ class EntryPoint:
             if cat == _FROM:
                 self._expand(mod, *opts)
             elif cat == _TEMPLATE:
-                self._expand(*opts, fetch_main=True, formatter=mod)
+                self._expand(*opts, formatter=mod)
             else:
                 self.args[cat].append((mod, opts))
 

@@ -59,12 +59,46 @@ mamba env create -f env.yml
 
 ### Run Command Line Interface by examples
 
-#### Setup
+#### Autocomplete
 
 Setup autocomplete for ``run_classifier.py``:
 
 ```bash
 source classifier/init.sh
+```
+
+Some examples:
+
+complete main task
+
+```bash
+./run_classifier.py <tab><tab>
+./run_classifier.py h<tab><tab>
+```
+
+complete path
+
+```bash
+./run_classifier.py from <tab><tab>
+./run_classifier.py train --template "user: "${USER} <tab><tab>
+```
+
+complete model
+
+```bash
+./run_classifier.py help --s<tab><tab>
+./run_classifier.py train --setting <tab><tab>
+./run_classifier.py debug --dataset HCR<tab><tab>
+```
+
+complete setting
+
+```bash
+./run_classifier.py train --setting IO "<tab><tab>
+```
+
+```bash
+./run_classifier.py train --setting IO "o<tab><tab>
 ```
 
 #### Help

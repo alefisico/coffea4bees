@@ -13,7 +13,7 @@ class Main(main.Main):
         prog="expand",
         description="Expand options from predefined workflows.",
         workflow=[
-            ("main", f"read and parse workflows"),
+            ("main", "read and parse workflows"),
         ],
     )
     argparser.add_argument(
