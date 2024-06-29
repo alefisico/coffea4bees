@@ -61,7 +61,7 @@ mamba env create -f env.yml
 
 #### Autocomplete
 
-Setup autocomplete for ``run_classifier.py``:
+Setup autocomplete for `classifier_run.py`:
 
 ```bash
 source classifier/init.sh
@@ -72,33 +72,33 @@ Some examples:
 complete main task
 
 ```bash
-./run_classifier.py <tab><tab>
-./run_classifier.py h<tab><tab>
+./classifier_run.py <tab><tab>
+./classifier_run.py h<tab><tab>
 ```
 
 complete path
 
 ```bash
-./run_classifier.py from <tab><tab>
-./run_classifier.py train --template "user: "${USER} <tab><tab>
+./classifier_run.py from <tab><tab>
+./classifier_run.py train --template "user: "${USER} <tab><tab>
 ```
 
 complete model
 
 ```bash
-./run_classifier.py help --s<tab><tab>
-./run_classifier.py train --setting <tab><tab>
-./run_classifier.py debug --dataset HCR<tab><tab>
+./classifier_run.py help --s<tab><tab>
+./classifier_run.py train --setting <tab><tab>
+./classifier_run.py debug --dataset HCR<tab><tab>
 ```
 
 complete setting
 
 ```bash
-./run_classifier.py train --setting IO "<tab><tab>
+./classifier_run.py train --setting IO "<tab><tab>
 ```
 
 ```bash
-./run_classifier.py train --setting IO "o<tab><tab>
+./classifier_run.py train --setting IO "o<tab><tab>
 ```
 
 #### Help
@@ -106,7 +106,7 @@ complete setting
 To list all available commands and options:
 
 ```bash
-./run_classifier.py help --all
+./classifier_run.py help --all
 ```
 
 #### Monitor
@@ -114,11 +114,11 @@ To list all available commands and options:
 Start a monitor using port 10200 and save the logs to a local directory named by the current timestamp:
 
 ```bash
-./run_classifier.py monitor --setting Monitor "address: 10200" --setting IO "output: ./logs-{timestamp}/"
+./classifier_run.py monitor --setting Monitor "address: 10200" --setting IO "output: ./logs-{timestamp}/"
 ```
 
 It will print the IP address and port number that the monitor is listening to. e.g.
-  
+
 ```console
 [04/18/24 13:36:18] [ main] INFO     Started Monitor at 127.0.1.1:10200
 ```
@@ -137,7 +137,7 @@ Cache the `HCR.FvT_picoAOD` dataset using a pre-defined workflow and connect to 
 
 ```bash
 export WFS="classifier/config/workflows/examples"
-./run_classifier.py from ${WFS}/cache_training_set.yml --setting Monitor "address: 127.0.1.1:10200"
+./classifier_run.py from ${WFS}/cache_training_set.yml --setting Monitor "address: 127.0.1.1:10200"
 ```
 
 By default, it will write to `root://cmseos.fnal.gov//store/user/{user}/HH4b/classifier/cache/` in LPC, which can be changed by appending `--setting IO "output: /path/to/save/"`.
@@ -145,19 +145,19 @@ By default, it will write to `root://cmseos.fnal.gov//store/user/{user}/HH4b/cla
 > **_NOTE:_** Check what files are cached:
 
 ```bash
-./run_classifier.py debug --dataset HCR.FvT_picoAOD
+./classifier_run.py debug --dataset HCR.FvT_picoAOD
 ```
 
 > **_NOTE:_** Use `expand` to recover the command line arguments from workflows:
 
 ```bash
-./run_classifier.py expand ${WFS}/cache_training_set.yml
+./classifier_run.py expand ${WFS}/cache_training_set.yml
 ```
 
 > **_NOTE:_** Use `workflow` to generate the workflow file from command line:
 
 ```bash
-./run_classifier.py workflow ${WFS}/test.yml train --max-loaders 4 --max-trainers 1  --dataset ... --model ... --setting torch.DataLoader "yaml:##{batch_skim: 65536, num_workers: 2}"
+./classifier_run.py workflow ${WFS}/test.yml train --max-loaders 4 --max-trainers 1  --dataset ... --model ... --setting torch.DataLoader "yaml:##{batch_skim: 65536, num_workers: 2}"
 ```
 
 ##### Train FvT classifier with HCR architecture using cached datasets
@@ -165,7 +165,7 @@ By default, it will write to `root://cmseos.fnal.gov//store/user/{user}/HH4b/cla
 Load the dataset from cache and train the classifier using the example workflow:
 
 ```bash
-./run_classifier.py from ${WFS}/train_hcr_fvt.yml --template "user: "${USER} ${WFS}/template/load_cached_dataset.yml --setting Monitor ... --setting IO ...
+./classifier_run.py from ${WFS}/train_hcr_fvt.yml --template "user: "${USER} ${WFS}/template/load_cached_dataset.yml --setting Monitor ... --setting IO ...
 ```
 
 > **_NOTE:_** By using `--template` with a mapping followed by files, it will replace the keys in the files with Python's [`str.format`](https://docs.python.org/3/library/string.html#format-string-syntax) (escaped by `{{` and `}}`). e.g. replace `{user}` by current `${USER}`.
