@@ -5,9 +5,11 @@ _script_completion() {
     opts=$(python -m classifier.task.autocomplete._core "${COMP_WORDS[@]}" 2>&1)
     exit_code=$?
     if [ $exit_code -eq 0 ]; then
-        COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+        mapfile -t COMPREPLY < <( compgen -W "${opts}" -- ${cur})
         return 0
     elif [ $exit_code -eq 1 ]; then
+        echo "${opts}"
+    elif [ $exit_code -eq 255 ]; then
         _filedir
     else
         COMPREPLY=()

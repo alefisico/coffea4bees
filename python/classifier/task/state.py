@@ -106,6 +106,18 @@ class Cascade(GlobalState, Static, metaclass=_ClassPropertyMeta):
                 )
 
     @classmethod
+    def autocomplete(cls, opts: list[str]):
+        import json
+
+        yield from filter(
+            lambda x: x.startswith(opts[-1]),
+            map(
+                lambda x: f'"{x[0]}: {json.dumps(x[1])}"',
+                filter(_is_state, dict_proxy(cls).items()),
+            ),
+        )
+
+    @classmethod
     def help(cls):
         from base_class.typetools import get_partial_type_hints, type_name
         from rich.markup import escape

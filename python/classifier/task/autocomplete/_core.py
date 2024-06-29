@@ -7,25 +7,33 @@ from classifier.config.main.help import _walk_packages
 from .. import main as m
 from ..special import TaskBase
 
+_PATHCODE = 255
 
-def _subcomplete(cls: TaskBase, args: list[str]):
+
+def _subcomplete(cls: type[TaskBase], args: list[str]):
     last = args[-1] if args else ""
     yield from (i for i in m.EntryPoint._preserved if i.startswith(last))
-    if isinstance(cls, TaskBase) and cls.autocomplete is not NotImplemented:
+    if (
+        isinstance(cls, type)
+        and issubclass(cls, TaskBase)
+        and cls.autocomplete is not NotImplemented
+    ):
         yield from cls.autocomplete(args)
 
 
 def _special(cat: str, args: list[str]):
+    if not args:
+        return
     last = args[-1]
     if last.startswith("-"):
         yield from _subcomplete(None, [last])
         return
     match cat:
         case m._FROM:
-            sys.exit(1)
+            sys.exit(_PATHCODE)
         case m._TEMPLATE:
             if len(args) > 1:
-                sys.exit(1)
+                sys.exit(_PATHCODE)
 
 
 def autocomplete():
@@ -82,4 +90,4 @@ def autocomplete():
 
 
 if __name__ == "__main__":
-    print(" ".join(autocomplete()))
+    print("\n".join(autocomplete()))
