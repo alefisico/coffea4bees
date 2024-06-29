@@ -37,7 +37,7 @@ def _special(cat: str, args: list[str]):
 
 
 def autocomplete():
-    args = deque(sys.argv[2:])  # 0 is "_core.py", 1 is "./classifier_run.py"
+    args = deque(sys.argv[2:])  # 0 is "_core.py", 1 is "./pyml.py"
     main = args.popleft() if args else ""
     if len(args) == 0:
         for part in m.EntryPoint._tasks + [m._FROM, m._TEMPLATE]:

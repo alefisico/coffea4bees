@@ -1,5 +1,5 @@
 #!/bin/bash
-_classifier_run_autocomplete() {
+_pyml_task_autocomplete() {
     local cur opts
     cur="${COMP_WORDS[COMP_CWORD]}"
     opts=$(python -m classifier.task.autocomplete._core "${COMP_WORDS[@]}" 2>&1)
@@ -17,4 +17,4 @@ _classifier_run_autocomplete() {
     fi
 }
 
-complete -F _classifier_run_autocomplete "./classifier_run.py"
+complete -F _pyml_task_autocomplete "./pyml.py"
