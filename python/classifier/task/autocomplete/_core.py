@@ -1,21 +1,31 @@
-import glob
 import inspect
 import sys
 from collections import deque
 
 from classifier.config.main.help import _walk_packages
 
-from ..task import main as m
-from ..task.special import TaskBase
+from .. import main as m
+from ..special import TaskBase
 
 
 def _subcomplete(cls: TaskBase, args: list[str]):
     last = args[-1] if args else ""
     yield from (i for i in m.EntryPoint._preserved if i.startswith(last))
-    if cls is not None and cls.autocomplete is not NotImplemented:
+    if isinstance(cls, TaskBase) and cls.autocomplete is not NotImplemented:
         yield from cls.autocomplete(args)
-    else:
-        yield from glob.glob(f"{last}*")
+
+
+def _special(cat: str, args: list[str]):
+    last = args[-1]
+    if last.startswith("-"):
+        yield from _subcomplete(None, [last])
+        return
+    match cat:
+        case m._FROM:
+            sys.exit(1)
+        case m._TEMPLATE:
+            if len(args) > 1:
+                sys.exit(1)
 
 
 def autocomplete():
@@ -28,14 +38,19 @@ def autocomplete():
         return
     subargs = m.EntryPoint._fetch_subargs(args)
     if len(args) == 0:
-        yield from _subcomplete(
-            m.EntryPoint._fetch_module(f"{main}.Main", m._MAIN)[1], subargs
-        )
+        if main in m.EntryPoint._tasks:
+            yield from _subcomplete(
+                m.EntryPoint._fetch_module(f"{main}.Main", m._MAIN)[1], subargs
+            )
+        else:
+            yield from _special(main, subargs)
+        return
     while len(args) > 0:
         cat = args.popleft().removeprefix("--")
-        mod = args.popleft() if args else ""
+        mod = args.popleft() if args else None
         if len(args) == 0:
             if cat in m.EntryPoint._keys:
+                mod = mod or ""
                 target = m.EntryPoint._keys[cat]
                 for imp in _walk_packages(f"{m._CLASSIFIER}/{m._CONFIG}/{cat}/"):
                     if imp:
@@ -57,13 +72,13 @@ def autocomplete():
         if len(args) == 0:
             if cat in m.EntryPoint._keys:
                 yield from _subcomplete(
-                    m.EntryPoint._fetch_module(mod, cat)[1], subargs
+                    m.EntryPoint._fetch_module(mod or "", cat)[1], subargs
                 )
             else:
-                # TODO deal with "--from" and "--template"
-                yield from _subcomplete(None, subargs)
+                if mod is not None:
+                    subargs.insert(0, mod)
+                yield from _special(cat, subargs)
             return
-    yield from ()
 
 
 if __name__ == "__main__":
