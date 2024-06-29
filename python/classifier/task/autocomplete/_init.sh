@@ -1,5 +1,5 @@
 #!/bin/bash
-_script_completion() {
+_run_classifier_autocomplete() {
     local cur opts
     cur="${COMP_WORDS[COMP_CWORD]}"
     opts=$(python -m classifier.task.autocomplete._core "${COMP_WORDS[@]}" 2>&1)
@@ -17,4 +17,4 @@ _script_completion() {
     fi
 }
 
-complete -F _script_completion "./run_classifier.py"
+complete -F _run_classifier_autocomplete "./run_classifier.py"
