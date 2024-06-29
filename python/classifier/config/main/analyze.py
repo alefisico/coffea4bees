@@ -14,8 +14,8 @@ class Main(SetupMultiprocessing):
         prog="analyze",
         description="Run standalone analysis.",
         workflow=[
-            ("main", f"[blue]\[analyzer, ...]=analysis.analyze()[/blue] initialize"),
-            ("sub", f"[blue]analyzer()[/blue] run"),
+            ("main", "[blue]\[analyzer, ...]=analysis.analyze()[/blue] initialize"),
+            ("sub", "[blue]analyzer()[/blue] run"),
         ],
     )
 
