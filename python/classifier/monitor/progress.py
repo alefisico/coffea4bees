@@ -8,7 +8,7 @@ from rich.progress import BarColumn, ProgressColumn, SpinnerColumn, TimeElapsedC
 from rich.progress import Progress as _Bar
 
 from ..config.setting import monitor as cfg
-from ..process.monitor import Recorder, StaticProxy, post
+from ..process.monitor import MonitorProxy, Recorder, post_to_monitor
 from ..typetools import WithUUID
 from ..utils import noop
 
@@ -81,7 +81,7 @@ class TimeRemainColumn(ProgressColumn):
         return text
 
 
-class Progress(StaticProxy):
+class Progress(MonitorProxy):
     _jobs: dict[tuple, ProgressTracker]
     _console_ids: dict[tuple, str]
     _console_bar: _Bar
@@ -106,7 +106,7 @@ class Progress(StaticProxy):
         cls._update(job)
         return job
 
-    @post(max_retry=1)
+    @post_to_monitor(max_retry=1)
     @cfg.check(cfg.Progress)
     def _update(self, new: ProgressTracker):
         uuid = (new.source, new.uuid)

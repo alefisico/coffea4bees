@@ -5,7 +5,7 @@ from typing import Iterable
 
 from ...config.setting import monitor as cfg
 from ...config.state import RepoInfo
-from ...process.monitor import Recorder, post
+from ...process.monitor import Recorder, post_to_monitor
 from ..backends import Platform
 
 
@@ -36,7 +36,7 @@ class MultiPlatformHandler(logging.Handler):
         record.pathname = RepoInfo.get_url(record.pathname)
         self._emit(record)
 
-    @post(max_retry=1)
+    @post_to_monitor(max_retry=1)
     @cfg.check(cfg.Log)
     def _emit(self, record: MultiPlatformLogRecord):
         record.name = Recorder.registered(record.name)

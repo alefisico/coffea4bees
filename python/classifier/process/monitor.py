@@ -7,23 +7,21 @@ import os
 import socket
 from dataclasses import dataclass
 from enum import Flag
-from functools import wraps
 from threading import Lock
-from typing import Any, Callable, Concatenate, NamedTuple, ParamSpec, TypeVar, overload
+from typing import Callable, NamedTuple, TypeVar
 
 import fsspec
 
 from ..config import setting as cfg
-from ..typetools import Method
 from . import pipe_address
-from .connection import Client, Packet, Server
+from .connection import Client, Packet, PostBase, Server, post
 from .initializer import status
 
 __all__ = [
     "Monitor",
     "Reporter",
-    "StaticProxy",
-    "post",
+    "MonitorProxy",
+    "post_to_monitor",
     "connect_to_monitor",
 ]
 
@@ -110,27 +108,20 @@ class _Packet(Packet):
         super().__post_init__()
 
 
-class _post:
-    def __init__(self, func, wait: bool, retry: int):
-        wraps(func)(self)
-        self._func = func
-        self._name = func.__name__
-        self._wait = wait
-        self._retry = retry
-
-    def __call__(self, cls: type[StaticProxy], *args, **kwargs):
+class _PostToMonitor(PostBase):
+    def __call__(self, cls: type[MonitorProxy], *args, **kwargs):
         packet = _Packet(
-            cls.init,
-            self._name,
-            args,
-            kwargs,
-            wait=self._wait,
-            lock=self._wait,
-            retry=self._retry,
+            obj=cls.init,
+            func=self.name,
+            args=args,
+            kwargs=kwargs,
+            wait=self.wait,
+            lock=self.wait,
+            retry=self.retry,
         )
         match _Status.now():
             case _Status.Monitor:
-                if self._wait:
+                if self.wait:
                     return packet()
                 else:
                     return Monitor.current()._jobs.put(packet)
@@ -138,42 +129,12 @@ class _post:
                 return Reporter.current().send(packet)
 
 
-_CallbackP = ParamSpec("_CallbackP")
-_CallbackReturnT = TypeVar("_CallbackReturnT")
+def _post_method(*args, **kwargs):
+    return classmethod(_PostToMonitor(*args, **kwargs))
 
 
-@overload
-def post(
-    func: Callable[Concatenate[Any, _CallbackP], _CallbackReturnT], /
-) -> Method[_CallbackP, _CallbackReturnT]: ...
-@overload
-def post(
-    wait_for_return: bool = False,
-    max_retry: int = None,
-) -> Callable[
-    [Callable[Concatenate[Any, _CallbackP], _CallbackReturnT]],
-    Method[_CallbackP, _CallbackReturnT],
-]: ...
-def post(
-    func=None,
-    *,
-    wait_for_return: bool = False,
-    max_retry: int = None,
-):
-    if func is None:
-        return lambda func: post(
-            func,
-            wait_for_return=wait_for_return,
-            max_retry=max_retry,
-        )
-    else:
-        return classmethod(
-            _post(
-                func,
-                wait=wait_for_return,
-                retry=max_retry,
-            )
-        )
+class post_to_monitor(post):
+    _method = _post_method
 
 
 class Monitor(Server, _Singleton):
@@ -226,11 +187,11 @@ class Reporter(Client, _Singleton):
 
 
 class _ProxyMeta(type):
-    def __getattr__(cls: type[StaticProxy], name: str):
+    def __getattr__(cls: type[MonitorProxy], name: str):
         return getattr(cls.init(), name)
 
 
-class StaticProxy(_Singleton, metaclass=_ProxyMeta):
+class MonitorProxy(_Singleton, metaclass=_ProxyMeta):
     _lock: Lock = None
 
     @classmethod
@@ -242,7 +203,7 @@ class StaticProxy(_Singleton, metaclass=_ProxyMeta):
         return cls._lock
 
 
-class Recorder(StaticProxy):
+class Recorder(MonitorProxy):
     _node = (_get_host(), os.getpid())
     _name = f"{_node[0]}/pid-{_node[1]}/{mp.current_process().name}"
 
@@ -253,7 +214,7 @@ class Recorder(StaticProxy):
         self._reporters = {self._name: "main"}
         self._data = [(cfg.Monitor.file, Recorder.serialize)]
 
-    @post
+    @post_to_monitor
     def register(self, name: str):
         index = f"#{len(self._reporters)}"
         self._reporters[name] = index

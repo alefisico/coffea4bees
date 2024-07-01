@@ -4,16 +4,16 @@ import fsspec
 from base_class.system.eos import EOS, PathLike
 from classifier.config.setting import IO
 
-from ...process.monitor import StaticProxy, post
+from ...process.monitor import MonitorProxy, post_to_monitor
 
 
-class Index(StaticProxy):
+class Index(MonitorProxy):
     _urls: dict[str, list[tuple[str, str]]]
 
     def __init__(self):
         self._urls = defaultdict(list)
 
-    @post(wait_for_return=True)
+    @post_to_monitor(wait_for_return=True)
     def add(cls, category: str, title: str, path: PathLike):
         if IO.report.is_null:
             return

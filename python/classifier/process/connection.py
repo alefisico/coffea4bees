@@ -2,17 +2,34 @@ from __future__ import annotations
 
 import logging
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from functools import wraps
 from multiprocessing import connection as mpc
 from queue import PriorityQueue
 from threading import Lock, Thread
-from typing import Callable, Protocol
+from types import MethodType
+from typing import (
+    Annotated,
+    Any,
+    Callable,
+    Concatenate,
+    Optional,
+    ParamSpec,
+    Protocol,
+    TypeVar,
+    overload,
+)
+
+from base_class.typetools import check_subclass, get_partial_type_hints
+from classifier.typetools import Method
 
 from ..utils import noop
 
 __all__ = [
     "Server",
     "Client",
+    "Proxy",
+    "shared",
     "post",
 ]
 
@@ -28,17 +45,16 @@ def _close_connection(connection: mpc.Connection):
         pass
 
 
-class Proxy(Protocol):
-    @classmethod
+class ProxyLike(Protocol):
     def lock(self) -> Lock: ...
 
 
 @dataclass
 class Packet:
-    obj: Callable[[], Proxy] = None
+    obj: Callable[[], ProxyLike] = None
     func: str = ""
     args: tuple = ()
-    kwargs: dict = None
+    kwargs: dict = field(default_factory=dict)
     wait: bool = False
     lock: bool = False
     retry: int = 0
@@ -46,14 +62,20 @@ class Packet:
     def __post_init__(self):
         self._timestamp = time.time_ns()
         self._retried = 0
-        self.kwargs = self.kwargs or {}
 
-    def __call__(self):
-        obj = self.obj()
+    def __call__(self, server: Server = None):
+        if self.obj is ...:
+            if server is not None:
+                obj = server
+            else:
+                raise RuntimeError(f"Unable to identify method {self.func}")
+        else:
+            obj = self.obj()
         lock = obj.lock() if self.lock else noop
         try:
             with lock:
-                return getattr(obj, self.func)._func(obj, *self.args, **self.kwargs)
+                p: PostBase = getattr(obj, self.func)
+                return p.func(obj, *self.args, **self.kwargs)
         except Exception as e:
             logging.error(e, exc_info=e)
 
@@ -71,6 +93,17 @@ class Packet:
                 other._timestamp,
             )
         return NotImplemented
+
+
+@dataclass
+class PostBase:
+    func: Callable
+    wait: bool
+    retry: int
+
+    def __post_init__(self):
+        wraps(self.func)(self)
+        self.name = self.func.__name__
 
 
 class Server:
@@ -130,7 +163,7 @@ class Server:
 
     def _run(self):
         while (packet := self._jobs.get()).obj is not None:
-            packet()
+            packet(self)
 
     def _listen(self):
         while True:
@@ -158,7 +191,7 @@ class Server:
             try:
                 packet: Packet = connection.recv()
                 if packet.wait:
-                    connection.send(packet())
+                    connection.send(packet(self))
                 else:
                     packet._retried = 0
                     self._jobs.put(packet)
@@ -221,3 +254,110 @@ class Client:
             thread.join()
             return True
         return False
+
+
+class Proxy(Server):
+    _client: Optional[Client] = None
+    _address: shared[str | tuple[str, int]]
+    _init_local: shared[tuple[tuple, dict]]
+
+    def __init_subclass__(cls):
+        cls.__shared = []
+        for k, v in get_partial_type_hints(cls, include_extras=True).items():
+            if check_subclass(v, shared):
+                cls.__shared.append(k)
+
+    def __getstate__(self):
+        return {k: getattr(self, k) for k in self.__shared if hasattr(self, k)}
+
+    def __setstate__(self, __attrs: dict[str]):
+        args, kwargs = __attrs.get("_init_local", ((), {}))
+        self.init_local(*args, **kwargs)
+        for k, v in __attrs.items():
+            setattr(self, k, v)
+        self._client = Client(self._address)
+
+    def __init__(self, address: str | tuple[str, int], *args, **kwargs):
+        super().__init__(address)
+        self._init_local = (args, kwargs)
+        self.init_local(*args, **kwargs)
+
+    def init_local(self): ...
+
+    def lock(self):
+        return self._lock
+
+
+_SharedT = TypeVar("_SharedT")
+shared = Annotated[_SharedT, "shared"]
+
+
+class _Post(PostBase):
+    def __get__(self, obj: Proxy, cls=None):
+        if obj is None:
+            return self
+        return MethodType(self, obj)
+
+    def __call__(self, obj: Proxy, *args, **kwargs):
+        packet = Packet(
+            obj=...,
+            func=self.name,
+            args=args,
+            kwargs=kwargs,
+            wait=self.wait,
+            lock=self.wait,
+            retry=self.retry,
+        )
+        if obj._client is None:
+            if self.wait:
+                return packet(obj)
+            else:
+                obj._jobs.put(packet)
+        else:
+            return obj._client.send(packet)
+
+
+_PostP = ParamSpec("_PostP")
+_PostReturnT = TypeVar("_PostReturnT")
+
+
+class _PostMeta(type):
+    _method: type[PostBase] = None
+
+    def __call__(
+        cls,
+        func=None,
+        *,
+        wait_for_return: bool = False,
+        max_retry: int = None,
+    ):
+        if func is None:
+            return lambda func: cls(
+                func,
+                wait_for_return=wait_for_return,
+                max_retry=max_retry,
+            )
+        else:
+            return cls._method(
+                func=func,
+                wait=wait_for_return,
+                retry=max_retry,
+            )
+
+
+class post(metaclass=_PostMeta):
+    _method = _Post
+
+    @overload
+    def __new__(
+        cls, func: Callable[Concatenate[Any, _PostP], _PostReturnT], /
+    ) -> Method[_PostP, _PostReturnT]: ...
+    @overload
+    def __new__(
+        cls,
+        wait_for_return: bool = False,
+        max_retry: int = None,
+    ) -> Callable[
+        [Callable[Concatenate[Any, _PostP], _PostReturnT]],
+        Method[_PostP, _PostReturnT],
+    ]: ...
