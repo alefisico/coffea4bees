@@ -4,10 +4,10 @@ import fsspec
 from base_class.system.eos import EOS, PathLike
 from classifier.config.setting import IO
 
-from ...process.monitor import Proxy, post
+from ...process.monitor import StaticProxy, post
 
 
-class Index(Proxy):
+class Index(StaticProxy):
     _urls: dict[str, list[tuple[str, str]]]
 
     def __init__(self):

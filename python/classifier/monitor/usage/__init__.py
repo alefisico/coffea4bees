@@ -8,7 +8,7 @@ import psutil
 
 from ...config.setting import monitor as cfg
 from ...config.state import RunInfo
-from ...process.monitor import Node, Proxy, Recorder, post
+from ...process.monitor import Node, Recorder, StaticProxy, post
 
 _MIB = 2**20
 _CUDA = {"12.1": 254}  # MiB
@@ -34,7 +34,7 @@ class ProcessInfo(TypedDict):
     cmd: list[str]
 
 
-class Usage(Proxy):
+class Usage(StaticProxy):
     _records_local: list[Resource] = []
     _processes_local: set[int] = set()
     _lock = Lock()

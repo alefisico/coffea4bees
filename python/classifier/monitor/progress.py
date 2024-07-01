@@ -4,12 +4,11 @@ import time
 from copy import deepcopy
 from dataclasses import dataclass
 
-from rich.progress import BarColumn
+from rich.progress import BarColumn, ProgressColumn, SpinnerColumn, TimeElapsedColumn
 from rich.progress import Progress as _Bar
-from rich.progress import ProgressColumn, SpinnerColumn, TimeElapsedColumn
 
 from ..config.setting import monitor as cfg
-from ..process.monitor import Proxy, Recorder, post
+from ..process.monitor import Recorder, StaticProxy, post
 from ..typetools import WithUUID
 from ..utils import noop
 
@@ -82,7 +81,7 @@ class TimeRemainColumn(ProgressColumn):
         return text
 
 
-class Progress(Proxy):
+class Progress(StaticProxy):
     _jobs: dict[tuple, ProgressTracker]
     _console_ids: dict[tuple, str]
     _console_bar: _Bar

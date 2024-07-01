@@ -92,7 +92,7 @@ class Server:
         self._handlers: list[Thread] = []
 
     def start(self):
-        if self._listener is None:
+        if (self._listener is None) and (self._address is not None):
             self._listener = (
                 mpc.Listener(self._address),
                 Thread(target=self._listen, daemon=True),

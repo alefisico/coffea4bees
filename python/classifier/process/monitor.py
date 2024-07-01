@@ -10,20 +10,19 @@ from enum import Flag
 from functools import wraps
 from threading import Lock
 from typing import Any, Callable, Concatenate, NamedTuple, ParamSpec, TypeVar, overload
-from uuid import uuid4
 
 import fsspec
 
 from ..config import setting as cfg
 from ..typetools import Method
-from . import is_poxis
+from . import pipe_address
 from .connection import Client, Packet, Server
 from .initializer import status
 
 __all__ = [
     "Monitor",
     "Reporter",
-    "Proxy",
+    "StaticProxy",
     "post",
     "connect_to_monitor",
 ]
@@ -119,7 +118,7 @@ class _post:
         self._wait = wait
         self._retry = retry
 
-    def __call__(self, cls: type[Proxy], *args, **kwargs):
+    def __call__(self, cls: type[StaticProxy], *args, **kwargs):
         packet = _Packet(
             cls.init,
             self._name,
@@ -183,12 +182,9 @@ class Monitor(Server, _Singleton):
     def __init__(self):
         # address
         _, port = cfg.Monitor.address
-        if port is None:
-            uuid = f"monitor-{uuid4()}"
-            address = f"/tmp/{uuid}" if is_poxis() else rf"\\.\pipe\{uuid}"
-        else:
-            address = (_get_host(), port)
-        super().__init__(address=address)
+        super().__init__(
+            address=pipe_address("monitor") if port is None else (_get_host(), port)
+        )
 
     def _start(self):
         return super().start()
@@ -230,11 +226,11 @@ class Reporter(Client, _Singleton):
 
 
 class _ProxyMeta(type):
-    def __getattr__(cls: type[Proxy], name: str):
+    def __getattr__(cls: type[StaticProxy], name: str):
         return getattr(cls.init(), name)
 
 
-class Proxy(_Singleton, metaclass=_ProxyMeta):
+class StaticProxy(_Singleton, metaclass=_ProxyMeta):
     _lock: Lock = None
 
     @classmethod
@@ -246,7 +242,7 @@ class Proxy(_Singleton, metaclass=_ProxyMeta):
         return cls._lock
 
 
-class Recorder(Proxy):
+class Recorder(StaticProxy):
     _node = (_get_host(), os.getpid())
     _name = f"{_node[0]}/pid-{_node[1]}/{mp.current_process().name}"
 
