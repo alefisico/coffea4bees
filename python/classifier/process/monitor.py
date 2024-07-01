@@ -301,7 +301,7 @@ class Recorder(Proxy):
 def connect_to_monitor():
     Reporter.init(cfg.Monitor.address)
     status.initializer.add_unique(_start_reporter)
-    atexit.register(Reporter.current().send_atexit)
+    atexit.register(Reporter.current().stop)
 
 
 def wait_for_monitor():

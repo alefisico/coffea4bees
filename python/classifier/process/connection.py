@@ -10,6 +10,12 @@ from typing import Callable, Protocol
 
 from ..utils import noop
 
+__all__ = [
+    "Server",
+    "Client",
+    "post",
+]
+
 
 class _ClientError(Exception):
     __module__ = Exception.__module__
@@ -207,20 +213,11 @@ class Client:
         else:
             self._jobs.put(packet)
 
-    def send_atexit(self):
-        self.stop()
-        if not self._jobs.empty():
-            self._jobs.put(Packet())
-            self._send_non_blocking()
-
     def stop(self):
         if self._thread is not None:
-            with self._lock:
-                running = self._sender is not None
-            if running:
-                self._jobs.put(Packet())
-                thread = self._thread
-                self._thread = None
-                thread.join()
+            self._jobs.put(Packet())
+            thread = self._thread
+            self._thread = None
+            thread.join()
             return True
         return False
