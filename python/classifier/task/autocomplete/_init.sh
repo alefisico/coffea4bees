@@ -2,8 +2,13 @@
 _pyml_task_autocomplete() {
     local cur opts
     cur="${COMP_WORDS[COMP_CWORD]}"
-    opts=$(python -m classifier.task.autocomplete._core "${COMP_WORDS[@]}" 2>&1)
+    opts=$(python -m classifier.task.autocomplete._bind "${COMP_WORDS[@]}" 2>&1)
     exit_code=$?
+    while [ $exit_code -eq 254 ]; do
+        (python -m classifier.task.autocomplete._core &)
+        opts=$(python -m classifier.task.autocomplete._bind wait "${COMP_WORDS[@]}" 2>&1)
+        exit_code=$?
+    done
     if [ $exit_code -eq 0 ]; then
         mapfile -t COMPREPLY < <( compgen -W "${opts}" -- ${cur})
         return 0

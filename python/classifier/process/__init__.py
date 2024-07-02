@@ -19,10 +19,10 @@ if TYPE_CHECKING:
 __all__ = ["status", "is_poxis", "n_cpu", "get_context"]
 
 
-def pipe_address(*prefix: str):
+def pipe_address(*prefix: str, uuid: bool = True):
     return os.fspath(
         Path("/tmp" if is_poxis() else R"\\.\pipe").joinpath(
-            "-".join(prefix + (str(uuid4()),))
+            "-".join(prefix + ((str(uuid4()),) if uuid else ()))
         )
     )
 

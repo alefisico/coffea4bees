@@ -1,13 +1,19 @@
 import inspect
-import sys
+import os
 from collections import deque
+from multiprocessing.connection import Listener
+from typing import Iterable
 
 from classifier.config.main.help import _walk_packages
 
 from .. import main as m
 from ..special import TaskBase
+from ._bind import ADDRESS, FILEDIR, is_exit
 
-_PATHCODE = 255
+_TIMEOUT = 300  # seconds
+
+
+class _filedir(Exception): ...
 
 
 def _subcomplete(cls: type[TaskBase], args: list[str]):
@@ -25,19 +31,19 @@ def _special(cat: str, args: list[str]):
     if not args:
         return
     last = args[-1]
-    if last.startswith("-"):
+    if last.startswith(m._DASH):
         yield from _subcomplete(None, [last])
         return
     match cat:
         case m._FROM:
-            sys.exit(_PATHCODE)
+            raise _filedir
         case m._TEMPLATE:
             if len(args) > 1:
-                sys.exit(_PATHCODE)
+                raise _filedir
 
 
-def autocomplete():
-    args = deque(sys.argv[2:])  # 0 is "_core.py", 1 is "./pyml.py"
+def autocomplete(args: Iterable[str]):
+    args = deque(args[1:])
     main = args.popleft() if args else ""
     if len(args) == 0:
         for part in m.EntryPoint._tasks + [m._FROM, m._TEMPLATE]:
@@ -89,5 +95,33 @@ def autocomplete():
             return
 
 
+def pipe_server():
+    try:
+        os.remove(ADDRESS)
+    except FileNotFoundError:
+        ...
+    listener = Listener(ADDRESS)
+    listener._listener._socket.settimeout(_TIMEOUT)
+    while True:
+        conn = None
+        try:
+            conn = listener.accept()
+            args: list[str] = conn.recv()
+            if is_exit(args):
+                break
+            conn.send(list(autocomplete(args)))
+        except _filedir:
+            conn.send(FILEDIR)
+        except TimeoutError:
+            break
+        finally:
+            if conn is not None:
+                conn.close()
+    try:
+        listener.close()
+    except OSError:
+        ...
+
+
 if __name__ == "__main__":
-    print("\n".join(autocomplete()))
+    pipe_server()
