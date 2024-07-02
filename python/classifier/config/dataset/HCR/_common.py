@@ -5,12 +5,6 @@ from abc import abstractmethod
 from functools import cache, cached_property
 from typing import TYPE_CHECKING, Callable, Iterable
 
-from classifier.df.tools import (
-    add_columns,
-    add_label_index,
-    drop_columns,
-    map_selection_to_index,
-)
 from classifier.typetools import enum_dict
 
 from ...setting.df import Columns
@@ -46,6 +40,8 @@ class Common(LoadGroupedRoot):
 
     def __init__(self):
         super().__init__()
+        from classifier.df.tools import drop_columns, map_selection_to_index
+
         # fmt: off
         (
             self.to_tensor
@@ -87,6 +83,7 @@ class Common(LoadGroupedRoot):
     @cache
     def from_root(self, groups: frozenset[str]):
         from classifier.df.io import FromRoot
+        from classifier.df.tools import add_columns, add_label_index
 
         friends = []
         for k, v in self.friends.items():

@@ -4,6 +4,7 @@ from fractions import Fraction
 from functools import cached_property
 from typing import TYPE_CHECKING, Callable, Iterable, Literal
 
+import numpy as np
 from base_class.math.random import SeedLike, Squares
 
 from ..config.setting.df import Columns
@@ -21,8 +22,6 @@ class add_label_index:
         self._label = label
 
     def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
-        import numpy as np
-
         df.loc[:, (Columns.label_index,)] = np.dtype(Columns.index_dtype).type(
             MultiClass.index(self._label)
         )
@@ -73,8 +72,6 @@ class map_selection_to_index:
         return self
 
     def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
-        import numpy as np
-
         t = np.dtype(Columns.index_dtype)
         idx = np.zeros(len(df), dtype=t)
         sel = np.zeros(len(df), dtype=bool)
@@ -139,8 +136,6 @@ class prescale:
     def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
         if self._scale == 1:
             return df
-        import numpy as np
-
         columns = [*(self._columns | {Columns.weight})]
         if self._selection is not None:
             prescaled = np.asarray(self._selection(df))

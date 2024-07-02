@@ -7,7 +7,6 @@ from ...state.label import MultiClass
 from ._HCR import HCR
 
 if TYPE_CHECKING:
-    from classifier.ml.roc import MulticlassROC
     from classifier.ml.skimmer import BatchType
 
 

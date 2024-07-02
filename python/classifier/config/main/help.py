@@ -5,11 +5,9 @@ import re
 from pathlib import Path
 from textwrap import indent
 
-import rich.terminal_theme as themes
 from classifier.task import ArgParser, EntryPoint, Task, main, parse
 from classifier.task.special import WorkInProgress
 from classifier.task.task import _INDENT
-from rich.console import Console
 
 from .. import setting as cfg
 
@@ -88,6 +86,8 @@ class Main(main.Main):
 
     def __init__(self):
         super().__init__()
+        from rich.console import Console
+
         self._console = Console(record=True, markup=True)
 
     def _print(self, *args, **kwargs):
@@ -105,6 +105,8 @@ class Main(main.Main):
         return True
 
     def run(self, parser: EntryPoint):
+        import rich.terminal_theme as themes
+
         tasks = parser.args["main"]
         self._print("[orange3]\[Usage][/orange3]")
         self._print(

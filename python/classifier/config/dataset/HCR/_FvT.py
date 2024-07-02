@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from classifier.df.tools import add_label_index_from_column, prescale
 from classifier.task import ArgParser
 
 from ._common import Common
@@ -51,6 +50,8 @@ class FvT(Common):
 
     @property
     def preprocessor_by_label(self):
+        from classifier.df.tools import add_label_index_from_column, prescale
+
         return [
             (
                 [("data",)],

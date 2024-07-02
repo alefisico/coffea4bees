@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-import logging
 from abc import ABC, abstractmethod
 from functools import cached_property, partial, reduce
 from itertools import chain
 from typing import TYPE_CHECKING, Callable
 
 from base_class.utils import unique
-from classifier.monitor.progress import Progress
 from classifier.task import ArgParser, Dataset, converter, parse
 
 if TYPE_CHECKING:
@@ -228,6 +226,7 @@ class _load_df_from_root(_load_df):
 
         import pandas as pd
         from base_class.root import Chunk
+        from classifier.monitor.progress import Progress
         from classifier.process import status
 
         chunks = []

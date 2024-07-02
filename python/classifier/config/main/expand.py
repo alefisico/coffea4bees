@@ -1,5 +1,4 @@
 from classifier.task import ArgParser, EntryPoint, main
-from rich import print
 
 from .. import setting as cfg
 from .help import _print_mod
@@ -34,6 +33,8 @@ class Main(main.Main):
         cfg.Monitor.enable = False
 
     def run(self, parser: EntryPoint):
+        from rich import print
+
         if self.opts.as_template:
             parser._expand(
                 *self.opts.files[1:], fetch_main=True, formatter=self.opts.files[0]

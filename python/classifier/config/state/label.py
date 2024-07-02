@@ -6,9 +6,9 @@ class MultiClass(GlobalState):
 
     @classmethod
     def add(cls, *labels: str):
-        for l in labels:
-            if l not in cls.labels:
-                cls.labels.append(l)
+        for label in labels:
+            if label not in cls.labels:
+                cls.labels.append(label)
 
     @classmethod
     def index(cls, label: str):
@@ -16,4 +16,4 @@ class MultiClass(GlobalState):
 
     @classmethod
     def indices(cls, *labels: str):
-        return [cls.index(l) for l in labels]
+        return [cls.index(label) for label in labels]
