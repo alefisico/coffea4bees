@@ -15,11 +15,13 @@ _pyml_task_autocomplete() {
     elif [ $exit_code -eq 1 ]; then
         echo "${opts}"
     elif [ $exit_code -eq 255 ]; then
-        _filedir
-    else
-        COMPREPLY=()
-        return 0
+        if command -v _filedir &>/dev/null; then
+            _filedir
+            return 0
+        fi
     fi
+    COMPREPLY=()
+    return 0
 }
 
 complete -F _pyml_task_autocomplete "./pyml.py"

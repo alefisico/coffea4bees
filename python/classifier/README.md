@@ -67,6 +67,12 @@ Setup autocomplete for `pyml.py`:
 source classifier/init.sh
 ```
 
+Stop autocomplete for `pyml.py`:
+
+```bash
+source classifier/exit.sh
+```
+
 Some examples:
 
 complete main task
