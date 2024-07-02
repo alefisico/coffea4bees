@@ -801,7 +801,6 @@ def decluster_splitting_types(input_jets, splitting_types, input_pdfs):
         #
         #  Sample the PDFs,  add sampled varibales to the jets to be declustered
         #
-        #sample_PDFs(input_jets_decluster, input_pdfs, splittings)
         sample_PDFs_vs_pT(input_jets_to_decluster, input_pdfs, splittings_info)
 
         #
@@ -817,7 +816,7 @@ def decluster_splitting_types(input_jets, splitting_types, input_pdfs):
         clustering_fail = fail_pt_mask | fail_eta_mask
 
         if num_trys > 4:
-            print(f"Bailing with {np.sum(ak.num(input_jets_decluster))}\n")
+            print(f"Bailing with {np.sum(ak.num(input_jets_to_decluster))}\n")
             clustering_fail = ~(fail_pt_mask | ~fail_pt_mask)  #All False
 
         #

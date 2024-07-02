@@ -252,6 +252,7 @@ class clusteringTestCase(unittest.TestCase):
             print("Jet flavour Before ISR cleaning")
             print(clustered_jets.jet_flavor)
         clustered_jets = clean_ISR(clustered_jets, _clustered_splittings)
+
         if debug: 
             print("Jet flavour after ISR cleaning")
             print(clustered_jets.jet_flavor)
