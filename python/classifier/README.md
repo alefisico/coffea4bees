@@ -59,19 +59,23 @@ mamba env create -f env.yml
 
 ### Run Command Line Interface by examples
 
+#### Setup
+
+Setup the environment for
+
+- command line autocomplete
+
+```bash
+source classifier/install.sh
+```
+
+Uninstall the environment:
+
+```bash
+source classifier/uninstall.sh
+```
+
 #### Autocomplete
-
-Setup autocomplete for `pyml.py`:
-
-```bash
-source classifier/init.sh
-```
-
-Stop autocomplete for `pyml.py`:
-
-```bash
-source classifier/exit.sh
-```
 
 Some examples:
 
