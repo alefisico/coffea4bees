@@ -55,12 +55,12 @@ class TaskBase:
     @interface
     def parse(self, opts: list[str]): ...
 
+    @interface(optional=True)
+    def debug(self): ...
+
     @classmethod
     @interface(optional=True)
     def autocomplete(cls, opts: list[str]) -> Generator[str, None, None]: ...
-
-    @interface(optional=True)
-    def debug(self): ...
 
     @classmethod
     @interface

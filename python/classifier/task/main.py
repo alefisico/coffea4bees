@@ -5,6 +5,7 @@ import logging
 import os
 import sys
 from collections import deque
+from itertools import chain
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Optional
 
@@ -16,7 +17,7 @@ from .dataset import Dataset
 from .model import Model
 from .special import interface, new
 from .state import Cascade, _is_private
-from .task import Task
+from .task import _DASH, Task
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -30,8 +31,6 @@ _TEMPLATE = "template"
 
 _MODULE = "module"
 _OPTION = "option"
-
-_DASH = "-"
 
 
 class EntryPoint:
@@ -50,7 +49,9 @@ class EntryPoint:
         "model": Model,
         "analysis": Analysis,
     }
-    _preserved = [*(f"--{k}" for k in _keys), f"--{_FROM}", f"--{_TEMPLATE}"]
+    _preserved = [
+        *(f"{_DASH}{k}" for k in chain(_keys, (_FROM, _TEMPLATE))),
+    ]
 
     @classmethod
     def _fetch_subargs(cls, args: deque):
@@ -145,7 +146,7 @@ class EntryPoint:
                 formatter=self.args[_MAIN][1][0],
             )
         while len(args) > 0:
-            cat = args.popleft().removeprefix("--")
+            cat = args.popleft().removeprefix(_DASH)
             mod = args.popleft()
             opts = self._fetch_subargs(args)
             if cat == _FROM:

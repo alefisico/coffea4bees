@@ -14,7 +14,7 @@ from rich.console import Console
 from .. import setting as cfg
 
 _NOTES = [
-    f"A special task/flag [blue]{main._FROM}[/blue]/[blue]--{main._FROM}[/blue] [yellow]file \[file ...][/yellow] can be used to load and merge workflows from files. If an option is marked as {parse.EMBED}, it can directly read the jsonable object embedded in the workflow configuration file.",
+    f"A special task/flag [blue]{main._FROM}[/blue]/[blue]{main._DASH}{main._FROM}[/blue] [yellow]file \[file ...][/yellow] can be used to load and merge workflows from files. If an option is marked as {parse.EMBED}, it can directly read the jsonable object embedded in the workflow configuration file.",
     f"A special task/flag [blue ]{main._TEMPLATE}[/blue] [yellow]formatter file \[file ...][/yellow] can be used to load and merge workflows and replace the keys by the formatter.",
 ]
 
@@ -23,7 +23,7 @@ def _print_mod(cat: str, imp: str, opts: list[str | dict], newline: str = "\n"):
     if cat is None:
         output = [f"[blue]{imp}[/blue]"]
     else:
-        output = [f"[blue]--{cat}[/blue] [green]{imp}[/green]"]
+        output = [f"[blue]{main._DASH}{cat}[/blue] [green]{imp}[/green]"]
     current = []
     for opt in opts + [None]:
         if (isinstance(opt, str) and opt.startswith(main._DASH)) or (opt is None):
@@ -51,7 +51,7 @@ def _walk_packages(base):
 class Main(main.Main):
     _no_state = True
 
-    _keys = " ".join(f"--{k}" for k in EntryPoint._keys)
+    _keys = " ".join(f"{main._DASH}{k}" for k in EntryPoint._keys)
     argparser = ArgParser(
         prog="help",
         description="Print help information.",
@@ -112,7 +112,7 @@ class Main(main.Main):
                 [
                     f"{parser.entrypoint} [blue]task[/blue] [yellow]\[args ...][/yellow]",
                     *(
-                        f"[blue]--{k}[/blue] [green]module.class[/green] [yellow]\[args ...][/yellow]"
+                        f"[blue]{main._DASH}{k}[/blue] [green]module.class[/green] [yellow]\[args ...][/yellow]"
                         for k in parser._keys
                     ),
                 ]
@@ -170,7 +170,7 @@ class Main(main.Main):
             self._print("\n[orange3]\[Modules][/orange3]")
             for cat in parser._keys:
                 target = EntryPoint._keys[cat]
-                self._print(f"[blue]--{cat}[/blue]")
+                self._print(f"[blue]{main._DASH}{cat}[/blue]")
                 for imp in _walk_packages(f"{main._CLASSIFIER}/{main._CONFIG}/{cat}/"):
                     if imp:
                         imp = f"{imp}."

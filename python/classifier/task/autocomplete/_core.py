@@ -54,7 +54,7 @@ def autocomplete():
             yield from _special(main, subargs)
         return
     while len(args) > 0:
-        cat = args.popleft().removeprefix("--")
+        cat = args.popleft().removeprefix(m._DASH)
         mod = args.popleft() if args else None
         if len(args) == 0:
             if cat in m.EntryPoint._keys:
