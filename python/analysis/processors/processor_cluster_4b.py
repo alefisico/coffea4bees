@@ -50,18 +50,12 @@ class analysis(processor.ProcessorABC):
             clustering_pdfs_file = "jet_clustering/jet-splitting-PDFs-0jet-00-01-00_5j/clustering_pdfs_vs_pT.yml",
             #clustering_pdfs_file="jet_clustering/clustering_PDFs/clustering_pdfs_vs_pT.yml",
             do_declustering=False,
-            do_gbb_only=True,
-            do_4jets=True,
-            do_5jets=False,
     ):
 
         logging.debug("\nInitialize Analysis Processor")
         self.corrections_metadata = yaml.safe_load(open(corrections_metadata, "r"))
         self.clustering_pdfs = yaml.safe_load(open(clustering_pdfs_file, "r"))
         self.do_declustering = do_declustering
-        self.do_gbb_only = do_gbb_only
-        self.do_4jets = do_4jets
-        self.do_5jets = do_5jets
 
         self.cutFlowCuts = [
             "all",
@@ -74,7 +68,7 @@ class analysis(processor.ProcessorABC):
             "pass1OthJets",
         ]
 
-        self.histCuts = ["passPreSel"]
+        self.histCuts = ["passPreSel", "pass0OthJets", "pass1OthJets"]
 
 
     def process(self, event):
@@ -153,14 +147,13 @@ class analysis(processor.ProcessorABC):
 
         event['pass0OthJets'] = event.nJet_selected == 4
         event['pass1OthJets'] = event.nJet_selected == 5
-        selections.add("pass0OthJets", event.pass0OthJets)
-        selections.add("pass1OthJets", event.pass1OthJets)
+        event['passMax1OthJets'] = event.nJet_selected < 6
+        selections.add("pass0OthJets",    event.pass0OthJets)
+        selections.add("pass1OthJets",    event.pass1OthJets)
+        selections.add("passMax1OthJets", event.passMax1OthJets)
         allcuts.append("passFourTag")
 
-        if self.do_4jets:
-            allcuts.append("pass0OthJets")
-        elif self.do_5jets:
-            allcuts.append("pass1OthJets")
+        allcuts.append("passMax1OthJets")
 
         selev = event[selections.all(*allcuts)]
 
@@ -279,13 +272,8 @@ class analysis(processor.ProcessorABC):
             #
             #  Recluster
             #
-            # canJet["jet_flavor"] = "b"
             jets_for_clustering = ak.concatenate([canJet, notCanJet_sel], axis=1)
             jets_for_clustering = jets_for_clustering[ak.argsort(jets_for_clustering.pt, axis=1, ascending=False)]
-
-            #canJet.
-            print("canJet",canJet.jet_flavor,"\n")
-            print("jets_for_clustering", jets_for_clustering.jet_flavor,"\n")
 
             clustered_jets_reclustered, clustered_splittings_reclustered = cluster_bs(jets_for_clustering, debug=False)
             compute_decluster_variables(clustered_splittings_reclustered)
