@@ -13,7 +13,7 @@ class Index(MonitorProxy):
     def __init__(self):
         self._urls = defaultdict(list)
 
-    @post_to_monitor(wait_for_return=True)
+    @post_to_monitor(wait_for_return=True, acquire_lock=True)
     def add(cls, category: str, title: str, path: PathLike):
         if IO.report.is_null:
             return

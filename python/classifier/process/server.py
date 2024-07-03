@@ -99,6 +99,7 @@ class Packet:
 class PostBase:
     func: Callable
     wait: bool
+    lock: bool
     retry: int
 
     def __post_init__(self):
@@ -305,7 +306,7 @@ class _Post(PostBase):
             args=args,
             kwargs=kwargs,
             wait=self.wait,
-            lock=self.wait,
+            lock=self.lock,
             retry=self.retry,
         )
         if obj._client is None:
@@ -329,18 +330,21 @@ class _PostMeta(type):
         func=None,
         *,
         wait_for_return: bool = False,
+        acquire_lock: bool = False,
         max_retry: int = None,
     ):
         if func is None:
             return lambda func: cls(
                 func,
                 wait_for_return=wait_for_return,
+                acquire_lock=acquire_lock,
                 max_retry=max_retry,
             )
         else:
             return cls._method(
                 func=func,
                 wait=wait_for_return,
+                lock=acquire_lock,
                 retry=max_retry,
             )
 
@@ -356,6 +360,7 @@ class post(metaclass=_PostMeta):
     def __new__(
         cls,
         wait_for_return: bool = False,
+        acquire_lock: bool = False,
         max_retry: int = None,
     ) -> Callable[
         [Callable[Concatenate[Any, _PostP], _PostReturnT]],

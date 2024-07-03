@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from torch.utils.data import DataLoader, Dataset
 
-from ..config.setting.torch import DataLoader as cfg
-from ..monitor.progress import MessageType, Progress
+from ...config.setting.torch import DataLoader as cfg
+from ...monitor.progress import MessageType, Progress
 
 
 def simple_loader(
@@ -14,7 +14,7 @@ def simple_loader(
     loader = DataLoaderWithProgress(dataset, **kwargs)
     loader._progress_msg = report_progress
     if loader.num_workers != 0:
-        from ..process import status
+        from ...process import status
 
         loader.multiprocessing_context = status.context
     return loader
@@ -40,5 +40,3 @@ class DataLoaderWithProgress(DataLoader):
             return self._progress_iter()
         else:
             return super().__iter__()
-
-

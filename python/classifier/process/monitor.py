@@ -14,8 +14,8 @@ import fsspec
 
 from ..config import setting as cfg
 from . import pipe_address
-from .connection import Client, Packet, PostBase, Server, post
 from .initializer import status
+from .server import Client, Packet, PostBase, Server, post
 
 __all__ = [
     "Monitor",
@@ -116,7 +116,7 @@ class _PostToMonitor(PostBase):
             args=args,
             kwargs=kwargs,
             wait=self.wait,
-            lock=self.wait,
+            lock=self.lock,
             retry=self.retry,
         )
         match _Status.now():
