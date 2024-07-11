@@ -107,6 +107,11 @@ def print_list_debug_info(process, tag, cut, region):
           f"_reg={region}")
 
 
+def get_label(default_str, override_list, i):
+    return override_list[i] if (override_list and len(override_list) > i) else default_str
+
+
+
 #
 #  Get hist from input file(s)
 #
@@ -473,7 +478,7 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
 
             _process_config = copy.copy(process_config)
             _process_config["fillcolor"] = _colors[ic]
-            _process_config["label"]     = label_override[ic] if label_override else f"{process_config['label']} { _cut}"
+            _process_config["label"]     = get_label(f"{process_config['label']} { _cut}", label_override, ic)
             _process_config["histtype"]  = kwargs.get("histtype","errorbar")
 
             _hist = get_hist(cfg, _process_config,
@@ -493,7 +498,7 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
 
             _process_config = copy.copy(process_config)
             _process_config["fillcolor"] = _colors[ir]
-            _process_config["label"]     = label_override[ir] if label_override else f"{_process_config['label']} {_reg}"
+            _process_config["label"]     = get_label(f"{process_config['label']} { _reg}", label_override, ir)
             _process_config["histtype"]  = kwargs.get("histtype","errorbar")
 
             _hist = get_hist(cfg, _process_config,
@@ -564,7 +569,7 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
 
             _process_config = copy.copy(process_config)
             _process_config["fillcolor"] = _colors[iv]
-            _process_config["label"]     = label_override[iv] if label_override else f"{_process_config['label']} {_var}"
+            _process_config["label"]     = get_label(f"{process_config['label']} { _var}", label_override, iv)
             _process_config["histtype"]  = kwargs.get("histtype","errorbar")
 
             _hist = get_hist(cfg, _process_config,
