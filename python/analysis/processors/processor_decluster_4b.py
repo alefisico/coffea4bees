@@ -9,8 +9,8 @@ import uproot
 
 from analysis.helpers.networks import HCREnsemble
 from analysis.helpers.topCandReconstruction import find_tops, dumpTopCandidateTestVectors, buildTop, mW, mt, find_tops_slow
-from analysis.helpers.clustering import cluster_bs, make_synthetic_event
-    
+from analysis.helpers.clustering import cluster_bs, make_synthetic_event, clean_ISR
+
 from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
 from coffea import processor
 from coffea.util import load
@@ -92,12 +92,9 @@ class analysis(processor.ProcessorABC):
             apply_FvT=True,
             apply_boosted_veto=False,
             run_SvB=True,
-            do_gbb_only=True,
-            do_4jets=True,
-            do_5jets=False,
             do_declustering=False,
             corrections_metadata="analysis/metadata/corrections.yml",
-            clustering_pdfs_file="jet_clustering/clustering_PDFs/clustering_pdfs_vs_pT.yml",
+            clustering_pdfs_file = "jet_clustering/jet-splitting-PDFs-00-02-00/clustering_pdfs_vs_pT.yml",
             run_systematics=[],
             blind = False,
             make_classifier_input: str = None,
@@ -115,7 +112,6 @@ class analysis(processor.ProcessorABC):
         self.classifier_SvB_MA = HCREnsemble(SvB_MA) if SvB_MA else None
         self.corrections_metadata = yaml.safe_load(open(corrections_metadata, "r"))
         self.do_declustering = do_declustering
-        self.do_gbb_only = do_gbb_only
         self.clustering_pdfs = yaml.safe_load(open(clustering_pdfs_file, "r"))
 
         self.cutFlowCuts = [
@@ -133,7 +129,7 @@ class analysis(processor.ProcessorABC):
             "SB",
         ]
 
-        self.histCuts = ["passPreSel"]
+        self.histCuts = ["passPreSel", "pass0OthJets", "pass1OthJets"]
         if self.run_SvB:
             self.cutFlowCuts += ["passSvB", "failSvB"]
             self.histCuts += ["passSvB", "failSvB"]
@@ -507,14 +503,14 @@ class analysis(processor.ProcessorABC):
 
         event['pass0OthJets'] = event.nJet_selected == 4
         event['pass1OthJets'] = event.nJet_selected == 5
+        event['passMax1OthJets'] = event.nJet_selected < 6
+
         selections.add("pass0OthJets", event.pass0OthJets)
         selections.add("pass1OthJets", event.pass1OthJets)
+        selections.add("passMax1OthJets", event.passMax1OthJets)
         allcuts.append("passFourTag")
 
-        if self.do_4jets:
-            allcuts.append("pass0OthJets")
-        elif self.do_5jets:
-            allcuts.append("pass1OthJets")
+        allcuts.append("passMax1OthJets")
 
         selev = event[selections.all(*allcuts)]
 
@@ -552,35 +548,21 @@ class analysis(processor.ProcessorABC):
         notCanJet = notCanJet[notCanJet.selected_loose]
         notCanJet = notCanJet[ak.argsort(notCanJet.pt, axis=1, ascending=False)]
         notCanJet_sel = notCanJet[notCanJet.selected]
-        
+
         if self.do_declustering:
             canJet["jet_flavor"] = "b"
             notCanJet_sel["jet_flavor"] = "j"
 
             jets_for_clustering = ak.concatenate([canJet, notCanJet_sel], axis=1)
             jets_for_clustering = jets_for_clustering[ak.argsort(jets_for_clustering.pt, axis=1, ascending=False)]
-            
+
             clustered_jets, _clustered_splittings = cluster_bs(jets_for_clustering, debug=False)
-            
-            if self.do_gbb_only:
-    
-                #
-                # 1st replace bstar splittings with their original jets (b, g_bb)
-                #
-                bstar_mask_splittings = _clustered_splittings.jet_flavor == "b(bb)"
-                bs_from_bstar = _clustered_splittings[bstar_mask_splittings].part_A
-                gbbs_from_bstar = _clustered_splittings[bstar_mask_splittings].part_B
-                jets_from_bstar = ak.concatenate([bs_from_bstar, gbbs_from_bstar], axis=1)
-    
-                bstar_mask = clustered_jets.jet_flavor == "b(bb)"
-                clustered_jets_nobStar = clustered_jets[~bstar_mask]
-                clustered_jets          = ak.concatenate([clustered_jets_nobStar, jets_from_bstar], axis=1)
-    
-    
+            clustered_jets = clean_ISR(clustered_jets, _clustered_splittings)
+
             #
             # Declustering
             #
-    
+
             #
             #  Read in the pdfs
             #
@@ -589,19 +571,22 @@ class analysis(processor.ProcessorABC):
             #input_pdf_file_name = "analysis/plots_synthetic_datasets/clustering_pdfs_vs_pT.yml"
             #with open(self.clustering_pdfs, 'r') as input_file:
             #    input_pdfs = yaml.safe_load(input_file)
-    
+
             declustered_jets = make_synthetic_event(clustered_jets, self.clustering_pdfs)
-            canJet = declustered_jets
+
+            canJet = declustered_jets[declustered_jets.jet_flavor == "b"]
+
+            #canJet = declustered_jets
 
             #
             #  Hack
             #
             canJet["puId"] = 7
             canJet["jetId"] = 7 # selev.Jet.puId[canJet_idx]
-            canJet["btagDeepFlavB"] = 1.0 # Set bs to 1 and ls to 0 
+            canJet["btagDeepFlavB"] = 1.0 # Set bs to 1 and ls to 0
             canJet = canJet[ak.argsort(canJet.pt, axis=1, ascending=False)]
 
-            
+
         #
         #   Proceed as normal
         #
@@ -910,6 +895,7 @@ class analysis(processor.ProcessorABC):
             self._cutFlow.fill("passPreSel", selev, allTag=True)
             self._cutFlow.fill("passFourTag", selev )
             self._cutFlow.fill("pass0OthJets",selev )
+            self._cutFlow.fill("pass1OthJets",selev )
             self._cutFlow.fill("passPreSel_woTrig", selev, allTag=True,
                                wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[selections.all(*allcuts)] ))
             self._cutFlow.fill("passDiJetMass", selev[selev.passDiJetMass])
