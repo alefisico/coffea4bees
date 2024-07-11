@@ -16,7 +16,7 @@ from base_class.hist import Collection, Fill
 from base_class.physics.object import LorentzVector, Jet, Muon, Elec
 #from analysis.helpers.hist_templates import SvBHists, FvTHists, QuadJetHists
 from analysis.helpers.clustering_hist_templates import ClusterHists
-from analysis.helpers.clustering import cluster_bs, compute_decluster_variables, cluster_bs_fast, make_synthetic_event, get_list_of_splitting_types
+from analysis.helpers.clustering import cluster_bs, compute_decluster_variables, cluster_bs_fast, make_synthetic_event, get_list_of_splitting_types, clean_ISR
 
 from analysis.helpers.cutflow import cutFlow
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
@@ -46,20 +46,16 @@ class analysis(processor.ProcessorABC):
             *,
             threeTag=False,
             corrections_metadata="analysis/metadata/corrections.yml",
-            clustering_pdfs_file="jet_clustering/clustering_PDFs/clustering_pdfs_vs_pT.yml",
+            #   Make with ../.ci-workflows/synthetic-dataset-plot-job.sh
+            clustering_pdfs_file = "jet_clustering/jet-splitting-PDFs-0jet-00-01-00_5j/clustering_pdfs_vs_pT.yml",
+            #clustering_pdfs_file="jet_clustering/clustering_PDFs/clustering_pdfs_vs_pT.yml",
             do_declustering=False,
-            do_gbb_only=True,
-            do_4jets=True,
-            do_5jets=False,
     ):
 
         logging.debug("\nInitialize Analysis Processor")
         self.corrections_metadata = yaml.safe_load(open(corrections_metadata, "r"))
         self.clustering_pdfs = yaml.safe_load(open(clustering_pdfs_file, "r"))
         self.do_declustering = do_declustering
-        self.do_gbb_only = do_gbb_only
-        self.do_4jets = do_4jets
-        self.do_5jets = do_5jets
 
         self.cutFlowCuts = [
             "all",
@@ -72,7 +68,7 @@ class analysis(processor.ProcessorABC):
             "pass1OthJets",
         ]
 
-        self.histCuts = ["passPreSel"]
+        self.histCuts = ["passPreSel", "pass0OthJets", "pass1OthJets"]
 
 
     def process(self, event):
@@ -151,14 +147,13 @@ class analysis(processor.ProcessorABC):
 
         event['pass0OthJets'] = event.nJet_selected == 4
         event['pass1OthJets'] = event.nJet_selected == 5
-        selections.add("pass0OthJets", event.pass0OthJets)
-        selections.add("pass1OthJets", event.pass1OthJets)
+        event['passMax1OthJets'] = event.nJet_selected < 6
+        selections.add("pass0OthJets",    event.pass0OthJets)
+        selections.add("pass1OthJets",    event.pass1OthJets)
+        selections.add("passMax1OthJets", event.passMax1OthJets)
         allcuts.append("passFourTag")
 
-        if self.do_4jets:
-            allcuts.append("pass0OthJets")
-        elif self.do_5jets:
-            allcuts.append("pass1OthJets")
+        allcuts.append("passMax1OthJets")
 
         selev = event[selections.all(*allcuts)]
 
@@ -257,24 +252,8 @@ class analysis(processor.ProcessorABC):
         #  Declustering
         #
         if self.do_declustering:
-            if self.do_gbb_only:
 
-                #
-                # The following should not be needed...
-                #  
-                
-                #
-                # 1st replace bstar splittings with their original jets (b, g_bb)
-                #
-                bstar_mask_splittings = clustered_splittings.jet_flavor == "b(bb)"
-                bs_from_bstar = clustered_splittings[bstar_mask_splittings].part_A
-                gbbs_from_bstar = clustered_splittings[bstar_mask_splittings].part_B
-                jets_from_bstar = ak.concatenate([bs_from_bstar, gbbs_from_bstar], axis=1)
-
-                bstar_mask = clustered_jets.jet_flavor == "b(bb)"
-                clustered_jets_nobStar = clustered_jets[~bstar_mask]
-                clustered_jets          = ak.concatenate([clustered_jets_nobStar, jets_from_bstar], axis=1)
-
+            clustered_jets = clean_ISR(clustered_jets, clustered_splittings)
 
             #
             # Declustering
@@ -283,22 +262,20 @@ class analysis(processor.ProcessorABC):
             #
             #  Read in the pdfs
             #
-            #   Make with ../.ci-workflows/synthetic-dataset-plot-job.sh
-            # input_pdf_file_name = "analysis/plots_synthetic_datasets/clustering_pdfs.yml"
-            # input_pdf_file_name = "analysis/plots_synthetic_datasets/clustering_pdfs_vs_pT.yml"
-            # with open(input_pdf_file_name, 'r') as input_file:
-            #     input_pdfs = yaml.safe_load(input_file)
 
             declustered_jets = make_synthetic_event(clustered_jets, self.clustering_pdfs)
-            canJet = declustered_jets
+
+            is_b_mask = declustered_jets.jet_flavor == "b"
+            canJet = declustered_jets[is_b_mask]
+            notCanJet_sel = declustered_jets[~is_b_mask]
 
             #
             #  Recluster
             #
-            canJet["jet_flavor"] = "b"
-            canJet = canJet[ak.argsort(canJet.pt, axis=1, ascending=False)]
+            jets_for_clustering = ak.concatenate([canJet, notCanJet_sel], axis=1)
+            jets_for_clustering = jets_for_clustering[ak.argsort(jets_for_clustering.pt, axis=1, ascending=False)]
 
-            clustered_jets_reclustered, clustered_splittings_reclustered = cluster_bs(canJet, debug=False)
+            clustered_jets_reclustered, clustered_splittings_reclustered = cluster_bs(jets_for_clustering, debug=False)
             compute_decluster_variables(clustered_splittings_reclustered)
 
             all_split_types_re = get_list_of_splitting_types(clustered_splittings_reclustered)

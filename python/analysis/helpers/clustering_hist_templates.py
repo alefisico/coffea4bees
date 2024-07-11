@@ -90,6 +90,13 @@ class ClusterHists(Template):
     mB_pT = H((5, 50, 500, ("pt", "pT")),
                 (50, 0, 50,  ('mB', 'mB [GeV]')))
 
+    mA_l_pT = H((5, 50, 500, ("pt", "pT")),
+                (50, 0, 300,  ('mA', 'mA [GeV]')))
+
+    mB_l_pT = H((5, 50, 500, ("pt", "pT")),
+                (50, 0, 300,  ('mB', 'mB [GeV]')))
+
+    
 
     zA_pT = H((5, 50, 500, ("pt", "pT")),
               (50, 0.5, 1.3,  ('zA', 'z fraction')))
