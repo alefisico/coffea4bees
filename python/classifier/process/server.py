@@ -33,6 +33,8 @@ __all__ = [
     "post",
 ]
 
+_Address = str | tuple[str, int]
+
 
 class _ClientError(Exception):
     __module__ = Exception.__module__
@@ -108,7 +110,7 @@ class PostBase:
 
 
 class Server:
-    def __init__(self, address):
+    def __init__(self, address: _Address):
         # address
         self._address = address
 
@@ -200,11 +202,18 @@ class Server:
                 _close_connection(connection)
                 break
 
+    def __enter__(self):
+        self.start()
+        return self
+
+    def __exit__(self, *_):
+        self.stop()
+
 
 class Client:
     reconnect_delay = 1  # seconds
 
-    def __init__(self, address: str | tuple[str, int]):
+    def __init__(self, address: _Address):
         self._address = address
         self._lock = Lock()
         self._jobs: PriorityQueue[Packet] = PriorityQueue()
@@ -259,7 +268,7 @@ class Client:
 
 class Proxy(Server):
     _client: Optional[Client] = None
-    _address: shared[str | tuple[str, int]]
+    _address: shared[_Address]
     _init_local: shared[tuple[tuple, dict]]
 
     def __init_subclass__(cls):
@@ -278,7 +287,7 @@ class Proxy(Server):
             setattr(self, k, v)
         self._client = Client(self._address)
 
-    def __init__(self, address: str | tuple[str, int], *args, **kwargs):
+    def __init__(self, address: _Address, *args, **kwargs):
         super().__init__(address)
         self._init_local = (args, kwargs)
         self.init_local(*args, **kwargs)
