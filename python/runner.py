@@ -153,8 +153,9 @@ if __name__ == '__main__':
     config_runner.setdefault('dashboard_address', 10200)
     config_runner.setdefault('friend_base', None)
     config_runner.setdefault('friend_base_argname', "make_classifier_input")
-    config_runner.setdefault('friend_metafile', 'friends.json')
+    config_runner.setdefault('friend_metafile', 'friends')
     config_runner.setdefault('friend_merge_step', 100_000)
+    config_runner.setdefault('override_top_reconstruction', None)
     if args.systematics:
         logging.info("\nRunning with systematics")
         configs['config']['run_systematics'] = True
@@ -186,7 +187,10 @@ if __name__ == '__main__':
             else:
                 xsec = eval(metadata['datasets'][dataset]['xs'])
 
-            top_reconstruction = metadata['datasets'][dataset]['top_reconstruction'] if "top_reconstruction" in metadata['datasets'][dataset] else None
+            top_reconstruction = config_runner["override_top_reconstruction"] or (
+                metadata['datasets'][dataset]['top_reconstruction']
+                if "top_reconstruction" in metadata['datasets'][dataset]
+                else None)
             logging.info(f"\n top construction configured as {top_reconstruction} ")
 
             metadata_dataset[dataset] = {'year': year,
@@ -472,7 +476,7 @@ if __name__ == '__main__':
             #
             # Save friend tree metadata if exists
             #
-            friend_base = config_runner["friend_base"] or configs.get(
+            friend_base = config_runner["friend_base"] or configs["config"].get(
                 config_runner["friend_base_argname"], None
             )
             friends: dict[str, Friend] = output.get("friends", None)
@@ -499,7 +503,7 @@ if __name__ == '__main__':
                 from base_class.system.eos import EOS
                 from base_class.utils.json import DefaultEncoder
                 with fsspec.open(
-                    EOS(friend_base) / config_runner["friend_metafile"], "wt"
+                    EOS(friend_base) / f'{config_runner["friend_metafile"]}.json', "wt"
                 ) as f:
                     json.dump(friends, f, cls=DefaultEncoder)
                 logging.info("The following frends trees are created:")
