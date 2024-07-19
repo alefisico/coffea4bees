@@ -126,7 +126,6 @@ if __name__ == '__main__':
     # disable numba debug warnings
     logging.getLogger('numba').setLevel(logging.WARNING)
 
-    
     logging.info(f"\nRunning with these parameters: {args}")
 
     #
@@ -152,6 +151,10 @@ if __name__ == '__main__':
     config_runner.setdefault('workers', 2)
     config_runner.setdefault('skipbadfiles', False)
     config_runner.setdefault('dashboard_address', 10200)
+    config_runner.setdefault('friend_base', None)
+    config_runner.setdefault('friend_base_argname', "make_classifier_input")
+    config_runner.setdefault('friend_metafile', 'friends.json')
+    config_runner.setdefault('friend_merge_step', 100_000)
     if args.systematics:
         logging.info("\nRunning with systematics")
         configs['config']['run_systematics'] = True
@@ -241,7 +244,6 @@ if __name__ == '__main__':
                     logging.info(
                         f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
 
-
             elif isDataForMix:
                 logging.info("\nConfig Data for Mixed ")
 
@@ -269,7 +271,6 @@ if __name__ == '__main__':
 
                 logging.info(f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
 
-
             elif isTTForMixed:
                 logging.info("\nConfig TT for Mixed ")
 
@@ -290,8 +291,6 @@ if __name__ == '__main__':
                                      'metadata': metadata_dataset[idataset]}
 
                 logging.info(f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
-
-
 
             # isData
             else:
@@ -473,18 +472,16 @@ if __name__ == '__main__':
             #
             # Save friend tree metadata if exists
             #
-            _FRIEND_BASE_PROCESSOR_ARG = 'make_classifier_input' # FIXME: need to make it more general
-            _FRIEND_MERGE_STEP = 100_000  # FIXME: need to make it more general
-            _FRIEND_METADATA_FILENAME = 'friends.json' # FIXME: need to make it more general
-
-            friend_base = configs["config"].get(_FRIEND_BASE_PROCESSOR_ARG, None)
+            friend_base = config_runner["friend_base"] or configs.get(
+                config_runner["friend_base_argname"], None
+            )
             friends: dict[str, Friend] = output.get("friends", None)
             if friend_base is not None and friends is not None:
                 if args.condor:
                     (friends,) = dask.compute(
                         {
                             k: friends[k].merge(
-                                step=_FRIEND_MERGE_STEP,
+                                step=config_runner["friend_merge_step"],
                                 base_path=friend_base,
                                 naming=_friend_merge_name,
                                 dask=True,
@@ -495,15 +492,17 @@ if __name__ == '__main__':
                 else:
                     for k, v in friends.items():
                         friends[k] = v.merge(
-                            step=_FRIEND_MERGE_STEP,
+                            step=config_runner["friend_merge_step"],
                             base_path=friend_base,
                             naming=_friend_merge_name,
                         )
                 from base_class.system.eos import EOS
                 from base_class.utils.json import DefaultEncoder
-                with fsspec.open(EOS(friend_base) / _FRIEND_METADATA_FILENAME, "wt") as f:
+                with fsspec.open(
+                    EOS(friend_base) / config_runner["friend_metafile"], "wt"
+                ) as f:
                     json.dump(friends, f, cls=DefaultEncoder)
-                logging.info(f"The following frends trees are created:")
+                logging.info("The following frends trees are created:")
                 logging.info(pretty_repr([*friends.keys()]))
                 logging.info(f"Saved friend trees and metadata to {friend_base}")
 

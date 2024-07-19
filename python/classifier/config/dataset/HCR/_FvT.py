@@ -15,21 +15,16 @@ def _apply_JCM(df: pd.DataFrame):
     return df
 
 
+def _common_selection(df: pd.DataFrame):
+    return df["passHLT"] & (df["SB"] | df["SR"]) & (df["fourTag"] | df["threeTag"])
+
+
 def _data_selection(df: pd.DataFrame):
-    return df[
-        df["passHLT"]  # trigger
-        & (df["SB"] | df["SR"])  # boson mass
-        & (df["fourTag"] | df["threeTag"])  # n-tag
-        & (~(df["SR"] & df["fourTag"]))  # blind
-    ]
+    return df[_common_selection(df) & (~(df["SR"] & df["fourTag"]))]
 
 
 def _ttbar_selection(df: pd.DataFrame):
-    return df[
-        df["passHLT"]  # trigger
-        & (df["SB"] | df["SR"])  # boson mass
-        & (df["fourTag"] | df["threeTag"])  # n-tag
-    ]
+    return df[_common_selection(df)]
 
 
 def _ttbar_3b_prescale(df: pd.DataFrame):
@@ -44,12 +39,10 @@ class FvT(Common):
         help="prescale 3b ttbar events",
     )
 
-    @property
-    def allowed_labels(self):
-        return []
+    def label_from_group(self):
+        return ()
 
-    @property
-    def preprocessor_by_label(self):
+    def preprocess_by_group(self):
         from classifier.df.tools import add_label_index_from_column, prescale
 
         return [

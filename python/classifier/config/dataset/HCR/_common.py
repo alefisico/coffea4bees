@@ -76,7 +76,7 @@ class Common(LoadGroupedRoot):
             return int(matched[0])
 
     def _get_label(self, groups: frozenset[str]):
-        matched = groups.intersection(self._allowed_labels)
+        matched = groups.intersection(self._label_from_group)
         if len(matched) >= 1:
             return next(iter(matched))
 
@@ -91,7 +91,7 @@ class Common(LoadGroupedRoot):
                 friends.extend(v)
 
         pres = []
-        for gs, ps in self._preprocessor_by_label:
+        for gs, ps in self._preprocess_by_group:
             if any(map(lambda g: g <= groups, gs)):
                 pres.extend(ps)
         pres.extend(self.preprocessors)
@@ -110,13 +110,13 @@ class Common(LoadGroupedRoot):
         )
 
     @cached_property
-    def _allowed_labels(self):
-        return frozenset(self.allowed_labels)
+    def _label_from_group(self):
+        return frozenset(self.label_from_group())
 
     @cached_property
-    def _preprocessor_by_label(self):
+    def _preprocess_by_group(self):
         return [
-            ([frozenset(g) for g in gs], [*ps]) for gs, ps in self.preprocessor_by_label
+            ([frozenset(g) for g in gs], [*ps]) for gs, ps in self.preprocess_by_group()
         ]
 
     @cached_property
@@ -128,13 +128,11 @@ class Common(LoadGroupedRoot):
             + InputBranch.feature_NotCanJet
         )
 
-    @property
     @abstractmethod
-    def allowed_labels(self) -> Iterable[str]: ...
+    def label_from_group(self) -> Iterable[str]: ...
 
-    @property
     @abstractmethod
-    def preprocessor_by_label(
+    def preprocess_by_group(
         self,
     ) -> Iterable[
         tuple[Iterable[Iterable[str]], Iterable[Callable[[pd.DataFrame], pd.DataFrame]]]
