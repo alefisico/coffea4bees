@@ -225,11 +225,7 @@ class Friend:
         executor: Executor = ...,
     ):
         """
-        Automatically dump the in-memory data when :meth:`add` is called.
-
-        Parameters
-        ----------
-        See :meth:`dump` for details.
+        Automatically dump the in-memory data when :meth:`add` is called. The parameters are the same as :meth:`dump`.
 
         Notes
         -----
@@ -390,6 +386,7 @@ class Friend:
         library: Literal["ak"] = "ak",
         reader_options: dict = None,
     ) -> ak.Array: ...
+
     @overload
     def arrays(
         self,
@@ -397,6 +394,7 @@ class Friend:
         library: Literal["pd"] = "pd",
         reader_options: dict = None,
     ) -> pd.DataFrame: ...
+
     @overload
     def arrays(
         self,
@@ -404,6 +402,7 @@ class Friend:
         library: Literal["np"] = "np",
         reader_options: dict = None,
     ) -> dict[str, np.ndarray]: ...
+
     @_on_disk
     def arrays(
         self,
@@ -439,6 +438,7 @@ class Friend:
         library: Literal["ak"] = "ak",
         reader_options: dict = None,
     ) -> ak.Array: ...
+
     @overload
     def concat(
         self,
@@ -446,6 +446,7 @@ class Friend:
         library: Literal["pd"] = "pd",
         reader_options: dict = None,
     ) -> pd.DataFrame: ...
+
     @overload
     def concat(
         self,
@@ -453,6 +454,7 @@ class Friend:
         library: Literal["np"] = "np",
         reader_options: dict = None,
     ) -> dict[str, np.ndarray]: ...
+
     @_on_disk
     def concat(
         self,
@@ -488,6 +490,7 @@ class Friend:
         library: Literal["ak"] = "ak",
         reader_options: dict = None,
     ) -> dak.Array: ...
+
     @overload
     def dask(
         self,
@@ -495,6 +498,7 @@ class Friend:
         library: Literal["np"] = "np",
         reader_options: dict = None,
     ) -> dict[str, da.Array]: ...
+
     @_on_disk
     def dask(
         self,

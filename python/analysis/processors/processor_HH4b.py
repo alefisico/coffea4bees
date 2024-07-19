@@ -1,39 +1,44 @@
-import time
 import gc
-import awkward as ak
-import numpy as np
-import correctionlib
-import yaml
+import logging
+import time
 import warnings
+
+import awkward as ak
+import correctionlib
+import numpy as np
 import uproot
-
-from analysis.helpers.networks import HCREnsemble
-from analysis.helpers.topCandReconstruction import find_tops, dumpTopCandidateTestVectors, buildTop, mW, mt, find_tops_slow
-
-from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
-from coffea import processor
-from coffea.util import load
-from coffea.analysis_tools import Weights, PackedSelection
-
-from base_class.hist import Collection, Fill
-from base_class.physics.object import LorentzVector, Jet, Muon, Elec
-from analysis.helpers.hist_templates import SvBHists, FvTHists, QuadJetHists, WCandHists, TopCandHists
-
-
+import yaml
+from analysis.helpers.common import apply_btag_sf, init_jet_factory, update_events
 from analysis.helpers.cutflow import cutFlow
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
-
+from analysis.helpers.hist_templates import (
+    FvTHists,
+    QuadJetHists,
+    SvBHists,
+    TopCandHists,
+    WCandHists,
+)
 from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
-from analysis.helpers.common import init_jet_factory, apply_btag_sf, update_events
-
+from analysis.helpers.networks import HCREnsemble
 from analysis.helpers.selection_basic_4b import (
     apply_event_selection_4b,
-    apply_object_selection_4b
+    apply_object_selection_4b,
 )
-
-import logging
-
-from base_class.root import TreeReader, Chunk
+from analysis.helpers.topCandReconstruction import (
+    buildTop,
+    dumpTopCandidateTestVectors,
+    find_tops,
+    find_tops_slow,
+    mt,
+    mW,
+)
+from base_class.hist import Collection, Fill
+from base_class.physics.object import Elec, Jet, LorentzVector, Muon
+from base_class.root import Chunk, TreeReader
+from coffea import processor
+from coffea.analysis_tools import PackedSelection, Weights
+from coffea.nanoevents import NanoAODSchema, NanoEventsFactory
+from coffea.util import load
 
 #
 # Setup
@@ -976,9 +981,9 @@ class analysis(processor.ProcessorABC):
 
             friends = {}
             if self.make_classifier_input is not None:
+                _all_selection = selections.all(*allcuts)
                 for k in ["ZZSR", "ZHSR", "HHSR", "SR", "SB"]:
                     selev[k] = selev["quadJet_selected"][k]
-
                 selev["nSelJets"] = ak.num(selev.selJet)
 
                 if "xbW_reco" in selev.fields:  #### AGE: this should be temporary
@@ -986,9 +991,9 @@ class analysis(processor.ProcessorABC):
                     selev["xW"]  = selev["xW_reco"]
 
                 ####
-                from ..helpers.classifier.HCR import dump_input_friend, dump_JCM_weight
+                from ..helpers.classifier.HCR import dump_input_friend, dump_JCM_weight, dump_FvT_weight
 
-                friends["friends"] = dump_input_friend( selev, self.make_classifier_input, "HCR_input", *selections, weight="weight" if isMC else "weight_noJCM_noFvT", NotCanJet="notCanJet_coffea") | dump_JCM_weight( selev, self.make_classifier_input, "JCM_weight", *selections, )
+                friends["friends"] = dump_input_friend( selev, self.make_classifier_input, "HCR_input", _all_selection, weight="weight" if isMC else "weight_noJCM_noFvT", NotCanJet="notCanJet_coffea") | dump_JCM_weight( selev, self.make_classifier_input, "JCM_weight", _all_selection) | dump_FvT_weight( selev, self.make_classifier_input, "FvT_weight", _all_selection)
 
             output = hist.output | processOutput | friends
         #
