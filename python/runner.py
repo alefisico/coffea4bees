@@ -481,7 +481,7 @@ if __name__ == '__main__':
             )
             friends: dict[str, Friend] = output.get("friends", None)
             if friend_base is not None and friends is not None:
-                if args.condor:
+                if args.run_dask:
                     (friends,) = dask.compute(
                         {
                             k: friends[k].merge(
