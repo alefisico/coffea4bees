@@ -7,8 +7,8 @@ from ...state.label import MultiClass
 from ._HCR import HCR
 
 if TYPE_CHECKING:
-    from classifier.discriminator.roc import MulticlassROC
-    from classifier.discriminator.skimmer import BatchType
+    from classifier.ml.roc import MulticlassROC
+    from classifier.ml.skimmer import BatchType
 
 
 def _roc_nominal_selection(batch: BatchType):
@@ -61,8 +61,7 @@ class FvT(HCR):
 
     @property
     def rocs(self):
-        import numpy as np
-        from classifier.discriminator.roc import MulticlassROC
+        from classifier.ml.roc import MulticlassROC
 
         return (
             MulticlassROC(

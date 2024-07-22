@@ -17,7 +17,14 @@ from ..config.setting.HCR import Input, InputBranch, Output
 from ..config.state.label import MultiClass
 from ..nn.HCR_blocks import HCR
 from ..nn.schedule import MilestoneStep, Schedule
-from . import BatchType, BenchmarkStage, Classifier, Model, OutputStage, TrainingStage
+from . import (
+    BatchType,
+    BenchmarkStage,
+    MultiStageTraining,
+    Model,
+    OutputStage,
+    TrainingStage,
+)
 from .roc import MulticlassROC
 from .skimmer import Skimmer, Splitter
 
@@ -151,7 +158,7 @@ class HCRModel(Model):
             self._nn.setGhostBatches(self.ghost_batch.get_bs(), True)
 
 
-class HCRTraining(Classifier):
+class HCRTraining(MultiStageTraining):
     def __init__(
         self,
         arch: HCRArch,

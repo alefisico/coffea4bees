@@ -17,6 +17,9 @@ workflow:
 
 variables:
   CONTAINER_HOST: cms-cmu
+  GIT_SUBMODULE_STRATEGY: recursive
+  GIT_SUBMODULE_DEPTH: 1
+  GIT_SUBMODULE_FORCE_HTTPS: "true"
 
 include:
   - local: '.ci-workflows/stages_*.yml'

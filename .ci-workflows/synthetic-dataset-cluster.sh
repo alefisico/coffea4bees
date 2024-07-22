@@ -14,10 +14,12 @@ else
 fi
 echo "############### Running datasets from " $DATASETS
 echo "############### Running test processor"
-#python runner.py -t -o test_synthetic_datasets.coffea -d data  -p analysis/processors/processor_cluster_4b.py -y UL18  -op analysis/hists/ -m $DATASETS -c analysis/metadata/cluster_4b.yml
-python runner.py -t -o test_synthetic_datasets.coffea -d data  -p analysis/processors/processor_cluster_4b.py -y UL18  -op analysis/hists/ -m $DATASETS -c analysis/metadata/cluster_and_decluster_4b.yml
-# python  jet_clustering/make_jet_splitting_PDFs.py analysis/hists/test_synthetic_datasets.coffea  --out jet_clustering/jet-splitting-PDFs-0jet-00-00-01
 
-#python runner.py -t -o test_synthetic_datasets.coffea -d data  -p analysis/processors/processor_HH4b.py -y UL17 UL18 UL16_preVFP UL16_postVFP -op analysis/hists/ -m $DATASETS
+
+#python runner.py -t -o test_synthetic_datasets_4j_and_5j.coffea -d data  -p analysis/processors/processor_cluster_4b.py -y UL18  -op analysis/hists/ -m $DATASETS -c analysis/metadata/cluster_4b.yml  
+python runner.py -t -o test_synthetic_datasets_4j_and_5j.coffea -d data  -p analysis/processors/processor_cluster_4b.py -y UL18  -op analysis/hists/ -m $DATASETS -c analysis/metadata/cluster_and_decluster.yml
+
+# python  jet_clustering/make_jet_splitting_PDFs.py analysis/hists/test_synthetic_datasets_4j_and_5j.coffea  --out jet_clustering/jet-splitting-PDFs-00-02-00 
+
 ls
-cd ../
+#cd ../

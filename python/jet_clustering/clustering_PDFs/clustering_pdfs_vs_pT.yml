@@ -5,7 +5,7 @@ splittings:
     ['gbbs', 'bstars']
 
 pt_bins:
-    [140, 230, 320, 410]
+    [0, 140, 230, 320, 410, inf]
 
 
 gbbs:

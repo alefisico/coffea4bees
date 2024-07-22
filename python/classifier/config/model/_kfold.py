@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING
 from classifier.task import ArgParser, Model, converter, parse
 
 if TYPE_CHECKING:
-    from classifier.discriminator import Classifier
-    from classifier.discriminator.skimmer import Splitter
+    from classifier.ml import MultiStageTraining
+    from classifier.ml.skimmer import Splitter
     from classifier.process.device import Device
     from torch.utils.data import StackDataset
 
@@ -69,11 +69,11 @@ class _KFold(Model):
 
 class KFoldClassifier(ABC, _KFold):
     @abstractmethod
-    def initializer(self, splitter: Splitter, **kwargs) -> Classifier: ...
+    def initializer(self, splitter: Splitter, **kwargs) -> MultiStageTraining: ...
 
     def train(self):
         if not self.seeds:
-            from classifier.discriminator.skimmer import KFold
+            from classifier.ml.skimmer import KFold
 
             return [
                 _train_classifier(
@@ -86,7 +86,7 @@ class KFoldClassifier(ABC, _KFold):
                 for offset in self.offsets
             ]
         else:
-            from classifier.discriminator.skimmer import RandomKFold
+            from classifier.ml.skimmer import RandomKFold
 
             return [
                 _train_classifier(
@@ -103,7 +103,7 @@ class KFoldClassifier(ABC, _KFold):
 
 
 class _train_classifier:
-    def __init__(self, classifier: Classifier):
+    def __init__(self, classifier: MultiStageTraining):
         self._classifier = classifier
 
     def __call__(self, device: Device, dataset: StackDataset):
