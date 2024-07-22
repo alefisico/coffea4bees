@@ -252,6 +252,7 @@ def resize(
     output: dict[str, dict[str, list[Chunk]]],
     step: int,
     chunk_size: int,
+    dask: bool = True
 ):
     base = EOS(base_path)
     transform = NanoAOD(regular=False, jagged=True)
@@ -263,6 +264,6 @@ def resize(
                 step=step,
                 chunk_size=chunk_size,
                 reader_options={"transform": transform},
-                dask=True,
+                dask=dask,
             )
     return output

@@ -311,6 +311,7 @@ if __name__ == '__main__':
                         logging.info(
                             f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
 
+    client = None
     #
     # IF run in condor
     #
@@ -428,14 +429,18 @@ if __name__ == '__main__':
             # check integrity of the output
             output = integrity_check(fileset, output)
             # merge output into new chunks each have `chunksize` events
-            output = client.compute(
-                resize(
-                    base_path=configs['config']['base_path'],
-                    output=output,
-                    step=config_runner.get('basketsize', configs['config']['step']),
-                    chunk_size=config_runner.get('picosize', config_runner['chunksize'])),
-                sync=True
+            kwargs = dict(
+                base_path=configs["config"]["base_path"],
+                output=output,
+                step=config_runner.get("basketsize", configs["config"]["step"]),
+                chunk_size=config_runner.get(
+                    "picosize", config_runner["chunksize"]
+                ),
             )
+            if client is not None:
+                output = client.compute(resize(**kwargs), sync=True)
+            else:
+                output = resize(**kwargs, dask=False)
             # only keep file name for each chunk
             for dataset, chunks in output.items():
                 chunks['files'] = [str(f.path) for f in chunks['files']]
@@ -446,9 +451,11 @@ if __name__ == '__main__':
             logging.info(f'\n{nEvent/elapsed:,.0f} events/s total '
                          f'({nEvent}/{elapsed})')
 
-            metadata = processor.accumulate(
-                client.compute(fetch_metadata(fileset, dask=True), sync=True))
-
+            if client is not None:
+                metadata = client.compute(fetch_metadata(fileset, dask=True), sync=True)
+            else:
+                metadata = fetch_metadata(fileset, dask=False)
+            metadata = processor.accumulate(metadata)
             for ikey in metadata:
                 if ikey in output:
                     metadata[ikey].update(output[ikey])
