@@ -16,7 +16,7 @@ from base_class.hist import Collection, Fill
 from base_class.physics.object import LorentzVector, Jet, Muon, Elec
 #from analysis.helpers.hist_templates import SvBHists, FvTHists, QuadJetHists
 from analysis.helpers.clustering_hist_templates import ClusterHists
-from analysis.helpers.clustering import cluster_bs, compute_decluster_variables, cluster_bs_fast, make_synthetic_event, get_list_of_splitting_types, clean_ISR
+from analysis.helpers.clustering import cluster_bs, compute_decluster_variables, cluster_bs_fast, make_synthetic_event, get_list_of_splitting_types, clean_ISR, get_list_of_ISR_splittings
 
 from analysis.helpers.cutflow import cutFlow
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
@@ -47,7 +47,8 @@ class analysis(processor.ProcessorABC):
             threeTag=False,
             corrections_metadata="analysis/metadata/corrections.yml",
             #   Make with ../.ci-workflows/synthetic-dataset-plot-job.sh
-            clustering_pdfs_file = "jet_clustering/jet-splitting-PDFs-0jet-00-01-00_5j/clustering_pdfs_vs_pT.yml",
+            # clustering_pdfs_file = "jet_clustering/jet-splitting-PDFs-0jet-00-01-00_5j/clustering_pdfs_vs_pT.yml",
+            clustering_pdfs_file = "jet_clustering/jet-splitting-PDFs-00-02-00/clustering_pdfs_vs_pT.yml",
             #clustering_pdfs_file="jet_clustering/clustering_PDFs/clustering_pdfs_vs_pT.yml",
             do_declustering=False,
     ):
@@ -242,6 +243,13 @@ class analysis(processor.ProcessorABC):
         all_split_types = get_list_of_splitting_types(clustered_splittings)
 
         #
+        #  Filter the ISR splittings
+        #
+        ISR_splittings  = get_list_of_ISR_splittings(all_split_types)
+        all_split_types = [item for item in all_split_types if item not in ISR_splittings]
+
+
+        #
         # Sort clusterings by type
         #
         for _s_type in all_split_types:
@@ -279,6 +287,8 @@ class analysis(processor.ProcessorABC):
             compute_decluster_variables(clustered_splittings_reclustered)
 
             all_split_types_re = get_list_of_splitting_types(clustered_splittings_reclustered)
+            ISR_splittings_re  = get_list_of_ISR_splittings(all_split_types_re)
+            all_split_types_re = [item for item in all_split_types_re if item not in ISR_splittings_re]
 
             for _s_type in all_split_types_re:
                 selev[f"splitting_{_s_type}_re"]  = clustered_splittings_reclustered[clustered_splittings_reclustered.jet_flavor == _s_type]
