@@ -427,7 +427,7 @@ if __name__ == '__main__':
             # check integrity of the output
             output = integrity_check(fileset, output)
             # merge output into new chunks each have `chunksize` events
-            output = dask.compute(
+            output = client.compute(
                 resize(
                     base_path=configs['config']['base_path'],
                     output=output,
@@ -444,7 +444,7 @@ if __name__ == '__main__':
                          f'({nEvent}/{elapsed})')
 
             metadata = processor.accumulate(
-                dask.compute(fetch_metadata(fileset, dask=True))[0])
+                client.compute(fetch_metadata(fileset, dask=True))[0])
 
             for ikey in metadata:
                 if ikey in output:
@@ -482,7 +482,7 @@ if __name__ == '__main__':
             friends: dict[str, Friend] = output.get("friends", None)
             if friend_base is not None and friends is not None:
                 if args.run_dask:
-                    (merged_friends,) = dask.compute(
+                    (merged_friends,) = client.compute(
                         {
                             k: friends[k].merge(
                                 step=config_runner["friend_merge_step"],
