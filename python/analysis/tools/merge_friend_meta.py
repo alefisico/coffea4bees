@@ -18,16 +18,29 @@ def merge_friend_metas(output: PathLike, *metafiles: PathLike, cleanup: bool = T
                 merged[k] += friend
             else:
                 merged[k] = friend
+    output = EOS(output)
+    tmp = output.local_temp(dir=".")
+    try:
+        with fsspec.open(tmp, "wt") as f:
+            json.dump(merged, f, cls=DefaultEncoder)
+        tmp.move_to(output, parents=True, overwrite=True)
+    except Exception as e:
+        if tmp.exists:
+            tmp.rm()
+        raise e
     if cleanup:
         for metafile in metafiles:
             EOS(metafile).rm()
-    with fsspec.open(EOS(output).mkdir(True), "w") as f:
-        json.dump(merged, f, cls=DefaultEncoder)
 
 
 if __name__ == "__main__":
     argparser = ArgumentParser()
-    argparser.add_argument("-o", "--output", required=True, help="Output metafile")
+    argparser.add_argument(
+        "-o",
+        "--output",
+        required=True,
+        help="Output metafile",
+    )
     argparser.add_argument(
         "-i",
         "--input",
