@@ -754,6 +754,20 @@ def get_list_of_combined_jet_types(jets):
 
     return splitting_types
 
+def get_list_of_ISR_splittings(splitting_types):
+
+    ISR_splittings = []
+    for _s in splitting_types:
+
+        if len(_s) == 1:
+            continue
+
+        child_A, child_B = children_jet_flavors(_s)
+
+        if child_A.count("b") == 0 and child_B.count("b") > 1:
+            ISR_splittings.append(_s)
+    return ISR_splittings
+
 
 def decluster_splitting_types(input_jets, splitting_types, input_pdfs):
 
@@ -868,16 +882,8 @@ def clean_ISR(clustered_jets, splittings):
 
     all_jet_types =  get_list_of_splitting_types(clustered_jets)
 
-    ISR_splittings = []
-    for _s in all_jet_types:
+    ISR_splittings = get_list_of_ISR_splittings(all_jet_types)
 
-        if len(_s) == 1:
-            continue
-
-        child_A, child_B = children_jet_flavors(_s)
-
-        if child_A.count("b") == 0 and child_B.count("b") > 1:
-            ISR_splittings.append(_s)
 
     #
     #  Will need recusion here
