@@ -211,10 +211,10 @@ if __name__ == '__main__':
                     if 'data' not in dataset:
                         metadata_dataset[dataset]['genEventSumw'] = metadata['datasets'][dataset][year][config_runner['data_tier']]['sumw']
                     meta_files = metadata['datasets'][dataset][year][config_runner['data_tier']]['files']
-            # if not dataset.endswith('data'):
-            #     if config_runner['data_tier'].startswith('pico'):
-            #         metadata_dataset[dataset]['genEventSumw'] = metadata['datasets'][dataset][year][config_runner['data_tier']]['sumw']
-            #         meta_files = metadata['datasets'][dataset][year][config_runner['data_tier']]['files']
+                # if not dataset.endswith('data'):
+                #     if config_runner['data_tier'].startswith('pico'):
+                #         metadata_dataset[dataset]['genEventSumw'] = metadata['datasets'][dataset][year][config_runner['data_tier']]['sumw']
+                #         meta_files = metadata['datasets'][dataset][year][config_runner['data_tier']]['files']
                 else:
                     meta_files = metadata['datasets'][dataset][year][config_runner['data_tier']]
 
@@ -482,12 +482,13 @@ if __name__ == '__main__':
             friends: dict[str, Friend] = output.get("friends", None)
             if friend_base is not None and friends is not None:
                 if args.run_dask:
-                    (friends,) = dask.compute(
+                    (merged_friends,) = dask.compute(
                         {
                             k: friends[k].merge(
                                 step=config_runner["friend_merge_step"],
                                 base_path=friend_base,
                                 naming=_friend_merge_name,
+                                clean=False,
                                 dask=True,
                             )
                             for k in friends
@@ -500,15 +501,17 @@ if __name__ == '__main__':
                             base_path=friend_base,
                             naming=_friend_merge_name,
                         )
+                for v in friends.values():
+                    v.reset(confirm=False)
+                friends = merged_friends
                 from base_class.system.eos import EOS
                 from base_class.utils.json import DefaultEncoder
-                with fsspec.open(
-                    EOS(friend_base) / f'{config_runner["friend_metafile"]}.json', "wt"
-                ) as f:
+                metafile = EOS(friend_base) / f'{config_runner["friend_metafile"]}.json'
+                with fsspec.open(metafile, "wt") as f:
                     json.dump(friends, f, cls=DefaultEncoder)
                 logging.info("The following frends trees are created:")
                 logging.info(pretty_repr([*friends.keys()]))
-                logging.info(f"Saved friend trees and metadata to {friend_base}")
+                logging.info(f"Saved friend tree metadata to {metafile}")
 
             #
             #  Saving file
