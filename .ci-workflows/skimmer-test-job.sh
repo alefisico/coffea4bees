@@ -13,6 +13,6 @@ fi
 cat skimmer/metadata/tmp.yml
 sed -e "s#/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v1/NANOAODSIM#metadata/nano_TTToSemiLeptonic_ci.txt#" metadata/datasets_HH4b.yml > metadata/datasets_ci.yml
 echo "############### Running test processor"
-python runner.py -s -p skimmer/processor/skimmer_4b.py -c skimmer/metadata/tmp.yml -y UL18 -d TTToSemiLeptonic -op skimmer/metadata/ -o picoaod_datasets_TTToSemiLeptonic_UL18.yml -m metadata/datasets_ci.yml  -t
+python runner.py -s -p skimmer/processor/skimmer_4b.py -c skimmer/metadata/tmp.yml -y UL18 -d TTToSemiLeptonic -op skimmer/metadata/ -o picoaod_datasets_TTToSemiLeptonic_UL18.yml -m metadata/datasets_ci.yml  -t --dask
 ls -R skimmer/
 cd ../
