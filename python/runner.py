@@ -125,6 +125,7 @@ if __name__ == '__main__':
     )
     # disable numba debug warnings
     logging.getLogger('numba').setLevel(logging.WARNING)
+    logging.getLogger("lpcjobqueue").setLevel(logging.WARNING)
 
     logging.info(f"\nRunning with these parameters: {args}")
 
@@ -432,7 +433,9 @@ if __name__ == '__main__':
                     base_path=configs['config']['base_path'],
                     output=output,
                     step=config_runner.get('basketsize', configs['config']['step']),
-                    chunk_size=config_runner.get('picosize', config_runner['chunksize'])))[0]
+                    chunk_size=config_runner.get('picosize', config_runner['chunksize'])),
+                sync=True
+            )
             # only keep file name for each chunk
             for dataset, chunks in output.items():
                 chunks['files'] = [str(f.path) for f in chunks['files']]
@@ -444,7 +447,7 @@ if __name__ == '__main__':
                          f'({nEvent}/{elapsed})')
 
             metadata = processor.accumulate(
-                client.compute(fetch_metadata(fileset, dask=True))[0])
+                client.compute(fetch_metadata(fileset, dask=True), sync=True))
 
             for ikey in metadata:
                 if ikey in output:
@@ -482,7 +485,7 @@ if __name__ == '__main__':
             friends: dict[str, Friend] = output.get("friends", None)
             if friend_base is not None and friends is not None:
                 if args.run_dask:
-                    (merged_friends,) = client.compute(
+                    merged_friends = client.compute(
                         {
                             k: friends[k].merge(
                                 step=config_runner["friend_merge_step"],
@@ -492,7 +495,8 @@ if __name__ == '__main__':
                                 dask=True,
                             )
                             for k in friends
-                        }
+                        },
+                        sync=True,
                     )
                 else:
                     for k, v in friends.items():
@@ -529,6 +533,14 @@ if __name__ == '__main__':
         dask_report_file = f'/tmp/coffea4bees-dask-report-{datetime.today().strftime("%Y-%m-%d_%H-%M-%S")}.html'
         with performance_report(filename=dask_report_file):
             run_job()
+        try:
+            cluster.close()
+        except RuntimeError:
+            ...
+        try:
+            client.close()
+        except RuntimeError:
+            ...
         logging.info(f'Dask performace report saved in {dask_report_file}')
     else:
         run_job()
