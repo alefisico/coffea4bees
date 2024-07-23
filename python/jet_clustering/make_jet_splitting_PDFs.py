@@ -246,7 +246,7 @@ def test_nominal_PDFs(config, output_file_name):
                     print(len(xcenters))
                     print(len(ycenters))
 
-                    num_samples = 10000
+                    num_samples = 100000
 
                     # Draw samples
                     sampled_indices = np.random.choice(len(probabilities_flat), size=num_samples, p=probabilities_flat)
@@ -254,9 +254,15 @@ def test_nominal_PDFs(config, output_file_name):
                     xcenters_flat = np.repeat(xcenters, len(ycenters))
                     ycenters_flat = np.tile(ycenters, len(xcenters))
 
+                    print(sampled_indices[0:10])
+                    
                     sampled_x = xcenters_flat[sampled_indices]
                     sampled_y = ycenters_flat[sampled_indices]
 
+                    print(sampled_x[0:10])
+                    print(sampled_y[0:10])
+
+                    
                     # Plot the original 2D histogram
                     plt.figure(figsize=(12, 6))
                     plt.subplot(1, 2, 1)
@@ -310,8 +316,8 @@ def doPlots(debug=False):
 
     splitting_config = {}
     splitting_config["bb"]   = bb_hist_name
-    splitting_config["bj"]   = bj_hist_name
-    splitting_config["b(bj)"]   = b_bj_hist_name
+#    splitting_config["bj"]   = bj_hist_name
+#    splitting_config["b(bj)"]   = b_bj_hist_name
 
     output_file_name_vs_pT = args.outputFolder+"/clustering_pdfs_vs_pT.yml"
     make_PDFs_vs_Pt(splitting_config, output_file_name_vs_pT)
