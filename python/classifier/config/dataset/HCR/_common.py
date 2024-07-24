@@ -24,20 +24,6 @@ class _Derived:
 class Common(LoadGroupedRoot):
     _year_pattern = re.compile(r"20\d{2}")
 
-    _other_branches = [
-        "ZZSR",
-        "ZHSR",
-        "HHSR",
-        "SR",
-        "SB",
-        "fourTag",
-        "threeTag",
-        "passHLT",
-        "pseudoTagWeight",
-        Columns.event,
-        Columns.weight,
-    ]
-
     def __init__(self):
         super().__init__()
         from classifier.df.tools import drop_columns, map_selection_to_index
@@ -122,7 +108,7 @@ class Common(LoadGroupedRoot):
     @cached_property
     def _branches(self):
         return set(
-            self._other_branches
+            self.other_branches()
             + InputBranch.feature_ancillary
             + InputBranch.feature_CanJet
             + InputBranch.feature_NotCanJet
@@ -137,3 +123,27 @@ class Common(LoadGroupedRoot):
     ) -> Iterable[
         tuple[Iterable[Iterable[str]], Iterable[Callable[[pd.DataFrame], pd.DataFrame]]]
     ]: ...
+
+    def other_branches(self):
+        return [
+            "ZZSR",
+            "ZHSR",
+            "HHSR",
+            "SR",
+            "SB",
+            "fourTag",
+            "threeTag",
+            "passHLT",
+            "pseudoTagWeight",
+            Columns.event,
+            Columns.weight,
+        ]
+
+    def debug(self):
+        import logging
+
+        from rich.pretty import pretty_repr
+
+        logging.debug("files", pretty_repr(self.files))
+        logging.debug("preprocessors", pretty_repr(self.preprocessors))
+        logging.debug("postprocessors", pretty_repr(self.postprocessors))

@@ -34,6 +34,12 @@ class MultiPlatformHandler(logging.Handler):
         record.__class__ = MultiPlatformLogRecord
         record.name = Recorder.name()
         record.pathname = RepoInfo.get_url(record.pathname)
+        if isinstance(record.msg, str) and record.args:
+            try:
+                record.msg = record.msg % record.args
+                record.args = None
+            except TypeError:
+                ...
         self._emit(record)
 
     @post_to_monitor(max_retry=1)

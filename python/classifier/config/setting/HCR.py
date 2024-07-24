@@ -18,6 +18,10 @@ class InputBranch(Cascade):
     def get__feature_NotCanJet(cls, var: list[str]):
         return [f"NotCanJet_{f}" for f in var]
 
+    @classmethod
+    def get__feature_ancillary(cls, var: list[str]):
+        return var.copy()
+
 
 class Input(Cascade):
     label: str = "label"

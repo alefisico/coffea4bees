@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from classifier.task import ArgParser
+from classifier.task import ArgParser, Dataset
 
 from ._common import Common
 
@@ -74,9 +74,14 @@ class FvT(Common):
         ]
 
 
-class FvT_picoAOD(FvT):
+class _PicoAOD(Dataset):
     argparser = ArgParser()
     argparser.remove_argument("--files", "--filelists")
+    argparser.add_argument(
+        "--metadata",
+        default="datasets_HH4b_2024_v1",
+        help="name of the metadata file",
+    )
     defaults = {"files": [], "filelists": []}
 
     def __init__(self):
@@ -84,7 +89,7 @@ class FvT_picoAOD(FvT):
         self.opts.filelists = self._filelists()
 
     def _filelists(self):
-        base = "metadata/datasets_HH4b_2024_v1.yml@@datasets.{dataset}.{year}.picoAOD{era}.files"
+        base = f"metadata/{self.opts.metadata}.yml@@datasets.{{dataset}}.{{year}}.picoAOD{{era}}.files"
         year = {
             "2016": ["UL16_preVFP", "UL16_postVFP"],
             "2017": ["UL17"],
@@ -112,9 +117,5 @@ class FvT_picoAOD(FvT):
             filelists.append(files)
         return filelists
 
-    def debug(self):
-        import logging
 
-        from rich.pretty import pretty_repr
-
-        logging.debug(pretty_repr(self.files))
+class FvT_picoAOD(_PicoAOD, FvT): ...

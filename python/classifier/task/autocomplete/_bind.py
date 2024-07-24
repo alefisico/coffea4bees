@@ -14,6 +14,7 @@ _WAIT_TIMEOUT = 10  # seconds
 NOSERVER = 254
 FILEDIR = 255
 
+_CONN_ERR = (FileNotFoundError, ConnectionRefusedError)
 
 def is_exit(args: list[str]):
     return len(args) == 1 and args[0] == _EXIT
@@ -31,12 +32,12 @@ def pipe_client():
             try:
                 client = Client(ADDRESS)
                 break
-            except FileNotFoundError:
+            except _CONN_ERR:
                 time.sleep(_WAIT_INTERVAL)
     else:
         try:
             client = Client(ADDRESS)
-        except FileNotFoundError:
+        except _CONN_ERR:
             sys.exit(NOSERVER)
     client.send(args)
     if is_exit(args):
