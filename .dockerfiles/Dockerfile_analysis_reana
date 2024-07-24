@@ -4,6 +4,7 @@ RUN dnf update -y && dnf install -y poppler-utils
 RUN pip install --upgrade pip
 RUN pip install pycodestyle 
 RUN pip install memory-profiler
+RUN pip install fsspec-xrootd
 RUN pip install reana-client
 
 RUN mkdir -p /home/user/coffea4bees/python/
