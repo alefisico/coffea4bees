@@ -2,6 +2,7 @@ if [[ $(hostname) = *lxplus* ]]; then
     echo """Running local in lxplus"""
     export workflow_name="workflow"
 else
+    source /afs/cern.ch/user/r/reana/public/reana/bin/activate
     export REANA_SERVER_URL=https://reana.cern.ch
     export REANA_ACCESS_TOKEN="${REANA_TOKEN}"
     export workflow_name="coffea4bees"
