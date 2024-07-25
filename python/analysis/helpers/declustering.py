@@ -1,0 +1,436 @@
+import numpy as np
+import awkward as ak
+from coffea.nanoevents.methods import vector
+from analysis.helpers.sample_jet_templates import sample_PDFs_vs_pT
+
+
+def extract_all_parentheses_substrings(s):
+    substrings = []
+    start_indices = []
+    counter = 0
+
+    for i, char in enumerate(s):
+        if char == '(':
+            if counter == 0:
+                start_indices.append(i)
+            counter += 1
+        elif char == ')':
+            counter -= 1
+            if counter == 0:
+                start_index = start_indices.pop(0)
+                substrings.append(s[start_index:i+1])
+
+    return substrings
+
+
+def children_jet_flavors(comb_flavor):
+
+    if len(comb_flavor) < 2:
+        print(f"ERROR len of combined flavor is too low {len(comb_flavor)}  {comb_flavor}")
+
+    sub_combs = extract_all_parentheses_substrings(comb_flavor)
+
+    if len(sub_combs) == 0:
+        child_A = comb_flavor[0]
+        child_B = comb_flavor[1]
+    elif len(sub_combs) == 1:
+        child_A = comb_flavor[0]
+        child_B = sub_combs[0]
+    elif len(sub_combs) == 2:
+        child_A = sub_combs[0]
+        child_B = sub_combs[1]
+    else:
+        print(f"ERROR comb_flavor is {comb_flavor} sub_combs is {sub_combs} len {len(sub_combs)}")
+
+    return child_A, child_B
+
+
+def get_list_of_combined_jet_types(jets):
+    """ 
+      returns a list of all the splitting types that are the results of a combination 
+        (ie: no b or j )
+    """
+    all_jet_types =  get_list_of_splitting_types(jets)
+    splitting_types = []
+    for _s in all_jet_types:
+
+        if len(_s) == 1:
+            continue
+
+        splitting_types.append(_s)
+
+    return splitting_types
+
+
+def get_list_of_ISR_splittings(splitting_types):
+
+    ISR_splittings = []
+    for _s in splitting_types:
+
+        if len(_s) == 1:
+            continue
+
+        child_A, child_B = children_jet_flavors(_s)
+
+        if child_A.count("b") == 0 and child_B.count("b") > 1:
+            ISR_splittings.append(_s)
+    return ISR_splittings
+
+
+def get_list_of_splitting_types(splittings):
+    unique_splittings = set(ak.flatten(splittings.jet_flavor).to_list())
+    return list(unique_splittings)
+
+
+def compute_decluster_variables(clustered_splittings):
+
+    #
+    # z-axis
+    #
+    z_axis      = ak.zip({"x": 0, "y": 0, "z": 1,}, with_name="ThreeVector", behavior=vector.behavior,)
+    boost_vec_z = ak.zip({"x": 0, "y": 0, "z": clustered_splittings.boostvec.z,}, with_name="ThreeVector", behavior=vector.behavior,)
+
+    #
+    #  Boost to pz0
+    #
+    clustered_splittings_pz0        = clustered_splittings.boost(-boost_vec_z)
+    clustered_splittings_part_A_pz0 = clustered_splittings.part_A.boost(-boost_vec_z)
+    clustered_splittings_part_B_pz0 = clustered_splittings.part_B.boost(-boost_vec_z)
+
+    comb_z_plane_hat = z_axis.cross(clustered_splittings_pz0).unit
+    decay_plane_hat = clustered_splittings_part_A_pz0.cross(clustered_splittings_part_B_pz0).unit
+
+    #
+    #  Clustering (calc variables to histogram)
+    #
+    clustered_splittings["zA"]        = clustered_splittings_pz0.dot(clustered_splittings_part_A_pz0) / (clustered_splittings_pz0.pt**2)
+    clustered_splittings["mA"]        = clustered_splittings.part_A.mass
+    clustered_splittings["rhoA"]      = clustered_splittings.part_A.mass / (clustered_splittings.pt * clustered_splittings.zA)
+    clustered_splittings["abs_eta"]   = np.abs(clustered_splittings.eta)
+
+    clustered_splittings["mB"]        = clustered_splittings.part_B.mass
+    clustered_splittings["rhoB"]      = clustered_splittings.part_B.mass / (clustered_splittings.pt * (1 - clustered_splittings.zA))
+
+    clustered_splittings["thetaA"]    = np.arccos(clustered_splittings_pz0.unit.dot(clustered_splittings_part_A_pz0.unit))
+    clustered_splittings["tan_thetaA"]    = np.tan(np.arccos(clustered_splittings_pz0.unit.dot(clustered_splittings_part_A_pz0.unit)))
+    clustered_splittings["decay_phi"] = np.arccos(decay_plane_hat.dot(comb_z_plane_hat))
+    clustered_splittings["dr_AB"]     = clustered_splittings.part_A.delta_r(clustered_splittings.part_B)
+    clustered_splittings["dpt_AB"]    = clustered_splittings.part_A.pt - (clustered_splittings.pt * clustered_splittings.zA)
+    return
+
+
+def rotateZ(particles, angle):
+    sinT = np.sin(angle)
+    cosT = np.cos(angle)
+    x_rotated = cosT * particles.x - sinT * particles.y
+    y_rotated = sinT * particles.x + cosT * particles.y
+
+    return ak.zip(
+        {
+            "x": x_rotated,
+            "y": y_rotated,
+            "z": particles.z,
+            "t": particles.t,
+        },
+        with_name="LorentzVector",
+        behavior=vector.behavior,
+    )
+
+
+def rotateX(particles, angle):
+    sinT = np.sin(angle)
+    cosT = np.cos(angle)
+    y_rotated = cosT * particles.y - sinT * particles.z
+    z_rotated = sinT * particles.y + cosT * particles.z
+
+    return ak.zip(
+        {
+            "x": particles.x,
+            "y": y_rotated,
+            "z": z_rotated,
+            "t": particles.t,
+        },
+        with_name="LorentzVector",
+        behavior=vector.behavior,
+    )
+
+
+
+def decluster_combined_jets(input_jet):
+
+    #
+    #  Need a nested way to propogate the jet flavors
+    #
+    n_jets = np.sum(ak.num(input_jet))
+
+    jet_flav_flat = ak.flatten(input_jet.jet_flavor)
+    simple_comb_mask = (np.char.str_len(jet_flav_flat) == 2)
+
+    jet_flav_child_A = np.full(n_jets, "XXX")
+    jet_flav_child_B = np.full(n_jets, "XXX")
+
+    #
+    #  The simple combinations
+    #
+    _simple_flav_child_A = [s[0] for s in jet_flav_flat[simple_comb_mask]]
+    _simple_flav_child_B = [s[1] for s in jet_flav_flat[simple_comb_mask]]
+    jet_flav_child_A[simple_comb_mask] = _simple_flav_child_A
+    jet_flav_child_B[simple_comb_mask] = _simple_flav_child_B
+
+
+    #
+    #  The nested combinations
+    #
+    _nested_flav_child_A = [s.lstrip("(").split("(")[0] for s in jet_flav_flat[~simple_comb_mask]]
+    _nested_flav_child_B = [s.split("(")[1].rstrip(")") for s in jet_flav_flat[~simple_comb_mask]]
+
+    jet_flav_child_A[~simple_comb_mask] = _nested_flav_child_A
+    jet_flav_child_B[~simple_comb_mask] = _nested_flav_child_B
+
+    jet_flavor_A = ak.unflatten(jet_flav_child_A, ak.num(input_jet))
+    jet_flavor_B = ak.unflatten(jet_flav_child_B, ak.num(input_jet))
+
+
+    combined_pt = input_jet.pt
+    tanThetaA = np.tan(input_jet.thetaA)
+    tanThetaB = input_jet.zA / (1 - input_jet.zA) * tanThetaA
+
+    #
+    #  pA (in frame with pz=0 phi=0 decay_phi = 0)
+    #
+    pA_pz0_px = input_jet.zA * combined_pt
+    pA_pz0_py = 0
+    pA_pz0_pz = - input_jet.zA * combined_pt * tanThetaA
+    #pA_mass   = input_jet.rhoA * input_jet.pt * input_jet.zA
+    pA_mass   = input_jet.mA
+    pA_pz0_E  = np.sqrt(pA_pz0_px**2 + pA_pz0_pz**2 + pA_mass**2)
+
+    pA_pz0_phi0_decayPhi0 = ak.zip(
+        {
+            "x": pA_pz0_px,
+            "y": pA_pz0_py,
+            "z": pA_pz0_pz,
+            "t": pA_pz0_E,
+        },
+        with_name="LorentzVector",
+        behavior=vector.behavior,
+    )
+
+    pB_pz0_px = (1 - input_jet.zA) * combined_pt
+    pB_pz0_py = 0
+    pB_pz0_pz = (1 - input_jet.zA) * combined_pt * tanThetaB
+    #pB_mass   = input_jet.rhoB * input_jet.pt * (1 - input_jet.zA)
+    pB_mass   = input_jet.mB
+    pB_pz0_E  = np.sqrt(pB_pz0_px**2 + pB_pz0_pz**2 + pB_mass**2)
+
+    pB_pz0_phi0_decayPhi0 = ak.zip(
+        {
+            "x": pB_pz0_px,
+            "y": pB_pz0_py,
+            "z": pB_pz0_pz,
+            "t": pB_pz0_E,
+        },
+        with_name="LorentzVector",
+        behavior=vector.behavior,
+    )
+
+    #
+    # Do Rotation of the decay plane
+    #
+
+    # Pseudo-random number to decide if we rotate by phi or phi + pi
+    decay_phi = input_jet.decay_phi + np.pi * ((input_jet.pt % 1) > 0.5)
+
+    pA_pz0_phi0 = rotateX(pA_pz0_phi0_decayPhi0, decay_phi)
+    pB_pz0_phi0 = rotateX(pB_pz0_phi0_decayPhi0, decay_phi)
+
+    #
+    #  Boost back to jet pZ
+    #
+    boost_vec_z = ak.zip(
+        {
+            "x": 0,
+            "y": 0,
+            "z": input_jet.boostvec.z,
+        },
+        with_name="ThreeVector",
+        behavior=vector.behavior,
+    )
+
+    pA_phi0 = pA_pz0_phi0.boost(boost_vec_z)
+    pB_phi0 = pB_pz0_phi0.boost(boost_vec_z)
+
+    #
+    #  Rotate to jet phi
+    #
+    pA = rotateZ(pA_phi0, input_jet.phi)
+    pB = rotateZ(pB_phi0, input_jet.phi)
+
+    pA = ak.zip(
+        {
+            "pt":  pA.pt,
+            "eta": pA.eta,
+            "phi": pA.phi,
+            "mass":pA.mass,
+            "jet_flavor":jet_flavor_A,
+        },
+        with_name="PtEtaPhiMLorentzVector",
+        behavior=vector.behavior,
+    )
+
+    pB = ak.zip(
+        {
+            "pt":  pB.pt,
+            "eta": pB.eta,
+            "phi": pB.phi,
+            "mass":pB.mass,
+            "jet_flavor":jet_flavor_B,
+        },
+        with_name="PtEtaPhiMLorentzVector",
+        behavior=vector.behavior,
+    )
+
+
+    return pA, pB
+    #return ak.concatenate([pA, pB], axis=1)
+
+
+
+def decluster_splitting_types(input_jets, splitting_types, input_pdfs):
+
+    #
+    #  Create a mask for all the jets that need declustered
+    #
+    input_jets['split_mask'] = False
+    for _s in splitting_types:
+        _split_mask  = input_jets.jet_flavor == _s
+        input_jets["split_mask"] = _split_mask | input_jets.split_mask
+
+    #
+    #  Save the jets that dont need to be declustered
+    #
+    unclustered_jets = input_jets[~input_jets.split_mask]
+
+    #
+    #  Mask the jets to be declustered
+    #
+    input_jets_to_decluster = input_jets[input_jets.split_mask]
+
+    #
+    #  Need to iterate b/c
+    #   - Some unclusterings fail the jet pt and eta
+    #   - Some lead to dR too close (Not checked yet!)
+    #   - Some of the splittings are recursive (no implemented yet!)
+    num_trys = 0
+
+    while(ak.any(input_jets_to_decluster)):
+
+        splittings_info = []
+
+        for _s in splitting_types:
+
+            # Pre compute these to save time
+            _s_mask = input_jets_to_decluster.jet_flavor == _s
+            _num_samples   = np.sum(ak.num(input_jets_to_decluster[_s_mask]))
+            _indicies = np.where(ak.flatten(_s_mask))
+            _indicies_tuple = (_indicies[0].to_list())
+
+            splittings_info.append((_s, _num_samples, _indicies_tuple))
+
+
+        #
+        #  Sample the PDFs,  add sampled varibales to the jets to be declustered
+        #
+        sample_PDFs_vs_pT(input_jets_to_decluster, input_pdfs, splittings_info)
+
+        #
+        #  do the declustering
+        #
+        declustered_jets_A, declustered_jets_B  = decluster_combined_jets(input_jets_to_decluster)
+
+        #
+        #  Check for declustered jets vailing kinematic requirements
+        #
+        fail_pt_mask  = (declustered_jets_A.pt < 40) | (declustered_jets_B.pt < 40)
+        fail_eta_mask = (np.abs(declustered_jets_A.eta) > 2.5) | (np.abs(declustered_jets_B.eta) > 2.5)
+        fail_dr_mask  = declustered_jets_A.delta_r(declustered_jets_B) < 0.4
+        clustering_fail = fail_pt_mask | fail_eta_mask | fail_dr_mask
+
+        print(ak.any(fail_dr_mask))
+        if num_trys > 4:
+            print(f"Bailing with {np.sum(ak.num(input_jets_to_decluster))}\n")
+            clustering_fail = ~(fail_pt_mask | ~fail_pt_mask)  #All False
+
+        #
+        #  Save unclustered jets that are OK
+        #
+        unclustered_jets = ak.concatenate([unclustered_jets, declustered_jets_A[~clustering_fail], declustered_jets_B[~clustering_fail]], axis=1)
+
+        #
+        #  Try again with the other jets
+        #
+        #print(f"Was {np.sum(ak.num(input_jets_decluster))}\n")
+        input_jets_to_decluster = input_jets_to_decluster[clustering_fail]
+        #print(f"Now {np.sum(ak.num(input_jets_decluster))}\n")
+        num_trys += 1
+
+    return unclustered_jets
+
+
+
+
+def make_synthetic_event(input_jets, input_pdfs):
+
+
+    #
+    # This needs to be recurseive !!!
+    #
+
+    #
+    #  Get all the different types of splitted needed
+    #
+    splitting_types = get_list_of_combined_jet_types(input_jets)
+
+    while len(splitting_types):
+
+        input_jets = decluster_splitting_types(input_jets, splitting_types, input_pdfs)
+
+        splitting_types = get_list_of_combined_jet_types(input_jets)
+
+    return input_jets
+    
+
+
+def clean_ISR(clustered_jets, splittings):
+
+    all_jet_types =  get_list_of_splitting_types(clustered_jets)
+
+    ISR_splittings = get_list_of_ISR_splittings(all_jet_types)
+
+
+    #
+    #  Will need recusion here
+    #
+    clustered_jets_noISR = clustered_jets
+
+    for _isr_splitting in ISR_splittings:
+
+        ISR_mask = clustered_jets.jet_flavor == _isr_splitting
+        ISR_jets = clustered_jets[ISR_mask]
+
+        ISR_splittings_mask = splittings.jet_flavor == 'j(bb)'
+        ISR_splittings = splittings[ISR_splittings_mask]
+
+        match_splitting = (ISR_splittings.delta_r(ISR_jets) == 0)
+        declustered_A = ISR_splittings[match_splitting].part_A
+
+        # To ADd
+        #  detclustered_A_jets = decluster(detclustered_A) # recurseive deculstering
+
+        declustered_B = ISR_splittings[match_splitting].part_B
+        declustered_ISR_jets = ak.concatenate([declustered_A, declustered_B], axis=1)
+
+        clustered_jets_noISR = clustered_jets[~ISR_mask]
+        clustered_jets_noISR = ak.concatenate([clustered_jets_noISR, declustered_ISR_jets], axis=1)
+
+    return clustered_jets_noISR
