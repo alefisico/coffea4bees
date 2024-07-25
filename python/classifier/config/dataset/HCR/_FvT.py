@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from classifier.task import ArgParser, Dataset
 
-from ._common import Common
+from ._common import Common, group_year
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -39,13 +39,11 @@ class FvT(Common):
         help="prescale 3b ttbar events",
     )
 
-    def label_from_group(self):
-        return ()
-
     def preprocess_by_group(self):
         from classifier.df.tools import add_label_index_from_column, prescale
 
         return [
+            group_year(),
             (
                 [("data",)],
                 [
@@ -104,17 +102,14 @@ class _PicoAOD(Dataset):
         ttbar = ["TTTo2L2Nu", "TTToHadronic", "TTToSemiLeptonic"]
         filelists = []
         for k, v in year.items():
-            files = [f"data,{k}"]
+            data_fs = [f"data,year:{k}"]
+            ttbar_fs = [f"ttbar,year:{k}"]
             for y in v:
                 for e in era[y]:
-                    files.append(base.format(dataset="data", year=y, era=f".{e}"))
-            filelists.append(files)
-        for k, v in year.items():
-            files = [f"ttbar,{k}"]
-            for y in v:
+                    data_fs.append(base.format(dataset="data", year=y, era=f".{e}"))
                 for tt in ttbar:
-                    files.append(base.format(dataset=tt, year=y, era=""))
-            filelists.append(files)
+                    ttbar_fs.append(base.format(dataset=tt, year=y, era=""))
+            filelists.extend((data_fs, ttbar_fs))
         return filelists
 
 

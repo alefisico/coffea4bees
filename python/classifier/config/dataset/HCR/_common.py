@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from abc import abstractmethod
+from collections import defaultdict
 from functools import cache, cached_property
 from typing import TYPE_CHECKING, Callable, Iterable
 
@@ -13,7 +14,7 @@ from ...setting.torch import KFold
 from .._df import LoadGroupedRoot
 
 if TYPE_CHECKING:
-    import pandas as pd
+    from classifier.df.tools import DFProcessor
 
 
 class _Derived:
@@ -21,12 +22,47 @@ class _Derived:
     ntag_index: str = "ntag_index"
 
 
-class Common(LoadGroupedRoot):
-    _year_pattern = re.compile(r"20\d{2}")
+class _group_processor:
+    def __init__(self, gs: Iterable[Iterable[str]], ps: Iterable[DFProcessor]):
+        self._gs = (*map(frozenset, gs),)
+        self._ps = (*ps,)
 
+    def __call__(self, groups: frozenset[str]):
+        if any(g <= groups for g in self._gs):
+            yield from self._ps
+
+
+class group_year:
+    __pattern = re.compile(r"year:(?P<year>20\d{2})")
+
+    def __call__(cls, groups: frozenset[str]):
+        from classifier.df.tools import add_columns
+
+        matched = (*filter(None, map(cls.__pattern.fullmatch, groups)),)
+        if len(matched) == 1:
+            yield add_columns(year=int(matched[0].group("year")))
+        elif len(matched) > 1:
+            raise ValueError(f"Multiple years found in {groups}")
+
+
+class group_single_label:
+    def __init__(self, *labels: str):
+        self._labels = frozenset(labels)
+
+    def __call__(self, groups: frozenset[str]):
+        from classifier.df.tools import add_label_index
+
+        matched = groups & self._labels
+        if len(matched) == 1:
+            yield add_label_index(next(iter(matched)))
+        elif len(matched) > 1:
+            raise ValueError(f"Multiple labels found in {groups}")
+
+
+class Common(LoadGroupedRoot):
     def __init__(self):
         super().__init__()
-        from classifier.df.tools import drop_columns, map_selection_to_index
+        from classifier.df.tools import drop_columns, map_selection_to_flag
 
         # fmt: off
         (
@@ -41,12 +77,12 @@ class Common(LoadGroupedRoot):
         )
         self.preprocessors.extend(
             [
-                map_selection_to_index(
+                map_selection_to_flag(
                     **enum_dict(MassRegion)
-                ).set(selection=_Derived.region_index, op="|"),
-                map_selection_to_index(
+                ).set(name=_Derived.region_index),
+                map_selection_to_flag(
                     **enum_dict(NTag)
-                ).set(selection=_Derived.ntag_index),
+                ).set(name=_Derived.ntag_index),
                 drop_columns(
                     "ZZSR", "ZHSR", "HHSR", "SR", "SB",
                     "fourTag", "threeTag", "pseudoTagWeight",
@@ -56,20 +92,9 @@ class Common(LoadGroupedRoot):
         )
         # fmt: on
 
-    def _get_year(self, groups: frozenset[str]):
-        matched = [*filter(self._year_pattern.fullmatch, groups)]
-        if len(matched) >= 1:
-            return int(matched[0])
-
-    def _get_label(self, groups: frozenset[str]):
-        matched = groups.intersection(self._label_from_group)
-        if len(matched) >= 1:
-            return next(iter(matched))
-
     @cache
     def from_root(self, groups: frozenset[str]):
         from classifier.df.io import FromRoot
-        from classifier.df.tools import add_columns, add_label_index
 
         friends = []
         for k, v in self.friends.items():
@@ -77,17 +102,9 @@ class Common(LoadGroupedRoot):
                 friends.extend(v)
 
         pres = []
-        for gs, ps in self._preprocess_by_group:
-            if any(map(lambda g: g <= groups, gs)):
-                pres.extend(ps)
+        for g in self._preprocess_by_group:
+            pres.extend(g(groups))
         pres.extend(self.preprocessors)
-
-        year = self._get_year(groups)
-        if year is not None:
-            pres.append(add_columns(year=year))
-        label = self._get_label(groups)
-        if label is not None:
-            pres.append(add_label_index(label))
 
         return FromRoot(
             friends=friends,
@@ -96,14 +113,14 @@ class Common(LoadGroupedRoot):
         )
 
     @cached_property
-    def _label_from_group(self):
-        return frozenset(self.label_from_group())
-
-    @cached_property
-    def _preprocess_by_group(self):
-        return [
-            ([frozenset(g) for g in gs], [*ps]) for gs, ps in self.preprocess_by_group()
-        ]
+    def _preprocess_by_group(self) -> list[_group_processor]:
+        pres = []
+        for i in self.preprocess_by_group():
+            if isinstance(i, tuple):
+                pres.append(_group_processor(*i))
+            else:
+                pres.append(i)
+        return pres
 
     @cached_property
     def _branches(self):
@@ -115,13 +132,11 @@ class Common(LoadGroupedRoot):
         )
 
     @abstractmethod
-    def label_from_group(self) -> Iterable[str]: ...
-
-    @abstractmethod
     def preprocess_by_group(
         self,
     ) -> Iterable[
-        tuple[Iterable[Iterable[str]], Iterable[Callable[[pd.DataFrame], pd.DataFrame]]]
+        tuple[Iterable[Iterable[str]], Iterable[DFProcessor]]
+        | Callable[[frozenset[str]], Iterable[DFProcessor]]
     ]: ...
 
     def other_branches(self):
@@ -144,6 +159,11 @@ class Common(LoadGroupedRoot):
 
         from rich.pretty import pretty_repr
 
-        logging.debug("files", pretty_repr(self.files))
-        logging.debug("preprocessors", pretty_repr(self.preprocessors))
-        logging.debug("postprocessors", pretty_repr(self.postprocessors))
+        pres = defaultdict(list)
+        for gs in self.files:
+            for p in self._preprocess_by_group:
+                pres[gs].extend(p(gs))
+        pres["common"] = self.preprocessors
+        logging.debug("files:", pretty_repr(self.files))
+        logging.debug("preprocessors:", pretty_repr(pres))
+        logging.debug("postprocessors:", pretty_repr(self.postprocessors))

@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from functools import cached_property, partial, reduce
 from itertools import chain
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
 from base_class.utils import unique
 from classifier.task import ArgParser, Dataset, converter, parse
@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     import pandas as pd
     from base_class.root import Friend
     from classifier.df.io import FromRoot, ToTensor
+    from classifier.df.tools import DFProcessor
     from classifier.monitor.progress import ProgressTracker
 
 # basic
@@ -22,8 +23,8 @@ class Dataframe(Dataset):
         from classifier.df.io import ToTensor
 
         self._to_tensor = ToTensor()
-        self._preprocessors: list[Callable[[pd.DataFrame], pd.DataFrame]] = []
-        self._postprocessors: list[Callable[[pd.DataFrame], pd.DataFrame]] = []
+        self._preprocessors: list[DFProcessor] = []
+        self._postprocessors: list[DFProcessor] = []
         self._trainables: list[_load_df] = []
 
     @property
@@ -47,7 +48,7 @@ class Dataframe(Dataset):
 
 class _load_df(ABC):
     to_tensor: ToTensor
-    postprocessors: list[Callable[[pd.DataFrame], pd.DataFrame]]
+    postprocessors: list[DFProcessor]
 
     def __call__(self):
         data = self.load()

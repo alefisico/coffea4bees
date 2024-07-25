@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable, Iterable, Optional
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -11,13 +11,16 @@ from base_class.root import Chain, Chunk, Friend
 
 from ..monitor.progress import ProgressTracker
 
+if TYPE_CHECKING:
+    from .tools import DFProcessor
+
 
 class FromRoot:
     def __init__(
         self,
         friends: Iterable[Friend] = None,
         branches: Callable[[set[str]], set[str]] = None,
-        preprocessors: Iterable[Callable[[pd.DataFrame], pd.DataFrame]] = None,
+        preprocessors: Iterable[DFProcessor] = None,
     ):
         self.chain = Chain()
         self.branches = branches
