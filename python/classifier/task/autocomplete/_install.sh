@@ -1,12 +1,13 @@
 #!/bin/bash
 _pyml_task_autocomplete() {
-    local cur opts
+    local cur cmd opts
     cur="${COMP_WORDS[COMP_CWORD]}"
-    opts=$(python -m classifier.task.autocomplete._bind "${COMP_WORDS[@]}" 2>&1)
+    cmd="${COMP_WORDS[@]:0:$COMP_CWORD+1}"
+    opts=$(python -m classifier.task.autocomplete._bind ${cmd} 2>&1)
     exit_code=$?
     while [ $exit_code -eq 254 ]; do
         (python -m classifier.task.autocomplete._core &)
-        opts=$(python -m classifier.task.autocomplete._bind wait "${COMP_WORDS[@]}" 2>&1)
+        opts=$(python -m classifier.task.autocomplete._bind wait ${cmd} 2>&1)
         exit_code=$?
     done
     if [ $exit_code -eq 0 ]; then
