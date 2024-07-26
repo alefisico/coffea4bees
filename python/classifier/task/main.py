@@ -69,9 +69,9 @@ class EntryPoint:
     def _fetch_module(cls, module: str, key: str) -> tuple[ModuleType, type[Task]]:
         return import_(*cls._fetch_module_name(module, key))
 
-    def _fetch_all(self):
+    def _fetch_all(self, *cats: str):
         self.mods: dict[str, list[Task]] = {}
-        for cat in self._keys:
+        for cat in cats:
             target = self._keys[cat]
             self.mods[cat] = []
             for imp, opts in self.args[cat]:
@@ -170,10 +170,9 @@ class EntryPoint:
         if cls.prelude is not NotImplemented:
             cls.prelude()
 
+        all_cats = [*self._keys]
         if not cls._no_init:
-            self._fetch_all()
-
-        self.main: Main = new(cls, self.args[_MAIN][1])
+            self._fetch_all(all_cats[0])
 
         from ..config import setting as cfg
 
@@ -197,6 +196,15 @@ class EntryPoint:
                 setup_reporter()
                 address = host if port is None else f"{host}:{port}"
                 logging.info(f"Connecting to Monitor {address}")
+        else:
+            from ..monitor import disable_monitor
+
+            disable_monitor()
+
+        if not cls._no_init:
+            self._fetch_all(*all_cats[1:])
+
+        self.main: Main = new(cls, self.args[_MAIN][1])
 
     def run(self, reproducible: Callable = None):
         from ..config import setting as cfg

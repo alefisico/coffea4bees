@@ -108,7 +108,7 @@ class LoadRoot(ABC, Dataframe):
         return unique(
             reduce(
                 list.__add__,
-                (parse.mapping(f, "file") for f in filelists),
+                (parse.mapping(f, "file") or [] for f in filelists),
                 files.copy(),
             )
         )

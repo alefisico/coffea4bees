@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from classifier.task import ArgParser, Dataset
+from classifier.task import ArgParser
 
+from . import _picoAOD
 from ._common import Common, group_year
 
 if TYPE_CHECKING:
@@ -31,7 +32,7 @@ def _ttbar_3b_prescale(df: pd.DataFrame):
     return df["threeTag"]
 
 
-class FvT(Common):
+class Background(Common):
     argparser = ArgParser()
     argparser.add_argument(
         "--ttbar-3b-prescale",
@@ -72,45 +73,4 @@ class FvT(Common):
         ]
 
 
-class _PicoAOD(Dataset):
-    argparser = ArgParser()
-    argparser.remove_argument("--files", "--filelists")
-    argparser.add_argument(
-        "--metadata",
-        default="datasets_HH4b_2024_v1",
-        help="name of the metadata file",
-    )
-    defaults = {"files": [], "filelists": []}
-
-    def __init__(self):
-        super().__init__()
-        self.opts.filelists = self._filelists()
-
-    def _filelists(self):
-        base = f"metadata/{self.opts.metadata}.yml@@datasets.{{dataset}}.{{year}}.picoAOD{{era}}.files"
-        year = {
-            "2016": ["UL16_preVFP", "UL16_postVFP"],
-            "2017": ["UL17"],
-            "2018": ["UL18"],
-        }
-        era = {
-            "UL16_preVFP": ["B", "C", "D", "E", "F"],
-            "UL16_postVFP": ["F", "G", "H"],
-            "UL17": ["B", "C", "D", "E", "F"],
-            "UL18": ["A", "B", "C", "D"],
-        }
-        ttbar = ["TTTo2L2Nu", "TTToHadronic", "TTToSemiLeptonic"]
-        filelists = []
-        for k, v in year.items():
-            data_fs = [f"data,year:{k}"]
-            ttbar_fs = [f"ttbar,year:{k}"]
-            for y in v:
-                for e in era[y]:
-                    data_fs.append(base.format(dataset="data", year=y, era=f".{e}"))
-                for tt in ttbar:
-                    ttbar_fs.append(base.format(dataset=tt, year=y, era=""))
-            filelists.extend((data_fs, ttbar_fs))
-        return filelists
-
-
-class FvT_picoAOD(_PicoAOD, FvT): ...
+class PicoAOD(_picoAOD.FvT, Background): ...

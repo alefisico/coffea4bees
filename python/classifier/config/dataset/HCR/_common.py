@@ -22,6 +22,11 @@ class _Derived:
     ntag_index: str = "ntag_index"
 
 
+def _sort_map(obj: dict[frozenset[str]]):
+    obj = {(*sorted(k),): v for k, v in obj.items()}
+    return {k: obj[k] for k in sorted(obj)}
+
+
 class _group_processor:
     def __init__(self, gs: Iterable[Iterable[str]], ps: Iterable[DFProcessor]):
         self._gs = (*map(frozenset, gs),)
@@ -33,7 +38,7 @@ class _group_processor:
 
 
 class group_year:
-    __pattern = re.compile(r"year:(?P<year>20\d{2})")
+    __pattern = re.compile(r"year:\w*(?P<year>\d{2}).*")
 
     def __call__(cls, groups: frozenset[str]):
         from classifier.df.tools import add_columns
@@ -163,7 +168,10 @@ class Common(LoadGroupedRoot):
         for gs in self.files:
             for p in self._preprocess_by_group:
                 pres[gs].extend(p(gs))
-        pres["common"] = self.preprocessors
-        logging.debug("files:", pretty_repr(self.files))
-        logging.debug("preprocessors:", pretty_repr(pres))
-        logging.debug("postprocessors:", pretty_repr(self.postprocessors))
+        logging.debug("files:", pretty_repr(_sort_map(self.files)))
+        logging.debug("friends:", pretty_repr(_sort_map(self.friends)))
+        logging.debug(
+            "preprocessors:",
+            pretty_repr(_sort_map(pres) | {"common": self.preprocessors}),
+        )
+        logging.debug("preprocessors:", pretty_repr(self.postprocessors))

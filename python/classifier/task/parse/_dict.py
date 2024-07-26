@@ -105,8 +105,8 @@ def mapping(arg: str, default: str = "yaml", formatter: str = None):
     if arg == "":
         return {}
 
-    def error(msg: str):
-        logging.error(f'{msg} when parsing "{arg}"')
+    def warn(msg: str):
+        logging.warning(f'{msg} when parsing "{arg}"')
 
     protocol, data = _mapping_scheme(arg)
     if protocol is None:
@@ -120,14 +120,14 @@ def mapping(arg: str, default: str = "yaml", formatter: str = None):
         else:
             result = _deserialize(data, protocol)
     except DeserializationError as e:
-        error(e.msg)
+        warn(e.msg)
         return
     if keys is not None:
         for i, k in enumerate(keys):
             try:
                 result = result[k]
             except Exception:
-                error(f'Failed to select key "{".".join(keys[:i+1])}"')
+                warn(f'Failed to select key "{".".join(keys[:i+1])}"')
                 return
     return result
 
