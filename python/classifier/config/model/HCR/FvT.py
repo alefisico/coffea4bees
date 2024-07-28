@@ -30,7 +30,7 @@ def _roc_data_selection(batch: BatchType):
     }
 
 
-class FvT(HCR):
+class Baseline(HCR):
     @staticmethod
     def loss(batch: BatchType):
         import torch
