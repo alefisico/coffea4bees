@@ -59,7 +59,7 @@ def doPlots(debug=False):
                 "norm": True,
                 "region":"SR",
                 "cut":"passPreSel",
-                "doRatio":0,
+                "doRatio":1,
                 "rebin":1,
                 "process":"data",
                 "histtype":"step",
@@ -67,17 +67,20 @@ def doPlots(debug=False):
 
         _split_name_0 = "splitting_" + _split
         _split_name_1 = "splitting_" + _split + "_re"
-
-
+        
+        
         plot([f"{_split_name_0}.drAB",       f"{_split_name_1}.drAB"],      **args)
         plot([f"{_split_name_0}.thetaA",     f"{_split_name_1}.thetaA"],    **args)
         plot([f"{_split_name_0}.decay_phi",  f"{_split_name_1}.decay_phi"], **args)
         plot([f"{_split_name_0}.mA",         f"{_split_name_1}.mA"],        **args)
+        plot([f"{_split_name_0}.mA_l",       f"{_split_name_1}.mA_l"],      **args)
         plot([f"{_split_name_0}.mB",         f"{_split_name_1}.mB"],        **args)
+        plot([f"{_split_name_0}.mB_l",       f"{_split_name_1}.mB_l"],      **args)
         plot([f"{_split_name_0}.zA",         f"{_split_name_1}.zA"],        **args)
         plot([f"{_split_name_0}.pt_l",       f"{_split_name_1}.pt_l"],      **args)
         plot([f"{_split_name_0}.eta",        f"{_split_name_1}.eta"],       **args)
     
+        args["doRatio"] = 0
         plot(f"{_split_name_0}.n", **args)
         plot(f"{_split_name_1}.n", **args)    
     
