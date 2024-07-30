@@ -7,6 +7,10 @@ class ClusterHists(Template):
     pt        = H((100,  0, 300, ('pt',    "pt [GeV]")))
     pt_l      = H((100,  0, 500, ('pt',    "pt [GeV]")))
 
+    pt_A        = H((100,  0, 300, ('part_A.pt',    "pt [GeV]")))
+    pt_B        = H((100,  0, 300, ('part_B.pt',    "pt [GeV]")))
+    dpt_AB        = H((50,  -50, 50, ('dpt_AB',    "pt [GeV]")))
+
     pz        = H((100, -500, 500, ('pz',    "pz [GeV]")))
 
 
@@ -85,7 +89,7 @@ class ClusterHists(Template):
                 (50, 0, 1.0,  ('rhoB', 'rho B')))
 
     mA_pT = H((5, 50, 500, ("pt", "pT")),
-                (50, 0, 50,  ('mA', 'mA [GeV]')))
+              (100, 0, 50,  ('mA', 'mA [GeV]')))
 
     mB_pT = H((5, 50, 500, ("pt", "pT")),
                 (50, 0, 50,  ('mB', 'mB [GeV]')))
@@ -96,7 +100,7 @@ class ClusterHists(Template):
     mB_l_pT = H((5, 50, 500, ("pt", "pT")),
                 (50, 0, 300,  ('mB', 'mB [GeV]')))
 
-    
+
 
     zA_pT = H((5, 50, 500, ("pt", "pT")),
               (50, 0.5, 1.3,  ('zA', 'z fraction')))
