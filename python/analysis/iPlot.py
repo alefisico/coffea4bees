@@ -13,10 +13,10 @@ import base_class.plots.iPlot_config as cfg
 #     Variable Binning
 
 
-def ls(option="var", match=None):
+def ls(option="var", var_match=None):
     for k in cfg.axisLabels[option]:
-        if match:
-            if k.find(match) != -1:
+        if var_match:
+            if k.find(var_match) != -1:
                 print(k)
         else:
             print(k)
@@ -101,21 +101,26 @@ def plot(var='selJets.pt', *, cut="passPreSel", region="SR", **kwargs):
         'doRatio'  : bool (False)
         'rebin'    : int (1),
     """
-    
+
     if kwargs.get("debug", False):
         print(f'kwargs = {kwargs}')
-    
+
     if type(var) is not list and var.find("*") != -1:
-        ls(match=var.replace("*", ""))
+        ls(var_match=var.replace("*", ""))
         return
-    
+
+    if type(var) is list and var[0].find("*") != -1:
+        ls(var_match=var[0].replace("*", ""))
+        return
+
+
     if len(cfg.hists) > 1:
         fig, ax = makePlot(cfg, var=var, cut=cut, region=region,
                            outputFolder=cfg.outputFolder, fileLabels=cfg.fileLabels, **kwargs)
     else:
         fig, ax = makePlot(cfg, var=var, cut=cut, region=region,
                            outputFolder=cfg.outputFolder, **kwargs)
-    
+
 
     fileName = "test.pdf"
     fig.savefig(fileName)
@@ -182,4 +187,3 @@ if __name__ == '__main__':
     cfg.fileLabels = args.fileLabels
     cfg.axisLabels, cfg.cutList = read_axes_and_cuts(cfg.hists, cfg.plotConfig)
     print_cfg(cfg)
-
