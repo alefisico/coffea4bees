@@ -101,7 +101,7 @@ def plot(var='selJets.pt', *, cut="passPreSel", region="SR", **kwargs):
         'doRatio'  : bool (False)
         'rebin'    : int (1),
     """
-
+    print()
     if kwargs.get("debug", False):
         print(f'kwargs = {kwargs}')
 
@@ -126,6 +126,7 @@ def plot(var='selJets.pt', *, cut="passPreSel", region="SR", **kwargs):
     fig.savefig(fileName)
     plt.close()
     os.system("open "+fileName)
+    print()
 
     if kwargs.get("debug", False):
         return fig, ax

@@ -184,6 +184,78 @@ def centers_to_edges(centers):
     return edges
 
 
+def get_bins_xMin_xMax_from_centers(centers):
+    nBins = len(centers)
+    bin_half_width = 0.5*(centers[1]  - centers[0])
+    xMin  = centers[0]  - bin_half_width
+    xMax  = centers[-1] + bin_half_width
+
+    return nBins, xMin, xMax
+
+
+def test_PDFs_vs_Pt(config, output_file_name):
+    splittings = list(config.keys())
+    varNames   = list(config[splittings[0]].keys())
+
+
+
+
+    #
+    #  test the Pdfs
+    #
+    with open(output_file_name, 'r') as input_file:
+
+        input_pdfs = yaml.safe_load(input_file)
+        nPt_bins = len(input_pdfs["pt_bins"]) - 1
+
+        for _s in splittings:
+
+            print(f"Doing splitting {_s}")
+
+            for _v in varNames:
+                print(f"\nDoing var splitting {_v}")
+
+                if _v.find("_vs_") == -1:
+                    is_1d_hist = True
+                else:
+                    is_1d_hist = False
+
+
+                if is_1d_hist:
+
+                    for _iPt in range(nPt_bins):
+
+                        probs   = np.array(input_pdfs[_s][_v][_iPt]["probs"],       dtype=float)
+                        centers = np.array(input_pdfs[_s][_v][_iPt]["bin_centers"], dtype=float)
+
+                        nBins, xMin, xMax = get_bins_xMin_xMax_from_centers(centers)
+
+                        num_samples = 10000
+                        samples = np.random.choice(centers, size=num_samples, p=probs)
+
+                        sample_hist = hist.Hist.new.Reg(nBins, xMin, xMax).Double()
+                        sample_hist.fill(samples)
+
+                        sample_pdf  = hist.Hist.new.Reg(nBins, xMin, xMax).Double()
+                        sample_pdf[...] = probs * num_samples
+
+                        sample_hist.plot(label="samples")
+                        sample_pdf.plot(label="pdf")
+
+                    plt.xlabel(_v)
+                    plt.legend()
+                    plt.savefig(args.outputFolder+f"/test_sampling_pt_{_s}_{_v}.pdf")
+                    plt.yscale("log")
+                    plt.savefig(args.outputFolder+f"/test_sampling_pt_{_s}_{_v}_log.pdf")
+
+                    plt.close()
+
+
+                else:
+                    pass
+
+
+
 def test_nominal_PDFs(config, output_file_name):
 
     splittings = list(config.keys())
@@ -206,16 +278,14 @@ def test_nominal_PDFs(config, output_file_name):
                     is_1d_hist = False
 
                 if is_1d_hist:
+
                     probs   = np.array(input_pdfs[_s][_v]["probs"],       dtype=float)
                     centers = np.array(input_pdfs[_s][_v]["bin_centers"], dtype=float)
 
+                    nBins, xMin, xMax = get_bins_xMin_xMax_from_centers(centers)
+
                     num_samples = 10000
                     samples = np.random.choice(centers, size=num_samples, p=probs)
-
-                    nBins = len(centers)
-                    bin_half_width = 0.5*(centers[1]  - centers[0])
-                    xMin  = centers[0]  - bin_half_width
-                    xMax  = centers[-1] + bin_half_width
 
                     sample_hist = hist.Hist.new.Reg(nBins, xMin, xMax).Double()
                     sample_hist.fill(samples)
@@ -320,7 +390,7 @@ def doPlots(debug=False):
 
     output_file_name_vs_pT = args.outputFolder+"/clustering_pdfs_vs_pT.yml"
     make_PDFs_vs_Pt(splitting_config, output_file_name_vs_pT)
-    #test_PDFs_vs_Pt(splitting_config, output_file_name_vs_pT)
+    test_PDFs_vs_Pt(splitting_config, output_file_name_vs_pT)
 
     #
     #  No Pt Depedence
