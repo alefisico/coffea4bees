@@ -9,7 +9,8 @@ import uproot
 
 from analysis.helpers.networks import HCREnsemble
 from analysis.helpers.topCandReconstruction import find_tops, dumpTopCandidateTestVectors, buildTop, mW, mt, find_tops_slow
-from analysis.helpers.clustering import cluster_bs, make_synthetic_event, clean_ISR
+from analysis.helpers.clustering   import cluster_bs
+from analysis.helpers.declustering import make_synthetic_event, clean_ISR
 
 from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
 from coffea import processor
