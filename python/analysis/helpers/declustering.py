@@ -156,7 +156,7 @@ def rotateX(particles, angle):
 
 
 
-def decluster_combined_jets(input_jet):
+def decluster_combined_jets(input_jet, debug=False):
 
     n_jets = np.sum(ak.num(input_jet))
 
@@ -177,9 +177,9 @@ def decluster_combined_jets(input_jet):
 
     #
     #  The nested combinations
-    #
-    _nested_flav_child_A = [s.lstrip("(").split("(")[0] for s in jet_flav_flat[~simple_comb_mask]]
-    _nested_flav_child_B = [s.split("(")[1].rstrip(")") for s in jet_flav_flat[~simple_comb_mask]]
+    #   # A is always the more complex
+    _nested_flav_child_A = [s.split("(")[1].rstrip(")") for s in jet_flav_flat[~simple_comb_mask]]
+    _nested_flav_child_B = [s.lstrip("(").split("(")[0] for s in jet_flav_flat[~simple_comb_mask]]
 
     #print(f'child A {_nested_flav_child_A}')
     #print(f'child B {_nested_flav_child_B}')
@@ -190,7 +190,6 @@ def decluster_combined_jets(input_jet):
 
     jet_flavor_A = ak.unflatten(jet_flav_child_A, ak.num(input_jet))
     jet_flavor_B = ak.unflatten(jet_flav_child_B, ak.num(input_jet))
-
 
     combined_pt = input_jet.pt
     tanThetaA = np.tan(input_jet.thetaA)
@@ -223,6 +222,8 @@ def decluster_combined_jets(input_jet):
     #pB_mass   = input_jet.rhoB * input_jet.pt * (1 - input_jet.zA)
     pB_mass   = input_jet.mB
     pB_pz0_E  = np.sqrt(pB_pz0_px**2 + pB_pz0_pz**2 + pB_mass**2)
+
+
 
     pB_pz0_phi0_decayPhi0 = ak.zip(
         {
@@ -297,7 +298,7 @@ def decluster_combined_jets(input_jet):
 
 
 
-def decluster_splitting_types(input_jets, splitting_types, input_pdfs):
+def decluster_splitting_types(input_jets, splitting_types, input_pdfs, debug=False):
 
     #
     #  Create a mask for all the jets that need declustered
@@ -312,6 +313,8 @@ def decluster_splitting_types(input_jets, splitting_types, input_pdfs):
     #
     unclustered_jets = input_jets[~input_jets.split_mask]
 
+
+
     #
     #  Mask the jets to be declustered
     #
@@ -324,7 +327,11 @@ def decluster_splitting_types(input_jets, splitting_types, input_pdfs):
     #   - Some of the splittings are recursive (no implemented yet!)
     num_trys = 0
 
+
+
     while(ak.any(input_jets_to_decluster)):
+
+        if debug: print(f" (decluster_splitting_types) num_trys {num_trys} ")
 
         splittings_info = []
 
@@ -347,7 +354,7 @@ def decluster_splitting_types(input_jets, splitting_types, input_pdfs):
         #
         #  do the declustering
         #
-        declustered_jets_A, declustered_jets_B  = decluster_combined_jets(input_jets_to_decluster)
+        declustered_jets_A, declustered_jets_B  = decluster_combined_jets(input_jets_to_decluster, debug=debug)
 
         #
         #  Check for declustered jets vailing kinematic requirements
@@ -380,7 +387,7 @@ def decluster_splitting_types(input_jets, splitting_types, input_pdfs):
 
 
 
-def make_synthetic_event_core(input_jets, input_pdfs):
+def make_synthetic_event_core(input_jets, input_pdfs, debug=False):
 
 
     #
@@ -392,20 +399,22 @@ def make_synthetic_event_core(input_jets, input_pdfs):
     #
     splitting_types = get_list_of_combined_jet_types(input_jets)
 
+    if debug: print(f" (make_synthetic_event_core) splitting_types {splitting_types}")
+
     while len(splitting_types):
 
-        input_jets = decluster_splitting_types(input_jets, splitting_types, input_pdfs)
+        input_jets = decluster_splitting_types(input_jets, splitting_types, input_pdfs, debug=debug)
 
         splitting_types = get_list_of_combined_jet_types(input_jets)
 
 
-
+    if debug: print(f" (make_synthetic_event_core) splitting_types now {splitting_types}")
     #min_dr = get_min_dr(input_jets)
 
     return input_jets
 
-def make_synthetic_event(input_jets, input_pdfs):
-    return make_synthetic_event_core(input_jets, input_pdfs)
+def make_synthetic_event(input_jets, input_pdfs, debug=False):
+    return make_synthetic_event_core(input_jets, input_pdfs, debug=debug)
 
 
 # def make_synthetic_event(input_jets, input_pdfs):

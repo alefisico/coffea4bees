@@ -72,7 +72,24 @@ class clusteringTestCase(unittest.TestCase):
         )
 
 
+        self.input_jet_pt_bbj      = [[121.32373046875, 104.4700927734375, 98.575927734375, 76.08642578125, 40.5], [189.64794921875, 103.1923828125, 54.4713134765625, 53.684326171875, 52.28125], [286.233642578125, 160.190185546875, 137.513427734375, 63.8873291015625, 47.0625], [137.4715576171875, 96.1270751953125, 75.84152221679688, 65.9375, 50.4638671875], [323.55615234375, 287.734375, 133.1051025390625, 72.7578125, 44.84375], [212.763427734375, 153.80810546875, 93.18988037109375, 55.65625, 51.38140869140625], [182.375, 159.4368896484375, 117.1884765625, 72.4398193359375, 61.2030029296875], [166.875, 133.4300537109375, 82.14520263671875, 61.18505859375, 55.551177978515625], [188.04296875, 131.243408203125, 84.04052734375, 73.125, 59.80682373046875], [211.049072265625, 124.302978515625, 113.849609375, 96.976318359375, 64.9375]]
+        self.input_jet_eta_bbj     = [[-0.27557373046875, -0.7879638671875, 1.0927734375, 1.110107421875, 2.0224609375], [-0.556884765625, 1.50048828125, -1.5009765625, 2.0869140625, 0.9755859375], [0.798095703125, 0.99658203125, -2.26416015625, -0.6783447265625, -0.12933349609375], [1.687744140625, -0.25347900390625, -2.001953125, 1.846923828125, -0.14910888671875], [0.9591064453125, -0.7325439453125, -0.18792724609375, 1.870361328125, 1.698974609375], [1.033203125, -0.6864013671875, 1.393798828125, 1.2431640625, -1.3427734375], [-0.44427490234375, 0.34490966796875, -0.6148681640625, 0.174468994140625, 0.1990966796875], [1.328125, -0.83154296875, -1.185791015625, -0.37445068359375, 1.9853515625], [0.31536865234375, 1.581787109375, 0.690185546875, 0.30084228515625, -1.00927734375], [0.015628814697265625, 1.1064453125, 1.861328125, -0.9864501953125, 2.30322265625]]
+        self.input_jet_phi_bbj     = [[0.8409423828125, 0.7689208984375, 4.4438300132751465, 3.3007636070251465, -1.004638671875], [1.4921875, 4.0444159507751465, 3.9799628257751465, 6.166562557220459, -0.5740966796875], [5.7452216148376465, 2.49169921875, 3.1752753257751465, 0.9876708984375, -0.06793212890625], [2.87060546875, 0.0531463623046875, 5.4795966148376465, -0.215606689453125, 2.923828125], [0.38848876953125, 3.3657050132751465, 2.99462890625, 1.03857421875, -1.219970703125], [2.921875, 0.23577880859375, 4.8925604820251465, 0.3216552734375, 2.28955078125], [0.7491455078125, 4.6284003257751465, 2.3427734375, 1.568603515625, 6.0012030601501465], [-2.40283203125, 3.4604315757751465, 0.4329833984375, 0.566650390625, 1.07666015625], [5.6957831382751465, 2.27001953125, 4.5253729820251465, -2.99365234375, 1.842041015625], [1.079345703125, 4.3469061851501465, 4.5226874351501465, 1.9443359375, -2.33837890625]]
+        self.input_jet_mass_bbj    = [[17.1162109375, 14.593124389648438, 16.187713623046875, 14.678573608398438, 9.5234375], [42.87664794921875, 15.475616455078125, 10.702194213867188, 9.176605224609375, 9.8515625], [23.61243438720703, 19.530120849609375, 13.258628845214844, 12.957328796386719, 9.90625], [14.27728271484375, 14.1954345703125, 13.277191162109375, 10.46875, 8.628997802734375], [46.4573974609375, 58.197998046875, 28.2264404296875, 11.06298828125, 7.97265625], [18.99920654296875, 10.88543701171875, 13.593544006347656, 7.578125, 8.23480224609375], [23.140625, 19.77544403076172, 28.5819091796875, 9.609878540039062, 9.621047973632812], [15.875, 12.916053771972656, 9.715099334716797, 7.9855499267578125, 10.496315002441406], [22.601318359375, 14.383399963378906, 11.28387451171875, 10.140625, 10.2315673828125], [18.971710205078125, 21.770095825195312, 17.5333251953125, 19.34527587890625, 9.0]]
+        self.input_jet_flavor_bbj  = [['b', 'b', 'b', 'b', 'j'], ['b', 'b', 'b', 'b', 'j'], ['b', 'b', 'b', 'b', 'j'], ['b', 'b', 'b', 'j', 'b'], ['b', 'b', 'b', 'b', 'j'], ['b', 'b', 'b', 'j', 'b'], ['j', 'b', 'b', 'b', 'b'], ['j', 'b', 'b', 'b', 'b'], ['b', 'b', 'b', 'j', 'b'], ['b', 'b', 'b', 'b', 'j']]
 
+
+        self.input_jets_bbj = ak.zip(
+            {
+                "pt": self.input_jet_pt_bbj,
+                "eta": self.input_jet_eta_bbj,
+                "phi": self.input_jet_phi_bbj,
+                "mass": self.input_jet_mass_bbj,
+                "jet_flavor": self.input_jet_flavor_bbj,
+            },
+            with_name="PtEtaPhiMLorentzVector",
+            behavior=vector.behavior,
+        )
 
 
 
@@ -187,6 +204,10 @@ class clusteringTestCase(unittest.TestCase):
     def test_declustering_5jets(self):
         self._declustering_test(self.input_jets_5, debug=False)
 
+    def test_declustering_bbjjets(self):
+        self._declustering_test(self.input_jets_bbj, debug=False)
+
+
 
     def test_cluster_bs_fast_4jets(self):
 
@@ -242,37 +263,46 @@ class clusteringTestCase(unittest.TestCase):
         self.assertTrue(all(phi_check), "All phis should be the same")
 
 
-    def _synthetic_datasets_gbb_only_test(self, input_jets, n_jets_expected, debug=False):
+    def _synthetic_datasets_test(self, input_jets, n_jets_expected, debug=False):
 
         clustered_jets, _clustered_splittings = cluster_bs(input_jets, debug=False)
 
         #
+        # Check particle orderings of splittings
+        #
+        part_A_len =  [len(i) for i in ak.flatten(_clustered_splittings.part_A.jet_flavor)]
+        part_B_len =  [len(i) for i in ak.flatten(_clustered_splittings.part_B.jet_flavor)]
+        self.assertTrue(all(a >= b for a, b in zip(part_A_len, part_B_len)), "Part A should be the more complex of the pair")
+
+        #
         #  Decluster the splitting that are 0b + >1 bs
         #
-        if debug: 
+        if debug:
             print("Jet flavour Before ISR cleaning")
             print(clustered_jets.jet_flavor)
         clustered_jets = clean_ISR(clustered_jets, _clustered_splittings)
 
-        if debug: 
+        if debug:
             print("Jet flavour after ISR cleaning")
             print(clustered_jets.jet_flavor)
 
         #
         # Declustering
         #
+        #print(_clustered_splittings)
+        #breakpoint()
 
         #
         #  Read in the pdfs
         #
         #  Make with ../.ci-workflows/synthetic-dataset-plot-job.sh
         # input_pdf_file_name = "analysis/plots_synthetic_datasets/clustering_pdfs.yml"
-        input_pdf_file_name = "jet_clustering/jet-splitting-PDFs-0jet-00-01-00_5j/clustering_pdfs_vs_pT.yml"
+        input_pdf_file_name = "jet_clustering/jet-splitting-PDFs-00-02-00/clustering_pdfs_vs_pT.yml"
         #input_pdf_file_name = "jet_clustering/clustering_PDFs/clustering_pdfs_vs_pT.yml"
         with open(input_pdf_file_name, 'r') as input_file:
             input_pdfs = yaml.safe_load(input_file)
 
-        declustered_jets = make_synthetic_event(clustered_jets, input_pdfs)
+        declustered_jets = make_synthetic_event(clustered_jets, input_pdfs, debug=debug)
         #pA = declustered_jets[:,0:2]
         #pB = declustered_jets[:,2:]
 
@@ -280,11 +310,11 @@ class clusteringTestCase(unittest.TestCase):
         # Sanity checks
         #
 
+
         match_n_jets = ak.num(declustered_jets) == n_jets_expected
         if not all(match_n_jets):
             print("ERROR number of declustered_jets")
             print(f"ak.num(declustered_jets)        {ak.num(declustered_jets)}")
-            print("Only after gbb declustering")
             print(f"clustered_jets.jet_flavor     {clustered_jets.jet_flavor}")
             print(f"clustered_jets.pt             {clustered_jets.pt}")
             #print(f"pA.pt                         {pA.pt}")
@@ -301,16 +331,35 @@ class clusteringTestCase(unittest.TestCase):
             #print(f"Reco phi {(pA + pB).phi[1]}")
 
         self.assertTrue(all(match_n_jets), f"Should always get {n_jets_expected} jets")
+        return declustered_jets
 
 
-    def test_synthetic_datasets_gbb_only_4jets(self):
-
-        self._synthetic_datasets_gbb_only_test(self.input_jets_4, n_jets_expected = 4)
 
 
-    def test_synthetic_datasets_gbb_only_5jets(self):
 
-        self._synthetic_datasets_gbb_only_test(self.input_jets_5, n_jets_expected = 5, debug=True)
+    def test_synthetic_datasets_4jets(self):
+        self._synthetic_datasets_test(self.input_jets_4, n_jets_expected = 4)
+
+
+    def test_synthetic_datasets_5jets(self):
+        self._synthetic_datasets_test(self.input_jets_5, n_jets_expected = 5)
+
+
+    def test_synthetic_datasets_bbjjets(self):
+        declustered_jets = self._synthetic_datasets_test(self.input_jets_bbj, n_jets_expected = 5, debug=True)
+
+        #
+        #  Do reclustering
+        #
+        is_b_mask = declustered_jets.jet_flavor == "b"
+
+        canJet = declustered_jets[is_b_mask]
+        notCanJet_sel = declustered_jets[~is_b_mask]
+        jets_for_clustering = ak.concatenate([canJet, notCanJet_sel], axis=1)
+        jets_for_clustering = jets_for_clustering[ak.argsort(jets_for_clustering.pt, axis=1, ascending=False)]
+        clustered_jets_reclustered, clustered_splittings_reclustered = cluster_bs(jets_for_clustering, debug=False)
+        compute_decluster_variables(clustered_splittings_reclustered)
+        #breakpoint()
 
 
 if __name__ == '__main__':
