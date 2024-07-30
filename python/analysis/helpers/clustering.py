@@ -51,7 +51,7 @@ def get_min_indicies(particles, R):
 
 
 def distance_matrix_kt(vectors):
-    pt1 = ak.values_astype(vectors.pt, np.float64)
+    pt1  = ak.values_astype(vectors.pt, np.float64)
     eta1 = ak.values_astype(vectors.eta, np.float64)
     phi1 = ak.values_astype(vectors.phi, np.float64)
 
@@ -106,12 +106,11 @@ def comb_jet_flavor(flavor_A, flavor_B):
         return flavor_A + flavor_B
 
     if len(flavor_B) < len(flavor_A):
-        return flavor_A + flavor_B
+        return flavor_B + flavor_A
 
     _name_list = [flavor_A, flavor_B]
     _name_list.sort()
     return "".join(_name_list)
-
 
 
 
@@ -120,7 +119,19 @@ def combine_particles(part_A, part_B, *, debug=False):
 
     new_part_A = part_A
     new_part_B = part_B
+
+    # All else equal Pt ordered
     if part_A.pt < part_B.pt:
+        new_part_A = part_B
+        new_part_B = part_A
+
+    # If the one is a b and the other a j, flavor ordered
+    if part_A.jet_flavor == "j" and part_B.jet_flavor == "b":
+        new_part_A = part_B
+        new_part_B = part_A
+
+    # order by complexity
+    elif len(part_B.jet_flavor) > len(part_A.jet_flavor):
         new_part_A = part_B
         new_part_B = part_A
 
