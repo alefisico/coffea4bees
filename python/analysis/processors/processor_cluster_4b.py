@@ -16,7 +16,8 @@ from base_class.hist import Collection, Fill
 from base_class.physics.object import LorentzVector, Jet, Muon, Elec
 #from analysis.helpers.hist_templates import SvBHists, FvTHists, QuadJetHists
 from analysis.helpers.clustering_hist_templates import ClusterHists
-from analysis.helpers.clustering import cluster_bs, compute_decluster_variables, cluster_bs_fast, make_synthetic_event, get_list_of_splitting_types, clean_ISR, get_list_of_ISR_splittings
+from analysis.helpers.clustering   import cluster_bs, cluster_bs_fast
+from analysis.helpers.declustering import compute_decluster_variables, make_synthetic_event, get_list_of_splitting_types, clean_ISR, get_list_of_ISR_splittings
 
 from analysis.helpers.cutflow import cutFlow
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
@@ -214,6 +215,7 @@ class analysis(processor.ProcessorABC):
 
         canJet["jet_flavor"] = "b"
         notCanJet_sel["jet_flavor"] = "j"
+        selev["notCanJet_sel"] = notCanJet_sel
 
         jets_for_clustering = ak.concatenate([canJet, notCanJet_sel], axis=1)
         jets_for_clustering = jets_for_clustering[ak.argsort(jets_for_clustering.pt, axis=1, ascending=False)]
@@ -255,6 +257,53 @@ class analysis(processor.ProcessorABC):
         for _s_type in all_split_types:
             selev[f"splitting_{_s_type}"]   = clustered_splittings[clustered_splittings.jet_flavor == _s_type]
 
+        # print(f'{chunk} all splitting types {all_split_types}\n')
+
+        dumpTestVectors_bbj = False
+        if dumpTestVectors_bbj:
+            # bbj_mask = ak.num(selev["splitting_b(bj)"]) == 1
+            # bbj_partA = selev["splitting_b(bj)"][bbj_mask].part_A
+            # bbj_partB = selev["splitting_b(bj)"][bbj_mask].part_B
+            #
+            # if ak.sum(ak.num(selev["splitting_b(bj)"])) > 4:
+            #     print(f'{chunk}\n\n')
+            #     print(f'{chunk} self.input_jet_pt      = {[bbj_partA[iE].pt.tolist()         + bbj_partB[iE].pt.tolist()         for iE in range(5)]}')
+            #     print(f'{chunk} self.input_jet_eta     = {[bbj_partA[iE].eta.tolist()        + bbj_partB[iE].eta.tolist()        for iE in range(5)]}')
+            #     print(f'{chunk} self.input_jet_phi     = {[bbj_partA[iE].phi.tolist()        + bbj_partB[iE].phi.tolist()        for iE in range(5)]}')
+            #     print(f'{chunk} self.input_jet_mass    = {[bbj_partA[iE].mass.tolist()       + bbj_partB[iE].mass.tolist()       for iE in range(5)]}')
+            #     print(f'{chunk} self.input_jet_flavor  = {[bbj_partA[iE].jet_flavor.tolist() + bbj_partB[iE].jet_flavor.tolist() for iE in range(5)]}')
+            #     print(f'{chunk}\n\n')
+
+            print(f'{chunk} num splitting {ak.num(selev["splitting_b(bj)"])}')
+            print(f'{chunk} mask {ak.num(selev["splitting_b(bj)"]) > 0}')
+            bbj_mask = ak.num(selev["splitting_b(bj)"]) > 0
+            jets_for_clustering_bbj = jets_for_clustering[bbj_mask]
+            print(f'{chunk}\n\n')
+            print(f'{chunk} self.input_jet_pt      = {[jets_for_clustering_bbj[iE].pt.tolist()         for iE in range(10)]}')
+            print(f'{chunk} self.input_jet_eta     = {[jets_for_clustering_bbj[iE].eta.tolist()        for iE in range(10)]}')
+            print(f'{chunk} self.input_jet_phi     = {[jets_for_clustering_bbj[iE].phi.tolist()        for iE in range(10)]}')
+            print(f'{chunk} self.input_jet_mass    = {[jets_for_clustering_bbj[iE].mass.tolist()       for iE in range(10)]}')
+            print(f'{chunk} self.input_jet_flavor  = {[jets_for_clustering_bbj[iE].jet_flavor.tolist() for iE in range(10)]}')
+            print(f'{chunk}\n\n')
+
+
+
+        #
+        # writing out bb splitting for Chris Berman
+        #
+        # out_data = {}
+        # out_data["pt_comb"]  = ak.flatten(selev["splitting_bb"].pt)
+        # out_data["eta_comb"] = ak.flatten(selev["splitting_bb"].eta)
+        # out_data["zA"] = ak.flatten(selev["splitting_bb"].zA)
+        # out_data["thetaA"] = ak.flatten(selev["splitting_bb"].thetaA)
+        # out_data["mA"] = ak.flatten(selev["splitting_bb"].mA)
+        # out_data["mB"] = ak.flatten(selev["splitting_bb"].mB)
+        # out_data["decay_phi"] = ak.flatten(selev["splitting_bb"].decay_phi)
+        #
+        # for out_k, out_v in out_data.items():
+        #     processOutput[out_k] = {}
+        #     processOutput[out_k][event.metadata['dataset']] = list(out_v)
+
 
         #
         #  Declustering
@@ -274,13 +323,26 @@ class analysis(processor.ProcessorABC):
             declustered_jets = make_synthetic_event(clustered_jets, self.clustering_pdfs)
 
             is_b_mask = declustered_jets.jet_flavor == "b"
-            canJet = declustered_jets[is_b_mask]
-            notCanJet_sel = declustered_jets[~is_b_mask]
+            canJet_re = declustered_jets[is_b_mask]
+
+            canJet_re["puId"] = 7
+            canJet_re["jetId"] = 7 # selev.Jet.puId[canJet_idx]
+            canJet_re["btagDeepFlavB"] = 1.0 # Set bs to 1 and ls to 0
+
+
+            notCanJet_sel_re = declustered_jets[~is_b_mask]
+            notCanJet_sel_re["puId"] = 7
+            notCanJet_sel_re["jetId"] = 7 # selev.Jet.puId[canJet_idx]
+            notCanJet_sel_re["btagDeepFlavB"] = 0 # Set bs to 1 and ls to 0
+
+
+            selev["canJet_re"] = canJet_re
+            selev["notCanJet_sel_re"] = notCanJet_sel_re
 
             #
             #  Recluster
             #
-            jets_for_clustering = ak.concatenate([canJet, notCanJet_sel], axis=1)
+            jets_for_clustering = ak.concatenate([canJet_re, notCanJet_sel_re], axis=1)
             jets_for_clustering = jets_for_clustering[ak.argsort(jets_for_clustering.pt, axis=1, ascending=False)]
 
             clustered_jets_reclustered, clustered_splittings_reclustered = cluster_bs(jets_for_clustering, debug=False)
@@ -292,6 +354,47 @@ class analysis(processor.ProcessorABC):
 
             for _s_type in all_split_types_re:
                 selev[f"splitting_{_s_type}_re"]  = clustered_splittings_reclustered[clustered_splittings_reclustered.jet_flavor == _s_type]
+
+            # print(f'{chunk} all splitting_re types {all_split_types_re}\n')
+
+            debug_bbj = False
+            if debug_bbj:
+                bbj_mask = ak.num(selev["splitting_b(bj)_re"]) > 0
+                #bbj_partA = selev["splitting_b(bj)_re"][bbj_mask].part_A
+
+                selev_bbjj = selev[bbj_mask]
+
+                bbj_partB_large_mass = selev_bbjj["splitting_b(bj)_re"].part_B.mass > 50
+                print(f'{chunk} mass {selev_bbjj["splitting_b(bj)_re"].part_B.mass}')
+                print(f'{chunk} have large {bbj_partB_large_mass}')
+                print(f'{chunk} any {ak.any(bbj_partB_large_mass, axis=1)}')
+
+                large_bbj_mb_event_mask = ak.any(bbj_partB_large_mass, axis=1)
+
+                selev_large_bbj = selev_bbjj[large_bbj_mb_event_mask]
+
+                print(f'{chunk} partB mass {selev_large_bbj["splitting_b(bj)_re"].part_B.mass}\n')
+                print(f'{chunk} partB flav {selev_large_bbj["splitting_b(bj)_re"].part_B.jet_flavor}\n')
+                print(f'{chunk} partB pt {selev_large_bbj["splitting_b(bj)_re"].part_B.pt}\n')
+                print(f'{chunk} partB eta {selev_large_bbj["splitting_b(bj)_re"].part_B.eta}\n')
+
+
+                print(f'{chunk} partA mass {selev_large_bbj["splitting_b(bj)_re"].part_A.mass}\n')
+                print(f'{chunk} partA falv {selev_large_bbj["splitting_b(bj)_re"].part_A.jet_flavor}\n')
+                print(f'{chunk} partA pt {selev_large_bbj["splitting_b(bj)_re"].part_A.pt}\n')
+                print(f'{chunk} partA eta {selev_large_bbj["splitting_b(bj)_re"].part_A.eta}\n')
+
+            dumpTestVectors = False
+            if dumpTestVectors:
+                print(f'{chunk}\n\n')
+                print(f'{chunk} self.input_jet_pt  = {[jets_for_clustering[iE].pt.tolist() for iE in range(10)]}')
+                print(f'{chunk} self.input_jet_eta  = {[jets_for_clustering[iE].eta.tolist() for iE in range(10)]}')
+                print(f'{chunk} self.input_jet_phi  = {[jets_for_clustering[iE].phi.tolist() for iE in range(10)]}')
+                print(f'{chunk} self.input_jet_mass  = {[jets_for_clustering[iE].mass.tolist() for iE in range(10)]}')
+                print(f'{chunk} self.input_jet_flavor  = {[jets_for_clustering[iE].jet_flavor.tolist() for iE in range(10)]}')
+                print(f'{chunk}\n\n')
+
+
 
 
         selev["region"] = 0b10
@@ -334,6 +437,11 @@ class analysis(processor.ProcessorABC):
         fill += Jet.plot(("canJets", "Higgs Candidate Jets"), "canJet",           skip=["deepjet_c"])
         fill += Jet.plot(("othJets", "Other Jets"),           "notCanJet_coffea", skip=["deepjet_c"])
         fill += Jet.plot(("tagJets", "Tag Jets"),             "tagJet",           skip=["deepjet_c"])
+
+        fill += Jet.plot(("notCanJet_sel", "Higgs Candidate Jets"), "notCanJet_sel",           skip=["deepjet_c"])
+        if self.do_declustering:
+            fill += Jet.plot(("canJets_re", "Higgs Candidate Jets"), "canJet_re",           skip=["deepjet_c"])
+            fill += Jet.plot(("notCanJet_sel_re", "Higgs Candidate Jets"), "notCanJet_sel_re",           skip=["deepjet_c"])
 
         #
         #  Make Jet Hists

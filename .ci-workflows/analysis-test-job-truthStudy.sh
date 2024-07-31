@@ -16,6 +16,4 @@ DATASETS=metadata/datasets_HH4b_cernbox.yml
 echo "############### Running datasets from " $DATASETS
 echo "############### Running test processor"
 python runner.py -t    -o testTruth.coffea -d GluGluToHHTo4B_cHHH1 -p analysis/processors/processor_genmatch_HH4b.py -y UL18  -op analysis/hists/ -m $DATASETS  -c analysis/metadata/HH4b_genmatch.yml
-# python runner.py     -o testTruth.coffea -d GluGluToHHTo4B_cHHH1 -p analysis/processors/processor_genmatch_HH4b.py -y UL18  -op analysis/hists/ -m $DATASETS  -c analysis/metadata/HH4b_genmatch.yml 
-
 cd ../
