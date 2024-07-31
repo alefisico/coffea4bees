@@ -15,9 +15,9 @@ from coffea.analysis_tools import Weights, PackedSelection
 from base_class.hist import Collection, Fill
 from base_class.physics.object import LorentzVector, Jet, Muon, Elec
 #from analysis.helpers.hist_templates import SvBHists, FvTHists, QuadJetHists
-from analysis.helpers.clustering_hist_templates import ClusterHists
-from analysis.helpers.clustering   import cluster_bs, cluster_bs_fast
-from analysis.helpers.declustering import compute_decluster_variables, make_synthetic_event, get_list_of_splitting_types, clean_ISR, get_list_of_ISR_splittings
+from jet_clustering.clustering_hist_templates import ClusterHists
+from jet_clustering.clustering   import cluster_bs, cluster_bs_fast
+from jet_clustering.declustering import compute_decluster_variables, make_synthetic_event, get_list_of_splitting_types, clean_ISR, get_list_of_ISR_splittings
 
 from analysis.helpers.cutflow import cutFlow
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema

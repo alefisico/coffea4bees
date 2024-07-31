@@ -1,7 +1,7 @@
 import numpy as np
 import awkward as ak
 from coffea.nanoevents.methods import vector
-from analysis.helpers.sample_jet_templates import sample_PDFs_vs_pT
+from jet_clustering.sample_jet_templates import sample_PDFs_vs_pT
 
 def extract_all_parentheses_substrings(s):
     substrings = []

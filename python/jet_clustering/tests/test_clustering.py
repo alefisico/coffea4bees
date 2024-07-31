@@ -13,8 +13,8 @@ from copy import copy
 import os
 
 sys.path.insert(0, os.getcwd())
-from analysis.helpers.clustering   import kt_clustering, cluster_bs, cluster_bs_fast
-from analysis.helpers.declustering import compute_decluster_variables, decluster_combined_jets, make_synthetic_event, get_list_of_splitting_types, clean_ISR, get_list_of_ISR_splittings
+from jet_clustering.clustering   import kt_clustering, cluster_bs, cluster_bs_fast
+from jet_clustering.declustering import compute_decluster_variables, decluster_combined_jets, make_synthetic_event, get_list_of_splitting_types, clean_ISR, get_list_of_ISR_splittings
 
 #import vector
 #vector.register_awkward()
