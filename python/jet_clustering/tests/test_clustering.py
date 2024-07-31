@@ -13,8 +13,8 @@ from copy import copy
 import os
 
 sys.path.insert(0, os.getcwd())
-from analysis.helpers.clustering   import kt_clustering, cluster_bs, cluster_bs_fast
-from analysis.helpers.declustering import compute_decluster_variables, decluster_combined_jets, make_synthetic_event, get_list_of_splitting_types, clean_ISR
+from jet_clustering.clustering   import kt_clustering, cluster_bs, cluster_bs_fast
+from jet_clustering.declustering import compute_decluster_variables, decluster_combined_jets, make_synthetic_event, get_list_of_splitting_types, clean_ISR, get_list_of_ISR_splittings
 
 #import vector
 #vector.register_awkward()
@@ -91,6 +91,25 @@ class clusteringTestCase(unittest.TestCase):
             behavior=vector.behavior,
         )
 
+
+        self.input_jet_pt_6  = [[234.91912841796875, 228.775634765625, 64.3125, 61.700439453125, 58.14398193359375, 48.59375], [246.812744140625, 168.35546875, 131.75, 131.6524658203125, 77.25, 56.489501953125], [456.72607421875, 352.0, 149.59912109375, 86.875, 63.031005859375, 43.9178466796875], [279.784423828125, 250.7904052734375, 101.01605224609375, 60.875, 52.53875732421875, 50.4375], [205.3228759765625, 133.94091796875, 101.066650390625, 92.125, 87.998291015625, 73.75], [188.9853515625, 170.12255859375, 107.0625, 89.625, 72.04833984375, 51.375], [131.75, 106.16046142578125, 83.59130859375, 83.375, 80.9718017578125, 52.386932373046875], [188.0804443359375, 92.1796875, 85.25, 76.4375, 63.67181396484375, 47.8173828125], [223.25, 137.75, 112.379150390625, 81.25457763671875, 78.2041015625, 74.050048828125], [153.71630859375, 137.92950439453125, 72.625, 65.625, 48.224700927734375, 43.3271484375]]
+        self.input_jet_eta_6  = [[-0.5133056640625, -1.543701171875, 0.831787109375, 0.9537353515625, -0.7618408203125, -1.153564453125], [0.34356689453125, 0.094818115234375, 0.9638671875, -0.02260589599609375, -0.31683349609375, -1.843505859375], [-1.39208984375, -1.231689453125, -0.9793701171875, -0.11669921875, 0.168609619140625, -0.13671875], [-1.185546875, 1.681396484375, 0.44091796875, 0.45770263671875, -0.3785400390625, -0.6993408203125], [0.06719970703125, -0.7655029296875, -0.005198478698730469, 1.295166015625, 0.669677734375, 2.1767578125], [0.03668975830078125, -0.8272705078125, 1.010009765625, -1.881591796875, 0.592041015625, -1.369384765625], [-0.1100006103515625, -1.47216796875, -0.756591796875, -1.90283203125, -0.605224609375, -0.5802001953125], [0.6260986328125, 1.0166015625, -1.91943359375, -2.1875, 0.588134765625, 0.03516387939453125], [2.29443359375, -2.3876953125, 0.200958251953125, -0.6177978515625, 0.5872802734375, 0.36236572265625], [0.56787109375, -0.610595703125, -2.2841796875, -0.0773773193359375, 0.9136962890625, 0.5615234375]]
+        self.input_jet_phi_6  = [[0.49713134765625, 3.7636542320251465, -2.18408203125, 1.37109375, 3.01513671875, 0.0600128173828125], [5.3735175132751465, 2.31298828125, 2.5029296875, 5.6054511070251465, -1.099365234375, 2.41845703125], [1.5263671875, -1.49658203125, 4.2846503257751465, -2.72265625, 0.5770263671875, 0.21160888671875], [1.529296875, 4.7824530601501465, 5.1801581382751465, -2.49658203125, 1.103515625, 2.10205078125], [4.9992499351501465, 1.5009765625, 4.4350409507751465, 2.3486328125, 1.9658203125, 1.104248046875], [5.7166571617126465, 2.6904296875, -0.45654296875, 2.40087890625, 5.1591620445251465, 1.868896484375], [-2.20703125, 1.962158203125, 0.53076171875, -0.107879638671875, 2.99072265625, 6.280444622039795], [3.6713690757751465, 2.3046875, 0.2967529296875, -0.5640869140625, 0.604248046875, 6.1497015953063965], [-1.74560546875, 2.49755859375, 1.0810546875, 1.872802734375, 1.3837890625, 5.2116522789001465], [0.30316162109375, 3.1650214195251465, -2.75439453125, 0.294921875, 5.3921942710876465, 4.9733710289001465]]
+        self.input_jet_mass_6  = [[30.531005859375, 29.481903076171875, 9.0234375, 11.388397216796875, 9.933212280273438, 9.6328125], [24.9578857421875, 25.6658935546875, 25.484375, 11.848068237304688, 9.796875, 8.627471923828125], [67.39971923828125, 32.09375, 25.495628356933594, 12.6328125, 9.835433959960938, 8.893363952636719], [37.81341552734375, 27.132110595703125, 21.957839965820312, 11.3828125, 7.413169860839844, 10.8203125], [20.790863037109375, 16.518096923828125, 16.962127685546875, 15.4921875, 12.61669921875, 13.7578125], [29.63092041015625, 26.920989990234375, 17.078125, 21.515625, 10.68695068359375, 10.27667236328125], [21.046875, 15.8487548828125, 11.893730163574219, 17.375, 16.7896728515625, 9.014328002929688], [18.280426025390625, 9.745559692382812, 13.5078125, 22.375, 11.146934509277344, 7.6776123046875], [13.953125, 14.125, 18.94012451171875, 14.496162414550781, 11.415924072265625, 9.816543579101562], [26.37384033203125, 13.808853149414062, 10.6328125, 11.40625, 8.66156005859375, 8.05224609375]]
+        self.input_jet_flavor_6  = [['b', 'b', 'j', 'b', 'b', 'j'], ['b', 'b', 'j', 'b', 'j', 'b'], ['b', 'j', 'b', 'j', 'b', 'b'], ['b', 'b', 'b', 'j', 'b', 'j'], ['b', 'b', 'b', 'j', 'b', 'j'], ['b', 'b', 'j', 'j', 'b', 'b'], ['j', 'b', 'b', 'j', 'b', 'b'], ['b', 'b', 'j', 'j', 'b', 'b'], ['j', 'j', 'b', 'b', 'b', 'b'], ['b', 'b', 'j', 'j', 'b', 'b']]
+
+
+        self.input_jets_6 = ak.zip(
+            {
+                "pt": self.input_jet_pt_6,
+                "eta": self.input_jet_eta_6,
+                "phi": self.input_jet_phi_6,
+                "mass": self.input_jet_mass_6,
+                "jet_flavor": self.input_jet_flavor_6,
+            },
+            with_name="PtEtaPhiMLorentzVector",
+            behavior=vector.behavior,
+        )
 
 
 
@@ -207,6 +226,9 @@ class clusteringTestCase(unittest.TestCase):
     def test_declustering_bbjjets(self):
         self._declustering_test(self.input_jets_bbj, debug=False)
 
+    def test_declustering_6jets(self):
+        self._declustering_test(self.input_jets_6, debug=False)
+
 
 
     def test_cluster_bs_fast_4jets(self):
@@ -274,17 +296,22 @@ class clusteringTestCase(unittest.TestCase):
         part_B_len =  [len(i) for i in ak.flatten(_clustered_splittings.part_B.jet_flavor)]
         self.assertTrue(all(a >= b for a, b in zip(part_A_len, part_B_len)), "Part A should be the more complex of the pair")
 
+
         #
         #  Decluster the splitting that are 0b + >1 bs
         #
         if debug:
             print("Jet flavour Before ISR cleaning")
-            print(clustered_jets.jet_flavor)
-        clustered_jets = clean_ISR(clustered_jets, _clustered_splittings)
+            [print(i) for i in clustered_jets.jet_flavor]
+
+        clustered_jets = clean_ISR(clustered_jets, _clustered_splittings, debug=debug)
+
+
 
         if debug:
             print("Jet flavour after ISR cleaning")
-            print(clustered_jets.jet_flavor)
+            [print(i) for i in clustered_jets.jet_flavor]
+
 
         #
         # Declustering
@@ -342,11 +369,11 @@ class clusteringTestCase(unittest.TestCase):
 
 
     def test_synthetic_datasets_5jets(self):
-        self._synthetic_datasets_test(self.input_jets_5, n_jets_expected = 5)
+        self._synthetic_datasets_test(self.input_jets_5, n_jets_expected = 5, debug=False)
 
 
     def test_synthetic_datasets_bbjjets(self):
-        declustered_jets = self._synthetic_datasets_test(self.input_jets_bbj, n_jets_expected = 5, debug=True)
+        declustered_jets = self._synthetic_datasets_test(self.input_jets_bbj, n_jets_expected = 5)
 
         #
         #  Do reclustering
@@ -360,6 +387,24 @@ class clusteringTestCase(unittest.TestCase):
         clustered_jets_reclustered, clustered_splittings_reclustered = cluster_bs(jets_for_clustering, debug=False)
         compute_decluster_variables(clustered_splittings_reclustered)
         #breakpoint()
+
+
+#    def test_synthetic_datasets_6jets(self):
+#        self._synthetic_datasets_test(self.input_jets_6, n_jets_expected = 6, debug = True)
+
+
+    def test_get_list_of_ISR_splittings(self):
+
+
+        test_splitting_types = ["b", "j", "bb", "bj", "jj", "j(bb)", "b(bj)", "j(bj)", "b(j(bj))",'(bb)(jj)','(jj)(bb)',"j(j(bj))", "j(b(bj))"]
+        expected_ISR_splittings = ["bj","jj","j(bb)", "j(bj)",'(bb)(jj)','(jj)(bb)',"j(j(bj))", "j(b(bj))"]
+
+
+        ISR_splittings = get_list_of_ISR_splittings(test_splitting_types)
+
+        print(f"ISR_splittings is {ISR_splittings}")
+
+        self.assertListEqual(ISR_splittings, expected_ISR_splittings)
 
 
 if __name__ == '__main__':

@@ -16,9 +16,9 @@ echo "############### Running datasets from " $DATASETS
 echo "############### Running test processor"
 
 
-#python runner.py -t -o test_synthetic_datasets_4j_and_5j.coffea -d data  -p analysis/processors/processor_cluster_4b.py -y UL18  -op analysis/hists/ -m $DATASETS -c analysis/metadata/cluster_4b.yml
+python runner.py -t -o test_synthetic_datasets_4j_and_5j.coffea -d data  -p analysis/processors/processor_cluster_4b.py -y UL18  -op analysis/hists/ -m $DATASETS -c analysis/metadata/cluster_4b.yml
 # time python runner.py  -o synthetic_datasets_4j_and_5j.coffea -d data  -p analysis/processors/processor_cluster_4b.py -y UL18  -op analysis/hists/ -m $DATASETS -c analysis/metadata/cluster_4b.yml  
-python runner.py -t -o test_synthetic_datasets_4j_and_5j.coffea -d data  -p analysis/processors/processor_cluster_4b.py -y UL18  -op analysis/hists/ -m $DATASETS -c analysis/metadata/cluster_and_decluster.yml
+#python runner.py -t -o test_synthetic_datasets_4j_and_5j.coffea -d data  -p analysis/processors/processor_cluster_4b.py -y UL18  -op analysis/hists/ -m $DATASETS -c analysis/metadata/cluster_and_decluster.yml
 # time python runner.py  -o synthetic_datasets_4j_and_5j.coffea -d data  -p analysis/processors/processor_cluster_4b.py -y UL18  -op analysis/hists/ -m $DATASETS -c analysis/metadata/cluster_and_decluster.yml
 
 # python  jet_clustering/make_jet_splitting_PDFs.py analysis/hists/test_synthetic_datasets_4j_and_5j.coffea  --out jet_clustering/jet-splitting-PDFs-00-02-00 
