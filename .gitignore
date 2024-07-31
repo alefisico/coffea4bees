@@ -218,3 +218,4 @@ python/stats_analysis/testsLocal/
 python/stats_analysis/testsLocal_kfold/
 python/stats_analysis/fitBiasData/
 python/analysis/plots_synthetic_datasets/
+python/jet_clustering/*/*pdf
