@@ -60,10 +60,12 @@ class _Base(Common):
         self.to_tensor.add("kl", "float32").columns("kl")
 
     def preprocess_by_group(self):
-        _MCs = ("ttbar", "ZZ", "ZH", "ggF", "VBF")
+        import numpy as np
+
+        _MCs = {"ttbar", "ZZ", "ZH", "ggF", "VBF"}
         return [
             group_key(),
-            group_key("kl", r"kl:(?P<kl>.*)"),
+            group_key(key="kl", pattern=r"kl:(?P<kl>.*)", default=np.nan),
             group_single_label("data", *_MCs),
             ([("data",)], [_reweight_bkg, _data_selection(*self.opts.regions)]),
             ([(k,) for k in _MCs], [_mc_selection(*self.opts.regions)]),
@@ -75,20 +77,16 @@ def _background_normalization(df: pd.DataFrame):
     return df
 
 
-class FvT(_picoAOD.Background, _Base):
+class Background(_picoAOD.Background, _Base):
     def __init__(self):
+        from classifier.df.tools import drop_columns
+
         super().__init__()
         self.postprocessors.append(_background_normalization)
+        self.preprocessors.append(drop_columns("FvT"))
 
     def other_branches(self):
         return super().other_branches() + {"FvT"}
-
-    def preprocess_by_group(self):
-        from classifier.df.tools import drop_columns
-
-        return super().preprocess_by_group() + [
-            ([()], [drop_columns("FvT")]),
-        ]
 
 
 def _signal_normalization(df: pd.DataFrame):

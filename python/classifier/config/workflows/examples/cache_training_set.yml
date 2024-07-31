@@ -7,7 +7,7 @@ main:
     - --states label.MultiClass.labels
 
 dataset:
-  - module: HCR.FvT_picoAOD
+  - module: HCR.FvT
     option:
       - --friends
       -  # empty tag so that the friend tree will be applied to all files

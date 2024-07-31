@@ -5,7 +5,7 @@ from abc import abstractmethod
 from collections import defaultdict
 from dataclasses import dataclass
 from functools import cache, cached_property
-from typing import TYPE_CHECKING, Callable, Iterable
+from typing import TYPE_CHECKING, Any, Callable, Iterable
 
 from classifier.typetools import enum_dict
 
@@ -42,7 +42,8 @@ class _group_processor:
 class group_key:
     key: str = "year"
     pattern: str = r"year:\w*(?P<year>\d{2}).*"
-    t: type = float
+    default: Any = None
+    dtype: type = float
 
     def __post_init__(self):
         self._pattern = re.compile(self.pattern)
@@ -52,9 +53,11 @@ class group_key:
 
         matched = (*filter(None, map(self._pattern.fullmatch, groups)),)
         if len(matched) == 1:
-            yield add_columns(**{self.key: self.t(matched[0].group(self.key))})
+            yield add_columns(**{self.key: self.dtype(matched[0].group(self.key))})
         elif len(matched) > 1:
             raise ValueError(f'Multiple "{self.pattern}" matched in {groups}')
+        elif self.default is not None:
+            yield add_columns(**{self.key: self.default})
 
 
 class group_single_label:
