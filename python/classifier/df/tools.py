@@ -144,7 +144,7 @@ class drop_columns:
         self.columns = [*columns]
 
     def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
-        return df.drop(columns=self.columns)
+        return df.drop(columns=self.columns, errors="ignore")
 
     def __repr__(self):
         return f"{_type_str(self)} {_iter_str(self.columns)}"

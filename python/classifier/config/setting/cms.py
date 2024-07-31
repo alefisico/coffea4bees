@@ -10,5 +10,9 @@ class CollisionData(Cascade):
     }
 
 
-class TTbarMC(Cascade):
+class MC_TTbar(Cascade):
     datasets: list[str] = ["TTTo2L2Nu", "TTToHadronic", "TTToSemiLeptonic"]
+
+
+class MC_HH_ggF(Cascade):
+    kl: list[float] = [0.0, 1.0, 2.45, 5.0]

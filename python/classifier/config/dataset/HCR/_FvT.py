@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from classifier.task import ArgParser
 
 from . import _picoAOD
-from ._common import Common, group_year
+from ._common import Common, group_key
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -32,7 +32,7 @@ def _ttbar_3b_prescale(df: pd.DataFrame):
     return df["threeTag"]
 
 
-class Background(Common):
+class FvT(_picoAOD.Background, Common):
     argparser = ArgParser()
     argparser.add_argument(
         "--ttbar-3b-prescale",
@@ -44,7 +44,7 @@ class Background(Common):
         from classifier.df.tools import add_label_index_from_column, prescale
 
         return [
-            group_year(),
+            group_key(),
             (
                 [("data",)],
                 [
@@ -71,6 +71,3 @@ class Background(Common):
                 ],
             ),
         ]
-
-
-class PicoAOD(_picoAOD.FvT, Background): ...

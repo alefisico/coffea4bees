@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from abc import abstractmethod
 from collections import defaultdict
+from dataclasses import dataclass
 from functools import cache, cached_property
 from typing import TYPE_CHECKING, Callable, Iterable
 
@@ -37,17 +38,23 @@ class _group_processor:
             yield from self._ps
 
 
-class group_year:
-    __pattern = re.compile(r"year:\w*(?P<year>\d{2}).*")
+@dataclass
+class group_key:
+    key: str = "year"
+    pattern: str = r"year:\w*(?P<year>\d{2}).*"
+    t: type = float
 
-    def __call__(cls, groups: frozenset[str]):
+    def __post_init__(self):
+        self._pattern = re.compile(self.pattern)
+
+    def __call__(self, groups: frozenset[str]):
         from classifier.df.tools import add_columns
 
-        matched = (*filter(None, map(cls.__pattern.fullmatch, groups)),)
+        matched = (*filter(None, map(self._pattern.fullmatch, groups)),)
         if len(matched) == 1:
-            yield add_columns(year=int(matched[0].group("year")))
+            yield add_columns(**{self.key: self.t(matched[0].group(self.key))})
         elif len(matched) > 1:
-            raise ValueError(f"Multiple years found in {groups}")
+            raise ValueError(f'Multiple "{self.pattern}" matched in {groups}')
 
 
 class group_single_label:
@@ -129,11 +136,10 @@ class Common(LoadGroupedRoot):
 
     @cached_property
     def _branches(self):
-        return set(
-            self.other_branches()
-            + InputBranch.feature_ancillary
-            + InputBranch.feature_CanJet
-            + InputBranch.feature_NotCanJet
+        return self.other_branches().union(
+            InputBranch.feature_ancillary,
+            InputBranch.feature_CanJet,
+            InputBranch.feature_NotCanJet,
         )
 
     @abstractmethod
@@ -145,7 +151,7 @@ class Common(LoadGroupedRoot):
     ]: ...
 
     def other_branches(self):
-        return [
+        return {
             "ZZSR",
             "ZHSR",
             "HHSR",
@@ -157,7 +163,7 @@ class Common(LoadGroupedRoot):
             "pseudoTagWeight",
             Columns.event,
             Columns.weight,
-        ]
+        }
 
     def debug(self):
         import logging
@@ -174,4 +180,5 @@ class Common(LoadGroupedRoot):
             "preprocessors:",
             pretty_repr(_sort_map(pres) | {"common": self.preprocessors}),
         )
-        logging.debug("preprocessors:", pretty_repr(self.postprocessors))
+        logging.debug("postprocessors:", pretty_repr(self.postprocessors))
+        logging.debug("tensor:", pretty_repr(self.to_tensor._columns))
