@@ -213,7 +213,7 @@ def cluster_bs_core(event_jets, distance_function, *, debug = False):
 
         clustered_jets.append(particles)
 
-    # Create the PtEtaPhiMLorentzVectorArray with ndim=2
+    # Create the PtEtaPhiMLorentzVectorArray
     clustered_events = ak.zip(
         {
             "pt":         ak.Array([[v.pt for v in sublist] for sublist in clustered_jets]),
@@ -227,7 +227,7 @@ def cluster_bs_core(event_jets, distance_function, *, debug = False):
     )
 
 
-    # Create the PtEtaPhiMLorentzVectorArray with ndim=2
+    # Create the PtEtaPhiMLorentzVectorArray
     splittings_events = ak.zip(
         {
             "pt":  ak.Array([[v.pt  for v in sublist] for sublist in splittings]),

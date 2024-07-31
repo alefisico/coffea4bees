@@ -68,9 +68,10 @@ class analysis(processor.ProcessorABC):
             "passFourTag",
             "pass0OthJets",
             "pass1OthJets",
+            "pass2OthJets",
         ]
 
-        self.histCuts = ["passPreSel", "pass0OthJets", "pass1OthJets"]
+        self.histCuts = ["passPreSel", "pass0OthJets", "pass1OthJets", "pass2OthJets"]
 
 
     def process(self, event):
@@ -149,13 +150,18 @@ class analysis(processor.ProcessorABC):
 
         event['pass0OthJets'] = event.nJet_selected == 4
         event['pass1OthJets'] = event.nJet_selected == 5
+        event['pass2OthJets'] = event.nJet_selected == 6
         event['passMax1OthJets'] = event.nJet_selected < 6
+        event['passMax2OthJets'] = event.nJet_selected < 7
         selections.add("pass0OthJets",    event.pass0OthJets)
         selections.add("pass1OthJets",    event.pass1OthJets)
+        selections.add("pass2OthJets",    event.pass2OthJets)
         selections.add("passMax1OthJets", event.passMax1OthJets)
+        selections.add("passMax2OthJets", event.passMax2OthJets)
         allcuts.append("passFourTag")
 
-        allcuts.append("passMax1OthJets")
+        #allcuts.append("passMax1OthJets")
+        allcuts.append("passMax2OthJets")
 
         selev = event[selections.all(*allcuts)]
 
@@ -248,6 +254,7 @@ class analysis(processor.ProcessorABC):
         #  Filter the ISR splittings
         #
         ISR_splittings  = get_list_of_ISR_splittings(all_split_types)
+        ISR_splittings = [] # Hack save all splitngs for now
         all_split_types = [item for item in all_split_types if item not in ISR_splittings]
 
 
@@ -349,7 +356,8 @@ class analysis(processor.ProcessorABC):
             compute_decluster_variables(clustered_splittings_reclustered)
 
             all_split_types_re = get_list_of_splitting_types(clustered_splittings_reclustered)
-            ISR_splittings_re  = get_list_of_ISR_splittings(all_split_types_re)
+            # ISR_splittings_re  = get_list_of_ISR_splittings(all_split_types_re)
+            ISR_splittings_re = [] # Hack Save all splitting for now
             all_split_types_re = [item for item in all_split_types_re if item not in ISR_splittings_re]
 
             for _s_type in all_split_types_re:
@@ -408,6 +416,7 @@ class analysis(processor.ProcessorABC):
         self._cutFlow.fill("passFourTag", selev )
         self._cutFlow.fill("pass0OthJets",selev )
         self._cutFlow.fill("pass1OthJets",selev )
+        self._cutFlow.fill("pass2OthJets",selev )
 
         self._cutFlow.addOutput(processOutput, event.metadata["dataset"])
 
