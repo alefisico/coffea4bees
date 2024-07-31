@@ -48,7 +48,7 @@ class add_label_index:
         self._label = label
 
     def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
-        df.loc[:, (Columns.label_index,)] = np.dtype(Columns.index_dtype).type(
+        df.loc[:, Columns.label_index] = np.dtype(Columns.index_dtype).type(
             MultiClass.index(self._label)
         )
         return df
@@ -82,7 +82,7 @@ class add_label_flag:
 
     def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
         for label in MultiClass.labels:
-            df.loc[:, (label,)] = label in self._labels
+            df.loc[:, label] = label in self._labels
         return df
 
     def __repr__(self):
@@ -119,7 +119,7 @@ class map_selection_to_flag:
                     idx |= arr * t.type(v)
             sel |= arr
         idx[~sel] = t.type(self._default)
-        df.loc[:, (Columns.selection_index if self._name is ... else self._name,)] = idx
+        df.loc[:, Columns.selection_index if self._name is ... else self._name] = idx
         return df
 
     def __repr__(self):
@@ -132,7 +132,7 @@ class add_columns:
 
     def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
         for k, v in self._values.items():
-            df.loc[:, (k,)] = v
+            df.loc[:, k] = v
         return df
 
     def __repr__(self):

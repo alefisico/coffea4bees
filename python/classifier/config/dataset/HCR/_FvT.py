@@ -44,7 +44,6 @@ class FvT(_picoAOD.Background, Common):
         from classifier.df.tools import add_label_index_from_column, prescale
 
         return [
-            group_key(),
             (
                 [("data",)],
                 [
@@ -70,4 +69,5 @@ class FvT(_picoAOD.Background, Common):
                     _apply_JCM,
                 ],
             ),
+            group_key(),
         ]

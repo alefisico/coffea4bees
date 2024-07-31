@@ -64,11 +64,11 @@ class _Base(Common):
 
         _MCs = {"ttbar", "ZZ", "ZH", "ggF", "VBF"}
         return [
+            ([("data",)], [_data_selection(*self.opts.regions), _reweight_bkg]),
+            ([(k,) for k in _MCs], [_mc_selection(*self.opts.regions)]),
             group_key(),
             group_key(key="kl", pattern=r"kl:(?P<kl>.*)", default=np.nan),
             group_single_label("data", *_MCs),
-            ([("data",)], [_reweight_bkg, _data_selection(*self.opts.regions)]),
-            ([(k,) for k in _MCs], [_mc_selection(*self.opts.regions)]),
         ]
 
 
@@ -86,7 +86,7 @@ class Background(_picoAOD.Background, _Base):
         self.preprocessors.append(drop_columns("FvT"))
 
     def other_branches(self):
-        return super().other_branches() + {"FvT"}
+        return super().other_branches() | {"FvT"}
 
 
 def _signal_normalization(df: pd.DataFrame):

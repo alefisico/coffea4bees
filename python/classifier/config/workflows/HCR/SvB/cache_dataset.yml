@@ -11,14 +11,16 @@ dataset:
   - module: HCR.SvB.Background
     option:
       - --friends
-      - root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/friend/friends.json@@HCR_input
-      - root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/friend/friends.json@@JCM_weight
-      - root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/friend/friends.json@@FvT
+      -
+      - root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/friend/friend.json@@HCR_input
+      - root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/friend/friend.json@@JCM_weight
+      - root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/friend/friend.json@@FvT_weight
       - --max-workers 8
   - module: HCR.SvB.Signal
     option:
       - --friends
-      - root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/friend/friends.json@@HCR_input
+      -
+      - root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/friend/friend.json@@HCR_input
       - --max-workers 8
 
 setting:
