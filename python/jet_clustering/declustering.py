@@ -74,8 +74,13 @@ def get_list_of_ISR_splittings(splitting_types):
         child_A_nBs = child_A.count("b")
         child_B_nBs = child_B.count("b")
 
-        if (child_A_nBs == 0 and child_B_nBs >= 0) or (child_A_nBs >= 0 and child_B_nBs == 0):
-            ISR_splittings.append(_s)
+        #
+        #  All splittings are ISR unless there is a b in both children
+        #
+        if(child_A_nBs > 0 and child_B_nBs):
+            continue
+
+        ISR_splittings.append(_s)
 
 
     return ISR_splittings
