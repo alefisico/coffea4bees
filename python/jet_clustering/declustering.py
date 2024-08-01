@@ -1,7 +1,7 @@
 import numpy as np
 import awkward as ak
 from coffea.nanoevents.methods import vector
-from analysis.helpers.sample_jet_templates import sample_PDFs_vs_pT
+from jet_clustering.sample_jet_templates import sample_PDFs_vs_pT
 
 def extract_all_parentheses_substrings(s):
     substrings = []
@@ -71,8 +71,13 @@ def get_list_of_ISR_splittings(splitting_types):
 
         child_A, child_B = children_jet_flavors(_s)
 
-        if child_A.count("b") == 0 and child_B.count("b") > 1:
+        child_A_nBs = child_A.count("b")
+        child_B_nBs = child_B.count("b")
+
+        if (child_A_nBs == 0 and child_B_nBs >= 0) or (child_A_nBs >= 0 and child_B_nBs == 0):
             ISR_splittings.append(_s)
+
+
     return ISR_splittings
 
 
@@ -168,9 +173,9 @@ def decluster_combined_jets(input_jet, debug=False):
 
     #
     #  The simple combinations
-    #
-    _simple_flav_child_A = [s[0] for s in jet_flav_flat[simple_comb_mask]]
-    _simple_flav_child_B = [s[1] for s in jet_flav_flat[simple_comb_mask]]
+    #  Fix this for the b and j ordERING!!!!
+    _simple_flav_child_A = [str(s)[0] for s in jet_flav_flat[simple_comb_mask]]
+    _simple_flav_child_B = [str(s)[1] for s in jet_flav_flat[simple_comb_mask]]
     jet_flav_child_A[simple_comb_mask] = _simple_flav_child_A
     jet_flav_child_B[simple_comb_mask] = _simple_flav_child_B
 
@@ -178,12 +183,12 @@ def decluster_combined_jets(input_jet, debug=False):
     #
     #  The nested combinations
     #   # A is always the more complex
-    _nested_flav_child_A = [s.split("(")[1].rstrip(")") for s in jet_flav_flat[~simple_comb_mask]]
-    _nested_flav_child_B = [s.lstrip("(").split("(")[0] for s in jet_flav_flat[~simple_comb_mask]]
+
+    _nested_flav_child_A = [str(s).split("(")[1].rstrip(")") for s in jet_flav_flat[~simple_comb_mask]]
+    _nested_flav_child_B = [str(s).lstrip("(").split("(")[0] for s in jet_flav_flat[~simple_comb_mask]]
 
     #print(f'child A {_nested_flav_child_A}')
     #print(f'child B {_nested_flav_child_B}')
-
 
     jet_flav_child_A[~simple_comb_mask] = _nested_flav_child_A
     jet_flav_child_B[~simple_comb_mask] = _nested_flav_child_B
@@ -328,13 +333,12 @@ def decluster_splitting_types(input_jets, splitting_types, input_pdfs, debug=Fal
     num_trys = 0
 
 
-
     while(ak.any(input_jets_to_decluster)):
 
         if debug: print(f" (decluster_splitting_types) num_trys {num_trys} ")
 
         splittings_info = []
-
+        if debug: print(f"splittings_types is {splitting_types} num_trys {num_trys}")
         for _s in splitting_types:
 
             # Pre compute these to save time
@@ -403,10 +407,12 @@ def make_synthetic_event_core(input_jets, input_pdfs, debug=False):
 
     while len(splitting_types):
 
+        if debug: print(f"(make_synthetic_event_core) splitting_types was {splitting_types}")
         input_jets = decluster_splitting_types(input_jets, splitting_types, input_pdfs, debug=debug)
 
         splitting_types = get_list_of_combined_jet_types(input_jets)
 
+        if debug: print(f"(make_synthetic_event_core) splitting_types is now {splitting_types}")
 
     if debug: print(f" (make_synthetic_event_core) splitting_types now {splitting_types}")
     #min_dr = get_min_dr(input_jets)
@@ -488,36 +494,49 @@ def make_synthetic_event(input_jets, input_pdfs, debug=False):
 #     return newly_declustered_events
 
 
-def clean_ISR(clustered_jets, splittings):
+def clean_ISR(clustered_jets, splittings, debug=False):
 
     all_jet_types =  get_list_of_splitting_types(clustered_jets)
 
-    ISR_splittings = get_list_of_ISR_splittings(all_jet_types)
+    if debug:
+        print(f" (clean_ISR) all_jet_types {all_jet_types}")
+
+
+    ISR_splittings_types = get_list_of_ISR_splittings(all_jet_types)
+
+
+    if debug:
+        print(f" (clean_ISR) ISR_splittings_types {ISR_splittings_types}")
 
 
     #
     #  Will need recusion here
     #
-    clustered_jets_noISR = clustered_jets
+    clustered_jets_clean = clustered_jets
 
-    for _isr_splitting in ISR_splittings:
+    for _isr_splitting in ISR_splittings_types:
 
-        ISR_mask = clustered_jets.jet_flavor == _isr_splitting
-        ISR_jets = clustered_jets[ISR_mask]
+        ISR_mask = clustered_jets_clean.jet_flavor == _isr_splitting
+        ISR_jets = clustered_jets_clean[ISR_mask]
 
-        ISR_splittings_mask = splittings.jet_flavor == 'j(bb)'
+        ISR_splittings_mask = splittings.jet_flavor == _isr_splitting
         ISR_splittings = splittings[ISR_splittings_mask]
 
-        match_splitting = (ISR_splittings.delta_r(ISR_jets) == 0)
-        declustered_A = ISR_splittings[match_splitting].part_A
+        pairs = ak.cartesian([ISR_jets, ISR_splittings], axis=1, nested=True)
+        delta_r_values = pairs[:,"0"].delta_r(pairs[:,"1"])
+        closest_indices = ak.argmin(delta_r_values, axis=1)
+        match_splitting = ISR_splittings[closest_indices]
+
+        declustered_A = match_splitting.part_A
+        declustered_B = match_splitting.part_B
 
         # To ADd
         #  detclustered_A_jets = decluster(detclustered_A) # recurseive deculstering
+        #  detclustered_A_jets = decluster(detclustered_A) # recurseive deculstering
 
-        declustered_B = ISR_splittings[match_splitting].part_B
         declustered_ISR_jets = ak.concatenate([declustered_A, declustered_B], axis=1)
 
-        clustered_jets_noISR = clustered_jets[~ISR_mask]
-        clustered_jets_noISR = ak.concatenate([clustered_jets_noISR, declustered_ISR_jets], axis=1)
+        clustered_jets_clean = clustered_jets_clean[~ISR_mask]
+        clustered_jets_clean = ak.concatenate([clustered_jets_clean, declustered_ISR_jets], axis=1)
 
-    return clustered_jets_noISR
+    return clustered_jets_clean
