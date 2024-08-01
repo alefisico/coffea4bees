@@ -29,12 +29,13 @@ def children_jet_flavors(comb_flavor):
 
     sub_combs = extract_all_parentheses_substrings(comb_flavor)
 
+
     if len(sub_combs) == 0:
         child_A = comb_flavor[0]
         child_B = comb_flavor[1]
     elif len(sub_combs) == 1:
-        child_A = comb_flavor[0]
-        child_B = sub_combs[0]
+        child_A = sub_combs[0]
+        child_B = comb_flavor.replace(sub_combs[0],"")
     elif len(sub_combs) == 2:
         child_A = sub_combs[0]
         child_B = sub_combs[1]
@@ -77,7 +78,7 @@ def get_list_of_ISR_splittings(splitting_types):
         #
         #  All splittings are ISR unless there is a b in both children
         #
-        if(child_A_nBs > 0 and child_B_nBs):
+        if(child_A_nBs > 0 and child_B_nBs > 0):
             continue
 
         ISR_splittings.append(_s)

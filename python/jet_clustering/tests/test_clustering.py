@@ -14,7 +14,7 @@ import os
 
 sys.path.insert(0, os.getcwd())
 from jet_clustering.clustering   import kt_clustering, cluster_bs, cluster_bs_fast
-from jet_clustering.declustering import compute_decluster_variables, decluster_combined_jets, make_synthetic_event, get_list_of_splitting_types, clean_ISR, get_list_of_ISR_splittings
+from jet_clustering.declustering import compute_decluster_variables, decluster_combined_jets, make_synthetic_event, get_list_of_splitting_types, clean_ISR, get_list_of_ISR_splittings, children_jet_flavors
 
 #import vector
 #vector.register_awkward()
@@ -319,7 +319,6 @@ class clusteringTestCase(unittest.TestCase):
 
         clustered_jets, _clustered_splittings = cluster_bs(input_jets, debug=False)
 
-
         self._check_jet_flavors(_clustered_splittings.part_A.jet_flavor,
                                 _clustered_splittings.part_B.jet_flavor,
                                 debug=debug)
@@ -334,18 +333,15 @@ class clusteringTestCase(unittest.TestCase):
 
         clustered_jets = clean_ISR(clustered_jets, _clustered_splittings, debug=debug)
 
-
-
         if debug:
             print("Jet flavour after ISR cleaning")
             [print(i) for i in clustered_jets.jet_flavor]
 
 
+
         #
         # Declustering
         #
-        #print(_clustered_splittings)
-        #breakpoint()
 
         #
         #  Read in the pdfs
@@ -408,7 +404,7 @@ class clusteringTestCase(unittest.TestCase):
 
 
     def test_synthetic_datasets_5jets(self):
-        self._synthetic_datasets_test(self.input_jets_5, n_jets_expected = 5, debug=False)
+        self._synthetic_datasets_test(self.input_jets_5, n_jets_expected = 5, debug=True)
 
 
     def test_synthetic_datasets_bbjjets(self):
@@ -419,12 +415,24 @@ class clusteringTestCase(unittest.TestCase):
 #        self._synthetic_datasets_test(self.input_jets_6, n_jets_expected = 6, debug = True)
 
 
+    def test_children_jet_flavors(self):
+        splitting_types = [ ('bb', ('b','b')), ('bj',('b','j')), ('jb',('j','b')), ('jj',('j','j')),
+                            ("j(bb)", ('(bb)', 'j')), ("b(bj)", ('(bj)', 'b')), ("j(bj)", ('(bj)', 'j')), ("(bj)b", ('(bj)', 'b')),
+                            ("(j(bj))b", ('(j(bj))', 'b')), ("(bb)(jj)", ('(bb)', '(jj)')), ("(jj)(bb)", ('(jj)', '(bb)')), ("j(j(bj))", ('(j(bj))','j')),
+                           ]
+
+        for _s in splitting_types:
+
+            _children = children_jet_flavors(_s[0])
+            #print(_s[0],":",_children,"vs",_s[1])
+            self.assertTrue(_children == _s[1], f"Miss match for type {_s[0]}: got {_children}, expected {_s[1]}")
+
     def test_get_list_of_ISR_splittings(self):
 
 
         splitting_types = [("b",False), ("j",False),
                            ("bb",False), ("bj",True), ("jj",True),
-                           ("j(bb)",True), ("b(bj)",False), ("j(bj)",True),
+                           ("j(bb)",True), ("b(bj)",False), ("j(bj)",True),('(bj)b',False),
                            ("b(j(bj))",False), ('(bb)(jj)',True), ('(jj)(bb)',True) ,("j(j(bj))",True), ("j(b(bj))",True)
                            ]
 
