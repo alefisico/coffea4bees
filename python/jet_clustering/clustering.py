@@ -55,7 +55,7 @@ def distance_matrix_kt(vectors):
     eta1 = ak.values_astype(vectors.eta, np.float64)
     phi1 = ak.values_astype(vectors.phi, np.float64)
 
-    pt2 = pt1[:, np.newaxis]
+    pt2  = pt1[:, np.newaxis]
     eta2 = eta1[:, np.newaxis]
     phi2 = phi1[:, np.newaxis]
 

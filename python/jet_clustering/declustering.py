@@ -535,8 +535,13 @@ def clean_ISR(clustered_jets, splittings, debug=False):
 
             pairs = ak.cartesian([ISR_jets, ISR_splittings], axis=1, nested=True)
             delta_r_values = pairs[:,"0"].delta_r(pairs[:,"1"])
-            closest_indices = ak.argmin(delta_r_values, axis=1)
+            closest_indices = ak.argmin(delta_r_values, axis=2)
             match_splitting = ISR_splittings[closest_indices]
+
+            if debug:
+                print(f" ISR_jets: {ISR_jets.pt}  {ISR_jets.eta} {ISR_jets.phi} ")
+                print(f" match_splitting: {match_splitting.pt}  {match_splitting.eta} {match_splitting.phi} ")
+                print(f" ISR_splittings: {ISR_splittings.pt}  {ISR_splittings.eta} {ISR_splittings.phi} ")
 
             declustered_A = match_splitting.part_A
             declustered_B = match_splitting.part_B
