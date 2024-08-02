@@ -12,7 +12,7 @@ import numpy as np
 import yaml
 
 sys.path.insert(0, os.getcwd())
-from base_class.plots.plots import makePlot, make2DPlot, load_config, load_hists, read_axes_and_cuts, parse_args
+from base_class.plots.plots import makePlot, make2DPlot, load_config, load_hists, read_axes_and_cuts, parse_args, get_cut_dict
 import base_class.plots.iPlot_config as cfg
 
 np.seterr(divide='ignore', invalid='ignore')
@@ -64,10 +64,20 @@ pt_names = {0: "$p_{T}$: < 140 GeV",
             }
 
 
+eta_names = {0: "$\eta_{T}$: < 0.6",
+             1: "$\eta_{T}$: 0.6 - 1.2",
+             2: "$\eta_{T}$: 1.2 - 1.8",
+             3: "$\eta_{T}$: 1.8 - 2.4",
+             4: "$\eta_{T}$: > 2.4",
+            }
+
+
 def make_PDFs_vs_Pt(config, output_file_name_vs_pT):
 
     splittings = list(config.keys())
     varNames   = list(config[splittings[0]].keys())
+
+
     pt_bins = [0, 140, 230, 320, 410, np.inf]
 
     with open(output_file_name_vs_pT, 'w') as output_file_vs_pT:
@@ -84,11 +94,12 @@ def make_PDFs_vs_Pt(config, output_file_name_vs_pT):
 
         for _s in splittings:
             output_file_vs_pT.write(f"\n{_s}:\n")
-
+            print(f"Writing {_s}")
             for _v in varNames:
                 var_config = config[_s][_v]
                 #splitting_{_s}.{_v}_pT"
-                _hist_name = f"{var_config[0]}_pT"
+                _hist_name = f"splitting_{_s}.{var_config[0]}_pT"
+                print(f"\t var {_hist_name}")
 
                 output_file_vs_pT.write(f"    {_v}:\n")
 
@@ -102,7 +113,10 @@ def make_PDFs_vs_Pt(config, output_file_name_vs_pT):
 
                 for _iPt in range(len(pt_bins) - 1):
 
-                    plot_dict = {"process":"data", "year":sum, "tag":1,"region":sum,"passPreSel":True, "pass0OthJets":sum, "pass1OthJets":sum, "pt":_iPt}
+                    cut_dict = get_cut_dict("passPreSel", cfg.cutList)
+                    plot_dict = {"process":"data", "year":sum, "tag":1,"region":sum, "pt":_iPt}
+                    plot_dict = plot_dict | cut_dict
+
 
                     if is_1d_hist:
                         _hist = cfg.hists[0]["hists"][_hist_name][plot_dict]
@@ -111,6 +125,11 @@ def make_PDFs_vs_Pt(config, output_file_name_vs_pT):
 
                         bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
                         probs = counts.value / counts.value.sum()
+
+                        # Hack for empty histograms
+                        if any(np.isnan(probs)):
+                            probs[np.isnan(probs)] = 0
+                            probs[0] = 1
 
                         write_1D_pdf(output_file_vs_pT, _iPt, bin_centers, probs, n_spaces=8)
                     else:
@@ -151,8 +170,9 @@ def make_nominal_PDFs(config, output_file_name):
                     is_1d_hist = False
 
                 if is_1d_hist:
-                    _hist_name, _rebin = config[_s][_v]
+                    _var_name, _rebin = config[_s][_v]
 
+                    _hist_name = f"splitting_{_s}.{_var_name}"
                     fig, ax = plot(_hist_name, region="SR", cut="passPreSel", doRatio=0, rebin=_rebin, process="data")
                     bin_centers = ax.get_lines()[0].get_xdata()
                     counts      = ax.get_lines()[0].get_ydata()
@@ -165,7 +185,9 @@ def make_nominal_PDFs(config, output_file_name):
                     _v = _v.replace(f"{_s}.","")
                     hist_to_plot = cfg.hists[0]["hists"][f"splitting_{_s}.{_v}"]
 
-                    plot_dict = {"process":"data", "year":sum, "tag":1,"region":sum,"passPreSel":True, "pass0OthJets":sum, "pass1OthJets":sum}
+                    cut_dict = get_cut_dict("passPreSel", cfg.cutList)
+                    plot_dict = {"process":"data", "year":sum, "tag":1,"region":sum }
+                    plot_dict = plot_dict | cut_dict
 
                     _hist = hist_to_plot[plot_dict]
 
@@ -182,6 +204,78 @@ def centers_to_edges(centers):
     edges[0] = centers[0] - bin_width / 2
     edges[-1] = centers[-1] + bin_width / 2
     return edges
+
+
+def get_bins_xMin_xMax_from_centers(centers):
+    nBins = len(centers)
+    bin_half_width = 0.5*(centers[1]  - centers[0])
+    xMin  = centers[0]  - bin_half_width
+    xMax  = centers[-1] + bin_half_width
+
+    return nBins, xMin, xMax
+
+
+def test_PDFs_vs_Pt(config, output_file_name):
+    splittings = list(config.keys())
+    varNames   = list(config[splittings[0]].keys())
+
+
+
+
+    #
+    #  test the Pdfs
+    #
+    with open(output_file_name, 'r') as input_file:
+
+        input_pdfs = yaml.safe_load(input_file)
+        nPt_bins = len(input_pdfs["pt_bins"]) - 1
+
+        for _s in splittings:
+
+            print(f"Doing splitting {_s}")
+
+            for _v in varNames:
+                print(f"\tDoing var  {_v}")
+
+                if _v.find("_vs_") == -1:
+                    is_1d_hist = True
+                else:
+                    is_1d_hist = False
+
+
+                if is_1d_hist:
+
+                    for _iPt in range(nPt_bins):
+
+                        probs   = np.array(input_pdfs[_s][_v][_iPt]["probs"],       dtype=float)
+                        centers = np.array(input_pdfs[_s][_v][_iPt]["bin_centers"], dtype=float)
+
+                        nBins, xMin, xMax = get_bins_xMin_xMax_from_centers(centers)
+
+                        num_samples = 10000
+                        samples = np.random.choice(centers, size=num_samples, p=probs)
+
+                        sample_hist = hist.Hist.new.Reg(nBins, xMin, xMax).Double()
+                        sample_hist.fill(samples)
+
+                        sample_pdf  = hist.Hist.new.Reg(nBins, xMin, xMax).Double()
+                        sample_pdf[...] = probs * num_samples
+
+                        sample_hist.plot(label="samples")
+                        sample_pdf.plot(label="pdf")
+
+                    plt.xlabel(_v)
+                    plt.legend()
+                    plt.savefig(args.outputFolder+f"/test_sampling_pt_{_s}_{_v}.pdf")
+                    plt.yscale("log")
+                    plt.savefig(args.outputFolder+f"/test_sampling_pt_{_s}_{_v}_log.pdf")
+
+                    plt.close()
+
+
+                else:
+                    pass
+
 
 
 def test_nominal_PDFs(config, output_file_name):
@@ -206,16 +300,14 @@ def test_nominal_PDFs(config, output_file_name):
                     is_1d_hist = False
 
                 if is_1d_hist:
+
                     probs   = np.array(input_pdfs[_s][_v]["probs"],       dtype=float)
                     centers = np.array(input_pdfs[_s][_v]["bin_centers"], dtype=float)
 
+                    nBins, xMin, xMax = get_bins_xMin_xMax_from_centers(centers)
+
                     num_samples = 10000
                     samples = np.random.choice(centers, size=num_samples, p=probs)
-
-                    nBins = len(centers)
-                    bin_half_width = 0.5*(centers[1]  - centers[0])
-                    xMin  = centers[0]  - bin_half_width
-                    xMax  = centers[-1] + bin_half_width
 
                     sample_hist = hist.Hist.new.Reg(nBins, xMin, xMax).Double()
                     sample_hist.fill(samples)
@@ -294,33 +386,33 @@ def doPlots(debug=False):
     #
     #  config Setup
     #
-
-    bb_hist_name = {}
-    bb_hist_name["mA"]        = ("splitting_bb.mA",        1)
-    bb_hist_name["mB"]        = ("splitting_bb.mB",        1)
-    bb_hist_name["decay_phi"] = ("splitting_bb.decay_phi", 4)
-    bb_hist_name["zA_vs_thetaA"]        = ("splitting_bb.zA_vs_thetaA",        1)
-
-    bj_hist_name = {}
-    bj_hist_name["mA"]        = ("splitting_bj.mA",        1)
-    bj_hist_name["mB"]        = ("splitting_bj.mB",        1)
-    bj_hist_name["decay_phi"] = ("splitting_bj.decay_phi", 4)
-    bj_hist_name["zA_vs_thetaA"]        = ("splitting_bj.zA_vs_thetaA",        1)
-
-    b_bj_hist_name = {}
-    b_bj_hist_name["mA"]        = ("splitting_b(bj).mA_l",        1)
-    b_bj_hist_name["mB"]        = ("splitting_b(bj).mB_l",        1)
-    b_bj_hist_name["decay_phi"] = ("splitting_b(bj).decay_phi", 4)
-    b_bj_hist_name["zA_vs_thetaA"]        = ("splitting_b(bj).zA_vs_thetaA",        1)
-
     splitting_config = {}
-    splitting_config["bb"]   = bb_hist_name
-    splitting_config["bj"]   = bj_hist_name
-    splitting_config["b(bj)"]   = b_bj_hist_name
+
+    s_XX     = { "mA":("mA",   1),  "mB":("mB",   1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_vs_thetaA", 1) }
+    s_XX_X   = { "mA":("mA_l", 1),  "mB":("mB",   1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_vs_thetaA", 1) }
+    s_XX_XX  = { "mA":("mA_l", 1),  "mB":("mB_l", 1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_vs_thetaA", 1) }
+    s_XX_X_X = { "mA":("mA_l", 1),  "mB":("mB",   1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_vs_thetaA", 1) }
+
+    splitting_config["bb"]    = s_XX
+    splitting_config["bj"]    = s_XX
+    splitting_config["jj"]    = s_XX
+
+    splitting_config["(bj)b"] = s_XX_X
+    splitting_config["(bj)j"] = s_XX_X
+    splitting_config["(bb)j"] = s_XX_X
+    splitting_config["(jj)b"] = s_XX_X
+
+    splitting_config["(bb)(jj)"] = s_XX_XX
+    splitting_config["(bj)(bj)"] = s_XX_XX
+
+    splitting_config["((jj)b)b"] = s_XX_X_X
+    splitting_config["((bj)b)j"] = s_XX_X_X
+    splitting_config["((bj)j)b"] = s_XX_X_X
+    splitting_config["((bb)j)j"] = s_XX_X_X
 
     output_file_name_vs_pT = args.outputFolder+"/clustering_pdfs_vs_pT.yml"
     make_PDFs_vs_Pt(splitting_config, output_file_name_vs_pT)
-    #test_PDFs_vs_Pt(splitting_config, output_file_name_vs_pT)
+    test_PDFs_vs_Pt(splitting_config, output_file_name_vs_pT)
 
     #
     #  No Pt Depedence
@@ -351,7 +443,9 @@ def doPlots(debug=False):
 
                 for _iPt in range(len(pt_bins) - 1):
 
-                    plot_dict = {"process":"data", "year":sum, "tag":1,"region":sum,"passPreSel":True, "pass0OthJets":sum, "pass1OthJets":sum, "pt":_iPt}
+                    cut_dict = get_cut_dict("passPreSel", cfg.cutList)
+                    plot_dict = {"process":"data", "year":sum, "tag":1,"region":sum,"pt":_iPt}
+                    plot_dict = plot_dict | cut_dict
 
                     if is_1d_hist:
                         cfg.hists[0]["hists"][_hist_name][plot_dict].plot(label=f"{pt_names[_iPt]}")
@@ -380,14 +474,17 @@ def doPlots(debug=False):
                 plt.figure(figsize=(18, 12))
 
             for _iPt in range(len(pt_bins) - 1):
-                plot_dict = {"process":"data", "year":sum, "tag":1,"region":sum,"passPreSel":True, "pass0OthJets":sum, "pass1OthJets":sum, "abs_eta":_iPt}
+
+                cut_dict = get_cut_dict("passPreSel", cfg.cutList)
+                plot_dict = {"process":"data", "year":sum, "tag":1,"region":sum, "abs_eta":_iPt}
+                plot_dict = plot_dict | cut_dict
 
                 if is_1d_hist:
-                    cfg.hists[0]["hists"][_hist_name][plot_dict].plot(label=f"{pt_names[_iPt]}")
+                    cfg.hists[0]["hists"][_hist_name][plot_dict].plot(label=f"{eta_names[_iPt]}")
                 else:
                     plt.subplot(2, 3, _iPt + 1)
                     cfg.hists[0]["hists"][_hist_name][plot_dict].plot2d()
-                    plt.title(f'{pt_names[_iPt]}')
+                    plt.title(f'{eta_names[_iPt]}')
             plt.legend()
             plt.savefig(args.outputFolder+f"/test_eta_dependence_{_s}_{_v}.pdf")
 

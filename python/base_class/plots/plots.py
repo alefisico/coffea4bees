@@ -587,7 +587,7 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
     yearStr = get_value_nested_dict(cfg.plotConfig, "year", default="RunII")
     kwargs["year"] = yearStr
 
-    if kwargs.get("doRatio", False):
+    if kwargs.get("doRatio", kwargs.get("doratio", False)):
 
         ratio_plots = []
 
@@ -765,7 +765,7 @@ def makePlot(cfg, var='selJets.pt',
     #
     #  Config Ratios
     #
-    if kwargs.get("doRatio", False):
+    if kwargs.get("doRatio", kwargs.get("doratio", False)):
         ratio_config = cfg.plotConfig["ratios"]
         ratio_plots = []
 
