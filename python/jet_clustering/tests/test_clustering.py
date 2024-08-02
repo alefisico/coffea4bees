@@ -290,8 +290,6 @@ class clusteringTestCase(unittest.TestCase):
         part_A_flat = ak.flatten(part_A_jet_flavor)
         part_B_flat = ak.flatten(part_B_jet_flavor)
 
-        if debug:
-            [print(i) for i in zip(part_A_flat, part_B_flat)]
 
         #
         #  A should always be the more complex
@@ -336,8 +334,6 @@ class clusteringTestCase(unittest.TestCase):
         if debug:
             print("Jet flavour after ISR cleaning")
             [print(i) for i in clustered_jets.jet_flavor]
-
-
 
         #
         # Declustering
@@ -411,14 +407,14 @@ class clusteringTestCase(unittest.TestCase):
         self._synthetic_datasets_test(self.input_jets_bbj, n_jets_expected = 5)
 
 
-#    def test_synthetic_datasets_6jets(self):
-#        self._synthetic_datasets_test(self.input_jets_6, n_jets_expected = 6, debug = True)
+    def test_synthetic_datasets_6jets(self):
+        self._synthetic_datasets_test(self.input_jets_6, n_jets_expected = 6, debug = True)
 
 
     def test_children_jet_flavors(self):
         splitting_types = [ ('bb', ('b','b')), ('bj',('b','j')), ('jb',('j','b')), ('jj',('j','j')),
-                            ("j(bb)", ('(bb)', 'j')), ("b(bj)", ('(bj)', 'b')), ("j(bj)", ('(bj)', 'j')), ("(bj)b", ('(bj)', 'b')),
-                            ("(j(bj))b", ('(j(bj))', 'b')), ("(bb)(jj)", ('(bb)', '(jj)')), ("(jj)(bb)", ('(jj)', '(bb)')), ("j(j(bj))", ('(j(bj))','j')),
+                            ("j(bb)", ('bb', 'j')), ("b(bj)", ('bj', 'b')), ("j(bj)", ('bj', 'j')), ("(bj)b", ('bj', 'b')),
+                            ("(j(bj))b", ('j(bj)', 'b')), ("(bb)(jj)", ('bb', 'jj')), ("(jj)(bb)", ('jj', 'bb')), ("j(j(bj))", ('j(bj)','j')),
                            ]
 
         for _s in splitting_types:

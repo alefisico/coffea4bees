@@ -34,11 +34,11 @@ def children_jet_flavors(comb_flavor):
         child_A = comb_flavor[0]
         child_B = comb_flavor[1]
     elif len(sub_combs) == 1:
-        child_A = sub_combs[0]
-        child_B = comb_flavor.replace(sub_combs[0],"")
+        child_A = sub_combs[0][1:-1] # the 1:-1 remove the leading and trailing parems
+        child_B = str(comb_flavor).replace(sub_combs[0],"")
     elif len(sub_combs) == 2:
-        child_A = sub_combs[0]
-        child_B = sub_combs[1]
+        child_A = sub_combs[0][1:-1]
+        child_B = sub_combs[1][1:-1]
     else:
         print(f"ERROR comb_flavor is {comb_flavor} sub_combs is {sub_combs} len {len(sub_combs)}")
 
@@ -174,8 +174,9 @@ def decluster_combined_jets(input_jet, debug=False):
     jet_flav_flat = ak.flatten(input_jet.jet_flavor)
     simple_comb_mask = (np.char.str_len(jet_flav_flat) == 2)
 
-    jet_flav_child_A = np.full(n_jets, "XXX")
-    jet_flav_child_B = np.full(n_jets, "XXX")
+    # For some reason this dummy string has to be as long as the longest possible replacement
+    jet_flav_child_A = np.full(n_jets, "XXXXXXXXXXXXXXX")
+    jet_flav_child_B = np.full(n_jets, "XXXXXXXXXXXXXXX")
 
     #
     #  The simple combinations
@@ -189,9 +190,9 @@ def decluster_combined_jets(input_jet, debug=False):
     #
     #  The nested combinations
     #   # A is always the more complex
-
-    _nested_flav_child_A = [str(s).split("(")[1].rstrip(")") for s in jet_flav_flat[~simple_comb_mask]]
-    _nested_flav_child_B = [str(s).lstrip("(").split("(")[0] for s in jet_flav_flat[~simple_comb_mask]]
+    _children = [children_jet_flavors(s) for s in jet_flav_flat[~simple_comb_mask]]
+    _nested_flav_child_A = [child[0] for child in _children]
+    _nested_flav_child_B = [child[1] for child in _children]
 
     #print(f'child A {_nested_flav_child_A}')
     #print(f'child B {_nested_flav_child_B}')
@@ -201,6 +202,8 @@ def decluster_combined_jets(input_jet, debug=False):
 
     jet_flavor_A = ak.unflatten(jet_flav_child_A, ak.num(input_jet))
     jet_flavor_B = ak.unflatten(jet_flav_child_B, ak.num(input_jet))
+
+
 
     combined_pt = input_jet.pt
     tanThetaA = np.tan(input_jet.thetaA)

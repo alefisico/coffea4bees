@@ -92,7 +92,7 @@ class ClusterHists(Template):
               (100, 0, 50,  ('mA', 'mA [GeV]')))
 
     mB_pT = H((5, 50, 500, ("pt", "pT")),
-                (50, 0, 50,  ('mB', 'mB [GeV]')))
+              (100, 0, 50,  ('mB', 'mB [GeV]')))
 
     mA_l_pT = H((5, 50, 500, ("pt", "pT")),
                 (50, 0, 300,  ('mA', 'mA [GeV]')))
