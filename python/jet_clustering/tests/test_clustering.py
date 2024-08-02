@@ -344,7 +344,7 @@ class clusteringTestCase(unittest.TestCase):
         #
         #  Make with ../.ci-workflows/synthetic-dataset-plot-job.sh
         # input_pdf_file_name = "analysis/plots_synthetic_datasets/clustering_pdfs.yml"
-        input_pdf_file_name = "jet_clustering/jet-splitting-PDFs-00-02-00/clustering_pdfs_vs_pT.yml"
+        input_pdf_file_name = "jet_clustering/jet-splitting-PDFs-00-03-00/clustering_pdfs_vs_pT.yml"
         #input_pdf_file_name = "jet_clustering/clustering_PDFs/clustering_pdfs_vs_pT.yml"
         with open(input_pdf_file_name, 'r') as input_file:
             input_pdfs = yaml.safe_load(input_file)
@@ -400,7 +400,7 @@ class clusteringTestCase(unittest.TestCase):
 
 
     def test_synthetic_datasets_5jets(self):
-        self._synthetic_datasets_test(self.input_jets_5, n_jets_expected = 5, debug=True)
+        self._synthetic_datasets_test(self.input_jets_5, n_jets_expected = 5, debug=False)
 
 
     def test_synthetic_datasets_bbjjets(self):
@@ -408,7 +408,7 @@ class clusteringTestCase(unittest.TestCase):
 
 
     def test_synthetic_datasets_6jets(self):
-        self._synthetic_datasets_test(self.input_jets_6, n_jets_expected = 6, debug = True)
+        self._synthetic_datasets_test(self.input_jets_6, n_jets_expected = 6, debug = False)
 
 
     def test_children_jet_flavors(self):

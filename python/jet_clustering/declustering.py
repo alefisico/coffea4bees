@@ -523,29 +523,46 @@ def clean_ISR(clustered_jets, splittings, debug=False):
     #
     clustered_jets_clean = clustered_jets
 
-    for _isr_splitting in ISR_splittings_types:
+    while(len(ISR_splittings_types)):
 
-        ISR_mask = clustered_jets_clean.jet_flavor == _isr_splitting
-        ISR_jets = clustered_jets_clean[ISR_mask]
+        for _isr_splitting in ISR_splittings_types:
 
-        ISR_splittings_mask = splittings.jet_flavor == _isr_splitting
-        ISR_splittings = splittings[ISR_splittings_mask]
+            ISR_mask = clustered_jets_clean.jet_flavor == _isr_splitting
+            ISR_jets = clustered_jets_clean[ISR_mask]
 
-        pairs = ak.cartesian([ISR_jets, ISR_splittings], axis=1, nested=True)
-        delta_r_values = pairs[:,"0"].delta_r(pairs[:,"1"])
-        closest_indices = ak.argmin(delta_r_values, axis=1)
-        match_splitting = ISR_splittings[closest_indices]
+            ISR_splittings_mask = splittings.jet_flavor == _isr_splitting
+            ISR_splittings = splittings[ISR_splittings_mask]
 
-        declustered_A = match_splitting.part_A
-        declustered_B = match_splitting.part_B
+            pairs = ak.cartesian([ISR_jets, ISR_splittings], axis=1, nested=True)
+            delta_r_values = pairs[:,"0"].delta_r(pairs[:,"1"])
+            closest_indices = ak.argmin(delta_r_values, axis=1)
+            match_splitting = ISR_splittings[closest_indices]
 
-        # To ADd
-        #  detclustered_A_jets = decluster(detclustered_A) # recurseive deculstering
-        #  detclustered_A_jets = decluster(detclustered_A) # recurseive deculstering
+            declustered_A = match_splitting.part_A
+            declustered_B = match_splitting.part_B
 
-        declustered_ISR_jets = ak.concatenate([declustered_A, declustered_B], axis=1)
+            # To ADd
+            #  detclustered_A_jets = decluster(detclustered_A) # recurseive deculstering
+            #  detclustered_A_jets = decluster(detclustered_A) # recurseive deculstering
 
-        clustered_jets_clean = clustered_jets_clean[~ISR_mask]
-        clustered_jets_clean = ak.concatenate([clustered_jets_clean, declustered_ISR_jets], axis=1)
+            declustered_ISR_jets = ak.concatenate([declustered_A, declustered_B], axis=1)
+
+            clustered_jets_clean = clustered_jets_clean[~ISR_mask]
+            clustered_jets_clean = ak.concatenate([clustered_jets_clean, declustered_ISR_jets], axis=1)
+
+        #
+        # Recompute ISR splitting_types
+        #
+        all_jet_types =  get_list_of_splitting_types(clustered_jets_clean)
+
+        if debug:
+            print(f" (clean_ISR) all_jet_types now {all_jet_types}")
+
+        ISR_splittings_types = get_list_of_ISR_splittings(all_jet_types)
+
+        if debug:
+            print(f" (clean_ISR) ISR_splittings_types now {ISR_splittings_types}")
+
+
 
     return clustered_jets_clean
