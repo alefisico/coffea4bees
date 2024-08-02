@@ -14,7 +14,7 @@ import os
 
 sys.path.insert(0, os.getcwd())
 from jet_clustering.clustering   import kt_clustering, cluster_bs, cluster_bs_fast
-from jet_clustering.declustering import compute_decluster_variables, decluster_combined_jets, make_synthetic_event, get_list_of_splitting_types, clean_ISR, get_list_of_ISR_splittings
+from jet_clustering.declustering import compute_decluster_variables, decluster_combined_jets, make_synthetic_event, get_list_of_splitting_types, clean_ISR, get_list_of_ISR_splittings, children_jet_flavors
 
 #import vector
 #vector.register_awkward()
@@ -147,9 +147,6 @@ class clusteringTestCase(unittest.TestCase):
 
         clustered_jets, clustered_splittings = cluster_bs(input_jets, debug=False)
         compute_decluster_variables(clustered_splittings)
-
-        if debug:
-            breakpoint()
 
         if self.debug:
             for iEvent, jets in enumerate(clustered_jets):
@@ -285,16 +282,44 @@ class clusteringTestCase(unittest.TestCase):
         self.assertTrue(all(phi_check), "All phis should be the same")
 
 
-    def _synthetic_datasets_test(self, input_jets, n_jets_expected, debug=False):
-
-        clustered_jets, _clustered_splittings = cluster_bs(input_jets, debug=False)
+    def _check_jet_flavors(self, part_A_jet_flavor, part_B_jet_flavor, debug=False):
 
         #
         # Check particle orderings of splittings
         #
-        part_A_len =  [len(i) for i in ak.flatten(_clustered_splittings.part_A.jet_flavor)]
-        part_B_len =  [len(i) for i in ak.flatten(_clustered_splittings.part_B.jet_flavor)]
+        part_A_flat = ak.flatten(part_A_jet_flavor)
+        part_B_flat = ak.flatten(part_B_jet_flavor)
+
+
+        #
+        #  A should always be the more complex
+        #
+        part_A_len = np.array([len(i) for i in part_A_flat])
+        part_B_len = np.array([len(i) for i in part_B_flat])
         self.assertTrue(all(a >= b for a, b in zip(part_A_len, part_B_len)), "Part A should be the more complex of the pair")
+
+
+        #
+        #  More bs in A when lengths are the same
+        #
+        part_A_countbs = np.array([i.count("b") for i in part_A_flat])
+        part_B_countbs = np.array([i.count("b") for i in part_B_flat])
+
+        more_bs_in_partA = part_A_countbs >= part_B_countbs
+        equal_len_mask = part_A_len == part_B_len
+        more_bs_in_partA[~equal_len_mask] = True
+
+
+        self.assertTrue(np.all(more_bs_in_partA), "Part A should alwasy have more bs")
+
+
+    def _synthetic_datasets_test(self, input_jets, n_jets_expected, debug=False):
+
+        clustered_jets, _clustered_splittings = cluster_bs(input_jets, debug=False)
+
+        self._check_jet_flavors(_clustered_splittings.part_A.jet_flavor,
+                                _clustered_splittings.part_B.jet_flavor,
+                                debug=debug)
 
 
         #
@@ -306,25 +331,20 @@ class clusteringTestCase(unittest.TestCase):
 
         clustered_jets = clean_ISR(clustered_jets, _clustered_splittings, debug=debug)
 
-
-
         if debug:
             print("Jet flavour after ISR cleaning")
             [print(i) for i in clustered_jets.jet_flavor]
 
-
         #
         # Declustering
         #
-        #print(_clustered_splittings)
-        #breakpoint()
 
         #
         #  Read in the pdfs
         #
         #  Make with ../.ci-workflows/synthetic-dataset-plot-job.sh
         # input_pdf_file_name = "analysis/plots_synthetic_datasets/clustering_pdfs.yml"
-        input_pdf_file_name = "jet_clustering/jet-splitting-PDFs-00-02-00/clustering_pdfs_vs_pT.yml"
+        input_pdf_file_name = "jet_clustering/jet-splitting-PDFs-00-03-00/clustering_pdfs_vs_pT.yml"
         #input_pdf_file_name = "jet_clustering/clustering_PDFs/clustering_pdfs_vs_pT.yml"
         with open(input_pdf_file_name, 'r') as input_file:
             input_pdfs = yaml.safe_load(input_file)
@@ -358,22 +378,6 @@ class clusteringTestCase(unittest.TestCase):
             #print(f"Reco phi {(pA + pB).phi[1]}")
 
         self.assertTrue(all(match_n_jets), f"Should always get {n_jets_expected} jets")
-        return declustered_jets
-
-
-
-
-
-    def test_synthetic_datasets_4jets(self):
-        self._synthetic_datasets_test(self.input_jets_4, n_jets_expected = 4)
-
-
-    def test_synthetic_datasets_5jets(self):
-        self._synthetic_datasets_test(self.input_jets_5, n_jets_expected = 5, debug=False)
-
-
-    def test_synthetic_datasets_bbjjets(self):
-        declustered_jets = self._synthetic_datasets_test(self.input_jets_bbj, n_jets_expected = 5)
 
         #
         #  Do reclustering
@@ -386,18 +390,56 @@ class clusteringTestCase(unittest.TestCase):
         jets_for_clustering = jets_for_clustering[ak.argsort(jets_for_clustering.pt, axis=1, ascending=False)]
         clustered_jets_reclustered, clustered_splittings_reclustered = cluster_bs(jets_for_clustering, debug=False)
         compute_decluster_variables(clustered_splittings_reclustered)
-        #breakpoint()
+
+        self._check_jet_flavors(clustered_splittings_reclustered.part_A.jet_flavor,
+                                clustered_splittings_reclustered.part_B.jet_flavor)
 
 
-#    def test_synthetic_datasets_6jets(self):
-#        self._synthetic_datasets_test(self.input_jets_6, n_jets_expected = 6, debug = True)
+    def test_synthetic_datasets_4jets(self):
+        self._synthetic_datasets_test(self.input_jets_4, n_jets_expected = 4)
 
+
+    def test_synthetic_datasets_5jets(self):
+        self._synthetic_datasets_test(self.input_jets_5, n_jets_expected = 5, debug=False)
+
+
+    def test_synthetic_datasets_bbjjets(self):
+        self._synthetic_datasets_test(self.input_jets_bbj, n_jets_expected = 5)
+
+
+    def test_synthetic_datasets_6jets(self):
+        self._synthetic_datasets_test(self.input_jets_6, n_jets_expected = 6, debug = False)
+
+
+    def test_children_jet_flavors(self):
+        splitting_types = [ ('bb', ('b','b')), ('bj',('b','j')), ('jb',('j','b')), ('jj',('j','j')),
+                            ("j(bb)", ('bb', 'j')), ("b(bj)", ('bj', 'b')), ("j(bj)", ('bj', 'j')), ("(bj)b", ('bj', 'b')),
+                            ("(j(bj))b", ('j(bj)', 'b')), ("(bb)(jj)", ('bb', 'jj')), ("(jj)(bb)", ('jj', 'bb')), ("j(j(bj))", ('j(bj)','j')),
+                           ]
+
+        for _s in splitting_types:
+
+            _children = children_jet_flavors(_s[0])
+            #print(_s[0],":",_children,"vs",_s[1])
+            self.assertTrue(_children == _s[1], f"Miss match for type {_s[0]}: got {_children}, expected {_s[1]}")
 
     def test_get_list_of_ISR_splittings(self):
 
 
-        test_splitting_types = ["b", "j", "bb", "bj", "jj", "j(bb)", "b(bj)", "j(bj)", "b(j(bj))",'(bb)(jj)','(jj)(bb)',"j(j(bj))", "j(b(bj))"]
-        expected_ISR_splittings = ["bj","jj","j(bb)", "j(bj)",'(bb)(jj)','(jj)(bb)',"j(j(bj))", "j(b(bj))"]
+        splitting_types = [("b",False), ("j",False),
+                           ("bb",False), ("bj",True), ("jj",True),
+                           ("j(bb)",True), ("b(bj)",False), ("j(bj)",True),('(bj)b',False),
+                           ("b(j(bj))",False), ('(bb)(jj)',True), ('(jj)(bb)',True) ,("j(j(bj))",True), ("j(b(bj))",True)
+                           ]
+
+
+        test_splitting_types = []
+        expected_ISR_splittings = []
+
+        for _s in splitting_types:
+            test_splitting_types.append(_s[0])
+            if _s[1]:
+                expected_ISR_splittings.append(_s[0])
 
 
         ISR_splittings = get_list_of_ISR_splittings(test_splitting_types)

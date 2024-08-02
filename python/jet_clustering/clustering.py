@@ -93,7 +93,7 @@ def remove_indices(particles, indices_to_remove):
     mask[indices_to_remove] = False
     return particles[mask]
 
-# Order by size of cluster then by flavour
+# Add parenthesis if needed
 def comb_jet_flavor(flavor_A, flavor_B):
 
     # Add Parens if the input is already clustered
@@ -102,15 +102,7 @@ def comb_jet_flavor(flavor_A, flavor_B):
     if len(flavor_B) > 1:
         flavor_B = f"({str(flavor_B)})"
 
-    if len(flavor_A) < len(flavor_B):
-        return flavor_A + flavor_B
-
-    if len(flavor_B) < len(flavor_A):
-        return flavor_B + flavor_A
-
-    _name_list = [flavor_A, flavor_B]
-    _name_list.sort()
-    return "".join(_name_list)
+    return flavor_A + flavor_B
 
 
 
@@ -120,22 +112,24 @@ def combine_particles(part_A, part_B, *, debug=False):
     new_part_A = part_A
     new_part_B = part_B
 
-    # All else equal Pt ordered
-    if part_A.pt < part_B.pt:
-        new_part_A = part_B
-        new_part_B = part_A
-
-    # If the one is a b and the other a j, flavor ordered
-    if part_A.jet_flavor == "j" and part_B.jet_flavor == "b":
-        new_part_A = part_B
-        new_part_B = part_A
-
     # order by complexity
-    elif len(part_B.jet_flavor) > len(part_A.jet_flavor):
+    if len(new_part_B.jet_flavor) > len(new_part_A.jet_flavor):
         new_part_A = part_B
         new_part_B = part_A
 
-    part_comb_jet_flavor = comb_jet_flavor(part_A.jet_flavor, part_B.jet_flavor)
+
+    # else order by bjet content
+    elif new_part_A.jet_flavor.count("b") < new_part_B.jet_flavor.count("b"):
+        new_part_A = part_B
+        new_part_B = part_A
+
+    # else order by pt
+    elif new_part_A.jet_flavor.count("b") == new_part_B.jet_flavor.count("b") and (new_part_A.pt < new_part_B.pt):
+        new_part_A = part_B
+        new_part_B = part_A
+
+
+    part_comb_jet_flavor = comb_jet_flavor(new_part_A.jet_flavor, new_part_B.jet_flavor)
 
     part_comb_array = ak.zip(
         {

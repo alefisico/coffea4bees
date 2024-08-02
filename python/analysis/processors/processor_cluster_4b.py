@@ -71,7 +71,7 @@ class analysis(processor.ProcessorABC):
             "pass2OthJets",
         ]
 
-        self.histCuts = ["passPreSel", "pass0OthJets", "pass1OthJets", "pass2OthJets"]
+        self.histCuts = ["passPreSel"] #, "pass0OthJets", "pass1OthJets", "pass2OthJets"]
 
 
     def process(self, event):
@@ -162,6 +162,7 @@ class analysis(processor.ProcessorABC):
 
         #allcuts.append("passMax1OthJets")
         allcuts.append("passMax2OthJets")
+        #allcuts.append("pass2OthJets")
 
         selev = event[selections.all(*allcuts)]
 
@@ -310,6 +311,13 @@ class analysis(processor.ProcessorABC):
         # for out_k, out_v in out_data.items():
         #     processOutput[out_k] = {}
         #     processOutput[out_k][event.metadata['dataset']] = list(out_v)
+
+
+        #
+        #  get the ISR cleaned splittings
+        #
+        #clustered_jets = clean_ISR(clustered_jets, _clustered_splittings, debug=debug)
+
 
 
         #
