@@ -14,7 +14,7 @@ import os
 
 sys.path.insert(0, os.getcwd())
 from jet_clustering.clustering   import kt_clustering, cluster_bs, cluster_bs_fast
-from jet_clustering.declustering import compute_decluster_variables, decluster_combined_jets, make_synthetic_event, get_list_of_splitting_types, clean_ISR, get_list_of_ISR_splittings, children_jet_flavors
+from jet_clustering.declustering import compute_decluster_variables, decluster_combined_jets, make_synthetic_event, get_list_of_splitting_types, clean_ISR, get_list_of_ISR_splittings, children_jet_flavors, get_list_of_all_sub_splittings, get_list_of_combined_jet_types
 
 #import vector
 #vector.register_awkward()
@@ -370,6 +370,21 @@ class clusteringTestCase(unittest.TestCase):
             [print(i) for i in clustered_jets.jet_flavor]
 
         #
+        # Testing the splitting cleaning
+        #
+        all_split_types = get_list_of_splitting_types(_clustered_splittings)
+        cleaned_combined_types = get_list_of_combined_jet_types(clustered_jets)
+        cleaned_split_types = []
+        for _s in cleaned_combined_types:
+            cleaned_split_types += get_list_of_all_sub_splittings(_s)
+
+        if debug:
+            print(f"all_split_types {all_split_types}")
+            print(f"cleaned_combined_types {cleaned_combined_types}")
+            print(f"cleaned_split_types {cleaned_split_types}")
+
+
+        #
         # Declustering
         #
 
@@ -485,6 +500,24 @@ class clusteringTestCase(unittest.TestCase):
         print(f"ISR_splittings is {ISR_splittings}")
 
         self.assertListEqual(ISR_splittings, expected_ISR_splittings)
+
+
+    def test_get_list_of_all_sub_splittings(self):
+        splitting_types = [("b",[]),
+                           ("bb",["bb"]),
+                           ('j(bj)', ['j(bj)','bj']),
+                           ("(bb)(jj)", ["(bb)(jj)",'bb', 'jj']),
+                           ("j(j(bj))", ["j(j(bj))",'j(bj)','bj']),
+                           ("(j(bj))b", ["(j(bj))b","j(bj)","bj"] )
+                           ]
+
+
+        for _s in splitting_types:
+
+            sub_splitting = get_list_of_all_sub_splittings(_s[0])
+            expected = _s[1]
+            #print(f"{_s[0]} -> {sub_splitting}")
+            self.assertListEqual(expected, sub_splitting)
 
 
 if __name__ == '__main__':
