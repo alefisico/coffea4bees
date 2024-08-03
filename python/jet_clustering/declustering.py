@@ -29,7 +29,6 @@ def children_jet_flavors(comb_flavor):
 
     sub_combs = extract_all_parentheses_substrings(comb_flavor)
 
-
     if len(sub_combs) == 0:
         child_A = comb_flavor[0]
         child_B = comb_flavor[1]
@@ -60,6 +59,18 @@ def get_list_of_combined_jet_types(jets):
         splitting_types.append(_s)
 
     return splitting_types
+
+
+def get_list_of_all_sub_splittings(splitting):
+    """
+      returns a list of all the sub splitting types (including the original)
+    """
+    if len(splitting) > 1:
+        childA, childB = children_jet_flavors(splitting)
+        return [splitting] + get_list_of_all_sub_splittings(childA) + get_list_of_all_sub_splittings(childB)
+
+    return []
+
 
 
 def get_list_of_ISR_splittings(splitting_types):
