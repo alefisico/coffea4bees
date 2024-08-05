@@ -95,7 +95,7 @@ class analysis(processor.ProcessorABC):
             run_SvB=True,
             do_declustering=False,
             corrections_metadata="analysis/metadata/corrections.yml",
-            clustering_pdfs_file = "jet_clustering/jet-splitting-PDFs-00-03-00/clustering_pdfs_vs_pT.yml",
+            clustering_pdfs_file = "jet_clustering/jet-splitting-PDFs-00-04-00/clustering_pdfs_vs_pT.yml",
             run_systematics=[],
             blind = False,
             make_classifier_input: str = None,
@@ -123,16 +123,16 @@ class analysis(processor.ProcessorABC):
             "passJetMult_btagSF",
             "passPreSel",
             "passFourTag",
-            "pass0OthJets",
-            "pass1OthJets",
-            "pass2OthJets",
+            #"pass0OthJets",
+            #"pass1OthJets",
+            #"pass2OthJets",
             "passDiJetMass",
             "SR",
             "SB",
         ]
 
         #self.histCuts = ["passPreSel", "pass0OthJets", "pass1OthJets", "pass2OthJets"]
-        self.histCuts = ["passPreSel", "pass0OthJets", "pass2OthJets"]
+        self.histCuts = ["passPreSel"] #"pass0OthJets", "pass2OthJets"]
         if self.run_SvB:
             self.cutFlowCuts += ["passSvB", "failSvB"]
             self.histCuts += ["passSvB", "failSvB"]
@@ -504,21 +504,21 @@ class analysis(processor.ProcessorABC):
         selections.add("passFourTag", event.fourTag)
 
 
-        event['pass0OthJets'] = event.nJet_selected == 4
-        event['pass1OthJets'] = event.nJet_selected == 5
-        event['pass2OthJets'] = event.nJet_selected == 6
-        event['passMax1OthJets'] = event.nJet_selected < 6
-        event['passMax2OthJets'] = event.nJet_selected < 7
-
-        selections.add("pass0OthJets", event.pass0OthJets)
-        selections.add("pass1OthJets", event.pass1OthJets)
-        selections.add("pass2OthJets", event.pass2OthJets)
-        selections.add("passMax1OthJets", event.passMax1OthJets)
-        selections.add("passMax2OthJets", event.passMax2OthJets)
+        #event['pass0OthJets'] = event.nJet_selected == 4
+        #event['pass1OthJets'] = event.nJet_selected == 5
+        #event['pass2OthJets'] = event.nJet_selected == 6
+        #event['passMax1OthJets'] = event.nJet_selected < 6
+        #event['passMax2OthJets'] = event.nJet_selected < 7
+        #
+        #selections.add("pass0OthJets", event.pass0OthJets)
+        #selections.add("pass1OthJets", event.pass1OthJets)
+        #selections.add("pass2OthJets", event.pass2OthJets)
+        #selections.add("passMax1OthJets", event.passMax1OthJets)
+        #selections.add("passMax2OthJets", event.passMax2OthJets)
         allcuts.append("passFourTag")
 
         #allcuts.append("passMax1OthJets")
-        allcuts.append("passMax2OthJets")
+        #allcuts.append("passMax2OthJets")
 
         selev = event[selections.all(*allcuts)]
 

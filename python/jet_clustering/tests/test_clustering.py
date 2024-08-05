@@ -13,7 +13,7 @@ from copy import copy
 import os
 
 sys.path.insert(0, os.getcwd())
-from jet_clustering.clustering   import kt_clustering, cluster_bs, cluster_bs_fast
+from jet_clustering.clustering   import kt_clustering, cluster_bs, cluster_bs_fast, cluster_bs_numba
 from jet_clustering.declustering import compute_decluster_variables, decluster_combined_jets, make_synthetic_event, get_list_of_splitting_types, clean_ISR, get_list_of_ISR_splittings, children_jet_flavors, get_list_of_all_sub_splittings, get_list_of_combined_jet_types
 
 #import vector
@@ -262,7 +262,7 @@ class clusteringTestCase(unittest.TestCase):
         self._declustering_test(self.input_jets_6, debug=False)
 
 
-    def test_cluster_bs_fast_4jets(self):
+    def test_cluster_bs_speed_test(self):
 
         start = time.perf_counter()
         clustered_jets_fast, clustered_splittings_fast = cluster_bs_fast(self.input_jets_all , debug=False)
@@ -276,9 +276,37 @@ class clusteringTestCase(unittest.TestCase):
         elapsed_time_loops_python = (end - start)
         print(f"\nElapsed time loops Python = {elapsed_time_loops_python}s")
 
+
+        start = time.perf_counter()
+        _, _ = cluster_bs_numba(self.input_jets_all, debug=False)
+        end = time.perf_counter()
+        elapsed_time_numba = (end - start)
+        print(f"\nElapsed time numba1  = {elapsed_time_numba}s")
+
+        start = time.perf_counter()
+        clustered_jets_numba, clustered_splittings_numba = cluster_bs_numba(self.input_jets_all, debug=False)
+        end = time.perf_counter()
+        elapsed_time_numba = (end - start)
+        print(f"\nElapsed time numba2  = {elapsed_time_numba}s")
+
+
+
         #
         # Sanity checks
         #
+
+        #
+        # Check Masses
+        #
+        self.assertTrue(np.sum(ak.num(clustered_splittings.mass)) == np.sum(ak.num(clustered_splittings_numba.mass)),
+                        f"Should get the same number of splittings! {np.sum(ak.num(clustered_splittings.mass))} vs {np.sum(ak.num(clustered_splittings_numba.mass))}")
+
+
+        mass_check = [np.allclose(i, j, 1e-4) for i, j in zip(clustered_splittings.mass, clustered_splittings_numba.mass)]
+        self.assertTrue(all(mass_check), "All Masses should be the same")
+        pt_check = [np.allclose(i, j, 1e-4) for i, j in zip(clustered_splittings.pt, clustered_splittings_numba.pt)]
+        self.assertTrue(all(pt_check), "All Masses should be the same")
+
 
         #
         # Check Masses
@@ -314,6 +342,23 @@ class clusteringTestCase(unittest.TestCase):
             print("values")
             [print(i, j) for i, j in zip(clustered_splittings.phi, clustered_splittings_fast.phi)]
         self.assertTrue(all(phi_check), "All phis should be the same")
+
+
+#    def profile_clustering(self):
+#
+#        from cProfile import Profile
+#
+#        test = lambda: cluster_bs(self.input_jets_all , debug=False)
+#
+#        profiler = Profile()
+#        profiler.runcall(test)
+#
+#        from pstats import Stats
+#        stats = Stats(profiler)
+#        stats.strip_dirs()
+#        stats.sort_stats("cumulative")
+#        stats.print_stats()
+
 
 
     def _check_jet_flavors(self, part_A_jet_flavor, part_B_jet_flavor, debug=False):
