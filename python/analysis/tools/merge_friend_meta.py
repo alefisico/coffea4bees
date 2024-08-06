@@ -30,7 +30,9 @@ def merge_friend_metas(output: PathLike, *metafiles: PathLike, cleanup: bool = T
         raise e
     if cleanup:
         for metafile in metafiles:
-            EOS(metafile).rm()
+            metafile = EOS(metafile)
+            if metafile != output:
+                metafile.rm()
 
 
 if __name__ == "__main__":
