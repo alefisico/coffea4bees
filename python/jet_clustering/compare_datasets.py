@@ -23,23 +23,10 @@ def plot(var, **kwargs):
     return fig, ax
 
 
-def doPlots(debug=False):
+def plotCut(args):
 
-    norm = True
-    
-    args = {"norm": True,
-            "doRatio": 1,
-            "labels":["De-clustered","Nominal"],
-            "norm": False,
-            "region":"sum",
-            "cut":"passPreSel",
-            "doRatio":1,
-            "rebin":1,
-            "process":"data",
-            "histtype":"step",
-            }
-    
     # Fixes Needed !!!
+    args["rebin"] = 1
     plot("canJet3.pt", **args)
     plot("canJets.eta", **args)
     plot("quadJet_min_dr.close.dr", **args,xlim=[0,2])
@@ -83,10 +70,44 @@ def doPlots(debug=False):
     #
     #  Event Level
     #
+    args["rebin"] = 1
+    plot("selJets.n", **args, yscale="log")
+
     args["rebin"] = 4
     plot("SvB_MA.ps_zh", **args, yscale="log")
     plot("SvB_MA.ps_zz", **args, yscale="log")
     plot("SvB_MA.ps_hh", **args, yscale="log")
+
+    plot("SvB.ps_zh", **args, yscale="log")
+    plot("SvB.ps_zz", **args, yscale="log")
+    plot("SvB.ps_hh", **args, yscale="log")
+
+    
+    
+
+def doPlots(debug=False):
+
+    norm = True
+
+    
+    args = {"norm": True,
+            "doRatio": 1,
+            "labels":["De-clustered","Nominal"],
+            "norm": False,
+            "region":"sum",
+            "cut":"passPreSel",
+            "doRatio":1,
+            "rebin":1,
+            "process":"data",
+            "histtype":"step",
+            }
+
+    for _cut in ["passPreSel", "pass0OthJets", "pass1OthJets"]:
+        args["cut"] = _cut
+        print(f"plotting {_cut}")
+        plotCut(args)
+    
+    
     
 
         

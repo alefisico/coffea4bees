@@ -9,8 +9,8 @@ import uproot
 
 from analysis.helpers.networks import HCREnsemble
 from analysis.helpers.topCandReconstruction import find_tops, dumpTopCandidateTestVectors, buildTop, mW, mt, find_tops_slow
-from analysis.helpers.clustering   import cluster_bs
-from analysis.helpers.declustering import make_synthetic_event, clean_ISR
+from jet_clustering.clustering   import cluster_bs
+from jet_clustering.declustering import make_synthetic_event, clean_ISR
 
 from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
 from coffea import processor
@@ -95,7 +95,7 @@ class analysis(processor.ProcessorABC):
             run_SvB=True,
             do_declustering=False,
             corrections_metadata="analysis/metadata/corrections.yml",
-            clustering_pdfs_file = "jet_clustering/jet-splitting-PDFs-00-02-00/clustering_pdfs_vs_pT.yml",
+            clustering_pdfs_file = "jet_clustering/jet-splitting-PDFs-00-04-00/clustering_pdfs_vs_pT.yml",
             run_systematics=[],
             blind = False,
             make_classifier_input: str = None,
@@ -123,14 +123,16 @@ class analysis(processor.ProcessorABC):
             "passJetMult_btagSF",
             "passPreSel",
             "passFourTag",
-            "pass0OthJets",
-            "pass1OthJets",
+            #"pass0OthJets",
+            #"pass1OthJets",
+            #"pass2OthJets",
             "passDiJetMass",
             "SR",
             "SB",
         ]
 
-        self.histCuts = ["passPreSel", "pass0OthJets", "pass1OthJets"]
+        #self.histCuts = ["passPreSel", "pass0OthJets", "pass1OthJets", "pass2OthJets"]
+        self.histCuts = ["passPreSel"] #"pass0OthJets", "pass2OthJets"]
         if self.run_SvB:
             self.cutFlowCuts += ["passSvB", "failSvB"]
             self.histCuts += ["passSvB", "failSvB"]
@@ -502,16 +504,21 @@ class analysis(processor.ProcessorABC):
         selections.add("passFourTag", event.fourTag)
 
 
-        event['pass0OthJets'] = event.nJet_selected == 4
-        event['pass1OthJets'] = event.nJet_selected == 5
-        event['passMax1OthJets'] = event.nJet_selected < 6
-
-        selections.add("pass0OthJets", event.pass0OthJets)
-        selections.add("pass1OthJets", event.pass1OthJets)
-        selections.add("passMax1OthJets", event.passMax1OthJets)
+        #event['pass0OthJets'] = event.nJet_selected == 4
+        #event['pass1OthJets'] = event.nJet_selected == 5
+        #event['pass2OthJets'] = event.nJet_selected == 6
+        #event['passMax1OthJets'] = event.nJet_selected < 6
+        #event['passMax2OthJets'] = event.nJet_selected < 7
+        #
+        #selections.add("pass0OthJets", event.pass0OthJets)
+        #selections.add("pass1OthJets", event.pass1OthJets)
+        #selections.add("pass2OthJets", event.pass2OthJets)
+        #selections.add("passMax1OthJets", event.passMax1OthJets)
+        #selections.add("passMax2OthJets", event.passMax2OthJets)
         allcuts.append("passFourTag")
 
-        allcuts.append("passMax1OthJets")
+        #allcuts.append("passMax1OthJets")
+        #allcuts.append("passMax2OthJets")
 
         selev = event[selections.all(*allcuts)]
 
@@ -586,6 +593,22 @@ class analysis(processor.ProcessorABC):
             canJet["jetId"] = 7 # selev.Jet.puId[canJet_idx]
             canJet["btagDeepFlavB"] = 1.0 # Set bs to 1 and ls to 0
             canJet = canJet[ak.argsort(canJet.pt, axis=1, ascending=False)]
+
+            #print(f"{chunk} {ak.num(canJet)} \n" )
+            four_canJets = ak.num(canJet) ==4
+            not_four_canJets = ~four_canJets
+            #print(f"{chunk} {ak.num(canJet) ==4} \n" )
+            #print(f"{chunk} {ak.any(ak.)} \n" )
+            if ak.any(not_four_canJets):
+                jets_for_clustering_error = jets_for_clustering[not_four_canJets]
+                print(f"{chunk} ERRROR {ak.num(canJet[not_four_canJets])} \n" )
+                print(f'{chunk}\n\n')
+                print(f'{chunk} self.input_jet_pt  = {[jets_for_clustering_error[iE].pt.tolist() for iE in range(10)]}')
+                print(f'{chunk} self.input_jet_eta  = {[jets_for_clustering_error[iE].eta.tolist() for iE in range(10)]}')
+                print(f'{chunk} self.input_jet_phi  = {[jets_for_clustering_error[iE].phi.tolist() for iE in range(10)]}')
+                print(f'{chunk} self.input_jet_mass  = {[jets_for_clustering_error[iE].mass.tolist() for iE in range(10)]}')
+                print(f'{chunk} self.input_jet_flavor  = {[jets_for_clustering_error[iE].jet_flavor.tolist() for iE in range(10)]}')
+                print(f'{chunk}\n\n')
 
 
         #
