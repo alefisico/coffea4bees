@@ -39,10 +39,17 @@ def write_2D_pdf(output_file, varName, hist, n_spaces=4):
     yedges = hist.axes[1].edges
     probabilities = counts.value / counts.value.sum()
 
+
+
     xcenters = (xedges[:-1] + xedges[1:]) / 2
     ycenters = (yedges[:-1] + yedges[1:]) / 2
 
     probabilities_flat = probabilities.flatten()
+
+    # Hack for empty histograms
+    if any(np.isnan(probabilities_flat)):
+        probabilities_flat[np.isnan(probabilities_flat)] = 0
+        probabilities_flat[0] = 1
 
     spaces = " " * n_spaces
     output_file.write(f"{spaces}{varName}:\n")
@@ -234,7 +241,7 @@ def doPlots(debug=False):
     #
     #  Get All splittings
     #
-    all_splittings = [i.replace("splitting_","").replace(".zA_l","") for i in cfg.hists[0]["hists"].keys() if not i.find("zA_l") == -1]
+    all_splittings = [i.replace("splitting_","").replace(".zA_l","") for i in cfg.hists[0]["hists"].keys() if not i.find("zA_l") == -1 and i.find("detailed") == -1]
 
     unconfig_splitting = []
 
@@ -274,6 +281,11 @@ def doPlots(debug=False):
     make_PDFs_vs_Pt(splitting_config, output_file_name_vs_pT)
     test_PDFs_vs_Pt(splitting_config, output_file_name_vs_pT)
 
+
+    with open(args.outputFolder+"/all_splittings.txt", "w") as splitting_out_file:
+        all_splittings.sort(reverse=True)
+        for _s in all_splittings:
+            splitting_out_file.write(f"{_s}\n")
 
 
 
