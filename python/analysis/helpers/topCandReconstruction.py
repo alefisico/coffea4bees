@@ -169,17 +169,17 @@ def buildTop(input_jets, top_cand_idx):
     })
 
 
-    
+
     W_p = top_cands[1] + top_cands[2]
 
     rec_top_cands["xW"] = (W_p.mass - mW) / (0.10 * W_p.mass)
     W_p = W_p * (mW / W_p.mass)
- 
-    bReg_p = top_cands[0] * top_cands[0].bRegCorr 
+
+    bReg_p = top_cands[0] * top_cands[0].bRegCorr
     mbW = (bReg_p + W_p).mass
     W_p = None
     bReg_p = None
-    
+
     #
     # smaller resolution term because there are fewer degrees of freedom. FWHM=25GeV, about the same as mW
     #

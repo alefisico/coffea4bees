@@ -186,8 +186,14 @@ def decluster_combined_jets(input_jet, debug=False):
     simple_comb_mask = (np.char.str_len(jet_flav_flat) == 2)
 
     # For some reason this dummy string has to be as long as the longest possible replacement
-    jet_flav_child_A = np.full(n_jets, "XXXXXXXXXXXXXXX")
-    jet_flav_child_B = np.full(n_jets, "XXXXXXXXXXXXXXX")
+    # jet_flav_child_A = np.full(n_jets, "XXXXXXXXXXXXXXX")
+    # jet_flav_child_B = np.full(n_jets, "XXXXXXXXXXXXXXX")
+    dummy_str = "XXXXXXXXXXXXXXXXXXXXXXXXX"
+    len_dummy_str = 25
+    # dummy_str = "XXXXXXXXXXXXXXX"
+    # len_dummy_str = 15
+    jet_flav_child_A = np.full(n_jets, dummy_str)
+    jet_flav_child_B = np.full(n_jets, dummy_str)
 
     #
     #  The simple combinations
@@ -197,13 +203,21 @@ def decluster_combined_jets(input_jet, debug=False):
     jet_flav_child_A[simple_comb_mask] = _simple_flav_child_A
     jet_flav_child_B[simple_comb_mask] = _simple_flav_child_B
 
-
     #
     #  The nested combinations
     #   # A is always the more complex
     _children = [children_jet_flavors(s) for s in jet_flav_flat[~simple_comb_mask]]
     _nested_flav_child_A = [child[0] for child in _children]
     _nested_flav_child_B = [child[1] for child in _children]
+
+    over_flow_child_A = any(len(s) > len_dummy_str for s in _nested_flav_child_A)
+    if over_flow_child_A:
+        print(f"\n ERROR: child A flavor overflow {_nested_flav_child_A} \n")
+
+    over_flow_child_B = any(len(s) > len_dummy_str for s in _nested_flav_child_B)
+    if over_flow_child_B:
+        print(f"\n ERROR: child A flavor overflow {_nested_flav_child_A} \n")
+
 
     #print(f'child A {_nested_flav_child_A}')
     #print(f'child B {_nested_flav_child_B}')
@@ -330,6 +344,7 @@ def decluster_splitting_types(input_jets, splitting_types, input_pdfs, debug=Fal
     #
     input_jets['split_mask'] = False
     for _s in splitting_types:
+
         _split_mask  = input_jets.jet_flavor == _s
         input_jets["split_mask"] = _split_mask | input_jets.split_mask
 
