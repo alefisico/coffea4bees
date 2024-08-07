@@ -36,7 +36,7 @@ def _ttbar(metadata: str):
     for year in CollisionData.eras:
         filelists.append(
             [
-                f"ttbar,year:{year}",
+                f"label:ttbar,year:{year}",
                 *(
                     metadata.format(dataset=tt, year=year, era="")
                     for tt in MC_TTbar.datasets
@@ -51,7 +51,7 @@ def _data(metadata: str):
     for year, eras in CollisionData.eras.items():
         filelists.append(
             [
-                f"data,year:{year}",
+                f"label:data,year:{year}",
                 *(
                     metadata.format(dataset="data", year=year, era=f".{e}")
                     for e in eras
@@ -71,7 +71,7 @@ def _ZZ_ZH(metadata: str):
         for label, processes in datasets.items():
             filelists.append(
                 [
-                    f"{label},year:{year}",
+                    f"label:{label},year:{year}",
                     *(metadata.format(dataset=d, year=year, era="") for d in processes),
                 ]
             )
@@ -99,7 +99,7 @@ class _ggF:
                 for c in couplings:
                     filelists.append(
                         [
-                            f"{label},year:{year},{cls.__cs2label(c)}",
+                            f"label:{label},year:{year},{cls.__cs2label(c)}",
                             metadata.format(
                                 dataset=process.format(
                                     **{k: cls.__c2str(v) for k, v in c.items()}

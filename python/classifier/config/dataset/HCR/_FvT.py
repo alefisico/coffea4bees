@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING
 
 from classifier.task import ArgParser
 
-from . import _picoAOD
-from ._common import Common, group_key
+from . import _group, _picoAOD
+from ._common import Common
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -44,30 +44,28 @@ class FvT(_picoAOD.Background, Common):
         from classifier.df.tools import add_label_index_from_column, prescale
 
         return [
-            (
-                [("data",)],
-                [
+            _group.fullmatch(
+                ("label:data",),
+                processors=[
                     _data_selection,
                     add_label_index_from_column(threeTag="d3", fourTag="d4"),
                 ],
             ),
-            (
-                [("ttbar",)],
-                [
-                    _ttbar_selection,
+            _group.fullmatch(
+                ("label:ttbar",),
+                processors=[
                     prescale(
                         scale=self.opts.ttbar_3b_prescale,
                         selection=_ttbar_3b_prescale,
                         seed=("ttbar", 0),
                     ),
+                    _ttbar_selection,
                     add_label_index_from_column(threeTag="t3", fourTag="t4"),
                 ],
             ),
-            (
-                [()],
-                [
-                    _apply_JCM,
-                ],
+            _group.fullmatch(
+                (),
+                processors=[_apply_JCM],
             ),
-            group_key(),
+            _group.add_year(),
         ]

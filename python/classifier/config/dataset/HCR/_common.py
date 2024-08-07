@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import re
 from abc import abstractmethod
 from collections import defaultdict
-from dataclasses import dataclass
 from functools import cache, cached_property
-from typing import TYPE_CHECKING, Any, Callable, Iterable
+from typing import Iterable
 
 from classifier.typetools import enum_dict
 
@@ -13,9 +11,7 @@ from ...setting.df import Columns
 from ...setting.HCR import Input, InputBranch, MassRegion, NTag
 from ...setting.torch import KFold
 from .._df import LoadGroupedRoot
-
-if TYPE_CHECKING:
-    from classifier.df.tools import DFProcessor
+from . import _group
 
 
 class _Derived:
@@ -26,52 +22,6 @@ class _Derived:
 def _sort_map(obj: dict[frozenset[str]]):
     obj = {(*sorted(k),): v for k, v in obj.items()}
     return {k: obj[k] for k in sorted(obj)}
-
-
-class _group_processor:
-    def __init__(self, gs: Iterable[Iterable[str]], ps: Iterable[DFProcessor]):
-        self._gs = (*map(frozenset, gs),)
-        self._ps = (*ps,)
-
-    def __call__(self, groups: frozenset[str]):
-        if any(g <= groups for g in self._gs):
-            yield from self._ps
-
-
-@dataclass
-class group_key:
-    key: str = "year"
-    pattern: str = r"year:\w*(?P<year>\d{2}).*"
-    default: Any = None
-    dtype: type = float
-
-    def __post_init__(self):
-        self._pattern = re.compile(self.pattern)
-
-    def __call__(self, groups: frozenset[str]):
-        from classifier.df.tools import add_columns
-
-        matched = (*filter(None, map(self._pattern.fullmatch, groups)),)
-        if len(matched) == 1:
-            yield add_columns(**{self.key: self.dtype(matched[0].group(self.key))})
-        elif len(matched) > 1:
-            raise ValueError(f'Multiple "{self.pattern}" matched in {groups}')
-        elif self.default is not None:
-            yield add_columns(**{self.key: self.default})
-
-
-class group_single_label:
-    def __init__(self, *labels: str):
-        self._labels = frozenset(labels)
-
-    def __call__(self, groups: frozenset[str]):
-        from classifier.df.tools import add_label_index
-
-        matched = groups & self._labels
-        if len(matched) == 1:
-            yield add_label_index(next(iter(matched)))
-        elif len(matched) > 1:
-            raise ValueError(f"Multiple labels found in {groups}")
 
 
 class Common(LoadGroupedRoot):
@@ -128,14 +78,8 @@ class Common(LoadGroupedRoot):
         )
 
     @cached_property
-    def _preprocess_by_group(self) -> list[_group_processor]:
-        pres = []
-        for i in self.preprocess_by_group():
-            if isinstance(i, tuple):
-                pres.append(_group_processor(*i))
-            else:
-                pres.append(i)
-        return pres
+    def _preprocess_by_group(self):
+        return self.preprocess_by_group()
 
     @cached_property
     def _branches(self):
@@ -146,12 +90,7 @@ class Common(LoadGroupedRoot):
         )
 
     @abstractmethod
-    def preprocess_by_group(
-        self,
-    ) -> Iterable[
-        tuple[Iterable[Iterable[str]], Iterable[DFProcessor]]
-        | Callable[[frozenset[str]], Iterable[DFProcessor]]
-    ]: ...
+    def preprocess_by_group(self) -> Iterable[_group.ProcessorGenerator]: ...
 
     def other_branches(self):
         return {

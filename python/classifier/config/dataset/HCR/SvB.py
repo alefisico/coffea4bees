@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING
 from classifier.config.setting.df import Columns
 from classifier.task import ArgParser
 
-from . import _picoAOD
-from ._common import Common, group_key, group_single_label
+from . import _group, _picoAOD
+from ._common import Common
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -62,19 +62,18 @@ class _Base(Common):
     def preprocess_by_group(self):
         import numpy as np
 
-        _MCs = {"ttbar", "ZZ", "ZH", "ggF", "VBF"}
         return [
-            ([("data",)], [_data_selection(*self.opts.regions), _reweight_bkg]),
-            ([(k,) for k in _MCs], [_mc_selection(*self.opts.regions)]),
-            group_key(),
-            group_key(key="kl", pattern=r"kl:(?P<kl>.*)", default=np.nan),
-            group_single_label("data", *_MCs),
+            _group.regex(
+                "label:data",
+                (_data_selection(*self.opts.regions), _reweight_bkg),
+                (_mc_selection(*self.opts.regions),),
+            ),
+            _group.add_year(),
+            _group.add_column(
+                key="kl", pattern=r"kl:(?P<kl>.*)", default=np.nan, dtype=float
+            ),
+            _group.add_single_label(),
         ]
-
-
-def _background_normalization(df: pd.DataFrame):
-    df.loc[:, "weight"] /= df["weight"].sum()
-    return df
 
 
 class Background(_picoAOD.Background, _Base):
@@ -82,26 +81,31 @@ class Background(_picoAOD.Background, _Base):
         from classifier.df.tools import drop_columns
 
         super().__init__()
-        self.postprocessors.append(_background_normalization)
+        self.postprocessors.append(self.normalize)
         self.preprocessors.append(drop_columns("FvT"))
 
     def other_branches(self):
         return super().other_branches() | {"FvT"}
 
-
-def _signal_normalization(df: pd.DataFrame):
-    group = df.groupby(
-        [Columns.label_index, "kl"],
-        dropna=False,
-    )
-    df.loc[:, "weight"] = group["weight"].transform(lambda x: x / x.sum())
-    return df
+    @staticmethod
+    def normalize(df: pd.DataFrame):
+        df.loc[:, "weight"] /= df["weight"].sum()
+        return df
 
 
 class Signal(_picoAOD.Signal, _Base):
     def __init__(self):
         super().__init__()
-        self.postprocessors.append(_signal_normalization)
+        self.postprocessors.append(self.normalize)
 
     def other_branches(self):
         return super().other_branches() - {"pseudoTagWeight"}
+
+    @staticmethod
+    def normalize(df: pd.DataFrame):
+        group = df.groupby(
+            [Columns.label_index, "kl"],
+            dropna=False,
+        )
+        df.loc[:, "weight"] = group["weight"].transform(lambda x: x / x.sum())
+        return df
