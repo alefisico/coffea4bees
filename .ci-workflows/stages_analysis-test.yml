@@ -19,6 +19,17 @@ analysis-test-truthStudy:
       - python/analysis/hists/testTruth.coffea
 
 
+synthetic-dataset-cluster:   
+  stage: analysis-test   
+  extends:
+    - .base_analysis
+  script:
+    - source .ci-workflows/synthetic-dataset-cluster.sh
+  artifacts: 
+    paths:
+      - python/analysis/hists/test_synthetic_datasets.coffea
+
+
 analysis-test-job-unsup:   
   stage: analysis-test   
   extends:
@@ -73,4 +84,6 @@ skimmer-analysis-test-job:
   artifacts: 
     paths:
       - python/analysis/hists/test_skimmer.coffea
+
+
 

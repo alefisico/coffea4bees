@@ -95,7 +95,7 @@ class analysis(processor.ProcessorABC):
             run_SvB=True,
             do_declustering=False,
             corrections_metadata="analysis/metadata/corrections.yml",
-            clustering_pdfs_file = "jet_clustering/jet-splitting-PDFs-00-04-00/clustering_pdfs_vs_pT.yml",
+            clustering_pdfs_file = "jet_clustering/jet-splitting-PDFs-00-05-00/clustering_pdfs_vs_pT.yml",
             run_systematics=[],
             blind = False,
             make_classifier_input: str = None,
@@ -601,13 +601,14 @@ class analysis(processor.ProcessorABC):
             #print(f"{chunk} {ak.any(ak.)} \n" )
             if ak.any(not_four_canJets):
                 jets_for_clustering_error = jets_for_clustering[not_four_canJets]
+                nJetsError = len(jets_for_clustering_error)
                 print(f"{chunk} ERRROR {ak.num(canJet[not_four_canJets])} \n" )
                 print(f'{chunk}\n\n')
-                print(f'{chunk} self.input_jet_pt  = {[jets_for_clustering_error[iE].pt.tolist() for iE in range(10)]}')
-                print(f'{chunk} self.input_jet_eta  = {[jets_for_clustering_error[iE].eta.tolist() for iE in range(10)]}')
-                print(f'{chunk} self.input_jet_phi  = {[jets_for_clustering_error[iE].phi.tolist() for iE in range(10)]}')
-                print(f'{chunk} self.input_jet_mass  = {[jets_for_clustering_error[iE].mass.tolist() for iE in range(10)]}')
-                print(f'{chunk} self.input_jet_flavor  = {[jets_for_clustering_error[iE].jet_flavor.tolist() for iE in range(10)]}')
+                print(f'{chunk} self.input_jet_pt  = {[jets_for_clustering_error[iE].pt.tolist() for iE in range(nJetsError)]}')
+                print(f'{chunk} self.input_jet_eta  = {[jets_for_clustering_error[iE].eta.tolist() for iE in range(nJetsError)]}')
+                print(f'{chunk} self.input_jet_phi  = {[jets_for_clustering_error[iE].phi.tolist() for iE in range(nJetsError)]}')
+                print(f'{chunk} self.input_jet_mass  = {[jets_for_clustering_error[iE].mass.tolist() for iE in range(nJetsError)]}')
+                print(f'{chunk} self.input_jet_flavor  = {[jets_for_clustering_error[iE].jet_flavor.tolist() for iE in range(nJetsError)]}')
                 print(f'{chunk}\n\n')
 
 

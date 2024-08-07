@@ -47,10 +47,7 @@ class analysis(processor.ProcessorABC):
             *,
             threeTag=False,
             corrections_metadata="analysis/metadata/corrections.yml",
-            #   Make with ../.ci-workflows/synthetic-dataset-plot-job.sh
-            # clustering_pdfs_file = "jet_clustering/jet-splitting-PDFs-0jet-00-01-00_5j/clustering_pdfs_vs_pT.yml",
             clustering_pdfs_file = "jet_clustering/jet-splitting-PDFs-00-03-00/clustering_pdfs_vs_pT.yml",
-            #clustering_pdfs_file="jet_clustering/clustering_PDFs/clustering_pdfs_vs_pT.yml",
             do_declustering=False,
     ):
 
