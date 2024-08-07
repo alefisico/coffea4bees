@@ -53,7 +53,7 @@ histtojson-test-job:
     paths:
       - python/stats_analysis/hists/histAll.json
 
-analysis-plot-job:    
+synthetic-dataset-plot-job:    
   stage: plot 
   extends:
     - .base_analysis
