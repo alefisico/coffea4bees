@@ -412,7 +412,6 @@ class clusteringTestCase(unittest.TestCase):
         equal_len_mask = part_A_len == part_B_len
         more_bs_in_partA[~equal_len_mask] = True
 
-
         self.assertTrue(np.all(more_bs_in_partA), "Part A should alwasy have more bs")
 
 
@@ -462,14 +461,12 @@ class clusteringTestCase(unittest.TestCase):
         #
         #  Make with ../.ci-workflows/synthetic-dataset-plot-job.sh
         # input_pdf_file_name = "analysis/plots_synthetic_datasets/clustering_pdfs.yml"
-        input_pdf_file_name = "jet_clustering/jet-splitting-PDFs-00-05-00/clustering_pdfs_vs_pT.yml"
+        input_pdf_file_name = "jet_clustering/jet-splitting-PDFs-00-03-00/clustering_pdfs_vs_pT.yml"
         #input_pdf_file_name = "jet_clustering/clustering_PDFs/clustering_pdfs_vs_pT.yml"
         with open(input_pdf_file_name, 'r') as input_file:
             input_pdfs = yaml.safe_load(input_file)
 
         declustered_jets = make_synthetic_event(clustered_jets, input_pdfs, debug=debug)
-        #pA = declustered_jets[:,0:2]
-        #pB = declustered_jets[:,2:]
 
         #
         # Sanity checks
@@ -489,11 +486,6 @@ class clusteringTestCase(unittest.TestCase):
             print(f"ak.num(declustered_jets)        {ak.num(declustered_jets)}")
             print(f"clustered_jets.phi             {clustered_jets.phi}")
 
-            #
-            #  Checkphi
-            #
-            #print(f"input phi {clustered_jets.phi[1]}")
-            #print(f"Reco phi {(pA + pB).phi[1]}")
 
         self.assertTrue(all(match_n_jets), f"Should always get {n_jets_expected} jets")
 
@@ -516,14 +508,11 @@ class clusteringTestCase(unittest.TestCase):
     def test_synthetic_datasets_4jets(self):
         self._synthetic_datasets_test(self.input_jets_4, n_jets_expected = 4)
 
-
     def test_synthetic_datasets_5jets(self):
         self._synthetic_datasets_test(self.input_jets_5, n_jets_expected = 5, debug=False)
 
-
     def test_synthetic_datasets_bbjjets(self):
         self._synthetic_datasets_test(self.input_jets_bbj, n_jets_expected = 5)
-
 
     def test_synthetic_datasets_6jets(self):
         self._synthetic_datasets_test(self.input_jets_6, n_jets_expected = 6, debug = False)
@@ -534,6 +523,20 @@ class clusteringTestCase(unittest.TestCase):
     def test_synthetic_datasets_HH_3bjets(self):
         self._synthetic_datasets_test(self.input_jets_HH_3b, n_jets_expected = 10, debug = False)
 
+#    def profile_synthetic_datasets(self):
+#
+#        from cProfile import Profile
+#
+#        test = lambda: self._synthetic_datasets_test(self.input_jets_6 , n_jets_expected=6,debug=False)
+#
+#        profiler = Profile()
+#        profiler.runcall(test)
+#
+#        from pstats import Stats
+#        stats = Stats(profiler)
+#        stats.strip_dirs()
+#        stats.sort_stats("cumulative")
+#        stats.print_stats()
 
 
 
@@ -552,7 +555,6 @@ class clusteringTestCase(unittest.TestCase):
 
     def test_get_list_of_ISR_splittings(self):
 
-
         splitting_types = [("b",False), ("j",False),
                            ("bb",False), ("bj",True), ("jj",True),
                            ("j(bb)",True), ("b(bj)",False), ("j(bj)",True),('(bj)b',False),
@@ -568,10 +570,7 @@ class clusteringTestCase(unittest.TestCase):
             if _s[1]:
                 expected_ISR_splittings.append(_s[0])
 
-
         ISR_splittings = get_list_of_ISR_splittings(test_splitting_types)
-
-        print(f"ISR_splittings is {ISR_splittings}")
 
         self.assertListEqual(ISR_splittings, expected_ISR_splittings)
 
@@ -591,7 +590,7 @@ class clusteringTestCase(unittest.TestCase):
 
             sub_splitting = get_list_of_all_sub_splittings(_s[0])
             expected = _s[1]
-            print(f"{_s[0]} -> {sub_splitting}")
+            #print(f"{_s[0]} -> {sub_splitting}")
             self.assertListEqual(expected, sub_splitting)
 
 

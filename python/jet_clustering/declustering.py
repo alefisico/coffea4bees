@@ -190,8 +190,8 @@ def decluster_combined_jets(input_jet, debug=False):
     # jet_flav_child_B = np.full(n_jets, "XXXXXXXXXXXXXXX")
     dummy_str = "XXXXXXXXXXXXXXXXXXXXXXXXX"
     len_dummy_str = 25
-    # dummy_str = "XXXXXXXXXXXXXXX"
-    # len_dummy_str = 15
+    #dummy_str = "XXX"
+    #len_dummy_str = 3
     jet_flav_child_A = np.full(n_jets, dummy_str)
     jet_flav_child_B = np.full(n_jets, dummy_str)
 
@@ -216,7 +216,7 @@ def decluster_combined_jets(input_jet, debug=False):
 
     over_flow_child_B = any(len(s) > len_dummy_str for s in _nested_flav_child_B)
     if over_flow_child_B:
-        print(f"\n ERROR: child A flavor overflow {_nested_flav_child_A} \n")
+        print(f"\n ERROR: child B flavor overflow {_nested_flav_child_B} \n")
 
 
     #print(f'child A {_nested_flav_child_A}')
