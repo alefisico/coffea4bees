@@ -52,3 +52,15 @@ histtojson-test-job:
   artifacts: 
     paths:
       - python/stats_analysis/hists/histAll.json
+
+analysis-plot-job:    
+  stage: plot 
+  extends:
+    - .base_analysis
+  needs: 
+    - synthetic-dataset-cluster
+  script:
+    - source .ci-workflows/synthetic-dataset-plot-job.sh
+  artifacts:
+    paths:
+      - python/jet_clustering/jet-splitting-PDFs-test/
