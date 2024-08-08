@@ -4,7 +4,7 @@ from classifier.task import Analysis, ArgParser, EntryPoint
 from classifier.utils import call
 
 from .. import setting as cfg
-from ._utils import SetupMultiprocessing
+from ._utils import SetupMultiprocessing, progress_advance
 
 
 class Main(SetupMultiprocessing):
@@ -30,7 +30,8 @@ def run_analyzer(parser: EntryPoint, output: dict):
     from concurrent.futures import ProcessPoolExecutor
 
     from classifier.monitor import Index
-    from classifier.process import status
+    from classifier.monitor.progress import Progress
+    from classifier.process import pool, status
 
     analysis: list[Analysis] = parser.mods["analysis"]
     analyzers = [*chain(*(a.analyze(output) for a in analysis))]
@@ -38,12 +39,22 @@ def run_analyzer(parser: EntryPoint, output: dict):
         return []
 
     if status.context is not None:
-        with ProcessPoolExecutor(
-            max_workers=cfg.Analysis.max_workers,
-            mp_context=status.context,
-            initializer=status.initializer,
-        ) as pool:
-            results = [*pool.map(call, analyzers)]
+        with (
+            ProcessPoolExecutor(
+                max_workers=cfg.Analysis.max_workers,
+                mp_context=status.context,
+                initializer=status.initializer,
+            ) as executor,
+            Progress.new(total=len(analyzers), msg=("analysis", "Running")) as progress,
+        ):
+            results = [
+                *pool.submit(
+                    executor,
+                    call,
+                    analyzers,
+                    callbacks=[lambda _: progress_advance(progress)],
+                )
+            ]
     else:
         results = [*map(call, analyzers)]
     Index.render()

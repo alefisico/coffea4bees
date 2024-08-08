@@ -30,6 +30,7 @@ class ProgressTracker(PicklableLock, WithUUID):
         self.source = Recorder.name()
         self._completed = 0
         self._step = None
+        self._update(updated=True)
 
     def _update(self, msg: MessageType = None, updated: bool = False, step: int = None):
         if (msg is not None) and (msg != self.msg):
@@ -79,6 +80,12 @@ class ProgressTracker(PicklableLock, WithUUID):
     def is_finished(self):
         return self._completed >= self.total
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_):
+        self.complete()
+
 
 class TimeRemainColumn(ProgressColumn):
     def render(self, task):
@@ -112,9 +119,7 @@ class Progress(MonitorProxy):
     @classmethod
     @cfg.check(cfg.Progress, default=noop)
     def new(cls, total: int, msg: MessageType = "") -> ProgressTracker:
-        job = ProgressTracker(msg=msg, total=total)
-        cls._update(job)
-        return job
+        return ProgressTracker(msg=msg, total=total)
 
     @post_to_monitor(max_retry=1)
     @cfg.check(cfg.Progress)

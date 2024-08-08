@@ -9,8 +9,6 @@ import pandas as pd
 import torch
 from base_class.root import Chain, Chunk, Friend
 
-from ..monitor.progress import ProgressTracker
-
 if TYPE_CHECKING:
     from .tools import DFProcessor
 
@@ -29,7 +27,7 @@ class FromRoot:
         if friends:
             self.chain += friends
 
-    def read(self, chunk: Chunk, progress: ProgressTracker = None):
+    def read(self, chunk: Chunk) -> Optional[pd.DataFrame]:
         chain = self.chain.copy()
         chain += chunk
         df = chain.concat(library="pd", reader_options={"branch_filter": self.branches})
@@ -37,8 +35,6 @@ class FromRoot:
             if len(df) == 0:
                 return None
             df = preprocessor(df)
-        if progress is not None:
-            progress.advance(len(chunk))
         return df
 
 

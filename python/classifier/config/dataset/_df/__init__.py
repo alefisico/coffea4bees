@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from functools import cached_property, partial, reduce
+from functools import cached_property, reduce
 from itertools import chain
 from typing import TYPE_CHECKING
 
 from base_class.utils import unique
+from classifier.config.main._utils import progress_advance
 from classifier.task import ArgParser, Dataset, converter, parse
 
 if TYPE_CHECKING:
@@ -13,7 +14,6 @@ if TYPE_CHECKING:
     from base_class.root import Friend
     from classifier.df.io import FromRoot, ToTensor
     from classifier.df.tools import DFProcessor
-    from classifier.monitor.progress import ProgressTracker
 
 # basic
 
@@ -197,15 +197,13 @@ class LoadGroupedRoot(LoadRoot):
 
 
 class _fetch:
-    def __init__(self, tree: str, progress: ProgressTracker):
+    def __init__(self, tree: str):
         self._tree = tree
-        self._progress = progress
 
     def __call__(self, path: str):
         from base_class.root import Chunk
 
         chunk = Chunk(source=path, name=self._tree, fetch=True)
-        self._progress.advance(1)
         return chunk
 
 
@@ -228,38 +226,51 @@ class _load_df_from_root(_load_df):
         import pandas as pd
         from base_class.root import Chunk
         from classifier.monitor.progress import Progress
-        from classifier.process import status
+        from classifier.process import pool, status
 
-        chunks = []
-        dfs = []
         with ProcessPoolExecutor(
             max_workers=self._max_workers,
             mp_context=status.context,
             initializer=status.initializer,
-        ) as pool:
-            progress = Progress.new(
+        ) as executor:
+            with Progress.new(
                 total=sum(map(lambda x: len(x[1]), self._from_root)),
-                msg="Fetching metadata of ROOT files",
-            )
-            for _, files in self._from_root:
-                chunks.append(
-                    pool.map(_fetch(tree=self._tree, progress=progress), files)
-                )
-            chunks = [list(c) for c in chunks]
-            progress.complete()
-            progress = Progress.new(
-                total=sum(map(len, chain(*chunks))), msg="Loading ROOT files "
-            )
-            for i in range(len(chunks)):
-                balanced = Chunk.balance(
-                    self._chunksize, *chunks[i], common_branches=True
-                )
-                dfs.append(
-                    pool.map(
-                        partial(self._from_root[i][0].read, progress=progress), balanced
+                msg=("files", "Fetching metadata"),
+            ) as progress:
+                chunks = [
+                    list(
+                        pool.submit(
+                            executor,
+                            _fetch(tree=self._tree),
+                            files,
+                            callbacks=[lambda _: progress_advance(progress)],
+                        )
                     )
-                )
-        progress.complete()
+                    for _, files in self._from_root
+                ]
+            with Progress.new(
+                total=sum(map(len, chain(*chunks))),
+                msg=("events", "Loading"),
+            ) as progress:
+                dfs = [
+                    *chain(
+                        *(
+                            pool.submit(
+                                executor,
+                                self._from_root[i][0].read,
+                                Chunk.balance(
+                                    self._chunksize,
+                                    *chunks[i],
+                                    common_branches=True,
+                                ),
+                                callbacks=[
+                                    lambda x: progress_advance(progress, len(x))
+                                ],
+                            )
+                            for i in range(len(chunks))
+                        )
+                    ),
+                ]
         return pd.concat(
-            filter(lambda x: x is not None, chain(*dfs)), ignore_index=True, copy=False
+            filter(lambda x: x is not None, dfs), ignore_index=True, copy=False
         )
