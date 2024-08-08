@@ -28,7 +28,18 @@ class clusteringTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-#        self.inputFile = wrapper.args["inputFile"]
+
+        #
+        #  Read in the pdfs
+        #
+        #  Make with ../.ci-workflows/synthetic-dataset-plot-job.sh
+        # input_pdf_file_name = "analysis/plots_synthetic_datasets/clustering_pdfs.yml"
+        input_pdf_file_name = "jet_clustering/jet-splitting-PDFs-00-03-00/clustering_pdfs_vs_pT.yml"
+        #input_pdf_file_name = "jet_clustering/clustering_PDFs/clustering_pdfs_vs_pT.yml"
+        with open(input_pdf_file_name, 'r') as input_file:
+            self.input_pdfs = yaml.safe_load(input_file)
+
+        #        self.inputFile = wrapper.args["inputFile"]
 
         #
         # From 4jet events
@@ -149,6 +160,27 @@ class clusteringTestCase(unittest.TestCase):
                 "phi": self.input_jet_phi_HH_3b + self.input_jet_phi_HH_3b,
                 "mass": self.input_jet_mass_HH_3b + self.input_jet_mass_HH_3b,
                 "jet_flavor": self.input_jet_flavor_HH_3b + self.input_jet_flavor_HH_3b,
+            },
+            with_name="PtEtaPhiMLorentzVector",
+            behavior=vector.behavior,
+        )
+
+        #
+        #   `(bj)((jj)b)` splittins
+        #
+        self.input_jet_pt_bad_split      = [[411.75, 347.75, 193.948974609375, 97.8897705078125, 74.1673583984375, 64.99481201171875, 64.4375, 45.6875], [257.868896484375, 252.375, 182.0518798828125, 163.2843017578125, 112.82763671875, 98.5625, 75.9375, 63.4375, 50.75, 40.625]]
+        self.input_jet_eta_bad_split     = [[0.708251953125, -0.1527099609375, 1.647705078125, 0.0011379718780517578, 0.7615966796875, -1.027587890625, -0.0990142822265625, -0.5068359375], [-0.2508544921875, 0.6533203125, -0.8846435546875, -0.1190643310546875, -1.188232421875, 2.072265625, -1.62890625, -1.823486328125, -1.2900390625, -0.403564453125]]
+        self.input_jet_phi_bad_split     = [[0.6732177734375, 3.1025390625, 5.0475897789001465, 2.546875, 5.5264716148376465, 4.5519843101501465, -1.86865234375, -2.2685546875], [0.37841796875, -2.87353515625, 0.8896484375, 3.4594550132751465, 4.4452948570251465, 1.46337890625, -1.463134765625, 0.43634033203125, 0.46148681640625, -2.2685546875]]
+        self.input_jet_mass_bad_split    = [[44.78125, 34.3125, 22.199172973632812, 12.091888427734375, 16.046722412109375, 12.618278503417969, 11.578125, 6.93359375], [27.153228759765625, 21.859375, 20.270751953125, 22.866058349609375, 20.2275390625, 12.640625, 7.80078125, 9.8828125, 8.4609375, 7.046875]]
+        self.input_jet_flavor_bad_split  = [['j', 'j', 'b', 'b', 'b', 'b', 'j', 'j'], ['b', 'j', 'b', 'b', 'b', 'j', 'j', 'j', 'j', 'j']]
+
+        self.input_jets_bad_split = ak.zip(
+            {
+                "pt": self.input_jet_pt_bad_split,
+                "eta": self.input_jet_eta_bad_split,
+                "phi": self.input_jet_phi_bad_split,
+                "mass": self.input_jet_mass_bad_split,
+                "jet_flavor": self.input_jet_flavor_bad_split,
             },
             with_name="PtEtaPhiMLorentzVector",
             behavior=vector.behavior,
@@ -393,6 +425,9 @@ class clusteringTestCase(unittest.TestCase):
         part_A_flat = ak.flatten(part_A_jet_flavor)
         part_B_flat = ak.flatten(part_B_jet_flavor)
 
+        if debug:
+            print(f"part_A_flat {part_A_flat}")
+            print(f"part_B_flat {part_B_flat}")
 
         #
         #  A should always be the more complex
@@ -417,7 +452,7 @@ class clusteringTestCase(unittest.TestCase):
 
     def _synthetic_datasets_test(self, input_jets, n_jets_expected, debug=False):
 
-        clustered_jets, _clustered_splittings = cluster_bs(input_jets, debug=False)
+        clustered_jets, _clustered_splittings = cluster_bs(input_jets, debug=debug)
 
         self._check_jet_flavors(_clustered_splittings.part_A.jet_flavor,
                                 _clustered_splittings.part_B.jet_flavor,
@@ -455,23 +490,11 @@ class clusteringTestCase(unittest.TestCase):
         #
         # Declustering
         #
-
-        #
-        #  Read in the pdfs
-        #
-        #  Make with ../.ci-workflows/synthetic-dataset-plot-job.sh
-        # input_pdf_file_name = "analysis/plots_synthetic_datasets/clustering_pdfs.yml"
-        input_pdf_file_name = "jet_clustering/jet-splitting-PDFs-00-03-00/clustering_pdfs_vs_pT.yml"
-        #input_pdf_file_name = "jet_clustering/clustering_PDFs/clustering_pdfs_vs_pT.yml"
-        with open(input_pdf_file_name, 'r') as input_file:
-            input_pdfs = yaml.safe_load(input_file)
-
-        declustered_jets = make_synthetic_event(clustered_jets, input_pdfs, debug=debug)
+        declustered_jets = make_synthetic_event(clustered_jets, self.input_pdfs, debug=debug)
 
         #
         # Sanity checks
         #
-
 
         match_n_jets = ak.num(declustered_jets) == n_jets_expected
         if not all(match_n_jets):
@@ -522,6 +545,10 @@ class clusteringTestCase(unittest.TestCase):
 
     def test_synthetic_datasets_HH_3bjets(self):
         self._synthetic_datasets_test(self.input_jets_HH_3b, n_jets_expected = 10, debug = False)
+
+    def test_synthetic_datasets_bad_split(self):
+        self._synthetic_datasets_test(self.input_jets_bad_split, n_jets_expected = [8, 10], debug = False)
+
 
 #    def profile_synthetic_datasets(self):
 #
