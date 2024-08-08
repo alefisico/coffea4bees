@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from copy import deepcopy
+from copy import copy
 from dataclasses import dataclass
 
 from rich.progress import BarColumn, ProgressColumn, SpinnerColumn, TimeElapsedColumn
@@ -9,7 +9,7 @@ from rich.progress import Progress as _Bar
 
 from ..config.setting import monitor as cfg
 from ..process.monitor import MonitorProxy, Recorder, post_to_monitor
-from ..typetools import WithUUID
+from ..typetools import PicklableLock, WithUUID
 from ..utils import noop
 
 _FORMAT = "%H:%M:%S"
@@ -19,40 +19,50 @@ MessageType = str | tuple[str, ...]
 
 
 @dataclass
-class ProgressTracker(WithUUID):
+class ProgressTracker(PicklableLock, WithUUID):
     msg: MessageType
     total: int
 
     def __post_init__(self):
+        super().__init__()
         self.start_t = time.time()
         self.updated_t = self.start_t
         self.source = Recorder.name()
         self._completed = 0
         self._step = None
-        super().__init__()
 
     def _update(self, msg: MessageType = None, updated: bool = False, step: int = None):
         if (msg is not None) and (msg != self.msg):
             self.msg = msg
             updated = True
         if updated:
-            new = deepcopy(self)
+            new = copy(self)
+            new.lock = None
             new._step = step
             Progress._update(new)
 
     def update(self, completed: int, msg: MessageType = None):
-        updated = completed > self._completed
-        if updated:
-            self.updated_t = time.time()
-            self._completed = completed
-        self._update(msg, updated)
+        with self.lock:
+            updated = completed > self._completed
+            if updated:
+                self.updated_t = time.time()
+                self._completed = completed
+            self._update(msg, updated)
 
-    def advance(self, step: int, msg: MessageType = None):
-        updated = step > 0
-        if updated:
-            self.updated_t = time.time()
-            self._completed += step
-        self._update(msg, updated, step)
+    def advance(
+        self,
+        step: int = 1,
+        msg: MessageType = None,
+        distributed: bool = False,
+    ):
+        with self.lock:
+            updated = step > 0
+            if updated:
+                self.updated_t = time.time()
+                self._completed += step
+                if not distributed:
+                    step = None
+            self._update(msg, updated, step)
 
     def complete(self):
         self.update(self.total)
