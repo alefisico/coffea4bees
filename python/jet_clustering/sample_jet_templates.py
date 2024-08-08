@@ -91,6 +91,13 @@ def sample_PDFs_vs_pT(input_jets_decluster, input_pdfs, splittings):
         # Sample the pdfs from the different splitting options
         for _splitting_name, _num_samples, _indicies_tuple in splittings:
 
+            if _splitting_name not in input_pdfs.keys():
+
+                old_splitting_name = _splitting_name
+                key_list = list(input_pdfs.keys())
+                _splitting_name = key_list[-1]
+                print(f"ERROR {old_splitting_name} not in inputPDFs using last splitting {_splitting_name}")
+
             for _iPt in range(n_pt_bins):
 
                 if is_1d_pdf:
