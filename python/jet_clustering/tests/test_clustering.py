@@ -133,6 +133,30 @@ class clusteringTestCase(unittest.TestCase):
 
 
 
+        #
+        # ERrors in HH signal
+        #
+        self.input_jet_pt_HH_3b  = [[262.848876953125, 190.92445373535156, 118.01837921142578, 85.73815155029297, 84.77513885498047, 81.45384216308594, 56.21860122680664, 54.88019561767578, 53.123104095458984, 40.82435989379883]]
+        self.input_jet_eta_HH_3b  = [[-0.5233154296875, -0.108184814453125, 1.060302734375, -1.105712890625, 1.79638671875, 2.23681640625, 0.953369140625, 0.212158203125, 1.939208984375, 1.075439453125]]
+        self.input_jet_phi_HH_3b  = [[3.4057440757751465, 0.60888671875, 0.807861328125, 3.9755682945251465, 2.97900390625, -0.3990478515625, -0.474609375, 5.6286444664001465, 1.234130859375, 1.5517578125]]
+        self.input_jet_mass_HH_3b  = [[19.766611099243164, 15.895012855529785, 20.83321762084961, 11.490931510925293, 14.269634246826172, 8.53515338897705, 9.325471878051758, 8.153546333312988, 11.367645263671875, 8.33912181854248]]
+        self.input_jet_flavor_HH_3b  = [['b', 'b', 'j', 'b', 'j', 'j', 'j', 'b', 'j', 'j']]
+
+        self.input_jets_HH_3b = ak.zip(
+            {
+                "pt": self.input_jet_pt_HH_3b + self.input_jet_pt_HH_3b,
+                "eta": self.input_jet_eta_HH_3b + self.input_jet_eta_HH_3b,
+                "phi": self.input_jet_phi_HH_3b + self.input_jet_phi_HH_3b,
+                "mass": self.input_jet_mass_HH_3b + self.input_jet_mass_HH_3b,
+                "jet_flavor": self.input_jet_flavor_HH_3b + self.input_jet_flavor_HH_3b,
+            },
+            with_name="PtEtaPhiMLorentzVector",
+            behavior=vector.behavior,
+        )
+
+
+
+
         self.input_jets_all = ak.zip(
             {
                 "pt":  self.input_jet_pt_4 + self.input_jet_pt_5 + self.input_jet_pt_bbj + self.input_jet_pt_6 + self.input_jet_pt_5b,
@@ -388,7 +412,6 @@ class clusteringTestCase(unittest.TestCase):
         equal_len_mask = part_A_len == part_B_len
         more_bs_in_partA[~equal_len_mask] = True
 
-
         self.assertTrue(np.all(more_bs_in_partA), "Part A should alwasy have more bs")
 
 
@@ -444,8 +467,6 @@ class clusteringTestCase(unittest.TestCase):
             input_pdfs = yaml.safe_load(input_file)
 
         declustered_jets = make_synthetic_event(clustered_jets, input_pdfs, debug=debug)
-        #pA = declustered_jets[:,0:2]
-        #pB = declustered_jets[:,2:]
 
         #
         # Sanity checks
@@ -465,11 +486,6 @@ class clusteringTestCase(unittest.TestCase):
             print(f"ak.num(declustered_jets)        {ak.num(declustered_jets)}")
             print(f"clustered_jets.phi             {clustered_jets.phi}")
 
-            #
-            #  Checkphi
-            #
-            #print(f"input phi {clustered_jets.phi[1]}")
-            #print(f"Reco phi {(pA + pB).phi[1]}")
 
         self.assertTrue(all(match_n_jets), f"Should always get {n_jets_expected} jets")
 
@@ -492,20 +508,35 @@ class clusteringTestCase(unittest.TestCase):
     def test_synthetic_datasets_4jets(self):
         self._synthetic_datasets_test(self.input_jets_4, n_jets_expected = 4)
 
-
     def test_synthetic_datasets_5jets(self):
         self._synthetic_datasets_test(self.input_jets_5, n_jets_expected = 5, debug=False)
 
-
     def test_synthetic_datasets_bbjjets(self):
         self._synthetic_datasets_test(self.input_jets_bbj, n_jets_expected = 5)
-
 
     def test_synthetic_datasets_6jets(self):
         self._synthetic_datasets_test(self.input_jets_6, n_jets_expected = 6, debug = False)
 
     def test_synthetic_datasets_5bjets(self):
-        self._synthetic_datasets_test(self.input_jets_5b[0:2], n_jets_expected = 6, debug = False)
+        self._synthetic_datasets_test(self.input_jets_5b, n_jets_expected = 6, debug = False)
+
+    def test_synthetic_datasets_HH_3bjets(self):
+        self._synthetic_datasets_test(self.input_jets_HH_3b, n_jets_expected = 10, debug = False)
+
+#    def profile_synthetic_datasets(self):
+#
+#        from cProfile import Profile
+#
+#        test = lambda: self._synthetic_datasets_test(self.input_jets_6 , n_jets_expected=6,debug=False)
+#
+#        profiler = Profile()
+#        profiler.runcall(test)
+#
+#        from pstats import Stats
+#        stats = Stats(profiler)
+#        stats.strip_dirs()
+#        stats.sort_stats("cumulative")
+#        stats.print_stats()
 
 
 
@@ -513,6 +544,7 @@ class clusteringTestCase(unittest.TestCase):
         splitting_types = [ ('bb', ('b','b')), ('bj',('b','j')), ('jb',('j','b')), ('jj',('j','j')),
                             ("j(bb)", ('bb', 'j')), ("b(bj)", ('bj', 'b')), ("j(bj)", ('bj', 'j')), ("(bj)b", ('bj', 'b')),
                             ("(j(bj))b", ('j(bj)', 'b')), ("(bb)(jj)", ('bb', 'jj')), ("(jj)(bb)", ('jj', 'bb')), ("j(j(bj))", ('j(bj)','j')),
+                            ('((((jj)j)j)((bj)j))b', ('(((jj)j)j)((bj)j)','b')),
                            ]
 
         for _s in splitting_types:
@@ -522,7 +554,6 @@ class clusteringTestCase(unittest.TestCase):
             self.assertTrue(_children == _s[1], f"Miss match for type {_s[0]}: got {_children}, expected {_s[1]}")
 
     def test_get_list_of_ISR_splittings(self):
-
 
         splitting_types = [("b",False), ("j",False),
                            ("bb",False), ("bj",True), ("jj",True),
@@ -539,10 +570,7 @@ class clusteringTestCase(unittest.TestCase):
             if _s[1]:
                 expected_ISR_splittings.append(_s[0])
 
-
         ISR_splittings = get_list_of_ISR_splittings(test_splitting_types)
-
-        print(f"ISR_splittings is {ISR_splittings}")
 
         self.assertListEqual(ISR_splittings, expected_ISR_splittings)
 
@@ -553,7 +581,8 @@ class clusteringTestCase(unittest.TestCase):
                            ('j(bj)', ['j(bj)','bj']),
                            ("(bb)(jj)", ["(bb)(jj)",'bb', 'jj']),
                            ("j(j(bj))", ["j(j(bj))",'j(bj)','bj']),
-                           ("(j(bj))b", ["(j(bj))b","j(bj)","bj"] )
+                           ("(j(bj))b", ["(j(bj))b","j(bj)","bj"] ),
+                           ("((((jj)j)j)((bj)j))b", ["((((jj)j)j)((bj)j))b", "(((jj)j)j)((bj)j)", "((jj)j)j",  "(jj)j", "jj", "(bj)j", "bj"]),
                            ]
 
 
