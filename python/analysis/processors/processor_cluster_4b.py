@@ -53,7 +53,11 @@ class analysis(processor.ProcessorABC):
 
         logging.debug("\nInitialize Analysis Processor")
         self.corrections_metadata = yaml.safe_load(open(corrections_metadata, "r"))
-        self.clustering_pdfs = yaml.safe_load(open(clustering_pdfs_file, "r"))
+        if not clustering_pdfs_file == "None":
+            self.clustering_pdfs = yaml.safe_load(open(clustering_pdfs_file, "r"))
+            logging.info(f"Loaded {len(self.clustering_pdfs.keys())} PDFs from {clustering_pdfs_file}")
+        else:
+            self.clustering_pdfs = None
         self.do_declustering = do_declustering
 
         self.cutFlowCuts = [
@@ -264,7 +268,30 @@ class analysis(processor.ProcessorABC):
         for _s_type in cleaned_split_types:
             selev[f"splitting_{_s_type}"]   = clustered_splittings[clustered_splittings.jet_flavor == _s_type]
 
-        # print(f'{chunk} all splitting types {all_split_types}\n')
+        #print(f'{chunk} cleaned splitting types {cleaned_split_types}\n')
+
+        # error_type = '(bj)((jj)b)'
+        # found_error = error_type in cleaned_split_types
+        #
+        # if found_error:
+        #     print(f"ERROR have splitting type {error_type}\n" )
+        #
+        #     error_mask = clustered_splittings.jet_flavor == error_type
+        #     event_mask = ak.any(error_mask,axis=1 )
+        #
+        #     # print(f'{chunk} num splitting {ak.num(selev["splitting_b(bj)"])}')
+        #     # print(f'{chunk} mask {ak.num(selev["splitting_b(bj)"]) > 0}')
+        #     #bbj_mask = ak.num(selev["splitting_b(bj)"]) > 0
+        #     jets_for_clustering_error = jets_for_clustering[event_mask]
+        #     n_jets_error = len(jets_for_clustering_error)
+        #     print(f'{chunk}\n\n')
+        #     print(f'{chunk} self.input_jet_pt      = {[jets_for_clustering_error[iE].pt.tolist()         for iE in range(n_jets_error)]}')
+        #     print(f'{chunk} self.input_jet_eta     = {[jets_for_clustering_error[iE].eta.tolist()        for iE in range(n_jets_error)]}')
+        #     print(f'{chunk} self.input_jet_phi     = {[jets_for_clustering_error[iE].phi.tolist()        for iE in range(n_jets_error)]}')
+        #     print(f'{chunk} self.input_jet_mass    = {[jets_for_clustering_error[iE].mass.tolist()       for iE in range(n_jets_error)]}')
+        #     print(f'{chunk} self.input_jet_flavor  = {[jets_for_clustering_error[iE].jet_flavor.tolist() for iE in range(n_jets_error)]}')
+        #     print(f'{chunk}\n\n')
+
 
         dumpTestVectors_bbj = False
         if dumpTestVectors_bbj:
