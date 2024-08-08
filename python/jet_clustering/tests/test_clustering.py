@@ -14,7 +14,7 @@ import os
 
 sys.path.insert(0, os.getcwd())
 from jet_clustering.clustering   import kt_clustering, cluster_bs, cluster_bs_fast, cluster_bs_numba
-from jet_clustering.declustering import compute_decluster_variables, decluster_combined_jets, make_synthetic_event, get_list_of_splitting_types, clean_ISR, get_list_of_ISR_splittings, children_jet_flavors, get_list_of_all_sub_splittings, get_list_of_combined_jet_types
+from jet_clustering.declustering import compute_decluster_variables, decluster_combined_jets, make_synthetic_event, get_list_of_splitting_types, clean_ISR, get_list_of_ISR_splittings, children_jet_flavors, get_list_of_all_sub_splittings, get_list_of_combined_jet_types, get_splitting_summary
 
 #import vector
 #vector.register_awkward()
@@ -619,6 +619,23 @@ class clusteringTestCase(unittest.TestCase):
             expected = _s[1]
             #print(f"{_s[0]} -> {sub_splitting}")
             self.assertListEqual(expected, sub_splitting)
+
+    def test_get_splitting_summary(self):
+        splitting_types = [ ('bb',                   ( (1, 1), (1,1))),
+                            ("(bb)j",                ( (2, 1), (2,0))),
+                            ("(j(bj))b",             ( (3, 1), (1,1))),
+                            ('((((jj)j)j)((bj)j))b', ( (7 ,1), (1,1))),
+                             ]
+        for _s in splitting_types:
+
+            njets, nbs = get_splitting_summary(_s[0])
+            expected_njets = _s[1][0]
+            expected_nbs   = _s[1][1]
+            print(f"{_s[0]} -> {njets}  {nbs}")
+            self.assertEqual(expected_njets, njets, "ERROR in njets")
+            self.assertEqual(expected_nbs,   nbs,   "ERROR in nbs")
+
+
 
 
 if __name__ == '__main__':
