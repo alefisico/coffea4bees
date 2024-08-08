@@ -14,16 +14,18 @@ runner:
     - base_class
     - analysis
     - skimmer
+    - data
   allowlist_sites:
-    - T3_US_FNALLPC
-    - T3_US_NotreDame
     - T2_US_Nebraska
     - T2_US_Purdue
+    - T3_US_FNALLPC
+    - T3_US_NotreDame
 
 config:
-  #base_path: root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v1/
-  base_path: /srv/python/skimmer/test/   ### local
+  base_path: root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/
+  # base_path: /srv/python/skimmer/test/   ### local
   step: 100000
+  loosePtForSkim: True
   skip_collections:
     - Photon
     - LHEPart

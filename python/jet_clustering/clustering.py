@@ -2,6 +2,7 @@ import numpy as np
 import awkward as ak
 from copy import copy
 from coffea.nanoevents.methods import vector
+from numba import jit
 
 # anti kt
 # dij = min(1 / (part_A['pt']**2), 1 / (part_B['pt']**2)) * delta_r(part_A['eta'], part_A['phi'], part_B['eta'], part_B['phi'])**2 / R**2
@@ -48,6 +49,38 @@ def get_min_indicies(particles, R):
 
     return idx_A, idx_B
 
+@jit
+def get_min_indicies_numba_core(particles_pt, particles_eta, particles_phi):
+    distances = []
+    for iA in range(len(particles_pt)):
+        for jB in range(len(particles_pt)):
+            if iA < jB:
+
+                dphi = particles_phi[iA] - particles_phi[jB]
+                if dphi > np.pi:
+                    dphi -= 2*np.pi
+                if dphi < -np.pi:
+                    dphi += 2*np.pi
+
+                dij = min(particles_pt[iA]**2, particles_pt[jB]**2) * (np.square(particles_eta[iA] - particles_eta[jB]) + np.square(dphi))
+
+                #dij = part_A.delta_r(part_B)**2            # KT
+                distances.append((dij, iA, jB))
+
+    # Find the minimum distance
+    _, idx_A, idx_B = min(distances)
+
+    return idx_A, idx_B
+
+
+
+def get_min_indicies_numba(particles, R):
+    particles_pt  = particles.pt
+    particles_eta = particles.eta
+    particles_phi = particles.phi
+
+    return get_min_indicies_numba_core(particles.pt, particles.eta, particles.phi)
+
 
 
 def distance_matrix_kt(vectors):
@@ -55,7 +88,7 @@ def distance_matrix_kt(vectors):
     eta1 = ak.values_astype(vectors.eta, np.float64)
     phi1 = ak.values_astype(vectors.phi, np.float64)
 
-    pt2 = pt1[:, np.newaxis]
+    pt2  = pt1[:, np.newaxis]
     eta2 = eta1[:, np.newaxis]
     phi2 = phi1[:, np.newaxis]
 
@@ -74,6 +107,7 @@ def distance_matrix_kt(vectors):
     # Set the diagonal elements to a large value to ignore them
     dij[mask] = np.inf
     return dij
+
 
 def get_min_indicies_fast(particles, R):
     distances = []
@@ -112,21 +146,28 @@ def combine_particles(part_A, part_B, *, debug=False):
     new_part_A = part_A
     new_part_B = part_B
 
+    if debug:
+        print(f"(combine_particles) new_part_A {new_part_A}")
+        print(f"(combine_particles) new_part_B {new_part_B}")
+
     # order by complexity
     if len(new_part_B.jet_flavor) > len(new_part_A.jet_flavor):
         new_part_A = part_B
         new_part_B = part_A
+        if debug:
+            print(f"(combine_particles) swap b/c complexity")
 
+    elif len(new_part_B.jet_flavor) == len(new_part_A.jet_flavor):
 
-    # else order by bjet content
-    elif new_part_A.jet_flavor.count("b") < new_part_B.jet_flavor.count("b"):
-        new_part_A = part_B
-        new_part_B = part_A
+        # else order by bjet content
+        if new_part_A.jet_flavor.count("b") < new_part_B.jet_flavor.count("b"):
+            new_part_A = part_B
+            new_part_B = part_A
 
-    # else order by pt
-    elif new_part_A.jet_flavor.count("b") == new_part_B.jet_flavor.count("b") and (new_part_A.pt < new_part_B.pt):
-        new_part_A = part_B
-        new_part_B = part_A
+        # else order by pt
+        elif new_part_A.jet_flavor.count("b") == new_part_B.jet_flavor.count("b") and (new_part_A.pt < new_part_B.pt):
+            new_part_A = part_B
+            new_part_B = part_A
 
 
     part_comb_jet_flavor = comb_jet_flavor(new_part_A.jet_flavor, new_part_B.jet_flavor)
@@ -181,7 +222,7 @@ def cluster_bs_core(event_jets, distance_function, *, debug = False):
 
             if debug: print(f"size partilces {len(particles)}")
 
-            part_comb_array = combine_particles(particles[idx_A], particles[idx_B])
+            part_comb_array = combine_particles(particles[idx_A], particles[idx_B], debug = debug)
 
             #
             #  Stop if going to combine 3 bs
@@ -260,11 +301,15 @@ def cluster_bs_core(event_jets, distance_function, *, debug = False):
 
 
 def cluster_bs(event_jets, *, debug = False):
-    return cluster_bs_core(event_jets, get_min_indicies)
+    return cluster_bs_core(event_jets, get_min_indicies, debug=debug)
 
 
 def cluster_bs_fast(event_jets, *, debug = False):
     return cluster_bs_core(event_jets, get_min_indicies_fast)
+
+def cluster_bs_numba(event_jets, *, debug = False):
+    return cluster_bs_core(event_jets, get_min_indicies_numba)
+
 
 
 # Define the kt clustering algorithm

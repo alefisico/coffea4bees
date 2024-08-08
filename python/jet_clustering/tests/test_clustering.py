@@ -13,8 +13,8 @@ from copy import copy
 import os
 
 sys.path.insert(0, os.getcwd())
-from jet_clustering.clustering   import kt_clustering, cluster_bs, cluster_bs_fast
-from jet_clustering.declustering import compute_decluster_variables, decluster_combined_jets, make_synthetic_event, get_list_of_splitting_types, clean_ISR, get_list_of_ISR_splittings, children_jet_flavors
+from jet_clustering.clustering   import kt_clustering, cluster_bs, cluster_bs_fast, cluster_bs_numba
+from jet_clustering.declustering import compute_decluster_variables, decluster_combined_jets, make_synthetic_event, get_list_of_splitting_types, clean_ISR, get_list_of_ISR_splittings, children_jet_flavors, get_list_of_all_sub_splittings, get_list_of_combined_jet_types
 
 #import vector
 #vector.register_awkward()
@@ -28,7 +28,18 @@ class clusteringTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-#        self.inputFile = wrapper.args["inputFile"]
+
+        #
+        #  Read in the pdfs
+        #
+        #  Make with ../.ci-workflows/synthetic-dataset-plot-job.sh
+        # input_pdf_file_name = "analysis/plots_synthetic_datasets/clustering_pdfs.yml"
+        input_pdf_file_name = "jet_clustering/jet-splitting-PDFs-00-03-00/clustering_pdfs_vs_pT.yml"
+        #input_pdf_file_name = "jet_clustering/clustering_PDFs/clustering_pdfs_vs_pT.yml"
+        with open(input_pdf_file_name, 'r') as input_file:
+            self.input_pdfs = yaml.safe_load(input_file)
+
+        #        self.inputFile = wrapper.args["inputFile"]
 
         #
         # From 4jet events
@@ -39,7 +50,7 @@ class clusteringTestCase(unittest.TestCase):
         self.input_jet_phi_4 = [[2.4931640625, -0.48309326171875, 2.66259765625, -1.79443359375], [-0.2913818359375, 2.51220703125, -2.73876953125, 0.58349609375], [-2.220703125, 0.6153564453125, 1.251708984375, -1.930908203125], [-1.36962890625, 1.342041015625, 1.99609375, 2.5849609375], [-0.1124420166015625, 2.6875, -2.44775390625, 0.168304443359375], [2.546875, 1.327392578125, -0.794189453125, -0.979248046875], [2.95556640625, 0.7203369140625, -1.276611328125, -0.4969482421875], [1.421630859375, -1.33935546875, -1.302978515625, -3.140625], [-2.45751953125, 0.27557373046875, 1.65087890625, -0.6121826171875], [-3.08984375, -0.14752197265625, 0.2174072265625, -2.95947265625]]
         self.input_jet_mass_4 = [[16.8125, 24.96875, 9.5390625, 6.18359375], [18.859375, 15.296875, 13.5, 7.7421875], [20.5, 16.96875, 11.7265625, 10.7421875], [20.421875, 16.921875, 16.46875, 9.1875], [32.3125, 18.015625, 10.4140625, 13.40625], [14.046875, 9.625, 12.3984375, 8.3515625], [19.3125, 22.875, 13.671875, 12.0234375], [32.15625, 11.8125, 17.25, 11.3828125], [17.0, 14.953125, 9.046875, 11.5], [15.65625, 16.890625, 17.640625, 7.9921875]]
 
-        self.jet_flavor_4 = [["b"] * 4] * len(self.input_jet_pt_4)
+        self.input_jet_flavor_4 = [["b"] * 4] * len(self.input_jet_pt_4)
 
         self.input_jets_4 = ak.zip(
             {
@@ -47,7 +58,7 @@ class clusteringTestCase(unittest.TestCase):
                 "eta": self.input_jet_eta_4,
                 "phi": self.input_jet_phi_4,
                 "mass": self.input_jet_mass_4,
-                "jet_flavor": self.jet_flavor_4,
+                "jet_flavor": self.input_jet_flavor_4,
             },
             with_name="PtEtaPhiMLorentzVector",
             behavior=vector.behavior,
@@ -110,6 +121,86 @@ class clusteringTestCase(unittest.TestCase):
             with_name="PtEtaPhiMLorentzVector",
             behavior=vector.behavior,
         )
+
+
+        self.input_jet_pt_5b  = [[847.06787109375, 575.1123046875, 393.391845703125, 132.3695068359375, 101.75, 46.1875], [147.25, 144.20068359375, 89.9044189453125, 86.82928466796875, 77.19970703125, 46.03125], [187.54718017578125, 111.3125, 109.57470703125, 96.76171875, 89.548828125, 53.4375], [205.770263671875, 91.76766967773438, 80.0137939453125, 72.25, 72.0625, 58.360931396484375], [257.81396484375, 199.16796875, 176.09033203125, 168.09375, 45.78125, 45.59375], [358.4278564453125, 158.643310546875, 141.4593505859375, 56.093170166015625, 52.625, 48.28125], [360.7578125, 157.62237548828125, 149.375, 72.39990234375, 71.32080078125, 48.5625], [232.29541015625, 107.25, 98.73687744140625, 93.718505859375, 68.5625, 62.34161376953125], [130.875, 85.73077392578125, 78.266357421875, 66.3837890625, 64.326171875, 45.125], [163.8134765625, 124.72186279296875, 116.5625, 56.59375, 52.27362060546875, 50.5859375]]
+        self.input_jet_eta_5b  = [[-0.45623779296875, -0.146209716796875, -0.6796875, -1.140380859375, -1.597412109375, 1.530517578125], [-0.511962890625, 0.4573974609375, 0.03043365478515625, -0.8470458984375, -0.8199462890625, 0.6304931640625], [1.843994140625, -0.8642578125, 1.0400390625, -1.63427734375, 0.56298828125, -2.0244140625], [-0.6571044921875, 1.706787109375, 0.44293212890625, 0.40264892578125, 0.54150390625, 0.805419921875], [2.2060546875, -1.774169921875, 0.4654541015625, 1.042724609375, -0.0927581787109375, 1.240966796875], [-1.69287109375, 0.3299560546875, -0.47491455078125, -0.015758514404296875, 1.12255859375, 0.1666259765625], [-1.627685546875, -0.41790771484375, -1.678466796875, -1.666015625, -0.793701171875, 0.33197021484375], [0.4727783203125, -0.0710601806640625, 0.866455078125, -0.4940185546875, -0.011898040771484375, 0.607177734375], [0.901611328125, -1.986083984375, -1.075439453125, 0.713623046875, -0.517333984375, -1.24560546875], [-1.4072265625, -0.5345458984375, -1.128173828125, -1.193359375, -0.8819580078125, -0.673095703125]]
+        self.input_jet_phi_5b  = [[0.7490234375, 3.5683417320251465, 2.86474609375, 4.8049139976501465, -1.607177734375, -1.41748046875], [-0.8682861328125, 2.0068359375, 4.2328925132751465, 3.4609198570251465, 0.798583984375, -2.06005859375], [4.7670722007751465, 2.68115234375, 0.95166015625, 5.9013495445251465, 2.50341796875, -0.0863189697265625], [1.468505859375, 5.1887030601501465, 3.1508612632751465, -1.85498046875, 0.2962646484375, 4.9518866539001465], [1.825927734375, 3.5492987632751465, 5.8480658531188965, 5.5837225914001465, -0.880859375, 1.49755859375], [0.51123046875, 3.2905097007751465, 3.7035956382751465, 5.5689520835876465, -1.193115234375, -1.93310546875], [1.469970703125, 3.5317206382751465, -1.829345703125, 5.3429999351501465, 4.3251776695251465, -1.745361328125], [1.477783203125, -2.37109375, 5.6043524742126465, 5.0405097007751465, 2.52294921875, 4.3627753257751465], [2.61083984375, 4.4965643882751465, 0.7987060546875, 4.7101874351501465, 5.7914862632751465, 1.236328125], [5.1718573570251465, 1.2177734375, 1.914306640625, -1.98681640625, 3.4330878257751465, 4.0219550132751465]]
+        self.input_jet_mass_5b  = [[49.44325256347656, 84.58648681640625, 51.7620849609375, 15.502212524414062, 15.359375, 9.75], [18.140625, 18.935760498046875, 22.168212890625, 14.885765075683594, 11.135177612304688, 8.875], [31.703811645507812, 23.640625, 13.62493896484375, 14.672607421875, 9.512954711914062, 9.4375], [35.9139404296875, 14.719371795654297, 12.301963806152344, 15.1953125, 11.59375, 10.432571411132812], [40.98614501953125, 21.42822265625, 19.395263671875, 14.83355712890625, 10.734375, 7.0234375], [40.57731628417969, 32.29435729980469, 17.542205810546875, 9.165962219238281, 11.90625, 9.7578125], [36.6953125, 19.475631713867188, 20.125, 11.5631103515625, 12.649574279785156, 9.3671875], [23.001861572265625, 11.828125, 18.114395141601562, 18.237213134765625, 8.953125, 12.131118774414062], [18.859375, 10.186088562011719, 18.271240234375, 13.1004638671875, 11.26220703125, 9.5078125], [20.97808837890625, 21.042236328125, 18.296875, 10.4375, 9.928436279296875, 9.153881072998047]]
+        self.input_jet_flavor_5b  = [['b', 'b', 'b', 'b', 'j', 'j'], ['j', 'b', 'b', 'b', 'b', 'j'], ['b', 'j', 'b', 'b', 'b', 'j'], ['b', 'b', 'b', 'j', 'j', 'b'], ['b', 'b', 'b', 'b', 'j', 'j'], ['b', 'b', 'b', 'b', 'j', 'j'], ['b', 'b', 'j', 'b', 'b', 'j'], ['b', 'j', 'b', 'b', 'j', 'b'], ['j', 'b', 'b', 'b', 'b', 'j'], ['b', 'b', 'j', 'j', 'b', 'b']]
+
+
+        self.input_jets_5b = ak.zip(
+            {
+                "pt": self.input_jet_pt_5b,
+                "eta": self.input_jet_eta_5b,
+                "phi": self.input_jet_phi_5b,
+                "mass": self.input_jet_mass_5b,
+                "jet_flavor": self.input_jet_flavor_5b,
+            },
+            with_name="PtEtaPhiMLorentzVector",
+            behavior=vector.behavior,
+        )
+
+
+
+        #
+        # ERrors in HH signal
+        #
+        self.input_jet_pt_HH_3b  = [[262.848876953125, 190.92445373535156, 118.01837921142578, 85.73815155029297, 84.77513885498047, 81.45384216308594, 56.21860122680664, 54.88019561767578, 53.123104095458984, 40.82435989379883]]
+        self.input_jet_eta_HH_3b  = [[-0.5233154296875, -0.108184814453125, 1.060302734375, -1.105712890625, 1.79638671875, 2.23681640625, 0.953369140625, 0.212158203125, 1.939208984375, 1.075439453125]]
+        self.input_jet_phi_HH_3b  = [[3.4057440757751465, 0.60888671875, 0.807861328125, 3.9755682945251465, 2.97900390625, -0.3990478515625, -0.474609375, 5.6286444664001465, 1.234130859375, 1.5517578125]]
+        self.input_jet_mass_HH_3b  = [[19.766611099243164, 15.895012855529785, 20.83321762084961, 11.490931510925293, 14.269634246826172, 8.53515338897705, 9.325471878051758, 8.153546333312988, 11.367645263671875, 8.33912181854248]]
+        self.input_jet_flavor_HH_3b  = [['b', 'b', 'j', 'b', 'j', 'j', 'j', 'b', 'j', 'j']]
+
+        self.input_jets_HH_3b = ak.zip(
+            {
+                "pt": self.input_jet_pt_HH_3b + self.input_jet_pt_HH_3b,
+                "eta": self.input_jet_eta_HH_3b + self.input_jet_eta_HH_3b,
+                "phi": self.input_jet_phi_HH_3b + self.input_jet_phi_HH_3b,
+                "mass": self.input_jet_mass_HH_3b + self.input_jet_mass_HH_3b,
+                "jet_flavor": self.input_jet_flavor_HH_3b + self.input_jet_flavor_HH_3b,
+            },
+            with_name="PtEtaPhiMLorentzVector",
+            behavior=vector.behavior,
+        )
+
+        #
+        #   `(bj)((jj)b)` splittins
+        #
+        self.input_jet_pt_bad_split      = [[411.75, 347.75, 193.948974609375, 97.8897705078125, 74.1673583984375, 64.99481201171875, 64.4375, 45.6875], [257.868896484375, 252.375, 182.0518798828125, 163.2843017578125, 112.82763671875, 98.5625, 75.9375, 63.4375, 50.75, 40.625]]
+        self.input_jet_eta_bad_split     = [[0.708251953125, -0.1527099609375, 1.647705078125, 0.0011379718780517578, 0.7615966796875, -1.027587890625, -0.0990142822265625, -0.5068359375], [-0.2508544921875, 0.6533203125, -0.8846435546875, -0.1190643310546875, -1.188232421875, 2.072265625, -1.62890625, -1.823486328125, -1.2900390625, -0.403564453125]]
+        self.input_jet_phi_bad_split     = [[0.6732177734375, 3.1025390625, 5.0475897789001465, 2.546875, 5.5264716148376465, 4.5519843101501465, -1.86865234375, -2.2685546875], [0.37841796875, -2.87353515625, 0.8896484375, 3.4594550132751465, 4.4452948570251465, 1.46337890625, -1.463134765625, 0.43634033203125, 0.46148681640625, -2.2685546875]]
+        self.input_jet_mass_bad_split    = [[44.78125, 34.3125, 22.199172973632812, 12.091888427734375, 16.046722412109375, 12.618278503417969, 11.578125, 6.93359375], [27.153228759765625, 21.859375, 20.270751953125, 22.866058349609375, 20.2275390625, 12.640625, 7.80078125, 9.8828125, 8.4609375, 7.046875]]
+        self.input_jet_flavor_bad_split  = [['j', 'j', 'b', 'b', 'b', 'b', 'j', 'j'], ['b', 'j', 'b', 'b', 'b', 'j', 'j', 'j', 'j', 'j']]
+
+        self.input_jets_bad_split = ak.zip(
+            {
+                "pt": self.input_jet_pt_bad_split,
+                "eta": self.input_jet_eta_bad_split,
+                "phi": self.input_jet_phi_bad_split,
+                "mass": self.input_jet_mass_bad_split,
+                "jet_flavor": self.input_jet_flavor_bad_split,
+            },
+            with_name="PtEtaPhiMLorentzVector",
+            behavior=vector.behavior,
+        )
+
+
+
+
+        self.input_jets_all = ak.zip(
+            {
+                "pt":  self.input_jet_pt_4 + self.input_jet_pt_5 + self.input_jet_pt_bbj + self.input_jet_pt_6 + self.input_jet_pt_5b,
+                "eta": self.input_jet_eta_4 + self.input_jet_eta_5 + self.input_jet_eta_bbj + self.input_jet_eta_6 + self.input_jet_eta_5b,
+                "phi": self.input_jet_phi_4 + self.input_jet_phi_5 + self.input_jet_phi_bbj + self.input_jet_phi_6 + self.input_jet_phi_5b,
+                "mass": self.input_jet_mass_4 + self.input_jet_mass_5 + self.input_jet_mass_bbj + self.input_jet_mass_6 + self.input_jet_mass_5b,
+                "jet_flavor": self.input_jet_flavor_4 + self.input_jet_flavor_5 + self.input_jet_flavor_bbj + self.input_jet_flavor_6 + self.input_jet_flavor_5b,
+            },
+            with_name="PtEtaPhiMLorentzVector",
+            behavior=vector.behavior,
+        )
+
 
 
 
@@ -227,24 +318,51 @@ class clusteringTestCase(unittest.TestCase):
         self._declustering_test(self.input_jets_6, debug=False)
 
 
-
-    def test_cluster_bs_fast_4jets(self):
+    def test_cluster_bs_speed_test(self):
 
         start = time.perf_counter()
-        clustered_jets_fast, clustered_splittings_fast = cluster_bs_fast(self.input_jets_4, debug=False)
+        clustered_jets_fast, clustered_splittings_fast = cluster_bs_fast(self.input_jets_all , debug=False)
         end = time.perf_counter()
         elapsed_time_matrix_python = (end - start)
         print(f"\nElapsed time fast Python = {elapsed_time_matrix_python}s")
 
         start = time.perf_counter()
-        clustered_jets, clustered_splittings = cluster_bs(self.input_jets_4, debug=False)
+        clustered_jets, clustered_splittings = cluster_bs(self.input_jets_all, debug=False)
         end = time.perf_counter()
         elapsed_time_loops_python = (end - start)
         print(f"\nElapsed time loops Python = {elapsed_time_loops_python}s")
 
+
+        start = time.perf_counter()
+        _, _ = cluster_bs_numba(self.input_jets_all, debug=False)
+        end = time.perf_counter()
+        elapsed_time_numba = (end - start)
+        print(f"\nElapsed time numba1  = {elapsed_time_numba}s")
+
+        start = time.perf_counter()
+        clustered_jets_numba, clustered_splittings_numba = cluster_bs_numba(self.input_jets_all, debug=False)
+        end = time.perf_counter()
+        elapsed_time_numba = (end - start)
+        print(f"\nElapsed time numba2  = {elapsed_time_numba}s")
+
+
+
         #
         # Sanity checks
         #
+
+        #
+        # Check Masses
+        #
+        self.assertTrue(np.sum(ak.num(clustered_splittings.mass)) == np.sum(ak.num(clustered_splittings_numba.mass)),
+                        f"Should get the same number of splittings! {np.sum(ak.num(clustered_splittings.mass))} vs {np.sum(ak.num(clustered_splittings_numba.mass))}")
+
+
+        mass_check = [np.allclose(i, j, 1e-4) for i, j in zip(clustered_splittings.mass, clustered_splittings_numba.mass)]
+        self.assertTrue(all(mass_check), "All Masses should be the same")
+        pt_check = [np.allclose(i, j, 1e-4) for i, j in zip(clustered_splittings.pt, clustered_splittings_numba.pt)]
+        self.assertTrue(all(pt_check), "All Masses should be the same")
+
 
         #
         # Check Masses
@@ -282,6 +400,23 @@ class clusteringTestCase(unittest.TestCase):
         self.assertTrue(all(phi_check), "All phis should be the same")
 
 
+#    def profile_clustering(self):
+#
+#        from cProfile import Profile
+#
+#        test = lambda: cluster_bs(self.input_jets_all , debug=False)
+#
+#        profiler = Profile()
+#        profiler.runcall(test)
+#
+#        from pstats import Stats
+#        stats = Stats(profiler)
+#        stats.strip_dirs()
+#        stats.sort_stats("cumulative")
+#        stats.print_stats()
+
+
+
     def _check_jet_flavors(self, part_A_jet_flavor, part_B_jet_flavor, debug=False):
 
         #
@@ -290,6 +425,9 @@ class clusteringTestCase(unittest.TestCase):
         part_A_flat = ak.flatten(part_A_jet_flavor)
         part_B_flat = ak.flatten(part_B_jet_flavor)
 
+        if debug:
+            print(f"part_A_flat {part_A_flat}")
+            print(f"part_B_flat {part_B_flat}")
 
         #
         #  A should always be the more complex
@@ -309,13 +447,12 @@ class clusteringTestCase(unittest.TestCase):
         equal_len_mask = part_A_len == part_B_len
         more_bs_in_partA[~equal_len_mask] = True
 
-
         self.assertTrue(np.all(more_bs_in_partA), "Part A should alwasy have more bs")
 
 
     def _synthetic_datasets_test(self, input_jets, n_jets_expected, debug=False):
 
-        clustered_jets, _clustered_splittings = cluster_bs(input_jets, debug=False)
+        clustered_jets, _clustered_splittings = cluster_bs(input_jets, debug=debug)
 
         self._check_jet_flavors(_clustered_splittings.part_A.jet_flavor,
                                 _clustered_splittings.part_B.jet_flavor,
@@ -336,27 +473,28 @@ class clusteringTestCase(unittest.TestCase):
             [print(i) for i in clustered_jets.jet_flavor]
 
         #
+        # Testing the splitting cleaning
+        #
+        all_split_types = get_list_of_splitting_types(_clustered_splittings)
+        cleaned_combined_types = get_list_of_combined_jet_types(clustered_jets)
+        cleaned_split_types = []
+        for _s in cleaned_combined_types:
+            cleaned_split_types += get_list_of_all_sub_splittings(_s)
+
+        if debug:
+            print(f"all_split_types {all_split_types}")
+            print(f"cleaned_combined_types {cleaned_combined_types}")
+            print(f"cleaned_split_types {cleaned_split_types}")
+
+
+        #
         # Declustering
         #
-
-        #
-        #  Read in the pdfs
-        #
-        #  Make with ../.ci-workflows/synthetic-dataset-plot-job.sh
-        # input_pdf_file_name = "analysis/plots_synthetic_datasets/clustering_pdfs.yml"
-        input_pdf_file_name = "jet_clustering/jet-splitting-PDFs-00-03-00/clustering_pdfs_vs_pT.yml"
-        #input_pdf_file_name = "jet_clustering/clustering_PDFs/clustering_pdfs_vs_pT.yml"
-        with open(input_pdf_file_name, 'r') as input_file:
-            input_pdfs = yaml.safe_load(input_file)
-
-        declustered_jets = make_synthetic_event(clustered_jets, input_pdfs, debug=debug)
-        #pA = declustered_jets[:,0:2]
-        #pB = declustered_jets[:,2:]
+        declustered_jets = make_synthetic_event(clustered_jets, self.input_pdfs, debug=debug)
 
         #
         # Sanity checks
         #
-
 
         match_n_jets = ak.num(declustered_jets) == n_jets_expected
         if not all(match_n_jets):
@@ -371,11 +509,6 @@ class clusteringTestCase(unittest.TestCase):
             print(f"ak.num(declustered_jets)        {ak.num(declustered_jets)}")
             print(f"clustered_jets.phi             {clustered_jets.phi}")
 
-            #
-            #  Checkphi
-            #
-            #print(f"input phi {clustered_jets.phi[1]}")
-            #print(f"Reco phi {(pA + pB).phi[1]}")
 
         self.assertTrue(all(match_n_jets), f"Should always get {n_jets_expected} jets")
 
@@ -398,23 +531,47 @@ class clusteringTestCase(unittest.TestCase):
     def test_synthetic_datasets_4jets(self):
         self._synthetic_datasets_test(self.input_jets_4, n_jets_expected = 4)
 
-
     def test_synthetic_datasets_5jets(self):
         self._synthetic_datasets_test(self.input_jets_5, n_jets_expected = 5, debug=False)
-
 
     def test_synthetic_datasets_bbjjets(self):
         self._synthetic_datasets_test(self.input_jets_bbj, n_jets_expected = 5)
 
-
     def test_synthetic_datasets_6jets(self):
         self._synthetic_datasets_test(self.input_jets_6, n_jets_expected = 6, debug = False)
+
+    def test_synthetic_datasets_5bjets(self):
+        self._synthetic_datasets_test(self.input_jets_5b, n_jets_expected = 6, debug = False)
+
+    def test_synthetic_datasets_HH_3bjets(self):
+        self._synthetic_datasets_test(self.input_jets_HH_3b, n_jets_expected = 10, debug = False)
+
+    def test_synthetic_datasets_bad_split(self):
+        self._synthetic_datasets_test(self.input_jets_bad_split, n_jets_expected = [8, 10], debug = False)
+
+
+#    def profile_synthetic_datasets(self):
+#
+#        from cProfile import Profile
+#
+#        test = lambda: self._synthetic_datasets_test(self.input_jets_6 , n_jets_expected=6,debug=False)
+#
+#        profiler = Profile()
+#        profiler.runcall(test)
+#
+#        from pstats import Stats
+#        stats = Stats(profiler)
+#        stats.strip_dirs()
+#        stats.sort_stats("cumulative")
+#        stats.print_stats()
+
 
 
     def test_children_jet_flavors(self):
         splitting_types = [ ('bb', ('b','b')), ('bj',('b','j')), ('jb',('j','b')), ('jj',('j','j')),
                             ("j(bb)", ('bb', 'j')), ("b(bj)", ('bj', 'b')), ("j(bj)", ('bj', 'j')), ("(bj)b", ('bj', 'b')),
                             ("(j(bj))b", ('j(bj)', 'b')), ("(bb)(jj)", ('bb', 'jj')), ("(jj)(bb)", ('jj', 'bb')), ("j(j(bj))", ('j(bj)','j')),
+                            ('((((jj)j)j)((bj)j))b', ('(((jj)j)j)((bj)j)','b')),
                            ]
 
         for _s in splitting_types:
@@ -424,7 +581,6 @@ class clusteringTestCase(unittest.TestCase):
             self.assertTrue(_children == _s[1], f"Miss match for type {_s[0]}: got {_children}, expected {_s[1]}")
 
     def test_get_list_of_ISR_splittings(self):
-
 
         splitting_types = [("b",False), ("j",False),
                            ("bb",False), ("bj",True), ("jj",True),
@@ -441,12 +597,28 @@ class clusteringTestCase(unittest.TestCase):
             if _s[1]:
                 expected_ISR_splittings.append(_s[0])
 
-
         ISR_splittings = get_list_of_ISR_splittings(test_splitting_types)
 
-        print(f"ISR_splittings is {ISR_splittings}")
-
         self.assertListEqual(ISR_splittings, expected_ISR_splittings)
+
+
+    def test_get_list_of_all_sub_splittings(self):
+        splitting_types = [("b",[]),
+                           ("bb",["bb"]),
+                           ('j(bj)', ['j(bj)','bj']),
+                           ("(bb)(jj)", ["(bb)(jj)",'bb', 'jj']),
+                           ("j(j(bj))", ["j(j(bj))",'j(bj)','bj']),
+                           ("(j(bj))b", ["(j(bj))b","j(bj)","bj"] ),
+                           ("((((jj)j)j)((bj)j))b", ["((((jj)j)j)((bj)j))b", "(((jj)j)j)((bj)j)", "((jj)j)j",  "(jj)j", "jj", "(bj)j", "bj"]),
+                           ]
+
+
+        for _s in splitting_types:
+
+            sub_splitting = get_list_of_all_sub_splittings(_s[0])
+            expected = _s[1]
+            #print(f"{_s[0]} -> {sub_splitting}")
+            self.assertListEqual(expected, sub_splitting)
 
 
 if __name__ == '__main__':

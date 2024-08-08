@@ -15,9 +15,9 @@ from coffea.analysis_tools import Weights, PackedSelection
 from base_class.hist import Collection, Fill
 from base_class.physics.object import LorentzVector, Jet, Muon, Elec
 #from analysis.helpers.hist_templates import SvBHists, FvTHists, QuadJetHists
-from jet_clustering.clustering_hist_templates import ClusterHists
+from jet_clustering.clustering_hist_templates import ClusterHists, ClusterHistsDetailed
 from jet_clustering.clustering   import cluster_bs, cluster_bs_fast
-from jet_clustering.declustering import compute_decluster_variables, make_synthetic_event, get_list_of_splitting_types, clean_ISR, get_list_of_ISR_splittings
+from jet_clustering.declustering import compute_decluster_variables, make_synthetic_event, get_list_of_splitting_types, clean_ISR, get_list_of_ISR_splittings, get_list_of_combined_jet_types, get_list_of_all_sub_splittings
 
 from analysis.helpers.cutflow import cutFlow
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
@@ -47,16 +47,17 @@ class analysis(processor.ProcessorABC):
             *,
             threeTag=False,
             corrections_metadata="analysis/metadata/corrections.yml",
-            #   Make with ../.ci-workflows/synthetic-dataset-plot-job.sh
-            # clustering_pdfs_file = "jet_clustering/jet-splitting-PDFs-0jet-00-01-00_5j/clustering_pdfs_vs_pT.yml",
-            clustering_pdfs_file = "jet_clustering/jet-splitting-PDFs-00-02-00/clustering_pdfs_vs_pT.yml",
-            #clustering_pdfs_file="jet_clustering/clustering_PDFs/clustering_pdfs_vs_pT.yml",
+            clustering_pdfs_file = "jet_clustering/jet-splitting-PDFs-00-03-00/clustering_pdfs_vs_pT.yml",
             do_declustering=False,
     ):
 
         logging.debug("\nInitialize Analysis Processor")
         self.corrections_metadata = yaml.safe_load(open(corrections_metadata, "r"))
-        self.clustering_pdfs = yaml.safe_load(open(clustering_pdfs_file, "r"))
+        if not clustering_pdfs_file == "None":
+            self.clustering_pdfs = yaml.safe_load(open(clustering_pdfs_file, "r"))
+            logging.info(f"Loaded {len(self.clustering_pdfs.keys())} PDFs from {clustering_pdfs_file}")
+        else:
+            self.clustering_pdfs = None
         self.do_declustering = do_declustering
 
         self.cutFlowCuts = [
@@ -66,9 +67,9 @@ class analysis(processor.ProcessorABC):
             "passJetMult",
             "passJetMult_btagSF",
             "passFourTag",
-            "pass0OthJets",
-            "pass1OthJets",
-            "pass2OthJets",
+            #"pass0OthJets",
+            #"pass1OthJets",
+            #"pass2OthJets",
         ]
 
         self.histCuts = ["passPreSel"] #, "pass0OthJets", "pass1OthJets", "pass2OthJets"]
@@ -148,20 +149,23 @@ class analysis(processor.ProcessorABC):
         #selections.add("passPreSel", event.passPreSel)
         selections.add("passFourTag", event.fourTag)
 
-        event['pass0OthJets'] = event.nJet_selected == 4
-        event['pass1OthJets'] = event.nJet_selected == 5
-        event['pass2OthJets'] = event.nJet_selected == 6
-        event['passMax1OthJets'] = event.nJet_selected < 6
-        event['passMax2OthJets'] = event.nJet_selected < 7
-        selections.add("pass0OthJets",    event.pass0OthJets)
-        selections.add("pass1OthJets",    event.pass1OthJets)
-        selections.add("pass2OthJets",    event.pass2OthJets)
-        selections.add("passMax1OthJets", event.passMax1OthJets)
-        selections.add("passMax2OthJets", event.passMax2OthJets)
+        #event['pass0OthJets'] = event.nJet_selected == 4
+        #event['pass1OthJets'] = event.nJet_selected == 5
+        #event['pass2OthJets'] = event.nJet_selected == 6
+        #event['passMax1OthJets'] = event.nJet_selected < 6
+        #event['passMax2OthJets'] = event.nJet_selected < 7
+        #event['passMax4OthJets'] = event.nJet_selected < 9
+        #selections.add("pass0OthJets",    event.pass0OthJets)
+        #selections.add("pass1OthJets",    event.pass1OthJets)
+        #selections.add("pass2OthJets",    event.pass2OthJets)
+        #selections.add("passMax1OthJets", event.passMax1OthJets)
+        #selections.add("passMax2OthJets", event.passMax2OthJets)
+        #selections.add("passMax4OthJets", event.passMax4OthJets)
         allcuts.append("passFourTag")
 
         #allcuts.append("passMax1OthJets")
-        allcuts.append("passMax2OthJets")
+        #allcuts.append("passMax2OthJets")
+        #allcuts.append("passMax4OthJets")
         #allcuts.append("pass2OthJets")
 
         selev = event[selections.all(*allcuts)]
@@ -246,26 +250,48 @@ class analysis(processor.ProcessorABC):
         clustered_jets, clustered_splittings = cluster_bs(jets_for_clustering, debug=False)
         compute_decluster_variables(clustered_splittings)
 
-        #
-        #  get all splitting types
-        #
-        all_split_types = get_list_of_splitting_types(clustered_splittings)
 
         #
-        #  Filter the ISR splittings
+        #  get all splitting types that are used (ie: not pure ISR)
         #
-        ISR_splittings  = get_list_of_ISR_splittings(all_split_types)
-        ISR_splittings = [] # Hack save all splitngs for now
-        all_split_types = [item for item in all_split_types if item not in ISR_splittings]
+        clustered_jets = clean_ISR(clustered_jets, clustered_splittings)
+
+        cleaned_combined_types = get_list_of_combined_jet_types(clustered_jets)
+        cleaned_split_types = []
+        for _s in cleaned_combined_types:
+            cleaned_split_types += get_list_of_all_sub_splittings(_s)
 
 
         #
         # Sort clusterings by type
         #
-        for _s_type in all_split_types:
+        for _s_type in cleaned_split_types:
             selev[f"splitting_{_s_type}"]   = clustered_splittings[clustered_splittings.jet_flavor == _s_type]
 
-        # print(f'{chunk} all splitting types {all_split_types}\n')
+        #print(f'{chunk} cleaned splitting types {cleaned_split_types}\n')
+
+        # error_type = '(bj)((jj)b)'
+        # found_error = error_type in cleaned_split_types
+        #
+        # if found_error:
+        #     print(f"ERROR have splitting type {error_type}\n" )
+        #
+        #     error_mask = clustered_splittings.jet_flavor == error_type
+        #     event_mask = ak.any(error_mask,axis=1 )
+        #
+        #     # print(f'{chunk} num splitting {ak.num(selev["splitting_b(bj)"])}')
+        #     # print(f'{chunk} mask {ak.num(selev["splitting_b(bj)"]) > 0}')
+        #     #bbj_mask = ak.num(selev["splitting_b(bj)"]) > 0
+        #     jets_for_clustering_error = jets_for_clustering[event_mask]
+        #     n_jets_error = len(jets_for_clustering_error)
+        #     print(f'{chunk}\n\n')
+        #     print(f'{chunk} self.input_jet_pt      = {[jets_for_clustering_error[iE].pt.tolist()         for iE in range(n_jets_error)]}')
+        #     print(f'{chunk} self.input_jet_eta     = {[jets_for_clustering_error[iE].eta.tolist()        for iE in range(n_jets_error)]}')
+        #     print(f'{chunk} self.input_jet_phi     = {[jets_for_clustering_error[iE].phi.tolist()        for iE in range(n_jets_error)]}')
+        #     print(f'{chunk} self.input_jet_mass    = {[jets_for_clustering_error[iE].mass.tolist()       for iE in range(n_jets_error)]}')
+        #     print(f'{chunk} self.input_jet_flavor  = {[jets_for_clustering_error[iE].jet_flavor.tolist() for iE in range(n_jets_error)]}')
+        #     print(f'{chunk}\n\n')
+
 
         dumpTestVectors_bbj = False
         if dumpTestVectors_bbj:
@@ -314,18 +340,11 @@ class analysis(processor.ProcessorABC):
 
 
         #
-        #  get the ISR cleaned splittings
-        #
-        #clustered_jets = clean_ISR(clustered_jets, _clustered_splittings, debug=debug)
-
-
-
-        #
         #  Declustering
         #
         if self.do_declustering:
 
-            clustered_jets = clean_ISR(clustered_jets, clustered_splittings)
+            # clustered_jets = clean_ISR(clustered_jets, clustered_splittings)
 
             #
             # Declustering
@@ -363,12 +382,12 @@ class analysis(processor.ProcessorABC):
             clustered_jets_reclustered, clustered_splittings_reclustered = cluster_bs(jets_for_clustering, debug=False)
             compute_decluster_variables(clustered_splittings_reclustered)
 
-            all_split_types_re = get_list_of_splitting_types(clustered_splittings_reclustered)
-            # ISR_splittings_re  = get_list_of_ISR_splittings(all_split_types_re)
-            ISR_splittings_re = [] # Hack Save all splitting for now
-            all_split_types_re = [item for item in all_split_types_re if item not in ISR_splittings_re]
+            # all_split_types_re = get_list_of_splitting_types(clustered_splittings_reclustered)
+            # # ISR_splittings_re  = get_list_of_ISR_splittings(all_split_types_re)
+            # ISR_splittings_re = [] # Hack Save all splitting for now
+            # all_split_types_re = [item for item in all_split_types_re if item not in ISR_splittings_re]
 
-            for _s_type in all_split_types_re:
+            for _s_type in cleaned_split_types:
                 selev[f"splitting_{_s_type}_re"]  = clustered_splittings_reclustered[clustered_splittings_reclustered.jet_flavor == _s_type]
 
             # print(f'{chunk} all splitting_re types {all_split_types_re}\n')
@@ -422,9 +441,9 @@ class analysis(processor.ProcessorABC):
         selev["weight"] = weights.weight()[selections.all(*allcuts)]
 
         self._cutFlow.fill("passFourTag", selev )
-        self._cutFlow.fill("pass0OthJets",selev )
-        self._cutFlow.fill("pass1OthJets",selev )
-        self._cutFlow.fill("pass2OthJets",selev )
+        #self._cutFlow.fill("pass0OthJets",selev )
+        #self._cutFlow.fill("pass1OthJets",selev )
+        #self._cutFlow.fill("pass2OthJets",selev )
 
         self._cutFlow.addOutput(processOutput, event.metadata["dataset"])
 
@@ -444,21 +463,21 @@ class analysis(processor.ProcessorABC):
         #
         # To Add
         #
-        fill += hist.add( "nPVs", (101, -0.5, 100.5, ("PV.npvs", "Number of Primary Vertices")) )
-        fill += hist.add( "nPVsGood", (101, -0.5, 100.5, ("PV.npvsGood", "Number of Good Primary Vertices")), )
+        # fill += hist.add( "nPVs", (101, -0.5, 100.5, ("PV.npvs", "Number of Primary Vertices")) )
+        # fill += hist.add( "nPVsGood", (101, -0.5, 100.5, ("PV.npvsGood", "Number of Good Primary Vertices")), )
 
         #
         # Jets
         #
         fill += Jet.plot(("selJets", "Selected Jets"),        "selJet",           skip=["deepjet_c"])
-        fill += Jet.plot(("canJets", "Higgs Candidate Jets"), "canJet",           skip=["deepjet_c"])
-        fill += Jet.plot(("othJets", "Other Jets"),           "notCanJet_coffea", skip=["deepjet_c"])
-        fill += Jet.plot(("tagJets", "Tag Jets"),             "tagJet",           skip=["deepjet_c"])
+        # fill += Jet.plot(("canJets", "Higgs Candidate Jets"), "canJet",           skip=["deepjet_c"])
+        # fill += Jet.plot(("othJets", "Other Jets"),           "notCanJet_coffea", skip=["deepjet_c"])
+        # fill += Jet.plot(("tagJets", "Tag Jets"),             "tagJet",           skip=["deepjet_c"])
 
-        fill += Jet.plot(("notCanJet_sel", "Higgs Candidate Jets"), "notCanJet_sel",           skip=["deepjet_c"])
-        if self.do_declustering:
-            fill += Jet.plot(("canJets_re", "Higgs Candidate Jets"), "canJet_re",           skip=["deepjet_c"])
-            fill += Jet.plot(("notCanJet_sel_re", "Higgs Candidate Jets"), "notCanJet_sel_re",           skip=["deepjet_c"])
+        # fill += Jet.plot(("notCanJet_sel", "Higgs Candidate Jets"), "notCanJet_sel",           skip=["deepjet_c"])
+        # if self.do_declustering:
+        #     fill += Jet.plot(("canJets_re", "Higgs Candidate Jets"), "canJet_re",           skip=["deepjet_c"])
+        #     fill += Jet.plot(("notCanJet_sel_re", "Higgs Candidate Jets"), "notCanJet_sel_re",           skip=["deepjet_c"])
 
         #
         #  Make Jet Hists
@@ -469,11 +488,20 @@ class analysis(processor.ProcessorABC):
             fill += Jet.plot( (f"canJet{iJ}", f"Higgs Candidate Jets {iJ}"), f"canJet{iJ}", skip=["n", "deepjet_c"], )
 
 
-        for _s_type in all_split_types:
+        for _s_type in cleaned_split_types:
             fill += ClusterHists( (f"splitting_{_s_type}", f"{_s_type} Splitting"), f"splitting_{_s_type}" )
 
+        if 'bb' in cleaned_split_types:
+            fill += ClusterHistsDetailed( (f"detailed_splitting_bb",    f"bb Splitting"),    f"splitting_bb"    )
+        if 'bj' in cleaned_split_types:
+            fill += ClusterHistsDetailed( (f"detailed_splitting_bj",    f"bj Splitting"),    f"splitting_bj"    )
+        if 'jj' in cleaned_split_types:
+            fill += ClusterHistsDetailed( (f"detailed_splitting_jj",    f"jj Splitting"),    f"splitting_jj"    )
+        if '(bj)b' in cleaned_split_types:
+            fill += ClusterHistsDetailed( (f"detailed_splitting_(bj)b", f"(bj)b Splitting"), f"splitting_(bj)b" )
+
         if self.do_declustering:
-            for _s_type in all_split_types_re:
+            for _s_type in cleaned_split_types:
                 fill += ClusterHists( (f"splitting_{_s_type}_re", f"${_s_type} Splitting"), f"splitting_{_s_type}_re" )
 
 

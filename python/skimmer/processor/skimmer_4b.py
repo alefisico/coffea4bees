@@ -9,8 +9,9 @@ import logging
 import awkward as ak
 
 class Skimmer(PicoAOD):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, loosePtForSkim=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.loosePtForSkim = loosePtForSkim
         self.corrections_metadata = yaml.safe_load(open('analysis/metadata/corrections.yml', 'r'))
         self.cutFlowCuts = [
             "all",
@@ -41,8 +42,7 @@ class Skimmer(PicoAOD):
         event["Jet"] = jets
 
 
-        loosePtForSkim = False #True
-        event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year], loosePtForSkim=loosePtForSkim  )
+        event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year], loosePtForSkim=self.loosePtForSkim  )
 
         weights = Weights(len(event), storeIndividual=True)
 
@@ -56,10 +56,10 @@ class Skimmer(PicoAOD):
         selections.add( "lumimask", event.lumimask)
         selections.add( "passNoiseFilter", event.passNoiseFilter)
         selections.add( "passHLT", ( np.full(len(event), True) if isMC else event.passHLT ) )
-        if loosePtForSkim:
+        if self.loosePtForSkim:
             selections.add( 'passJetMult_lowpt_forskim', event.passJetMult_lowpt_forskim )
         selections.add( 'passJetMult',   event.passJetMult )
-        if loosePtForSkim:
+        if self.loosePtForSkim:
             selections.add( "passPreSel_lowpt_forskim",  event.passPreSel_lowpt_forskim)
         selections.add( "passPreSel",    event.passPreSel)
 
@@ -68,7 +68,7 @@ class Skimmer(PicoAOD):
         cumulative_cuts = ["lumimask"]
         self._cutFlow.fill( "all",             event[selections.all(*cumulative_cuts)], allTag=True )
 
-        if loosePtForSkim:
+        if self.loosePtForSkim:
             all_cuts = ["passNoiseFilter", "passHLT", "passJetMult_lowpt_forskim", "passJetMult", "passPreSel_lowpt_forskim", "passPreSel"]
         else:
             all_cuts = ["passNoiseFilter", "passHLT", "passJetMult", "passPreSel"]
@@ -77,7 +77,7 @@ class Skimmer(PicoAOD):
             cumulative_cuts.append(cut)
             self._cutFlow.fill( cut, event[selections.all(*cumulative_cuts)], allTag=True )
 
-        if loosePtForSkim:
+        if self.loosePtForSkim:
             selection = event.lumimask & event.passNoiseFilter & event.passJetMult_lowpt_forskim & event.passPreSel_lowpt_forskim
         else:
             selection = event.lumimask & event.passNoiseFilter & event.passJetMult & event.passPreSel

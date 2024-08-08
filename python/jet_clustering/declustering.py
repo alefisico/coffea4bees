@@ -29,7 +29,6 @@ def children_jet_flavors(comb_flavor):
 
     sub_combs = extract_all_parentheses_substrings(comb_flavor)
 
-
     if len(sub_combs) == 0:
         child_A = comb_flavor[0]
         child_B = comb_flavor[1]
@@ -60,6 +59,18 @@ def get_list_of_combined_jet_types(jets):
         splitting_types.append(_s)
 
     return splitting_types
+
+
+def get_list_of_all_sub_splittings(splitting):
+    """
+      returns a list of all the sub splitting types (including the original)
+    """
+    if len(splitting) > 1:
+        childA, childB = children_jet_flavors(splitting)
+        return [splitting] + get_list_of_all_sub_splittings(childA) + get_list_of_all_sub_splittings(childB)
+
+    return []
+
 
 
 def get_list_of_ISR_splittings(splitting_types):
@@ -175,8 +186,14 @@ def decluster_combined_jets(input_jet, debug=False):
     simple_comb_mask = (np.char.str_len(jet_flav_flat) == 2)
 
     # For some reason this dummy string has to be as long as the longest possible replacement
-    jet_flav_child_A = np.full(n_jets, "XXXXXXXXXXXXXXX")
-    jet_flav_child_B = np.full(n_jets, "XXXXXXXXXXXXXXX")
+    # jet_flav_child_A = np.full(n_jets, "XXXXXXXXXXXXXXX")
+    # jet_flav_child_B = np.full(n_jets, "XXXXXXXXXXXXXXX")
+    dummy_str = "XXXXXXXXXXXXXXXXXXXXXXXXX"
+    len_dummy_str = 25
+    #dummy_str = "XXX"
+    #len_dummy_str = 3
+    jet_flav_child_A = np.full(n_jets, dummy_str)
+    jet_flav_child_B = np.full(n_jets, dummy_str)
 
     #
     #  The simple combinations
@@ -186,13 +203,21 @@ def decluster_combined_jets(input_jet, debug=False):
     jet_flav_child_A[simple_comb_mask] = _simple_flav_child_A
     jet_flav_child_B[simple_comb_mask] = _simple_flav_child_B
 
-
     #
     #  The nested combinations
     #   # A is always the more complex
     _children = [children_jet_flavors(s) for s in jet_flav_flat[~simple_comb_mask]]
     _nested_flav_child_A = [child[0] for child in _children]
     _nested_flav_child_B = [child[1] for child in _children]
+
+    over_flow_child_A = any(len(s) > len_dummy_str for s in _nested_flav_child_A)
+    if over_flow_child_A:
+        print(f"\n ERROR: child A flavor overflow {_nested_flav_child_A} \n")
+
+    over_flow_child_B = any(len(s) > len_dummy_str for s in _nested_flav_child_B)
+    if over_flow_child_B:
+        print(f"\n ERROR: child B flavor overflow {_nested_flav_child_B} \n")
+
 
     #print(f'child A {_nested_flav_child_A}')
     #print(f'child B {_nested_flav_child_B}')
@@ -319,6 +344,7 @@ def decluster_splitting_types(input_jets, splitting_types, input_pdfs, debug=Fal
     #
     input_jets['split_mask'] = False
     for _s in splitting_types:
+
         _split_mask  = input_jets.jet_flavor == _s
         input_jets["split_mask"] = _split_mask | input_jets.split_mask
 
@@ -535,8 +561,13 @@ def clean_ISR(clustered_jets, splittings, debug=False):
 
             pairs = ak.cartesian([ISR_jets, ISR_splittings], axis=1, nested=True)
             delta_r_values = pairs[:,"0"].delta_r(pairs[:,"1"])
-            closest_indices = ak.argmin(delta_r_values, axis=1)
+            closest_indices = ak.argmin(delta_r_values, axis=2)
             match_splitting = ISR_splittings[closest_indices]
+
+            if debug:
+                print(f" ISR_jets: {ISR_jets.pt}  {ISR_jets.eta} {ISR_jets.phi} ")
+                print(f" match_splitting: {match_splitting.pt}  {match_splitting.eta} {match_splitting.phi} ")
+                print(f" ISR_splittings: {ISR_splittings.pt}  {ISR_splittings.eta} {ISR_splittings.phi} ")
 
             declustered_A = match_splitting.part_A
             declustered_B = match_splitting.part_B
