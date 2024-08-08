@@ -44,6 +44,20 @@ def children_jet_flavors(comb_flavor):
     return child_A, child_B
 
 
+def get_splitting_summary(comb_flavor):
+
+    childA, childB = children_jet_flavors(comb_flavor)
+
+    n_b_A = childA.count("b")
+    n_X_A = n_b_A + childA.count("j")
+
+    n_b_B = childB.count("b")
+    n_X_B = n_b_B + childB.count("j")
+
+
+    return (n_X_A, n_X_B), (n_b_A, n_b_B)
+
+
 def get_list_of_combined_jet_types(jets):
     """
       returns a list of all the splitting types that are the results of a combination
