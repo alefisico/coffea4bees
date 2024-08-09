@@ -93,14 +93,14 @@ class Main(LoadTrainingSets):
                 mp_context=status.context,
                 initializer=status.initializer,
             ) as executor,
-            Progress.new(total=len(chunks), msg=("chunks", "Caching")) as progress,
+            Progress.new(total=size, msg=("chunks", "Caching")) as progress,
         ):
             tasks = pool.submit(
                 executor,
                 _save_cache(datasets, IOSetting.output, self.opts.compression),
                 range(len(chunks)),
                 chunks,
-                callbacks=[lambda _: progress_advance(progress)],
+                callbacks=[lambda _, idx: progress_advance(progress, len(idx))],
             )
             (*tasks,)  # wait for completion
         logging.info(

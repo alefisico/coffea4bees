@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from abc import ABC, abstractmethod
 from functools import cached_property, reduce
 from itertools import chain
@@ -271,6 +272,12 @@ class _load_df_from_root(_load_df):
                         )
                     ),
                 ]
-        return pd.concat(
+        df = pd.concat(
             filter(lambda x: x is not None, dfs), ignore_index=True, copy=False
         )
+        logging.info(
+            "Loaded <DataFrame>:",
+            f"entries: {len(df)}",
+            f"columns: {sorted(df.columns)}",
+        )
+        return df
