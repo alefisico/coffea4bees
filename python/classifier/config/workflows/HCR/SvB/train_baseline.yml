@@ -1,0 +1,18 @@
+main:
+  module: train
+  option:
+    - --max-loaders 10 
+    - --max-trainers 1
+
+model:
+  - module: HCR.SvB.ggF_SM
+    option:
+      - --kfolds 3
+      - --training FixedStep
+      - epoch: 20
+        bs_init: 1024
+
+setting:
+  - module: IO
+    option:
+      - output: root://cmseos.fnal.gov//store/user/{{user}}/HH4b/classifier/SvB/train/{tag}/

@@ -9,6 +9,8 @@ from ._HCR import HCR
 if TYPE_CHECKING:
     from classifier.ml.skimmer import BatchType
 
+_ROC_BIN = (1000, 0, 1)
+
 
 def _roc_nominal_selection(batch: BatchType):
     return {
@@ -38,8 +40,8 @@ class Baseline(HCR):
 
         # get tensors
         c_score = batch[Output.class_raw]
-        is_SR = (batch[Input.region] & MassRegion.SR.value) != 0
         weight = batch[Input.weight]
+        is_SR = (batch[Input.region] & MassRegion.SR.value) != 0
 
         # remove 4b data contribution from SR
         no_SR_d4 = torch.ones(
@@ -66,19 +68,19 @@ class Baseline(HCR):
             MulticlassROC(
                 name="4b vs 3b data",
                 selection=_roc_data_selection,
-                bins=(1000, 0, 1),
+                bins=_ROC_BIN,
                 pos=("d4", "t4"),
             ),
             MulticlassROC(
                 name="4b vs 3b",
                 selection=_roc_nominal_selection,
-                bins=(1000, 0, 1),
+                bins=_ROC_BIN,
                 pos=("d4", "t4"),
             ),
             MulticlassROC(
                 name="ttbar vs data",
                 selection=_roc_nominal_selection,
-                bins=(1000, 0, 1),
+                bins=_ROC_BIN,
                 pos=("t4", "t3"),
             ),
         )

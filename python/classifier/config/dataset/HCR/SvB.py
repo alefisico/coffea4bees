@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import operator as op
-from functools import reduce
+from functools import partial, reduce
 from typing import TYPE_CHECKING
 
 from classifier.config.setting.df import Columns
-from classifier.task import ArgParser
+from classifier.task import ArgParser, converter
 
 from . import _group, _picoAOD
 from ._common import Common
@@ -77,19 +77,27 @@ class _Base(Common):
 
 
 class Background(_picoAOD.Background, _Base):
+    argparser = ArgParser()
+    argparser.add_argument(
+        "--norm",
+        default=1.0,
+        type=converter.float_pos,
+        help="normalization factor",
+    )
+
     def __init__(self):
         from classifier.df.tools import drop_columns
 
         super().__init__()
-        self.postprocessors.append(self.normalize)
+        self.postprocessors.append(partial(self.normalize, norm=self.opts.norm))
         self.preprocessors.append(drop_columns("FvT"))
 
     def other_branches(self):
         return super().other_branches() | {"FvT"}
 
     @staticmethod
-    def normalize(df: pd.DataFrame):
-        df.loc[:, "weight"] /= df["weight"].sum()
+    def normalize(df: pd.DataFrame, norm: float):
+        df.loc[:, "weight"] /= df["weight"].sum() / norm
         return df
 
 

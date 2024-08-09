@@ -2,4 +2,4 @@ dataset:
   - module: cache
     option:
       - --input
-      - root://cmseos.fnal.gov//store/user/{user}/HH4b/classifier/SvB/dataset/result.json
+      - root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/classifier/SvB/dataset/result.json

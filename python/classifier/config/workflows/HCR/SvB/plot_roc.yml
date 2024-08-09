@@ -1,0 +1,12 @@
+main: analyze
+
+analysis:
+  - module: HCR.LossROC
+    option:
+      - --input
+      - root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/classifier/SvB/train/{tag}/result.json
+
+setting:
+  - module: IO
+    option:
+      - output: root://root://eosuser.cern.ch//eos/user/c/chuyuan/www/HH4b/classifier/SvB/{tag}/
