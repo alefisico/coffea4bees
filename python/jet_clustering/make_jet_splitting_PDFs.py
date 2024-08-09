@@ -15,6 +15,7 @@ import re
 sys.path.insert(0, os.getcwd())
 from base_class.plots.plots import makePlot, make2DPlot, load_config, load_hists, read_axes_and_cuts, parse_args, get_cut_dict
 import base_class.plots.iPlot_config as cfg
+from jet_clustering.declustering import get_splitting_summary, get_splitting_name
 
 np.seterr(divide='ignore', invalid='ignore')
 
@@ -226,10 +227,34 @@ def test_PDFs_vs_Pt(config, output_file_name):
         print("Total Counts\n")
         print(total_counts)
 
+        #all_splitting_names = [get_splitting_name(i) for i in splittings]
+        #all_splitting_names = set(all_splitting_names) # make unique
+        #breakpoint()
 
         sorted_counts = dict(sorted(total_counts.items(), key=lambda item: item[1], reverse=True) )
-        for k, v, in sorted_counts.items():
-            print(f"{k:25} ... {v}")
+        with open(args.outputFolder+"/all_splittings_multiplicities.txt", "w") as splitting_mult_file:
+            for k, v, in sorted_counts.items():
+                nJets, nbs = get_splitting_summary(k)
+                _s_info = f"{k:25}   {v:10}  {nJets}"
+                print(_s_info)
+                splitting_mult_file.write(f"{_s_info}\n")
+
+
+        #
+        # Now the grouped splittings
+        #
+        total_counts_grouped_splittings = {}
+        for k, v in sorted_counts.items():
+            _split_name = get_splitting_name(k)
+            total_counts_grouped_splittings[_split_name] = total_counts_grouped_splittings.get(_split_name,0) + v
+
+        sorted_counts_grouped = dict(sorted(total_counts_grouped_splittings.items(), key=lambda item: item[1], reverse=True) )
+        with open(args.outputFolder+"/all_grouped_splittings_multiplicities.txt", "w") as splitting_group_mult_file:
+            for k, v, in sorted_counts_grouped.items():
+                _s_info = f"{k:25}   {v:10} "
+                print(_s_info)
+                splitting_group_mult_file.write(f"{_s_info}\n")
+
 
         #print("Total Counts vs pt\n")
         #print(counts_vs_pt)
@@ -274,6 +299,9 @@ def doPlots(debug=False):
 
     unconfig_splitting = []
 
+    # HACK
+    #all_splittings = all_splittings[0:20]
+
 
 
     for _s in all_splittings:
@@ -306,15 +334,17 @@ def doPlots(debug=False):
     #splitting_config["((jj)b)b"] = s_XX_X_X
     #splitting_config["((bj)j)b"] = s_XX_X_X
 
-    output_file_name_vs_pT = args.outputFolder+"/clustering_pdfs_vs_pT.yml"
-    make_PDFs_vs_Pt(splitting_config, output_file_name_vs_pT)
-    test_PDFs_vs_Pt(splitting_config, output_file_name_vs_pT)
-
 
     with open(args.outputFolder+"/all_splittings.txt", "w") as splitting_out_file:
         all_splittings.sort(reverse=True)
         for _s in all_splittings:
+
             splitting_out_file.write(f"{_s}\n")
+
+    output_file_name_vs_pT = args.outputFolder+"/clustering_pdfs_vs_pT.yml"
+    make_PDFs_vs_Pt(splitting_config, output_file_name_vs_pT)
+    test_PDFs_vs_Pt(splitting_config, output_file_name_vs_pT)
+
 
 
 

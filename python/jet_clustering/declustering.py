@@ -58,6 +58,16 @@ def get_splitting_summary(comb_flavor):
     return (n_X_A, n_X_B), (n_b_A, n_b_B)
 
 
+def get_splitting_name(comb_flavor):
+
+    n_Xs, _ = get_splitting_summary(comb_flavor)
+    if n_Xs[0] > 4 or (n_Xs[0] + n_Xs[1]) > 5:
+        return f"{n_Xs[0]}_{n_Xs[1]}"
+
+    return comb_flavor
+
+
+
 def get_list_of_combined_jet_types(jets):
     """
       returns a list of all the splitting types that are the results of a combination
