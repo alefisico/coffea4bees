@@ -15,6 +15,7 @@ import re
 sys.path.insert(0, os.getcwd())
 from base_class.plots.plots import makePlot, make2DPlot, load_config, load_hists, read_axes_and_cuts, parse_args, get_cut_dict
 import base_class.plots.iPlot_config as cfg
+from jet_clustering.declustering import get_splitting_summary, get_splitting_name
 
 np.seterr(divide='ignore', invalid='ignore')
 
@@ -24,11 +25,12 @@ def plot(var, **kwargs):
     return fig, ax
 
 
-def write_1D_pdf(output_file, varName, bin_centers, probs, n_spaces=4):
+def write_1D_pdf(output_file, varName, bin_centers, probs, total_counts, n_spaces=4):
     spaces = " " * n_spaces
     output_file.write(f"{spaces}{varName}:\n")
     output_file.write(f"{spaces}    bin_centers:  {bin_centers.tolist()}\n")
     output_file.write(f"{spaces}    probs:  {probs.tolist()}\n")
+    output_file.write(f"{spaces}    counts:  {total_counts}\n")
 
 
 def write_2D_pdf(output_file, varName, hist, n_spaces=4):
@@ -38,8 +40,6 @@ def write_2D_pdf(output_file, varName, hist, n_spaces=4):
     xedges = hist.axes[0].edges
     yedges = hist.axes[1].edges
     probabilities = counts.value / counts.value.sum()
-
-
 
     xcenters = (xedges[:-1] + xedges[1:]) / 2
     ycenters = (yedges[:-1] + yedges[1:]) / 2
@@ -85,7 +85,7 @@ def make_PDFs_vs_Pt(config, output_file_name_vs_pT):
                 var_config = config[_s][_v]
                 #splitting_{_s}.{_v}_pT"
                 _hist_name = f"splitting_{_s}.{var_config[0]}_pT"
-                print(f"\t var {_hist_name}")
+                #print(f"\t var {_hist_name}")
 
                 output_file_vs_pT.write(f"    {_v}:\n")
 
@@ -96,6 +96,7 @@ def make_PDFs_vs_Pt(config, output_file_name_vs_pT):
                 else:
                     is_1d_hist = False
                     plt.figure(figsize=(18, 12))
+
 
                 for _iPt in range(len(pt_bins) - 1):
 
@@ -112,12 +113,16 @@ def make_PDFs_vs_Pt(config, output_file_name_vs_pT):
                         bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
                         probs = counts.value / counts.value.sum()
 
+                        total_counts = np.sum(counts).value
+
+
                         # Hack for empty histograms
                         if any(np.isnan(probs)):
                             probs[np.isnan(probs)] = 0
                             probs[0] = 1
 
-                        write_1D_pdf(output_file_vs_pT, _iPt, bin_centers, probs, n_spaces=8)
+
+                        write_1D_pdf(output_file_vs_pT, _iPt, bin_centers, probs, total_counts, n_spaces=8)
                     else:
 
                         hist_to_plot = cfg.hists[0]["hists"][f"{_hist_name}"]
@@ -159,12 +164,17 @@ def test_PDFs_vs_Pt(config, output_file_name):
         input_pdfs = yaml.safe_load(input_file)
         nPt_bins = len(input_pdfs["pt_bins"]) - 1
 
+        counts_vs_pt = {}
+        total_counts = {}
+
+
         for _s in splittings:
 
             print(f"Doing splitting {_s}")
+            total_counts[_s] = 0
 
             for _v in varNames:
-                print(f"\tDoing var  {_v}")
+                #print(f"\tDoing var  {_v}")
 
                 if _v.find("_vs_") == -1:
                     is_1d_hist = True
@@ -174,7 +184,15 @@ def test_PDFs_vs_Pt(config, output_file_name):
 
                 if is_1d_hist:
 
+
                     for _iPt in range(nPt_bins):
+
+                        # Only read the total counts from mA
+                        if _v == "decay_phi":
+                            _counts = input_pdfs[_s][_v][_iPt]["counts"]
+                            total_counts[_s] +=_counts
+                            counts_vs_pt[f"{_s}_{_iPt}"] = _counts
+
 
                         probs   = np.array(input_pdfs[_s][_v][_iPt]["probs"],       dtype=float)
                         centers = np.array(input_pdfs[_s][_v][_iPt]["bin_centers"], dtype=float)
@@ -205,6 +223,42 @@ def test_PDFs_vs_Pt(config, output_file_name):
                 else:
                     pass
 
+        ## splittings
+        print("Total Counts\n")
+        print(total_counts)
+
+        #all_splitting_names = [get_splitting_name(i) for i in splittings]
+        #all_splitting_names = set(all_splitting_names) # make unique
+        #breakpoint()
+
+        sorted_counts = dict(sorted(total_counts.items(), key=lambda item: item[1], reverse=True) )
+        with open(args.outputFolder+"/all_splittings_multiplicities.txt", "w") as splitting_mult_file:
+            for k, v, in sorted_counts.items():
+                nJets, nbs = get_splitting_summary(k)
+                _s_info = f"{k:25}   {v:10}  {nJets}"
+                print(_s_info)
+                splitting_mult_file.write(f"{_s_info}\n")
+
+
+        #
+        # Now the grouped splittings
+        #
+        total_counts_grouped_splittings = {}
+        for k, v in sorted_counts.items():
+            _split_name = get_splitting_name(k)
+            total_counts_grouped_splittings[_split_name] = total_counts_grouped_splittings.get(_split_name,0) + v
+
+        sorted_counts_grouped = dict(sorted(total_counts_grouped_splittings.items(), key=lambda item: item[1], reverse=True) )
+        with open(args.outputFolder+"/all_grouped_splittings_multiplicities.txt", "w") as splitting_group_mult_file:
+            for k, v, in sorted_counts_grouped.items():
+                _s_info = f"{k:25}   {v:10} "
+                print(_s_info)
+                splitting_group_mult_file.write(f"{_s_info}\n")
+
+
+        #print("Total Counts vs pt\n")
+        #print(counts_vs_pt)
+        #counts_vs_pt[f"{_s}_{_iPt}"] = _counts
 
 
 
@@ -245,6 +299,9 @@ def doPlots(debug=False):
 
     unconfig_splitting = []
 
+    # HACK
+    #all_splittings = all_splittings[0:20]
+
 
 
     for _s in all_splittings:
@@ -277,15 +334,17 @@ def doPlots(debug=False):
     #splitting_config["((jj)b)b"] = s_XX_X_X
     #splitting_config["((bj)j)b"] = s_XX_X_X
 
-    output_file_name_vs_pT = args.outputFolder+"/clustering_pdfs_vs_pT.yml"
-    make_PDFs_vs_Pt(splitting_config, output_file_name_vs_pT)
-    test_PDFs_vs_Pt(splitting_config, output_file_name_vs_pT)
-
 
     with open(args.outputFolder+"/all_splittings.txt", "w") as splitting_out_file:
         all_splittings.sort(reverse=True)
         for _s in all_splittings:
+
             splitting_out_file.write(f"{_s}\n")
+
+    output_file_name_vs_pT = args.outputFolder+"/clustering_pdfs_vs_pT.yml"
+    make_PDFs_vs_Pt(splitting_config, output_file_name_vs_pT)
+    test_PDFs_vs_Pt(splitting_config, output_file_name_vs_pT)
+
 
 
 
