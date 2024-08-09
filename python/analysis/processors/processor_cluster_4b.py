@@ -211,13 +211,9 @@ class analysis(processor.ProcessorABC):
         notCanJet = selev.Jet[notCanJet_idx]
         notCanJet = notCanJet[notCanJet.selected_loose]
         notCanJet = notCanJet[ak.argsort(notCanJet.pt, axis=1, ascending=False)]
-        notCanJet_sel = notCanJet[notCanJet.selected]
 
         notCanJet["isSelJet"] = 1 * ( (notCanJet.pt > 40) & (np.abs(notCanJet.eta) < 2.4) )  # should have been defined as notCanJet.pt>=40, too late to fix this now...
         selev["notCanJet_coffea"] = notCanJet
-        selev["nNotCanJet"] = ak.num(selev.notCanJet_coffea)
-
-        # print(selev.nJet_selected, selev.nNotCanJet, ak.num(notCanJet_sel),"\n")
 
         #
         # Build diJets, indexed by diJet[event,pairing,0/1]
@@ -225,10 +221,9 @@ class analysis(processor.ProcessorABC):
         #canJet = selev["canJet"]
 
         canJet["jet_flavor"] = "b"
-        notCanJet_sel["jet_flavor"] = "j"
-        selev["notCanJet_sel"] = notCanJet_sel
+        notCanJet["jet_flavor"] = "j"
 
-        jets_for_clustering = ak.concatenate([canJet, notCanJet_sel], axis=1)
+        jets_for_clustering = ak.concatenate([canJet, notCanJet], axis=1)
         jets_for_clustering = jets_for_clustering[ak.argsort(jets_for_clustering.pt, axis=1, ascending=False)]
 
         #
@@ -364,14 +359,14 @@ class analysis(processor.ProcessorABC):
             canJet_re["btagDeepFlavB"] = 1.0 # Set bs to 1 and ls to 0
 
 
-            notCanJet_sel_re = declustered_jets[~is_b_mask]
-            notCanJet_sel_re["puId"] = 7
-            notCanJet_sel_re["jetId"] = 7 # selev.Jet.puId[canJet_idx]
-            notCanJet_sel_re["btagDeepFlavB"] = 0 # Set bs to 1 and ls to 0
+            notCanJet_re = declustered_jets[~is_b_mask]
+            notCanJet_re["puId"] = 7
+            notCanJet_re["jetId"] = 7 # selev.Jet.puId[canJet_idx]
+            notCanJet_re["btagDeepFlavB"] = 0 # Set bs to 1 and ls to 0
 
 
             selev["canJet_re"] = canJet_re
-            selev["notCanJet_sel_re"] = notCanJet_sel_re
+            selev["notCanJet_coffea_re"] = notCanJet_re
 
             #
             #  Recluster

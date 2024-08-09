@@ -412,10 +412,12 @@ def decluster_splitting_types(input_jets, splitting_types, input_pdfs, debug=Fal
         #
         #  Check for declustered jets vailing kinematic requirements
         #
-        fail_pt_mask  = (declustered_jets_A.pt < 40) | (declustered_jets_B.pt < 40)
-        fail_eta_mask = (np.abs(declustered_jets_A.eta) > 2.5) | (np.abs(declustered_jets_B.eta) > 2.5)
+        # Update to only be bjets
+        fail_pt_mask    = (declustered_jets_A.pt < 20) | (declustered_jets_B.pt < 20)
+        fail_pt_b_mask  = ((declustered_jets_A.pt < 40) &  (declustered_jets_A.jet_flavor == "b")) | ((declustered_jets_B.pt < 40) &  (declustered_jets_B.jet_flavor == "b"))
+        fail_eta_b_mask = ((declustered_jets_A.jet_flavor == "b") & (np.abs(declustered_jets_A.eta) > 2.5)) | ((declustered_jets_A.jet_flavor == "b") & (np.abs(declustered_jets_B.eta) > 2.5))
         fail_dr_mask  = declustered_jets_A.delta_r(declustered_jets_B) < 0.4
-        clustering_fail = fail_pt_mask | fail_eta_mask | fail_dr_mask
+        clustering_fail = fail_pt_mask | fail_pt_b_mask | fail_eta_b_mask | fail_dr_mask
 
         #print(ak.any(fail_dr_mask))
         if num_trys > 4:
