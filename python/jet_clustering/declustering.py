@@ -126,6 +126,11 @@ def get_list_of_splitting_types(splittings):
     unique_splittings = set(ak.flatten(splittings.jet_flavor).to_list())
     return list(unique_splittings)
 
+def get_list_of_splitting_names(splittings):
+    unique_splittings = set(ak.flatten(splittings.splitting_name).to_list())
+    return list(unique_splittings)
+
+
 
 def compute_decluster_variables(clustered_splittings):
 

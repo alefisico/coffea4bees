@@ -14,7 +14,7 @@ import os
 
 sys.path.insert(0, os.getcwd())
 from jet_clustering.clustering   import kt_clustering, cluster_bs, cluster_bs_fast, cluster_bs_numba
-from jet_clustering.declustering import compute_decluster_variables, decluster_combined_jets, make_synthetic_event, get_list_of_splitting_types, clean_ISR, get_list_of_ISR_splittings, children_jet_flavors, get_list_of_all_sub_splittings, get_list_of_combined_jet_types, get_splitting_summary
+from jet_clustering.declustering import compute_decluster_variables, decluster_combined_jets, make_synthetic_event, get_list_of_splitting_types, clean_ISR, get_list_of_ISR_splittings, children_jet_flavors, get_list_of_all_sub_splittings, get_list_of_combined_jet_types, get_splitting_summary, get_splitting_name
 
 #import vector
 #vector.register_awkward()
@@ -239,6 +239,10 @@ class clusteringTestCase(unittest.TestCase):
         clustered_jets, clustered_splittings = cluster_bs(input_jets, debug=False)
         compute_decluster_variables(clustered_splittings)
 
+        split_name_flat = [get_splitting_name(i) for i in ak.flatten(clustered_splittings.jet_flavor)]
+        split_name = ak.unflatten(split_name_flat, ak.num(clustered_splittings))
+        clustered_splittings["splitting_name"] = split_name
+
         if self.debug:
             for iEvent, jets in enumerate(clustered_jets):
                 print(f"Event {iEvent}")
@@ -316,6 +320,9 @@ class clusteringTestCase(unittest.TestCase):
 
     def test_declustering_6jets(self):
         self._declustering_test(self.input_jets_6, debug=False)
+
+    def test_declustering_Njets(self):
+        self._declustering_test(self.input_jets_bad_split, debug=False)
 
 
     def test_cluster_bs_speed_test(self):
