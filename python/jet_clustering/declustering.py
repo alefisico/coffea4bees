@@ -62,7 +62,7 @@ def get_splitting_name(comb_flavor):
 
     n_Xs, _ = get_splitting_summary(comb_flavor)
     if n_Xs[0] > 4 or (n_Xs[0] + n_Xs[1]) > 5:
-        return f"{n_Xs[0]}_{n_Xs[1]}"
+        return f"{n_Xs[0]}/{n_Xs[1]}"
 
     return comb_flavor
 
