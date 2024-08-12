@@ -49,7 +49,7 @@ class Main(WorkInProgress, SelectDevice, LoadTrainingSets):
         import numpy as np
         import torch.nn.functional as F
         import torch.optim as optim
-        from classifier.nn.HCR_blocks import HCR
+        from classifier.nn.blocks.HCR import HCR
         from torch.profiler import ProfilerActivity, profile, schedule
         from torch.utils.data import DataLoader, Subset
 
