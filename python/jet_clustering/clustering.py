@@ -146,21 +146,28 @@ def combine_particles(part_A, part_B, *, debug=False):
     new_part_A = part_A
     new_part_B = part_B
 
+    if debug:
+        print(f"(combine_particles) new_part_A {new_part_A}")
+        print(f"(combine_particles) new_part_B {new_part_B}")
+
     # order by complexity
     if len(new_part_B.jet_flavor) > len(new_part_A.jet_flavor):
         new_part_A = part_B
         new_part_B = part_A
+        if debug:
+            print(f"(combine_particles) swap b/c complexity")
 
+    elif len(new_part_B.jet_flavor) == len(new_part_A.jet_flavor):
 
-    # else order by bjet content
-    elif new_part_A.jet_flavor.count("b") < new_part_B.jet_flavor.count("b"):
-        new_part_A = part_B
-        new_part_B = part_A
+        # else order by bjet content
+        if new_part_A.jet_flavor.count("b") < new_part_B.jet_flavor.count("b"):
+            new_part_A = part_B
+            new_part_B = part_A
 
-    # else order by pt
-    elif new_part_A.jet_flavor.count("b") == new_part_B.jet_flavor.count("b") and (new_part_A.pt < new_part_B.pt):
-        new_part_A = part_B
-        new_part_B = part_A
+        # else order by pt
+        elif new_part_A.jet_flavor.count("b") == new_part_B.jet_flavor.count("b") and (new_part_A.pt < new_part_B.pt):
+            new_part_A = part_B
+            new_part_B = part_A
 
 
     part_comb_jet_flavor = comb_jet_flavor(new_part_A.jet_flavor, new_part_B.jet_flavor)
@@ -215,7 +222,7 @@ def cluster_bs_core(event_jets, distance_function, *, debug = False):
 
             if debug: print(f"size partilces {len(particles)}")
 
-            part_comb_array = combine_particles(particles[idx_A], particles[idx_B])
+            part_comb_array = combine_particles(particles[idx_A], particles[idx_B], debug = debug)
 
             #
             #  Stop if going to combine 3 bs
@@ -294,7 +301,7 @@ def cluster_bs_core(event_jets, distance_function, *, debug = False):
 
 
 def cluster_bs(event_jets, *, debug = False):
-    return cluster_bs_core(event_jets, get_min_indicies)
+    return cluster_bs_core(event_jets, get_min_indicies, debug=debug)
 
 
 def cluster_bs_fast(event_jets, *, debug = False):
