@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import logging
 import os
+from pathlib import Path
 from typing import TYPE_CHECKING, Literal
+from uuid import uuid4
 
 from .initializer import status
 
@@ -15,6 +17,14 @@ if TYPE_CHECKING:
 
 
 __all__ = ["status", "is_poxis", "n_cpu", "get_context"]
+
+
+def pipe_address(*prefix: str, uuid: bool = True):
+    return os.fspath(
+        Path("/tmp" if is_poxis() else R"\\.\pipe").joinpath(
+            "-".join(prefix + ((str(uuid4()),) if uuid else ()))
+        )
+    )
 
 
 def is_poxis():

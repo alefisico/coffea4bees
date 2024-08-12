@@ -54,3 +54,5 @@ class bounded(Generic[_BoundedT]):
 
 int_pos = bounded(int, lower=1)
 int_neg = bounded(int, upper=-1)
+float_pos = bounded(float, lower=0, closed_lower=False)
+float_neg = bounded(float, upper=0, closed_upper=False)

@@ -35,7 +35,7 @@ class Main(WorkInProgress, SelectDevice, LoadTrainingSets):
         "--dataset-size",
         type=converter.int_pos,
         default=128,
-        help=f"size of dataset",
+        help="size of dataset",
     )
     argparser.add_argument(
         "--profile-activities",
@@ -49,7 +49,7 @@ class Main(WorkInProgress, SelectDevice, LoadTrainingSets):
         import numpy as np
         import torch.nn.functional as F
         import torch.optim as optim
-        from classifier.nn.HCR_blocks import HCR
+        from classifier.nn.blocks.HCR import HCR
         from torch.profiler import ProfilerActivity, profile, schedule
         from torch.utils.data import DataLoader, Subset
 
@@ -85,7 +85,7 @@ class Main(WorkInProgress, SelectDevice, LoadTrainingSets):
                 loss = F.cross_entropy(c, truth)
                 loss.backward()
                 opt.step()
-        logging.info(f"Exporting timeline for model...")
-        p.export_memory_timeline(os.fspath(cfg.IO.profiler / f"profiler.html"))
-        logging.info(f"Exporting trace for model...")
-        p.export_chrome_trace(os.fspath(cfg.IO.profiler / f"profiler.json"))
+        logging.info("Exporting timeline for model...")
+        p.export_memory_timeline(os.fspath(cfg.IO.profiler / "profiler.html"))
+        logging.info("Exporting trace for model...")
+        p.export_chrome_trace(os.fspath(cfg.IO.profiler / "profiler.json"))

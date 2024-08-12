@@ -11,7 +11,17 @@ from classifier.task import ArgParser, EntryPoint, Main, converter
 from classifier.utils import call
 
 if TYPE_CHECKING:
+    from classifier.monitor.progress import ProgressTracker
     from classifier.task.dataset import Dataset
+
+
+class progress_advance:
+    def __init__(self, progress: ProgressTracker, step: int = 1):
+        self._progress = progress
+        self._step = step
+
+    def __call__(self, _):
+        self._progress.advance(step=self._step)
 
 
 class SetupMultiprocessing(Main):
@@ -65,9 +75,10 @@ class LoadTrainingSets(SetupMultiprocessing):
     )
 
     def load_training_sets(self, parser: EntryPoint):
-        from concurrent.futures import ProcessPoolExecutor as Pool
+        from concurrent.futures import ProcessPoolExecutor
 
-        from classifier.process import status
+        from classifier.monitor.progress import Progress
+        from classifier.process import pool, status
         from torch.utils.data import ConcatDataset, StackDataset
 
         # load datasets in parallel
@@ -77,12 +88,22 @@ class LoadTrainingSets(SetupMultiprocessing):
             raise ValueError("No dataset to load")
         logging.info(f"Loading {len(loaders)} datasets")
         timer = datetime.now()
-        with Pool(
-            max_workers=self.opts.max_loaders,
-            mp_context=status.context,
-            initializer=status.initializer,
-        ) as pool:
-            datasets = [*pool.map(call, loaders)]
+        with (
+            ProcessPoolExecutor(
+                max_workers=self.opts.max_loaders,
+                mp_context=status.context,
+                initializer=status.initializer,
+            ) as executor,
+            Progress.new(total=len(loaders), msg=("datasets", "Loading")) as progress,
+        ):
+            datasets = [
+                *pool.submit(
+                    executor,
+                    call,
+                    loaders,
+                    callbacks=[lambda _: progress_advance(progress)],
+                )
+            ]
         logging.info(f"Loaded {len(loaders)} datasets in {datetime.now() - timer}")
         # concatenate datasets
         keys = [set(d.keys()) for d in datasets]

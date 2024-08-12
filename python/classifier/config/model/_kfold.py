@@ -79,6 +79,7 @@ class KFoldClassifier(ABC, _KFold):
                 _train_classifier(
                     self.initializer(
                         KFold(self.kfolds, offset),
+                        model=type(self).__name__,
                         kfolds=self.kfolds,
                         offset=offset,
                     )
@@ -92,6 +93,7 @@ class KFoldClassifier(ABC, _KFold):
                 _train_classifier(
                     self.initializer(
                         RandomKFold(seed, self.kfolds, offset),
+                        model=type(self).__name__,
                         kfolds=self.kfolds,
                         offset=offset,
                         seed=seed,

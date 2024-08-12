@@ -14,7 +14,6 @@ import numpy.typing as npt
 import uproot
 from analysis.helpers.cutflow import cutFlow
 from base_class.awkward.zip import NanoAOD
-from base_class.dask.delayed import delayed
 from base_class.root import Chunk, TreeReader, TreeWriter, merge
 from base_class.system.eos import EOS, PathLike
 from base_class.utils.wrapper import retry
@@ -153,7 +152,6 @@ class PicoAOD(ProcessorABC):
         pass
 
 
-@delayed
 def _fetch_metadata(dataset: str, path: PathLike, dask: bool = False):
     try:
         with uproot.open(path) as f:
@@ -188,10 +186,12 @@ def fetch_metadata(
                     )
             results = [task.result() for task in tasks]
     else:
+        from dask import delayed
+        func = delayed(_fetch_metadata)
         results = []
         for dataset, files in fileset.items():
             for file in files["files"]:
-                results.append(_fetch_metadata(dataset, file, dask=dask))
+                results.append(func(dataset, file, dask=dask))
     return results
 
 
@@ -252,6 +252,7 @@ def resize(
     output: dict[str, dict[str, list[Chunk]]],
     step: int,
     chunk_size: int,
+    dask: bool = True
 ):
     base = EOS(base_path)
     transform = NanoAOD(regular=False, jagged=True)
@@ -263,6 +264,6 @@ def resize(
                 step=step,
                 chunk_size=chunk_size,
                 reader_options={"transform": transform},
-                dask=True,
+                dask=dask,
             )
     return output

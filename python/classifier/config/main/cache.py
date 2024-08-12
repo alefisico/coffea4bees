@@ -9,7 +9,7 @@ import fsspec
 from classifier.task import ArgParser, EntryPoint, converter
 
 from ..setting import IO as IOSetting
-from ._utils import LoadTrainingSets
+from ._utils import LoadTrainingSets, progress_advance
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 class Main(LoadTrainingSets):
     argparser = ArgParser(
         prog="cache",
-        description="Save datasets to disk. Use [blue]--dataset[/blue] [green]cache.Torch[/green] to load.",
+        description="Save datasets to disk. Use [blue]-dataset[/blue] [green]cache.Torch[/green] to load.",
         workflow=[
             *LoadTrainingSets._workflow,
             ("sub", "write chunks to disk"),
@@ -57,10 +57,11 @@ class Main(LoadTrainingSets):
     )
 
     def run(self, parser: EntryPoint):
-        from concurrent.futures import ProcessPoolExecutor as Pool
+        from concurrent.futures import ProcessPoolExecutor
 
         import numpy as np
-        from classifier.process import status
+        from classifier.monitor.progress import Progress
+        from classifier.process import pool, status
 
         # cache states
         states = dict.fromkeys(self.opts.states, None)
@@ -86,15 +87,22 @@ class Main(LoadTrainingSets):
 
         logging.info("Caching datasets...")
         timer = datetime.now()
-        with Pool(
-            max_workers=self.opts.max_writers,
-            mp_context=status.context,
-            initializer=status.initializer,
-        ) as pool:
-            _ = pool.map(
+        with (
+            ProcessPoolExecutor(
+                max_workers=self.opts.max_writers,
+                mp_context=status.context,
+                initializer=status.initializer,
+            ) as executor,
+            Progress.new(total=size, msg=("chunks", "Caching")) as progress,
+        ):
+            tasks = pool.submit(
+                executor,
                 _save_cache(datasets, IOSetting.output, self.opts.compression),
-                zip(range(len(chunks)), chunks),
+                range(len(chunks)),
+                chunks,
+                callbacks=[lambda _, idx: progress_advance(progress, len(idx))],
             )
+            (*tasks,)  # wait for completion
         logging.info(
             f"Wrote {size} entries to {len(chunks)} files in {datetime.now() - timer}"
         )
@@ -113,12 +121,11 @@ class _save_cache:
         self.path = path
         self.compression = compression
 
-    def __call__(self, args: tuple[int, npt.ArrayLike]):
+    def __call__(self, chunk: int, indices: npt.ArrayLike):
         import torch
         from classifier.nn.dataset import skim_loader
         from torch.utils.data import Subset
 
-        chunk, indices = args
         subset = Subset(self.dataset, indices)
         chunks = [*skim_loader(subset)]
         data = {k: torch.cat([c[k] for c in chunks]) for k in self.dataset.datasets}

@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import os
 from datetime import datetime
+from typing import TYPE_CHECKING
 
-from base_class.system.eos import EOS, PathLike
 from classifier.task import GlobalState
+
+if TYPE_CHECKING:
+    from base_class.system.eos import EOS, PathLike
 
 
 FILE = ("python", "classifier", "config", "state", "__init__.py")
@@ -26,6 +29,8 @@ class RepoInfo:
 
     @classmethod
     def get_url(cls, path: PathLike) -> str:
+        from base_class.system.eos import EOS
+
         if cls._local is None:
             local = EOS(__file__)
             for i in range(len(FILE)):

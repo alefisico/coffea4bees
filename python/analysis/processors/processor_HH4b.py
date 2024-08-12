@@ -1,39 +1,43 @@
-import time
 import gc
-import awkward as ak
-import numpy as np
-import correctionlib
-import yaml
+import logging
+import time
 import warnings
+
+import awkward as ak
+import correctionlib
+import numpy as np
 import uproot
-
-from analysis.helpers.networks import HCREnsemble
-from analysis.helpers.topCandReconstruction import find_tops, dumpTopCandidateTestVectors, buildTop, mW, mt, find_tops_slow
-
-from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
-from coffea import processor
-from coffea.util import load
-from coffea.analysis_tools import Weights, PackedSelection
-
-from base_class.hist import Collection, Fill
-from base_class.physics.object import LorentzVector, Jet, Muon, Elec
-from analysis.helpers.hist_templates import SvBHists, FvTHists, QuadJetHists, WCandHists, TopCandHists
-
-
+import yaml
+from analysis.helpers.common import apply_btag_sf, init_jet_factory, update_events
 from analysis.helpers.cutflow import cutFlow
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
-
+from analysis.helpers.hist_templates import (
+    FvTHists,
+    QuadJetHists,
+    SvBHists,
+    TopCandHists,
+    WCandHists,
+)
 from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
-from analysis.helpers.common import init_jet_factory, apply_btag_sf, update_events
-
 from analysis.helpers.selection_basic_4b import (
     apply_event_selection_4b,
-    apply_object_selection_4b
+    apply_object_selection_4b,
 )
-
-import logging
-
-from base_class.root import TreeReader, Chunk
+from analysis.helpers.topCandReconstruction import (
+    buildTop,
+    dumpTopCandidateTestVectors,
+    find_tops,
+    find_tops_slow,
+    mt,
+    mW,
+)
+from base_class.hist import Collection, Fill
+from base_class.physics.object import Elec, Jet, LorentzVector, Muon
+from base_class.root import Chunk, TreeReader
+from coffea import processor
+from coffea.analysis_tools import PackedSelection, Weights
+from coffea.nanoevents import NanoAODSchema, NanoEventsFactory
+from coffea.util import load
 
 #
 # Setup
@@ -77,7 +81,6 @@ def setSvBVars(SvBName, event):
     event[SvBName, "ps_hh"] = this_ps_hh
 
 
-
 class analysis(processor.ProcessorABC):
     def __init__(
         self,
@@ -105,6 +108,8 @@ class analysis(processor.ProcessorABC):
         self.apply_FvT = apply_FvT
         self.run_SvB = run_SvB
         self.apply_boosted_veto = apply_boosted_veto
+        if SvB or SvB_MA: # import torch on demand
+            from analysis.helpers.networks import HCREnsemble
         self.classifier_SvB = HCREnsemble(SvB) if SvB else None
         self.classifier_SvB_MA = HCREnsemble(SvB_MA) if SvB_MA else None
         self.corrections_metadata = yaml.safe_load(open(corrections_metadata, "r"))
@@ -213,7 +218,7 @@ class analysis(processor.ProcessorABC):
 
         if self.run_SvB:
             if (self.classifier_SvB is None) | (self.classifier_SvB_MA is None):
-                #SvB_file = f'{path}/SvB_newSBDef.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_ULHH")}'
+                # SvB_file = f'{path}/SvB_newSBDef.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_ULHH")}'
                 SvB_file = f'{path}/SvB_ULHH.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_ULHH")}'
                 event["SvB"] = ( NanoEventsFactory.from_root( SvB_file,
                                                               entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().SvB )
@@ -221,7 +226,7 @@ class analysis(processor.ProcessorABC):
                 if not ak.all(event.SvB.event == event.event):
                     raise ValueError("ERROR: SvB events do not match events ttree")
 
-                #SvB_MA_file = f'{path}/SvB_MA_newSBDef.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_MA_ULHH")}'
+                # SvB_MA_file = f'{path}/SvB_MA_newSBDef.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_MA_ULHH")}'
                 SvB_MA_file = f'{path}/SvB_MA_ULHH.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_MA_ULHH")}'
                 event["SvB_MA"] = ( NanoEventsFactory.from_root( SvB_MA_file,
                                                                  entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema ).events().SvB_MA )
@@ -278,7 +283,6 @@ class analysis(processor.ProcessorABC):
 
             # shifts.extend( [({"Jet": jets.JER.up}, f"CMS_res_j_{year_label}Up"), ({"Jet": jets.JER.down}, f"CMS_res_j_{year_label}Down")] )
 
-
             logging.info(f"\nJet variations {[name for _, name in shifts]}")
 
         return processor.accumulate( self.process_shift(update_events(event, collections), name) for collections, name in shifts )
@@ -333,7 +337,6 @@ class analysis(processor.ProcessorABC):
                 list_weight_names.append('CMS_bbbb_resolved_ggf_triggerEffSF')
                 logging.debug( f"trigWeight {weights.partial_weight(include=['CMS_bbbb_resolved_ggf_triggerEffSF'])[:10]}\n" )
 
-
             # puWeight (to be checked)
             if not isTTForMixed:
                 puWeight = list( correctionlib.CorrectionSet.from_file( self.corrections_metadata[year]["PU"] ).values() )[0]
@@ -343,7 +346,6 @@ class analysis(processor.ProcessorABC):
                              puWeight.evaluate(event.Pileup.nTrueInt.to_numpy(), "down"), )
                 list_weight_names.append(f"CMS_pileup_{year_label}")
                 logging.debug( f"PU weight {weights.partial_weight(include=[f'CMS_pileup_{year_label}'])[:10]}\n" )
-
 
             # L1 prefiring weight
             if ( "L1PreFiringWeight" in event.fields ):  #### AGE: this should be temprorary (field exists in UL)
@@ -419,11 +421,9 @@ class analysis(processor.ProcessorABC):
         logging.debug(f"weights event {weights.weight()[:10]}")
         logging.debug(f"Weight Statistics {weights.weightStatistics}")
 
-
         # Apply object selection (function does not remove events, adds content to objects)
         event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year],
                                            isMixedData=isMixedData, isTTForMixed=isTTForMixed, isDataForMixed=isDataForMixed )
-
 
         selections = PackedSelection()
         selections.add( "lumimask", event.lumimask)
@@ -458,7 +458,6 @@ class analysis(processor.ProcessorABC):
             self._cutFlow.fill( "passJetMult", event[ selections.all(*allcuts)], allTag=True )
             self._cutFlow.fill( "passJetMult_woTrig", event[ selections.all(*allcuts)], allTag=True,
                                wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[selections.all(*allcuts)] ))
-
 
         #
         # Calculate and apply btag scale factors
@@ -705,7 +704,6 @@ class analysis(processor.ProcessorABC):
                 selev["delta_xbW"] = selev.xbW - selev.xbW_reco
                 selev["delta_xW"] = selev.xW - selev.xW_reco
 
-
         if self.apply_FvT:
             quadJet["FvT_q_score"] = np.concatenate( ( np.reshape(np.array(selev.FvT.q_1234), (-1, 1)),
                                                        np.reshape(np.array(selev.FvT.q_1324), (-1, 1)),
@@ -883,8 +881,8 @@ class analysis(processor.ProcessorABC):
 
             if "xbW" in selev.fields:  ### AGE: this should be temporary
                 fill += hist.add("xW", (100, 0, 12, ("xW", "xW")))
-                #fill += hist.add("delta_xW", (100, -5, 5, ("delta_xW", "delta xW")))
-                #fill += hist.add("delta_xW_l", (100, -15, 15, ("delta_xW", "delta xW")))
+                # fill += hist.add("delta_xW", (100, -5, 5, ("delta_xW", "delta xW")))
+                # fill += hist.add("delta_xW_l", (100, -15, 15, ("delta_xW", "delta xW")))
 
             #
             # Separate reweighting for the different mixed samples
@@ -976,9 +974,9 @@ class analysis(processor.ProcessorABC):
 
             friends = {}
             if self.make_classifier_input is not None:
+                _all_selection = selections.all(*allcuts)
                 for k in ["ZZSR", "ZHSR", "HHSR", "SR", "SB"]:
                     selev[k] = selev["quadJet_selected"][k]
-
                 selev["nSelJets"] = ak.num(selev.selJet)
 
                 if "xbW_reco" in selev.fields:  #### AGE: this should be temporary
@@ -986,9 +984,9 @@ class analysis(processor.ProcessorABC):
                     selev["xW"]  = selev["xW_reco"]
 
                 ####
-                from ..helpers.classifier.HCR import dump_input_friend, dump_JCM_weight
+                from ..helpers.classifier.HCR import dump_input_friend, dump_JCM_weight, dump_FvT_weight
 
-                friends["friends"] = dump_input_friend( selev, self.make_classifier_input, "HCR_input", *selections, weight="weight" if isMC else "weight_noJCM_noFvT", NotCanJet="notCanJet_coffea") | dump_JCM_weight( selev, self.make_classifier_input, "JCM_weight", *selections, )
+                friends["friends"] = dump_input_friend( selev, self.make_classifier_input, "HCR_input", _all_selection, weight="weight" if isMC else "weight_noJCM_noFvT", NotCanJet="notCanJet_coffea") | dump_JCM_weight( selev, self.make_classifier_input, "JCM_weight", _all_selection) | dump_FvT_weight( selev, self.make_classifier_input, "FvT_weight", _all_selection)
 
             output = hist.output | processOutput | friends
         #
@@ -1024,7 +1022,6 @@ class analysis(processor.ProcessorABC):
                                                       region=[2],  # SR / SB / Other
                                                       **dict((s, ...) for s in self.histCuts) )
 
-
                     selev[f"weight_{ivar}"] = weights.weight(modifier=ivar)[ selections.all(*allcuts) ]
                     fill_SvB_ivar = Fill( process=processName, year=year, variation=ivar, weight=f"weight_{ivar}", )
 
@@ -1049,6 +1046,7 @@ class analysis(processor.ProcessorABC):
         logging.debug(f"{chunk}{nEvent/elapsed:,.0f} events/s")
 
     def compute_SvB(self, event):
+        # import torch on demand
         import torch
         import torch.nn.functional as F
 

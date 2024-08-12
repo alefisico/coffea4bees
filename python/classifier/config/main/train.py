@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 from classifier.task import ArgParser, EntryPoint, Model, converter
 
-from ._utils import LoadTrainingSets, SelectDevice
+from ._utils import LoadTrainingSets, SelectDevice, progress_advance
 
 if TYPE_CHECKING:
     from classifier.process.device import Device
@@ -42,9 +42,10 @@ class Main(SelectDevice, LoadTrainingSets):
     )
 
     def run(self, parser: EntryPoint):
-        from concurrent.futures import ProcessPoolExecutor as Pool
+        from concurrent.futures import ProcessPoolExecutor
 
-        from classifier.process import status
+        from classifier.monitor.progress import Progress
+        from classifier.process import pool, status
 
         # load datasets in parallel
         datasets = self.load_training_sets(parser)
@@ -54,11 +55,21 @@ class Main(SelectDevice, LoadTrainingSets):
         trainers = [*chain(*(m.train() for m in models))]
         logging.info(f"Initialized {len(trainers)} models in {datetime.now() - timer}")
         # train models in parallel
-        with Pool(
-            max_workers=self.opts.max_trainers,
-            mp_context=status.context,
-            initializer=status.initializer,
-        ) as pool:
-            results = [*pool.map(_train_model(self.device, datasets), trainers)]
+        with (
+            ProcessPoolExecutor(
+                max_workers=self.opts.max_trainers,
+                mp_context=status.context,
+                initializer=status.initializer,
+            ) as executor,
+            Progress.new(total=len(trainers), msg=("models", "Training")) as progress,
+        ):
+            results = [
+                *pool.submit(
+                    executor,
+                    _train_model(self.device, datasets),
+                    trainers,
+                    callbacks=[lambda _: progress_advance(progress)],
+                )
+            ]
 
         return {"models": results}
