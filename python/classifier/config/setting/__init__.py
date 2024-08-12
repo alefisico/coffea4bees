@@ -52,10 +52,11 @@ class IO(Cascade):
 
     output: EOS = "./{main}-{timestamp}/"
     monitor: EOS = "diagnostics"
+    report: EOS = "report"
     profiler: EOS = "profiling"
 
-    file_states: str = "states.pkl"
-    file_metadata: str = "metadata.json"
+    states: EOS = "states.pkl"
+    result: EOS = "result.json"
 
     @classmethod
     def _generate_path(cls, value: str):
@@ -84,43 +85,32 @@ class IO(Cascade):
         return cls._generate_path(value)
 
     @classmethod
+    def get__report(cls, value: str):
+        return cls._generate_path(value)
+
+    @classmethod
     def get__profiler(cls, value: str):
         return cls._generate_path(value)
+
+    @classmethod
+    def get__states(cls, value: str):
+        return cls.output / value
+
+    @classmethod
+    def get__result(cls, value: str):
+        return cls.output / value
 
 
 class Monitor(Cascade):
     enable: bool = True
-    address: str = None
-    port: int = 10200
-
-    # backends
-    console_enable: bool = True
-    console_update_interval: float = 1.0  # seconds
-    console_fps: int = 10
-
-    web_enable: bool = False
-
-    # components
-    log_enable: bool = True
-
-    progress_enable: bool = True
-
-    usage_enable: bool = False
-    usage_update_interval: float = 1.0  # seconds
-    usage_gpu: bool = True
-    usage_gpu_force_torch: bool = False
-
-    # records
-    file_meta: str = "meta.json"
-    file_log: str = "logs.html"
-    file_usage: str = "usage.json"
+    file: str = "meta.json"
+    address: tuple[str, int] = ":10200"
 
     # performance
-    max_resend: int = 1
+    retry_max: int = 1
     reconnect_delay: float = 0.1  # seconds
 
     # builtins
-    logging_level: int = 20
     socket_timeout: float = None
     warnings_ignore: bool = True
 
@@ -138,3 +128,24 @@ class Monitor(Cascade):
             warnings.filterwarnings("ignore")
         else:
             warnings.filterwarnings("default")
+
+    @classmethod
+    def get__address(cls, value: int | str):
+        if isinstance(value, int):
+            return None, value
+        if value is None:
+            return None, None
+        parts = value.rsplit(":", 1)
+        if len(parts) == 2:
+            try:
+                port = int(parts[1])
+                host = parts[0] or None
+                return host, port
+            except:
+                pass
+        return value or None, None
+
+
+class Analysis(Cascade):
+    enable: bool = True
+    max_workers: int = 1

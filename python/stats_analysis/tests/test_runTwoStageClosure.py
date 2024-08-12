@@ -19,8 +19,9 @@ class TestRunTwoStageClosure(unittest.TestCase):
         # This is the output from runTwoStageClosure
         #    time python3 runTwoStageClosure.py
         #
-        self.output_path = wrapper.args["output_path"] 
-        inputFileName = self.output_path+"/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin20.root"
+        self.output_path = wrapper.args["output_path"]
+        inputFileName = wrapper.args["inputFile"] 
+        #inputFileName = self.output_path+"/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin20.root"
         self.inputROOTFile = ROOT.TFile(inputFileName, "READ")
 
         #  Make these numbers with:

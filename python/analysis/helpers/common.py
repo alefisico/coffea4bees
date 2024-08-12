@@ -1,17 +1,19 @@
 import awkward as ak
 import numpy as np
-from coffea.nanoevents import NanoEventsFactory, NanoAODSchema, BaseSchema
+from coffea.nanoevents import NanoAODSchema
+
 NanoAODSchema.warn_missing_crossrefs = False
 import warnings
+
 warnings.filterwarnings("ignore")
 from coffea.nanoevents.methods import vector
+
 ak.behavior.update(vector.behavior)
-from coffea import processor, util
-import correctionlib
-import pickle
-import cachetools
 import logging
-import copy
+import pickle
+
+import correctionlib
+
 
 # following example here: https://github.com/CoffeaTeam/coffea/blob/master/tests/test_jetmet_tools.py#L529
 def init_jet_factory(weight_sets, event, isMC):   #### AGE: this is temporary, it should be updated with correctionlib
@@ -30,20 +32,21 @@ def init_jet_factory(weight_sets, event, isMC):   #### AGE: this is temporary, i
     extract.finalize()
     evaluator = extract.make_evaluator()
 
-    from coffea.jetmet_tools import CorrectedJetsFactory, CorrectedMETFactory, JECStack, JetResolution, JetResolutionScaleFactor
+    from base_class.jetmet_tools import CorrectedJetsFactory
+    from coffea.jetmet_tools import JECStack
     jec_stack_names = []
     for key in evaluator.keys():
         jec_stack_names.append(key)
         if 'UncertaintySources' in key:
             jec_stack_names.append(key)
 
-    # print(jec_stack_names)
+    logging.debug(jec_stack_names)
     jec_inputs = {name: evaluator[name] for name in jec_stack_names}
-    # print('jec_inputs:')
-    # print(jec_inputs)
+    logging.debug('jec_inputs:')
+    logging.debug(jec_inputs)
     jec_stack = JECStack(jec_inputs)
-    # print('jec_stack')
-    # print(jec_stack.__dict__)
+    logging.debug('jec_stack')
+    logging.debug(jec_stack.__dict__)
     name_map = jec_stack.blank_name_map
     name_map["JetPt"]    = "pt"
     name_map["JetMass"]  = "mass"
@@ -53,7 +56,7 @@ def init_jet_factory(weight_sets, event, isMC):   #### AGE: this is temporary, i
     name_map['ptRaw']    = 'pt_raw'
     name_map['massRaw']  = 'mass_raw'
     name_map['Rho']      = 'rho'
-    # print(name_map)
+    logging.debug(name_map)
 
     jet_factory = CorrectedJetsFactory(name_map, jec_stack)
     uncertainties = jet_factory.uncertainties()
@@ -63,8 +66,7 @@ def init_jet_factory(weight_sets, event, isMC):   #### AGE: this is temporary, i
     else:
         logging.warning('WARNING: No uncertainties were loaded in the jet factory')
 
-    jec_cache = cachetools.Cache(np.inf)
-    jet_variations = jet_factory.build(nominal_jet, lazy_cache=jec_cache)
+    jet_variations = jet_factory.build(nominal_jet, event.event)
 
     return jet_variations
 

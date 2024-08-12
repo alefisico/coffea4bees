@@ -8,18 +8,20 @@ from rich.progress import BarColumn
 from rich.progress import Progress as _Bar
 from rich.progress import ProgressColumn, SpinnerColumn, TimeElapsedColumn
 
-from ..config.setting import Monitor as cfg
-from ..process.monitor import Proxy, Recorder, callback
+from ..config.setting import monitor as cfg
+from ..process.monitor import Proxy, Recorder, post
 from ..typetools import WithUUID
 from ..utils import noop
 
 _FORMAT = "%H:%M:%S"
 _UNKNOWN = "+--:--:--"
 
+MessageType = str | tuple[str, ...]
+
 
 @dataclass
 class ProgressTracker(WithUUID):
-    msg: str
+    msg: MessageType
     total: int
 
     def __post_init__(self):
@@ -30,7 +32,7 @@ class ProgressTracker(WithUUID):
         self._step = None
         super().__init__()
 
-    def _update(self, msg: str = None, updated: bool = False, step: int = None):
+    def _update(self, msg: MessageType = None, updated: bool = False, step: int = None):
         if (msg is not None) and (msg != self.msg):
             self.msg = msg
             updated = True
@@ -39,14 +41,14 @@ class ProgressTracker(WithUUID):
             new._step = step
             Progress._update(new)
 
-    def update(self, completed: int, msg: str = None):
+    def update(self, completed: int, msg: MessageType = None):
         updated = completed > self._completed
         if updated:
             self.updated_t = time.time()
             self._completed = completed
         self._update(msg, updated)
 
-    def advance(self, step: int, msg: str = None):
+    def advance(self, step: int, msg: MessageType = None):
         updated = step > 0
         if updated:
             self.updated_t = time.time()
@@ -69,7 +71,7 @@ class ProgressTracker(WithUUID):
         return self._completed >= self.total
 
 
-class _EstimateColumn(ProgressColumn):
+class TimeRemainColumn(ProgressColumn):
     def render(self, task):
         estimate = task.fields.get("estimate")
         text = _UNKNOWN
@@ -87,27 +89,26 @@ class Progress(Proxy):
 
     def __init__(self):
         self._jobs = {}
-        if cfg.console_enable:
-            self._console_bar = _Bar(
-                SpinnerColumn(),
-                TimeElapsedColumn(),
-                _EstimateColumn(),
-                BarColumn(bar_width=None),
-                "{task.completed}/{task.total} {task.description}",
-                "\[{task.fields[source]}]",
-                expand=True,
-            )
-            self._console_ids = {}
+        self._console_bar = _Bar(
+            SpinnerColumn(),
+            TimeElapsedColumn(),
+            TimeRemainColumn(),
+            BarColumn(bar_width=None),
+            "{task.completed}/{task.total} {task.description}",
+            "\[{task.fields[source]}]",
+            expand=True,
+        )
+        self._console_ids = {}
 
     @classmethod
-    def new(cls, total: int, msg: str = "") -> ProgressTracker:
-        if cfg.progress_enable:
-            job = ProgressTracker(msg=msg, total=total)
-            cls._update(job)
-            return job
-        return noop
+    @cfg.check(cfg.Progress, default=noop)
+    def new(cls, total: int, msg: MessageType = "") -> ProgressTracker:
+        job = ProgressTracker(msg=msg, total=total)
+        cls._update(job)
+        return job
 
-    @callback(max_retry=1)
+    @post(max_retry=1)
+    @cfg.check(cfg.Progress)
     def _update(self, new: ProgressTracker):
         uuid = (new.source, new.uuid)
         old = self._jobs.get(uuid)
@@ -120,13 +121,19 @@ class Progress(Proxy):
             self._jobs.pop(uuid)
 
     @classmethod
+    def _format_msg(cls, msg: MessageType):
+        if isinstance(msg, str):
+            return msg
+        return "|".join(msg)
+
+    @classmethod
     def _console_callback(cls):
         with cls.lock():
             jobs = cls._jobs.copy()
 
         for uuid, job in jobs.items():
             kwargs = {
-                "description": job.msg,
+                "description": cls._format_msg(job.msg),
                 "completed": job._completed,
                 "estimate": job.estimate,
                 "source": Recorder.registered(job.source),
@@ -144,10 +151,10 @@ class Progress(Proxy):
                 ...
 
 
+@cfg.check(cfg.Progress)
 def setup_monitor():
-    if cfg.progress_enable:
-        if cfg.console_enable:
-            from .backends.console import Dashboard as _CD
+    if cfg.Console.enable:
+        from .backends.console import Dashboard as _CD
 
-            _CD.layout.add_row(Progress._console_bar)
-            _CD.add(Progress._console_callback)
+        _CD.layout.add_row(Progress._console_bar)
+        _CD.add(Progress._console_callback)

@@ -8,6 +8,8 @@ from classifier.task.parse._dict import _mapping_scheme, mapping
 from classifier.utils import YamlIndentSequence
 from yaml.representer import Representer
 
+from .. import setting as cfg
+
 _MAX_WIDTH = 10
 
 
@@ -30,28 +32,9 @@ def _merge_args(opts: list[str]) -> list[str]:
         return merged
 
 
-def _parse_opts(mod: str, opts: list[str]):
-    output = {main._MODULE: mod}
-    merged = []
-    group = []
-    for opt in opts:
-        scheme = _mapping_scheme(opt)[0]
-        if (scheme is not None) or (opt.startswith(main._DASH)):
-            merged.extend(_merge_args(group))
-            group.clear()
-        if scheme is not None:
-            merged.append(mapping(opt))
-        else:
-            group.append(opt)
-    merged.extend(_merge_args(group))
-    if len(merged) > 0:
-        output[main._OPTION] = merged
-    return output
-
-
 class Main(main.Main):
-    _no_monitor = True
-    _no_load = True
+    _no_state = True
+    _no_init = True
 
     argparser = ArgParser(
         prog="workflow",
@@ -61,26 +44,60 @@ class Main(main.Main):
         ],
     )
     argparser.add_argument(
-        "workflow",
+        "path",
         help="output path to workflow file",
+    )
+    argparser.add_argument(
+        "--embed-file",
+        help="embed mappings or sequences read from file",
+        action="store_true",
     )
     argparser.add_argument(
         "main",
         help="main task",
     )
 
+    @classmethod
+    def prelude(cls):
+        cfg.Analysis.enable = False
+        cfg.Monitor.enable = False
+
     def run(self, parser: EntryPoint):
         from base_class.system.eos import EOS
 
-        output = EOS(self.opts.workflow)
+        output = EOS(self.opts.path)
         workflow = defaultdict(list)
-        workflow[main._MAIN] = _parse_opts(
-            self.opts.main, parser.args[main._MAIN][1][2:]
-        )
+        args: list[str] = [*parser.args[main._MAIN][1]]
+        for k in ["--embed-file", self.opts.path, self.opts.main]:
+            if k in args:
+                args.remove(k)
+        workflow[main._MAIN] = self._parse_opts(self.opts.main, args)
         for k in parser._keys:
             for mod, opts in parser.args[k]:
-                workflow[k].append(_parse_opts(mod, opts))
+                workflow[k].append(self._parse_opts(mod, opts))
 
         yaml.add_representer(defaultdict, Representer.represent_dict)
         with fsspec.open(output, "wt") as f:
             yaml.dump(workflow, f, sort_keys=False, Dumper=YamlIndentSequence)
+
+    def _parse_opts(self, mod: str, opts: list[str]):
+        output = {main._MODULE: mod}
+        merged = []
+        group = []
+        for opt in opts:
+            scheme = _mapping_scheme(opt)[0]
+            if (scheme is not None) or (opt.startswith(main._DASH)):
+                merged.extend(_merge_args(group))
+                group.clear()
+            if (
+                scheme is not None
+                and (scheme != "py")
+                and (self.opts.embed_file or scheme != "file")
+            ):
+                merged.append(mapping(opt))
+            else:
+                group.append(opt)
+        merged.extend(_merge_args(group))
+        if len(merged) > 0:
+            output[main._OPTION] = merged
+        return output

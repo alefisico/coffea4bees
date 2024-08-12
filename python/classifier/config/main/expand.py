@@ -1,12 +1,13 @@
 from classifier.task import ArgParser, EntryPoint, main
 from rich import print
 
+from .. import setting as cfg
 from .help import _print_mod
 
 
 class Main(main.Main):
-    _no_monitor = True
-    _no_load = True
+    _no_state = True
+    _no_init = True
 
     argparser = ArgParser(
         prog="expand",
@@ -26,6 +27,11 @@ class Main(main.Main):
         action="store_true",
         help="expand as template",
     )
+
+    @classmethod
+    def prelude(cls):
+        cfg.Analysis.enable = False
+        cfg.Monitor.enable = False
 
     def run(self, parser: EntryPoint):
         if self.opts.as_template:

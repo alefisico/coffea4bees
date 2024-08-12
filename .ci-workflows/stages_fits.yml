@@ -1,0 +1,21 @@
+analysis-makeweights-job:    
+  stage: fits
+  extends:
+    - .base_analysis
+  needs: 
+    - analysis-test-job
+  script:
+    - source .ci-workflows/analysis-makeweights-job.sh
+  artifacts:
+    paths:
+      - python/analysis/testJCM_Coffea/
+
+twoStageClosure-test-job:   
+  stage: fits
+  extends:
+    - .base_combine
+  needs: 
+    - analysis-test-mixed-job
+  script:
+    - source .ci-workflows/analysis-runTwoStageClosure-ROOT.sh
+

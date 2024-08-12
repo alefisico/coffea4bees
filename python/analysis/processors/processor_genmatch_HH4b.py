@@ -14,6 +14,9 @@ from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
 from coffea import processor
 from coffea.analysis_tools import Weights, PackedSelection
 
+from base_class.hist import Collection, Fill
+from base_class.physics.object import LorentzVector, Jet
+
 from analysis.helpers.cutflow import cutFlow
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
 
@@ -82,19 +85,19 @@ class analysis(processor.ProcessorABC):
 
         self.cutFlowCuts = [
             "all",
+            "pass4GenBJets00",    "pass4GenBJets20",    "pass4GenBJets40",
+            "pass4GenBJets00_1j", "pass4GenBJets20_1j", "pass4GenBJets40_1j",
+            "pass4GenBJetsb203b40_1j_i",  "pass4GenBJetsb203b40_1j_e",
+            "pass4GenBJets2b202b40_2j_i", "pass4GenBJets2b202b40_2j_e",
             "passHLT",
-            "passNoiseFilter",
-            "passJetMult",
-            "passJetMult_btagSF",
-            "passPreSel",
-            "passDiJetMass",
-            "SR",
-            "SB",
         ]
 
-        self.histCuts = ["passPreSel"]
-        self.cutFlowCuts += ["passSvB", "failSvB"]
-        self.histCuts += ["passSvB", "failSvB"]
+        self.histCuts = ["pass4GenBJets00",    "pass4GenBJets20",    "pass4GenBJets40",
+                         "pass4GenBJets00_1j", "pass4GenBJets20_1j", "pass4GenBJets40_1j",
+                         "pass4GenBJetsb203b40_1j_i", "pass4GenBJetsb203b40_1j_e",
+                         "pass4GenBJets2b202b40_2j_i", "pass4GenBJets2b202b40_2j_e",
+                         ]
+
 
 
     def process(self, event):
@@ -120,15 +123,11 @@ class analysis(processor.ProcessorABC):
         event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year] )
         #event = apply_object_selection_boosted_4b( event )
 
-        selections = PackedSelection()
-        selections.add( "lumimask", event.lumimask)
-        selections.add( "passNoiseFilter", event.passNoiseFilter)
-        selections.add( "passHLT", ( np.full(len(event), True) if (isMC or isMixedData or isTTForMixed or isDataForMixed) else event.passHLT ) )
-        selections.add( 'passJetMult', event.passJetMult )
-        selections.add( "passPreSel", event.passPreSel )
-        selections.add( "passFourTag", ( event.passJetMult & event.passPreSel & event.fourTag) )
-        #selections.add( 'passBoostedSel', event.passBoostedSel )
-        allcuts = [ 'passJetMult' ]
+        # selections.add( 'passJetMult', event.passJetMult )
+        # selections.add( "passPreSel", event.passPreSel )
+        # selections.add( "passFourTag", ( event.passJetMult & event.passPreSel & event.fourTag) )
+        # selections.add( 'passBoostedSel', event.passBoostedSel )
+        # allcuts = [ 'passJetMult' ]
 
         #
         #  Cut Flows
@@ -140,155 +139,174 @@ class analysis(processor.ProcessorABC):
         }
 
 
-        event['GenJet', 'selected'] = (event.GenJet.pt >= 40) & (np.abs(event.GenJet.eta) <= 2.4) & (np.abs(event.GenJet.partonFlavour)==5)
-        event['selGenJet'] = event.GenJet[event.GenJet.selected]
-        event['passFourGenJets'] = ak.num(event.selGenJet) >=4
-        selections.add('passFourGenJets', event.passFourGenJets )
-
+        #
+        #  genJet -> b-quark matching
+        #
         event['bfromH']= find_genpart(event.GenPart, [5], [25])
-        event['matchedGenJet'] = event.bfromH.nearest( event.selGenJet, threshold=0.2 )
-        event['matchedGenJet'] = event.matchedGenJet[ ak.argsort(event.matchedGenJet.pt, axis=1, ascending=False) ]
-        event['m4j'] = ak.where( ak.num(event.matchedGenJet) == 4 ,
-                                (event.matchedGenJet[:,0] + event.matchedGenJet[:,1] + event.matchedGenJet[:,2] + event.matchedGenJet[:,3]).mass,
-                                -999 )
 
-        hist = { 'hists': {} }
-        process_axis = hist2.axis.StrCategory([], name='process', growth=True)
-        sel_axis = hist2.axis.StrCategory([], name='selection', growth=True)
-        hist['hists']['numGenJets'] = hist2.Hist(
-            process_axis, sel_axis,
-            hist2.axis.Regular(20, 0, 20, name='n'),
-            hist2.storage.Weight()
-        )
-        hist['hists']['genJet1_pt'] = hist2.Hist(
-            process_axis, sel_axis,
-            hist2.axis.Regular(200, 0, 2000, name='pt'),
-            hist2.storage.Weight()
-        )
-        hist['hists']['genJet4_pt'] = copy.copy(hist['hists']['genJet1_pt'])
+        event['GenJet', 'selectedBs00'] = (event.GenJet.pt >= 0) & (np.abs(event.GenJet.eta) <= 2.4) & (np.abs(event.GenJet.partonFlavour)==5)
+        event['selGenBJet00'] = event.GenJet[event.GenJet.selectedBs00]
+        event['matchedGenBJet00'] = event.bfromH.nearest( event.selGenBJet00, threshold=0.2 )
+        event['matchedGenBJet00'] = event.matchedGenBJet00[ ak.argsort(event.matchedGenBJet00.pt, axis=1, ascending=False) ]
+        event['matchedGenBJet00'] = event.matchedGenBJet00[~ak.is_none(event.matchedGenBJet00, axis=1)]
 
-        hist['hists']['matchgenJet1_pt'] = copy.copy(hist['hists']['genJet1_pt'])
-        hist['hists']['matchgenJet2_pt'] = copy.copy(hist['hists']['genJet1_pt'])
-        hist['hists']['matchgenJet3_pt'] = copy.copy(hist['hists']['genJet1_pt'])
-        hist['hists']['matchgenJet4_pt'] = copy.copy(hist['hists']['genJet1_pt'])
+        event['matchedGenBJet15'] = event.matchedGenBJet00[event.matchedGenBJet00.pt > 15]
+        event['matchedGenBJet20'] = event.matchedGenBJet00[event.matchedGenBJet00.pt > 20]
+        event['matchedGenBJet30'] = event.matchedGenBJet00[event.matchedGenBJet00.pt > 30]
+        event['matchedGenBJet40'] = event.matchedGenBJet00[event.matchedGenBJet00.pt > 40]
 
-        hist['hists']['genJet1_eta'] = hist2.Hist(
-            process_axis, sel_axis,
-            hist2.axis.Regular(80, -5, 5, name='eta'),
-            hist2.storage.Weight()
-        )
-        hist['hists']['genJet4_eta'] = copy.copy(hist['hists']['genJet1_eta'])
-        hist['hists']['matchgenJet1_eta'] = copy.copy(hist['hists']['genJet1_eta'])
-        hist['hists']['matchgenJet2_eta'] = copy.copy(hist['hists']['genJet1_eta'])
-        hist['hists']['matchgenJet3_eta'] = copy.copy(hist['hists']['genJet1_eta'])
-        hist['hists']['matchgenJet4_eta'] = copy.copy(hist['hists']['genJet1_eta'])
 
-        hist['hists']['m4j'] = hist2.Hist(
-            process_axis, sel_axis,
-            hist2.axis.Regular(200, 0, 2000, name='mass'),
-            hist2.storage.Weight()
-        )
+        event['pass4GenBJets00'] = ak.num(event.matchedGenBJet00) >= 4
+        event['pass4GenBJets15'] = ak.num(event.matchedGenBJet15) >= 4
+        event['pass4GenBJets20'] = ak.num(event.matchedGenBJet20) >= 4
+        event['pass4GenBJets30'] = ak.num(event.matchedGenBJet30) >= 4
+        event['pass4GenBJets40'] = ak.num(event.matchedGenBJet40) >= 4
+        event['pass3GenBJets40'] = ak.num(event.matchedGenBJet40) >= 3
+        event['pass2GenBJets40'] = ak.num(event.matchedGenBJet40) >= 2
+        event['weight'] = weights.weight()   ### this is for _cutflow
 
-        cuts = {
-            'noselection' : [],
-            'reco_fourtag' : ['passFourTag'],
-            'gen_fourtag' : ['passFourGenJets']
-        }
+        #
+        #  Only look at event where the 4 b-jets are in the tracker
+        #
+        selev = event[event.pass4GenBJets00]
 
-        for iname, icut in cuts.items():
-            icut = selections.all(*icut)
-            hist['hists']['numGenJets'].fill(
-                process=processName,
-                selection=iname,
-                n=ak.num(event.selGenJet[icut]),
-                weight=weights.weight()[icut]
-            )
+        for iJ in range(4):
+            selev[f"matchedGenBJet00_{iJ}"] = selev.matchedGenBJet00[:, iJ]
 
-            event['selGenJet'] = ak.pad_none( event.selGenJet, 4, axis=1 )
-            hist['hists']['genJet1_pt'].fill(
-                process=processName,
-                selection=iname,
-                pt=ak.to_numpy(ak.fill_none(event['selGenJet'][icut][:,0].pt, np.nan)),
-                weight=weights.weight()[icut]
-            )
-            hist['hists']['genJet4_pt'].fill(
-                process=processName,
-                selection=iname,
-                pt=ak.to_numpy(ak.fill_none(event['selGenJet'][icut][:,3].pt, np.nan)),
-                weight=weights.weight()[icut]
-            )
-            hist['hists']['genJet1_eta'].fill(
-                process=processName,
-                selection=iname,
-                eta=ak.to_numpy(ak.fill_none(event['selGenJet'][icut][:,0].eta, np.nan)),
-                weight=weights.weight()[icut]
-            )
-            hist['hists']['genJet4_eta'].fill(
-                process=processName,
-                selection=iname,
-                eta=ak.to_numpy(ak.fill_none(event['selGenJet'][icut][:,3].eta, np.nan)),
-                weight=weights.weight()[icut]
-            )
 
-            hist['hists']['matchgenJet1_pt'].fill(
-                process=processName,
-                selection=iname,
-                pt=ak.to_numpy(ak.fill_none(event['matchedGenJet'][icut][:,0].pt, np.nan)),
-                weight=weights.weight()[icut]
-            )
-            hist['hists']['matchgenJet1_eta'].fill(
-                process=processName,
-                selection=iname,
-                eta=ak.to_numpy(ak.fill_none(event['matchedGenJet'][icut][:,0].eta, np.nan)),
-                weight=weights.weight()[icut]
-            )
-            hist['hists']['matchgenJet2_pt'].fill(
-                process=processName,
-                selection=iname,
-                pt=ak.to_numpy(ak.fill_none(event['matchedGenJet'][icut][:,1].pt, np.nan)),
-                weight=weights.weight()[icut]
-            )
-            hist['hists']['matchgenJet2_eta'].fill(
-                process=processName,
-                selection=iname,
-                eta=ak.to_numpy(ak.fill_none(event['matchedGenJet'][icut][:,1].eta, np.nan)),
-                weight=weights.weight()[icut]
-            )
-            hist['hists']['matchgenJet3_pt'].fill(
-                process=processName,
-                selection=iname,
-                pt=ak.to_numpy(ak.fill_none(event['matchedGenJet'][icut][:,2].pt, np.nan)),
-                weight=weights.weight()[icut]
-            )
-            hist['hists']['matchgenJet3_eta'].fill(
-                process=processName,
-                selection=iname,
-                eta=ak.to_numpy(ak.fill_none(event['matchedGenJet'][icut][:,2].eta, np.nan)),
-                weight=weights.weight()[icut]
-            )
-            hist['hists']['matchgenJet4_pt'].fill(
-                process=processName,
-                selection=iname,
-                pt=ak.to_numpy(ak.fill_none(event['matchedGenJet'][icut][:,3].pt, np.nan)),
-                weight=weights.weight()[icut]
-            )
-            hist['hists']['matchgenJet4_eta'].fill(
-                process=processName,
-                selection=iname,
-                eta=ak.to_numpy(ak.fill_none(event['matchedGenJet'][icut][:,3].eta, np.nan)),
-                weight=weights.weight()[icut]
-            )
-            hist['hists']['m4j'].fill(
-                process=processName,
-                selection=iname,
-                mass=ak.to_numpy(ak.fill_none(event['m4j'][icut], np.nan)),
-                weight=weights.weight()[icut]
-            )
+        selev["v4j00"] = ak.where(  selev.pass4GenBJets00,
+                                    selev.matchedGenBJet00.sum(axis=1),
+                                    1e-10 * selev.matchedGenBJet00.sum(axis=1),
+                                  )
+
+        selev["v4j15"] = ak.where(  selev.pass4GenBJets15,
+                                    selev.matchedGenBJet15.sum(axis=1),
+                                    1e-10 * selev.matchedGenBJet15.sum(axis=1),
+                                  )
+
+
+        selev["v4j20"] = ak.where(  selev.pass4GenBJets20,
+                                    selev.matchedGenBJet20.sum(axis=1),
+                                    1e-10 * selev.matchedGenBJet20.sum(axis=1),
+                                  )
+
+
+        selev["v4j30"] = ak.where(  selev.pass4GenBJets30,
+                                    selev.matchedGenBJet30.sum(axis=1),
+                                    1e-10 * selev.matchedGenBJet30.sum(axis=1),
+                                  )
+
+
+        selev["v4j40"] = ak.where(  selev.pass4GenBJets40,
+                                    selev.matchedGenBJet40.sum(axis=1),
+                                    1e-10 * selev.matchedGenBJet40.sum(axis=1),
+
+                                  )
+
+
+        #
+        #  Other Jets
+        #
+        selev['GenJet', 'other00'] = (np.abs(selev.GenJet.eta) <= 2.4) & (~selev.GenJet.selectedBs00)
+        selev['otherGenJets00'] = selev.GenJet[selev.GenJet.other00]
+        selev['otherGenJets40'] = selev.otherGenJets00[selev.otherGenJets00.pt > 40]
+
+        selev['pass1OtherJet40'] = ak.num(selev.otherGenJets40) >= 1
+        selev['pass2OtherJet40'] = ak.num(selev.otherGenJets40) >= 2
+
+        selev['pass4GenBJets00_1j'] = selev.pass4GenBJets00 & selev.pass1OtherJet40
+        selev['pass4GenBJets20_1j'] = selev.pass4GenBJets20 & selev.pass1OtherJet40
+        selev['pass4GenBJets40_1j'] = selev.pass4GenBJets40 & selev.pass1OtherJet40
+
+        selev['pass4GenBJetsb203b40_1j_i'] = selev.pass4GenBJets20 & selev.pass3GenBJets40 & selev.pass1OtherJet40
+        selev['pass4GenBJetsb203b40_1j_e'] = selev.pass4GenBJetsb203b40_1j_i & ~selev.pass4GenBJets40
+
+        selev['pass4GenBJets2b202b40_2j_i'] = selev.pass4GenBJets20 & selev.pass2GenBJets40 & selev.pass2OtherJet40
+        selev['pass4GenBJets2b202b40_2j_e'] = selev.pass4GenBJets2b202b40_2j_i & ~selev.pass4GenBJets40 & ~selev.pass4GenBJetsb203b40_1j_i
+
+
+        # selev['Jet', 'selected'] = (selev.Jet.pt >= 40) & (np.abs(selev.Jet.eta) <= 2.4)
+        # selev['selJet'] = selev.Jet[ selev.Jet.selected ]
+        # selev['matchedRecoJet'] = selev.bfromH.nearest( selev.selJet, threshold=0.2 )
+        # selev['matchedRecoJet'] = selev.matchedRecoJet[ ak.argsort(selev.matchedRecoJet.pt, axis=1, ascending=False) ]
+
+        #
+        #  Hacks for plotting (all events count as SR and fourTag
+        #
+        selev["region"] = np.full(len(selev), 0b10)
+        selev["tag"]    = np.full(len(selev), 4)
+
+        selections = PackedSelection()
+        selections.add( "passHLT",            event.passHLT )
+        selections.add( "pass4GenBJets00",    event.pass4GenBJets00)
+        selections.add( "pass4GenBJets20",    event.pass4GenBJets20)
+        selections.add( "pass4GenBJets40",    event.pass4GenBJets40)
+        selections.add( "pass3GenBJets40",    event.pass3GenBJets40)
+        selections.add( "pass2GenBJets40",    event.pass2GenBJets40)
+
+        event_pass1OtherJet40 = np.full(len(event), False)
+        event_pass1OtherJet40[event.pass4GenBJets00] = selev.pass1OtherJet40
+        event["pass1OtherJet40"] = event_pass1OtherJet40
+
+        event_pass2OtherJet40 = np.full(len(event), False)
+        event_pass2OtherJet40[event.pass4GenBJets00] = selev.pass2OtherJet40
+        event["pass2OtherJet40"] = event_pass2OtherJet40
+
+
+        selections.add( "pass1OtherJet40",    event.pass1OtherJet40)
+        selections.add( "pass2OtherJet40",    event.pass2OtherJet40)
 
         self._cutFlow = cutFlow(self.cutFlowCuts)
+        self._cutFlow.fill( "all", event, allTag=True)
+        self._cutFlow.fill( "pass4GenBJets00",    event[selections.require(pass4GenBJets00=True)], allTag=True)
+        self._cutFlow.fill( "pass4GenBJets20",    event[selections.require(pass4GenBJets20=True)], allTag=True)
+        self._cutFlow.fill( "pass4GenBJets40",    event[selections.require(pass4GenBJets40=True)], allTag=True)
+        self._cutFlow.fill( "pass4GenBJets00_1j", event[selections.require(pass4GenBJets00=True, pass1OtherJet40=True)], allTag=True)
+        self._cutFlow.fill( "pass4GenBJets20_1j", event[selections.require(pass4GenBJets20=True, pass1OtherJet40=True)], allTag=True)
+        self._cutFlow.fill( "pass4GenBJets40_1j", event[selections.require(pass4GenBJets40=True, pass1OtherJet40=True)], allTag=True)
+        self._cutFlow.fill( "pass4GenBJetsb203b40_1j_i", event[selections.require(pass4GenBJets20=True, pass3GenBJets40=True, pass1OtherJet40=True)], allTag=True)
+        self._cutFlow.fill( "pass4GenBJetsb203b40_1j_e", event[selections.require(pass4GenBJets20=True, pass3GenBJets40=True, pass1OtherJet40=True, pass4GenBJets40=False)], allTag=True)
+        self._cutFlow.fill( "pass4GenBJets2b202b40_2j_i", event[selections.require(pass4GenBJets20=True, pass2GenBJets40=True, pass2OtherJet40=True)], allTag=True)
+        self._cutFlow.fill( "pass4GenBJets2b202b40_2j_e", event[selections.require(pass4GenBJets20=True, pass2GenBJets40=True, pass2OtherJet40=True, pass4GenBJets40=False, pass3GenBJets40=False)], allTag=True)
+
+        fill = Fill(process=processName, year=year, weight="weight")
+
+        hist = Collection( process=[processName],
+                           year=[year],
+                           tag=[3, 4, 0],  # 3 / 4/ Other
+                           region=[2, 1, 0],  # SR / SB / Other
+                           **dict((s, ...) for s in self.histCuts)
+                          )
+
+        #
+        #  Jets
+        #
+        fill += LorentzVector.plot(('matchedGenBJet20', 'Selected Gen Candidate'), 'matchedGenBJet20')
+        fill += LorentzVector.plot(('matchedGenBJet40', 'Selected Gen Candidate'), 'matchedGenBJet40')
+
+        fill += LorentzVector.plot(('otherGenJet00', 'Non matched Gen Candidate'), 'otherGenJets00')
+        fill += LorentzVector.plot(('otherGenJet40', 'Non matched Gen Candidate'), 'otherGenJets40')
+
+
+        for iJ in range(4):
+            fill += LorentzVector.plot((f'genBJet{iJ}', f'Matched Gen {iJ}'), f'matchedGenBJet00_{iJ}', skip=["n"])
+
+
+        #
+        #  m4js
+        #
+        fill += LorentzVector.plot_pair( ("v4j00", R"$HH_{4b}$"), "v4j00", skip=["n", "dr", "dphi", "st"], bins={"mass": (120, 0, 1200)}, )
+        fill += LorentzVector.plot_pair( ("v4j15", R"$HH_{4b}$"), "v4j15", skip=["n", "dr", "dphi", "st"], bins={"mass": (120, 0, 1200)}, )
+        fill += LorentzVector.plot_pair( ("v4j20", R"$HH_{4b}$"), "v4j20", skip=["n", "dr", "dphi", "st"], bins={"mass": (120, 0, 1200)}, )
+        fill += LorentzVector.plot_pair( ("v4j30", R"$HH_{4b}$"), "v4j30", skip=["n", "dr", "dphi", "st"], bins={"mass": (120, 0, 1200)}, )
+        fill += LorentzVector.plot_pair( ("v4j40", R"$HH_{4b}$"), "v4j40", skip=["n", "dr", "dphi", "st"], bins={"mass": (120, 0, 1200)}, )
+
+
+        fill(selev, hist)
+
         self._cutFlow.addOutput(processOutput, event.metadata["dataset"])
 
-        output = processOutput | hist
+        output = processOutput | hist.output
 
         return output
 

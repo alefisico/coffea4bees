@@ -43,7 +43,7 @@ def list_of_files(ifile, allowlist_sites=['T3_US_FNALLPC'], test=False, test_fil
         return ifile
     elif ifile.endswith('.txt'):
         file_list = [
-            jfile if jfile.startswith(('root','file')) else f'root://cmseos.fnal.gov/{jfile.rstrip()}' for jfile in open(ifile).readlines()]
+            jfile.rstrip() if jfile.startswith(('root','file')) else f'root://cmseos.fnal.gov/{jfile.rstrip()}' for jfile in open(ifile).readlines()]
         return file_list
     else:
         rucio_client = rucio_utils.get_rucio_client()
@@ -117,13 +117,16 @@ if __name__ == '__main__':
     parser.add_argument('--gitdiff', dest="gitdiff",
                         default="", help='Overwrite git diff for reproducible')
     args = parser.parse_args()
-    # logging_level = logging.DEBUG if args.debug else logging.INFO
-    logging_level = logging.INFO
+    # configure default logger
+    logging_level = logging.DEBUG if args.debug else logging.INFO
     logging.basicConfig(
         level=logging_level,
         handlers=[RichHandler(level=logging_level, markup=True)],
     )
+    # disable numba debug warnings
+    logging.getLogger('numba').setLevel(logging.WARNING)
 
+    
     logging.info(f"\nRunning with these parameters: {args}")
 
     #
@@ -243,15 +246,21 @@ if __name__ == '__main__':
                 logging.info("\nConfig Data for Mixed ")
 
                 nMixedSamples = metadata['datasets'][dataset]["nSamples"]
+                use_kfold = metadata['datasets'][dataset].get("use_kfold", False)
                 data_3b_mix_config = metadata['datasets'][dataset][year][config_runner['data_tier']]
                 logging.info(f"\nNumber of mixed samples is {nMixedSamples}")
+                logging.info(f"\nUsing kfolding? {use_kfold}")
 
                 idataset = f'{dataset}_{year}'
 
                 metadata_dataset[idataset] = copy(metadata_dataset[dataset])
-                metadata_dataset[idataset]['FvT_files'] = [data_3b_mix_config['FvT_file_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
-                metadata_dataset[idataset]['FvT_names'] = [data_3b_mix_config['FvT_name_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
                 metadata_dataset[idataset]['JCM_loads'] = [data_3b_mix_config['JCM_load_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
+                if use_kfold:
+                    metadata_dataset[idataset]['FvT_files'] = [data_3b_mix_config['FvT_file_kfold_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
+                    metadata_dataset[idataset]['FvT_names'] = [data_3b_mix_config['FvT_name_kfold_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
+                else:
+                    metadata_dataset[idataset]['FvT_files'] = [data_3b_mix_config['FvT_file_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
+                    metadata_dataset[idataset]['FvT_names'] = [data_3b_mix_config['FvT_name_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
 
                 fileset[idataset] = {'files': list_of_files(data_3b_mix_config['files'],
                                                             test=args.test, test_files=config_runner['test_files'],

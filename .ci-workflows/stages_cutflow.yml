@@ -1,0 +1,62 @@
+analysis-cutflow-job:    
+  stage: cutflow
+  extends:
+    - .base_analysis
+  needs: 
+    - analysis-test-job
+  script:
+    - source .ci-workflows/analysis-cutflow-job.sh
+  artifacts:
+    paths:
+      - python/analysis/tests/test_dump_cutflow.yml
+
+analysis-mixed-cutflow-job:    
+  stage: cutflow
+  extends:
+    - .base_analysis
+  needs: 
+    - analysis-test-mixed-job
+  script:
+    - source .ci-workflows/analysis-mixed-cutflow-job.sh
+  artifacts:
+    paths:
+      - python/analysis/tests/test_dump_cutflow_mixed_data.yml
+      - python/analysis/tests/test_dump_cutflow_mixed_bkg.yml
+
+skimmer-analysis-cutflow-job:    
+  stage: cutflow
+  extends:
+    - .base_analysis
+  needs: 
+    - skimmer-analysis-test-job
+  script:
+    - source .ci-workflows/skimmer-analysis-cutflow-job.sh
+  artifacts:
+    paths:
+      - python/analysis/tests/test_dump_skimmer_cutflow.yml
+  allow_failure: true
+
+analysis-systematics-cutflow-job:    
+  stage: cutflow
+  extends:
+    - .base_analysis
+  needs: 
+    - analysis-systematics-test-job
+  script:
+    - source .ci-workflows/analysis-systematics-cutflow-job.sh
+  artifacts:
+    paths:
+      - python/analysis/tests/test_systematics_dump_cutflow.yml
+
+analysis-cutflow-job-unsup:    
+ stage: cutflow
+ extends:
+   - .base_analysis
+ needs: 
+   - analysis-test-job-unsup
+ script:
+   - source .ci-workflows/analysis-cutflow-job-unsup.sh
+ artifacts:
+   paths:
+     - python/analysis/tests/test_dump_cutflow_job_unsup.yml
+

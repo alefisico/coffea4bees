@@ -1,61 +1,61 @@
 counts4:
     data_UL18D:
-        passJetMult: 914.0
-        passPreSel: 22.0
-        passDiJetMass: 13.0
-        SR: 4.0
+        passJetMult: 895.0
+        passPreSel: 49.36
+        passDiJetMass: 12.0
+        SR: 3.0
         SB: 9.0
         passSvB: 0.0
-        failSvB: 14.0
+        failSvB: 13.0
 
     data_UL18C:
-        passJetMult: 920.0
-        passPreSel: 36.0
-        passDiJetMass: 15.0
+        passJetMult: 908.0
+        passPreSel: 65.51
+        passDiJetMass: 14.0
         SR: 2.0
+        SB: 12.0
+        passSvB: 0.0
+        failSvB: 24.0
+
+    data_UL18B:
+        passJetMult: 907.0
+        passPreSel: 70.93
+        passDiJetMass: 16.0
+        SR: 3.0
         SB: 13.0
+        passSvB: 0.0
+        failSvB: 31.0
+
+    data_UL18A:
+        passJetMult: 903.0
+        passPreSel: 70.4
+        passDiJetMass: 13.0
+        SR: 7.0
+        SB: 6.0
         passSvB: 0.0
         failSvB: 25.0
 
-    data_UL18B:
-        passJetMult: 918.0
-        passPreSel: 44.0
-        passDiJetMass: 17.0
-        SR: 4.0
-        SB: 13.0
-        passSvB: 0.0
-        failSvB: 32.0
-
-    data_UL18A:
-        passJetMult: 915.0
-        passPreSel: 43.0
-        passDiJetMass: 14.0
-        SR: 7.0
-        SB: 7.0
-        passSvB: 0.0
-        failSvB: 27.0
-
     data_UL17F:
-        passJetMult: 912.0
-        passPreSel: 38.0
+        passJetMult: 899.0
+        passPreSel: 76.31
         passDiJetMass: 20.0
-        SR: 8.0
-        SB: 12.0
+        SR: 7.0
+        SB: 13.0
         passSvB: 2.0
         failSvB: 20.0
 
     data_UL17E:
-        passJetMult: 911.0
-        passPreSel: 41.0
+        passJetMult: 899.0
+        passPreSel: 76.73
         passDiJetMass: 18.0
-        SR: 10.0
-        SB: 8.0
+        SR: 9.0
+        SB: 9.0
         passSvB: 0.0
-        failSvB: 27.0
+        failSvB: 25.0
 
     data_UL17D:
-        passJetMult: 909.0
-        passPreSel: 55.0
+        passJetMult: 899.0
+        passPreSel: 94.4
         passDiJetMass: 30.0
         SR: 10.0
         SB: 20.0
@@ -63,26 +63,26 @@ counts4:
         failSvB: 29.0
 
     data_UL17C:
-        passJetMult: 899.0
-        passPreSel: 53.0
+        passJetMult: 893.0
+        passPreSel: 89.94
         passDiJetMass: 23.0
-        SR: 10.0
-        SB: 13.0
+        SR: 9.0
+        SB: 14.0
         passSvB: 1.0
-        failSvB: 30.0
+        failSvB: 29.0
 
     data_UL16_preVFPE:
-        passJetMult: 940.0
-        passPreSel: 23.0
-        passDiJetMass: 13.0
+        passJetMult: 921.0
+        passPreSel: 45.0
+        passDiJetMass: 12.0
         SR: 4.0
-        SB: 9.0
+        SB: 8.0
         passSvB: 0.0
-        failSvB: 14.0
+        failSvB: 13.0
 
     data_UL16_preVFPD:
-        passJetMult: 943.0
-        passPreSel: 27.0
+        passJetMult: 916.0
+        passPreSel: 49.58
         passDiJetMass: 9.0
         SR: 3.0
         SB: 6.0
@@ -90,8 +90,8 @@ counts4:
         failSvB: 19.0
 
     data_UL16_preVFPC:
-        passJetMult: 939.0
-        passPreSel: 27.0
+        passJetMult: 924.0
+        passPreSel: 51.89
         passDiJetMass: 17.0
         SR: 3.0
         SB: 14.0
@@ -99,8 +99,8 @@ counts4:
         failSvB: 18.0
 
     data_UL16_preVFPB:
-        passJetMult: 945.0
-        passPreSel: 28.0
+        passJetMult: 926.0
+        passPreSel: 51.12
         passDiJetMass: 19.0
         SR: 5.0
         SB: 14.0
@@ -108,29 +108,29 @@ counts4:
         failSvB: 16.0
 
     data_UL16_postVFPH:
-        passJetMult: 941.0
-        passPreSel: 33.0
-        passDiJetMass: 17.0
-        SR: 7.0
-        SB: 10.0
+        passJetMult: 913.0
+        passPreSel: 54.12
+        passDiJetMass: 16.0
+        SR: 8.0
+        SB: 8.0
         passSvB: 0.0
-        failSvB: 16.0
+        failSvB: 15.0
 
     data_UL16_postVFPG:
-        passJetMult: 962.0
-        passPreSel: 28.0
+        passJetMult: 951.0
+        passPreSel: 51.44
         passDiJetMass: 13.0
         SR: 4.0
         SB: 9.0
         passSvB: 0.0
-        failSvB: 15.0
+        failSvB: 14.0
 
     data_UL16_postVFPF:
-        passJetMult: 940.0
-        passPreSel: 15.0
+        passJetMult: 904.0
+        passPreSel: 35.34
         passDiJetMass: 10.0
-        SR: 4.0
-        SB: 6.0
+        SR: 3.0
+        SB: 7.0
         passSvB: 1.0
         failSvB: 8.0
 
@@ -146,7 +146,7 @@ counts4:
     ZZ4b_UL17:
         passJetMult: 0.07
         passPreSel: 0.02
-        passDiJetMass: 0.02
+        passDiJetMass: 0.01
         SR: 0.01
         SB: 0.0
         passSvB: 0.01
@@ -154,7 +154,7 @@ counts4:
 
     ZZ4b_UL16_preVFP:
         passJetMult: 0.13
-        passPreSel: 0.01
+        passPreSel: 0.02
         passDiJetMass: 0.01
         SR: 0.01
         SB: 0.0
@@ -172,16 +172,16 @@ counts4:
 
     ZH4b_UL18:
         passJetMult: 0.21
-        passPreSel: 0.05
-        passDiJetMass: 0.05
-        SR: 0.03
+        passPreSel: 0.06
+        passDiJetMass: 0.04
+        SR: 0.04
         SB: 0.01
         passSvB: 0.02
         failSvB: 0.0
 
     ZH4b_UL17:
         passJetMult: 0.16
-        passPreSel: 0.04
+        passPreSel: 0.05
         passDiJetMass: 0.04
         SR: 0.03
         SB: 0.01
@@ -190,7 +190,7 @@ counts4:
 
     ZH4b_UL16_preVFP:
         passJetMult: 0.29
-        passPreSel: 0.05
+        passPreSel: 0.06
         passDiJetMass: 0.04
         SR: 0.04
         SB: 0.01
@@ -199,70 +199,70 @@ counts4:
 
     ZH4b_UL16_postVFP:
         passJetMult: 0.3
-        passPreSel: 0.05
-        passDiJetMass: 0.05
+        passPreSel: 0.06
+        passDiJetMass: 0.04
         SR: 0.04
         SB: 0.01
         passSvB: 0.02
         failSvB: 0.0
 
     TTToSemiLeptonic_UL18:
-        passJetMult: 11.25
-        passPreSel: 0.36
-        passDiJetMass: 0.14
+        passJetMult: 11.2
+        passPreSel: 0.64
+        passDiJetMass: 0.13
         SR: 0.0
-        SB: 0.14
+        SB: 0.13
         passSvB: 0.0
-        failSvB: 0.26
+        failSvB: 0.25
 
     TTToSemiLeptonic_UL17:
-        passJetMult: 10.95
-        passPreSel: 0.22
-        passDiJetMass: 0.15
-        SR: 0.05
-        SB: 0.11
+        passJetMult: 10.76
+        passPreSel: 0.48
+        passDiJetMass: 0.12
+        SR: 0.02
+        SB: 0.1
         passSvB: 0.0
-        failSvB: 0.15
+        failSvB: 0.1
 
     TTToSemiLeptonic_UL16_preVFP:
-        passJetMult: 29.55
-        passPreSel: 0.53
-        passDiJetMass: 0.23
+        passJetMult: 29.49
+        passPreSel: 1.14
+        passDiJetMass: 0.26
         SR: 0.12
-        SB: 0.11
+        SB: 0.14
         passSvB: 0.0
-        failSvB: 0.32
+        failSvB: 0.28
 
     TTToSemiLeptonic_UL16_postVFP:
-        passJetMult: 20.77
-        passPreSel: 0.37
-        passDiJetMass: 0.14
-        SR: 0.02
-        SB: 0.13
+        passJetMult: 20.49
+        passPreSel: 0.83
+        passDiJetMass: 0.09
+        SR: 0.03
+        SB: 0.06
         passSvB: 0.0
         failSvB: 0.13
 
     TTToHadronic_UL18:
-        passJetMult: 18.33
-        passPreSel: 0.3
-        passDiJetMass: 0.14
-        SR: 0.05
-        SB: 0.08
+        passJetMult: 18.31
+        passPreSel: 1.04
+        passDiJetMass: 0.18
+        SR: 0.13
+        SB: 0.04
         passSvB: 0.0
-        failSvB: 0.13
+        failSvB: 0.16
 
     TTToHadronic_UL17:
-        passJetMult: 17.83
-        passPreSel: 0.27
-        passDiJetMass: 0.19
-        SR: 0.12
+        passJetMult: 17.81
+        passPreSel: 0.92
+        passDiJetMass: 0.12
+        SR: 0.05
         SB: 0.07
         passSvB: 0.0
         failSvB: 0.09
 
     TTToHadronic_UL16_preVFP:
-        passJetMult: 49.59
-        passPreSel: 0.47
+        passJetMult: 49.21
+        passPreSel: 1.76
         passDiJetMass: 0.19
         SR: 0.13
         SB: 0.05
@@ -270,62 +270,62 @@ counts4:
         failSvB: 0.34
 
     TTToHadronic_UL16_postVFP:
-        passJetMult: 36.97
-        passPreSel: 0.31
-        passDiJetMass: 0.14
+        passJetMult: 36.79
+        passPreSel: 1.27
+        passDiJetMass: 0.11
         SR: 0.06
-        SB: 0.09
+        SB: 0.05
         passSvB: 0.0
         failSvB: 0.06
 
     TTTo2L2Nu_UL18:
-        passJetMult: 7.96
-        passPreSel: 0.47
+        passJetMult: 7.84
+        passPreSel: 0.67
         passDiJetMass: 0.11
         SR: 0.04
-        SB: 0.08
+        SB: 0.07
         passSvB: 0.02
-        failSvB: 0.35
+        failSvB: 0.33
 
     TTTo2L2Nu_UL17:
-        passJetMult: 7.66
-        passPreSel: 0.48
-        passDiJetMass: 0.17
-        SR: 0.03
-        SB: 0.13
+        passJetMult: 7.56
+        passPreSel: 0.72
+        passDiJetMass: 0.19
+        SR: 0.08
+        SB: 0.11
         passSvB: 0.0
-        failSvB: 0.23
+        failSvB: 0.25
 
     TTTo2L2Nu_UL16_preVFP:
-        passJetMult: 20.86
-        passPreSel: 0.39
+        passJetMult: 20.07
+        passPreSel: 0.8
         passDiJetMass: 0.21
-        SR: 0.07
-        SB: 0.14
+        SR: 0.0
+        SB: 0.21
         passSvB: 0.0
         failSvB: 0.32
 
     TTTo2L2Nu_UL16_postVFP:
-        passJetMult: 13.82
-        passPreSel: 0.56
-        passDiJetMass: 0.18
-        SR: 0.11
+        passJetMult: 13.69
+        passPreSel: 0.86
+        passDiJetMass: 0.19
+        SR: 0.12
         SB: 0.07
         passSvB: 0.0
         failSvB: 0.43
 
     GluGluToHHTo4B_cHHH1_UL18:
         passJetMult: 0.2
-        passPreSel: 0.05
+        passPreSel: 0.06
         passDiJetMass: 0.05
         SR: 0.04
-        SB: 0.01
+        SB: 0.0
         passSvB: 0.02
         failSvB: 0.0
 
     GluGluToHHTo4B_cHHH1_UL17:
         passJetMult: 0.12
-        passPreSel: 0.03
+        passPreSel: 0.04
         passDiJetMass: 0.03
         SR: 0.03
         SB: 0.0
@@ -334,7 +334,7 @@ counts4:
 
     GluGluToHHTo4B_cHHH1_UL16_preVFP:
         passJetMult: 0.29
-        passPreSel: 0.04
+        passPreSel: 0.05
         passDiJetMass: 0.04
         SR: 0.03
         SB: 0.01
@@ -354,143 +354,143 @@ counts4:
 
 counts3:
     data_UL18D:
-        passJetMult: 914.0
-        passPreSel: 30.25
-        passDiJetMass: 13.12
-        SR: 4.93
-        SB: 8.19
+        passJetMult: 895.0
+        passPreSel: 49.36
+        passDiJetMass: 12.01
+        SR: 4.39
+        SB: 7.62
         passSvB: 0.39
-        failSvB: 19.77
+        failSvB: 18.59
 
     data_UL18C:
-        passJetMult: 920.0
-        passPreSel: 31.2
-        passDiJetMass: 13.76
-        SR: 5.25
-        SB: 8.52
+        passJetMult: 908.0
+        passPreSel: 65.51
+        passDiJetMass: 13.39
+        SR: 5.37
+        SB: 8.03
         passSvB: 0.41
-        failSvB: 19.13
+        failSvB: 18.76
 
     data_UL18B:
-        passJetMult: 918.0
-        passPreSel: 29.17
-        passDiJetMass: 12.55
-        SR: 5.41
-        SB: 7.14
+        passJetMult: 907.0
+        passPreSel: 70.93
+        passDiJetMass: 12.07
+        SR: 5.25
+        SB: 6.81
         passSvB: 0.2
-        failSvB: 17.79
+        failSvB: 17.19
 
     data_UL18A:
-        passJetMult: 915.0
-        passPreSel: 30.52
-        passDiJetMass: 14.45
-        SR: 5.23
-        SB: 9.22
+        passJetMult: 903.0
+        passPreSel: 70.4
+        passDiJetMass: 13.77
+        SR: 4.98
+        SB: 8.79
         passSvB: 0.46
-        failSvB: 17.75
+        failSvB: 17.09
 
     data_UL17F:
-        passJetMult: 912.0
-        passPreSel: 40.63
-        passDiJetMass: 19.77
-        SR: 7.86
-        SB: 11.91
+        passJetMult: 899.0
+        passPreSel: 76.31
+        passDiJetMass: 18.19
+        SR: 7.34
+        SB: 10.86
         passSvB: 0.38
-        failSvB: 24.6
+        failSvB: 22.91
 
     data_UL17E:
-        passJetMult: 911.0
-        passPreSel: 39.05
-        passDiJetMass: 19.2
-        SR: 6.93
-        SB: 12.27
+        passJetMult: 899.0
+        passPreSel: 76.73
+        passDiJetMass: 18.33
+        SR: 6.66
+        SB: 11.67
         passSvB: 0.38
-        failSvB: 23.92
+        failSvB: 23.15
 
     data_UL17D:
-        passJetMult: 909.0
-        passPreSel: 40.36
-        passDiJetMass: 20.01
-        SR: 7.37
-        SB: 12.64
-        passSvB: 0.62
-        failSvB: 22.79
+        passJetMult: 899.0
+        passPreSel: 94.4
+        passDiJetMass: 19.36
+        SR: 7.22
+        SB: 12.14
+        passSvB: 0.55
+        failSvB: 22.31
 
     data_UL17C:
-        passJetMult: 899.0
-        passPreSel: 39.7
-        passDiJetMass: 22.0
-        SR: 7.22
-        SB: 14.78
-        passSvB: 0.47
-        failSvB: 23.02
+        passJetMult: 893.0
+        passPreSel: 89.94
+        passDiJetMass: 20.79
+        SR: 6.91
+        SB: 13.89
+        passSvB: 0.46
+        failSvB: 22.25
 
     data_UL16_preVFPE:
-        passJetMult: 940.0
-        passPreSel: 23.9
-        passDiJetMass: 12.57
-        SR: 4.8
-        SB: 7.77
+        passJetMult: 921.0
+        passPreSel: 45.0
+        passDiJetMass: 12.09
+        SR: 4.5
+        SB: 7.6
         passSvB: 0.34
-        failSvB: 14.5
+        failSvB: 13.8
 
     data_UL16_preVFPD:
-        passJetMult: 943.0
-        passPreSel: 23.7
-        passDiJetMass: 12.67
-        SR: 4.81
-        SB: 7.86
+        passJetMult: 916.0
+        passPreSel: 49.58
+        passDiJetMass: 11.97
+        SR: 4.44
+        SB: 7.54
         passSvB: 0.25
-        failSvB: 14.63
+        failSvB: 13.89
 
     data_UL16_preVFPC:
-        passJetMult: 939.0
-        passPreSel: 25.62
-        passDiJetMass: 14.72
-        SR: 5.22
-        SB: 9.5
+        passJetMult: 924.0
+        passPreSel: 51.89
+        passDiJetMass: 14.27
+        SR: 5.0
+        SB: 9.27
         passSvB: 0.21
-        failSvB: 14.95
+        failSvB: 14.58
 
     data_UL16_preVFPB:
-        passJetMult: 945.0
-        passPreSel: 24.06
-        passDiJetMass: 12.86
-        SR: 3.86
-        SB: 9.0
+        passJetMult: 926.0
+        passPreSel: 51.12
+        passDiJetMass: 12.22
+        SR: 3.7
+        SB: 8.52
         passSvB: 0.08
-        failSvB: 15.49
+        failSvB: 14.95
 
     data_UL16_postVFPH:
-        passJetMult: 941.0
-        passPreSel: 23.47
-        passDiJetMass: 13.5
-        SR: 5.6
-        SB: 7.9
-        passSvB: 0.26
-        failSvB: 14.0
+        passJetMult: 913.0
+        passPreSel: 54.12
+        passDiJetMass: 12.6
+        SR: 5.17
+        SB: 7.43
+        passSvB: 0.24
+        failSvB: 13.24
 
     data_UL16_postVFPG:
-        passJetMult: 962.0
-        passPreSel: 24.94
-        passDiJetMass: 13.25
-        SR: 4.66
-        SB: 8.59
+        passJetMult: 951.0
+        passPreSel: 51.44
+        passDiJetMass: 12.98
+        SR: 4.79
+        SB: 8.19
         passSvB: 0.2
-        failSvB: 15.82
+        failSvB: 15.51
 
     data_UL16_postVFPF:
-        passJetMult: 940.0
-        passPreSel: 21.57
-        passDiJetMass: 12.36
-        SR: 3.92
-        SB: 8.44
+        passJetMult: 904.0
+        passPreSel: 35.34
+        passDiJetMass: 11.22
+        SR: 3.31
+        SB: 7.91
         passSvB: 0.04
-        failSvB: 13.9
+        failSvB: 13.08
 
     ZZ4b_UL18:
         passJetMult: 0.09
-        passPreSel: 0.0
+        passPreSel: 0.02
         passDiJetMass: 0.0
         SR: 0.0
         SB: 0.0
@@ -499,7 +499,7 @@ counts3:
 
     ZZ4b_UL17:
         passJetMult: 0.07
-        passPreSel: 0.0
+        passPreSel: 0.02
         passDiJetMass: 0.0
         SR: 0.0
         SB: 0.0
@@ -508,7 +508,7 @@ counts3:
 
     ZZ4b_UL16_preVFP:
         passJetMult: 0.13
-        passPreSel: 0.0
+        passPreSel: 0.02
         passDiJetMass: 0.0
         SR: 0.0
         SB: 0.0
@@ -517,7 +517,7 @@ counts3:
 
     ZZ4b_UL16_postVFP:
         passJetMult: 0.17
-        passPreSel: 0.0
+        passPreSel: 0.02
         passDiJetMass: 0.0
         SR: 0.0
         SB: 0.0
@@ -526,7 +526,7 @@ counts3:
 
     ZH4b_UL18:
         passJetMult: 0.21
-        passPreSel: 0.01
+        passPreSel: 0.06
         passDiJetMass: 0.01
         SR: 0.0
         SB: 0.0
@@ -535,7 +535,7 @@ counts3:
 
     ZH4b_UL17:
         passJetMult: 0.16
-        passPreSel: 0.01
+        passPreSel: 0.05
         passDiJetMass: 0.0
         SR: 0.0
         SB: 0.0
@@ -544,7 +544,7 @@ counts3:
 
     ZH4b_UL16_preVFP:
         passJetMult: 0.29
-        passPreSel: 0.01
+        passPreSel: 0.06
         passDiJetMass: 0.01
         SR: 0.0
         SB: 0.0
@@ -553,7 +553,7 @@ counts3:
 
     ZH4b_UL16_postVFP:
         passJetMult: 0.3
-        passPreSel: 0.01
+        passPreSel: 0.06
         passDiJetMass: 0.01
         SR: 0.0
         SB: 0.0
@@ -561,8 +561,8 @@ counts3:
         failSvB: 0.0
 
     TTToSemiLeptonic_UL18:
-        passJetMult: 11.25
-        passPreSel: 0.31
+        passJetMult: 11.2
+        passPreSel: 0.64
         passDiJetMass: 0.17
         SR: 0.08
         SB: 0.09
@@ -570,35 +570,35 @@ counts3:
         failSvB: 0.12
 
     TTToSemiLeptonic_UL17:
-        passJetMult: 10.95
-        passPreSel: 0.34
-        passDiJetMass: 0.2
+        passJetMult: 10.76
+        passPreSel: 0.48
+        passDiJetMass: 0.18
         SR: 0.08
-        SB: 0.12
+        SB: 0.11
         passSvB: 0.01
         failSvB: 0.13
 
     TTToSemiLeptonic_UL16_preVFP:
-        passJetMult: 29.55
-        passPreSel: 0.67
-        passDiJetMass: 0.37
-        SR: 0.17
-        SB: 0.2
+        passJetMult: 29.49
+        passPreSel: 1.14
+        passDiJetMass: 0.35
+        SR: 0.16
+        SB: 0.19
         passSvB: 0.01
-        failSvB: 0.25
+        failSvB: 0.24
 
     TTToSemiLeptonic_UL16_postVFP:
-        passJetMult: 20.77
-        passPreSel: 0.48
-        passDiJetMass: 0.27
+        passJetMult: 20.49
+        passPreSel: 0.83
+        passDiJetMass: 0.26
         SR: 0.13
-        SB: 0.14
+        SB: 0.13
         passSvB: 0.02
-        failSvB: 0.2
+        failSvB: 0.18
 
     TTToHadronic_UL18:
-        passJetMult: 18.33
-        passPreSel: 0.69
+        passJetMult: 18.31
+        passPreSel: 1.04
         passDiJetMass: 0.46
         SR: 0.24
         SB: 0.22
@@ -606,71 +606,71 @@ counts3:
         failSvB: 0.21
 
     TTToHadronic_UL17:
-        passJetMult: 17.83
-        passPreSel: 0.75
-        passDiJetMass: 0.54
-        SR: 0.27
+        passJetMult: 17.81
+        passPreSel: 0.92
+        passDiJetMass: 0.53
+        SR: 0.26
         SB: 0.27
         passSvB: 0.03
-        failSvB: 0.24
+        failSvB: 0.22
 
     TTToHadronic_UL16_preVFP:
-        passJetMult: 49.59
-        passPreSel: 1.31
-        passDiJetMass: 0.97
-        SR: 0.45
+        passJetMult: 49.21
+        passPreSel: 1.76
+        passDiJetMass: 0.95
+        SR: 0.43
         SB: 0.52
         passSvB: 0.03
-        failSvB: 0.4
+        failSvB: 0.39
 
     TTToHadronic_UL16_postVFP:
-        passJetMult: 36.97
-        passPreSel: 1.04
-        passDiJetMass: 0.77
-        SR: 0.37
-        SB: 0.4
+        passJetMult: 36.79
+        passPreSel: 1.27
+        passDiJetMass: 0.74
+        SR: 0.38
+        SB: 0.36
         passSvB: 0.03
-        failSvB: 0.31
+        failSvB: 0.29
 
     TTTo2L2Nu_UL18:
-        passJetMult: 7.96
-        passPreSel: 0.23
-        passDiJetMass: 0.11
-        SR: 0.04
-        SB: 0.07
-        passSvB: 0.01
-        failSvB: 0.12
-
-    TTTo2L2Nu_UL17:
-        passJetMult: 7.66
-        passPreSel: 0.23
+        passJetMult: 7.84
+        passPreSel: 0.67
         passDiJetMass: 0.11
         SR: 0.04
         SB: 0.07
         passSvB: 0.01
         failSvB: 0.11
 
+    TTTo2L2Nu_UL17:
+        passJetMult: 7.56
+        passPreSel: 0.72
+        passDiJetMass: 0.11
+        SR: 0.04
+        SB: 0.07
+        passSvB: 0.01
+        failSvB: 0.1
+
     TTTo2L2Nu_UL16_preVFP:
-        passJetMult: 20.86
-        passPreSel: 0.43
-        passDiJetMass: 0.2
+        passJetMult: 20.07
+        passPreSel: 0.8
+        passDiJetMass: 0.19
         SR: 0.08
-        SB: 0.12
+        SB: 0.11
         passSvB: 0.0
-        failSvB: 0.21
+        failSvB: 0.19
 
     TTTo2L2Nu_UL16_postVFP:
-        passJetMult: 13.82
-        passPreSel: 0.3
-        passDiJetMass: 0.14
-        SR: 0.06
-        SB: 0.09
+        passJetMult: 13.69
+        passPreSel: 0.86
+        passDiJetMass: 0.13
+        SR: 0.05
+        SB: 0.08
         passSvB: 0.01
-        failSvB: 0.15
+        failSvB: 0.14
 
     GluGluToHHTo4B_cHHH1_UL18:
         passJetMult: 0.2
-        passPreSel: 0.01
+        passPreSel: 0.06
         passDiJetMass: 0.0
         SR: 0.0
         SB: 0.0
@@ -679,7 +679,7 @@ counts3:
 
     GluGluToHHTo4B_cHHH1_UL17:
         passJetMult: 0.12
-        passPreSel: 0.0
+        passPreSel: 0.04
         passDiJetMass: 0.0
         SR: 0.0
         SB: 0.0
@@ -688,7 +688,7 @@ counts3:
 
     GluGluToHHTo4B_cHHH1_UL16_preVFP:
         passJetMult: 0.29
-        passPreSel: 0.01
+        passPreSel: 0.05
         passDiJetMass: 0.01
         SR: 0.0
         SB: 0.0
@@ -697,7 +697,7 @@ counts3:
 
     GluGluToHHTo4B_cHHH1_UL16_postVFP:
         passJetMult: 0.22
-        passPreSel: 0.01
+        passPreSel: 0.04
         passDiJetMass: 0.0
         SR: 0.0
         SB: 0.0
@@ -708,62 +708,62 @@ counts3:
 
 counts4_unit:
     data_UL18D:
-        passJetMult: 914.0
-        passPreSel: 22.0
-        passDiJetMass: 13.0
-        SR: 4.0
+        passJetMult: 895.0
+        passPreSel: 869.0
+        passDiJetMass: 12.0
+        SR: 3.0
         SB: 9.0
         passSvB: 0.0
-        failSvB: 14.0
+        failSvB: 13.0
 
     data_UL18C:
-        passJetMult: 920.0
-        passPreSel: 36.0
-        passDiJetMass: 15.0
+        passJetMult: 908.0
+        passPreSel: 900.0
+        passDiJetMass: 14.0
         SR: 2.0
+        SB: 12.0
+        passSvB: 0.0
+        failSvB: 24.0
+
+    data_UL18B:
+        passJetMult: 907.0
+        passPreSel: 879.0
+        passDiJetMass: 16.0
+        SR: 3.0
         SB: 13.0
+        passSvB: 0.0
+        failSvB: 31.0
+
+    data_UL18A:
+        passJetMult: 903.0
+        passPreSel: 878.0
+        passDiJetMass: 13.0
+        SR: 7.0
+        SB: 6.0
         passSvB: 0.0
         failSvB: 25.0
 
-    data_UL18B:
-        passJetMult: 918.0
-        passPreSel: 44.0
-        passDiJetMass: 17.0
-        SR: 4.0
-        SB: 13.0
-        passSvB: 0.0
-        failSvB: 32.0
-
-    data_UL18A:
-        passJetMult: 915.0
-        passPreSel: 43.0
-        passDiJetMass: 14.0
-        SR: 7.0
-        SB: 7.0
-        passSvB: 0.0
-        failSvB: 27.0
-
     data_UL17F:
-        passJetMult: 912.0
-        passPreSel: 38.0
+        passJetMult: 899.0
+        passPreSel: 875.0
         passDiJetMass: 20.0
-        SR: 8.0
-        SB: 12.0
+        SR: 7.0
+        SB: 13.0
         passSvB: 2.0
         failSvB: 20.0
 
     data_UL17E:
-        passJetMult: 911.0
-        passPreSel: 41.0
+        passJetMult: 899.0
+        passPreSel: 875.0
         passDiJetMass: 18.0
-        SR: 10.0
-        SB: 8.0
+        SR: 9.0
+        SB: 9.0
         passSvB: 0.0
-        failSvB: 27.0
+        failSvB: 25.0
 
     data_UL17D:
-        passJetMult: 909.0
-        passPreSel: 55.0
+        passJetMult: 899.0
+        passPreSel: 888.0
         passDiJetMass: 30.0
         SR: 10.0
         SB: 20.0
@@ -771,26 +771,26 @@ counts4_unit:
         failSvB: 29.0
 
     data_UL17C:
-        passJetMult: 899.0
-        passPreSel: 53.0
+        passJetMult: 893.0
+        passPreSel: 869.0
         passDiJetMass: 23.0
-        SR: 10.0
-        SB: 13.0
+        SR: 9.0
+        SB: 14.0
         passSvB: 1.0
-        failSvB: 30.0
+        failSvB: 29.0
 
     data_UL16_preVFPE:
-        passJetMult: 940.0
-        passPreSel: 23.0
-        passDiJetMass: 13.0
+        passJetMult: 921.0
+        passPreSel: 907.0
+        passDiJetMass: 12.0
         SR: 4.0
-        SB: 9.0
+        SB: 8.0
         passSvB: 0.0
-        failSvB: 14.0
+        failSvB: 13.0
 
     data_UL16_preVFPD:
-        passJetMult: 943.0
-        passPreSel: 27.0
+        passJetMult: 916.0
+        passPreSel: 897.0
         passDiJetMass: 9.0
         SR: 3.0
         SB: 6.0
@@ -798,8 +798,8 @@ counts4_unit:
         failSvB: 19.0
 
     data_UL16_preVFPC:
-        passJetMult: 939.0
-        passPreSel: 27.0
+        passJetMult: 924.0
+        passPreSel: 917.0
         passDiJetMass: 17.0
         SR: 3.0
         SB: 14.0
@@ -807,8 +807,8 @@ counts4_unit:
         failSvB: 18.0
 
     data_UL16_preVFPB:
-        passJetMult: 945.0
-        passPreSel: 28.0
+        passJetMult: 926.0
+        passPreSel: 907.0
         passDiJetMass: 19.0
         SR: 5.0
         SB: 14.0
@@ -816,161 +816,161 @@ counts4_unit:
         failSvB: 16.0
 
     data_UL16_postVFPH:
-        passJetMult: 941.0
-        passPreSel: 33.0
-        passDiJetMass: 17.0
-        SR: 7.0
-        SB: 10.0
+        passJetMult: 913.0
+        passPreSel: 892.0
+        passDiJetMass: 16.0
+        SR: 8.0
+        SB: 8.0
         passSvB: 0.0
-        failSvB: 16.0
+        failSvB: 15.0
 
     data_UL16_postVFPG:
-        passJetMult: 962.0
-        passPreSel: 28.0
+        passJetMult: 951.0
+        passPreSel: 940.0
         passDiJetMass: 13.0
         SR: 4.0
         SB: 9.0
         passSvB: 0.0
-        failSvB: 15.0
+        failSvB: 14.0
 
     data_UL16_postVFPF:
-        passJetMult: 940.0
-        passPreSel: 15.0
+        passJetMult: 904.0
+        passPreSel: 889.0
         passDiJetMass: 10.0
-        SR: 4.0
-        SB: 6.0
+        SR: 3.0
+        SB: 7.0
         passSvB: 1.0
         failSvB: 8.0
 
     ZZ4b_UL18:
-        passJetMult: 907.0
-        passPreSel: 113.0
-        passDiJetMass: 103.0
-        SR: 79.0
-        SB: 24.0
-        passSvB: 26.0
-        failSvB: 11.0
+        passJetMult: 861.0
+        passPreSel: 844.0
+        passDiJetMass: 93.0
+        SR: 74.0
+        SB: 19.0
+        passSvB: 24.0
+        failSvB: 9.0
 
     ZZ4b_UL17:
-        passJetMult: 926.0
-        passPreSel: 127.0
-        passDiJetMass: 107.0
-        SR: 77.0
-        SB: 30.0
+        passJetMult: 886.0
+        passPreSel: 874.0
+        passDiJetMass: 100.0
+        SR: 73.0
+        SB: 27.0
         passSvB: 33.0
-        failSvB: 15.0
+        failSvB: 13.0
 
     ZZ4b_UL16_preVFP:
-        passJetMult: 953.0
-        passPreSel: 112.0
-        passDiJetMass: 97.0
-        SR: 74.0
-        SB: 23.0
+        passJetMult: 924.0
+        passPreSel: 911.0
+        passDiJetMass: 96.0
+        SR: 78.0
+        SB: 18.0
         passSvB: 24.0
-        failSvB: 16.0
+        failSvB: 17.0
 
     ZZ4b_UL16_postVFP:
-        passJetMult: 947.0
-        passPreSel: 102.0
+        passJetMult: 960.0
+        passPreSel: 954.0
         passDiJetMass: 93.0
-        SR: 71.0
-        SB: 22.0
+        SR: 70.0
+        SB: 23.0
         passSvB: 22.0
         failSvB: 11.0
 
     ZH4b_UL18:
-        passJetMult: 915.0
-        passPreSel: 164.0
-        passDiJetMass: 155.0
-        SR: 117.0
-        SB: 38.0
-        passSvB: 52.0
+        passJetMult: 882.0
+        passPreSel: 869.0
+        passDiJetMass: 151.0
+        SR: 122.0
+        SB: 29.0
+        passSvB: 54.0
         failSvB: 8.0
 
     ZH4b_UL17:
-        passJetMult: 919.0
-        passPreSel: 180.0
-        passDiJetMass: 165.0
-        SR: 140.0
-        SB: 25.0
-        passSvB: 70.0
-        failSvB: 8.0
+        passJetMult: 908.0
+        passPreSel: 898.0
+        passDiJetMass: 164.0
+        SR: 144.0
+        SB: 20.0
+        passSvB: 69.0
+        failSvB: 7.0
 
     ZH4b_UL16_preVFP:
-        passJetMult: 944.0
-        passPreSel: 147.0
-        passDiJetMass: 137.0
-        SR: 111.0
-        SB: 26.0
+        passJetMult: 925.0
+        passPreSel: 912.0
+        passDiJetMass: 131.0
+        SR: 109.0
+        SB: 22.0
         passSvB: 46.0
-        failSvB: 14.0
+        failSvB: 12.0
 
     ZH4b_UL16_postVFP:
-        passJetMult: 937.0
-        passPreSel: 166.0
-        passDiJetMass: 156.0
-        SR: 127.0
-        SB: 29.0
+        passJetMult: 945.0
+        passPreSel: 942.0
+        passDiJetMass: 155.0
+        SR: 124.0
+        SB: 31.0
         passSvB: 48.0
         failSvB: 10.0
 
     TTToSemiLeptonic_UL18:
-        passJetMult: 885.0
-        passPreSel: 14.0
-        passDiJetMass: 7.0
+        passJetMult: 857.0
+        passPreSel: 819.0
+        passDiJetMass: 5.0
         SR: 1.0
-        SB: 6.0
+        SB: 4.0
         passSvB: 0.0
-        failSvB: 10.0
+        failSvB: 9.0
 
     TTToSemiLeptonic_UL17:
-        passJetMult: 868.0
-        passPreSel: 9.0
-        passDiJetMass: 6.0
-        SR: 2.0
+        passJetMult: 841.0
+        passPreSel: 797.0
+        passDiJetMass: 5.0
+        SR: 1.0
         SB: 4.0
+        passSvB: 0.0
+        failSvB: 4.0
+
+    TTToSemiLeptonic_UL16_preVFP:
+        passJetMult: 874.0
+        passPreSel: 842.0
+        passDiJetMass: 6.0
+        SR: 3.0
+        SB: 3.0
         passSvB: 0.0
         failSvB: 6.0
 
-    TTToSemiLeptonic_UL16_preVFP:
-        passJetMult: 884.0
-        passPreSel: 12.0
-        passDiJetMass: 5.0
-        SR: 3.0
-        SB: 2.0
-        passSvB: 0.0
-        failSvB: 7.0
-
     TTToSemiLeptonic_UL16_postVFP:
-        passJetMult: 869.0
-        passPreSel: 14.0
-        passDiJetMass: 7.0
-        SR: 2.0
-        SB: 5.0
+        passJetMult: 853.0
+        passPreSel: 816.0
+        passDiJetMass: 6.0
+        SR: 3.0
+        SB: 3.0
         passSvB: 0.0
         failSvB: 7.0
 
     TTToHadronic_UL18:
-        passJetMult: 991.0
-        passPreSel: 9.0
+        passJetMult: 981.0
+        passPreSel: 955.0
         passDiJetMass: 5.0
-        SR: 3.0
-        SB: 2.0
+        SR: 4.0
+        SB: 1.0
         passSvB: 0.0
-        failSvB: 3.0
+        failSvB: 4.0
 
     TTToHadronic_UL17:
-        passJetMult: 979.0
-        passPreSel: 7.0
-        passDiJetMass: 4.0
-        SR: 2.0
+        passJetMult: 969.0
+        passPreSel: 932.0
+        passDiJetMass: 3.0
+        SR: 1.0
         SB: 2.0
         passSvB: 0.0
         failSvB: 3.0
 
     TTToHadronic_UL16_preVFP:
-        passJetMult: 993.0
-        passPreSel: 6.0
+        passJetMult: 978.0
+        passPreSel: 956.0
         passDiJetMass: 2.0
         SR: 1.0
         SB: 1.0
@@ -978,80 +978,80 @@ counts4_unit:
         failSvB: 5.0
 
     TTToHadronic_UL16_postVFP:
-        passJetMult: 992.0
-        passPreSel: 8.0
-        passDiJetMass: 5.0
+        passJetMult: 978.0
+        passPreSel: 947.0
+        passDiJetMass: 4.0
         SR: 2.0
-        SB: 3.0
+        SB: 2.0
         passSvB: 0.0
         failSvB: 1.0
 
     TTTo2L2Nu_UL18:
-        passJetMult: 692.0
-        passPreSel: 23.0
+        passJetMult: 677.0
+        passPreSel: 633.0
         passDiJetMass: 7.0
         SR: 2.0
         SB: 5.0
         passSvB: 1.0
-        failSvB: 17.0
+        failSvB: 16.0
 
     TTTo2L2Nu_UL17:
-        passJetMult: 678.0
-        passPreSel: 26.0
+        passJetMult: 650.0
+        passPreSel: 612.0
         passDiJetMass: 12.0
-        SR: 4.0
-        SB: 8.0
+        SR: 5.0
+        SB: 7.0
         passSvB: 0.0
-        failSvB: 12.0
+        failSvB: 13.0
 
     TTTo2L2Nu_UL16_preVFP:
-        passJetMult: 745.0
-        passPreSel: 14.0
+        passJetMult: 702.0
+        passPreSel: 665.0
         passDiJetMass: 7.0
-        SR: 2.0
-        SB: 5.0
+        SR: 0.0
+        SB: 7.0
         passSvB: 0.0
         failSvB: 11.0
 
     TTTo2L2Nu_UL16_postVFP:
-        passJetMult: 693.0
-        passPreSel: 22.0
-        passDiJetMass: 7.0
-        SR: 5.0
+        passJetMult: 676.0
+        passPreSel: 641.0
+        passDiJetMass: 8.0
+        SR: 6.0
         SB: 2.0
         passSvB: 0.0
         failSvB: 17.0
 
     GluGluToHHTo4B_cHHH1_UL18:
-        passJetMult: 1006.0
-        passPreSel: 238.0
-        passDiJetMass: 227.0
-        SR: 193.0
-        SB: 34.0
-        passSvB: 96.0
+        passJetMult: 969.0
+        passPreSel: 960.0
+        passDiJetMass: 219.0
+        SR: 196.0
+        SB: 23.0
+        passSvB: 95.0
         failSvB: 10.0
 
     GluGluToHHTo4B_cHHH1_UL17:
-        passJetMult: 971.0
-        passPreSel: 208.0
-        passDiJetMass: 196.0
-        SR: 164.0
-        SB: 32.0
-        passSvB: 81.0
-        failSvB: 14.0
+        passJetMult: 953.0
+        passPreSel: 943.0
+        passDiJetMass: 191.0
+        SR: 165.0
+        SB: 26.0
+        passSvB: 80.0
+        failSvB: 13.0
 
     GluGluToHHTo4B_cHHH1_UL16_preVFP:
-        passJetMult: 1002.0
-        passPreSel: 155.0
+        passJetMult: 1004.0
+        passPreSel: 997.0
         passDiJetMass: 145.0
-        SR: 123.0
-        SB: 22.0
+        SR: 127.0
+        SB: 18.0
         passSvB: 58.0
         failSvB: 11.0
 
     GluGluToHHTo4B_cHHH1_UL16_postVFP:
-        passJetMult: 977.0
-        passPreSel: 169.0
+        passJetMult: 986.0
+        passPreSel: 980.0
         passDiJetMass: 158.0
         SR: 148.0
         SB: 10.0
@@ -1062,355 +1062,355 @@ counts4_unit:
 
 counts3_unit:
     data_UL18D:
-        passJetMult: 914.0
-        passPreSel: 889.0
-        passDiJetMass: 270.0
-        SR: 103.0
-        SB: 167.0
+        passJetMult: 895.0
+        passPreSel: 869.0
+        passDiJetMass: 250.0
+        SR: 93.0
+        SB: 157.0
         passSvB: 4.0
-        failSvB: 635.0
+        failSvB: 604.0
 
     data_UL18C:
-        passJetMult: 920.0
-        passPreSel: 882.0
-        passDiJetMass: 269.0
-        SR: 102.0
-        SB: 167.0
+        passJetMult: 908.0
+        passPreSel: 900.0
+        passDiJetMass: 262.0
+        SR: 103.0
+        SB: 159.0
         passSvB: 10.0
-        failSvB: 605.0
+        failSvB: 595.0
 
     data_UL18B:
-        passJetMult: 918.0
-        passPreSel: 871.0
-        passDiJetMass: 276.0
-        SR: 120.0
-        SB: 156.0
+        passJetMult: 907.0
+        passPreSel: 879.0
+        passDiJetMass: 264.0
+        SR: 115.0
+        SB: 149.0
         passSvB: 7.0
-        failSvB: 603.0
+        failSvB: 585.0
 
     data_UL18A:
-        passJetMult: 915.0
-        passPreSel: 866.0
-        passDiJetMass: 282.0
-        SR: 115.0
-        SB: 167.0
+        passJetMult: 903.0
+        passPreSel: 878.0
+        passDiJetMass: 266.0
+        SR: 105.0
+        SB: 161.0
         passSvB: 6.0
-        failSvB: 585.0
+        failSvB: 565.0
 
     data_UL17F:
-        passJetMult: 912.0
-        passPreSel: 873.0
-        passDiJetMass: 296.0
-        SR: 118.0
-        SB: 178.0
+        passJetMult: 899.0
+        passPreSel: 875.0
+        passDiJetMass: 278.0
+        SR: 114.0
+        SB: 164.0
         passSvB: 7.0
-        failSvB: 589.0
+        failSvB: 559.0
 
     data_UL17E:
-        passJetMult: 911.0
-        passPreSel: 870.0
-        passDiJetMass: 305.0
-        SR: 102.0
-        SB: 203.0
+        passJetMult: 899.0
+        passPreSel: 875.0
+        passDiJetMass: 290.0
+        SR: 101.0
+        SB: 189.0
         passSvB: 5.0
-        failSvB: 585.0
+        failSvB: 563.0
 
     data_UL17D:
-        passJetMult: 909.0
-        passPreSel: 853.0
-        passDiJetMass: 301.0
-        SR: 118.0
-        SB: 183.0
+        passJetMult: 899.0
+        passPreSel: 888.0
+        passDiJetMass: 292.0
+        SR: 116.0
+        SB: 176.0
         passSvB: 6.0
-        failSvB: 562.0
+        failSvB: 546.0
 
     data_UL17C:
-        passJetMult: 899.0
-        passPreSel: 844.0
-        passDiJetMass: 310.0
-        SR: 108.0
-        SB: 202.0
+        passJetMult: 893.0
+        passPreSel: 869.0
+        passDiJetMass: 293.0
+        SR: 103.0
+        SB: 190.0
         passSvB: 8.0
-        failSvB: 572.0
+        failSvB: 558.0
 
     data_UL16_preVFPE:
-        passJetMult: 940.0
-        passPreSel: 917.0
-        passDiJetMass: 364.0
-        SR: 146.0
-        SB: 218.0
+        passJetMult: 921.0
+        passPreSel: 907.0
+        passDiJetMass: 351.0
+        SR: 134.0
+        SB: 217.0
         passSvB: 7.0
-        failSvB: 632.0
+        failSvB: 606.0
 
     data_UL16_preVFPD:
-        passJetMult: 943.0
-        passPreSel: 914.0
-        passDiJetMass: 390.0
-        SR: 153.0
-        SB: 237.0
+        passJetMult: 916.0
+        passPreSel: 897.0
+        passDiJetMass: 366.0
+        SR: 144.0
+        SB: 222.0
         passSvB: 7.0
-        failSvB: 633.0
+        failSvB: 601.0
 
     data_UL16_preVFPC:
-        passJetMult: 939.0
-        passPreSel: 912.0
-        passDiJetMass: 419.0
-        SR: 159.0
-        SB: 260.0
+        passJetMult: 924.0
+        passPreSel: 917.0
+        passDiJetMass: 408.0
+        SR: 154.0
+        SB: 254.0
         passSvB: 6.0
-        failSvB: 600.0
+        failSvB: 585.0
 
     data_UL16_preVFPB:
-        passJetMult: 945.0
-        passPreSel: 914.0
-        passDiJetMass: 387.0
-        SR: 141.0
-        SB: 246.0
+        passJetMult: 926.0
+        passPreSel: 907.0
+        passDiJetMass: 366.0
+        SR: 135.0
+        SB: 231.0
         passSvB: 3.0
-        failSvB: 639.0
+        failSvB: 616.0
 
     data_UL16_postVFPH:
-        passJetMult: 941.0
-        passPreSel: 906.0
-        passDiJetMass: 417.0
-        SR: 167.0
-        SB: 250.0
-        passSvB: 7.0
-        failSvB: 613.0
+        passJetMult: 913.0
+        passPreSel: 892.0
+        passDiJetMass: 391.0
+        SR: 148.0
+        SB: 243.0
+        passSvB: 6.0
+        failSvB: 586.0
 
     data_UL16_postVFPG:
-        passJetMult: 962.0
-        passPreSel: 932.0
-        passDiJetMass: 406.0
-        SR: 149.0
-        SB: 257.0
+        passJetMult: 951.0
+        passPreSel: 940.0
+        passDiJetMass: 400.0
+        SR: 152.0
+        SB: 248.0
         passSvB: 7.0
-        failSvB: 652.0
+        failSvB: 638.0
 
     data_UL16_postVFPF:
-        passJetMult: 940.0
-        passPreSel: 925.0
-        passDiJetMass: 403.0
-        SR: 137.0
-        SB: 266.0
+        passJetMult: 904.0
+        passPreSel: 889.0
+        passDiJetMass: 369.0
+        SR: 122.0
+        SB: 247.0
         passSvB: 3.0
-        failSvB: 683.0
+        failSvB: 645.0
 
     ZZ4b_UL18:
-        passJetMult: 907.0
-        passPreSel: 777.0
-        passDiJetMass: 496.0
-        SR: 306.0
-        SB: 190.0
-        passSvB: 69.0
-        failSvB: 205.0
+        passJetMult: 861.0
+        passPreSel: 844.0
+        passDiJetMass: 463.0
+        SR: 289.0
+        SB: 174.0
+        passSvB: 71.0
+        failSvB: 190.0
 
     ZZ4b_UL17:
-        passJetMult: 926.0
-        passPreSel: 793.0
-        passDiJetMass: 501.0
-        SR: 310.0
-        SB: 191.0
-        passSvB: 58.0
-        failSvB: 218.0
+        passJetMult: 886.0
+        passPreSel: 874.0
+        passDiJetMass: 479.0
+        SR: 304.0
+        SB: 175.0
+        passSvB: 53.0
+        failSvB: 206.0
 
     ZZ4b_UL16_preVFP:
-        passJetMult: 953.0
-        passPreSel: 833.0
-        passDiJetMass: 555.0
-        SR: 325.0
-        SB: 230.0
-        passSvB: 59.0
-        failSvB: 320.0
+        passJetMult: 924.0
+        passPreSel: 911.0
+        passDiJetMass: 529.0
+        SR: 309.0
+        SB: 220.0
+        passSvB: 58.0
+        failSvB: 305.0
 
     ZZ4b_UL16_postVFP:
-        passJetMult: 947.0
-        passPreSel: 836.0
-        passDiJetMass: 547.0
+        passJetMult: 960.0
+        passPreSel: 954.0
+        passDiJetMass: 560.0
         SR: 342.0
-        SB: 205.0
-        passSvB: 66.0
-        failSvB: 275.0
+        SB: 218.0
+        passSvB: 65.0
+        failSvB: 283.0
 
     ZH4b_UL18:
-        passJetMult: 915.0
-        passPreSel: 741.0
-        passDiJetMass: 553.0
-        SR: 361.0
-        SB: 192.0
-        passSvB: 125.0
-        failSvB: 154.0
+        passJetMult: 882.0
+        passPreSel: 869.0
+        passDiJetMass: 532.0
+        SR: 331.0
+        SB: 201.0
+        passSvB: 115.0
+        failSvB: 146.0
 
     ZH4b_UL17:
-        passJetMult: 919.0
-        passPreSel: 732.0
-        passDiJetMass: 539.0
-        SR: 361.0
-        SB: 178.0
+        passJetMult: 908.0
+        passPreSel: 898.0
+        passDiJetMass: 527.0
+        SR: 354.0
+        SB: 173.0
         passSvB: 131.0
-        failSvB: 154.0
+        failSvB: 150.0
 
     ZH4b_UL16_preVFP:
-        passJetMult: 944.0
-        passPreSel: 789.0
-        passDiJetMass: 600.0
-        SR: 385.0
-        SB: 215.0
+        passJetMult: 925.0
+        passPreSel: 912.0
+        passDiJetMass: 580.0
+        SR: 382.0
+        SB: 198.0
         passSvB: 105.0
-        failSvB: 205.0
+        failSvB: 198.0
 
     ZH4b_UL16_postVFP:
-        passJetMult: 937.0
-        passPreSel: 765.0
-        passDiJetMass: 591.0
-        SR: 425.0
-        SB: 166.0
-        passSvB: 123.0
-        failSvB: 186.0
+        passJetMult: 945.0
+        passPreSel: 942.0
+        passDiJetMass: 599.0
+        SR: 428.0
+        SB: 171.0
+        passSvB: 124.0
+        failSvB: 190.0
 
     TTToSemiLeptonic_UL18:
-        passJetMult: 885.0
-        passPreSel: 840.0
-        passDiJetMass: 518.0
-        SR: 262.0
-        SB: 256.0
+        passJetMult: 857.0
+        passPreSel: 819.0
+        passDiJetMass: 488.0
+        SR: 250.0
+        SB: 238.0
         passSvB: 19.0
-        failSvB: 333.0
+        failSvB: 335.0
 
     TTToSemiLeptonic_UL17:
-        passJetMult: 868.0
-        passPreSel: 829.0
-        passDiJetMass: 467.0
-        SR: 229.0
-        SB: 238.0
-        passSvB: 15.0
-        failSvB: 370.0
+        passJetMult: 841.0
+        passPreSel: 797.0
+        passDiJetMass: 437.0
+        SR: 219.0
+        SB: 218.0
+        passSvB: 13.0
+        failSvB: 356.0
 
     TTToSemiLeptonic_UL16_preVFP:
-        passJetMult: 884.0
-        passPreSel: 851.0
-        passDiJetMass: 477.0
-        SR: 252.0
-        SB: 225.0
+        passJetMult: 874.0
+        passPreSel: 842.0
+        passDiJetMass: 466.0
+        SR: 248.0
+        SB: 218.0
         passSvB: 10.0
-        failSvB: 416.0
+        failSvB: 409.0
 
     TTToSemiLeptonic_UL16_postVFP:
-        passJetMult: 869.0
-        passPreSel: 829.0
-        passDiJetMass: 489.0
-        SR: 246.0
-        SB: 243.0
-        passSvB: 20.0
-        failSvB: 408.0
+        passJetMult: 853.0
+        passPreSel: 816.0
+        passDiJetMass: 467.0
+        SR: 232.0
+        SB: 235.0
+        passSvB: 19.0
+        failSvB: 393.0
 
     TTToHadronic_UL18:
-        passJetMult: 991.0
-        passPreSel: 962.0
-        passDiJetMass: 711.0
-        SR: 388.0
-        SB: 323.0
-        passSvB: 29.0
-        failSvB: 269.0
-
-    TTToHadronic_UL17:
-        passJetMult: 979.0
-        passPreSel: 949.0
-        passDiJetMass: 691.0
-        SR: 396.0
-        SB: 295.0
-        passSvB: 38.0
+        passJetMult: 981.0
+        passPreSel: 955.0
+        passDiJetMass: 699.0
+        SR: 394.0
+        SB: 305.0
+        passSvB: 28.0
         failSvB: 267.0
 
+    TTToHadronic_UL17:
+        passJetMult: 969.0
+        passPreSel: 932.0
+        passDiJetMass: 686.0
+        SR: 390.0
+        SB: 296.0
+        passSvB: 39.0
+        failSvB: 254.0
+
     TTToHadronic_UL16_preVFP:
-        passJetMult: 993.0
-        passPreSel: 971.0
-        passDiJetMass: 705.0
-        SR: 373.0
-        SB: 332.0
+        passJetMult: 978.0
+        passPreSel: 956.0
+        passDiJetMass: 689.0
+        SR: 374.0
+        SB: 315.0
         passSvB: 18.0
-        failSvB: 344.0
+        failSvB: 330.0
 
     TTToHadronic_UL16_postVFP:
-        passJetMult: 992.0
-        passPreSel: 974.0
-        passDiJetMass: 708.0
-        SR: 388.0
-        SB: 320.0
+        passJetMult: 978.0
+        passPreSel: 947.0
+        passDiJetMass: 682.0
+        SR: 361.0
+        SB: 321.0
         passSvB: 19.0
-        failSvB: 344.0
+        failSvB: 323.0
 
     TTTo2L2Nu_UL18:
-        passJetMult: 692.0
-        passPreSel: 615.0
-        passDiJetMass: 270.0
-        SR: 120.0
-        SB: 150.0
-        passSvB: 8.0
-        failSvB: 365.0
+        passJetMult: 677.0
+        passPreSel: 633.0
+        passDiJetMass: 265.0
+        SR: 117.0
+        SB: 148.0
+        passSvB: 10.0
+        failSvB: 361.0
 
     TTTo2L2Nu_UL17:
-        passJetMult: 678.0
-        passPreSel: 617.0
-        passDiJetMass: 263.0
-        SR: 106.0
-        SB: 157.0
-        passSvB: 8.0
-        failSvB: 374.0
+        passJetMult: 650.0
+        passPreSel: 612.0
+        passDiJetMass: 242.0
+        SR: 102.0
+        SB: 140.0
+        passSvB: 6.0
+        failSvB: 353.0
 
     TTTo2L2Nu_UL16_preVFP:
-        passJetMult: 745.0
-        passPreSel: 709.0
-        passDiJetMass: 278.0
-        SR: 123.0
-        SB: 155.0
+        passJetMult: 702.0
+        passPreSel: 665.0
+        passDiJetMass: 251.0
+        SR: 112.0
+        SB: 139.0
         passSvB: 1.0
-        failSvB: 456.0
+        failSvB: 416.0
 
     TTTo2L2Nu_UL16_postVFP:
-        passJetMult: 693.0
-        passPreSel: 643.0
-        passDiJetMass: 257.0
-        SR: 112.0
-        SB: 145.0
-        passSvB: 9.0
-        failSvB: 421.0
+        passJetMult: 676.0
+        passPreSel: 641.0
+        passDiJetMass: 241.0
+        SR: 99.0
+        SB: 142.0
+        passSvB: 10.0
+        failSvB: 410.0
 
     GluGluToHHTo4B_cHHH1_UL18:
-        passJetMult: 1006.0
-        passPreSel: 764.0
-        passDiJetMass: 522.0
-        SR: 354.0
-        SB: 168.0
+        passJetMult: 969.0
+        passPreSel: 960.0
+        passDiJetMass: 495.0
+        SR: 344.0
+        SB: 151.0
         passSvB: 122.0
-        failSvB: 194.0
+        failSvB: 184.0
 
     GluGluToHHTo4B_cHHH1_UL17:
-        passJetMult: 971.0
-        passPreSel: 761.0
-        passDiJetMass: 517.0
-        SR: 360.0
-        SB: 157.0
-        passSvB: 121.0
-        failSvB: 191.0
+        passJetMult: 953.0
+        passPreSel: 943.0
+        passDiJetMass: 499.0
+        SR: 356.0
+        SB: 143.0
+        passSvB: 120.0
+        failSvB: 183.0
 
     GluGluToHHTo4B_cHHH1_UL16_preVFP:
-        passJetMult: 1002.0
-        passPreSel: 840.0
-        passDiJetMass: 576.0
-        SR: 427.0
-        SB: 149.0
+        passJetMult: 1004.0
+        passPreSel: 997.0
+        passDiJetMass: 581.0
+        SR: 425.0
+        SB: 156.0
         passSvB: 144.0
         failSvB: 215.0
 
     GluGluToHHTo4B_cHHH1_UL16_postVFP:
-        passJetMult: 977.0
-        passPreSel: 795.0
-        passDiJetMass: 563.0
-        SR: 433.0
-        SB: 130.0
+        passJetMult: 986.0
+        passPreSel: 980.0
+        passDiJetMass: 577.0
+        SR: 437.0
+        SB: 140.0
         passSvB: 169.0
-        failSvB: 197.0
+        failSvB: 203.0
 
 
 

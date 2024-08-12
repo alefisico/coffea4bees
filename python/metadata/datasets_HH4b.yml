@@ -520,11 +520,11 @@ datasets:
     UL16_preVFP:
       lumi: 19.5e3
       nanoAOD:
-        B: /BtagCSV/Run2016B-ver2_HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
-        C: /BtagCSV/Run2016C-HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
-        D: /BtagCSV/Run2016D-HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
-        E: /BtagCSV/Run2016E-HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
-        F: /BtagCSV/Run2016F-HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
+        B: /BTagCSV/Run2016B-ver2_HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
+        C: /BTagCSV/Run2016C-HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
+        D: /BTagCSV/Run2016D-HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
+        E: /BTagCSV/Run2016E-HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
+        F: /BTagCSV/Run2016F-HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
       picoAOD:
         B:
           files:
@@ -544,11 +544,11 @@ datasets:
     UL17:
       lumi: 41.5e3
       nanoAOD:
-        B: /BtagCSV/Run2017B-UL2017_MiniAODv2_NanoAODv9-v1/NANOAOD
-        C: /BtagCSV/Run2017C-UL2017_MiniAODv2_NanoAODv9-v1/NANOAOD
-        D: /BtagCSV/Run2017D-UL2017_MiniAODv2_NanoAODv9-v1/NANOAOD
-        E: /BtagCSV/Run2017E-UL2017_MiniAODv2_NanoAODv9-v1/NANOAOD
-        F: /BtagCSV/Run2017F-UL2017_MiniAODv2_NanoAODv9-v1/NANOAOD
+        B: /BTagCSV/Run2017B-UL2017_MiniAODv2_NanoAODv9-v1/NANOAOD
+        C: /BTagCSV/Run2017C-UL2017_MiniAODv2_NanoAODv9-v1/NANOAOD
+        D: /BTagCSV/Run2017D-UL2017_MiniAODv2_NanoAODv9-v1/NANOAOD
+        E: /BTagCSV/Run2017E-UL2017_MiniAODv2_NanoAODv9-v1/NANOAOD
+        F: /BTagCSV/Run2017F-UL2017_MiniAODv2_NanoAODv9-v1/NANOAOD
       picoAOD:
         C:
           files:
@@ -599,9 +599,13 @@ datasets:
       lumi: 59.8e3
       trigger:
       - PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepCSV_4p5
+
+
   data_3b_for_mixed:
     '2016':
       picoAOD:
+        FvT_file_kfold_template: root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//data2016_3b/FvT_3bDvTMix4bDvT_vXXX_newSBDefSeedAll45.root
+        FvT_name_kfold_template: FvT_3bDvTMix4bDvT_vXXX_newSBDefSeedAve
         FvT_file_template: root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//data2016_3b/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
         FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
         JCM_load_template: 3bDvTMix4bDvT_vXXX
@@ -609,6 +613,8 @@ datasets:
         - root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//data2016_3b/picoAOD_3b_wJCM_newSBDef.root
     '2017':
       picoAOD:
+        FvT_file_kfold_template: root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//data2017_3b/FvT_3bDvTMix4bDvT_vXXX_newSBDefSeedAll45.root
+        FvT_name_kfold_template: FvT_3bDvTMix4bDvT_vXXX_newSBDefSeedAve
         FvT_file_template: root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//data2017_3b/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
         FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
         JCM_load_template: 3bDvTMix4bDvT_vXXX
@@ -616,12 +622,16 @@ datasets:
         - root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//data2017_3b/picoAOD_3b_wJCM_newSBDef.root
     '2018':
       picoAOD:
+        FvT_file_kfold_template: root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//data2018_3b/FvT_3bDvTMix4bDvT_vXXX_newSBDefSeedAll45.root
+        FvT_name_kfold_template: FvT_3bDvTMix4bDvT_vXXX_newSBDefSeedAve
         FvT_file_template: root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//data2018_3b/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
         FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
         JCM_load_template: 3bDvTMix4bDvT_vXXX
         files:
         - root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//data2018_3b/picoAOD_3b_wJCM_newSBDef.root
     nSamples: 15
+    use_kfold: True
+
   ggZH4b:
     UL16_postVFP:
       nanoAOD: /dataset/dataset/NANOAODSIM

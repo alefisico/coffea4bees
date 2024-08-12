@@ -107,6 +107,11 @@ def print_list_debug_info(process, tag, cut, region):
           f"_reg={region}")
 
 
+def get_label(default_str, override_list, i):
+    return override_list[i] if (override_list and len(override_list) > i) else default_str
+
+
+
 #
 #  Get hist from input file(s)
 #
@@ -129,7 +134,10 @@ def get_hist(cfg, config, var, region, cut, rebin, file_index=None, debug=False)
     if type(codes["region"][region]) is list:
         region_dict = {"region":  [hist.loc(r) for r in codes["region"][region]]}
     else:
-        region_dict = {"region":  hist.loc(codes["region"][region])}
+        if region == "sum":
+            region_dict = {"region":  sum}
+        else:
+            region_dict = {"region":  hist.loc(codes["region"][region])}
 
     cut_dict = get_cut_dict(cut, cfg.cutList)
 
@@ -265,11 +273,11 @@ def _draw_plot(hist_list, stack_dict, **kwargs):
         _plot_options = {"density":  norm,
                          "label":    hist_config.get("label", ""),
                          "color":    hist_config.get('fillcolor', 'k'),
-                         "histtype": hist_config.get("histtype", "errorbar"),
+                         "histtype": kwargs.get("histtype", hist_config.get("histtype", "errorbar")),
                          "yerr": False,
                          }
 
-        if hist_config.get("histtype", "errorbar") in ["errorbar"]:
+        if kwargs.get("histtype", hist_config.get("histtype", "errorbar")) in ["errorbar"]:
             _plot_options["markersize"] = 12
             _plot_options["yerr"] = True
 
@@ -340,6 +348,7 @@ def _plot(hist_list, stack_dict, plotConfig, **kwargs):
     ax = fig.gca()
     hep.cms.label("Internal", data=True,
                   year=kwargs['year'].replace("UL", "20"), loc=0, ax=ax)
+
 
     return fig, ax
 
@@ -437,11 +446,12 @@ def _plot_ratio(hist_list, stack_dict, ratio_list, **kwargs):
 def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
 
     if kwargs.get("debug", False):
-        print(f" hist process={process}, "
+        print(f" in _makeHistFromList hist process={process}, "
               f"cut={cut}")
 
     rebin = kwargs.get("rebin", 1)
     var_over_ride = kwargs.get("var_over_ride", {})
+    label_override = kwargs.get("labels", None)
 
     #
     #  Unstacked hists
@@ -468,8 +478,8 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
 
             _process_config = copy.copy(process_config)
             _process_config["fillcolor"] = _colors[ic]
-            _process_config["label"]     = process_config["label"] + " " + _cut
-            _process_config["histtype"]  = "errorbar"
+            _process_config["label"]     = get_label(f"{process_config['label']} { _cut}", label_override, ic)
+            _process_config["histtype"]  = kwargs.get("histtype","errorbar")
 
             _hist = get_hist(cfg, _process_config,
                              var=var_to_plot, region=region, cut=_cut, rebin=rebin,
@@ -488,8 +498,8 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
 
             _process_config = copy.copy(process_config)
             _process_config["fillcolor"] = _colors[ir]
-            _process_config["label"]     = f"{_process_config['label']} {_reg}"
-            _process_config["histtype"]  = "errorbar"
+            _process_config["label"]     = get_label(f"{process_config['label']} { _reg}", label_override, ir)
+            _process_config["histtype"]  = kwargs.get("histtype","errorbar")
 
             _hist = get_hist(cfg, _process_config,
                              var=var_to_plot, region=_reg, cut=cut, rebin=rebin,
@@ -511,12 +521,14 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
             _process_config = copy.copy(process_config)
             _process_config["fillcolor"] = _colors[iF]
 
-            if iF < len(fileLabels):
+            if label_override:
+                _process_config["label"] = label_override[iF]
+            elif iF < len(fileLabels):
                 _process_config["label"] = _process_config["label"] + " " + fileLabels[iF]
             else:
                 _process_config["label"] = _process_config["label"] + " file" + str(iF + 1)
 
-            _process_config["histtype"]  = "errorbar"
+            _process_config["histtype"]  = kwargs.get("histtype","errorbar")
 
             _hist = get_hist(cfg, _process_config,
                              var=var_to_plot, region=region, cut=cut, rebin=rebin,
@@ -536,7 +548,7 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
 
             _process_config = copy.copy(_proc_conf)
             _process_config["fillcolor"] = _proc_conf.get("fillcolor", None).replace("yellow", "orange")
-            _process_config["histtype"]  = "errorbar"
+            _process_config["histtype"]  = kwargs.get("histtype","errorbar")
 
             var_to_plot = var_over_ride.get(_proc_conf["process"], var)
 
@@ -557,8 +569,8 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
 
             _process_config = copy.copy(process_config)
             _process_config["fillcolor"] = _colors[iv]
-            _process_config["label"]     = f"{_process_config['label']} {_var}"
-            _process_config["histtype"]  = "errorbar"
+            _process_config["label"]     = get_label(f"{process_config['label']} { _var}", label_override, iv)
+            _process_config["histtype"]  = kwargs.get("histtype","errorbar")
 
             _hist = get_hist(cfg, _process_config,
                              var=_var, region=region, cut=cut, rebin=rebin,
@@ -575,7 +587,7 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
     yearStr = get_value_nested_dict(cfg.plotConfig, "year", default="RunII")
     kwargs["year"] = yearStr
 
-    if kwargs.get("doRatio", False):
+    if kwargs.get("doRatio", kwargs.get("doratio", False)):
 
         ratio_plots = []
 
@@ -753,7 +765,7 @@ def makePlot(cfg, var='selJets.pt',
     #
     #  Config Ratios
     #
-    if kwargs.get("doRatio", False):
+    if kwargs.get("doRatio", kwargs.get("doratio", False)):
         ratio_config = cfg.plotConfig["ratios"]
         ratio_plots = []
 

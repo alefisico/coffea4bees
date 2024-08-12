@@ -1,9 +1,8 @@
-import os, sys
+import os
 import ROOT
 import argparse
 import logging
 import json
-import numpy as np
 ROOT.gROOT.SetBatch(True)
 
 
@@ -22,7 +21,6 @@ def json_to_TH1( coffea_hist, iname, rebin ):
     rHist = ROOT.TH1F(iname, iname, len(centers), edges[0], edges[-1])
     rHist.Sumw2()
 
-
     rHist.SetBinContent(0, underflow_value)
     rHist.SetBinError(0, ROOT.TMath.Sqrt(underflow_variance))
 
@@ -37,7 +35,7 @@ def json_to_TH1( coffea_hist, iname, rebin ):
 
     return rHist
 
-def create_root_file(file_to_convert, histos, output_dir):
+def create_root_file(file_to_convert, _, output_dir):
     logging.info( "in create_root_file")
     coffea_hists = json.load(open(file_to_convert, 'r'))
     logging.info( "leaded coffea_hists")

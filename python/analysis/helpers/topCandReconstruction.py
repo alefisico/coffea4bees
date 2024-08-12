@@ -133,28 +133,28 @@ def find_tops_no_numba(events_jest):
 
 def dumpTopCandidateTestVectors(event, logging, chunk, nEvent):
 
-    logging.info(f'{chunk}\n\n')
-    logging.info(f'{chunk} self.input_jet_pt  = {[event[iE].Jet[event[iE].Jet.selected].pt.tolist() for iE in range(nEvent)]}')
-    logging.info(f'{chunk} self.input_jet_eta = {[event[iE].Jet[event[iE].Jet.selected].eta.tolist() for iE in range(nEvent)]}')
-    logging.info(f'{chunk} self.input_jet_phi = {[event[iE].Jet[event[iE].Jet.selected].phi.tolist() for iE in range(nEvent)]}')
-    logging.info(f'{chunk} self.input_jet_mass = {[event[iE].Jet[event[iE].Jet.selected].mass.tolist() for iE in range(nEvent)]}')
-    logging.info(f'{chunk} self.input_jet_btagDeepFlavB = {[event[iE].Jet[event[iE].Jet.selected].btagDeepFlavB.tolist() for iE in range(nEvent)]}')
-    logging.info(f'{chunk} self.input_jet_bRegCorr = {[event[iE].Jet[event[iE].Jet.selected].bRegCorr.tolist() for iE in range(nEvent)]}')
-    logging.info(f'{chunk} self.output_xbW = {[event[iE].xbW for iE in range(nEvent)]}')
-    logging.info(f'{chunk} self.output_xW = {[event[iE].xW for iE in range(nEvent)]}')
-    logging.info(f'{chunk}\n\n')
+#    logging.info(f'{chunk}\n\n')
+#    logging.info(f'{chunk} self.input_jet_pt  = {[event[iE].Jet[event[iE].Jet.selected].pt.tolist() for iE in range(nEvent)]}')
+#    logging.info(f'{chunk} self.input_jet_eta = {[event[iE].Jet[event[iE].Jet.selected].eta.tolist() for iE in range(nEvent)]}')
+#    logging.info(f'{chunk} self.input_jet_phi = {[event[iE].Jet[event[iE].Jet.selected].phi.tolist() for iE in range(nEvent)]}')
+#    logging.info(f'{chunk} self.input_jet_mass = {[event[iE].Jet[event[iE].Jet.selected].mass.tolist() for iE in range(nEvent)]}')
+#    logging.info(f'{chunk} self.input_jet_btagDeepFlavB = {[event[iE].Jet[event[iE].Jet.selected].btagDeepFlavB.tolist() for iE in range(nEvent)]}')
+#    logging.info(f'{chunk} self.input_jet_bRegCorr = {[event[iE].Jet[event[iE].Jet.selected].bRegCorr.tolist() for iE in range(nEvent)]}')
+#    logging.info(f'{chunk} self.output_xbW = {[event[iE].xbW for iE in range(nEvent)]}')
+#    logging.info(f'{chunk} self.output_xW = {[event[iE].xW for iE in range(nEvent)]}')
+#    logging.info(f'{chunk}\n\n')
 
+    print(f'{chunk}\n\n')
+    print(f'{chunk} self.input_jet_pt  = {[event[iE].Jet[event[iE].Jet.selected].pt.tolist() for iE in range(nEvent)]}')
+    print(f'{chunk} self.input_jet_eta = {[event[iE].Jet[event[iE].Jet.selected].eta.tolist() for iE in range(nEvent)]}')
+    print(f'{chunk} self.input_jet_phi = {[event[iE].Jet[event[iE].Jet.selected].phi.tolist() for iE in range(nEvent)]}')
+    print(f'{chunk} self.input_jet_mass = {[event[iE].Jet[event[iE].Jet.selected].mass.tolist() for iE in range(nEvent)]}')
+    print(f'{chunk} self.input_jet_btagDeepFlavB = {[event[iE].Jet[event[iE].Jet.selected].btagDeepFlavB.tolist() for iE in range(nEvent)]}')
+    print(f'{chunk} self.input_jet_bRegCorr = {[event[iE].Jet[event[iE].Jet.selected].bRegCorr.tolist() for iE in range(nEvent)]}')
+    print(f'{chunk} self.output_xbW = {[event[iE].xbW for iE in range(nEvent)]}')
+    print(f'{chunk} self.output_xW = {[event[iE].xW for iE in range(nEvent)]}')
+    print(f'{chunk}\n\n')
 
-#    for iEvent in range(nEvent):
-#        logging.info(f'{chunk} event idx ={iEvent} selectedJets pt {event[iEvent].Jet[event[iEvent].Jet.selected].pt}\n')
-#        logging.info(f'{chunk} event idx ={iEvent} selectedJets eta {event[iEvent].Jet[event[iEvent].Jet.selected].eta}\n')
-#        logging.info(f'{chunk} event idx ={iEvent} selectedJets phi {event[iEvent].Jet[event[iEvent].Jet.selected].phi}\n')
-#        logging.info(f'{chunk} event idx ={iEvent} selectedJets mass {event[iEvent].Jet[event[iEvent].Jet.selected].mass}\n')
-#        logging.info(f'{chunk} event idx ={iEvent} selectedJets btagDeepFlavB {event[iEvent].Jet[event[iEvent].Jet.selected].btagDeepFlavB}\n')
-#        logging.info(f'{chunk} event idx ={iEvent} selectedJets bRegCorr {event[iEvent].Jet[event[iEvent].Jet.selected].bRegCorr}\n')
-#        logging.info(f'{chunk} event idx ={iEvent} xbW {event[iEvent].xbW}\n')
-#        logging.info(f'{chunk} event idx ={iEvent} xW {event[iEvent].xW}\n')
-#        logging.info(f'{chunk}\n event idx ={iEvent} xW {event[iEvent].xW}\n')
 
 
 def buildTop(input_jets, top_cand_idx):
@@ -169,17 +169,17 @@ def buildTop(input_jets, top_cand_idx):
     })
 
 
-    
+
     W_p = top_cands[1] + top_cands[2]
 
     rec_top_cands["xW"] = (W_p.mass - mW) / (0.10 * W_p.mass)
     W_p = W_p * (mW / W_p.mass)
- 
-    bReg_p = top_cands[0] * top_cands[0].bRegCorr 
+
+    bReg_p = top_cands[0] * top_cands[0].bRegCorr
     mbW = (bReg_p + W_p).mass
     W_p = None
     bReg_p = None
-    
+
     #
     # smaller resolution term because there are fewer degrees of freedom. FWHM=25GeV, about the same as mW
     #

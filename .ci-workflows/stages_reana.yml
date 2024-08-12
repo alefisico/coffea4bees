@@ -1,0 +1,12 @@
+reana-job:
+  stage: reana
+  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:reana_latest
+  tags:
+    - k8s-cvmfs
+  script:
+    - source .ci-workflows/reana-job.sh
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_PIPELINE_SOURCE == "push"
+      when: never
+  allow_failure: true

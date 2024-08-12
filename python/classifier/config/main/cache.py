@@ -6,7 +6,6 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 import fsspec
-from classifier.nn.dataset import skim_loader
 from classifier.task import ArgParser, EntryPoint, converter
 
 from ..setting import IO as IOSetting
@@ -53,8 +52,9 @@ class Main(LoadTrainingSets):
         default=1,
         help="the maximum number of files to write in parallel",
     )
-    argparser.remove_argument("--save-state")
-    defaults = {"save_state": True}
+    argparser.add_argument(
+        "--states", action="extend", nargs="+", help="states to cache", default=[]
+    )
 
     def run(self, parser: EntryPoint):
         from concurrent.futures import ProcessPoolExecutor as Pool
@@ -62,6 +62,15 @@ class Main(LoadTrainingSets):
         import numpy as np
         from classifier.process import status
 
+        # cache states
+        states = dict.fromkeys(self.opts.states, None)
+        if states:
+            logging.info(f"The following states will be cached {sorted(states)}")
+            for state in states:
+                mod, var = state.rsplit(".", 1)
+                mod = EntryPoint._fetch_module(mod, "state")[1]
+                states[state] = getattr(mod, var)
+        # cache datasets
         datasets = self.load_training_sets(parser)
         size = len(datasets)
         chunks = np.arange(size)
@@ -89,12 +98,12 @@ class Main(LoadTrainingSets):
         logging.info(
             f"Wrote {size} entries to {len(chunks)} files in {datetime.now() - timer}"
         )
-
         return {
             "size": size,
             "chunksize": chunksize,
             "shuffle": self.opts.shuffle,
             "compression": self.opts.compression,
+            "states": states,
         }
 
 
@@ -106,6 +115,7 @@ class _save_cache:
 
     def __call__(self, args: tuple[int, npt.ArrayLike]):
         import torch
+        from classifier.nn.dataset import skim_loader
         from torch.utils.data import Subset
 
         chunk, indices = args

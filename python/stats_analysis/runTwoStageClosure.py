@@ -22,6 +22,52 @@ COLORS = ['xkcd:purple', 'xkcd:green', 'xkcd:blue', 'xkcd:teal', 'xkcd:orange', 
 ROOT.gROOT.SetBatch(True)
 matplotlib.use('Agg')
 
+
+regionName = {'SB': 'Sideband',
+              'CR': 'Control Region',
+              'SR': 'Signal Region',
+              'notSR': 'Sideband',
+              'SRNoHH': 'Signal Region (Veto HH)',
+}
+
+# BEs = [                                                 '1',
+#                                                    '2*x-1',
+#                                             '6*x^2 -6*x+1',
+#                                    '20*x^3 -30*x^2+12*x-1',
+#                           '70*x^4 -140*x^3 +90*x^2-20*x+1',
+#                 '252*x^5 -630*x^4 +560*x^3-210*x^2+30*x-1',
+#        '924*x^6-2772*x^5+3150*x^4-1680*x^3+420*x^2-42*x+1',
+#                                           '3432*x^7-  12012*x^6+ 16632*x^5- 11550*x^4+ 4200*x^3- 756*x^2+ 56*x-1',
+#                              '12870*x^8-  51480*x^7+  84084*x^6- 72072*x^5+ 34650*x^4- 9240*x^3+1260*x^2- 72*x+1',
+#                  '48620*x^9- 218790*x^8+ 411840*x^7- 420420*x^6+252252*x^5- 90090*x^4+18480*x^3-1980*x^2+ 90*x-1',
+#     '184756*x^10-923780*x^9+1969110*x^8-2333760*x^7+1681680*x^6-756756*x^5+210210*x^4-34320*x^3+2970*x^2-110*x+1',
+#        ]
+
+
+BEs = ['1',             # 0
+       'sin(1*pi*x)',   # 1
+       'cos(1*pi*x)',   # 2
+       'sin(2*pi*x)',   # 3
+       'cos(2*pi*x)',   # 4
+       'sin(3*pi*x)',   # 5
+       'cos(3*pi*x)',   # 6
+       'sin(4*pi*x)',   # 7
+       'cos(4*pi*x)',   # 8
+       'sin(5*pi*x)',   # 9
+       'cos(5*pi*x)',   # 10
+]
+
+BE = []
+for i, s in enumerate(BEs):
+    BE.append( ROOT.TF1('BE%d' % i, s, 0, 1) )
+
+
+
+def print_log(string):
+    print(string)
+    log_file.write(string+"\n")
+
+
 def exists(path):
     if "root://" in path:
         url, path = parseXRD(path)
@@ -64,13 +110,14 @@ def mkpath(path, doExecute=True, debug=False):
         mkdir(thisDir, doExecute)
 
 
-def combine_hists(input_file, hist_template, procs, years):
+def combine_hists(input_file, hist_template, procs, years, debug=False):
     hist = None
 
     for p in procs:
         hist_name_proc = hist_template.replace("PROC", p)
 
         for iy, y in enumerate(years):
+            if debug: print(f"y is {y} {years}")
             hist_name = hist_name_proc.replace("YEAR", y)
 
             if hist is None:
@@ -78,7 +125,8 @@ def combine_hists(input_file, hist_template, procs, years):
                 if type(input_file) is list:
                     hist =  input_file[iy].Get(hist_name).Clone()
                 else:
-                    if args.debug: print(f"getting {hist_name} from {input_file}")
+                    if debug: print(f"getting {hist_name} from {input_file}")
+                    if debug: input_file.ls()
                     hist =  input_file.Get(hist_name).Clone()
             else:
                 # print(f"reading {hist_name}")
@@ -88,6 +136,72 @@ def combine_hists(input_file, hist_template, procs, years):
                     hist.Add( input_file.Get(hist_name).Clone() )
 
     return hist
+
+
+def writeYears(f, input_file_data3b, input_file_TT, input_file_mix, mix, channel):
+
+
+    years=["2016", "2017", "2018"]
+
+    for y in years:
+        directory = f"{mix}/{channel}{y}"
+        f.mkdir(directory)
+
+
+        #
+        # data_obs
+        #
+        var_name = args.var.replace("XXX", channel)
+
+        mix_number = mix.replace(f"{args.mix_name}_v", "")
+
+        hist_data_obs = combine_hists(input_file_mix,
+                                      f"{var_name}_PROC_YEAR_fourTag_SR",
+                                      years=[y],
+                                      procs=[f"mix_v{mix_number}"],
+                                      debug=args.debug)
+
+        f.cd(directory)
+        hist_data_obs.SetName("data_obs")
+        hist_data_obs.Write()
+
+        #
+        # multijet
+        #
+        var_name_multijet = var_name.replace("SvB_ps", f"SvB_FvT_{mix}_newSBDef_ps")
+        if args.use_kfold:
+            var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDefSeedAve_ps")
+        else:
+            var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDef_ps")
+        
+        
+
+        hist_multijet = combine_hists(input_file_data3b,
+                                      f"{var_name_multijet}_PROC_YEAR_threeTag_SR",
+                                      years=[y],
+                                      procs=["data_3b_for_mixed"], 
+                                      debug=args.debug)
+
+        f.cd(directory)
+        hist_multijet.SetName("multijet")
+        hist_multijet.Write()
+
+#    #
+#    # TTBar
+#    #
+#    ttbar_procs = ["TTTo2L2Nu", "TTToHadronic", "TTToSemiLeptonic"]
+#
+#    hist_ttbar = combine_hists(input_file_TT,
+#                               f"{var_name}_PROC_YEAR_fourTag_SR",
+#                               years=["UL16_preVFP", "UL16_postVFP", "UL17", "UL18"],
+#                               procs=["TTTo2L2Nu_for_mixed", "TTToHadronic_for_mixed", "TTToSemiLeptonic_for_mixed"])
+#
+#    f.cd(directory)
+#    hist_ttbar.SetName("ttbar")
+#    hist_ttbar.Write()
+
+    return
+
 
 
 def addYears(f, input_file_data3b, input_file_TT, input_file_mix, mix, channel):
@@ -105,7 +219,8 @@ def addYears(f, input_file_data3b, input_file_TT, input_file_mix, mix, channel):
     hist_data_obs = combine_hists(input_file_mix,
                                   f"{var_name}_PROC_YEAR_fourTag_SR",
                                   years=["2016", "2017", "2018"],
-                                  procs=[f"mix_v{mix_number}"])
+                                  procs=[f"mix_v{mix_number}"],
+                                  debug=args.debug)
 
     f.cd(directory)
     hist_data_obs.SetName("data_obs")
@@ -115,12 +230,17 @@ def addYears(f, input_file_data3b, input_file_TT, input_file_mix, mix, channel):
     # multijet
     #
     var_name_multijet = var_name.replace("SvB_ps", f"SvB_FvT_{mix}_newSBDef_ps")
-    var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDef_ps")
+    if args.use_kfold:
+        var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDefSeedAve_ps")
+    else:
+        var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDef_ps")
+
 
     hist_multijet = combine_hists(input_file_data3b,
                                   f"{var_name_multijet}_PROC_YEAR_threeTag_SR",
                                   years=["2016", "2017", "2018"],
-                                  procs=["data_3b_for_mixed"])
+                                  procs=["data_3b_for_mixed"], 
+                                  debug=args.debug)
 
     f.cd(directory)
     hist_multijet.SetName("multijet")
@@ -134,7 +254,8 @@ def addYears(f, input_file_data3b, input_file_TT, input_file_mix, mix, channel):
     hist_ttbar = combine_hists(input_file_TT,
                                f"{var_name}_PROC_YEAR_fourTag_SR",
                                years=["UL16_preVFP", "UL16_postVFP", "UL17", "UL18"],
-                               procs=["TTTo2L2Nu_for_mixed", "TTToHadronic_for_mixed", "TTToSemiLeptonic_for_mixed"])
+                               procs=["TTTo2L2Nu_for_mixed", "TTToHadronic_for_mixed", "TTToSemiLeptonic_for_mixed"],
+                               debug=args.debug)
 
     f.cd(directory)
     hist_ttbar.SetName("ttbar")
@@ -143,13 +264,14 @@ def addYears(f, input_file_data3b, input_file_TT, input_file_mix, mix, channel):
     return
 
 
-def addMixes(f, directory):
+def addMixes(f, directory, procs=['ttbar', 'multijet', 'data_obs']):
     hists = []
-    for process in ['ttbar', 'multijet', 'data_obs']:
+    for process in procs:
         try:
+            if args.debug: print(f"Trying {directory}/{process}")
             f.Get(f'{directory}/{process}').IsZombie()
         except ReferenceError:
-            print("getting " + mixes[0] + '/' + directory + '/' + process)
+            if args.debug: print("appending", mixes[0] + '/' + directory + '/' + process)
             hists.append( f.Get(mixes[0] + '/' + directory + '/' + process) )
 
             if ttAverage and process == 'ttbar':  # skip averaging if ttAverage and process == 'ttbar'
@@ -197,6 +319,7 @@ def prepInput():
     f = ROOT.TFile(closure_file_out, 'RECREATE')
 
     for mix in mixes:
+        writeYears(f, input_file_data3b, input_file_TT, input_file_mix, mix=mix, channel=channel)
         addYears(f, input_file_data3b, input_file_TT, input_file_mix, mix=mix, channel=channel)
 
     addMixes(f, channel)
@@ -209,7 +332,8 @@ def prepInput():
     hist_signal = combine_hists(input_file_sig,
                                 f"{var_name}_PROC_YEAR_fourTag_SR",
                                 years=["UL16_preVFP", "UL16_postVFP", "UL17", "UL18"],
-                                procs=["GluGluToHHTo4B_cHHH1", "ZZ4b", "ZH4b"])
+                                procs=["GluGluToHHTo4B_cHHH1", "ZZ4b", "ZH4b"], 
+                                debug=args.debug)
 
 #    hist_signal_preUL = combine_hists(input_file_sig_preUL,
 #                                f"{var_name}_PROC_YEAR_fourTag_SR",
@@ -223,9 +347,9 @@ def prepInput():
     hist_signal.SetName("signal")
     hist_signal.Write()
 
-# ##       for year in ['2016', '2017', '2018']:
-# ##           addMixes(f, input_root_files, channel+year)
-# ##
+    for year in ['2016', '2017', '2018']:
+        addMixes(f, channel+year, procs=['multijet', 'data_obs'])
+
 
     f.Close()
 
@@ -265,7 +389,6 @@ class multijetEnsemble:
 
         self.channel = channel
         self.rebin = rebin
-        mkpath(f'{args.outputPath}/{args.mix_name}/{classifier}/rebin{self.rebin}/{args.region}/{self.channel}')
 
         self.output_yml = open(f'{args.outputPath}/{args.mix_name}/{classifier}/rebin{self.rebin}/{args.region}/{self.channel}/0_variance_results.yml', 'w')
 
@@ -284,6 +407,7 @@ class multijetEnsemble:
 
         print(f"Reading {self.channel}/signal")
         self.signal = f.Get('%s/signal' % self.channel)
+        print(self.signal)
         self.signal.Rebin(self.rebin)
 
         self.f = f
@@ -439,7 +563,7 @@ class multijetEnsemble:
     def print_exit_message(self):
         self.output_yml.close()
         for line in self.exit_message:
-            print(line)
+            print_log(line)
 
     def makeFitFunction(self, basis):
 
@@ -1903,7 +2027,7 @@ class closure:
     def print_exit_message(self):
         self.output_yml.close()
         for line in self.exit_message:
-            print(line)
+            print_log(line)
 
 
 def run():
@@ -1944,6 +2068,7 @@ def run():
     closures[channel].print_exit_message()
 
 
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='make JCM weights', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -1962,6 +2087,7 @@ if __name__ == "__main__":
     parser.add_argument('--outputPath', default="stats_analysis/closureFitsNew")
     parser.add_argument('--reuse_inputs', action="store_true")
     parser.add_argument('--skip_closure', dest="run_closure", action="store_false")
+    parser.add_argument('--use_kfold',    action="store_true")
     #parser.add_argument('--skip_plots',   dest="do_plots",    action="store_false")
     parser.add_argument('--do_CI',   action="store_true")
 
@@ -1993,25 +2119,38 @@ if __name__ == "__main__":
 
     rebin = int(args.rebin)
 
-    closure_file_out = f"{args.outputPath}/hists_closure_{args.mix_name}_{args.var}_rebin{rebin}.root"
+    #mkpath(f'{args.outputPath}')
+    mkpath(f'{args.outputPath}/{args.mix_name}/{classifier}/rebin{rebin}/{args.region}/{channel}')
+
+    closure_file_out = f"{args.outputPath}/{args.mix_name}/{classifier}/rebin{rebin}/{args.region}/{channel}/hists_closure_{args.mix_name}_{args.var}_rebin{rebin}.root"
     closure_file_out_pkl = closure_file_out.replace("root", "pkl")
+    closure_file_out_log = closure_file_out.replace("root", "log")
 
-    print(f"\nRunning with channel {channel} and rebin {rebin}")
-    print(f"   creating:\n")
-    print(f"\t{closure_file_out}")
+    log_file = open(closure_file_out_log,"w")
+
+    print_log(f"\nRunning with channel {channel} and rebin {rebin}")
+    print_log(f"   creating:\n")
+    print_log(f"\t{closure_file_out}")
+    print_log(f"\t{closure_file_out_log}")
     if args.run_closure:
-        print(f"\t{closure_file_out_pkl}")
+        print_log(f"\t{closure_file_out_pkl}")
 
-    mkpath(f'{args.outputPath}')
+    print_log(f"\nInputs are ")
+    print_log(f"\t input_file_data3b {args.input_file_data3b}")
+    print_log(f"\t input_file_TT     {args.input_file_TT}")
+    print_log(f"\t input_file_mix    {args.input_file_mix}")
+    print_log(f"\t input_file_sig    {args.input_file_sig}")
+    if args.use_kfold:
+        print_log(f"\t Using kFolding")        
+
 
     doPrepInputs = True
     if args.reuse_inputs:
         if os.path.exists(closure_file_out):
             doPrepInputs = False
-            print(f"   reusing inputs from {closure_file_out}")
+            print_log(f"   reusing inputs from {closure_file_out}")
         else:
-            print(f"WARNING: cannot reuse inputs because {closure_file_out} does not exist")
-
+            print_log(f"WARNING: cannot reuse inputs because {closure_file_out} does not exist")
 
 
     lumi = args.lumi
@@ -2027,7 +2166,6 @@ if __name__ == "__main__":
         plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
 
-
     ttAverage = False
     doSpuriousSignal = True
     dataAverage = True
@@ -2035,51 +2173,14 @@ if __name__ == "__main__":
 
     probThreshold = 0.05  # 0.045500263896 #0.682689492137 # 1sigma
 
-    regionName = {'SB': 'Sideband',
-                  'CR': 'Control Region',
-                  'SR': 'Signal Region',
-                  'notSR': 'Sideband',
-                  'SRNoHH': 'Signal Region (Veto HH)',
-                  }
-
-    # BEs = [                                                 '1',
-    #                                                    '2*x-1',
-    #                                             '6*x^2 -6*x+1',
-    #                                    '20*x^3 -30*x^2+12*x-1',
-    #                           '70*x^4 -140*x^3 +90*x^2-20*x+1',
-    #                 '252*x^5 -630*x^4 +560*x^3-210*x^2+30*x-1',
-    #        '924*x^6-2772*x^5+3150*x^4-1680*x^3+420*x^2-42*x+1',
-    #                                           '3432*x^7-  12012*x^6+ 16632*x^5- 11550*x^4+ 4200*x^3- 756*x^2+ 56*x-1',
-    #                              '12870*x^8-  51480*x^7+  84084*x^6- 72072*x^5+ 34650*x^4- 9240*x^3+1260*x^2- 72*x+1',
-    #                  '48620*x^9- 218790*x^8+ 411840*x^7- 420420*x^6+252252*x^5- 90090*x^4+18480*x^3-1980*x^2+ 90*x-1',
-    #     '184756*x^10-923780*x^9+1969110*x^8-2333760*x^7+1681680*x^6-756756*x^5+210210*x^4-34320*x^3+2970*x^2-110*x+1',
-    #        ]
-
-    BEs = ['1',             # 0
-           'sin(1*pi*x)',   # 1
-           'cos(1*pi*x)',   # 2
-           'sin(2*pi*x)',   # 3
-           'cos(2*pi*x)',   # 4
-           'sin(3*pi*x)',   # 5
-           'cos(3*pi*x)',   # 6
-           'sin(4*pi*x)',   # 7
-           'cos(4*pi*x)',   # 8
-           'sin(5*pi*x)',   # 9
-           'cos(5*pi*x)',   # 10
-           ]
-
-    BE = []
-    for i, s in enumerate(BEs):
-        BE.append( ROOT.TF1('BE%d' % i, s, 0, 1) )
-
     mixes = [f'{args.mix_name}_v{i}' for i in range(nMixes)]
 
     if doPrepInputs:
-        print("\nPreparing the input \n")
+        print_log("\nPreparing the input \n")
         prepInput()
 
     if args.run_closure:
-        print("\nRunning the closure \n")
+        print_log("\nRunning the closure \n")
         run()
     else:
-        print("\nSkipping the closure \n")
+        print_log("\nSkipping the closure \n")
