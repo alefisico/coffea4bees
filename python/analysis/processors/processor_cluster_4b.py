@@ -246,27 +246,35 @@ class analysis(processor.ProcessorABC):
         compute_decluster_variables(clustered_splittings)
 
 
+        #
+        #  add split name (can probably do this when making the splitting
+        #
         split_name_flat = [get_splitting_name(i) for i in ak.flatten(clustered_splittings.jet_flavor)]
         split_name = ak.unflatten(split_name_flat, ak.num(clustered_splittings))
         clustered_splittings["splitting_name"] = split_name
 
-        splitting_types = get_list_of_splitting_names(clustered_splittings)
 
-        # #
-        # #  get all splitting types that are used (ie: not pure ISR)
-        # #
-        # clustered_jets = clean_ISR(clustered_jets, clustered_splittings)
+
         #
-        # cleaned_combined_types = get_list_of_combined_jet_types(clustered_jets)
-        # cleaned_split_types = []
-        # for _s in cleaned_combined_types:
-        #     cleaned_split_types += get_list_of_all_sub_splittings(_s)
+        #  get all splitting types that are used (ie: not pure ISR)
+        #
+        clustered_jets = clean_ISR(clustered_jets, clustered_splittings)
 
+        cleaned_combined_jet_flavors = get_list_of_combined_jet_types(clustered_jets)
+        cleaned_split_jet_flavors = []
+        for _s in cleaned_combined_jet_flavors:
+            cleaned_split_jet_flavors += get_list_of_all_sub_splittings(_s)
+
+        #
+        # Convert to list of cleaned splitting names
+        #
+        cleaned_splitting_name = [get_splitting_name(i) for i in cleaned_split_jet_flavors]
+        cleaned_splitting_name = set(cleaned_splitting_name)
 
         #
         # Sort clusterings by type
         #
-        for _s_type in splitting_types:
+        for _s_type in cleaned_splitting_name:
             selev[f"splitting_{_s_type}"]   = clustered_splittings[clustered_splittings.splitting_name == _s_type]
 
         #print(f'{chunk} cleaned splitting types {cleaned_split_types}\n')
@@ -388,7 +396,7 @@ class analysis(processor.ProcessorABC):
             # ISR_splittings_re = [] # Hack Save all splitting for now
             # all_split_types_re = [item for item in all_split_types_re if item not in ISR_splittings_re]
 
-            for _s_type in splitting_types:
+            for _s_type in cleaned_splitting_name:
                 selev[f"splitting_{_s_type}_re"]  = clustered_splittings_reclustered[clustered_splittings_reclustered.jet_flavor == _s_type]
 
             # print(f'{chunk} all splitting_re types {all_split_types_re}\n')
@@ -489,20 +497,20 @@ class analysis(processor.ProcessorABC):
             fill += Jet.plot( (f"canJet{iJ}", f"Higgs Candidate Jets {iJ}"), f"canJet{iJ}", skip=["n", "deepjet_c"], )
 
 
-        for _s_type in splitting_types:
+        for _s_type in cleaned_splitting_name:
             fill += ClusterHists( (f"splitting_{_s_type}", f"{_s_type} Splitting"), f"splitting_{_s_type}" )
 
-        if 'bb' in splitting_types:
+        if 'bb' in cleaned_splitting_name:
             fill += ClusterHistsDetailed( (f"detailed_splitting_bb",    f"bb Splitting"),    f"splitting_bb"    )
-        if 'bj' in splitting_types:
+        if 'bj' in cleaned_splitting_name:
             fill += ClusterHistsDetailed( (f"detailed_splitting_bj",    f"bj Splitting"),    f"splitting_bj"    )
-        if 'jj' in splitting_types:
+        if 'jj' in cleaned_splitting_name:
             fill += ClusterHistsDetailed( (f"detailed_splitting_jj",    f"jj Splitting"),    f"splitting_jj"    )
-        if '(bj)b' in splitting_types:
+        if '(bj)b' in cleaned_splitting_name:
             fill += ClusterHistsDetailed( (f"detailed_splitting_(bj)b", f"(bj)b Splitting"), f"splitting_(bj)b" )
 
         if self.do_declustering:
-            for _s_type in splitting_types:
+            for _s_type in cleaned_splitting_name:
                 fill += ClusterHists( (f"splitting_{_s_type}_re", f"${_s_type} Splitting"), f"splitting_{_s_type}_re" )
 
 

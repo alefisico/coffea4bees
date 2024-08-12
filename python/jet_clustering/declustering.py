@@ -411,7 +411,7 @@ def decluster_splitting_types(input_jets, splitting_types, input_pdfs, debug=Fal
             _indicies = np.where(ak.flatten(_s_mask))
             _indicies_tuple = (_indicies[0].to_list())
 
-            splittings_info.append((_s, _num_samples, _indicies_tuple))
+            splittings_info.append((get_splitting_name(_s), _num_samples, _indicies_tuple))
 
 
         #

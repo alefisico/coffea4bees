@@ -16,7 +16,7 @@ echo "############### Running datasets from " $DATASETS
 echo "############### Running test processor"
 
 
-python runner.py -t   -o test_declustering_declustered.coffea -d data  -p analysis/processors/processor_decluster_4b.py -y UL18  -op analysis/hists/ -m $DATASETS -c analysis/metadata/decluster.yml
+python runner.py -t   -o test_declustering_declustered.coffea -d data  -p analysis/processors/processor_decluster_4b.py -y UL17 UL18 UL16_preVFP UL16_postVFP  -op analysis/hists/ -m $DATASETS -c analysis/metadata/decluster.yml
 
 # time python runner.py    -o declustering_nominal.coffea     -d data  -p analysis/processors/processor_decluster_4b.py -y UL17 UL18 UL16_preVFP UL16_postVFP  -op analysis/hists/ -m $DATASETS 
 # time python runner.py    -o declustering_declustered.coffea -d data  -p analysis/processors/processor_decluster_4b.py -y UL17 UL18 UL16_preVFP UL16_postVFP  -op analysis/hists/ -m $DATASETS -c analysis/metadata/decluster.yml
