@@ -1,4 +1,6 @@
-main: analyze
+# template: tag
+main:
+  module: analyze
 
 analysis:
   - module: HCR.LossROC
@@ -9,4 +11,5 @@ analysis:
 setting:
   - module: IO
     option:
-      - output: root://root://eosuser.cern.ch//eos/user/c/chuyuan/www/HH4b/classifier/SvB/{tag}/
+      - output: root://eosuser.cern.ch//eos/user/c/chuyuan/www/HH4b/classifier/SvB/
+        report: {tag}
