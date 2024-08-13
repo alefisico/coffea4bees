@@ -49,22 +49,23 @@ def get_splitting_summary(comb_flavor):
     childA, childB = children_jet_flavors(comb_flavor)
 
     n_b_A = childA.count("b")
-    n_X_A = n_b_A + childA.count("j")
+    n_j_A = childA.count("j")
 
     n_b_B = childB.count("b")
-    n_X_B = n_b_B + childB.count("j")
+    n_j_B = childB.count("j")
 
 
-    return (n_X_A, n_X_B), (n_b_A, n_b_B)
+    return (n_b_A, n_j_A), (n_b_B, n_j_B)
 
 
 def get_splitting_name(comb_flavor):
 
-    n_Xs, _ = get_splitting_summary(comb_flavor)
-    if n_Xs[0] > 4 or (n_Xs[0] + n_Xs[1]) > 5:
-        return f"{n_Xs[0]}/{n_Xs[1]}"
+    A_stats, B_stats = get_splitting_summary(comb_flavor)
+    #if n_Xs[0] > 4 or (n_Xs[0] + n_Xs[1]) > 5:
+    #    return f"{n_Xs[0]}/{n_Xs[1]}"
 
-    return comb_flavor
+
+    return f"{A_stats[0]}b{A_stats[1]}j/{B_stats[0]}b{B_stats[1]}j"
 
 
 
