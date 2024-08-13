@@ -240,31 +240,27 @@ def test_PDFs_vs_Pt(config, output_file_name):
         with open(args.outputFolder+"/all_splittings_multiplicities.txt", "w") as splitting_mult_file:
             for k, v, in sorted_counts.items():
                 #nJets, nbs = get_splitting_summary(k)
-                _sA, _sB = k.split("/")
 
-                nA = getNb(_sA) + getNj(_sA)
-                nB = getNb(_sB) + getNj(_sB)
-
-                _s_info = f"{k:25}   {v:10}  {nA}/{nB}"
+                _s_info = f"{k:25}   {v:10}"
                 print(_s_info)
                 splitting_mult_file.write(f"{_s_info}\n")
 
 
-        #
-        # Now the grouped splittings
-        #
-        total_counts_grouped_splittings = {}
-        for k, v in sorted_counts.items():
-            _split_name = get_splitting_name(k)
-            total_counts_grouped_splittings[_split_name] = total_counts_grouped_splittings.get(_split_name,0) + v
-
-        sorted_counts_grouped = dict(sorted(total_counts_grouped_splittings.items(), key=lambda item: item[1], reverse=True) )
-        with open(args.outputFolder+"/all_grouped_splittings_multiplicities.txt", "w") as splitting_group_mult_file:
-            for k, v, in sorted_counts_grouped.items():
-                _s_info = f"{k:25}   {v:10} "
-                print(_s_info)
-                splitting_group_mult_file.write(f"{_s_info}\n")
-
+#        #
+#        # Now the grouped splittings
+#        #
+#        total_counts_grouped_splittings = {}
+#        for k, v in sorted_counts.items():
+#            _split_name = get_splitting_name(k)
+#            total_counts_grouped_splittings[_split_name] = total_counts_grouped_splittings.get(_split_name,0) + v
+#
+#        sorted_counts_grouped = dict(sorted(total_counts_grouped_splittings.items(), key=lambda item: item[1], reverse=True) )
+#        with open(args.outputFolder+"/all_grouped_splittings_multiplicities.txt", "w") as splitting_group_mult_file:
+#            for k, v, in sorted_counts_grouped.items():
+#                _s_info = f"{k:25}   {v:10} "
+#                print(_s_info)
+#                splitting_group_mult_file.write(f"{_s_info}\n")
+#
 
         #print("Total Counts vs pt\n")
         #print(counts_vs_pt)
@@ -300,10 +296,10 @@ def doPlots(debug=False):
     p_1bNj_0bNj = r'1b[1-9]\d*j/[01]b[2-9]\d*j'
 
     #p_C_X  = r'\([()jb]*\)[bj]'
-    p_C_XX = r'\([()jb]*\)\([bj]{2}\)'
-    p_C_C  = r'\([()jb]*\)\([()bj]*\)'
-    p_N_1  = r'\d+/1'
     p_N_N  = r'\d+/\d+'
+    p_X_1  = r'X/1'
+    p_X_2  = r'X/2'
+    p_X_X  = r'X/X'
 
 
     patterns = { p_XX    : s_XX,
@@ -311,6 +307,10 @@ def doPlots(debug=False):
                  p_0bNj_X   : s_XX_X,
                  p_0bNj_0bNj : s_XX_XX,
                  p_1bNj_0bNj : s_XX_XX,
+                 p_N_N       : s_XX_XX,
+                 p_X_X       : s_XX_XX,
+                 p_X_1       : s_XX_X,
+                 p_X_2       : s_XX_XX,
                 }
 
     #
