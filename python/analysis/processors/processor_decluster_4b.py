@@ -95,7 +95,7 @@ class analysis(processor.ProcessorABC):
             run_SvB=True,
             do_declustering=False,
             corrections_metadata="analysis/metadata/corrections.yml",
-            clustering_pdfs_file = None,
+            clustering_pdfs_file = "None",
             run_systematics=[],
             blind = False,
             make_classifier_input: str = None,

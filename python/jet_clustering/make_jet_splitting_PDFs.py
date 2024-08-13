@@ -84,7 +84,8 @@ def make_PDFs_vs_Pt(config, output_file_name_vs_pT):
             for _v in varNames:
                 var_config = config[_s][_v]
                 #splitting_{_s}.{_v}_pT"
-                _hist_name = f"splitting_{_s.replace('/','_')}.{var_config[0]}_pT"
+                #_hist_name = f"splitting_{_s.replace('/','_')}.{var_config[0]}_pT"
+                _hist_name = f"splitting_{_s}.{var_config[0]}_pT"
                 #print(f"\t var {_hist_name}")
 
                 output_file_vs_pT.write(f"    {_v}:\n")
