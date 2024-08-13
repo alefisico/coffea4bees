@@ -49,22 +49,23 @@ def get_splitting_summary(comb_flavor):
     childA, childB = children_jet_flavors(comb_flavor)
 
     n_b_A = childA.count("b")
-    n_X_A = n_b_A + childA.count("j")
+    n_j_A = childA.count("j")
 
     n_b_B = childB.count("b")
-    n_X_B = n_b_B + childB.count("j")
+    n_j_B = childB.count("j")
 
 
-    return (n_X_A, n_X_B), (n_b_A, n_b_B)
+    return (n_b_A, n_j_A), (n_b_B, n_j_B)
 
 
 def get_splitting_name(comb_flavor):
 
-    n_Xs, _ = get_splitting_summary(comb_flavor)
-    if n_Xs[0] > 4 or (n_Xs[0] + n_Xs[1]) > 5:
-        return f"{n_Xs[0]}/{n_Xs[1]}"
+    A_stats, B_stats = get_splitting_summary(comb_flavor)
+    #if n_Xs[0] > 4 or (n_Xs[0] + n_Xs[1]) > 5:
+    #    return f"{n_Xs[0]}/{n_Xs[1]}"
 
-    return comb_flavor
+
+    return f"{A_stats[0]}b{A_stats[1]}j/{B_stats[0]}b{B_stats[1]}j"
 
 
 
@@ -125,6 +126,11 @@ def get_list_of_ISR_splittings(splitting_types):
 def get_list_of_splitting_types(splittings):
     unique_splittings = set(ak.flatten(splittings.jet_flavor).to_list())
     return list(unique_splittings)
+
+def get_list_of_splitting_names(splittings):
+    unique_splittings = set(ak.flatten(splittings.splitting_name).to_list())
+    return list(unique_splittings)
+
 
 
 def compute_decluster_variables(clustered_splittings):
@@ -406,7 +412,7 @@ def decluster_splitting_types(input_jets, splitting_types, input_pdfs, debug=Fal
             _indicies = np.where(ak.flatten(_s_mask))
             _indicies_tuple = (_indicies[0].to_list())
 
-            splittings_info.append((_s, _num_samples, _indicies_tuple))
+            splittings_info.append((get_splitting_name(_s), _num_samples, _indicies_tuple))
 
 
         #
@@ -422,10 +428,12 @@ def decluster_splitting_types(input_jets, splitting_types, input_pdfs, debug=Fal
         #
         #  Check for declustered jets vailing kinematic requirements
         #
-        fail_pt_mask  = (declustered_jets_A.pt < 40) | (declustered_jets_B.pt < 40)
-        fail_eta_mask = (np.abs(declustered_jets_A.eta) > 2.5) | (np.abs(declustered_jets_B.eta) > 2.5)
+        # Update to only be bjets
+        fail_pt_mask    = (declustered_jets_A.pt < 20) | (declustered_jets_B.pt < 20)
+        fail_pt_b_mask  = ((declustered_jets_A.pt < 40) &  (declustered_jets_A.jet_flavor == "b")) | ((declustered_jets_B.pt < 40) &  (declustered_jets_B.jet_flavor == "b"))
+        fail_eta_b_mask = ((declustered_jets_A.jet_flavor == "b") & (np.abs(declustered_jets_A.eta) > 2.5)) | ((declustered_jets_A.jet_flavor == "b") & (np.abs(declustered_jets_B.eta) > 2.5))
         fail_dr_mask  = declustered_jets_A.delta_r(declustered_jets_B) < 0.4
-        clustering_fail = fail_pt_mask | fail_eta_mask | fail_dr_mask
+        clustering_fail = fail_pt_mask | fail_pt_b_mask | fail_eta_b_mask | fail_dr_mask
 
         #print(ak.any(fail_dr_mask))
         if num_trys > 4:

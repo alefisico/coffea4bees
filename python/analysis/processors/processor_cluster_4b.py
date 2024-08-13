@@ -17,7 +17,7 @@ from base_class.physics.object import LorentzVector, Jet, Muon, Elec
 #from analysis.helpers.hist_templates import SvBHists, FvTHists, QuadJetHists
 from jet_clustering.clustering_hist_templates import ClusterHists, ClusterHistsDetailed
 from jet_clustering.clustering   import cluster_bs, cluster_bs_fast
-from jet_clustering.declustering import compute_decluster_variables, make_synthetic_event, get_list_of_splitting_types, clean_ISR, get_list_of_ISR_splittings, get_list_of_combined_jet_types, get_list_of_all_sub_splittings
+from jet_clustering.declustering import compute_decluster_variables, make_synthetic_event, get_list_of_splitting_types, clean_ISR, get_list_of_ISR_splittings, get_list_of_combined_jet_types, get_list_of_all_sub_splittings, get_splitting_name, get_list_of_splitting_names
 
 from analysis.helpers.cutflow import cutFlow
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
@@ -211,13 +211,9 @@ class analysis(processor.ProcessorABC):
         notCanJet = selev.Jet[notCanJet_idx]
         notCanJet = notCanJet[notCanJet.selected_loose]
         notCanJet = notCanJet[ak.argsort(notCanJet.pt, axis=1, ascending=False)]
-        notCanJet_sel = notCanJet[notCanJet.selected]
 
         notCanJet["isSelJet"] = 1 * ( (notCanJet.pt > 40) & (np.abs(notCanJet.eta) < 2.4) )  # should have been defined as notCanJet.pt>=40, too late to fix this now...
         selev["notCanJet_coffea"] = notCanJet
-        selev["nNotCanJet"] = ak.num(selev.notCanJet_coffea)
-
-        # print(selev.nJet_selected, selev.nNotCanJet, ak.num(notCanJet_sel),"\n")
 
         #
         # Build diJets, indexed by diJet[event,pairing,0/1]
@@ -225,10 +221,9 @@ class analysis(processor.ProcessorABC):
         #canJet = selev["canJet"]
 
         canJet["jet_flavor"] = "b"
-        notCanJet_sel["jet_flavor"] = "j"
-        selev["notCanJet_sel"] = notCanJet_sel
+        notCanJet["jet_flavor"] = "j"
 
-        jets_for_clustering = ak.concatenate([canJet, notCanJet_sel], axis=1)
+        jets_for_clustering = ak.concatenate([canJet, notCanJet], axis=1)
         jets_for_clustering = jets_for_clustering[ak.argsort(jets_for_clustering.pt, axis=1, ascending=False)]
 
         #
@@ -252,21 +247,35 @@ class analysis(processor.ProcessorABC):
 
 
         #
+        #  add split name (can probably do this when making the splitting
+        #
+        split_name_flat = [get_splitting_name(i) for i in ak.flatten(clustered_splittings.jet_flavor)]
+        split_name = ak.unflatten(split_name_flat, ak.num(clustered_splittings))
+        clustered_splittings["splitting_name"] = split_name
+
+
+
+        #
         #  get all splitting types that are used (ie: not pure ISR)
         #
         clustered_jets = clean_ISR(clustered_jets, clustered_splittings)
 
-        cleaned_combined_types = get_list_of_combined_jet_types(clustered_jets)
-        cleaned_split_types = []
-        for _s in cleaned_combined_types:
-            cleaned_split_types += get_list_of_all_sub_splittings(_s)
+        cleaned_combined_jet_flavors = get_list_of_combined_jet_types(clustered_jets)
+        cleaned_split_jet_flavors = []
+        for _s in cleaned_combined_jet_flavors:
+            cleaned_split_jet_flavors += get_list_of_all_sub_splittings(_s)
 
+        #
+        # Convert to list of cleaned splitting names
+        #
+        cleaned_splitting_name = [get_splitting_name(i) for i in cleaned_split_jet_flavors]
+        cleaned_splitting_name = set(cleaned_splitting_name)
 
         #
         # Sort clusterings by type
         #
-        for _s_type in cleaned_split_types:
-            selev[f"splitting_{_s_type}"]   = clustered_splittings[clustered_splittings.jet_flavor == _s_type]
+        for _s_type in cleaned_splitting_name:
+            selev[f"splitting_{_s_type}"]   = clustered_splittings[clustered_splittings.splitting_name == _s_type]
 
         #print(f'{chunk} cleaned splitting types {cleaned_split_types}\n')
 
@@ -364,14 +373,14 @@ class analysis(processor.ProcessorABC):
             canJet_re["btagDeepFlavB"] = 1.0 # Set bs to 1 and ls to 0
 
 
-            notCanJet_sel_re = declustered_jets[~is_b_mask]
-            notCanJet_sel_re["puId"] = 7
-            notCanJet_sel_re["jetId"] = 7 # selev.Jet.puId[canJet_idx]
-            notCanJet_sel_re["btagDeepFlavB"] = 0 # Set bs to 1 and ls to 0
+            notCanJet_re = declustered_jets[~is_b_mask]
+            notCanJet_re["puId"] = 7
+            notCanJet_re["jetId"] = 7 # selev.Jet.puId[canJet_idx]
+            notCanJet_re["btagDeepFlavB"] = 0 # Set bs to 1 and ls to 0
 
 
             selev["canJet_re"] = canJet_re
-            selev["notCanJet_sel_re"] = notCanJet_sel_re
+            selev["notCanJet_coffea_re"] = notCanJet_re
 
             #
             #  Recluster
@@ -387,7 +396,7 @@ class analysis(processor.ProcessorABC):
             # ISR_splittings_re = [] # Hack Save all splitting for now
             # all_split_types_re = [item for item in all_split_types_re if item not in ISR_splittings_re]
 
-            for _s_type in cleaned_split_types:
+            for _s_type in cleaned_splitting_name:
                 selev[f"splitting_{_s_type}_re"]  = clustered_splittings_reclustered[clustered_splittings_reclustered.jet_flavor == _s_type]
 
             # print(f'{chunk} all splitting_re types {all_split_types_re}\n')
@@ -488,20 +497,20 @@ class analysis(processor.ProcessorABC):
             fill += Jet.plot( (f"canJet{iJ}", f"Higgs Candidate Jets {iJ}"), f"canJet{iJ}", skip=["n", "deepjet_c"], )
 
 
-        for _s_type in cleaned_split_types:
+        for _s_type in cleaned_splitting_name:
             fill += ClusterHists( (f"splitting_{_s_type}", f"{_s_type} Splitting"), f"splitting_{_s_type}" )
 
-        if 'bb' in cleaned_split_types:
+        if 'bb' in cleaned_splitting_name:
             fill += ClusterHistsDetailed( (f"detailed_splitting_bb",    f"bb Splitting"),    f"splitting_bb"    )
-        if 'bj' in cleaned_split_types:
+        if 'bj' in cleaned_splitting_name:
             fill += ClusterHistsDetailed( (f"detailed_splitting_bj",    f"bj Splitting"),    f"splitting_bj"    )
-        if 'jj' in cleaned_split_types:
+        if 'jj' in cleaned_splitting_name:
             fill += ClusterHistsDetailed( (f"detailed_splitting_jj",    f"jj Splitting"),    f"splitting_jj"    )
-        if '(bj)b' in cleaned_split_types:
+        if '(bj)b' in cleaned_splitting_name:
             fill += ClusterHistsDetailed( (f"detailed_splitting_(bj)b", f"(bj)b Splitting"), f"splitting_(bj)b" )
 
         if self.do_declustering:
-            for _s_type in cleaned_split_types:
+            for _s_type in cleaned_splitting_name:
                 fill += ClusterHists( (f"splitting_{_s_type}_re", f"${_s_type} Splitting"), f"splitting_{_s_type}_re" )
 
 

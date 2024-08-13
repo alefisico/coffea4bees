@@ -95,7 +95,7 @@ class analysis(processor.ProcessorABC):
             run_SvB=True,
             do_declustering=False,
             corrections_metadata="analysis/metadata/corrections.yml",
-            clustering_pdfs_file = "jet_clustering/jet-splitting-PDFs-00-05-00/clustering_pdfs_vs_pT.yml",
+            clustering_pdfs_file = "None",
             run_systematics=[],
             blind = False,
             make_classifier_input: str = None,
@@ -113,7 +113,11 @@ class analysis(processor.ProcessorABC):
         self.classifier_SvB_MA = HCREnsemble(SvB_MA) if SvB_MA else None
         self.corrections_metadata = yaml.safe_load(open(corrections_metadata, "r"))
         self.do_declustering = do_declustering
-        self.clustering_pdfs = yaml.safe_load(open(clustering_pdfs_file, "r"))
+        if not clustering_pdfs_file == "None":
+            self.clustering_pdfs = yaml.safe_load(open(clustering_pdfs_file, "r"))
+            logging.info(f"Loaded {len(self.clustering_pdfs.keys())} PDFs from {clustering_pdfs_file}")
+        else:
+            self.clustering_pdfs = None
 
         self.cutFlowCuts = [
             "all",
@@ -555,13 +559,12 @@ class analysis(processor.ProcessorABC):
         notCanJet = selev.Jet[notCanJet_idx]
         notCanJet = notCanJet[notCanJet.selected_loose]
         notCanJet = notCanJet[ak.argsort(notCanJet.pt, axis=1, ascending=False)]
-        notCanJet_sel = notCanJet[notCanJet.selected]
 
         if self.do_declustering:
             canJet["jet_flavor"] = "b"
-            notCanJet_sel["jet_flavor"] = "j"
+            notCanJet["jet_flavor"] = "j"
 
-            jets_for_clustering = ak.concatenate([canJet, notCanJet_sel], axis=1)
+            jets_for_clustering = ak.concatenate([canJet, notCanJet], axis=1)
             jets_for_clustering = jets_for_clustering[ak.argsort(jets_for_clustering.pt, axis=1, ascending=False)]
 
             clustered_jets, _clustered_splittings = cluster_bs(jets_for_clustering, debug=False)
@@ -570,6 +573,7 @@ class analysis(processor.ProcessorABC):
             #
             # Declustering
             #
+
 
             #
             #  Read in the pdfs
@@ -582,17 +586,22 @@ class analysis(processor.ProcessorABC):
 
             declustered_jets = make_synthetic_event(clustered_jets, self.clustering_pdfs)
 
-            canJet = declustered_jets[declustered_jets.jet_flavor == "b"]
+
+
 
             #canJet = declustered_jets
 
-            #
-            #  Hack
-            #
+            canJet = declustered_jets[declustered_jets.jet_flavor == "b"]
             canJet["puId"] = 7
             canJet["jetId"] = 7 # selev.Jet.puId[canJet_idx]
             canJet["btagDeepFlavB"] = 1.0 # Set bs to 1 and ls to 0
             canJet = canJet[ak.argsort(canJet.pt, axis=1, ascending=False)]
+
+            notCanJet = declustered_jets[declustered_jets.jet_flavor == "j"]
+            notCanJet["puId"] = 7
+            notCanJet["jetId"] = 7 # selev.Jet.puId[canJet_idx]
+            notCanJet["btagDeepFlavB"] = 0.0 # Set bs to 1 and ls to 0
+            notCanJet = notCanJet[ak.argsort(notCanJet.pt, axis=1, ascending=False)]
 
             #print(f"{chunk} {ak.num(canJet)} \n" )
             four_canJets = ak.num(canJet) ==4
@@ -630,12 +639,6 @@ class analysis(processor.ProcessorABC):
         # print(selev.v4j.n)
         # selev['Jet', 'canJet'] = False
 
-        #
-        # Need to fix this...
-        #
-        notCanJet = selev.Jet[notCanJet_idx]
-        notCanJet = notCanJet[notCanJet.selected_loose]
-        notCanJet = notCanJet[ak.argsort(notCanJet.pt, axis=1, ascending=False)]
 
         notCanJet["isSelJet"] = 1 * ( (notCanJet.pt > 40) & (np.abs(notCanJet.eta) < 2.4) )  # should have been defined as notCanJet.pt>=40, too late to fix this now...
         selev["notCanJet_coffea"] = notCanJet
