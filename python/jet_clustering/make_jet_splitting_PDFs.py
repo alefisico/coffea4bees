@@ -231,14 +231,12 @@ def test_PDFs_vs_Pt(config, output_file_name):
         #all_splitting_names = set(all_splitting_names) # make unique
         #breakpoint()
 
-        def getNb(s):
-            return int(s.split("b")[0])
-
-        def getNj(s):
-            return int(s.split("b")[-1].rstrip("j"))
-
 
         sorted_counts = dict(sorted(total_counts.items(), key=lambda item: item[1], reverse=True) )
+        with open(args.outputFolder+'/all_splittings_multiplicities.yaml', 'w') as splitting_mult_file:
+            yaml.dump(sorted_counts, splitting_mult_file, default_flow_style=False)
+
+
         with open(args.outputFolder+"/all_splittings_multiplicities.txt", "w") as splitting_mult_file:
             for k, v, in sorted_counts.items():
                 #nJets, nbs = get_splitting_summary(k)
