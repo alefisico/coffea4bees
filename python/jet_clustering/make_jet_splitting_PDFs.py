@@ -84,7 +84,8 @@ def make_PDFs_vs_Pt(config, output_file_name_vs_pT):
             for _v in varNames:
                 var_config = config[_s][_v]
                 #splitting_{_s}.{_v}_pT"
-                _hist_name = f"splitting_{_s.replace('/','_')}.{var_config[0]}_pT"
+                #_hist_name = f"splitting_{_s.replace('/','_')}.{var_config[0]}_pT"
+                _hist_name = f"splitting_{_s}.{var_config[0]}_pT"
                 #print(f"\t var {_hist_name}")
 
                 output_file_vs_pT.write(f"    {_v}:\n")
@@ -230,11 +231,23 @@ def test_PDFs_vs_Pt(config, output_file_name):
         #all_splitting_names = set(all_splitting_names) # make unique
         #breakpoint()
 
+        def getNb(s):
+            return int(s.split("b")[0])
+
+        def getNj(s):
+            return int(s.split("b")[-1].rstrip("j"))
+
+
         sorted_counts = dict(sorted(total_counts.items(), key=lambda item: item[1], reverse=True) )
         with open(args.outputFolder+"/all_splittings_multiplicities.txt", "w") as splitting_mult_file:
             for k, v, in sorted_counts.items():
-                nJets, nbs = get_splitting_summary(k)
-                _s_info = f"{k:25}   {v:10}  {nJets}"
+                #nJets, nbs = get_splitting_summary(k)
+                _sA, _sB = k.split("/")
+
+                nA = getNb(_sA) + getNj(_sA)
+                nB = getNb(_sB) + getNj(_sB)
+
+                _s_info = f"{k:25}   {v:10}  {nA}/{nB}"
                 print(_s_info)
                 splitting_mult_file.write(f"{_s_info}\n")
 
@@ -273,11 +286,22 @@ def doPlots(debug=False):
     s_XX     = { "mA":("mA",   1),  "mB":("mB",   1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_vs_thetaA", 1) }
     s_XX_X   = { "mA":("mA_l", 1),  "mB":("mB",   1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_vs_thetaA", 1) }
     s_XX_XX  = { "mA":("mA_l", 1),  "mB":("mB_l", 1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_vs_thetaA", 1) }
-    s_XX_X_X = { "mA":("mA_l", 1),  "mB":("mB",   1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_vs_thetaA", 1) }
 
+
+    #
     # Define the regex pattern
-    p_XX   = r'[bj]{2}'
-    p_C_X  = r'\([()jb]*\)[bj]'
+    #
+    #pattern = r'[01]b[01]j(/[01]b[01]j)?'
+
+    p_XX = r'[01]b[01]j/[01]b[01]j'
+
+    p_1bNj_X = r'1b[1-9]\d*j/[01]b[01]j'
+    p_0bNj_X = r'0b[2-9]\d*j/[01]b[01]j'
+
+    p_0bNj_0bNj = r'0b[2-9]\d*j/[01]b[2-9]\d*j'
+    p_1bNj_0bNj = r'1b[1-9]\d*j/[01]b[2-9]\d*j'
+
+    #p_C_X  = r'\([()jb]*\)[bj]'
     p_C_XX = r'\([()jb]*\)\([bj]{2}\)'
     p_C_C  = r'\([()jb]*\)\([()bj]*\)'
     p_N_1  = r'\d+/1'
@@ -285,11 +309,10 @@ def doPlots(debug=False):
 
 
     patterns = { p_XX    : s_XX,
-                 p_C_X   : s_XX_X,
-                 p_C_XX  : s_XX_XX,
-                 p_C_C   : s_XX_XX,
-                 p_N_1   : s_XX_X,
-                 p_N_N   : s_XX_XX,
+                 p_1bNj_X   : s_XX_X,
+                 p_0bNj_X   : s_XX_X,
+                 p_0bNj_0bNj : s_XX_XX,
+                 p_1bNj_0bNj : s_XX_XX,
                 }
 
     #
@@ -328,7 +351,6 @@ def doPlots(debug=False):
 
     if len(unconfig_splitting):
         print(f"Unconfigured splittings are {unconfig_splitting}")
-
 
     #print(len(splitting_config.)
 
