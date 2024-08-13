@@ -95,7 +95,7 @@ class analysis(processor.ProcessorABC):
             run_SvB=True,
             do_declustering=False,
             corrections_metadata="analysis/metadata/corrections.yml",
-            clustering_pdfs_file = "jet_clustering/jet-splitting-PDFs-00-05-00/clustering_pdfs_vs_pT.yml",
+            clustering_pdfs_file = "None",
             run_systematics=[],
             blind = False,
             make_classifier_input: str = None,
@@ -113,7 +113,11 @@ class analysis(processor.ProcessorABC):
         self.classifier_SvB_MA = HCREnsemble(SvB_MA) if SvB_MA else None
         self.corrections_metadata = yaml.safe_load(open(corrections_metadata, "r"))
         self.do_declustering = do_declustering
-        self.clustering_pdfs = yaml.safe_load(open(clustering_pdfs_file, "r"))
+        if not clustering_pdfs_file == "None":
+            self.clustering_pdfs = yaml.safe_load(open(clustering_pdfs_file, "r"))
+            logging.info(f"Loaded {len(self.clustering_pdfs.keys())} PDFs from {clustering_pdfs_file}")
+        else:
+            self.clustering_pdfs = None
 
         self.cutFlowCuts = [
             "all",
@@ -569,6 +573,7 @@ class analysis(processor.ProcessorABC):
             #
             # Declustering
             #
+
 
             #
             #  Read in the pdfs

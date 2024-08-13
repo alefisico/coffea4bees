@@ -84,6 +84,7 @@ def make_PDFs_vs_Pt(config, output_file_name_vs_pT):
             for _v in varNames:
                 var_config = config[_s][_v]
                 #splitting_{_s}.{_v}_pT"
+                #_hist_name = f"splitting_{_s.replace('/','_')}.{var_config[0]}_pT"
                 _hist_name = f"splitting_{_s}.{var_config[0]}_pT"
                 #print(f"\t var {_hist_name}")
 
@@ -167,7 +168,6 @@ def test_PDFs_vs_Pt(config, output_file_name):
         counts_vs_pt = {}
         total_counts = {}
 
-
         for _s in splittings:
 
             print(f"Doing splitting {_s}")
@@ -213,9 +213,9 @@ def test_PDFs_vs_Pt(config, output_file_name):
 
                     plt.xlabel(_v)
                     plt.legend()
-                    plt.savefig(args.outputFolder+f"/test_sampling_pt_{_s}_{_v}.pdf")
+                    plt.savefig(args.outputFolder+f"/test_sampling_pt_{_s.replace('/','_')}_{_v}.pdf")
                     plt.yscale("log")
-                    plt.savefig(args.outputFolder+f"/test_sampling_pt_{_s}_{_v}_log.pdf")
+                    plt.savefig(args.outputFolder+f"/test_sampling_pt_{_s.replace('/','_')}_{_v}_log.pdf")
 
                     plt.close()
 
@@ -281,21 +281,22 @@ def doPlots(debug=False):
     p_C_X  = r'\([()jb]*\)[bj]'
     p_C_XX = r'\([()jb]*\)\([bj]{2}\)'
     p_C_C  = r'\([()jb]*\)\([()bj]*\)'
-
-
+    p_N_1  = r'\d+/1'
+    p_N_N  = r'\d+/\d+'
 
 
     patterns = { p_XX    : s_XX,
                  p_C_X   : s_XX_X,
                  p_C_XX  : s_XX_XX,
                  p_C_C   : s_XX_XX,
-                 #p_XX_XX : s_XX_XX,
+                 p_N_1   : s_XX_X,
+                 p_N_N   : s_XX_XX,
                 }
 
     #
     #  Get All splittings
     #
-    all_splittings = [i.replace("splitting_","").replace(".zA_l","") for i in cfg.hists[0]["hists"].keys() if not i.find("zA_l") == -1 and i.find("detailed") == -1]
+    all_splittings = [i.replace("splitting_","").replace(".zA_l","").replace("_","/") for i in cfg.hists[0]["hists"].keys() if not i.find("zA_l") == -1 and i.find("detailed") == -1]
 
     unconfig_splitting = []
 
@@ -325,6 +326,10 @@ def doPlots(debug=False):
 
     print(f" Total Splittings {n_splittings}")
     print(f"   nConfigured    {n_configured_splittings}")
+
+    if len(unconfig_splitting):
+        print(f"Unconfigured splittings are {unconfig_splitting}")
+
 
     #print(len(splitting_config.)
 

@@ -62,7 +62,7 @@ def get_splitting_name(comb_flavor):
 
     n_Xs, _ = get_splitting_summary(comb_flavor)
     if n_Xs[0] > 4 or (n_Xs[0] + n_Xs[1]) > 5:
-        return f"{n_Xs[0]}_{n_Xs[1]}"
+        return f"{n_Xs[0]}/{n_Xs[1]}"
 
     return comb_flavor
 
@@ -411,7 +411,7 @@ def decluster_splitting_types(input_jets, splitting_types, input_pdfs, debug=Fal
             _indicies = np.where(ak.flatten(_s_mask))
             _indicies_tuple = (_indicies[0].to_list())
 
-            splittings_info.append((_s, _num_samples, _indicies_tuple))
+            splittings_info.append((get_splitting_name(_s), _num_samples, _indicies_tuple))
 
 
         #
