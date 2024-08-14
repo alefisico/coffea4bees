@@ -46,6 +46,13 @@ class _mc_selection(_common_selection):
     ntags = "fourTag"
 
 
+def _remove_outlier(df: pd.DataFrame):
+    # TODO: This is a temporary solution triggered by the following two events:
+    # GluGluToHHTo4B_cHHH2p45, year:UL16, event:298138, weight: 8.754285
+    # GluGluToHHTo4B_cHHH5   , year:UL17, event:269373, weight:40.969357
+    return df.loc[df["weight"] < 1]
+
+
 class _Base(Common):
     argparser = ArgParser()
     argparser.add_argument(
@@ -73,6 +80,7 @@ class _Base(Common):
                 key="kl", pattern=r"kl:(?P<kl>.*)", default=np.nan, dtype=float
             ),
             _group.add_single_label(),
+            _group.regex(r"kl:(2.45|5)", (_remove_outlier,)),
         ]
 
 
