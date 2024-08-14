@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import sys
 
 import tblib.pickling_support
 
@@ -9,8 +10,17 @@ from ...process.monitor import Recorder
 from ._redirect import MultiPlatformHandler
 
 
+def _excepthook(exc_type, exc_value, exc_traceback):
+    logging.error(
+        "Uncaught exception",
+        exc_info=(exc_type, exc_value, exc_traceback),
+    )
+
+
 def _common():
     tblib.pickling_support.install()
+    if cfg.Log.forward_exception:
+        sys.excepthook = _excepthook
 
 
 def disable_monitor():
