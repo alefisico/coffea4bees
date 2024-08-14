@@ -48,8 +48,14 @@ class _mc_selection(_common_selection):
 
 def _remove_outlier(df: pd.DataFrame):
     # TODO: This is a temporary solution triggered by the following two events:
-    # GluGluToHHTo4B_cHHH2p45, year:UL16, event:298138, weight: 8.754285
-    # GluGluToHHTo4B_cHHH5   , year:UL17, event:269373, weight:40.969357
+    #
+    # GluGluToHHTo4B_cHHH2p45
+    # root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL16NanoAODv9/GluGluToHHTo4B_cHHH2p45_TuneCP5_PSWeights_13TeV-powheg-pythia8/NANOAODSIM/106X_mcRun2_asymptotic_v17-v1/2810000/13EBD534-FF20-C34B-BCC7-521EEB2FD396.root
+    # event:298138, weight: 726.4/0.0131
+    #
+    # GluGluToHHTo4B_cHHH5
+    # root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL17NanoAODv9/GluGluToHHTo4B_cHHH5_TuneCP5_PSWeights_13TeV-powheg-pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/30000/ABFD7D49-76A1-2A48-A523-6811C8C7FA01.root
+    # event:269373, weight: 5996/0.0802
     return df.loc[df["weight"] < 1]
 
 
