@@ -29,7 +29,8 @@ class _roc_select_sig:
     def _select(self, batch: BatchType):
         import torch
 
-        return torch.isin(batch[Input.label], MultiClass.indices(*_BKG, self.sig))
+        label = batch[Input.label]
+        return torch.isin(label, label.new_tensor(MultiClass.indices(*_BKG, self.sig)))
 
 
 class _roc_select_ggF(_roc_select_sig):
@@ -40,8 +41,9 @@ class _roc_select_ggF(_roc_select_sig):
     def _select(self, batch: BatchType):
         import torch
 
-        return torch.isin(batch[Input.label], MultiClass.indices(*self.bkg)) | (
-            (batch["kl"] == self.kl) & (batch[Input.label] == MultiClass.index("ggF"))
+        label = batch[Input.label]
+        return torch.isin(label, label.new_tensor(MultiClass.indices(*self.bkg))) | (
+            (batch["kl"] == self.kl) & (label == MultiClass.index("ggF"))
         )
 
 
