@@ -62,22 +62,22 @@ class Baseline(HCR):
 
     @property
     def rocs(self):
-        from classifier.ml.roc import MulticlassROC
+        from classifier.ml.benchmarks.multiclass import ROC
 
         return (
-            MulticlassROC(
+            ROC(
                 name="4b vs 3b data",
                 selection=_roc_data_selection,
                 bins=_ROC_BIN,
                 pos=("d4", "t4"),
             ),
-            MulticlassROC(
+            ROC(
                 name="4b vs 3b",
                 selection=_roc_nominal_selection,
                 bins=_ROC_BIN,
                 pos=("d4", "t4"),
             ),
-            MulticlassROC(
+            ROC(
                 name="ttbar vs data",
                 selection=_roc_nominal_selection,
                 bins=_ROC_BIN,

@@ -1,5 +1,6 @@
-from typing import Callable, Iterable
+from typing import Callable, Iterable, Optional
 
+import base_class.numpy as npext
 import numpy as np
 import torch
 import torch.types as tt
@@ -21,11 +22,11 @@ class FixedThresholdROC:
         negative_classes: Iterable[int] = None,
         score_interpretation: Callable[[Tensor, Tensor], Tensor] = None,
     ):
-        self.hist = FloatWeighted(thresholds, err=False)
-        self.pos = sorted(set(positive_classes))
+        self._hist = FloatWeighted(thresholds, err=False)
+        self._pos = sorted(set(positive_classes))
         if negative_classes is not None:
-            self.neg = sorted(set(negative_classes))
-            self.map = score_interpretation
+            self._neg = sorted(set(negative_classes))
+            self._map = score_interpretation
         self.reset()
 
     def reset(self):
@@ -41,11 +42,11 @@ class FixedThresholdROC:
     def _init(self, f: tt._dtype, i: tt._dtype, d: tt.Device):
         if self.__t is None:
             self.__t = {"dtype": f, "device": d}
-            self.__pos = torch.as_tensor(self.pos, dtype=i, device=d)
+            self.__pos = torch.as_tensor(self._pos, dtype=i, device=d)
             if self._has_neg:
-                self.__neg = torch.as_tensor(self.neg, dtype=i, device=d)
-            self.__FP = self.hist.copy(**self.__t)
-            self.__TP = self.hist.copy(**self.__t)
+                self.__neg = torch.as_tensor(self._neg, dtype=i, device=d)
+            self.__FP = self._hist.copy(**self.__t)
+            self.__TP = self._hist.copy(**self.__t)
             self.__P = torch.tensor(0, **self.__t)
             self.__N = torch.tensor(0, **self.__t)
 
@@ -54,12 +55,12 @@ class FixedThresholdROC:
         return hasattr(self, "neg")
 
     def _score(self, y_pred: Tensor):
-        pos = y_pred[:, self.pos].sum(dim=-1)
-        if (not self._has_neg) or (self.map is None):
+        pos = y_pred[:, self._pos].sum(dim=-1)
+        if (not self._has_neg) or (self._map is None):
             return pos
         else:
-            neg = y_pred[:, self.neg].sum(dim=-1)
-            return self.map(pos, neg)
+            neg = y_pred[:, self._neg].sum(dim=-1)
+            return self._map(pos, neg)
 
     def _bounded(self, FPR: Tensor, TPR: Tensor):
         f, t = [FPR], [TPR]
@@ -92,7 +93,7 @@ class FixedThresholdROC:
             raise ValueError(f"{msg} must have the same length")
 
     @torch.no_grad()
-    def update(self, y_pred: Tensor, y_true: Tensor, weight: Tensor = None):
+    def update(self, y_pred: Tensor, y_true: Tensor, weight: Optional[Tensor] = None):
         self._init(
             weight.dtype if weight is not None else y_pred.dtype,
             y_true.dtype,
@@ -103,7 +104,7 @@ class FixedThresholdROC:
         if y_pred.dim() == 2:
             y_pred = self._score(y_pred)
         if weight is None:
-            weight = torch.ones_like(y_true)
+            weight = torch.ones_like(y_pred)
         else:
             self._check_shape(weight=(weight, 1), y_true=(y_true, 1))
         # update P, N, TP, FP
@@ -118,8 +119,8 @@ class FixedThresholdROC:
     def roc(self):
         if self.__t is None:
             return np.array([]), np.array([]), 0.0
-        __TP = self.__TP.values()
-        __FP = self.__FP.values()
+        __TP, _ = self.__TP.hist()
+        __FP, _ = self.__FP.hist()
         fpr = torch.cumsum(__FP, dim=0) / self.__N
         tpr = torch.cumsum(__TP, dim=0) / self.__P
         # deal with negative weights
@@ -135,4 +136,12 @@ class FixedThresholdROC:
         # AUC
         auc = -torch.trapz(tpr, fpr)
         self.reset()
-        return to_arr(fpr), to_arr(tpr), to_num(auc)
+        return fpr, tpr, auc
+
+    def to_json(self):
+        fpr, tpr, auc = self.roc()
+        return {
+            "FPR": npext.to.base64(to_arr(fpr)),
+            "TPR": npext.to.base64(to_arr(tpr)),
+            "AUC": to_num(auc),
+        }
