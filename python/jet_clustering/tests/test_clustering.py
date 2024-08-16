@@ -628,10 +628,10 @@ class clusteringTestCase(unittest.TestCase):
             self.assertListEqual(expected, sub_splitting)
 
     def test_get_splitting_summary(self):
-        splitting_types = [ ('bb',                   ( (1, 1), (1,1))),
-                            ("(bb)j",                ( (2, 1), (2,0))),
-                            ("(j(bj))b",             ( (3, 1), (1,1))),
-                            ('((((jj)j)j)((bj)j))b', ( (7 ,1), (1,1))),
+        splitting_types = [ ('bb',                   ( (1, 0), (1,0))),
+                            ("(bb)j",                ( (2, 0), (0,1))),
+                            ("(j(bj))b",             ( (1, 2), (1,0))),
+                            ('((((jj)j)j)((bj)j))b', ( (1 ,6), (1,0))),
                              ]
         for _s in splitting_types:
 

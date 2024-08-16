@@ -39,7 +39,7 @@ def plotCut(args):
     plot("canJets.eta", **args, xlim=[-3,3])
     plot("canJets.phi", **args)
     plot("canJets.energy", **args)
-    plot("canJets.mass", **args,xlim=[0,50])
+    plot("canJets.mass", **args)#),xlim=[0,50])
     plot("canJets.pz", **args)#,yscale="log")
 
     for i in range(4):
@@ -47,8 +47,16 @@ def plotCut(args):
         plot(f"canJet{i}.eta", **args, xlim=[-3,3])
         plot(f"canJet{i}.phi", **args)
         plot(f"canJet{i}.energy", **args)
-        plot(f"canJet{i}.mass", **args,xlim=[0,50])
+        plot(f"canJet{i}.mass", **args)#,xlim=[0,50])
         plot(f"canJet{i}.pz", **args)#,yscale="log")
+
+
+    plot("othJets.pt",  **args)
+    plot("othJets.eta", **args)
+    plot("othJets.phi", **args)
+    plot("othJets.energy", **args)
+    plot("othJets.mass", **args)
+    plot("othJets.pz", **args)#,yscale="log")
 
 
     #
@@ -80,7 +88,8 @@ def plotCut(args):
     #  Event Level
     #
     args["rebin"] = 1
-    plot("selJets.n", **args, yscale="log")
+    plot("selJets.n", **args, yscale="linear")
+    plot("othJets.n", **args, yscale="linear")
 
     args["rebin"] = 4
     plot("SvB_MA.ps_zh", **args, yscale="log")

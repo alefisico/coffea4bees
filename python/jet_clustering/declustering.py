@@ -49,23 +49,45 @@ def get_splitting_summary(comb_flavor):
     childA, childB = children_jet_flavors(comb_flavor)
 
     n_b_A = childA.count("b")
-    n_X_A = n_b_A + childA.count("j")
+    n_j_A = childA.count("j")
 
     n_b_B = childB.count("b")
-    n_X_B = n_b_B + childB.count("j")
+    n_j_B = childB.count("j")
 
+    return (n_b_A, n_j_A), (n_b_B, n_j_B)
 
-    return (n_X_A, n_X_B), (n_b_A, n_b_B)
 
 
 def get_splitting_name(comb_flavor):
 
-    n_Xs, _ = get_splitting_summary(comb_flavor)
-    if n_Xs[0] > 4 or (n_Xs[0] + n_Xs[1]) > 5:
-        return f"{n_Xs[0]}/{n_Xs[1]}"
+    A_stats, B_stats = get_splitting_summary(comb_flavor)
 
-    return comb_flavor
+    nA = A_stats[0] + A_stats[1]
+    nB = B_stats[0] + B_stats[1]
 
+    #  X / X
+    if nA > 3 and nB > 2:
+        return "X/X"
+
+    #  3 / 3
+    if nA == 3 and nB == 3:
+        return f"3/3"
+
+    # 3/2,  4/2,  and X/2
+    if nA > 2 and nB > 1:
+        if nA > 4:
+            return f"X/{nB}"
+
+        return f"{nA}/{nB}"
+
+    # 4/1, X,1
+    if nA > 3 and nB > 0:
+        if nA > 4:
+            return f"X/{nB}"
+
+        return f"{nA}/{nB}"
+
+    return f"{A_stats[0]}b{A_stats[1]}j/{B_stats[0]}b{B_stats[1]}j"
 
 
 def get_list_of_combined_jet_types(jets):
