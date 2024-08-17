@@ -570,24 +570,14 @@ class analysis(processor.ProcessorABC):
             clustered_jets, _clustered_splittings = cluster_bs(jets_for_clustering, debug=False)
             clustered_jets = clean_ISR(clustered_jets, _clustered_splittings)
 
+
+            mask_unclustered_jet = (clustered_jets.jet_flavor == "b") | (clustered_jets.jet_flavor == "j")
+            selev["nClusteredJets"] = ak.num(clustered_jets[~mask_unclustered_jet])
+
             #
             # Declustering
             #
-
-
-            #
-            #  Read in the pdfs
-            #
-            #  Make with ../.ci-workflows/synthetic-dataset-plot-job.sh
-            #input_pdf_file_name = "analysis/plots_synthetic_datasets/clustering_pdfs.yml"
-            #input_pdf_file_name = "analysis/plots_synthetic_datasets/clustering_pdfs_vs_pT.yml"
-            #with open(self.clustering_pdfs, 'r') as input_file:
-            #    input_pdfs = yaml.safe_load(input_file)
-
             declustered_jets = make_synthetic_event(clustered_jets, self.clustering_pdfs)
-
-
-
 
             #canJet = declustered_jets
 
@@ -1029,6 +1019,9 @@ class analysis(processor.ProcessorABC):
             fill += Jet.plot( ("selJets_noJCM", "Selected Jets"),        "selJet",       weight="weight_noJCM_noFvT", skip=skip_all_but_n, )
             fill += Jet.plot( ("tagJets_noJCM", "Tag Jets"),             "tagJet",       weight="weight_noJCM_noFvT", skip=skip_all_but_n, )
             fill += Jet.plot( ("tagJets_loose_noJCM", "Loose Tag Jets"), "tagJet_loose", weight="weight_noJCM_noFvT", skip=skip_all_but_n, )
+
+            if self.do_declustering:
+                fill += hist.add("nClusteredJets",      (4, -0.5, 3.5, ("nClusteredJets",   "Number of clustered Jets"  ) ) )
 
             for iJ in range(4):
                 fill += Jet.plot( (f"canJet{iJ}", f"Higgs Candidate Jets {iJ}"), f"canJet{iJ}", skip=["n", "deepjet_c"], bins={"mass": (100, 0, 100)})
