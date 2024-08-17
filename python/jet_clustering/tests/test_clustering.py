@@ -34,7 +34,7 @@ class clusteringTestCase(unittest.TestCase):
         #
         #  Make with ../.ci-workflows/synthetic-dataset-plot-job.sh
         # input_pdf_file_name = "analysis/plots_synthetic_datasets/clustering_pdfs.yml"
-        input_pdf_file_name = "jet_clustering/jet-splitting-PDFs-00-03-00/clustering_pdfs_vs_pT.yml"
+        input_pdf_file_name = "jet_clustering/jet-splitting-PDFs-00-07-00/clustering_pdfs_vs_pT.yml"
         #input_pdf_file_name = "jet_clustering/clustering_PDFs/clustering_pdfs_vs_pT.yml"
         with open(input_pdf_file_name, 'r') as input_file:
             self.input_pdfs = yaml.safe_load(input_file)
@@ -475,7 +475,11 @@ class clusteringTestCase(unittest.TestCase):
 
         clustered_jets = clean_ISR(clustered_jets, _clustered_splittings, debug=debug)
 
-        if debug:
+        #mask_b_jet = clean_ISR
+        mask_unclustered_jet = (clustered_jets.jet_flavor == "b") | (clustered_jets.jet_flavor == "j")
+        ak.num(clustered_jets[~mask_unclustered_jet])
+
+        if debug or True:
             print("Jet flavour after ISR cleaning")
             [print(i) for i in clustered_jets.jet_flavor]
 
