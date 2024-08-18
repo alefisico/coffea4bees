@@ -56,6 +56,8 @@ def setSvBVars(SvBName, event):
 
     event[SvBName, "hh"] = ( getattr(event, SvBName).phh >= getattr(event, SvBName).pzz ) & (getattr(event, SvBName).phh >= getattr(event, SvBName).pzh)
 
+    event[SvBName, "tt_vs_mj"] = ( getattr(event, SvBName).ptt / (getattr(event, SvBName).ptt + getattr(event, SvBName).pmj) )
+
 
     #
     #  Set ps_{bb}
@@ -96,6 +98,7 @@ class analysis(processor.ProcessorABC):
             do_declustering=False,
             corrections_metadata="analysis/metadata/corrections.yml",
             clustering_pdfs_file = "None",
+            top_reconstruction_override = False,
             run_systematics=[],
             blind = False,
             make_classifier_input: str = None,
@@ -118,6 +121,7 @@ class analysis(processor.ProcessorABC):
             logging.info(f"Loaded {len(self.clustering_pdfs.keys())} PDFs from {clustering_pdfs_file}")
         else:
             self.clustering_pdfs = None
+        self.top_reconstruction_override = top_reconstruction_override
 
         self.cutFlowCuts = [
             "all",
@@ -157,8 +161,12 @@ class analysis(processor.ProcessorABC):
         processName = event.metadata['processName']
         isMC    = True if event.run[0] == 1 else False
 
-        self.top_reconstruction = event.metadata.get("top_reconstruction", None)
-        logging.debug(f"top_reconstruction is {self.top_reconstruction}")
+        if self.top_reconstruction_override:
+            self.top_reconstruction = self.top_reconstruction_override
+            logging.info(f"top_reconstruction overridden to {self.top_reconstruction}")
+        else:
+            self.top_reconstruction = event.metadata.get("top_reconstruction", None)
+
         isMixedData    = not (dataset.find("mix_v") == -1)
         isDataForMixed = not (dataset.find("data_3b_for_mixed") == -1)
         isTTForMixed   = not (dataset.find("TTTo") == -1) and not ( dataset.find("_for_mixed") == -1 )
@@ -585,13 +593,24 @@ class analysis(processor.ProcessorABC):
             canJet["puId"] = 7
             canJet["jetId"] = 7 # selev.Jet.puId[canJet_idx]
             canJet["btagDeepFlavB"] = 1.0 # Set bs to 1 and ls to 0
+            canJet["bRegCorr"] = 1.0
+            canJet["tagged"] = 1
             canJet = canJet[ak.argsort(canJet.pt, axis=1, ascending=False)]
 
             notCanJet = declustered_jets[declustered_jets.jet_flavor == "j"]
             notCanJet["puId"] = 7
-            notCanJet["jetId"] = 7 # selev.Jet.puId[canJet_idx]
+            notCanJet["jetId"] = 7
             notCanJet["btagDeepFlavB"] = 0.0 # Set bs to 1 and ls to 0
+            notCanJet["bRegCorr"] = 1.0
+            notCanJet["tagged"] = 0
             notCanJet = notCanJet[ak.argsort(notCanJet.pt, axis=1, ascending=False)]
+
+            new_jets = ak.concatenate([canJet, notCanJet], axis=1)
+            new_jets["selected_loose"] = 1
+            new_jets["tagged_loose"] = 0
+            new_jets["selected"] = 1 * ( (new_jets.pt > 40) & (np.abs(new_jets.eta) < 2.4) )
+            selev['Jet'] = new_jets
+            selev['selJet'] = new_jets[new_jets.selected]
 
             #print(f"{chunk} {ak.num(canJet)} \n" )
             four_canJets = ak.num(canJet) ==4
@@ -962,6 +981,9 @@ class analysis(processor.ProcessorABC):
             fill += hist.add( "nPVs", (101, -0.5, 100.5, ("PV.npvs", "Number of Primary Vertices")) )
             fill += hist.add( "nPVsGood", (101, -0.5, 100.5, ("PV.npvsGood", "Number of Good Primary Vertices")), )
 
+            fill += hist.add( "hT", (50, 0, 1000, ("hT", "h_{T} [GeV]")), )
+            fill += hist.add( "hT_selected", (50, 0, 1000, ("hT_selected", "h_{T} [GeV]")), )
+
             #
             #  Make classifier hists
             #
@@ -970,8 +992,14 @@ class analysis(processor.ProcessorABC):
                 if isMixedData or isDataForMixed or isTTForMixed:
                     FvT_skip = ["pt", "pm3", "pm4"]
 
-            if "xbW" in selev.fields:  ### AGE: this should be temporary
-                fill += hist.add("xW", (100, 0, 12, ("xW", "xW")))
+            if "xbW_reco" in selev.fields:
+                fill += hist.add("xW",  (100, -12, 12, ("xW_reco", "xW")))
+                fill += hist.add("xbW", (100, -15, 15, ("xbW_reco", "xbW")))
+
+            else:
+                fill += hist.add("xW",  (100, -12, 12, ("xW", "xW")))
+                fill += hist.add("xbW", (100, -15, 15, ("xbW", "xbW")))
+
                 #fill += hist.add("delta_xW", (100, -5, 5, ("delta_xW", "delta xW")))
                 #fill += hist.add("delta_xW_l", (100, -15, 15, ("delta_xW", "delta xW")))
 
@@ -1211,6 +1239,8 @@ class analysis(processor.ProcessorABC):
             this_ps_hh[ SvB.hh ] = SvB.ps[ SvB.hh ]
             this_ps_hh[ SvB.passMinPs == False ] = -2
             SvB['ps_hh'] = this_ps_hh
+
+            SvB['tt_vs_mj'] = ( SvB.ptt / (SvB.ptt + SvB.pmj) )
 
             if classifier in event.fields:
                 error = ~np.isclose(event[classifier].ps, SvB.ps, atol=1e-5, rtol=1e-3)

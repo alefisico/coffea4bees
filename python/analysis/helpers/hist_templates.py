@@ -5,6 +5,8 @@ class SvBHists(Template):
     ps      = H((100, 0, 1, ('ps', "Regressed P(Signal)")))
     ptt     = H((100, 0, 1, ('ptt', "Regressed P(tT)")))
 
+    tt_vs_mj     = H((100, 0, 1, ('tt_vs_mj', "P(tT) | Background")))
+
     ps_zz   = H((200, 0, 1, ('ps_zz', "Regressed P(Signal) $|$ P(ZZ) is largest ")))
     ps_zh   = H((200, 0, 1, ('ps_zh', "Regressed P(Signal) $|$ P(ZH) is largest ")))
     ps_hh   = H((200, 0, 1, ('ps_hh', "Regressed P(Signal) $|$ P(HH) is largest ")))
@@ -95,6 +97,3 @@ class TopCandHists(Template):
 
     xW_vs_xbW  = H((100, 0,  12,   ("xW",   'X_{W}')),
                    (100, 0,  12,   ("xbW",  'X_{bW}')))
-
-
-
