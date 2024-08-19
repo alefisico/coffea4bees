@@ -83,7 +83,7 @@ class TopCandHists(Template):
     xWt  = H(( 60, 0,  12,   ("xWt",  "X_{W,t}")))
     xWbW = H(( 60, 0,  12,   ("xWbW", "X_{W,bW}")))
     rWbW = H(( 60, 0,  12,   ("rWbW", "r_{W,bW}")))
-    xbW  = H(( 60, 0,  12,   ("xbW",  "X_{W,bW}")))
+    xbW  = H(( 60, -15,  15,   ("xbW",  "X_{W,bW}")))
     xW   = H((100, 0,  12,   ("xW",   'X_{W}')))
 
     mW_vs_mt  = H((50,  0, 250, ('W.p.mass', 'W Candidate Mass [GeV]')),

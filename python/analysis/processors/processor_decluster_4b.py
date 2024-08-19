@@ -534,11 +534,6 @@ class analysis(processor.ProcessorABC):
 
         selev = event[selections.all(*allcuts)]
 
-        #
-        #  Calculate hT
-        #
-        selev["hT"] = ak.sum(selev.Jet[selev.Jet.selected_loose].pt, axis=1)
-        selev["hT_selected"] = ak.sum(selev.Jet[selev.Jet.selected].pt, axis=1)
 
         #
         # Build and select boson candidate jets with bRegCorr applied
@@ -587,28 +582,33 @@ class analysis(processor.ProcessorABC):
             #
             declustered_jets = make_synthetic_event(clustered_jets, self.clustering_pdfs)
 
-            #canJet = declustered_jets
-
             canJet = declustered_jets[declustered_jets.jet_flavor == "b"]
             canJet["puId"] = 7
             canJet["jetId"] = 7 # selev.Jet.puId[canJet_idx]
-            canJet["btagDeepFlavB"] = 1.0 # Set bs to 1 and ls to 0
+
+
+            btag_rand = np.random.uniform(low=0.6, high=1.0, size=len(ak.flatten(canJet,axis=1)))
+            canJet["btagDeepFlavB"] = ak.unflatten(btag_rand, ak.num(canJet))
             canJet["bRegCorr"] = 1.0
-            canJet["tagged"] = 1
+            canJet["tagged"] = True
+            canJet["selected"] = True
             canJet = canJet[ak.argsort(canJet.pt, axis=1, ascending=False)]
 
             notCanJet = declustered_jets[declustered_jets.jet_flavor == "j"]
             notCanJet["puId"] = 7
             notCanJet["jetId"] = 7
-            notCanJet["btagDeepFlavB"] = 0.0 # Set bs to 1 and ls to 0
+
+            btag_rand = np.random.uniform(low=0.0, high=0.6, size=len(ak.flatten(notCanJet,axis=1)))
+            notCanJet["btagDeepFlavB"] = ak.unflatten(btag_rand, ak.num(notCanJet))
             notCanJet["bRegCorr"] = 1.0
-            notCanJet["tagged"] = 0
+            notCanJet["tagged"] = True
+            notCanJet["selected"] =  (notCanJet.pt >= 40) & (np.abs(notCanJet.eta) <= 2.4)
             notCanJet = notCanJet[ak.argsort(notCanJet.pt, axis=1, ascending=False)]
 
             new_jets = ak.concatenate([canJet, notCanJet], axis=1)
-            new_jets["selected_loose"] = 1
-            new_jets["tagged_loose"] = 0
-            new_jets["selected"] = 1 * ( (new_jets.pt > 40) & (np.abs(new_jets.eta) < 2.4) )
+            new_jets["selected_loose"] = True
+            new_jets["tagged_loose"] = False
+
             selev['Jet'] = new_jets
             selev['selJet'] = new_jets[new_jets.selected]
 
@@ -633,6 +633,13 @@ class analysis(processor.ProcessorABC):
         #
         #   Proceed as normal
         #
+
+        #
+        #  Calculate hT
+        #
+        selev["hT"] = ak.sum(selev.Jet[selev.Jet.selected_loose].pt, axis=1)
+        selev["hT_selected"] = ak.sum(selev.Jet[selev.Jet.selected].pt, axis=1)
+
         selev["canJet"] = canJet
 
         #
@@ -644,10 +651,6 @@ class analysis(processor.ProcessorABC):
         selev["canJet3"] = canJet[:, 3]
 
         selev["v4j"] = canJet.sum(axis=1)
-        # selev['v4j', 'n'] = 1
-        # print(selev.v4j.n)
-        # selev['Jet', 'canJet'] = False
-
 
         notCanJet["isSelJet"] = 1 * ( (notCanJet.pt > 40) & (np.abs(notCanJet.eta) < 2.4) )  # should have been defined as notCanJet.pt>=40, too late to fix this now...
         selev["notCanJet_coffea"] = notCanJet
@@ -981,8 +984,8 @@ class analysis(processor.ProcessorABC):
             fill += hist.add( "nPVs", (101, -0.5, 100.5, ("PV.npvs", "Number of Primary Vertices")) )
             fill += hist.add( "nPVsGood", (101, -0.5, 100.5, ("PV.npvsGood", "Number of Good Primary Vertices")), )
 
-            fill += hist.add( "hT", (50, 0, 1000, ("hT", "h_{T} [GeV]")), )
-            fill += hist.add( "hT_selected", (50, 0, 1000, ("hT_selected", "h_{T} [GeV]")), )
+            fill += hist.add( "hT", (50, 0, 1500, ("hT", "h_{T} [GeV]")), )
+            fill += hist.add( "hT_selected", (50, 0, 1500, ("hT_selected", "h_{T} [GeV]")), )
 
             #
             #  Make classifier hists
@@ -1014,10 +1017,10 @@ class analysis(processor.ProcessorABC):
             #
             # Jets
             #
-            fill += Jet.plot(("selJets", "Selected Jets"),        "selJet",           skip=["deepjet_c"], bins={"mass": (100, 0, 100)})
-            fill += Jet.plot(("canJets", "Higgs Candidate Jets"), "canJet",           skip=["deepjet_c"], bins={"mass": (100, 0, 100)})
-            fill += Jet.plot(("othJets", "Other Jets"),           "notCanJet_coffea", skip=["deepjet_c"], bins={"mass": (100, 0, 100)})
-            fill += Jet.plot(("tagJets", "Tag Jets"),             "tagJet",           skip=["deepjet_c"], bins={"mass": (100, 0, 100)})
+            fill += Jet.plot(("selJets", "Selected Jets"),        "selJet",           skip=["deepjet_c"], bins={"mass": (100, 0, 100), "phi": (100, -np.pi, 2*np.pi)})
+            fill += Jet.plot(("canJets", "Higgs Candidate Jets"), "canJet",           skip=["deepjet_c"], bins={"mass": (100, 0, 100), "phi": (100, -np.pi, 2*np.pi)})
+            fill += Jet.plot(("othJets", "Other Jets"),           "notCanJet_coffea", skip=["deepjet_c"], bins={"mass": (100, 0, 100), "phi": (100, -np.pi, 2*np.pi)})
+            fill += Jet.plot(("tagJets", "Tag Jets"),             "tagJet",           skip=["deepjet_c"], bins={"mass": (100, 0, 100), "phi": (100, -np.pi, 2*np.pi)})
 
             #
             #  Make quad jet hists
