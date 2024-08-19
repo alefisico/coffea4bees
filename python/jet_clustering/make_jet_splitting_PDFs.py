@@ -231,30 +231,36 @@ def test_PDFs_vs_Pt(config, output_file_name):
         #all_splitting_names = set(all_splitting_names) # make unique
         #breakpoint()
 
+
         sorted_counts = dict(sorted(total_counts.items(), key=lambda item: item[1], reverse=True) )
+        with open(args.outputFolder+'/all_splittings_multiplicities.yaml', 'w') as splitting_mult_file:
+            yaml.dump(sorted_counts, splitting_mult_file, default_flow_style=False)
+
+
         with open(args.outputFolder+"/all_splittings_multiplicities.txt", "w") as splitting_mult_file:
             for k, v, in sorted_counts.items():
-                nJets, nbs = get_splitting_summary(k)
-                _s_info = f"{k:25}   {v:10}  {nJets}"
+                #nJets, nbs = get_splitting_summary(k)
+
+                _s_info = f"{k:25}   {v:10}"
                 print(_s_info)
                 splitting_mult_file.write(f"{_s_info}\n")
 
 
-        #
-        # Now the grouped splittings
-        #
-        total_counts_grouped_splittings = {}
-        for k, v in sorted_counts.items():
-            _split_name = get_splitting_name(k)
-            total_counts_grouped_splittings[_split_name] = total_counts_grouped_splittings.get(_split_name,0) + v
-
-        sorted_counts_grouped = dict(sorted(total_counts_grouped_splittings.items(), key=lambda item: item[1], reverse=True) )
-        with open(args.outputFolder+"/all_grouped_splittings_multiplicities.txt", "w") as splitting_group_mult_file:
-            for k, v, in sorted_counts_grouped.items():
-                _s_info = f"{k:25}   {v:10} "
-                print(_s_info)
-                splitting_group_mult_file.write(f"{_s_info}\n")
-
+#        #
+#        # Now the grouped splittings
+#        #
+#        total_counts_grouped_splittings = {}
+#        for k, v in sorted_counts.items():
+#            _split_name = get_splitting_name(k)
+#            total_counts_grouped_splittings[_split_name] = total_counts_grouped_splittings.get(_split_name,0) + v
+#
+#        sorted_counts_grouped = dict(sorted(total_counts_grouped_splittings.items(), key=lambda item: item[1], reverse=True) )
+#        with open(args.outputFolder+"/all_grouped_splittings_multiplicities.txt", "w") as splitting_group_mult_file:
+#            for k, v, in sorted_counts_grouped.items():
+#                _s_info = f"{k:25}   {v:10} "
+#                print(_s_info)
+#                splitting_group_mult_file.write(f"{_s_info}\n")
+#
 
         #print("Total Counts vs pt\n")
         #print(counts_vs_pt)
@@ -274,23 +280,37 @@ def doPlots(debug=False):
     s_XX     = { "mA":("mA",   1),  "mB":("mB",   1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_vs_thetaA", 1) }
     s_XX_X   = { "mA":("mA_l", 1),  "mB":("mB",   1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_vs_thetaA", 1) }
     s_XX_XX  = { "mA":("mA_l", 1),  "mB":("mB_l", 1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_vs_thetaA", 1) }
-    s_XX_X_X = { "mA":("mA_l", 1),  "mB":("mB",   1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_vs_thetaA", 1) }
 
+
+    #
     # Define the regex pattern
-    p_XX   = r'[bj]{2}'
-    p_C_X  = r'\([()jb]*\)[bj]'
-    p_C_XX = r'\([()jb]*\)\([bj]{2}\)'
-    p_C_C  = r'\([()jb]*\)\([()bj]*\)'
-    p_N_1  = r'\d+/1'
+    #
+    #pattern = r'[01]b[01]j(/[01]b[01]j)?'
+
+    p_XX = r'[01]b[01]j/[01]b[01]j'
+
+    p_1bNj_X = r'1b[1-9]\d*j/[01]b[01]j'
+    p_0bNj_X = r'0b[2-9]\d*j/[01]b[01]j'
+
+    p_0bNj_0bNj = r'0b[2-9]\d*j/[01]b[2-9]\d*j'
+    p_1bNj_0bNj = r'1b[1-9]\d*j/[01]b[2-9]\d*j'
+
+    #p_C_X  = r'\([()jb]*\)[bj]'
     p_N_N  = r'\d+/\d+'
+    p_X_1  = r'X/1'
+    p_X_2  = r'X/2'
+    p_X_X  = r'X/X'
 
 
     patterns = { p_XX    : s_XX,
-                 p_C_X   : s_XX_X,
-                 p_C_XX  : s_XX_XX,
-                 p_C_C   : s_XX_XX,
-                 p_N_1   : s_XX_X,
-                 p_N_N   : s_XX_XX,
+                 p_1bNj_X   : s_XX_X,
+                 p_0bNj_X   : s_XX_X,
+                 p_0bNj_0bNj : s_XX_XX,
+                 p_1bNj_0bNj : s_XX_XX,
+                 p_N_N       : s_XX_XX,
+                 p_X_X       : s_XX_XX,
+                 p_X_1       : s_XX_X,
+                 p_X_2       : s_XX_XX,
                 }
 
     #
@@ -329,7 +349,6 @@ def doPlots(debug=False):
 
     if len(unconfig_splitting):
         print(f"Unconfigured splittings are {unconfig_splitting}")
-
 
     #print(len(splitting_config.)
 
