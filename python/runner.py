@@ -40,11 +40,11 @@ def list_of_files(ifile, allowlist_sites=['T3_US_FNALLPC'], test=False, test_fil
     '''Check if ifile is root file or dataset to check in rucio'''
 
     if isinstance(ifile, list):
-        return ifile
+        return ifile[:(test_files if test else None)]
     elif ifile.endswith('.txt'):
         file_list = [
             jfile.rstrip() if jfile.startswith(('root','file')) else f'root://cmseos.fnal.gov/{jfile.rstrip()}' for jfile in open(ifile).readlines()]
-        return file_list
+        return file_list[:(test_files if test else None)]
     else:
         rucio_client = rucio_utils.get_rucio_client()
         outfiles, outsite, sites_counts = rucio_utils.get_dataset_files_replicas(
