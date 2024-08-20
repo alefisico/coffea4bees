@@ -94,6 +94,7 @@ class analysis(processor.ProcessorABC):
         apply_boosted_veto=False,
         run_SvB=True,
         corrections_metadata="analysis/metadata/corrections.yml",
+        top_reconstruction_override = False,
         run_systematics=[],
         make_classifier_input: str = None,
     ):
@@ -109,6 +110,7 @@ class analysis(processor.ProcessorABC):
         self.classifier_SvB = HCREnsemble(SvB) if SvB else None
         self.classifier_SvB_MA = HCREnsemble(SvB_MA) if SvB_MA else None
         self.corrections_metadata = yaml.safe_load(open(corrections_metadata, "r"))
+        self.top_reconstruction_override = top_reconstruction_override
 
         self.cutFlowCuts = [
             "all",
@@ -143,7 +145,11 @@ class analysis(processor.ProcessorABC):
         processName = event.metadata['processName']
         isMC    = True if event.run[0] == 1 else False
 
-        self.top_reconstruction = event.metadata.get("top_reconstruction", None)
+        if self.top_reconstruction_override:
+            self.top_reconstruction = self.top_reconstruction_override
+            logging.info(f"top_reconstruction overridden to {self.top_reconstruction}")
+        else:
+            self.top_reconstruction = event.metadata.get("top_reconstruction", None)
 
         isMixedData    = not (dataset.find("mix_v") == -1)
         isDataForMixed = not (dataset.find("data_3b_for_mixed") == -1)
