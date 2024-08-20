@@ -99,6 +99,7 @@ class analysis(processor.ProcessorABC):
             corrections_metadata="analysis/metadata/corrections.yml",
             clustering_pdfs_file = "None",
             top_reconstruction_override = False,
+            subtract_ttbar_with_weights = False,
             run_systematics=[],
             blind = False,
             make_classifier_input: str = None,
@@ -122,6 +123,7 @@ class analysis(processor.ProcessorABC):
         else:
             self.clustering_pdfs = None
         self.top_reconstruction_override = top_reconstruction_override
+        self.subtract_ttbar_with_weights = subtract_ttbar_with_weights
 
         self.cutFlowCuts = [
             "all",
@@ -843,6 +845,8 @@ class analysis(processor.ProcessorABC):
                                                           np.reshape(np.array(selev.SvB_MA.q_1324), (-1, 1)),
                                                           np.reshape(np.array(selev.SvB_MA.q_1423), (-1, 1)), ), axis=1, )
 
+
+
         #
         # Compute Signal Regions
         #
@@ -926,11 +930,27 @@ class analysis(processor.ProcessorABC):
         if not (isMC or "mixed" in dataset) and self.blind:
             selev = selev[~(selev["quadJet_selected"].SR & selev.fourTag)]
 
+
+        #
+        #  Do TTBar subtraction
+        #
+        if self.subtract_ttbar_with_weights:
+            ttbar_rand = np.random.uniform(low=0, high=1.0, size=len(selev))
+
+            pass_ttbar_filter = np.full( len(event), True)
+            pass_ttbar_filter[ selections.all(*allcuts) ] = (ttbar_rand > selev.SvB_MA.tt_vs_mj)
+            selections.add( 'pass_ttbar_filter', pass_ttbar_filter )
+            allcuts.append("pass_ttbar_filter")
+            selev = selev[(ttbar_rand > selev.SvB_MA.tt_vs_mj)]
+
+
         #
         # CutFlow
         #
         logging.debug(f"final weight {weights.weight()[:10]}")
         selev["weight"] = weights.weight()[selections.all(*allcuts)]
+
+
         if not shift_name:
             self._cutFlow.fill("passPreSel", selev, allTag=True)
             self._cutFlow.fill("passFourTag", selev )
@@ -1081,6 +1101,7 @@ class analysis(processor.ProcessorABC):
 
                 fill += SvBHists(("SvB",    "SvB Classifier"),    "SvB")
                 fill += SvBHists(("SvB_MA", "SvB MA Classifier"), "SvB_MA")
+
                 fill += hist.add( "quadJet_selected_SvB_q_score", ( 100, 0, 1, ( "quadJet_selected.SvB_q_score",  "Selected Quad Jet Diboson SvB q score") ) )
                 fill += hist.add( "quadJet_min_SvB_MA_q_score",   ( 100, 0, 1, ( "quadJet_min_dr.SvB_MA_q_score", "Min dR Quad Jet Diboson SvB MA q score") ) )
                 if isDataForMixed:
