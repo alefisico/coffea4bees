@@ -21,7 +21,7 @@ class _train_model:
         self._datasets = datasets
 
     def __call__(self, trainer: ModelTrainer):
-        return trainer(self._device, self._datasets)
+        return trainer(device=self._device, datasets=self._datasets)
 
 
 class Main(SelectDevice, LoadTrainingSets):

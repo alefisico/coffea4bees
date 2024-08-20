@@ -76,37 +76,25 @@ class KFoldClassifier(ABC, _KFold):
             from classifier.ml.skimmer import KFold
 
             return [
-                _train_classifier(
-                    self.initializer(
-                        KFold(self.kfolds, offset),
-                        model=type(self).__name__,
-                        kfolds=self.kfolds,
-                        offset=offset,
-                    )
-                )
+                self.initializer(
+                    KFold(self.kfolds, offset),
+                    model=type(self).__name__,
+                    kfolds=self.kfolds,
+                    offset=offset,
+                ).train
                 for offset in self.offsets
             ]
         else:
             from classifier.ml.skimmer import RandomKFold
 
             return [
-                _train_classifier(
-                    self.initializer(
-                        RandomKFold(seed, self.kfolds, offset),
-                        model=type(self).__name__,
-                        kfolds=self.kfolds,
-                        offset=offset,
-                        seed=seed,
-                    )
-                )
+                self.initializer(
+                    RandomKFold(seed, self.kfolds, offset),
+                    model=type(self).__name__,
+                    kfolds=self.kfolds,
+                    offset=offset,
+                    seed=seed,
+                ).train
                 for seed in self.seeds
                 for offset in self.offsets
             ]
-
-
-class _train_classifier:
-    def __init__(self, classifier: MultiStageTraining):
-        self._classifier = classifier
-
-    def __call__(self, device: Device, dataset: StackDataset):
-        return self._classifier.train(dataset=dataset, device=device)
