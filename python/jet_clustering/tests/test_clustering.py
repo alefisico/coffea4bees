@@ -14,7 +14,7 @@ import os
 
 sys.path.insert(0, os.getcwd())
 from jet_clustering.clustering   import kt_clustering, cluster_bs, cluster_bs_fast, cluster_bs_numba
-from jet_clustering.declustering import compute_decluster_variables, decluster_combined_jets, make_synthetic_event, get_list_of_splitting_types, clean_ISR, get_list_of_ISR_splittings, children_jet_flavors, get_list_of_all_sub_splittings, get_list_of_combined_jet_types
+from jet_clustering.declustering import compute_decluster_variables, decluster_combined_jets, make_synthetic_event, get_list_of_splitting_types, clean_ISR, get_list_of_ISR_splittings, children_jet_flavors, get_list_of_all_sub_splittings, get_list_of_combined_jet_types, get_splitting_summary, get_splitting_name
 
 #import vector
 #vector.register_awkward()
@@ -28,7 +28,18 @@ class clusteringTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-#        self.inputFile = wrapper.args["inputFile"]
+
+        #
+        #  Read in the pdfs
+        #
+        #  Make with ../.ci-workflows/synthetic-dataset-plot-job.sh
+        # input_pdf_file_name = "analysis/plots_synthetic_datasets/clustering_pdfs.yml"
+        input_pdf_file_name = "jet_clustering/jet-splitting-PDFs-00-07-00/clustering_pdfs_vs_pT.yml"
+        #input_pdf_file_name = "jet_clustering/clustering_PDFs/clustering_pdfs_vs_pT.yml"
+        with open(input_pdf_file_name, 'r') as input_file:
+            self.input_pdfs = yaml.safe_load(input_file)
+
+        #        self.inputFile = wrapper.args["inputFile"]
 
         #
         # From 4jet events
@@ -133,6 +144,51 @@ class clusteringTestCase(unittest.TestCase):
 
 
 
+        #
+        # ERrors in HH signal
+        #
+        self.input_jet_pt_HH_3b  = [[262.848876953125, 190.92445373535156, 118.01837921142578, 85.73815155029297, 84.77513885498047, 81.45384216308594, 56.21860122680664, 54.88019561767578, 53.123104095458984, 40.82435989379883]]
+        self.input_jet_eta_HH_3b  = [[-0.5233154296875, -0.108184814453125, 1.060302734375, -1.105712890625, 1.79638671875, 2.23681640625, 0.953369140625, 0.212158203125, 1.939208984375, 1.075439453125]]
+        self.input_jet_phi_HH_3b  = [[3.4057440757751465, 0.60888671875, 0.807861328125, 3.9755682945251465, 2.97900390625, -0.3990478515625, -0.474609375, 5.6286444664001465, 1.234130859375, 1.5517578125]]
+        self.input_jet_mass_HH_3b  = [[19.766611099243164, 15.895012855529785, 20.83321762084961, 11.490931510925293, 14.269634246826172, 8.53515338897705, 9.325471878051758, 8.153546333312988, 11.367645263671875, 8.33912181854248]]
+        self.input_jet_flavor_HH_3b  = [['b', 'b', 'j', 'b', 'j', 'j', 'j', 'b', 'j', 'j']]
+
+        self.input_jets_HH_3b = ak.zip(
+            {
+                "pt": self.input_jet_pt_HH_3b + self.input_jet_pt_HH_3b,
+                "eta": self.input_jet_eta_HH_3b + self.input_jet_eta_HH_3b,
+                "phi": self.input_jet_phi_HH_3b + self.input_jet_phi_HH_3b,
+                "mass": self.input_jet_mass_HH_3b + self.input_jet_mass_HH_3b,
+                "jet_flavor": self.input_jet_flavor_HH_3b + self.input_jet_flavor_HH_3b,
+            },
+            with_name="PtEtaPhiMLorentzVector",
+            behavior=vector.behavior,
+        )
+
+        #
+        #   `(bj)((jj)b)` splittins
+        #
+        self.input_jet_pt_bad_split      = [[411.75, 347.75, 193.948974609375, 97.8897705078125, 74.1673583984375, 64.99481201171875, 64.4375, 45.6875], [257.868896484375, 252.375, 182.0518798828125, 163.2843017578125, 112.82763671875, 98.5625, 75.9375, 63.4375, 50.75, 40.625]]
+        self.input_jet_eta_bad_split     = [[0.708251953125, -0.1527099609375, 1.647705078125, 0.0011379718780517578, 0.7615966796875, -1.027587890625, -0.0990142822265625, -0.5068359375], [-0.2508544921875, 0.6533203125, -0.8846435546875, -0.1190643310546875, -1.188232421875, 2.072265625, -1.62890625, -1.823486328125, -1.2900390625, -0.403564453125]]
+        self.input_jet_phi_bad_split     = [[0.6732177734375, 3.1025390625, 5.0475897789001465, 2.546875, 5.5264716148376465, 4.5519843101501465, -1.86865234375, -2.2685546875], [0.37841796875, -2.87353515625, 0.8896484375, 3.4594550132751465, 4.4452948570251465, 1.46337890625, -1.463134765625, 0.43634033203125, 0.46148681640625, -2.2685546875]]
+        self.input_jet_mass_bad_split    = [[44.78125, 34.3125, 22.199172973632812, 12.091888427734375, 16.046722412109375, 12.618278503417969, 11.578125, 6.93359375], [27.153228759765625, 21.859375, 20.270751953125, 22.866058349609375, 20.2275390625, 12.640625, 7.80078125, 9.8828125, 8.4609375, 7.046875]]
+        self.input_jet_flavor_bad_split  = [['j', 'j', 'b', 'b', 'b', 'b', 'j', 'j'], ['b', 'j', 'b', 'b', 'b', 'j', 'j', 'j', 'j', 'j']]
+
+        self.input_jets_bad_split = ak.zip(
+            {
+                "pt": self.input_jet_pt_bad_split,
+                "eta": self.input_jet_eta_bad_split,
+                "phi": self.input_jet_phi_bad_split,
+                "mass": self.input_jet_mass_bad_split,
+                "jet_flavor": self.input_jet_flavor_bad_split,
+            },
+            with_name="PtEtaPhiMLorentzVector",
+            behavior=vector.behavior,
+        )
+
+
+
+
         self.input_jets_all = ak.zip(
             {
                 "pt":  self.input_jet_pt_4 + self.input_jet_pt_5 + self.input_jet_pt_bbj + self.input_jet_pt_6 + self.input_jet_pt_5b,
@@ -182,6 +238,10 @@ class clusteringTestCase(unittest.TestCase):
 
         clustered_jets, clustered_splittings = cluster_bs(input_jets, debug=False)
         compute_decluster_variables(clustered_splittings)
+
+        split_name_flat = [get_splitting_name(i) for i in ak.flatten(clustered_splittings.jet_flavor)]
+        split_name = ak.unflatten(split_name_flat, ak.num(clustered_splittings))
+        clustered_splittings["splitting_name"] = split_name
 
         if self.debug:
             for iEvent, jets in enumerate(clustered_jets):
@@ -260,6 +320,9 @@ class clusteringTestCase(unittest.TestCase):
 
     def test_declustering_6jets(self):
         self._declustering_test(self.input_jets_6, debug=False)
+
+    def test_declustering_Njets(self):
+        self._declustering_test(self.input_jets_bad_split, debug=False)
 
 
     def test_cluster_bs_speed_test(self):
@@ -369,6 +432,9 @@ class clusteringTestCase(unittest.TestCase):
         part_A_flat = ak.flatten(part_A_jet_flavor)
         part_B_flat = ak.flatten(part_B_jet_flavor)
 
+        if debug:
+            print(f"part_A_flat {part_A_flat}")
+            print(f"part_B_flat {part_B_flat}")
 
         #
         #  A should always be the more complex
@@ -388,13 +454,12 @@ class clusteringTestCase(unittest.TestCase):
         equal_len_mask = part_A_len == part_B_len
         more_bs_in_partA[~equal_len_mask] = True
 
-
         self.assertTrue(np.all(more_bs_in_partA), "Part A should alwasy have more bs")
 
 
     def _synthetic_datasets_test(self, input_jets, n_jets_expected, debug=False):
 
-        clustered_jets, _clustered_splittings = cluster_bs(input_jets, debug=False)
+        clustered_jets, _clustered_splittings = cluster_bs(input_jets, debug=debug)
 
         self._check_jet_flavors(_clustered_splittings.part_A.jet_flavor,
                                 _clustered_splittings.part_B.jet_flavor,
@@ -410,7 +475,11 @@ class clusteringTestCase(unittest.TestCase):
 
         clustered_jets = clean_ISR(clustered_jets, _clustered_splittings, debug=debug)
 
-        if debug:
+        #mask_b_jet = clean_ISR
+        mask_unclustered_jet = (clustered_jets.jet_flavor == "b") | (clustered_jets.jet_flavor == "j")
+        ak.num(clustered_jets[~mask_unclustered_jet])
+
+        if debug or True:
             print("Jet flavour after ISR cleaning")
             [print(i) for i in clustered_jets.jet_flavor]
 
@@ -432,25 +501,11 @@ class clusteringTestCase(unittest.TestCase):
         #
         # Declustering
         #
-
-        #
-        #  Read in the pdfs
-        #
-        #  Make with ../.ci-workflows/synthetic-dataset-plot-job.sh
-        # input_pdf_file_name = "analysis/plots_synthetic_datasets/clustering_pdfs.yml"
-        input_pdf_file_name = "jet_clustering/jet-splitting-PDFs-00-03-00/clustering_pdfs_vs_pT.yml"
-        #input_pdf_file_name = "jet_clustering/clustering_PDFs/clustering_pdfs_vs_pT.yml"
-        with open(input_pdf_file_name, 'r') as input_file:
-            input_pdfs = yaml.safe_load(input_file)
-
-        declustered_jets = make_synthetic_event(clustered_jets, input_pdfs, debug=debug)
-        #pA = declustered_jets[:,0:2]
-        #pB = declustered_jets[:,2:]
+        declustered_jets = make_synthetic_event(clustered_jets, self.input_pdfs, debug=debug)
 
         #
         # Sanity checks
         #
-
 
         match_n_jets = ak.num(declustered_jets) == n_jets_expected
         if not all(match_n_jets):
@@ -465,11 +520,6 @@ class clusteringTestCase(unittest.TestCase):
             print(f"ak.num(declustered_jets)        {ak.num(declustered_jets)}")
             print(f"clustered_jets.phi             {clustered_jets.phi}")
 
-            #
-            #  Checkphi
-            #
-            #print(f"input phi {clustered_jets.phi[1]}")
-            #print(f"Reco phi {(pA + pB).phi[1]}")
 
         self.assertTrue(all(match_n_jets), f"Should always get {n_jets_expected} jets")
 
@@ -492,20 +542,39 @@ class clusteringTestCase(unittest.TestCase):
     def test_synthetic_datasets_4jets(self):
         self._synthetic_datasets_test(self.input_jets_4, n_jets_expected = 4)
 
-
     def test_synthetic_datasets_5jets(self):
         self._synthetic_datasets_test(self.input_jets_5, n_jets_expected = 5, debug=False)
 
-
     def test_synthetic_datasets_bbjjets(self):
         self._synthetic_datasets_test(self.input_jets_bbj, n_jets_expected = 5)
-
 
     def test_synthetic_datasets_6jets(self):
         self._synthetic_datasets_test(self.input_jets_6, n_jets_expected = 6, debug = False)
 
     def test_synthetic_datasets_5bjets(self):
-        self._synthetic_datasets_test(self.input_jets_5b[0:2], n_jets_expected = 6, debug = False)
+        self._synthetic_datasets_test(self.input_jets_5b, n_jets_expected = 6, debug = False)
+
+    def test_synthetic_datasets_HH_3bjets(self):
+        self._synthetic_datasets_test(self.input_jets_HH_3b, n_jets_expected = 10, debug = False)
+
+    def test_synthetic_datasets_bad_split(self):
+        self._synthetic_datasets_test(self.input_jets_bad_split, n_jets_expected = [8, 10], debug = False)
+
+
+#    def profile_synthetic_datasets(self):
+#
+#        from cProfile import Profile
+#
+#        test = lambda: self._synthetic_datasets_test(self.input_jets_6 , n_jets_expected=6,debug=False)
+#
+#        profiler = Profile()
+#        profiler.runcall(test)
+#
+#        from pstats import Stats
+#        stats = Stats(profiler)
+#        stats.strip_dirs()
+#        stats.sort_stats("cumulative")
+#        stats.print_stats()
 
 
 
@@ -513,6 +582,7 @@ class clusteringTestCase(unittest.TestCase):
         splitting_types = [ ('bb', ('b','b')), ('bj',('b','j')), ('jb',('j','b')), ('jj',('j','j')),
                             ("j(bb)", ('bb', 'j')), ("b(bj)", ('bj', 'b')), ("j(bj)", ('bj', 'j')), ("(bj)b", ('bj', 'b')),
                             ("(j(bj))b", ('j(bj)', 'b')), ("(bb)(jj)", ('bb', 'jj')), ("(jj)(bb)", ('jj', 'bb')), ("j(j(bj))", ('j(bj)','j')),
+                            ('((((jj)j)j)((bj)j))b', ('(((jj)j)j)((bj)j)','b')),
                            ]
 
         for _s in splitting_types:
@@ -522,7 +592,6 @@ class clusteringTestCase(unittest.TestCase):
             self.assertTrue(_children == _s[1], f"Miss match for type {_s[0]}: got {_children}, expected {_s[1]}")
 
     def test_get_list_of_ISR_splittings(self):
-
 
         splitting_types = [("b",False), ("j",False),
                            ("bb",False), ("bj",True), ("jj",True),
@@ -539,10 +608,7 @@ class clusteringTestCase(unittest.TestCase):
             if _s[1]:
                 expected_ISR_splittings.append(_s[0])
 
-
         ISR_splittings = get_list_of_ISR_splittings(test_splitting_types)
-
-        print(f"ISR_splittings is {ISR_splittings}")
 
         self.assertListEqual(ISR_splittings, expected_ISR_splittings)
 
@@ -553,7 +619,8 @@ class clusteringTestCase(unittest.TestCase):
                            ('j(bj)', ['j(bj)','bj']),
                            ("(bb)(jj)", ["(bb)(jj)",'bb', 'jj']),
                            ("j(j(bj))", ["j(j(bj))",'j(bj)','bj']),
-                           ("(j(bj))b", ["(j(bj))b","j(bj)","bj"] )
+                           ("(j(bj))b", ["(j(bj))b","j(bj)","bj"] ),
+                           ("((((jj)j)j)((bj)j))b", ["((((jj)j)j)((bj)j))b", "(((jj)j)j)((bj)j)", "((jj)j)j",  "(jj)j", "jj", "(bj)j", "bj"]),
                            ]
 
 
@@ -563,6 +630,23 @@ class clusteringTestCase(unittest.TestCase):
             expected = _s[1]
             #print(f"{_s[0]} -> {sub_splitting}")
             self.assertListEqual(expected, sub_splitting)
+
+    def test_get_splitting_summary(self):
+        splitting_types = [ ('bb',                   ( (1, 0), (1,0))),
+                            ("(bb)j",                ( (2, 0), (0,1))),
+                            ("(j(bj))b",             ( (1, 2), (1,0))),
+                            ('((((jj)j)j)((bj)j))b', ( (1 ,6), (1,0))),
+                             ]
+        for _s in splitting_types:
+
+            njets, nbs = get_splitting_summary(_s[0])
+            expected_njets = _s[1][0]
+            expected_nbs   = _s[1][1]
+            print(f"{_s[0]} -> {njets}  {nbs}")
+            self.assertEqual(expected_njets, njets, "ERROR in njets")
+            self.assertEqual(expected_nbs,   nbs,   "ERROR in nbs")
+
+
 
 
 if __name__ == '__main__':

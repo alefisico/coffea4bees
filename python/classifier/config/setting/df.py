@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 class Columns(Cascade):
     event: str = "event"
     weight: str = "weight"
-    weight_normalized: str = "weight_normalized"
+    weight_raw: str = "weight_raw"
 
     label_index: str = "label_index"
     selection_index: str = "selection_index"

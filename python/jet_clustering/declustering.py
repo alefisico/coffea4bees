@@ -44,6 +44,52 @@ def children_jet_flavors(comb_flavor):
     return child_A, child_B
 
 
+def get_splitting_summary(comb_flavor):
+
+    childA, childB = children_jet_flavors(comb_flavor)
+
+    n_b_A = childA.count("b")
+    n_j_A = childA.count("j")
+
+    n_b_B = childB.count("b")
+    n_j_B = childB.count("j")
+
+    return (n_b_A, n_j_A), (n_b_B, n_j_B)
+
+
+
+def get_splitting_name(comb_flavor):
+
+    A_stats, B_stats = get_splitting_summary(comb_flavor)
+
+    nA = A_stats[0] + A_stats[1]
+    nB = B_stats[0] + B_stats[1]
+
+    #  X / X
+    if nA > 3 and nB > 2:
+        return "X/X"
+
+    #  3 / 3
+    if nA == 3 and nB == 3:
+        return f"3/3"
+
+    # 3/2,  4/2,  and X/2
+    if nA > 2 and nB > 1:
+        if nA > 4:
+            return f"X/{nB}"
+
+        return f"{nA}/{nB}"
+
+    # 4/1, X,1
+    if nA > 3 and nB > 0:
+        if nA > 4:
+            return f"X/{nB}"
+
+        return f"{nA}/{nB}"
+
+    return f"{A_stats[0]}b{A_stats[1]}j/{B_stats[0]}b{B_stats[1]}j"
+
+
 def get_list_of_combined_jet_types(jets):
     """
       returns a list of all the splitting types that are the results of a combination
@@ -101,6 +147,11 @@ def get_list_of_ISR_splittings(splitting_types):
 def get_list_of_splitting_types(splittings):
     unique_splittings = set(ak.flatten(splittings.jet_flavor).to_list())
     return list(unique_splittings)
+
+def get_list_of_splitting_names(splittings):
+    unique_splittings = set(ak.flatten(splittings.splitting_name).to_list())
+    return list(unique_splittings)
+
 
 
 def compute_decluster_variables(clustered_splittings):
@@ -186,8 +237,14 @@ def decluster_combined_jets(input_jet, debug=False):
     simple_comb_mask = (np.char.str_len(jet_flav_flat) == 2)
 
     # For some reason this dummy string has to be as long as the longest possible replacement
-    jet_flav_child_A = np.full(n_jets, "XXXXXXXXXXXXXXX")
-    jet_flav_child_B = np.full(n_jets, "XXXXXXXXXXXXXXX")
+    # jet_flav_child_A = np.full(n_jets, "XXXXXXXXXXXXXXX")
+    # jet_flav_child_B = np.full(n_jets, "XXXXXXXXXXXXXXX")
+    dummy_str = "XXXXXXXXXXXXXXXXXXXXXXXXX"
+    len_dummy_str = 25
+    #dummy_str = "XXX"
+    #len_dummy_str = 3
+    jet_flav_child_A = np.full(n_jets, dummy_str)
+    jet_flav_child_B = np.full(n_jets, dummy_str)
 
     #
     #  The simple combinations
@@ -197,13 +254,21 @@ def decluster_combined_jets(input_jet, debug=False):
     jet_flav_child_A[simple_comb_mask] = _simple_flav_child_A
     jet_flav_child_B[simple_comb_mask] = _simple_flav_child_B
 
-
     #
     #  The nested combinations
     #   # A is always the more complex
     _children = [children_jet_flavors(s) for s in jet_flav_flat[~simple_comb_mask]]
     _nested_flav_child_A = [child[0] for child in _children]
     _nested_flav_child_B = [child[1] for child in _children]
+
+    over_flow_child_A = any(len(s) > len_dummy_str for s in _nested_flav_child_A)
+    if over_flow_child_A:
+        print(f"\n ERROR: child A flavor overflow {_nested_flav_child_A} \n")
+
+    over_flow_child_B = any(len(s) > len_dummy_str for s in _nested_flav_child_B)
+    if over_flow_child_B:
+        print(f"\n ERROR: child B flavor overflow {_nested_flav_child_B} \n")
+
 
     #print(f'child A {_nested_flav_child_A}')
     #print(f'child B {_nested_flav_child_B}')
@@ -330,6 +395,7 @@ def decluster_splitting_types(input_jets, splitting_types, input_pdfs, debug=Fal
     #
     input_jets['split_mask'] = False
     for _s in splitting_types:
+
         _split_mask  = input_jets.jet_flavor == _s
         input_jets["split_mask"] = _split_mask | input_jets.split_mask
 
@@ -367,7 +433,7 @@ def decluster_splitting_types(input_jets, splitting_types, input_pdfs, debug=Fal
             _indicies = np.where(ak.flatten(_s_mask))
             _indicies_tuple = (_indicies[0].to_list())
 
-            splittings_info.append((_s, _num_samples, _indicies_tuple))
+            splittings_info.append((get_splitting_name(_s), _num_samples, _indicies_tuple))
 
 
         #
@@ -383,10 +449,12 @@ def decluster_splitting_types(input_jets, splitting_types, input_pdfs, debug=Fal
         #
         #  Check for declustered jets vailing kinematic requirements
         #
-        fail_pt_mask  = (declustered_jets_A.pt < 40) | (declustered_jets_B.pt < 40)
-        fail_eta_mask = (np.abs(declustered_jets_A.eta) > 2.5) | (np.abs(declustered_jets_B.eta) > 2.5)
+        # Update to only be bjets
+        fail_pt_mask    = (declustered_jets_A.pt < 20) | (declustered_jets_B.pt < 20)
+        fail_pt_b_mask  = ((declustered_jets_A.pt < 40) &  (declustered_jets_A.jet_flavor == "b")) | ((declustered_jets_B.pt < 40) &  (declustered_jets_B.jet_flavor == "b"))
+        fail_eta_b_mask = ((declustered_jets_A.jet_flavor == "b") & (np.abs(declustered_jets_A.eta) > 2.5)) | ((declustered_jets_A.jet_flavor == "b") & (np.abs(declustered_jets_B.eta) > 2.5))
         fail_dr_mask  = declustered_jets_A.delta_r(declustered_jets_B) < 0.4
-        clustering_fail = fail_pt_mask | fail_eta_mask | fail_dr_mask
+        clustering_fail = fail_pt_mask | fail_pt_b_mask | fail_eta_b_mask | fail_dr_mask
 
         #print(ak.any(fail_dr_mask))
         if num_trys > 4:

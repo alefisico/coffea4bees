@@ -16,12 +16,12 @@ echo "############### Running datasets from " $DATASETS
 echo "############### Running test processor"
 
 
-python runner.py -t   -o test_declustering_declustered.coffea -d data  -p analysis/processors/processor_decluster_4b.py -y UL18  -op analysis/hists/ -m $DATASETS -c analysis/metadata/decluster.yml
+python runner.py -t   -o test_declustering_declustered.coffea -d data  -p analysis/processors/processor_decluster_4b.py -y UL17 UL18 UL16_preVFP UL16_postVFP  -op analysis/hists/ -m $DATASETS -c analysis/metadata/decluster.yml
 
-# time python runner.py    -o declustering_nominal.coffea     -d data  -p analysis/processors/processor_decluster_4b.py -y UL18  -op analysis/hists/ -m $DATASETS 
-# time python runner.py    -o declustering_declustered.coffea -d data  -p analysis/processors/processor_decluster_4b.py -y UL18  -op analysis/hists/ -m $DATASETS -c analysis/metadata/decluster.yml
-# time python runner.py    -o declustering_declustered_signal.coffea -d GluGluToHHTo4B_cHHH1  -p analysis/processors/processor_decluster_4b.py -y UL18  -op analysis/hists/ -m $DATASETS -c analysis/metadata/decluster.yml
-# time python runner.py    -o declustering_nominal_signal.coffea -d GluGluToHHTo4B_cHHH1  -p analysis/processors/processor_decluster_4b.py -y UL18  -op analysis/hists/ -m $DATASETS 
+# time python runner.py    -o declustering_nominal.coffea     -d data  -p analysis/processors/processor_decluster_4b.py -y UL17 UL18 UL16_preVFP UL16_postVFP  -op analysis/hists/ -m $DATASETS 
+# time python runner.py    -o declustering_declustered.coffea -d data  -p analysis/processors/processor_decluster_4b.py -y UL17 UL18 UL16_preVFP UL16_postVFP  -op analysis/hists/ -m $DATASETS -c analysis/metadata/decluster.yml
+# time python runner.py    -o declustering_declustered_signal.coffea -d GluGluToHHTo4B_cHHH1  -p analysis/processors/processor_decluster_4b.py -y UL17 UL18 UL16_preVFP UL16_postVFP  -op analysis/hists/ -m $DATASETS -c analysis/metadata/decluster_signal.yml
+# time python runner.py    -o declustering_nominal_signal.coffea -d GluGluToHHTo4B_cHHH1  -p analysis/processors/processor_decluster_4b.py -y UL17 UL18 UL16_preVFP UL16_postVFP  -op analysis/hists/ -m $DATASETS 
 # python  jet_clustering/compare_datasets.py analysis/hists/test_declustering_declustered.coffea  analysis/hists/test_declustering_nominal.coffea  --out analysis/plots_test_synthetic_datasets
 ls
 #cd ../

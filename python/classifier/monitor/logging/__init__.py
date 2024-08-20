@@ -13,11 +13,11 @@ def _common():
     tblib.pickling_support.install()
 
 
-def _disable():
+def disable_monitor():
     logging.basicConfig(handlers=[logging.NullHandler()], level=None)
 
 
-@cfg.check(cfg.Log, default=_disable, is_callable=True)
+@cfg.check(cfg.Log, default=disable_monitor, is_callable=True)
 def setup_reporter():
     _common()
     return logging.basicConfig(
@@ -26,7 +26,7 @@ def setup_reporter():
     )
 
 
-@cfg.check(cfg.Log, default=_disable, is_callable=True)
+@cfg.check(cfg.Log, default=disable_monitor, is_callable=True)
 def setup_monitor():
     _common()
     handlers = []

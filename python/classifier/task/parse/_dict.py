@@ -51,7 +51,7 @@ def _deserialize(data: str, protocol: str):
             try:
                 mod = importlib.import_module(".".join(mods[:-1]))
                 return vars(getattr(mod, mods[-1]))
-            except:
+            except Exception:
                 raise DeserializationError(f'Failed to import "{data}"')
         case "csv":
             import pandas as pd
@@ -77,7 +77,7 @@ def _deserialize_file(path: str, formatter: str):
             if formatter is not None:
                 data = data.format(**mapping(formatter))
             return _deserialize(data, protocol)
-    except:
+    except Exception:
         raise DeserializationError(f'Failed to read file "{path}"')
 
 
@@ -105,8 +105,8 @@ def mapping(arg: str, default: str = "yaml", formatter: str = None):
     if arg == "":
         return {}
 
-    def error(msg: str):
-        logging.error(f'{msg} when parsing "{arg}"')
+    def warn(msg: str):
+        logging.warning(f'{msg} when parsing "{arg}"')
 
     protocol, data = _mapping_scheme(arg)
     if protocol is None:
@@ -120,14 +120,14 @@ def mapping(arg: str, default: str = "yaml", formatter: str = None):
         else:
             result = _deserialize(data, protocol)
     except DeserializationError as e:
-        error(e.msg)
+        warn(e.msg)
         return
     if keys is not None:
         for i, k in enumerate(keys):
             try:
                 result = result[k]
-            except:
-                error(f'Failed to select key "{".".join(keys[:i+1])}"')
+            except Exception:
+                warn(f'Failed to select key "{".".join(keys[:i+1])}"')
                 return
     return result
 

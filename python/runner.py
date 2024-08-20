@@ -125,8 +125,8 @@ if __name__ == '__main__':
     )
     # disable numba debug warnings
     logging.getLogger('numba').setLevel(logging.WARNING)
+    logging.getLogger("lpcjobqueue").setLevel(logging.WARNING)
 
-    
     logging.info(f"\nRunning with these parameters: {args}")
 
     #
@@ -152,6 +152,11 @@ if __name__ == '__main__':
     config_runner.setdefault('workers', 2)
     config_runner.setdefault('skipbadfiles', False)
     config_runner.setdefault('dashboard_address', 10200)
+    config_runner.setdefault('friend_base', None)
+    config_runner.setdefault('friend_base_argname', "make_classifier_input")
+    config_runner.setdefault('friend_metafile', 'friends')
+    config_runner.setdefault('friend_merge_step', 100_000)
+    config_runner.setdefault('override_top_reconstruction', None)
     if args.systematics:
         logging.info("\nRunning with systematics")
         configs['config']['run_systematics'] = True
@@ -183,7 +188,10 @@ if __name__ == '__main__':
             else:
                 xsec = eval(metadata['datasets'][dataset]['xs'])
 
-            top_reconstruction = metadata['datasets'][dataset]['top_reconstruction'] if "top_reconstruction" in metadata['datasets'][dataset] else None
+            top_reconstruction = config_runner["override_top_reconstruction"] or (
+                metadata['datasets'][dataset]['top_reconstruction']
+                if "top_reconstruction" in metadata['datasets'][dataset]
+                else None)
             logging.info(f"\n top construction configured as {top_reconstruction} ")
 
             metadata_dataset[dataset] = {'year': year,
@@ -204,10 +212,10 @@ if __name__ == '__main__':
                     if 'data' not in dataset:
                         metadata_dataset[dataset]['genEventSumw'] = metadata['datasets'][dataset][year][config_runner['data_tier']]['sumw']
                     meta_files = metadata['datasets'][dataset][year][config_runner['data_tier']]['files']
-            # if not dataset.endswith('data'):
-            #     if config_runner['data_tier'].startswith('pico'):
-            #         metadata_dataset[dataset]['genEventSumw'] = metadata['datasets'][dataset][year][config_runner['data_tier']]['sumw']
-            #         meta_files = metadata['datasets'][dataset][year][config_runner['data_tier']]['files']
+                # if not dataset.endswith('data'):
+                #     if config_runner['data_tier'].startswith('pico'):
+                #         metadata_dataset[dataset]['genEventSumw'] = metadata['datasets'][dataset][year][config_runner['data_tier']]['sumw']
+                #         meta_files = metadata['datasets'][dataset][year][config_runner['data_tier']]['files']
                 else:
                     meta_files = metadata['datasets'][dataset][year][config_runner['data_tier']]
 
@@ -241,7 +249,6 @@ if __name__ == '__main__':
                     logging.info(
                         f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
 
-
             elif isDataForMix:
                 logging.info("\nConfig Data for Mixed ")
 
@@ -269,7 +276,6 @@ if __name__ == '__main__':
 
                 logging.info(f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
 
-
             elif isTTForMixed:
                 logging.info("\nConfig TT for Mixed ")
 
@@ -291,8 +297,6 @@ if __name__ == '__main__':
 
                 logging.info(f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
 
-
-
             # isData
             else:
 
@@ -307,6 +311,7 @@ if __name__ == '__main__':
                         logging.info(
                             f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
 
+    client = None
     #
     # IF run in condor
     #
@@ -424,12 +429,18 @@ if __name__ == '__main__':
             # check integrity of the output
             output = integrity_check(fileset, output)
             # merge output into new chunks each have `chunksize` events
-            output = dask.compute(
-                resize(
-                    base_path=configs['config']['base_path'],
-                    output=output,
-                    step=config_runner.get('basketsize', configs['config']['step']),
-                    chunk_size=config_runner.get('picosize', config_runner['chunksize'])))[0]
+            kwargs = dict(
+                base_path=configs["config"]["base_path"],
+                output=output,
+                step=config_runner.get("basketsize", configs["config"]["step"]),
+                chunk_size=config_runner.get(
+                    "picosize", config_runner["chunksize"]
+                ),
+            )
+            if client is not None:
+                output = client.compute(resize(**kwargs), sync=True)
+            else:
+                output = resize(**kwargs, dask=False)
             # only keep file name for each chunk
             for dataset, chunks in output.items():
                 chunks['files'] = [str(f.path) for f in chunks['files']]
@@ -440,9 +451,11 @@ if __name__ == '__main__':
             logging.info(f'\n{nEvent/elapsed:,.0f} events/s total '
                          f'({nEvent}/{elapsed})')
 
-            metadata = processor.accumulate(
-                dask.compute(fetch_metadata(fileset, dask=True))[0])
-
+            if client is not None:
+                metadata = client.compute(fetch_metadata(fileset, dask=True), sync=True)
+            else:
+                metadata = fetch_metadata(fileset, dask=False)
+            metadata = processor.accumulate(metadata)
             for ikey in metadata:
                 if ikey in output:
                     metadata[ikey].update(output[ikey])
@@ -473,39 +486,43 @@ if __name__ == '__main__':
             #
             # Save friend tree metadata if exists
             #
-            _FRIEND_BASE_PROCESSOR_ARG = 'make_classifier_input' # FIXME: need to make it more general
-            _FRIEND_MERGE_STEP = 100_000  # FIXME: need to make it more general
-            _FRIEND_METADATA_FILENAME = 'friends.json' # FIXME: need to make it more general
-
-            friend_base = configs["config"].get(_FRIEND_BASE_PROCESSOR_ARG, None)
+            friend_base = config_runner["friend_base"] or configs["config"].get(
+                config_runner["friend_base_argname"], None
+            )
             friends: dict[str, Friend] = output.get("friends", None)
             if friend_base is not None and friends is not None:
-                if args.condor:
-                    (friends,) = dask.compute(
+                if args.run_dask:
+                    merged_friends = client.compute(
                         {
                             k: friends[k].merge(
-                                step=_FRIEND_MERGE_STEP,
+                                step=config_runner["friend_merge_step"],
                                 base_path=friend_base,
                                 naming=_friend_merge_name,
+                                clean=False,
                                 dask=True,
                             )
                             for k in friends
-                        }
+                        },
+                        sync=True,
                     )
                 else:
                     for k, v in friends.items():
                         friends[k] = v.merge(
-                            step=_FRIEND_MERGE_STEP,
+                            step=config_runner["friend_merge_step"],
                             base_path=friend_base,
                             naming=_friend_merge_name,
                         )
+                for v in friends.values():
+                    v.reset(confirm=False)
+                friends = merged_friends
                 from base_class.system.eos import EOS
                 from base_class.utils.json import DefaultEncoder
-                with fsspec.open(EOS(friend_base) / _FRIEND_METADATA_FILENAME, "wt") as f:
+                metafile = EOS(friend_base) / f'{config_runner["friend_metafile"]}.json'
+                with fsspec.open(metafile, "wt") as f:
                     json.dump(friends, f, cls=DefaultEncoder)
-                logging.info(f"The following frends trees are created:")
+                logging.info("The following frends trees are created:")
                 logging.info(pretty_repr([*friends.keys()]))
-                logging.info(f"Saved friend trees and metadata to {friend_base}")
+                logging.info(f"Saved friend tree metadata to {metafile}")
 
             #
             #  Saving file
@@ -523,6 +540,14 @@ if __name__ == '__main__':
         dask_report_file = f'/tmp/coffea4bees-dask-report-{datetime.today().strftime("%Y-%m-%d_%H-%M-%S")}.html'
         with performance_report(filename=dask_report_file):
             run_job()
+        try:
+            cluster.close()
+        except RuntimeError:
+            ...
+        try:
+            client.close()
+        except RuntimeError:
+            ...
         logging.info(f'Dask performace report saved in {dask_report_file}')
     else:
         run_job()

@@ -1,5 +1,3 @@
-from classifier.df.tools import add_label_flag, add_label_index
-
 from . import ArgParser, Dataframe
 
 
@@ -13,6 +11,8 @@ class WithSingleLabel(Dataframe):
 
     def __init__(self):
         super().__init__()
+        from classifier.df.tools import add_label_index
+
         self.postprocessors.append(add_label_index(self.opts.label))
 
 
@@ -27,4 +27,6 @@ class WithMultipleLabel(Dataframe):
 
     def __init__(self):
         super().__init__()
+        from classifier.df.tools import add_label_flag
+
         self.postprocessors.append(add_label_flag(*self.opts.labels))

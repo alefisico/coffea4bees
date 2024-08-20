@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Concatenate, ParamSpec, TypeVar, overload
+from typing import Any, Callable, Concatenate, Generator, ParamSpec, TypeVar, overload
 
 from ..typetools import Method
 
-__all__ = ["interface", "new", "TaskBase", "Static", "Unique"]
+__all__ = ["interface", "new", "TaskBase", "Static"]
 
 _InterfaceP = ParamSpec("_InterfaceP")
 _InterfaceReturnT = TypeVar("_InterfaceReturnT")
@@ -57,6 +57,10 @@ class TaskBase:
 
     @interface(optional=True)
     def debug(self): ...
+
+    @classmethod
+    @interface(optional=True)
+    def autocomplete(cls, opts: list[str]) -> Generator[str, None, None]: ...
 
     @classmethod
     @interface
