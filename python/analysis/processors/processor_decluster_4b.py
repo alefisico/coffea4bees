@@ -237,26 +237,26 @@ class analysis(processor.ProcessorABC):
                 raise ValueError("ERROR: FvT events do not match events ttree")
 
         if self.run_SvB:
-            if (self.classifier_SvB is None) | (self.classifier_SvB_MA is None):
-                #SvB_file = f'{path}/SvB_newSBDef.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_ULHH")}'
-                SvB_file = f'{path}/SvB_ULHH.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_ULHH")}'
-                event["SvB"] = ( NanoEventsFactory.from_root( SvB_file,
-                                                              entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().SvB )
 
-                if not ak.all(event.SvB.event == event.event):
-                    raise ValueError("ERROR: SvB events do not match events ttree")
+            #SvB_file = f'{path}/SvB_newSBDef.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_ULHH")}'
+            SvB_file = f'{path}/SvB_ULHH.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_ULHH")}'
+            event["original_SvB"] = ( NanoEventsFactory.from_root( SvB_file,
+                                                          entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().SvB )
 
-                #SvB_MA_file = f'{path}/SvB_MA_newSBDef.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_MA_ULHH")}'
-                SvB_MA_file = f'{path}/SvB_MA_ULHH.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_MA_ULHH")}'
-                event["SvB_MA"] = ( NanoEventsFactory.from_root( SvB_MA_file,
-                                                                 entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema ).events().SvB_MA )
+            if not ak.all(event.original_SvB.event == event.event):
+                raise ValueError("ERROR: SvB events do not match events ttree")
 
-                if not ak.all(event.SvB_MA.event == event.event):
-                    raise ValueError("ERROR: SvB_MA events do not match events ttree")
+            #SvB_MA_file = f'{path}/SvB_MA_newSBDef.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_MA_ULHH")}'
+            SvB_MA_file = f'{path}/SvB_MA_ULHH.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_MA_ULHH")}'
+            event["original_SvB_MA"] = ( NanoEventsFactory.from_root( SvB_MA_file,
+                                                             entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema ).events().SvB_MA )
 
-                # defining SvB for different SR
-                setSvBVars("SvB", event)
-                setSvBVars("SvB_MA", event)
+            if not ak.all(event.original_SvB_MA.event == event.event):
+                raise ValueError("ERROR: SvB_MA events do not match events ttree")
+
+            # defining SvB for different SR
+            setSvBVars("original_SvB", event)
+            setSvBVars("original_SvB_MA", event)
 
         if isDataForMixed:
 
@@ -535,6 +535,15 @@ class analysis(processor.ProcessorABC):
         #allcuts.append("passMax2OthJets")
 
         selev = event[selections.all(*allcuts)]
+
+        ## TTbar subtractions
+        if self.subtract_ttbar_with_weights:
+            ttbar_rand = np.random.uniform(low=0, high=1.0, size=len(selev))
+            pass_ttbar_filter = np.full( len(event), True)
+            pass_ttbar_filter[ selections.all(*allcuts) ] = (ttbar_rand > selev.original_SvB_MA.tt_vs_mj)
+            selections.add( 'pass_ttbar_filter', pass_ttbar_filter )
+            allcuts.append("pass_ttbar_filter")
+            selev = selev[(ttbar_rand > selev.original_SvB_MA.tt_vs_mj)]
 
 
         #
@@ -929,19 +938,6 @@ class analysis(processor.ProcessorABC):
         #
         if not (isMC or "mixed" in dataset) and self.blind:
             selev = selev[~(selev["quadJet_selected"].SR & selev.fourTag)]
-
-
-        #
-        #  Do TTBar subtraction
-        #
-        if self.subtract_ttbar_with_weights:
-            ttbar_rand = np.random.uniform(low=0, high=1.0, size=len(selev))
-
-            pass_ttbar_filter = np.full( len(event), True)
-            pass_ttbar_filter[ selections.all(*allcuts) ] = (ttbar_rand > selev.SvB_MA.tt_vs_mj)
-            selections.add( 'pass_ttbar_filter', pass_ttbar_filter )
-            allcuts.append("pass_ttbar_filter")
-            selev = selev[(ttbar_rand > selev.SvB_MA.tt_vs_mj)]
 
 
         #
