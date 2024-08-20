@@ -596,8 +596,6 @@ class analysis(processor.ProcessorABC):
             canJet = declustered_jets[declustered_jets.jet_flavor == "b"]
             canJet["puId"] = 7
             canJet["jetId"] = 7 # selev.Jet.puId[canJet_idx]
-
-
             btag_rand = np.random.uniform(low=0.6, high=1.0, size=len(ak.flatten(canJet,axis=1)))
             canJet["btagDeepFlavB"] = ak.unflatten(btag_rand, ak.num(canJet))
             canJet["bRegCorr"] = 1.0
@@ -608,7 +606,6 @@ class analysis(processor.ProcessorABC):
             notCanJet = declustered_jets[declustered_jets.jet_flavor == "j"]
             notCanJet["puId"] = 7
             notCanJet["jetId"] = 7
-
             btag_rand = np.random.uniform(low=0.0, high=0.6, size=len(ak.flatten(notCanJet,axis=1)))
             notCanJet["btagDeepFlavB"] = ak.unflatten(btag_rand, ak.num(notCanJet))
             notCanJet["bRegCorr"] = 1.0
@@ -619,9 +616,12 @@ class analysis(processor.ProcessorABC):
             new_jets = ak.concatenate([canJet, notCanJet], axis=1)
             new_jets["selected_loose"] = True
             new_jets["tagged_loose"] = False
+            new_jets = new_jets[ak.argsort(new_jets.pt, axis=1, ascending=False)]
 
             selev['Jet'] = new_jets
+
             selev['selJet'] = new_jets[new_jets.selected]
+
 
             #print(f"{chunk} {ak.num(canJet)} \n" )
             four_canJets = ak.num(canJet) ==4

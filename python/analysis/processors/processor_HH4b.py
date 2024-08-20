@@ -54,6 +54,7 @@ def setSvBVars(SvBName, event):
 
     event[SvBName, "hh"] = ( getattr(event, SvBName).phh >= getattr(event, SvBName).pzz ) & (getattr(event, SvBName).phh >= getattr(event, SvBName).pzh)
 
+    event[SvBName, "tt_vs_mj"] = ( getattr(event, SvBName).ptt / (getattr(event, SvBName).ptt + getattr(event, SvBName).pmj) )
 
     #
     #  Set ps_{bb}
@@ -1119,6 +1120,8 @@ class analysis(processor.ProcessorABC):
             this_ps_hh[ SvB.hh ] = SvB.ps[ SvB.hh ]
             this_ps_hh[ SvB.passMinPs == False ] = -2
             SvB['ps_hh'] = this_ps_hh
+
+            SvB['tt_vs_mj'] = ( SvB.ptt / (SvB.ptt + SvB.pmj) )
 
             if classifier in event.fields:
                 error = ~np.isclose(event[classifier].ps, SvB.ps, atol=1e-5, rtol=1e-3)
