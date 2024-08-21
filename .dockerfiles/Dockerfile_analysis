@@ -1,7 +1,7 @@
 FROM coffeateam/coffea-base-almalinux8:0.7.22-py3.10
 
 RUN dnf update -y && dnf install -y poppler-utils 
-RUN dnf install -y root
+RUN dnf install -y root python3-root
 RUN pip install --upgrade pip
 RUN pip install pycodestyle 
 RUN pip install memory-profiler
