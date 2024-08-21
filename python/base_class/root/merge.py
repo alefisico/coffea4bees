@@ -1,13 +1,14 @@
 from ..dask.delayed import delayed
 from ..system.eos import EOS, PathLike
 from .chunk import Chunk
-from .io import TreeReader, TreeWriter
+from .io import ReaderOptions, TreeReader, TreeWriter, WriterOptions
 
 
 @delayed
 def move(
     path: PathLike,
     source: Chunk,
+    clean_source: bool = True,
     dask: bool = False,
 ):
     """
@@ -19,6 +20,8 @@ def move(
         Path to output ROOT file.
     source : ~heptools.root.chunk.Chunk
         Source chunk to move.
+    clean_source : bool, optional, default=True
+        If ``True``, remove the source chunk after moving.
     dask : bool, optional, default=False
         If ``True``, return a :class:`~dask.delayed.Delayed` object.
 
@@ -28,7 +31,9 @@ def move(
         Moved chunk.
     """
     source = source.deepcopy()
-    source.path = source.path.move_to(path)
+    source.path = (source.path.move_to if clean_source else source.path.copy_to)(
+        path, overwrite=True
+    )
     return source
 
 
@@ -37,8 +42,8 @@ def merge(
     path: PathLike,
     *sources: Chunk,
     step: int,
-    writer_options: dict = None,
-    reader_options: dict = None,
+    writer_options: WriterOptions = None,
+    reader_options: ReaderOptions = None,
     dask: bool = False,
 ):
     """
@@ -104,8 +109,9 @@ def resize(
     *sources: Chunk,
     step: int,
     chunk_size: int = ...,
-    writer_options: dict = None,
-    reader_options: dict = None,
+    writer_options: WriterOptions = None,
+    reader_options: ReaderOptions = None,
+    clean_source: bool = True,
     dask: bool = False,
 ):
     """
@@ -125,6 +131,8 @@ def resize(
         Additional options passed to :class:`~.io.TreeWriter`.
     reader_options : dict, optional
         Additional options passed to :class:`~.io.TreeReader`.
+    clean_source : bool, optional, default=True
+        If ``True``, remove the source chunk after moving.
     dask : bool, optional, default=False
         If ``True``, return a :class:`~dask.delayed.Delayed` object.
 
@@ -165,5 +173,6 @@ def resize(
                     dask=dask,
                 )
             )
-    results = clean(sources, results, dask=dask)
+    if clean_source:
+        results = clean(sources, results, dask=dask)
     return results

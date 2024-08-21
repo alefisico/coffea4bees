@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from classifier.patch import patch_awkward_pandas
 from classifier.task import EntryPoint
 

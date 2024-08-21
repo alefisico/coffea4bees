@@ -10,7 +10,7 @@ class Main(main.Main):
         prog="debug",
         description="Debug tasks.",
         workflow=[
-            ("main", f"[blue]task.debug()[/blue] debug tasks"),
+            ("main", "[blue]task.debug()[/blue] debug tasks"),
         ],
     )
 
