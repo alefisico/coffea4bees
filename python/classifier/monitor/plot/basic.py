@@ -17,6 +17,7 @@ from bokeh.models import (
     ScrollBox,
     Slider,
     Toggle,
+    UIElement,
 )
 from bokeh.plotting import figure
 
@@ -81,6 +82,17 @@ def generate_toggles(keys: set[str], category: dict[str, list[str]]):
                 group[0].js_link("active", toggle, "active")
             layout.extend(group)
     return toggles, row(*layout, sizing_mode="stretch_width")
+
+
+def generate_layout(toggles: UIElement, plots: list[UIElement]):
+    return column(
+        toggles,
+        ScrollBox(
+            child=column(plots, sizing_mode="stretch_width"),
+            sizing_mode="stretch_both",
+        ),
+        sizing_mode="stretch_both",
+    )
 
 
 def plot_multiphase_scalar(
@@ -181,13 +193,7 @@ def plot_multiphase_scalar(
         phase_hover.renderers.append(vs)
         layout.append(fig)
 
-    return column(
-        toggle_row,
-        ScrollBox(
-            child=row(*layout, sizing_mode="stretch_width"), sizing_mode="stretch_both"
-        ),
-        sizing_mode="stretch_both",
-    )
+    return generate_layout(toggle_row, layout)
 
 
 def plot_multiphase_curve(
@@ -291,10 +297,4 @@ def plot_multiphase_curve(
         fig.add_layout(Legend(items=legends, **_LEGEND_KWARGS), "right")
         layout.append(column(slider, row(fig, banner), sizing_mode="stretch_width"))
 
-    return column(
-        toggle_row,
-        ScrollBox(
-            child=row(*layout, sizing_mode="stretch_width"), sizing_mode="stretch_both"
-        ),
-        sizing_mode="stretch_both",
-    )
+    return generate_layout(toggle_row, layout)
