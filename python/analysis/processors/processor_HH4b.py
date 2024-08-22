@@ -18,6 +18,7 @@ from analysis.helpers.hist_templates import (
     TopCandHists,
     WCandHists,
 )
+from analysis.helpers.SvB_helpers import setSvBVars
 from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
 from analysis.helpers.selection_basic_4b import (
     apply_event_selection_4b,
@@ -45,42 +46,6 @@ from coffea.util import load
 NanoAODSchema.warn_missing_crossrefs = False
 warnings.filterwarnings("ignore")
 
-
-def setSvBVars(SvBName, event):
-
-    event[SvBName, "passMinPs"] = ( (getattr(event, SvBName).pzz > 0.01)
-                                    | (getattr(event, SvBName).pzh > 0.01)
-                                    | (getattr(event, SvBName).phh > 0.01) )
-
-    event[SvBName, "zz"] = ( getattr(event, SvBName).pzz >  getattr(event, SvBName).pzh ) & (getattr(event, SvBName).pzz > getattr(event, SvBName).phh)
-
-    event[SvBName, "zh"] = ( getattr(event, SvBName).pzh >  getattr(event, SvBName).pzz ) & (getattr(event, SvBName).pzh > getattr(event, SvBName).phh)
-
-    event[SvBName, "hh"] = ( getattr(event, SvBName).phh >= getattr(event, SvBName).pzz ) & (getattr(event, SvBName).phh >= getattr(event, SvBName).pzh)
-
-
-    #
-    #  Set ps_{bb}
-    #
-    this_ps_zz = np.full(len(event), -1, dtype=float)
-    this_ps_zz[getattr(event, SvBName).zz] = getattr(event, SvBName).ps[ getattr(event, SvBName).zz ]
-
-    this_ps_zz[getattr(event, SvBName).passMinPs == False] = -2
-    event[SvBName, "ps_zz"] = this_ps_zz
-
-    this_ps_zh = np.full(len(event), -1, dtype=float)
-    this_ps_zh[getattr(event, SvBName).zh] = getattr(event, SvBName).ps[ getattr(event, SvBName).zh ]
-
-    this_ps_zh[getattr(event, SvBName).passMinPs == False] = -2
-    event[SvBName, "ps_zh"] = this_ps_zh
-
-    this_ps_hh = np.full(len(event), -1, dtype=float)
-    this_ps_hh[getattr(event, SvBName).hh] = getattr(event, SvBName).ps[ getattr(event, SvBName).hh ]
-
-    this_ps_hh[getattr(event, SvBName).passMinPs == False] = -2
-    event[SvBName, "ps_hh"] = this_ps_hh
-
-
 class analysis(processor.ProcessorABC):
     def __init__(
         self,
@@ -96,6 +61,7 @@ class analysis(processor.ProcessorABC):
         apply_boosted_veto=False,
         run_SvB=True,
         corrections_metadata="analysis/metadata/corrections.yml",
+        top_reconstruction_override = False,
         run_systematics=[],
         make_classifier_input: str = None,
     ):
@@ -113,6 +79,7 @@ class analysis(processor.ProcessorABC):
         self.classifier_SvB = HCREnsemble(SvB) if SvB else None
         self.classifier_SvB_MA = HCREnsemble(SvB_MA) if SvB_MA else None
         self.corrections_metadata = yaml.safe_load(open(corrections_metadata, "r"))
+        self.top_reconstruction_override = top_reconstruction_override
 
         self.cutFlowCuts = [
             "all",
@@ -147,7 +114,11 @@ class analysis(processor.ProcessorABC):
         processName = event.metadata['processName']
         isMC    = True if event.run[0] == 1 else False
 
-        self.top_reconstruction = event.metadata.get("top_reconstruction", None)
+        if self.top_reconstruction_override:
+            self.top_reconstruction = self.top_reconstruction_override
+            logging.info(f"top_reconstruction overridden to {self.top_reconstruction}")
+        else:
+            self.top_reconstruction = event.metadata.get("top_reconstruction", None)
 
         isMixedData    = not (dataset.find("mix_v") == -1)
         isDataForMixed = not (dataset.find("data_3b_for_mixed") == -1)
@@ -1117,6 +1088,8 @@ class analysis(processor.ProcessorABC):
             this_ps_hh[ SvB.hh ] = SvB.ps[ SvB.hh ]
             this_ps_hh[ SvB.passMinPs == False ] = -2
             SvB['ps_hh'] = this_ps_hh
+
+            SvB['tt_vs_mj'] = ( SvB.ptt / (SvB.ptt + SvB.pmj) )
 
             if classifier in event.fields:
                 error = ~np.isclose(event[classifier].ps, SvB.ps, atol=1e-5, rtol=1e-3)
