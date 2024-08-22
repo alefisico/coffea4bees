@@ -888,11 +888,11 @@ class analysis(processor.ProcessorABC):
 
                 fill += FvTHists(("FvT", "FvT Classifier"), "FvT", skip=FvT_skip)
 
-                fill += hist.add("quadJet_selected_FvT_score", (100, 0, 1, ("quadJet_selected.FvT_q_score", "Selected Quad Jet Diboson FvT q score") ) )
-                fill += hist.add("quadJet_min_FvT_score",      (100, 0, 1, ("quadJet_min_dr.FvT_q_score",   "Min dR Quad Jet Diboson FvT q score"  ) ) )
+                fill += hist.add("quadJet_selected.FvT_score", (100, 0, 1, ("quadJet_selected.FvT_q_score", "Selected Quad Jet Diboson FvT q score") ) )
+                fill += hist.add("quadJet_min_dr.FvT_score",      (100, 0, 1, ("quadJet_min_dr.FvT_q_score",   "Min dR Quad Jet Diboson FvT q score"  ) ) )
 
                 if self.JCM:
-                    fill += hist.add("FvT_noFvT", (100, 0, 5, ("FvT.FvT", "FvT reweight")), weight="weight_noFvT")
+                    fill += hist.add("FvT.noFvT", (100, 0, 5, ("FvT.FvT", "FvT reweight")), weight="weight_noFvT")
 
             skip_all_but_n = ["deepjet_b", "energy", "eta", "id_jet", "id_pileup", "mass", "phi", "pt", "pz", "deepjet_c", ]
 
@@ -927,8 +927,8 @@ class analysis(processor.ProcessorABC):
 
                 fill += SvBHists(("SvB",    "SvB Classifier"),    "SvB")
                 fill += SvBHists(("SvB_MA", "SvB MA Classifier"), "SvB_MA")
-                fill += hist.add( "quadJet_selected_SvB_q_score", ( 100, 0, 1, ( "quadJet_selected.SvB_q_score",  "Selected Quad Jet Diboson SvB q score") ) )
-                fill += hist.add( "quadJet_min_SvB_MA_q_score",   ( 100, 0, 1, ( "quadJet_min_dr.SvB_MA_q_score", "Min dR Quad Jet Diboson SvB MA q score") ) )
+                fill += hist.add( "quadJet_selected.SvB_q_score", ( 100, 0, 1, ( "quadJet_selected.SvB_q_score",  "Selected Quad Jet Diboson SvB q score") ) )
+                fill += hist.add( "quadJet_min_dr.SvB_MA_q_score",   ( 100, 0, 1, ( "quadJet_min_dr.SvB_MA_q_score", "Min dR Quad Jet Diboson SvB MA q score") ) )
                 if isDataForMixed:
                     for _FvT_name in event.metadata["FvT_names"]:
                         fill += SvBHists( (f"SvB_{_FvT_name}",    "SvB Classifier"),    "SvB",    weight=f"weight_{_FvT_name}", )
