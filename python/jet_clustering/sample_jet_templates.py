@@ -3,8 +3,6 @@ import awkward as ak
 from base_class.math.random import Squares
 #from base_class.sample_jet_templates import sample_PDFs_vs_pT
 
-rng = Squares("sample_jet_templates", 1, "test")
-
 def sample_PDFs(input_jets_decluster, input_pdfs, splittings):
 
     n_jets   = np.sum(ak.num(input_jets_decluster))
@@ -96,16 +94,18 @@ def sample_PDFs_vs_pT(input_jets_decluster, input_pdfs, rand_seed, splittings):
         for _splitting_name, _num_samples, _indicies_tuple in splittings:
 
             # For random number seeding
-            split_name_hash_ = len(_splitting_name) + 3 * _splitting_name.count("b") + 5 * _splitting_name.count("j") * 7 * _splitting_name.count("(")
+            split_name_hash = len(_splitting_name) + 3 * _splitting_name.count("b") + 5 * _splitting_name.count("j") * 7 * _splitting_name.count("(")
             pts  =  ak.flatten(input_jets_decluster.pt)[_indicies_tuple]
-            #etas =  ak.flatten(input_jets_decluster.eta)[_indicies_tuple]
+            etas =  ak.flatten(input_jets_decluster.eta)[_indicies_tuple]
+            phis =  ak.flatten(input_jets_decluster.phi)[_indicies_tuple]
 
             #_num_samples
             counter = np.empty( (_num_samples, 3), dtype=np.uint64)  # split_name_hash_, pt, var_name
-            counter[:, 0] = np.repeat(split_name_hash_, _num_samples)
-            counter[:, 1] = pts
-            counter[:, 1] <<= 32
-            counter[:, 2] = np.repeat(13*_iVar + rand_seed , _num_samples)
+            counter[:, 0] = np.asarray(pts ).view(np.uint64)
+            counter[:, 1] = np.asarray(etas).view(np.uint64)
+            counter[:, 2] = np.asarray(phis).view(np.uint64)
+
+            rng = Squares("sample_jet_templates", _iVar, rand_seed, split_name_hash)
 
 
             if _splitting_name not in input_pdfs.keys():

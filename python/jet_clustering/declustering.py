@@ -3,6 +3,13 @@ import awkward as ak
 from coffea.nanoevents.methods import vector
 from jet_clustering.sample_jet_templates import sample_PDFs_vs_pT
 
+#_MAX_NUM_JET_RETRY = 4
+#_MAX_NUM_EVENT_RETRY = 4
+
+_MAX_NUM_JET_RETRY   = 8
+_MAX_NUM_EVENT_RETRY = 8
+
+
 def extract_all_parentheses_substrings(s):
     substrings = []
     start_indices = []
@@ -470,7 +477,7 @@ def decluster_splitting_types(input_jets, splitting_types, input_pdfs, rand_seed
         clustering_fail = fail_pt_mask | fail_pt_b_mask | fail_eta_b_mask | fail_dr_mask
 
         #print(ak.any(fail_dr_mask))
-        if num_trys > 4:
+        if num_trys > _MAX_NUM_JET_RETRY:
             print(f"Bailing with {np.sum(ak.num(input_jets_to_decluster))}\n")
             clustering_fail = ~(fail_pt_mask | ~fail_pt_mask)  #All False
 
@@ -582,8 +589,8 @@ def make_synthetic_event(input_jets, input_pdfs, debug=False):
 
         pass_dr2_mask_local = min_dr2 > 0.16 # 0.4**2
 
-        if num_trys > 4:
-            print(f"Bailing on dR check with {np.sum(ak.num(events_to_decluster_mask))}\n")
+        if num_trys > _MAX_NUM_EVENT_RETRY:
+            print(f"Bailing on dR check with {np.sum(events_to_decluster_mask == True)}\n")
             pass_dr2_mask_local = (pass_dr2_mask_local | ~pass_dr2_mask_local)  #All True
 
 
