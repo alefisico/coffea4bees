@@ -132,7 +132,6 @@ def sample_PDFs_vs_pT(input_jets_decluster, input_pdfs, rand_seed, splittings):
                     ycenters_flat = np.tile(ycenters, len(xcenters))
 
                     #sampled_indices = np.random.choice(len(probabilities_flat), size=_num_samples, p=probabilities_flat)
-                    #breakpoint()
                     sampled_indices = rng.choice(counter, a=len(probabilities_flat), p=probabilities_flat)#.astype(np.int32)
 
                     _sampled_data_x_vs_pT[_iPt][_indicies_tuple] = xcenters_flat[sampled_indices]
