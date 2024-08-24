@@ -585,6 +585,23 @@ class analysis(processor.ProcessorABC):
 
             selev['selJet'] = new_jets[new_jets.selected]
 
+            #
+            # check_can_jets = ak.num(canJet) - ak.num(canJet[canJet.selected])
+            # print(f"\n Any can jet errors ? {ak.any(check_can_jets)}")
+            # check_jets = ak.num(selev.Jet) - (ak.num(canJet) + ak.num(notCanJet))
+            # print(f"\n Any jet errors ? {ak.any(check_jets)}")
+            # check_sel_jets = ak.num(selev.selJet) - (ak.num(canJet[canJet.selected]) + ak.num(notCanJet[notCanJet.selected]))
+            # print(f"\n Any seljet errors ? {ak.any(check_sel_jets)}")
+
+
+            # print(f"\n canJets Diff             {ak.num(canJet) - ak.num(canJet[canJet.selected])} \n" )
+            # print(f"\n canJets             {ak.num(canJet)} \n" )
+            # print(f"\n canJetsSelected     {ak.num(canJet[canJet.selected])} \n" )
+            # print(f"\n notCanJet           {ak.num(notCanJet)} \n" )
+            # print(f"\n notCanJet.selected  {ak.num(notCanJet[notCanJet.selected])} \n" )
+            # print(f"\n Jet                 {ak.num(selev.Jet)} \n" )
+            # print(f"\n selJet              {ak.num(selev.selJet)} \n" )
+
 
             #print(f"{chunk} {ak.num(canJet)} \n" )
             four_canJets = ak.num(canJet) ==4
