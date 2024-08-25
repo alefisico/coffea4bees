@@ -1,7 +1,7 @@
 import numpy as np
 import awkward as ak
 from base_class.math.random import Squares
-#from base_class.sample_jet_templates import sample_PDFs_vs_pT
+
 
 def sample_PDFs(input_jets_decluster, input_pdfs, splittings):
 
@@ -50,7 +50,6 @@ def sample_PDFs(input_jets_decluster, input_pdfs, splittings):
             input_jets_decluster["thetaA"]     = ak.unflatten(_sampled_data_y,    ak.num(input_jets_decluster))
 
 
-
 def sample_PDFs_vs_pT(input_jets_decluster, input_pdfs, rand_seed, splittings):
 
     n_jets   = np.sum(ak.num(input_jets_decluster))
@@ -59,13 +58,12 @@ def sample_PDFs_vs_pT(input_jets_decluster, input_pdfs, rand_seed, splittings):
     pt_masks = []
     for iPt in range(n_pt_bins):
         _min_pt = float(input_pdfs["pt_bins"][iPt])
-        _max_pt = float(input_pdfs["pt_bins"][iPt+1])
+        _max_pt = float(input_pdfs["pt_bins"][iPt + 1])
         if _max_pt == "inf":
             _max_pt = np.inf
 
         _this_mask = (input_jets_decluster.pt > _min_pt) & (input_jets_decluster.pt < _max_pt)
-        pt_masks.append( _this_mask )
-
+        pt_masks.append(_this_mask)
 
     #
     #  Sample the PDFs for the jets we will uncluster
@@ -95,18 +93,17 @@ def sample_PDFs_vs_pT(input_jets_decluster, input_pdfs, rand_seed, splittings):
 
             # For random number seeding
             split_name_hash = len(_splitting_name) + 3 * _splitting_name.count("b") + 5 * _splitting_name.count("j") * 7 * _splitting_name.count("(")
-            pts  =  ak.flatten(input_jets_decluster.pt)[_indicies_tuple]
-            etas =  ak.flatten(input_jets_decluster.eta)[_indicies_tuple]
-            phis =  ak.flatten(input_jets_decluster.phi)[_indicies_tuple]
+            pts  = ak.flatten(input_jets_decluster.pt)[_indicies_tuple]
+            etas = ak.flatten(input_jets_decluster.eta)[_indicies_tuple]
+            phis = ak.flatten(input_jets_decluster.phi)[_indicies_tuple]
 
-            #_num_samples
-            counter = np.empty( (_num_samples, 3), dtype=np.uint64)  # split_name_hash_, pt, var_name
+            # _num_samples
+            counter = np.empty((_num_samples, 3), dtype=np.uint64)  # split_name_hash_, pt, var_name
             counter[:, 0] = np.asarray(pts ).view(np.uint64)
             counter[:, 1] = np.asarray(etas).view(np.uint64)
             counter[:, 2] = np.asarray(phis).view(np.uint64)
 
             rng = Squares("sample_jet_templates", _iVar, rand_seed, split_name_hash)
-
 
             if _splitting_name not in input_pdfs.keys():
 
@@ -121,7 +118,7 @@ def sample_PDFs_vs_pT(input_jets_decluster, input_pdfs, rand_seed, splittings):
                     probs   = np.array(input_pdfs[_splitting_name][_var_name][_iPt]["probs"], dtype=float)
                     centers = np.array(input_pdfs[_splitting_name][_var_name][_iPt]["bin_centers"], dtype=float)
 
-                    #_sampled_data_vs_pT[_iPt][_indicies_tuple] = np.random.choice(centers, size=_num_samples, p=probs)
+                    # _sampled_data_vs_pT[_iPt][_indicies_tuple] = np.random.choice(centers, size=_num_samples, p=probs)
                     _sampled_data_vs_pT[_iPt][_indicies_tuple] = rng.choice(counter, a=centers, p=probs).astype(np.float32)
                 else:
                     probabilities_flat = np.array(input_pdfs[_splitting_name][_var_name][_iPt]["probabilities_flat"], dtype=float)
@@ -131,12 +128,11 @@ def sample_PDFs_vs_pT(input_jets_decluster, input_pdfs, rand_seed, splittings):
                     xcenters_flat = np.repeat(xcenters, len(ycenters))
                     ycenters_flat = np.tile(ycenters, len(xcenters))
 
-                    #sampled_indices = np.random.choice(len(probabilities_flat), size=_num_samples, p=probabilities_flat)
-                    sampled_indices = rng.choice(counter, a=len(probabilities_flat), p=probabilities_flat)#.astype(np.int32)
+                    # sampled_indices = np.random.choice(len(probabilities_flat), size=_num_samples, p=probabilities_flat)
+                    sampled_indices = rng.choice(counter, a=len(probabilities_flat), p=probabilities_flat)   # .astype(np.int32)
 
                     _sampled_data_x_vs_pT[_iPt][_indicies_tuple] = xcenters_flat[sampled_indices]
                     _sampled_data_y_vs_pT[_iPt][_indicies_tuple] = ycenters_flat[sampled_indices]
-
 
             #
             #  Now work out which pT bins to use
@@ -153,7 +149,6 @@ def sample_PDFs_vs_pT(input_jets_decluster, input_pdfs, rand_seed, splittings):
                     _pt_indicies = np.where(ak.flatten(pt_masks[iPt]))[0]
                     _sampled_data_x[_pt_indicies] = _sampled_data_x_vs_pT[iPt][_pt_indicies]
                     _sampled_data_y[_pt_indicies] = _sampled_data_y_vs_pT[iPt][_pt_indicies]
-
 
         #
         # Save the sampled data to the jets to be uclustered for use in decluster_combined_jets
