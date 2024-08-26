@@ -24,7 +24,13 @@ if __name__ == '__main__':
             dataset = ikey.split( tmp_split )[0]
             year = tmp_split.split('_')[1] + '_'.join(ikey.split(tmp_split)[1:])
             if dataset in main_file['datasets']:
-                if 'source' in tmp_file[ikey].keys(): tmp_file[ikey].pop('source')
+                for iname in ['source', 'kFactor', 
+                              'lumi', 'xs', 
+                              'cutFlowFourTag', 'cutFlowFourTagUnitWeight',
+                              'cutFlowThreeTag', 'cutFlowThreeTagUnitWeight',
+                              'reproducible', 
+                              ]:
+                    if iname in tmp_file[ikey].keys(): tmp_file[ikey].pop(iname)
                 if 'data' in dataset:
                     era = year[-1]
                     year = ''.join(year[:-1])

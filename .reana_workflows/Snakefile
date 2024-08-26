@@ -257,7 +257,8 @@ rule make_combine_inputs:
     resources:
         voms_proxy=True,
         kerberos=True,
-        compute_backend="kubernetes"
+        compute_backend="kubernetes",
+        kubernetes_memory_limit="9.5Gi"
     shell:
         """
 source /cvmfs/cms.cern.ch/cmsset_default.sh
