@@ -113,9 +113,7 @@ class PicoAOD(ProcessorABC):
             added is not None
             and (size := len(added)) != result[dataset]["saved_events"]
         ):
-            raise SkimmingError(
-                f"Length of additional branches ({size}) does not match the number of selected events ({result[dataset]['saved_events']})"
-            )
+            raise SkimmingError(f"Length of additional branches ({size}) does not match the number of selected events ({result[dataset]['saved_events']})")
         # clear cache
         _clear_cache(events)
         # save selected events
