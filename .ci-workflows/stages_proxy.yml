@@ -7,6 +7,7 @@ voms_proxy:
     paths:
       - proxy
   script:
+    - sudo mkdir -P /etc/grid-security/certificates/
     - sudo cp -rf /cvmfs/grid.cern.ch/etc/grid-security/certificates/* /etc/grid-security/certificates/
     # - sudo cp -rf /cvmfs/grid.cern.ch/etc/grid-security/vomsdir/cms/* /etc/grid-security/vomsdir/cms/
     # - sudo cp -rf /cvmfs/grid.cern.ch/etc/grid-security/vomses/ /etc/
