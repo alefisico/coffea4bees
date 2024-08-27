@@ -1,6 +1,10 @@
 import yaml
 from skimmer.processor.picoaod import PicoAOD, fetch_metadata, resize
 from analysis.helpers.selection_basic_4b import apply_event_selection_4b, apply_object_selection_4b
+
+from jet_clustering.clustering   import cluster_bs
+from jet_clustering.declustering import make_synthetic_event, clean_ISR
+
 from coffea.analysis_tools import Weights, PackedSelection
 import numpy as np
 from analysis.helpers.common import init_jet_factory
@@ -9,9 +13,15 @@ import logging
 import awkward as ak
 
 class DeClusterer(PicoAOD):
-    def __init__(self, loosePtForSkim=False, *args, **kwargs):
+    def __init__(self, clustering_pdfs_file = "None", *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.loosePtForSkim = loosePtForSkim
+
+        if not clustering_pdfs_file == "None":
+            self.clustering_pdfs = yaml.safe_load(open(clustering_pdfs_file, "r"))
+            logging.info(f"Loaded {len(self.clustering_pdfs.keys())} PDFs from {clustering_pdfs_file}")
+        else:
+            self.clustering_pdfs = None
+
         self.corrections_metadata = yaml.safe_load(open('analysis/metadata/corrections.yml', 'r'))
         self.cutFlowCuts = [
             "all",
@@ -28,6 +38,7 @@ class DeClusterer(PicoAOD):
         isMC    = True if event.run[0] == 1 else False
         year    = event.metadata['year']
         dataset = event.metadata['dataset']
+        nEvent = len(event)
 
         event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year] )
 
@@ -38,7 +49,7 @@ class DeClusterer(PicoAOD):
         jets = init_jet_factory(juncWS, event, isMC)
         event["Jet"] = jets
 
-        event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year], loosePtForSkim=self.loosePtForSkim  )
+        event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year]  )
 
         weights = Weights(len(event), storeIndividual=True)
 
@@ -55,55 +66,168 @@ class DeClusterer(PicoAOD):
         selections.add( "lumimask", event.lumimask)
         selections.add( "passNoiseFilter", event.passNoiseFilter)
         selections.add( "passHLT", ( np.full(len(event), True) if isMC else event.passHLT ) )
-        if self.loosePtForSkim:
-            selections.add( 'passJetMult_lowpt_forskim', event.passJetMult_lowpt_forskim )
         selections.add( 'passJetMult',   event.passJetMult )
-        if self.loosePtForSkim:
-            selections.add( "passPreSel_lowpt_forskim",  event.passPreSel_lowpt_forskim)
-        selections.add( 'passJetMult', event.passJetMult )
-        selections.add( "passPreSel",  event.passPreSel)
         selections.add( "passFourTag", event.fourTag)
-
 
         event["weight"] = weights.weight()
 
         cumulative_cuts = ["lumimask"]
         self._cutFlow.fill( "all",             event[selections.all(*cumulative_cuts)], allTag=True )
 
-        if self.loosePtForSkim:
-            all_cuts = ["passNoiseFilter", "passHLT", "passJetMult_lowpt_forskim", "passJetMult", "passPreSel_lowpt_forskim", "passPreSel"]
-        else:
-            all_cuts = ["passNoiseFilter", "passHLT", "passJetMult", "passPreSel", "passFourTag"]
+        all_cuts = ["passNoiseFilter", "passHLT", "passJetMult","passFourTag"]
 
         for cut in all_cuts:
             cumulative_cuts.append(cut)
             self._cutFlow.fill( cut, event[selections.all(*cumulative_cuts)], allTag=True )
 
-        if self.loosePtForSkim:
-            selection = event.lumimask & event.passNoiseFilter & event.passJetMult_lowpt_forskim & event.passPreSel_lowpt_forskim
-        else:
-            selection = event.lumimask & event.passNoiseFilter & event.passJetMult & event.passPreSel & event.fourTag
+        selection = event.lumimask & event.passNoiseFilter & event.passJetMult & event.fourTag
         if not isMC: selection = selection & event.passHLT
 
         selev = event[selections.all(*cumulative_cuts)]
-        #selev = event[selection]
+
+        # ## TTbar subtractions
+        # if self.subtract_ttbar_with_weights:
+        #     ttbar_rand = np.random.uniform(low=0, high=1.0, size=len(selev))
+        #     pass_ttbar_filter = np.full( len(event), True)
+        #     pass_ttbar_filter[ selections.all(*allcuts) ] = (ttbar_rand > selev.original_SvB_MA.tt_vs_mj)
+        #     selections.add( 'pass_ttbar_filter', pass_ttbar_filter )
+        #     allcuts.append("pass_ttbar_filter")
+        #     selev = selev[(ttbar_rand > selev.original_SvB_MA.tt_vs_mj)]
+
+        #
+        # Build and select boson candidate jets with bRegCorr applied
+        #
+        sorted_idx = ak.argsort( selev.Jet.btagDeepFlavB * selev.Jet.selected, axis=1, ascending=False )
+        canJet_idx = sorted_idx[:, 0:4]
+        notCanJet_idx = sorted_idx[:, 4:]
+        canJet = selev.Jet[canJet_idx]
+
+        # apply bJES to canJets
+        canJet = canJet * canJet.bRegCorr
+        canJet["bRegCorr"] = selev.Jet.bRegCorr[canJet_idx]
+        canJet["btagDeepFlavB"] = selev.Jet.btagDeepFlavB[canJet_idx]
+        #canJet["puId"] = selev.Jet.puId[canJet_idx]
+        #canJet["jetId"] = selev.Jet.puId[canJet_idx]
+        if isMC:
+            canJet["hadronFlavour"] = selev.Jet.hadronFlavour[canJet_idx]
+
+        canJet["calibration"] = selev.Jet.calibration[canJet_idx]
+
+        #
+        # pt sort canJets
+        #
+        canJet = canJet[ak.argsort(canJet.pt, axis=1, ascending=False)]
+
+        notCanJet = selev.Jet[notCanJet_idx]
+        notCanJet = notCanJet[notCanJet.selected_loose]
+        notCanJet = notCanJet[ak.argsort(notCanJet.pt, axis=1, ascending=False)]
+
+        #
+        # Do the Clustering
+        #
+        canJet["jet_flavor"] = "b"
+        notCanJet["jet_flavor"] = "j"
+
+        jets_for_clustering = ak.concatenate([canJet, notCanJet], axis=1)
+        jets_for_clustering = jets_for_clustering[ak.argsort(jets_for_clustering.pt, axis=1, ascending=False)]
+
+        clustered_jets, _clustered_splittings = cluster_bs(jets_for_clustering, debug=False)
+        clustered_jets = clean_ISR(clustered_jets, _clustered_splittings)
+
+        mask_unclustered_jet = (clustered_jets.jet_flavor == "b") | (clustered_jets.jet_flavor == "j")
+        selev["nClusteredJets"] = ak.num(clustered_jets[~mask_unclustered_jet])
+
+        #
+        # Declustering
+        #
+        declustered_jets = make_synthetic_event(clustered_jets, self.clustering_pdfs)
+
+        canJet = declustered_jets[declustered_jets.jet_flavor == "b"]
+        #canJet["puId"] = 7
+        #canJet["jetId"] = 7 # selev.Jet.puId[canJet_idx]
+        btag_rand = np.random.uniform(low=0.6, high=1.0, size=len(ak.flatten(canJet,axis=1)))
+        canJet["btagDeepFlavB"] = ak.unflatten(btag_rand, ak.num(canJet))
+        #canJet["bRegCorr"] = 1.0
+        canJet["tagged"] = True
+        canJet["selected"] = True
+        canJet = canJet[ak.argsort(canJet.pt, axis=1, ascending=False)]
+
+        notCanJet = declustered_jets[declustered_jets.jet_flavor == "j"]
+        #notCanJet["puId"] = 7
+        #notCanJet["jetId"] = 7
+        btag_rand = np.random.uniform(low=0.0, high=0.6, size=len(ak.flatten(notCanJet,axis=1)))
+        notCanJet["btagDeepFlavB"] = ak.unflatten(btag_rand, ak.num(notCanJet))
+        #notCanJet["bRegCorr"] = 1.0
+        notCanJet["tagged"] = True
+        notCanJet["selected"] =  (notCanJet.pt >= 40) & (np.abs(notCanJet.eta) <= 2.4)
+        notCanJet = notCanJet[ak.argsort(notCanJet.pt, axis=1, ascending=False)]
+
+        new_jets = ak.concatenate([canJet, notCanJet], axis=1)
+        new_jets["selected_loose"] = True
+        new_jets["tagged_loose"] = False
+        new_jets = new_jets[ak.argsort(new_jets.pt, axis=1, ascending=False)]
+
+        n_jet_old_all = ak.num(selev.Jet)
+        total_jet_old_all = int(ak.sum(n_jet_old_all))
+        selev.Jet = selev.Jet[selev.Jet.selected_loose]
+
+        n_jet_old = ak.num(selev.Jet)
+        total_jet_old = int(ak.sum(n_jet_old))
+
+        # To do  make seljets pt > 40 eta < 2.5
+        selev.Jet = new_jets
 
         n_jet = ak.num(selev.Jet)
         total_jet = int(ak.sum(n_jet))
 
+        delta_njet = n_jet - n_jet_old
+        delta_njet_total = total_jet - total_jet_old
+        print(f"delta_njet_total is {delta_njet_total} {total_jet} {total_jet_old} {total_jet_old_all} \n")
+        print(f"delta_njet  {ak.any(delta_njet)} {delta_njet[~(delta_njet ==0)]}   \n")
 
+        # need to deal with the jets that fail...
+
+        #processOutput = {}
+        #processOutput['nEvent'] = {}
+        #processOutput['nEvent'][event.metadata['dataset']] = {
+        #    'nEvent' : nEvent,
+        #    'genWeights': np.sum(event.genWeight) if isMC else nEvent
+        #
+        #}
+
+        #'isGood', 'btagDeepB', 'cleanmask', 'jetId', 'area', 'chEmEF', 'eta', 'pt', 'bRegCorr', 'rawFactor', 'btagDeepFlavB', 'puId', 'phi', 'neEmEF', 'btagCSVV2', 'mass'
         branches = ak.Array(
             {
-                # replace branch by using the same name as nanoAOD
-                "Jet_pt": selev.event % 53 + ak.local_index(selev.Jet.pt),
-                # replace another branch
-                "Jet_phi": ak.unflatten(np.zeros(total_jet), n_jet),
-                # create new branch
-                "Jet_isGood": ak.unflatten(
-                    np.repeat(selev.event % 2 == 0, n_jet), n_jet
-                ),
+                ## replace branch by using the same name as nanoAOD
+                #"Jet_phi": new_jets.phi,
+                # "Jet_pt":              selev.Jet.pt,
+                # "Jet_eta":             selev.Jet.eta,
+                # "Jet_phi":             selev.Jet.phi,
+                # "Jet_mass":            selev.Jet.mass,
+                # #"Jet_jet_flavor":      selev.Jet.jet_flavor,
+                # "Jet_btagDeepFlavB":   selev.Jet.btagDeepFlavB,
+
+                "Jet_pt":              selev.Jet.pt, #ak.unflatten(np.full(total_jet, 7), n_jet),
+                "Jet_eta":             selev.Jet.eta,
+                "Jet_phi":             selev.Jet.phi,
+                "Jet_mass":            ak.unflatten(np.full(total_jet, 7), n_jet),
+                #"Jet_jet_flavor":      selev.Jet.jet_flavor,
+                "Jet_btagDeepFlavB":   ak.unflatten(np.full(total_jet, 7), n_jet),
+
+                "Jet_jetId":           ak.unflatten(np.full(total_jet, 7), n_jet),
+                "Jet_puId":            ak.unflatten(np.full(total_jet, 7), n_jet),
+                "Jet_bRegCorr":        ak.unflatten(np.full(total_jet, 1), n_jet),
+                # unused... set to dummy
+                "Jet_isGood":    ak.unflatten(np.full(total_jet, 1), n_jet),
+                "Jet_btagDeepB": ak.unflatten(np.full(total_jet, 1), n_jet),
+                "Jet_cleanmask": ak.unflatten(np.full(total_jet, 1), n_jet),
+                "Jet_area":      ak.unflatten(np.full(total_jet, 1), n_jet),
+                "Jet_chEmEF":    ak.unflatten(np.full(total_jet, 1), n_jet),
+                "Jet_rawFactor": ak.unflatten(np.full(total_jet, 1), n_jet),
+                "Jet_neEmEF":    ak.unflatten(np.full(total_jet, 1), n_jet),
+                "Jet_btagCSVV2": ak.unflatten(np.full(total_jet, 1), n_jet),
                 # create new regular branch
-                "isBad": selev.event % 2 == 1,
+                "nClusteredJets": selev["nClusteredJets"],
             }
         )
 
