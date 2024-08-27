@@ -210,9 +210,9 @@ class DeClusterer(PicoAOD):
                 "Jet_pt":              selev.Jet.pt, #ak.unflatten(np.full(total_jet, 7), n_jet),
                 "Jet_eta":             selev.Jet.eta,
                 "Jet_phi":             selev.Jet.phi,
-                "Jet_mass":            ak.unflatten(np.full(total_jet, 7), n_jet),
+                "Jet_mass":            selev.Jet.mass,
                 #"Jet_jet_flavor":      selev.Jet.jet_flavor,
-                "Jet_btagDeepFlavB":   ak.unflatten(np.full(total_jet, 7), n_jet),
+                "Jet_btagDeepFlavB":   selev.Jet.btagDeepFlavB,
 
                 "Jet_jetId":           ak.unflatten(np.full(total_jet, 7), n_jet),
                 "Jet_puId":            ak.unflatten(np.full(total_jet, 7), n_jet),
