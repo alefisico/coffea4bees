@@ -575,15 +575,15 @@ datasets:
         A:
           files:
           - root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/data2018A/picoAOD.root
-        #B:
-        #  files:
-        #  - root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/data2018B/picoAOD.root
-        #C:
-        #  files:
-        #  - root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/data2018C/picoAOD.root
-        #D:
-        #  files:
-        #  - root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/data2018D/picoAOD.root
+        B:
+          files:
+          - root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/data2018B/picoAOD.root
+        C:
+          files:
+          - root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/data2018C/picoAOD.root
+        D:
+          files:
+          - root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/data2018D/picoAOD.root
       trigger:
       - PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepCSV_4p5
     '2016':

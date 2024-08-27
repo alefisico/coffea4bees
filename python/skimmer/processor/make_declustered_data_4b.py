@@ -142,82 +142,52 @@ class DeClusterer(PicoAOD):
         #
         declustered_jets = make_synthetic_event(clustered_jets, self.clustering_pdfs)
 
+
         canJet = declustered_jets[declustered_jets.jet_flavor == "b"]
-        #canJet["puId"] = 7
-        #canJet["jetId"] = 7 # selev.Jet.puId[canJet_idx]
         btag_rand = np.random.uniform(low=0.6, high=1.0, size=len(ak.flatten(canJet,axis=1)))
         canJet["btagDeepFlavB"] = ak.unflatten(btag_rand, ak.num(canJet))
-        #canJet["bRegCorr"] = 1.0
-        canJet["tagged"] = True
-        canJet["selected"] = True
+        # Set these pt > 40 and |eta| < 2.4
         canJet = canJet[ak.argsort(canJet.pt, axis=1, ascending=False)]
 
         notCanJet = declustered_jets[declustered_jets.jet_flavor == "j"]
-        #notCanJet["puId"] = 7
-        #notCanJet["jetId"] = 7
         btag_rand = np.random.uniform(low=0.0, high=0.6, size=len(ak.flatten(notCanJet,axis=1)))
         notCanJet["btagDeepFlavB"] = ak.unflatten(btag_rand, ak.num(notCanJet))
-        #notCanJet["bRegCorr"] = 1.0
-        notCanJet["tagged"] = True
-        notCanJet["selected"] =  (notCanJet.pt >= 40) & (np.abs(notCanJet.eta) <= 2.4)
         notCanJet = notCanJet[ak.argsort(notCanJet.pt, axis=1, ascending=False)]
 
         new_jets = ak.concatenate([canJet, notCanJet], axis=1)
-        new_jets["selected_loose"] = True
-        new_jets["tagged_loose"] = False
         new_jets = new_jets[ak.argsort(new_jets.pt, axis=1, ascending=False)]
 
-        n_jet_old_all = ak.num(selev.Jet)
-        total_jet_old_all = int(ak.sum(n_jet_old_all))
-        selev.Jet = selev.Jet[selev.Jet.selected_loose]
-
-        n_jet_old = ak.num(selev.Jet)
-        total_jet_old = int(ak.sum(n_jet_old))
-
-        # To do  make seljets pt > 40 eta < 2.5
-        # selev.Jet = new_jets
+        # n_jet_old_all = ak.num(selev.Jet)
+        # total_jet_old_all = int(ak.sum(n_jet_old_all))
+        # selev.Jet = selev.Jet[selev.Jet.selected_loose]
+        #
+        # n_jet_old = ak.num(selev.Jet)
+        # total_jet_old = int(ak.sum(n_jet_old))
 
         n_jet = ak.num(new_jets)
         total_jet = int(ak.sum(n_jet))
 
-        delta_njet = n_jet - n_jet_old
-        delta_njet_total = total_jet - total_jet_old
-        print(f"delta_njet_total is {delta_njet_total} {total_jet} {total_jet_old} {total_jet_old_all} \n")
-        print(f"delta_njet  {ak.any(delta_njet)} {delta_njet[~(delta_njet ==0)]}   \n")
-
-        # need to deal with the jets that fail...
-
-        #processOutput = {}
-        #processOutput['nEvent'] = {}
-        #processOutput['nEvent'][event.metadata['dataset']] = {
-        #    'nEvent' : nEvent,
-        #    'genWeights': np.sum(event.genWeight) if isMC else nEvent
-        #
-        #}
+        # delta_njet = n_jet - n_jet_old
+        # delta_njet_total = total_jet - total_jet_old
+        # print(f"delta_njet_total is {delta_njet_total} {total_jet} {total_jet_old} {total_jet_old_all} \n")
+        # print(f"delta_njet  {ak.any(delta_njet)} {delta_njet[~(delta_njet ==0)]}   \n")
 
         #'isGood', 'btagDeepB', 'cleanmask', 'jetId', 'area', 'chEmEF', 'eta', 'pt', 'bRegCorr', 'rawFactor', 'btagDeepFlavB', 'puId', 'phi', 'neEmEF', 'btagCSVV2', 'mass'
         branches = ak.Array(
             {
-                ## replace branch by using the same name as nanoAOD
-                #"Jet_phi": new_jets.phi,
-                # "Jet_pt":              selev.Jet.pt,
-                # "Jet_eta":             selev.Jet.eta,
-                # "Jet_phi":             selev.Jet.phi,
-                # "Jet_mass":            selev.Jet.mass,
-                # #"Jet_jet_flavor":      selev.Jet.jet_flavor,
-                # "Jet_btagDeepFlavB":   selev.Jet.btagDeepFlavB,
-
+                # Update jets with new kinematics
                 "Jet_pt":              new_jets.pt, #ak.unflatten(np.full(total_jet, 7), n_jet),
                 "Jet_eta":             new_jets.eta,
                 "Jet_phi":             new_jets.phi,
                 "Jet_mass":            new_jets.mass,
-                #"Jet_jet_flavor":      selev.Jet.jet_flavor,
                 "Jet_btagDeepFlavB":   new_jets.btagDeepFlavB,
-
-                "Jet_jetId":           ak.unflatten(np.full(total_jet, 7), n_jet),
-                "Jet_puId":            ak.unflatten(np.full(total_jet, 7), n_jet),
-                "Jet_bRegCorr":        ak.unflatten(np.full(total_jet, 1), n_jet),
-                # unused... set to dummy
+                # These throw error
+                #"Jet_jet_flavor":      ak.unflatten(np.full(total_jet, "b".encode("utf-8")), n_jet), # jets.jet_flavor ,
+                #"Jet_jet_flavor":      ak.unflatten(np.full(total_jet, "b" n_jet), # jets.jet_flavor ,
+                # Set to dummy values for synthetic jets
+                "Jet_jetId":     ak.unflatten(np.full(total_jet, 7), n_jet),
+                "Jet_puId":      ak.unflatten(np.full(total_jet, 7), n_jet),
+                "Jet_bRegCorr":  ak.unflatten(np.full(total_jet, 1), n_jet),
                 "Jet_isGood":    ak.unflatten(np.full(total_jet, 1), n_jet),
                 "Jet_btagDeepB": ak.unflatten(np.full(total_jet, 1), n_jet),
                 "Jet_cleanmask": ak.unflatten(np.full(total_jet, 1), n_jet),
@@ -226,6 +196,7 @@ class DeClusterer(PicoAOD):
                 "Jet_rawFactor": ak.unflatten(np.full(total_jet, 1), n_jet),
                 "Jet_neEmEF":    ak.unflatten(np.full(total_jet, 1), n_jet),
                 "Jet_btagCSVV2": ak.unflatten(np.full(total_jet, 1), n_jet),
+
                 # create new regular branch
                 "nClusteredJets": selev["nClusteredJets"],
             }
