@@ -175,9 +175,9 @@ class DeClusterer(PicoAOD):
         total_jet_old = int(ak.sum(n_jet_old))
 
         # To do  make seljets pt > 40 eta < 2.5
-        selev.Jet = new_jets
+        # selev.Jet = new_jets
 
-        n_jet = ak.num(selev.Jet)
+        n_jet = ak.num(new_jets)
         total_jet = int(ak.sum(n_jet))
 
         delta_njet = n_jet - n_jet_old
@@ -207,12 +207,12 @@ class DeClusterer(PicoAOD):
                 # #"Jet_jet_flavor":      selev.Jet.jet_flavor,
                 # "Jet_btagDeepFlavB":   selev.Jet.btagDeepFlavB,
 
-                "Jet_pt":              selev.Jet.pt, #ak.unflatten(np.full(total_jet, 7), n_jet),
-                "Jet_eta":             selev.Jet.eta,
-                "Jet_phi":             selev.Jet.phi,
-                "Jet_mass":            selev.Jet.mass,
+                "Jet_pt":              new_jets.pt, #ak.unflatten(np.full(total_jet, 7), n_jet),
+                "Jet_eta":             new_jets.eta,
+                "Jet_phi":             new_jets.phi,
+                "Jet_mass":            new_jets.mass,
                 #"Jet_jet_flavor":      selev.Jet.jet_flavor,
-                "Jet_btagDeepFlavB":   selev.Jet.btagDeepFlavB,
+                "Jet_btagDeepFlavB":   new_jets.btagDeepFlavB,
 
                 "Jet_jetId":           ak.unflatten(np.full(total_jet, 7), n_jet),
                 "Jet_puId":            ak.unflatten(np.full(total_jet, 7), n_jet),
