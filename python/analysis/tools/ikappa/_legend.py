@@ -18,11 +18,11 @@ from bokeh.models import (
 )
 from hist.axis import StrCategory
 
-from ._utils import BokehLog, ibtn
+from ._utils import BokehLog
 from .config import UI, Datasets, Stacks
 
 if TYPE_CHECKING:
-    from ._plot import CategoryAxis
+    from ._plot import AxisProjector
 
 _DIHIGGS = sorted(set(di_higgs.__all__) - {"Coupling"})
 _PROCESS = "process"
@@ -192,7 +192,7 @@ class LegendGroup:  # TODO add hist
 
     def __init__(
         self,
-        categories: dict[str, CategoryAxis],
+        categories: dict[str, AxisProjector],
         logger: BokehLog,
         *freeze_callbacks: Callable[[bool], None],
     ):
@@ -203,10 +203,10 @@ class LegendGroup:  # TODO add hist
         )
         # controls
         self._dom_freeze = _btn("", self._dom_freeze_click)
-        self._dom_add_model = ibtn("plus", self._dom_add_model_click)
-        self._dom_remove_model = ibtn("minus", self._dom_remove_model_click)
-        self._dom_add_stack = ibtn("plus", self._dom_add_stack_click)
-        self._dom_remove_stack = ibtn("minus", self._dom_remove_stack_click)
+        self._dom_add_model = self.log.ibtn("plus", self._dom_add_model_click)
+        self._dom_remove_model = self.log.ibtn("minus", self._dom_remove_model_click)
+        self._dom_add_stack = self.log.ibtn("plus", self._dom_add_stack_click)
+        self._dom_remove_stack = self.log.ibtn("minus", self._dom_remove_stack_click)
         self._dom_cats = Select(options=[*self._categories], align="center")
         self._dom_cats_all = _btn("All", self._dom_cat_select_all)
         self._dom_cats_clear = _btn("Clear", self._dom_cats_select_none)

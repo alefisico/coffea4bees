@@ -38,6 +38,8 @@ def PathInput(**kwargs):
 class BokehLog:
     def __init__(self, doc: Document, max_history: int = None):
         self._doc = doc
+
+        self._style_ibtn = InlineStyleSheet(css=".bk-btn {padding: 0 6px;}")
         self._dom_log = Div(
             text="",
             height=UI.log_height,
@@ -99,33 +101,16 @@ URL.revokeObjectURL(url);
             self._histories = self._histories[: self._max]
         self._dom_log.text = "<br>".join(self._histories)
 
-
-class _Tree(defaultdict):
-    def __init__(self):
-        super().__init__(_Tree)
-
-    def sorted(self):
-        new = _Tree()
-        for k, v in sorted(self.items()):
-            if isinstance(v, _Tree):
-                new[k] = v.sorted()
-            else:
-                new[k] = v
-        return new
-
-
-_ICON_BTN_STYLE = InlineStyleSheet(css=".bk-btn {padding: 0 5px;}")
-
-
-def ibtn(symbol: str, *onclick, **kwargs):
-    btn = Button(
-        label="",
-        icon=TablerIcon(icon_name=symbol, size="1.5em"),
-        button_type="primary",
-        align="center",
-        stylesheets=[_ICON_BTN_STYLE],
-        **kwargs,
-    )
-    for click in onclick:
-        btn.on_click(click)
-    return btn
+    def ibtn(self, symbol: str, *onclick, **kwargs):
+        btn = Button(
+            label="",
+            icon=TablerIcon(icon_name=symbol, size="1.5em"),
+            aspect_ratio=1,
+            button_type="primary",
+            align="center",
+            stylesheets=[self._style_ibtn],
+            **kwargs,
+        )
+        for click in onclick:
+            btn.on_click(click)
+        return btn

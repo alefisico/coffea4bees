@@ -2,28 +2,81 @@ from bokeh.document import Document
 from bokeh.layouts import column, row
 from bokeh.models import Button, Div, InlineStyleSheet, MultiChoice, ScrollBox
 from hist import Hist
-from hist.axis import AxesMixin, Boolean
+from hist.axis import (
+    AxesMixin,
+    Boolean,
+    IntCategory,
+    Integer,
+    Regular,
+    StrCategory,
+    Variable,
+)
 
 from ._legend import LegendGroup
 from ._treeview import TreeView
-from ._utils import BokehLog, ibtn
+from ._utils import BokehLog
 from .config import UI
 
 
-class CategoryAxis:
-    _EMPTY = InlineStyleSheet(css="div.choices__inner {background-color: pink;}")
+# Regular, Variable
+class AxisProjector:
+    _TRUE = "True"
+    _FALSE = "False"
+    _OTHERS = "Others"
+
+    @classmethod
+    def __bins(cls, axis: AxesMixin):
+        _ax = axis._ax
+        over = _ax.traits_overflow
+        under = _ax.traits_underflow
+        cats = [*axis]
+        match axis:
+            case Boolean():
+                return [cls._FALSE, cls._TRUE]
+            case IntCategory():
+                return [*map(str, cats)] + ([cls._OTHERS] if over else [])
+            case StrCategory():
+                if not over:
+                    return cats
+                _cats = set(cats)
+                others = cls._OTHERS
+                while others in _cats:
+                    others += "?"
+                return cats + [others]
+            case Integer():
+                return (
+                    ([f"<{cats[0]}"] if under else [])
+                    + [*map(str, cats)]
+                    + ([f">{cats[-1]}"] if over else [])
+                )
+            case Regular() | Variable():
+                _cats = []
+                for a, b in cats[:-1]:
+                    _cats.append(f"[{a},{b})")
+                a, b = cats[-1]
+                _cats.append(f"[{a},{b}{')' if over else ']'}")
+                return (
+                    ([f"(-\u221E,{cats[0][0]})"] if under else [])
+                    + _cats
+                    + ([f"[{cats[-1][-1]}, \u221E)"] if over else [])
+                )
 
     def __init__(self, axis: AxesMixin):
         self._type = type(axis)
         self._name = axis.name
         self._label = axis.label or axis.name
-        self._choices = (
-            ["True", "False"] if self._type is Boolean else [*map(str, axis)]
+
+        self._choices = self.__bins(axis)
+        self._indices: dict[str, int] = dict(
+            zip(self._choices, range(len(self._choices)))
         )
 
+        self._style_empty = InlineStyleSheet(
+            css="div.choices__inner {background-color: pink;}"
+        )
         self.dom = MultiChoice(
             title=self._label,
-            value=self._choices[0:1],
+            value=self._choices[-1:],
             options=self._choices,
             sizing_mode="stretch_width",
         )
@@ -31,11 +84,13 @@ class CategoryAxis:
 
     def _dom_change(self, attr, old, new):
         if not new:
-            self.dom.stylesheets = [self._EMPTY]
+            self.dom.stylesheets = [self._style_empty]
         else:
             self.dom.stylesheets = []
 
-    def projet(self): ...  # TODO
+    @property
+    def selected(self):
+        return [self._indices[v] for v in self.dom.value]
 
 
 class Plotter:
@@ -56,14 +111,14 @@ class Plotter:
         test = next(iter(hists.values()))
 
         self.hists = hists
-        self.categories: dict[str, CategoryAxis] = {
-            axis.name: CategoryAxis(axis)
+        self.categories: dict[str, AxisProjector] = {
+            axis.name: AxisProjector(axis)
             for axis in sorted(test.axes, key=lambda x: x.name)
             if axis.name in categories
         }
         n_cat = len(self.categories)
 
-        self._dom_full = ibtn("")
+        self._dom_full = self.log.ibtn("")
         self._dom_full.on_click(self._dom_fullscreen)
         self._dom_plot = Button(
             label="Plot", button_type="success", sizing_mode="stretch_height"
