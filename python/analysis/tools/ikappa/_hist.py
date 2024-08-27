@@ -5,6 +5,7 @@ import re
 from itertools import chain
 from typing import TYPE_CHECKING, Callable, Iterable
 
+import numpy.typing as npt
 from base_class.physics import di_higgs
 from base_class.physics.di_higgs import Coupling
 from bokeh.layouts import column, row
@@ -16,7 +17,7 @@ from bokeh.models import (
     MultiChoice,
     Select,
 )
-from hist.axis import StrCategory
+from hist.axis import AxesMixin, StrCategory
 
 from ._utils import BokehLog
 from .config import UI, Datasets, Stacks
@@ -73,7 +74,7 @@ class _KappaMatch:
         return k, float(cls._D.sub(".", v))
 
 
-class _KappaModel:  # TODO add hist
+class _KappaModel:
     def __init__(self, model: str, pattern: str, matched: _KappaMatch = None):
         self._matched = _KappaMatch() if matched is None else matched
 
@@ -136,7 +137,7 @@ class _KappaModel:  # TODO add hist
             ]
 
 
-class _StackGroup:  # TODO add hist
+class _StackGroup:
     def __init__(self, processes: MultiChoice, matched: Iterable[str] = None):
         self._matched = list(matched or ())
         self._dom_stacks = MultiChoice(
@@ -184,7 +185,7 @@ class _StackGroup:  # TODO add hist
             self.dom.children[-1] = self._dom_stacks
 
 
-class LegendGroup:  # TODO add hist
+class HistGroup:
     _FREEZE = {
         False: dict(label="Setup", button_type="success"),
         True: dict(label="Unset", button_type="danger"),
@@ -328,6 +329,10 @@ class LegendGroup:  # TODO add hist
         return self._dom_cats.value
 
     @property
+    def selected(self):
+        return self._dom_cats_selected.value
+
+    @property
     def frozen(self):
         return self._frozen
 
@@ -349,3 +354,11 @@ class LegendGroup:  # TODO add hist
             setattr(self._dom_freeze, k, v)
         for callback in self._callbacks:
             callback(self._frozen)
+
+    def __call__(
+        self, data: dict[str, tuple[npt.NDArray, npt.NDArray, list[AxesMixin]]]
+    ):
+        # TODO add hist
+        # TODO add json kappa framework
+        for k, (x, w, axes) in data.items():
+            print(k, x, w, axes)

@@ -1,8 +1,9 @@
 import html
-from collections import defaultdict
+import traceback
 from datetime import datetime
 from functools import partial
 from glob import glob
+from typing import Callable
 
 from bokeh.document import Document
 from bokeh.layouts import row
@@ -39,7 +40,7 @@ class BokehLog:
     def __init__(self, doc: Document, max_history: int = None):
         self._doc = doc
 
-        self._style_ibtn = InlineStyleSheet(css=".bk-btn {padding: 0 6px;}")
+        self._style_ibtn = InlineStyleSheet(css=".bk-btn {padding: 1px 4px;}")
         self._dom_log = Div(
             text="",
             height=UI.log_height,
@@ -50,6 +51,7 @@ class BokehLog:
                 padding_left="10px",
                 margin="0px",
                 border="1px solid #C8C8C8",
+                white_space="pre",
             ),
         )
         self._dom_dump = Button(
@@ -62,7 +64,7 @@ class BokehLog:
             CustomJS(
                 args=dict(log=self._dom_log),
                 code="""
-const page = "<!DOCTYPE html><html><head><title>Log</title></head><body>" + log.text + "</body></html>";
+const page = "<!DOCTYPE html><html><head><title>Log</title></head><body><div style='white-space: pre;'>" + log.text + "</div></body></html>";
 const blob = new Blob([page], {type: 'text/plain'});
 const url = URL.createObjectURL(blob);
 const a = document.createElement('a');
@@ -78,7 +80,9 @@ URL.revokeObjectURL(url);
         self._max = max_history
         self._histories = []
 
-    def __call__(self, *msgs: str, escape=False):
+    def __call__(
+        self, *msgs: str, escape=False, transform: Callable[[str], str] = None
+    ):
         lines = []
         for msg in msgs:
             if hasattr(msg, "__html__"):
@@ -89,8 +93,27 @@ URL.revokeObjectURL(url);
                 if escape:
                     msg = html.escape(msg)
                 lines.append(msg.replace("\n", "<br>"))
+        if transform:
+            lines = map(transform, lines)
         self._doc.add_next_tick_callback(
             partial(self._dom_update_log, "<br>".join(lines))
+        )
+
+    def error(self, *msgs: str, escape=False, exec_info: Exception = None):
+        err = []
+        if exec_info:
+            err.append(
+                "".join(
+                    traceback.format_exception(
+                        type(exec_info), exec_info, exec_info.__traceback__
+                    )
+                )
+            )
+        self(
+            *msgs,
+            *err,
+            escape=escape,
+            transform=lambda x: f'<font color="red">{x}</font>',
         )
 
     def _dom_update_log(self, msg):

@@ -75,7 +75,7 @@ class Main:
                     self.log(f'Data loaded from "{path}"')
                     self.plotter.update(data["hists"], data["categories"])
             except Exception as e:
-                self.log(f'<font color="red">{e}</font> while loading "{path}"')
+                self.log.error(exec_info=e)
 
     def _dom_load_hist(self):
         self._load_queue.put(self._dom_hist_input.value)

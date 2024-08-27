@@ -1,3 +1,7 @@
+from typing import Iterable
+
+import numpy as np
+import numpy.typing as npt
 from bokeh.document import Document
 from bokeh.layouts import column, row
 from bokeh.models import Button, Div, InlineStyleSheet, MultiChoice, ScrollBox
@@ -12,7 +16,7 @@ from hist.axis import (
     Variable,
 )
 
-from ._legend import LegendGroup
+from ._hist import HistGroup
 from ._treeview import TreeView
 from ._utils import BokehLog
 from .config import UI
@@ -22,7 +26,7 @@ from .config import UI
 class AxisProjector:
     _TRUE = "True"
     _FALSE = "False"
-    _OTHERS = "Others"
+    _OTHERS = '<span style="font-style: italic; font-weight: bold;">Others</span>'
 
     @classmethod
     def __bins(cls, axis: AxesMixin):
@@ -36,13 +40,7 @@ class AxisProjector:
             case IntCategory():
                 return [*map(str, cats)] + ([cls._OTHERS] if over else [])
             case StrCategory():
-                if not over:
-                    return cats
-                _cats = set(cats)
-                others = cls._OTHERS
-                while others in _cats:
-                    others += "?"
-                return cats + [others]
+                return cats + ([cls._OTHERS] if over else [])
             case Integer():
                 return (
                     ([f"<{cats[0]}"] if under else [])
@@ -88,9 +86,44 @@ class AxisProjector:
         else:
             self.dom.stylesheets = []
 
+    def select(self, *bins: str):
+        return [self._indices[v] for v in bins]
+
     @property
     def selected(self):
         return [self._indices[v] for v in self.dom.value]
+
+
+class _Projector:
+    def __init__(self, axes: Iterable[AxesMixin], categories: set[str]):
+        self.axes: dict[str, AxisProjector] = {
+            axis.name: AxisProjector(axis)
+            for axis in sorted(axes, key=lambda x: x.name)
+            if axis.name in categories
+        }
+
+    def __call__(
+        self, hist: Hist, exclude: set[str] = None
+    ) -> tuple[npt.NDArray, npt.NDArray, list[AxesMixin]]:
+        exclude = set(exclude or ())
+        val = hist.values(flow=True)
+        var = hist.variances(flow=True)
+        edges, _sum, _slice = [], [], []
+        for i, axis in enumerate(hist.axes):
+            n = axis.name
+            if n in self.axes and n not in exclude:
+                _slice.append(self.axes[n].selected)
+                _sum.append(i)
+            else:
+                _slice.append(np.arange(val.shape[i]))
+                edges.append(axis)
+        sums = tuple(_sum)
+        slicer = np.ix_(*_slice)
+        return (
+            np.sum(val[slicer], axis=sums),
+            np.sum(var[slicer], axis=sums),
+            edges,
+        )
 
 
 class Plotter:
@@ -108,15 +141,7 @@ class Plotter:
 
     def update(self, hists: dict[str, Hist], categories: set[str]):
         self.reset()
-        test = next(iter(hists.values()))
-
-        self.hists = hists
-        self.categories: dict[str, AxisProjector] = {
-            axis.name: AxisProjector(axis)
-            for axis in sorted(test.axes, key=lambda x: x.name)
-            if axis.name in categories
-        }
-        n_cat = len(self.categories)
+        self.data = hists
 
         self._dom_full = self.log.ibtn("")
         self._dom_full.on_click(self._dom_fullscreen)
@@ -125,12 +150,13 @@ class Plotter:
         )
         self._dom_plot.on_click(self._dom_plot_selected)
         self._dom_hist_select = MultiChoice(
-            options=[*self.hists],
-            search_option_limit=len(self.hists),
+            options=[*self.data],
+            search_option_limit=len(self.data),
             sizing_mode="stretch_width",
         )
+        ncats = len(categories)
         self._dom_hist_tree = TreeView(
-            paths={k: f"hist{len(v.axes)-n_cat}d" for k, v in self.hists.items()},
+            paths={k: f"hist{len(v.axes)-ncats}d" for k, v in self.data.items()},
             root="hists",
             separator=".",
             icons={
@@ -151,8 +177,9 @@ class Plotter:
             sizing_mode="stretch_height",
         )
         # blocks
-        self.groups = LegendGroup(self.categories, self.log, self._dom_enable_plot)
-        self.groups.frozen = True
+        self.project = _Projector(next(iter(hists.values())).axes, categories)
+        self.hist = HistGroup(self.project.axes, self.log, self._dom_enable_plot)
+        self.hist.frozen = True
         self._main_dom = row(
             self._dom_hist_tree,
             column(
@@ -184,7 +211,7 @@ class Plotter:
         self._dom_full.disabled = not frozen
         if frozen:
             self._dom_cat_select.child.children = [
-                v.dom for k, v in self.categories.items() if k != self.groups.process
+                v.dom for k, v in self.project.axes.items() if k != self.hist.process
             ]
         else:
             self._dom_cat_select.child.children = []
@@ -194,7 +221,7 @@ class Plotter:
         self._parent.full = self.full
 
     def _dom_plot_selected(self):
-        self._plot()  # TODO: implement this method
+        self._plot(self._dom_hist_select.value)
 
     @property
     def full(self):
@@ -208,6 +235,21 @@ class Plotter:
             self.dom.children = [self._main_dom]
         else:
             self._dom_full.icon.icon_name = "arrows-maximize"
-            self.dom.children = [self.groups.dom, self._main_dom]
+            self.dom.children = [self.hist.dom, self._main_dom]
 
-    def _plot(self): ...  # TODO: implement this method
+    def _plot(self, hists: list[str]):
+        # TODO: plot or save
+        empty = False
+        for k, v in self.project.axes.items():
+            if not v.selected:
+                self.log.error(f'"{k}" is empty.')
+                empty = True
+        if not hists:
+            self.log.error("No histogram selected.")
+            empty = True
+        if empty:
+            return
+
+        self.hist(
+            {k: self.project(self.data[k], exclude=(self.hist.process,)) for k in hists}
+        )
