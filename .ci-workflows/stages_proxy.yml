@@ -1,15 +1,12 @@
 voms_proxy:
   stage: proxy
-  image: gitlab-registry.cern.ch/cms-cloud/cmssw-docker/cc7-cms:latest
+  image: gitlab-registry.cern.ch/cms-cloud/cmssw-docker/al8-cms:latest
   tags:
     - k8s-cvmfs
   artifacts:
     paths:
       - proxy
   script:
-    - sudo cp -rf /cvmfs/grid.cern.ch/etc/grid-security/certificates/* /etc/grid-security/certificates/
-    - sudo cp -rf /cvmfs/grid.cern.ch/etc/grid-security/vomsdir/cms/* /etc/grid-security/vomsdir/cms/
-    - sudo cp -rf /cvmfs/grid.cern.ch/etc/grid-security/vomses/ /etc/
     - mkdir -p ${HOME}/.globus
     - printf "${GRID_USERCERT}" | base64 -d > ${HOME}/.globus/usercert.pem
     - printf "${GRID_USERKEY}" | base64 -d > ${HOME}/.globus/userkey.pem
