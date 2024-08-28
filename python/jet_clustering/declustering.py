@@ -516,14 +516,12 @@ def make_synthetic_event_core(input_jets, input_pdfs, rand_seed, debug=False):
 #   return make_synthetic_event_core(input_jets, input_pdfs, debug=debug)
 
 
-def make_synthetic_event(input_jets, input_pdfs, debug=False):
+def make_synthetic_event(input_jets, input_pdfs, declustering_rand_seed=66, debug=False):
 
     # Start with all True
     events_to_decluster_mask = np.ones(len(input_jets), dtype=bool)
 
     n_events = len(input_jets)
-
-    declustering_rand_seed = 66
 
     # Get number of expected output jets
     jet_clustering_summary = ["".join(ak.to_list(i)) for i in input_jets.jet_flavor]

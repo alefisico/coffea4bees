@@ -1,9 +1,13 @@
 import yaml
 from skimmer.processor.picoaod import PicoAOD, fetch_metadata, resize
 from analysis.helpers.selection_basic_4b import apply_event_selection_4b, apply_object_selection_4b
+from coffea.nanoevents import NanoEventsFactory
 
 from jet_clustering.clustering   import cluster_bs
 from jet_clustering.declustering import make_synthetic_event, clean_ISR
+from analysis.helpers.SvB_helpers import setSvBVars
+from analysis.helpers.FriendTreeSchema import FriendTreeSchema
+from base_class.math.random import Squares
 
 from coffea.analysis_tools import Weights, PackedSelection
 import numpy as np
@@ -13,8 +17,11 @@ import logging
 import awkward as ak
 
 class DeClusterer(PicoAOD):
-    def __init__(self, clustering_pdfs_file = "None", *args, **kwargs):
+    def __init__(self, clustering_pdfs_file = "None", subtract_ttbar_with_weights = False, declustering_rand_seed=5, *args, **kwargs):
+        kwargs["pico_base_name"] = f'picoAOD_seed{declustering_rand_seed}'
         super().__init__(*args, **kwargs)
+
+        logging.info(f"\nRunning Declusterer with these parameters: clustering_pdfs_file = {clustering_pdfs_file}, subtract_ttbar_with_weights = {subtract_ttbar_with_weights}, declustering_rand_seed = {declustering_rand_seed}, args = {args}, kwargs = {kwargs}")
 
         if not clustering_pdfs_file == "None":
             self.clustering_pdfs = yaml.safe_load(open(clustering_pdfs_file, "r"))
@@ -22,6 +29,8 @@ class DeClusterer(PicoAOD):
         else:
             self.clustering_pdfs = None
 
+        self.subtract_ttbar_with_weights = subtract_ttbar_with_weights
+        self.declustering_rand_seed = declustering_rand_seed
         self.corrections_metadata = yaml.safe_load(open('analysis/metadata/corrections.yml', 'r'))
         self.cutFlowCuts = [
             "all",
@@ -38,7 +47,25 @@ class DeClusterer(PicoAOD):
         isMC    = True if event.run[0] == 1 else False
         year    = event.metadata['year']
         dataset = event.metadata['dataset']
+        fname   = event.metadata['filename']
+        estart  = event.metadata['entrystart']
+        estop   = event.metadata['entrystop']
         nEvent = len(event)
+
+        path = fname.replace(fname.split("/")[-1], "")
+
+        if self.subtract_ttbar_with_weights:
+
+            SvB_MA_file = f'{fname.replace("picoAOD", "SvB_MA_ULHH")}'
+            event["SvB_MA"] = ( NanoEventsFactory.from_root( SvB_MA_file,
+                                                             entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema ).events().SvB_MA )
+
+            if not ak.all(event.SvB_MA.event == event.event):
+                raise ValueError("ERROR: SvB_MA events do not match events ttree")
+
+            # defining SvB_MA
+            setSvBVars("SvB_MA", event)
+
 
         event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year] )
 
@@ -85,14 +112,16 @@ class DeClusterer(PicoAOD):
 
         selev = event[selections.all(*cumulative_cuts)]
 
-        # ## TTbar subtractions
-        # if self.subtract_ttbar_with_weights:
-        #     ttbar_rand = np.random.uniform(low=0, high=1.0, size=len(selev))
-        #     pass_ttbar_filter = np.full( len(event), True)
-        #     pass_ttbar_filter[ selections.all(*allcuts) ] = (ttbar_rand > selev.original_SvB_MA.tt_vs_mj)
-        #     selections.add( 'pass_ttbar_filter', pass_ttbar_filter )
-        #     allcuts.append("pass_ttbar_filter")
-        #     selev = selev[(ttbar_rand > selev.original_SvB_MA.tt_vs_mj)]
+        ## TTbar subtractions
+        if self.subtract_ttbar_with_weights:
+            #rng = Squares("ttbar_subtractions")
+            ttbar_rand = np.random.uniform(low=0, high=1.0, size=len(selev))
+            pass_ttbar_filter = np.full( len(event), True)
+            pass_ttbar_filter[ selections.all(*cumulative_cuts) ] = (ttbar_rand > selev.SvB_MA.tt_vs_mj)
+            selections.add( 'pass_ttbar_filter', pass_ttbar_filter )
+            cumulative_cuts.append("pass_ttbar_filter")
+            selection = selection & pass_ttbar_filter
+            selev = selev[(ttbar_rand > selev.SvB_MA.tt_vs_mj)]
 
         #
         # Build and select boson candidate jets with bRegCorr applied
@@ -106,8 +135,6 @@ class DeClusterer(PicoAOD):
         canJet = canJet * canJet.bRegCorr
         canJet["bRegCorr"] = selev.Jet.bRegCorr[canJet_idx]
         canJet["btagDeepFlavB"] = selev.Jet.btagDeepFlavB[canJet_idx]
-        #canJet["puId"] = selev.Jet.puId[canJet_idx]
-        #canJet["jetId"] = selev.Jet.puId[canJet_idx]
         if isMC:
             canJet["hadronFlavour"] = selev.Jet.hadronFlavour[canJet_idx]
 
@@ -140,16 +167,17 @@ class DeClusterer(PicoAOD):
         #
         # Declustering
         #
-        declustered_jets = make_synthetic_event(clustered_jets, self.clustering_pdfs)
-
+        declustered_jets = make_synthetic_event(clustered_jets, self.clustering_pdfs, declustering_rand_seed=self.declustering_rand_seed)
 
         canJet = declustered_jets[declustered_jets.jet_flavor == "b"]
+        canJet["jet_flavor_bit"] = 1
         btag_rand = np.random.uniform(low=0.6, high=1.0, size=len(ak.flatten(canJet,axis=1)))
         canJet["btagDeepFlavB"] = ak.unflatten(btag_rand, ak.num(canJet))
         # Set these pt > 40 and |eta| < 2.4
         canJet = canJet[ak.argsort(canJet.pt, axis=1, ascending=False)]
 
         notCanJet = declustered_jets[declustered_jets.jet_flavor == "j"]
+        notCanJet["jet_flavor_bit"] = 0
         btag_rand = np.random.uniform(low=0.0, high=0.6, size=len(ak.flatten(notCanJet,axis=1)))
         notCanJet["btagDeepFlavB"] = ak.unflatten(btag_rand, ak.num(notCanJet))
         notCanJet = notCanJet[ak.argsort(notCanJet.pt, axis=1, ascending=False)]
@@ -181,24 +209,21 @@ class DeClusterer(PicoAOD):
                 "Jet_phi":             new_jets.phi,
                 "Jet_mass":            new_jets.mass,
                 "Jet_btagDeepFlavB":   new_jets.btagDeepFlavB,
-                # These throw error
-                #"Jet_jet_flavor":      ak.unflatten(np.full(total_jet, "b".encode("utf-8")), n_jet), # jets.jet_flavor ,
-                #"Jet_jet_flavor":      ak.unflatten(np.full(total_jet, "b" n_jet), # jets.jet_flavor ,
-                # Set to dummy values for synthetic jets
-                "Jet_jetId":     ak.unflatten(np.full(total_jet, 7), n_jet),
-                "Jet_puId":      ak.unflatten(np.full(total_jet, 7), n_jet),
-                "Jet_bRegCorr":  ak.unflatten(np.full(total_jet, 1), n_jet),
-                "Jet_isGood":    ak.unflatten(np.full(total_jet, 1), n_jet),
-                "Jet_btagDeepB": ak.unflatten(np.full(total_jet, 1), n_jet),
-                "Jet_cleanmask": ak.unflatten(np.full(total_jet, 1), n_jet),
-                "Jet_area":      ak.unflatten(np.full(total_jet, 1), n_jet),
-                "Jet_chEmEF":    ak.unflatten(np.full(total_jet, 1), n_jet),
-                "Jet_rawFactor": ak.unflatten(np.full(total_jet, 1), n_jet),
-                "Jet_neEmEF":    ak.unflatten(np.full(total_jet, 1), n_jet),
-                "Jet_btagCSVV2": ak.unflatten(np.full(total_jet, 1), n_jet),
+                "Jet_jet_flavor_bit":  new_jets.jet_flavor_bit,
+                "Jet_jetId":           ak.unflatten(np.full(total_jet, 7), n_jet),
+                "Jet_puId":            ak.unflatten(np.full(total_jet, 7), n_jet),
+                "Jet_bRegCorr":        ak.unflatten(np.full(total_jet, 1), n_jet),
+                "Jet_isGood":          ak.unflatten(np.full(total_jet, 1), n_jet),
+                "Jet_btagDeepB":       ak.unflatten(np.full(total_jet, 1), n_jet),
+                "Jet_cleanmask":       ak.unflatten(np.full(total_jet, 1), n_jet),
+                "Jet_area":            ak.unflatten(np.full(total_jet, 1), n_jet),
+                "Jet_chEmEF":          ak.unflatten(np.full(total_jet, 1), n_jet),
+                "Jet_rawFactor":       ak.unflatten(np.full(total_jet, 1), n_jet),
+                "Jet_neEmEF":          ak.unflatten(np.full(total_jet, 1), n_jet),
+                "Jet_btagCSVV2":       ak.unflatten(np.full(total_jet, 1), n_jet),
 
                 # create new regular branch
-                "nClusteredJets": selev["nClusteredJets"],
+                "nClusteredJets":      selev["nClusteredJets"],
             }
         )
 

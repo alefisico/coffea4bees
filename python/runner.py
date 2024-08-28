@@ -437,6 +437,10 @@ if __name__ == '__main__':
                     "picosize", config_runner["chunksize"]
                 ),
             )
+
+            if "declustering_rand_seed" in configs["config"]:
+                kwargs["pico_base_name"] = f'picoAOD_seed{configs["config"]["declustering_rand_seed"]}'
+
             if client is not None:
                 output = client.compute(resize(**kwargs), sync=True)
             else:
