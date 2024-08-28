@@ -114,8 +114,19 @@ class DeClusterer(PicoAOD):
 
         ## TTbar subtractions
         if self.subtract_ttbar_with_weights:
-            #rng = Squares("ttbar_subtractions")
-            ttbar_rand = np.random.uniform(low=0, high=1.0, size=len(selev))
+
+            #
+            # Get reproducible random numbers
+            #
+            rng = Squares("ttbar_subtraction", dataset, year)
+            counter = np.empty((len(selev), 2), dtype=np.uint64)
+            counter[:, 0] = np.asarray(selev.event).view(np.uint64)
+            counter[:, 1] = np.asarray(selev.run).view(np.uint32)
+            counter[:, 1] <<= 32
+            counter[:, 1] |= np.asarray(selev.luminosityBlock).view(np.uint32)
+            ttbar_rand = rng.uniform(counter, low=0, high=1.0).astype(np.float32)
+
+
             pass_ttbar_filter = np.full( len(event), True)
             pass_ttbar_filter[ selections.all(*cumulative_cuts) ] = (ttbar_rand > selev.SvB_MA.tt_vs_mj)
             selections.add( 'pass_ttbar_filter', pass_ttbar_filter )
