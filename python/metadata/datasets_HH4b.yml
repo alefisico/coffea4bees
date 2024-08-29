@@ -529,15 +529,15 @@ datasets:
         B:
           files:
           - root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/data2016B/picoAOD.root
-        #C:
-        #  files:
-        #  - root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/data2016C/picoAOD.root
-        #D:
-        #  files:
-        #  - root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/data2016D/picoAOD.root
-        #E:
-        #  files:
-        #  - root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/data2016E/picoAOD.root
+        C:
+          files:
+          - root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/data2016C/picoAOD.root
+        D:
+          files:
+          - root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/data2016D/picoAOD.root
+        E:
+          files:
+          - root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/data2016E/picoAOD.root
       trigger:
       - QuadJet45_TripleBTagCSV_p087
       - DoubleJet90_Double30_TripleBTagCSV_p087
