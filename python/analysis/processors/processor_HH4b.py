@@ -81,9 +81,8 @@ class analysis(processor.ProcessorABC):
         self.corrections_metadata = yaml.safe_load(open(corrections_metadata, "r"))
         self.top_reconstruction_override = top_reconstruction_override
 
-        logging.info("\n\nHACK TURNING ON SYNTHETIC DATA FLAG BY HAND!!!!!\n\n")
-        self.isSyntheticData = True
-        #self.isSyntheticData = False
+        isSyntheticData = False
+        self.isSyntheticData = isSyntheticData
 
         self.cutFlowCuts = [
             "all",
@@ -124,9 +123,9 @@ class analysis(processor.ProcessorABC):
         else:
             self.top_reconstruction = event.metadata.get("top_reconstruction", None)
 
-        isMixedData    = not (dataset.find("mix_v") == -1)
-        isDataForMixed = not (dataset.find("data_3b_for_mixed") == -1)
-        isTTForMixed   = not (dataset.find("TTTo") == -1) and not ( dataset.find("_for_mixed") == -1 )
+        self.isMixedData    = not (dataset.find("mix_v") == -1)
+        self.isDataForMixed = not (dataset.find("data_3b_for_mixed") == -1)
+        self.isTTForMixed   = not (dataset.find("TTTo") == -1) and not ( dataset.find("_for_mixed") == -1 )
 
 
         nEvent = len(event)
@@ -139,7 +138,7 @@ class analysis(processor.ProcessorABC):
         #
         path = fname.replace(fname.split("/")[-1], "")
         if self.apply_FvT:
-            if isMixedData:
+            if self.isMixedData:
 
                 FvT_name = event.metadata["FvT_name"]
                 event["FvT"] = getattr( NanoEventsFactory.from_root( f'{event.metadata["FvT_file"]}', entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema, ).events(),
@@ -154,7 +153,7 @@ class analysis(processor.ProcessorABC):
                 event["FvT", "q_1324"] = np.full(len(event), -1, dtype=int)
                 event["FvT", "q_1423"] = np.full(len(event), -1, dtype=int)
 
-            elif isDataForMixed or isTTForMixed:
+            elif self.isDataForMixed or self.isTTForMixed:
 
                 #
                 # Use the first to define the FvT weights
@@ -214,7 +213,7 @@ class analysis(processor.ProcessorABC):
                 setSvBVars("SvB", event)
                 setSvBVars("SvB_MA", event)
 
-        if isDataForMixed:
+        if self.isDataForMixed:
 
             #
             # Load the different JCMs
@@ -227,7 +226,7 @@ class analysis(processor.ProcessorABC):
         #
         # Event selection
         #
-        event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year], isMixedData)
+        event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year], self.isMixedData)
 
         #
         # Checking boosted selection (should change in the future)
@@ -240,7 +239,7 @@ class analysis(processor.ProcessorABC):
         #
         # Calculate and apply Jet Energy Calibration
         #
-        if ( self.isSyntheticData or isMixedData or isDataForMixed or isTTForMixed or not isMC ):  #### AGE: data corrections are not applied. Should be changed
+        if ( self.isSyntheticData or self.isMixedData or self.isDataForMixed or self.isTTForMixed or not isMC ):  #### AGE: data corrections are not applied. Should be changed
             jets = event.Jet
 
         else:
@@ -279,9 +278,6 @@ class analysis(processor.ProcessorABC):
         xs      = event.metadata.get('xs',      1.0)
         kFactor = event.metadata.get('kFactor', 1.0)
 
-        isMixedData    = not (dataset.find("mix_v") == -1)
-        isDataForMixed = not (dataset.find("data_3b_for_mixed") == -1)
-        isTTForMixed   = not (dataset.find("TTTo") == -1) and not ( dataset.find("_for_mixed") == -1 )
         nEvent = len(event)
         weights = Weights(len(event), storeIndividual=True)
         list_weight_names = []
@@ -314,7 +310,7 @@ class analysis(processor.ProcessorABC):
                 logging.debug( f"trigWeight {weights.partial_weight(include=['CMS_bbbb_resolved_ggf_triggerEffSF'])[:10]}\n" )
 
             # puWeight (to be checked)
-            if not isTTForMixed:
+            if not self.isTTForMixed:
                 puWeight = list( correctionlib.CorrectionSet.from_file( self.corrections_metadata[year]["PU"] ).values() )[0]
                 weights.add( f"CMS_pileup_{year_label}",
                              puWeight.evaluate(event.Pileup.nTrueInt.to_numpy(), "nominal"),
@@ -398,13 +394,15 @@ class analysis(processor.ProcessorABC):
         logging.debug(f"Weight Statistics {weights.weightStatistics}")
 
         # Apply object selection (function does not remove events, adds content to objects)
+        doLeptonRemoval = not (self.isMixedData or self.isTTForMixed or self.isDataForMixed)
         event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year],
-                                           isMixedData=isMixedData, isTTForMixed=isTTForMixed, isDataForMixed=isDataForMixed, isSyntheticData=self.isSyntheticData )
+                                           doLeptonRemoval=doLeptonRemoval, isSyntheticData=self.isSyntheticData )
 
         selections = PackedSelection()
         selections.add( "lumimask", event.lumimask)
         selections.add( "passNoiseFilter", event.passNoiseFilter)
-        selections.add( "passHLT", ( np.full(len(event), True) if (isMC or isMixedData or isTTForMixed or isDataForMixed) else event.passHLT ) )
+        skip_HLT_cut = (isMC or self.isMixedData or self.isTTForMixed or self.isDataForMixed)
+        selections.add( "passHLT", ( np.full(len(event), True) if skip_HLT_cut else event.passHLT ) )
         selections.add( 'passJetMult', event.passJetMult )
         allcuts = [ 'lumimask', 'passNoiseFilter', 'passHLT', 'passJetMult' ]
         event['weight'] = weights.weight()   ### this is for _cutflow
@@ -490,8 +488,8 @@ class analysis(processor.ProcessorABC):
         canJet["jetId"] = selev.Jet.puId[canJet_idx]
         if isMC:
             canJet["hadronFlavour"] = selev.Jet.hadronFlavour[canJet_idx]
-        if not (isMixedData or self.isSyntheticData) and not isTTForMixed and not isDataForMixed:
-            canJet["calibration"] = selev.Jet.calibration[canJet_idx]
+
+        canJet["calibration"] = selev.Jet.calibration[canJet_idx]
 
         #
         # pt sort canJets
@@ -543,7 +541,7 @@ class analysis(processor.ProcessorABC):
 
             if self.apply_FvT:
 
-                if isDataForMixed:
+                if self.isDataForMixed:
 
                     #
                     #  Load the weights for each mixed sample
@@ -847,23 +845,22 @@ class analysis(processor.ProcessorABC):
             fill += hist.add( "nPVs", (101, -0.5, 100.5, ("PV.npvs", "Number of Primary Vertices")) )
             fill += hist.add( "nPVsGood", (101, -0.5, 100.5, ("PV.npvsGood", "Number of Good Primary Vertices")), )
 
-            #
-            #  Make classifier hists
-            #
-            if self.apply_FvT:
-                FvT_skip = []
-                if isMixedData or isDataForMixed or isTTForMixed:
-                    FvT_skip = ["pt", "pm3", "pm4"]
+            fill += hist.add( "hT", (50, 0, 1500, ("hT", "h_{T} [GeV]")), )
+            fill += hist.add( "hT_selected", (50, 0, 1500, ("hT_selected", "h_{T} [GeV]")), )
 
-            if "xbW" in selev.fields:  ### AGE: this should be temporary
-                fill += hist.add("xW", (100, 0, 12, ("xW", "xW")))
-                # fill += hist.add("delta_xW", (100, -5, 5, ("delta_xW", "delta xW")))
-                # fill += hist.add("delta_xW_l", (100, -15, 15, ("delta_xW", "delta xW")))
+            if "xbW_reco" in selev.fields:
+                fill += hist.add("xW",  (100, -12, 12, ("xW_reco", "xW")))
+                fill += hist.add("xbW", (100, -15, 15, ("xbW_reco", "xbW")))
+
+            else:
+                fill += hist.add("xW",  (100, -12, 12, ("xW", "xW")))
+                fill += hist.add("xbW", (100, -15, 15, ("xbW", "xbW")))
+
 
             #
             # Separate reweighting for the different mixed samples
             #
-            if isDataForMixed:
+            if self.isDataForMixed:
                 for _FvT_name in event.metadata["FvT_names"]:
                     fill += SvBHists( (f"SvB_{_FvT_name}",    "SvB Classifier"),    "SvB",    weight=f"weight_{_FvT_name}" )
                     fill += SvBHists( (f"SvB_MA_{_FvT_name}", "SvB MA Classifier"), "SvB_MA", weight=f"weight_{_FvT_name}" )
@@ -888,7 +885,7 @@ class analysis(processor.ProcessorABC):
             #
             if self.apply_FvT:
                 FvT_skip = []
-                if isMixedData or isDataForMixed or isTTForMixed:
+                if self.isMixedData or self.isDataForMixed or self.isTTForMixed:
                     FvT_skip = ["pt", "pm3", "pm4"]
 
                 fill += FvTHists(("FvT", "FvT Classifier"), "FvT", skip=FvT_skip)
@@ -916,7 +913,7 @@ class analysis(processor.ProcessorABC):
                 skip_muons += ["genPartFlav"]
             fill += Muon.plot( ("selMuons", "Selected Muons"), "selMuon", skip=skip_muons )
 
-            if not isMixedData:
+            if not self.isMixedData:
                 skip_elecs = ["charge"] + Elec.skip_detailed_plots
                 if not isMC:
                     skip_elecs += ["genPartFlav"]
@@ -934,7 +931,7 @@ class analysis(processor.ProcessorABC):
                 fill += SvBHists(("SvB_MA", "SvB MA Classifier"), "SvB_MA")
                 fill += hist.add( "quadJet_selected_SvB_q_score", ( 100, 0, 1, ( "quadJet_selected.SvB_q_score",  "Selected Quad Jet Diboson SvB q score") ) )
                 fill += hist.add( "quadJet_min_SvB_MA_q_score",   ( 100, 0, 1, ( "quadJet_min_dr.SvB_MA_q_score", "Min dR Quad Jet Diboson SvB MA q score") ) )
-                if isDataForMixed:
+                if self.isDataForMixed:
                     for _FvT_name in event.metadata["FvT_names"]:
                         fill += SvBHists( (f"SvB_{_FvT_name}",    "SvB Classifier"),    "SvB",    weight=f"weight_{_FvT_name}", )
                         fill += SvBHists( (f"SvB_MA_{_FvT_name}", "SvB MA Classifier"), "SvB_MA", weight=f"weight_{_FvT_name}", )
