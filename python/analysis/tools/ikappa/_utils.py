@@ -43,11 +43,11 @@ class BokehLog:
         self._style_ibtn = InlineStyleSheet(css=".bk-btn {padding: 1px 4px;}")
         self._dom_log = Div(
             text="",
-            height=UI.log_height,
+            height=UI.height_log,
             sizing_mode="stretch_width",
             styles=Styles(
                 overflow="auto",
-                background=UI.background,
+                background=UI.color_background,
                 padding_left="10px",
                 margin="0px",
                 border="1px solid #C8C8C8",

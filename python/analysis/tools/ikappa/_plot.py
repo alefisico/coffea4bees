@@ -38,7 +38,7 @@ class AxisProjector:
 
     @classmethod
     def __bins(cls, axis: AxesMixin):
-        _ax = axis._ax
+        _ax = axis._ax  # Note: private attribute in boost-histogram
         over = _ax.traits_overflow
         under = _ax.traits_underflow
         cats = [*axis]
@@ -67,7 +67,7 @@ class AxisProjector:
                     + ([f"[{cats[-1][-1]}, \u221E)"] if over else [])
                 )
 
-    def __init__(self, axis: AxesMixin):
+    def __init__(self, axis: AxesMixin, dist: Hist):
         self._type = type(axis)
         self._name = axis.name
         self._label = axis.label or axis.name
@@ -82,7 +82,7 @@ class AxisProjector:
         )
         self.dom = MultiChoice(
             title=self._label,
-            value=self._choices[-1:],
+            value=[self._choices[np.argmax(dist.values(flow=True))]],
             options=self._choices,
             sizing_mode="stretch_width",
         )
@@ -94,7 +94,7 @@ class AxisProjector:
         else:
             self.dom.stylesheets = []
 
-    def select(self, *bins: str):
+    def select(self, bins: Iterable[str]):
         return [self._indices[v] for v in bins]
 
     @property
@@ -102,45 +102,31 @@ class AxisProjector:
         return [self._indices[v] for v in self.dom.value]
 
 
-class _Projector:
-    def __init__(self, axes: Iterable[AxesMixin], categories: set[str]):
-        self.axes: dict[str, AxisProjector] = {
-            axis.name: AxisProjector(axis)
-            for axis in sorted(axes, key=lambda x: x.name)
-            if axis.name in categories
-        }
-
-    def __call__(
-        self, hist: Hist, exclude: set[str] = None
-    ) -> tuple[npt.NDArray, npt.NDArray, list[AxesMixin]]:
-        exclude = set(exclude or ())
-        val = hist.values(flow=True)
-        var = hist.variances(flow=True)
-        edges, _sum, _slice = [], [], []
-        for i, axis in enumerate(hist.axes):
-            n = axis.name
-            if n in self.axes and n not in exclude:
-                _slice.append(self.axes[n].selected)
-                _sum.append(i)
-            else:
-                _slice.append(np.arange(val.shape[i]))
-                edges.append(axis)
-        sums = tuple(_sum)
-        slicer = np.ix_(*_slice)
-        return (
-            np.sum(val[slicer], axis=sums),
-            np.sum(var[slicer], axis=sums),
-            edges,
-        )
-
-
 class Plotter:
+    _DIV = {
+        "font-size": "1.5em",
+        "text-align": "center",
+        "background-color": UI.color_background,
+        "z-index": "-1",
+    }
+
     def __init__(self, doc: Document, logger: BokehLog, parent):
         self._doc = doc
         self._data = None
         self._parent = parent
 
         self.log = logger
+
+        self._dom_idle = Div(
+            text="Waiting for data...",
+            sizing_mode="stretch_both",
+            styles=self._DIV,
+        )
+        self._dom_status = Div(
+            text="",
+            sizing_mode="stretch_both",
+            styles=self._DIV,
+        )
         self.dom = column(sizing_mode="stretch_both")
         self._dom_reset()
 
@@ -159,10 +145,12 @@ class Plotter:
         self._dom_plot.on_click(self._dom_plot_selected)
         self._dom_hist_select = MultiChoice(
             options=[*self.data],
+            height=UI.height_select_bar,
             search_option_limit=len(self.data),
             sizing_mode="stretch_width",
         )
         ncats = len(categories)
+        # select hists
         self._dom_hist_tree = TreeView(
             paths={k: f"hist{len(v.axes)-ncats}d" for k, v in self.data.items()},
             root="hists",
@@ -171,22 +159,33 @@ class Plotter:
                 "hist1d": "bi-bar-chart-line",
                 "hist2d": "bi-boxes",
             },
-            width=UI.side_width,
+            width=UI.width_side,
             sizing_mode="stretch_height",
         )
         self._dom_hist_select.js_link("value", self._dom_hist_tree, "selected")
         self._dom_hist_tree.js_link("selected", self._dom_hist_select, "value")
-        # select category
+        # select categories
         self._dom_cat_select = ScrollBox(
             child=column(
-                width=UI.side_width,
+                width=UI.width_side,
                 sizing_mode="stretch_height",
             ),
             sizing_mode="stretch_height",
         )
+        # plots
+        self._dom_main = ScrollBox(
+            child=Div(),
+            sizing_mode="stretch_both",
+        )
         # blocks
-        self.project = _Projector(next(iter(hists.values())).axes, categories)
-        self.hist = HistGroup(self.project.axes, self.log, self._dom_enable_plot)
+        self.categories: dict[str, AxisProjector] = {}
+        test = next(iter(hists.values()))
+        for axis in sorted(test.axes, key=lambda x: x.name):
+            if axis.name in categories:
+                self.categories[axis.name] = AxisProjector(
+                    axis, test.project(axis.name)
+                )
+        self.hist = HistGroup(self.categories, self.log, self._dom_enable_plot)
         self.hist.frozen = True
         self._main_dom = row(
             self._dom_hist_tree,
@@ -199,6 +198,7 @@ class Plotter:
                 ),
                 row(
                     self._dom_cat_select,
+                    self._dom_main,
                     sizing_mode="stretch_both",
                 ),
                 sizing_mode="stretch_both",
@@ -208,10 +208,21 @@ class Plotter:
 
         self._doc.add_next_tick_callback(self._dom_update)
 
+    def status(self, msg: str):
+        self._doc.add_next_tick_callback(partial(self._dom_update_status, msg))
+
+    def _dom_update_status(self, msg: str):
+        self._dom_main.child = self._dom_status
+        self._dom_status.text = msg
+
+    def _dom_show_plot(self, plots):
+        self._dom_main.child = plots
+
     def _dom_reset(self):
-        self.dom.children = [Div(text="Waiting for data...")]
+        self.dom.children = [self._dom_idle]
 
     def _dom_update(self):
+        self._dom_update_status("")
         self.full = False
 
     def _dom_enable_plot(self, frozen: bool):
@@ -219,7 +230,7 @@ class Plotter:
         self._dom_full.disabled = not frozen
         if frozen:
             self._dom_cat_select.child.children = [
-                v.dom for k, v in self.project.axes.items() if k != self.hist.process
+                v.dom for k, v in self.categories.items() if k != self.hist.process
             ]
         else:
             self._dom_cat_select.child.children = []
@@ -246,18 +257,71 @@ class Plotter:
             self.dom.children = [self.hist.dom, self._main_dom]
 
     def _plot(self, hists: list[str]):
-        # TODO: plot or save
-        empty = False
-        for k, v in self.project.axes.items():
+        self.status("Plotting...")
+        errs = []
+        for k, v in self.categories.items():
             if not v.selected:
-                self.log.error(f'"{k}" is empty.')
-                empty = True
+                errs.append(f'"{k}" is empty.')
         if not hists:
-            self.log.error("No histogram selected.")
-            empty = True
-        if empty:
-            return
+            errs.append("No histogram selected.")
+        if errs:
+            return self.log.error(*errs)
 
-        self.hist(
-            {k: self.project(self.data[k], exclude=(self.hist.process,)) for k in hists}
+        projected = {}
+        for name in hists:
+            hist = self.data[name]
+            try:
+                match len(hist.axes) - len(self.categories):
+                    case 1:
+                        projected[name] = self._project1d(hist)
+                    case 2:  # TODO: plot 2D histogram
+                        raise NotImplementedError("2D histogram is not supported yet.")
+                    case _:
+                        raise RuntimeError(
+                            "Histogram with more than 2 dimensions is not supported."
+                        )
+            except Exception as e:
+                self.log.error(f'Histogram "{name}" is skipped', exec_info=e)
+        plots = self.hist(projected, self.status)
+        # TODO save or show
+        # TEMP below
+        self._doc.add_next_tick_callback(partial(self._dom_show_plot, plots))
+
+    @staticmethod
+    def __project(
+        _slice: Iterable[npt.NDArray],
+        _sum: Iterable[int],
+        _transpose: bool,
+        *arrs: npt.NDArray,
+    ) -> Generator[npt.NDArray, None, None]:
+        _slice = np.ix_(*_slice)
+        _sum = tuple(_sum)
+        for arr in arrs:
+            arr = np.sum(arr[_slice], axis=_sum)
+            if _transpose:
+                arr = arr.T
+            yield arr
+
+    def _project1d(self, hist: Hist) -> Hist1D:
+        val: npt.NDArray = hist.values(flow=True)
+        var: npt.NDArray = hist.variances(flow=True)
+        _transpose, edge = False, None
+        _sum, _slice = [], []
+        processes = [*self.hist.selected]
+        for i, axis in enumerate(hist.axes):
+            n = axis.name
+            if n == self.hist.process:
+                _slice.append(self.categories[n].select(processes))
+                _transpose = edge is None
+            elif n in self.categories:
+                _slice.append(self.categories[n].selected)
+                _sum.append(i)
+            else:
+                _slice.append(np.arange(val.shape[i]))
+                edge = axis
+        val, var = self.__project(_slice, _sum, _transpose, val, var)
+        return (
+            pd.DataFrame(var, columns=processes),
+            pd.DataFrame(val, columns=processes),
+            edge,
         )
