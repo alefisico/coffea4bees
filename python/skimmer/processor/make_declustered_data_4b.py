@@ -70,14 +70,6 @@ class DeClusterer(PicoAOD):
 
         event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year] )
 
-        #juncWS = [ self.corrections_metadata[year]["JERC"][0].replace("STEP", istep)
-        #           for istep in ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"] ] #+ self.corrections_metadata[year]["JERC"][2:]
-
-        #jets = event.jet
-        #old_jets = copy(event.Jet)
-        #jets = init_jet_factory(juncWS, event, isMC)
-        #event["Jet"] = jets
-
         event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year]  )
 
         weights = Weights(len(event), storeIndividual=True)
@@ -200,22 +192,9 @@ class DeClusterer(PicoAOD):
         new_jets = ak.concatenate([canJet, notCanJet], axis=1)
         new_jets = new_jets[ak.argsort(new_jets.pt, axis=1, ascending=False)]
 
-        # n_jet_old_all = ak.num(selev.Jet)
-        # total_jet_old_all = int(ak.sum(n_jet_old_all))
-        # selev.Jet = selev.Jet[selev.Jet.selected_loose]
-        #
-        # n_jet_old = ak.num(selev.Jet)
-        # total_jet_old = int(ak.sum(n_jet_old))
-
         n_jet = ak.num(new_jets)
         total_jet = int(ak.sum(n_jet))
 
-        # delta_njet = n_jet - n_jet_old
-        # delta_njet_total = total_jet - total_jet_old
-        # print(f"delta_njet_total is {delta_njet_total} {total_jet} {total_jet_old} {total_jet_old_all} \n")
-        # print(f"delta_njet  {ak.any(delta_njet)} {delta_njet[~(delta_njet ==0)]}   \n")
-
-        #'isGood', 'btagDeepB', 'cleanmask', 'jetId', 'area', 'chEmEF', 'eta', 'pt', 'bRegCorr', 'rawFactor', 'btagDeepFlavB', 'puId', 'phi', 'neEmEF', 'btagCSVV2', 'mass'
         branches = ak.Array(
             {
                 # Update jets with new kinematics
