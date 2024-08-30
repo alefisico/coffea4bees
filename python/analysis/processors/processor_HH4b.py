@@ -81,6 +81,10 @@ class analysis(processor.ProcessorABC):
         self.corrections_metadata = yaml.safe_load(open(corrections_metadata, "r"))
         self.top_reconstruction_override = top_reconstruction_override
 
+        logging.info("\n\nHACK TURNING ON SYNTHETIC DATA FLAG BY HAND!!!!!\n\n")
+        self.isSyntheticData = True
+        #self.isSyntheticData = False
+
         self.cutFlowCuts = [
             "all",
             "passHLT",
@@ -123,6 +127,7 @@ class analysis(processor.ProcessorABC):
         isMixedData    = not (dataset.find("mix_v") == -1)
         isDataForMixed = not (dataset.find("data_3b_for_mixed") == -1)
         isTTForMixed   = not (dataset.find("TTTo") == -1) and not ( dataset.find("_for_mixed") == -1 )
+
 
         nEvent = len(event)
 
@@ -235,7 +240,7 @@ class analysis(processor.ProcessorABC):
         #
         # Calculate and apply Jet Energy Calibration
         #
-        if ( isMixedData or isDataForMixed or isTTForMixed or not isMC ):  #### AGE: data corrections are not applied. Should be changed
+        if ( self.isSyntheticData or isMixedData or isDataForMixed or isTTForMixed or not isMC ):  #### AGE: data corrections are not applied. Should be changed
             jets = event.Jet
 
         else:
@@ -394,7 +399,7 @@ class analysis(processor.ProcessorABC):
 
         # Apply object selection (function does not remove events, adds content to objects)
         event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year],
-                                           isMixedData=isMixedData, isTTForMixed=isTTForMixed, isDataForMixed=isDataForMixed )
+                                           isMixedData=isMixedData, isTTForMixed=isTTForMixed, isDataForMixed=isDataForMixed, isSyntheticData=self.isSyntheticData )
 
         selections = PackedSelection()
         selections.add( "lumimask", event.lumimask)
@@ -485,7 +490,7 @@ class analysis(processor.ProcessorABC):
         canJet["jetId"] = selev.Jet.puId[canJet_idx]
         if isMC:
             canJet["hadronFlavour"] = selev.Jet.hadronFlavour[canJet_idx]
-        if not isMixedData and not isTTForMixed and not isDataForMixed:
+        if not (isMixedData or self.isSyntheticData) and not isTTForMixed and not isDataForMixed:
             canJet["calibration"] = selev.Jet.calibration[canJet_idx]
 
         #
@@ -793,8 +798,8 @@ class analysis(processor.ProcessorABC):
         logging.debug(f"final weight {weights.weight()[:10]}")
         selev["weight"] = weights.weight()[selections.all(*allcuts)]
         if not shift_name:
-            self._cutFlow.fill("passPreSel", selev, allTag=True)
-            self._cutFlow.fill("passPreSel_woTrig", selev, allTag=True,
+            self._cutFlow.fill("passPreSel", selev)
+            self._cutFlow.fill("passPreSel_woTrig", selev,
                                wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[selections.all(*allcuts)] ))
             self._cutFlow.fill("passDiJetMass", selev[selev.passDiJetMass])
             self._cutFlow.fill("passDiJetMass_woTrig", selev[selev.passDiJetMass],

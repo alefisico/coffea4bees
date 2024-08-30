@@ -23,7 +23,7 @@ def apply_event_selection_4b( event, isMC, corrections_metadata, isMixedData = F
 
     return event
 
-def apply_object_selection_4b( event, year, isMC, dataset, corrections_metadata, *, isMixedData=False, isTTForMixed=False, isDataForMixed=False, doLeptonRemoval=True, loosePtForSkim=False,   ):
+def apply_object_selection_4b( event, year, isMC, dataset, corrections_metadata, *, isMixedData=False, isTTForMixed=False, isDataForMixed=False, doLeptonRemoval=True, loosePtForSkim=False, isSyntheticData=False  ):
     """docstring for apply_basic_selection_4b. This fuction is not modifying the content of anything in events. it is just adding it"""
 
     #
@@ -46,10 +46,12 @@ def apply_object_selection_4b( event, year, isMC, dataset, corrections_metadata,
     else: selLepton = event.selMuon
 
 
-    if isMixedData or isTTForMixed or isDataForMixed:
+    if isMixedData or isTTForMixed or isDataForMixed or isSyntheticData:
         event['Jet', 'pileup'] = ((event.Jet.puId < 7) & (event.Jet.pt < 50)) | ((np.abs(event.Jet.eta) > 2.4) & (event.Jet.pt < 40))
         event['Jet', 'selected_loose'] = (event.Jet.pt >= 20) & ~event.Jet.pileup & (event.Jet.jetId>=2)
         event['Jet', 'selected'] = (event.Jet.pt >= 40) & (np.abs(event.Jet.eta) <= 2.4) & ~event.Jet.pileup & (event.Jet.jetId>=2)
+        if isSyntheticData:
+            event['Jet', 'selected'] = (event.Jet.selected) | (event.Jet.jet_flavor_bit == 1)
 
     else:
 

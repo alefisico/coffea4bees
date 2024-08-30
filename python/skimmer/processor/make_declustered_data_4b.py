@@ -40,6 +40,7 @@ class DeClusterer(PicoAOD):
             "passJetMult",
             "passPreSel_lowpt_forskim",
             "passPreSel",
+            "pass_ttbar_filter",
         ]
 
     def select(self, event):
@@ -69,12 +70,13 @@ class DeClusterer(PicoAOD):
 
         event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year] )
 
-        juncWS = [ self.corrections_metadata[year]["JERC"][0].replace("STEP", istep)
-                   for istep in ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"] ] #+ self.corrections_metadata[year]["JERC"][2:]
+        #juncWS = [ self.corrections_metadata[year]["JERC"][0].replace("STEP", istep)
+        #           for istep in ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"] ] #+ self.corrections_metadata[year]["JERC"][2:]
 
+        #jets = event.jet
         #old_jets = copy(event.Jet)
-        jets = init_jet_factory(juncWS, event, isMC)
-        event["Jet"] = jets
+        #jets = init_jet_factory(juncWS, event, isMC)
+        #event["Jet"] = jets
 
         event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year]  )
 
@@ -131,6 +133,8 @@ class DeClusterer(PicoAOD):
             pass_ttbar_filter[ selections.all(*cumulative_cuts) ] = (ttbar_rand > selev.SvB_MA.tt_vs_mj)
             selections.add( 'pass_ttbar_filter', pass_ttbar_filter )
             cumulative_cuts.append("pass_ttbar_filter")
+            self._cutFlow.fill( "pass_ttbar_filter", event[selections.all(*cumulative_cuts)], allTag=True )
+
             selection = selection & pass_ttbar_filter
             selev = selev[(ttbar_rand > selev.SvB_MA.tt_vs_mj)]
 
