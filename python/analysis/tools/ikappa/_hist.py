@@ -3,9 +3,8 @@ from __future__ import annotations
 import difflib
 import re
 from itertools import chain
-from typing import TYPE_CHECKING, Callable, Iterable
+from typing import TYPE_CHECKING, Callable, Iterable, NamedTuple
 
-import numpy.typing as npt
 from base_class.physics import di_higgs
 from base_class.physics.di_higgs import Coupling
 from bokeh.layouts import column, row
@@ -23,7 +22,20 @@ from ._utils import BokehLog
 from .config import UI, Datasets, Stacks
 
 if TYPE_CHECKING:
+    import pandas as pd
+
     from ._plot import AxisProjector
+
+    class Hist1D(NamedTuple):
+        values: pd.DataFrame
+        variances: pd.DataFrame
+        edge: AxesMixin
+
+    class Hist2D(NamedTuple):
+        values: pd.DataFrame
+        variances: pd.DataFrame
+        edges: tuple[AxesMixin, AxesMixin]
+
 
 _DIHIGGS = sorted(set(di_higgs.__all__) - {"Coupling"})
 _PROCESS = "process"
@@ -225,10 +237,14 @@ class HistGroup:
         ]
         # models
         self._models: list[_KappaModel] = []
-        self._dom_models = column(sizing_mode="stretch_width", background=UI.background)
+        self._dom_models = column(
+            sizing_mode="stretch_width", background=UI.color_background
+        )
         # stacks
         self._stacks: list[_StackGroup] = []
-        self._dom_stacks = column(sizing_mode="stretch_width", background=UI.background)
+        self._dom_stacks = column(
+            sizing_mode="stretch_width", background=UI.color_background
+        )
         # blocks
         self.dom = column(
             row(
@@ -356,9 +372,9 @@ class HistGroup:
             callback(self._frozen)
 
     def __call__(
-        self, data: dict[str, tuple[npt.NDArray, npt.NDArray, list[AxesMixin]]]
-    ):
+        self, data: dict[str, Hist1D], logger: Callable[[str]]
+    ):  # TODO: plot 2D histogram
         # TODO add hist
-        # TODO add json kappa framework
         for k, (x, w, axes) in data.items():
             print(k, x, w, axes)
+        return column(sizing_mode="stretch_both")

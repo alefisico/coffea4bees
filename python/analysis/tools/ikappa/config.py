@@ -22,6 +22,7 @@ XRootD = (
 
 
 class UI:
-    log_height = 50
-    side_width = 200
-    background = "#E8E8E8"
+    height_log = 50
+    height_select_bar = 40
+    width_side = 200
+    color_background = "#E8E8E8"

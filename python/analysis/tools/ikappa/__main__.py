@@ -15,6 +15,7 @@ from bokeh.models import Button, Select
 from bokeh.server.server import Server
 
 from ._plot import Plotter
+from ._sanity import sanitized
 from ._utils import BokehLog, PathInput
 
 
@@ -72,8 +73,17 @@ class Main:
                 with fsspec.open(path, compression=self._hist_compression) as file:
                     self.log(f'Loading data from "{path}"...')
                     data = cloudpickle.load(file)
-                    self.log(f'Data loaded from "{path}"')
-                    self.plotter.update(data["hists"], data["categories"])
+                    self.log("Sanitizing data...")
+                    groups = sanitized(data["hists"], data["categories"])
+                    hists = {k: data["hists"][k] for k in groups[0]}
+                    skipped = sum(groups[1:], [])
+                    if skipped:
+                        self.log.error(
+                            "The following histograms are skipped because of category mismatch",
+                            *skipped,
+                        )
+                    self.log("Loading plotter...")
+                    self.plotter.update(hists, data["categories"])
             except Exception as e:
                 self.log.error(exec_info=e)
 

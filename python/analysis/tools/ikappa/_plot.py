@@ -1,7 +1,10 @@
-from typing import Iterable
+from __future__ import annotations
+
+from functools import partial
+from typing import TYPE_CHECKING, Generator, Iterable
 
 import numpy as np
-import numpy.typing as npt
+import pandas as pd
 from bokeh.document import Document
 from bokeh.layouts import column, row
 from bokeh.models import Button, Div, InlineStyleSheet, MultiChoice, ScrollBox
@@ -20,6 +23,11 @@ from ._hist import HistGroup
 from ._treeview import TreeView
 from ._utils import BokehLog
 from .config import UI
+
+if TYPE_CHECKING:
+    import numpy.typing as npt
+
+    from ._hist import Hist1D
 
 
 # Regular, Variable
