@@ -119,7 +119,7 @@ class TrigEmulatorTool:
             ht_weights = [self.m_rand.random() for _ in range(3)]
 
             for trigName, trigEmulator in self.m_emulatedTrigMenu.items():
-                if trigEmulator.passTrig(offline_jet_pts, offline_btagged_jet_pts, ht, btag_weights, ht_weights, iToy):
+                if trigEmulator.passTrigCorrelated(offline_jet_pts, offline_btagged_jet_pts, ht, btag_weights, ht_weights, iToy):
                     passAny = True
 
             if passAny:
@@ -403,6 +403,15 @@ class TrigEmulatorTool:
 
 
     # getRandWeights method needs to be implemented
-    def getRandWeights(self, offline_btagged_jet_pts, setSeed, seed):
-        # Implement the method to generate random weights
-        pass
+    def getRandWeights(self, input_pts, setSeed, seedOffset):
+        if setSeed and len(input_pts) > 0:
+            seed = int(input_pts[0] * seedOffset + input_pts[0])
+            self.m_rand.seed(seed)
+
+        randNumbers = []
+        for _ in range(len(input_pts)):
+            calo_rand = self.m_rand.random()  # Calo
+            pf_rand = self.m_rand.random()    # PF
+            randNumbers.append([calo_rand, pf_rand])
+
+        return randNumbers

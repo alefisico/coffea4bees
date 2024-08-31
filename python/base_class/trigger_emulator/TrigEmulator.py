@@ -71,6 +71,7 @@ class TrigEmulator:
                 return False
 
         # Apply BTag Operating Points
+
         for iThres in range(len(self.m_bTagOpPoints)):
             HLTBTag = self.m_bTagOpPoints[iThres]
             nJetsPassBTag = 0

@@ -37,6 +37,9 @@ class trigger_emulator_TestCase(unittest.TestCase):
 
 
         self.emulator_test_tool_data_2018 = TrigEmulatorTool("Test", year="2018")
+        print(self.emulator_test_tool_data_2018.GetWeightOR([40,40,40,40], [40,40,40,40], 400))
+        print(self.emulator_test_tool_data_2018.GetWeightOR([100,100,100,100], [40,40,40,40], 400))
+
         self.emulator_test_tool_data_2017 = TrigEmulatorTool("Test", year="2017")
         self.emulator_test_tool_data_2016 = TrigEmulatorTool("Test", year="2016")
 
@@ -52,8 +55,6 @@ class trigger_emulator_TestCase(unittest.TestCase):
         self.emulator_test_tool_mc_2018_3b = TrigEmulatorTool("Test", year="2018", useMCTurnOns=True, is3b=True)
         self.emulator_test_tool_mc_2017_3b = TrigEmulatorTool("Test", year="2017", useMCTurnOns=True, is3b=True)
         self.emulator_test_tool_mc_2016_3b = TrigEmulatorTool("Test", year="2016", useMCTurnOns=True, is3b=True)
-
-
 
         self.debug = False
 
