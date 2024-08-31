@@ -38,8 +38,8 @@ class TrigEmulatorTool:
 
         if self.m_debug:
             print("TrigEmulatorTool::Making Ht Thresholds")
-        for hc in self.m_HTConfig:
-            self.m_Ht[hc[0]] = HLTHtEmulator(hc[1][0], hc[1][1], debug)
+        for trig_name, trig_data in self.m_HTConfig.items():
+            self.m_Ht[trig_name] = HLTHtEmulator(high_bin_edge=trig_data["high_bin_edge"] , eff=trig_data["eff"], eff_err=trig_data["eff_err"])
 
         if self.m_debug:
             print("TrigEmulatorTool::Making BTag Thresholds")
@@ -156,26 +156,28 @@ class TrigEmulatorTool:
         with open(input_file_name, 'r') as infile:
             data = yaml.safe_load(infile)
 
+        JetConfigs = [("jetTurnOn::PF30BTag",     "pt_s_PF30inMJMatchBtagTandP_jetID_TurnOn"),
+                      ("jetTurnOn::PF30BTag",     "pt_s_PF30inMJMatchBtagTandP_jetID_TurnOn"),
+                      ("jetTurnOn::PF40BTag",     "pt_s_PF40inMJMatchBtagTandP_jetID_TurnOn"),
+                      ("jetTurnOn::PF45BTag",     "pt_s_PF45inMJMatchBtagTandP_jetID_TurnOn"),
+                      ("jetTurnOn::PF60BTag",     "pt_PF60inMJMatchBtagTandP_jetID_TurnOn"),
+                      ("jetTurnOn::PF75BTag",     "pt_PF75inMJMatchBtagTandP_jetID_TurnOn"),
+                      ("jetTurnOn::PF116BTag",    "pt_PF116inMJMatchBtagTandP_jetID_TurnOn"),
+                      ("jetTurnOn::PF116DrBTag",  "pt_PF116DrfilterMatchBtagTandP_jetID_TurnOn"),
+                      ("jetTurnOn::L1112BTag",    "pt_L12b112inMJMatchBtagTandP_jetID_TurnOn"),
+                      ("jetTurnOn::Calo100BTag",  "pt_Calo100inMJMatchBtagTandP_jetID_TurnOn"),
+                      ("jetTurnOn::PF30",         "pt_s_PF30inMJTandP_jetID_TurnOn"),
+                      ("jetTurnOn::PF40",         "pt_s_PF40inMJTandP_jetID_TurnOn"),
+                      ("jetTurnOn::PF45",         "pt_s_PF45inMJTandP_jetID_TurnOn"),
+                      ("jetTurnOn::PF60",         "pt_PF60inMJTandP_jetID_TurnOn"),
+                      ("jetTurnOn::PF75",         "pt_PF75inMJTandP_jetID_TurnOn"),
+                      ("jetTurnOn::PF116",        "pt_PF116inMJTandP_jetID_TurnOn"),
+                      ("jetTurnOn::L1112",        "pt_L12b112inMJTandP_jetID_TurnOn"),
+                      ("jetTurnOn::Calo100",      "pt_Calo100inMJTandP_jetID_TurnOn"),
+                      ]
 
-        self.m_JetConfig["jetTurnOn::PF30BTag"]     = data["pt_s_PF30inMJMatchBtagTandP_jetID_TurnOn"]
-        self.m_JetConfig["jetTurnOn::PF30BTag"]     = data["pt_s_PF30inMJMatchBtagTandP_jetID_TurnOn"]
-        self.m_JetConfig["jetTurnOn::PF40BTag"]     = data["pt_s_PF40inMJMatchBtagTandP_jetID_TurnOn"]
-        self.m_JetConfig["jetTurnOn::PF45BTag"]     = data["pt_s_PF45inMJMatchBtagTandP_jetID_TurnOn"]
-        self.m_JetConfig["jetTurnOn::PF60BTag"]     = data["pt_PF60inMJMatchBtagTandP_jetID_TurnOn"]
-        self.m_JetConfig["jetTurnOn::PF75BTag"]     = data["pt_PF75inMJMatchBtagTandP_jetID_TurnOn"]
-        self.m_JetConfig["jetTurnOn::PF116BTag"]    = data["pt_PF116inMJMatchBtagTandP_jetID_TurnOn"]
-        self.m_JetConfig["jetTurnOn::PF116DrBTag"]  = data["pt_PF116DrfilterMatchBtagTandP_jetID_TurnOn"]
-        self.m_JetConfig["jetTurnOn::L1112BTag"]    = data["pt_L12b112inMJMatchBtagTandP_jetID_TurnOn"]
-        self.m_JetConfig["jetTurnOn::Calo100BTag"]  = data["pt_Calo100inMJMatchBtagTandP_jetID_TurnOn"]
-        self.m_JetConfig["jetTurnOn::PF30"]         = data["pt_s_PF30inMJTandP_jetID_TurnOn"]
-        self.m_JetConfig["jetTurnOn::PF40"]         = data["pt_s_PF40inMJTandP_jetID_TurnOn"]
-        self.m_JetConfig["jetTurnOn::PF45"]         = data["pt_s_PF45inMJTandP_jetID_TurnOn"]
-        self.m_JetConfig["jetTurnOn::PF60"]         = data["pt_PF60inMJTandP_jetID_TurnOn"]
-        self.m_JetConfig["jetTurnOn::PF75"]         = data["pt_PF75inMJTandP_jetID_TurnOn"]
-        self.m_JetConfig["jetTurnOn::PF116"]        = data["pt_PF116inMJTandP_jetID_TurnOn"]
-        self.m_JetConfig["jetTurnOn::L1112"]        = data["pt_L12b112inMJTandP_jetID_TurnOn"]
-        self.m_JetConfig["jetTurnOn::Calo100"]      = data["pt_Calo100inMJTandP_jetID_TurnOn"]
-
+        for _config in JetConfigs:
+            self.m_JetConfig[_config[0]]     = data[_config[1]]
 
         BTagConfig = [("bTagTurnOn::PFDeepCSV",               "pt_PFDeepCSVinMJMatchBtagTandP_jetID_TurnOn"),
                       ("bTagTurnOn::CaloDeepCSV",             "pt_CaloDeepCSVinMJMatchBtagTandP_jetID_TurnOn"),
@@ -186,19 +188,18 @@ class TrigEmulatorTool:
                       ("bTagTurnOn::CaloDeepCSV2b116loose",   "pt_CaloDeepCSVinMJ2b116MatchBlooseTandP_jetID_TurnOn"),
                       ("bTagTurnOn::Calo100BTagloose",        "pt_Calo100ANDCaloCSVDeepinMJMatchBlooseTandP_jetID_TurnOn"),
                       ]
+
         for _config in BTagConfig:
             self.m_BTagConfig[_config[0]]     = data[_config[1]]
-#
-#  //
-#  // Ht Config
-#  //
-#  HTConfig = {
-#    //{hTTurnOn::L1ORAll_Ht330_4j_3b,            {{"hT30_L1ORAll_TurnOn",      fileName2018}} },
-#    {hTTurnOn::L1ORAll_Ht330_4j_3b,       {{"hT30_L1ORAll_TurnOn_4Jet2Tag", fileName2018}} },
-#    //{hTTurnOn::L1ORAll_Ht330_4j_3b,            {{"hT30_L1ORAll_TurnOn_2Tag",      fileName2018}} },
-#    {hTTurnOn::CaloHt320,                      {{"hT30_CaloHt320_TurnOn",    fileName2018}} },
-#    {hTTurnOn::PFHt330,                        {{"hT30_PFHt330_TurnOn",      fileName2018}} },
-#  };
+
+        HTConfig = [
+            ("hTTurnOn::L1ORAll_Ht330_4j_3b",            "hT30_L1ORAll_TurnOn_4Jet2Tag"),
+            ("hTTurnOn::CaloHt320",                      "hT30_CaloHt320_TurnOn"),
+            ("hTTurnOn::PFHt330",                        "hT30_PFHt330_TurnOn"),
+        ]
+
+        for _config in HTConfig:
+            self.m_HTConfig[_config[0]]     = data[_config[1]]
 
 
 
