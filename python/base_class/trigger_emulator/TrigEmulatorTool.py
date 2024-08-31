@@ -143,17 +143,12 @@ class TrigEmulatorTool:
     def config2018(self):
         print("TrigEmulatorTool::configuring for 2018 ")
 
-        # std::string fileName2018 = m_useMCTurnOns ? "haddOutput_All_MC2018_11Nov_fittedTurnOns.root" : "haddOutput_All_Data2018_11Nov_fittedTurnOns.root" ;
         fileName2018 = "base_class/trigger_emulator/data/haddOutput_All_Data2018_11Nov_fittedTurnOns.yaml"
         if self.m_useMCTurnOns:
             fileName2018 = "base_class/trigger_emulator/data/haddOutput_All_MC2018_11Nov_fittedTurnOns.yaml"
         print("TrigEmulatorTool::using file \t ", fileName2018)
 
-
-        # Configuration for 2018
-        input_file_name = "base_class/trigger_emulator/data/haddOutput_All_MC2018_11Nov_fittedTurnOns.yaml"
-        # std::string fileName2018 = m_useMCTurnOns ? "haddOutput_All_MC2018_11Nov_fittedTurnOns.root" : "haddOutput_All_Data2018_11Nov_fittedTurnOns.root" ;
-        with open(input_file_name, 'r') as infile:
+        with open(fileName2018, 'r') as infile:
             data = yaml.safe_load(infile)
 
         JetConfigs = [("jetTurnOn::PF30BTag",     "pt_s_PF30inMJMatchBtagTandP_jetID_TurnOn"),
@@ -204,14 +199,16 @@ class TrigEmulatorTool:
 
 
     def config2017(self):
-        # Configuration for 2017
-#  cout << "TrigEmulatorTool::configuring for 2017 " << endl;
-#  std::string fileName2017 = m_useMCTurnOns ? "haddOutput_All_MC2017_11Nov_fittedTurnOns.root" : "haddOutput_All_Data2017_11Nov_fittedTurnOns.root" ;
-#  cout << "TrigEmulatorTool::using file \t " << fileName2017 << endl;
-#
-#  //
-#  //  Jet Emulator
-#  //
+        print("TrigEmulatorTool::configuring for 2017 ")
+
+        fileName2017 = "base_class/trigger_emulator/data/haddOutput_All_Data2017_11Nov_fittedTurnOns.yaml"
+        if self.m_useMCTurnOns:
+            fileName2017 = "base_class/trigger_emulator/data/haddOutput_All_MC2017_11Nov_fittedTurnOns.yaml"
+        print("TrigEmulatorTool::using file \t ",fileName2017)
+
+        with open(fileName2017, 'r') as infile:
+            data = yaml.safe_load(infile)
+
 #  JetConfig = {
 #    {jetTurnOn::PF30BTag,                   {{"pt_s_PF30inMJMatchBtagTandP_jetID_TurnOn",                     fileName2017}} },
 #    {jetTurnOn::PF40BTag,                   {{"pt_s_PF40inMJMatchBtagTandP_jetID_TurnOn",                     fileName2017}} },

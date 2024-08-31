@@ -36,7 +36,11 @@ class trigger_emulator_TestCase(unittest.TestCase):
         self.emulator_test = TrigEmulator(ht_thresholds_test, jet_thresholds_test, jet_multiplicities_test, btag_op_points_test, btag_multiplicities_test)
 
 
-        self.emulator_test_tool = TrigEmulatorTool("Test")
+        self.emulator_test_tool_data_2018 = TrigEmulatorTool("Test", year="2018")
+        self.emulator_test_tool_data_2017 = TrigEmulatorTool("Test", year="2017")
+
+        self.emulator_test_tool_mc_2018 = TrigEmulatorTool("Test", year="2018", useMCTurnOns=True)
+        self.emulator_test_tool_mc_2017 = TrigEmulatorTool("Test", year="2017", useMCTurnOns=True)
 
 
         self.debug = False

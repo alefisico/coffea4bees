@@ -123,6 +123,8 @@ def convert_ROOT_file_to_yaml(input_file_name, out_dir="base_class/trigger_emula
 
 input_file_names = ["haddOutput_All_MC2018_11Nov_fittedTurnOns.root",
                     "haddOutput_All_Data2018_11Nov_fittedTurnOns.root",
+                    "haddOutput_All_MC2017_11Nov_fittedTurnOns.root",
+                    "haddOutput_All_Data2017_11Nov_fittedTurnOns.root",
                     ]
 
 for input_file_name in input_file_names:
