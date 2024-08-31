@@ -366,42 +366,38 @@ class TrigEmulatorTool:
         if is3b:
             print("Configuring 2016 menu for 3b events")
 
-#
-#self.AddTrig("EMU_4j_3b",
-#			   [hTTurnOn::L1ORAll_4j_3b],
-#			   [jetTurnOn::PF45BTag],[4],
-#			   [bTagTurnOn::CaloCSVloose],[3]);
-#
-#	self.AddTrig("EMU_2b",
-#			   [jetTurnOn::L1100BTag,    jetTurnOn::PF100BTag], [2, 2],
-#			   [bTagTurnOn::Calo100BTag, bTagTurnOn::CaloCSV2b100loose],[2, 2]);
-#
-#	self.AddTrig("EMU_2j_2j_3b",
-#			   [hTTurnOn::L1ORAll_2j_2j_3b],
-#			   //[jetTurnOn::Calo30BTag,jetTurnOn::Calo90BTag,jetTurnOn::PF30BTag,jetTurnOn::PF90BTag],[4,2,4,2],
-#			   [jetTurnOn::Calo90BTag,jetTurnOn::PF30BTag,jetTurnOn::PF90BTag],[2,4,2],
-#			   [bTagTurnOn::CaloCSVloose],[3]);
+            self.AddTrig("EMU_4j_3b",
+		         HTNames=["hTTurnOn::L1ORAll_4j_3b"],
+		         JetNames=["jetTurnOn::PF45BTag"],JetMults=[4],
+		         TagNames=["bTagTurnOn::CaloCSVloose"],TagMults=[3])
 
+            self.AddTrig("EMU_2b",
+		         JetNames=["jetTurnOn::L1100BTag",    "jetTurnOn::PF100BTag"], JetMults=[2, 2],
+		         TagNames=["bTagTurnOn::Calo100BTag", "bTagTurnOn::CaloCSV2b100loose"],TagMults=[2, 2])
+
+            self.AddTrig("EMU_2j_2j_3b",
+		         HTNames=["hTTurnOn::L1ORAll_2j_2j_3b"],
+		         JetNames=["jetTurnOn::Calo90BTag","jetTurnOn::PF30BTag","jetTurnOn::PF90BTag"],JetMults=[2,4,2],
+		         TagNames=["bTagTurnOn::CaloCSVloose"],TagMults=[3]);
 
 
         else:
             print("Configuring 2016 menu for 4b events")
 
-#self.AddTrig("EMU_4j_3b",
-#			   [hTTurnOn::L1ORAll_4j_3b],
-#			   [jetTurnOn::PF45BTag],[4],
-#			   [bTagTurnOn::CaloCSV],[3]);
-#
-#	self.AddTrig("EMU_2b",
-#			   [jetTurnOn::L1100BTag,    jetTurnOn::PF100BTag], [2, 2],
-#			   [bTagTurnOn::Calo100BTag, bTagTurnOn::CaloCSV2b100],[2, 2]);
-#
-#	self.AddTrig("EMU_2j_2j_3b",
-#			   [hTTurnOn::L1ORAll_2j_2j_3b],
-#			   //[jetTurnOn::Calo30BTag,jetTurnOn::Calo90BTag,jetTurnOn::PF30BTag,jetTurnOn::PF90BTag],[4,2,4,2],
-#			   [jetTurnOn::Calo90BTag,jetTurnOn::PF30BTag,jetTurnOn::PF90BTag],[2,4,2],
-#			   [bTagTurnOn::CaloCSV],[3]);
-#
+            self.AddTrig("EMU_4j_3b",
+			 HTNames=["hTTurnOn::L1ORAll_4j_3b"],
+			 JetNames=["jetTurnOn::PF45BTag"],JetMults=[4],
+			 TagNames=["bTagTurnOn::CaloCSV"],TagMults=[3])
+
+            self.AddTrig("EMU_2b",
+			 JetNames=["jetTurnOn::L1100BTag",    "jetTurnOn::PF100BTag"], JetMults=[2, 2],
+			 TagNames=["bTagTurnOn::Calo100BTag", "bTagTurnOn::CaloCSV2b100"],TagMults=[2, 2])
+
+            self.AddTrig("EMU_2j_2j_3b",
+			 HTNames=["hTTurnOn::L1ORAll_2j_2j_3b"],
+			 JetNames=["jetTurnOn::Calo90BTag","jetTurnOn::PF30BTag","jetTurnOn::PF90BTag"],JetMults=[2,4,2],
+			 TagNames=["bTagTurnOn::CaloCSV"],TagMults=[3]);
+
 
 
 
