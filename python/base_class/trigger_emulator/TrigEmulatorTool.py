@@ -14,9 +14,7 @@ class TrigEmulatorTool:
         self.m_useMCTurnOns = useMCTurnOns
         self.m_rand = random.Random()
 
-        self.m_JetConfig  = {}
-        self.m_HTConfig   = {}
-        self.m_BTagConfig = {}
+        self.m_HTConfig = {}
 
         self.m_Jet = {}
         self.m_Ht = {}
@@ -32,22 +30,11 @@ class TrigEmulatorTool:
             print(f"TrigEmulatorTool::ERROR year has to be 2018, 2017 or 2016. Not {year}")
 
         if self.m_debug:
-            print("TrigEmulatorTool::Making Jet Thresholds")
-        for trig_name, trig_data in self.m_JetConfig.items():
-            self.m_Jet[trig_name] = HLTJetEmulator(high_bin_edge=trig_data["high_bin_edge"] , eff=trig_data["eff"], eff_err=trig_data["eff_err"])
-
-        if self.m_debug:
             print("TrigEmulatorTool::Making Ht Thresholds")
         for trig_name, trig_data in self.m_HTConfig.items():
             self.m_Ht[trig_name] = HLTHtEmulator(high_bin_edge=trig_data["high_bin_edge"] , eff=trig_data["eff"], eff_err=trig_data["eff_err"])
 
-        if self.m_debug:
-            print("TrigEmulatorTool::Making BTag Thresholds")
-        for trig_name, trig_data in self.m_BTagConfig.items():
-            self.m_BTag[trig_name] = HLTBTagEmulator(high_bin_edge=trig_data["high_bin_edge"], eff=trig_data["eff"], eff_err=trig_data["eff_err"])
 
-        if self.m_debug:
-            print("TrigEmulatorTool::Leaving")
 
     def AddTrig(self, trigName, HTNames=None, JetNames=None, JetMults=None, TagNames=None, TagMults=None):
         if self.m_debug:
@@ -172,7 +159,7 @@ class TrigEmulatorTool:
                       ]
 
         for _config in JetConfigs:
-            self.m_JetConfig[_config[0]]     = data[_config[1]]
+            self.m_Jet[_config[0]] = HLTJetEmulator(high_bin_edge=data[_config[1]]["high_bin_edge"] , eff=data[_config[1]]["eff"], eff_err=data[_config[1]]["eff_err"])
 
         BTagConfig = [("bTagTurnOn::PFDeepCSV",               "pt_PFDeepCSVinMJMatchBtagTandP_jetID_TurnOn"),
                       ("bTagTurnOn::CaloDeepCSV",             "pt_CaloDeepCSVinMJMatchBtagTandP_jetID_TurnOn"),
@@ -185,7 +172,8 @@ class TrigEmulatorTool:
                       ]
 
         for _config in BTagConfig:
-            self.m_BTagConfig[_config[0]]     = data[_config[1]]
+            self.m_BTag[_config[0]] = HLTBTagEmulator(high_bin_edge=data[_config[1]]["high_bin_edge"] , eff=data[_config[1]]["eff"], eff_err=data[_config[1]]["eff_err"])
+
 
         HTConfig = [
             ("hTTurnOn::L1ORAll_Ht330_4j_3b",            "hT30_L1ORAll_TurnOn_4Jet2Tag"),
@@ -194,7 +182,7 @@ class TrigEmulatorTool:
         ]
 
         for _config in HTConfig:
-            self.m_HTConfig[_config[0]]     = data[_config[1]]
+            self.m_Ht[_config[0]] = HLTHtEmulator(high_bin_edge=data[_config[1]]["high_bin_edge"] , eff=data[_config[1]]["eff"], eff_err=data[_config[1]]["eff_err"])
 
 
 
@@ -226,8 +214,7 @@ class TrigEmulatorTool:
                       ]
 
         for _config in JetConfigs:
-            self.m_JetConfig[_config[0]]     = data[_config[1]]
-
+            self.m_Jet[_config[0]] = HLTJetEmulator(high_bin_edge=data[_config[1]]["high_bin_edge"] , eff=data[_config[1]]["eff"], eff_err=data[_config[1]]["eff_err"])
 
         BTagConfigs = [("bTagTurnOn::PFCSV",                 "pt_PFCSVinMJMatchBtagTandP_jetID_TurnOn"),
                        ("bTagTurnOn::CaloCSV",               "pt_CaloCSVinMJMatchBtagTandP_jetID_TurnOn"),
@@ -240,7 +227,8 @@ class TrigEmulatorTool:
                        ]
 
         for _config in BTagConfigs:
-            self.m_BTagConfig[_config[0]]     = data[_config[1]]
+            self.m_BTag[_config[0]] = HLTBTagEmulator(high_bin_edge=data[_config[1]]["high_bin_edge"] , eff=data[_config[1]]["eff"], eff_err=data[_config[1]]["eff_err"])
+
 
 
         HTConfigs = [("hTTurnOn::L1ORAll_Ht300_4j_3b",       "hT30_L1ORAll_TurnOn_4Jet2Tag"),
@@ -249,7 +237,7 @@ class TrigEmulatorTool:
                      ]
 
         for _config in HTConfigs:
-            self.m_HTConfig[_config[0]]     = data[_config[1]]
+            self.m_Ht[_config[0]] = HLTHtEmulator(high_bin_edge=data[_config[1]]["high_bin_edge"] , eff=data[_config[1]]["eff"], eff_err=data[_config[1]]["eff_err"])
 
 
     def config2016(self):
@@ -276,7 +264,7 @@ class TrigEmulatorTool:
                       ]
 
         for _config in JetConfigs:
-            self.m_JetConfig[_config[0]]     = data[_config[1]]
+            self.m_Jet[_config[0]] = HLTJetEmulator(high_bin_edge=data[_config[1]]["high_bin_edge"] , eff=data[_config[1]]["eff"], eff_err=data[_config[1]]["eff_err"])
 
         BTagConfigs = [("bTagTurnOn::CaloCSV",               "pt_CaloCSVinMJMatchBtagTandP_jetID_TurnOn"),
                       ("bTagTurnOn::CaloCSV2b100",          "pt_CaloCSVinMJ2b100MatchBtagTandP_jetID_TurnOn"),
@@ -286,14 +274,15 @@ class TrigEmulatorTool:
                       ]
 
         for _config in BTagConfigs:
-            self.m_BTagConfig[_config[0]]     = data[_config[1]]
+            self.m_BTag[_config[0]] = HLTBTagEmulator(high_bin_edge=data[_config[1]]["high_bin_edge"] , eff=data[_config[1]]["eff"], eff_err=data[_config[1]]["eff_err"])
 
         HTConfigs = [("hTTurnOn::L1ORAll_4j_3b",     "hT30_L1ORAll_TurnOn_4Jet2Tag"),
                      ("hTTurnOn::L1ORAll_2j_2j_3b",  "hT30_L1ORAll_2j_2j_3b_TurnOn_4Jet2Tag"),
                      ]
 
         for _config in HTConfigs:
-            self.m_HTConfig[_config[0]]     = data[_config[1]]
+            self.m_Ht[_config[0]] = HLTHtEmulator(high_bin_edge=data[_config[1]]["high_bin_edge"] , eff=data[_config[1]]["eff"], eff_err=data[_config[1]]["eff_err"])
+
 
 
     # getRandWeights method needs to be implemented
