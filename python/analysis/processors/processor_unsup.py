@@ -171,7 +171,8 @@ class analysis(processor.ProcessorABC):
         self._cutFlow.fill("passHLT",  event[ event.lumimask & event.passNoiseFilter & event.passHLT], allTag=True)
 
         ### Apply object selection (function does not remove events, adds content to objects)
-        event =  apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year], isMixedData=isMixedData  )
+        doLeptonRemoval = not isMixedData
+        event =  apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year], doLeptonRemoval=doLeptonRemoval  )
         self._cutFlow.fill("passJetMult",  event[ event.lumimask & event.passNoiseFilter & event.passHLT & event.passJetMult ], allTag=True)
 
         ### Filtering object and event selection
@@ -222,8 +223,7 @@ class analysis(processor.ProcessorABC):
         canJet['jetId'] = selev.Jet.puId[canJet_idx]
         if isMC:
             canJet['hadronFlavour'] = selev.Jet.hadronFlavour[canJet_idx]
-        if not isMixedData:
-            canJet['calibration'] = selev.Jet.calibration[canJet_idx]
+        canJet['calibration'] = selev.Jet.calibration[canJet_idx]
 
         ### pt sort canJets
         canJet = canJet[ak.argsort(canJet.pt, axis=1, ascending=False)]
@@ -365,9 +365,9 @@ class analysis(processor.ProcessorABC):
         fill += hist.add('hT_no3to4DtoM',          (100,  0,   1000,  ('hT',          'H_{T} [GeV}')), weight="wNo3to4DtoM")
         fill += hist.add('hT_selected_no3to4DtoM', (100,  0,   1000,  ('hT_selected', 'H_{T} (selected jets) [GeV}')), weight="wNo3to4DtoM")
         fill += LorentzVector.plot_pair(('v4j_no3to4DtoM'), 'v4j', skip=['n', 'dr', 'dphi', 'st'], bins={'mass': (120, 0, 1200)}, weight="wNo3to4DtoM")
-        fill += QuadJetHistsUnsup(('quadJet_selected_no3to4DtoM', 'Selected Quad Jet no3to4DtoM'), 'quadJet_selected', weight = "wNo3to4DtoM")  
-        
-        
+        fill += QuadJetHistsUnsup(('quadJet_selected_no3to4DtoM', 'Selected Quad Jet no3to4DtoM'), 'quadJet_selected', weight = "wNo3to4DtoM")
+
+
         fill += Jet.plot(('selJets', 'Selected Jets'),        'selJet',           skip=['deepjet_c'])
         fill += Jet.plot(('tagJets', 'Tag Jets'),             'tagJet',           skip=['deepjet_c'])
         fill += Jet.plot(('othJets', 'Other Jets'),           'notCanJet_coffea', skip=['deepjet_c'])

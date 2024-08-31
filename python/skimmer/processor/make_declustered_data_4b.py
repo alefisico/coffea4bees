@@ -40,6 +40,7 @@ class DeClusterer(PicoAOD):
             "passJetMult",
             "passPreSel_lowpt_forskim",
             "passPreSel",
+            "pass_ttbar_filter",
         ]
 
     def select(self, event):
@@ -68,13 +69,6 @@ class DeClusterer(PicoAOD):
 
 
         event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year] )
-
-        juncWS = [ self.corrections_metadata[year]["JERC"][0].replace("STEP", istep)
-                   for istep in ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"] ] #+ self.corrections_metadata[year]["JERC"][2:]
-
-        #old_jets = copy(event.Jet)
-        jets = init_jet_factory(juncWS, event, isMC)
-        event["Jet"] = jets
 
         event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year]  )
 
@@ -114,12 +108,25 @@ class DeClusterer(PicoAOD):
 
         ## TTbar subtractions
         if self.subtract_ttbar_with_weights:
-            #rng = Squares("ttbar_subtractions")
-            ttbar_rand = np.random.uniform(low=0, high=1.0, size=len(selev))
+
+            #
+            # Get reproducible random numbers
+            #
+            rng = Squares("ttbar_subtraction", dataset, year)
+            counter = np.empty((len(selev), 2), dtype=np.uint64)
+            counter[:, 0] = np.asarray(selev.event).view(np.uint64)
+            counter[:, 1] = np.asarray(selev.run).view(np.uint32)
+            counter[:, 1] <<= 32
+            counter[:, 1] |= np.asarray(selev.luminosityBlock).view(np.uint32)
+            ttbar_rand = rng.uniform(counter, low=0, high=1.0).astype(np.float32)
+
+
             pass_ttbar_filter = np.full( len(event), True)
             pass_ttbar_filter[ selections.all(*cumulative_cuts) ] = (ttbar_rand > selev.SvB_MA.tt_vs_mj)
             selections.add( 'pass_ttbar_filter', pass_ttbar_filter )
             cumulative_cuts.append("pass_ttbar_filter")
+            self._cutFlow.fill( "pass_ttbar_filter", event[selections.all(*cumulative_cuts)], allTag=True )
+
             selection = selection & pass_ttbar_filter
             selev = selev[(ttbar_rand > selev.SvB_MA.tt_vs_mj)]
 
@@ -185,22 +192,9 @@ class DeClusterer(PicoAOD):
         new_jets = ak.concatenate([canJet, notCanJet], axis=1)
         new_jets = new_jets[ak.argsort(new_jets.pt, axis=1, ascending=False)]
 
-        # n_jet_old_all = ak.num(selev.Jet)
-        # total_jet_old_all = int(ak.sum(n_jet_old_all))
-        # selev.Jet = selev.Jet[selev.Jet.selected_loose]
-        #
-        # n_jet_old = ak.num(selev.Jet)
-        # total_jet_old = int(ak.sum(n_jet_old))
-
         n_jet = ak.num(new_jets)
         total_jet = int(ak.sum(n_jet))
 
-        # delta_njet = n_jet - n_jet_old
-        # delta_njet_total = total_jet - total_jet_old
-        # print(f"delta_njet_total is {delta_njet_total} {total_jet} {total_jet_old} {total_jet_old_all} \n")
-        # print(f"delta_njet  {ak.any(delta_njet)} {delta_njet[~(delta_njet ==0)]}   \n")
-
-        #'isGood', 'btagDeepB', 'cleanmask', 'jetId', 'area', 'chEmEF', 'eta', 'pt', 'bRegCorr', 'rawFactor', 'btagDeepFlavB', 'puId', 'phi', 'neEmEF', 'btagCSVV2', 'mass'
         branches = ak.Array(
             {
                 # Update jets with new kinematics

@@ -16,3 +16,13 @@ skimmer-basic-test-job:
   script:
     - source .ci-workflows/skimmer-basic-test-job.sh
 
+synthetic-dataset-make-dataset:
+  stage: skimmer-test
+  extends:
+    - .base_analysis
+  script:
+    - source .ci-workflows/synthetic-dataset-make-dataset.sh
+  artifacts:
+    paths:
+      - python/skimmer/metadata/picoaod_datasets_declustered_data_test_UL18.yml
+      - skimmer/test/data_UL18A/picoAOD_seed5.root
