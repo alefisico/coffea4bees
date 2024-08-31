@@ -1,12 +1,13 @@
 class TrigEmulator:
-    def __init__(self, ht_thresholds, jet_thresholds, jet_multiplicities, btag_op_points, btag_multiplicities):
+    def __init__(self, ht_thresholds, jet_thresholds, jet_multiplicities, btag_op_points, btag_multiplicities, nToys=100):
         self.m_htThresholds = ht_thresholds
         self.m_jetThresholds = jet_thresholds
         self.m_jetMultiplicities = jet_multiplicities
         self.m_bTagOpPoints = btag_op_points
         self.m_bTagMultiplicities = btag_multiplicities
+        self.m_nToys = nToys
 
-    def passTrig(self, offline_jet_pts, offline_btagged_jet_pts, ht, seedOffset):
+    def passTrig(self, offline_jet_pts, offline_btagged_jet_pts, ht=-1, seedOffset=1.0):
         # Ht Cut
         for iThres in range(len(self.m_htThresholds)):
             HLTHtCut = self.m_htThresholds[iThres]
@@ -45,8 +46,8 @@ class TrigEmulator:
 
         return True
 
-
-    def passTrigCorrelated(self, offline_jet_pts, offline_btagged_jet_pts, ht, btag_rand, ht_rand, seedOffset):
+    # Used for calculating correlated decisions with input (ht and btagging) weights
+    def passTrigCorrelated(self, offline_jet_pts, offline_btagged_jet_pts, ht, btag_rand, ht_rand, seedOffset=1.0):
         # Ht Cut
         for iThres in range(len(self.m_htThresholds)):
             HLTHtCut = self.m_htThresholds[iThres]
@@ -86,8 +87,8 @@ class TrigEmulator:
 
         return True
 
-
-    def calcWeight(self, offline_jet_pts, offline_btagged_jet_pts, ht):
+    #  Calculate weight for trigger, average nPass over nToys
+    def calcWeight(self, offline_jet_pts, offline_btagged_jet_pts, ht=-1):
         nPass = 0
 
         for iToy in range(self.m_nToys):
@@ -99,26 +100,12 @@ class TrigEmulator:
         # print(f"TrigEmulator::calcWeight is {weight}")
         return weight
 
-
-    def Fill(self, offline_jet_pts, offline_btagged_jet_pts, ht):
-        for iToy in range(self.m_nToys):
-            # Count all events
-            self.m_nTotal += 1
-            if self.passTrig(offline_jet_pts, offline_btagged_jet_pts, ht, iToy):
-                self.m_nPass += 1
-
-        return
-
-
-#
-# # Example instantiation
-# emulator = TrigEmulator(nToys=1000)
-#
-# # Example data
-# offline_jet_pts = [100, 150, 200]
-# offline_btagged_jet_pts = [120, 180]
-# ht = 500
-#
-# # Calculate the weight
-# weight = emulator.calcWeight(offline_jet_pts, offline_btagged_jet_pts, ht)
-# print(weight)  # Output: The calculated weight as a float
+    # #  For doing global run counting (Eg: in rate prediction)
+    # def Fill(self, offline_jet_pts, offline_btagged_jet_pts, ht):
+    #     for iToy in range(self.m_nToys):
+    #         # Count all events
+    #         self.m_nTotal += 1
+    #         if self.passTrig(offline_jet_pts, offline_btagged_jet_pts, ht, iToy):
+    #             self.m_nPass += 1
+    #
+    #     return
