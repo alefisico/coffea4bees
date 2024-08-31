@@ -253,49 +253,48 @@ class TrigEmulatorTool:
 
 
     def config2016(self):
-        # Configuration for 2016
-#  cout << "TrigEmulatorTool::configuring for 2016 " << endl;
-#  std::string fileName2016 = m_useMCTurnOns ? "haddOutput_All_MC2016_11Nov_fittedTurnOns.root" : "haddOutput_All_Data2016_11Nov_fittedTurnOns.root" ;
-#  cout << "TrigEmulatorTool::using file \t " << fileName2016 << endl;
-#
-#  //
-#  //  Jet Emulator
-#  //
-#  JetConfig = {
-#    ("jetTurnOn::Calo30BTag", "pt_Calo30inMJMatchBtagTandP_jetID_TurnOn"),
-#    ("jetTurnOn::Calo45BTag", "pt_Calo45inMJMatchBtagTandP_jetID_TurnOn"),
-#    ("jetTurnOn::Calo90BTag", "pt_Calo90inMJMatchBtagTandP_jetID_TurnOn"),
-#    ("jetTurnOn::Calo100BTag", "pt_Calo100inMJMatchBtagTandP_jetID_TurnOn"),
-#    ("jetTurnOn::PF30BTag",   "pt_PF30inMJMatchBtagTandP_jetID_TurnOn"),
-#    ("jetTurnOn::PF45BTag",   "pt_PF45inMJMatchBtagTandP_jetID_TurnOn"),
-#    ("jetTurnOn::PF90BTag",   "pt_PF90inMJMatchBtagTandP_jetID_TurnOn"),
-#    ("jetTurnOn::PF100BTag",  "pt_PF100inMJMatchBtagTandP_jetID_TurnOn"),
-#    ("jetTurnOn::L1100BTag",   "pt_L12b100inMJMatchBtagTandP_jetID_TurnOn"),
-#  };
-#
-#  //
-#  //  BTag Emulator
-#  //
-#  BTagConfig = {
-#    ("bTagTurnOn::CaloCSV",               "pt_CaloCSVinMJMatchBtagTandP_jetID_TurnOn"),
-#    ("bTagTurnOn::CaloCSV2b100",          "pt_CaloCSVinMJ2b100MatchBtagTandP_jetID_TurnOn"),
-#    ("bTagTurnOn::Calo100BTag",           "pt_Calo100inMJMatchBtagTandP_jetID_TurnOn"),
-#    ("bTagTurnOn::CaloCSVloose",               "pt_CaloCSVinMJMatchBlooseTandP_jetID_TurnOn"),
-#    ("bTagTurnOn::CaloCSV2b100loose",          "pt_CaloCSVinMJ2b100MatchBlooseTandP_jetID_TurnOn"),
-#    //{bTagTurnOn::Calo100BTagloose,           {{"pt_Calo100inMJMatchBlooseTandP_jetID_TurnOn", fileName2016}} },
-#  };
-#
-#  //
-#  // HT Config
-#  //
-#  HTConfig = {
-#    {hTTurnOn::L1ORAll_4j_3b,       {{"hT30_L1ORAll_TurnOn_4Jet2Tag", fileName2016}} },
-#    //{hTTurnOn::L1ORAll_4j_3b,       {{"hT30_L1ORAll_TurnOn",      fileName2016}} },
-#    {hTTurnOn::L1ORAll_2j_2j_3b,    {{"hT30_L1ORAll_2j_2j_3b_TurnOn_4Jet2Tag",      fileName2016}} },
-#    //{hTTurnOn::L1ORAll_2j_2j_3b,    {{"hT30_L1ORAll_2j_2j_3b_TurnOn",      fileName2016}} },
-#  };
+        print("TrigEmulatorTool::configuring for 2016 ")
 
-        pass
+        fileName2016 = "base_class/trigger_emulator/data/haddOutput_All_Data2016_11Nov_fittedTurnOns.yaml"
+        if self.m_useMCTurnOns:
+            fileName2016 = "base_class/trigger_emulator/data/haddOutput_All_MC2016_11Nov_fittedTurnOns.yaml"
+        print("TrigEmulatorTool::using file \t ",fileName2016)
+
+        with open(fileName2016, 'r') as infile:
+            data = yaml.safe_load(infile)
+
+
+        JetConfigs = [("jetTurnOn::Calo30BTag", "pt_Calo30inMJMatchBtagTandP_jetID_TurnOn"),
+                      ("jetTurnOn::Calo45BTag", "pt_Calo45inMJMatchBtagTandP_jetID_TurnOn"),
+                      ("jetTurnOn::Calo90BTag", "pt_Calo90inMJMatchBtagTandP_jetID_TurnOn"),
+                      ("jetTurnOn::Calo100BTag", "pt_Calo100inMJMatchBtagTandP_jetID_TurnOn"),
+                      ("jetTurnOn::PF30BTag",   "pt_PF30inMJMatchBtagTandP_jetID_TurnOn"),
+                      ("jetTurnOn::PF45BTag",   "pt_PF45inMJMatchBtagTandP_jetID_TurnOn"),
+                      ("jetTurnOn::PF90BTag",   "pt_PF90inMJMatchBtagTandP_jetID_TurnOn"),
+                      ("jetTurnOn::PF100BTag",  "pt_PF100inMJMatchBtagTandP_jetID_TurnOn"),
+                      ("jetTurnOn::L1100BTag",   "pt_L12b100inMJMatchBtagTandP_jetID_TurnOn"),
+                      ]
+
+        for _config in JetConfigs:
+            self.m_JetConfig[_config[0]]     = data[_config[1]]
+
+        BTagConfigs = [("bTagTurnOn::CaloCSV",               "pt_CaloCSVinMJMatchBtagTandP_jetID_TurnOn"),
+                      ("bTagTurnOn::CaloCSV2b100",          "pt_CaloCSVinMJ2b100MatchBtagTandP_jetID_TurnOn"),
+                      ("bTagTurnOn::Calo100BTag",           "pt_Calo100inMJMatchBtagTandP_jetID_TurnOn"),
+                      ("bTagTurnOn::CaloCSVloose",               "pt_CaloCSVinMJMatchBlooseTandP_jetID_TurnOn"),
+                      ("bTagTurnOn::CaloCSV2b100loose",          "pt_CaloCSVinMJ2b100MatchBlooseTandP_jetID_TurnOn"),
+                      ]
+
+        for _config in BTagConfigs:
+            self.m_BTagConfig[_config[0]]     = data[_config[1]]
+
+        HTConfigs = [("hTTurnOn::L1ORAll_4j_3b",     "hT30_L1ORAll_TurnOn_4Jet2Tag"),
+                     ("hTTurnOn::L1ORAll_2j_2j_3b",  "hT30_L1ORAll_2j_2j_3b_TurnOn_4Jet2Tag"),
+                     ]
+
+        for _config in HTConfigs:
+            self.m_HTConfig[_config[0]]     = data[_config[1]]
+
 
     # getRandWeights method needs to be implemented
     def getRandWeights(self, offline_btagged_jet_pts, setSeed, seed):

@@ -38,9 +38,11 @@ class trigger_emulator_TestCase(unittest.TestCase):
 
         self.emulator_test_tool_data_2018 = TrigEmulatorTool("Test", year="2018")
         self.emulator_test_tool_data_2017 = TrigEmulatorTool("Test", year="2017")
+        self.emulator_test_tool_data_2016 = TrigEmulatorTool("Test", year="2016")
 
         self.emulator_test_tool_mc_2018 = TrigEmulatorTool("Test", year="2018", useMCTurnOns=True)
         self.emulator_test_tool_mc_2017 = TrigEmulatorTool("Test", year="2017", useMCTurnOns=True)
+        self.emulator_test_tool_mc_2016 = TrigEmulatorTool("Test", year="2016", useMCTurnOns=True)
 
 
         self.debug = False
