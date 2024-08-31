@@ -1,22 +1,14 @@
 import unittest
 #import argparse
-#import yaml
+import yaml
 #from parser import wrapper
 #import sys
 
-from ..trigger_emulator.HLTBTagEmulator import HLTBTagEmulator
-from ..trigger_emulator.HLTHtEmulator   import HLTHtEmulator
-from ..trigger_emulator.HLTJetEmulator  import HLTJetEmulator
-from ..trigger_emulator.TrigEmulator    import TrigEmulator
-
-#import numpy as np
-#import awkward as ak
-#from coffea.nanoevents.methods import vector
-#import time
-#from copy import copy
-#import os
-
-# sys.path.insert(0, os.getcwd())
+from ..trigger_emulator.HLTBTagEmulator    import HLTBTagEmulator
+from ..trigger_emulator.HLTHtEmulator      import HLTHtEmulator
+from ..trigger_emulator.HLTJetEmulator     import HLTJetEmulator
+from ..trigger_emulator.TrigEmulator       import TrigEmulator
+from ..trigger_emulator.TrigEmulatorTool   import TrigEmulatorTool
 
 
 
@@ -42,6 +34,10 @@ class trigger_emulator_TestCase(unittest.TestCase):
 
         # Instantiate the trigger emulator
         self.emulator_test = TrigEmulator(ht_thresholds_test, jet_thresholds_test, jet_multiplicities_test, btag_op_points_test, btag_multiplicities_test)
+
+
+        self.emulator_test_tool = TrigEmulatorTool("Test")
+
 
         self.debug = False
 
@@ -88,6 +84,13 @@ class trigger_emulator_TestCase(unittest.TestCase):
         weight = self.emulator_test.calcWeight(offline_jet_pts, offline_btagged_jet_pts, ht)
         print(weight)  # Output: The calculated weight as a float
 
+
+    def test_yaml(self):
+        input_file_name = "base_class/trigger_emulator/data/haddOutput_All_MC2016_11Nov_fittedTurnOns.yaml"
+        with open(input_file_name, 'r') as infile:
+            data = yaml.safe_load(infile)
+
+        #print(data.keys())
 
 
 if __name__ == '__main__':
