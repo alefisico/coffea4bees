@@ -121,5 +121,10 @@ def convert_ROOT_file_to_yaml(input_file_name, out_dir="base_class/trigger_emula
     save_to_yaml(data_dict, f'{out_dir}/{input_file_name.replace("root","yaml")}')
 
 
-input_file_name = "haddOutput_All_MC2018_11Nov_fittedTurnOns.root"
-convert_ROOT_file_to_yaml(input_file_name)
+input_file_names = ["haddOutput_All_MC2018_11Nov_fittedTurnOns.root",
+                    "haddOutput_All_Data2018_11Nov_fittedTurnOns.root",
+                    ]
+
+for input_file_name in input_file_names:
+    print(f"Converting {input_file_name}")
+    convert_ROOT_file_to_yaml(input_file_name)
