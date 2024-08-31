@@ -4,10 +4,11 @@ import yaml
 from ..trigger_emulator.HLTBTagEmulator    import HLTBTagEmulator
 from ..trigger_emulator.HLTHtEmulator      import HLTHtEmulator
 from ..trigger_emulator.HLTJetEmulator     import HLTJetEmulator
+from ..trigger_emulator.TrigEmulator       import TrigEmulator
 
 
 class TrigEmulatorTool:
-    def __init__(self, name, nToys=1000, year="2018", debug=False, useMCTurnOns=False):
+    def __init__(self, name, nToys=1000, year="2018", debug=False, useMCTurnOns=False, is3b=False):
         self.m_name = name
         self.m_nToys = nToys
         self.m_debug = debug
@@ -17,22 +18,31 @@ class TrigEmulatorTool:
         self.m_HTConfig = {}
 
         self.m_Jet = {}
-        self.m_Ht = {}
+        self.m_Ht  = {}
         self.m_BTag = {}
 
+        self.m_emulatedTrigMenu  = {}
+        self.m_emulatedDecisions = {}
+        self.m_emulatedWeights   = {}
+
         if year == "2018":
-            self.config2018()
+            self.config2018Filters()
+            self.config2018Menu(is3b)
+
+
         elif year == "2017":
-            self.config2017()
+            self.config2017Filters()
+            self.config2017Menu(is3b)
+
+
         elif year == "2016":
-            self.config2016()
+            self.config2016Filters()
+            self.config2016Menu(is3b)
+
+
         else:
             print(f"TrigEmulatorTool::ERROR year has to be 2018, 2017 or 2016. Not {year}")
 
-        if self.m_debug:
-            print("TrigEmulatorTool::Making Ht Thresholds")
-        for trig_name, trig_data in self.m_HTConfig.items():
-            self.m_Ht[trig_name] = HLTHtEmulator(high_bin_edge=trig_data["high_bin_edge"] , eff=trig_data["eff"], eff_err=trig_data["eff_err"])
 
 
 
@@ -59,14 +69,14 @@ class TrigEmulatorTool:
         assert len(TagNames) == len(TagMults)
         assert len(TagNames) < 3
 
-        HTCuts = [self.m_Ht[ht] for ht in HTNames if ht in self.m_Ht]
-        JetPtCuts = [self.m_Jet[jt] for jt in JetNames if jt in self.m_Jet]
+        HTCuts     = [self.m_Ht[ht] for ht in HTNames if ht in self.m_Ht]
+        JetPtCuts  = [self.m_Jet[jt] for jt in JetNames if jt in self.m_Jet]
         BTagPtCuts = [self.m_BTag[bt] for bt in TagNames if bt in self.m_BTag]
 
         if self.m_debug:
             print(f"TrigEmulatorTool::AddTrig inserting {trigName}")
 
-        self.m_emulatedTrigMenu[trigName] = TrigEmulator(trigName, HTCuts, JetPtCuts, JetMults, BTagPtCuts, TagMults, self.m_nToys)
+        self.m_emulatedTrigMenu[trigName] = TrigEmulator(HTCuts, JetPtCuts, JetMults, BTagPtCuts, TagMults, nToys=self.m_nToys)
         self.m_emulatedDecisions[trigName] = False
         self.m_emulatedWeights[trigName] = 0.0
 
@@ -117,17 +127,13 @@ class TrigEmulatorTool:
 
         return float(nPass) / self.m_nToys
 
-    def Fill(self, offline_jet_pts, offline_btagged_jet_pts, ht):
-        for trigEmulator in self.m_emulatedTrigMenu.values():
-            trigEmulator.Fill(offline_jet_pts, offline_btagged_jet_pts, ht)
-
     def dumpResults(self):
         for trigName, trigEmulator in self.m_emulatedTrigMenu.items():
             print(trigName, end=" ")
             trigEmulator.dumpResults()
 
 
-    def config2018(self):
+    def config2018Filters(self):
         print("TrigEmulatorTool::configuring for 2018 ")
 
         fileName2018 = "base_class/trigger_emulator/data/haddOutput_All_Data2018_11Nov_fittedTurnOns.yaml"
@@ -185,8 +191,43 @@ class TrigEmulatorTool:
             self.m_Ht[_config[0]] = HLTHtEmulator(high_bin_edge=data[_config[1]]["high_bin_edge"] , eff=data[_config[1]]["eff"], eff_err=data[_config[1]]["eff_err"])
 
 
+    def config2018Menu(self, is3b):
 
-    def config2017(self):
+        if is3b:
+            print("Configuring 2018 menu for 3b events")
+
+            self.AddTrig("EMU_4j_3b",
+                         HTNames=["hTTurnOn::L1ORAll_Ht330_4j_3b","hTTurnOn::PFHt330"],
+	    	         JetNames=["jetTurnOn::PF30BTag","jetTurnOn::PF75BTag","jetTurnOn::PF60BTag","jetTurnOn::PF45BTag","jetTurnOn::PF40BTag"],
+                         JetMults=[4,1,2,3,4],
+	    	         TagNames=["bTagTurnOn::CaloDeepCSVloose", "bTagTurnOn::PFDeepCSVloose"],TagMults=[2, 3]
+              		 );
+
+            self.AddTrig("EMU_2b",
+		         JetNames=["jetTurnOn::L1112BTag", "jetTurnOn::PF116BTag", "jetTurnOn::PF116DrBTag"], JetMults=[2, 2, 1],
+		         TagNames=["bTagTurnOn::Calo100BTagloose"],TagMults=[2],
+              		 );
+
+
+        else:
+            print("Configuring 2018 menu for 4b events")
+
+            self.AddTrig("EMU_4j_3b",
+	    	         HTNames=["hTTurnOn::L1ORAll_Ht330_4j_3b","hTTurnOn::PFHt330"],
+	    	         JetNames=["jetTurnOn::PF30BTag","jetTurnOn::PF75BTag","jetTurnOn::PF60BTag","jetTurnOn::PF45BTag","jetTurnOn::PF40BTag"],
+                         JetMults=[4,1,2,3,4],
+	    	         TagNames=["bTagTurnOn::CaloDeepCSV", "bTagTurnOn::PFDeepCSV"],TagMults=[2, 3]
+	    	         )
+
+            self.AddTrig("EMU_2b",
+		         JetNames=["jetTurnOn::L1112BTag", "jetTurnOn::PF116BTag", "jetTurnOn::PF116DrBTag"], JetMults=[2, 2, 1],
+		         TagNames=["bTagTurnOn::Calo100BTag"],TagMults=[2],
+		         )
+
+
+
+
+    def config2017Filters(self):
         print("TrigEmulatorTool::configuring for 2017 ")
 
         fileName2017 = "base_class/trigger_emulator/data/haddOutput_All_Data2017_11Nov_fittedTurnOns.yaml"
@@ -239,8 +280,44 @@ class TrigEmulatorTool:
         for _config in HTConfigs:
             self.m_Ht[_config[0]] = HLTHtEmulator(high_bin_edge=data[_config[1]]["high_bin_edge"] , eff=data[_config[1]]["eff"], eff_err=data[_config[1]]["eff_err"])
 
+    def config2017Menu(self, is3b):
 
-    def config2016(self):
+        if is3b:
+            print("Configuring 2017 menu for 3b events")
+
+#
+#
+#self.AddTrig("EMU_4j_3b",
+#			   //{hTTurnOn::L1ORAll_Ht300_4j_3b,hTTurnOn::CaloHt300,hTTurnOn::PFHt300},
+#			   {hTTurnOn::L1ORAll_Ht300_4j_3b,hTTurnOn::PFHt300},
+#			   {jetTurnOn::PF30BTag,jetTurnOn::PF75BTag,jetTurnOn::PF60BTag,jetTurnOn::PF45BTag,jetTurnOn::PF40BTag},{4,1,2,3,4},
+#			   {bTagTurnOn::CaloCSVloose, bTagTurnOn::PFCSVloose},{2,3}
+#			   );
+#
+#	self.AddTrig("EMU_2b",
+#			   {jetTurnOn::L1100BTag, jetTurnOn::PF100BTag, jetTurnOn::PF100DrBTag}, {2, 2, 1},
+#			   {bTagTurnOn::Calo100BTagloose},{2}
+#			   );
+
+
+
+        else:
+            print("Configuring 2017 menu for 4b events")
+
+#self.AddTrig("EMU_4j_3b",
+#			   //{hTTurnOn::L1ORAll_Ht300_4j_3b,hTTurnOn::CaloHt300,hTTurnOn::PFHt300},
+#			   {hTTurnOn::L1ORAll_Ht300_4j_3b,hTTurnOn::PFHt300},
+#			   {jetTurnOn::PF30BTag,jetTurnOn::PF75BTag,jetTurnOn::PF60BTag,jetTurnOn::PF45BTag,jetTurnOn::PF40BTag},{4,1,2,3,4},
+#			   {bTagTurnOn::CaloCSV, bTagTurnOn::PFCSV},{2,3}
+#			   );
+#
+#	self.AddTrig("EMU_2b",
+#			   {jetTurnOn::L1100BTag, jetTurnOn::PF100BTag, jetTurnOn::PF100DrBTag}, {2, 2, 1},
+#			   {bTagTurnOn::Calo100BTag},{2} // Should multiply these together...
+#			   );
+
+
+    def config2016Filters(self):
         print("TrigEmulatorTool::configuring for 2016 ")
 
         fileName2016 = "base_class/trigger_emulator/data/haddOutput_All_Data2016_11Nov_fittedTurnOns.yaml"
@@ -282,6 +359,49 @@ class TrigEmulatorTool:
 
         for _config in HTConfigs:
             self.m_Ht[_config[0]] = HLTHtEmulator(high_bin_edge=data[_config[1]]["high_bin_edge"] , eff=data[_config[1]]["eff"], eff_err=data[_config[1]]["eff_err"])
+
+    def config2016Menu(self, is3b):
+
+        if is3b:
+            print("Configuring 2016 menu for 3b events")
+
+#
+#self.AddTrig("EMU_4j_3b",
+#			   {hTTurnOn::L1ORAll_4j_3b},
+#			   {jetTurnOn::PF45BTag},{4},
+#			   {bTagTurnOn::CaloCSVloose},{3});
+#
+#	self.AddTrig("EMU_2b",
+#			   {jetTurnOn::L1100BTag,    jetTurnOn::PF100BTag}, {2, 2},
+#			   {bTagTurnOn::Calo100BTag, bTagTurnOn::CaloCSV2b100loose},{2, 2});
+#
+#	self.AddTrig("EMU_2j_2j_3b",
+#			   {hTTurnOn::L1ORAll_2j_2j_3b},
+#			   //{jetTurnOn::Calo30BTag,jetTurnOn::Calo90BTag,jetTurnOn::PF30BTag,jetTurnOn::PF90BTag},{4,2,4,2},
+#			   {jetTurnOn::Calo90BTag,jetTurnOn::PF30BTag,jetTurnOn::PF90BTag},{2,4,2},
+#			   {bTagTurnOn::CaloCSVloose},{3});
+
+
+
+        else:
+            print("Configuring 2016 menu for 4b events")
+
+#self.AddTrig("EMU_4j_3b",
+#			   {hTTurnOn::L1ORAll_4j_3b},
+#			   {jetTurnOn::PF45BTag},{4},
+#			   {bTagTurnOn::CaloCSV},{3});
+#
+#	self.AddTrig("EMU_2b",
+#			   {jetTurnOn::L1100BTag,    jetTurnOn::PF100BTag}, {2, 2},
+#			   {bTagTurnOn::Calo100BTag, bTagTurnOn::CaloCSV2b100},{2, 2});
+#
+#	self.AddTrig("EMU_2j_2j_3b",
+#			   {hTTurnOn::L1ORAll_2j_2j_3b},
+#			   //{jetTurnOn::Calo30BTag,jetTurnOn::Calo90BTag,jetTurnOn::PF30BTag,jetTurnOn::PF90BTag},{4,2,4,2},
+#			   {jetTurnOn::Calo90BTag,jetTurnOn::PF30BTag,jetTurnOn::PF90BTag},{2,4,2},
+#			   {bTagTurnOn::CaloCSV},{3});
+#
+
 
 
 
