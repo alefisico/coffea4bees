@@ -209,56 +209,48 @@ class TrigEmulatorTool:
         with open(fileName2017, 'r') as infile:
             data = yaml.safe_load(infile)
 
-#  JetConfig = {
-#    {jetTurnOn::PF30BTag,                   {{"pt_s_PF30inMJMatchBtagTandP_jetID_TurnOn",                     fileName2017}} },
-#    {jetTurnOn::PF40BTag,                   {{"pt_s_PF40inMJMatchBtagTandP_jetID_TurnOn",                     fileName2017}} },
-#    {jetTurnOn::PF45BTag,                   {{"pt_s_PF45inMJMatchBtagTandP_jetID_TurnOn",                     fileName2017}} },
-#    {jetTurnOn::PF60BTag,                   {{"pt_PF60inMJMatchBtagTandP_jetID_TurnOn",                      fileName2017}} },
-#    {jetTurnOn::PF75BTag,                   {{"pt_PF75inMJMatchBtagTandP_jetID_TurnOn",                      fileName2017}} },
-#    {jetTurnOn::PF100BTag,                  {{"pt_PF100inMJMatchBtagTandP_jetID_TurnOn",                     fileName2017}} },
-#    {jetTurnOn::PF100DrBTag,                {{"pt_PF100DrfilterMatchBtagTandP_jetID_TurnOn",                  fileName2017}} },
-#
-#    {jetTurnOn::L1100BTag,   {{"pt_L12b100inMJTandP_jetID_TurnOn", fileName2017}} },
-#    {jetTurnOn::Calo100BTag, {{"pt_Calo100inMJMatchBtagTandP_jetID_TurnOn", fileName2017}} },
-#
-#    {jetTurnOn::PF30,                   {{"pt_s_PF30inMJTandP_jetID_TurnOn",                     fileName2017}} },
-#    {jetTurnOn::PF40,                   {{"pt_s_PF40inMJTandP_jetID_TurnOn",                     fileName2017}} },
-#    {jetTurnOn::PF45,                   {{"pt_s_PF45inMJTandP_jetID_TurnOn",                     fileName2017}} },
-#    {jetTurnOn::PF60,                   {{"pt_PF60inMJTandP_jetID_TurnOn",                       fileName2017}} },
-#    {jetTurnOn::PF75,                   {{"pt_PF75inMJTandP_jetID_TurnOn",                       fileName2017}} },
-#  };
-#
-#
-#  //
-#  //  BTag Emulator
-#  //
-#  BTagConfig = {
-#    {bTagTurnOn::PFCSV,                 {{"pt_PFCSVinMJMatchBtagTandP_jetID_TurnOn",               fileName2017}} },
-#    {bTagTurnOn::CaloCSV,               {{"pt_CaloCSVinMJMatchBtagTandP_jetID_TurnOn",             fileName2017}} },
-#    {bTagTurnOn::CaloCSV2b100,          {{"pt_CaloCSVinMJ2b100MatchBtagTandP_jetID_TurnOn",        fileName2017}} },
-#    {bTagTurnOn::Calo100BTag,           {{"pt_Calo100ANDCaloCSVinMJMatchBtagTandP_jetID_TurnOn",             fileName2017}} },
-#
-#
-#    {bTagTurnOn::PFCSVloose,                 {{"pt_PFCSVinMJMatchBlooseTandP_jetID_TurnOn",               fileName2017}} },
-#    {bTagTurnOn::CaloCSVloose,               {{"pt_CaloCSVinMJMatchBlooseTandP_jetID_TurnOn",             fileName2017}} },
-#    {bTagTurnOn::CaloCSV2b100loose,          {{"pt_CaloCSVinMJ2b100MatchBlooseTandP_jetID_TurnOn",        fileName2017}} },
-#    {bTagTurnOn::Calo100BTagloose,           {{"pt_Calo100ANDCaloCSVinMJMatchBlooseTandP_jetID_TurnOn",             fileName2017}} },
-#
-#  };
-#
-#  //
-#  // Ht Config
-#  //
-#  HTConfig = {
-#    //{hTTurnOn::L1ORAll_Ht300_4j_3b,       {{"hT30_L1ORAll_TurnOn",      fileName2017}} },
-#    {hTTurnOn::L1ORAll_Ht300_4j_3b,       {{"hT30_L1ORAll_TurnOn_4Jet2Tag", fileName2017}} },
-#    {hTTurnOn::CaloHt300,                 {{"hT30_CaloHt300_TurnOn",    fileName2017}} },
-#    {hTTurnOn::PFHt300,                   {{"hT30_PFHt300_TurnOn",      fileName2017}} },
-#  };
+        JetConfigs = [("jetTurnOn::PF30BTag",     "pt_s_PF30inMJMatchBtagTandP_jetID_TurnOn"),
+                      ("jetTurnOn::PF40BTag",     "pt_s_PF40inMJMatchBtagTandP_jetID_TurnOn"),
+                      ("jetTurnOn::PF45BTag",     "pt_s_PF45inMJMatchBtagTandP_jetID_TurnOn"),
+                      ("jetTurnOn::PF60BTag",     "pt_PF60inMJMatchBtagTandP_jetID_TurnOn"),
+                      ("jetTurnOn::PF75BTag",     "pt_PF75inMJMatchBtagTandP_jetID_TurnOn"),
+                      ("jetTurnOn::PF100BTag",    "pt_PF100inMJMatchBtagTandP_jetID_TurnOn"),
+                      ("jetTurnOn::PF100DrBTag",  "pt_PF100DrfilterMatchBtagTandP_jetID_TurnOn"),
+                      ("jetTurnOn::L1100BTag",    "pt_L12b100inMJTandP_jetID_TurnOn"),
+                      ("jetTurnOn::Calo100BTag",  "pt_Calo100inMJMatchBtagTandP_jetID_TurnOn"),
+                      ("jetTurnOn::PF30",         "pt_s_PF30inMJTandP_jetID_TurnOn"),
+                      ("jetTurnOn::PF40",         "pt_s_PF40inMJTandP_jetID_TurnOn"),
+                      ("jetTurnOn::PF45",         "pt_s_PF45inMJTandP_jetID_TurnOn"),
+                      ("jetTurnOn::PF60",         "pt_PF60inMJTandP_jetID_TurnOn"),
+                      ("jetTurnOn::PF75",         "pt_PF75inMJTandP_jetID_TurnOn"),
+                      ]
+
+        for _config in JetConfigs:
+            self.m_JetConfig[_config[0]]     = data[_config[1]]
 
 
+        BTagConfigs = [("bTagTurnOn::PFCSV",                 "pt_PFCSVinMJMatchBtagTandP_jetID_TurnOn"),
+                       ("bTagTurnOn::CaloCSV",               "pt_CaloCSVinMJMatchBtagTandP_jetID_TurnOn"),
+                       ("bTagTurnOn::CaloCSV2b100",          "pt_CaloCSVinMJ2b100MatchBtagTandP_jetID_TurnOn"),
+                       ("bTagTurnOn::Calo100BTag",           "pt_Calo100ANDCaloCSVinMJMatchBtagTandP_jetID_TurnOn"),
+                       ("bTagTurnOn::PFCSVloose",                 "pt_PFCSVinMJMatchBlooseTandP_jetID_TurnOn"),
+                       ("bTagTurnOn::CaloCSVloose",               "pt_CaloCSVinMJMatchBlooseTandP_jetID_TurnOn"),
+                       ("bTagTurnOn::CaloCSV2b100loose",          "pt_CaloCSVinMJ2b100MatchBlooseTandP_jetID_TurnOn"),
+                       ("bTagTurnOn::Calo100BTagloose",           "pt_Calo100ANDCaloCSVinMJMatchBlooseTandP_jetID_TurnOn"),
+                       ]
 
-        pass
+        for _config in BTagConfigs:
+            self.m_BTagConfig[_config[0]]     = data[_config[1]]
+
+
+        HTConfigs = [("hTTurnOn::L1ORAll_Ht300_4j_3b",       "hT30_L1ORAll_TurnOn_4Jet2Tag"),
+                     ("hTTurnOn::CaloHt300",                 "hT30_CaloHt300_TurnOn"),
+                     ("hTTurnOn::PFHt300",                   "hT30_PFHt300_TurnOn"),
+                     ]
+
+        for _config in HTConfigs:
+            self.m_HTConfig[_config[0]]     = data[_config[1]]
+
 
     def config2016(self):
         # Configuration for 2016
@@ -270,29 +262,26 @@ class TrigEmulatorTool:
 #  //  Jet Emulator
 #  //
 #  JetConfig = {
-#    {jetTurnOn::Calo30BTag, {{"pt_Calo30inMJMatchBtagTandP_jetID_TurnOn", fileName2016}} },
-#    {jetTurnOn::Calo45BTag, {{"pt_Calo45inMJMatchBtagTandP_jetID_TurnOn", fileName2016}} },
-#    {jetTurnOn::Calo90BTag, {{"pt_Calo90inMJMatchBtagTandP_jetID_TurnOn", fileName2016}} },
-#    {jetTurnOn::Calo100BTag, {{"pt_Calo100inMJMatchBtagTandP_jetID_TurnOn", fileName2016}} },
-#
-#    {jetTurnOn::PF30BTag,   {{"pt_PF30inMJMatchBtagTandP_jetID_TurnOn",                     fileName2016}} },
-#    {jetTurnOn::PF45BTag,   {{"pt_PF45inMJMatchBtagTandP_jetID_TurnOn",                     fileName2016}} },
-#    {jetTurnOn::PF90BTag,   {{"pt_PF90inMJMatchBtagTandP_jetID_TurnOn",                       fileName2016}} },
-#    {jetTurnOn::PF100BTag,  {{"pt_PF100inMJMatchBtagTandP_jetID_TurnOn",                       fileName2016}} },
-#
-#    {jetTurnOn::L1100BTag,   {{"pt_L12b100inMJMatchBtagTandP_jetID_TurnOn", fileName2016}} },
+#    ("jetTurnOn::Calo30BTag", "pt_Calo30inMJMatchBtagTandP_jetID_TurnOn"),
+#    ("jetTurnOn::Calo45BTag", "pt_Calo45inMJMatchBtagTandP_jetID_TurnOn"),
+#    ("jetTurnOn::Calo90BTag", "pt_Calo90inMJMatchBtagTandP_jetID_TurnOn"),
+#    ("jetTurnOn::Calo100BTag", "pt_Calo100inMJMatchBtagTandP_jetID_TurnOn"),
+#    ("jetTurnOn::PF30BTag",   "pt_PF30inMJMatchBtagTandP_jetID_TurnOn"),
+#    ("jetTurnOn::PF45BTag",   "pt_PF45inMJMatchBtagTandP_jetID_TurnOn"),
+#    ("jetTurnOn::PF90BTag",   "pt_PF90inMJMatchBtagTandP_jetID_TurnOn"),
+#    ("jetTurnOn::PF100BTag",  "pt_PF100inMJMatchBtagTandP_jetID_TurnOn"),
+#    ("jetTurnOn::L1100BTag",   "pt_L12b100inMJMatchBtagTandP_jetID_TurnOn"),
 #  };
 #
 #  //
 #  //  BTag Emulator
 #  //
 #  BTagConfig = {
-#    {bTagTurnOn::CaloCSV,               {{"pt_CaloCSVinMJMatchBtagTandP_jetID_TurnOn",             fileName2016}} },
-#    {bTagTurnOn::CaloCSV2b100,          {{"pt_CaloCSVinMJ2b100MatchBtagTandP_jetID_TurnOn",        fileName2016}} },
-#    {bTagTurnOn::Calo100BTag,           {{"pt_Calo100inMJMatchBtagTandP_jetID_TurnOn", fileName2016}} },
-#
-#    {bTagTurnOn::CaloCSVloose,               {{"pt_CaloCSVinMJMatchBlooseTandP_jetID_TurnOn",             fileName2016}} },
-#    {bTagTurnOn::CaloCSV2b100loose,          {{"pt_CaloCSVinMJ2b100MatchBlooseTandP_jetID_TurnOn",        fileName2016}} },
+#    ("bTagTurnOn::CaloCSV",               "pt_CaloCSVinMJMatchBtagTandP_jetID_TurnOn"),
+#    ("bTagTurnOn::CaloCSV2b100",          "pt_CaloCSVinMJ2b100MatchBtagTandP_jetID_TurnOn"),
+#    ("bTagTurnOn::Calo100BTag",           "pt_Calo100inMJMatchBtagTandP_jetID_TurnOn"),
+#    ("bTagTurnOn::CaloCSVloose",               "pt_CaloCSVinMJMatchBlooseTandP_jetID_TurnOn"),
+#    ("bTagTurnOn::CaloCSV2b100loose",          "pt_CaloCSVinMJ2b100MatchBlooseTandP_jetID_TurnOn"),
 #    //{bTagTurnOn::Calo100BTagloose,           {{"pt_Calo100inMJMatchBlooseTandP_jetID_TurnOn", fileName2016}} },
 #  };
 #
