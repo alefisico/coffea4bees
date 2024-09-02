@@ -11,28 +11,29 @@ def find_tops_kernel(events_jets, builder):
     """
 
     for jets in events_jets:
-        # print(f"jets.pt are {jets.pt}\n")
-        # print(f"jets.btagDeepFlavB are {jets.btagDeepFlavB}\n")
+        nJets = len(jets)
+
+        if nJets < 3: continue
 
         builder.begin_list()
-        nJets = len(jets)
+
+        # Pre-calculate sets for faster checks
+        valid_pair_indices = [(ib, ij) for ib in range(0, 3) for ij in range(2, nJets) if ib != ij]
+        valid_triplet_indices = [(ib, ij, il) for ib in range(0, 3) for ij in range(2, nJets) for il in range(2, nJets) if len({ib, ij, il}) == 3]
+
         for ib in range(0, 3):
             for ij in range(2, nJets):
-                if len({ib, ij}) < 2:
+                if (ib, ij) not in valid_pair_indices:
                     continue
-                #
-                # don't consider W pairs where j is more b-like than b.
-                #
+
                 if jets[ib].btagDeepFlavB < jets[ij].btagDeepFlavB:
                     continue
 
                 for il in range(2, nJets):
-                    if len({ib, ij, il}) < 3:
+                    if (ib, ij, il) not in valid_triplet_indices:
                         continue
 
-                    #
-                    # don't consider W pairs where l is more b-like than j.
-                    #
+                    # don't consider W pairs where j is more b-like than b.
                     if jets[ij].btagDeepFlavB < jets[il].btagDeepFlavB:
                         continue
 
@@ -45,7 +46,6 @@ def find_tops_kernel(events_jets, builder):
         builder.end_list()
 
     return builder
-
 
 def find_tops_kernel_slow(events_jets, builder):
     """Search for valid 4-lepton combinations from an array of events * leptons {charge, ...}
@@ -56,27 +56,29 @@ def find_tops_kernel_slow(events_jets, builder):
     (omitting permutations of the pairs)
     """
     for jets in events_jets:
-        builder.begin_list()
         nJets = len(jets)
+
+        if nJets < 3: continue
+
+        builder.begin_list()
+
+        # Pre-calculate sets for faster checks
+        valid_pair_indices = [(ib, ij) for ib in range(0, 3) for ij in range(2, nJets) if ib != ij]
+        valid_triplet_indices = [(ib, ij, il) for ib in range(0, 3) for ij in range(2, nJets) for il in range(2, nJets) if len({ib, ij, il}) == 3]
 
         for ib in range(0, 3):
             for ij in range(2, nJets):
-                if len({ib, ij}) < 2:
+                if (ib, ij) not in valid_pair_indices:
                     continue
 
-                #
-                # don't consider W pairs where j is more b-like than b.
-                #
                 if jets[ib].btagDeepFlavB < jets[ij].btagDeepFlavB:
                     continue
 
                 for il in range(2, nJets):
-                    if len({ib, ij, il}) < 3:
+                    if (ib, ij, il) not in valid_triplet_indices:
                         continue
 
-                    #
-                    # don't consider W pairs where l is more b-like than j.
-                    #
+                    # don't consider W pairs where j is more b-like than b.
                     if jets[ij].btagDeepFlavB < jets[il].btagDeepFlavB:
                         continue
 
@@ -89,7 +91,6 @@ def find_tops_kernel_slow(events_jets, builder):
         builder.end_list()
 
     return builder
-
 
 def find_tops(events_jets):
 
