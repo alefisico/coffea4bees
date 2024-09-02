@@ -18,7 +18,7 @@ from analysis.helpers.hist_templates import (
     TopCandHists,
     WCandHists,
 )
-from analysis.helpers.SvB_helpers import setSvBVars
+from analysis.helpers.SvB_helpers import setSvBVars, compute_SvB
 from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
 from analysis.helpers.selection_basic_4b import (
     apply_event_selection_4b,
@@ -227,7 +227,6 @@ class analysis(processor.ProcessorABC):
         # Event selection
         #
         event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year], self.isMixedData)
-
         #
         # Checking boosted selection (should change in the future)
         #
@@ -464,7 +463,8 @@ class analysis(processor.ProcessorABC):
         #
         selections.add("passPreSel", event.passPreSel)
         allcuts.append("passPreSel")
-        selev = event[selections.all(*allcuts)]
+        analysis_selections = selections.all(*allcuts)
+        selev = event[analysis_selections]
 
         #
         #  Calculate hT
@@ -513,7 +513,7 @@ class analysis(processor.ProcessorABC):
         notCanJet = notCanJet[notCanJet.selected_loose]
         notCanJet = notCanJet[ak.argsort(notCanJet.pt, axis=1, ascending=False)]
 
-        notCanJet["isSelJet"] = 1 * ( (notCanJet.pt > 40) & (np.abs(notCanJet.eta) < 2.4) )  # should have been defined as notCanJet.pt>=40, too late to fix this now...
+        notCanJet["isSelJet"] = 1 * ( (notCanJet.pt >= 40) & (np.abs(notCanJet.eta) < 2.4) )  
         selev["notCanJet_coffea"] = notCanJet
         selev["nNotCanJet"] = ak.num(selev.notCanJet_coffea)
 
@@ -521,8 +521,8 @@ class analysis(processor.ProcessorABC):
         # calculate pseudoTagWeight for threeTag events
         #
         all_weights = ['genweight', 'CMS_bbbb_resolved_ggf_triggerEffSF', f'CMS_pileup_{year_label}' ,'CMS_btag']
-        logging.debug( f"noJCM_noFVT partial {weights.partial_weight(include=all_weights)[ selections.all(*allcuts) ][:10]}" )
-        selev["weight_noJCM_noFvT"] = weights.partial_weight( include=all_weights )[selections.all(*allcuts)]
+        logging.debug( f"noJCM_noFVT partial {weights.partial_weight(include=all_weights)[ analysis_selections ][:10]}" )
+        selev["weight_noJCM_noFvT"] = weights.partial_weight( include=all_weights )[analysis_selections]
 
         if self.JCM:
             selev["Jet_untagged_loose"] = selev.Jet[ selev.Jet.selected & ~selev.Jet.tagged_loose ]
@@ -561,14 +561,14 @@ class analysis(processor.ProcessorABC):
                 else:
                     weight = ( pseudoTagWeight[selev.threeTag] * selev.FvT.FvT[selev.threeTag] )
                     tmp_weight = np.full(len(event), 1.0)
-                    tmp_weight[selections.all(*allcuts) & event.threeTag] = weight
+                    tmp_weight[analysis_selections & event.threeTag] = weight
                     weights.add("FvT", tmp_weight)
                     list_weight_names.append(f"FvT")
                     logging.debug( f"FvT {weights.partial_weight(include=['FvT'])[:10]}\n" )
 
             else:
                 tmp_weight = np.full(len(event), 1.0)
-                tmp_weight[selections.all(*allcuts)] = weight_noFvT
+                tmp_weight[analysis_selections] = weight_noFvT
                 weights.add("no_FvT", tmp_weight)
                 list_weight_names.append(f"no_FvT")
                 logging.debug( f"no_FvT {weights.partial_weight(include=['no_FvT'])[:10]}\n" )
@@ -648,35 +648,9 @@ class analysis(processor.ProcessorABC):
             else:
                 top_cands = find_tops(selev.selJet)
 
-            rec_top_cands = buildTop(selev.selJet, top_cands)
-
-            selev["top_cand"] = rec_top_cands[:, 0]
-            bReg_p = selev.top_cand.b * selev.top_cand.b.bRegCorr
-            selev["top_cand", "p"] = bReg_p + selev.top_cand.j + selev.top_cand.l
-
-            # mW, mt = 80.4, 173.0
-            selev["top_cand", "W"] = ak.zip( { "p": selev.top_cand.j + selev.top_cand.l,
-                                               "j": selev.top_cand.j,
-                                               "l": selev.top_cand.l, } )
-
-            selev["top_cand", "W", "pW"] = selev.top_cand.W.p * ( mW / selev.top_cand.W.p.mass )
-            selev["top_cand", "mbW"] = (bReg_p + selev.top_cand.W.pW).mass
-            selev["top_cand", "xt"] = (selev.top_cand.p.mass - mt) / ( 0.10 * selev.top_cand.p.mass )
-            selev["top_cand", "xWt"] = np.sqrt(selev.top_cand.xW**2 + selev.top_cand.xt**2)
-            selev["top_cand", "mbW"] = (bReg_p + selev.top_cand.W.pW).mass
-            selev["top_cand", "xWbW"] = np.sqrt( selev.top_cand.xW**2 + selev.top_cand.xbW**2 )
-
-            #
-            # after minimizing, the ttbar distribution is centered around ~(0.5, 0.25) with surfaces of constant density approximiately constant radii
-            #
-            selev["top_cand", "rWbW"] = np.sqrt( (selev.top_cand.xbW - 0.25) ** 2 + (selev.top_cand.xW - 0.5) ** 2 )
-
+            selev['top_cand'], _ = buildTop(selev.selJet, top_cands)
             selev["xbW_reco"] = selev.top_cand.xbW
             selev["xW_reco"] = selev.top_cand.xW
-
-            if "xbW" in selev.fields:  #### AGE: this should be temporary
-                selev["delta_xbW"] = selev.xbW - selev.xbW_reco
-                selev["delta_xW"] = selev.xW - selev.xW_reco
 
         if self.apply_FvT:
             quadJet["FvT_q_score"] = np.concatenate( ( np.reshape(np.array(selev.FvT.q_1234), (-1, 1)),
@@ -688,11 +662,11 @@ class analysis(processor.ProcessorABC):
 
             if (self.classifier_SvB is not None) | (self.classifier_SvB_MA is not None):
 
-                if "xbW_reco" not in selev.fields:
+                if "xbW_reco" not in selev.fields:  ### is this still needed? AGE
                     selev["xbW_reco"] = selev["xbW"]
                     selev["xW_reco"]  = selev["xW"]
 
-                self.compute_SvB(selev)
+                compute_SvB(selev)
 
             quadJet["SvB_q_score"] = np.concatenate( ( np.reshape(np.array(selev.SvB.q_1234), (-1, 1)),
                                                        np.reshape(np.array(selev.SvB.q_1324), (-1, 1)),
@@ -785,7 +759,7 @@ class analysis(processor.ProcessorABC):
         #
         if not (isMC or "mixed" in dataset) and self.blind:
             blind_sel = np.full( len(event), True)
-            blind_sel[ selections.all(*allcuts) ] = ~(selev["quadJet_selected"].SR & selev.fourTag)
+            blind_sel[ analysis_selections ] = ~(selev["quadJet_selected"].SR & selev.fourTag)
             selections.add( 'blind', blind_sel )
             allcuts.append( 'blind' )
             selev = selev[~(selev["quadJet_selected"].SR & selev.fourTag)]
@@ -794,29 +768,29 @@ class analysis(processor.ProcessorABC):
         # CutFlow
         #
         logging.debug(f"final weight {weights.weight()[:10]}")
-        selev["weight"] = weights.weight()[selections.all(*allcuts)]
+        selev["weight"] = weights.weight()[analysis_selections]
         if not shift_name:
             self._cutFlow.fill("passPreSel", selev)
             self._cutFlow.fill("passPreSel_woTrig", selev,
-                               wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[selections.all(*allcuts)] ))
+                               wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[analysis_selections] ))
             self._cutFlow.fill("passDiJetMass", selev[selev.passDiJetMass])
             self._cutFlow.fill("passDiJetMass_woTrig", selev[selev.passDiJetMass],
-                               wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[selections.all(*allcuts)][selev.passDiJetMass] ))
+                               wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[analysis_selections][selev.passDiJetMass] ))
             if self.run_SvB:
                 selev['passSR'] = selev.passDiJetMass & selev["quadJet_selected"].SR
                 self._cutFlow.fill( "SR", selev[selev.passSR] )
                 self._cutFlow.fill( "SR_woTrig", selev[selev.passSR],
-                               wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[selections.all(*allcuts)][selev.passSR] ))
+                               wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[analysis_selections][selev.passSR] ))
                 selev['passSB'] = selev.passDiJetMass & selev["quadJet_selected"].SB
                 self._cutFlow.fill( "SB", selev[(selev.passDiJetMass & selev["quadJet_selected"].SB)] )
                 self._cutFlow.fill( "SB_woTrig", selev[(selev.passDiJetMass & selev["quadJet_selected"].SB)],
-                               wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[selections.all(*allcuts)][selev.passSB] ))
+                               wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[analysis_selections][selev.passSB] ))
                 self._cutFlow.fill("passSvB", selev[selev.passSvB])
                 self._cutFlow.fill("passSvB_woTrig", selev[selev.passSvB],
-                               wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[selections.all(*allcuts)][selev.passSvB] ))
+                               wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[analysis_selections][selev.passSvB] ))
                 self._cutFlow.fill("failSvB", selev[selev.failSvB])
                 self._cutFlow.fill("failSvB_woTrig", selev[selev.failSvB],
-                               wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[selections.all(*allcuts)][selev.failSvB] ))
+                               wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[analysis_selections][selev.failSvB] ))
 
             self._cutFlow.addOutput(processOutput, event.metadata["dataset"])
 
@@ -947,12 +921,12 @@ class analysis(processor.ProcessorABC):
 
             friends = {}
             if self.make_classifier_input is not None:
-                _all_selection = selections.all(*allcuts)
+                _all_selection = analysis_selections
                 for k in ["ZZSR", "ZHSR", "HHSR", "SR", "SB"]:
                     selev[k] = selev["quadJet_selected"][k]
                 selev["nSelJets"] = ak.num(selev.selJet)
 
-                if "xbW_reco" in selev.fields:  #### AGE: this should be temporary
+                if "xbW_reco" in selev.fields:  
                     selev["xbW"] = selev["xbW_reco"]
                     selev["xW"]  = selev["xW_reco"]
 
@@ -995,7 +969,7 @@ class analysis(processor.ProcessorABC):
                                                       region=[2],  # SR / SB / Other
                                                       **dict((s, ...) for s in self.histCuts) )
 
-                    selev[f"weight_{ivar}"] = weights.weight(modifier=ivar)[ selections.all(*allcuts) ]
+                    selev[f"weight_{ivar}"] = weights.weight(modifier=ivar)[ analysis_selections ]
                     fill_SvB_ivar = Fill( process=processName, year=year, variation=ivar, weight=f"weight_{ivar}", )
 
                     logging.debug(f"{ivar} {selev['weight']}")
@@ -1018,102 +992,6 @@ class analysis(processor.ProcessorABC):
         elapsed = time.time() - tstart
         logging.debug(f"{chunk}{nEvent/elapsed:,.0f} events/s")
 
-    def compute_SvB(self, event):
-        # import torch on demand
-        import torch
-        import torch.nn.functional as F
-
-        n = len(event)
-
-        j = torch.zeros(n, 4, 4)
-        j[:, 0, :] = torch.tensor(event.canJet.pt)
-        j[:, 1, :] = torch.tensor(event.canJet.eta)
-        j[:, 2, :] = torch.tensor(event.canJet.phi)
-        j[:, 3, :] = torch.tensor(event.canJet.mass)
-
-        o = torch.zeros(n, 5, 8)
-        o[:, 0, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(event.notCanJet_coffea.pt,       target=8, clip=True) ), -1, ) )
-        o[:, 1, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(event.notCanJet_coffea.eta,      target=8, clip=True) ), -1, ) )
-        o[:, 2, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(event.notCanJet_coffea.phi,      target=8, clip=True) ), -1, ) )
-        o[:, 3, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(event.notCanJet_coffea.mass,     target=8, clip=True) ), -1, ) )
-        o[:, 4, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(event.notCanJet_coffea.isSelJet, target=8, clip=True) ), -1, ) )
-
-        a = torch.zeros(n, 4)
-        a[:, 0] = float(event.metadata["year"][3])
-        a[:, 1] = torch.tensor(event.nJet_selected)
-        a[:, 2] = torch.tensor(event.xW_reco)
-        a[:, 3] = torch.tensor(event.xbW_reco)
-
-        e = torch.tensor(event.event) % 3
-
-        for classifier in ["SvB", "SvB_MA"]:
-
-            if classifier == "SvB":
-                c_logits, q_logits = self.classifier_SvB(j, o, a, e)
-
-            if classifier == "SvB_MA":
-                c_logits, q_logits = self.classifier_SvB_MA(j, o, a, e)
-
-            c_score, q_score = ( F.softmax(c_logits, dim=-1).numpy(), F.softmax(q_logits, dim=-1).numpy(), )
-
-            # classes = [mj,tt,zz,zh,hh]
-            SvB = ak.zip( { "pmj": c_score[:, 0],
-                            "ptt": c_score[:, 1],
-                            "pzz": c_score[:, 2],
-                            "pzh": c_score[:, 3],
-                            "phh": c_score[:, 4],
-                            "q_1234": q_score[:, 0],
-                            "q_1324": q_score[:, 1],
-                            "q_1423": q_score[:, 2],
-                            }
-                          )
-
-            largest_name = np.array(["None", "ZZ", "ZH", "HH"])
-            SvB["ps"] = SvB.pzz + SvB.pzh + SvB.phh
-            SvB["passMinPs"] = (SvB.pzz > 0.01) | (SvB.pzh > 0.01) | (SvB.phh > 0.01)
-            SvB["zz"] = (SvB.pzz > SvB.pzh) & (SvB.pzz > SvB.phh)
-            SvB["zh"] = (SvB.pzh > SvB.pzz) & (SvB.pzh > SvB.phh)
-            SvB["hh"] = (SvB.phh > SvB.pzz) & (SvB.phh > SvB.pzh)
-            SvB["largest"] = largest_name[ SvB.passMinPs * ( 1 * SvB.zz + 2* SvB.zh + 3*SvB.hh ) ]
-
-            this_ps_zz = np.full(len(event), -1, dtype=float)
-            this_ps_zz[ SvB.zz ] = SvB.ps[ SvB.zz ]
-            this_ps_zz[ SvB.passMinPs == False ] = -2
-            SvB['ps_zz'] = this_ps_zz
-
-            this_ps_zh = np.full(len(event), -1, dtype=float)
-            this_ps_zh[ SvB.zh ] = SvB.ps[ SvB.zh ]
-            this_ps_zh[ SvB.passMinPs == False ] = -2
-            SvB['ps_zh'] = this_ps_zh
-
-            this_ps_hh = np.full(len(event), -1, dtype=float)
-            this_ps_hh[ SvB.hh ] = SvB.ps[ SvB.hh ]
-            this_ps_hh[ SvB.passMinPs == False ] = -2
-            SvB['ps_hh'] = this_ps_hh
-
-            SvB['tt_vs_mj'] = ( SvB.ptt / (SvB.ptt + SvB.pmj) )
-
-            if classifier in event.fields:
-                error = ~np.isclose(event[classifier].ps, SvB.ps, atol=1e-5, rtol=1e-3)
-                if np.any(error):
-                    delta = np.abs(event[classifier].ps - SvB.ps)
-                    worst = np.max(delta) == delta
-                    worst_event = event[worst][0]
-
-                    logging.warning( f"WARNING: Calculated {classifier} does not agree within tolerance for some events ({np.sum(error)}/{len(error)}) {delta[worst]}" )
-
-                    logging.warning("----------")
-
-                    for field in event[classifier].fields:
-                        logging.warning(f"{field} {worst_event[classifier][field]}")
-
-                    logging.warning("----------")
-
-                    for field in SvB.fields:
-                        logging.warning(f"{field} {SvB[worst][field]}")
-
-            # del event[classifier]
-            event[classifier] = SvB
 
     def postprocess(self, accumulator):
         return accumulator

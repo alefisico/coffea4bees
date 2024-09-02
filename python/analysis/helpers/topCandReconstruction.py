@@ -161,7 +161,6 @@ def dumpTopCandidateTestVectors(event, logging, chunk, nEvent):
 
 def buildTop(input_jets, top_cand_idx):
     """ Takes indices of jets and returns reconstructed top candidate
-
     """
     # Extract jets based on indices 
     b, j, l = input_jets[top_cand_idx["0"]], input_jets[top_cand_idx["1"]], input_jets[top_cand_idx["2"]]
@@ -172,7 +171,7 @@ def buildTop(input_jets, top_cand_idx):
     pW = W_p * (mW / W_p.mass)  
 
     bReg_p = b * b.bRegCorr
-    mbW = (bReg_p + W_p).mass
+    mbW = (bReg_p + pW).mass
 
     # smaller resolution term because there are fewer degrees of freedom. FWHM=25GeV, about the same as mW
     xbW = (mbW - mt) / (0.05 * mbW)
@@ -194,15 +193,16 @@ def buildTop(input_jets, top_cand_idx):
     })
 
     # Sort and select the best candidate
-    rec_top_cands = rec_top_cands[ak.argsort(rec_top_cands.xW ** 2 + rec_top_cands.xbW ** 2, axis=1, ascending=True)][:, 0]
+    rec_top_cands = rec_top_cands[ak.argsort(rec_top_cands.xW ** 2 + rec_top_cands.xbW ** 2, axis=1, ascending=True)]
 
-    rec_top_cands["p"] = rec_top_cands.bReg_p + rec_top_cands.j + rec_top_cands.l
-    rec_top_cands["xt"] = (rec_top_cands.p.mass - mt) / (0.10 * rec_top_cands.p.mass)
-    rec_top_cands["xWt"] = np.sqrt(rec_top_cands.xW ** 2 + rec_top_cands.xt ** 2)
-    rec_top_cands["xWbW"] = np.sqrt(rec_top_cands.xW ** 2 + rec_top_cands.xbW ** 2)
+    top_cand = rec_top_cands[:,0]
+    top_cand["p"] = top_cand.bReg_p + top_cand.j + top_cand.l
+    top_cand["xt"] = (top_cand.p.mass - mt) / (0.10 * top_cand.p.mass)
+    top_cand["xWt"] = np.sqrt(top_cand.xW ** 2 + top_cand.xt ** 2)
+    top_cand["xWbW"] = np.sqrt(top_cand.xW ** 2 + top_cand.xbW ** 2)
     # after minimizing, the ttbar distribution is centered around ~(0.5, 0.25) with surfaces of constant density approximiately constant radii
-    rec_top_cands["rWbW"] = np.sqrt((rec_top_cands.xbW - 0.25) ** 2 + (rec_top_cands.xW - 0.5) ** 2)
-    rec_top_cands["xbW_reco"] = rec_top_cands.xbW
-    rec_top_cands["xW_reco"] = rec_top_cands.xW
+    top_cand["rWbW"] = np.sqrt((top_cand.xbW - 0.25) ** 2 + (top_cand.xW - 0.5) ** 2)
+    top_cand["xbW_reco"] = top_cand.xbW
+    top_cand["xW_reco"] = top_cand.xW
 
-    return rec_top_cands
+    return top_cand, rec_top_cands
