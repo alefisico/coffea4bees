@@ -6,6 +6,7 @@ class HLTHtEmulator:
         self.m_eff = eff
         self.m_effErr = eff_err
         self.m_rand = np.random.default_rng()  # Initialize a random number generator
+        self.m_nBins = len(self.m_highBinEdge)
 
     def passHt(self, ht, seedOffset=1.0, smearFactor=0.0):
         # Optionally set the seed, similar to the C++ code (commented out here)
@@ -21,7 +22,7 @@ class HLTHtEmulator:
         eff = -99
         effErr = -99
 
-        for iBin in range(len(self.m_highBinEdge)):
+        for iBin in range(self.m_nBins):
             if debug:
                 print(f"{iBin} comparing {ht} to {self.m_highBinEdge[iBin]}")
             if ht < self.m_highBinEdge[iBin]:
