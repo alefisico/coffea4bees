@@ -1,4 +1,5 @@
 import numpy as np
+import awkward as ak
 
 def setSvBVars(SvBName, event):
 
@@ -35,7 +36,8 @@ def setSvBVars(SvBName, event):
     this_ps_hh[getattr(event, SvBName).passMinPs == False] = -2
     event[SvBName, "ps_hh"] = this_ps_hh
 
-def compute_SvB(self, event):
+
+def compute_SvB(event, classifier_SvB, classifier_SvB_MA):
     # import torch on demand
     import torch
     import torch.nn.functional as F
@@ -66,10 +68,10 @@ def compute_SvB(self, event):
     for classifier in ["SvB", "SvB_MA"]:
 
         if classifier == "SvB":
-            c_logits, q_logits = self.classifier_SvB(j, o, a, e)
+            c_logits, q_logits = classifier_SvB(j, o, a, e)
 
         if classifier == "SvB_MA":
-            c_logits, q_logits = self.classifier_SvB_MA(j, o, a, e)
+            c_logits, q_logits = classifier_SvB_MA(j, o, a, e)
 
         c_score, q_score = ( F.softmax(c_logits, dim=-1).numpy(), F.softmax(q_logits, dim=-1).numpy(), )
 

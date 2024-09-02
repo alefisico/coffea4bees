@@ -666,7 +666,7 @@ class analysis(processor.ProcessorABC):
                     selev["xbW_reco"] = selev["xbW"]
                     selev["xW_reco"]  = selev["xW"]
 
-                compute_SvB(selev)
+                compute_SvB(selev, self.classifier_SvB, self.classifier_SvB_MA)
 
             quadJet["SvB_q_score"] = np.concatenate( ( np.reshape(np.array(selev.SvB.q_1234), (-1, 1)),
                                                        np.reshape(np.array(selev.SvB.q_1324), (-1, 1)),
