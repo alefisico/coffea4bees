@@ -7,18 +7,13 @@ class HLTBTagEmulator:
         self.m_eff = eff
         self.m_effErr = eff_err
         self.m_rand = np.random.default_rng()  # Initialize a random number generator
-
-        #
-        #  Yaml file loading...
-        #
-
-
+        self.m_nBins = len(self.m_highBinEdge)
 
     def passJetThreshold(self, pt, bTagRand, smearFactor=0.0):
         eff = -99
         effErr = -99
 
-        for iBin in range(len(self.m_highBinEdge)):
+        for iBin in range(self.m_nBins):
             if pt < self.m_highBinEdge[iBin]:
                 eff = self.m_eff[iBin]
                 effErr = self.m_effErr[iBin]
