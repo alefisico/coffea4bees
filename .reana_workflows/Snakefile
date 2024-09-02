@@ -1,6 +1,8 @@
 from datetime import datetime
 
 TIMESTAMP = datetime.now().strftime('%Y%m%d_%H%M%S')
+analysis_container = "gitlab-registry.cern.ch/cms-cmu/coffea4bees:766323bc"   ### actual tag for reproducibility
+combine_container = "gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0"
 
 #
 # rule all sets the entire workflow. This is were you define the last output of the workflow.
@@ -27,7 +29,7 @@ rule all:
 
 rule analysis_databkgs:
     output: "output/histAll.coffea"
-    container: "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
+    container: analysis_container
     params:
         hash=config['hash'],
         diff=config['diff'],
@@ -38,6 +40,8 @@ rule analysis_databkgs:
     resources:
         voms_proxy=True,
         kerberos=True,
+        # compute_backend="htcondorcern",
+        # htcondor_max_runtime="workday"
         compute_backend="kubernetes",
         kubernetes_memory_limit="9.5Gi"
     shell:
@@ -108,8 +112,7 @@ use rule analysis_databkgs as analysis_mixeddata with:
 rule analysis_systematics:
     output:
         "output/histsyst_{samplesyst}-{iysyst}.coffea"
-    container:
-        "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
+    container: analysis_container
     params:
         hash=config['hash'],
         diff=config['diff'],
@@ -176,7 +179,7 @@ use rule analysis_systematics as analysis_signal with:
 rule merging_coffea_files_syst:
     input:
         files = expand(['output/histsyst_{idatsyst}-{iyear}.coffea'], idatsyst=config['dataset_systematics'], iyear=config['year']) #+ expand(['output/histsystpreUL_{idat}-{iyear}.coffea'], idat=config['dataset_preUL'], iyear=config['year_preUL'])
-    container: "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
+    container: analysis_container
     output:
         "output/histAll_syst.coffea"
     params:
@@ -210,8 +213,7 @@ rule make_plots:
         "output/histAll.coffea"
     output:
         "output/RunII/passPreSel/fourTag/SB/nPVs.pdf"
-    container:
-        "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
+    container: analysis_container
     resources:
         kerberos=True,
         compute_backend="kubernetes",
@@ -233,8 +235,7 @@ rule convert_hist_to_json:
         outall = "output/histAll.json",
         outsyst = "output/histAll_syst.json",
         outsystcHHHX = "output/histAll_signals_cHHHX.json"
-    container:
-        "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
+    container: analysis_container
     resources:
         compute_backend="kubernetes",
         kubernetes_memory_limit="8Gi"
@@ -252,8 +253,7 @@ rule make_combine_inputs:
     output:
         "output/datacards/shapes.root",
         "output/datacards/datacard.txt"
-    container:
-        "docker://gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0"
+    container: combine_container
     resources:
         voms_proxy=True,
         kerberos=True,
@@ -273,8 +273,7 @@ rule run_combine:
         "output/datacards/datacard.txt"
     output:
         "output/datacards/limits.json"
-    container:
-        "docker://gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0"
+    container: combine_container
     resources:
         voms_proxy=True,
         kerberos=True,
@@ -296,8 +295,7 @@ rule run_postfit:
         "output/datacards/datacard.txt"
     output:
         "output/datacards/plots/SvB_postfit.png"
-    container:
-        "docker://gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0"
+    container: combine_container
     resources:
         voms_proxy=True,
         kerberos=True,
@@ -319,8 +317,7 @@ rule make_syst_plots:
         "output/datacards/shapes.root",
     log:
         "output/tmp.log"
-    container:
-        "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
+    container: analysis_container
     resources:
         kerberos=True,
         compute_backend="kubernetes",
