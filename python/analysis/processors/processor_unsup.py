@@ -321,8 +321,7 @@ class analysis(processor.ProcessorABC):
         ### sort the jets by btagging
         selev.selJet  = selev.selJet[ak.argsort(selev.selJet.btagDeepFlavB, axis=1, ascending=False)]
         top_cands     = find_tops(selev.selJet)
-        rec_top_cands = buildTop(selev.selJet, top_cands)
-        selev["top_cand"] = rec_top_cands[:, 0]
+        selev["top_cand"], _ = buildTop(selev.selJet, top_cands)
         selev["xbW_reco"] = selev.top_cand.xbW
         selev["xW_reco"]  = selev.top_cand.xW
         selev["delta_xbW"] = selev.xbW - selev.xbW_reco
