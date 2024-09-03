@@ -1,8 +1,6 @@
 import numpy as np
 import awkward as ak
-import logging
-from coffea.nanoevents import NanoEventsFactory, NanoAODSchema, BaseSchema
-from analysis.helpers.common import init_jet_factory, jet_corrections, mask_event_decision, drClean
+from analysis.helpers.common import mask_event_decision, drClean
 from coffea.lumi_tools import LumiMask
 
 def apply_event_selection_4b( event, isMC, corrections_metadata, isMixedData = False):
@@ -23,7 +21,7 @@ def apply_event_selection_4b( event, isMC, corrections_metadata, isMixedData = F
 
     return event
 
-def apply_object_selection_4b( event, year, isMC, dataset, corrections_metadata, *, doLeptonRemoval=True, loosePtForSkim=False, isSyntheticData=False  ):
+def apply_object_selection_4b( event, corrections_metadata, *, doLeptonRemoval=True, loosePtForSkim=False, isSyntheticData=False  ):
     """docstring for apply_basic_selection_4b. This fuction is not modifying the content of anything in events. it is just adding it"""
 
     #
@@ -83,14 +81,14 @@ def apply_object_selection_4b( event, year, isMC, dataset, corrections_metadata,
     tagCode[event.threeTag] = 3
     event['tag'] = tagCode
 
-    # For low pt selection
-    event['Jet', 'selected_lowpt'] = (event.Jet.pt >= 15) & (np.abs(event.Jet.eta) <= 2.4) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned & ~event.Jet.selected
-    event['lowptJet'] = event.Jet[event.Jet.selected_lowpt]
-    event['Jet', 'tagged_lowpt']       = event.Jet.selected_lowpt & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['M'])
-    event['nJet_tagged_lowpt'] = ak.num(event.Jet[event.Jet.tagged_lowpt])
-    event['tagJet_lowpt'] = event.Jet[event.Jet.tagged_lowpt]
-    event['lowpt_fourTag']  = (event['nJet_tagged']==3) & (event['nJet_tagged_lowpt'] >= 0)
-    event['lowpt_threeTag'] = (event['nJet_tagged']==2) & (event['nJet_tagged_lowpt'] == 1)
+    # # For low pt selection
+    # event['Jet', 'selected_lowpt'] = (event.Jet.pt >= 15) & (np.abs(event.Jet.eta) <= 2.4) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned & ~event.Jet.selected
+    # event['lowptJet'] = event.Jet[event.Jet.selected_lowpt]
+    # event['Jet', 'tagged_lowpt']       = event.Jet.selected_lowpt & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['M'])
+    # event['nJet_tagged_lowpt'] = ak.num(event.Jet[event.Jet.tagged_lowpt])
+    # event['tagJet_lowpt'] = event.Jet[event.Jet.tagged_lowpt]
+    # event['lowpt_fourTag']  = (event['nJet_tagged']==3) & (event['nJet_tagged_lowpt'] >= 0)
+    # event['lowpt_threeTag'] = event.threeTag & ~event.lowpt_fourTag
 
 
     # Only need 30 GeV jets for signal systematics
