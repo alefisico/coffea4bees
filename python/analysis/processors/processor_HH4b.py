@@ -1,11 +1,12 @@
 import gc
 import logging
-import time
 import warnings
+from memory_profiler import profile
 
 import awkward as ak
 import numpy as np
 import yaml
+import uproot
 from analysis.helpers.common import apply_btag_sf, init_jet_factory, update_events
 from analysis.helpers.event_weights import add_weights
 from analysis.helpers.cutflow import cutFlow
@@ -50,7 +51,6 @@ class analysis(processor.ProcessorABC):
         JCM=None,
         SvB=None,
         SvB_MA=None,
-        threeTag=True,  ### this is not doing anything
         blind=False,
         apply_trigWeight=True,
         apply_btagSF=True,
@@ -109,9 +109,9 @@ class analysis(processor.ProcessorABC):
         estop   = event.metadata['entrystop']
         chunk   = f'{dataset}::{estart:6d}:{estop:6d} >>> '
         year    = event.metadata['year']
-        year_label = self.corrections_metadata[year]['year_label']
+        # year_label = self.corrections_metadata[year]['year_label']
         processName = event.metadata['processName']
-        isMC    = True if event.run[0] == 1 else False
+        isMC    = False if "data" in processName else True
 
         if self.top_reconstruction_override:
             self.top_reconstruction = self.top_reconstruction_override
@@ -257,6 +257,7 @@ class analysis(processor.ProcessorABC):
 
         return processor.accumulate( self.process_shift(update_events(event, collections), name) for collections, name in shifts )
 
+    # @profile
     def process_shift(self, event, shift_name):
         """For different jet variations. It computes event variations for the nominal case."""
 
@@ -281,7 +282,7 @@ class analysis(processor.ProcessorABC):
 
         # Apply object selection (function does not remove events, adds content to objects)
         doLeptonRemoval = not (self.isMixedData or self.isTTForMixed or self.isDataForMixed)
-        event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year],
+        event = apply_object_selection_4b( event, self.corrections_metadata[year],
                                            doLeptonRemoval=doLeptonRemoval, isSyntheticData=self.isSyntheticData )
 
         selections = PackedSelection()
