@@ -359,6 +359,7 @@ class analysis(processor.ProcessorABC):
         #
         selev["hT"] = ak.sum(selev.Jet[selev.Jet.selected_loose].pt, axis=1)
         selev["hT_selected"] = ak.sum(selev.Jet[selev.Jet.selected].pt, axis=1)
+        selev["hT_trigger"] = ak.sum(selev.Jet[selev.Jet.ht_selected].pt, axis=1)
 
         #
         # Build and select boson candidate jets with bRegCorr applied

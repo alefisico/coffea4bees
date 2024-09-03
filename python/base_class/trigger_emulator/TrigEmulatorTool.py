@@ -14,8 +14,9 @@ class TrigEmulatorTool:
         self.m_debug = debug
         self.m_useMCTurnOns = useMCTurnOns
         self.m_rand = random.Random()
-
+        self.m_is3b = is3b
         self.m_HTConfig = {}
+        self.m_year = year
 
         self.m_Jet = {}
         self.m_Ht  = {}
@@ -27,17 +28,17 @@ class TrigEmulatorTool:
 
         if year == "2018":
             self.config2018Filters()
-            self.config2018Menu(is3b)
+            self.config2018Menu()
 
 
         elif year == "2017":
             self.config2017Filters()
-            self.config2017Menu(is3b)
+            self.config2017Menu()
 
 
         elif year == "2016":
             self.config2016Filters()
-            self.config2016Menu(is3b)
+            self.config2016Menu()
 
 
         else:
@@ -125,7 +126,20 @@ class TrigEmulatorTool:
             if passAny:
                 nPass += 1
 
-        return float(nPass) / self.m_nToys
+        weight = float(nPass) / self.m_nToys
+
+        #
+        # SF to correct the 3b btag SFs
+        #
+        if self.m_is3b:
+            if self.m_year == "2018":
+                weight *= 0.600
+            elif self.m_year == "2017":
+                weight *= 0.558;
+            elif self.m_year == "2016":
+                weight *= 0.857;
+
+        return weight
 
     def dumpResults(self):
         for trigName, trigEmulator in self.m_emulatedTrigMenu.items():
@@ -191,9 +205,9 @@ class TrigEmulatorTool:
             self.m_Ht[_config[0]] = HLTHtEmulator(high_bin_edge=data[_config[1]]["high_bin_edge"] , eff=data[_config[1]]["eff"], eff_err=data[_config[1]]["eff_err"])
 
 
-    def config2018Menu(self, is3b):
+    def config2018Menu(self):
 
-        if is3b:
+        if self.m_is3b:
             print("Configuring 2018 menu for 3b events")
 
             self.AddTrig("EMU_4j_3b",
@@ -280,9 +294,9 @@ class TrigEmulatorTool:
         for _config in HTConfigs:
             self.m_Ht[_config[0]] = HLTHtEmulator(high_bin_edge=data[_config[1]]["high_bin_edge"] , eff=data[_config[1]]["eff"], eff_err=data[_config[1]]["eff_err"])
 
-    def config2017Menu(self, is3b):
+    def config2017Menu(self):
 
-        if is3b:
+        if self.m_is3b:
             print("Configuring 2017 menu for 3b events")
 
             self.AddTrig("EMU_4j_3b",
@@ -361,9 +375,9 @@ class TrigEmulatorTool:
         for _config in HTConfigs:
             self.m_Ht[_config[0]] = HLTHtEmulator(high_bin_edge=data[_config[1]]["high_bin_edge"] , eff=data[_config[1]]["eff"], eff_err=data[_config[1]]["eff_err"])
 
-    def config2016Menu(self, is3b):
+    def config2016Menu(self):
 
-        if is3b:
+        if self.m_is3b:
             print("Configuring 2016 menu for 3b events")
 
             self.AddTrig("EMU_4j_3b",
