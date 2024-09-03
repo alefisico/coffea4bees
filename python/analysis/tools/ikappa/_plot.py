@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Generator, Iterable
 
 import numpy as np
 import pandas as pd
-from bokeh.document import Document
 from bokeh.layouts import column, row
 from bokeh.models import Button, Div, InlineStyleSheet, MultiChoice, ScrollBox
 from hist import Hist
@@ -21,7 +20,7 @@ from hist.axis import (
 
 from ._hist import HistGroup
 from ._treeview import TreeView
-from ._utils import BokehLog
+from ._utils import Component
 from .config import UI
 
 if TYPE_CHECKING:
@@ -102,20 +101,19 @@ class AxisProjector:
         return [self._indices[v] for v in self.dom.value]
 
 
-class Plotter:
+class Plotter(Component):
     _DIV = {
         "font-size": "1.5em",
         "text-align": "center",
         "background-color": UI.color_background,
         "z-index": "-1",
+        "border": UI.border,
     }
 
-    def __init__(self, doc: Document, logger: BokehLog, parent):
-        self._doc = doc
+    def __init__(self, parent, **kwargs):
+        super().__init__(**kwargs)
         self._data = None
         self._parent = parent
-
-        self.log = logger
 
         self._dom_idle = Div(
             text="Waiting for data...",
@@ -131,23 +129,20 @@ class Plotter:
         self._dom_reset()
 
     def reset(self):
-        self._doc.add_next_tick_callback(self._dom_reset)
+        self.doc.add_next_tick_callback(self._dom_reset)
 
     def update(self, hists: dict[str, Hist], categories: set[str]):
         self.reset()
         self.data = hists
 
-        self._dom_full = self.log.ibtn("")
+        self._dom_full = self.shared.icon_button("")
         self._dom_full.on_click(self._dom_fullscreen)
         self._dom_plot = Button(
             label="Plot", button_type="success", sizing_mode="stretch_height"
         )
         self._dom_plot.on_click(self._dom_plot_selected)
-        self._dom_hist_select = MultiChoice(
-            options=[*self.data],
-            height=UI.height_select_bar,
-            search_option_limit=len(self.data),
-            sizing_mode="stretch_width",
+        self._dom_hist_select = self.shared.multichoice(
+            options=[*self.data], search_option_limit=len(self.data)
         )
         ncats = len(categories)
         # select hists
@@ -185,7 +180,9 @@ class Plotter:
                 self.categories[axis.name] = AxisProjector(
                     axis, test.project(axis.name)
                 )
-        self.hist = HistGroup(self.categories, self.log, self._dom_enable_plot)
+        self.hist = HistGroup(
+            self.categories, self._dom_enable_plot, **self.inherit_global_states
+        )
         self.hist.frozen = True
         self._main_dom = row(
             self._dom_hist_tree,
@@ -206,10 +203,10 @@ class Plotter:
             sizing_mode="stretch_both",
         )
 
-        self._doc.add_next_tick_callback(self._dom_update)
+        self.doc.add_next_tick_callback(self._dom_update)
 
     def status(self, msg: str):
-        self._doc.add_next_tick_callback(partial(self._dom_update_status, msg))
+        self.doc.add_next_tick_callback(partial(self._dom_update_status, msg))
 
     def _dom_update_status(self, msg: str):
         self._dom_main.child = self._dom_status
@@ -285,7 +282,7 @@ class Plotter:
         plots = self.hist(projected, self.status)
         # TODO save or show
         # TEMP below
-        self._doc.add_next_tick_callback(partial(self._dom_show_plot, plots))
+        self.doc.add_next_tick_callback(partial(self._dom_show_plot, plots))
 
     @staticmethod
     def __project(

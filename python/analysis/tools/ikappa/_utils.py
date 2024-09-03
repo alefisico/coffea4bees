@@ -3,7 +3,7 @@ import traceback
 from datetime import datetime
 from functools import partial
 from glob import glob
-from typing import Callable
+from typing import Callable, Optional
 
 from bokeh.document import Document
 from bokeh.layouts import row
@@ -13,6 +13,7 @@ from bokeh.models import (
     CustomJS,
     Div,
     InlineStyleSheet,
+    MultiChoice,
     Styles,
     TablerIcon,
 )
@@ -37,10 +38,20 @@ def PathInput(**kwargs):
 
 
 class BokehLog:
+    _BLOB = """
+const page = "<!DOCTYPE html><html><head><title>Log</title></head><body><div style='white-space: pre;'>" + log.text + "</div></body></html>";
+const blob = new Blob([page], {type: 'text/html'});
+const url = URL.createObjectURL(blob);
+"""
+    _BUTTON = {
+        "label": "",
+        "button_type": "primary",
+        "sizing_mode": "stretch_height",
+        "margin": 0,
+    }
+
     def __init__(self, doc: Document, max_history: int = None):
         self._doc = doc
-
-        self._style_ibtn = InlineStyleSheet(css=".bk-btn {padding: 1px 4px;}")
         self._dom_log = Div(
             text="",
             height=UI.height_log,
@@ -50,23 +61,19 @@ class BokehLog:
                 background=UI.color_background,
                 padding_left="10px",
                 margin="0px",
-                border="1px solid #C8C8C8",
+                border=UI.border,
                 white_space="pre",
             ),
         )
         self._dom_dump = Button(
-            label="Dump",
-            button_type="primary",
-            sizing_mode="stretch_height",
-            margin=0,
+            icon=TablerIcon(icon_name="download", size="2em"),
+            **self._BUTTON,
         )
         self._dom_dump.js_on_click(
             CustomJS(
                 args=dict(log=self._dom_log),
-                code="""
-const page = "<!DOCTYPE html><html><head><title>Log</title></head><body><div style='white-space: pre;'>" + log.text + "</div></body></html>";
-const blob = new Blob([page], {type: 'text/plain'});
-const url = URL.createObjectURL(blob);
+                code=self._BLOB
+                + """
 const a = document.createElement('a');
 a.href = url;
 a.download = 'log.html';
@@ -75,7 +82,23 @@ URL.revokeObjectURL(url);
 """,
             )
         )
-        self.dom = row(self._dom_log, self._dom_dump, sizing_mode="stretch_width")
+        self._dom_max = Button(
+            icon=TablerIcon(icon_name="window-maximize", size="2em"),
+            **self._BUTTON,
+        )
+        self._dom_max.js_on_click(
+            CustomJS(
+                args=dict(log=self._dom_log),
+                code=self._BLOB
+                + """
+window.open(url, '_blank');
+URL.revokeObjectURL(url);
+""",
+            )
+        )
+        self.dom = row(
+            self._dom_log, self._dom_dump, self._dom_max, sizing_mode="stretch_width"
+        )
 
         self._max = max_history
         self._histories = []
@@ -124,16 +147,56 @@ URL.revokeObjectURL(url);
             self._histories = self._histories[: self._max]
         self._dom_log.text = "<br>".join(self._histories)
 
-    def ibtn(self, symbol: str, *onclick, **kwargs):
-        btn = Button(
-            label="",
-            icon=TablerIcon(icon_name=symbol, size="1.5em"),
-            aspect_ratio=1,
-            button_type="primary",
-            align="center",
-            stylesheets=[self._style_ibtn],
+
+class SharedDOM:
+    def __init__(self, doc: Document):
+        self._doc = doc
+
+        self._icon_button_style = {
+            "label": "",
+            "aspect_ratio": 1,
+            "button_type": "primary",
+            "align": "center",
+            "stylesheets": [InlineStyleSheet(css=".bk-btn {padding: 1px 4px;}")],
+        }
+
+        self._multichoice_z_index = 1000
+        self._multichoice_style = {
+            "height": UI.height_multichoice,
+            "sizing_mode": "stretch_width",
+        }
+
+    def multichoice(self, z_index: Optional[int] = None, **kwargs):
+        if z_index is None:
+            z_index = self._multichoice_z_index
+            self._multichoice_z_index += 1
+        kwargs = self._multichoice_style | kwargs
+        return MultiChoice(
+            stylesheets=[
+                InlineStyleSheet(
+                    css=f"div.choices {{background: white;z-index: {z_index};}}"
+                )
+            ],
             **kwargs,
         )
+
+    def icon_button(self, symbol: str, *onclick, **kwargs):
+        kwargs.pop("icon", None)
+        kwargs = self._icon_button_style | kwargs
+        btn = Button(icon=TablerIcon(icon_name=symbol, size="1.5em"), **kwargs)
         for click in onclick:
             btn.on_click(click)
         return btn
+
+
+class Component:
+    def __init__(
+        self, doc: Document = None, log: BokehLog = None, shared: SharedDOM = None
+    ):
+        self.doc = doc
+        self.log = log
+        self.shared = shared
+
+    @property
+    def inherit_global_states(self):
+        return dict(doc=self.doc, log=self.log, shared=self.shared)

@@ -18,7 +18,7 @@ from bokeh.models import (
 )
 from hist.axis import AxesMixin, StrCategory
 
-from ._utils import BokehLog
+from ._utils import Component
 from .config import UI, Datasets, Stacks
 
 if TYPE_CHECKING:
@@ -197,7 +197,7 @@ class _StackGroup:
             self.dom.children[-1] = self._dom_stacks
 
 
-class HistGroup:
+class HistGroup(Component):
     _FREEZE = {
         False: dict(label="Setup", button_type="success"),
         True: dict(label="Unset", button_type="danger"),
@@ -206,24 +206,28 @@ class HistGroup:
     def __init__(
         self,
         categories: dict[str, AxisProjector],
-        logger: BokehLog,
         *freeze_callbacks: Callable[[bool], None],
+        **kwargs,
     ):
-        self.log = logger
+        super().__init__(**kwargs)
         self._callbacks = freeze_callbacks
         self._categories = dict(
             filter(lambda x: x[1]._type is StrCategory, categories.items())
         )
         # controls
         self._dom_freeze = _btn("", self._dom_freeze_click)
-        self._dom_add_model = self.log.ibtn("plus", self._dom_add_model_click)
-        self._dom_remove_model = self.log.ibtn("minus", self._dom_remove_model_click)
-        self._dom_add_stack = self.log.ibtn("plus", self._dom_add_stack_click)
-        self._dom_remove_stack = self.log.ibtn("minus", self._dom_remove_stack_click)
+        self._dom_add_model = self.shared.icon_button("plus", self._dom_add_model_click)
+        self._dom_remove_model = self.shared.icon_button(
+            "minus", self._dom_remove_model_click
+        )
+        self._dom_add_stack = self.shared.icon_button("plus", self._dom_add_stack_click)
+        self._dom_remove_stack = self.shared.icon_button(
+            "minus", self._dom_remove_stack_click
+        )
         self._dom_cats = Select(options=[*self._categories], align="center")
         self._dom_cats_all = _btn("All", self._dom_cat_select_all)
         self._dom_cats_clear = _btn("Clear", self._dom_cats_select_none)
-        self._dom_cats_selected = MultiChoice(sizing_mode="stretch_width")
+        self._dom_cats_selected = self.shared.multichoice()
         self._dom_cats.on_change("value", self._dom_cats_update)
         self._controls = [
             self._dom_add_model,

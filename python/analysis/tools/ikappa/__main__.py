@@ -16,14 +16,14 @@ from bokeh.server.server import Server
 
 from ._plot import Plotter
 from ._sanity import sanitized
-from ._utils import BokehLog, PathInput
+from ._utils import BokehLog, Component, PathInput, SharedDOM
 
 
-class Main:
-    log: BokehLog
+class Main(Component):
     plotter: Plotter
 
     def __init__(self):
+        super().__init__()
         # file
         self._dom_hist_submit = Button(
             label="Load", button_type="success", sizing_mode="stretch_height"
@@ -92,8 +92,10 @@ class Main:
 
     def _dom_render(self, doc: Document):
         doc.title = "i\u03BA"
+        self.doc = doc
         self.log = BokehLog(doc)
-        self.plotter = Plotter(doc, self.log, self)
+        self.shared = SharedDOM(doc)
+        self.plotter = Plotter(parent=self, **self.inherit_global_states)
         self.full = False
         doc.add_root(self.dom)
         self.log("Ready.")
