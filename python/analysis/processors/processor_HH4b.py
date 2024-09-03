@@ -1,12 +1,10 @@
 import gc
 import logging
 import warnings
-from memory_profiler import profile
 
 import awkward as ak
 import numpy as np
 import yaml
-import uproot
 from analysis.helpers.common import apply_btag_sf, init_jet_factory, update_events
 from analysis.helpers.event_weights import add_weights
 from analysis.helpers.cutflow import cutFlow
@@ -257,7 +255,6 @@ class analysis(processor.ProcessorABC):
 
         return processor.accumulate( self.process_shift(update_events(event, collections), name) for collections, name in shifts )
 
-    # @profile
     def process_shift(self, event, shift_name):
         """For different jet variations. It computes event variations for the nominal case."""
 

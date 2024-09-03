@@ -10,6 +10,7 @@ combine_container = "gitlab-registry.cern.ch/cms-analysis/general/combine-contai
 #
 rule all:
     input:
+        expand("output/histAll__{dataset}__{year}.coffea", year=config['year'], dataset=config['dataset']),
         expand("output/histsyst_{samplesyst}-{iysyst}.coffea", samplesyst=config['dataset_systematics'], iysyst=config['year']),
         #expand("output/histsystpreUL_{samplesystpreUL}-{iysystpreUL}.coffea", samplesystpreUL=config['dataset_preUL'], iysystpreUL=config['year_preUL']),
         expand("output/histsignal_{samplesignal}-{iysignal}.coffea", samplesignal=config['dataset_signal'], iysignal=config['year']),
@@ -28,15 +29,15 @@ rule all:
 
 
 rule analysis_databkgs:
-    output: "output/histAll.coffea"
+    output: "output/histAll__{dataset}__{year}.coffea"
     container: analysis_container
     params:
         hash=config['hash'],
         diff=config['diff'],
-        isam=config['dataset'],
-        iy=config['year'],
-        output="histAll.coffea",
-        logname="histAll"
+        isam="{dataset}",
+        iy="{year}",
+        output="histAll__{dataset}__{year}.coffea",
+        logname="histAll__{dataset}__{year}"
     resources:
         voms_proxy=True,
         kerberos=True,
@@ -156,48 +157,36 @@ use rule analysis_systematics as analysis_signal with:
 #        output="histsystpreUL_{samplesystpreUL}-{iysystpreUL}.coffea",
 #        logname="syst_preUL_{samplesystpreUL}-{iysystpreUL}"
 
-#rule merging_coffea_files_databkgs:
-#    input:
-#        files = ['output/histAll_bkgsdata.coffea', 'output/histAll_signal_preUL.coffea']
-#    output: "output/histAll.coffea"
-#    container: "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
-#    params:
-#        output= "histAll.coffea",
-#        logname= "databkgs"
-#    resources:
-#        kerberos=True,
-#        compute_backend="kubernetes",
-#        kubernetes_memory_limit="9.5Gi"
-#    shell:
-#        """
-#mprof run -C -o python/mprofile_merge_{params.logname}.dat python python/analysis/merge_coffea_files.py -f {input.files} -o {output}
-#mprof plot -o output/mprofile_merge_{params.logname}.png python/mprofile_merge_{params.logname}.dat
-#xrdcp {output} root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/{params.output}
-#cp {output} /eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/{params.output}
-#        """
+rule merging_coffea_files_databkgs:
+   input:
+       files = expand(['output/histAll__{dataset}__{iyear}.coffea'], iyear=config['year'], dataset=config['dataset'])
+   output: "output/histAll.coffea"
+   container: "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
+   params:
+       output= "histAll.coffea",
+       logname= "databkgs"
+   resources:
+       kerberos=True,
+       compute_backend="kubernetes",
+       kubernetes_memory_limit="9.5Gi"
+   shell:
+       """
+mprof run -C -o python/mprofile_merge_{params.logname}.dat python python/analysis/merge_coffea_files.py -f {input.files} -o {output}
+mprof plot -o output/mprofile_merge_{params.logname}.png python/mprofile_merge_{params.logname}.dat
+xrdcp {output} root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/{params.output}
+cp {output} /eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/{params.output}
+       """
 
-rule merging_coffea_files_syst:
+use rule merging_coffea_files_databkgs as rule merging_coffea_files_syst with:
     input:
         files = expand(['output/histsyst_{idatsyst}-{iyear}.coffea'], idatsyst=config['dataset_systematics'], iyear=config['year']) #+ expand(['output/histsystpreUL_{idat}-{iyear}.coffea'], idat=config['dataset_preUL'], iyear=config['year_preUL'])
-    container: analysis_container
     output:
         "output/histAll_syst.coffea"
     params:
         output= "histAll_syst.coffea",
         logname= "syst"
-    resources:
-        kerberos=True,
-        compute_backend="kubernetes",
-        kubernetes_memory_limit="9.5Gi"
-    shell:
-        """
-mprof run -C -o python/mprofile_merge_{params.logname}.dat python python/analysis/merge_coffea_files.py -f {input.files} -o {output}
-mprof plot -o output/mprofile_merge_{params.logname}.png python/mprofile_merge_{params.logname}.dat
-xrdcp {output} root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/{params.output}
-cp {output} /eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/{params.output}
-        """
 
-use rule merging_coffea_files_syst as merging_coffea_files_signal_diffHHH with:
+use rule merging_coffea_files_databkgs as merging_coffea_files_signal_diffHHH with:
     input:
         files = expand(['output/histsignal_{idatsignal}-{iyear}.coffea'],idatsignal=config['dataset_signal'], iyear=config['year']) + expand(['output/histsyst_{idatsyst}-{iyear}.coffea'], idatsyst=config['dataset_systematics'], iyear=config['year'])
 
