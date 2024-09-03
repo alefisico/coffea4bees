@@ -70,7 +70,7 @@ class DeClusterer(PicoAOD):
 
         event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year] )
 
-        event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year]  )
+        event = apply_object_selection_4b( event, self.corrections_metadata[year]  )
 
         weights = Weights(len(event), storeIndividual=True)
 
