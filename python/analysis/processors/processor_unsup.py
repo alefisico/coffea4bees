@@ -172,7 +172,7 @@ class analysis(processor.ProcessorABC):
 
         ### Apply object selection (function does not remove events, adds content to objects)
         doLeptonRemoval = not isMixedData
-        event =  apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year], doLeptonRemoval=doLeptonRemoval  )
+        event =  apply_object_selection_4b( event, self.corrections_metadata[year], doLeptonRemoval=doLeptonRemoval  )
         self._cutFlow.fill("passJetMult",  event[ event.lumimask & event.passNoiseFilter & event.passHLT & event.passJetMult ], allTag=True)
 
         ### Filtering object and event selection
@@ -321,8 +321,7 @@ class analysis(processor.ProcessorABC):
         ### sort the jets by btagging
         selev.selJet  = selev.selJet[ak.argsort(selev.selJet.btagDeepFlavB, axis=1, ascending=False)]
         top_cands     = find_tops(selev.selJet)
-        rec_top_cands = buildTop(selev.selJet, top_cands)
-        selev["top_cand"] = rec_top_cands[:, 0]
+        selev["top_cand"], _ = buildTop(selev.selJet, top_cands)
         selev["xbW_reco"] = selev.top_cand.xbW
         selev["xW_reco"]  = selev.top_cand.xW
         selev["delta_xbW"] = selev.xbW - selev.xbW_reco

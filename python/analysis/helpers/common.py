@@ -11,9 +11,7 @@ from coffea.nanoevents.methods import vector
 ak.behavior.update(vector.behavior)
 import logging
 import pickle
-
 import correctionlib
-
 
 # following example here: https://github.com/CoffeaTeam/coffea/blob/master/tests/test_jetmet_tools.py#L529
 def init_jet_factory(weight_sets, event, isMC):   #### AGE: this is temporary, it should be updated with correctionlib
@@ -140,19 +138,19 @@ def apply_btag_sf( jets,
                   btagSF_norm_file='ZZ4b/nTupleAnalysis/weights/btagSF_norm.pkl',
                   ):
     '''
-    Can be replace with coffea.btag_tools if official WP are used
+    Can be replace with coffea.btag_tools when btag_tools accept jsonpog files
     '''
 
     btagSF = correctionlib.CorrectionSet.from_file(correction_file)[correction_type]
 
     weights = {}
     j, nj = ak.flatten(jets), ak.num(jets)
-    hf, eta, pt, tag = np.array(j.hadronFlavour), np.array(abs(j.eta)), np.array(j.pt), np.array(j.btagDeepFlavB)
+    hf, eta, pt, tag = ak.to_numpy(j.hadronFlavour), ak.to_numpy(abs(j.eta)), ak.to_numpy(j.pt), ak.to_numpy(j.btagDeepFlavB)
 
     cj_bl = jets[jets.hadronFlavour!=4]
     nj_bl = ak.num(cj_bl)
     cj_bl = ak.flatten(cj_bl)
-    hf_bl, eta_bl, pt_bl, tag_bl = np.array(cj_bl.hadronFlavour), np.array(abs(cj_bl.eta)), np.array(cj_bl.pt), np.array(cj_bl.btagDeepFlavB)
+    hf_bl, eta_bl, pt_bl, tag_bl = ak.to_numpy(cj_bl.hadronFlavour), ak.to_numpy(abs(cj_bl.eta)), ak.to_numpy(cj_bl.pt), ak.to_numpy(cj_bl.btagDeepFlavB)
     SF_bl= btagSF.evaluate('central', hf_bl, eta_bl, pt_bl, tag_bl)
     SF_bl = ak.unflatten(SF_bl, nj_bl)
     SF_bl = np.prod(SF_bl, axis=1)
@@ -160,7 +158,7 @@ def apply_btag_sf( jets,
     cj_c = jets[jets.hadronFlavour==4]
     nj_c = ak.num(cj_c)
     cj_c = ak.flatten(cj_c)
-    hf_c, eta_c, pt_c, tag_c = np.array(cj_c.hadronFlavour), np.array(abs(cj_c.eta)), np.array(cj_c.pt), np.array(cj_c.btagDeepFlavB)
+    hf_c, eta_c, pt_c, tag_c = ak.to_numpy(cj_c.hadronFlavour), ak.to_numpy(abs(cj_c.eta)), ak.to_numpy(cj_c.pt), ak.to_numpy(cj_c.btagDeepFlavB)
     SF_c= btagSF.evaluate('central', hf_c, eta_c, pt_c, tag_c)
     SF_c = ak.unflatten(SF_c, nj_c)
     SF_c = np.prod(SF_c, axis=1)
@@ -227,4 +225,3 @@ def update_events(events, collections):
     for name, value in collections.items():
         out = ak.with_field(out, value, name)
     return out
-

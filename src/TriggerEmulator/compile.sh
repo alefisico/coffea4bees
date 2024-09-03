@@ -1,1 +1,0 @@
-$(root-config --cxx --cflags) -Iinterface/  src/TrigEmulatorTool.cc src/TrigEmulator.cc src/HLT* $(root-config --libs) -fPIC -shared -o TrigEmulatorTool.so 

@@ -120,7 +120,7 @@ class analysis(processor.ProcessorABC):
         event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year], False)
 
         # Apply object selection (function does not remove events, adds content to objects)
-        event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year] )
+        event = apply_object_selection_4b( event, self.corrections_metadata[year] )
         #event = apply_object_selection_boosted_4b( event )
 
         # selections.add( 'passJetMult', event.passJetMult )

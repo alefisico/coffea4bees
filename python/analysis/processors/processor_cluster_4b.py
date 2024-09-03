@@ -191,7 +191,7 @@ class analysis(processor.ProcessorABC):
         logging.debug(f"Weight Statistics {weights.weightStatistics}")
 
         # Apply object selection (function does not remove events, adds content to objects)
-        event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year] )
+        event = apply_object_selection_4b( event, self.corrections_metadata[year] )
 
 
 
