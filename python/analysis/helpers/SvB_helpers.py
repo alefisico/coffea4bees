@@ -60,8 +60,8 @@ def compute_SvB(event, classifier_SvB, classifier_SvB_MA):
     a = torch.zeros(n, 4)
     a[:, 0] = float(event.metadata["year"][3])
     a[:, 1] = torch.tensor(event.nJet_selected)
-    a[:, 2] = torch.tensor(event.xW_reco)
-    a[:, 3] = torch.tensor(event.xbW_reco)
+    a[:, 2] = torch.tensor(event.xW)
+    a[:, 3] = torch.tensor(event.xbW)
 
     e = torch.tensor(event.event) % 3
 

@@ -535,8 +535,9 @@ class analysis(processor.ProcessorABC):
                 top_cands = find_tops(selev.selJet)
 
             selev['top_cand'], _ = buildTop(selev.selJet, top_cands)
-            selev["xbW_reco"] = selev.top_cand.xbW
-            selev["xW_reco"] = selev.top_cand.xW
+
+            selev["xbW"] = selev.top_cand.xbW
+            selev["xW"] = selev.top_cand.xW
 
         if self.apply_FvT:
             quadJet["FvT_q_score"] = np.concatenate( ( np.reshape(np.array(selev.FvT.q_1234), (-1, 1)),
@@ -547,11 +548,6 @@ class analysis(processor.ProcessorABC):
         if self.run_SvB:
 
             if (self.classifier_SvB is not None) | (self.classifier_SvB_MA is not None):
-
-                if "xbW_reco" not in selev.fields:  ### is this still needed? AGE
-                    selev["xbW_reco"] = selev["xbW"]
-                    selev["xW_reco"]  = selev["xW"]
-
                 compute_SvB(selev, self.classifier_SvB, self.classifier_SvB_MA)
 
             quadJet["SvB_q_score"] = np.concatenate( ( np.reshape(np.array(selev.SvB.q_1234), (-1, 1)),
@@ -708,14 +704,8 @@ class analysis(processor.ProcessorABC):
             fill += hist.add( "hT", (50, 0, 1500, ("hT", "h_{T} [GeV]")), )
             fill += hist.add( "hT_selected", (50, 0, 1500, ("hT_selected", "h_{T} [GeV]")), )
 
-            if "xbW_reco" in selev.fields:
-                fill += hist.add("xW",  (100, -12, 12, ("xW_reco", "xW")))
-                fill += hist.add("xbW", (100, -15, 15, ("xbW_reco", "xbW")))
-
-            else:
-                fill += hist.add("xW",  (100, -12, 12, ("xW", "xW")))
-                fill += hist.add("xbW", (100, -15, 15, ("xbW", "xbW")))
-
+            fill += hist.add("xW",  (100, -12, 12, ("xW", "xW")))
+            fill += hist.add("xbW", (100, -15, 15, ("xbW", "xbW")))
 
             #
             # Separate reweighting for the different mixed samples
@@ -811,10 +801,6 @@ class analysis(processor.ProcessorABC):
                 for k in ["ZZSR", "ZHSR", "HHSR", "SR", "SB"]:
                     selev[k] = selev["quadJet_selected"][k]
                 selev["nSelJets"] = ak.num(selev.selJet)
-
-                if "xbW_reco" in selev.fields:  
-                    selev["xbW"] = selev["xbW_reco"]
-                    selev["xW"]  = selev["xW_reco"]
 
                 ####
                 from ..helpers.classifier.HCR import dump_input_friend, dump_JCM_weight, dump_FvT_weight

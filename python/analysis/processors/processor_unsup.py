@@ -172,7 +172,7 @@ class analysis(processor.ProcessorABC):
 
         ### Apply object selection (function does not remove events, adds content to objects)
         doLeptonRemoval = not isMixedData
-        event =  apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year], doLeptonRemoval=doLeptonRemoval  )
+        event =  apply_object_selection_4b( event, self.corrections_metadata[year], doLeptonRemoval=doLeptonRemoval  )
         self._cutFlow.fill("passJetMult",  event[ event.lumimask & event.passNoiseFilter & event.passHLT & event.passJetMult ], allTag=True)
 
         ### Filtering object and event selection
