@@ -42,7 +42,7 @@ class Skimmer(PicoAOD):
         event["Jet"] = jets
 
 
-        event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year], loosePtForSkim=self.loosePtForSkim  )
+        event = apply_object_selection_4b( event, self.corrections_metadata[year], loosePtForSkim=self.loosePtForSkim  )
 
         weights = Weights(len(event), storeIndividual=True)
 
