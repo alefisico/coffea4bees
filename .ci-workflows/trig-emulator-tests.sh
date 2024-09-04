@@ -3,6 +3,6 @@ ls
 echo "############### Moving to python folder"
 cd python/
 echo "############### Running trigger emulator test"
-python base_class/tests/test_trigger_emulator.py
+python -m unittest base_class.tests.test_trigger_emulator
 cd ../
 
