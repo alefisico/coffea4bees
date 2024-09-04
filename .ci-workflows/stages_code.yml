@@ -19,7 +19,7 @@ jet-clustering:
   script:
     - source .ci-workflows/jet-clustering-tests.sh
 
-jet-clustering:
+trig-emulator:
   stage: code
   extends:
     - .base_analysis
