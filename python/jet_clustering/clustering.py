@@ -277,6 +277,7 @@ def cluster_bs_core(event_jets, distance_function, *, debug=False):
             "phi":  ak.Array([[v.phi  for v in sublist] for sublist in splittings]),
             "mass": ak.Array([[v.mass for v in sublist] for sublist in splittings]),
             "jet_flavor": ak.Array([[v.jet_flavor for v in sublist] for sublist in splittings]),
+            "btagDeepFlavB": ak.Array([[v.btagDeepFlavB for v in sublist] for sublist in splittings]),
             "part_A": ak.zip(
                 {
                     "pt":         ak.Array([[v.part_A.pt   for v in sublist] for sublist in splittings]),

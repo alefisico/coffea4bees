@@ -59,6 +59,7 @@ class clusteringTestCase(unittest.TestCase):
                 "phi": self.input_jet_phi_4,
                 "mass": self.input_jet_mass_4,
                 "jet_flavor": self.input_jet_flavor_4,
+                "btagDeepFlavB": self.input_jet_pt_4, ## Hack
             },
             with_name="PtEtaPhiMLorentzVector",
             behavior=vector.behavior,
@@ -69,7 +70,7 @@ class clusteringTestCase(unittest.TestCase):
         self.input_jet_phi_5  = [[2.06884765625, 5.5608954429626465, -1.4248046875, 3.7079901695251465, 1.1357421875], [3.7953925132751465, 0.8619384765625, 0.7774658203125, 6.2029852867126465, 3.04150390625], [1.671142578125, 4.9018378257751465, 5.0817694664001465, 5.3899970054626465, 2.7255859375], [5.0261054039001465, 2.37890625, 2.68701171875, 0.7398681640625, 6.0952277183532715], [1.554931640625, -3.13134765625, 5.6200995445251465, 0.2047119140625, 4.4792304039001465], [2.47021484375, 1.626953125, 4.9301581382751465, 6.0857672691345215, 4.9946112632751465], [1.499267578125, 4.5829901695251465, 4.7106757164001465, 5.0483222007751465, -2.0654296875], [4.3429999351501465, 1.481689453125, 0.78515625, 0.6368408203125, 1.269775390625], [-2.8740234375, 1.008544921875, 4.2407050132751465, 5.5678534507751465, 0.562255859375], [1.16943359375, -2.26611328125, 4.9030585289001465, 5.8507513999938965, 1.7421875]]
         self.input_jet_mass_5  = [[18.3929443359375, 16.167137145996094, 20.8125, 9.837577819824219, 7.376430511474609], [18.627456665039062, 14.282325744628906, 10.098735809326172, 10.676605224609375, 12.8828125], [20.226531982421875, 35.16229248046875, 9.027721405029297, 14.4912109375, 9.1015625], [22.6912841796875, 19.15625, 15.039527893066406, 5.409450531005859, 13.238250732421875], [25.096435546875, 14.2734375, 11.000885009765625, 9.951026916503906, 10.315155029296875], [14.715652465820312, 11.21875, 14.8203125, 8.70376968383789, 8.22491455078125], [20.9124755859375, 10.833625793457031, 11.0955810546875, 10.830390930175781, 9.59375], [23.3994140625, 16.117172241210938, 10.51025390625, 10.590438842773438, 7.5078125], [23.140625, 24.85760498046875, 14.499320983886719, 12.903610229492188, 10.6402587890625], [25.775680541992188, 16.75, 12.032047271728516, 13.135284423828125, 6.7713165283203125]]
         self.input_jet_flavor_5  = [['b', 'b', 'j', 'b', 'b'], ['b', 'b', 'b', 'b', 'j'], ['b', 'b', 'b', 'b', 'j'], ['b', 'j', 'b', 'b', 'b'], ['b', 'j', 'b', 'b', 'b'], ['b', 'j', 'b', 'b', 'b'], ['b', 'b', 'b', 'b', 'j'], ['b', 'b', 'b', 'b', 'j'], ['j', 'b', 'b', 'b', 'b'], ['b', 'j', 'b', 'b', 'b']]
-
+        self.input_btagDeepFlavB_5 = [[1.0] * 5] * len(self.input_jet_pt_5)# Dummy
         self.input_jets_5 = ak.zip(
             {
                 "pt": self.input_jet_pt_5,
@@ -77,6 +78,7 @@ class clusteringTestCase(unittest.TestCase):
                 "phi": self.input_jet_phi_5,
                 "mass": self.input_jet_mass_5,
                 "jet_flavor": self.input_jet_flavor_5,
+                "btagDeepFlavB": self.input_jet_pt_5, ## Hack
             },
             with_name="PtEtaPhiMLorentzVector",
             behavior=vector.behavior,
@@ -118,6 +120,7 @@ class clusteringTestCase(unittest.TestCase):
                 "phi": self.input_jet_phi_6,
                 "mass": self.input_jet_mass_6,
                 "jet_flavor": self.input_jet_flavor_6,
+                "btagDeepFlavB": self.input_jet_pt_6, ## Hack
             },
             with_name="PtEtaPhiMLorentzVector",
             behavior=vector.behavior,
@@ -138,6 +141,7 @@ class clusteringTestCase(unittest.TestCase):
                 "phi": self.input_jet_phi_5b,
                 "mass": self.input_jet_mass_5b,
                 "jet_flavor": self.input_jet_flavor_5b,
+                "btagDeepFlavB": self.input_jet_pt_5b, ## Hack
             },
             with_name="PtEtaPhiMLorentzVector",
             behavior=vector.behavior,
@@ -161,6 +165,7 @@ class clusteringTestCase(unittest.TestCase):
                 "phi": self.input_jet_phi_HH_3b + self.input_jet_phi_HH_3b,
                 "mass": self.input_jet_mass_HH_3b + self.input_jet_mass_HH_3b,
                 "jet_flavor": self.input_jet_flavor_HH_3b + self.input_jet_flavor_HH_3b,
+                "btagDeepFlavB": self.input_jet_pt_HH_3b + self.input_jet_pt_HH_3b, ## Hack
             },
             with_name="PtEtaPhiMLorentzVector",
             behavior=vector.behavior,
@@ -182,6 +187,7 @@ class clusteringTestCase(unittest.TestCase):
                 "phi": self.input_jet_phi_bad_split,
                 "mass": self.input_jet_mass_bad_split,
                 "jet_flavor": self.input_jet_flavor_bad_split,
+                "btagDeepFlavB": self.input_jet_pt_bad_split, ## Hack
             },
             with_name="PtEtaPhiMLorentzVector",
             behavior=vector.behavior,
@@ -197,6 +203,7 @@ class clusteringTestCase(unittest.TestCase):
                 "phi": self.input_jet_phi_4 + self.input_jet_phi_5 + self.input_jet_phi_bbj + self.input_jet_phi_6 + self.input_jet_phi_5b,
                 "mass": self.input_jet_mass_4 + self.input_jet_mass_5 + self.input_jet_mass_bbj + self.input_jet_mass_6 + self.input_jet_mass_5b,
                 "jet_flavor": self.input_jet_flavor_4 + self.input_jet_flavor_5 + self.input_jet_flavor_bbj + self.input_jet_flavor_6 + self.input_jet_flavor_5b,
+                "btagDeepFlavB": self.input_jet_pt_4 + self.input_jet_pt_5 + self.input_jet_pt_bbj + self.input_jet_pt_6 + self.input_jet_pt_5b, ## Hack
             },
             with_name="PtEtaPhiMLorentzVector",
             behavior=vector.behavior,
