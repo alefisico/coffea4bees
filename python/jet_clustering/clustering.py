@@ -170,6 +170,7 @@ def combine_particles(part_A, part_B, *, debug=False):
             new_part_B = part_A
 
     part_comb_jet_flavor = comb_jet_flavor(new_part_A.jet_flavor, new_part_B.jet_flavor)
+    part_comb_btagDeepFlavB  = (new_part_A.btagDeepFlavB, new_part_B.btagDeepFlavB)
 
     part_comb_array = ak.zip(
         {
@@ -178,6 +179,7 @@ def combine_particles(part_A, part_B, *, debug=False):
             "phi": [part_comb.phi],
             "mass": [part_comb.mass],
             "jet_flavor": [part_comb_jet_flavor],
+            "btagDeepFlavB": [part_comb_btagDeepFlavB],
             "part_A": [new_part_A],
             "part_B": [new_part_B],
             #            "part_B": [new_part_B],
@@ -250,18 +252,22 @@ def cluster_bs_core(event_jets, distance_function, *, debug=False):
 
         clustered_jets.append(particles)
 
+
+
     # Create the PtEtaPhiMLorentzVectorArray
     clustered_events = ak.zip(
         {
-            "pt":         ak.Array([[v.pt for v in sublist] for sublist in clustered_jets]),
-            "eta":        ak.Array([[v.eta for v in sublist] for sublist in clustered_jets]),
-            "phi":        ak.Array([[v.phi for v in sublist] for sublist in clustered_jets]),
-            "mass":       ak.Array([[v.mass for v in sublist] for sublist in clustered_jets]),
-            "jet_flavor": ak.Array([[v.jet_flavor for v in sublist] for sublist in clustered_jets]),
+            "pt":            ak.Array([[v.pt for v in sublist] for sublist in clustered_jets]),
+            "eta":           ak.Array([[v.eta for v in sublist] for sublist in clustered_jets]),
+            "phi":           ak.Array([[v.phi for v in sublist] for sublist in clustered_jets]),
+            "mass":          ak.Array([[v.mass for v in sublist] for sublist in clustered_jets]),
+            "jet_flavor":    ak.Array([[v.jet_flavor for v in sublist] for sublist in clustered_jets]),
+            "btagDeepFlavB": ak.Array([[v.btagDeepFlavB for v in sublist] for sublist in clustered_jets]),
         },
         with_name="PtEtaPhiMLorentzVector",
         behavior=vector.behavior
     )
+
 
     # Create the PtEtaPhiMLorentzVectorArray
     splittings_events = ak.zip(
@@ -271,6 +277,7 @@ def cluster_bs_core(event_jets, distance_function, *, debug=False):
             "phi":  ak.Array([[v.phi  for v in sublist] for sublist in splittings]),
             "mass": ak.Array([[v.mass for v in sublist] for sublist in splittings]),
             "jet_flavor": ak.Array([[v.jet_flavor for v in sublist] for sublist in splittings]),
+            "btagDeepFlavB": ak.Array([[v.btagDeepFlavB for v in sublist] for sublist in splittings]),
             "part_A": ak.zip(
                 {
                     "pt":         ak.Array([[v.part_A.pt   for v in sublist] for sublist in splittings]),
@@ -278,6 +285,7 @@ def cluster_bs_core(event_jets, distance_function, *, debug=False):
                     "phi":        ak.Array([[v.part_A.phi  for v in sublist] for sublist in splittings]),
                     "mass":       ak.Array([[v.part_A.mass for v in sublist] for sublist in splittings]),
                     "jet_flavor": ak.Array([[v.part_A.jet_flavor for v in sublist] for sublist in splittings]),
+                    "btagDeepFlavB": ak.Array([[v.part_A.btagDeepFlavB for v in sublist] for sublist in splittings]),
                 },
                 with_name="PtEtaPhiMLorentzVector",
                 behavior=vector.behavior
@@ -289,6 +297,7 @@ def cluster_bs_core(event_jets, distance_function, *, debug=False):
                     "phi":        ak.Array([[v.part_B.phi for v in sublist] for sublist in splittings]),
                     "mass":       ak.Array([[v.part_B.mass for v in sublist] for sublist in splittings]),
                     "jet_flavor": ak.Array([[v.part_B.jet_flavor for v in sublist] for sublist in splittings]),
+                    "btagDeepFlavB": ak.Array([[v.part_B.btagDeepFlavB for v in sublist] for sublist in splittings]),
                 },
                 with_name="PtEtaPhiMLorentzVector",
                 behavior=vector.behavior

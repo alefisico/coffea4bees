@@ -280,6 +280,12 @@ def decluster_combined_jets(input_jet, debug=False):
     jet_flavor_A = ak.unflatten(jet_flav_child_A, ak.num(input_jet))
     jet_flavor_B = ak.unflatten(jet_flav_child_B, ak.num(input_jet))
 
+    flat_btagDeepFlavB = ak.flatten(input_jet.btagDeepFlavB)
+    flat_jet_btagDeepFlavB_child_A = [r["0"] for r in flat_btagDeepFlavB]
+    flat_jet_btagDeepFlavB_child_B = [r["1"] for r in flat_btagDeepFlavB]
+    jet_btagDeepFlavB_child_A = ak.unflatten(flat_jet_btagDeepFlavB_child_A, ak.num(input_jet))
+    jet_btagDeepFlavB_child_B = ak.unflatten(flat_jet_btagDeepFlavB_child_B, ak.num(input_jet))
+
     combined_pt = input_jet.pt
     tanThetaA = np.tan(input_jet.thetaA)
     tanThetaB = input_jet.zA / (1 - input_jet.zA) * tanThetaA
@@ -362,6 +368,7 @@ def decluster_combined_jets(input_jet, debug=False):
             "phi":        pA.phi,
             "mass":       pA.mass,
             "jet_flavor": jet_flavor_A,
+            "btagDeepFlavB": jet_btagDeepFlavB_child_A,
         },
         with_name="PtEtaPhiMLorentzVector",
         behavior=vector.behavior,
@@ -374,6 +381,7 @@ def decluster_combined_jets(input_jet, debug=False):
             "phi":        pB.phi,
             "mass":       pB.mass,
             "jet_flavor": jet_flavor_B,
+            "btagDeepFlavB": jet_btagDeepFlavB_child_B,
         },
         with_name="PtEtaPhiMLorentzVector",
         behavior=vector.behavior,
@@ -534,6 +542,7 @@ def make_synthetic_event(input_jets, input_pdfs, declustering_rand_seed=66, debu
     flat_declustered_phi        = np.zeros(n_total_declustered_jets)
     flat_declustered_mass       = np.zeros(n_total_declustered_jets)
     flat_declustered_jet_flavor = np.full (n_total_declustered_jets, "X")
+    flat_declustered_btagDeepFlavB = np.full(n_total_declustered_jets, -1.0)
 
     num_trys = 0
 
@@ -575,16 +584,22 @@ def make_synthetic_event(input_jets, input_pdfs, declustering_rand_seed=66, debu
 
         new_jets_flat = ak.flatten(declustered_events[sucessful_deccluster_event_indicies])
 
-        flat_declustered_pt        [jet_replace_mask] = new_jets_flat.pt
-        flat_declustered_eta       [jet_replace_mask] = new_jets_flat.eta
-        flat_declustered_phi       [jet_replace_mask] = new_jets_flat.phi
-        flat_declustered_mass      [jet_replace_mask] = new_jets_flat.mass
-        flat_declustered_jet_flavor[jet_replace_mask] = new_jets_flat.jet_flavor
-
+        flat_declustered_pt        [jet_replace_mask]    = new_jets_flat.pt
+        flat_declustered_eta       [jet_replace_mask]    = new_jets_flat.eta
+        flat_declustered_phi       [jet_replace_mask]    = new_jets_flat.phi
+        flat_declustered_mass      [jet_replace_mask]    = new_jets_flat.mass
+        flat_declustered_jet_flavor[jet_replace_mask]    = new_jets_flat.jet_flavor
+        flat_declustered_btagDeepFlavB[jet_replace_mask] = [float(i) for i in new_jets_flat.btagDeepFlavB]
         events_to_decluster_mask[update_indicies_global] = False
         num_trys += 1
 
-    #    declustered_pt =
+    #
+    #  Assigning the flavor bit (for writting out the synthetic datasets
+    #
+    flat_declustered_flavor_bit  = np.full(shape=len(flat_declustered_pt), fill_value=1)
+    flat_is_j_mask = flat_declustered_jet_flavor == "j"
+    flat_declustered_flavor_bit[flat_is_j_mask] = 0
+
     newly_declustered_events = ak.zip(
         {
             "pt":         ak.unflatten(flat_declustered_pt,         n_declustered_jets_per_event),
@@ -592,6 +607,8 @@ def make_synthetic_event(input_jets, input_pdfs, declustering_rand_seed=66, debu
             "phi":        ak.unflatten(flat_declustered_phi,        n_declustered_jets_per_event),
             "mass":       ak.unflatten(flat_declustered_mass,       n_declustered_jets_per_event),
             "jet_flavor": ak.unflatten(flat_declustered_jet_flavor, n_declustered_jets_per_event),
+            "btagDeepFlavB": ak.unflatten(flat_declustered_btagDeepFlavB, n_declustered_jets_per_event),
+            "jet_flavor_bit": ak.unflatten(flat_declustered_flavor_bit, n_declustered_jets_per_event),
         },
         with_name="PtEtaPhiMLorentzVector",
         behavior=vector.behavior,
