@@ -6,7 +6,7 @@ from itertools import chain
 from typing import TYPE_CHECKING, Callable, Iterable, NamedTuple
 
 from base_class.physics import di_higgs
-from base_class.physics.di_higgs import Coupling
+from base_class.physics.di_higgs import Coupling, Diagram
 from bokeh.layouts import column, row
 from bokeh.models import (
     AutocompleteInput,
@@ -15,11 +15,12 @@ from bokeh.models import (
     Dropdown,
     MultiChoice,
     Select,
+    Slider,
 )
 from hist.axis import AxesMixin, StrCategory
 
 from ._utils import Component
-from .config import UI, Datasets, Stacks
+from .config import UI, CouplingScan, Datasets, Stacks
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -71,7 +72,7 @@ class _KappaMatch:
                 if match is not None:
                     self._match[process] = dict(map(self._f, match.groupdict().items()))
             self._couplings = Coupling(*self._match.values())
-            self._model = getattr(di_higgs, model)(
+            self._model: Diagram = getattr(di_higgs, model)(
                 basis=self._couplings, unit_basis_weight=True
             )
         except Exception:
@@ -88,7 +89,7 @@ class _KappaMatch:
 
 class _KappaModel:
     def __init__(self, model: str, pattern: str, matched: _KappaMatch = None):
-        self._matched = _KappaMatch() if matched is None else matched
+        self.matched = _KappaMatch() if matched is None else matched
 
         self._dom_model = Select(options=_DIHIGGS, align="center")
         self._dom_pattern_div = _div(text="Pattern:")
@@ -114,16 +115,16 @@ class _KappaModel:
         self.disabled = False
 
     def __iter__(self):
-        yield from self._matched._match
+        yield from self.matched._match
 
     def __contains__(self, item):
-        return item in self._matched._match
+        return item in self.matched._match
 
     def _dom_model_change(self, attr, old, new):
         self._dom_patterns.completions = [*Datasets.get(new, ())]
 
     def update(self, processes: Iterable[str]):
-        self._matched = _KappaMatch(
+        self.matched = _KappaMatch(
             self._dom_patterns.value, processes, self._dom_model.value
         )
 
@@ -136,7 +137,7 @@ class _KappaModel:
         self._dom_model.disabled = value
         self._dom_patterns.disabled = value
         if value:
-            if self._matched:
+            if self.matched:
                 matched = sorted(self)
             else:
                 matched = []
@@ -151,9 +152,9 @@ class _KappaModel:
 
 class _StackGroup:
     def __init__(self, processes: MultiChoice, matched: Iterable[str] = None):
-        self._matched = list(matched or ())
+        self.matched = list(matched or ())
         self._dom_stacks = MultiChoice(
-            value=self._matched,
+            value=self.matched,
             options=processes.value,
             sizing_mode="stretch_width",
             align="center",
@@ -177,7 +178,7 @@ class _StackGroup:
 
     def update(self, processes: Iterable[str]):
         if set(self._dom_stacks.value) <= set(processes):
-            self._matched = self._dom_stacks.value
+            self.matched = self._dom_stacks.value
 
     @property
     def disabled(self):
@@ -187,7 +188,7 @@ class _StackGroup:
     def disabled(self, value: bool):
         self._dom_stacks.disabled = value
         if value:
-            if self._matched:
+            if self.matched:
                 matched = sorted(self)
             else:
                 matched = []
@@ -375,10 +376,55 @@ class HistGroup(Component):
         for callback in self._callbacks:
             callback(self._frozen)
 
-    def __call__(
-        self, data: dict[str, Hist1D], logger: Callable[[str]]
-    ):  # TODO: plot 2D histogram
+    def render(
+        self,
+        data: dict[str, Hist1D],  # TODO: plot 2D histogram
+        logger: Callable[[str], None],
+    ):
+        # render coupling sliders
+        coupling_link: dict[str, Slider] = {}
+        coupling_dom = []
+        for model in self._models:
+            if not model.matched:
+                continue
+            for k in model.matched._model.diagrams[0]:
+                if k in coupling_link:
+                    continue
+                slider, dom = self._render_slider(k)
+                coupling_link[k] = slider
+                coupling_dom.append(dom)
         # TODO add hist
         for k, (x, w, axes) in data.items():
             print(k, x, w, axes)
-        return column(sizing_mode="stretch_both")
+        return column(
+            column(*coupling_dom, sizing_mode="stretch_width"),
+            sizing_mode="stretch_both",
+        )
+
+    def _render_slider(self, coupling: str):
+        start, end, step = CouplingScan[coupling if coupling in CouplingScan else None]
+        slider = Slider(
+            start=start,
+            end=end,
+            step=step,
+            value=1,
+            title=coupling,
+            sizing_mode="stretch_width",
+        )
+        imin = self.shared.float_input(value=start, high=end, title="Min")
+        imax = self.shared.float_input(value=end, low=start, title="Max")
+        istep = self.shared.float_input(value=step, low=0, high=1, title="Step [0,1]")
+        ivalue = self.shared.float_input(value=1, low=start, high=end, title="Value")
+
+        imin.js_link("value", slider, "start")
+        imin.js_link("value", ivalue, "low")
+        imin.js_link("value", imax, "low")
+        imax.js_link("value", slider, "end")
+        imax.js_link("value", ivalue, "high")
+        imax.js_link("value", imin, "high")
+        ivalue.js_link("value", slider, "value")
+        slider.js_link("value", ivalue, "value")
+        istep.js_link("value", slider, "step")
+        return slider, row(
+            istep, imin, imax, slider, ivalue, sizing_mode="stretch_width"
+        )

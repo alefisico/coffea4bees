@@ -3,10 +3,13 @@ from __future__ import annotations
 from functools import partial
 from typing import TYPE_CHECKING, Generator, Iterable
 
+import fsspec
 import numpy as np
 import pandas as pd
+from bokeh.embed import file_html
 from bokeh.layouts import column, row
-from bokeh.models import Button, Div, InlineStyleSheet, MultiChoice, ScrollBox
+from bokeh.models import Button, Div, InlineStyleSheet, MultiChoice, ScrollBox, Select
+from bokeh.resources import Resources
 from hist import Hist
 from hist.axis import (
     AxesMixin,
@@ -20,13 +23,16 @@ from hist.axis import (
 
 from ._hist import HistGroup
 from ._treeview import TreeView
-from ._utils import Component
+from ._utils import Component, Confirmation, PathInput
 from .config import UI
 
 if TYPE_CHECKING:
     import numpy.typing as npt
 
+    from .__main__ import Main
     from ._hist import Hist1D
+
+_RESOURCE = ["cdn", "inline"]
 
 
 # Regular, Variable
@@ -110,7 +116,7 @@ class Plotter(Component):
         "border": UI.border,
     }
 
-    def __init__(self, parent, **kwargs):
+    def __init__(self, parent: Main, **kwargs):
         super().__init__(**kwargs)
         self._data = None
         self._parent = parent
@@ -135,8 +141,9 @@ class Plotter(Component):
         self.reset()
         self.data = hists
 
-        self._dom_full = self.shared.icon_button("")
-        self._dom_full.on_click(self._dom_fullscreen)
+        # select hists
+        self._dom_full_btn = self.shared.icon_button("")
+        self._dom_full_btn.on_click(self._dom_full)
         self._dom_plot = Button(
             label="Plot", button_type="success", sizing_mode="stretch_height"
         )
@@ -144,8 +151,8 @@ class Plotter(Component):
         self._dom_hist_select = self.shared.multichoice(
             options=[*self.data], search_option_limit=len(self.data)
         )
+        # hist tree
         ncats = len(categories)
-        # select hists
         self._dom_hist_tree = TreeView(
             paths={k: f"hist{len(v.axes)-ncats}d" for k, v in self.data.items()},
             root="hists",
@@ -172,6 +179,11 @@ class Plotter(Component):
             child=Div(),
             sizing_mode="stretch_both",
         )
+        # upload
+        self._dom_upload_path = PathInput(sizing_mode="stretch_width")
+        self._dom_upload_resource = Select(value=_RESOURCE[0], options=_RESOURCE)
+        self._dom_upload_confirm = Confirmation(self.shared, "upload")
+        self._dom_upload_confirm.on_click(self._dom_upload_plot)
         # blocks
         self.categories: dict[str, AxisProjector] = {}
         test = next(iter(hists.values()))
@@ -188,9 +200,16 @@ class Plotter(Component):
             self._dom_hist_tree,
             column(
                 row(
+                    self._dom_upload_path,
+                    Div(text="Resource:", align="center"),
+                    self._dom_upload_resource,
+                    self._dom_upload_confirm.dom,
+                    sizing_mode="stretch_width",
+                ),
+                row(
                     self._dom_plot,
                     self._dom_hist_select,
-                    self._dom_full,
+                    self._dom_full_btn,
                     sizing_mode="stretch_width",
                 ),
                 row(
@@ -208,6 +227,19 @@ class Plotter(Component):
     def status(self, msg: str):
         self.doc.add_next_tick_callback(partial(self._dom_update_status, msg))
 
+    def _dom_upload_plot(self):
+        if self._dom_main.child is self._dom_status:
+            self.log.error("No plot to upload.")
+            return
+        self._parent.upload(
+            path=self._dom_upload_path.value,
+            content=file_html(
+                models=self._dom_main.child,
+                resources=Resources(mode=self._dom_upload_resource.value),
+                title="\u03BA Framework Plots",
+            ),
+        )
+
     def _dom_update_status(self, msg: str):
         self._dom_main.child = self._dom_status
         self._dom_status.text = msg
@@ -224,7 +256,7 @@ class Plotter(Component):
 
     def _dom_enable_plot(self, frozen: bool):
         self._dom_plot.disabled = not frozen
-        self._dom_full.disabled = not frozen
+        self._dom_full_btn.disabled = not frozen
         if frozen:
             self._dom_cat_select.child.children = [
                 v.dom for k, v in self.categories.items() if k != self.hist.process
@@ -232,7 +264,7 @@ class Plotter(Component):
         else:
             self._dom_cat_select.child.children = []
 
-    def _dom_fullscreen(self):
+    def _dom_full(self):
         self.full = not self.full
         self._parent.full = self.full
 
@@ -247,10 +279,10 @@ class Plotter(Component):
     def full(self, value):
         self._full = value
         if value:
-            self._dom_full.icon.icon_name = "arrows-minimize"
+            self._dom_full_btn.icon.icon_name = "arrows-minimize"
             self.dom.children = [self._main_dom]
         else:
-            self._dom_full.icon.icon_name = "arrows-maximize"
+            self._dom_full_btn.icon.icon_name = "arrows-maximize"
             self.dom.children = [self.hist.dom, self._main_dom]
 
     def _plot(self, hists: list[str]):
@@ -268,6 +300,7 @@ class Plotter(Component):
         for name in hists:
             hist = self.data[name]
             try:
+                self.status(f'Preparing histogram "{name}"...')
                 match len(hist.axes) - len(self.categories):
                     case 1:
                         projected[name] = self._project1d(hist)
@@ -279,7 +312,7 @@ class Plotter(Component):
                         )
             except Exception as e:
                 self.log.error(f'Histogram "{name}" is skipped', exec_info=e)
-        plots = self.hist(projected, self.status)
+        plots = self.hist.render(projected, self.status)
         # TODO save or show
         # TEMP below
         self.doc.add_next_tick_callback(partial(self._dom_show_plot, plots))

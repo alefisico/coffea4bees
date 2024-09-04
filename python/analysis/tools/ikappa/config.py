@@ -20,11 +20,19 @@ XRootD = (
     "root://eosuser.cern.ch//eos/",
 )
 
+CouplingScan = MappingProxyType(
+    {
+        "kl": (-5, 10, 0.1),
+        None: (0, 5, 0.1),
+    }
+)
+
 
 class UI:
     height_log = 50
     height_multichoice = 40
     width_side = 200
+    width_numeric_input = 80
 
     color_background = "#E8E8E8"
     border = "1px solid #C8C8C8"

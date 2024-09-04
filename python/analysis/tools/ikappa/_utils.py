@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import html
 import traceback
 from datetime import datetime
@@ -14,9 +16,11 @@ from bokeh.models import (
     Div,
     InlineStyleSheet,
     MultiChoice,
+    NumericInput,
     Styles,
     TablerIcon,
 )
+from bokeh.util.callback_manager import EventCallback
 
 from .config import UI, XRootD
 
@@ -35,6 +39,29 @@ def PathInput(**kwargs):
     model = AutocompleteInput(**kwargs)
     model.on_change("value_input", partial(_change_input_glob, model))
     return model
+
+
+class Confirmation:
+    def __init__(self, shared: SharedDOM, icon: str, **kwargs):
+        kwargs.pop("button_type", None)
+        self._dom_action = shared.icon_button(icon, **kwargs)
+        self._dom_confirm = shared.icon_button("check", button_type="success", **kwargs)
+        self._dom_cancel = shared.icon_button("x", button_type="danger", **kwargs)
+        self._dom_action.on_click(self._dom_action_click)
+        self._dom_confirm.on_click(self._dom_reset)
+        self._dom_cancel.on_click(self._dom_reset)
+
+        self.dom = row()
+        self._dom_reset()
+
+    def _dom_action_click(self):
+        self.dom.children = [self._dom_confirm, self._dom_cancel]
+
+    def _dom_reset(self):
+        self.dom.children = [self._dom_action]
+
+    def on_click(self, handler: EventCallback):
+        self._dom_confirm.on_click(handler)
 
 
 class BokehLog:
@@ -166,6 +193,11 @@ class SharedDOM:
             "sizing_mode": "stretch_width",
         }
 
+        self._float_input_style = {
+            "width": UI.width_numeric_input,
+            "mode": "float",
+        }
+
     def multichoice(self, z_index: Optional[int] = None, **kwargs):
         if z_index is None:
             z_index = self._multichoice_z_index
@@ -187,6 +219,10 @@ class SharedDOM:
         for click in onclick:
             btn.on_click(click)
         return btn
+
+    def float_input(self, **kwargs):
+        kwargs = kwargs | self._float_input_style
+        return NumericInput(**kwargs)
 
 
 class Component:

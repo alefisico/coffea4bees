@@ -45,9 +45,13 @@ class Main(Component):
         )
         self.dom = column(sizing_mode="stretch_both", margin=(0, 0, 5, 0))
 
-        self._load_queue = Queue()
+        self._load_queue: Queue[str] = Queue()
         self._load_thread = Thread(target=self._load_hist, daemon=True)
         self._load_thread.start()
+
+        self._upload_queue: Queue[tuple[str, str]] = Queue()
+        self._upload_thread = Thread(target=self._upload_plot, daemon=True)
+        self._upload_thread.start()
 
     @property
     def full(self):
@@ -70,9 +74,12 @@ class Main(Component):
     def _load_hist(self):
         while path := self._load_queue.get():
             try:
-                with fsspec.open(path, compression=self._hist_compression) as file:
-                    self.log(f'Loading data from "{path}"...')
+                with fsspec.open(
+                    path, mode="rb", compression=self._hist_compression
+                ) as file:
+                    self.log(f'[async] Loading data from "{path}"...')
                     data = cloudpickle.load(file)
+                    self.log(f'[async] Loaded from "{path}".')
                     self.log("Sanitizing data...")
                     groups = sanitized(data["hists"], data["categories"])
                     hists = {k: data["hists"][k] for k in groups[0]}
@@ -89,6 +96,20 @@ class Main(Component):
 
     def _dom_load_hist(self):
         self._load_queue.put(self._dom_hist_input.value)
+
+    def _upload_plot(self):
+        while item := self._upload_queue.get():
+            path, content = item
+            try:
+                with fsspec.open(path, "wt") as file:
+                    self.log(f'[async] Uploading plot to "{path}"...')
+                    file.write(content)
+                self.log(f'[async] Uploaded to "{path}".')
+            except Exception as e:
+                self.log.error(exec_info=e)
+
+    def upload(self, path: str, content: str):
+        self._upload_queue.put((path, content))
 
     def _dom_render(self, doc: Document):
         doc.title = "i\u03BA"
