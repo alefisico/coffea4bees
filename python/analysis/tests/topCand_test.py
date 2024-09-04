@@ -119,7 +119,7 @@ class topCandRecoTestCase(unittest.TestCase):
     def test_buildTopCand(self):
         top_cands = find_tops(self.input_jets)
 
-        rec_top_cands = buildTop(self.input_jets, top_cands)
+        _, rec_top_cands = buildTop(self.input_jets, top_cands)
         xW_min = rec_top_cands[:, 0].xW
         xbW_min = rec_top_cands[:, 0].xbW
 
