@@ -24,6 +24,8 @@ from bokeh.util.callback_manager import EventCallback
 
 from .config import UI, XRootD
 
+_STYLESHEETS = "stylesheets"
+
 
 def _change_input_glob(self: AutocompleteInput, attr, old, new: str):
     empty = not (paths := glob(f"{new}*"))
@@ -184,7 +186,7 @@ class SharedDOM:
             "aspect_ratio": 1,
             "button_type": "primary",
             "align": "center",
-            "stylesheets": [InlineStyleSheet(css=".bk-btn {padding: 1px 4px;}")],
+            _STYLESHEETS: [InlineStyleSheet(css=".bk-btn {padding: 1px 4px;}")],
         }
 
         self._multichoice_z_index = 1000
@@ -198,31 +200,77 @@ class SharedDOM:
             "mode": "float",
         }
 
+        self._hr_style = {
+            "sizing_mode": "stretch_width",
+            _STYLESHEETS: [
+                InlineStyleSheet(
+                    css=f"""
+div.bk-clearfix {{
+    width: 100%;
+}}
+hr {{
+    border: none;
+    height: 1px;
+    background-color: {UI.color_border};
+}}
+"""
+                )
+            ],
+        }
+
+    @staticmethod
+    def __merge(default: dict, custom: dict, **fixed):
+        styles = (default, custom, fixed)
+        stylesheets = sum((s.get(_STYLESHEETS, []) for s in styles), start=[])
+        custom = default | custom | fixed
+        if stylesheets:
+            custom[_STYLESHEETS] = stylesheets
+        return custom
+
     def multichoice(self, z_index: Optional[int] = None, **kwargs):
         if z_index is None:
             z_index = self._multichoice_z_index
             self._multichoice_z_index += 1
-        kwargs = self._multichoice_style | kwargs
         return MultiChoice(
-            stylesheets=[
-                InlineStyleSheet(
-                    css=f"div.choices {{background: white;z-index: {z_index};}}"
-                )
-            ],
-            **kwargs,
+            **self.__merge(
+                self._multichoice_style,
+                kwargs,
+                stylesheets=[
+                    InlineStyleSheet(
+                        css=f"div.choices {{background: white;z-index: {z_index};}}"
+                    )
+                ],
+            ),
         )
 
     def icon_button(self, symbol: str, *onclick, **kwargs):
-        kwargs.pop("icon", None)
-        kwargs = self._icon_button_style | kwargs
-        btn = Button(icon=TablerIcon(icon_name=symbol, size="1.5em"), **kwargs)
+        btn = Button(
+            **self.__merge(
+                self._icon_button_style,
+                kwargs,
+                icon=TablerIcon(icon_name=symbol, size="1.5em"),
+            ),
+        )
         for click in onclick:
             btn.on_click(click)
         return btn
 
     def float_input(self, **kwargs):
-        kwargs = kwargs | self._float_input_style
-        return NumericInput(**kwargs)
+        return NumericInput(
+            **self.__merge(
+                self._float_input_style,
+                kwargs,
+            )
+        )
+
+    def hr(self, **kwargs):
+        return Div(
+            **self.__merge(
+                self._hr_style,
+                kwargs,
+                text="<hr>",
+            )
+        )
 
 
 class Component:

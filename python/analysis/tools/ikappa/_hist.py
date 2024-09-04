@@ -2,20 +2,26 @@ from __future__ import annotations
 
 import difflib
 import re
+from abc import ABC, abstractmethod
+from collections import defaultdict
 from itertools import chain
-from typing import TYPE_CHECKING, Callable, Iterable, NamedTuple
+from typing import TYPE_CHECKING, Callable, Generator, Iterable, NamedTuple, Optional
 
 from base_class.physics import di_higgs
 from base_class.physics.di_higgs import Coupling, Diagram
-from bokeh.layouts import column, row
+from bokeh.layouts import column, grid, row
 from bokeh.models import (
     AutocompleteInput,
     Button,
+    Checkbox,
     Div,
     Dropdown,
     MultiChoice,
+    Row,
+    ScrollBox,
     Select,
     Slider,
+    TextInput,
 )
 from hist.axis import AxesMixin, StrCategory
 
@@ -42,7 +48,14 @@ _DIHIGGS = sorted(set(di_higgs.__all__) - {"Coupling"})
 _PROCESS = "process"
 
 
-def _div(text: str):
+class SourceID:
+    raw = "_{}".format
+    process = "rp{:d}".format
+    model = "m{}p{:d}".format
+    stack = "s{:d}p{:d}".format
+
+
+def _label(text: str):
     return Div(text=text, align="center")
 
 
@@ -51,12 +64,6 @@ def _btn(label: str, *onclick):
     for click in onclick:
         btn.on_click(click)
     return btn
-
-
-def _update_menu(drop: Dropdown, matched: list[str]):
-    drop.menu = [(m, m) for m in matched]
-    drop.label = "Matched" if matched else "No Match"
-    drop.button_type = "success" if matched else "danger"
 
 
 class _KappaMatch:
@@ -87,12 +94,35 @@ class _KappaMatch:
         return k, float(cls._D.sub(".", v))
 
 
-class _KappaModel:
+class _Matched(ABC):
+    dom_hint: list
+    dom_hide: list
+    dom_matched: Dropdown
+    dom: Row
+    matched: bool
+
+    @abstractmethod
+    def __iter__(self): ...
+
+    def _disable(self, value: bool):
+        if value:
+            matched = sorted(self) if self.matched else []
+            self.dom_matched.menu = [(m, m) for m in matched]
+            self.dom_matched.label = "Matched" if matched else "No Match"
+            self.dom_matched.button_type = "success" if matched else "danger"
+
+            self.dom.children = self.dom_hint + [self.dom_matched]
+        else:
+            self.dom.children = self.dom_hint + self.dom_hide
+
+
+class _KappaModel(_Matched):
+    matched: _KappaMatch
+
     def __init__(self, model: str, pattern: str, matched: _KappaMatch = None):
         self.matched = _KappaMatch() if matched is None else matched
 
         self._dom_model = Select(options=_DIHIGGS, align="center")
-        self._dom_pattern_div = _div(text="Pattern:")
         self._dom_patterns = AutocompleteInput(
             value=pattern,
             restrict=False,
@@ -102,15 +132,11 @@ class _KappaModel:
         )
         self._dom_model.on_change("value", self._dom_model_change)
         self._dom_model.value = model
-        self._dom_matched = Dropdown(sizing_mode="stretch_width", align="center")
 
-        self.dom = row(
-            _div(text="Model:"),
-            self._dom_model,
-            self._dom_pattern_div,
-            self._dom_patterns,
-            sizing_mode="stretch_width",
-        )
+        self.dom_hint = [_label(text="Model:"), self._dom_model]
+        self.dom_hide = [_label(text="Pattern:"), self._dom_patterns]
+        self.dom_matched = Dropdown(sizing_mode="stretch_width", align="center")
+        self.dom = row(sizing_mode="stretch_width")
 
         self.disabled = False
 
@@ -136,66 +162,66 @@ class _KappaModel:
     def disabled(self, value: bool):
         self._dom_model.disabled = value
         self._dom_patterns.disabled = value
-        if value:
-            if self.matched:
-                matched = sorted(self)
-            else:
-                matched = []
-            _update_menu(self._dom_matched, matched)
-            self.dom.children = self.dom.children[:2] + [self._dom_matched]
-        else:
-            self.dom.children = self.dom.children[:2] + [
-                self._dom_pattern_div,
-                self._dom_patterns,
-            ]
+        self._disable(value)
+
+    @property
+    def name(self):
+        return self._dom_patterns.value
+
+    @property
+    def model(self):
+        return self._dom_model.value
 
 
-class _StackGroup:
-    def __init__(self, processes: MultiChoice, matched: Iterable[str] = None):
+class _StackGroup(_Matched):
+    matched: list[str]
+
+    def __init__(
+        self, name: str, processes: MultiChoice, matched: Iterable[str] = None
+    ):
         self.matched = list(matched or ())
-        self._dom_stacks = MultiChoice(
+
+        self._dom_name = TextInput(value=name or "")
+        self._dom_bins = MultiChoice(
             value=self.matched,
             options=processes.value,
             sizing_mode="stretch_width",
             align="center",
         )
-        self._dom_stacks.js_link("options", processes, "value")
-        self._dom_stacked = Dropdown(sizing_mode="stretch_width", align="center")
+        self._dom_bins.js_link("options", processes, "value")
 
-        self.dom = row(
-            _div(text="Stack:"),
-            self._dom_stacks,
-            sizing_mode="stretch_width",
-        )
+        self.dom_hint = [_label(text="Stack:"), self._dom_name]
+        self.dom_hide = [_label(text="Bins:"), self._dom_bins]
+        self.dom_matched = Dropdown(sizing_mode="stretch_width", align="center")
+        self.dom = row(sizing_mode="stretch_width")
 
         self.disabled = False
 
-    def __iter__(self):
-        yield from self._dom_stacks.value
+    def __iter__(self) -> Generator[str, None, None]:
+        yield from self.matched
 
     def __contains__(self, item):
-        return item in self._dom_stacks.value
+        return item in self.matched
 
     def update(self, processes: Iterable[str]):
-        if set(self._dom_stacks.value) <= set(processes):
-            self.matched = self._dom_stacks.value
+        if set(self._dom_bins.value) <= set(processes):
+            self.matched = self._dom_bins.value
+        else:
+            self.matched = []
 
     @property
     def disabled(self):
-        return self._dom_stacks.disabled
+        return self._dom_name.disabled
 
     @disabled.setter
     def disabled(self, value: bool):
-        self._dom_stacks.disabled = value
-        if value:
-            if self.matched:
-                matched = sorted(self)
-            else:
-                matched = []
-            _update_menu(self._dom_stacked, matched)
-            self.dom.children[-1] = self._dom_stacked
-        else:
-            self.dom.children[-1] = self._dom_stacks
+        self._dom_name.disabled = value
+        self._dom_bins.disabled = value
+        self._disable(value)
+
+    @property
+    def name(self):
+        return self._dom_name.value
 
 
 class HistGroup(Component):
@@ -250,17 +276,19 @@ class HistGroup(Component):
         self._dom_stacks = column(
             sizing_mode="stretch_width", background=UI.color_background
         )
+        # processes
+        self._processes: list[str] = []
         # blocks
         self.dom = column(
             row(
                 self._dom_freeze,
-                _div(text="Model:"),
+                _label(text="Model:"),
                 self._dom_add_model,
                 self._dom_remove_model,
-                _div(text="Stack:"),
+                _label(text="Stack:"),
                 self._dom_add_stack,
                 self._dom_remove_stack,
-                _div(text="Axis:"),
+                _label(text="Axis:"),
                 self._dom_cats,
                 self._dom_cats_all,
                 self._dom_cats_clear,
@@ -286,9 +314,9 @@ class HistGroup(Component):
             self._models.pop()
             self._dom_models.children.pop()
 
-    def add_stack(self, stacks: Iterable[str] = None):
+    def add_stack(self, name: Optional[str] = None, stacks: Iterable[str] = None):
         self._stacks.append(
-            _StackGroup(processes=self._dom_cats_selected, matched=stacks)
+            _StackGroup(name=name, processes=self._dom_cats_selected, matched=stacks)
         )
         self._dom_stacks.children.append(self._stacks[-1].dom)
 
@@ -315,9 +343,9 @@ class HistGroup(Component):
         if not self._models:
             self._dom_cats.value = categories[0]
             processes = set(self._categories[self.process]._choices)
-        for ks in Stacks:
-            if set(ks) <= processes:
-                self.add_stack(ks)
+        for k, vs in Stacks:
+            if set(vs) <= processes:
+                self.add_stack(k, vs)
                 processes -= set(self._stacks[-1])
 
     def _dom_freeze_click(self):
@@ -368,6 +396,7 @@ class HistGroup(Component):
             for stacks in self._stacks:
                 stacks.update(processes)
                 processes -= set(stacks)
+            self._processes = sorted(processes)
 
         for control in chain(self._controls, self._models, self._stacks):
             control.disabled = self._frozen
@@ -381,6 +410,18 @@ class HistGroup(Component):
         data: dict[str, Hist1D],  # TODO: plot 2D histogram
         logger: Callable[[str], None],
     ):
+        colors: dict[str, str] = {}
+
+        # preprocessing
+        models: dict[str, list[_KappaModel]] = defaultdict(list)
+        for m in self._models:
+            if m.matched:
+                models[m.model].append(m)
+        stacks: list[_StackGroup] = []
+        for s in self._stacks:
+            if s.matched:
+                stacks.append(s)
+
         # render coupling sliders
         coupling_link: dict[str, Slider] = {}
         coupling_dom = []
@@ -393,11 +434,61 @@ class HistGroup(Component):
                 slider, dom = self._render_slider(k)
                 coupling_link[k] = slider
                 coupling_dom.append(dom)
+
+        # render legend # TODO
+        legends: dict[str, Checkbox] = {}
+        legend_column = []
+
+        def legend_add(field: str, label: str):
+            colors[field] = "yellow"  # TODO placeholder
+            legends[field] = Checkbox(label=label, active=True)  # TODO placeholder
+            legend_column.append(legends[field])
+
+        def legend_title(title: str):
+            legend_column.append(
+                Div(text=title, align="center", styles={"font-size": "1.2em"})
+            )
+
+        def legend_hr():
+            legend_column.append(self.shared.hr())
+
+        legend_title("Legend")
+        for i, p in enumerate(self._processes):
+            legend_add(SourceID.process(i), p)
+        legend_hr()
+        for k, ms in models.items():
+            legend_title(f"(Model) {k}")
+            for i, m in enumerate(ms):
+                legend_add(SourceID.model(k, i), m.name)
+            legend_hr()
+        for i, s in enumerate(stacks):
+            legend_title(f"(Stack) {s.name or i+1}")
+            for j, p in enumerate(s):
+                legend_add(SourceID.stack(i, j), p)
+            legend_hr()
+
+        # render plots # TODO
+        plot_grid = grid(sizing_mode="stretch_both")
         # TODO add hist
         for k, (x, w, axes) in data.items():
+            logger(f'Rendering histogram "{k}"')
             print(k, x, w, axes)
+
         return column(
             column(*coupling_dom, sizing_mode="stretch_width"),
+            row(
+                ScrollBox(child=plot_grid, sizing_mode="stretch_both"),
+                ScrollBox(
+                    child=column(
+                        *legend_column,
+                        width=UI.width_side,
+                        sizing_mode="stretch_height",
+                    ),
+                    styles={"border": UI.border},
+                    sizing_mode="stretch_height",
+                ),
+                sizing_mode="stretch_both",
+            ),
             sizing_mode="stretch_both",
         )
 
@@ -413,7 +504,7 @@ class HistGroup(Component):
         )
         imin = self.shared.float_input(value=start, high=end, title="Min")
         imax = self.shared.float_input(value=end, low=start, title="Max")
-        istep = self.shared.float_input(value=step, low=0, high=1, title="Step [0,1]")
+        istep = self.shared.float_input(value=step, low=0, title="Step")
         ivalue = self.shared.float_input(value=1, low=start, high=end, title="Value")
 
         imin.js_link("value", slider, "start")
@@ -426,5 +517,5 @@ class HistGroup(Component):
         slider.js_link("value", ivalue, "value")
         istep.js_link("value", slider, "step")
         return slider, row(
-            istep, imin, imax, slider, ivalue, sizing_mode="stretch_width"
+            ivalue, slider, istep, imin, imax, sizing_mode="stretch_width"
         )

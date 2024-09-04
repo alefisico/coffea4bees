@@ -3,7 +3,6 @@ from __future__ import annotations
 from functools import partial
 from typing import TYPE_CHECKING, Generator, Iterable
 
-import fsspec
 import numpy as np
 import pandas as pd
 from bokeh.embed import file_html
@@ -21,7 +20,7 @@ from hist.axis import (
     Variable,
 )
 
-from ._hist import HistGroup
+from ._hist import HistGroup, SourceID
 from ._treeview import TreeView
 from ._utils import Component, Confirmation, PathInput
 from .config import UI
@@ -175,7 +174,7 @@ class Plotter(Component):
             sizing_mode="stretch_height",
         )
         # plots
-        self._dom_main = ScrollBox(
+        self._dom_content = ScrollBox(
             child=Div(),
             sizing_mode="stretch_both",
         )
@@ -192,11 +191,11 @@ class Plotter(Component):
                 self.categories[axis.name] = AxisProjector(
                     axis, test.project(axis.name)
                 )
-        self.hist = HistGroup(
+        self.group = HistGroup(
             self.categories, self._dom_enable_plot, **self.inherit_global_states
         )
-        self.hist.frozen = True
-        self._main_dom = row(
+        self.group.frozen = True
+        self.main = row(
             self._dom_hist_tree,
             column(
                 row(
@@ -214,7 +213,7 @@ class Plotter(Component):
                 ),
                 row(
                     self._dom_cat_select,
-                    self._dom_main,
+                    self._dom_content,
                     sizing_mode="stretch_both",
                 ),
                 sizing_mode="stretch_both",
@@ -228,24 +227,24 @@ class Plotter(Component):
         self.doc.add_next_tick_callback(partial(self._dom_update_status, msg))
 
     def _dom_upload_plot(self):
-        if self._dom_main.child is self._dom_status:
+        if self._dom_content.child is self._dom_status:
             self.log.error("No plot to upload.")
             return
         self._parent.upload(
             path=self._dom_upload_path.value,
             content=file_html(
-                models=self._dom_main.child,
+                models=self._dom_content.child,
                 resources=Resources(mode=self._dom_upload_resource.value),
                 title="\u03BA Framework Plots",
             ),
         )
 
     def _dom_update_status(self, msg: str):
-        self._dom_main.child = self._dom_status
+        self._dom_content.child = self._dom_status
         self._dom_status.text = msg
 
     def _dom_show_plot(self, plots):
-        self._dom_main.child = plots
+        self._dom_content.child = plots
 
     def _dom_reset(self):
         self.dom.children = [self._dom_idle]
@@ -259,10 +258,11 @@ class Plotter(Component):
         self._dom_full_btn.disabled = not frozen
         if frozen:
             self._dom_cat_select.child.children = [
-                v.dom for k, v in self.categories.items() if k != self.hist.process
+                v.dom for k, v in self.categories.items() if k != self.group.process
             ]
         else:
             self._dom_cat_select.child.children = []
+            self._dom_update_status("")
 
     def _dom_full(self):
         self.full = not self.full
@@ -280,10 +280,10 @@ class Plotter(Component):
         self._full = value
         if value:
             self._dom_full_btn.icon.icon_name = "arrows-minimize"
-            self.dom.children = [self._main_dom]
+            self.dom.children = [self.main]
         else:
             self._dom_full_btn.icon.icon_name = "arrows-maximize"
-            self.dom.children = [self.hist.dom, self._main_dom]
+            self.dom.children = [self.group.dom, self.main]
 
     def _plot(self, hists: list[str]):
         self.status("Plotting...")
@@ -312,9 +312,7 @@ class Plotter(Component):
                         )
             except Exception as e:
                 self.log.error(f'Histogram "{name}" is skipped', exec_info=e)
-        plots = self.hist.render(projected, self.status)
-        # TODO save or show
-        # TEMP below
+        plots = self.group.render(projected, self.status)
         self.doc.add_next_tick_callback(partial(self._dom_show_plot, plots))
 
     @staticmethod
@@ -337,10 +335,10 @@ class Plotter(Component):
         var: npt.NDArray = hist.variances(flow=True)
         _transpose, edge = False, None
         _sum, _slice = [], []
-        processes = [*self.hist.selected]
+        processes = [*self.group.selected]
         for i, axis in enumerate(hist.axes):
             n = axis.name
-            if n == self.hist.process:
+            if n == self.group.process:
                 _slice.append(self.categories[n].select(processes))
                 _transpose = edge is None
             elif n in self.categories:
@@ -350,8 +348,9 @@ class Plotter(Component):
                 _slice.append(np.arange(val.shape[i]))
                 edge = axis
         val, var = self.__project(_slice, _sum, _transpose, val, var)
+        columns = [*map(SourceID.raw, processes)]
         return (
-            pd.DataFrame(var, columns=processes),
-            pd.DataFrame(val, columns=processes),
+            pd.DataFrame(var, columns=columns),
+            pd.DataFrame(val, columns=columns),
             edge,
         )

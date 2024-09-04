@@ -1,26 +1,28 @@
 from types import MappingProxyType
 
-Datasets = MappingProxyType(
+Datasets: dict[str, tuple[str, ...]] = MappingProxyType(
     {
-        "ggF": (r"GluGluToHHTo4B_cHHH(?P<kl>[p\d]+)",),
+        "ggF": (r"^GluGluToHHTo4B_cHHH(?P<kl>[p\d]+)$",),
     }
 )
 
-Stacks = (
+Stacks: tuple[tuple[str, tuple[str, ...]]] = (
     (
-        "Multijet",
-        "TTToSemiLeptonic",
-        "TTToHadronic",
-        "TTTo2L2Nu",
+        "Background",
+        (
+            "Multijet",
+            "TTToSemiLeptonic",
+            "TTToHadronic",
+            "TTTo2L2Nu",
+        ),
     ),
 )
-
-XRootD = (
+XRootD: tuple[str, ...] = (
     "root://cmseos.fnal.gov//store/",
     "root://eosuser.cern.ch//eos/",
 )
 
-CouplingScan = MappingProxyType(
+CouplingScan: dict[str, tuple[float, float, float]] = MappingProxyType(
     {
         "kl": (-5, 10, 0.1),
         None: (0, 5, 0.1),
@@ -35,4 +37,5 @@ class UI:
     width_numeric_input = 80
 
     color_background = "#E8E8E8"
-    border = "1px solid #C8C8C8"
+    color_border = "#C8C8C8"
+    border = f"1px solid {color_border}"
