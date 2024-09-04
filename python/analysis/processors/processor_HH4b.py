@@ -120,6 +120,9 @@ class analysis(processor.ProcessorABC):
         self.isDataForMixed = not (self.dataset.find("data_3b_for_mixed") == -1)
         self.isTTForMixed   = not (self.dataset.find("TTTo") == -1) and not ( self.dataset.find("_for_mixed") == -1 )
 
+        if self.isMixedData:
+            self.isMC = False
+
         self.nEvent = len(event)
 
         logging.debug(fname)
