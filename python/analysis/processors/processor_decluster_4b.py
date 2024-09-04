@@ -409,8 +409,9 @@ class analysis(processor.ProcessorABC):
 
 
         # Apply object selection (function does not remove events, adds content to objects)
-        event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year],
-                                           isMixedData=isMixedData, isTTForMixed=isTTForMixed, isDataForMixed=isDataForMixed )
+        doLeptonRemoval = not (isMixedData or isTTForMixed or isDataForMixed)
+        event = apply_object_selection_4b( event, self.corrections_metadata[year], doLeptonRemoval=doLeptonRemoval )
+
 
 
         selections = PackedSelection()
@@ -780,33 +781,10 @@ class analysis(processor.ProcessorABC):
 
             rec_top_cands = buildTop(selev.selJet, top_cands)
 
-            selev["top_cand"] = rec_top_cands[:, 0]
-            bReg_p = selev.top_cand.b * selev.top_cand.b.bRegCorr
-            selev["top_cand", "p"] = bReg_p + selev.top_cand.j + selev.top_cand.l
+            selev['top_cand'], _ = buildTop(selev.selJet, top_cands)
 
-            # mW, mt = 80.4, 173.0
-            selev["top_cand", "W"] = ak.zip( { "p": selev.top_cand.j + selev.top_cand.l,
-                                               "j": selev.top_cand.j,
-                                               "l": selev.top_cand.l, } )
-
-            selev["top_cand", "W", "pW"] = selev.top_cand.W.p * ( mW / selev.top_cand.W.p.mass )
-            selev["top_cand", "mbW"] = (bReg_p + selev.top_cand.W.pW).mass
-            selev["top_cand", "xt"] = (selev.top_cand.p.mass - mt) / ( 0.10 * selev.top_cand.p.mass )
-            selev["top_cand", "xWt"] = np.sqrt(selev.top_cand.xW**2 + selev.top_cand.xt**2)
-            selev["top_cand", "mbW"] = (bReg_p + selev.top_cand.W.pW).mass
-            selev["top_cand", "xWbW"] = np.sqrt( selev.top_cand.xW**2 + selev.top_cand.xbW**2 )
-
-            #
-            # after minimizing, the ttbar distribution is centered around ~(0.5, 0.25) with surfaces of constant density approximiately constant radii
-            #
-            selev["top_cand", "rWbW"] = np.sqrt( (selev.top_cand.xbW - 0.25) ** 2 + (selev.top_cand.xW - 0.5) ** 2 )
-
-            selev["xbW_reco"] = selev.top_cand.xbW
-            selev["xW_reco"] = selev.top_cand.xW
-
-            if "xbW" in selev.fields:  #### AGE: this should be temporary
-                selev["delta_xbW"] = selev.xbW - selev.xbW_reco
-                selev["delta_xW"] = selev.xW - selev.xW_reco
+            selev["xbW"] = selev.top_cand.xbW
+            selev["xW"] = selev.top_cand.xW
 
 
         if self.apply_FvT:
@@ -991,11 +969,6 @@ class analysis(processor.ProcessorABC):
                 if isMixedData or isDataForMixed or isTTForMixed:
                     FvT_skip = ["pt", "pm3", "pm4"]
 
-            if "xbW_reco" in selev.fields:
-                fill += hist.add("xW",  (100, -12, 12, ("xW_reco", "xW")))
-                fill += hist.add("xbW", (100, -15, 15, ("xbW_reco", "xbW")))
-
-            else:
                 fill += hist.add("xW",  (100, -12, 12, ("xW", "xW")))
                 fill += hist.add("xbW", (100, -15, 15, ("xbW", "xbW")))
 
@@ -1101,11 +1074,6 @@ class analysis(processor.ProcessorABC):
 
                 selev["nSelJets"] = ak.num(selev.selJet)
 
-                if "xbW_reco" in selev.fields:  #### AGE: this should be temporary
-                    selev["xbW"] = selev["xbW_reco"]
-                    selev["xW"]  = selev["xW_reco"]
-
-                ####
                 from ..helpers.classifier.HCR import dump_input_friend, dump_JCM_weight
 
                 friends["friends"] = dump_input_friend( selev, self.make_classifier_input, "HCR_input", *selections, weight="weight" if isMC else "weight_noJCM_noFvT", NotCanJet="notCanJet_coffea") | dump_JCM_weight( selev, self.make_classifier_input, "JCM_weight", *selections, )
