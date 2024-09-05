@@ -13,13 +13,6 @@ from analysis.helpers.filling_histograms import (
 from analysis.helpers.event_weights import add_weights
 from analysis.helpers.cutflow import cutFlow
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
-from analysis.helpers.hist_templates import (
-    FvTHists,
-    QuadJetHists,
-    SvBHists,
-    TopCandHists,
-    WCandHists,
-)
 from analysis.helpers.SvB_helpers import setSvBVars, compute_SvB
 from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
 from analysis.helpers.selection_basic_4b import (
@@ -32,11 +25,9 @@ from analysis.helpers.topCandReconstruction import (
     find_tops,
     find_tops_slow,
 )
-from base_class.hist import Collection, Fill
-from base_class.physics.object import Elec, Jet, LorentzVector, Muon
 from base_class.root import Chunk, TreeReader
 from coffea import processor
-from coffea.analysis_tools import PackedSelection, Weights
+from coffea.analysis_tools import PackedSelection
 from coffea.nanoevents import NanoAODSchema, NanoEventsFactory
 from coffea.util import load
 
@@ -678,120 +669,19 @@ class analysis(processor.ProcessorABC):
         #
 
         if not self.run_systematics:
-
-<<<<<<< HEAD
-            hist = filling_nominal_histograms(selev, processName, year, isMC, self.histCuts, self.apply_FvT, self.JCM, self.run_SvB, self.top_reconstruction, self.isMixedData, self.isDataForMixed, self.isTTForMixed, event.metadata)
-=======
-            fill = Fill(process=self.processName, year=self.year, weight="weight")
-
-            hist = Collection( process=[self.processName],
-                               year=[self.year],
-                               tag=[3, 4, 0],  # 3 / 4/ Other
-                               region=[2, 1, 0],  # SR / SB / Other
-                               **dict((s, ...) for s in self.histCuts)
-                               )
-
-            #
-            # To Add
-            #
-
-            #    m4j_vs_leadSt_dR = dir.make<TH2F>("m4j_vs_leadSt_dR", (name+"/m4j_vs_leadSt_dR; m_{4j} [GeV]; S_{T} leading boson candidate #DeltaR(j,j); Entries").c_str(), 40,100,1100, 25,0,5);
-            #    m4j_vs_sublSt_dR = dir.make<TH2F>("m4j_vs_sublSt_dR", (name+"/m4j_vs_sublSt_dR; m_{4j} [GeV]; S_{T} subleading boson candidate #DeltaR(j,j); Entries").c_str(), 40,100,1100, 25,0,5);
-
-            fill += hist.add( "nPVs", (101, -0.5, 100.5, ("PV.npvs", "Number of Primary Vertices")) )
-            fill += hist.add( "nPVsGood", (101, -0.5, 100.5, ("PV.npvsGood", "Number of Good Primary Vertices")), )
-
-            fill += hist.add( "hT", (50, 0, 1500, ("hT", "h_{T} [GeV]")), )
-            fill += hist.add( "hT_selected", (50, 0, 1500, ("hT_selected", "h_{T} [GeV]")), )
-
-            fill += hist.add("xW",  (100, -12, 12, ("xW", "xW")))
-            fill += hist.add("xbW", (100, -15, 15, ("xbW", "xbW")))
-
-            #
-            # Separate reweighting for the different mixed samples
-            #
-            if self.isDataForMixed:
-                for _FvT_name in event.metadata["FvT_names"]:
-                    fill += SvBHists( (f"SvB_{_FvT_name}",    "SvB Classifier"),    "SvB",    weight=f"weight_{_FvT_name}" )
-                    fill += SvBHists( (f"SvB_MA_{_FvT_name}", "SvB MA Classifier"), "SvB_MA", weight=f"weight_{_FvT_name}" )
-
-            #
-            # Jets
-            #
-            fill += Jet.plot(("selJets", "Selected Jets"),        "selJet",           skip=["deepjet_c"])
-            fill += Jet.plot(("canJets", "Higgs Candidate Jets"), "canJet",           skip=["deepjet_c"])
-            fill += Jet.plot(("othJets", "Other Jets"),           "notCanJet_coffea", skip=["deepjet_c"])
-            fill += Jet.plot(("tagJets", "Tag Jets"),             "tagJet",           skip=["deepjet_c"])
-
-            #
-            #  Make quad jet hists
-            #
-            fill += LorentzVector.plot_pair( ("v4j", R"$HH_{4b}$"), "v4j", skip=["n", "dr", "dphi", "st"], bins={"mass": (120, 0, 1200)}, )
-            fill += QuadJetHists( ("quadJet_selected", "Selected Quad Jet"), "quadJet_selected" )
-            fill += QuadJetHists( ("quadJet_min_dr", "Min dR Quad Jet"), "quadJet_min_dr" )
-
-            #
-            #  Make classifier hists
-            #
-            if self.apply_FvT:
-                FvT_skip = []
-                if self.isMixedData or self.isDataForMixed or self.isTTForMixed:
-                    FvT_skip = ["pt", "pm3", "pm4"]
-
-                fill += FvTHists(("FvT", "FvT Classifier"), "FvT", skip=FvT_skip)
-
-                fill += hist.add("quadJet_selected_FvT_score", (100, 0, 1, ("quadJet_selected.FvT_q_score", "Selected Quad Jet Diboson FvT q score") ) )
-                fill += hist.add("quadJet_min_FvT_score",      (100, 0, 1, ("quadJet_min_dr.FvT_q_score",   "Min dR Quad Jet Diboson FvT q score"  ) ) )
-
-                if self.JCM:
-                    fill += hist.add("FvT_noFvT", (100, 0, 5, ("FvT.FvT", "FvT reweight")), weight="weight_noFvT")
-
-            skip_all_but_n = ["deepjet_b", "energy", "eta", "id_jet", "id_pileup", "mass", "phi", "pt", "pz", "deepjet_c", ]
-
-            fill += Jet.plot( ("selJets_noJCM", "Selected Jets"),        "selJet",       weight="weight_noJCM_noFvT", skip=skip_all_but_n, )
-            fill += Jet.plot( ("tagJets_noJCM", "Tag Jets"),             "tagJet",       weight="weight_noJCM_noFvT", skip=skip_all_but_n, )
-            fill += Jet.plot( ("tagJets_loose_noJCM", "Loose Tag Jets"), "tagJet_loose", weight="weight_noJCM_noFvT", skip=skip_all_but_n, )
-
-            for iJ in range(4):
-                fill += Jet.plot( (f"canJet{iJ}", f"Higgs Candidate Jets {iJ}"), f"canJet{iJ}", skip=["n", "deepjet_c"], )
-
-            #
-            #  Leptons
-            #
-            skip_muons = ["charge"] + Muon.skip_detailed_plots
-            if not self.isMC:
-                skip_muons += ["genPartFlav"]
-            fill += Muon.plot( ("selMuons", "Selected Muons"), "selMuon", skip=skip_muons )
-
-            if not self.isMixedData:
-                skip_elecs = ["charge"] + Elec.skip_detailed_plots
-                if not self.isMC:
-                    skip_elecs += ["genPartFlav"]
-                fill += Elec.plot( ("selElecs", "Selected Elecs"), "selElec", skip=skip_elecs )
-
-            #
-            # Top Candidates
-            #
-            if self.top_reconstruction in ["slow","fast"]:
-                fill += TopCandHists(("top_cand", "Top Candidate"), "top_cand")
-
-            if self.run_SvB:
-
-                fill += SvBHists(("SvB",    "SvB Classifier"),    "SvB")
-                fill += SvBHists(("SvB_MA", "SvB MA Classifier"), "SvB_MA")
-                fill += hist.add( "quadJet_selected_SvB_q_score", ( 100, 0, 1, ( "quadJet_selected.SvB_q_score",  "Selected Quad Jet Diboson SvB q score") ) )
-                fill += hist.add( "quadJet_min_SvB_MA_q_score",   ( 100, 0, 1, ( "quadJet_min_dr.SvB_MA_q_score", "Min dR Quad Jet Diboson SvB MA q score") ) )
-                if self.isDataForMixed:
-                    for _FvT_name in event.metadata["FvT_names"]:
-                        fill += SvBHists( (f"SvB_{_FvT_name}",    "SvB Classifier"),    "SvB",    weight=f"weight_{_FvT_name}", )
-                        fill += SvBHists( (f"SvB_MA_{_FvT_name}", "SvB MA Classifier"), "SvB_MA", weight=f"weight_{_FvT_name}", )
-
-            #
-            # fill histograms
-            #
-            # fill.cache(selev)
-            fill(selev, hist)
->>>>>>> ca38b7e3493f8a258291fc73bef0e1d82d71e554
+            ## this can be simplified
+            hist = filling_nominal_histograms(selev, self.JCM, 
+                                              processName=self.processName, 
+                                              year=self.year, 
+                                              isMC=self.isMC, 
+                                              histCuts=self.histCuts, 
+                                              apply_FvT=self.apply_FvT, 
+                                              run_SvB=self.run_SvB, 
+                                              top_reconstruction=self.top_reconstruction, 
+                                              isMixedData=self.isMixedData, 
+                                              isDataForMixed=self.isDataForMixed, 
+                                              isTTForMixed=self.isTTForMixed, 
+                                              event_metadata=event.metadata)
 
             garbage = gc.collect()
             # print('Garbage:',garbage)
@@ -813,56 +703,15 @@ class analysis(processor.ProcessorABC):
         # Run systematics
         #
         else:
-<<<<<<< HEAD
-            hist_SvB = filling_syst_histograms(shift_name, selev, processName, year, weights, analysis_selections, self.histCuts)
+            hist_SvB = filling_syst_histograms(selev, weights, 
+                                               analysis_selections, 
+                                               shift_name=shift_name, 
+                                               processName=self.processName, 
+                                               year=self.year, 
+                                               histCuts=self.histCuts)
             garbage = gc.collect()
             # print('Garbage:',garbage)
             output = hist_SvB | processOutput
-=======
-
-            shift_name = "nominal" if not shift_name else shift_name
-            hist_SvB = Collection( process=[self.processName],
-                                   year=[self.year],
-                                   variation=[shift_name],
-                                   tag=[4],  # 3 / 4/ Other
-                                   region=[2],  # SR / SB / Other
-                                   **dict((s, ...) for s in self.histCuts),
-                                   )
-
-            fill_SvB = Fill( process=self.processName, year=self.year, variation=shift_name, weight="weight" )
-            fill_SvB += SvBHists(("SvB",    "SvB Classifier"),    "SvB",    skip=["ps", "ptt"])
-            fill_SvB += SvBHists(("SvB_MA", "SvB MA Classifier"), "SvB_MA", skip=["ps", "ptt"])
-
-            fill_SvB(selev, hist_SvB)
-
-            if "nominal" in shift_name:
-                logging.info(f"Weight variations {weights.variations}")
-
-                dict_hist_SvB = {}
-                for ivar in list(weights.variations):
-
-                    dict_hist_SvB[ivar] = Collection( process=[self.processName],
-                                                      year=[self.year],
-                                                      variation=[ivar],
-                                                      tag=[4],  # 3 / 4/ Other
-                                                      region=[2],  # SR / SB / Other
-                                                      **dict((s, ...) for s in self.histCuts) )
-
-                    selev[f"weight_{ivar}"] = weights.weight(modifier=ivar)[ analysis_selections ]
-                    fill_SvB_ivar = Fill( process=self.processName, year=self.year, variation=ivar, weight=f"weight_{ivar}", )
-
-                    logging.debug(f"{ivar} {selev['weight']}")
-
-                    fill_SvB_ivar += SvBHists( ("SvB",    "SvB Classifier"),    "SvB",    skip=["ps", "ptt"] )
-                    fill_SvB_ivar += SvBHists( ("SvB_MA", "SvB MA Classifier"), "SvB_MA", skip=["ps", "ptt"] )
-
-                    fill_SvB_ivar(selev, dict_hist_SvB[ivar])
-
-                    for ih in hist_SvB.output["hists"].keys():
-                        hist_SvB.output["hists"][ih] = ( hist_SvB.output["hists"][ih] + dict_hist_SvB[ivar].output["hists"][ih] )
-
-            output = hist_SvB.output | processOutput
->>>>>>> ca38b7e3493f8a258291fc73bef0e1d82d71e554
 
         return output
 

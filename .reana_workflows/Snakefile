@@ -34,8 +34,8 @@ rule analysis_databkgs:
     params:
         hash=config['hash'],
         diff=config['diff'],
-        isam="{dataset}",
-        iy="{year}",
+        isam=config['dataset'],
+        iy=config['year'],
         output="histAll.coffea",
         logname="histAll"
     resources:
@@ -302,8 +302,9 @@ cmsenv || true
 cd -
 cat {input}
 echo "RUNNING COMBINE"
-source python/stats_analysis/run_combine.sh output/datacards/ --postfit
-python3 make_postfit_plot.py -i output/datacards/postfit_s.root -o {output} --do_postfit False
+cd python/stats_analysis/
+source run_combine.sh ../../output/datacards/ --postfit
+python3 make_postfit_plot.py -i ../../output/datacards/postfit_s.root -o {output} --do_postfit False
         """
 
 rule make_syst_plots:

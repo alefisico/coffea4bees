@@ -9,7 +9,19 @@ from base_class.hist import Collection, Fill
 from base_class.physics.object import Elec, Jet, LorentzVector, Muon
 import logging
 
-def filling_nominal_histograms(selev, processName, year, isMC, histCuts, apply_FvT, JCM, run_SvB, top_reconstruction, isMixedData, isDataForMixed, isTTForMixed, event_metadata):
+def filling_nominal_histograms(selev, JCM,
+                               processName: str = None, 
+                               year: str = 'UL18', 
+                               isMC: bool = False, 
+                               histCuts: list = [], 
+                               apply_FvT: bool = False, 
+                               run_SvB: bool = False, 
+                               top_reconstruction: bool = False, 
+                               isMixedData: bool = False, 
+                               isDataForMixed: bool = False, 
+                               isTTForMixed: bool = False, 
+                               event_metadata: dict = {},
+                               ):
 
     fill = Fill(process=processName, year=year, weight="weight")
 
@@ -124,7 +136,12 @@ def filling_nominal_histograms(selev, processName, year, isMC, histCuts, apply_F
     return hist.output
 
 
-def filling_syst_histograms(shift_name, selev, processName, year, weights, analysis_selections, histCuts):
+def filling_syst_histograms(selev, weights, analysis_selections,  
+                            shift_name: str = 'nominal', 
+                            processName: str = None, 
+                            year: str = 'UL18', 
+                            histCuts: list = []
+                            ):
 
     shift_name = "nominal" if not shift_name else shift_name
     hist_SvB = Collection( process=[processName],
