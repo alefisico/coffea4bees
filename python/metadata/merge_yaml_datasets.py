@@ -17,18 +17,18 @@ if __name__ == '__main__':
 
     for ifile in args.files_to_add:
 
-        tmp_file = yaml.safe_load(open(ifile, 'r'))
+        tmp_file = yaml.full_load(open(ifile, 'r'))
 
         for ikey in tmp_file.keys():
             tmp_split = ('_UL' if 'UL' in ikey else '_20')
             dataset = ikey.split( tmp_split )[0]
             year = tmp_split.split('_')[1] + '_'.join(ikey.split(tmp_split)[1:])
             if dataset in main_file['datasets']:
-                for iname in ['source', 'kFactor', 
-                              'lumi', 'xs', 
+                for iname in ['source', 'kFactor',
+                              'lumi', 'xs',
                               'cutFlowFourTag', 'cutFlowFourTagUnitWeight',
                               'cutFlowThreeTag', 'cutFlowThreeTagUnitWeight',
-                              'reproducible', 
+                              'reproducible',
                               ]:
                     if iname in tmp_file[ikey].keys(): tmp_file[ikey].pop(iname)
                 if 'data' in dataset:
