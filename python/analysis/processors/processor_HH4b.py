@@ -80,7 +80,7 @@ class analysis(processor.ProcessorABC):
         self.corrections_metadata = yaml.safe_load(open(corrections_metadata, "r"))
         self.top_reconstruction_override = top_reconstruction_override
 
-        isSyntheticData = False
+        isSyntheticData = False ## Hard code for Now !!
         self.isSyntheticData = isSyntheticData
 
         self.cutFlowCuts = [
@@ -106,14 +106,13 @@ class analysis(processor.ProcessorABC):
     def process(self, event):
 
         fname   = event.metadata['filename']
-        dataset = event.metadata['dataset']
-        estart  = event.metadata['entrystart']
-        estop   = event.metadata['entrystop']
-        chunk   = f'{dataset}::{estart:6d}:{estop:6d} >>> '
-        year    = event.metadata['year']
-        # year_label = self.corrections_metadata[year]['year_label']
-        processName = event.metadata['processName']
-        isMC    = False if "data" in processName else True
+        self.dataset = event.metadata['dataset']
+        self.estart  = event.metadata['entrystart']
+        self.estop   = event.metadata['entrystop']
+        self.chunk   = f'{self.dataset}::{self.estart:6d}:{self.estop:6d} >>> '
+        self.year    = event.metadata['year']
+        self.processName = event.metadata['processName']
+        self.isMC    = False if "data" in self.processName else True
 
         if self.top_reconstruction_override:
             self.top_reconstruction = self.top_reconstruction_override
@@ -121,15 +120,17 @@ class analysis(processor.ProcessorABC):
         else:
             self.top_reconstruction = event.metadata.get("top_reconstruction", None)
 
-        self.isMixedData    = not (dataset.find("mix_v") == -1)
-        self.isDataForMixed = not (dataset.find("data_3b_for_mixed") == -1)
-        self.isTTForMixed   = not (dataset.find("TTTo") == -1) and not ( dataset.find("_for_mixed") == -1 )
+        self.isMixedData    = not (self.dataset.find("mix_v") == -1)
+        self.isDataForMixed = not (self.dataset.find("data_3b_for_mixed") == -1)
+        self.isTTForMixed   = not (self.dataset.find("TTTo") == -1) and not ( self.dataset.find("_for_mixed") == -1 )
 
+        if self.isMixedData:
+            self.isMC = False
 
-        nEvent = len(event)
+        self.nEvent = len(event)
 
         logging.debug(fname)
-        logging.debug(f'{chunk}Process {nEvent} Events')
+        logging.debug(f'{self.chunk}Process {self.nEvent} Events')
 
         #
         # Reading SvB friend trees
@@ -139,7 +140,7 @@ class analysis(processor.ProcessorABC):
             if self.isMixedData:
 
                 FvT_name = event.metadata["FvT_name"]
-                event["FvT"] = getattr( NanoEventsFactory.from_root( f'{event.metadata["FvT_file"]}', entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema, ).events(),
+                event["FvT"] = getattr( NanoEventsFactory.from_root( f'{event.metadata["FvT_file"]}', entry_start=self.estart, entry_stop=self.estop, schemaclass=FriendTreeSchema, ).events(),
                                         FvT_name )
 
                 event["FvT", "FvT"] = getattr(event["FvT"], FvT_name)
@@ -156,7 +157,7 @@ class analysis(processor.ProcessorABC):
                 #
                 # Use the first to define the FvT weights
                 #
-                event["FvT"] = getattr( NanoEventsFactory.from_root( f'{event.metadata["FvT_files"][0]}', entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema, ).events(),
+                event["FvT"] = getattr( NanoEventsFactory.from_root( f'{event.metadata["FvT_files"][0]}', entry_start=self.estart, entry_stop=self.estop, schemaclass=FriendTreeSchema, ).events(),
                                         event.metadata["FvT_names"][0], )
 
                 event["FvT", "FvT"] = getattr( event["FvT"], event.metadata["FvT_names"][0] )
@@ -170,13 +171,13 @@ class analysis(processor.ProcessorABC):
 
                 for _FvT_name, _FvT_file in zip( event.metadata["FvT_names"], event.metadata["FvT_files"] ):
 
-                    event[_FvT_name] = getattr( NanoEventsFactory.from_root( f"{_FvT_file}", entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema, ).events(),
+                    event[_FvT_name] = getattr( NanoEventsFactory.from_root( f"{_FvT_file}", entry_start=self.estart, entry_stop=self.estop, schemaclass=FriendTreeSchema, ).events(),
                                                 _FvT_name, )
 
                     event[_FvT_name, _FvT_name] = getattr(event[_FvT_name], _FvT_name)
 
             else:
-                event["FvT"] = ( NanoEventsFactory.from_root( f'{fname.replace("picoAOD", "FvT")}', entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().FvT )
+                event["FvT"] = ( NanoEventsFactory.from_root( f'{fname.replace("picoAOD", "FvT")}', entry_start=self.estart, entry_stop=self.estop, schemaclass=FriendTreeSchema).events().FvT )
 
             if "std" not in event.FvT.fields:
                 event["FvT", "std"] = np.ones(len(event))
@@ -191,18 +192,18 @@ class analysis(processor.ProcessorABC):
 
         if self.run_SvB:
             if (self.classifier_SvB is None) | (self.classifier_SvB_MA is None):
-                # SvB_file = f'{path}/SvB_newSBDef.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_ULHH")}'
-                SvB_file = f'{path}/SvB_ULHH.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_ULHH")}'
+                # SvB_file = f'{path}/SvB_newSBDef.root' if 'mix' in self.dataset else f'{fname.replace("picoAOD", "SvB_ULHH")}'
+                SvB_file = f'{path}/SvB_ULHH.root' if 'mix' in self.dataset else f'{fname.replace("picoAOD", "SvB_ULHH")}'
                 event["SvB"] = ( NanoEventsFactory.from_root( SvB_file,
-                                                              entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().SvB )
+                                                              entry_start=self.estart, entry_stop=self.estop, schemaclass=FriendTreeSchema).events().SvB )
 
                 if not ak.all(event.SvB.event == event.event):
                     raise ValueError("ERROR: SvB events do not match events ttree")
 
-                # SvB_MA_file = f'{path}/SvB_MA_newSBDef.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_MA_ULHH")}'
-                SvB_MA_file = f'{path}/SvB_MA_ULHH.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_MA_ULHH")}'
+                # SvB_MA_file = f'{path}/SvB_MA_newSBDef.root' if 'mix' in self.dataset else f'{fname.replace("picoAOD", "SvB_MA_ULHH")}'
+                SvB_MA_file = f'{path}/SvB_MA_ULHH.root' if 'mix' in self.dataset else f'{fname.replace("picoAOD", "SvB_MA_ULHH")}'
                 event["SvB_MA"] = ( NanoEventsFactory.from_root( SvB_MA_file,
-                                                                 entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema ).events().SvB_MA )
+                                                                 entry_start=self.estart, entry_stop=self.estop, schemaclass=FriendTreeSchema ).events().SvB_MA )
 
                 if not ak.all(event.SvB_MA.event == event.event):
                     raise ValueError("ERROR: SvB_MA events do not match events ttree")
@@ -224,32 +225,33 @@ class analysis(processor.ProcessorABC):
         #
         # Event selection
         #
-        event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year], self.isMixedData)
+        event = apply_event_selection_4b( event, self.isMC, self.corrections_metadata[self.year], self.isMixedData)
+
         #
         # Checking boosted selection (should change in the future)
         #
         if self.apply_boosted_veto:
             boosted_file = load("analysis/hists/counts_boosted.coffea")['boosted']
-            boosted_events = boosted_file[dataset]['event'] if dataset in boosted_file.keys() else event.event
+            boosted_events = boosted_file[self.dataset]['event'] if self.dataset in boosted_file.keys() else event.event
             event['vetoBoostedSel'] = ~np.isin( event.event.to_numpy(), boosted_events )
 
         #
         # Calculate and apply Jet Energy Calibration
         #
-        if ( self.isSyntheticData or self.isMixedData or self.isDataForMixed or self.isTTForMixed or not isMC ):  #### AGE: data corrections are not applied. Should be changed
+        if ( self.isSyntheticData or self.isMixedData or self.isDataForMixed or self.isTTForMixed or not self.isMC ):  #### AGE: data corrections are not applied. Should be changed
             jets = event.Jet
 
         else:
-            juncWS = [ self.corrections_metadata[year]["JERC"][0].replace("STEP", istep)
-                       for istep in ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"] ] #+ self.corrections_metadata[year]["JERC"][2:]
+            juncWS = [ self.corrections_metadata[self.year]["JERC"][0].replace("STEP", istep)
+                       for istep in ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"] ] #+ self.corrections_metadata[self.year]["JERC"][2:]
 
             if self.run_systematics:
-                juncWS += [self.corrections_metadata[year]["JERC"][1]]
-            jets = init_jet_factory(juncWS, event, isMC)
+                juncWS += [self.corrections_metadata[self.year]["JERC"][1]]
+            jets = init_jet_factory(juncWS, event, self.isMC)
 
         shifts = [({"Jet": jets}, None)]
         if self.run_systematics:
-            for jesunc in self.corrections_metadata[year]["JES_uncertainties"]:
+            for jesunc in self.corrections_metadata[self.year]["JES_uncertainties"]:
                 shifts.extend( [ ({"Jet": jets[f"JES_{jesunc}"].up}, f"CMS_scale_j_{jesunc}Up"),
                                  ({"Jet": jets[f"JES_{jesunc}"].down}, f"CMS_scale_j_{jesunc}Down"), ] )
 
@@ -262,34 +264,25 @@ class analysis(processor.ProcessorABC):
     def process_shift(self, event, shift_name):
         """For different jet variations. It computes event variations for the nominal case."""
 
-        dataset = event.metadata['dataset']
-        estart  = event.metadata['entrystart']
-        estop   = event.metadata['entrystop']
-        chunk   = f'{dataset}::{estart:6d}:{estop:6d} >>> '
-        year        = event.metadata['year']
-        year_label = self.corrections_metadata[year]['year_label']
-        processName = event.metadata['processName']
-        isMC        = True if event.run[0] == 1 else False
-
-        nEvent = len(event)
+        year_label = self.corrections_metadata[self.year]['year_label']
 
         ### adds all the event mc weights and 1 for data
-        weights, list_weight_names = add_weights( event, isMC, dataset, year_label,
-                                                 estart, estop, 
-                                                 self.corrections_metadata[year],
-                                                 self.apply_trigWeight,
-                                                 self.isTTForMixed
-                                                  ) 
+        weights, list_weight_names = add_weights( event, self.isMC, self.dataset, year_label,
+                                                  self.estart, self.estop,
+                                                  self.corrections_metadata[self.year],
+                                                  self.apply_trigWeight,
+                                                  self.isTTForMixed
+                                                 )
 
         # Apply object selection (function does not remove events, adds content to objects)
         doLeptonRemoval = not (self.isMixedData or self.isTTForMixed or self.isDataForMixed)
-        event = apply_object_selection_4b( event, self.corrections_metadata[year],
+        event = apply_object_selection_4b( event, self.corrections_metadata[self.year],
                                            doLeptonRemoval=doLeptonRemoval, isSyntheticData=self.isSyntheticData )
 
         selections = PackedSelection()
         selections.add( "lumimask", event.lumimask)
         selections.add( "passNoiseFilter", event.passNoiseFilter)
-        skip_HLT_cut = (isMC or self.isMixedData or self.isTTForMixed or self.isDataForMixed)
+        skip_HLT_cut = (self.isMC or self.isMixedData or self.isTTForMixed or self.isDataForMixed)
         selections.add( "passHLT", ( np.full(len(event), True) if skip_HLT_cut else event.passHLT ) )
         selections.add( 'passJetMult', event.passJetMult )
         allcuts = [ 'lumimask', 'passNoiseFilter', 'passHLT', 'passJetMult' ]
@@ -302,8 +295,8 @@ class analysis(processor.ProcessorABC):
         if not shift_name:
             processOutput['nEvent'] = {}
             processOutput['nEvent'][event.metadata['dataset']] = {
-                'nEvent' : nEvent,
-                'genWeights': np.sum(event.genWeight) if isMC else nEvent
+                'nEvent' : self.nEvent,
+                'genWeights': np.sum(event.genWeight) if self.isMC else self.nEvent
 
             }
 
@@ -325,19 +318,19 @@ class analysis(processor.ProcessorABC):
         # Calculate and apply btag scale factors
         #### AGE to add btag JES
         #
-        if isMC and self.apply_btagSF:
+        if self.isMC and self.apply_btagSF:
 
             if (not shift_name) & self.run_systematics:
-                btag_SF_weights = apply_btag_sf( event.selJet, correction_file=self.corrections_metadata[year]["btagSF"],
-                                                 btag_uncertainties=self.corrections_metadata[year][ "btag_uncertainties" ], )
+                btag_SF_weights = apply_btag_sf( event.selJet, correction_file=self.corrections_metadata[self.year]["btagSF"],
+                                                 btag_uncertainties=self.corrections_metadata[self.year][ "btag_uncertainties" ], )
 
                 weights.add_multivariation( f"CMS_btag", btag_SF_weights["btagSF_central"],
-                                            self.corrections_metadata[year]["btag_uncertainties"],
+                                            self.corrections_metadata[self.year]["btag_uncertainties"],
                                             [ var.to_numpy() for name, var in btag_SF_weights.items() if "_up" in name ],
                                             [ var.to_numpy() for name, var in btag_SF_weights.items() if "_down" in name ], )
             else:
                 weights.add( "CMS_btag",
-                         apply_btag_sf( event.selJet, correction_file=self.corrections_metadata[year]["btagSF"], btag_uncertainties=None, )["btagSF_central"], )
+                         apply_btag_sf( event.selJet, correction_file=self.corrections_metadata[self.year]["btagSF"], btag_uncertainties=None, )["btagSF_central"], )
             list_weight_names.append(f"CMS_btag")
 
             logging.debug( f"Btag weight {weights.partial_weight(include=['CMS_btag'])[:10]}\n" )
@@ -376,7 +369,7 @@ class analysis(processor.ProcessorABC):
         canJet["btagDeepFlavB"] = selev.Jet.btagDeepFlavB[canJet_idx]
         canJet["puId"] = selev.Jet.puId[canJet_idx]
         canJet["jetId"] = selev.Jet.puId[canJet_idx]
-        if isMC:
+        if self.isMC:
             canJet["hadronFlavour"] = selev.Jet.hadronFlavour[canJet_idx]
 
         canJet["calibration"] = selev.Jet.calibration[canJet_idx]
@@ -403,7 +396,7 @@ class analysis(processor.ProcessorABC):
         notCanJet = notCanJet[notCanJet.selected_loose]
         notCanJet = notCanJet[ak.argsort(notCanJet.pt, axis=1, ascending=False)]
 
-        notCanJet["isSelJet"] = 1 * ( (notCanJet.pt >= 40) & (np.abs(notCanJet.eta) < 2.4) )  
+        notCanJet["isSelJet"] = 1 * ( (notCanJet.pt >= 40) & (np.abs(notCanJet.eta) < 2.4) )
         selev["notCanJet_coffea"] = notCanJet
         selev["nNotCanJet"] = ak.num(selev.notCanJet_coffea)
 
@@ -526,7 +519,7 @@ class analysis(processor.ProcessorABC):
         #
         #  Build the top Candiates
         #
-        # dumpTopCandidateTestVectors(selev, logging, chunk, 15)
+        # dumpTopCandidateTestVectors(selev, logging, self.chunk, 15)
 
         if self.top_reconstruction in ["slow","fast"]:
 
@@ -643,7 +636,7 @@ class analysis(processor.ProcessorABC):
         #
         # Blind data in fourTag SR
         #
-        if not (isMC or "mixed" in dataset) and self.blind:
+        if not (self.isMC or "mixed" in self.dataset) and self.blind:
             blind_sel = np.full( len(event), True)
             blind_sel[ analysis_selections ] = ~(selev["quadJet_selected"].SR & selev.fourTag)
             selections.add( 'blind', blind_sel )
@@ -686,7 +679,119 @@ class analysis(processor.ProcessorABC):
 
         if not self.run_systematics:
 
+<<<<<<< HEAD
             hist = filling_nominal_histograms(selev, processName, year, isMC, self.histCuts, self.apply_FvT, self.JCM, self.run_SvB, self.top_reconstruction, self.isMixedData, self.isDataForMixed, self.isTTForMixed, event.metadata)
+=======
+            fill = Fill(process=self.processName, year=self.year, weight="weight")
+
+            hist = Collection( process=[self.processName],
+                               year=[self.year],
+                               tag=[3, 4, 0],  # 3 / 4/ Other
+                               region=[2, 1, 0],  # SR / SB / Other
+                               **dict((s, ...) for s in self.histCuts)
+                               )
+
+            #
+            # To Add
+            #
+
+            #    m4j_vs_leadSt_dR = dir.make<TH2F>("m4j_vs_leadSt_dR", (name+"/m4j_vs_leadSt_dR; m_{4j} [GeV]; S_{T} leading boson candidate #DeltaR(j,j); Entries").c_str(), 40,100,1100, 25,0,5);
+            #    m4j_vs_sublSt_dR = dir.make<TH2F>("m4j_vs_sublSt_dR", (name+"/m4j_vs_sublSt_dR; m_{4j} [GeV]; S_{T} subleading boson candidate #DeltaR(j,j); Entries").c_str(), 40,100,1100, 25,0,5);
+
+            fill += hist.add( "nPVs", (101, -0.5, 100.5, ("PV.npvs", "Number of Primary Vertices")) )
+            fill += hist.add( "nPVsGood", (101, -0.5, 100.5, ("PV.npvsGood", "Number of Good Primary Vertices")), )
+
+            fill += hist.add( "hT", (50, 0, 1500, ("hT", "h_{T} [GeV]")), )
+            fill += hist.add( "hT_selected", (50, 0, 1500, ("hT_selected", "h_{T} [GeV]")), )
+
+            fill += hist.add("xW",  (100, -12, 12, ("xW", "xW")))
+            fill += hist.add("xbW", (100, -15, 15, ("xbW", "xbW")))
+
+            #
+            # Separate reweighting for the different mixed samples
+            #
+            if self.isDataForMixed:
+                for _FvT_name in event.metadata["FvT_names"]:
+                    fill += SvBHists( (f"SvB_{_FvT_name}",    "SvB Classifier"),    "SvB",    weight=f"weight_{_FvT_name}" )
+                    fill += SvBHists( (f"SvB_MA_{_FvT_name}", "SvB MA Classifier"), "SvB_MA", weight=f"weight_{_FvT_name}" )
+
+            #
+            # Jets
+            #
+            fill += Jet.plot(("selJets", "Selected Jets"),        "selJet",           skip=["deepjet_c"])
+            fill += Jet.plot(("canJets", "Higgs Candidate Jets"), "canJet",           skip=["deepjet_c"])
+            fill += Jet.plot(("othJets", "Other Jets"),           "notCanJet_coffea", skip=["deepjet_c"])
+            fill += Jet.plot(("tagJets", "Tag Jets"),             "tagJet",           skip=["deepjet_c"])
+
+            #
+            #  Make quad jet hists
+            #
+            fill += LorentzVector.plot_pair( ("v4j", R"$HH_{4b}$"), "v4j", skip=["n", "dr", "dphi", "st"], bins={"mass": (120, 0, 1200)}, )
+            fill += QuadJetHists( ("quadJet_selected", "Selected Quad Jet"), "quadJet_selected" )
+            fill += QuadJetHists( ("quadJet_min_dr", "Min dR Quad Jet"), "quadJet_min_dr" )
+
+            #
+            #  Make classifier hists
+            #
+            if self.apply_FvT:
+                FvT_skip = []
+                if self.isMixedData or self.isDataForMixed or self.isTTForMixed:
+                    FvT_skip = ["pt", "pm3", "pm4"]
+
+                fill += FvTHists(("FvT", "FvT Classifier"), "FvT", skip=FvT_skip)
+
+                fill += hist.add("quadJet_selected_FvT_score", (100, 0, 1, ("quadJet_selected.FvT_q_score", "Selected Quad Jet Diboson FvT q score") ) )
+                fill += hist.add("quadJet_min_FvT_score",      (100, 0, 1, ("quadJet_min_dr.FvT_q_score",   "Min dR Quad Jet Diboson FvT q score"  ) ) )
+
+                if self.JCM:
+                    fill += hist.add("FvT_noFvT", (100, 0, 5, ("FvT.FvT", "FvT reweight")), weight="weight_noFvT")
+
+            skip_all_but_n = ["deepjet_b", "energy", "eta", "id_jet", "id_pileup", "mass", "phi", "pt", "pz", "deepjet_c", ]
+
+            fill += Jet.plot( ("selJets_noJCM", "Selected Jets"),        "selJet",       weight="weight_noJCM_noFvT", skip=skip_all_but_n, )
+            fill += Jet.plot( ("tagJets_noJCM", "Tag Jets"),             "tagJet",       weight="weight_noJCM_noFvT", skip=skip_all_but_n, )
+            fill += Jet.plot( ("tagJets_loose_noJCM", "Loose Tag Jets"), "tagJet_loose", weight="weight_noJCM_noFvT", skip=skip_all_but_n, )
+
+            for iJ in range(4):
+                fill += Jet.plot( (f"canJet{iJ}", f"Higgs Candidate Jets {iJ}"), f"canJet{iJ}", skip=["n", "deepjet_c"], )
+
+            #
+            #  Leptons
+            #
+            skip_muons = ["charge"] + Muon.skip_detailed_plots
+            if not self.isMC:
+                skip_muons += ["genPartFlav"]
+            fill += Muon.plot( ("selMuons", "Selected Muons"), "selMuon", skip=skip_muons )
+
+            if not self.isMixedData:
+                skip_elecs = ["charge"] + Elec.skip_detailed_plots
+                if not self.isMC:
+                    skip_elecs += ["genPartFlav"]
+                fill += Elec.plot( ("selElecs", "Selected Elecs"), "selElec", skip=skip_elecs )
+
+            #
+            # Top Candidates
+            #
+            if self.top_reconstruction in ["slow","fast"]:
+                fill += TopCandHists(("top_cand", "Top Candidate"), "top_cand")
+
+            if self.run_SvB:
+
+                fill += SvBHists(("SvB",    "SvB Classifier"),    "SvB")
+                fill += SvBHists(("SvB_MA", "SvB MA Classifier"), "SvB_MA")
+                fill += hist.add( "quadJet_selected_SvB_q_score", ( 100, 0, 1, ( "quadJet_selected.SvB_q_score",  "Selected Quad Jet Diboson SvB q score") ) )
+                fill += hist.add( "quadJet_min_SvB_MA_q_score",   ( 100, 0, 1, ( "quadJet_min_dr.SvB_MA_q_score", "Min dR Quad Jet Diboson SvB MA q score") ) )
+                if self.isDataForMixed:
+                    for _FvT_name in event.metadata["FvT_names"]:
+                        fill += SvBHists( (f"SvB_{_FvT_name}",    "SvB Classifier"),    "SvB",    weight=f"weight_{_FvT_name}", )
+                        fill += SvBHists( (f"SvB_MA_{_FvT_name}", "SvB MA Classifier"), "SvB_MA", weight=f"weight_{_FvT_name}", )
+
+            #
+            # fill histograms
+            #
+            # fill.cache(selev)
+            fill(selev, hist)
+>>>>>>> ca38b7e3493f8a258291fc73bef0e1d82d71e554
 
             garbage = gc.collect()
             # print('Garbage:',garbage)
@@ -701,17 +806,63 @@ class analysis(processor.ProcessorABC):
                 ####
                 from ..helpers.classifier.HCR import dump_input_friend, dump_JCM_weight, dump_FvT_weight
 
-                friends["friends"] = dump_input_friend( selev, self.make_classifier_input, "HCR_input", _all_selection, weight="weight" if isMC else "weight_noJCM_noFvT", NotCanJet="notCanJet_coffea") | dump_JCM_weight( selev, self.make_classifier_input, "JCM_weight", _all_selection) | dump_FvT_weight( selev, self.make_classifier_input, "FvT_weight", _all_selection)
+                friends["friends"] = dump_input_friend( selev, self.make_classifier_input, "HCR_input", _all_selection, weight="weight" if self.isMC else "weight_noJCM_noFvT", NotCanJet="notCanJet_coffea") | dump_JCM_weight( selev, self.make_classifier_input, "JCM_weight", _all_selection) | dump_FvT_weight( selev, self.make_classifier_input, "FvT_weight", _all_selection)
 
             output = hist | processOutput | friends
         #
         # Run systematics
         #
         else:
+<<<<<<< HEAD
             hist_SvB = filling_syst_histograms(shift_name, selev, processName, year, weights, analysis_selections, self.histCuts)
             garbage = gc.collect()
             # print('Garbage:',garbage)
             output = hist_SvB | processOutput
+=======
+
+            shift_name = "nominal" if not shift_name else shift_name
+            hist_SvB = Collection( process=[self.processName],
+                                   year=[self.year],
+                                   variation=[shift_name],
+                                   tag=[4],  # 3 / 4/ Other
+                                   region=[2],  # SR / SB / Other
+                                   **dict((s, ...) for s in self.histCuts),
+                                   )
+
+            fill_SvB = Fill( process=self.processName, year=self.year, variation=shift_name, weight="weight" )
+            fill_SvB += SvBHists(("SvB",    "SvB Classifier"),    "SvB",    skip=["ps", "ptt"])
+            fill_SvB += SvBHists(("SvB_MA", "SvB MA Classifier"), "SvB_MA", skip=["ps", "ptt"])
+
+            fill_SvB(selev, hist_SvB)
+
+            if "nominal" in shift_name:
+                logging.info(f"Weight variations {weights.variations}")
+
+                dict_hist_SvB = {}
+                for ivar in list(weights.variations):
+
+                    dict_hist_SvB[ivar] = Collection( process=[self.processName],
+                                                      year=[self.year],
+                                                      variation=[ivar],
+                                                      tag=[4],  # 3 / 4/ Other
+                                                      region=[2],  # SR / SB / Other
+                                                      **dict((s, ...) for s in self.histCuts) )
+
+                    selev[f"weight_{ivar}"] = weights.weight(modifier=ivar)[ analysis_selections ]
+                    fill_SvB_ivar = Fill( process=self.processName, year=self.year, variation=ivar, weight=f"weight_{ivar}", )
+
+                    logging.debug(f"{ivar} {selev['weight']}")
+
+                    fill_SvB_ivar += SvBHists( ("SvB",    "SvB Classifier"),    "SvB",    skip=["ps", "ptt"] )
+                    fill_SvB_ivar += SvBHists( ("SvB_MA", "SvB MA Classifier"), "SvB_MA", skip=["ps", "ptt"] )
+
+                    fill_SvB_ivar(selev, dict_hist_SvB[ivar])
+
+                    for ih in hist_SvB.output["hists"].keys():
+                        hist_SvB.output["hists"][ih] = ( hist_SvB.output["hists"][ih] + dict_hist_SvB[ivar].output["hists"][ih] )
+
+            output = hist_SvB.output | processOutput
+>>>>>>> ca38b7e3493f8a258291fc73bef0e1d82d71e554
 
         return output
 

@@ -24,9 +24,11 @@ from analysis.helpers.networks import HCREnsemble
 from analysis.helpers.cutflow import cutFlow
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
 
+
 from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
 from analysis.helpers.common import init_jet_factory, apply_btag_sf, update_events
 
+from analysis.helpers.SvB_helpers import setSvBVars, compute_SvB
 from analysis.helpers.selection_basic_4b import (
     apply_event_selection_4b,
     apply_object_selection_4b
@@ -43,42 +45,6 @@ NanoAODSchema.warn_missing_crossrefs = False
 warnings.filterwarnings("ignore")
 
 
-
-def setSvBVars(SvBName, event):
-
-    event[SvBName, "passMinPs"] = ( (getattr(event, SvBName).pzz > 0.01)
-                                    | (getattr(event, SvBName).pzh > 0.01)
-                                    | (getattr(event, SvBName).phh > 0.01) )
-
-    event[SvBName, "zz"] = ( getattr(event, SvBName).pzz >  getattr(event, SvBName).pzh ) & (getattr(event, SvBName).pzz > getattr(event, SvBName).phh)
-
-    event[SvBName, "zh"] = ( getattr(event, SvBName).pzh >  getattr(event, SvBName).pzz ) & (getattr(event, SvBName).pzh > getattr(event, SvBName).phh)
-
-    event[SvBName, "hh"] = ( getattr(event, SvBName).phh >= getattr(event, SvBName).pzz ) & (getattr(event, SvBName).phh >= getattr(event, SvBName).pzh)
-
-    event[SvBName, "tt_vs_mj"] = ( getattr(event, SvBName).ptt / (getattr(event, SvBName).ptt + getattr(event, SvBName).pmj) )
-
-
-    #
-    #  Set ps_{bb}
-    #
-    this_ps_zz = np.full(len(event), -1, dtype=float)
-    this_ps_zz[getattr(event, SvBName).zz] = getattr(event, SvBName).ps[ getattr(event, SvBName).zz ]
-
-    this_ps_zz[getattr(event, SvBName).passMinPs == False] = -2
-    event[SvBName, "ps_zz"] = this_ps_zz
-
-    this_ps_zh = np.full(len(event), -1, dtype=float)
-    this_ps_zh[getattr(event, SvBName).zh] = getattr(event, SvBName).ps[ getattr(event, SvBName).zh ]
-
-    this_ps_zh[getattr(event, SvBName).passMinPs == False] = -2
-    event[SvBName, "ps_zh"] = this_ps_zh
-
-    this_ps_hh = np.full(len(event), -1, dtype=float)
-    this_ps_hh[getattr(event, SvBName).hh] = getattr(event, SvBName).ps[ getattr(event, SvBName).hh ]
-
-    this_ps_hh[getattr(event, SvBName).passMinPs == False] = -2
-    event[SvBName, "ps_hh"] = this_ps_hh
 
 
 
@@ -182,8 +148,6 @@ class analysis(processor.ProcessorABC):
 
         jets = init_jet_factory(juncWS, event, isMC)
 
-        shifts = [({"Jet": jets}, None)]
-
         weights = Weights(len(event), storeIndividual=True)
         list_weight_names = []
 
@@ -192,8 +156,6 @@ class analysis(processor.ProcessorABC):
 
         # Apply object selection (function does not remove events, adds content to objects)
         event = apply_object_selection_4b( event, self.corrections_metadata[year] )
-
-
 
         selections = PackedSelection()
         selections.add( "lumimask", event.lumimask)
@@ -368,6 +330,7 @@ class analysis(processor.ProcessorABC):
 
         #print(f'{chunk} cleaned splitting types {cleaned_split_types}\n')
 
+
         # error_type = '(bj)((jj)b)'
         # found_error = error_type in cleaned_split_types
         #
@@ -391,32 +354,8 @@ class analysis(processor.ProcessorABC):
         #     print(f'{chunk}\n\n')
 
 
-        dumpTestVectors_bbj = False
-        if dumpTestVectors_bbj:
-            # bbj_mask = ak.num(selev["splitting_b(bj)"]) == 1
-            # bbj_partA = selev["splitting_b(bj)"][bbj_mask].part_A
-            # bbj_partB = selev["splitting_b(bj)"][bbj_mask].part_B
-            #
-            # if ak.sum(ak.num(selev["splitting_b(bj)"])) > 4:
-            #     print(f'{chunk}\n\n')
-            #     print(f'{chunk} self.input_jet_pt      = {[bbj_partA[iE].pt.tolist()         + bbj_partB[iE].pt.tolist()         for iE in range(5)]}')
-            #     print(f'{chunk} self.input_jet_eta     = {[bbj_partA[iE].eta.tolist()        + bbj_partB[iE].eta.tolist()        for iE in range(5)]}')
-            #     print(f'{chunk} self.input_jet_phi     = {[bbj_partA[iE].phi.tolist()        + bbj_partB[iE].phi.tolist()        for iE in range(5)]}')
-            #     print(f'{chunk} self.input_jet_mass    = {[bbj_partA[iE].mass.tolist()       + bbj_partB[iE].mass.tolist()       for iE in range(5)]}')
-            #     print(f'{chunk} self.input_jet_flavor  = {[bbj_partA[iE].jet_flavor.tolist() + bbj_partB[iE].jet_flavor.tolist() for iE in range(5)]}')
-            #     print(f'{chunk}\n\n')
-
-            print(f'{chunk} num splitting {ak.num(selev["splitting_b(bj)"])}')
-            print(f'{chunk} mask {ak.num(selev["splitting_b(bj)"]) > 0}')
-            bbj_mask = ak.num(selev["splitting_b(bj)"]) > 0
-            jets_for_clustering_bbj = jets_for_clustering[bbj_mask]
-            print(f'{chunk}\n\n')
-            print(f'{chunk} self.input_jet_pt      = {[jets_for_clustering_bbj[iE].pt.tolist()         for iE in range(10)]}')
-            print(f'{chunk} self.input_jet_eta     = {[jets_for_clustering_bbj[iE].eta.tolist()        for iE in range(10)]}')
-            print(f'{chunk} self.input_jet_phi     = {[jets_for_clustering_bbj[iE].phi.tolist()        for iE in range(10)]}')
-            print(f'{chunk} self.input_jet_mass    = {[jets_for_clustering_bbj[iE].mass.tolist()       for iE in range(10)]}')
-            print(f'{chunk} self.input_jet_flavor  = {[jets_for_clustering_bbj[iE].jet_flavor.tolist() for iE in range(10)]}')
-            print(f'{chunk}\n\n')
+        # from jet_clustering.dumpTestVectors   import dumpTestVectors_bbj
+        # dumpTestVectors_bbj(chunk, selev, jets_for_clustering)
 
 
 
@@ -557,12 +496,6 @@ class analysis(processor.ProcessorABC):
                            region=[2, 1, 0],  # SR / SB / Other
                            **dict((s, ...) for s in self.histCuts)
                            )
-
-        #
-        # To Add
-        #
-        # fill += hist.add( "nPVs", (101, -0.5, 100.5, ("PV.npvs", "Number of Primary Vertices")) )
-        # fill += hist.add( "nPVsGood", (101, -0.5, 100.5, ("PV.npvsGood", "Number of Good Primary Vertices")), )
 
         #
         # Jets

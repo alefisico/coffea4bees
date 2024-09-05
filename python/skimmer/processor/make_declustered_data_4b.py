@@ -176,34 +176,20 @@ class DeClusterer(PicoAOD):
         #
         declustered_jets = make_synthetic_event(clustered_jets, self.clustering_pdfs, declustering_rand_seed=self.declustering_rand_seed)
 
-        canJet = declustered_jets[declustered_jets.jet_flavor == "b"]
-        canJet["jet_flavor_bit"] = 1
-        btag_rand = np.random.uniform(low=0.6, high=1.0, size=len(ak.flatten(canJet,axis=1)))
-        canJet["btagDeepFlavB"] = ak.unflatten(btag_rand, ak.num(canJet))
-        # Set these pt > 40 and |eta| < 2.4
-        canJet = canJet[ak.argsort(canJet.pt, axis=1, ascending=False)]
+        declustered_jets = declustered_jets[ak.argsort(declustered_jets.pt, axis=1, ascending=False)]
 
-        notCanJet = declustered_jets[declustered_jets.jet_flavor == "j"]
-        notCanJet["jet_flavor_bit"] = 0
-        btag_rand = np.random.uniform(low=0.0, high=0.6, size=len(ak.flatten(notCanJet,axis=1)))
-        notCanJet["btagDeepFlavB"] = ak.unflatten(btag_rand, ak.num(notCanJet))
-        notCanJet = notCanJet[ak.argsort(notCanJet.pt, axis=1, ascending=False)]
-
-        new_jets = ak.concatenate([canJet, notCanJet], axis=1)
-        new_jets = new_jets[ak.argsort(new_jets.pt, axis=1, ascending=False)]
-
-        n_jet = ak.num(new_jets)
+        n_jet = ak.num(declustered_jets)
         total_jet = int(ak.sum(n_jet))
 
         branches = ak.Array(
             {
                 # Update jets with new kinematics
-                "Jet_pt":              new_jets.pt, #ak.unflatten(np.full(total_jet, 7), n_jet),
-                "Jet_eta":             new_jets.eta,
-                "Jet_phi":             new_jets.phi,
-                "Jet_mass":            new_jets.mass,
-                "Jet_btagDeepFlavB":   new_jets.btagDeepFlavB,
-                "Jet_jet_flavor_bit":  new_jets.jet_flavor_bit,
+                "Jet_pt":              declustered_jets.pt, #ak.unflatten(np.full(total_jet, 7), n_jet),
+                "Jet_eta":             declustered_jets.eta,
+                "Jet_phi":             declustered_jets.phi,
+                "Jet_mass":            declustered_jets.mass,
+                "Jet_btagDeepFlavB":   declustered_jets.btagDeepFlavB,
+                "Jet_jet_flavor_bit":  declustered_jets.jet_flavor_bit,
                 "Jet_jetId":           ak.unflatten(np.full(total_jet, 7), n_jet),
                 "Jet_puId":            ak.unflatten(np.full(total_jet, 7), n_jet),
                 "Jet_bRegCorr":        ak.unflatten(np.full(total_jet, 1), n_jet),
