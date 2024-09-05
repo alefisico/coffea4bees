@@ -139,6 +139,18 @@ def comb_jet_flavor(flavor_A, flavor_B):
 
     return flavor_A + flavor_B
 
+# Add parenthesis if needed
+def comb_jet_btag_string(btag_A, btag_B):
+
+    ## Add Parens if the input is already clustered
+    #if len(flavor_A) > 1:
+    #    flavor_A = f"({str(flavor_A)})"
+    #if len(flavor_B) > 1:
+    #    flavor_B = f"({str(flavor_B)})"
+
+    return f"({btag_A},{btag_B})"
+
+
 
 def combine_particles(part_A, part_B, *, debug=False):
     part_comb = part_A + part_B
@@ -170,7 +182,9 @@ def combine_particles(part_A, part_B, *, debug=False):
             new_part_B = part_A
 
     part_comb_jet_flavor = comb_jet_flavor(new_part_A.jet_flavor, new_part_B.jet_flavor)
-    part_comb_btagDeepFlavB  = (new_part_A.btagDeepFlavB, new_part_B.btagDeepFlavB)
+
+    part_comb_btag_string  = comb_jet_btag_string(new_part_A.btag_string, new_part_B.btag_string)
+
 
     part_comb_array = ak.zip(
         {
@@ -179,10 +193,9 @@ def combine_particles(part_A, part_B, *, debug=False):
             "phi": [part_comb.phi],
             "mass": [part_comb.mass],
             "jet_flavor": [part_comb_jet_flavor],
-            "btagDeepFlavB": [part_comb_btagDeepFlavB],
+            "btag_string": [part_comb_btag_string],
             "part_A": [new_part_A],
             "part_B": [new_part_B],
-            #            "part_B": [new_part_B],
         },
         with_name="PtEtaPhiMLorentzVector",
         behavior=vector.behavior,
@@ -195,6 +208,9 @@ def combine_particles(part_A, part_B, *, debug=False):
 def cluster_bs_core(event_jets, distance_function, *, debug=False):
     clustered_jets = []
     splittings = []
+
+    event_jets["btag_string"] = [[str(round(v,3)) for v in sublist] for sublist in event_jets.btagDeepFlavB]
+
 
     nevents = len(event_jets)
 
@@ -262,7 +278,7 @@ def cluster_bs_core(event_jets, distance_function, *, debug=False):
             "phi":           ak.Array([[v.phi for v in sublist] for sublist in clustered_jets]),
             "mass":          ak.Array([[v.mass for v in sublist] for sublist in clustered_jets]),
             "jet_flavor":    ak.Array([[v.jet_flavor for v in sublist] for sublist in clustered_jets]),
-            "btagDeepFlavB": ak.Array([[v.btagDeepFlavB for v in sublist] for sublist in clustered_jets]),
+            "btag_string":   ak.Array([[v.btag_string for v in sublist] for sublist in clustered_jets]),
         },
         with_name="PtEtaPhiMLorentzVector",
         behavior=vector.behavior
@@ -277,7 +293,7 @@ def cluster_bs_core(event_jets, distance_function, *, debug=False):
             "phi":  ak.Array([[v.phi  for v in sublist] for sublist in splittings]),
             "mass": ak.Array([[v.mass for v in sublist] for sublist in splittings]),
             "jet_flavor": ak.Array([[v.jet_flavor for v in sublist] for sublist in splittings]),
-            "btagDeepFlavB": ak.Array([[v.btagDeepFlavB for v in sublist] for sublist in splittings]),
+            "btag_string": ak.Array([[v.btag_string for v in sublist] for sublist in splittings]),
             "part_A": ak.zip(
                 {
                     "pt":         ak.Array([[v.part_A.pt   for v in sublist] for sublist in splittings]),
@@ -285,7 +301,7 @@ def cluster_bs_core(event_jets, distance_function, *, debug=False):
                     "phi":        ak.Array([[v.part_A.phi  for v in sublist] for sublist in splittings]),
                     "mass":       ak.Array([[v.part_A.mass for v in sublist] for sublist in splittings]),
                     "jet_flavor": ak.Array([[v.part_A.jet_flavor for v in sublist] for sublist in splittings]),
-                    "btagDeepFlavB": ak.Array([[v.part_A.btagDeepFlavB for v in sublist] for sublist in splittings]),
+                    "btag_string": ak.Array([[v.part_A.btag_string for v in sublist] for sublist in splittings]),
                 },
                 with_name="PtEtaPhiMLorentzVector",
                 behavior=vector.behavior
@@ -297,7 +313,7 @@ def cluster_bs_core(event_jets, distance_function, *, debug=False):
                     "phi":        ak.Array([[v.part_B.phi for v in sublist] for sublist in splittings]),
                     "mass":       ak.Array([[v.part_B.mass for v in sublist] for sublist in splittings]),
                     "jet_flavor": ak.Array([[v.part_B.jet_flavor for v in sublist] for sublist in splittings]),
-                    "btagDeepFlavB": ak.Array([[v.part_B.btagDeepFlavB for v in sublist] for sublist in splittings]),
+                    "btag_string": ak.Array([[v.part_B.btag_string for v in sublist] for sublist in splittings]),
                 },
                 with_name="PtEtaPhiMLorentzVector",
                 behavior=vector.behavior

@@ -305,7 +305,6 @@ class analysis(processor.ProcessorABC):
         clustered_splittings["splitting_name"] = split_name
 
 
-
         #
         #  get all splitting types that are used (ie: not pure ISR)
         #
@@ -329,7 +328,6 @@ class analysis(processor.ProcessorABC):
             selev[f"splitting_{_s_type}"]   = clustered_splittings[clustered_splittings.splitting_name == _s_type]
 
         #print(f'{chunk} cleaned splitting types {cleaned_split_types}\n')
-
 
         # error_type = '(bj)((jj)b)'
         # found_error = error_type in cleaned_split_types
@@ -398,14 +396,11 @@ class analysis(processor.ProcessorABC):
 
             canJet_re["puId"] = 7
             canJet_re["jetId"] = 7 # selev.Jet.puId[canJet_idx]
-            canJet_re["btagDeepFlavB"] = 1.0 # Set bs to 1 and ls to 0
 
 
             notCanJet_re = declustered_jets[~is_b_mask]
             notCanJet_re["puId"] = 7
             notCanJet_re["jetId"] = 7 # selev.Jet.puId[canJet_idx]
-            notCanJet_re["btagDeepFlavB"] = 0 # Set bs to 1 and ls to 0
-
 
             selev["canJet_re"] = canJet_re
             selev["notCanJet_coffea_re"] = notCanJet_re

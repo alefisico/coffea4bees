@@ -29,6 +29,37 @@ def extract_all_parentheses_substrings(s):
     return substrings
 
 
+def extract_outermost_pair(s):
+    # Trim leading and trailing whitespaces and ensure it starts with '(' and ends with ')'
+    s = s.strip()
+
+    if not (s.startswith("(") and s.endswith(")")):
+        raise ValueError("Input must start with '(' and end with ')'")
+
+    # We will count the open and close parentheses
+    open_count = 0
+    comma_index = -1  # To store the position of the main separating comma
+
+    # Traverse the string to find the outermost comma
+    for i, char in enumerate(s):
+        if char == '(':
+            open_count += 1
+        elif char == ')':
+            open_count -= 1
+        elif char == ',' and open_count == 1:  # The outermost comma is when open_count == 1
+            comma_index = i
+            break
+
+    if comma_index == -1:
+        raise ValueError("Input doesn't seem to have a valid '(A, B)' format")
+
+    # Extract A and B by splitting at the found comma
+    A = s[1:comma_index].strip()   # Everything after '(' up to the comma
+    B = s[comma_index + 1:-1].strip()  # Everything after the comma up to ')'
+
+    return A, B
+
+
 def children_jet_flavors(comb_flavor):
 
     if len(comb_flavor) < 2:
@@ -280,11 +311,12 @@ def decluster_combined_jets(input_jet, debug=False):
     jet_flavor_A = ak.unflatten(jet_flav_child_A, ak.num(input_jet))
     jet_flavor_B = ak.unflatten(jet_flav_child_B, ak.num(input_jet))
 
-    flat_btagDeepFlavB = ak.flatten(input_jet.btagDeepFlavB)
-    flat_jet_btagDeepFlavB_child_A = [r["0"] for r in flat_btagDeepFlavB]
-    flat_jet_btagDeepFlavB_child_B = [r["1"] for r in flat_btagDeepFlavB]
-    jet_btagDeepFlavB_child_A = ak.unflatten(flat_jet_btagDeepFlavB_child_A, ak.num(input_jet))
-    jet_btagDeepFlavB_child_B = ak.unflatten(flat_jet_btagDeepFlavB_child_B, ak.num(input_jet))
+    flat_jet_btag_string = ak.flatten(input_jet.btag_string)
+    _btag_string_pairs = [extract_outermost_pair(str(s)) for s in flat_jet_btag_string]
+    flat_jet_btag_string_A = [p[0] for p in  _btag_string_pairs]
+    flat_jet_btag_string_B = [p[1] for p in  _btag_string_pairs]
+    jet_btag_string_A = ak.unflatten(flat_jet_btag_string_A, ak.num(input_jet))
+    jet_btag_string_B = ak.unflatten(flat_jet_btag_string_B, ak.num(input_jet))
 
     combined_pt = input_jet.pt
     tanThetaA = np.tan(input_jet.thetaA)
@@ -368,7 +400,7 @@ def decluster_combined_jets(input_jet, debug=False):
             "phi":        pA.phi,
             "mass":       pA.mass,
             "jet_flavor": jet_flavor_A,
-            "btagDeepFlavB": jet_btagDeepFlavB_child_A,
+            "btag_string": jet_btag_string_A,
         },
         with_name="PtEtaPhiMLorentzVector",
         behavior=vector.behavior,
@@ -381,7 +413,7 @@ def decluster_combined_jets(input_jet, debug=False):
             "phi":        pB.phi,
             "mass":       pB.mass,
             "jet_flavor": jet_flavor_B,
-            "btagDeepFlavB": jet_btagDeepFlavB_child_B,
+            "btag_string": jet_btag_string_B,
         },
         with_name="PtEtaPhiMLorentzVector",
         behavior=vector.behavior,
@@ -589,7 +621,7 @@ def make_synthetic_event(input_jets, input_pdfs, declustering_rand_seed=66, debu
         flat_declustered_phi       [jet_replace_mask]    = new_jets_flat.phi
         flat_declustered_mass      [jet_replace_mask]    = new_jets_flat.mass
         flat_declustered_jet_flavor[jet_replace_mask]    = new_jets_flat.jet_flavor
-        flat_declustered_btagDeepFlavB[jet_replace_mask] = [float(i) for i in new_jets_flat.btagDeepFlavB]
+        flat_declustered_btagDeepFlavB[jet_replace_mask] = [float(str(i)) for i in new_jets_flat.btag_string]
         events_to_decluster_mask[update_indicies_global] = False
         num_trys += 1
 

@@ -14,7 +14,7 @@ cd python/
 # fi
 # echo "############### Modifying dataset file with skimmer ci output"
 # cat metadata/datasets_ci.yml
-# python metadata/merge_yaml_datasets.py -m metadata/datasets_HH4b.yml -f skimmer/metadata/picoaod_datasets_declustered_data_Run2.yml -o metadata/datasets_synthetic.yml
+python metadata/merge_yaml_datasets.py -m metadata/datasets_HH4b.yml -f skimmer/metadata/picoaod_datasets_declustered_data_Run2_seed17.yml -o metadata/datasets_synthetic_seed17.yml
 
 # echo "############### Changing metadata"
 # sed -e "s/apply_FvT.*/apply_FvT: false/" -e "s/apply_trig.*/apply_trigWeight: false/" -e "s/run_SvB.*/run_SvB: false/"  analysis/metadata/HH4b.yml > analysis/metadata/tmp.yml

@@ -560,8 +560,6 @@ class analysis(processor.ProcessorABC):
             canJet = declustered_jets[declustered_jets.jet_flavor == "b"]
             canJet["puId"] = 7
             canJet["jetId"] = 7 # selev.Jet.puId[canJet_idx]
-            btag_rand = np.random.uniform(low=0.6, high=1.0, size=len(ak.flatten(canJet,axis=1)))
-            canJet["btagDeepFlavB"] = ak.unflatten(btag_rand, ak.num(canJet))
             canJet["bRegCorr"] = 1.0
             canJet["tagged"] = True
             canJet["selected"] = True
@@ -570,8 +568,6 @@ class analysis(processor.ProcessorABC):
             notCanJet = declustered_jets[declustered_jets.jet_flavor == "j"]
             notCanJet["puId"] = 7
             notCanJet["jetId"] = 7
-            btag_rand = np.random.uniform(low=0.0, high=0.6, size=len(ak.flatten(notCanJet,axis=1)))
-            notCanJet["btagDeepFlavB"] = ak.unflatten(btag_rand, ak.num(notCanJet))
             notCanJet["bRegCorr"] = 1.0
             notCanJet["tagged"] = True
             notCanJet["selected"] =  (notCanJet.pt >= 40) & (np.abs(notCanJet.eta) <= 2.4)

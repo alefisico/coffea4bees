@@ -476,7 +476,13 @@ class clusteringTestCase(unittest.TestCase):
         if debug:
             print(f"input_jets.pt             {input_jets.pt}")
             print(f"input_jets.jet_flavor     {input_jets.jet_flavor}")
-            print(f"input_jets.btagDeepFlavB  {input_jets.btagDeepFlavB}")
+            print(f"input_jets.btag_string    {input_jets.btag_string}")
+
+        if debug:
+            print(f"clustered_jets_wISR.pt             {clustered_jets.pt}")
+            print(f"clustered_jets_wISR.jet_flavor     {clustered_jets.jet_flavor}")
+            print(f"clustered_jets_wISR.btag_string    {clustered_jets.btag_string}")
+
 
         #
         #  Decluster the splitting that are 0b + >1 bs
@@ -490,7 +496,7 @@ class clusteringTestCase(unittest.TestCase):
         if debug:
             print(f"clustered_jets.pt             {clustered_jets.pt}")
             print(f"clustered_jets.jet_flavor     {clustered_jets.jet_flavor}")
-            print(f"clustered_jets.btagDeepFlavB  {clustered_jets.btagDeepFlavB}")
+            print(f"clustered_jets.btag_string    {clustered_jets.btag_string}")
 
         #mask_b_jet = clean_ISR
         mask_unclustered_jet = (clustered_jets.jet_flavor == "b") | (clustered_jets.jet_flavor == "j")
