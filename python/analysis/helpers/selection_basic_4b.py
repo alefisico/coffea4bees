@@ -141,9 +141,11 @@ def create_cand_jet_dijet_quadjet( selev,
     sorted_idx = ak.argsort( selev.Jet.btagDeepFlavB * selev.Jet.selected, axis=1, ascending=False )
     canJet_idx = sorted_idx[:, 0:4]
     notCanJet_idx = sorted_idx[:, 4:]
+    # canJet = selev.Jet[canJet_idx]
 
-    # apply bJES to canJets
-    canJet = selev.Jet[canJet_idx] * selev.Jet[canJet_idx].bRegCorr
+    # # apply bJES to canJets
+    canJet = canJet * canJet.bRegCorr
+    # canJet = selev.Jet[canJet_idx] * selev.Jet[canJet_idx].bRegCorr
     canJet["bRegCorr"] = selev.Jet.bRegCorr[canJet_idx]
     canJet["btagDeepFlavB"] = selev.Jet.btagDeepFlavB[canJet_idx]
     canJet["puId"] = selev.Jet.puId[canJet_idx]
@@ -159,6 +161,10 @@ def create_cand_jet_dijet_quadjet( selev,
     selev["canJet"] = canJet
     for i in range(4):
         selev[f"canJet{i}"] = selev["canJet"][:, i]    
+    # selev["canJet0"] = canJet[:, 0]
+    # selev["canJet1"] = canJet[:, 1]
+    # selev["canJet2"] = canJet[:, 2]
+    # selev["canJet3"] = canJet[:, 3]
 
     selev["v4j"] = canJet.sum(axis=1)
     notCanJet = selev.Jet[notCanJet_idx]
@@ -173,11 +179,16 @@ def create_cand_jet_dijet_quadjet( selev,
     canJet = selev["canJet"]
     pairing = [([0, 2], [0, 1], [0, 1]), ([1, 3], [2, 3], [3, 2])]
     diJet = canJet[:, pairing[0]] + canJet[:, pairing[1]]
+    # diJet["lead"] = canJet[:, pairing[0]]
+    # diJet["subl"] = canJet[:, pairing[1]]
+    # diJet["st"] = diJet["lead"].pt + diJet["subl"].pt
+    # diJet["dr"] = diJet["lead"].delta_r(diJet["subl"])
+    # diJet["dphi"] = diJet["lead"].delta_phi(diJet["subl"])
+    diJet["st"] = canJet[:, pairing[0]].pt + canJet[:, pairing[1]].pt
+    diJet["dr"] = canJet[:, pairing[0]].delta_r(canJet[:, pairing[1]])
+    diJet["dphi"] = canJet[:, pairing[0]].delta_phi(canJet[:, pairing[1]])
     diJet["lead"] = canJet[:, pairing[0]]
     diJet["subl"] = canJet[:, pairing[1]]
-    diJet["st"] = diJet["lead"].pt + diJet["subl"].pt
-    diJet["dr"] = diJet["lead"].delta_r(diJet["subl"])
-    diJet["dphi"] = diJet["lead"].delta_phi(diJet["subl"])
     # Sort diJets within views to be lead st, subl st
     diJet = diJet[ak.argsort(diJet.st, axis=2, ascending=False)]
     diJetDr = diJet[ak.argsort(diJet.dr, axis=2, ascending=True)]
