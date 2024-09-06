@@ -1,0 +1,31 @@
+# template: norm
+main:
+  module: cache
+  option:
+    - --max-loaders 1
+    - --max-writers 10
+    - --nchunks 10
+    - --shuffle
+    - --states label.MultiClass.labels
+
+dataset:
+  - module: HCR.SvB.Background
+    option:
+      - --friends
+      -
+      - root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/friend/friend.json@@HCR_input
+      - root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/friend/friend.json@@JCM_weight
+      - root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/friend/friend.json@@FvT_weight
+      - --max-workers 8
+      - --norm {norm} # 6 signals: ZZ, ZH, ggF(0, 1, 2.45, 5)
+  - module: HCR.SvB.Signal
+    option:
+      - --friends
+      -
+      - root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/friend/friend.json@@HCR_input
+      - --max-workers 8
+
+setting:
+  - module: IO
+    option:
+      - output: root://cmseos.fnal.gov//store/user/{user}/HH4b/classifier/SvB/dataset/

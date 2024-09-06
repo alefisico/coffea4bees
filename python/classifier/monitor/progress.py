@@ -1,16 +1,15 @@
 from __future__ import annotations
 
 import time
-from copy import deepcopy
+from copy import copy
 from dataclasses import dataclass
 
-from rich.progress import BarColumn
+from rich.progress import BarColumn, ProgressColumn, SpinnerColumn, TimeElapsedColumn
 from rich.progress import Progress as _Bar
-from rich.progress import ProgressColumn, SpinnerColumn, TimeElapsedColumn
 
 from ..config.setting import monitor as cfg
-from ..process.monitor import Proxy, Recorder, post
-from ..typetools import WithUUID
+from ..process.monitor import MonitorProxy, Recorder, post_to_monitor
+from ..typetools import PicklableLock, WithUUID
 from ..utils import noop
 
 _FORMAT = "%H:%M:%S"
@@ -20,40 +19,51 @@ MessageType = str | tuple[str, ...]
 
 
 @dataclass
-class ProgressTracker(WithUUID):
+class ProgressTracker(PicklableLock, WithUUID):
     msg: MessageType
     total: int
 
     def __post_init__(self):
+        super().__init__()
         self.start_t = time.time()
         self.updated_t = self.start_t
         self.source = Recorder.name()
         self._completed = 0
         self._step = None
-        super().__init__()
+        self._update(updated=True)
 
     def _update(self, msg: MessageType = None, updated: bool = False, step: int = None):
         if (msg is not None) and (msg != self.msg):
             self.msg = msg
             updated = True
         if updated:
-            new = deepcopy(self)
+            new = copy(self)
+            new.lock = None
             new._step = step
             Progress._update(new)
 
     def update(self, completed: int, msg: MessageType = None):
-        updated = completed > self._completed
-        if updated:
-            self.updated_t = time.time()
-            self._completed = completed
-        self._update(msg, updated)
+        with self.lock:
+            updated = completed > self._completed
+            if updated:
+                self.updated_t = time.time()
+                self._completed = completed
+            self._update(msg, updated)
 
-    def advance(self, step: int, msg: MessageType = None):
-        updated = step > 0
-        if updated:
-            self.updated_t = time.time()
-            self._completed += step
-        self._update(msg, updated, step)
+    def advance(
+        self,
+        step: int = 1,
+        msg: MessageType = None,
+        distributed: bool = False,
+    ):
+        with self.lock:
+            updated = step > 0
+            if updated:
+                self.updated_t = time.time()
+                self._completed += step
+                if not distributed:
+                    step = None
+            self._update(msg, updated, step)
 
     def complete(self):
         self.update(self.total)
@@ -70,6 +80,12 @@ class ProgressTracker(WithUUID):
     def is_finished(self):
         return self._completed >= self.total
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_):
+        self.complete()
+
 
 class TimeRemainColumn(ProgressColumn):
     def render(self, task):
@@ -82,7 +98,7 @@ class TimeRemainColumn(ProgressColumn):
         return text
 
 
-class Progress(Proxy):
+class Progress(MonitorProxy):
     _jobs: dict[tuple, ProgressTracker]
     _console_ids: dict[tuple, str]
     _console_bar: _Bar
@@ -103,11 +119,9 @@ class Progress(Proxy):
     @classmethod
     @cfg.check(cfg.Progress, default=noop)
     def new(cls, total: int, msg: MessageType = "") -> ProgressTracker:
-        job = ProgressTracker(msg=msg, total=total)
-        cls._update(job)
-        return job
+        return ProgressTracker(msg=msg, total=total)
 
-    @post(max_retry=1)
+    @post_to_monitor(max_retry=1)
     @cfg.check(cfg.Progress)
     def _update(self, new: ProgressTracker):
         uuid = (new.source, new.uuid)

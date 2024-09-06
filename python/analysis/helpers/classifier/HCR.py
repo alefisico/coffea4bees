@@ -3,6 +3,11 @@ import base_class.awkward as akext
 import numpy as np
 from base_class.root import Chunk, Friend
 from base_class.system.eos import PathLike
+from base_class.aktools import has_record, get_field
+
+_NAMING = "{path1}/{name}_{uuid}_{start}_{stop}_{path0}"
+
+# TODO: dump trigger weight?
 
 
 def _build_cutflow(*selections):
@@ -19,7 +24,7 @@ def dump_friend(
     output: PathLike,
     name: str,
     data: ak.Array,
-    dump_naming: str = "{path1}/{name}_{uuid}_{start}_{stop}_{path0}",
+    dump_naming: str = _NAMING,
 ):
     chunk = Chunk.from_coffea_events(events)
     friend = Friend(name)
@@ -36,7 +41,7 @@ def dump_input_friend(
     CanJet: str = "canJet",
     NotCanJet: str = "notCanJet",
     weight: str = "weight",
-    dump_naming: str = "{path1}/{name}_{uuid}_{start}_{stop}_{path0}",
+    dump_naming: str = _NAMING,
 ):
     selection = _build_cutflow(*selections)
     padded = akext.pad.selected()
@@ -103,9 +108,9 @@ def dump_JCM_weight(
     name: str,
     *selections: ak.Array,
     pseudo_tag: str = "pseudoTagWeight",
-    dump_naming: str = "{path1}/{name}_{uuid}_{start}_{stop}_{path0}",
+    dump_naming: str = _NAMING,
 ):
-    if not pseudo_tag in events.fields:
+    if pseudo_tag not in events.fields:
         weight = np.ones(len(selections[0]), dtype=np.float64)
     else:
         selection = _build_cutflow(*selections)
@@ -116,5 +121,28 @@ def dump_JCM_weight(
         output=output,
         name=name,
         data=ak.Array({"pseudoTagWeight": weight}),
+        dump_naming=dump_naming,
+    )
+
+
+def dump_FvT_weight(  ### TODO: replace with proper evaluation code
+    events: ak.Array,
+    output: PathLike,
+    name: str,
+    *selections: ak.Array,
+    FvT_name: tuple[str, ...] = ("FvT", "FvT"),
+    dump_naming: str = "{path1}/{name}_{uuid}_{start}_{stop}_{path0}",
+):
+    if not has_record(events, FvT_name) == FvT_name:
+        weight = np.ones(len(selections[0]), dtype=np.float64)
+    else:
+        selection = _build_cutflow(*selections)
+        padded = akext.pad.selected(1)
+        weight = padded(get_field(events, FvT_name), selection)
+    return dump_friend(
+        events=events,
+        output=output,
+        name=name,
+        data=ak.Array({"FvT": weight}),
         dump_naming=dump_naming,
     )

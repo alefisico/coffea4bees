@@ -1,6 +1,8 @@
 from datetime import datetime
 
 TIMESTAMP = datetime.now().strftime('%Y%m%d_%H%M%S')
+analysis_container = "gitlab-registry.cern.ch/cms-cmu/coffea4bees:766323bc"   ### actual tag for reproducibility
+combine_container = "gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0"
 
 #
 # rule all sets the entire workflow. This is were you define the last output of the workflow.
@@ -8,6 +10,7 @@ TIMESTAMP = datetime.now().strftime('%Y%m%d_%H%M%S')
 #
 rule all:
     input:
+        expand("output/histAll__{dataset}__{year}.coffea", year=config['year'], dataset=config['dataset']),
         expand("output/histsyst_{samplesyst}-{iysyst}.coffea", samplesyst=config['dataset_systematics'], iysyst=config['year']),
         #expand("output/histsystpreUL_{samplesystpreUL}-{iysystpreUL}.coffea", samplesystpreUL=config['dataset_preUL'], iysystpreUL=config['year_preUL']),
         expand("output/histsignal_{samplesignal}-{iysignal}.coffea", samplesignal=config['dataset_signal'], iysignal=config['year']),
@@ -26,18 +29,20 @@ rule all:
 
 
 rule analysis_databkgs:
-    output: "output/histAll.coffea"
-    container: "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
+    output: "output/histAll__{dataset}__{year}.coffea"
+    container: analysis_container
     params:
         hash=config['hash'],
         diff=config['diff'],
-        isam=config['dataset'],
-        iy=config['year'],
-        output="histAll.coffea",
-        logname="histAll"
+        isam="{dataset}",
+        iy="{year}",
+        output="histAll__{dataset}__{year}.coffea",
+        logname="histAll__{dataset}__{year}"
     resources:
         voms_proxy=True,
         kerberos=True,
+        # compute_backend="htcondorcern",
+        # htcondor_max_runtime="workday"
         compute_backend="kubernetes",
         kubernetes_memory_limit="9.5Gi"
     shell:
@@ -108,8 +113,7 @@ use rule analysis_databkgs as analysis_mixeddata with:
 rule analysis_systematics:
     output:
         "output/histsyst_{samplesyst}-{iysyst}.coffea"
-    container:
-        "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
+    container: analysis_container
     params:
         hash=config['hash'],
         diff=config['diff'],
@@ -153,48 +157,36 @@ use rule analysis_systematics as analysis_signal with:
 #        output="histsystpreUL_{samplesystpreUL}-{iysystpreUL}.coffea",
 #        logname="syst_preUL_{samplesystpreUL}-{iysystpreUL}"
 
-#rule merging_coffea_files_databkgs:
-#    input:
-#        files = ['output/histAll_bkgsdata.coffea', 'output/histAll_signal_preUL.coffea']
-#    output: "output/histAll.coffea"
-#    container: "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
-#    params:
-#        output= "histAll.coffea",
-#        logname= "databkgs"
-#    resources:
-#        kerberos=True,
-#        compute_backend="kubernetes",
-#        kubernetes_memory_limit="9.5Gi"
-#    shell:
-#        """
-#mprof run -C -o python/mprofile_merge_{params.logname}.dat python python/analysis/merge_coffea_files.py -f {input.files} -o {output}
-#mprof plot -o output/mprofile_merge_{params.logname}.png python/mprofile_merge_{params.logname}.dat
-#xrdcp {output} root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/{params.output}
-#cp {output} /eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/{params.output}
-#        """
+rule merging_coffea_files_databkgs:
+   input:
+       files = expand(['output/histAll__{dataset}__{iyear}.coffea'], iyear=config['year'], dataset=config['dataset'])
+   output: "output/histAll.coffea"
+   container: "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
+   params:
+       output= "histAll.coffea",
+       logname= "databkgs"
+   resources:
+       kerberos=True,
+       compute_backend="kubernetes",
+       kubernetes_memory_limit="9.5Gi"
+   shell:
+       """
+mprof run -C -o python/mprofile_merge_{params.logname}.dat python python/analysis/merge_coffea_files.py -f {input.files} -o {output}
+mprof plot -o output/mprofile_merge_{params.logname}.png python/mprofile_merge_{params.logname}.dat
+xrdcp {output} root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/{params.output}
+cp {output} /eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/{params.output}
+       """
 
-rule merging_coffea_files_syst:
+use rule merging_coffea_files_databkgs as rule merging_coffea_files_syst with:
     input:
         files = expand(['output/histsyst_{idatsyst}-{iyear}.coffea'], idatsyst=config['dataset_systematics'], iyear=config['year']) #+ expand(['output/histsystpreUL_{idat}-{iyear}.coffea'], idat=config['dataset_preUL'], iyear=config['year_preUL'])
-    container: "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
     output:
         "output/histAll_syst.coffea"
     params:
         output= "histAll_syst.coffea",
         logname= "syst"
-    resources:
-        kerberos=True,
-        compute_backend="kubernetes",
-        kubernetes_memory_limit="9.5Gi"
-    shell:
-        """
-mprof run -C -o python/mprofile_merge_{params.logname}.dat python python/analysis/merge_coffea_files.py -f {input.files} -o {output}
-mprof plot -o output/mprofile_merge_{params.logname}.png python/mprofile_merge_{params.logname}.dat
-xrdcp {output} root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/{params.output}
-cp {output} /eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/{params.output}
-        """
 
-use rule merging_coffea_files_syst as merging_coffea_files_signal_diffHHH with:
+use rule merging_coffea_files_databkgs as merging_coffea_files_signal_diffHHH with:
     input:
         files = expand(['output/histsignal_{idatsignal}-{iyear}.coffea'],idatsignal=config['dataset_signal'], iyear=config['year']) + expand(['output/histsyst_{idatsyst}-{iyear}.coffea'], idatsyst=config['dataset_systematics'], iyear=config['year'])
 
@@ -210,8 +202,7 @@ rule make_plots:
         "output/histAll.coffea"
     output:
         "output/RunII/passPreSel/fourTag/SB/nPVs.pdf"
-    container:
-        "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
+    container: analysis_container
     resources:
         kerberos=True,
         compute_backend="kubernetes",
@@ -233,8 +224,7 @@ rule convert_hist_to_json:
         outall = "output/histAll.json",
         outsyst = "output/histAll_syst.json",
         outsystcHHHX = "output/histAll_signals_cHHHX.json"
-    container:
-        "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
+    container: analysis_container
     resources:
         compute_backend="kubernetes",
         kubernetes_memory_limit="8Gi"
@@ -252,12 +242,12 @@ rule make_combine_inputs:
     output:
         "output/datacards/shapes.root",
         "output/datacards/datacard.txt"
-    container:
-        "docker://gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0"
+    container: combine_container
     resources:
         voms_proxy=True,
         kerberos=True,
-        compute_backend="kubernetes"
+        compute_backend="kubernetes",
+        kubernetes_memory_limit="9.5Gi"
     shell:
         """
 source /cvmfs/cms.cern.ch/cmsset_default.sh
@@ -272,8 +262,7 @@ rule run_combine:
         "output/datacards/datacard.txt"
     output:
         "output/datacards/limits.json"
-    container:
-        "docker://gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0"
+    container: combine_container
     resources:
         voms_proxy=True,
         kerberos=True,
@@ -295,8 +284,7 @@ rule run_postfit:
         "output/datacards/datacard.txt"
     output:
         "output/datacards/plots/SvB_postfit.png"
-    container:
-        "docker://gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0"
+    container: combine_container
     resources:
         voms_proxy=True,
         kerberos=True,
@@ -318,8 +306,7 @@ rule make_syst_plots:
         "output/datacards/shapes.root",
     log:
         "output/tmp.log"
-    container:
-        "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
+    container: analysis_container
     resources:
         kerberos=True,
         compute_backend="kubernetes",

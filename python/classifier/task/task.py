@@ -9,6 +9,7 @@ from typing import Iterable, Literal
 from .special import TaskBase
 
 _INDENT = "  "
+_DASH = "-"
 
 
 class _Formatter(
@@ -95,3 +96,10 @@ class Task(TaskBase):
         if cls.argparser is NotImplemented:
             raise ValueError(f"{cls.__name__}.argparser is not implemented")
         return cls.argparser.format_help()
+
+    @classmethod
+    def autocomplete(cls, args: list[str]):
+        last = args[-1] if args else _DASH
+        if last.startswith(_DASH):
+            for action in cls.argparser._actions:
+                yield from filter(lambda x: x.startswith(last), action.option_strings)

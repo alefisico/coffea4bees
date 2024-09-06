@@ -1,6 +1,8 @@
 import builtins
+from _thread import LockType
 from enum import Enum
 from functools import partial
+from threading import Lock
 from typing import (
     Any,
     Callable,
@@ -30,7 +32,26 @@ class Method(Protocol, Generic[_MethodP, _MethodReturnT]):
 
 class WithUUID:
     def __init__(self):
+        super().__init__()
         self.uuid = uuid4()
+
+
+class PicklableLock:
+    def __init__(self):
+        super().__init__()
+        self.lock = Lock()
+
+    def __copy__(self):
+        new = self.__new__(self.__class__)
+        new.__dict__ = self.__dict__.copy()
+        return new
+
+    def __getstate__(self):
+        return self.__dict__ | {"lock": isinstance(self.lock, LockType)}
+
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.lock = Lock() if self.lock else None
 
 
 class dict_proxy(MutableMapping):
