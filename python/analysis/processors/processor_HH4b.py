@@ -12,6 +12,7 @@ from analysis.helpers.FriendTreeSchema import FriendTreeSchema
 from analysis.helpers.hist_templates import (
     FvTHists,
     QuadJetHists,
+    QuadJetHistsSRSingle,
     SvBHists,
     TopCandHists,
     WCandHists,
@@ -607,6 +608,25 @@ class analysis(processor.ProcessorABC):
         selev["quadJet_selected"] = quadJet[quadJet.selected][:, 0]
         selev["passDiJetMass"] = ak.any(quadJet.passDiJetMass, axis=1)
 
+        selev["m4j"] = selev.v4j.mass
+        selev["m4j_HHSR"] = ak.where(~selev.quadJet_selected.HHSR, -2, selev.m4j)
+        selev["m4j_ZHSR"] = ak.where(~selev.quadJet_selected.ZHSR, -2, selev.m4j)
+        selev["m4j_ZZSR"] = ak.where(~selev.quadJet_selected.ZZSR, -2, selev.m4j)
+        
+        selev['leadStM_selected'] = selev.quadJet_selected.lead.mass
+        selev['sublStM_selected'] = selev.quadJet_selected.subl.mass
+
+        selev['dijet_HHSR'] = ak.zip( { "lead_m": ak.where(~selev.quadJet_selected.HHSR, -2, selev.leadStM_selected),
+                                        "subl_m": ak.where(~selev.quadJet_selected.HHSR, -2, selev.sublStM_selected),
+                                    } )
+        selev['dijet_ZHSR'] = ak.zip( { "lead_m": ak.where(~selev.quadJet_selected.ZHSR, -2, selev.leadStM_selected),
+                                        "subl_m": ak.where(~selev.quadJet_selected.ZHSR, -2, selev.sublStM_selected),
+                                     } )
+        selev['dijet_ZZSR'] = ak.zip( { "lead_m": ak.where(~selev.quadJet_selected.ZZSR, -2, selev.leadStM_selected),
+                                        "subl_m": ak.where(~selev.quadJet_selected.ZZSR, -2, selev.sublStM_selected),
+                                     } )
+
+        
         selev["region"] = ( selev["quadJet_selected"].SR * 0b10 + selev["quadJet_selected"].SB * 0b01 )
 
         #
@@ -743,6 +763,15 @@ class analysis(processor.ProcessorABC):
             fill += QuadJetHists( ("quadJet_selected", "Selected Quad Jet"), "quadJet_selected" )
             fill += QuadJetHists( ("quadJet_min_dr", "Min dR Quad Jet"), "quadJet_min_dr" )
 
+
+            fill += hist.add( "m4j_HHSR", (120, 0, 1200, ("m4j_HHSR", "m4j HHSR")) )
+            fill += hist.add( "m4j_ZHSR", (120, 0, 1200, ("m4j_ZHSR", "m4j ZHSR")) )
+            fill += hist.add( "m4j_ZZSR", (120, 0, 1200, ("m4j_ZZSR", "m4j ZZSR")) )
+        
+            fill += QuadJetHistsSRSingle( ("dijet_HHSR", "DiJet Mass HHSR") ,"dijet_HHSR"  )
+            fill += QuadJetHistsSRSingle( ("dijet_ZHSR", "DiJet Mass ZHSR") ,"dijet_ZHSR"  )
+            fill += QuadJetHistsSRSingle( ("dijet_ZZSR", "DiJet Mass ZZSR") ,"dijet_ZZSR"  )
+        
             #
             #  Make classifier hists
             #
