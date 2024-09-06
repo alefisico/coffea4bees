@@ -17,18 +17,7 @@ from analysis.helpers.event_weights import (
 )
 from analysis.helpers.cutflow import cutFlow
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
-<<<<<<< HEAD
-from analysis.helpers.SvB_helpers import setSvBVars
-=======
-from analysis.helpers.hist_templates import (
-    FvTHists,
-    QuadJetHists,
-    SvBHists,
-    TopCandHists,
-    WCandHists,
-)
-from analysis.helpers.SvB_helpers import setSvBVars, compute_SvB, subtract_ttbar_with_SvB
->>>>>>> 78f08db1c3da9d74948261b281b5335666f18640
+from analysis.helpers.SvB_helpers import setSvBVars, subtract_ttbar_with_SvB
 from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
 from analysis.helpers.selection_basic_4b import (
     apply_event_selection_4b,
