@@ -86,6 +86,11 @@ def apply_object_selection_4b( event, corrections_metadata, *, doLeptonRemoval=T
     tagCode[event.threeTag] = 3
     event['tag'] = tagCode
 
+    #  Calculate hT
+    event["hT"] = ak.sum(event.Jet[event.Jet.selected_loose].pt, axis=1)
+    event["hT_selected"] = ak.sum(event.Jet[event.Jet.selected].pt, axis=1)
+    event["hT_trigger"] = ak.sum(event.Jet[event.Jet.ht_selected].pt, axis=1)
+
     # # For low pt selection
     # event['Jet', 'selected_lowpt'] = (event.Jet.pt >= 15) & (np.abs(event.Jet.eta) <= 2.4) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned & ~event.Jet.selected
     # event['lowptJet'] = event.Jet[event.Jet.selected_lowpt]

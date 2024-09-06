@@ -10,7 +10,11 @@ from analysis.helpers.filling_histograms import (
     filling_nominal_histograms,
     filling_syst_histograms
 )
-from analysis.helpers.event_weights import add_weights
+from analysis.helpers.event_weights import ( 
+    add_weights, 
+    add_pseudotagweights,
+    add_btagweights,
+)
 from analysis.helpers.cutflow import cutFlow
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
 from analysis.helpers.SvB_helpers import setSvBVars
@@ -312,19 +316,12 @@ class analysis(processor.ProcessorABC):
         #
         if self.isMC and self.apply_btagSF:
 
-            if (not shift_name) & self.run_systematics:
-                btag_SF_weights = apply_btag_sf( event.selJet, correction_file=self.corrections_metadata[self.year]["btagSF"],
-                                                 btag_uncertainties=self.corrections_metadata[self.year][ "btag_uncertainties" ], )
-
-                weights.add_multivariation( f"CMS_btag", btag_SF_weights["btagSF_central"],
-                                            self.corrections_metadata[self.year]["btag_uncertainties"],
-                                            [ var.to_numpy() for name, var in btag_SF_weights.items() if "_up" in name ],
-                                            [ var.to_numpy() for name, var in btag_SF_weights.items() if "_down" in name ], )
-            else:
-                weights.add( "CMS_btag",
-                         apply_btag_sf( event.selJet, correction_file=self.corrections_metadata[self.year]["btagSF"], btag_uncertainties=None, )["btagSF_central"], )
-            list_weight_names.append(f"CMS_btag")
-
+            weights, list_weight_names = add_btagweights( event.selJet, weights, 
+                                                         list_weight_names=list_weight_names,
+                                                         shift_name=shift_name,
+                                                         run_systematics=self.run_systematics,
+                                                         corrections_metadata=self.corrections_metadata[self.year]
+            )
             logging.debug( f"Btag weight {weights.partial_weight(include=['CMS_btag'])[:10]}\n" )
             event["weight"] = weights.weight()
             if not shift_name:
@@ -340,12 +337,6 @@ class analysis(processor.ProcessorABC):
         analysis_selections = selections.all(*allcuts)
         selev = event[analysis_selections]
 
-        #
-        #  Calculate hT
-        #
-        selev["hT"] = ak.sum(selev.Jet[selev.Jet.selected_loose].pt, axis=1)
-        selev["hT_selected"] = ak.sum(selev.Jet[selev.Jet.selected].pt, axis=1)
-        selev["hT_trigger"] = ak.sum(selev.Jet[selev.Jet.ht_selected].pt, axis=1)
         #
         #  Build the top Candiates
         #
@@ -411,61 +402,19 @@ class analysis(processor.ProcessorABC):
         #     processOutput[out_k] = {}
         #     processOutput[out_k][event.metadata['dataset']] = list(out_v)
 
-        #
-        # calculate pseudoTagWeight for threeTag events
-        #
-        all_weights = ['genweight', 'CMS_bbbb_resolved_ggf_triggerEffSF', f'CMS_pileup_{year_label}' ,'CMS_btag']
-        logging.debug( f"noJCM_noFVT partial {weights.partial_weight(include=all_weights)[ analysis_selections ][:10]}" )
-        selev["weight_noJCM_noFvT"] = weights.partial_weight( include=all_weights )[analysis_selections]
 
         if self.JCM:
-            selev["Jet_untagged_loose"] = selev.Jet[ selev.Jet.selected & ~selev.Jet.tagged_loose ]
-            nJet_pseudotagged = np.zeros(len(selev), dtype=int)
-            pseudoTagWeight = np.ones(len(selev))
-            pseudoTagWeight[selev.threeTag], nJet_pseudotagged[selev.threeTag] = ( self.JCM( selev[selev.threeTag]["Jet_untagged_loose"], selev.event[selev.threeTag], ) )
-            selev["nJet_pseudotagged"] = nJet_pseudotagged
-            selev["pseudoTagWeight"] = pseudoTagWeight
+            weights, list_weight_names = add_pseudotagweights( selev, weights, 
+                                                            analysis_selections, 
+                                                            JCM=self.JCM,
+                                                            apply_FvT=self.apply_FvT,
+                                                            isDataForMixed=self.isDataForMixed,
+                                                            list_weight_names=list_weight_names,
+                                                            event_metadata=event.metadata, 
+                                                            year_label=year_label,
+                                                            len_event=len(event),
+            )
 
-            #
-            # apply pseudoTagWeight and FvT to threeTag events
-            #
-            weight_noFvT = np.array(selev.weight.to_numpy(), dtype=float)
-            weight_noFvT[selev.threeTag] = ( selev.weight[selev.threeTag] * selev.pseudoTagWeight[selev.threeTag] )
-            selev["weight_noFvT"] = weight_noFvT
-
-            if self.apply_FvT:
-
-                if self.isDataForMixed:
-
-                    #
-                    #  Load the weights for each mixed sample
-                    #
-                    for _JCM_load, _FvT_name in zip( event.metadata["JCM_loads"], event.metadata["FvT_names"] ):
-                        _weight = np.array(selev.weight.to_numpy(), dtype=float)
-                        _weight[selev.threeTag] = ( selev.weight[selev.threeTag]
-                                                    * getattr(selev, f"{_JCM_load}")[selev.threeTag]
-                                                    * getattr(getattr(selev, _FvT_name), _FvT_name)[ selev.threeTag ] )
-                        selev[f"weight_{_FvT_name}"] = _weight
-
-                    #
-                    # Use the first as the nominal weight
-                    #
-                    selev["weight"] = selev[f'weight_{event.metadata["FvT_names"][0]}']
-
-                else:
-                    weight = ( pseudoTagWeight[selev.threeTag] * selev.FvT.FvT[selev.threeTag] )
-                    tmp_weight = np.full(len(event), 1.0)
-                    tmp_weight[analysis_selections & event.threeTag] = weight
-                    weights.add("FvT", tmp_weight)
-                    list_weight_names.append(f"FvT")
-                    logging.debug( f"FvT {weights.partial_weight(include=['FvT'])[:10]}\n" )
-
-            else:
-                tmp_weight = np.full(len(event), 1.0)
-                tmp_weight[analysis_selections] = weight_noFvT
-                weights.add("no_FvT", tmp_weight)
-                list_weight_names.append(f"no_FvT")
-                logging.debug( f"no_FvT {weights.partial_weight(include=['no_FvT'])[:10]}\n" )
         #
         # Blind data in fourTag SR
         #
