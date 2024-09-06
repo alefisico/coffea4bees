@@ -23,9 +23,9 @@ cd python/
 #time python runner.py -o test_synthetic_data_test.coffea -d data -p analysis/processors/processor_HH4b.py -y UL18  -op analysis/hists/ -c analysis/metadata/HH4b_synthetic_data.yml -m metadata/datasets_synthetic_seed17.yml
 
 
-echo "############### Running test processor HHSignal"
-python metadata/merge_yaml_datasets.py -m metadata/datasets_HH4b.yml -f skimmer/metadata/picoaod_datasets_declustered_GluGluToHHTo4B_cHHH1_test_UL18.yml  -o metadata/datasets_synthetic_seed17_test.yml
+echo "############### Running test processor "
+python metadata/merge_yaml_datasets.py -m metadata/datasets_HH4b.yml -f skimmer/metadata/picoaod_datasets_declustered_test_UL18.yml  -o metadata/datasets_synthetic_test.yml
 # python metadata/merge_yaml_datasets.py -m metadata/datasets_synthetic_seed17.yml -f skimmer/metadata/picoaod_datasets_declustered_GluGluToHHTo4B_cHHH1_Run2_seed17.yml -o metadata/datasets_synthetic_seed17.yml
-
-time python runner.py -o test_synthetic_GluGluToHHTo4B_cHHH1_seed17.coffea -d GluGluToHHTo4B_cHHH1 -p analysis/processors/processor_HH4b.py -y UL18  -op analysis/hists/ -c analysis/metadata/HH4b_synthetic_data.yml -m metadata/datasets_synthetic_seed17_test.yml
+cat metadata/datasets_synthetic_seed17.yml
+time python runner.py -o test_synthetic_datasets.coffea -d data GluGluToHHTo4B_cHHH1 -p analysis/processors/processor_HH4b.py -y UL18  -op analysis/hists/ -c analysis/metadata/HH4b_synthetic_data.yml -m metadata/datasets_synthetic_test.yml
 cd ../
