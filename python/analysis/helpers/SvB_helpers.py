@@ -1,5 +1,6 @@
 import numpy as np
 import awkward as ak
+from base_class.math.random import Squares
 
 def setSvBVars(SvBName, event):
 
@@ -37,7 +38,7 @@ def setSvBVars(SvBName, event):
     event[SvBName, "ps_hh"] = this_ps_hh
 
 
-def compute_SvB(event, classifier_SvB, classifier_SvB_MA):
+def compute_SvB(event, classifier_SvB, classifier_SvB_MA, logging, doCheck=True):
     # import torch on demand
     import torch
     import torch.nn.functional as F
@@ -112,7 +113,7 @@ def compute_SvB(event, classifier_SvB, classifier_SvB_MA):
 
         SvB['tt_vs_mj'] = ( SvB.ptt / (SvB.ptt + SvB.pmj) )
 
-        if classifier in event.fields:
+        if doCheck and classifier in event.fields:
             error = ~np.isclose(event[classifier].ps, SvB.ps, atol=1e-5, rtol=1e-3)
             if np.any(error):
                 delta = np.abs(event[classifier].ps - SvB.ps)
@@ -133,3 +134,19 @@ def compute_SvB(event, classifier_SvB, classifier_SvB_MA):
 
         # del event[classifier]
         event[classifier] = SvB
+
+
+def subtract_ttbar_with_SvB(selev, dataset, year):
+
+    #
+    # Get reproducible random numbers
+    #
+    rng = Squares("ttbar_subtraction", dataset, year)
+    counter = np.empty((len(selev), 2), dtype=np.uint64)
+    counter[:, 0] = np.asarray(selev.event).view(np.uint64)
+    counter[:, 1] = np.asarray(selev.run).view(np.uint32)
+    counter[:, 1] <<= 32
+    counter[:, 1] |= np.asarray(selev.luminosityBlock).view(np.uint32)
+    ttbar_rand = rng.uniform(counter, low=0, high=1.0).astype(np.float32)
+
+    return (ttbar_rand > selev.SvB_MA.tt_vs_mj)

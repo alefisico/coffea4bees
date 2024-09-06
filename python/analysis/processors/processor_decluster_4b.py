@@ -20,7 +20,7 @@ from coffea.analysis_tools import Weights, PackedSelection
 from base_class.hist import Collection, Fill
 from base_class.physics.object import LorentzVector, Jet, Muon, Elec
 from analysis.helpers.hist_templates import SvBHists, FvTHists, QuadJetHists, WCandHists, TopCandHists
-from analysis.helpers.SvB_helpers import setSvBVars
+from analysis.helpers.SvB_helpers import setSvBVars, compute_SvB, subtract_ttbar_with_SvB
 
 from analysis.helpers.cutflow import cutFlow
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
@@ -203,23 +203,23 @@ class analysis(processor.ProcessorABC):
 
             #SvB_file = f'{path}/SvB_newSBDef.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_ULHH")}'
             SvB_file = f'{path}/SvB_ULHH.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_ULHH")}'
-            event["original_SvB"] = ( NanoEventsFactory.from_root( SvB_file,
+            event["SvB"] = ( NanoEventsFactory.from_root( SvB_file,
                                                           entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().SvB )
 
-            if not ak.all(event.original_SvB.event == event.event):
+            if not ak.all(event.SvB.event == event.event):
                 raise ValueError("ERROR: SvB events do not match events ttree")
 
             #SvB_MA_file = f'{path}/SvB_MA_newSBDef.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_MA_ULHH")}'
             SvB_MA_file = f'{path}/SvB_MA_ULHH.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_MA_ULHH")}'
-            event["original_SvB_MA"] = ( NanoEventsFactory.from_root( SvB_MA_file,
+            event["SvB_MA"] = ( NanoEventsFactory.from_root( SvB_MA_file,
                                                              entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema ).events().SvB_MA )
 
-            if not ak.all(event.original_SvB_MA.event == event.event):
+            if not ak.all(event.SvB_MA.event == event.event):
                 raise ValueError("ERROR: SvB_MA events do not match events ttree")
 
             # defining SvB for different SR
-            setSvBVars("original_SvB", event)
-            setSvBVars("original_SvB_MA", event)
+            setSvBVars("SvB", event)
+            setSvBVars("SvB_MA", event)
 
         if isDataForMixed:
 
@@ -413,7 +413,6 @@ class analysis(processor.ProcessorABC):
         event = apply_object_selection_4b( event, self.corrections_metadata[year], doLeptonRemoval=doLeptonRemoval )
 
 
-
         selections = PackedSelection()
         selections.add( "lumimask", event.lumimask)
         selections.add( "passNoiseFilter", event.passNoiseFilter)
@@ -502,12 +501,14 @@ class analysis(processor.ProcessorABC):
 
         ## TTbar subtractions
         if self.subtract_ttbar_with_weights:
-            ttbar_rand = np.random.uniform(low=0, high=1.0, size=len(selev))
+
+            pass_ttbar_filter_selev = subtract_ttbar_with_SvB(selev, dataset, year)
+
             pass_ttbar_filter = np.full( len(event), True)
-            pass_ttbar_filter[ selections.all(*allcuts) ] = (ttbar_rand > selev.original_SvB_MA.tt_vs_mj)
+            pass_ttbar_filter[ selections.all(*allcuts) ] = pass_ttbar_filter_selev
             selections.add( 'pass_ttbar_filter', pass_ttbar_filter )
             allcuts.append("pass_ttbar_filter")
-            selev = selev[(ttbar_rand > selev.original_SvB_MA.tt_vs_mj)]
+            selev = selev[pass_ttbar_filter_selev]
 
 
         #
@@ -560,8 +561,6 @@ class analysis(processor.ProcessorABC):
             canJet = declustered_jets[declustered_jets.jet_flavor == "b"]
             canJet["puId"] = 7
             canJet["jetId"] = 7 # selev.Jet.puId[canJet_idx]
-            btag_rand = np.random.uniform(low=0.6, high=1.0, size=len(ak.flatten(canJet,axis=1)))
-            canJet["btagDeepFlavB"] = ak.unflatten(btag_rand, ak.num(canJet))
             canJet["bRegCorr"] = 1.0
             canJet["tagged"] = True
             canJet["selected"] = True
@@ -570,8 +569,6 @@ class analysis(processor.ProcessorABC):
             notCanJet = declustered_jets[declustered_jets.jet_flavor == "j"]
             notCanJet["puId"] = 7
             notCanJet["jetId"] = 7
-            btag_rand = np.random.uniform(low=0.0, high=0.6, size=len(ak.flatten(notCanJet,axis=1)))
-            notCanJet["btagDeepFlavB"] = ak.unflatten(btag_rand, ak.num(notCanJet))
             notCanJet["bRegCorr"] = 1.0
             notCanJet["tagged"] = True
             notCanJet["selected"] =  (notCanJet.pt >= 40) & (np.abs(notCanJet.eta) <= 2.4)
@@ -796,12 +793,7 @@ class analysis(processor.ProcessorABC):
         if self.run_SvB:
 
             if (self.classifier_SvB is not None) | (self.classifier_SvB_MA is not None):
-
-                if "xbW_reco" not in selev.fields:
-                    selev["xbW_reco"] = selev["xbW"]
-                    selev["xW_reco"]  = selev["xW"]
-
-                self.compute_SvB(selev)
+                compute_SvB(selev, self.classifier_SvB, self.classifier_SvB_MA, logging, doCheck=False)
 
             quadJet["SvB_q_score"] = np.concatenate( ( np.reshape(np.array(selev.SvB.q_1234), (-1, 1)),
                                                        np.reshape(np.array(selev.SvB.q_1324), (-1, 1)),
@@ -1136,101 +1128,6 @@ class analysis(processor.ProcessorABC):
         elapsed = time.time() - tstart
         logging.debug(f"{chunk}{nEvent/elapsed:,.0f} events/s")
 
-    def compute_SvB(self, event):
-        import torch
-        import torch.nn.functional as F
-
-        n = len(event)
-
-        j = torch.zeros(n, 4, 4)
-        j[:, 0, :] = torch.tensor(event.canJet.pt)
-        j[:, 1, :] = torch.tensor(event.canJet.eta)
-        j[:, 2, :] = torch.tensor(event.canJet.phi)
-        j[:, 3, :] = torch.tensor(event.canJet.mass)
-
-        o = torch.zeros(n, 5, 8)
-        o[:, 0, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(event.notCanJet_coffea.pt,       target=8, clip=True) ), -1, ) )
-        o[:, 1, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(event.notCanJet_coffea.eta,      target=8, clip=True) ), -1, ) )
-        o[:, 2, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(event.notCanJet_coffea.phi,      target=8, clip=True) ), -1, ) )
-        o[:, 3, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(event.notCanJet_coffea.mass,     target=8, clip=True) ), -1, ) )
-        o[:, 4, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(event.notCanJet_coffea.isSelJet, target=8, clip=True) ), -1, ) )
-
-        a = torch.zeros(n, 4)
-        a[:, 0] = float(event.metadata["year"][3])
-        a[:, 1] = torch.tensor(event.nJet_selected)
-        a[:, 2] = torch.tensor(event.xW_reco)
-        a[:, 3] = torch.tensor(event.xbW_reco)
-
-        e = torch.tensor(event.event) % 3
-
-        for classifier in ["SvB", "SvB_MA"]:
-
-            if classifier == "SvB":
-                c_logits, q_logits = self.classifier_SvB(j, o, a, e)
-
-            if classifier == "SvB_MA":
-                c_logits, q_logits = self.classifier_SvB_MA(j, o, a, e)
-
-            c_score, q_score = ( F.softmax(c_logits, dim=-1).numpy(), F.softmax(q_logits, dim=-1).numpy(), )
-
-            # classes = [mj,tt,zz,zh,hh]
-            SvB = ak.zip( { "pmj": c_score[:, 0],
-                            "ptt": c_score[:, 1],
-                            "pzz": c_score[:, 2],
-                            "pzh": c_score[:, 3],
-                            "phh": c_score[:, 4],
-                            "q_1234": q_score[:, 0],
-                            "q_1324": q_score[:, 1],
-                            "q_1423": q_score[:, 2],
-                            }
-                          )
-
-            largest_name = np.array(["None", "ZZ", "ZH", "HH"])
-            SvB["ps"] = SvB.pzz + SvB.pzh + SvB.phh
-            SvB["passMinPs"] = (SvB.pzz > 0.01) | (SvB.pzh > 0.01) | (SvB.phh > 0.01)
-            SvB["zz"] = (SvB.pzz > SvB.pzh) & (SvB.pzz > SvB.phh)
-            SvB["zh"] = (SvB.pzh > SvB.pzz) & (SvB.pzh > SvB.phh)
-            SvB["hh"] = (SvB.phh > SvB.pzz) & (SvB.phh > SvB.pzh)
-            SvB["largest"] = largest_name[ SvB.passMinPs * ( 1 * SvB.zz + 2* SvB.zh + 3*SvB.hh ) ]
-
-            this_ps_zz = np.full(len(event), -1, dtype=float)
-            this_ps_zz[ SvB.zz ] = SvB.ps[ SvB.zz ]
-            this_ps_zz[ SvB.passMinPs == False ] = -2
-            SvB['ps_zz'] = this_ps_zz
-
-            this_ps_zh = np.full(len(event), -1, dtype=float)
-            this_ps_zh[ SvB.zh ] = SvB.ps[ SvB.zh ]
-            this_ps_zh[ SvB.passMinPs == False ] = -2
-            SvB['ps_zh'] = this_ps_zh
-
-            this_ps_hh = np.full(len(event), -1, dtype=float)
-            this_ps_hh[ SvB.hh ] = SvB.ps[ SvB.hh ]
-            this_ps_hh[ SvB.passMinPs == False ] = -2
-            SvB['ps_hh'] = this_ps_hh
-
-            SvB['tt_vs_mj'] = ( SvB.ptt / (SvB.ptt + SvB.pmj) )
-
-            if classifier in event.fields:
-                error = ~np.isclose(event[classifier].ps, SvB.ps, atol=1e-5, rtol=1e-3)
-                if np.any(error):
-                    delta = np.abs(event[classifier].ps - SvB.ps)
-                    worst = np.max(delta) == delta
-                    worst_event = event[worst][0]
-
-                    logging.warning( f"WARNING: Calculated {classifier} does not agree within tolerance for some events ({np.sum(error)}/{len(error)}) {delta[worst]}" )
-
-                    logging.warning("----------")
-
-                    for field in event[classifier].fields:
-                        logging.warning(f"{field} {worst_event[classifier][field]}")
-
-                    logging.warning("----------")
-
-                    for field in SvB.fields:
-                        logging.warning(f"{field} {SvB[worst][field]}")
-
-            # del event[classifier]
-            event[classifier] = SvB
 
     def postprocess(self, accumulator):
         return accumulator
