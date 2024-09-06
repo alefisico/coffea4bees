@@ -5,16 +5,18 @@ from coffea.nanoevents import NanoEventsFactory
 
 from jet_clustering.clustering   import cluster_bs
 from jet_clustering.declustering import make_synthetic_event, clean_ISR
-from analysis.helpers.SvB_helpers import setSvBVars
+from analysis.helpers.SvB_helpers import setSvBVars, subtract_ttbar_with_SvB
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
 from base_class.math.random import Squares
+from analysis.helpers.event_weights import add_weights
 
 from coffea.analysis_tools import Weights, PackedSelection
 import numpy as np
-from analysis.helpers.common import init_jet_factory
+from analysis.helpers.common import init_jet_factory, apply_btag_sf
 from copy import copy
 import logging
 import awkward as ak
+import uproot
 
 class DeClusterer(PicoAOD):
     def __init__(self, clustering_pdfs_file = "None", subtract_ttbar_with_weights = False, declustering_rand_seed=5, *args, **kwargs):
@@ -36,12 +38,14 @@ class DeClusterer(PicoAOD):
             "all",
             "passHLT",
             "passNoiseFilter",
-            "passJetMult_lowpt_forskim",
             "passJetMult",
-            "passPreSel_lowpt_forskim",
             "passPreSel",
             "pass_ttbar_filter",
         ]
+
+        self.skip_collections = kwargs["skip_collections"]
+        self.skip_branches    = kwargs["skip_branches"]
+
 
     def select(self, event):
 
@@ -52,6 +56,7 @@ class DeClusterer(PicoAOD):
         estart  = event.metadata['entrystart']
         estop   = event.metadata['entrystop']
         nEvent = len(event)
+        year_label = self.corrections_metadata[year]['year_label']
 
         path = fname.replace(fname.split("/")[-1], "")
 
@@ -70,18 +75,33 @@ class DeClusterer(PicoAOD):
 
         event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year] )
 
+        ## adds all the event mc weights and 1 for data
+        weights, list_weight_names = add_weights( event, isMC, dataset, year_label,
+                                                  estart, estop,
+                                                  self.corrections_metadata[year],
+                                                  apply_trigWeight = True,
+                                                  isTTForMixed=False,
+                                                 )
+
         event = apply_object_selection_4b( event, self.corrections_metadata[year]  )
 
-        weights = Weights(len(event), storeIndividual=True)
+
+        #weights = Weights(len(event), storeIndividual=True)
 
         #
-        # general event weights
+        # Get the trigger weights
         #
         if isMC:
-            weights.add( "genweight_", event.genWeight )
-            weights.add( "CMS_bbbb_resolved_ggf_triggerEffSF", event.trigWeight.Data, event.trigWeight.MC, ak.where(event.passHLT, 1.0, 0.0), )
-            list_weight_names.append('CMS_bbbb_resolved_ggf_triggerEffSF')
-            logging.debug( f"trigWeight {weights.partial_weight(include=['CMS_bbbb_resolved_ggf_triggerEffSF'])[:10]}\n" )
+            if "GluGlu" in dataset:
+                ### this is temporary until trigWeight is computed in new code
+                trigWeight_file = uproot.open(f'{event.metadata["filename"].replace("picoAOD", "trigWeights")}')['Events']
+                trigWeight = trigWeight_file.arrays(['event', 'trigWeight_Data', 'trigWeight_MC'], entry_start=estart,entry_stop=estop)
+                if not ak.all(trigWeight.event == event.event):
+                    raise ValueError('trigWeight events do not match events ttree')
+
+                event["trigWeight_Data"] = trigWeight["trigWeight_Data"]
+                event["trigWeight_MC"]   = trigWeight["trigWeight_MC"]
+
 
         selections = PackedSelection()
         selections.add( "lumimask", event.lumimask)
@@ -101,34 +121,39 @@ class DeClusterer(PicoAOD):
             cumulative_cuts.append(cut)
             self._cutFlow.fill( cut, event[selections.all(*cumulative_cuts)], allTag=True )
 
+        #
+        # Add Btag SF
+        #
+        if isMC:
+            weights.add( "CMS_btag",
+                         apply_btag_sf( event.selJet, correction_file=self.corrections_metadata[year]["btagSF"], btag_uncertainties=None, )["btagSF_central"], )
+            list_weight_names.append(f"CMS_btag")
+
+            logging.debug( f"Btag weight {weights.partial_weight(include=['CMS_btag'])[:10]}\n" )
+            event["weight"] = weights.weight()
+
+
+
         selection = event.lumimask & event.passNoiseFilter & event.passJetMult & event.fourTag
         if not isMC: selection = selection & event.passHLT
 
         selev = event[selections.all(*cumulative_cuts)]
 
-        ## TTbar subtractions
+        #
+        #  TTbar subtractions using weights
+        #
         if self.subtract_ttbar_with_weights:
 
-            #
-            # Get reproducible random numbers
-            #
-            rng = Squares("ttbar_subtraction", dataset, year)
-            counter = np.empty((len(selev), 2), dtype=np.uint64)
-            counter[:, 0] = np.asarray(selev.event).view(np.uint64)
-            counter[:, 1] = np.asarray(selev.run).view(np.uint32)
-            counter[:, 1] <<= 32
-            counter[:, 1] |= np.asarray(selev.luminosityBlock).view(np.uint32)
-            ttbar_rand = rng.uniform(counter, low=0, high=1.0).astype(np.float32)
-
+            pass_ttbar_filter_selev = subtract_ttbar_with_SvB(selev, dataset, year)
 
             pass_ttbar_filter = np.full( len(event), True)
-            pass_ttbar_filter[ selections.all(*cumulative_cuts) ] = (ttbar_rand > selev.SvB_MA.tt_vs_mj)
+            pass_ttbar_filter[ selections.all(*cumulative_cuts) ] = pass_ttbar_filter_selev
             selections.add( 'pass_ttbar_filter', pass_ttbar_filter )
             cumulative_cuts.append("pass_ttbar_filter")
             self._cutFlow.fill( "pass_ttbar_filter", event[selections.all(*cumulative_cuts)], allTag=True )
 
             selection = selection & pass_ttbar_filter
-            selev = selev[(ttbar_rand > selev.SvB_MA.tt_vs_mj)]
+            selev = selev[pass_ttbar_filter_selev]
 
         #
         # Build and select boson candidate jets with bRegCorr applied
@@ -181,8 +206,8 @@ class DeClusterer(PicoAOD):
         n_jet = ak.num(declustered_jets)
         total_jet = int(ak.sum(n_jet))
 
-        branches = ak.Array(
-            {
+
+        out_branches = {
                 # Update jets with new kinematics
                 "Jet_pt":              declustered_jets.pt, #ak.unflatten(np.full(total_jet, 7), n_jet),
                 "Jet_eta":             declustered_jets.eta,
@@ -193,21 +218,30 @@ class DeClusterer(PicoAOD):
                 "Jet_jetId":           ak.unflatten(np.full(total_jet, 7), n_jet),
                 "Jet_puId":            ak.unflatten(np.full(total_jet, 7), n_jet),
                 "Jet_bRegCorr":        ak.unflatten(np.full(total_jet, 1), n_jet),
-                "Jet_isGood":          ak.unflatten(np.full(total_jet, 1), n_jet),
-                "Jet_btagDeepB":       ak.unflatten(np.full(total_jet, 1), n_jet),
-                "Jet_cleanmask":       ak.unflatten(np.full(total_jet, 1), n_jet),
-                "Jet_area":            ak.unflatten(np.full(total_jet, 1), n_jet),
-                "Jet_chEmEF":          ak.unflatten(np.full(total_jet, 1), n_jet),
-                "Jet_rawFactor":       ak.unflatten(np.full(total_jet, 1), n_jet),
-                "Jet_neEmEF":          ak.unflatten(np.full(total_jet, 1), n_jet),
-                "Jet_btagCSVV2":       ak.unflatten(np.full(total_jet, 1), n_jet),
-
                 # create new regular branch
-                "nClusteredJets":      selev["nClusteredJets"],
+                "nClusteredJets":      selev.nClusteredJets,
             }
-        )
+
+        if isMC:
+            out_branches["trigWeight_Data"] = selev.trigWeight_Data
+            out_branches["trigWeight_MC"]   = selev.trigWeight_MC
+            out_branches["CMSbtag"]        = weights.partial_weight(include=["CMS_btag"])[selections.all(*cumulative_cuts)]
+
+        #
+        #  Need to skip all the other jet branches to make sure they have the same number of jets
+        #
+        for f in event.Jet.fields:
+            bname = f"Jet_{f}"
+            if bname not in out_branches:
+                self.skip_branches.append(bname)
+
+        self.update_branch_filter(self.skip_collections, self.skip_branches)
+        branches = ak.Array(out_branches)
 
         result = {"total_jet": total_jet}
+
+        if isMC:
+            result["sumw"] = event.metadata["genEventSumw"]
 
         return (selection,
                 branches,
