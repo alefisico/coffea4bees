@@ -28,7 +28,7 @@ from analysis.helpers.FriendTreeSchema import FriendTreeSchema
 from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
 from analysis.helpers.common import init_jet_factory, apply_btag_sf, update_events
 
-from analysis.helpers.SvB_helpers import setSvBVars, compute_SvB
+from analysis.helpers.SvB_helpers import setSvBVars, subtract_ttbar_with_SvB
 from analysis.helpers.selection_basic_4b import (
     apply_event_selection_4b,
     apply_object_selection_4b
@@ -213,12 +213,14 @@ class analysis(processor.ProcessorABC):
 
         ## TTbar subtractions
         if self.subtract_ttbar_with_weights:
-            ttbar_rand = np.random.uniform(low=0, high=1.0, size=len(selev))
+
+            pass_ttbar_filter_selev = subtract_ttbar_with_SvB(selev, dataset, year)
+
             pass_ttbar_filter = np.full( len(event), True)
-            pass_ttbar_filter[ selections.all(*allcuts) ] = (ttbar_rand > selev.SvB_MA.tt_vs_mj)
+            pass_ttbar_filter[ selections.all(*allcuts) ] = pass_ttbar_filter_selev
             selections.add( 'pass_ttbar_filter', pass_ttbar_filter )
             allcuts.append("pass_ttbar_filter")
-            selev = selev[(ttbar_rand > selev.SvB_MA.tt_vs_mj)]
+            selev = selev[pass_ttbar_filter_selev]
 
 
         # logging.info( f"\n {chunk} Event:  nSelJets {selev['nJet_selected']}\n")
