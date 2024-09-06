@@ -5,7 +5,7 @@ import warnings
 import awkward as ak
 import numpy as np
 import yaml
-from analysis.helpers.common import apply_btag_sf, init_jet_factory, update_events
+from analysis.helpers.common import init_jet_factory, update_events
 from analysis.helpers.filling_histograms import (
     filling_nominal_histograms,
     filling_syst_histograms
