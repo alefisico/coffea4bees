@@ -16,7 +16,7 @@ from analysis.helpers.hist_templates import (
     TopCandHists,
     WCandHists,
 )
-from analysis.helpers.SvB_helpers import setSvBVars, compute_SvB
+from analysis.helpers.SvB_helpers import setSvBVars, compute_SvB, subtract_ttbar_with_SvB
 from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
 from analysis.helpers.selection_basic_4b import (
     apply_event_selection_4b,
@@ -35,6 +35,7 @@ from coffea import processor
 from coffea.analysis_tools import PackedSelection, Weights
 from coffea.nanoevents import NanoAODSchema, NanoEventsFactory
 from coffea.util import load
+
 
 #
 # Setup
@@ -59,6 +60,8 @@ class analysis(processor.ProcessorABC):
         top_reconstruction_override = False,
         run_systematics=[],
         make_classifier_input: str = None,
+        isSyntheticData=False,
+        subtract_ttbar_with_weights = False,
     ):
 
         logging.debug("\nInitialize Analysis Processor")
@@ -75,8 +78,8 @@ class analysis(processor.ProcessorABC):
         self.classifier_SvB_MA = HCREnsemble(SvB_MA) if SvB_MA else None
         self.corrections_metadata = yaml.safe_load(open(corrections_metadata, "r"))
         self.top_reconstruction_override = top_reconstruction_override
+        self.subtract_ttbar_with_weights = subtract_ttbar_with_weights
 
-        isSyntheticData = False ## Hard code for Now !!
         self.isSyntheticData = isSyntheticData
 
         self.cutFlowCuts = [
@@ -271,7 +274,7 @@ class analysis(processor.ProcessorABC):
                                                  )
 
         # Apply object selection (function does not remove events, adds content to objects)
-        doLeptonRemoval = not (self.isMixedData or self.isTTForMixed or self.isDataForMixed)
+        doLeptonRemoval = not (self.isSyntheticData or self.isMixedData or self.isTTForMixed or self.isDataForMixed)
         event = apply_object_selection_4b( event, self.corrections_metadata[self.year],
                                            doLeptonRemoval=doLeptonRemoval, isSyntheticData=self.isSyntheticData )
 
@@ -343,6 +346,23 @@ class analysis(processor.ProcessorABC):
         allcuts.append("passPreSel")
         analysis_selections = selections.all(*allcuts)
         selev = event[analysis_selections]
+
+        #
+        #  TTbar subtractions using weights
+        #
+        if self.subtract_ttbar_with_weights:
+
+            pass_ttbar_filter_selev = subtract_ttbar_with_SvB(selev, self.dataset, self.year)
+
+            pass_ttbar_filter = np.full( len(event), True)
+            pass_ttbar_filter[ selections.all(*allcuts) ] = pass_ttbar_filter_selev
+            selections.add( 'pass_ttbar_filter', pass_ttbar_filter )
+            allcuts.append("pass_ttbar_filter")
+            self._cutFlow.fill( "pass_ttbar_filter", event[selections.all(*allcuts)], allTag=True )
+
+            analysis_selections = selections.all(*allcuts)
+            selev = selev[pass_ttbar_filter_selev]
+
 
         #
         #  Calculate hT
@@ -541,7 +561,7 @@ class analysis(processor.ProcessorABC):
         if self.run_SvB:
 
             if (self.classifier_SvB is not None) | (self.classifier_SvB_MA is not None):
-                compute_SvB(selev, self.classifier_SvB, self.classifier_SvB_MA)
+                compute_SvB(selev, self.classifier_SvB, self.classifier_SvB_MA, logging)
 
             quadJet["SvB_q_score"] = np.concatenate( ( np.reshape(np.array(selev.SvB.q_1234), (-1, 1)),
                                                        np.reshape(np.array(selev.SvB.q_1324), (-1, 1)),
