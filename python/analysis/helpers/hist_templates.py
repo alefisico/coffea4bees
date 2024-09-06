@@ -64,6 +64,11 @@ class QuadJetHistsUnsup(Template):
     close           = LorentzVector.plot_pair(('...', R'Close Boson Candidate'), 'close', skip=['n'])
     other           = LorentzVector.plot_pair(('...', R'Other Boson Candidate'), 'other', skip=['n'])
 
+class QuadJetHistsSRSingle(Template):
+    lead_m           = H((50, 0, 250, ("lead_m",        'Lead Boson Candidate Mass')))
+    subl_m           = H((50, 0, 250, ("subl_m",        'Subl Boson Candidate Mass')))
+    lead_vs_subl_m   = H((50, 0, 250, ('lead_m', 'Lead Boson Candidate Mass')),
+                         (50, 0, 250, ('subl_m', 'Subl Boson Candidate Mass')))
 
 class WCandHists(Template):
 

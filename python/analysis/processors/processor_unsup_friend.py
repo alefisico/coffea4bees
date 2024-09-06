@@ -63,7 +63,7 @@ ak.behavior.update(vector.behavior)
 
 
 class analysis(processor.ProcessorABC):
-    def __init__(self, JCM='', threeTag = True, corrections_metadata='analysis/metadata/corrections.yml', run_systematics=[], SRno = '4',make_classifier_input=None):
+    def __init__(self, JCM='', threeTag = True, corrections_metadata='analysis/metadata/corrections.yml', run_systematics=[], SRno = '4', make_classifier_input: str = ''):
         logging.debug('\nInitialize Analysis Processor')
         self.cutFlowCuts = ["all", "passHLT", "passNoiseFilter", "passJetMult", "passJetMult_btagSF", "passPreSel"]
         self.histCuts = ['passPreSel']
@@ -76,6 +76,7 @@ class analysis(processor.ProcessorABC):
         self.m4j_SR = self.m4jBinEdges[self.SRno]
         self.m4j_lowSB = self.m4jBinEdges[int(self.SRno-1)]
         self.m4j_highSB = self.m4jBinEdges[int(self.SRno+1)]
+        self.make_classifier_input = make_classifier_input
         logging.info(f'Region SR at {self.SRno} with low SB at {int(self.SRno-1)} and high SB at {int(self.SRno+1)}')
         logging.info(f'm4js are {self.m4j_lowSB[0]}, {self.m4j_SR[0]}, {self.m4j_SR[1]}, {self.m4j_highSB[1]} GeV.')
 
@@ -86,6 +87,8 @@ class analysis(processor.ProcessorABC):
         logging.info(f'File path: {fname}')
 
         dataset = event.metadata['dataset']
+        fileuuild = event.metadata['fileuuid']
+
         estart  = event.metadata['entrystart']
         estop   = event.metadata['entrystop']
         chunk   = f'{dataset}::{estart:6d}:{estop:6d} >>> '
@@ -113,10 +116,8 @@ class analysis(processor.ProcessorABC):
 
 
         if 'picoAOD_3b_wJCM_newSBDef' in fname:
-            # fname_w3to4 = f"/smurthy/condor/unsupervised4b/randPair/w3to4hist/data20{year[2:4]}_picoAOD_3b_wJCM_newSBDef_w3to4_hist.root"
-            # fname_wDtoM = f"/smurthy/condor/unsupervised4b/randPair/wDtoMwJMC/data20{year[2:4]}_picoAOD_3b_wJCM_newSBDef_wDtoM.root"
-            fname_w3to4 = f"/smurthy/condor/unsup4b_coff/w3to4/data20{year[2:4]}_picoAOD_3b_wJCM_newSBDef_w3to4.root"
-            fname_wDtoM = f"/smurthy/condor/unsup4b_coff/wDtoM/data20{year[2:4]}_picoAOD_3b_wJCM_newSBDef_wDtoM.root"
+            fname_w3to4 = f"/smurthy/condor/unsupervised4b/randPair/w3to4hist/data20{year[2:4]}_picoAOD_3b_wJCM_newSBDef_w3to4_hist.root"
+            fname_wDtoM = f"/smurthy/condor/unsupervised4b/randPair/wDtoMwJMC/data20{year[2:4]}_picoAOD_3b_wJCM_newSBDef_wDtoM.root"
             event['w3to4'] = NanoEventsFactory.from_root(f'{path}{fname_w3to4}',
                             entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().w3to4.w3to4
 
@@ -173,14 +174,16 @@ class analysis(processor.ProcessorABC):
         self._cutFlow.fill("passHLT",  event[ event.lumimask & event.passNoiseFilter & event.passHLT], allTag=True)
 
         ### Apply object selection (function does not remove events, adds content to objects)
-        doLeptonRemoval = not isMixedData
-        event =  apply_object_selection_4b( event, self.corrections_metadata[year], doLeptonRemoval=doLeptonRemoval  )
+        event =  apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year], isMixedData=isMixedData  )
         self._cutFlow.fill("passJetMult",  event[ event.lumimask & event.passNoiseFilter & event.passHLT & event.passJetMult ], allTag=True)
 
-        ### Filtering object and event selection
-        selev = event[ event.lumimask & event.passNoiseFilter & event.passHLT & event.passJetMult ]
+        selections = []
+        filters = event.lumimask & event.passNoiseFilter & event.passHLT & event.passJetMult
+        selections.append(filters & event.passPreSel)
 
-
+        ## Filtering object and event selection
+        selev = event[filters]
+        
         ##### Calculate and apply btag scale factors
         if isMC:
             btagSF = correctionlib.CorrectionSet.from_file(self.corrections_metadata[year]['btagSF'])['deepJet_shape']
@@ -191,15 +194,17 @@ class analysis(processor.ProcessorABC):
 
             self._cutFlow.fill("passJetMult_btagSF",  selev, allTag=True)
 
-
-        ### Preselection: keep only three or four tag events
+        ## Preselection: keep only three or four tag events
         selev = selev[selev.passPreSel]
+        
         selev['wNo3to4DtoM'] = selev.weight
         selev['wNo3to4'] = selev.weight
 
-        if 'picoAOD_3b_wJCM_newSBDef' in fname:
-            selev['wNo3to4'] = selev.wNo3to4DtoM * selev.wDtoM
-            selev['weight'] = selev.wNo3to4 * selev.w3to4
+        if self.make_classifier_input is None:
+            logging.info('Reweighting w3to4')
+            if 'picoAOD_3b_wJCM_newSBDef' in fname:
+                selev['wNo3to4'] = selev.wNo3to4DtoM * selev.wDtoM
+                selev['weight'] = selev.wNo3to4 * selev.w3to4
 
 
         ############################################
@@ -225,7 +230,8 @@ class analysis(processor.ProcessorABC):
         canJet['jetId'] = selev.Jet.puId[canJet_idx]
         if isMC:
             canJet['hadronFlavour'] = selev.Jet.hadronFlavour[canJet_idx]
-        canJet['calibration'] = selev.Jet.calibration[canJet_idx]
+        if not isMixedData:
+            canJet['calibration'] = selev.Jet.calibration[canJet_idx]
 
         ### pt sort canJets
         canJet = canJet[ak.argsort(canJet.pt, axis=1, ascending=False)]
@@ -301,15 +307,9 @@ class analysis(processor.ProcessorABC):
         selev['quadJet'] = quadJet
         selev['quadJet_selected'] = quadJet[quadJet.selected][:, 0]
         selev["passDiJetMass"] = ak.any(quadJet.passDiJetMass, axis=1)
-        selev['leadStM_selected'] = selev.quadJet_selected.lead.mass
-        selev['sublStM_selected'] = selev.quadJet_selected.subl.mass
+        selev['leadStM'] = selev.quadJet_selected.lead.mass
+        selev['sublStM'] = selev.quadJet_selected.subl.mass
 
-        # selev['region'] = selev.SR*0b10 + selev.SB*0b01 # +selev.notSR*0b100 #+ selev.SRSB*0b11# + selev.SB_low*0b100 + selev.SB_high*0b101 + selev.notSR*0b110
-        #### SR = 2: 2
-        #### notSR = 1: 1
-        #### SB = 3: 3+1 = 4 (since SB is a subset of notSR)
-        #### lowSB = 5: 5+4 = 9 (since lowSB is a subset of SB)
-        #### highSB = 6: 6+4 = 10 (since highSB is a subset of SB)
 
         selev['region'] = selev.SR*0b01  +selev.notSRSB*0b100 + selev.SB_low*0b10 + selev.SB_high*0b11 # + selev.SB*0b01
 
@@ -322,12 +322,14 @@ class analysis(processor.ProcessorABC):
         ###  Build the top Candiates
         ### sort the jets by btagging
         selev.selJet  = selev.selJet[ak.argsort(selev.selJet.btagDeepFlavB, axis=1, ascending=False)]
+        selev["nSelJets"] = ak.num(selev.selJet)
         top_cands     = find_tops(selev.selJet)
-        selev["top_cand"], _ = buildTop(selev.selJet, top_cands)
-        selev["xbW_reco"] = selev.top_cand.xbW
-        selev["xW_reco"]  = selev.top_cand.xW
-        selev["delta_xbW"] = selev.xbW - selev.xbW_reco
-        selev["delta_xW"] = selev.xW - selev.xW_reco
+        rec_top_cands = buildTop(selev.selJet, top_cands)
+        # selev["top_cand"] = rec_top_cands[:, 0]
+        # selev["xbW_reco"] = selev.top_cand.xbW
+        # selev["xW_reco"]  = selev.top_cand.xW
+        # selev["delta_xbW"] = selev.xbW - selev.xbW_reco
+        # selev["delta_xW"] = selev.xW - selev.xW_reco
 
         # ####### Fix this!!! Giving errors
         ### Blind data in fourTag SR
@@ -338,7 +340,7 @@ class analysis(processor.ProcessorABC):
         ###########################################################
         ######################### Hists ##########################
         #########################################################
-
+        
         fill = Fill(process=processName, year=year, weight='weight')
 
         hist = Collection(process = [processName],
@@ -366,14 +368,14 @@ class analysis(processor.ProcessorABC):
         fill += hist.add('hT_no3to4DtoM',          (100,  0,   1000,  ('hT',          'H_{T} [GeV}')), weight="wNo3to4DtoM")
         fill += hist.add('hT_selected_no3to4DtoM', (100,  0,   1000,  ('hT_selected', 'H_{T} (selected jets) [GeV}')), weight="wNo3to4DtoM")
         fill += LorentzVector.plot_pair(('v4j_no3to4DtoM'), 'v4j', skip=['n', 'dr', 'dphi', 'st'], bins={'mass': (120, 0, 1200)}, weight="wNo3to4DtoM")
-        fill += QuadJetHistsUnsup(('quadJet_selected_no3to4DtoM', 'Selected Quad Jet no3to4DtoM'), 'quadJet_selected', weight = "wNo3to4DtoM")
-
-
+        fill += QuadJetHistsUnsup(('quadJet_selected_no3to4DtoM', 'Selected Quad Jet no3to4DtoM'), 'quadJet_selected', weight = "wNo3to4DtoM")  
+        
+        
         fill += Jet.plot(('selJets', 'Selected Jets'),        'selJet',           skip=['deepjet_c'])
         fill += Jet.plot(('tagJets', 'Tag Jets'),             'tagJet',           skip=['deepjet_c'])
         fill += Jet.plot(('othJets', 'Other Jets'),           'notCanJet_coffea', skip=['deepjet_c'])
         fill += Jet.plot(('canJets', 'Candidate Jets'),        'canJet',           skip=['deepjet_c'])
-
+        
 
         ### fill histograms ###
         # fill.cache(selev)
@@ -395,7 +397,19 @@ class analysis(processor.ProcessorABC):
         logging.debug(f'{chunk}{nEvent/elapsed:,.0f} events/s New')
         self._cutFlow.addOutput(processOutput, event.metadata['dataset'])
 
-        return hist.output | processOutput
+        friends = {}
+        if self.make_classifier_input is not None:
+            from analysis.processors.friendmaker_unsup import dump_input_friend
+            friends["friends"] = dump_input_friend(
+                selev,
+                self.make_classifier_input,   #### output file: return pathlike
+                "classifier_input",
+                *selections,
+                )
+
+        return hist.output | processOutput | friends
+
+
 
 
     def postprocess(self, accumulator):
