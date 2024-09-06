@@ -127,7 +127,7 @@ def apply_object_selection_boosted_4b( event ):
 
     return event
 
-def create_cand_jet_dijet_quadjet( selev, 
+def create_cand_jet_dijet_quadjet( selev, event_event,
                                   isMC:bool = False,
                                   apply_FvT:bool = False,
                                   apply_boosted_veto:bool = False,
@@ -141,11 +141,9 @@ def create_cand_jet_dijet_quadjet( selev,
     sorted_idx = ak.argsort( selev.Jet.btagDeepFlavB * selev.Jet.selected, axis=1, ascending=False )
     canJet_idx = sorted_idx[:, 0:4]
     notCanJet_idx = sorted_idx[:, 4:]
-    # canJet = selev.Jet[canJet_idx]
 
     # # apply bJES to canJets
-    canJet = canJet * canJet.bRegCorr
-    # canJet = selev.Jet[canJet_idx] * selev.Jet[canJet_idx].bRegCorr
+    canJet = selev.Jet[canJet_idx] * selev.Jet[canJet_idx].bRegCorr
     canJet["bRegCorr"] = selev.Jet.bRegCorr[canJet_idx]
     canJet["btagDeepFlavB"] = selev.Jet.btagDeepFlavB[canJet_idx]
     canJet["puId"] = selev.Jet.puId[canJet_idx]
@@ -161,10 +159,6 @@ def create_cand_jet_dijet_quadjet( selev,
     selev["canJet"] = canJet
     for i in range(4):
         selev[f"canJet{i}"] = selev["canJet"][:, i]    
-    # selev["canJet0"] = canJet[:, 0]
-    # selev["canJet1"] = canJet[:, 1]
-    # selev["canJet2"] = canJet[:, 2]
-    # selev["canJet3"] = canJet[:, 3]
 
     selev["v4j"] = canJet.sum(axis=1)
     notCanJet = selev.Jet[notCanJet_idx]
@@ -179,16 +173,12 @@ def create_cand_jet_dijet_quadjet( selev,
     canJet = selev["canJet"]
     pairing = [([0, 2], [0, 1], [0, 1]), ([1, 3], [2, 3], [3, 2])]
     diJet = canJet[:, pairing[0]] + canJet[:, pairing[1]]
-    # diJet["lead"] = canJet[:, pairing[0]]
-    # diJet["subl"] = canJet[:, pairing[1]]
-    # diJet["st"] = diJet["lead"].pt + diJet["subl"].pt
-    # diJet["dr"] = diJet["lead"].delta_r(diJet["subl"])
-    # diJet["dphi"] = diJet["lead"].delta_phi(diJet["subl"])
-    diJet["st"] = canJet[:, pairing[0]].pt + canJet[:, pairing[1]].pt
-    diJet["dr"] = canJet[:, pairing[0]].delta_r(canJet[:, pairing[1]])
-    diJet["dphi"] = canJet[:, pairing[0]].delta_phi(canJet[:, pairing[1]])
     diJet["lead"] = canJet[:, pairing[0]]
     diJet["subl"] = canJet[:, pairing[1]]
+    diJet["st"] = diJet["lead"].pt + diJet["subl"].pt
+    diJet["dr"] = diJet["lead"].delta_r(diJet["subl"])
+    diJet["dphi"] = diJet["lead"].delta_phi(diJet["subl"])
+    
     # Sort diJets within views to be lead st, subl st
     diJet = diJet[ak.argsort(diJet.st, axis=2, ascending=False)]
     diJetDr = diJet[ak.argsort(diJet.dr, axis=2, ascending=True)]
@@ -205,8 +195,8 @@ def create_cand_jet_dijet_quadjet( selev,
     max_m4j_scale = np.array([[650, 650]])
     max_dr_offset = np.array([[0.5, 0.7]])
     max_dr = np.array([[1.5, 1.5]])
-    m4j = np.repeat(np.reshape(np.array(selev["v4j"].mass), (-1, 1, 1)), 2, axis=2)
-    # m4j = selev["v4j"].mass[:, np.newaxis, np.newaxis]
+    # m4j = np.repeat(np.reshape(np.array(selev["v4j"].mass), (-1, 1, 1)), 2, axis=2)
+    m4j = selev["v4j"].mass[:, np.newaxis, np.newaxis]
     diJet["passMDR"] = (min_m4j_scale / m4j + min_dr_offset < diJet.dr) & ( diJet.dr < np.maximum(max_m4j_scale / m4j + max_dr_offset, max_dr) )
 
     #
@@ -224,7 +214,7 @@ def create_cand_jet_dijet_quadjet( selev,
     #
     # Build quadJets
     #
-    seeds = np.array(selev.event)[[0, -1]].view(np.ulonglong)
+    seeds = np.array(event_event)[[0, -1]].view(np.ulonglong)
     randomstate = np.random.Generator(np.random.PCG64(seeds))
     quadJet = ak.zip( { "lead": diJet[:, :, 0],
                         "subl": diJet[:, :, 1],
@@ -240,40 +230,28 @@ def create_cand_jet_dijet_quadjet( selev,
     quadJet["deta"] = quadJet["lead"].eta - quadJet["subl"].eta
 
     if apply_FvT:
-        # quadJet["FvT_q_score"] = np.concatenate( [ 
-        #     selev.FvT.q_1234[:, np.newaxis],
-        #     selev.FvT.q_1324[:, np.newaxis],
-        #     selev.FvT.q_1423[:, np.newaxis],
-        # ], axis=1, )
-        quadJet["FvT_q_score"] = np.concatenate( ( np.reshape(np.array(selev.FvT.q_1234), (-1, 1)),
-                                                    np.reshape(np.array(selev.FvT.q_1324), (-1, 1)),
-                                                    np.reshape(np.array(selev.FvT.q_1423), (-1, 1)), ),
-                                                    axis=1, )
+        quadJet["FvT_q_score"] = np.concatenate( [ 
+            selev.FvT.q_1234[:, np.newaxis],
+            selev.FvT.q_1324[:, np.newaxis],
+            selev.FvT.q_1423[:, np.newaxis],
+        ], axis=1, )
     
     if run_SvB:
 
         if (classifier_SvB is not None) | (classifier_SvB_MA is not None):
             compute_SvB(selev, classifier_SvB, classifier_SvB_MA)
 
-        # quadJet["SvB_q_score"] = np.concatenate( [ 
-        #     selev.SvB.q_1234[:, np.newaxis],
-        #     selev.SvB.q_1324[:, np.newaxis],
-        #     selev.SvB.q_1423[:, np.newaxis],
-        #     ], axis=1, )
+        quadJet["SvB_q_score"] = np.concatenate( [ 
+            selev.SvB.q_1234[:, np.newaxis],
+            selev.SvB.q_1324[:, np.newaxis],
+            selev.SvB.q_1423[:, np.newaxis],
+            ], axis=1, )
 
-        # quadJet["SvB_MA_q_score"] = np.concatenate( [ 
-        #     selev.SvB_MA.q_1234[:, np.newaxis],
-        #     selev.SvB_MA.q_1324[:, np.newaxis],
-        #     selev.SvB_MA.q_1423[:, np.newaxis],
-        #     ], axis=1, )
-        quadJet["SvB_q_score"] = np.concatenate( ( np.reshape(np.array(selev.SvB.q_1234), (-1, 1)),
-                                                    np.reshape(np.array(selev.SvB.q_1324), (-1, 1)),
-                                                    np.reshape(np.array(selev.SvB.q_1423), (-1, 1)), ),
-                                                    axis=1, )
-
-        quadJet["SvB_MA_q_score"] = np.concatenate( ( np.reshape(np.array(selev.SvB_MA.q_1234), (-1, 1)),
-                                                        np.reshape(np.array(selev.SvB_MA.q_1324), (-1, 1)),
-                                                        np.reshape(np.array(selev.SvB_MA.q_1423), (-1, 1)), ), axis=1, )
+        quadJet["SvB_MA_q_score"] = np.concatenate( [ 
+            selev.SvB_MA.q_1234[:, np.newaxis],
+            selev.SvB_MA.q_1324[:, np.newaxis],
+            selev.SvB_MA.q_1423[:, np.newaxis],
+            ], axis=1, )
 
     #
     # Compute Signal Regions
