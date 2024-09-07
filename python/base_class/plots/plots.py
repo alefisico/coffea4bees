@@ -349,7 +349,7 @@ def _plot(hist_list, stack_dict, plotConfig, **kwargs):
 
     ax = fig.gca()
     hep.cms.label("Internal", data=True,
-                  year=kwargs['year'].replace("UL", "20"), loc=0, ax=ax)
+                  year=kwargs.get('year',"RunII").replace("UL", "20"), loc=0, ax=ax)
 
 
     return fig, ax
@@ -380,7 +380,7 @@ def _plot2d(hist, plotConfig, **kwargs):
     ax = fig.gca()
 
     hep.cms.label("Internal", data=True,
-                  year=kwargs['year'].replace("UL", "20"), loc=0, ax=ax)
+                  year=kwargs.get('year',"RunII").replace("UL", "20"), loc=0, ax=ax)
 
     return fig, ax
 
@@ -403,7 +403,7 @@ def _plot_ratio(hist_list, stack_dict, ratio_list, **kwargs):
 
     main_ax = fig.add_subplot(grid[0])
     hep.cms.label("Internal", data=True,
-                  year=kwargs['year'].replace("UL", "20"), loc=0, ax=main_ax)
+                  year=kwargs.get('year',"RunII").replace("UL", "20"), loc=0, ax=main_ax)
 
     _draw_plot(hist_list, stack_dict, **kwargs)
 
@@ -630,7 +630,7 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
 
 
 def makePlot(cfg, var='selJets.pt',
-             cut="passPreSel", region="SR", year="RunII",**kwargs):
+             cut="passPreSel", region="SR", year="RunII", **kwargs):
     r"""
     Takes Options:
 
@@ -646,6 +646,8 @@ def makePlot(cfg, var='selJets.pt',
 
     process = kwargs.get("process", None)
     rebin   = kwargs.get("rebin", 1)
+    year    = kwargs.get("year", "RunII")
+
 
     if (type(cut) is list) or (type(region) is list) or (len(cfg.hists) > 1 and not cfg.combine_input_files) or (type(var) is list) or (type(process) is list):
         return _makeHistsFromList(cfg, var, cut, region, **kwargs)
@@ -702,7 +704,7 @@ def makePlot(cfg, var='selJets.pt',
     # Add args
     #
     #yearName = get_value_nested_dict(cfg.plotConfig,  "year", default="RunII")
-    #kwargs["year"] = yearName
+    #
 
     #
     #  The stack
@@ -838,8 +840,8 @@ def make2DPlot(cfg, process, var='selJets.pt',
     #  Get the year
     #    (Got to be a better way to do this....)
     #
-    #yearStr = get_value_nested_dict(cfg.plotConfig, "year", default="RunII")
-    #year = sum if yearStr == "RunII" else yearStr
+    year = kwargs.get("year","RunII")
+    year = sum if year == "RunII" else year
 
     #
     #  Unstacked hists
@@ -875,10 +877,6 @@ def make2DPlot(cfg, process, var='selJets.pt',
     if len(_hist.shape) == 3:  # for 2D plots
         _hist = _hist[sum, :, :]
 
-    #
-    # Add args
-    #
-    kwargs["year"] = yearStr
 
     #
     # Make the plot
