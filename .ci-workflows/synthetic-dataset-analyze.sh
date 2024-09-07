@@ -4,14 +4,16 @@ echo "############### Checking proxy"
 voms-proxy-info
 echo "############### Moving to python folder"
 cd python/
-# if [[ $(hostname) = *fnal* ]]; then
-#     echo "No changing files"
-# else
-#     echo "############### Modifying previous dataset file (to read local files)"
-#     ls -lR skimmer/
-#     sed -i "s/\/builds\/algomez\/coffea4bees\/python\///" skimmer/metadata/picoaod_datasets_TTToSemiLeptonic_UL18.yml
-#     cat skimmer/metadata/picoaod_datasets_TTToSemiLeptonic_UL18.yml
-# fi
+if [[ $(hostname) = *fnal* ]]; then
+    echo "No changing files"
+else
+    echo "############### Modifying previous dataset file (to read local files)"
+    ls -lR skimmer/
+    cat skimmer/metadata/picoaod_datasets_declustered_test_UL18.yml
+    echo ${CI_PROJECT_PATH}
+    sed -i "s/\/builds\/${CI_PROJECT_PATH}\/coffea4bees\/python\///" skimmer/metadata/picoaod_datasets_declustered_test_UL18.yml
+    cat skimmer/metadata/picoaod_datasets_declustered_test_UL18.yml
+fi
 # echo "############### Modifying dataset file with skimmer ci output"
 # cat metadata/datasets_ci.yml
 # python metadata/merge_yaml_datasets.py -m metadata/datasets_HH4b.yml -f skimmer/metadata/picoaod_datasets_declustered_data_test_UL18A.yml  -o metadata/datasets_synthetic_seed17_test.yml
