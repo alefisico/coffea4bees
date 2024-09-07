@@ -13,13 +13,19 @@ else
     echo "TEST"
     pwd
     echo ${CI_PROJECT_PATH}
-    sed -i "s|$CI_PROJECT_PATH/||g"  skimmer/metadata/picoaod_datasets_declustered_test_UL18.yml
+    sed -i "s|\/builds/$CI_PROJECT_PATH\/python||g"  skimmer/metadata/picoaod_datasets_declustered_test_UL18.yml
     echo "NEW"
     cat skimmer/metadata/picoaod_datasets_declustered_test_UL18.yml
 fi
 # echo "############### Modifying dataset file with skimmer ci output"
 # cat metadata/datasets_ci.yml
 # python metadata/merge_yaml_datasets.py -m metadata/datasets_HH4b.yml -f skimmer/metadata/picoaod_datasets_declustered_data_test_UL18A.yml  -o metadata/datasets_synthetic_seed17_test.yml
+
+#/builds/johnda/coffea4bees/python/skimmer/GluGluToHHTo4B_cHHH1_UL18/picoAOD_seed5.root
+#/builds/johnda/coffea4bees/python
+#johnda/coffea4bees
+#/builds/python/skimmer/GluGluToHHTo4B_cHHH1_UL18/picoAOD_seed5.root
+
 
 # echo "############### Changing metadata"
 # sed -e "s/apply_FvT.*/apply_FvT: false/" -e "s/apply_trig.*/apply_trigWeight: false/" -e "s/run_SvB.*/run_SvB: false/"  analysis/metadata/HH4b.yml > analysis/metadata/tmp.yml
