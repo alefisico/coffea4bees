@@ -6,47 +6,45 @@ class ClusterHists(Template):
     pt        = H((100,  0, 300, ('pt',    "pt [GeV]")))
     pt_l      = H((100,  0, 500, ('pt',    "pt [GeV]")))
 
-    pt_A      = H((100,  0, 300, ('part_A.pt',    "pt [GeV]")))
-    pt_B      = H((100,  0, 300, ('part_B.pt',    "pt [GeV]")))
+    mA        = H((100, 0, 100, ('part_A.mass', "mA [GeV]")))
+    mB        = H((100, 0,  60, ('mB', "mB [GeV]")))
+    mB_l      = H((100, 0, 400, ('mB', "mB [GeV]")))
+    mA_l      = H((100, 0, 400, ('mA', "mA [GeV]")))
+    mB_vl     = H((100, 0, 600, ('mB', "mB [GeV]")))
+    mA_vl     = H((100, 0, 1000, ('mA', "mA [GeV]")))
 
-    mA        = H((100, 0, 50, ('part_A.mass', "mA [GeV]")))
-
-    mB        = H((100, 0, 50, ('mB', "mB [GeV]")))
-
-    mB_l      = H((100, 0, 300, ('mB', "mB [GeV]")))
-    mA_l      = H((100, 0, 300, ('mA', "mA [GeV]")))
-
-    zA        = H((100,  0.5, 2, ('zA', "z fraction")))
-    zA_l      = H((100,  -3, 3, ('zA', "z fraction")))
+    zA        = H((100,  0.5, 1.3, ('zA', "z fraction")))
+    zA_l      = H((100,  0, 1.5, ('zA', "z fraction")))
+    zA_vl      = H((100,  -3, 3, ('zA', "z fraction")))
 
     decay_phi = H((100, -0.1, 3.2, ('decay_phi', "decay angle")))
-    thetaA    = H((100,  0, 2, ('thetaA',    "theta angle")))
-    thetaA_l  = H((100,  0, 3.2, ('thetaA',    "theta angle")))
+    thetaA    = H((100,  0, 1.5, ('thetaA',    "theta angle")))
 
     n         = H((0, 3,             ('n', 'Number')), n=ak.num)
-
 
     #
     #  For the PDFS
     #
 
     mA_pT = H((5, 50, 500, ("pt", "pT")),
-              (100, 0, 50,  ('mA', 'mA [GeV]')))
+              (100, 0, 100,  ('mA', 'mA [GeV]')))
 
     mB_pT = H((5, 50, 500, ("pt", "pT")),
-              (100, 0, 50,  ('mB', 'mB [GeV]')))
+              (100, 0, 60,  ('mB', 'mB [GeV]')))
 
     mA_l_pT = H((5, 50, 500, ("pt", "pT")),
-                (50, 0, 300,  ('mA', 'mA [GeV]')))
+                (100, 0, 400,  ('mA', 'mA [GeV]')))
 
     mB_l_pT = H((5, 50, 500, ("pt", "pT")),
-                (50, 0, 300,  ('mB', 'mB [GeV]')))
+                (100, 0, 400,  ('mB', 'mB [GeV]')))
 
-    zA_pT = H((5, 50, 500, ("pt", "pT")),
-              (50, 0.5, 1.3,  ('zA', 'z fraction')))
 
-    thetaA_pT = H((5, 50, 500, ("pt", "pT")),
-                  (50, 0.0, 1.5,  ('thetaA', 'theta angle')))
+    mA_vl_pT = H((5, 50, 500, ("pt", "pT")),
+                (100, 0, 1000,  ('mA', 'mA [GeV]')))
+
+    mB_vl_pT = H((5, 50, 500, ("pt", "pT")),
+                (100, 0, 600,  ('mB', 'mB [GeV]')))
+
 
     decay_phi_pT = H((5, 50, 500, ("pt", "pT")),
                      (50 , -0.1, 3.2, ('decay_phi', "decay angle")))
@@ -55,12 +53,26 @@ class ClusterHists(Template):
                         (50,  0.5, 1.3, ('zA', "z fraction")),
                         (50,  0, 1.5, ('thetaA',    "theta angle")))
 
+    zA_l_vs_thetaA_pT = H((5, 50, 500, ("pt", "pT")),
+                          (50,  0, 1.5, ('zA', "z fraction")),
+                          (50,  0, 1.5, ('thetaA',    "theta angle")))
+
 
 
 
 
 class ClusterHistsDetailed(ClusterHists):
     dpt_AB        = H((50,  -50, 50, ('dpt_AB',    "pt [GeV]")))
+
+    pt_A      = H((100,  0, 300, ('part_A.pt',    "pt [GeV]")))
+    pt_B      = H((100,  0, 300, ('part_B.pt',    "pt [GeV]")))
+
+    zA_pT = H((5, 50, 500, ("pt", "pT")),
+              (50, 0.5, 1.3,  ('zA', 'z fraction')))
+
+    thetaA_pT = H((5, 50, 500, ("pt", "pT")),
+                  (50, 0.0, 1.5,  ('thetaA', 'theta angle')))
+
 
     pz        = H((100, -500, 500, ('pz',    "pz [GeV]")))
     eta        = H((50,  -3, 3, ('eta',    "eta")))

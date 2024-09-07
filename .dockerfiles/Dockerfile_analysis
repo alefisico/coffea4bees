@@ -1,6 +1,7 @@
 FROM coffeateam/coffea-base-almalinux8:0.7.22-py3.10
 
 RUN dnf update -y && dnf install -y poppler-utils 
+RUN mamba install -y conda-forge::root=6.30
 RUN pip install --upgrade pip
 RUN pip install pycodestyle 
 RUN pip install memory-profiler

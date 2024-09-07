@@ -14,7 +14,6 @@ import numpy.typing as npt
 import uproot
 from analysis.helpers.cutflow import cutFlow
 from base_class.awkward.zip import NanoAOD
-from base_class.dask.delayed import delayed
 from base_class.root import Chunk, TreeReader, TreeWriter, merge
 from base_class.system.eos import EOS, PathLike
 from base_class.utils.wrapper import retry
@@ -49,6 +48,8 @@ def _branch_filter(collections: Iterable[str], branches: Iterable[str]):
     return rf'^(?!({"|".join(branches)})$).*$'
 
 
+
+
 class PicoAOD(ProcessorABC):
     def __init__(
         self,
@@ -56,6 +57,7 @@ class PicoAOD(ProcessorABC):
         step: int,
         skip_collections: Iterable[str] = None,
         skip_branches: Iterable[str] = None,
+        pico_base_name: str = _PICOAOD
     ):
         self._base = EOS(base_path)
         self._step = step
@@ -64,9 +66,16 @@ class PicoAOD(ProcessorABC):
         )
         self._transform = NanoAOD(regular=False, jagged=True)
         self.cutFlowCuts = []
+        self._pico_base_name = pico_base_name
 
     def _filter(self, branches: set[str]):
         return {*filter(self._branch_filter.match, branches)}
+
+    def update_branch_filter(self, skip_collections, skip_branches):
+        self._branch_filter = re.compile(
+            _branch_filter(skip_collections, skip_branches)
+        )
+
 
     @abstractmethod
     def select(
@@ -114,14 +123,12 @@ class PicoAOD(ProcessorABC):
             added is not None
             and (size := len(added)) != result[dataset]["saved_events"]
         ):
-            raise SkimmingError(
-                f"Length of additional branches ({size}) does not match the number of selected events ({result[dataset]['saved_events']})"
-            )
+            raise SkimmingError(f"Length of additional branches ({size}) does not match the number of selected events ({result[dataset]['saved_events']})")
         # clear cache
         _clear_cache(events)
         # save selected events
         if result[dataset]["saved_events"] > 0:
-            filename = f"{dataset}/{_PICOAOD}_{chunk.uuid}_{chunk.entry_start}_{chunk.entry_stop}{_ROOT}"
+            filename = f"{dataset}/{self._pico_base_name}_{chunk.uuid}_{chunk.entry_start}_{chunk.entry_stop}{_ROOT}"
             path = self._base / filename
             reader = TreeReader(self._filter)
             saved = 0
@@ -153,7 +160,6 @@ class PicoAOD(ProcessorABC):
         pass
 
 
-@delayed
 def _fetch_metadata(dataset: str, path: PathLike, dask: bool = False):
     try:
         with uproot.open(path) as f:
@@ -188,10 +194,12 @@ def fetch_metadata(
                     )
             results = [task.result() for task in tasks]
     else:
+        from dask import delayed
+        func = delayed(_fetch_metadata)
         results = []
         for dataset, files in fileset.items():
             for file in files["files"]:
-                results.append(_fetch_metadata(dataset, file, dask=dask))
+                results.append(func(dataset, file, dask=dask))
     return results
 
 
@@ -252,17 +260,20 @@ def resize(
     output: dict[str, dict[str, list[Chunk]]],
     step: int,
     chunk_size: int,
+    dask: bool = True,
+    pico_base_name: str = _PICOAOD,
+
 ):
     base = EOS(base_path)
     transform = NanoAOD(regular=False, jagged=True)
     for dataset, chunks in output.items():
         if len(chunks["files"]) > 0:
             output[dataset]["files"] = merge.resize(
-                base / dataset / f"{_PICOAOD}{_ROOT}",
+                base / dataset / f"{pico_base_name}{_ROOT}",
                 *chunks["files"],
                 step=step,
                 chunk_size=chunk_size,
                 reader_options={"transform": transform},
-                dask=True,
+                dask=dask,
             )
     return output

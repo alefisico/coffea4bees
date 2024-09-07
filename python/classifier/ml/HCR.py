@@ -15,13 +15,13 @@ from ..config import setting as cfg
 from ..config.scheduler import SkimStep
 from ..config.setting.HCR import Input, InputBranch, Output
 from ..config.state.label import MultiClass
-from ..nn.HCR_blocks import HCR
+from ..nn.blocks.HCR import HCR
 from ..nn.schedule import MilestoneStep, Schedule
 from . import (
     BatchType,
     BenchmarkStage,
-    MultiStageTraining,
     Model,
+    MultiStageTraining,
     OutputStage,
     TrainingStage,
 )

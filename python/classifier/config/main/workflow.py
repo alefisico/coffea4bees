@@ -40,7 +40,7 @@ class Main(main.Main):
         prog="workflow",
         description="Generate a workflow file from command line arguments",
         workflow=[
-            ("main", f"generate workflow"),
+            ("main", "generate workflow"),
         ],
     )
     argparser.add_argument(

@@ -35,7 +35,7 @@ ROOT file I/O based on :func:`uproot.reading.open`, :func:`uproot._dask.dask` an
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable, Generator, Literal, overload
+from typing import TYPE_CHECKING, Callable, Generator, Literal, TypedDict, overload
 
 import uproot
 
@@ -78,6 +78,17 @@ class _Reader:
     def __init__(self, **options):
         self._dask_options = self._default_options | self._dask_options | options
         self._open_options = self._default_options | self._open_options | options
+
+
+class WriterOptions(TypedDict):
+    name: str
+    parents: bool
+    basket_size: int
+
+
+class ReaderOptions(TypedDict):
+    branch_filter: Callable[[set[str]], set[str]]
+    transform: Callable[[RecordLike], RecordLike]
 
 
 class TreeWriter:
@@ -222,7 +233,7 @@ class TreeWriter:
         size = len_record(data, self._backend)
         if size == 0:
             return
-        elif size == None:
+        elif size is None:
             raise ValueError("The extended data does not have a well-defined length.")
         if self._basket_size is ...:
             self._backend = backend

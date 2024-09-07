@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable, Iterable, Optional
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -9,7 +9,8 @@ import pandas as pd
 import torch
 from base_class.root import Chain, Chunk, Friend
 
-from ..monitor.progress import ProgressTracker
+if TYPE_CHECKING:
+    from .tools import DFProcessor
 
 
 class FromRoot:
@@ -17,7 +18,7 @@ class FromRoot:
         self,
         friends: Iterable[Friend] = None,
         branches: Callable[[set[str]], set[str]] = None,
-        preprocessors: Iterable[Callable[[pd.DataFrame], pd.DataFrame]] = None,
+        preprocessors: Iterable[DFProcessor] = None,
     ):
         self.chain = Chain()
         self.branches = branches
@@ -26,7 +27,7 @@ class FromRoot:
         if friends:
             self.chain += friends
 
-    def read(self, chunk: Chunk, progress: ProgressTracker = None):
+    def read(self, chunk: Chunk) -> Optional[pd.DataFrame]:
         chain = self.chain.copy()
         chain += chunk
         df = chain.concat(library="pd", reader_options={"branch_filter": self.branches})
@@ -34,8 +35,6 @@ class FromRoot:
             if len(df) == 0:
                 return None
             df = preprocessor(df)
-        if progress is not None:
-            progress.advance(len(chunk))
         return df
 
 

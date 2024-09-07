@@ -1,4 +1,5 @@
 import awkward as ak
+import numpy as np
 import numba
 
 mW, mt = 80.4, 173.0
@@ -11,28 +12,29 @@ def find_tops_kernel(events_jets, builder):
     """
 
     for jets in events_jets:
-        # print(f"jets.pt are {jets.pt}\n")
-        # print(f"jets.btagDeepFlavB are {jets.btagDeepFlavB}\n")
+        nJets = len(jets)
+
+        if nJets < 3: continue
 
         builder.begin_list()
-        nJets = len(jets)
+
+        # Pre-calculate sets for faster checks
+        valid_pair_indices = [(ib, ij) for ib in range(0, 3) for ij in range(2, nJets) if ib != ij]
+        valid_triplet_indices = [(ib, ij, il) for ib in range(0, 3) for ij in range(2, nJets) for il in range(2, nJets) if len({ib, ij, il}) == 3]
+
         for ib in range(0, 3):
             for ij in range(2, nJets):
-                if len({ib, ij}) < 2:
+                if (ib, ij) not in valid_pair_indices:
                     continue
-                #
-                # don't consider W pairs where j is more b-like than b.
-                #
+
                 if jets[ib].btagDeepFlavB < jets[ij].btagDeepFlavB:
                     continue
 
                 for il in range(2, nJets):
-                    if len({ib, ij, il}) < 3:
+                    if (ib, ij, il) not in valid_triplet_indices:
                         continue
 
-                    #
-                    # don't consider W pairs where l is more b-like than j.
-                    #
+                    # don't consider W pairs where j is more b-like than b.
                     if jets[ij].btagDeepFlavB < jets[il].btagDeepFlavB:
                         continue
 
@@ -45,7 +47,6 @@ def find_tops_kernel(events_jets, builder):
         builder.end_list()
 
     return builder
-
 
 def find_tops_kernel_slow(events_jets, builder):
     """Search for valid 4-lepton combinations from an array of events * leptons {charge, ...}
@@ -56,27 +57,29 @@ def find_tops_kernel_slow(events_jets, builder):
     (omitting permutations of the pairs)
     """
     for jets in events_jets:
-        builder.begin_list()
         nJets = len(jets)
+
+        if nJets < 3: continue
+
+        builder.begin_list()
+
+        # Pre-calculate sets for faster checks
+        valid_pair_indices = [(ib, ij) for ib in range(0, 3) for ij in range(2, nJets) if ib != ij]
+        valid_triplet_indices = [(ib, ij, il) for ib in range(0, 3) for ij in range(2, nJets) for il in range(2, nJets) if len({ib, ij, il}) == 3]
 
         for ib in range(0, 3):
             for ij in range(2, nJets):
-                if len({ib, ij}) < 2:
+                if (ib, ij) not in valid_pair_indices:
                     continue
 
-                #
-                # don't consider W pairs where j is more b-like than b.
-                #
                 if jets[ib].btagDeepFlavB < jets[ij].btagDeepFlavB:
                     continue
 
                 for il in range(2, nJets):
-                    if len({ib, ij, il}) < 3:
+                    if (ib, ij, il) not in valid_triplet_indices:
                         continue
 
-                    #
-                    # don't consider W pairs where l is more b-like than j.
-                    #
+                    # don't consider W pairs where j is more b-like than b.
                     if jets[ij].btagDeepFlavB < jets[il].btagDeepFlavB:
                         continue
 
@@ -89,7 +92,6 @@ def find_tops_kernel_slow(events_jets, builder):
         builder.end_list()
 
     return builder
-
 
 def find_tops(events_jets):
 
@@ -159,32 +161,48 @@ def dumpTopCandidateTestVectors(event, logging, chunk, nEvent):
 
 def buildTop(input_jets, top_cand_idx):
     """ Takes indices of jets and returns reconstructed top candidate
-
     """
-    top_cands = [input_jets[top_cand_idx[idx]] for idx in "012"]
+    # Extract jets based on indices 
+    b, j, l = input_jets[top_cand_idx["0"]], input_jets[top_cand_idx["1"]], input_jets[top_cand_idx["2"]]
+
+    # Compute W properties 
+    W_p = j + l
+    xW = (W_p.mass - mW) / (0.10 * W_p.mass)
+    pW = W_p * (mW / W_p.mass)  
+
+    bReg_p = b * b.bRegCorr
+    mbW = (bReg_p + pW).mass
+
+    # smaller resolution term because there are fewer degrees of freedom. FWHM=25GeV, about the same as mW
+    xbW = (mbW - mt) / (0.05 * mbW)
+
     rec_top_cands = ak.zip({
-        "b" : top_cands[0],
-        "j" : top_cands[1],
-        "l" : top_cands[2],
+        "b": b,
+        "j": j,
+        "l": l,
+        "xW": xW,
+        "xbW": xbW,
+        "bReg_p": bReg_p,
+        "mbW": mbW,
+        "W": ak.zip({
+            "p": W_p,
+            "pW": pW,
+            "j": j,
+            "l": l
+        })
     })
 
+    # Sort and select the best candidate
+    rec_top_cands = rec_top_cands[ak.argsort(rec_top_cands.xW ** 2 + rec_top_cands.xbW ** 2, axis=1, ascending=True)]
 
+    top_cand = rec_top_cands[:,0]
+    top_cand["p"] = top_cand.bReg_p + top_cand.j + top_cand.l
+    top_cand["xt"] = (top_cand.p.mass - mt) / (0.10 * top_cand.p.mass)
+    top_cand["xWt"] = np.sqrt(top_cand.xW ** 2 + top_cand.xt ** 2)
+    top_cand["xWbW"] = np.sqrt(top_cand.xW ** 2 + top_cand.xbW ** 2)
+    # after minimizing, the ttbar distribution is centered around ~(0.5, 0.25) with surfaces of constant density approximiately constant radii
+    top_cand["rWbW"] = np.sqrt((top_cand.xbW - 0.25) ** 2 + (top_cand.xW - 0.5) ** 2)
+    top_cand["xbW_reco"] = top_cand.xbW
+    top_cand["xW_reco"] = top_cand.xW
 
-    W_p = top_cands[1] + top_cands[2]
-
-    rec_top_cands["xW"] = (W_p.mass - mW) / (0.10 * W_p.mass)
-    W_p = W_p * (mW / W_p.mass)
-
-    bReg_p = top_cands[0] * top_cands[0].bRegCorr
-    mbW = (bReg_p + W_p).mass
-    W_p = None
-    bReg_p = None
-
-    #
-    # smaller resolution term because there are fewer degrees of freedom. FWHM=25GeV, about the same as mW
-    #
-    rec_top_cands["xbW"] = (mbW - mt) / (0.05 * mbW)
-
-    rec_top_cands = rec_top_cands[ak.argsort(  rec_top_cands.xW ** 2 + rec_top_cands.xbW ** 2, axis=1, ascending=True)]
-
-    return rec_top_cands
+    return top_cand, rec_top_cands

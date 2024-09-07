@@ -5,6 +5,7 @@ import logging
 import os
 import sys
 from collections import deque
+from itertools import chain
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Optional
 
@@ -16,7 +17,7 @@ from .dataset import Dataset
 from .model import Model
 from .special import interface, new
 from .state import Cascade, _is_private
-from .task import Task
+from .task import _DASH, Task
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -30,8 +31,6 @@ _TEMPLATE = "template"
 
 _MODULE = "module"
 _OPTION = "option"
-
-_DASH = "-"
 
 
 class EntryPoint:
@@ -50,7 +49,9 @@ class EntryPoint:
         "model": Model,
         "analysis": Analysis,
     }
-    _preserved = [*(f"--{k}" for k in _keys), f"--{_FROM}", f"--{_TEMPLATE}"]
+    _preserved = [
+        *(f"{_DASH}{k}" for k in chain(_keys, (_FROM, _TEMPLATE))),
+    ]
 
     @classmethod
     def _fetch_subargs(cls, args: deque):
@@ -68,9 +69,9 @@ class EntryPoint:
     def _fetch_module(cls, module: str, key: str) -> tuple[ModuleType, type[Task]]:
         return import_(*cls._fetch_module_name(module, key))
 
-    def _fetch_all(self):
+    def _fetch_all(self, *cats: str):
         self.mods: dict[str, list[Task]] = {}
-        for cat in self._keys:
+        for cat in cats:
             target = self._keys[cat]
             self.mods[cat] = []
             for imp, opts in self.args[cat]:
@@ -133,7 +134,7 @@ class EntryPoint:
 
         args = deque(argv[1:])
         if len(args) == 0:
-            raise ValueError(f"No task specified")
+            raise ValueError("No task specified")
         arg = args.popleft()
         self.args[_MAIN] = arg, self._fetch_subargs(args)
         if arg == _FROM:
@@ -145,13 +146,13 @@ class EntryPoint:
                 formatter=self.args[_MAIN][1][0],
             )
         while len(args) > 0:
-            cat = args.popleft().removeprefix("--")
+            cat = args.popleft().removeprefix(_DASH)
             mod = args.popleft()
             opts = self._fetch_subargs(args)
             if cat == _FROM:
                 self._expand(mod, *opts)
             elif cat == _TEMPLATE:
-                self._expand(*opts, fetch_main=True, formatter=mod)
+                self._expand(*opts, formatter=mod)
             else:
                 self.args[cat].append((mod, opts))
 
@@ -169,10 +170,9 @@ class EntryPoint:
         if cls.prelude is not NotImplemented:
             cls.prelude()
 
+        all_cats = [*self._keys]
         if not cls._no_init:
-            self._fetch_all()
-
-        self.main: Main = new(cls, self.args[_MAIN][1])
+            self._fetch_all(all_cats[0])
 
         from ..config import setting as cfg
 
@@ -196,6 +196,15 @@ class EntryPoint:
                 setup_reporter()
                 address = host if port is None else f"{host}:{port}"
                 logging.info(f"Connecting to Monitor {address}")
+        else:
+            from ..monitor import disable_monitor
+
+            disable_monitor()
+
+        if not cls._no_init:
+            self._fetch_all(*all_cats[1:])
+
+        self.main: Main = new(cls, self.args[_MAIN][1])
 
     def run(self, reproducible: Callable = None):
         from ..config import setting as cfg

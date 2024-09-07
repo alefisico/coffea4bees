@@ -7,6 +7,7 @@ import yaml
 import warnings
 import uproot
 
+
 from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
 from coffea import processor
 from coffea.util import load
@@ -19,12 +20,15 @@ from jet_clustering.clustering_hist_templates import ClusterHists, ClusterHistsD
 from jet_clustering.clustering   import cluster_bs, cluster_bs_fast
 from jet_clustering.declustering import compute_decluster_variables, make_synthetic_event, get_list_of_splitting_types, clean_ISR, get_list_of_ISR_splittings, get_list_of_combined_jet_types, get_list_of_all_sub_splittings, get_splitting_name, get_list_of_splitting_names
 
+from analysis.helpers.networks import HCREnsemble
 from analysis.helpers.cutflow import cutFlow
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
+
 
 from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
 from analysis.helpers.common import init_jet_factory, apply_btag_sf, update_events
 
+from analysis.helpers.SvB_helpers import setSvBVars, subtract_ttbar_with_SvB
 from analysis.helpers.selection_basic_4b import (
     apply_event_selection_4b,
     apply_object_selection_4b
@@ -41,14 +45,21 @@ NanoAODSchema.warn_missing_crossrefs = False
 warnings.filterwarnings("ignore")
 
 
+
+
+
 class analysis(processor.ProcessorABC):
     def __init__(
             self,
             *,
+            SvB=None,
+            SvB_MA=None,
             threeTag=False,
             corrections_metadata="analysis/metadata/corrections.yml",
             clustering_pdfs_file = "jet_clustering/jet-splitting-PDFs-00-03-00/clustering_pdfs_vs_pT.yml",
+            run_SvB=True,
             do_declustering=False,
+            subtract_ttbar_with_weights = False,
     ):
 
         logging.debug("\nInitialize Analysis Processor")
@@ -58,7 +69,11 @@ class analysis(processor.ProcessorABC):
             logging.info(f"Loaded {len(self.clustering_pdfs.keys())} PDFs from {clustering_pdfs_file}")
         else:
             self.clustering_pdfs = None
+        self.classifier_SvB = HCREnsemble(SvB) if SvB else None
+        self.classifier_SvB_MA = HCREnsemble(SvB_MA) if SvB_MA else None
+        self.run_SvB = run_SvB
         self.do_declustering = do_declustering
+        self.subtract_ttbar_with_weights = subtract_ttbar_with_weights
 
         self.cutFlowCuts = [
             "all",
@@ -96,6 +111,34 @@ class analysis(processor.ProcessorABC):
         logging.debug(f'{chunk}Process {nEvent} Events')
 
         #
+        # Reading SvB friend trees (for TTbar subtraction)
+        #
+        path = fname.replace(fname.split("/")[-1], "")
+        if self.run_SvB:
+            if (self.classifier_SvB is None) | (self.classifier_SvB_MA is None):
+
+                #SvB_file = f'{path}/SvB_newSBDef.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_ULHH")}'
+                SvB_file = f'{path}/SvB_ULHH.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_ULHH")}'
+                event["SvB"] = ( NanoEventsFactory.from_root( SvB_file,
+                                                              entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().SvB )
+
+                if not ak.all(event.SvB.event == event.event):
+                    raise ValueError("ERROR: SvB events do not match events ttree")
+
+                #SvB_MA_file = f'{path}/SvB_MA_newSBDef.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_MA_ULHH")}'
+                SvB_MA_file = f'{path}/SvB_MA_ULHH.root' if 'mix' in dataset else f'{fname.replace("picoAOD", "SvB_MA_ULHH")}'
+                event["SvB_MA"] = ( NanoEventsFactory.from_root( SvB_MA_file,
+                                                                 entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema ).events().SvB_MA )
+
+                if not ak.all(event.SvB_MA.event == event.event):
+                    raise ValueError("ERROR: SvB_MA events do not match events ttree")
+
+                # defining SvB for different SR
+                setSvBVars("SvB", event)
+                setSvBVars("SvB_MA", event)
+
+
+        #
         # Event selection
         #
         event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year] )
@@ -105,8 +148,6 @@ class analysis(processor.ProcessorABC):
 
         jets = init_jet_factory(juncWS, event, isMC)
 
-        shifts = [({"Jet": jets}, None)]
-
         weights = Weights(len(event), storeIndividual=True)
         list_weight_names = []
 
@@ -114,7 +155,7 @@ class analysis(processor.ProcessorABC):
         logging.debug(f"Weight Statistics {weights.weightStatistics}")
 
         # Apply object selection (function does not remove events, adds content to objects)
-        event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year] )
+        event = apply_object_selection_4b( event, self.corrections_metadata[year] )
 
         selections = PackedSelection()
         selections.add( "lumimask", event.lumimask)
@@ -169,6 +210,18 @@ class analysis(processor.ProcessorABC):
         #allcuts.append("pass2OthJets")
 
         selev = event[selections.all(*allcuts)]
+
+        ## TTbar subtractions
+        if self.subtract_ttbar_with_weights:
+
+            pass_ttbar_filter_selev = subtract_ttbar_with_SvB(selev, dataset, year)
+
+            pass_ttbar_filter = np.full( len(event), True)
+            pass_ttbar_filter[ selections.all(*allcuts) ] = pass_ttbar_filter_selev
+            selections.add( 'pass_ttbar_filter', pass_ttbar_filter )
+            allcuts.append("pass_ttbar_filter")
+            selev = selev[pass_ttbar_filter_selev]
+
 
         # logging.info( f"\n {chunk} Event:  nSelJets {selev['nJet_selected']}\n")
 
@@ -254,7 +307,6 @@ class analysis(processor.ProcessorABC):
         clustered_splittings["splitting_name"] = split_name
 
 
-
         #
         #  get all splitting types that are used (ie: not pure ISR)
         #
@@ -302,32 +354,8 @@ class analysis(processor.ProcessorABC):
         #     print(f'{chunk}\n\n')
 
 
-        dumpTestVectors_bbj = False
-        if dumpTestVectors_bbj:
-            # bbj_mask = ak.num(selev["splitting_b(bj)"]) == 1
-            # bbj_partA = selev["splitting_b(bj)"][bbj_mask].part_A
-            # bbj_partB = selev["splitting_b(bj)"][bbj_mask].part_B
-            #
-            # if ak.sum(ak.num(selev["splitting_b(bj)"])) > 4:
-            #     print(f'{chunk}\n\n')
-            #     print(f'{chunk} self.input_jet_pt      = {[bbj_partA[iE].pt.tolist()         + bbj_partB[iE].pt.tolist()         for iE in range(5)]}')
-            #     print(f'{chunk} self.input_jet_eta     = {[bbj_partA[iE].eta.tolist()        + bbj_partB[iE].eta.tolist()        for iE in range(5)]}')
-            #     print(f'{chunk} self.input_jet_phi     = {[bbj_partA[iE].phi.tolist()        + bbj_partB[iE].phi.tolist()        for iE in range(5)]}')
-            #     print(f'{chunk} self.input_jet_mass    = {[bbj_partA[iE].mass.tolist()       + bbj_partB[iE].mass.tolist()       for iE in range(5)]}')
-            #     print(f'{chunk} self.input_jet_flavor  = {[bbj_partA[iE].jet_flavor.tolist() + bbj_partB[iE].jet_flavor.tolist() for iE in range(5)]}')
-            #     print(f'{chunk}\n\n')
-
-            print(f'{chunk} num splitting {ak.num(selev["splitting_b(bj)"])}')
-            print(f'{chunk} mask {ak.num(selev["splitting_b(bj)"]) > 0}')
-            bbj_mask = ak.num(selev["splitting_b(bj)"]) > 0
-            jets_for_clustering_bbj = jets_for_clustering[bbj_mask]
-            print(f'{chunk}\n\n')
-            print(f'{chunk} self.input_jet_pt      = {[jets_for_clustering_bbj[iE].pt.tolist()         for iE in range(10)]}')
-            print(f'{chunk} self.input_jet_eta     = {[jets_for_clustering_bbj[iE].eta.tolist()        for iE in range(10)]}')
-            print(f'{chunk} self.input_jet_phi     = {[jets_for_clustering_bbj[iE].phi.tolist()        for iE in range(10)]}')
-            print(f'{chunk} self.input_jet_mass    = {[jets_for_clustering_bbj[iE].mass.tolist()       for iE in range(10)]}')
-            print(f'{chunk} self.input_jet_flavor  = {[jets_for_clustering_bbj[iE].jet_flavor.tolist() for iE in range(10)]}')
-            print(f'{chunk}\n\n')
+        # from jet_clustering.dumpTestVectors   import dumpTestVectors_bbj
+        # dumpTestVectors_bbj(chunk, selev, jets_for_clustering)
 
 
 
@@ -370,14 +398,11 @@ class analysis(processor.ProcessorABC):
 
             canJet_re["puId"] = 7
             canJet_re["jetId"] = 7 # selev.Jet.puId[canJet_idx]
-            canJet_re["btagDeepFlavB"] = 1.0 # Set bs to 1 and ls to 0
 
 
             notCanJet_re = declustered_jets[~is_b_mask]
             notCanJet_re["puId"] = 7
             notCanJet_re["jetId"] = 7 # selev.Jet.puId[canJet_idx]
-            notCanJet_re["btagDeepFlavB"] = 0 # Set bs to 1 and ls to 0
-
 
             selev["canJet_re"] = canJet_re
             selev["notCanJet_coffea_re"] = notCanJet_re
@@ -468,12 +493,6 @@ class analysis(processor.ProcessorABC):
                            region=[2, 1, 0],  # SR / SB / Other
                            **dict((s, ...) for s in self.histCuts)
                            )
-
-        #
-        # To Add
-        #
-        # fill += hist.add( "nPVs", (101, -0.5, 100.5, ("PV.npvs", "Number of Primary Vertices")) )
-        # fill += hist.add( "nPVsGood", (101, -0.5, 100.5, ("PV.npvsGood", "Number of Good Primary Vertices")), )
 
         #
         # Jets
