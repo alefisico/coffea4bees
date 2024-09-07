@@ -13,7 +13,7 @@ else
     echo "TEST"
     pwd
     echo ${CI_PROJECT_PATH}
-    sed -i "s|\/builds/$CI_PROJECT_PATH\/python||g"  skimmer/metadata/picoaod_datasets_declustered_test_UL18.yml
+    sed -i "s|\/builds/$CI_PROJECT_PATH\/python\/||g"  skimmer/metadata/picoaod_datasets_declustered_test_UL18.yml
     echo "NEW"
     cat skimmer/metadata/picoaod_datasets_declustered_test_UL18.yml
 fi
