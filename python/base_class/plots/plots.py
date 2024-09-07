@@ -630,7 +630,7 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
 
 
 def makePlot(cfg, var='selJets.pt',
-             cut="passPreSel", region="SR", **kwargs):
+             cut="passPreSel", region="SR", year="RunII",**kwargs):
     r"""
     Takes Options:
 
