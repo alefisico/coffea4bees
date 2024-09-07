@@ -584,11 +584,6 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
     else:
         raise Exception("Error something needs to be a list!")
 
-    #
-    # Add args
-    #
-    #yearStr = get_value_nested_dict(cfg.plotConfig, "year", default="RunII")
-    #kwargs["year"] = yearStr
 
     if kwargs.get("doRatio", kwargs.get("doratio", False)):
 
@@ -622,9 +617,9 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
             tagName = process_config.get("tag", "fourTag")
 
         if kwargs.get("yscale", None) == "log":
-            _savefig(fig, var+"_logy", kwargs.get("outputFolder"), yearStr, cut, tagName, region, process)
+            _savefig(fig, var+"_logy", kwargs.get("outputFolder"), kwargs.get("year","RunII"), cut, tagName, region, process)
         else:
-            _savefig(fig, var, kwargs.get("outputFolder"), yearStr, cut, tagName, region, process)
+            _savefig(fig, var, kwargs.get("outputFolder"), kwargs.get("year","RunII"), cut, tagName, region, process)
 
     return fig, ax
 
@@ -703,6 +698,7 @@ def makePlot(cfg, var='selJets.pt',
     #
     # Add args
     #
+
     #yearName = get_value_nested_dict(cfg.plotConfig,  "year", default="RunII")
     #
 
@@ -805,9 +801,9 @@ def makePlot(cfg, var='selJets.pt',
     if kwargs.get("outputFolder", None):
         tagName = "fourTag" if "fourTag" in tagNames else "threeTag"
         if kwargs.get("yscale", "linear") == "log":
-            _savefig(fig, var+"_logy", kwargs.get("outputFolder"), yearName, cut, tagName, region)
+            _savefig(fig, var+"_logy", kwargs.get("outputFolder"), kwargs.get("year","RunII"), cut, tagName, region)
         else:
-            _savefig(fig, var, kwargs.get("outputFolder"), yearName, cut, tagName, region)
+            _savefig(fig, var, kwargs.get("outputFolder"), kwargs.get("year","RunII"), cut, tagName, region)
 
     return fig, ax
 
@@ -888,7 +884,7 @@ def make2DPlot(cfg, process, var='selJets.pt',
     #
     if kwargs.get("outputFolder", None):
         _savefig(fig, var, kwargs.get("outputFolder"),
-                 yearStr, cut, tagName, region, process)
+                 kwargs.get("year","RunII"), cut, tagName, region, process)
 
     return fig, ax
 
