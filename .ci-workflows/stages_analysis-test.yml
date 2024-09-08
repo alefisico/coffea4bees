@@ -85,5 +85,16 @@ skimmer-analysis-test-job:
     paths:
       - python/analysis/hists/test_skimmer.coffea
 
-
-
+weights-trigger-test-job:   
+  stage: analysis-test   
+  extends:
+    - .base_analysis
+  needs: 
+    - voms_proxy
+  script:
+    - source .ci-workflows/weights-trigger-test-job.sh
+  artifacts: 
+    paths:
+    paths:
+      - python/analysis/metadata/trigger_weights.yml
+      - python/analysis/GluGluToHHTo4B_cHHH1_UL18/picoAOD.root
