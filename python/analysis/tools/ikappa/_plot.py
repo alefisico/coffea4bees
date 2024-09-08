@@ -1,26 +1,28 @@
 from __future__ import annotations
 
 from functools import partial
-from typing import TYPE_CHECKING, Generator, Iterable
+from queue import Queue
+from threading import Thread
+from typing import TYPE_CHECKING, Generator, Iterable, TypedDict
 
 import numpy as np
 import pandas as pd
 from bokeh.embed import file_html
 from bokeh.layouts import column, row
-from bokeh.models import Button, Div, InlineStyleSheet, MultiChoice, ScrollBox, Select
+from bokeh.models import (
+    Button,
+    Checkbox,
+    CustomJS,
+    Div,
+    MultiChoice,
+    ScrollBox,
+    Select,
+)
 from bokeh.resources import Resources
 from hist import Hist
-from hist.axis import (
-    AxesMixin,
-    Boolean,
-    IntCategory,
-    Integer,
-    Regular,
-    StrCategory,
-    Variable,
-)
+from hist.axis import AxesMixin, Regular, Variable
 
-from ._hist import HistGroup, SourceID
+from ._hist import BHAxis, HistGroup
 from ._treeview import TreeView
 from ._utils import Component, Confirmation, PathInput
 from .config import UI
@@ -34,69 +36,26 @@ if TYPE_CHECKING:
 _RESOURCE = ["cdn", "inline"]
 
 
-# Regular, Variable
-class AxisProjector:
-    _TRUE = "True"
-    _FALSE = "False"
-    _OTHERS = '<span style="font-style: italic; font-weight: bold;">Others</span>'
-
-    @classmethod
-    def __bins(cls, axis: AxesMixin):
-        _ax = axis._ax  # Note: private attribute in boost-histogram
-        over = _ax.traits_overflow
-        under = _ax.traits_underflow
-        cats = [*axis]
-        match axis:
-            case Boolean():
-                return [cls._FALSE, cls._TRUE]
-            case IntCategory():
-                return [*map(str, cats)] + ([cls._OTHERS] if over else [])
-            case StrCategory():
-                return cats + ([cls._OTHERS] if over else [])
-            case Integer():
-                return (
-                    ([f"<{cats[0]}"] if under else [])
-                    + [*map(str, cats)]
-                    + ([f">{cats[-1]}"] if over else [])
-                )
-            case Regular() | Variable():
-                _cats = []
-                for a, b in cats[:-1]:
-                    _cats.append(f"[{a},{b})")
-                a, b = cats[-1]
-                _cats.append(f"[{a},{b}{')' if over else ']'}")
-                return (
-                    ([f"(-\u221E,{cats[0][0]})"] if under else [])
-                    + _cats
-                    + ([f"[{cats[-1][-1]}, \u221E)"] if over else [])
-                )
-
-    def __init__(self, axis: AxesMixin, dist: Hist):
+class AxisProjector(Component):
+    def __init__(self, axis: AxesMixin, dist: Hist, **kwargs):
+        super().__init__(**kwargs)
         self._type = type(axis)
         self._name = axis.name
         self._label = axis.label or axis.name
 
-        self._choices = self.__bins(axis)
+        self._choices = BHAxis.labels(axis)
         self._indices: dict[str, int] = dict(
             zip(self._choices, range(len(self._choices)))
         )
 
-        self._style_empty = InlineStyleSheet(
-            css="div.choices__inner {background-color: pink;}"
+        self.dom = self.shared.nonempty(
+            MultiChoice(
+                title=self._label,
+                value=[self._choices[np.argmax(dist.values(flow=True))]],
+                options=self._choices,
+                sizing_mode="stretch_width",
+            )
         )
-        self.dom = MultiChoice(
-            title=self._label,
-            value=[self._choices[np.argmax(dist.values(flow=True))]],
-            options=self._choices,
-            sizing_mode="stretch_width",
-        )
-        self.dom.on_change("value", self._dom_change)
-
-    def _dom_change(self, attr, old, new):
-        if not new:
-            self.dom.stylesheets = [self._style_empty]
-        else:
-            self.dom.stylesheets = []
 
     def select(self, bins: Iterable[str]):
         return [self._indices[v] for v in bins]
@@ -104,6 +63,12 @@ class AxisProjector:
     @property
     def selected(self):
         return [self._indices[v] for v in self.dom.value]
+
+
+class _PlotConfig(TypedDict):
+    normalized: bool
+    density: bool
+    log_y: bool
 
 
 class Plotter(Component):
@@ -140,16 +105,45 @@ class Plotter(Component):
         self.reset()
         self.data = hists
 
+        # blocks
+        self.categories: dict[str, AxisProjector] = {}
+        test = next(iter(hists.values()))
+        for axis in sorted(test.axes, key=lambda x: x.name):
+            if axis.name in categories:
+                self.categories[axis.name] = AxisProjector(
+                    axis, test.project(axis.name), **self.inherit_global_states
+                )
+        self.group = HistGroup(
+            self.categories, self._dom_enable_plot, **self.inherit_global_states
+        )
         # select hists
-        self._dom_full_btn = self.shared.icon_button("")
-        self._dom_full_btn.on_click(self._dom_full)
+        self._dom_full = self.shared.icon_button("arrows-maximize")
+        self._dom_full.js_on_click(
+            CustomJS(
+                args=dict(
+                    button=self._dom_full,
+                    elements=[self.log.dom, self._parent._file_dom, self.group.dom],
+                ),
+                code="""
+const full = button.icon.icon_name == "arrows-maximize";
+button.icon.icon_name = full ? "arrows-minimize" : "arrows-maximize";
+elements.forEach(e => e.visible = !full);
+""",
+            ),
+        )
         self._dom_plot = Button(
             label="Plot", button_type="success", sizing_mode="stretch_height"
         )
         self._dom_plot.on_click(self._dom_plot_selected)
-        self._dom_hist_select = self.shared.multichoice(
-            options=[*self.data], search_option_limit=len(self.data)
+        self._dom_hist_select = self.shared.nonempty(
+            self.shared.multichoice(
+                options=[*self.data], search_option_limit=len(self.data)
+            )
         )
+        # hist options
+        self._dom_normalized = Checkbox(label="Normalized", active=False)
+        self._dom_density = Checkbox(label="Density", active=False)
+        self._dom_log_y = Checkbox(label="Log y-axis", active=False)
         # hist tree
         ncats = len(categories)
         self._dom_hist_tree = TreeView(
@@ -183,17 +177,7 @@ class Plotter(Component):
         self._dom_upload_resource = Select(value=_RESOURCE[0], options=_RESOURCE)
         self._dom_upload_confirm = Confirmation(self.shared, "upload")
         self._dom_upload_confirm.on_click(self._dom_upload_plot)
-        # blocks
-        self.categories: dict[str, AxisProjector] = {}
-        test = next(iter(hists.values()))
-        for axis in sorted(test.axes, key=lambda x: x.name):
-            if axis.name in categories:
-                self.categories[axis.name] = AxisProjector(
-                    axis, test.project(axis.name)
-                )
-        self.group = HistGroup(
-            self.categories, self._dom_enable_plot, **self.inherit_global_states
-        )
+        # main
         self.group.frozen = True
         self.main = row(
             self._dom_hist_tree,
@@ -208,7 +192,13 @@ class Plotter(Component):
                 row(
                     self._dom_plot,
                     self._dom_hist_select,
-                    self._dom_full_btn,
+                    self._dom_full,
+                    sizing_mode="stretch_width",
+                ),
+                row(
+                    self._dom_normalized,
+                    self._dom_density,
+                    self._dom_log_y,
                     sizing_mode="stretch_width",
                 ),
                 row(
@@ -220,8 +210,11 @@ class Plotter(Component):
             ),
             sizing_mode="stretch_both",
         )
-
         self.doc.add_next_tick_callback(self._dom_update)
+
+        self._plot_queue: Queue[tuple[_PlotConfig, list[str]]] = Queue()
+        self._plot_thread = Thread(target=self._plot, daemon=True)
+        self._plot_thread.start()
 
     def status(self, msg: str):
         self.doc.add_next_tick_callback(partial(self._dom_update_status, msg))
@@ -240,8 +233,11 @@ class Plotter(Component):
         )
 
     def _dom_update_status(self, msg: str):
-        self._dom_content.child = self._dom_status
-        self._dom_status.text = msg
+        if self._dom_content.child is self._dom_status:
+            self._dom_status.text = msg + "<br>" + self._dom_status.text
+        else:
+            self._dom_status.text = msg
+            self._dom_content.child = self._dom_status
 
     def _dom_show_plot(self, plots):
         self._dom_content.child = plots
@@ -251,11 +247,11 @@ class Plotter(Component):
 
     def _dom_update(self):
         self._dom_update_status("")
-        self.full = False
+        self.dom.children = [self.group.dom, self.main]
 
     def _dom_enable_plot(self, frozen: bool):
         self._dom_plot.disabled = not frozen
-        self._dom_full_btn.disabled = not frozen
+        self._dom_full.disabled = not frozen
         if frozen:
             self._dom_cat_select.child.children = [
                 v.dom for k, v in self.categories.items() if k != self.group.process
@@ -264,28 +260,14 @@ class Plotter(Component):
             self._dom_cat_select.child.children = []
             self._dom_update_status("")
 
-    def _dom_full(self):
-        self.full = not self.full
-        self._parent.full = self.full
-
     def _dom_plot_selected(self):
-        self._plot(self._dom_hist_select.value)
+        self._plot_queue.put((self.config, self._dom_hist_select.value))
 
-    @property
-    def full(self):
-        return self._full
+    def _plot(self):
+        while task := self._plot_queue.get():
+            self._render(*task)
 
-    @full.setter
-    def full(self, value):
-        self._full = value
-        if value:
-            self._dom_full_btn.icon.icon_name = "arrows-minimize"
-            self.dom.children = [self.main]
-        else:
-            self._dom_full_btn.icon.icon_name = "arrows-maximize"
-            self.dom.children = [self.group.dom, self.main]
-
-    def _plot(self, hists: list[str]):
+    def _render(self, cfg: _PlotConfig, hists: list[str]):
         self.status("Plotting...")
         errs = []
         for k, v in self.categories.items():
@@ -303,7 +285,12 @@ class Plotter(Component):
                 self.status(f'Preparing histogram "{name}"...')
                 match len(hist.axes) - len(self.categories):
                     case 1:
-                        projected[name] = self._project1d(hist)
+                        hist = self._1d_project(hist)
+                        if cfg["normalized"]:
+                            hist = self._1d_normalized(hist)
+                        if cfg["density"]:
+                            hist = self._1d_density(hist)
+                        projected[name] = hist
                     case 2:  # TODO: plot 2D histogram
                         raise NotImplementedError("2D histogram is not supported yet.")
                     case _:
@@ -312,7 +299,7 @@ class Plotter(Component):
                         )
             except Exception as e:
                 self.log.error(f'Histogram "{name}" is skipped', exec_info=e)
-        plots = self.group.render(projected, self.status)
+        plots = self.group.render(data=projected, logger=self.status, **cfg)
         self.doc.add_next_tick_callback(partial(self._dom_show_plot, plots))
 
     @staticmethod
@@ -330,7 +317,7 @@ class Plotter(Component):
                 arr = arr.T
             yield arr
 
-    def _project1d(self, hist: Hist) -> Hist1D:
+    def _1d_project(self, hist: Hist) -> Hist1D:
         val: npt.NDArray = hist.values(flow=True)
         var: npt.NDArray = hist.variances(flow=True)
         _transpose, edge = False, None
@@ -348,9 +335,31 @@ class Plotter(Component):
                 _slice.append(np.arange(val.shape[i]))
                 edge = axis
         val, var = self.__project(_slice, _sum, _transpose, val, var)
-        columns = [*map(SourceID.raw, processes)]
         return (
-            pd.DataFrame(var, columns=columns),
-            pd.DataFrame(val, columns=columns),
+            pd.DataFrame(val, columns=processes),
+            pd.DataFrame(var, columns=processes),
             edge,
         )
+
+    def _1d_normalized(self, hist: Hist1D) -> Hist1D:
+        val, var, edge = hist
+        total = val.sum(axis=0)
+        val = val.div(total, axis=1)
+        var = var.div(total**2, axis=1)
+        return val, var, edge
+
+    def _1d_density(self, hist: Hist1D) -> Hist1D:
+        val, var, edge = hist
+        if isinstance(edge, (Regular, Variable)):
+            width = pd.Series(BHAxis.widths(edge))
+            val = val.div(width, axis=0)
+            var = var.div(width**2, axis=0)
+        return val, var, edge
+
+    @property
+    def config(self) -> _PlotConfig:
+        return {
+            "normalized": self._dom_normalized.active,
+            "density": self._dom_density.active,
+            "log_y": self._dom_log_y.active,
+        }

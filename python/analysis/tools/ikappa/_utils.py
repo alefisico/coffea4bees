@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import html
+import re
 import traceback
 from datetime import datetime
 from functools import partial
 from glob import glob
-from typing import Callable, Optional
+from typing import Any, Callable, Optional, TypeVar, overload
 
+from base_class.typetools import check_type
 from bokeh.document import Document
 from bokeh.layouts import row
 from bokeh.models import (
@@ -19,6 +21,7 @@ from bokeh.models import (
     NumericInput,
     Styles,
     TablerIcon,
+    UIElement,
 )
 from bokeh.util.callback_manager import EventCallback
 
@@ -46,21 +49,41 @@ def PathInput(**kwargs):
 class Confirmation:
     def __init__(self, shared: SharedDOM, icon: str, **kwargs):
         kwargs.pop("button_type", None)
+        kwargs.pop("visible", None)
         self._dom_action = shared.icon_button(icon, **kwargs)
-        self._dom_confirm = shared.icon_button("check", button_type="success", **kwargs)
-        self._dom_cancel = shared.icon_button("x", button_type="danger", **kwargs)
-        self._dom_action.on_click(self._dom_action_click)
-        self._dom_confirm.on_click(self._dom_reset)
-        self._dom_cancel.on_click(self._dom_reset)
+        self._dom_confirm = shared.icon_button(
+            "check", button_type="success", visible=False, **kwargs
+        )
+        self._dom_cancel = shared.icon_button(
+            "x", button_type="danger", visible=False, **kwargs
+        )
+        args = dict(
+            action=self._dom_action,
+            confirm=self._dom_confirm,
+            cancel=self._dom_cancel,
+        )
+        self._dom_action.js_on_click(
+            CustomJS(
+                args=args,
+                code="""
+confirm.visible = true;
+cancel.visible = true;
+action.visible = false;
+""",
+            )
+        )
+        reset = CustomJS(
+            args=args,
+            code="""
+confirm.visible = false;
+cancel.visible = false;
+action.visible = true;
+""",
+        )
+        self._dom_confirm.js_on_click(reset)
+        self._dom_cancel.js_on_click(reset)
 
-        self.dom = row()
-        self._dom_reset()
-
-    def _dom_action_click(self):
-        self.dom.children = [self._dom_confirm, self._dom_cancel]
-
-    def _dom_reset(self):
-        self.dom.children = [self._dom_action]
+        self.dom = row([self._dom_action, self._dom_confirm, self._dom_cancel])
 
     def on_click(self, handler: EventCallback):
         self._dom_confirm.on_click(handler)
@@ -177,6 +200,9 @@ URL.revokeObjectURL(url);
         self._dom_log.text = "<br>".join(self._histories)
 
 
+_ElementT = TypeVar("_ElementT", bound=UIElement)
+
+
 class SharedDOM:
     def __init__(self, doc: Document):
         self._doc = doc
@@ -217,6 +243,23 @@ hr {{
                 )
             ],
         }
+
+        self._badge_css = InlineStyleSheet(
+            css="""
+span.badge {
+    font-size: 0.7em;
+    font-weight: bold;
+    padding: 0.1em 0.5em;
+    border-radius: 0.4em;
+    color: white;
+    margin: 0 0.5em;
+}
+"""
+        )
+
+        self._nonempty_css = InlineStyleSheet(
+            css="div.choices__inner {background-color: pink;}"
+        )
 
     @staticmethod
     def __merge(default: dict, custom: dict, **fixed):
@@ -272,6 +315,41 @@ hr {{
             )
         )
 
+    def with_badge(self, element: _ElementT) -> _ElementT:
+        element.stylesheets.append(self._badge_css)
+        return element
+
+    def nonempty(self, element: _ElementT, empty: Optional[bool] = None) -> _ElementT:
+        if not hasattr(element, "value"):
+            return element
+        stylesheets = [i for i in element.stylesheets if i != self._nonempty_css]
+        element.js_on_change(
+            "value",
+            CustomJS(
+                args=dict(
+                    element=element,
+                    defaults=stylesheets.copy(),
+                    empty=self._nonempty_css,
+                ),
+                code="""
+const index = element.stylesheets.indexOf(empty);
+if (element.value.length === 0) {
+    if (index === -1) {
+        element.stylesheets = defaults.concat(empty);
+    }
+} else if (index !== -1) {
+    element.stylesheets = defaults.slice();
+}
+""",
+            ),
+        )
+        if empty is None:
+            empty = not element.value
+        if empty:
+            stylesheets.append(self._nonempty_css)
+        element.stylesheets = stylesheets
+        return element
+
 
 class Component:
     def __init__(
@@ -284,3 +362,153 @@ class Component:
     @property
     def inherit_global_states(self):
         return dict(doc=self.doc, log=self.log, shared=self.shared)
+
+
+class RGB:
+    __r: int
+    __g: int
+    __b: int
+    __a: float
+
+    __LUMINANCE = (0.2126, 0.7152, 0.0722)
+    __PATTERNS = (
+        (
+            re.compile(
+                r"#(?P<r>[0-9a-fA-F]{2})(?P<g>[0-9a-fA-F]{2})(?P<b>[0-9a-fA-F]{2})"
+            ),
+            16,
+        ),
+        (
+            re.compile(r"rgb\((?P<r>\d+)(,)?\s*(?P<g>\d+)(,)?\s*(?P<b>\d+)\)"),
+            10,
+        ),
+        (
+            re.compile(
+                r"rgba\((?P<r>\d+)(,)?\s*(?P<g>\d+)(,)?\s*(?P<b>\d+)\s*([,/])?\s*(?P<a>\d+(\.\d+)?(%)?)\)"
+            ),
+            10,
+        ),
+    )
+
+    @overload
+    def __init__(self, hex: str, /): ...
+    @overload
+    def __init__(self, red: int, green: int, blue: int, /): ...
+    @overload
+    def __init__(self, red: int, greeb: int, blue: int, alpha: float, /): ...
+    @overload
+    def __init__(self, red: float, green: float, blue: float, /): ...
+    @overload
+    def __init__(self, red: float, green: float, blue: float, alpha: float, /): ...
+    def __init__(self, *color):
+        _rgba = None
+        if check_type(color, tuple[str]):
+            for pattern, base in self.__PATTERNS:
+                if match := pattern.fullmatch(color[0]):
+                    match = match.groupdict()
+                    _rgba = tuple(int(match[c], base) for c in "rgb")
+                    if "a" in match:
+                        if match["a"].endswith("%"):
+                            _rgba += (float(match["a"][:-1]) / 100,)
+                        else:
+                            _rgba += (float(match["a"]),)
+                    break
+        elif check_type(color, tuple[int, int, int] | tuple[int, int, int, float]):
+            _rgba = color
+        elif check_type(
+            color, tuple[float, float, float] | tuple[float, float, float, float]
+        ):
+            _rgba = tuple(int(c * 255) if i < 3 else c for i, c in enumerate(color))
+        if _rgba is None:
+            raise ValueError(f'Invalid color: "{color}"')
+        if len(_rgba) == 3:
+            _rgba += (1.0,)
+        self.__r, self.__g, self.__b, self.__a = _rgba
+
+    @property
+    def __rgb(self):
+        return self.__r, self.__g, self.__b
+
+    @property
+    def __rgba(self):
+        return self.__r, self.__g, self.__b, self.__a
+
+    @property
+    def hex(self):
+        return "#{:02x}{:02x}{:02x}".format(*self.__rgb)
+
+    @property
+    def rgb(self):
+        return "rgb({:d}, {:d}, {:d})".format(*self.__rgb)
+
+    @property
+    def rgba(self):
+        return "rgba({:d}, {:d}, {:d}, {:.6g})".format(*self.__rgba)
+
+    def __lumi(self, c: int):
+        c /= 255
+        if c <= 0.04045:
+            return c / 12.92
+        return ((c + 0.055) / 1.055) ** 2.4
+
+    @property
+    def luminance(self):
+        return sum(self.__lumi(c) * w for c, w in zip(self.__rgb, self.__LUMINANCE))
+
+    def contrast(self, other: RGB):
+        c = (self.luminance + 0.05) / (other.luminance + 0.05)
+        return c if c > 1 else 1 / c
+
+    def contrast_best(self, *colors: RGB):
+        return max(colors, key=lambda x: self.contrast(x))
+
+    def __repr__(self):
+        return self.rgba
+
+    def __check(self, value: Any, name: str, _type: type, _range: tuple[Any, Any]):
+        if not isinstance(value, _type):
+            raise TypeError(f"{name} must be {_type}")
+        if not _range[0] <= value <= _range[1]:
+            raise ValueError(f"{name} must be between {_range[0]} and {_range[1]}")
+
+    @property
+    def alpha(self):
+        return self.__a
+
+    @alpha.setter
+    def alpha(self, value: float):
+        self.__check(value, "alpha", float, (0.0, 1.0))
+        self.__a = value
+
+    @property
+    def red(self):
+        return self.__r
+
+    @red.setter
+    def red(self, value: int):
+        self.__check(value, "red", int, (0, 255))
+        self.__r = value
+
+    @property
+    def green(self):
+        return self.__g
+
+    @green.setter
+    def green(self, value: int):
+        self.__check(value, "green", int, (0, 255))
+        self.__g = value
+
+    @property
+    def blue(self):
+        return self.__b
+
+    @blue.setter
+    def blue(self, value: int):
+        self.__check(value, "blue", int, (0, 255))
+        self.__b = value
+
+    def copy(self, alpha: Optional[float] = None):
+        new = RGB(self.red, self.green, self.blue, self.alpha)
+        if alpha is not None:
+            new.alpha = alpha
+        return new

@@ -43,7 +43,6 @@ class Main(Component):
             self._dom_hist_compression,
             sizing_mode="stretch_width",
         )
-        self.dom = column(sizing_mode="stretch_both", margin=(0, 0, 5, 0))
 
         self._load_queue: Queue[str] = Queue()
         self._load_thread = Thread(target=self._load_hist, daemon=True)
@@ -52,18 +51,6 @@ class Main(Component):
         self._upload_queue: Queue[tuple[str, str]] = Queue()
         self._upload_thread = Thread(target=self._upload_plot, daemon=True)
         self._upload_thread.start()
-
-    @property
-    def full(self):
-        return self._full
-
-    @full.setter
-    def full(self, value):
-        self._full = value
-        if value:
-            self.dom.children = [self.plotter.dom]
-        else:
-            self.dom.children = [self.log.dom, self._file_dom, self.plotter.dom]
 
     @property
     def _hist_compression(self):
@@ -117,8 +104,15 @@ class Main(Component):
         self.log = BokehLog(doc)
         self.shared = SharedDOM(doc)
         self.plotter = Plotter(parent=self, **self.inherit_global_states)
-        self.full = False
-        doc.add_root(self.dom)
+        doc.add_root(
+            column(
+                self.log.dom,
+                self._file_dom,
+                self.plotter.dom,
+                sizing_mode="stretch_both",
+                margin=(0, 0, 5, 0),
+            )
+        )
         self.log("Ready.")
 
     @staticmethod
