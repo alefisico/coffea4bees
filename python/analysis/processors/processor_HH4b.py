@@ -473,7 +473,6 @@ class analysis(processor.ProcessorABC):
 
             else:
                 tmp_weight = np.full(len(event), 1.0)
-                tmp_weight[analysis_selections] = weight_noFvT
                 weights.add("no_FvT", tmp_weight)
                 list_weight_names.append(f"no_FvT")
                 logging.debug( f"no_FvT {weights.partial_weight(include=['no_FvT'])[:10]}\n" )
