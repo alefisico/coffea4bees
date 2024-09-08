@@ -146,3 +146,34 @@ def dump_FvT_weight(  ### TODO: replace with proper evaluation code
         data=ak.Array({"FvT": weight}),
         dump_naming=dump_naming,
     )
+
+def dump_trigger_weight(
+    events: ak.Array,
+    output: PathLike,
+    name: str,
+    *selections: ak.Array,
+    trigWeight: str = "trigWeight",
+    dump_naming: str = _NAMING,
+):
+    selection = _build_cutflow(*selections)
+    padded = akext.pad.selected()
+    data = ak.Array(
+        {
+            "trigWeight": padded(
+                ak.zip(
+                    {
+                        "MC": events[trigWeight].MC,
+                        "Data": events[trigWeight].Data,
+                    }
+                ),
+                selection,
+            ),
+        }
+    )
+    return dump_friend(
+        events=events,
+        output=output,
+        name=name,
+        data=data,
+        dump_naming=dump_naming,
+    )

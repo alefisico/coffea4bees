@@ -1,4 +1,3 @@
-import gc
 import logging
 import warnings
 
@@ -499,7 +498,7 @@ class analysis(processor.ProcessorABC):
                 selev["nSelJets"] = ak.num(selev.selJet)
 
                 ####
-                from ..helpers.classifier.HCR import dump_input_friend, dump_JCM_weight, dump_FvT_weight
+                from ..helpers.dump_friendtrees import dump_input_friend, dump_JCM_weight, dump_FvT_weight
 
                 friends["friends"] = dump_input_friend( selev, self.make_classifier_input, "HCR_input", _all_selection, weight="weight" if self.isMC else "weight_noJCM_noFvT", NotCanJet="notCanJet_coffea") | dump_JCM_weight( selev, self.make_classifier_input, "JCM_weight", _all_selection) | dump_FvT_weight( selev, self.make_classifier_input, "FvT_weight", _all_selection)
 

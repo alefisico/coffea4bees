@@ -292,6 +292,23 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
     selev["quadJet"] = quadJet
     selev["quadJet_selected"] = quadJet[quadJet.selected][:, 0]
     selev["passDiJetMass"] = ak.any(quadJet.passDiJetMass, axis=1)
+    selev["m4j"] = selev.v4j.mass
+    selev["m4j_HHSR"] = ak.where(~selev.quadJet_selected.HHSR, -2, selev.m4j)
+    selev["m4j_ZHSR"] = ak.where(~selev.quadJet_selected.ZHSR, -2, selev.m4j)
+    selev["m4j_ZZSR"] = ak.where(~selev.quadJet_selected.ZZSR, -2, selev.m4j)
+    
+    selev['leadStM_selected'] = selev.quadJet_selected.lead.mass
+    selev['sublStM_selected'] = selev.quadJet_selected.subl.mass
+
+    selev['dijet_HHSR'] = ak.zip( { "lead_m": ak.where(~selev.quadJet_selected.HHSR, -2, selev.leadStM_selected),
+                                    "subl_m": ak.where(~selev.quadJet_selected.HHSR, -2, selev.sublStM_selected),
+                                } )
+    selev['dijet_ZHSR'] = ak.zip( { "lead_m": ak.where(~selev.quadJet_selected.ZHSR, -2, selev.leadStM_selected),
+                                    "subl_m": ak.where(~selev.quadJet_selected.ZHSR, -2, selev.sublStM_selected),
+                                    } )
+    selev['dijet_ZZSR'] = ak.zip( { "lead_m": ak.where(~selev.quadJet_selected.ZZSR, -2, selev.leadStM_selected),
+                                    "subl_m": ak.where(~selev.quadJet_selected.ZZSR, -2, selev.sublStM_selected),
+                                    } )
 
     selev["region"] = ( selev["quadJet_selected"].SR * 0b10 + selev["quadJet_selected"].SB * 0b01 )
 

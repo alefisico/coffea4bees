@@ -1,6 +1,7 @@
 from analysis.helpers.hist_templates import (
     FvTHists,
     QuadJetHists,
+    QuadJetHistsSRSingle,
     SvBHists,
     TopCandHists,
     WCandHists,
@@ -70,6 +71,13 @@ def filling_nominal_histograms(selev, JCM,
     fill += LorentzVector.plot_pair( ("v4j", R"$HH_{4b}$"), "v4j", skip=["n", "dr", "dphi", "st"], bins={"mass": (120, 0, 1200)}, )
     fill += QuadJetHists( ("quadJet_selected", "Selected Quad Jet"), "quadJet_selected" )
     fill += QuadJetHists( ("quadJet_min_dr", "Min dR Quad Jet"), "quadJet_min_dr" )
+    fill += hist.add( "m4j_HHSR", (120, 0, 1200, ("m4j_HHSR", "m4j HHSR")) )
+    fill += hist.add( "m4j_ZHSR", (120, 0, 1200, ("m4j_ZHSR", "m4j ZHSR")) )
+    fill += hist.add( "m4j_ZZSR", (120, 0, 1200, ("m4j_ZZSR", "m4j ZZSR")) )
+
+    fill += QuadJetHistsSRSingle( ("dijet_HHSR", "DiJet Mass HHSR") ,"dijet_HHSR"  )
+    fill += QuadJetHistsSRSingle( ("dijet_ZHSR", "DiJet Mass ZHSR") ,"dijet_ZHSR"  )
+    fill += QuadJetHistsSRSingle( ("dijet_ZZSR", "DiJet Mass ZZSR") ,"dijet_ZZSR"  )
 
     #
     #  Make classifier hists
