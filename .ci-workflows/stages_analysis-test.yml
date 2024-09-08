@@ -85,6 +85,19 @@ skimmer-analysis-test-job:
     paths:
       - python/analysis/hists/test_skimmer.coffea
 
+synthetic-dataset-analyze:   
+  stage: analysis-test   
+  extends:
+    - .base_analysis
+  needs:
+    - voms_proxy
+    - synthetic-dataset-make-dataset
+  script:
+    - source .ci-workflows/synthetic-dataset-analyze.sh
+  artifacts:
+    paths:
+      - python/analysis/hists/test_synthetic_datasets.coffea
+
 weights-trigger-test-job:   
   stage: analysis-test   
   extends:

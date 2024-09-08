@@ -71,6 +71,12 @@ class PicoAOD(ProcessorABC):
     def _filter(self, branches: set[str]):
         return {*filter(self._branch_filter.match, branches)}
 
+    def update_branch_filter(self, skip_collections, skip_branches):
+        self._branch_filter = re.compile(
+            _branch_filter(skip_collections, skip_branches)
+        )
+
+
     @abstractmethod
     def select(
         self, events: ak.Array

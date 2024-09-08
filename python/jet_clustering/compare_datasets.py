@@ -51,12 +51,9 @@ def plotCut(args):
         plot(f"canJet{i}.pz", **args)#,yscale="log")
 
 
-    plot("othJets.pt",  **args)
-    plot("othJets.eta", **args)
-    plot("othJets.phi", **args)
-    plot("othJets.energy", **args)
-    plot("othJets.mass", **args)
-    plot("othJets.pz", **args)#,yscale="log")
+    for jetName in ["selJets", "othJets"]:
+        for v in ["pt", "eta", "phi", "energy", "mass", "pz"]:
+            plot(f"{jetName}.{v}",  **args)
 
 
     #
@@ -79,10 +76,20 @@ def plotCut(args):
 
             #plot(f"{q}.{d}.dphi", **args)
 
-    plot("v4j.pt", **args)
-    plot("v4j.phi", **args)
-    plot("v4j.eta", **args)
-    plot("v4j.mass", **args)
+    for v in ["v4j.pt", "v4j.phi", "v4j.eta", "v4j.mass"]:
+        plot(v, **args)
+
+    #
+    # Top cand
+    #
+    for v in ["top_cand.xW", "xW",  "xbW", "top_cand.xWt", "top_cand.xWbW", "top_cand.xbW", "top_cand.rWbW",
+              "top_cand.W.p.mass",  "top_cand.W.p.eta", "top_cand.W.p.pt",
+              "top_cand.W.l.pt", "top_cand.W.j.pt", "top_cand.b.pt",
+              "top_cand.W.l.phi", "top_cand.W.j.phi", "top_cand.b.phi",
+              "top_cand.W.l.eta", "top_cand.W.j.eta", "top_cand.b.eta",
+              "top_cand.t.mass",  "top_cand.t.eta", "top_cand.t.pt",
+              ]:
+        plot(v, **args)
 
     #
     #  Event Level
@@ -91,19 +98,29 @@ def plotCut(args):
     plot("selJets.n", **args, yscale="linear")
     plot("othJets.n", **args, yscale="linear")
 
+    plot("hT", **args, yscale="linear")
+    plot("hT_selected", **args, yscale="linear")
+
     args["rebin"] = 4
     plot("SvB_MA.ps_zh", **args, yscale="log")
     plot("SvB_MA.ps_zz", **args, yscale="log")
     plot("SvB_MA.ps_hh", **args, yscale="log")
+    plot("SvB_MA.ptt", **args, yscale="log")
+    plot("SvB_MA.tt_vs_mj", **args, yscale="log")
+    plot("SvB_MA.ps_hh", **args, yscale="linear")
+    #plot("SvB_MA.ps_hh", **args, yscale="linear")
 
     plot("SvB.ps_zh", **args, yscale="log")
     plot("SvB.ps_zz", **args, yscale="log")
     plot("SvB.ps_hh", **args, yscale="log")
+    plot("SvB.tt_vs_mj", **args, yscale="log")
+    plot("SvB.ptt", **args, yscale="log")
+
+    plot("SvB.ps_hh", **args, yscale="linear")
 
 
 
-
-def doPlots(debug=False):
+def doPlots(doSignal=False, debug=False):
 
     norm = True
 
@@ -119,6 +136,9 @@ def doPlots(debug=False):
             "process":"data",
             "histtype":"step",
             }
+
+    if doSignal:
+        args["process"] = "HH4b"
 
     #for _cut in ["passPreSel", "pass0OthJets", "pass1OthJets"]:
     for _cut in ["passPreSel"]: #, "pass0OthJets", "pass1OthJets"]:
@@ -148,4 +168,4 @@ if __name__ == '__main__':
     cfg.axisLabels, cfg.cutList = read_axes_and_cuts(cfg.hists, cfg.plotConfig)
 
     #varList = [ h for h in cfg.hists[0]['hists'].keys() if not h in args.skip_hists ]
-    doPlots(debug=args.debug)
+    doPlots(doSignal=args.signal, debug=args.debug)
