@@ -37,11 +37,6 @@ def add_weights(event, isMC: bool = True,
                 trigWeight_file = uproot.open(f'{event.metadata["filename"].replace("picoAOD", "trigWeights")}')['Events']
                 trigWeight = trigWeight_file.arrays(['event', 'trigWeight_Data', 'trigWeight_MC'], entry_start=estart,entry_stop=estop)
 
-                logging.info( f"c++ Data {trigWeight['trigWeight_Data'][:10]}\n" )
-                logging.info( f"python Data {event['tmptrigWeight'].Data[:10]}\n" )
-                logging.info( f"c++ MC {trigWeight['trigWeight_MC'][:10]}\n" )
-                logging.info( f"python MC {event['tmptrigWeight'].MC[:10]}\n" )
-
                 if not ak.all(trigWeight.event == event.event):
                     raise ValueError('trigWeight events do not match events ttree')
 
