@@ -209,10 +209,11 @@ def add_btagweights( event, weights,
                                     corrections_metadata["btag_uncertainties"],
                                     [ var.to_numpy() for name, var in btag_SF_weights.items() if "_up" in name ],
                                     [ var.to_numpy() for name, var in btag_SF_weights.items() if "_down" in name ], )
-    elif isSyntheticData:
-        weights.add( "CMS_btag", event.CMSbtag )
     else:
-        weights.add( "CMS_btag", btag_SF_weights["btagSF_central"] )
+        if isSyntheticData:
+            weights.add( "CMS_btag", event.CMSbtag )
+        else:
+            weights.add( "CMS_btag", btag_SF_weights["btagSF_central"] )
     list_weight_names.append(f"CMS_btag")
 
     return weights, list_weight_names
