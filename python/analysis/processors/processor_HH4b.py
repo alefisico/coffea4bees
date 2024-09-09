@@ -329,8 +329,13 @@ class analysis(processor.ProcessorABC):
                                             [ var.to_numpy() for name, var in btag_SF_weights.items() if "_up" in name ],
                                             [ var.to_numpy() for name, var in btag_SF_weights.items() if "_down" in name ], )
             else:
-                weights.add( "CMS_btag",
-                         apply_btag_sf( event.selJet, correction_file=self.corrections_metadata[self.year]["btagSF"], btag_uncertainties=None, )["btagSF_central"], )
+                if self.isSyntheticData:
+                    weights.add( "CMS_btag",
+                                 event.CMSbtag)
+                else:
+                    weights.add( "CMS_btag",
+                                 apply_btag_sf( event.selJet, correction_file=self.corrections_metadata[self.year]["btagSF"], btag_uncertainties=None, )["btagSF_central"], )
+
             list_weight_names.append(f"CMS_btag")
 
             logging.debug( f"Btag weight {weights.partial_weight(include=['CMS_btag'])[:10]}\n" )
@@ -386,7 +391,7 @@ class analysis(processor.ProcessorABC):
         canJet["btagDeepFlavB"] = selev.Jet.btagDeepFlavB[canJet_idx]
         canJet["puId"] = selev.Jet.puId[canJet_idx]
         canJet["jetId"] = selev.Jet.puId[canJet_idx]
-        if self.isMC:
+        if self.isMC and not self.isSyntheticData:
             canJet["hadronFlavour"] = selev.Jet.hadronFlavour[canJet_idx]
 
         canJet["calibration"] = selev.Jet.calibration[canJet_idx]
@@ -468,7 +473,6 @@ class analysis(processor.ProcessorABC):
 
             else:
                 tmp_weight = np.full(len(event), 1.0)
-                tmp_weight[analysis_selections] = weight_noFvT
                 weights.add("no_FvT", tmp_weight)
                 list_weight_names.append(f"no_FvT")
                 logging.debug( f"no_FvT {weights.partial_weight(include=['no_FvT'])[:10]}\n" )

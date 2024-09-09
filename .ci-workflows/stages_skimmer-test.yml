@@ -24,5 +24,9 @@ synthetic-dataset-make-dataset:
     - source .ci-workflows/synthetic-dataset-make-dataset.sh
   artifacts:
     paths:
-      - python/skimmer/metadata/picoaod_datasets_declustered_data_test_UL18.yml
-      - skimmer/test/data_UL18A/picoAOD_seed5.root
+      - python/skimmer/metadata/picoaod_datasets_declustered_test_UL18.yml
+      - python/skimmer/data_UL18A/picoAOD_seed5.root
+      - python/skimmer/data_UL18B/picoAOD_seed5.root
+      - python/skimmer/data_UL18C/picoAOD_seed5.root
+      - python/skimmer/data_UL18D/picoAOD_seed5.root
+      - python/skimmer/GluGluToHHTo4B_cHHH1_UL18/picoAOD_seed5.root
