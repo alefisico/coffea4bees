@@ -523,6 +523,7 @@ class analysis(processor.ProcessorABC):
         # Build quadJets
         #
         seeds = np.array(event.event)[[0, -1]].view(np.ulonglong)
+        logging.info(f"{self.chunk} seeds {seeds[:10]} \n")
         randomstate = np.random.Generator(np.random.PCG64(seeds))
         quadJet = ak.zip( { "lead": diJet[:, :, 0],
                             "subl": diJet[:, :, 1],
@@ -616,7 +617,7 @@ class analysis(processor.ProcessorABC):
         selev["m4j_HHSR"] = ak.where(~selev.quadJet_selected.HHSR, -2, selev.m4j)
         selev["m4j_ZHSR"] = ak.where(~selev.quadJet_selected.ZHSR, -2, selev.m4j)
         selev["m4j_ZZSR"] = ak.where(~selev.quadJet_selected.ZZSR, -2, selev.m4j)
-        
+
         selev['leadStM_selected'] = selev.quadJet_selected.lead.mass
         selev['sublStM_selected'] = selev.quadJet_selected.subl.mass
 
@@ -630,7 +631,7 @@ class analysis(processor.ProcessorABC):
                                         "subl_m": ak.where(~selev.quadJet_selected.ZZSR, -2, selev.sublStM_selected),
                                      } )
 
-        
+
         selev["region"] = ( selev["quadJet_selected"].SR * 0b10 + selev["quadJet_selected"].SB * 0b01 )
 
         #
@@ -771,11 +772,11 @@ class analysis(processor.ProcessorABC):
             fill += hist.add( "m4j_HHSR", (120, 0, 1200, ("m4j_HHSR", "m4j HHSR")) )
             fill += hist.add( "m4j_ZHSR", (120, 0, 1200, ("m4j_ZHSR", "m4j ZHSR")) )
             fill += hist.add( "m4j_ZZSR", (120, 0, 1200, ("m4j_ZZSR", "m4j ZZSR")) )
-        
+
             fill += QuadJetHistsSRSingle( ("dijet_HHSR", "DiJet Mass HHSR") ,"dijet_HHSR"  )
             fill += QuadJetHistsSRSingle( ("dijet_ZHSR", "DiJet Mass ZHSR") ,"dijet_ZHSR"  )
             fill += QuadJetHistsSRSingle( ("dijet_ZZSR", "DiJet Mass ZZSR") ,"dijet_ZZSR"  )
-        
+
             #
             #  Make classifier hists
             #

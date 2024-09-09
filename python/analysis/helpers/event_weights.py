@@ -28,6 +28,7 @@ def add_weights(event, isMC: bool = True,
         weights.add( "genweight", event.genWeight * (lumi * xs * kFactor / event.metadata["genEventSumw"]) )
         list_weight_names.append('genweight')
         logging.debug( f"genweight {weights.partial_weight(include=['genweight'])[:10]}\n" )
+        logging.debug( f" = {event.genWeight} * ({lumi} * {xs} * {kFactor} / {event.metadata['genEventSumw']})\n")
 
         # trigger Weight (to be updated)
         if apply_trigWeight:
