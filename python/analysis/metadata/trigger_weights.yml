@@ -1,8 +1,7 @@
 runner:
   condor_cores: 1
   condor_memory: 4GB
-  friend_metafile: friend
 
 config:
-  # base_path: root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/
-  base_path: /srv/python/hists/local/   ### local
+  # make_classifier_input: root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/
+  make_classifier_input: /srv/python/hists/local/   ### local

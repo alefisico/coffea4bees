@@ -24,13 +24,13 @@ class analysis(processor.ProcessorABC):
     def __init__(
         self,
         *,
-        base_path: str = None,
+        make_classifier_input: str = None,
         corrections_metadata: str ="analysis/metadata/corrections.yml",
     ):
 
         logging.debug("\nInitialize Analysis Processor")
         self.corrections_metadata = yaml.safe_load(open(corrections_metadata, "r"))
-        self.base_path = base_path
+        self.make_classifier_input = make_classifier_input
 
         self.cutFlowCuts = [
             "all",
@@ -82,6 +82,8 @@ class analysis(processor.ProcessorABC):
         event['trigWeight'] = {
             "Data": ak.Array([ emulator_data.GetWeightOR(selJet_pt, tagJet_pt, hT_trigger) for selJet_pt, tagJet_pt, hT_trigger in zip(event.selJet.pt, event.tagJet.pt, event.hT_trigger) ]),
             "MC": ak.Array([ emulator_mc.GetWeightOR(selJet_pt, tagJet_pt, hT_trigger) for selJet_pt, tagJet_pt, hT_trigger in zip(event.selJet.pt, event.tagJet.pt, event.hT_trigger) ])
+            # "Data": [ emulator_data.GetWeightOR(selJet_pt, tagJet_pt, hT_trigger) for selJet_pt, tagJet_pt, hT_trigger in zip(event.selJet.pt, event.tagJet.pt, event.hT_trigger) ][0],
+            # "MC": [ emulator_mc.GetWeightOR(selJet_pt, tagJet_pt, hT_trigger) for selJet_pt, tagJet_pt, hT_trigger in zip(event.selJet.pt, event.tagJet.pt, event.hT_trigger) ][0]
         }
 
         logging.debug(f"trigger weight data: {event['trigWeight'].Data}")
@@ -94,13 +96,11 @@ class analysis(processor.ProcessorABC):
 
         friends = {}
 
-        friends["friends"] = dump_trigger_weight( event, self.base_path, 
+        friends["friends"] = dump_trigger_weight( event, self.make_classifier_input, 
                                                  "trigWeight",
                                                   selections.all(*allcuts))
 
-        output = friends
-        
-        return output
+        return friends
 
     def postprocess(self, accumulator):
         return accumulator

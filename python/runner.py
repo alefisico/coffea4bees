@@ -509,6 +509,9 @@ if __name__ == '__main__':
                         },
                         sync=True,
                     )
+                    friends = merged_friends
+                    for v in friends.values():
+                        v.reset(confirm=False)
                 else:
                     for k, v in friends.items():
                         friends[k] = v.merge(
@@ -516,9 +519,6 @@ if __name__ == '__main__':
                             base_path=friend_base,
                             naming=_friend_merge_name,
                         )
-                for v in friends.values():
-                    v.reset(confirm=False)
-                friends = merged_friends
                 from base_class.system.eos import EOS
                 from base_class.utils.json import DefaultEncoder
                 metafile = EOS(friend_base) / f'{config_runner["friend_metafile"]}.json'
