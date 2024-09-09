@@ -40,6 +40,8 @@ class DeClusterer(PicoAOD):
             "passNoiseFilter",
             "passJetMult",
             "passFourTag",
+            "passFourTag_btagSF",
+            "passFourTag_btagSF_woTrig",
             "pass_ttbar_filter",
         ]
 
@@ -144,8 +146,7 @@ class DeClusterer(PicoAOD):
 
             self._cutFlow.fill( "passFourTag_btagSF", event[selections.all(*cumulative_cuts)], allTag=True )
             self._cutFlow.fill( "passFourTag_btagSF_woTrig", event[selections.all(*cumulative_cuts)], allTag=True,
-                               wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[selections.all(*cumulative_cuts)] ))
-
+                                wOverride=float(np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[selections.all(*cumulative_cuts)])) )
 
         selection = event.lumimask & event.passNoiseFilter & event.passJetMult & event.fourTag
         if not isMC: selection = selection & event.passHLT
