@@ -29,7 +29,7 @@ from analysis.helpers.topCandReconstruction import (
     find_tops,
     find_tops_slow,
 )
-from base_class.root import Chunk, TreeReader
+from base_class.root import Chunk, TreeReader, Friend
 from coffea import processor
 from coffea.analysis_tools import PackedSelection
 from coffea.nanoevents import NanoAODSchema, NanoEventsFactory
@@ -75,7 +75,8 @@ class analysis(processor.ProcessorABC):
             from analysis.helpers.networks import HCREnsemble
         self.classifier_SvB = HCREnsemble(SvB) if SvB else None
         self.classifier_SvB_MA = HCREnsemble(SvB_MA) if SvB_MA else None
-        self.corrections_metadata = yaml.safe_load(open(corrections_metadata, "r"))
+        with open(corrections_metadata, "r") as f:
+            self.corrections_metadata = yaml.safe_load(f)
         self.top_reconstruction_override = top_reconstruction_override
         self.subtract_ttbar_with_weights = subtract_ttbar_with_weights
 
@@ -318,9 +319,11 @@ class analysis(processor.ProcessorABC):
         #
         if self.isMC and self.apply_btagSF:
 
-            weights, list_weight_names = add_btagweights( event.selJet, weights, 
+
+            weights, list_weight_names = add_btagweights( event, weights, 
                                                          list_weight_names=list_weight_names,
                                                          shift_name=shift_name,
+                                                         isSyntheticData=self.isSyntheticData,
                                                          run_systematics=self.run_systematics,
                                                          corrections_metadata=self.corrections_metadata[self.year]
             )

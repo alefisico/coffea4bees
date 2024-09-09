@@ -190,10 +190,11 @@ def add_pseudotagweights( selev, weights,
 
     return weights, list_weight_names
 
-def add_btagweights( selJet, weights, 
+def add_btagweights( event, selJet, weights, 
                     list_weight_names: list = [], 
                     shift_name: str = None, 
                     run_systematics: bool = False,
+                    isSyntheticData: bool = False,
                     corrections_metadata: dict = None, 
                     ):
 
@@ -208,6 +209,8 @@ def add_btagweights( selJet, weights,
                                     corrections_metadata["btag_uncertainties"],
                                     [ var.to_numpy() for name, var in btag_SF_weights.items() if "_up" in name ],
                                     [ var.to_numpy() for name, var in btag_SF_weights.items() if "_down" in name ], )
+    elif isSyntheticData:
+        weights.add( "CMS_btag", event.CMSbtag )
     else:
         weights.add( "CMS_btag", btag_SF_weights["btagSF_central"] )
     list_weight_names.append(f"CMS_btag")
