@@ -460,6 +460,7 @@ if __name__ == '__main__':
             else:
                 metadata = fetch_metadata(fileset, dask=False)
             metadata = processor.accumulate(metadata)
+
             for ikey in metadata:
                 if ikey in output:
                     metadata[ikey].update(output[ikey])
@@ -469,6 +470,10 @@ if __name__ == '__main__':
                         'args': str(args),
                         'diff': args.gitdiff if args.gitdiff else str(get_git_diff()),
                     }
+
+                    if config_runner["data_tier"] in ['picoAOD'] and "genEventSumw" in fileset[ikey]["metadata"]:
+                        metadata[ikey]["sumw"] = fileset[ikey]["metadata"]["genEventSumw"]
+
 
             args.output_file = 'picoaod_datasets.yml' if args.output_file.endswith(
                 'coffea') else args.output_file

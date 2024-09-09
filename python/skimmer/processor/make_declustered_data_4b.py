@@ -39,7 +39,7 @@ class DeClusterer(PicoAOD):
             "passHLT",
             "passNoiseFilter",
             "passJetMult",
-            "passPreSel",
+            "passFourTag",
             "pass_ttbar_filter",
         ]
 
@@ -239,9 +239,6 @@ class DeClusterer(PicoAOD):
         branches = ak.Array(out_branches)
 
         result = {"total_jet": total_jet}
-
-        if isMC:
-            result["sumw"] = event.metadata["genEventSumw"]
 
         return (selection,
                 branches,
