@@ -198,22 +198,24 @@ def add_btagweights( event, weights,
                     corrections_metadata: dict = None, 
                     ):
 
-    btag_SF_weights = apply_btag_sf(
-        event.selJet, 
-        correction_file=corrections_metadata["btagSF"],
-        btag_uncertainties=corrections_metadata["btag_uncertainties"] if (not shift_name) & run_systematics else None
-    )    
-
-    if (not shift_name) & run_systematics:
-        weights.add_multivariation( f"CMS_btag", btag_SF_weights["btagSF_central"],
-                                    corrections_metadata["btag_uncertainties"],
-                                    [ var.to_numpy() for name, var in btag_SF_weights.items() if "_up" in name ],
-                                    [ var.to_numpy() for name, var in btag_SF_weights.items() if "_down" in name ], )
+    if isSyntheticData:
+        weights.add( "CMS_btag", event.CMSbtag )
     else:
-        if isSyntheticData:
-            weights.add( "CMS_btag", event.CMSbtag )
+
+        btag_SF_weights = apply_btag_sf(
+            event.selJet, 
+            correction_file=corrections_metadata["btagSF"],
+            btag_uncertainties=corrections_metadata["btag_uncertainties"] if (not shift_name) & run_systematics else None
+        )    
+
+        if (not shift_name) & run_systematics:
+            weights.add_multivariation( f"CMS_btag", btag_SF_weights["btagSF_central"],
+                                        corrections_metadata["btag_uncertainties"],
+                                        [ var.to_numpy() for name, var in btag_SF_weights.items() if "_up" in name ],
+                                        [ var.to_numpy() for name, var in btag_SF_weights.items() if "_down" in name ], )
         else:
             weights.add( "CMS_btag", btag_SF_weights["btagSF_central"] )
+
     list_weight_names.append(f"CMS_btag")
 
     return weights, list_weight_names
