@@ -60,3 +60,16 @@ analysis-cutflow-job-unsup:
    paths:
      - python/analysis/tests/test_dump_cutflow_job_unsup.yml
 
+synthetic-dataset-analyze-cutflow:
+ stage: cutflow
+ extends:
+   - .base_analysis
+ needs: 
+   - synthetic-dataset-analyze
+ script:
+   - source .ci-workflows/synthetic-dataset-analyze-cutflow.sh
+ artifacts:
+   paths:
+     - python/analysis/tests/test_dump_cutflow_synthetic_datasets.yml
+
+
