@@ -190,7 +190,7 @@ def add_pseudotagweights( selev, weights,
 
     return weights, list_weight_names
 
-def add_btagweights( event, selJet, weights, 
+def add_btagweights( event, weights, 
                     list_weight_names: list = [], 
                     shift_name: str = None, 
                     run_systematics: bool = False,
@@ -199,7 +199,7 @@ def add_btagweights( event, selJet, weights,
                     ):
 
     btag_SF_weights = apply_btag_sf(
-        selJet, 
+        event.selJet, 
         correction_file=corrections_metadata["btagSF"],
         btag_uncertainties=corrections_metadata["btag_uncertainties"] if (not shift_name) & run_systematics else None
     )    
