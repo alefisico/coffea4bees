@@ -135,7 +135,7 @@ URL.revokeObjectURL(url);
             )
         )
         self._dom_max = Button(
-            icon=TablerIcon(icon_name="window-maximize", size="2em"),
+            icon=TablerIcon(icon_name="external-link", size="2em"),
             **self._BUTTON,
         )
         self._dom_max.js_on_click(

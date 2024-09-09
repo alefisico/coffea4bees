@@ -16,7 +16,7 @@ import yaml
 from base_class.system.eos import EOS
 from bokeh.document import Document
 from bokeh.layouts import column, row
-from bokeh.models import Button, Select, Tooltip
+from bokeh.models import Button, CustomJS, Div, Select, TablerIcon, Tooltip
 from bokeh.models.dom import HTML
 from bokeh.server.server import Server
 from hist import Hist
@@ -25,14 +25,14 @@ from ._plot import Plotter, Profile
 from ._sanity import sanitized
 from ._utils import BokehLog, Component, PathInput, SharedDOM
 
-_Actions = Literal["new", "attach"]
+_Actions = Literal["new", "add"]
+_INDENT = "  "
 
 
 class Main(Component):
     plotter: Plotter
 
     _BUTTON = dict(
-        button_type="success",
         sizing_mode="stretch_height",
         margin=(5, 0, 5, 5),
     )
@@ -40,10 +40,40 @@ class Main(Component):
     def __init__(self):
         super().__init__()
         # file
-        self._dom_new = Button(label="New", **self._BUTTON)
+        self._dom_new = Button(label="New", button_type="warning", **self._BUTTON)
         self._dom_new.on_click(partial(self._dom_load_hist, "new"))
-        self._dom_attach = Button(label="Attach", **self._BUTTON)
-        self._dom_attach.on_click(partial(self._dom_load_hist, "attach"))
+        self._dom_add = Button(label="Add", button_type="success", **self._BUTTON)
+        self._dom_add.on_click(partial(self._dom_load_hist, "add"))
+        self._dom_status = Button(
+            label="Status",
+            icon=TablerIcon(icon_name="external-link"),
+            button_type="primary",
+            **self._BUTTON,
+        )
+        self._dom_status.on_click(self._dom_show_status)
+        self._dom_status_div = Div(text="", visible=False)
+        self._dom_status_div.js_on_change(
+            "text",
+            CustomJS(
+                args=dict(div=self._dom_status_div),
+                code="""
+if (div.text != "") {
+    const text = div.text;
+    div.text = "";
+    const blob = new Blob([
+        `<!DOCTYPE html><html><head><title>Status</title><style>
+div.kappa-framework {white-space: pre;}
+div.box {background-color: #f0f0f0; border: 1px solid #d0d0d0; width: fit-content; min-width: calc(100% - 20px); padding: 10px;}
+div.code {font-family: monospace; white-space: pre; display: block;}
+div.itemize {white-space: break-spaces;}
+</style></head><body><div class="kappa-framework" style="width: auto;">`+ text + "</div></body></html>"], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank");
+    URL.revokeObjectURL(url);
+}
+""",
+            ),
+        )
         self._dom_hist_input = PathInput(
             title="File:",
             sizing_mode="stretch_width",
@@ -51,7 +81,7 @@ class Main(Component):
                 content=HTML(
                     """
 <b>New</b> overwrite the loaded data<br>
-<b>Attach</b> extend the loaded data<br>
+<b>Add</b> extend the loaded data<br>
 <b>File Extensions:</b><br>
 - profiles: <code>.yml .json</code><br>
 - histograms: any other files<br>
@@ -69,15 +99,18 @@ class Main(Component):
         # blocks
         self._file_dom = row(
             self._dom_new,
-            self._dom_attach,
+            self._dom_add,
             self._dom_hist_input,
             self._dom_hist_compression,
+            self._dom_status,
+            self._dom_status_div,
             sizing_mode="stretch_width",
         )
 
         # data
-        self._data: tuple[dict[str, Hist], set[str]] = {}, None
-        self._profile: dict[str, Profile] = {}
+        self._hists: tuple[dict[str, Hist], set[str]] = {}, None
+        self._profiles: dict[str, Profile] = {}
+        self._status = {"Histograms": [], "Profiles": []}
 
         # async
         self._load_queue: Queue[tuple[str, _Actions]] = Queue()
@@ -93,6 +126,45 @@ class Main(Component):
         if (comp := self._dom_hist_compression.value) == "None":
             return None
         return comp
+
+    def _dom_show_status(self):
+        content = []
+        content.append("<b>Files</b>:<br>")
+        for category, paths in self._status.items():
+            if not paths:
+                continue
+            content.append(f"{_INDENT}{category}:<br>")
+            content.extend(f"{_INDENT*2}- {path}<br>" for path in paths)
+        if self._hists[0] and self._hists[1] is not None:
+            content.append("<b>Categories</b>:<br>")
+            content.append("<div class='itemize box'>")
+            for k, v in self.plotter.categories.items():
+                content.append(f"{_INDENT}{k}")
+                content.append("<div class='code'>")
+                content.append("<br>".join(f"{_INDENT*2}{bin}" for bin in v._choices))
+                content.append("</div>")
+            content.append("</div>")
+            content.append("<b>Histograms</b>:<br>")
+            content.append("<div class='itemize box'>")
+            for name, hist in self._hists[0].items():
+                content.append(f"{_INDENT}{name}")
+                content.append("<div class='code'>")
+                content.append(
+                    "<br>".join(
+                        f"{_INDENT*2}{axis}"
+                        for axis in hist.axes
+                        if axis.name not in self._hists[1]
+                    )
+                )
+                content.append("</div>")
+            content.append("</div>")
+        if self._profiles:
+            content.append("<b>Profiles</b>:<br>")
+            content.append("<div class='code box'>")
+            content.append(yaml.safe_dump(self._profiles).replace("\n", "<br>"))
+            content.append("</div>")
+
+        self._dom_status_div.text = "".join(content)
 
     def _load_hist(self):
         while task := self._load_queue.get():
@@ -145,8 +217,15 @@ class Main(Component):
     def page(doc):
         Main()._dom_render(doc)
 
+    def _update_status(self, *status: str, category: str, action: _Actions):
+        match action:
+            case "new":
+                self._status[category] = [*status]
+            case "add":
+                self._status[category].extend(status)
+
     def _ext_data(self, path: EOS, action: _Actions):
-        if self._data[1] is None:
+        if self._hists[1] is None:
             action = "new"
         with fsspec.open(path, mode="rb", compression=self._hist_compression) as file:
             self.log(f'[async] Loading data from "{path}"...')
@@ -156,23 +235,24 @@ class Main(Component):
             match action:
                 case "new":
                     self.log("Creating new workspace.")
-                    self._data = hists, categories
-                case "attach":
-                    self.log("Attaching to existing workspace.")
-                    if self._data[1] != categories:
+                    self._hists = hists, categories
+                case "add":
+                    self.log("Adding to existing workspace.")
+                    if self._hists[1] != categories:
                         raise ValueError("Category mismatch.")
-                    self._data[0].update(hists)
+                    self._hists[0].update(hists)
             self.log("Sanitizing data...")
-            groups = sanitized(*self._data)
+            groups = sanitized(*self._hists)
             skipped = sum(groups[1:], [])
             if skipped:
                 self.log.error(
                     "The following histograms are skipped because of category mismatch",
                     *skipped,
                 )
-            self._data = {k: self._data[0][k] for k in groups[0]}, self._data[1]
+            self._hists = {k: self._hists[0][k] for k in groups[0]}, self._hists[1]
             self.log("Loading plotter...")
-            self.plotter.update_data(*self._data)
+            self.plotter.update_data(*self._hists)
+        self._update_status(str(path), category="Histograms", action=action)
         self.log("Done.")
 
     def _ext_profile(self, path: EOS, action: _Actions):
@@ -189,12 +269,13 @@ class Main(Component):
             match action:
                 case "new":
                     self.log("Applying new profile.")
-                    self._profile = data
-                case "attach":
-                    self.log("Attaching to existing profile.")
-                    self._profile.update(data)
+                    self._profiles = data
+                case "add":
+                    self.log("Adding to existing profile.")
+                    self._profiles.update(data)
             self.log("Updating plotter...")
-            self.plotter.update_profile(self._profile)
+            self.plotter.update_profile(self._profiles)
+        self._update_status(str(path), category="Profiles", action=action)
         self.log("Done.")
 
 

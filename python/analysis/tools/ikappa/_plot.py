@@ -19,10 +19,11 @@ from bokeh.models import (
     MultiChoice,
     ScrollBox,
     Select,
+    TablerIcon,
 )
 from bokeh.resources import Resources
 from hist import Hist
-from hist.axis import AxesMixin, Regular, Variable
+from hist.axis import AxesMixin
 
 from ._hist import BHAxis, HistGroup
 from ._treeview import TreeView
@@ -43,8 +44,10 @@ class Profile(TypedDict):
 
 
 class Profiler:
-    def __init__(self, profiles: dict[str, Profile]):
-        self._profiles = [(re.compile(k), v) for k, v in profiles.items()]
+    def __init__(self, profiles: dict[str, Profile] = None):
+        self._profiles = (
+            [(re.compile(k), v) for k, v in profiles.items()] if profiles else []
+        )
 
     def generate(self, name: str) -> Profile:
         profile = {}
@@ -61,7 +64,7 @@ class AxisProjector(Component):
         self._name = axis.name
         self._label = axis.label or axis.name
 
-        self._choices = BHAxis.labels(axis)
+        self._choices = BHAxis(flow=True).labels(axis)
         self._indices: dict[str, int] = dict(
             zip(self._choices, range(len(self._choices)))
         )
@@ -87,6 +90,7 @@ class _PlotConfig(TypedDict):
     normalized: bool
     density: bool
     log_y: bool
+    flow: bool
 
 
 class Plotter(Component):
@@ -98,7 +102,6 @@ class Plotter(Component):
         "border": UI.border,
     }
     _BUTTON = dict(
-        button_type="success",
         sizing_mode="stretch_height",
         margin=(5, 0, 5, 5),
     )
@@ -106,7 +109,7 @@ class Plotter(Component):
     def __init__(self, parent: Main, **kwargs):
         super().__init__(**kwargs)
         self._data = None
-        self._profile = None
+        self._profile = Profiler()
         self._parent = parent
 
         self._dom_idle = Div(
@@ -158,9 +161,14 @@ elements.forEach(e => e.visible = !full);
 """,
             ),
         )
-        self._dom_plot = Button(label="Plot", **self._BUTTON)
+        self._dom_plot = Button(label="Plot", button_type="success", **self._BUTTON)
         self._dom_plot.on_click(self._dom_select_plot)
-        self._dom_profile = Button(label="Profile", **self._BUTTON)
+        self._dom_profile = Button(
+            label="Profile",
+            icon=TablerIcon(icon_name="external-link", size="1em"),
+            button_type="primary",
+            **self._BUTTON,
+        )
         self._dom_profile_div = Div(text="", visible=False)
         self._dom_profile.on_click(self._dom_check_profile)
         self._dom_profile_div.js_on_change(
@@ -214,9 +222,12 @@ tr:hover {background-color: rgb(175, 225, 255);}
             )
         )
         # hist options
-        self._dom_normalized = Checkbox(label="Normalized", active=False)
-        self._dom_density = Checkbox(label="Density (Regular/Variable)", active=False)
-        self._dom_log_y = Checkbox(label="Log y-axis", active=False)
+        self._dom_normalized = Checkbox(label="normalized", active=False)
+        self._dom_density = Checkbox(
+            label="density (Regular/Variable only)", active=False
+        )
+        self._dom_log_y = Checkbox(label="log y-axis", active=False)
+        self._dom_flow = Checkbox(label="under/overflow", active=False)
         # hist tree
         ncats = len(categories)
         self._dom_hist_tree = TreeView(
@@ -263,9 +274,9 @@ tr:hover {background-color: rgb(175, 225, 255);}
                     sizing_mode="stretch_width",
                 ),
                 row(
-                    self._dom_plot,
                     self._dom_profile,
                     self._dom_profile_div,
+                    self._dom_plot,
                     self._dom_hist_select,
                     self._dom_full,
                     sizing_mode="stretch_width",
@@ -274,6 +285,7 @@ tr:hover {background-color: rgb(175, 225, 255);}
                     self._dom_normalized,
                     self._dom_density,
                     self._dom_log_y,
+                    self._dom_flow,
                     sizing_mode="stretch_width",
                 ),
                 row(
@@ -340,11 +352,8 @@ tr:hover {background-color: rgb(175, 225, 255);}
         self._plot_queue.put((self.config, self._dom_hist_select.value))
 
     def _dom_check_profile(self):
-        if self._profile is not None:
-            profile = {
-                k: self._profile.generate(k) for k in self._dom_hist_select.value
-            }
-            self._dom_profile_div.text = json.dumps(profile)
+        profile = {k: self._profile.generate(k) for k in self._dom_hist_select.value}
+        self._dom_profile_div.text = json.dumps(profile)
 
     def _plot(self):
         while task := self._plot_queue.get():
@@ -362,16 +371,17 @@ tr:hover {background-color: rgb(175, 225, 255);}
             return self.log.error(*errs)
 
         projected = {}
+        bhaxis = BHAxis(flow=cfg["flow"])
         for name in hists:
             hist = self.data[name]
-            profile = self._profile.generate(name) if self._profile else {}
+            profile = self._profile.generate(name)
             try:
                 self.status(f'Preparing histogram "{name}"...')
                 match len(hist.axes) - len(self.categories):
                     case 1:
-                        hist = self._1d_project(hist)
+                        hist = self._1d_project(hist, cfg["flow"])
                         if "rebin" in profile:
-                            hist = self._1d_rebin(hist, profile["rebin"])
+                            hist = self._1d_rebin(hist, profile["rebin"], bhaxis)
                         projected[name] = hist
                     case 2:  # TODO: plot 2D histogram
                         raise NotImplementedError("2D histogram is not supported yet.")
@@ -399,7 +409,7 @@ tr:hover {background-color: rgb(175, 225, 255);}
                 arr = arr.T
             yield arr
 
-    def _1d_project(self, hist: Hist) -> Hist1D:
+    def _1d_project(self, hist: Hist, flow: bool) -> Hist1D:
         val: npt.NDArray = hist.values(flow=True)
         var: npt.NDArray = hist.variances(flow=True)
         _transpose, edge = False, None
@@ -417,9 +427,13 @@ tr:hover {background-color: rgb(175, 225, 255);}
                 _slice.append(np.arange(val.shape[i]))
                 edge = axis
         val, var = self.__project(_slice, _sum, _transpose, val, var)
+        _slice = slice(None)
+        if not flow:
+            under, over = BHAxis(flow=True).flow(edge)
+            _slice = slice(under, -1 if over else None)
         return (
-            pd.DataFrame(val, columns=processes),
-            pd.DataFrame(var, columns=processes),
+            pd.DataFrame(val[_slice, :], columns=processes),
+            pd.DataFrame(var[_slice, :], columns=processes),
             edge,
         )
 
@@ -433,11 +447,11 @@ tr:hover {background-color: rgb(175, 225, 255);}
                 np.add.reduceat(df.to_numpy(), _idx, axis=0), columns=df.columns
             )
 
-    def _1d_rebin(self, hist: Hist1D, rebin: int | list[int]) -> Hist1D:
+    def _1d_rebin(self, hist: Hist1D, rebin: int | list[int], bhaxis: BHAxis) -> Hist1D:
         val, var, edge = hist
         idx = None
         try:
-            edge, idx = BHAxis.rebin(edge, rebin)
+            edge, idx = bhaxis.rebin(edge, rebin)
         except ValueError as e:
             self.log.error(str(e))
         if idx is not None:
@@ -450,4 +464,5 @@ tr:hover {background-color: rgb(175, 225, 255);}
             "normalized": self._dom_normalized.active,
             "density": self._dom_density.active,
             "log_y": self._dom_log_y.active,
+            "flow": self._dom_flow.active,
         }

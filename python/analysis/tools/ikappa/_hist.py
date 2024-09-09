@@ -120,16 +120,19 @@ class BHAxis:
     _FALSE = "False"
     _OTHERS = '<span style="font-style: italic; font-weight: bold;">Others</span>'
 
-    @classmethod
-    def flow(cls, axis: AxesMixin) -> tuple[bool, bool]:
+    def __init__(self, flow: bool):
+        self._flow = flow
+
+    def flow(self, axis: AxesMixin) -> tuple[bool, bool]:
+        if not self._flow:
+            return False, False
         _ax = axis._ax  # Note: Accessing private attribute in boost-histogram
         return _ax.traits_underflow, _ax.traits_overflow
 
-    @classmethod
-    def widths(cls, axis: AxesMixin) -> list[float] | None:
+    def widths(self, axis: AxesMixin) -> list[float] | None:
         if not isinstance(axis, (Regular, Variable)):
             return None
-        under, over = cls.flow(axis)
+        under, over = self.flow(axis)
         width = [*axis.widths]
         if under:
             width.insert(0, np.inf)
@@ -137,28 +140,27 @@ class BHAxis:
             width.append(np.inf)
         return width
 
-    @classmethod
-    def edges(cls, axis: Regular | Variable, finite: bool = False) -> list[float]:
-        under, over = cls.flow(axis)
+    def edges(self, axis: Regular | Variable, finite: bool = False) -> list[float]:
+        under, over = self.flow(axis)
         edges = [*axis.edges]
-        flow = np.min(axis.widths) if finite else np.inf
-        if under:
-            edges.insert(0, edges[0] - flow)
-        if over:
-            edges.append(edges[-1] + flow)
+        if under or over:
+            flow = np.min(axis.widths) if finite else np.inf
+            if under:
+                edges.insert(0, edges[0] - flow)
+            if over:
+                edges.append(edges[-1] + flow)
         return edges
 
-    @classmethod
-    def labels(cls, axis: AxesMixin) -> list[str]:
-        under, over = BHAxis.flow(axis)
+    def labels(self, axis: AxesMixin) -> list[str]:
+        under, over = self.flow(axis)
         cats = [*axis]
         match axis:
             case Boolean():
-                return [cls._FALSE, cls._TRUE]
+                return [self._FALSE, self._TRUE]
             case IntCategory():
-                return [*map(str, cats)] + ([cls._OTHERS] if over else [])
+                return [*map(str, cats)] + ([self._OTHERS] if over else [])
             case StrCategory():
-                return cats + ([cls._OTHERS] if over else [])
+                return cats + ([self._OTHERS] if over else [])
             case Integer():
                 return (
                     ([f"<{cats[0]}"] if under else [])
@@ -177,9 +179,8 @@ class BHAxis:
                     + ([f"[{_FF(cats[-1][-1])}, \u221E)"] if over else [])
                 )
 
-    @classmethod
     def rebin(
-        cls, axis: AxesMixin, rebin: int | list[int]
+        self, axis: AxesMixin, rebin: int | list[int]
     ) -> tuple[AxesMixin, npt.NDArray]:
         if (isinstance(rebin, int) and rebin <= 1) or (
             isinstance(rebin, list) and any(r < 1 for r in rebin)
@@ -191,7 +192,7 @@ class BHAxis:
             _rebin = rebin.copy()
         if sum(_rebin) != len(axis):
             raise ValueError(f'Rebin "{rebin}" does not match axis "{axis}"')
-        under, over = BHAxis.flow(axis)
+        under, over = self.flow(axis)
         _rebin.insert(0, 0)
         _idx = np.cumsum(_rebin)
         match axis:
@@ -623,8 +624,10 @@ class HistGroup(Component):
         normalized: bool,
         density: bool,
         log_y: bool,
+        flow: bool,
         **_,
     ):
+        bhaxis = BHAxis(flow)
         y_axis_type = "log" if log_y else "linear"
         # preprocessing
         models: dict[str, list[_KappaModel]] = defaultdict(list)
@@ -704,6 +707,8 @@ class HistGroup(Component):
             checkbox.styles = {
                 "background-color": color,
                 "color": colors[k].contrast_best(_WHITE, _BLACK).rgb,
+                "border-radius": "4px",
+                "padding": "2px 5px 2px 5px",
             }
 
         # TODO render plots
@@ -728,14 +733,15 @@ class HistGroup(Component):
                     y_axis_type=y_axis_type,
                 ),
                 axis,
+                bhaxis,
             )
             fig.add_tools(tooltip)
             plots.extend((Div(text=title), fig))
 
             # initialize data
-            _left, _right = self.__edges(axis)
-            _width = BHAxis.widths(axis)
-            val_edges = {"left": _left, "right": _right, "label": BHAxis.labels(axis)}
+            _left, _right = self.__edges(axis, bhaxis)
+            _width = bhaxis.widths(axis)
+            val_edges = {"left": _left, "right": _right, "label": bhaxis.labels(axis)}
             var_edges = {"center": (_left + _right) / 2}
             _bottom = self.__logy_find_bottom(val) if log_y else 0
 
@@ -812,9 +818,9 @@ class HistGroup(Component):
                 for checkbox in checkboxes:
                     checkbox.js_on_change("active", errorbar_visible)
 
-            # TODO render models
+            # TODO render models, js normalize, js density, js coupling, one errorbar
 
-            # TODO render stacks
+            # TODO render stacks, js normalize, js density, js stack, one errorbar
 
         return column(
             row(*glyph_option_doms, sizing_mode="stretch_width"),
@@ -877,24 +883,24 @@ class HistGroup(Component):
         )
 
     @staticmethod
-    def __ticks(fig: figure, edge: AxesMixin):
+    def __ticks(fig: figure, edge: AxesMixin, bhaxis: BHAxis):
         fig.xaxis.axis_label = (edge.label or edge.name).replace("$", "$$")
         fig.yaxis.axis_label = "Events"
         if isinstance(edge, (Regular, Variable)):
             fig.xaxis.ticker = [*edge.edges]
         else:
-            labels = BHAxis.labels(edge)
+            labels = bhaxis.labels(edge)
             fig.xaxis.ticker = [*range(len(labels))]
             fig.xaxis.major_label_overrides = dict(enumerate(labels))
         return fig
 
     @staticmethod
-    def __edges(edge: AxesMixin):
+    def __edges(edge: AxesMixin, bhaxis: BHAxis):
         if isinstance(edge, (Regular, Variable)):
-            edges = np.asarray(BHAxis.edges(edge, finite=True))
+            edges = np.asarray(bhaxis.edges(edge, finite=True))
             return edges[:-1], edges[1:]
         else:
-            edges = np.arange(len(edge) + sum(BHAxis.flow(edge)))
+            edges = np.arange(len(edge) + sum(bhaxis.flow(edge)))
             return edges - 0.5, edges + 0.5
 
     @staticmethod
