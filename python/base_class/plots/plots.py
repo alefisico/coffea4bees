@@ -605,9 +605,11 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
             ratio_plots.append((denCenters, ratios, ratio_uncert, ratio_config))
 
         fig, main_ax, ratio_ax = _plot_ratio(hists, {}, ratio_plots, **kwargs)
+        main_ax.set_title(f"{region}")
         ax = (main_ax, ratio_ax)
     else:
         fig, ax = _plot(hists, {}, cfg.plotConfig, **kwargs)
+        ax.set_title(f"{region}")
 
     if kwargs.get("outputFolder", None):
 
@@ -791,9 +793,11 @@ def makePlot(cfg, var='selJets.pt',
             ratio_plots.append((numCenters, ratios, ratio_uncert, ratio_config))
 
         fig, main_ax, ratio_ax = _plot_ratio(hists, stack_dict, ratio_plots,  **kwargs)
+        main_ax.set_title(f"{region}")
         ax = (main_ax, ratio_ax)
     else:
         fig, ax = _plot(hists, stack_dict, cfg.plotConfig, **kwargs)
+        ax.set_title(f"{region}")
 
     #
     # Save Fig
@@ -878,6 +882,7 @@ def make2DPlot(cfg, process, var='selJets.pt',
     # Make the plot
     #
     fig, ax = _plot2d(_hist, cfg.plotConfig, **kwargs)
+    ax.set_title(f"{region}")
 
     #
     # Save Fig
