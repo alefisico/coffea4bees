@@ -370,12 +370,8 @@ tr:hover {background-color: rgb(175, 225, 255);}
                 match len(hist.axes) - len(self.categories):
                     case 1:
                         hist = self._1d_project(hist)
-                        if cfg["normalized"]:
-                            hist = self._1d_normalized(hist)
                         if "rebin" in profile:
                             hist = self._1d_rebin(hist, profile["rebin"])
-                        if cfg["density"]:
-                            hist = self._1d_density(hist)
                         projected[name] = hist
                     case 2:  # TODO: plot 2D histogram
                         raise NotImplementedError("2D histogram is not supported yet.")
@@ -426,21 +422,6 @@ tr:hover {background-color: rgb(175, 225, 255);}
             pd.DataFrame(var, columns=processes),
             edge,
         )
-
-    def _1d_normalized(self, hist: Hist1D) -> Hist1D:
-        val, var, edge = hist
-        total = val.sum(axis=0)
-        val = val.div(total, axis=1)
-        var = var.div(total**2, axis=1)
-        return val, var, edge
-
-    def _1d_density(self, hist: Hist1D) -> Hist1D:
-        val, var, edge = hist
-        if isinstance(edge, (Regular, Variable)):
-            width = pd.Series(BHAxis.widths(edge))
-            val = val.div(width, axis=0)
-            var = var.div(width**2, axis=0)
-        return val, var, edge
 
     @staticmethod
     def __rebin(

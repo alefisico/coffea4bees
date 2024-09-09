@@ -112,7 +112,6 @@ _badge = '<span class="badge" style="background-color: {color};">{text}</span>'.
 class SourceID:
     regular = "rp{:d}".format
     model = "m{}p{:d}".format
-    basis = "m{}p{:d}b{:d}".format
     stack = "s{:d}p{:d}".format
 
 
@@ -127,7 +126,9 @@ class BHAxis:
         return _ax.traits_underflow, _ax.traits_overflow
 
     @classmethod
-    def widths(cls, axis: Regular | Variable) -> list[float]:
+    def widths(cls, axis: AxesMixin) -> list[float] | None:
+        if not isinstance(axis, (Regular, Variable)):
+            return None
         under, over = cls.flow(axis)
         width = [*axis.widths]
         if under:
@@ -619,6 +620,8 @@ class HistGroup(Component):
         self,
         data: dict[str, Hist1D],  # TODO: plot 2D histogram
         logger: Callable[[str], None],
+        normalized: bool,
+        density: bool,
         log_y: bool,
         **_,
     ):
@@ -731,6 +734,7 @@ class HistGroup(Component):
 
             # initialize data
             _left, _right = self.__edges(axis)
+            _width = BHAxis.widths(axis)
             val_edges = {"left": _left, "right": _right, "label": BHAxis.labels(axis)}
             var_edges = {"center": (_left + _right) / 2}
             _bottom = self.__logy_find_bottom(val) if log_y else 0
@@ -741,7 +745,9 @@ class HistGroup(Component):
             for i, p in enumerate(self._processes):
                 # data source
                 field = SourceID.regular(i)
-                _val, _err = val[p], np.sqrt(var[p])
+                _val, _err = self._preprocess(
+                    val[p], var[p], normalized, density, _width
+                )
                 val_source.data[p] = self.__tooltips(_val, _err)
                 val_source.data[field] = self.__logy_set_bottom(
                     _val, _bottom if log_y else None
@@ -902,3 +908,21 @@ class HistGroup(Component):
     @staticmethod
     def __logy_set_bottom(val: pd.DataFrame, bottom: Optional[float]):
         return val.clip(lower=bottom) if bottom is not None else val
+
+    @staticmethod
+    def _preprocess(
+        val: npt.NDArray,
+        var: npt.NDArray,
+        normalize: bool,
+        density: bool,
+        width: npt.NDArray,
+    ):
+        err = np.sqrt(var)
+        if normalize:
+            total = val.sum(axis=0)
+            val /= total
+            err /= total
+        if density and width is not None:
+            val /= width
+            err /= width
+        return val, err
