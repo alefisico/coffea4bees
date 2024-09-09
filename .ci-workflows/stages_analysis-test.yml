@@ -109,5 +109,5 @@ weights-trigger-test-job:
   artifacts: 
     paths:
     paths:
-      - python/analysis/metadata/trigger_weights.yml
-      - python/analysis/GluGluToHHTo4B_cHHH1_UL18/picoAOD.root
+      - python/analysis/trigger_weights/friends.json
+      - python/analysis/trigger_weights/GluGluToHHTo4B_cHHH1_UL18/trigWeight.chunk2.root
