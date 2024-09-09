@@ -3,7 +3,7 @@ import warnings
 
 import awkward as ak
 import numpy as np
-import yaml
+import yaml, json 
 from analysis.helpers.common import init_jet_factory, update_events
 from analysis.helpers.filling_histograms import (
     filling_nominal_histograms,
@@ -30,6 +30,7 @@ from analysis.helpers.topCandReconstruction import (
     find_tops_slow,
 )
 from base_class.root import Chunk, TreeReader, Friend
+from base_class.utils.json import DefaultEncoder
 from coffea import processor
 from coffea.analysis_tools import PackedSelection
 from coffea.nanoevents import NanoAODSchema, NanoEventsFactory
@@ -101,6 +102,9 @@ class analysis(processor.ProcessorABC):
 
         self.run_systematics = run_systematics
         self.make_classifier_input = make_classifier_input
+
+        # with open("hists/local/friends.json", 'r') as f:
+        #     self.friend = Friend.from_json(json.load(f)['trigWeight'])
 
     def process(self, event):
 
@@ -265,6 +269,9 @@ class analysis(processor.ProcessorABC):
 
         year_label = self.corrections_metadata[self.year]['year_label']
 
+        # target = Chunk.from_coffea_events(event)
+        # event['tmptrigWeight'] = self.friend.arrays(target)
+
         ### adds all the event mc weights and 1 for data
         weights, list_weight_names = add_weights( event, self.isMC, self.dataset, year_label,
                                                   self.estart, self.estop,
@@ -379,6 +386,7 @@ class analysis(processor.ProcessorABC):
         create_cand_jet_dijet_quadjet( selev, event.event,
                                       isMC = self.isMC,
                                       apply_FvT=self.apply_FvT,
+                                      isSyntheticData=self.isSyntheticData,
                                       apply_boosted_veto=self.apply_boosted_veto, 
                                       run_SvB=self.run_SvB,
                                       classifier_SvB=self.classifier_SvB,

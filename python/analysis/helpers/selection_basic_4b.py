@@ -137,6 +137,7 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
                                   apply_FvT:bool = False,
                                   apply_boosted_veto:bool = False,
                                   run_SvB:bool = False,
+                                  isSyntheticData:bool = False,
                                   classifier_SvB = None,
                                   classifier_SvB_MA = None,
                                    ):
@@ -153,7 +154,7 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
     canJet["btagDeepFlavB"] = selev.Jet.btagDeepFlavB[canJet_idx]
     canJet["puId"] = selev.Jet.puId[canJet_idx]
     canJet["jetId"] = selev.Jet.puId[canJet_idx]
-    if isMC:
+    if isMC and not isSyntheticData:
         canJet["hadronFlavour"] = selev.Jet.hadronFlavour[canJet_idx]
     canJet["calibration"] = selev.Jet.calibration[canJet_idx]
 
