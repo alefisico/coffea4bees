@@ -36,7 +36,7 @@ from coffea import processor
 from coffea.analysis_tools import PackedSelection, Weights
 from coffea.nanoevents import NanoAODSchema, NanoEventsFactory
 from coffea.util import load
-
+from base_class.math.random import Squares
 
 #
 # Setup
@@ -522,17 +522,18 @@ class analysis(processor.ProcessorABC):
         #
         # Build quadJets
         #
-        seeds = np.array(event.event)[[0, -1]].view(np.ulonglong)
-        logging.info(f"{self.chunk} seeds {seeds[:10]} \n")
-        randomstate = np.random.Generator(np.random.PCG64(seeds))
+        rng = Squares("quadJetSelection", self.dataset, self.year)
+        counter = np.empty((len(selev), 3, 2), dtype=np.uint64)
+        counter[:, :, 0] = np.asarray(diJet[:, :, 0].mass).view(np.uint64)
+        counter[:, :, 1] = np.asarray(diJet[:, :, 1].mass).view(np.uint64)
+
         quadJet = ak.zip( { "lead": diJet[:, :, 0],
                             "subl": diJet[:, :, 1],
                             "close": diJetDr[:, :, 0],
                             "other": diJetDr[:, :, 1],
                             "passDiJetMass": ak.all(diJet.passDiJetMass, axis=2),
-                            "random": randomstate.uniform(
-                                low=0.1, high=0.9, size=(diJet.__len__(), 3)
-                            ), } )
+                            "random": rng.uniform(counter, low=0.1, high=0.9),
+                           } )
 
         quadJet["dr"] = quadJet["lead"].delta_r(quadJet["subl"])
         quadJet["dphi"] = quadJet["lead"].delta_phi(quadJet["subl"])

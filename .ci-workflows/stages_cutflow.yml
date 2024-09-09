@@ -34,7 +34,7 @@ skimmer-analysis-cutflow-job:
   artifacts:
     paths:
       - python/analysis/tests/test_dump_skimmer_cutflow.yml
-  allow_failure: true
+  # allow_failure: true
 
 analysis-systematics-cutflow-job:    
   stage: cutflow
