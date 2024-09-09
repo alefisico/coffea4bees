@@ -4,10 +4,11 @@ import difflib
 import re
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from itertools import chain, cycle
+from itertools import chain, cycle, repeat
 from typing import TYPE_CHECKING, Callable, Generator, Iterable, NamedTuple, Optional
 
 import numpy as np
+import numpy.typing as npt
 from base_class.physics import di_higgs
 from base_class.physics.di_higgs import Coupling, Diagram
 from bokeh.layouts import column, row
@@ -166,7 +167,7 @@ class BHAxis:
             case Regular() | Variable():
                 _cats = []
                 for a, b in cats[:-1]:
-                    _cats.append(f"[{_FF(a)},{_FF(a)})")
+                    _cats.append(f"[{_FF(a)},{_FF(b)})")
                 a, b = cats[-1]
                 _cats.append(f"[{_FF(a)},{_FF(b)}{')' if over else ']'}")
                 return (
@@ -174,6 +175,59 @@ class BHAxis:
                     + _cats
                     + ([f"[{_FF(cats[-1][-1])}, \u221E)"] if over else [])
                 )
+
+    @classmethod
+    def rebin(
+        cls, axis: AxesMixin, rebin: int | list[int]
+    ) -> tuple[AxesMixin, npt.NDArray]:
+        if (isinstance(rebin, int) and rebin <= 1) or (
+            isinstance(rebin, list) and any(r < 1 for r in rebin)
+        ):
+            return axis, None
+        if isinstance(rebin, int):
+            _rebin = [*repeat(rebin, len(axis) // rebin)]
+        else:
+            _rebin = rebin.copy()
+        if sum(_rebin) != len(axis):
+            raise ValueError(f'Rebin "{rebin}" does not match axis "{axis}"')
+        under, over = BHAxis.flow(axis)
+        _rebin.insert(0, 0)
+        _idx = np.cumsum(_rebin)
+        match axis:
+            case Boolean():
+                _axis = StrCategory(["All"], flow=False)
+            case IntCategory() | StrCategory():
+                cats = [*axis]
+                _axis = StrCategory(
+                    [
+                        "|".join(map(str, cats[_idx[i] : _idx[i + 1]]))
+                        for i in range(len(_idx) - 1)
+                    ],
+                    flow=over,
+                )
+            case Integer():
+                cats = [*axis]
+                _axis = StrCategory(
+                    (
+                        ([f"<{cats[0]}"] if under else [])
+                        + [
+                            f"{cats[_idx[i]]}-{cats[_idx[i + 1]-1]}"
+                            for i in range(len(_idx) - 1)
+                        ]
+                        + ([f">{cats[-1]}"] if over else [])
+                    ),
+                    flow=False,
+                )
+            case Regular() | Variable():
+                edges = axis.edges
+                _axis = Variable(
+                    [edges[i] for i in _idx], underflow=under, overflow=over
+                )
+        if under:
+            _rebin.insert(1, 1)
+        if over:
+            _rebin.append(1)
+        return _axis, np.cumsum(_rebin)[:-1]
 
 
 def _label(text: str):

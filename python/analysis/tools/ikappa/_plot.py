@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+import re
 from functools import partial
 from queue import Queue
 from threading import Thread
@@ -34,6 +36,22 @@ if TYPE_CHECKING:
     from ._hist import Hist1D
 
 _RESOURCE = ["cdn", "inline"]
+
+
+class Profile(TypedDict):
+    rebin: int | list[int]
+
+
+class Profiler:
+    def __init__(self, profiles: dict[str, Profile]):
+        self._profiles = [(re.compile(k), v) for k, v in profiles.items()]
+
+    def generate(self, name: str) -> Profile:
+        profile = {}
+        for k, v in self._profiles:
+            if k.fullmatch(name) is not None:
+                profile.update(v)
+        return profile
 
 
 class AxisProjector(Component):
@@ -79,10 +97,16 @@ class Plotter(Component):
         "z-index": "-1",
         "border": UI.border,
     }
+    _BUTTON = dict(
+        button_type="success",
+        sizing_mode="stretch_height",
+        margin=(5, 0, 5, 5),
+    )
 
     def __init__(self, parent: Main, **kwargs):
         super().__init__(**kwargs)
         self._data = None
+        self._profile = None
         self._parent = parent
 
         self._dom_idle = Div(
@@ -101,7 +125,10 @@ class Plotter(Component):
     def reset(self):
         self.doc.add_next_tick_callback(self._dom_reset)
 
-    def update(self, hists: dict[str, Hist], categories: set[str]):
+    def update_profile(self, profiles: dict[str, Profile]):
+        self._profile = Profiler(profiles)
+
+    def update_data(self, hists: dict[str, Hist], categories: set[str]):
         self.reset()
         self.data = hists
 
@@ -131,10 +158,56 @@ elements.forEach(e => e.visible = !full);
 """,
             ),
         )
-        self._dom_plot = Button(
-            label="Plot", button_type="success", sizing_mode="stretch_height"
+        self._dom_plot = Button(label="Plot", **self._BUTTON)
+        self._dom_plot.on_click(self._dom_select_plot)
+        self._dom_profile = Button(label="Profile", **self._BUTTON)
+        self._dom_profile_div = Div(text="", visible=False)
+        self._dom_profile.on_click(self._dom_check_profile)
+        self._dom_profile_div.js_on_change(
+            "text",
+            CustomJS(
+                args=dict(
+                    div=self._dom_profile_div,
+                    columns=["hist", *Profile.__annotations__.keys()],
+                ),
+                code="""
+if (div.text != "") {
+    const profile = JSON.parse(div.text);
+    div.text = "";
+    let table = document.createElement("table");
+    let tr = table.insertRow();
+    for (const col of columns) {
+        let th = document.createElement("th");
+        th.textContent = col;
+        tr.appendChild(th);
+    }
+    for (const [k, row] of Object.entries(profile)) {
+        tr = table.insertRow();
+        for (const col of columns) {
+            if (col == "hist") {
+                let td = tr.insertCell();
+                td.textContent = k;
+            } else {
+                let td = tr.insertCell();
+                if (col in row) {
+                    td.textContent = row[col];
+                }
+            }
+        }
+    }
+    const blob = new Blob([
+        `<!DOCTYPE html><html><head><title>Profile</title><style>
+table, th, td {border: 1px solid black;border-collapse: collapse;}
+th, td {padding: 5px;text-align: center;}
+tr:hover {background-color: rgb(175, 225, 255);}
+</style></head><body>` + table.outerHTML + "</body></html>"], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank");
+    URL.revokeObjectURL(url);
+}
+""",
+            ),
         )
-        self._dom_plot.on_click(self._dom_plot_selected)
         self._dom_hist_select = self.shared.nonempty(
             self.shared.multichoice(
                 options=[*self.data], search_option_limit=len(self.data)
@@ -142,7 +215,7 @@ elements.forEach(e => e.visible = !full);
         )
         # hist options
         self._dom_normalized = Checkbox(label="Normalized", active=False)
-        self._dom_density = Checkbox(label="Density", active=False)
+        self._dom_density = Checkbox(label="Density (Regular/Variable)", active=False)
         self._dom_log_y = Checkbox(label="Log y-axis", active=False)
         # hist tree
         ncats = len(categories)
@@ -191,6 +264,8 @@ elements.forEach(e => e.visible = !full);
                 ),
                 row(
                     self._dom_plot,
+                    self._dom_profile,
+                    self._dom_profile_div,
                     self._dom_hist_select,
                     self._dom_full,
                     sizing_mode="stretch_width",
@@ -251,6 +326,7 @@ elements.forEach(e => e.visible = !full);
 
     def _dom_enable_plot(self, frozen: bool):
         self._dom_plot.disabled = not frozen
+        self._dom_profile.disabled = not frozen
         self._dom_full.disabled = not frozen
         if frozen:
             self._dom_cat_select.child.children = [
@@ -260,8 +336,15 @@ elements.forEach(e => e.visible = !full);
             self._dom_cat_select.child.children = []
             self._dom_update_status("")
 
-    def _dom_plot_selected(self):
+    def _dom_select_plot(self):
         self._plot_queue.put((self.config, self._dom_hist_select.value))
+
+    def _dom_check_profile(self):
+        if self._profile is not None:
+            profile = {
+                k: self._profile.generate(k) for k in self._dom_hist_select.value
+            }
+            self._dom_profile_div.text = json.dumps(profile)
 
     def _plot(self):
         while task := self._plot_queue.get():
@@ -281,6 +364,7 @@ elements.forEach(e => e.visible = !full);
         projected = {}
         for name in hists:
             hist = self.data[name]
+            profile = self._profile.generate(name) if self._profile else {}
             try:
                 self.status(f'Preparing histogram "{name}"...')
                 match len(hist.axes) - len(self.categories):
@@ -288,6 +372,8 @@ elements.forEach(e => e.visible = !full);
                         hist = self._1d_project(hist)
                         if cfg["normalized"]:
                             hist = self._1d_normalized(hist)
+                        if "rebin" in profile:
+                            hist = self._1d_rebin(hist, profile["rebin"])
                         if cfg["density"]:
                             hist = self._1d_density(hist)
                         projected[name] = hist
@@ -354,6 +440,27 @@ elements.forEach(e => e.visible = !full);
             width = pd.Series(BHAxis.widths(edge))
             val = val.div(width, axis=0)
             var = var.div(width**2, axis=0)
+        return val, var, edge
+
+    @staticmethod
+    def __rebin(
+        _idx: np.ndarray,
+        *dfs: pd.DataFrame,
+    ) -> Generator[pd.DataFrame, None, None]:
+        for df in dfs:
+            yield pd.DataFrame(
+                np.add.reduceat(df.to_numpy(), _idx, axis=0), columns=df.columns
+            )
+
+    def _1d_rebin(self, hist: Hist1D, rebin: int | list[int]) -> Hist1D:
+        val, var, edge = hist
+        idx = None
+        try:
+            edge, idx = BHAxis.rebin(edge, rebin)
+        except ValueError as e:
+            self.log.error(str(e))
+        if idx is not None:
+            val, var = self.__rebin(idx, val, var)
         return val, var, edge
 
     @property
