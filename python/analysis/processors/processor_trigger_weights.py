@@ -2,6 +2,7 @@ import logging
 import warnings
 import awkward as ak
 import yaml
+import numpy as np
 from analysis.helpers.common import init_jet_factory
 from base_class.trigger_emulator.TrigEmulatorTool   import TrigEmulatorTool
 from analysis.helpers.selection_basic_4b import (
@@ -79,12 +80,9 @@ class analysis(processor.ProcessorABC):
         year_label = self.corrections_metadata[self.year]['year_label'].replace("UL", "20").split("_")[0]
         emulator_data = TrigEmulatorTool("Test", year=year_label)
         emulator_mc   = TrigEmulatorTool("Test", year=year_label, useMCTurnOns=True)
-        event['trigWeight'] = {
-            "Data": ak.Array([ emulator_data.GetWeightOR(selJet_pt, tagJet_pt, hT_trigger) for selJet_pt, tagJet_pt, hT_trigger in zip(event.selJet.pt, event.tagJet.pt, event.hT_trigger) ]),
-            "MC": ak.Array([ emulator_mc.GetWeightOR(selJet_pt, tagJet_pt, hT_trigger) for selJet_pt, tagJet_pt, hT_trigger in zip(event.selJet.pt, event.tagJet.pt, event.hT_trigger) ])
-            # "Data": [ emulator_data.GetWeightOR(selJet_pt, tagJet_pt, hT_trigger) for selJet_pt, tagJet_pt, hT_trigger in zip(event.selJet.pt, event.tagJet.pt, event.hT_trigger) ][0],
-            # "MC": [ emulator_mc.GetWeightOR(selJet_pt, tagJet_pt, hT_trigger) for selJet_pt, tagJet_pt, hT_trigger in zip(event.selJet.pt, event.tagJet.pt, event.hT_trigger) ][0]
-        }
+        event['trigWeight'] = {}
+        event['trigWeight', "Data"] = ak.Array([ emulator_data.GetWeightOR(selJet_pt, tagJet_pt, hT_trigger) for selJet_pt, tagJet_pt, hT_trigger in zip(event.selJet.pt, event.tagJet.pt, event.hT_trigger) ])
+        event['trigWeight', 'MC' ] = ak.Array([ emulator_mc.GetWeightOR(selJet_pt, tagJet_pt, hT_trigger) for selJet_pt, tagJet_pt, hT_trigger in zip(event.selJet.pt, event.tagJet.pt, event.hT_trigger) ])
 
         logging.debug(f"trigger weight data: {event['trigWeight'].Data}")
         logging.debug(f"trigger weight mc: {event['trigWeight'].MC}")
