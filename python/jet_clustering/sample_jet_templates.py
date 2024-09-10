@@ -107,7 +107,7 @@ def sample_PDFs_vs_pT(input_jets_decluster, input_pdfs, rand_seed, splittings, c
             rng = Squares("sample_jet_templates", _iVar, rand_seed, _splitting_name)
 
             print(f"{chunk} eta: {np.asarray(etas)}\n")
-            print(f"{chunk} eta view: {np.round(np.asarray(etas),4).view(np.uint64)}\n")
+            print(f"{chunk} eta view round: {np.round(np.asarray(etas),4).view(np.uint64)}\n")
 
             print(f"{chunk} counter {counter[0:5]}\n")
 
