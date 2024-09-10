@@ -1,20 +1,20 @@
-# skimmer-test-job:   
-#   stage: skimmer-test   
-#   extends:
-#     - .base_analysis
-#   script:
-#     - source .ci-workflows/skimmer-test-job.sh
-#   artifacts: 
-#     paths:
-#       - python/skimmer/metadata/picoaod_datasets_TTToSemiLeptonic_UL18.yml
-#       - python/skimmer/TTToSemiLeptonic_UL18/picoAOD.root
-# 
-# skimmer-basic-test-job:   
-#   stage: skimmer-test   
-#   extends:
-#     - .base_analysis
-#   script:
-#     - source .ci-workflows/skimmer-basic-test-job.sh
+skimmer-test-job:   
+  stage: skimmer-test   
+  extends:
+    - .base_analysis
+  script:
+    - source .ci-workflows/skimmer-test-job.sh
+  artifacts: 
+    paths:
+      - python/skimmer/metadata/picoaod_datasets_TTToSemiLeptonic_UL18.yml
+      - python/skimmer/TTToSemiLeptonic_UL18/picoAOD.root
+
+skimmer-basic-test-job:   
+  stage: skimmer-test   
+  extends:
+    - .base_analysis
+  script:
+    - source .ci-workflows/skimmer-basic-test-job.sh
 
 synthetic-dataset-make-dataset:
   stage: skimmer-test
