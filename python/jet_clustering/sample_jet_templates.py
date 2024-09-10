@@ -50,7 +50,7 @@ from base_class.math.random import Squares
 #            input_jets_decluster["thetaA"]     = ak.unflatten(_sampled_data_y,    ak.num(input_jets_decluster))
 
 
-def sample_PDFs_vs_pT(input_jets_decluster, input_pdfs, rand_seed, splittings):
+def sample_PDFs_vs_pT(input_jets_decluster, input_pdfs, rand_seed, splittings, chunk=None):
 
     n_jets   = np.sum(ak.num(input_jets_decluster))
 
@@ -92,7 +92,7 @@ def sample_PDFs_vs_pT(input_jets_decluster, input_pdfs, rand_seed, splittings):
         for _splitting_name, _num_samples, _indicies_tuple in splittings:
 
             # For random number seeding
-            split_name_hash = len(_splitting_name) + 3 * _splitting_name.count("b") + 5 * _splitting_name.count("j") * 7 * _splitting_name.count("(")
+            #split_name_hash = len(_splitting_name) + 3 * _splitting_name.count("b") + 5 * _splitting_name.count("j") * 7 * _splitting_name.count("(")
             pts  = ak.flatten(input_jets_decluster.pt)[_indicies_tuple]
             etas = ak.flatten(input_jets_decluster.eta)[_indicies_tuple]
             phis = ak.flatten(input_jets_decluster.phi)[_indicies_tuple]
@@ -103,7 +103,8 @@ def sample_PDFs_vs_pT(input_jets_decluster, input_pdfs, rand_seed, splittings):
             counter[:, 1] = np.asarray(etas).view(np.uint64)
             counter[:, 2] = np.asarray(phis).view(np.uint64)
 
-            rng = Squares("sample_jet_templates", _iVar, rand_seed, split_name_hash)
+            print(f"{chunk} sample_PDFs_vs_pT {_iVar} {rand_seed} {_splitting_name}\n")
+            rng = Squares("sample_jet_templates", _iVar, rand_seed, _splitting_name)
 
             if _splitting_name not in input_pdfs.keys():
 
