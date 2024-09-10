@@ -1,3 +1,5 @@
+# import logging
+
 class TrigEmulator:
     def __init__(self, ht_thresholds, jet_thresholds, jet_multiplicities, btag_op_points, btag_multiplicities, nToys=100):
         self.m_htThresholds = ht_thresholds
@@ -98,7 +100,7 @@ class TrigEmulator:
                 nPass += 1
 
         weight = float(nPass) / self.m_nToys
-        # print(f"TrigEmulator::calcWeight is {weight}")
+        # logging.info(f"TrigEmulator::calcWeight is {weight}")
         return weight
 
     # #  For doing global run counting (Eg: in rate prediction)

@@ -1,4 +1,5 @@
 from coffea.analysis_tools import Weights
+from analysis.helpers.common import apply_btag_sf
 import correctionlib
 import awkward as ak
 import numpy as np
@@ -133,5 +134,88 @@ def add_weights(event, isMC: bool = True,
 
     logging.debug(f"weights event {weights.weight()[:10]}")
     logging.debug(f"Weight Statistics {weights.weightStatistics}")
+
+    return weights, list_weight_names
+
+
+def add_pseudotagweights( selev, weights, 
+                         analysis_selections, 
+                         JCM: callable = None,
+                         apply_FvT: bool = False,
+                         isDataForMixed: bool = False,
+                         list_weight_names:list = [], 
+                         event_metadata:dict = {}, 
+                         year_label: str = None,        
+                         len_event: int = None,
+):
+
+    #
+    # calculate pseudoTagWeight for threeTag events
+    #
+    all_weights = ['genweight', 'CMS_bbbb_resolved_ggf_triggerEffSF', f'CMS_pileup_{year_label}' ,'CMS_btag']
+    logging.debug( f"noJCM_noFVT partial {weights.partial_weight(include=all_weights)[ analysis_selections ][:10]}" )
+    selev["weight_noJCM_noFvT"] = weights.partial_weight( include=all_weights )[analysis_selections]
+
+    selev["Jet_untagged_loose"] = selev.Jet[ selev.Jet.selected & ~selev.Jet.tagged_loose ]
+    nJet_pseudotagged = np.zeros(len(selev), dtype=int)
+    pseudoTagWeight = np.ones(len(selev))
+    pseudoTagWeight[selev.threeTag], nJet_pseudotagged[selev.threeTag] = ( JCM( selev[selev.threeTag]["Jet_untagged_loose"], selev.event[selev.threeTag], ) )
+    selev["nJet_pseudotagged"] = nJet_pseudotagged
+    selev["pseudoTagWeight"] = pseudoTagWeight
+
+    weight_noFvT = np.array(selev.weight.to_numpy(), dtype=float)
+    weight_noFvT[selev.threeTag] = ( selev.weight[selev.threeTag] * selev.pseudoTagWeight[selev.threeTag] )
+    selev["weight_noFvT"] = weight_noFvT
+
+    # Apply pseudoTagWeight and FvT efficiently
+    if apply_FvT:
+        if isDataForMixed:
+            for _JCM_load, _FvT_name in zip(event_metadata["JCM_loads"], event_metadata["FvT_names"]):
+                selev[f"weight_{_FvT_name}"] = np.where(
+                    selev.threeTag,
+                    selev.weight * getattr(selev, f"{_JCM_load}") * getattr(getattr(selev, _FvT_name), _FvT_name),
+                    selev.weight,
+                )
+            selev["weight"] = selev[f'weight_{event_metadata["FvT_names"][0]}']
+        else:
+            weight = np.full(len_event, 1.0)
+            weight[analysis_selections] = np.where(selev.threeTag, selev["pseudoTagWeight"] * selev.FvT.FvT, 1.0)
+            weights.add("FvT", weight) 
+            list_weight_names.append("FvT")
+    else:
+        weight_noFvT = np.full(len_event, 1.0)
+        weight_noFvT[analysis_selections] = np.where(selev.threeTag, selev.weight * selev["pseudoTagWeight"], selev.weight)
+        weights.add("no_FvT", weight_noFvT)
+        list_weight_names.append("no_FvT")
+
+    return weights, list_weight_names
+
+def add_btagweights( event, weights, 
+                    list_weight_names: list = [], 
+                    shift_name: str = None, 
+                    run_systematics: bool = False,
+                    isSyntheticData: bool = False,
+                    corrections_metadata: dict = None, 
+                    ):
+
+    if isSyntheticData:
+        weights.add( "CMS_btag", event.CMSbtag )
+    else:
+
+        btag_SF_weights = apply_btag_sf(
+            event.selJet, 
+            correction_file=corrections_metadata["btagSF"],
+            btag_uncertainties=corrections_metadata["btag_uncertainties"] if (not shift_name) & run_systematics else None
+        )    
+
+        if (not shift_name) & run_systematics:
+            weights.add_multivariation( f"CMS_btag", btag_SF_weights["btagSF_central"],
+                                        corrections_metadata["btag_uncertainties"],
+                                        [ var.to_numpy() for name, var in btag_SF_weights.items() if "_up" in name ],
+                                        [ var.to_numpy() for name, var in btag_SF_weights.items() if "_down" in name ], )
+        else:
+            weights.add( "CMS_btag", btag_SF_weights["btagSF_central"] )
+
+    list_weight_names.append(f"CMS_btag")
 
     return weights, list_weight_names

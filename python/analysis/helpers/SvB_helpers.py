@@ -1,6 +1,7 @@
 import numpy as np
 import awkward as ak
 from base_class.math.random import Squares
+import logging
 
 def setSvBVars(SvBName, event):
 
@@ -38,7 +39,7 @@ def setSvBVars(SvBName, event):
     event[SvBName, "ps_hh"] = this_ps_hh
 
 
-def compute_SvB(event, classifier_SvB, classifier_SvB_MA, logging, doCheck=True):
+def compute_SvB(event, classifier_SvB, classifier_SvB_MA, doCheck=True):
     # import torch on demand
     import torch
     import torch.nn.functional as F

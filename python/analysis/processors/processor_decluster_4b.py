@@ -1066,7 +1066,7 @@ class analysis(processor.ProcessorABC):
 
                 selev["nSelJets"] = ak.num(selev.selJet)
 
-                from ..helpers.classifier.HCR import dump_input_friend, dump_JCM_weight
+                from ..helpers.dump_friendtrees import dump_input_friend, dump_JCM_weight
 
                 friends["friends"] = dump_input_friend( selev, self.make_classifier_input, "HCR_input", *selections, weight="weight" if isMC else "weight_noJCM_noFvT", NotCanJet="notCanJet_coffea") | dump_JCM_weight( selev, self.make_classifier_input, "JCM_weight", *selections, )
 
