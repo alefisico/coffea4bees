@@ -84,7 +84,7 @@ def get_min_indicies_numba(particles, R):
 
 
 def distance_matrix_kt(vectors):
-    pt1  = ak.values_astype(vectors.pt, np.float64)
+    pt1  = ak.values_astype(vectors.pt,  np.float64)
     eta1 = ak.values_astype(vectors.eta, np.float64)
     phi1 = ak.values_astype(vectors.phi, np.float64)
 
