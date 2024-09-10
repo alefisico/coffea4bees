@@ -636,6 +636,7 @@ class clusteringTestCase(unittest.TestCase):
             if _s[1]:
                 expected_ISR_splittings.append(_s[0])
 
+        expected_ISR_splittings.sort()
         ISR_splittings = get_list_of_ISR_splittings(test_splitting_types)
 
         self.assertListEqual(ISR_splittings, expected_ISR_splittings)

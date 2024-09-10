@@ -14,7 +14,6 @@ cat skimmer/metadata/declustering_for_test.yml
 echo "############### Running test processor"
 time python runner.py -s -p skimmer/processor/make_declustered_data_4b.py -c skimmer/metadata/declustering_for_test.yml -y UL18  -d data GluGluToHHTo4B_cHHH1 -op skimmer/metadata/ -o picoaod_datasets_declustered_test_UL18.yml -m metadata/datasets_HH4b.yml
 
-
 # time python runner.py -s -p skimmer/processor/make_declustered_data_4b.py -c skimmer/metadata/declustering_for_test.yml -y UL18  -d GluGluToHHTo4B_cHHH1 -op skimmer/metadata/ -o picoaod_datasets_declustered_GluGluToHHTo4B_cHHH1_test_UL18.yml -m metadata/datasets_HH4b.yml
 ls -R skimmer/
 cd ../

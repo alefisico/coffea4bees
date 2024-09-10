@@ -524,8 +524,13 @@ class analysis(processor.ProcessorABC):
         #
         rng = Squares("quadJetSelection", self.dataset, self.year)
         counter = np.empty((len(selev), 3, 2), dtype=np.uint64)
-        counter[:, :, 0] = np.asarray(diJet[:, :, 0].mass).view(np.uint64)
-        counter[:, :, 1] = np.asarray(diJet[:, :, 1].mass).view(np.uint64)
+        counter[:, :, 0] = np.round(np.asarray(diJet[:, :, 0].mass), 4).view(np.uint64)
+        counter[:, :, 1] = np.round(np.asarray(diJet[:, :, 1].mass), 4).view(np.uint64)
+
+        #print(f"mass {diJet[:, :, 0].mass[0:5]}\n")
+        #print(f"mass {np.asarray(diJet[:, :, 0].mass).view(np.uint64)[0:5]}\n")
+        #print(f"mass {np.round(np.asarray(diJet[:, :, 0].mass), 4).view(np.uint64)[0:5]}\n")
+
 
         quadJet = ak.zip( { "lead": diJet[:, :, 0],
                             "subl": diJet[:, :, 1],

@@ -207,8 +207,8 @@ class DeClusterer(PicoAOD):
 
         processOutput = {}
 
-        from analysis.helpers.write_debug_info import add_debug_info_to_output_clustering_inputs
-        add_debug_info_to_output_clustering_inputs(selev, jets_for_clustering, processOutput)
+        # from analysis.helpers.write_debug_info import add_debug_info_to_output_clustering_inputs
+        # add_debug_info_to_output_clustering_inputs(selev, jets_for_clustering, processOutput)
 
         clustered_jets, _clustered_splittings = cluster_bs(jets_for_clustering, debug=False)
         clustered_jets = clean_ISR(clustered_jets, _clustered_splittings)
@@ -219,15 +219,15 @@ class DeClusterer(PicoAOD):
         #
         # Declustering
         #
-        from analysis.helpers.write_debug_info import add_debug_info_to_output_clustering_outputs
-        add_debug_info_to_output_clustering_outputs(selev, clustered_jets, processOutput)
+        # from analysis.helpers.write_debug_info import add_debug_info_to_output_clustering_outputs
+        # add_debug_info_to_output_clustering_outputs(selev, clustered_jets, processOutput)
 
         declustered_jets = make_synthetic_event(clustered_jets, self.clustering_pdfs, declustering_rand_seed=self.declustering_rand_seed, chunk=chunk)
 
         declustered_jets = declustered_jets[ak.argsort(declustered_jets.pt, axis=1, ascending=False)]
 
-        from analysis.helpers.write_debug_info import add_debug_info_to_output_declustering_outputs
-        add_debug_info_to_output_declustering_outputs(selev, declustered_jets, processOutput)
+        # from analysis.helpers.write_debug_info import add_debug_info_to_output_declustering_outputs
+        # add_debug_info_to_output_declustering_outputs(selev, declustered_jets, processOutput)
 
 
         n_jet = ak.num(declustered_jets)
