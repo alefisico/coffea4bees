@@ -204,6 +204,11 @@ class DeClusterer(PicoAOD):
         jets_for_clustering = ak.concatenate([canJet, notCanJet], axis=1)
         jets_for_clustering = jets_for_clustering[ak.argsort(jets_for_clustering.pt, axis=1, ascending=False)]
 
+        processOutput = {}
+
+        from analysis.helpers.write_debug_info import add_debug_info_to_output_clustering_inputs
+        add_debug_info_to_output_clustering_inputs(selev, jets_for_clustering, processOutput)
+
         clustered_jets, _clustered_splittings = cluster_bs(jets_for_clustering, debug=False)
         clustered_jets = clean_ISR(clustered_jets, _clustered_splittings)
 
@@ -252,9 +257,9 @@ class DeClusterer(PicoAOD):
         self.update_branch_filter(self.skip_collections, self.skip_branches)
         branches = ak.Array(out_branches)
 
-        result = {"total_jet": total_jet}
+        processOutput["total_jet"] = total_jet
 
         return (selection,
                 branches,
-                result,
+                processOutput,
                 )

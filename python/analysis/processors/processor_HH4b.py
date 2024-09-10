@@ -638,38 +638,8 @@ class analysis(processor.ProcessorABC):
         #
         # Example of how to write out event numbers
         #
-        #  passSR = (selev["quadJet_selected"].SR)
-        #  passSR = (selev["SR"])
-        #
-        # out_data = {}
-        # out_data["SvB"    ] = selev["SvB_MA"].ps[passSR]
-        # out_data["event"  ] = selev["event"][passSR]
-        # out_data["run"    ] = selev["run"][passSR]
-        #
-        # debug_mask = ~event.passJetMult
-        # debug_mask = ((event["event"] == 66688  ) |
-        #               (event["event"] == 249987 ) |
-        #               (event["event"] == 121603 ) |
-        #               (event["event"] == 7816   ) |
-        #               (event["event"] == 25353  ) |
-        #               (event["event"] == 165389 ) |
-        #               (event["event"] == 293138 ) |
-        #               (event["event"] == 150164 ) |
-        #               (event["event"] == 262806 ) |
-        #               (event["event"] == 281111 ) )
-        #
-        # out_data["debug_event"  ] = event["event"][debug_mask]
-        # out_data["debug_run"    ] = event["run"][debug_mask]
-        # out_data["debug_jet_pt"    ] = event.Jet[event.Jet.selected_eta].pt[debug_mask].to_list()
-        # out_data["debug_jet_eta"   ] = event.Jet[event.Jet.selected_eta].eta[debug_mask].to_list()
-        # out_data["debug_jet_phi"   ] = event.Jet[event.Jet.selected_eta].phi[debug_mask].to_list()
-        # out_data["debug_jet_pu"    ] = event.Jet[event.Jet.selected_eta].pileup[debug_mask].to_list()
-        # out_data["debug_jet_jetId" ] = event.Jet[event.Jet.selected_eta].jetId[debug_mask].to_list()
-        # out_data["debug_jet_lep"   ] = event.Jet[event.Jet.selected_eta].lepton_cleaned[debug_mask].to_list()
-        #
-        # for out_k, out_v in out_data.items():
-        #     processOutput[out_k] = {}
-        #     processOutput[out_k][event.metadata['dataset']] = list(out_v)
+        # from analysis.helpers.write_debug_info import add_debug_info_to_output
+        # add_debug_info_to_output(selev, processOutput)
 
         if self.run_SvB:
             selev["passSvB"] = selev["SvB_MA"].ps > 0.80
