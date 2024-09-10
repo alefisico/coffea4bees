@@ -135,8 +135,8 @@ counts4_unit:
         passJetMult: 220.0
         passPreSel: 220.0
         passDiJetMass: 139.0
-        SR: 62.0
-        SB: 77.0
+        SR: 59.0
+        SB: 80.0
         passSvB: 8.0
         failSvB: 102.0
 
