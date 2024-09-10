@@ -1,28 +1,28 @@
-# analysis-helpers-job:    
-#   stage: code
-#   extends:
-#     - .base_analysis
-#   script:
-#     - source .ci-workflows/analysis-helpers-job.sh
-# 
-# kappa-framework:
-#   stage: code
-#   extends:
-#     - .base_analysis
-#   script:
-#     - source .ci-workflows/baseclass-kappa-framework.sh
-# 
-# jet-clustering:
-#   stage: code
-#   extends:
-#     - .base_analysis
-#   script:
-#     - source .ci-workflows/jet-clustering-tests.sh
-# 
-# trig-emulator:
-#   stage: code
-#   extends:
-#     - .base_analysis
-#   script:
-#     - source .ci-workflows/trig-emulator-tests.sh
-# 
+analysis-helpers-job:    
+  stage: code
+  extends:
+    - .base_analysis
+  script:
+    - source .ci-workflows/analysis-helpers-job.sh
+
+#kappa-framework:
+#  stage: code
+#  extends:
+#    - .base_analysis
+#  script:
+#    - source .ci-workflows/baseclass-kappa-framework.sh
+#
+#jet-clustering:
+#  stage: code
+#  extends:
+#    - .base_analysis
+#  script:
+#    - source .ci-workflows/jet-clustering-tests.sh
+#
+#trig-emulator:
+#  stage: code
+#  extends:
+#    - .base_analysis
+#  script:
+#    - source .ci-workflows/trig-emulator-tests.sh
+#
