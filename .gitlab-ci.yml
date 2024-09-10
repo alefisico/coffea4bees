@@ -27,9 +27,13 @@ include:
 stages:          
   - build
   - proxy
+  - code 
   - skimmer-test
   - analysis-test	
+  - fits
+  - plot
   - cutflow
+  - reana
 
 .base_analysis:
   needs:
