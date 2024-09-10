@@ -98,7 +98,7 @@ def sample_PDFs_vs_pT(input_jets_decluster, input_pdfs, rand_seed, splittings):
             phis = ak.flatten(input_jets_decluster.phi)[_indicies_tuple]
 
             # _num_samples
-            counter = np.empty((_num_samples, 3), dtype=np.uint64)  # split_name_hash_, pt, var_name
+            counter = np.zeros((_num_samples, 3), dtype=np.uint64)  # split_name_hash_, pt, var_name
             counter[:, 0] = np.asarray(pts ).view(np.uint64)
             counter[:, 1] = np.asarray(etas).view(np.uint64)
             counter[:, 2] = np.asarray(phis).view(np.uint64)

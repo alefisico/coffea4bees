@@ -59,6 +59,7 @@ class DeClusterer(PicoAOD):
         estop   = event.metadata['entrystop']
         nEvent = len(event)
         year_label = self.corrections_metadata[year]['year_label']
+        chunk   = f'{dataset}::{estart:6d}:{estop:6d} >>> '
 
         path = fname.replace(fname.split("/")[-1], "")
 
@@ -221,7 +222,7 @@ class DeClusterer(PicoAOD):
         from analysis.helpers.write_debug_info import add_debug_info_to_output_clustering_outputs
         add_debug_info_to_output_clustering_outputs(selev, clustered_jets, processOutput)
 
-        declustered_jets = make_synthetic_event(clustered_jets, self.clustering_pdfs, declustering_rand_seed=self.declustering_rand_seed)
+        declustered_jets = make_synthetic_event(clustered_jets, self.clustering_pdfs, declustering_rand_seed=self.declustering_rand_seed, chunk=chunk)
 
         declustered_jets = declustered_jets[ak.argsort(declustered_jets.pt, axis=1, ascending=False)]
 

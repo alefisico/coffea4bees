@@ -84,13 +84,13 @@ def add_debug_info_to_output_declustering_outputs(event, declustered_jets, proce
 
     out_data = {}
 
-    out_data["declusteredJets_event"  ]    = event["event"][0:10]
-    out_data["declusteredJets_run"    ]    = event["run"][0:10]
-    out_data["declusteredJets_jet_pt"    ] = declustered_jets.pt  [0:10].to_list()
-    out_data["declusteredJets_jet_eta"   ] = declustered_jets.eta [0:10].to_list()
-    out_data["declusteredJets_jet_phi"   ] = declustered_jets.phi [0:10].to_list()
-    out_data["declusteredJets_jet_mass"  ] = declustered_jets.mass[0:10].to_list()
-
+    out_data["declusteredJets_event"  ]      = event["event"][0:10]
+    out_data["declusteredJets_run"    ]      = event["run"][0:10]
+    out_data["declusteredJets_jet_pt"    ]   = declustered_jets.pt  [0:10].to_list()
+    out_data["declusteredJets_jet_eta"   ]   = declustered_jets.eta [0:10].to_list()
+    out_data["declusteredJets_jet_phi"   ]   = declustered_jets.phi [0:10].to_list()
+    out_data["declusteredJets_jet_mass"  ]   = declustered_jets.mass[0:10].to_list()
+    out_data["declusteredJets_jet_flavor"] = declustered_jets.jet_flavor[0:10].to_list()
     for out_k, out_v in out_data.items():
         processOutput[out_k] = {}
         processOutput[out_k][event.metadata['dataset']] = list(out_v)
