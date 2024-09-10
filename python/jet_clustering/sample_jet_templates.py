@@ -103,13 +103,13 @@ def sample_PDFs_vs_pT(input_jets_decluster, input_pdfs, rand_seed, splittings, c
             counter[:, 1] = np.round(np.asarray(etas), 4).view(np.uint64)
             counter[:, 2] = np.round(np.asarray(phis), 4).view(np.uint64)
 
-            print(f"{chunk} sample_PDFs_vs_pT {_iVar} {rand_seed} {_splitting_name}\n")
+            # print(f"{chunk} sample_PDFs_vs_pT {_iVar} {rand_seed} {_splitting_name}\n")
             rng = Squares("sample_jet_templates", _iVar, rand_seed, _splitting_name)
 
-            print(f"{chunk} eta: {np.asarray(etas)}\n")
-            print(f"{chunk} eta view round: {np.round(np.asarray(etas),4).view(np.uint64)}\n")
+            # print(f"{chunk} eta: {np.asarray(etas)}\n")
+            # print(f"{chunk} eta view round: {np.round(np.asarray(etas),4).view(np.uint64)}\n")
 
-            print(f"{chunk} counter {counter[0:5]}\n")
+            # print(f"{chunk} counter {counter[0:5]}\n")
 
             if _splitting_name not in input_pdfs.keys():
 
@@ -127,7 +127,7 @@ def sample_PDFs_vs_pT(input_jets_decluster, input_pdfs, rand_seed, splittings, c
                     # _sampled_data_vs_pT[_iPt][_indicies_tuple] = np.random.choice(centers, size=_num_samples, p=probs)
                     _sampled_data_vs_pT[_iPt][_indicies_tuple] = rng.choice(counter, a=centers, p=probs).astype(np.float32)
 
-                    print(f"{chunk} 1d rng.choice {_sampled_data_vs_pT[_iPt][_indicies_tuple][0:5]}\n")
+                    # print(f"{chunk} 1d rng.choice {_sampled_data_vs_pT[_iPt][_indicies_tuple][0:5]}\n")
                 else:
                     probabilities_flat = np.array(input_pdfs[_splitting_name][_var_name][_iPt]["probabilities_flat"], dtype=float)
                     xcenters           = np.array(input_pdfs[_splitting_name][_var_name][_iPt]["xcenters"],      dtype=float)
@@ -138,7 +138,7 @@ def sample_PDFs_vs_pT(input_jets_decluster, input_pdfs, rand_seed, splittings, c
 
                     # sampled_indices = np.random.choice(len(probabilities_flat), size=_num_samples, p=probabilities_flat)
                     sampled_indices = rng.choice(counter, a=len(probabilities_flat), p=probabilities_flat)   # .astype(np.int32)
-                    print(f"{chunk} 2d rng.choice {sampled_indices[0:5]}\n")
+                    # print(f"{chunk} 2d rng.choice {sampled_indices[0:5]}\n")
                     _sampled_data_x_vs_pT[_iPt][_indicies_tuple] = xcenters_flat[sampled_indices]
                     _sampled_data_y_vs_pT[_iPt][_indicies_tuple] = ycenters_flat[sampled_indices]
 
