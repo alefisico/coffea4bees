@@ -527,6 +527,14 @@ class analysis(processor.ProcessorABC):
         counter[:, :, 0] = np.round(np.asarray(diJet[:, :, 0].mass), 1).view(np.uint64)
         counter[:, :, 1] = np.round(np.asarray(diJet[:, :, 1].mass), 1).view(np.uint64)
 
+        print(f"{self.chunk} mass {diJet[:, :, 0].mass[0:5]}\n")
+        print(f"{self.chunk} mass view64 {np.asarray(diJet[:, :, 0].mass).view(np.uint64)[0:5]}\n")
+        print(f"{self.chunk} mass rounded view64 {np.round(np.asarray(diJet[:, :, 0].mass), 1).view(np.uint64)[0:5]}\n")
+        print(f"{self.chunk} mass rounded {np.round(np.asarray(diJet[:, :, 0].mass), 1)[0:5]}\n")
+        print(f"{self.chunk} counter 0 {counter[:, :, 0][0:5]}\n")
+        print(f"{self.chunk} counter 1 {counter[:, :, 1][0:5]}\n")
+
+
         quadJet = ak.zip( { "lead": diJet[:, :, 0],
                             "subl": diJet[:, :, 1],
                             "close": diJetDr[:, :, 0],
@@ -534,7 +542,8 @@ class analysis(processor.ProcessorABC):
                             "passDiJetMass": ak.all(diJet.passDiJetMass, axis=2),
                             "random": rng.uniform(counter, low=0.1, high=0.9),
                            } )
-        #print(f"{self.chunk} quadJet rand {quadJet.random[0:5]}\n")
+
+        print(f"{self.chunk} quadJet rand {quadJet.random[0:5]}\n")
         quadJet["dr"] = quadJet["lead"].delta_r(quadJet["subl"])
         quadJet["dphi"] = quadJet["lead"].delta_phi(quadJet["subl"])
         quadJet["deta"] = quadJet["lead"].eta - quadJet["subl"].eta
