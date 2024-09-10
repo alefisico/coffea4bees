@@ -51,12 +51,29 @@ def add_debug_info_to_output_clustering_inputs(event, jets_for_clustering, proce
 
     out_data = {}
 
-    out_data["clusteringInputs_event"  ]    = event["event"]
-    out_data["clusteringInputs_run"    ]    = event["run"]
-    out_data["clusteringInputs_jet_pt"    ] = jets_for_clustering.pt  .to_list()
-    out_data["clusteringInputs_jet_eta"   ] = jets_for_clustering.eta .to_list()
-    out_data["clusteringInputs_jet_phi"   ] = jets_for_clustering.phi .to_list()
-    out_data["clusteringInputs_jet_mass"  ] = jets_for_clustering.mass.to_list()
+    out_data["clusteringInputs_event"  ]    = event["event"][0:10]
+    out_data["clusteringInputs_run"    ]    = event["run"][0:10]
+    out_data["clusteringInputs_jet_pt"    ] = jets_for_clustering.pt  [0:10].to_list()
+    out_data["clusteringInputs_jet_eta"   ] = jets_for_clustering.eta [0:10].to_list()
+    out_data["clusteringInputs_jet_phi"   ] = jets_for_clustering.phi [0:10].to_list()
+    out_data["clusteringInputs_jet_mass"  ] = jets_for_clustering.mass[0:10].to_list()
+
+    for out_k, out_v in out_data.items():
+        processOutput[out_k] = {}
+        processOutput[out_k][event.metadata['dataset']] = list(out_v)
+
+
+def add_debug_info_to_output_clustering_outputs(event, clustered_jets, processOutput):
+
+    out_data = {}
+
+    out_data["clusteringOutputs_event"  ]    = event["event"][0:10]
+    out_data["clusteringOutputs_run"    ]    = event["run"][0:10]
+    out_data["clusteringOutputs_jet_pt"    ] = clustered_jets.pt  [0:10].to_list()
+    out_data["clusteringOutputs_jet_eta"   ] = clustered_jets.eta [0:10].to_list()
+    out_data["clusteringOutputs_jet_phi"   ] = clustered_jets.phi [0:10].to_list()
+    out_data["clusteringOutputs_jet_mass"  ] = clustered_jets.mass[0:10].to_list()
+    out_data["clusteringOutputs_jet_flavor"] = clustered_jets.jet_flavor[0:10].to_list()
 
     for out_k, out_v in out_data.items():
         processOutput[out_k] = {}
