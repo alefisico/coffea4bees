@@ -225,6 +225,10 @@ class DeClusterer(PicoAOD):
 
         declustered_jets = declustered_jets[ak.argsort(declustered_jets.pt, axis=1, ascending=False)]
 
+        from analysis.helpers.write_debug_info import add_debug_info_to_output_declustering_outputs
+        add_debug_info_to_output_declustering_outputs(selev, declustered_jets, processOutput)
+
+
         n_jet = ak.num(declustered_jets)
         total_jet = int(ak.sum(n_jet))
 
