@@ -34,7 +34,7 @@ skimmer-analysis-cutflow-job:
   artifacts:
     paths:
       - python/analysis/tests/test_dump_skimmer_cutflow.yml
-  allow_failure: true
+  # allow_failure: true
 
 analysis-systematics-cutflow-job:    
   stage: cutflow
@@ -59,4 +59,17 @@ analysis-cutflow-job-unsup:
  artifacts:
    paths:
      - python/analysis/tests/test_dump_cutflow_job_unsup.yml
+
+synthetic-dataset-analyze-cutflow:
+ stage: cutflow
+ extends:
+   - .base_analysis
+ needs: 
+   - synthetic-dataset-analyze
+ script:
+   - source .ci-workflows/synthetic-dataset-analyze-cutflow.sh
+ artifacts:
+   paths:
+     - python/analysis/tests/test_dump_cutflow_synthetic_datasets.yml
+
 

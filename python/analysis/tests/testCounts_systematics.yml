@@ -27,8 +27,8 @@ counts4_unit:
         passJetMult: 969.0
         passPreSel: 231.0
         passDiJetMass: 219.0
-        SR: 196.0
-        SB: 23.0
+        SR: 193.0
+        SB: 26.0
         passSvB: 99.0
         failSvB: 11.0
 
@@ -39,8 +39,8 @@ counts3_unit:
         passJetMult: 969.0
         passPreSel: 729.0
         passDiJetMass: 495.0
-        SR: 344.0
-        SB: 151.0
+        SR: 342.0
+        SB: 153.0
         passSvB: 121.0
         failSvB: 191.0
 

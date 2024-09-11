@@ -3,6 +3,7 @@ import awkward as ak
 from analysis.helpers.common import mask_event_decision, drClean
 from analysis.helpers.SvB_helpers import compute_SvB
 from coffea.lumi_tools import LumiMask
+from base_class.math.random import Squares
 
 def apply_event_selection_4b( event, isMC, corrections_metadata, isMixedData = False):
 
@@ -133,13 +134,13 @@ def apply_object_selection_boosted_4b( event ):
     return event
 
 def create_cand_jet_dijet_quadjet( selev, event_event,
-                                  isMC:bool = False,
-                                  apply_FvT:bool = False,
-                                  apply_boosted_veto:bool = False,
-                                  run_SvB:bool = False,
-                                  isSyntheticData:bool = False,
-                                  classifier_SvB = None,
-                                  classifier_SvB_MA = None,
+                                   isMC:bool = False,
+                                   apply_FvT:bool = False,
+                                   apply_boosted_veto:bool = False,
+                                   run_SvB:bool = False,
+                                   isSyntheticData:bool = False,
+                                   classifier_SvB = None,
+                                   classifier_SvB_MA = None,
                                    ):
     #
     # Build and select boson candidate jets with bRegCorr applied
@@ -164,7 +165,7 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
     canJet = canJet[ak.argsort(canJet.pt, axis=1, ascending=False)]
     selev["canJet"] = canJet
     for i in range(4):
-        selev[f"canJet{i}"] = selev["canJet"][:, i]    
+        selev[f"canJet{i}"] = selev["canJet"][:, i]
 
     selev["v4j"] = canJet.sum(axis=1)
     notCanJet = selev.Jet[notCanJet_idx]
@@ -184,7 +185,7 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
     diJet["st"] = diJet["lead"].pt + diJet["subl"].pt
     diJet["dr"] = diJet["lead"].delta_r(diJet["subl"])
     diJet["dphi"] = diJet["lead"].delta_phi(diJet["subl"])
-    
+
     # Sort diJets within views to be lead st, subl st
     diJet = diJet[ak.argsort(diJet.st, axis=2, ascending=False)]
     diJetDr = diJet[ak.argsort(diJet.dr, axis=2, ascending=True)]
@@ -220,40 +221,49 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
     #
     # Build quadJets
     #
-    seeds = np.array(event_event)[[0, -1]].view(np.ulonglong)
-    randomstate = np.random.Generator(np.random.PCG64(seeds))
+    rng = Squares("quadJetSelection", event_event)
+    counter = np.zeros((len(selev), 3, 2), dtype=np.uint64)
+    counter[:, :, 0] = np.round(np.asarray(diJet[:, :, 0].mass), 0).view(np.uint64)
+    counter[:, :, 1] = np.round(np.asarray(diJet[:, :, 1].mass), 0).view(np.uint64)
+
+    # print(f"{self.chunk} mass {diJet[:, :, 0].mass[0:5]}\n")
+    # print(f"{self.chunk} mass view64 {np.asarray(diJet[:, :, 0].mass).view(np.uint64)[0:5]}\n")
+    # print(f"{self.chunk} mass rounded view64 {np.round(np.asarray(diJet[:, :, 0].mass), 0).view(np.uint64)[0:5]}\n")
+    # print(f"{self.chunk} mass rounded {np.round(np.asarray(diJet[:, :, 0].mass), 0)[0:5]}\n")
+    # print(f"{self.chunk} counter 0 {counter[:, :, 0][0:5]}\n")
+    # print(f"{self.chunk} counter 1 {counter[:, :, 1][0:5]}\n")
+
     quadJet = ak.zip( { "lead": diJet[:, :, 0],
                         "subl": diJet[:, :, 1],
                         "close": diJetDr[:, :, 0],
                         "other": diJetDr[:, :, 1],
                         "passDiJetMass": ak.all(diJet.passDiJetMass, axis=2),
-                        "random": randomstate.uniform(
-                            low=0.1, high=0.9, size=(diJet.__len__(), 3)
-                        ), } )
+                        "random": rng.uniform(counter, low=0.1, high=0.9),
+                       } )
 
     quadJet["dr"] = quadJet["lead"].delta_r(quadJet["subl"])
     quadJet["dphi"] = quadJet["lead"].delta_phi(quadJet["subl"])
     quadJet["deta"] = quadJet["lead"].eta - quadJet["subl"].eta
 
     if apply_FvT:
-        quadJet["FvT_q_score"] = np.concatenate( [ 
+        quadJet["FvT_q_score"] = np.concatenate( [
             selev.FvT.q_1234[:, np.newaxis],
             selev.FvT.q_1324[:, np.newaxis],
             selev.FvT.q_1423[:, np.newaxis],
         ], axis=1, )
-    
+
     if run_SvB:
 
         if (classifier_SvB is not None) | (classifier_SvB_MA is not None):
             compute_SvB(selev, classifier_SvB, classifier_SvB_MA)
 
-        quadJet["SvB_q_score"] = np.concatenate( [ 
+        quadJet["SvB_q_score"] = np.concatenate( [
             selev.SvB.q_1234[:, np.newaxis],
             selev.SvB.q_1324[:, np.newaxis],
             selev.SvB.q_1423[:, np.newaxis],
             ], axis=1, )
 
-        quadJet["SvB_MA_q_score"] = np.concatenate( [ 
+        quadJet["SvB_MA_q_score"] = np.concatenate( [
             selev.SvB_MA.q_1234[:, np.newaxis],
             selev.SvB_MA.q_1324[:, np.newaxis],
             selev.SvB_MA.q_1423[:, np.newaxis],
@@ -297,7 +307,7 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
     selev["m4j_HHSR"] = ak.where(~selev.quadJet_selected.HHSR, -2, selev.m4j)
     selev["m4j_ZHSR"] = ak.where(~selev.quadJet_selected.ZHSR, -2, selev.m4j)
     selev["m4j_ZZSR"] = ak.where(~selev.quadJet_selected.ZZSR, -2, selev.m4j)
-    
+
     selev['leadStM_selected'] = selev.quadJet_selected.lead.mass
     selev['sublStM_selected'] = selev.quadJet_selected.subl.mass
 

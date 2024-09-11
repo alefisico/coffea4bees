@@ -3,14 +3,14 @@ import warnings
 
 import awkward as ak
 import numpy as np
-import yaml, json 
+import yaml, json
 from analysis.helpers.common import init_jet_factory, update_events
 from analysis.helpers.filling_histograms import (
     filling_nominal_histograms,
     filling_syst_histograms
 )
-from analysis.helpers.event_weights import ( 
-    add_weights, 
+from analysis.helpers.event_weights import (
+    add_weights,
     add_pseudotagweights,
     add_btagweights,
 )
@@ -326,8 +326,7 @@ class analysis(processor.ProcessorABC):
         #
         if self.isMC and self.apply_btagSF:
 
-
-            weights, list_weight_names = add_btagweights( event, weights, 
+            weights, list_weight_names = add_btagweights( event, weights,
                                                          list_weight_names=list_weight_names,
                                                          shift_name=shift_name,
                                                          isSyntheticData=self.isSyntheticData,
@@ -365,8 +364,6 @@ class analysis(processor.ProcessorABC):
         #
         #  Build the top Candiates
         #
-        # dumpTopCandidateTestVectors(selev, logging, self.chunk, 15)
-
         if self.top_reconstruction in ["slow","fast"]:
 
             # sort the jets by btagging
@@ -382,61 +379,34 @@ class analysis(processor.ProcessorABC):
             selev["xbW"] = selev.top_cand.xbW
             selev["xW"] = selev.top_cand.xW
 
-
+        #
+        #  Build di-jets and Quad-jets
+        #
         create_cand_jet_dijet_quadjet( selev, event.event,
                                       isMC = self.isMC,
                                       apply_FvT=self.apply_FvT,
                                       isSyntheticData=self.isSyntheticData,
-                                      apply_boosted_veto=self.apply_boosted_veto, 
+                                      apply_boosted_veto=self.apply_boosted_veto,
                                       run_SvB=self.run_SvB,
                                       classifier_SvB=self.classifier_SvB,
                                       classifier_SvB_MA=self.classifier_SvB_MA,
                                       )
+
         #
         # Example of how to write out event numbers
         #
-        #  passSR = (selev["quadJet_selected"].SR)
-        #  passSR = (selev["SR"])
-        #
-        # out_data = {}
-        # out_data["SvB"    ] = selev["SvB_MA"].ps[passSR]
-        # out_data["event"  ] = selev["event"][passSR]
-        # out_data["run"    ] = selev["run"][passSR]
-        #
-        # debug_mask = ~event.passJetMult
-        # debug_mask = ((event["event"] == 66688  ) |
-        #               (event["event"] == 249987 ) |
-        #               (event["event"] == 121603 ) |
-        #               (event["event"] == 7816   ) |
-        #               (event["event"] == 25353  ) |
-        #               (event["event"] == 165389 ) |
-        #               (event["event"] == 293138 ) |
-        #               (event["event"] == 150164 ) |
-        #               (event["event"] == 262806 ) |
-        #               (event["event"] == 281111 ) )
-        #
-        # out_data["debug_event"  ] = event["event"][debug_mask]
-        # out_data["debug_run"    ] = event["run"][debug_mask]
-        # out_data["debug_jet_pt"    ] = event.Jet[event.Jet.selected_eta].pt[debug_mask].to_list()
-        # out_data["debug_jet_eta"   ] = event.Jet[event.Jet.selected_eta].eta[debug_mask].to_list()
-        # out_data["debug_jet_phi"   ] = event.Jet[event.Jet.selected_eta].phi[debug_mask].to_list()
-        # out_data["debug_jet_pu"    ] = event.Jet[event.Jet.selected_eta].pileup[debug_mask].to_list()
-        # out_data["debug_jet_jetId" ] = event.Jet[event.Jet.selected_eta].jetId[debug_mask].to_list()
-        # out_data["debug_jet_lep"   ] = event.Jet[event.Jet.selected_eta].lepton_cleaned[debug_mask].to_list()
-        #
-        # for out_k, out_v in out_data.items():
-        #     processOutput[out_k] = {}
-        #     processOutput[out_k][event.metadata['dataset']] = list(out_v)
+        # from analysis.helpers.write_debug_info import add_debug_info_to_output
+        # add_debug_info_to_output(selev, processOutput)
 
 
         if self.JCM:
-            weights, list_weight_names = add_pseudotagweights( selev, weights, 
-                                                            analysis_selections, 
+            weights, list_weight_names = add_pseudotagweights( selev, weights,
+                                                            analysis_selections,
                                                             JCM=self.JCM,
                                                             apply_FvT=self.apply_FvT,
                                                             isDataForMixed=self.isDataForMixed,
                                                             list_weight_names=list_weight_names,
-                                                            event_metadata=event.metadata, 
+                                                            event_metadata=event.metadata,
                                                             year_label=year_label,
                                                             len_event=len(event),
             )
@@ -487,17 +457,17 @@ class analysis(processor.ProcessorABC):
 
         if not self.run_systematics:
             ## this can be simplified
-            hist = filling_nominal_histograms(selev, self.JCM, 
-                                              processName=self.processName, 
-                                              year=self.year, 
-                                              isMC=self.isMC, 
-                                              histCuts=self.histCuts, 
-                                              apply_FvT=self.apply_FvT, 
-                                              run_SvB=self.run_SvB, 
-                                              top_reconstruction=self.top_reconstruction, 
-                                              isMixedData=self.isMixedData, 
-                                              isDataForMixed=self.isDataForMixed, 
-                                              isTTForMixed=self.isTTForMixed, 
+            hist = filling_nominal_histograms(selev, self.JCM,
+                                              processName=self.processName,
+                                              year=self.year,
+                                              isMC=self.isMC,
+                                              histCuts=self.histCuts,
+                                              apply_FvT=self.apply_FvT,
+                                              run_SvB=self.run_SvB,
+                                              top_reconstruction=self.top_reconstruction,
+                                              isMixedData=self.isMixedData,
+                                              isDataForMixed=self.isDataForMixed,
+                                              isTTForMixed=self.isTTForMixed,
                                               event_metadata=event.metadata)
 
 
@@ -514,15 +484,16 @@ class analysis(processor.ProcessorABC):
                 friends["friends"] = dump_input_friend( selev, self.make_classifier_input, "HCR_input", _all_selection, weight="weight" if self.isMC else "weight_noJCM_noFvT", NotCanJet="notCanJet_coffea") | dump_JCM_weight( selev, self.make_classifier_input, "JCM_weight", _all_selection) | dump_FvT_weight( selev, self.make_classifier_input, "FvT_weight", _all_selection)
 
             output = hist | processOutput | friends
+
         #
         # Run systematics
         #
         else:
-            hist_SvB = filling_syst_histograms(selev, weights, 
-                                               analysis_selections, 
-                                               shift_name=shift_name, 
-                                               processName=self.processName, 
-                                               year=self.year, 
+            hist_SvB = filling_syst_histograms(selev, weights,
+                                               analysis_selections,
+                                               shift_name=shift_name,
+                                               processName=self.processName,
+                                               year=self.year,
                                                histCuts=self.histCuts)
             output = hist_SvB | processOutput
 

@@ -29,6 +29,7 @@ def add_weights(event, isMC: bool = True,
         weights.add( "genweight", event.genWeight * (lumi * xs * kFactor / event.metadata["genEventSumw"]) )
         list_weight_names.append('genweight')
         logging.debug( f"genweight {weights.partial_weight(include=['genweight'])[:10]}\n" )
+        logging.debug( f" = {event.genWeight} * ({lumi} * {xs} * {kFactor} / {event.metadata['genEventSumw']})\n")
 
         # trigger Weight (to be updated)
         if apply_trigWeight:
@@ -138,14 +139,14 @@ def add_weights(event, isMC: bool = True,
     return weights, list_weight_names
 
 
-def add_pseudotagweights( selev, weights, 
-                         analysis_selections, 
+def add_pseudotagweights( selev, weights,
+                         analysis_selections,
                          JCM: callable = None,
                          apply_FvT: bool = False,
                          isDataForMixed: bool = False,
-                         list_weight_names:list = [], 
-                         event_metadata:dict = {}, 
-                         year_label: str = None,        
+                         list_weight_names:list = [],
+                         event_metadata:dict = {},
+                         year_label: str = None,
                          len_event: int = None,
 ):
 
@@ -180,22 +181,24 @@ def add_pseudotagweights( selev, weights,
         else:
             weight = np.full(len_event, 1.0)
             weight[analysis_selections] = np.where(selev.threeTag, selev["pseudoTagWeight"] * selev.FvT.FvT, 1.0)
-            weights.add("FvT", weight) 
+            weights.add("FvT", weight)
             list_weight_names.append("FvT")
     else:
         weight_noFvT = np.full(len_event, 1.0)
-        weight_noFvT[analysis_selections] = np.where(selev.threeTag, selev.weight * selev["pseudoTagWeight"], selev.weight)
+        # JA do we really want this line v
+        #weight_noFvT[analysis_selections] = np.where(selev.threeTag, selev.weight * selev["pseudoTagWeight"], selev.weight)
         weights.add("no_FvT", weight_noFvT)
         list_weight_names.append("no_FvT")
+        logging.debug( f"no_FvT {weights.partial_weight(include=['no_FvT'])[:10]}\n" )
 
     return weights, list_weight_names
 
-def add_btagweights( event, weights, 
-                    list_weight_names: list = [], 
-                    shift_name: str = None, 
+def add_btagweights( event, weights,
+                    list_weight_names: list = [],
+                    shift_name: str = None,
                     run_systematics: bool = False,
                     isSyntheticData: bool = False,
-                    corrections_metadata: dict = None, 
+                    corrections_metadata: dict = None,
                     ):
 
     if isSyntheticData:
@@ -203,10 +206,10 @@ def add_btagweights( event, weights,
     else:
 
         btag_SF_weights = apply_btag_sf(
-            event.selJet, 
+            event.selJet,
             correction_file=corrections_metadata["btagSF"],
             btag_uncertainties=corrections_metadata["btag_uncertainties"] if (not shift_name) & run_systematics else None
-        )    
+        )
 
         if (not shift_name) & run_systematics:
             weights.add_multivariation( f"CMS_btag", btag_SF_weights["btagSF_central"],

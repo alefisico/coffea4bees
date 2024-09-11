@@ -16,7 +16,7 @@ DATASETS=metadata/datasets_HH4b_cernbox.yml
 echo "############### Running datasets from " $DATASETS
 echo "############### Running test processor"
 python runner.py -t -o test.coffea -d data TTToHadronic TTToSemiLeptonic TTTo2L2Nu  ZH4b ZZ4b GluGluToHHTo4B_cHHH1 -p analysis/processors/processor_HH4b.py -y UL17 UL18 UL16_preVFP UL16_postVFP -op analysis/hists/ -m $DATASETS
-#python runner.py -t -o test_preUL.coffea -d HH4b -p analysis/processors/processor_HH4b.py -y 2016 2017 2018 -op analysis/hists/ -m $DATASETS
-#python analysis/merge_coffea_files.py -f analysis/hists/test_UL.coffea analysis/hists/test_preUL.coffea -o analysis/hists/test.coffea
+
+#python runner.py -t -o test.coffea -d data  -p analysis/processors/processor_HH4b.py -y UL18   -op analysis/hists/ -m $DATASETS
 ls
 cd ../
