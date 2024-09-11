@@ -4,8 +4,16 @@ import difflib
 import re
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from html import escape
 from itertools import chain, cycle, repeat
-from typing import TYPE_CHECKING, Callable, Generator, Iterable, NamedTuple, Optional
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    Generator,
+    Iterable,
+    NamedTuple,
+    Optional,
+)
 
 import numpy as np
 import numpy.typing as npt
@@ -26,6 +34,7 @@ from bokeh.models import (
     ScrollBox,
     Select,
     Slider,
+    TablerIcon,
     TextInput,
     Whisker,
 )
@@ -95,10 +104,17 @@ _HIST_STEP_RIGHT = dict(
     line_width=1,
 )
 
-_HIST_ERRORBAR = dict(
+_HIST_ERRORBAR_BAR = dict(
     base="center",
     level="annotation",
     line_width=1,
+)
+
+_HIST_ERRORBAR_DOT = dict(
+    x="center",
+    size=5,
+    marker="circle",
+    line_width=0,
 )
 
 _BOX_STYLE = {
@@ -107,6 +123,12 @@ _BOX_STYLE = {
 }
 
 _badge = '<span class="badge" style="background-color: {color};">{text}</span>'.format
+
+_GLYPH_ICONS = {
+    "fill": "chart-bar",
+    "step": "chart-line",
+    "errorbar": "chart-candle",
+}
 
 
 class SourceID:
@@ -244,6 +266,13 @@ def _btn(label: str, *onclick):
         else:
             btn.on_click(click)
     return btn
+
+
+def _checkbox():
+    return Checkbox(
+        active=True,
+        width=UI.legend_checkbox_width - 10,  # 5px margin
+    )
 
 
 def _palette(n: int):
@@ -485,12 +514,12 @@ class HistGroup(Component):
         # models
         self._models: list[_KappaModel] = []
         self._dom_models = column(
-            sizing_mode="stretch_width", background=UI.color_background
+            sizing_mode="stretch_width", background=UI.background_color
         )
         # stacks
         self._stacks: list[_StackGroup] = []
         self._dom_stacks = column(
-            sizing_mode="stretch_width", background=UI.color_background
+            sizing_mode="stretch_width", background=UI.background_color
         )
         # processes
         self._processes: list[str] = []
@@ -629,6 +658,7 @@ class HistGroup(Component):
     ):
         bhaxis = BHAxis(flow)
         y_axis_type = "log" if log_y else "linear"
+
         # preprocessing
         models: dict[str, list[_KappaModel]] = defaultdict(list)
         for m in self._models:
@@ -638,19 +668,18 @@ class HistGroup(Component):
         for s in self._stacks:
             if s.matched:
                 stacks.append(s)
-        # render style options
-        glyph_options: dict[str, dict[str, Checkbox]] = defaultdict(dict)
-        glyph_option_doms = []
-        for k in ("Regular", "Stacked"):
-            _options = [Div(text=f"{k}:", styles={"font-weight": "bold"})]
-            for label in ("Fill", "Step", "Errorbar"):
-                glyph_options[k][label] = Checkbox(label=label, active=True)
-                _options.append(glyph_options[k][label])
-            glyph_option_doms.append(
-                row(
-                    *_options, sizing_mode="stretch_width", styles={"border": UI.border}
+
+        # palette
+        colors: dict[str, RGB] = {}
+        palette = iter(
+            _palette(
+                (
+                    len(self._processes)
+                    + len(models)
+                    + sum(len(v.matched) for v in stacks)
                 )
             )
+        )
 
         # render coupling sliders
         coupling_sliders: dict[str, Slider] = {}
@@ -665,27 +694,78 @@ class HistGroup(Component):
                 coupling_sliders[k] = slider
                 coupling_doms.append(dom)
 
-        # render legend
+        # render legend and glyph controls
         legends: dict[str, Checkbox] = {}
-        legends_all = Checkbox(label="All", active=True)
+        legends_all = _checkbox()
+        glyphs: dict[str, dict[str, Checkbox]] = {}
+        glyph_all: dict[str, Checkbox] = {}
+        glyph_expand = self.shared.icon_button(
+            "chevrons-left", label="Glyphs", aspect_ratio=None
+        )
+        for k in _GLYPH_ICONS:
+            glyph_all[k] = _checkbox()
+            legends_all.js_link("active", glyph_all[k], "active")
+
+        glyph_doms = [
+            row(
+                *(
+                    TablerIcon(
+                        icon_name=v,
+                        size=f"{UI.legend_checkbox_width-6}px",
+                        styles={"padding": "0 3px", "title": k},
+                    )
+                    for k, v in _GLYPH_ICONS.items()
+                ),
+                width=UI.legend_glyph_width,
+                visible=False,
+            ),
+            row(*glyph_all.values(), visible=False),
+        ]
         legend_doms = []
+        legend_title_style = _BOX_STYLE.copy()
+        if not coupling_doms:
+            legend_title_style.pop("margin-top")
 
         def legend_add(field: str, label: str):
-            legends[field] = Checkbox(label=label, active=True)
+            colors[field] = color = RGB(next(palette))
+            legends[field] = legend = _checkbox()
             legends_all.js_link("active", legends[field], "active")
-            legend_doms.append(legends[field])
+            glyphs[field] = glyph = {}
+            for k in _GLYPH_ICONS:
+                glyph[k] = _checkbox()
+                legend.js_link("active", glyph[k], "active")
+                glyph_all[k].js_link("active", glyph[k], "active")
+            glyph_doms.append(row(*glyph.values(), visible=False))
+            legend_doms.append(
+                row(
+                    glyph_doms[-1],
+                    legend,
+                    Div(
+                        text=escape(label),
+                        sizing_mode="stretch_width",
+                        styles={
+                            "background-color": color.rgb,
+                            "color": color.contrast_best(_WHITE, _BLACK).rgb,
+                            "border-radius": "4px",
+                            "padding": "2px 5px 2px 5px",
+                            "word-wrap": "anywhere",
+                        },
+                    ),
+                )
+            )
 
         def legend_title(title: str, *badges: str):
-            div = Div(text=title, align="center", styles={"font-size": "1.2em"})
+            padding = Div(text="", width=UI.legend_glyph_width, visible=False, margin=0)
+            div = Div(text=title, align="start", styles={"font-size": "1.2em"})
             if badges:
                 div = self.shared.with_badge(div)
                 div.text = "".join(chain(badges, (div.text,)))
-            legend_doms.append(div)
+            legend_doms.append(row(padding, div, sizing_mode="stretch_width"))
+            glyph_doms.append(padding)
 
         def legend_hr():
             legend_doms.append(self.shared.hr())
 
-        legend_title("Legend")
         for i, p in enumerate(self._processes):
             legend_add(SourceID.regular(i), p)
         legend_hr()
@@ -700,16 +780,34 @@ class HistGroup(Component):
                 legend_add(SourceID.stack(i, j), p)
             legend_hr()
 
-        # setup colors
-        colors: dict[str, RGB] = {}
-        for (k, checkbox), color in zip(legends.items(), _palette(len(legends))):
-            colors[k] = RGB(color)
-            checkbox.styles = {
-                "background-color": color,
-                "color": colors[k].contrast_best(_WHITE, _BLACK).rgb,
-                "border-radius": "4px",
-                "padding": "2px 5px 2px 5px",
-            }
+        legend_dom = ScrollBox(
+            child=column(*legend_doms, sizing_mode="stretch_height"),
+            width=UI.legend_width,
+            styles=_BOX_STYLE,
+            sizing_mode="stretch_height",
+        )
+        glyph_expand.js_on_click(
+            CustomJS(
+                args=dict(legend=legend_dom, glyphs=glyph_doms, button=glyph_expand),
+                code="""
+let icon = "chevrons-left";
+let visible = false;
+let modifier = -1;
+if (button.icon.icon_name == "chevrons-left") {
+    icon = "chevrons-right";
+    visible = true;
+    modifier = 1;
+}
+for (let glyph of glyphs) {
+    glyph.visible = visible;
+}
+button.icon.icon_name = icon;
+"""
+                + f"""
+legend.width = (legend.width + {UI.legend_glyph_width} * modifier);
+""",
+            )
+        )
 
         # TODO render plots
         plots = []
@@ -720,14 +818,14 @@ class HistGroup(Component):
                 tooltips=[
                     ("x\u00B1\u03C3", "@$name"),
                     ("bin", "@label"),
-                    ("dataset", "@$name"),
+                    ("dataset", "$name"),
                 ],
                 point_policy="follow_mouse",
             )
             tooltip.renderers = []
             fig = self.__ticks(
                 figure(
-                    height=UI.height_figure,
+                    height=UI.figure_height,
                     sizing_mode="stretch_width",
                     tools="pan,wheel_zoom,box_zoom,reset",
                     y_axis_type=y_axis_type,
@@ -741,90 +839,82 @@ class HistGroup(Component):
             # initialize data
             _left, _right = self.__edges(axis, bhaxis)
             _width = bhaxis.widths(axis)
-            val_edges = {"left": _left, "right": _right, "label": bhaxis.labels(axis)}
-            var_edges = {"center": (_left + _right) / 2}
+            _edges = {
+                "left": _left,
+                "right": _right,
+                "label": bhaxis.labels(axis),
+                "center": (_left + _right) / 2,
+            }
             _bottom = self.__logy_find_bottom(val) if log_y else 0
 
             # render regular histograms
-            val_source = ColumnDataSource(data=val_edges)
-            var_source = ColumnDataSource(data=var_edges)
+            source = ColumnDataSource(data=_edges)
             for i, p in enumerate(self._processes):
                 # data source
                 field = SourceID.regular(i)
                 _val, _err = self._preprocess(
                     val[p], var[p], normalized, density, _width
                 )
-                val_source.data[p] = self.__tooltips(_val, _err)
-                val_source.data[field] = self.__logy_set_bottom(
-                    _val, _bottom if log_y else None
-                )
-                var_source.data[f"upper_{field}"] = self.__logy_set_bottom(
-                    _val + _err, _bottom if log_y else None
-                )
-                var_source.data[f"lower_{field}"] = self.__logy_set_bottom(
-                    _val - _err, _bottom if log_y else None
-                )
+                source.data[p] = self.__tooltips(_val, _err)
+                for k, v in {
+                    field: _val,
+                    f"upper_{field}": _val + _err,
+                    f"lower_{field}": _val - _err,
+                }.items():
+                    source.data[k] = self.__logy_set_bottom(
+                        v, _bottom if log_y else None
+                    )
+                color = colors[field]
                 # fill glyph
                 fill = fig.quad(
                     top=field,
                     bottom=_bottom,
-                    fill_color=colors[field].copy(0.1).rgba,
-                    source=val_source,
+                    source=source,
+                    fill_color=color.copy(0.1).rgba,
                     **_HIST_FILL,
                     name=p,
                 )
-                checkboxes = [glyph_options["Regular"]["Fill"], legends[field]]
-                fill_visible = CustomJS(
-                    args=dict(glyphs=[fill], checks=checkboxes),
-                    code=_CODES["visibility"],
-                )
-                for checkbox in checkboxes:
-                    checkbox.js_on_change("active", fill_visible)
+                glyphs[field]["fill"].js_link("active", fill, "visible")
                 tooltip.renderers.append(fill)
                 # step glyph
                 step_left = fig.step(
                     y=field,
-                    line_color=colors[field].rgba,
-                    source=val_source,
+                    source=source,
+                    line_color=color.rgba,
                     **_HIST_STEP_LEFT,
                 )
+                glyphs[field]["step"].js_link("active", step_left, "visible")
                 step_right = fig.step(
                     y=field,
-                    line_color=colors[field].rgba,
-                    source=val_source,
+                    source=source,
+                    line_color=color.rgba,
                     **_HIST_STEP_RIGHT,
                 )
-                checkboxes = [glyph_options["Regular"]["Step"], legends[field]]
-                step_visible = CustomJS(
-                    args=dict(glyphs=[step_left, step_right], checks=checkboxes),
-                    code=_CODES["visibility"],
-                )
-                for checkbox in checkboxes:
-                    checkbox.js_on_change("active", step_visible)
+                glyphs[field]["step"].js_link("active", step_right, "visible")
                 # errorbar glyph
-                errorbar = Whisker(
+                errorbar_bar = Whisker(
                     upper=f"upper_{field}",
                     lower=f"lower_{field}",
-                    source=var_source,
-                    line_color=colors[field].rgba,
-                    **_HIST_ERRORBAR,
+                    source=source,
+                    line_color=color.rgba,
+                    **_HIST_ERRORBAR_BAR,
                 )
-                fig.add_layout(errorbar)
-                checkboxes = [glyph_options["Regular"]["Errorbar"], legends[field]]
-                errorbar_visible = CustomJS(
-                    args=dict(glyphs=[errorbar], checks=checkboxes),
-                    code=_CODES["visibility"],
+                fig.add_layout(errorbar_bar)
+                glyphs[field]["errorbar"].js_link("active", errorbar_bar, "visible")
+                errorbar_dot = fig.scatter(
+                    y=field,
+                    source=source,
+                    fill_color=color.rgba,
+                    **_HIST_ERRORBAR_DOT,
                 )
-                for checkbox in checkboxes:
-                    checkbox.js_on_change("active", errorbar_visible)
+                glyphs[field]["errorbar"].js_link("active", errorbar_dot, "visible")
 
             # TODO render models, js normalize, js density, js coupling, one errorbar
 
             # TODO render stacks, js normalize, js density, js stack, one errorbar
 
         return column(
-            row(*glyph_option_doms, sizing_mode="stretch_width"),
-            column(*coupling_doms, sizing_mode="stretch_width"),
+            *coupling_doms,
             row(
                 ScrollBox(
                     child=column(plots, sizing_mode="stretch_both"),
@@ -832,19 +922,23 @@ class HistGroup(Component):
                 ),
                 column(
                     row(
+                        glyph_doms[0],
+                        Div(
+                            text="Legend",
+                            sizing_mode="stretch_width",
+                            styles={"font-size": "1.2em"},
+                        ),
+                        sizing_mode="stretch_width",
+                        styles=legend_title_style,
+                    ),
+                    row(
+                        glyph_doms[1],
                         legends_all,
+                        glyph_expand,
                         sizing_mode="stretch_width",
                         styles=_BOX_STYLE,
                     ),
-                    ScrollBox(
-                        child=column(
-                            *legend_doms,
-                            width=UI.width_side,
-                            sizing_mode="stretch_height",
-                        ),
-                        styles=_BOX_STYLE,
-                        sizing_mode="stretch_height",
-                    ),
+                    legend_dom,
                     sizing_mode="stretch_height",
                 ),
                 sizing_mode="stretch_both",

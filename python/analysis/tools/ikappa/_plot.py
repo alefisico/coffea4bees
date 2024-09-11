@@ -19,7 +19,6 @@ from bokeh.models import (
     MultiChoice,
     ScrollBox,
     Select,
-    TablerIcon,
 )
 from bokeh.resources import Resources
 from hist import Hist
@@ -27,7 +26,7 @@ from hist.axis import AxesMixin
 
 from ._hist import BHAxis, HistGroup
 from ._treeview import TreeView
-from ._utils import Component, Confirmation, PathInput
+from ._utils import Component, Confirmation, DownloadLink, ExternalLink, PathInput
 from .config import UI
 
 if TYPE_CHECKING:
@@ -97,7 +96,7 @@ class Plotter(Component):
     _DIV = {
         "font-size": "1.5em",
         "text-align": "center",
-        "background-color": UI.color_background,
+        "background-color": UI.background_color,
         "z-index": "-1",
         "border": UI.border,
     }
@@ -163,58 +162,46 @@ elements.forEach(e => e.visible = !full);
         )
         self._dom_plot = Button(label="Plot", button_type="success", **self._BUTTON)
         self._dom_plot.on_click(self._dom_select_plot)
-        self._dom_profile = Button(
+        self._dom_profile = ExternalLink(
             label="Profile",
-            icon=TablerIcon(icon_name="external-link", size="1em"),
             button_type="primary",
             **self._BUTTON,
         )
-        self._dom_profile_div = Div(text="", visible=False)
-        self._dom_profile.on_click(self._dom_check_profile)
-        self._dom_profile_div.js_on_change(
-            "text",
-            CustomJS(
-                args=dict(
-                    div=self._dom_profile_div,
-                    columns=["hist", *Profile.__annotations__.keys()],
-                ),
-                code="""
-if (div.text != "") {
-    const profile = JSON.parse(div.text);
-    div.text = "";
-    let table = document.createElement("table");
-    let tr = table.insertRow();
+        self._dom_profile.add_page(
+            self._dom_check_profile,
+            f"""
+const columns = {str(["hist", *Profile.__annotations__.keys()])};
+console.log(columns);
+"""
+            + """
+const profile = JSON.parse(text);
+let table = document.createElement("table");
+let tr = table.insertRow();
+for (const col of columns) {
+    let th = document.createElement("th");
+    th.textContent = col;
+    tr.appendChild(th);
+}
+for (const [k, row] of Object.entries(profile)) {
+    tr = table.insertRow();
     for (const col of columns) {
-        let th = document.createElement("th");
-        th.textContent = col;
-        tr.appendChild(th);
-    }
-    for (const [k, row] of Object.entries(profile)) {
-        tr = table.insertRow();
-        for (const col of columns) {
-            if (col == "hist") {
-                let td = tr.insertCell();
-                td.textContent = k;
-            } else {
-                let td = tr.insertCell();
-                if (col in row) {
-                    td.textContent = row[col];
-                }
+        if (col == "hist") {
+            let td = tr.insertCell();
+            td.textContent = k;
+        } else {
+            let td = tr.insertCell();
+            if (col in row) {
+                td.textContent = row[col];
             }
         }
     }
-    const blob = new Blob([
-        `<!DOCTYPE html><html><head><title>Profile</title><style>
+}
+text = `<!DOCTYPE html><html><head><title>Profile</title><style>
 table, th, td {border: 1px solid black;border-collapse: collapse;}
 th, td {padding: 5px;text-align: center;}
 tr:hover {background-color: rgb(175, 225, 255);}
-</style></head><body>` + table.outerHTML + "</body></html>"], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    window.open(url, "_blank");
-    URL.revokeObjectURL(url);
-}
+</style></head><body>` + table.outerHTML + "</body></html>";
 """,
-            ),
         )
         self._dom_hist_select = self.shared.nonempty(
             self.shared.multichoice(
@@ -235,10 +222,10 @@ tr:hover {background-color: rgb(175, 225, 255);}
             root="hists",
             separator=".",
             icons={
-                "hist1d": "bi-bar-chart-line",
-                "hist2d": "bi-boxes",
+                "hist1d": "ti ti-chart-histogram",
+                "hist2d": "ti ti-chart-scatter",
             },
-            width=UI.width_side,
+            width=UI.sidebar_width,
             sizing_mode="stretch_height",
         )
         self._dom_hist_select.js_link("value", self._dom_hist_tree, "selected")
@@ -246,7 +233,7 @@ tr:hover {background-color: rgb(175, 225, 255);}
         # select categories
         self._dom_cat_select = ScrollBox(
             child=column(
-                width=UI.width_side,
+                width=UI.sidebar_width,
                 sizing_mode="stretch_height",
             ),
             sizing_mode="stretch_height",
@@ -261,6 +248,12 @@ tr:hover {background-color: rgb(175, 225, 255);}
         self._dom_upload_resource = Select(value=_RESOURCE[0], options=_RESOURCE)
         self._dom_upload_confirm = Confirmation(self.shared, "upload")
         self._dom_upload_confirm.on_click(self._dom_upload_plot)
+        self._dom_download = DownloadLink(**self.shared._icon_button_style)
+        self._dom_download._icon.size = "1.5em"
+        self._dom_download.add_page("plots", self._static_plot_page)
+        self._dom_upload_preview = ExternalLink(**self.shared._icon_button_style)
+        self._dom_upload_preview._icon.size = "1.5em"
+        self._dom_upload_preview.add_page(self._static_plot_page)
         # main
         self.group.frozen = True
         self.main = row(
@@ -270,12 +263,13 @@ tr:hover {background-color: rgb(175, 225, 255);}
                     self._dom_upload_path,
                     Div(text="Resource:", align="center"),
                     self._dom_upload_resource,
-                    self._dom_upload_confirm.dom,
+                    *self._dom_upload_confirm,
+                    *self._dom_download,
+                    *self._dom_upload_preview,
                     sizing_mode="stretch_width",
                 ),
                 row(
-                    self._dom_profile,
-                    self._dom_profile_div,
+                    *self._dom_profile,
                     self._dom_plot,
                     self._dom_hist_select,
                     self._dom_full,
@@ -306,17 +300,22 @@ tr:hover {background-color: rgb(175, 225, 255);}
     def status(self, msg: str):
         self.doc.add_next_tick_callback(partial(self._dom_update_status, msg))
 
+    def _static_plot_page(self):
+        if self._dom_content.child is self._dom_status:
+            return ""
+        return file_html(
+            models=self._dom_content.child,
+            resources=Resources(mode=self._dom_upload_resource.value),
+            title="\u03BA Framework Plots",
+        )
+
     def _dom_upload_plot(self):
         if self._dom_content.child is self._dom_status:
             self.log.error("No plot to upload.")
             return
         self._parent.upload(
             path=self._dom_upload_path.value,
-            content=file_html(
-                models=self._dom_content.child,
-                resources=Resources(mode=self._dom_upload_resource.value),
-                title="\u03BA Framework Plots",
-            ),
+            content=self._static_plot_page(),
         )
 
     def _dom_update_status(self, msg: str):
@@ -352,8 +351,9 @@ tr:hover {background-color: rgb(175, 225, 255);}
         self._plot_queue.put((self.config, self._dom_hist_select.value))
 
     def _dom_check_profile(self):
-        profile = {k: self._profile.generate(k) for k in self._dom_hist_select.value}
-        self._dom_profile_div.text = json.dumps(profile)
+        return json.dumps(
+            {k: self._profile.generate(k) for k in self._dom_hist_select.value}
+        )
 
     def _plot(self):
         while task := self._plot_queue.get():

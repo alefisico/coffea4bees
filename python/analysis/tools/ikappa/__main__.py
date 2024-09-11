@@ -16,14 +16,14 @@ import yaml
 from base_class.system.eos import EOS
 from bokeh.document import Document
 from bokeh.layouts import column, row
-from bokeh.models import Button, CustomJS, Div, Select, TablerIcon, Tooltip
+from bokeh.models import Button, Select, Tooltip
 from bokeh.models.dom import HTML
 from bokeh.server.server import Server
 from hist import Hist
 
 from ._plot import Plotter, Profile
 from ._sanity import sanitized
-from ._utils import BokehLog, Component, PathInput, SharedDOM
+from ._utils import BokehLog, Component, ExternalLink, PathInput, SharedDOM
 
 _Actions = Literal["new", "add"]
 _INDENT = "  "
@@ -44,35 +44,19 @@ class Main(Component):
         self._dom_new.on_click(partial(self._dom_load_hist, "new"))
         self._dom_add = Button(label="Add", button_type="success", **self._BUTTON)
         self._dom_add.on_click(partial(self._dom_load_hist, "add"))
-        self._dom_status = Button(
-            label="Status",
-            icon=TablerIcon(icon_name="external-link"),
-            button_type="primary",
-            **self._BUTTON,
+        self._dom_status = ExternalLink(
+            label="Status", button_type="primary", **self._BUTTON
         )
-        self._dom_status.on_click(self._dom_show_status)
-        self._dom_status_div = Div(text="", visible=False)
-        self._dom_status_div.js_on_change(
-            "text",
-            CustomJS(
-                args=dict(div=self._dom_status_div),
-                code="""
-if (div.text != "") {
-    const text = div.text;
-    div.text = "";
-    const blob = new Blob([
-        `<!DOCTYPE html><html><head><title>Status</title><style>
+        self._dom_status.add_page(
+            self._dom_show_status,
+            """         
+text = `<!DOCTYPE html><html><head><title>Status</title><style>
 div.kappa-framework {white-space: pre;}
 div.box {background-color: #f0f0f0; border: 1px solid #d0d0d0; width: fit-content; min-width: calc(100% - 20px); padding: 10px;}
 div.code {font-family: monospace; white-space: pre; display: block;}
 div.itemize {white-space: break-spaces;}
-</style></head><body><div class="kappa-framework" style="width: auto;">`+ text + "</div></body></html>"], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    window.open(url, "_blank");
-    URL.revokeObjectURL(url);
-}
+</style></head><body><div class="kappa-framework" style="width: auto;">`+ text + "</div></body></html>"
 """,
-            ),
         )
         self._dom_hist_input = PathInput(
             title="File:",
@@ -102,8 +86,7 @@ div.itemize {white-space: break-spaces;}
             self._dom_add,
             self._dom_hist_input,
             self._dom_hist_compression,
-            self._dom_status,
-            self._dom_status_div,
+            *self._dom_status,
             sizing_mode="stretch_width",
         )
 
@@ -164,7 +147,7 @@ div.itemize {white-space: break-spaces;}
             content.append(yaml.safe_dump(self._profiles).replace("\n", "<br>"))
             content.append("</div>")
 
-        self._dom_status_div.text = "".join(content)
+        return "".join(content)
 
     def _load_hist(self):
         while task := self._load_queue.get():

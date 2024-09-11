@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import html
+import json
 import re
 import traceback
 from datetime import datetime
@@ -46,6 +47,106 @@ def PathInput(**kwargs):
     return model
 
 
+class ExternalLink:
+    _ICON = "external-link"
+    _ACTION = """
+window.open(url, '_blank');
+URL.revokeObjectURL(url);
+"""
+
+    def __init__(self, **kwargs):
+        kwargs.pop("icon", None)
+        self._icon = TablerIcon(icon_name=self._ICON)
+        self._button = Button(icon=self._icon, **kwargs)
+        self._div = Div(text="", visible=False)
+        self.doms = (self._button, self._div)
+
+        self._button.js_on_click(
+            CustomJS(
+                args=dict(icon=self._icon, button=self._button),
+                code='icon.icon_name="loader"; button.disabled=true;',
+            )
+        )
+        self._icon.on_change("icon_name", self._dom_send_page)
+        self._div.js_on_change(
+            "text",
+            CustomJS(
+                args=dict(div=self._div, button=self._button, icon=self._icon),
+                # fmt: off
+                code="""
+if (div.text !== "") {
+    button.disabled = false;
+""" + 
+  f'icon.icon_name = "{self._ICON}";' + """
+    let pages = JSON.parse(div.text);
+    div.text = "";
+    for (let page of pages) {
+        let content = page.page;
+        if (page.parser !== "") {
+            content = (function(text){
+                eval(page.parser);
+                return text;
+            })(content);
+        }
+        const blob = new Blob([content], {type: 'text/html'});
+        const url = URL.createObjectURL(blob);
+""" +       
+        self._ACTION + """
+    }
+}
+""",
+                # fmt: on
+            ),
+        )
+
+        self._pages: list[tuple] = []
+
+    def __iter__(self):
+        yield from self.doms
+
+    def add_page(self, page: Callable[[], str], parser: Optional[str] = None):
+        self._pages.append((page, parser))
+
+    def _generate_page(self, page: tuple) -> dict:
+        return {"page": page[0](), "parser": page[1] or ""}
+
+    def _dom_send_page(self, attr, old, new):
+        if new != "loader":
+            return
+        if self._pages:
+            pages = []
+            for page in self._pages:
+                pages.append(self._generate_page(page))
+            self._div.text = json.dumps(pages)
+
+    @property
+    def disabled(self):
+        return self._button.disabled
+
+    @disabled.setter
+    def disabled(self, value: bool):
+        self._button.disabled = value
+
+
+class DownloadLink(ExternalLink):
+    _ICON = "download"
+    _ACTION = """
+const a = document.createElement('a');
+a.href = url;
+a.download = page.file+".html";
+a.click();
+URL.revokeObjectURL(url);
+"""
+
+    def add_page(
+        self, file: str, page: Callable[[], str], parser: Optional[str] = None
+    ):
+        self._pages.append((file, page, parser))
+
+    def _generate_page(self, page: tuple) -> dict:
+        return {"file": page[0], "page": page[1](), "parser": page[2] or ""}
+
+
 class Confirmation:
     def __init__(self, shared: SharedDOM, icon: str, **kwargs):
         kwargs.pop("button_type", None)
@@ -83,7 +184,10 @@ action.visible = true;
         self._dom_confirm.js_on_click(reset)
         self._dom_cancel.js_on_click(reset)
 
-        self.dom = row([self._dom_action, self._dom_confirm, self._dom_cancel])
+        self.doms = (self._dom_action, self._dom_confirm, self._dom_cancel)
+
+    def __iter__(self):
+        yield from self.doms
 
     def on_click(self, handler: EventCallback):
         self._dom_confirm.on_click(handler)
@@ -92,8 +196,10 @@ action.visible = true;
 class BokehLog:
     _BLOB = """
 const page = "<!DOCTYPE html><html><head><title>Log</title></head><body><div style='white-space: pre;'>" + log.text + "</div></body></html>";
-const blob = new Blob([page], {type: 'text/html'});
+const blob = new Blob([page], {{type: 'text/html'}});
 const url = URL.createObjectURL(blob);
+{}
+URL.revokeObjectURL(url);
 """
     _BUTTON = {
         "label": "",
@@ -106,11 +212,11 @@ const url = URL.createObjectURL(blob);
         self._doc = doc
         self._dom_log = Div(
             text="",
-            height=UI.height_log,
+            height=UI.log_height,
             sizing_mode="stretch_width",
             styles=Styles(
                 overflow="auto",
-                background=UI.color_background,
+                background=UI.background_color,
                 padding_left="10px",
                 margin="0px",
                 border=UI.border,
@@ -124,14 +230,14 @@ const url = URL.createObjectURL(blob);
         self._dom_dump.js_on_click(
             CustomJS(
                 args=dict(log=self._dom_log),
-                code=self._BLOB
-                + """
+                code=self._BLOB.format(
+                    """
 const a = document.createElement('a');
 a.href = url;
 a.download = 'log.html';
 a.click();
-URL.revokeObjectURL(url);
-""",
+"""
+                ),
             )
         )
         self._dom_max = Button(
@@ -141,11 +247,7 @@ URL.revokeObjectURL(url);
         self._dom_max.js_on_click(
             CustomJS(
                 args=dict(log=self._dom_log),
-                code=self._BLOB
-                + """
-window.open(url, '_blank');
-URL.revokeObjectURL(url);
-""",
+                code=self._BLOB.format("window.open(url, '_blank');"),
             )
         )
         self.dom = row(
@@ -217,12 +319,12 @@ class SharedDOM:
 
         self._multichoice_z_index = 1000
         self._multichoice_style = {
-            "height": UI.height_multichoice,
+            "height": UI.multichoice_height,
             "sizing_mode": "stretch_width",
         }
 
         self._float_input_style = {
-            "width": UI.width_numeric_input,
+            "width": UI.numeric_input_width,
             "mode": "float",
         }
 
@@ -237,7 +339,7 @@ div.bk-clearfix {{
 hr {{
     border: none;
     height: 1px;
-    background-color: {UI.color_border};
+    background-color: {UI.border_color};
 }}
 """
                 )
