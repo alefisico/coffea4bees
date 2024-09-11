@@ -134,13 +134,13 @@ def apply_object_selection_boosted_4b( event ):
     return event
 
 def create_cand_jet_dijet_quadjet( selev, event_event,
-                                  isMC:bool = False,
-                                  apply_FvT:bool = False,
-                                  apply_boosted_veto:bool = False,
-                                  run_SvB:bool = False,
-                                  isSyntheticData:bool = False,
-                                  classifier_SvB = None,
-                                  classifier_SvB_MA = None,
+                                   isMC:bool = False,
+                                   apply_FvT:bool = False,
+                                   apply_boosted_veto:bool = False,
+                                   run_SvB:bool = False,
+                                   isSyntheticData:bool = False,
+                                   classifier_SvB = None,
+                                   classifier_SvB_MA = None,
                                    ):
     #
     # Build and select boson candidate jets with bRegCorr applied
@@ -221,7 +221,7 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
     #
     # Build quadJets
     #
-    rng = Squares("quadJetSelection", self.dataset, self.year)
+    rng = Squares("quadJetSelection", event_event)
     counter = np.zeros((len(selev), 3, 2), dtype=np.uint64)
     counter[:, :, 0] = np.round(np.asarray(diJet[:, :, 0].mass), 0).view(np.uint64)
     counter[:, :, 1] = np.round(np.asarray(diJet[:, :, 1].mass), 0).view(np.uint64)
