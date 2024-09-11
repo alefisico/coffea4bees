@@ -8,11 +8,11 @@ from jet_clustering.declustering import make_synthetic_event, clean_ISR
 from analysis.helpers.SvB_helpers import setSvBVars, subtract_ttbar_with_SvB
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
 from base_class.math.random import Squares
-from analysis.helpers.event_weights import add_weights
+from analysis.helpers.event_weights import add_weights, add_btagweights
 
 from coffea.analysis_tools import Weights, PackedSelection
 import numpy as np
-from analysis.helpers.common import init_jet_factory, apply_btag_sf
+from analysis.helpers.common import init_jet_factory, update_events
 from copy import copy
 import logging
 import awkward as ak
@@ -41,7 +41,6 @@ class DeClusterer(PicoAOD):
             "passJetMult",
             "passFourTag",
             "passFourTag_btagSF",
-            "passFourTag_btagSF_woTrig",
             "pass_ttbar_filter",
         ]
 
@@ -75,8 +74,8 @@ class DeClusterer(PicoAOD):
             # defining SvB_MA
             setSvBVars("SvB_MA", event)
 
-
         event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year] )
+
 
         ## adds all the event mc weights and 1 for data
         weights, list_weight_names = add_weights( event, isMC, dataset, year_label,
@@ -86,7 +85,22 @@ class DeClusterer(PicoAOD):
                                                   isTTForMixed=False,
                                                  )
 
-        event = apply_object_selection_4b( event, self.corrections_metadata[year]  )
+        #
+        # Temp debgging
+        #
+        debug_mask = ((event["event"] == 11170  ) |
+                      (event["event"] == 11259  ) |
+                      (event["event"] == 393684 ) |
+                      (event["event"] == 63447  ) |
+                      (event["event"] == 11113  ) |
+                      (event["event"] == 63276  ) |
+                      (event["event"] == 11823  ) |
+                      (event["event"] == 11348  ) |
+                      (event["event"] == 11803  ) |
+                      (event["event"] == 275229 ) )
+
+        print(f"\n {chunk} Event {event.event[debug_mask].to_list()} \n")
+        print(f"\n {chunk} jet pt Before calibration {event.Jet.pt[debug_mask].to_list()} \n")
 
         #
         # Calculate and apply Jet Energy Calibration
@@ -99,7 +113,13 @@ class DeClusterer(PicoAOD):
                        for istep in ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"] ] #+ self.corrections_metadata[self.year]["JERC"][2:]
             jets = init_jet_factory(juncWS, event, isMC)
 
-        event.Jet = jets
+
+        event = update_events(event, {"Jet": jets})
+
+        print(f"\n {chunk} jet pt After calibration {event.Jet.pt[debug_mask].to_list()} \n")
+
+        event = apply_object_selection_4b( event, self.corrections_metadata[year]  )
+
 
         #
         # Get the trigger weights
@@ -138,16 +158,15 @@ class DeClusterer(PicoAOD):
         # Add Btag SF
         #
         if isMC:
-            weights.add( "CMS_btag",
-                         apply_btag_sf( event.selJet, correction_file=self.corrections_metadata[year]["btagSF"], btag_uncertainties=None, )["btagSF_central"], )
-            list_weight_names.append(f"CMS_btag")
 
+            weights, list_weight_names = add_btagweights( event, weights,
+                                                          list_weight_names=list_weight_names,
+                                                          corrections_metadata=self.corrections_metadata[year]
+            )
             logging.debug( f"Btag weight {weights.partial_weight(include=['CMS_btag'])[:10]}\n" )
             event["weight"] = weights.weight()
 
             self._cutFlow.fill( "passFourTag_btagSF", event[selections.all(*cumulative_cuts)], allTag=True )
-            self._cutFlow.fill( "passFourTag_btagSF_woTrig", event[selections.all(*cumulative_cuts)], allTag=True,
-                                wOverride=float(np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[selections.all(*cumulative_cuts)])) )
 
         selection = event.lumimask & event.passNoiseFilter & event.passJetMult & event.fourTag
         if not isMC: selection = selection & event.passHLT
