@@ -118,7 +118,6 @@ class DeClusterer(PicoAOD):
 
         print(f"\n {chunk} jet pt After calibration {event.Jet.pt[debug_mask].to_list()} \n")
 
-
         event = apply_object_selection_4b( event, self.corrections_metadata[year]  )
 
 
