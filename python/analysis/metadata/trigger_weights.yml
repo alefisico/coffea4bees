@@ -1,0 +1,7 @@
+runner:
+  condor_cores: 1
+  condor_memory: 4GB
+
+config:
+  # make_classifier_input: root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/
+  make_classifier_input: /srv/python/hists/local/   ### local
