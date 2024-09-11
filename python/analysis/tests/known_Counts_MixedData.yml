@@ -3,8 +3,8 @@ counts4:
         passJetMult: 988.0
         passPreSel: 971.0
         passDiJetMass: 337.0
-        SR: 133.0
-        SB: 204.0
+        SR: 129.0
+        SB: 208.0
         passSvB: 8.0
         failSvB: 636.0
 
@@ -12,8 +12,8 @@ counts4:
         passJetMult: 986.0
         passPreSel: 956.0
         passDiJetMass: 353.0
-        SR: 123.0
-        SB: 230.0
+        SR: 124.0
+        SB: 229.0
         passSvB: 13.0
         failSvB: 630.0
 
@@ -21,8 +21,8 @@ counts4:
         passJetMult: 969.0
         passPreSel: 945.0
         passDiJetMass: 422.0
-        SR: 160.0
-        SB: 262.0
+        SR: 156.0
+        SB: 266.0
         passSvB: 7.0
         failSvB: 637.0
 
@@ -30,8 +30,8 @@ counts4:
         passJetMult: 989.0
         passPreSel: 958.0
         passDiJetMass: 319.0
-        SR: 119.0
-        SB: 200.0
+        SR: 117.0
+        SB: 202.0
         passSvB: 7.0
         failSvB: 662.0
 
@@ -39,8 +39,8 @@ counts4:
         passJetMult: 992.0
         passPreSel: 955.0
         passDiJetMass: 359.0
-        SR: 118.0
-        SB: 241.0
+        SR: 111.0
+        SB: 248.0
         passSvB: 4.0
         failSvB: 653.0
 
@@ -48,8 +48,8 @@ counts4:
         passJetMult: 990.0
         passPreSel: 972.0
         passDiJetMass: 439.0
-        SR: 159.0
-        SB: 280.0
+        SR: 153.0
+        SB: 286.0
         passSvB: 6.0
         failSvB: 614.0
 
@@ -57,8 +57,8 @@ counts4:
         passJetMult: 995.0
         passPreSel: 980.0
         passDiJetMass: 322.0
-        SR: 135.0
-        SB: 187.0
+        SR: 129.0
+        SB: 193.0
         passSvB: 9.0
         failSvB: 653.0
 
@@ -66,8 +66,8 @@ counts4:
         passJetMult: 992.0
         passPreSel: 944.0
         passDiJetMass: 332.0
-        SR: 110.0
-        SB: 222.0
+        SR: 109.0
+        SB: 223.0
         passSvB: 10.0
         failSvB: 651.0
 
@@ -75,8 +75,8 @@ counts4:
         passJetMult: 983.0
         passPreSel: 964.0
         passDiJetMass: 407.0
-        SR: 142.0
-        SB: 265.0
+        SR: 144.0
+        SB: 263.0
         passSvB: 12.0
         failSvB: 632.0
 
@@ -102,8 +102,8 @@ counts4:
         passJetMult: 988.0
         passPreSel: 957.0
         passDiJetMass: 434.0
-        SR: 150.0
-        SB: 284.0
+        SR: 158.0
+        SB: 276.0
         passSvB: 14.0
         failSvB: 627.0
 
@@ -111,8 +111,8 @@ counts4:
         passJetMult: 994.0
         passPreSel: 965.0
         passDiJetMass: 333.0
-        SR: 117.0
-        SB: 216.0
+        SR: 122.0
+        SB: 211.0
         passSvB: 7.0
         failSvB: 649.0
 
@@ -120,8 +120,8 @@ counts4:
         passJetMult: 992.0
         passPreSel: 951.0
         passDiJetMass: 347.0
-        SR: 128.0
-        SB: 219.0
+        SR: 126.0
+        SB: 221.0
         passSvB: 12.0
         failSvB: 615.0
 
@@ -129,8 +129,8 @@ counts4:
         passJetMult: 986.0
         passPreSel: 966.0
         passDiJetMass: 425.0
-        SR: 150.0
-        SB: 275.0
+        SR: 152.0
+        SB: 273.0
         passSvB: 10.0
         failSvB: 634.0
 
@@ -138,8 +138,8 @@ counts4:
         passJetMult: 995.0
         passPreSel: 964.0
         passDiJetMass: 346.0
-        SR: 117.0
-        SB: 229.0
+        SR: 116.0
+        SB: 230.0
         passSvB: 7.0
         failSvB: 650.0
 
@@ -147,8 +147,8 @@ counts4:
         passJetMult: 990.0
         passPreSel: 954.0
         passDiJetMass: 340.0
-        SR: 117.0
-        SB: 223.0
+        SR: 115.0
+        SB: 225.0
         passSvB: 8.0
         failSvB: 630.0
 
@@ -156,8 +156,8 @@ counts4:
         passJetMult: 989.0
         passPreSel: 971.0
         passDiJetMass: 420.0
-        SR: 167.0
-        SB: 253.0
+        SR: 165.0
+        SB: 255.0
         passSvB: 10.0
         failSvB: 620.0
 
@@ -165,8 +165,8 @@ counts4:
         passJetMult: 993.0
         passPreSel: 970.0
         passDiJetMass: 359.0
-        SR: 131.0
-        SB: 228.0
+        SR: 130.0
+        SB: 229.0
         passSvB: 8.0
         failSvB: 633.0
 
@@ -183,8 +183,8 @@ counts4:
         passJetMult: 979.0
         passPreSel: 958.0
         passDiJetMass: 403.0
-        SR: 163.0
-        SB: 240.0
+        SR: 164.0
+        SB: 239.0
         passSvB: 12.0
         failSvB: 645.0
 
@@ -192,8 +192,8 @@ counts4:
         passJetMult: 992.0
         passPreSel: 973.0
         passDiJetMass: 355.0
-        SR: 146.0
-        SB: 209.0
+        SR: 142.0
+        SB: 213.0
         passSvB: 7.0
         failSvB: 643.0
 
@@ -201,8 +201,8 @@ counts4:
         passJetMult: 985.0
         passPreSel: 958.0
         passDiJetMass: 375.0
-        SR: 131.0
-        SB: 244.0
+        SR: 135.0
+        SB: 240.0
         passSvB: 7.0
         failSvB: 619.0
 
@@ -228,8 +228,8 @@ counts4:
         passJetMult: 993.0
         passPreSel: 957.0
         passDiJetMass: 342.0
-        SR: 136.0
-        SB: 206.0
+        SR: 131.0
+        SB: 211.0
         passSvB: 6.0
         failSvB: 611.0
 
@@ -246,8 +246,8 @@ counts4:
         passJetMult: 991.0
         passPreSel: 963.0
         passDiJetMass: 321.0
-        SR: 105.0
-        SB: 216.0
+        SR: 109.0
+        SB: 212.0
         passSvB: 2.0
         failSvB: 614.0
 
@@ -273,8 +273,8 @@ counts4:
         passJetMult: 989.0
         passPreSel: 969.0
         passDiJetMass: 363.0
-        SR: 113.0
-        SB: 250.0
+        SR: 120.0
+        SB: 243.0
         passSvB: 5.0
         failSvB: 632.0
 
@@ -282,8 +282,8 @@ counts4:
         passJetMult: 996.0
         passPreSel: 961.0
         passDiJetMass: 373.0
-        SR: 129.0
-        SB: 244.0
+        SR: 128.0
+        SB: 245.0
         passSvB: 12.0
         failSvB: 642.0
 
@@ -291,8 +291,8 @@ counts4:
         passJetMult: 982.0
         passPreSel: 971.0
         passDiJetMass: 398.0
-        SR: 134.0
-        SB: 264.0
+        SR: 131.0
+        SB: 267.0
         passSvB: 12.0
         failSvB: 657.0
 
@@ -300,8 +300,8 @@ counts4:
         passJetMult: 990.0
         passPreSel: 957.0
         passDiJetMass: 363.0
-        SR: 123.0
-        SB: 240.0
+        SR: 125.0
+        SB: 238.0
         passSvB: 12.0
         failSvB: 625.0
 
@@ -309,8 +309,8 @@ counts4:
         passJetMult: 996.0
         passPreSel: 961.0
         passDiJetMass: 373.0
-        SR: 127.0
-        SB: 246.0
+        SR: 128.0
+        SB: 245.0
         passSvB: 12.0
         failSvB: 642.0
 
@@ -318,8 +318,8 @@ counts4:
         passJetMult: 985.0
         passPreSel: 960.0
         passDiJetMass: 429.0
-        SR: 150.0
-        SB: 279.0
+        SR: 149.0
+        SB: 280.0
         passSvB: 9.0
         failSvB: 655.0
 
@@ -327,8 +327,8 @@ counts4:
         passJetMult: 986.0
         passPreSel: 956.0
         passDiJetMass: 345.0
-        SR: 136.0
-        SB: 209.0
+        SR: 137.0
+        SB: 208.0
         passSvB: 8.0
         failSvB: 614.0
 
@@ -345,8 +345,8 @@ counts4:
         passJetMult: 983.0
         passPreSel: 951.0
         passDiJetMass: 399.0
-        SR: 161.0
-        SB: 238.0
+        SR: 157.0
+        SB: 242.0
         passSvB: 14.0
         failSvB: 645.0
 
@@ -354,8 +354,8 @@ counts4:
         passJetMult: 991.0
         passPreSel: 963.0
         passDiJetMass: 321.0
-        SR: 122.0
-        SB: 199.0
+        SR: 123.0
+        SB: 198.0
         passSvB: 9.0
         failSvB: 637.0
 
@@ -363,8 +363,8 @@ counts4:
         passJetMult: 988.0
         passPreSel: 960.0
         passDiJetMass: 351.0
-        SR: 123.0
-        SB: 228.0
+        SR: 124.0
+        SB: 227.0
         passSvB: 7.0
         failSvB: 647.0
 
@@ -372,8 +372,8 @@ counts4:
         passJetMult: 980.0
         passPreSel: 955.0
         passDiJetMass: 421.0
-        SR: 146.0
-        SB: 275.0
+        SR: 148.0
+        SB: 273.0
         passSvB: 11.0
         failSvB: 634.0
 
@@ -381,8 +381,8 @@ counts4:
         passJetMult: 991.0
         passPreSel: 967.0
         passDiJetMass: 324.0
-        SR: 139.0
-        SB: 185.0
+        SR: 134.0
+        SB: 190.0
         passSvB: 11.0
         failSvB: 651.0
 
@@ -390,8 +390,8 @@ counts4:
         passJetMult: 986.0
         passPreSel: 955.0
         passDiJetMass: 364.0
-        SR: 128.0
-        SB: 236.0
+        SR: 132.0
+        SB: 232.0
         passSvB: 9.0
         failSvB: 624.0
 
@@ -399,8 +399,8 @@ counts4:
         passJetMult: 983.0
         passPreSel: 958.0
         passDiJetMass: 431.0
-        SR: 146.0
-        SB: 285.0
+        SR: 140.0
+        SB: 291.0
         passSvB: 7.0
         failSvB: 624.0
 
@@ -438,8 +438,8 @@ counts3:
         passJetMult: 989.0
         passPreSel: 1.14
         passDiJetMass: 0.46
-        SR: 0.26
-        SB: 0.2
+        SR: 0.29
+        SB: 0.17
         passSvB: 0.0
         failSvB: 0.47
 
@@ -474,8 +474,8 @@ counts3:
         passJetMult: 992.0
         passPreSel: 2.19
         passDiJetMass: 0.5
-        SR: 0.25
-        SB: 0.25
+        SR: 0.17
+        SB: 0.33
         passSvB: 0.0
         failSvB: 1.37
 
@@ -573,8 +573,8 @@ counts3:
         passJetMult: 993.0
         passPreSel: 0.96
         passDiJetMass: 0.48
-        SR: 0.17
-        SB: 0.31
+        SR: 0.2
+        SB: 0.27
         passSvB: 0.03
         failSvB: 0.58
 
@@ -582,8 +582,8 @@ counts3:
         passJetMult: 984.0
         passPreSel: 1.68
         passDiJetMass: 0.81
-        SR: 0.54
-        SB: 0.28
+        SR: 0.49
+        SB: 0.32
         passSvB: 0.0
         failSvB: 0.9
 
@@ -627,8 +627,8 @@ counts3:
         passJetMult: 998.0
         passPreSel: 1.31
         passDiJetMass: 0.45
-        SR: 0.2
-        SB: 0.25
+        SR: 0.23
+        SB: 0.22
         passSvB: 0.07
         failSvB: 0.81
 
@@ -717,8 +717,8 @@ counts3:
         passJetMult: 996.0
         passPreSel: 1.66
         passDiJetMass: 0.42
-        SR: 0.1
-        SB: 0.32
+        SR: 0.07
+        SB: 0.35
         passSvB: 0.0
         failSvB: 1.28
 
@@ -735,8 +735,8 @@ counts3:
         passJetMult: 986.0
         passPreSel: 1.07
         passDiJetMass: 0.26
-        SR: 0.11
-        SB: 0.15
+        SR: 0.05
+        SB: 0.2
         passSvB: 0.04
         failSvB: 0.52
 
@@ -780,8 +780,8 @@ counts3:
         passJetMult: 980.0
         passPreSel: 0.71
         passDiJetMass: 0.37
-        SR: 0.09
-        SB: 0.28
+        SR: 0.14
+        SB: 0.24
         passSvB: 0.0
         failSvB: 0.53
 
@@ -819,8 +819,8 @@ counts4_unit:
         passJetMult: 988.0
         passPreSel: 971.0
         passDiJetMass: 337.0
-        SR: 133.0
-        SB: 204.0
+        SR: 129.0
+        SB: 208.0
         passSvB: 8.0
         failSvB: 636.0
 
@@ -828,8 +828,8 @@ counts4_unit:
         passJetMult: 986.0
         passPreSel: 956.0
         passDiJetMass: 353.0
-        SR: 123.0
-        SB: 230.0
+        SR: 124.0
+        SB: 229.0
         passSvB: 13.0
         failSvB: 630.0
 
@@ -837,8 +837,8 @@ counts4_unit:
         passJetMult: 969.0
         passPreSel: 945.0
         passDiJetMass: 422.0
-        SR: 160.0
-        SB: 262.0
+        SR: 156.0
+        SB: 266.0
         passSvB: 7.0
         failSvB: 637.0
 
@@ -846,8 +846,8 @@ counts4_unit:
         passJetMult: 989.0
         passPreSel: 958.0
         passDiJetMass: 319.0
-        SR: 119.0
-        SB: 200.0
+        SR: 117.0
+        SB: 202.0
         passSvB: 7.0
         failSvB: 662.0
 
@@ -855,8 +855,8 @@ counts4_unit:
         passJetMult: 992.0
         passPreSel: 955.0
         passDiJetMass: 359.0
-        SR: 118.0
-        SB: 241.0
+        SR: 111.0
+        SB: 248.0
         passSvB: 4.0
         failSvB: 653.0
 
@@ -864,8 +864,8 @@ counts4_unit:
         passJetMult: 990.0
         passPreSel: 972.0
         passDiJetMass: 439.0
-        SR: 159.0
-        SB: 280.0
+        SR: 153.0
+        SB: 286.0
         passSvB: 6.0
         failSvB: 614.0
 
@@ -873,8 +873,8 @@ counts4_unit:
         passJetMult: 995.0
         passPreSel: 980.0
         passDiJetMass: 322.0
-        SR: 135.0
-        SB: 187.0
+        SR: 129.0
+        SB: 193.0
         passSvB: 9.0
         failSvB: 653.0
 
@@ -882,8 +882,8 @@ counts4_unit:
         passJetMult: 992.0
         passPreSel: 944.0
         passDiJetMass: 332.0
-        SR: 110.0
-        SB: 222.0
+        SR: 109.0
+        SB: 223.0
         passSvB: 10.0
         failSvB: 651.0
 
@@ -891,8 +891,8 @@ counts4_unit:
         passJetMult: 983.0
         passPreSel: 964.0
         passDiJetMass: 407.0
-        SR: 142.0
-        SB: 265.0
+        SR: 144.0
+        SB: 263.0
         passSvB: 12.0
         failSvB: 632.0
 
@@ -918,8 +918,8 @@ counts4_unit:
         passJetMult: 988.0
         passPreSel: 957.0
         passDiJetMass: 434.0
-        SR: 150.0
-        SB: 284.0
+        SR: 158.0
+        SB: 276.0
         passSvB: 14.0
         failSvB: 627.0
 
@@ -927,8 +927,8 @@ counts4_unit:
         passJetMult: 994.0
         passPreSel: 965.0
         passDiJetMass: 333.0
-        SR: 117.0
-        SB: 216.0
+        SR: 122.0
+        SB: 211.0
         passSvB: 7.0
         failSvB: 649.0
 
@@ -936,8 +936,8 @@ counts4_unit:
         passJetMult: 992.0
         passPreSel: 951.0
         passDiJetMass: 347.0
-        SR: 128.0
-        SB: 219.0
+        SR: 126.0
+        SB: 221.0
         passSvB: 12.0
         failSvB: 615.0
 
@@ -945,8 +945,8 @@ counts4_unit:
         passJetMult: 986.0
         passPreSel: 966.0
         passDiJetMass: 425.0
-        SR: 150.0
-        SB: 275.0
+        SR: 152.0
+        SB: 273.0
         passSvB: 10.0
         failSvB: 634.0
 
@@ -954,8 +954,8 @@ counts4_unit:
         passJetMult: 995.0
         passPreSel: 964.0
         passDiJetMass: 346.0
-        SR: 117.0
-        SB: 229.0
+        SR: 116.0
+        SB: 230.0
         passSvB: 7.0
         failSvB: 650.0
 
@@ -963,8 +963,8 @@ counts4_unit:
         passJetMult: 990.0
         passPreSel: 954.0
         passDiJetMass: 340.0
-        SR: 117.0
-        SB: 223.0
+        SR: 115.0
+        SB: 225.0
         passSvB: 8.0
         failSvB: 630.0
 
@@ -972,8 +972,8 @@ counts4_unit:
         passJetMult: 989.0
         passPreSel: 971.0
         passDiJetMass: 420.0
-        SR: 167.0
-        SB: 253.0
+        SR: 165.0
+        SB: 255.0
         passSvB: 10.0
         failSvB: 620.0
 
@@ -981,8 +981,8 @@ counts4_unit:
         passJetMult: 993.0
         passPreSel: 970.0
         passDiJetMass: 359.0
-        SR: 131.0
-        SB: 228.0
+        SR: 130.0
+        SB: 229.0
         passSvB: 8.0
         failSvB: 633.0
 
@@ -999,8 +999,8 @@ counts4_unit:
         passJetMult: 979.0
         passPreSel: 958.0
         passDiJetMass: 403.0
-        SR: 163.0
-        SB: 240.0
+        SR: 164.0
+        SB: 239.0
         passSvB: 12.0
         failSvB: 645.0
 
@@ -1008,8 +1008,8 @@ counts4_unit:
         passJetMult: 992.0
         passPreSel: 973.0
         passDiJetMass: 355.0
-        SR: 146.0
-        SB: 209.0
+        SR: 142.0
+        SB: 213.0
         passSvB: 7.0
         failSvB: 643.0
 
@@ -1017,8 +1017,8 @@ counts4_unit:
         passJetMult: 985.0
         passPreSel: 958.0
         passDiJetMass: 375.0
-        SR: 131.0
-        SB: 244.0
+        SR: 135.0
+        SB: 240.0
         passSvB: 7.0
         failSvB: 619.0
 
@@ -1044,8 +1044,8 @@ counts4_unit:
         passJetMult: 993.0
         passPreSel: 957.0
         passDiJetMass: 342.0
-        SR: 136.0
-        SB: 206.0
+        SR: 131.0
+        SB: 211.0
         passSvB: 6.0
         failSvB: 611.0
 
@@ -1062,8 +1062,8 @@ counts4_unit:
         passJetMult: 991.0
         passPreSel: 963.0
         passDiJetMass: 321.0
-        SR: 105.0
-        SB: 216.0
+        SR: 109.0
+        SB: 212.0
         passSvB: 2.0
         failSvB: 614.0
 
@@ -1089,8 +1089,8 @@ counts4_unit:
         passJetMult: 989.0
         passPreSel: 969.0
         passDiJetMass: 363.0
-        SR: 113.0
-        SB: 250.0
+        SR: 120.0
+        SB: 243.0
         passSvB: 5.0
         failSvB: 632.0
 
@@ -1098,8 +1098,8 @@ counts4_unit:
         passJetMult: 996.0
         passPreSel: 961.0
         passDiJetMass: 373.0
-        SR: 129.0
-        SB: 244.0
+        SR: 128.0
+        SB: 245.0
         passSvB: 12.0
         failSvB: 642.0
 
@@ -1107,8 +1107,8 @@ counts4_unit:
         passJetMult: 982.0
         passPreSel: 971.0
         passDiJetMass: 398.0
-        SR: 134.0
-        SB: 264.0
+        SR: 131.0
+        SB: 267.0
         passSvB: 12.0
         failSvB: 657.0
 
@@ -1116,8 +1116,8 @@ counts4_unit:
         passJetMult: 990.0
         passPreSel: 957.0
         passDiJetMass: 363.0
-        SR: 123.0
-        SB: 240.0
+        SR: 125.0
+        SB: 238.0
         passSvB: 12.0
         failSvB: 625.0
 
@@ -1125,8 +1125,8 @@ counts4_unit:
         passJetMult: 996.0
         passPreSel: 961.0
         passDiJetMass: 373.0
-        SR: 127.0
-        SB: 246.0
+        SR: 128.0
+        SB: 245.0
         passSvB: 12.0
         failSvB: 642.0
 
@@ -1134,8 +1134,8 @@ counts4_unit:
         passJetMult: 985.0
         passPreSel: 960.0
         passDiJetMass: 429.0
-        SR: 150.0
-        SB: 279.0
+        SR: 149.0
+        SB: 280.0
         passSvB: 9.0
         failSvB: 655.0
 
@@ -1143,8 +1143,8 @@ counts4_unit:
         passJetMult: 986.0
         passPreSel: 956.0
         passDiJetMass: 345.0
-        SR: 136.0
-        SB: 209.0
+        SR: 137.0
+        SB: 208.0
         passSvB: 8.0
         failSvB: 614.0
 
@@ -1161,8 +1161,8 @@ counts4_unit:
         passJetMult: 983.0
         passPreSel: 951.0
         passDiJetMass: 399.0
-        SR: 161.0
-        SB: 238.0
+        SR: 157.0
+        SB: 242.0
         passSvB: 14.0
         failSvB: 645.0
 
@@ -1170,8 +1170,8 @@ counts4_unit:
         passJetMult: 991.0
         passPreSel: 963.0
         passDiJetMass: 321.0
-        SR: 122.0
-        SB: 199.0
+        SR: 123.0
+        SB: 198.0
         passSvB: 9.0
         failSvB: 637.0
 
@@ -1179,8 +1179,8 @@ counts4_unit:
         passJetMult: 988.0
         passPreSel: 960.0
         passDiJetMass: 351.0
-        SR: 123.0
-        SB: 228.0
+        SR: 124.0
+        SB: 227.0
         passSvB: 7.0
         failSvB: 647.0
 
@@ -1188,8 +1188,8 @@ counts4_unit:
         passJetMult: 980.0
         passPreSel: 955.0
         passDiJetMass: 421.0
-        SR: 146.0
-        SB: 275.0
+        SR: 148.0
+        SB: 273.0
         passSvB: 11.0
         failSvB: 634.0
 
@@ -1197,8 +1197,8 @@ counts4_unit:
         passJetMult: 991.0
         passPreSel: 967.0
         passDiJetMass: 324.0
-        SR: 139.0
-        SB: 185.0
+        SR: 134.0
+        SB: 190.0
         passSvB: 11.0
         failSvB: 651.0
 
@@ -1206,8 +1206,8 @@ counts4_unit:
         passJetMult: 986.0
         passPreSel: 955.0
         passDiJetMass: 364.0
-        SR: 128.0
-        SB: 236.0
+        SR: 132.0
+        SB: 232.0
         passSvB: 9.0
         failSvB: 624.0
 
@@ -1215,8 +1215,8 @@ counts4_unit:
         passJetMult: 983.0
         passPreSel: 958.0
         passDiJetMass: 431.0
-        SR: 146.0
-        SB: 285.0
+        SR: 140.0
+        SB: 291.0
         passSvB: 7.0
         failSvB: 624.0
 
@@ -1254,8 +1254,8 @@ counts3_unit:
         passJetMult: 989.0
         passPreSel: 30.0
         passDiJetMass: 13.0
-        SR: 7.0
-        SB: 6.0
+        SR: 8.0
+        SB: 5.0
         passSvB: 0.0
         failSvB: 14.0
 
@@ -1290,8 +1290,8 @@ counts3_unit:
         passJetMult: 992.0
         passPreSel: 46.0
         passDiJetMass: 9.0
-        SR: 3.0
-        SB: 6.0
+        SR: 2.0
+        SB: 7.0
         passSvB: 0.0
         failSvB: 30.0
 
@@ -1389,8 +1389,8 @@ counts3_unit:
         passJetMult: 993.0
         passPreSel: 23.0
         passDiJetMass: 10.0
-        SR: 3.0
-        SB: 7.0
+        SR: 4.0
+        SB: 6.0
         passSvB: 1.0
         failSvB: 15.0
 
@@ -1398,8 +1398,8 @@ counts3_unit:
         passJetMult: 984.0
         passPreSel: 28.0
         passDiJetMass: 14.0
-        SR: 8.0
-        SB: 6.0
+        SR: 7.0
+        SB: 7.0
         passSvB: 0.0
         failSvB: 16.0
 
@@ -1443,8 +1443,8 @@ counts3_unit:
         passJetMult: 998.0
         passPreSel: 24.0
         passDiJetMass: 9.0
-        SR: 3.0
-        SB: 6.0
+        SR: 4.0
+        SB: 5.0
         passSvB: 1.0
         failSvB: 15.0
 
@@ -1533,8 +1533,8 @@ counts3_unit:
         passJetMult: 996.0
         passPreSel: 34.0
         passDiJetMass: 13.0
-        SR: 3.0
-        SB: 10.0
+        SR: 2.0
+        SB: 11.0
         passSvB: 0.0
         failSvB: 26.0
 
@@ -1551,8 +1551,8 @@ counts3_unit:
         passJetMult: 986.0
         passPreSel: 26.0
         passDiJetMass: 7.0
-        SR: 3.0
-        SB: 4.0
+        SR: 2.0
+        SB: 5.0
         passSvB: 1.0
         failSvB: 15.0
 
@@ -1596,8 +1596,8 @@ counts3_unit:
         passJetMult: 980.0
         passPreSel: 24.0
         passDiJetMass: 14.0
-        SR: 4.0
-        SB: 10.0
+        SR: 5.0
+        SB: 9.0
         passSvB: 0.0
         failSvB: 18.0
 
