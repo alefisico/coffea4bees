@@ -3,6 +3,7 @@ import awkward as ak
 from analysis.helpers.common import mask_event_decision, drClean
 from analysis.helpers.SvB_helpers import compute_SvB
 from coffea.lumi_tools import LumiMask
+from base_class.math.random import Squares
 
 def apply_event_selection_4b( event, isMC, corrections_metadata, isMixedData = False):
 

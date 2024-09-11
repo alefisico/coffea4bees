@@ -35,7 +35,7 @@ from coffea import processor
 from coffea.analysis_tools import PackedSelection
 from coffea.nanoevents import NanoAODSchema, NanoEventsFactory
 from coffea.util import load
-from base_class.math.random import Squares
+
 
 #
 # Setup
