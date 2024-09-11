@@ -39,10 +39,10 @@ counts4:
         passJetMult: 0.07
         passPreSel: 0.05
         passDiJetMass: 0.03
-        SR: 0.01
+        SR: 0.02
         SB: 0.01
         passSvB: 0.0
-        failSvB: 0.02
+        failSvB: 0.01
 
 
 
@@ -134,11 +134,11 @@ counts4_unit:
     GluGluToHHTo4B_cHHH1_UL18:
         passJetMult: 220.0
         passPreSel: 220.0
-        passDiJetMass: 139.0
-        SR: 61.0
-        SB: 78.0
-        passSvB: 8.0
-        failSvB: 102.0
+        passDiJetMass: 134.0
+        SR: 73.0
+        SB: 61.0
+        passSvB: 10.0
+        failSvB: 85.0
 
 
 
