@@ -405,13 +405,8 @@ class analysis(processor.ProcessorABC):
                                                             apply_FvT=self.apply_FvT,
                                                             isDataForMixed=self.isDataForMixed,
                                                             list_weight_names=list_weight_names,
-<<<<<<< HEAD
                                                             event_metadata=event.metadata, 
                                                             year_label=self.year_label,
-=======
-                                                            event_metadata=event.metadata,
-                                                            year_label=year_label,
->>>>>>> 8f8f855c86df44df167d6d688d86058bf8863900
                                                             len_event=len(event),
             )
 
