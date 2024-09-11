@@ -22,6 +22,8 @@ def add_debug_info_to_output(event, processOutput):
     #              (event["event"] == 281111 ) )
 
 
+    print(f"\n {event.Jet.pt[event.passJetMult].to_list()[0:5]} \n")
+
     out_data["passJetMult_event"  ]    = event["event"][event.passJetMult]
     out_data["passJetMult_run"    ]    = event["run"][event.passJetMult]
     out_data["passJetMult_jet_pt"    ] = event.Jet.pt[event.passJetMult].to_list()

@@ -74,8 +74,8 @@ class DeClusterer(PicoAOD):
             # defining SvB_MA
             setSvBVars("SvB_MA", event)
 
-
         event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year] )
+
 
         ## adds all the event mc weights and 1 for data
         weights, list_weight_names = add_weights( event, isMC, dataset, year_label,
@@ -85,6 +85,22 @@ class DeClusterer(PicoAOD):
                                                   isTTForMixed=False,
                                                  )
 
+        #
+        # Temp debgging
+        #
+        debug_mask = ((event["event"] == 11170  ) |
+                      (event["event"] == 11259  ) |
+                      (event["event"] == 393684 ) |
+                      (event["event"] == 63447  ) |
+                      (event["event"] == 11113  ) |
+                      (event["event"] == 63276  ) |
+                      (event["event"] == 11823  ) |
+                      (event["event"] == 11348  ) |
+                      (event["event"] == 11803  ) |
+                      (event["event"] == 275229 ) )
+
+        print(f"\n {chunk} Event {event.event[debug_mask].to_list()} \n")
+        print(f"\n {chunk} jet pt Before calibration {event.Jet.pt[debug_mask].to_list()} \n")
 
         #
         # Calculate and apply Jet Energy Calibration
@@ -99,6 +115,9 @@ class DeClusterer(PicoAOD):
 
 
         event = update_events(event, {"Jet": jets})
+
+        print(f"\n {chunk} jet pt After calibration {event.Jet.pt[debug_mask].to_list()} \n")
+
 
         event = apply_object_selection_4b( event, self.corrections_metadata[year]  )
 
