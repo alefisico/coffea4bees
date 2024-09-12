@@ -280,7 +280,7 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
         if (classifier_SvB is not None) | (classifier_SvB_MA is not None):
 
             compute_SvB(selev, 
-                        (selev.fourTag & quadJet.selected.SR), 
+                        (selev.fourTag & quadJet[quadJet.selected][:, 0].SR), 
                         classifier_SvB, 
                         classifier_SvB_MA, 
                         doCheck=False)
