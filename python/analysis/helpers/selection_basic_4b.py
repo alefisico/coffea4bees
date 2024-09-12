@@ -262,23 +262,10 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
     quadJet["SB"] = quadJet.passDiJetMass & ~quadJet.SR
 
     #
-    #  Build the close dR and other quadjets
-    #    (There is Probably a better way to do this ...
-    #
-    arg_min_close_dr = np.argmin(quadJet.close.dr, axis=1)
-    arg_min_close_dr = arg_min_close_dr.to_numpy()
-    selev["quadJet_min_dr"] = quadJet[ np.array(range(len(quadJet))), arg_min_close_dr ]
-
-    #
     # pick quadJet at random giving preference to ones which passDiJetMass and MDRs
     #
     quadJet["rank"] = ( 10 * quadJet.passDiJetMass + quadJet.lead.passMDR + quadJet.subl.passMDR + quadJet.random )
     quadJet["selected"] = quadJet.rank == np.max(quadJet.rank, axis=1)
-
-    selev["diJet"] = diJet
-    selev["quadJet"] = quadJet
-    selev["quadJet_selected"] = quadJet[quadJet.selected][:, 0]
-    selev["passDiJetMass"] = ak.any(quadJet.passDiJetMass, axis=1)
 
 
     if apply_FvT:
@@ -309,6 +296,19 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
             selev.SvB_MA.q_1324[:, np.newaxis],
             selev.SvB_MA.q_1423[:, np.newaxis],
             ], axis=1, )
+
+    selev["diJet"] = diJet
+    selev["quadJet"] = quadJet
+    selev["quadJet_selected"] = quadJet[quadJet.selected][:, 0]
+    selev["passDiJetMass"] = ak.any(quadJet.passDiJetMass, axis=1)
+    #
+    #  Build the close dR and other quadjets
+    #    (There is Probably a better way to do this ...
+    #
+    arg_min_close_dr = np.argmin(quadJet.close.dr, axis=1)
+    arg_min_close_dr = arg_min_close_dr.to_numpy()
+    selev["quadJet_min_dr"] = quadJet[ np.array(range(len(quadJet))), arg_min_close_dr ]
+
 
     selev["m4j"] = selev.v4j.mass
     selev["m4j_HHSR"] = ak.where(~selev.quadJet_selected.HHSR, -2, selev.m4j)
