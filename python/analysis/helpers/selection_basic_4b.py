@@ -279,8 +279,11 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
 
         if (classifier_SvB is not None) | (classifier_SvB_MA is not None):
 
+            ##### AGE: I dont understand why synthetic does not run without this
+            if isSyntheticData: tmp_mask = selev.fourTag
+            else: tmp_mask = (selev.fourTag & quadJet[quadJet.selected][:, 0].SR)
             compute_SvB(selev, 
-                        (selev.fourTag & quadJet[quadJet.selected][:, 0].SR), 
+                        tmp_mask,
                         classifier_SvB, 
                         classifier_SvB_MA, 
                         doCheck=False)
