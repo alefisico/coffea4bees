@@ -73,7 +73,7 @@ class analysis(processor.ProcessorABC):
         self.run_SvB = run_SvB
         self.apply_boosted_veto = apply_boosted_veto
         if SvB or SvB_MA: # import torch on demand
-            from classifier.nn.blocks.HCR import HCREnsemble
+            from analysis.helpers.networks import HCREnsemble
         self.classifier_SvB = HCREnsemble(SvB) if SvB else None
         self.classifier_SvB_MA = HCREnsemble(SvB_MA) if SvB_MA else None
         with open(corrections_metadata, "r") as f:
