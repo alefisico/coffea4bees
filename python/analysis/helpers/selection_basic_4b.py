@@ -138,6 +138,7 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
                                    apply_FvT:bool = False,
                                    apply_boosted_veto:bool = False,
                                    run_SvB:bool = False,
+                                   run_systematics:bool = False,
                                    isSyntheticData:bool = False,
                                    classifier_SvB = None,
                                    classifier_SvB_MA = None,
@@ -280,8 +281,8 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
         if (classifier_SvB is not None) | (classifier_SvB_MA is not None):
 
             ##### AGE: I dont understand why synthetic does not run without this
-            if isSyntheticData: tmp_mask = selev.fourTag
-            else: tmp_mask = (selev.fourTag & quadJet[quadJet.selected][:, 0].SR)
+            if run_systematics: tmp_mask = (selev.fourTag & quadJet[quadJet.selected][:, 0].SR)
+            else: tmp_mask = np.full(len(selev), True)
             compute_SvB(selev, 
                         tmp_mask,
                         classifier_SvB, 

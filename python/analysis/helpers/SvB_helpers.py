@@ -60,7 +60,6 @@ def compute_SvB(events, mask, classifier_SvB, classifier_SvB_MA, doCheck=True):
     o[:, 2, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(masked_events.notCanJet_coffea.phi,      target=8, clip=True) ), -1, ) )
     o[:, 3, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(masked_events.notCanJet_coffea.mass,     target=8, clip=True) ), -1, ) )
     o[:, 4, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(masked_events.notCanJet_coffea.isSelJet, target=8, clip=True) ), -1, ) )
-    print(f"{events.event[0]} Computing SvB for {n} events\n\n\n\n")
 
     a = torch.zeros(n, 4)
     a[:, 0] = float(masked_events.metadata["year"][3])
@@ -76,7 +75,6 @@ def compute_SvB(events, mask, classifier_SvB, classifier_SvB_MA, doCheck=True):
             events[f"old_{classifier}"] = events[classifier]
         
         if classifier == "SvB":
-            print(f"{events.event[0]} shape of j: {j.shape}, n = {n}")
             c_logits, q_logits = classifier_SvB(j, o, a, e)
 
         if classifier == "SvB_MA":
