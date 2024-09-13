@@ -4,11 +4,13 @@ import difflib
 import re
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from functools import partial
 from html import escape
 from itertools import chain, cycle, repeat
 from typing import (
     TYPE_CHECKING,
     Callable,
+    Collection,
     Generator,
     Iterable,
     NamedTuple,
@@ -26,6 +28,7 @@ from bokeh.models import (
     Checkbox,
     ColumnDataSource,
     CustomJS,
+    CustomJSHover,
     Div,
     Dropdown,
     HoverTool,
@@ -50,8 +53,7 @@ from hist.axis import (
 )
 
 from ._utils import RGB, Component
-from .config import UI, CouplingScan, Datasets, Palette, Stacks
-from .config import FloatFormat as _FF
+from .config import UI, CouplingScan, Datasets, FloatingPrecision, Palette, Stacks
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -69,23 +71,12 @@ if TYPE_CHECKING:
         edges: tuple[AxesMixin, AxesMixin]
 
 
+# constants
 _DIHIGGS = sorted(set(di_higgs.__all__) - {"Coupling"})
-_PROCESS = "process"
 _WHITE = RGB(255, 255, 255)
 _BLACK = RGB(0, 0, 0)
 
-_CODES = {
-    "visibility": """
-let visible = true;
-for (let check of checks) {
-    visible = visible && check.active;
-}
-for (let glyph of glyphs) {
-    glyph.visible = visible;
-}
-"""
-}
-
+# styles
 _HIST_FILL = dict(
     left="left",
     right="right",
@@ -122,8 +113,6 @@ _BOX_STYLE = {
     "margin-top": "-1px",
 }
 
-_badge = '<span class="badge" style="background-color: {color};">{text}</span>'.format
-
 _GLYPH_ICONS = {
     "fill": "chart-bar",
     "step": "chart-line",
@@ -131,10 +120,79 @@ _GLYPH_ICONS = {
 }
 
 
-class SourceID:
-    regular = "rp{:d}".format
-    model = "m{}p{:d}".format
-    stack = "s{:d}p{:d}".format
+# functions
+_FF = f"{{:.{FloatingPrecision}g}}".format
+
+
+def _find_process(categories: Collection[str]):
+    return difflib.get_close_matches("process", categories, n=len(categories), cutoff=0)
+
+
+# html & js
+_badge = '<span class="badge" style="background-color: {color};">{text}</span>'.format
+
+_CODES = {
+    "py_float_format": """
+function pyFloatFormat(value, precision) {
+    return value.toPrecision(precision).replace(/((\.0+)|((?<=\.\d*?)0+))(?=(e|$))/, "").replace(/e([+-])(\d)$/, "e$10$2");
+}
+""",
+    "preprocess": """
+function preprocess(val, err, normalize, density, width) {
+    err = err.map(Math.sqrt);
+    if (normalize) {
+        let total = Math.abs(val.reduce((a, b) => a + b, 0));
+        val = val.map(v => v / total);
+        err = err.map(e => e / total);
+    }
+    if (density && (width !== null)) {
+        val = val.map((v, i) => v / width[i]);
+        err = err.map((e, i) => e / width[i]);
+    }
+    return [val, err];
+}
+""",
+    "logy_set_bottom": """
+function logySetBottom(val, bottom) {
+    return val.map(v => v < bottom ? bottom : v);
+}
+""",
+    "tooltip_x": """
+function tooltipX(val, err, precision) {
+    let labels = new Array(val.length);
+    for (let i = 0; i < val.length; i++) {
+        labels[i] = `${pyFloatFormat(val[i], precision)} \u00B1 ${pyFloatFormat(err[i], precision)}`;
+    }
+    return labels;
+}
+""",
+}
+
+
+class _DataField:
+    regular = "r_{:d}".format
+    model = "m_{}__p_{:d}".format
+    basis = "b_{:d}".format
+    stack = "s_{:d}__p_{:d}".format
+
+    raw = "raw_{}".format
+    var = "var_{}".format
+
+
+class _PlotField:
+    upper = "upper_{}".format
+    lower = "lower_{}".format
+    label_count = "label_count_{}".format
+
+
+class _ColumnLike:
+    def __init__(self, val: pd.DataFrame):
+        test = val[val.columns[0]]
+        self._shape = len(test)
+        self._dtype = test.dtype
+
+    def zeros(self) -> npt.NDArray:
+        return np.zeros(self._shape, self._dtype)
 
 
 class BHAxis:
@@ -293,8 +351,8 @@ class _KappaMatch:
                 if match is not None:
                     self._match[process] = dict(map(self._f, match.groupdict().items()))
             self._couplings = Coupling(*self._match.values())
-            self._model: Diagram = getattr(di_higgs, model)(
-                basis=self._couplings, unit_basis_weight=True
+            self.model: Diagram = getattr(di_higgs, model)(
+                basis=self._couplings, unit_basis_weight=False
             )
         except Exception:
             self._match = {}
@@ -387,11 +445,11 @@ class _KappaModel(_Matched):
         self._disable(value)
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._dom_patterns.value
 
     @property
-    def model(self):
+    def model(self) -> str:
         return self._dom_model.value
 
 
@@ -577,9 +635,7 @@ class HistGroup(Component):
         _select.value = _select.options
 
     def _setup_default(self):
-        categories = difflib.get_close_matches(
-            _PROCESS, self._categories, n=len(self._categories), cutoff=0
-        )
+        categories = _find_process(self._categories)
         for cat in categories:
             processes = set(self._categories[cat]._choices)
             for k, vs in Datasets.items():
@@ -675,7 +731,7 @@ class HistGroup(Component):
             _palette(
                 (
                     len(self._processes)
-                    + len(models)
+                    + sum(len(v) for v in models.values())
                     + sum(len(v.matched) for v in stacks)
                 )
             )
@@ -687,7 +743,7 @@ class HistGroup(Component):
         for model in self._models:
             if not model.matched:
                 continue
-            for k in model.matched._model.diagrams[0]:
+            for k in model.matched.model.diagrams[0]:
                 if k in coupling_sliders:
                     continue
                 slider, dom = self._render_slider(k)
@@ -767,17 +823,17 @@ class HistGroup(Component):
             legend_doms.append(self.shared.hr())
 
         for i, p in enumerate(self._processes):
-            legend_add(SourceID.regular(i), p)
+            legend_add(_DataField.regular(i), p)
         legend_hr()
         for k, ms in models.items():
             legend_title(k, m.badge)
             for i, m in enumerate(ms):
-                legend_add(SourceID.model(k, i), m.name)
+                legend_add(_DataField.model(k, i), m.name)
             legend_hr()
         for i, s in enumerate(stacks):
             legend_title(f"{s.name or i+1}", s.badge)
             for j, p in enumerate(s):
-                legend_add(SourceID.stack(i, j), p)
+                legend_add(_DataField.stack(i, j), p)
             legend_hr()
 
         legend_dom = ScrollBox(
@@ -809,7 +865,142 @@ legend.width = (legend.width + {UI.legend_glyph_width} * modifier);
             )
         )
 
+        # plot utils
+        def setup_source(
+            field: str,
+            name: str,
+            source: ColumnDataSource,
+            val: npt.NDArray,
+            var: npt.NDArray,
+            bottom: float,
+            width: list[float] | None,
+        ):
+            val, err = self.__preprocess(val, var, normalized, density, width)
+            source.data[_PlotField.label_count(name)] = self.__tooltip_x(val, err)
+            for k, v in {
+                field: val,
+                _PlotField.upper(field): val + err,
+                _PlotField.lower(field): val - err,
+            }.items():
+                source.data[k] = self.__logy_set_bottom(v, bottom if log_y else None)
+            return source
+
+        def render_glyphs(
+            field: str,
+            name: str,
+            source: ColumnDataSource,
+            bottom: float,
+            fig: figure,
+            renderers: list,
+        ):
+            color = colors[field]
+            # fill glyph
+            fill = fig.quad(
+                top=field,
+                bottom=bottom,
+                source=source,
+                fill_color=color.copy(0.1).rgba,
+                **_HIST_FILL,
+                name=_PlotField.label_count(name),
+            )
+            glyphs[field]["fill"].js_link("active", fill, "visible")
+            renderers.append(fill)
+            # step glyph
+            step_left = fig.step(
+                y=field,
+                source=source,
+                line_color=color.rgba,
+                **_HIST_STEP_LEFT,
+            )
+            glyphs[field]["step"].js_link("active", step_left, "visible")
+            step_right = fig.step(
+                y=field,
+                source=source,
+                line_color=color.rgba,
+                **_HIST_STEP_RIGHT,
+            )
+            glyphs[field]["step"].js_link("active", step_right, "visible")
+            # errorbar glyph
+            errorbar_bar = Whisker(
+                upper=_PlotField.upper(field),
+                lower=_PlotField.lower(field),
+                source=source,
+                line_color=color.rgba,
+                **_HIST_ERRORBAR_BAR,
+            )
+            fig.add_layout(errorbar_bar)
+            glyphs[field]["errorbar"].js_link("active", errorbar_bar, "visible")
+            errorbar_dot = fig.scatter(
+                y=field,
+                source=source,
+                fill_color=color.rgba,
+                **_HIST_ERRORBAR_DOT,
+            )
+            glyphs[field]["errorbar"].js_link("active", errorbar_dot, "visible")
+
+            return fill, step_left, step_right, errorbar_bar, errorbar_dot
+
+        def js_model(
+            model: _KappaModel,
+            field: str,
+            name: str,
+            source: ColumnDataSource,
+            bottom: float,
+            width: list[float] | None,
+            sliders: dict[str, Slider],
+        ):
+            couplings = model.matched.model.diagrams[0]
+            sliders = {k: v for k, v in sliders.items() if k in couplings}
+            basis = [*map(_DataField.basis, range(len(model.matched._match)))]
+            js_change = CustomJS(
+                args=dict(
+                    col_field=field,
+                    col_name=_PlotField.label_count(name),
+                    col_val=[*map(_DataField.raw, basis)],
+                    col_var=[*map(lambda x: _DataField.raw(_DataField.var(x)), basis)],
+                    col_upper=_PlotField.upper(field),
+                    col_lower=_PlotField.lower(field),
+                    source=source,
+                    bottom=bottom,
+                    width=width,
+                    sliders=sliders,
+                    normalized=normalized,
+                    density=density,
+                    log_y=log_y,
+                    precision=FloatingPrecision,
+                ),
+                # fmt: off
+                code=
+_CODES["py_float_format"] +
+_CODES["preprocess"] + 
+_CODES["logy_set_bottom"] +
+_CODES["tooltip_x"] + """
+const weight = (function() {
+""" + "\n".join(f'let __{k} = sliders["{k}"].value;' for k in couplings)
++ "\n".join(model.matched.model.js_weight(**{k: f"__{k}" for k in couplings})) + """
+    return __w;
+})();
+let val = new Float64Array(source.data[col_field].length);
+let err = new Float64Array(source.data[col_field].length);
+for (let i = 0; i < val.length; i++) {
+    for (let j=0; j< weight.length; j++) {
+        val[i] += source.data[col_val[j]][i] * weight[j];
+        err[i] += source.data[col_var[j]][i] * (weight[j] ** 2);
+    }
+}
+[val, err] = preprocess(val, err, normalized, density, width);
+source.data[col_name] = tooltipX(val, err, precision);
+source.data[col_field] = logySetBottom(val, bottom);
+source.data[col_upper] = logySetBottom(val.map((v, i) => v + err[i]), bottom);
+source.data[col_lower] = logySetBottom(val.map((v, i) => v - err[i]), bottom);
+source.change.emit();
+""",
+            )
+            for slider in sliders.values():
+                slider.js_on_change("value", js_change)
+
         # TODO render plots
+
         plots = []
         for title, (val, var, axis) in data.items():
             logger(f'Rendering histogram "{title}"')
@@ -817,9 +1008,14 @@ legend.width = (legend.width + {UI.legend_glyph_width} * modifier);
             tooltip = HoverTool(
                 tooltips=[
                     ("x\u00B1\u03C3", "@$name"),
-                    ("bin", "@label"),
-                    ("dataset", "$name"),
+                    ("bin", "@edge"),
+                    ("dataset", "$name{custom}"),
                 ],
+                formatters={
+                    "$name": CustomJSHover(
+                        code=f"return special_vars.name.slice({len(_PlotField.label_count(''))});"
+                    )
+                },
                 point_policy="follow_mouse",
             )
             tooltip.renderers = []
@@ -842,74 +1038,56 @@ legend.width = (legend.width + {UI.legend_glyph_width} * modifier);
             _edges = {
                 "left": _left,
                 "right": _right,
-                "label": bhaxis.labels(axis),
                 "center": (_left + _right) / 2,
+                "edge": bhaxis.labels(axis),
             }
             _bottom = self.__logy_find_bottom(val) if log_y else 0
+
+            # utils
+            _np = _ColumnLike(val)
+            _plot = partial(
+                render_glyphs, bottom=_bottom, fig=fig, renderers=tooltip.renderers
+            )
+            _source = partial(setup_source, bottom=_bottom, width=_width)
+            _js_model = partial(
+                js_model, bottom=_bottom, width=_width, sliders=coupling_sliders
+            )
 
             # render regular histograms
             source = ColumnDataSource(data=_edges)
             for i, p in enumerate(self._processes):
                 # data source
-                field = SourceID.regular(i)
-                _val, _err = self._preprocess(
-                    val[p], var[p], normalized, density, _width
-                )
-                source.data[p] = self.__tooltips(_val, _err)
-                for k, v in {
-                    field: _val,
-                    f"upper_{field}": _val + _err,
-                    f"lower_{field}": _val - _err,
-                }.items():
-                    source.data[k] = self.__logy_set_bottom(
-                        v, _bottom if log_y else None
-                    )
-                color = colors[field]
-                # fill glyph
-                fill = fig.quad(
-                    top=field,
-                    bottom=_bottom,
-                    source=source,
-                    fill_color=color.copy(0.1).rgba,
-                    **_HIST_FILL,
+                field = _DataField.regular(i)
+                _plot(
+                    field=field,
                     name=p,
+                    source=_source(
+                        field=field, name=p, source=source, val=val[p], var=var[p]
+                    ),
                 )
-                glyphs[field]["fill"].js_link("active", fill, "visible")
-                tooltip.renderers.append(fill)
-                # step glyph
-                step_left = fig.step(
-                    y=field,
-                    source=source,
-                    line_color=color.rgba,
-                    **_HIST_STEP_LEFT,
-                )
-                glyphs[field]["step"].js_link("active", step_left, "visible")
-                step_right = fig.step(
-                    y=field,
-                    source=source,
-                    line_color=color.rgba,
-                    **_HIST_STEP_RIGHT,
-                )
-                glyphs[field]["step"].js_link("active", step_right, "visible")
-                # errorbar glyph
-                errorbar_bar = Whisker(
-                    upper=f"upper_{field}",
-                    lower=f"lower_{field}",
-                    source=source,
-                    line_color=color.rgba,
-                    **_HIST_ERRORBAR_BAR,
-                )
-                fig.add_layout(errorbar_bar)
-                glyphs[field]["errorbar"].js_link("active", errorbar_bar, "visible")
-                errorbar_dot = fig.scatter(
-                    y=field,
-                    source=source,
-                    fill_color=color.rgba,
-                    **_HIST_ERRORBAR_DOT,
-                )
-                glyphs[field]["errorbar"].js_link("active", errorbar_dot, "visible")
 
-            # TODO render models, js normalize, js density, js coupling, one errorbar
+            # render models
+            sm = Coupling({"": 1.0})
+            for k, ms in models.items():
+                for i, m in enumerate(ms):
+                    source = ColumnDataSource(data=_edges)
+                    weight = m.matched.model.weight(sm)[0]
+                    _val, _var = _np.zeros(), _np.zeros()
+                    for j, p in enumerate(m):
+                        field = _DataField.basis(j)
+                        source.data[_DataField.raw(field)] = val[p]
+                        source.data[_DataField.raw(_DataField.var(field))] = var[p]
+                        _val += val[p] * weight[j]
+                        _var += var[p] * (weight[j] ** 2)
+                    field = _DataField.model(k, i)
+                    _plot(
+                        field=field,
+                        name=m.name,
+                        source=_source(
+                            field=field, name=m.name, source=source, val=_val, var=_var
+                        ),
+                    )
+                    _js_model(model=m, field=field, name=m.name, source=source)
 
             # TODO render stacks, js normalize, js density, js stack, one errorbar
 
@@ -998,7 +1176,7 @@ legend.width = (legend.width + {UI.legend_glyph_width} * modifier);
             return edges - 0.5, edges + 0.5
 
     @staticmethod
-    def __tooltips(val: pd.Series, err: pd.Series):
+    def __tooltip_x(val: pd.Series, err: pd.Series):
         return [f"{_FF(v)} \u00B1 {_FF(e)}" for v, e in zip(val, err)]
 
     @staticmethod
@@ -1010,7 +1188,7 @@ legend.width = (legend.width + {UI.legend_glyph_width} * modifier);
         return val.clip(lower=bottom) if bottom is not None else val
 
     @staticmethod
-    def _preprocess(
+    def __preprocess(
         val: npt.NDArray,
         var: npt.NDArray,
         normalize: bool,
@@ -1019,7 +1197,7 @@ legend.width = (legend.width + {UI.legend_glyph_width} * modifier);
     ):
         err = np.sqrt(var)
         if normalize:
-            total = val.sum(axis=0)
+            total = np.abs(val.sum(axis=0))
             val /= total
             err /= total
         if density and width is not None:

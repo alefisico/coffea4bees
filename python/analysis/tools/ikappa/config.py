@@ -67,4 +67,4 @@ class UI:
     border = f"1px solid {border_color}"
 
 
-FloatFormat: Callable[[float], str] = "{:.6g}".format
+FloatingPrecision: int = 6
