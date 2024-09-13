@@ -1,7 +1,8 @@
 runner:
-  condor_cores: 1
-  condor_memory: 4GB
+  condor_cores: 4
+  condor_memory: 8GB
+  friend_metafile: trigger_weights_friends 
 
 config:
-  # make_classifier_input: root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/
-  make_classifier_input: /srv/python/hists/local/   ### local
+  make_classifier_input: root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v1/
+  # make_classifier_input: /srv/python/hists/local/   ### local

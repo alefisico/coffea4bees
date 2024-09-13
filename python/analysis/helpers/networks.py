@@ -19,7 +19,7 @@ def timefunc(func):
         start = time.perf_counter()
         result = func(*args, **kwargs)
         time_elapsed = time.perf_counter() - start
-        logging.info(f"\n\nFunction: {func.__name__}, Time: {time_elapsed}\n\n")
+        logging.debug(f"\n\nFunction: {func.__name__}, Time: {time_elapsed}\n\n")
         return result
 
     return time_closure

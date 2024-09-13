@@ -46,7 +46,7 @@ analysis-systematics-cutflow-job:
     - source .ci-workflows/analysis-systematics-cutflow-job.sh
   artifacts:
     paths:
-      - python/analysis/tests/test_systematics_dump_cutflow.yml
+      - python/analysis/tests/test_dump_systematics_cutflow.yml
 
 analysis-cutflow-job-unsup:    
  stage: cutflow
