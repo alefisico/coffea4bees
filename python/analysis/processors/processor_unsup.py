@@ -108,6 +108,9 @@ class analysis(processor.ProcessorABC):
         if isMC:
             cut_on_lumimask     = False
 
+        if isMixedData:
+            cut_on_lumimask     = False
+            do_lepton_jet_cleaning  = False
 
         processOutput = {}
         processOutput['nEvent'] = {}
