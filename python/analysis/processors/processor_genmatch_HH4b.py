@@ -110,14 +110,13 @@ class analysis(processor.ProcessorABC):
         isMC    = True if event.run[0] == 1 else False
         nEvent = len(event)
         weights = Weights(len(event), storeIndividual=True)
-
         logging.debug(fname)
         logging.debug(f'Process {nEvent} Events')
 
         #
         # Event selection
         #
-        event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year], False)
+        event = apply_event_selection_4b( event, self.corrections_metadata[year], cut_on_lumimask=False)
 
         # Apply object selection (function does not remove events, adds content to objects)
         event = apply_object_selection_4b( event, self.corrections_metadata[year] )
