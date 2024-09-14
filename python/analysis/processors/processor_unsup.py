@@ -102,20 +102,11 @@ class analysis(processor.ProcessorABC):
         #
         #  Nominal config (...what we would do for data)
         #
-        self.cut_on_lumimask         = True
-        self.cut_on_HLT_decision     = True
-        self.do_MC_weights           = False
-        self.do_jet_calibration      = False
-        self.do_lepton_jet_cleaning  = True
-        self.override_selected_with_flavor_bit  = False
-        self.use_prestored_btag_SF  = False
+        cut_on_lumimask         = True
+        do_lepton_jet_cleaning  = True
 
-        if self.isMC:
-            self.cut_on_lumimask     = False
-            self.cut_on_HLT_decision = False
-            self.do_jet_calibration  = True
-            self.do_MC_weights       = True
-
+        if isMC:
+            cut_on_lumimask     = False
 
 
         processOutput = {}
@@ -185,14 +176,14 @@ class analysis(processor.ProcessorABC):
         logging.debug(f"event['weight'] = {event.weight}")
 
         ### Event selection (function only adds flags, not remove events)
-        event = apply_event_selection_4b( event, self.corrections_metadata[year], self.cut_on_lumimask)
+        event = apply_event_selection_4b( event, self.corrections_metadata[year], cut_on_lumimask=cut_on_lumimask)
 
         self._cutFlow.fill("all",  event[event.lumimask], allTag=True)
         self._cutFlow.fill("passNoiseFilter",  event[ event.lumimask & event.passNoiseFilter], allTag=True)
         self._cutFlow.fill("passHLT",  event[ event.lumimask & event.passNoiseFilter & event.passHLT], allTag=True)
 
         ### Apply object selection (function does not remove events, adds content to objects)
-        event =  apply_object_selection_4b( event, self.corrections_metadata[year], doLeptonRemoval=self.do_lepton_jet_cleaning  )
+        event =  apply_object_selection_4b( event, self.corrections_metadata[year], doLeptonRemoval=do_lepton_jet_cleaning  )
         self._cutFlow.fill("passJetMult",  event[ event.lumimask & event.passNoiseFilter & event.passHLT & event.passJetMult ], allTag=True)
 
         ### Filtering object and event selection

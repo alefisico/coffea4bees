@@ -175,9 +175,10 @@ class analysis(processor.ProcessorABC):
             self.do_lepton_jet_cleaning  = False
 
         if self.isTTForMixed:
-            self.cut_on_lumimask     = False
-            self.cut_on_HLT_decision = False
-            self.do_lepton_jet_cleaning  = False
+            self.cut_on_lumimask        = False
+            self.cut_on_HLT_decision    = False
+            self.do_lepton_jet_cleaning = False
+            self.do_jet_calibration     = False
 
         if self.isDataForMixed:
             self.cut_on_HLT_decision = False
