@@ -30,6 +30,22 @@ _Actions = Literal["new", "add"]
 _INDENT = "  "
 
 
+class _ProfileStyle(yaml.SafeDumper):
+    @classmethod
+    def setup(cls):
+        cls.add_representer(dict, cls.represent_dict)
+        cls.add_representer(list, cls.represent_list)
+
+    def represent_dict(self, data):
+        return self.represent_mapping("tag:yaml.org,2002:map", data, flow_style=False)
+
+    def represent_list(self, data):
+        return self.represent_sequence("tag:yaml.org,2002:seq", data, flow_style=True)
+
+
+_ProfileStyle.setup()
+
+
 class Main(Component):
     plotter: Plotter
 
@@ -94,7 +110,9 @@ class Main(Component):
         if self._profiles:
             content.append("<b>Profiles</b>:<br>")
             content.append("<div class='code box'>")
-            content.append(yaml.safe_dump(self._profiles).replace("\n", "<br>"))
+            content.append(
+                yaml.dump(self._profiles, Dumper=_ProfileStyle).replace("\n", "<br>")
+            )
             content.append("</div>")
 
         return "".join(content)

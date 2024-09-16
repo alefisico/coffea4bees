@@ -96,6 +96,8 @@ _HIST_STEP_RIGHT = dict(
 )
 
 _HIST_ERRORBAR_BAR = dict(
+    upper_head=None,
+    lower_head=None,
     base="center",
     level="annotation",
     line_width=1,
@@ -139,32 +141,33 @@ function pyFloatFormat(value, precision) {
 """,
     "preprocess": """
 function preprocess(val, err, normalize, density, width) {
+    const total = val.reduce((a, b) => a + b, 0);
+    const label_sum = `${pyFloatFormat(total, precision)} \u00B1 ${pyFloatFormat(Math.sqrt(err.reduce((a, b) => a + b, 0)), precision)}`;
     err = err.map(Math.sqrt);
+    let label_bin = new Array(val.length);
+    for (let i = 0; i < val.length; i++) {
+        label_bin[i] = `${pyFloatFormat(val[i], precision)} \u00B1 ${pyFloatFormat(err[i], precision)}`;
+    }
     if (normalize) {
-        let total = Math.abs(val.reduce((a, b) => a + b, 0));
-        val = val.map(v => v / total);
-        err = err.map(e => e / total);
+        const norm = Math.abs(total);
+        val = val.map(v => v / norm);
+        err = err.map(e => e / norm);
     }
     if (density && (width !== null)) {
         val = val.map((v, i) => v / width[i]);
         err = err.map((e, i) => e / width[i]);
     }
-    return [val, err];
+    if (density || normalize) {
+        for (let i = 0; i < label_bin.length; i++) {
+            label_bin[i] = `${label_bin[i]} (${pyFloatFormat(val[i], precision)} \u00B1 ${pyFloatFormat(err[i], precision)})`;
+        }
+    }
+    return [[val, err], [label_sum], label_bin];
 }
 """,
     "logy_set_bottom": """
 function logySetBottom(val, bottom) {
     return val.map(v => v < bottom ? bottom : v);
-}
-""",
-    "tooltip_x": """
-function tooltipX(val, err, precision) {
-    let labels = new Array(val.length);
-    const total = `(${pyFloatFormat(val.reduce((a, b) => a + b, 0), precision)} \u00B1 ${pyFloatFormat(err.reduce((a, b) => Math.sqrt(a**2 + b**2), 0), precision)})`;
-    for (let i = 0; i < val.length; i++) {
-        labels[i] = `${pyFloatFormat(val[i], precision)} \u00B1 ${pyFloatFormat(err[i], precision)} ${total}`;
-    }
-    return labels;
 }
 """,
 }
@@ -726,7 +729,16 @@ class HistGroup(Component):
         **_,
     ):
         bhaxis = BHAxis(flow)
+        # config
         y_axis_type = "log" if log_y else "linear"
+        tags = []
+        if normalized:
+            tags.append("normalized")
+        if density:
+            tags.append("density")
+        tags = ", ".join(tags)
+        if tags:
+            tags = f" ({tags})"
 
         # preprocessing
         models: dict[str, list[_KappaModel]] = defaultdict(list)
@@ -768,7 +780,7 @@ class HistGroup(Component):
         glyphs: dict[str, dict[str, Checkbox]] = {}
         glyph_all: dict[str, Checkbox] = {}
         glyph_expand = self.shared.icon_button(
-            "chevrons-left", label="Glyphs", aspect_ratio=None
+            "chevrons-left", label="glyphs", aspect_ratio=None
         )
         for k in _GLYPH_ICONS:
             glyph_all[k] = _checkbox()
@@ -884,13 +896,18 @@ legend.width = (legend.width + {Plot.legend_glyph_width} * modifier);
             field: str,
             name: str,
             source: ColumnDataSource,
+            tooltip: dict[str, ColumnDataSource],
             val: npt.NDArray,
             var: npt.NDArray,
             bottom: float,
             width: list[float] | None,
         ):
-            val, err = self.__preprocess(val, var, normalized, density, width)
-            source.data[_PlotField.label_count(name)] = self.__tooltip_x(val, err)
+            label_count = _PlotField.label_count(name)
+            (
+                (val, err),
+                tooltip["total"].data[label_count],
+                source.data[label_count],
+            ) = self.__preprocess(val, var, normalized, density, width)
             for k, v in {
                 field: val,
                 _PlotField.upper(field): val + err,
@@ -959,6 +976,7 @@ legend.width = (legend.width + {Plot.legend_glyph_width} * modifier);
             field: str,
             name: str,
             source: ColumnDataSource,
+            tooltip: dict[str, ColumnDataSource],
             bottom: float,
             width: list[float] | None,
             sliders: dict[str, Slider],
@@ -975,6 +993,7 @@ legend.width = (legend.width + {Plot.legend_glyph_width} * modifier);
                     col_upper=_PlotField.upper(field),
                     col_lower=_PlotField.lower(field),
                     source=source,
+                    tooltip=tooltip,
                     bottom=bottom,
                     width=width,
                     sliders=sliders,
@@ -987,8 +1006,7 @@ legend.width = (legend.width + {Plot.legend_glyph_width} * modifier);
                 code=
 _CODES["py_float_format"] +
 _CODES["preprocess"] + 
-_CODES["logy_set_bottom"] +
-_CODES["tooltip_x"] + """
+_CODES["logy_set_bottom"] +"""
 const weight = (function() {
 """ + "\n".join(f'let __{k} = sliders["{k}"].value;' for k in couplings)
 + "\n".join(model.matched.model.js_weight(**{k: f"__{k}" for k in couplings})) + """
@@ -1002,8 +1020,10 @@ for (let i = 0; i < val.length; i++) {
         err[i] += source.data[col_var[j]][i] * (weight[j] ** 2);
     }
 }
-[val, err] = preprocess(val, err, normalized, density, width);
-source.data[col_name] = tooltipX(val, err, precision);
+let label_sum, label_bin;
+[[val, err], label_sum, label_bin] = preprocess(val, err, normalized, density, width);
+tooltip["total"].data[col_name] = label_sum;
+source.data[col_name] = label_bin;
 source.data[col_field] = logySetBottom(val, bottom);
 source.data[col_upper] = logySetBottom(val.map((v, i) => v + err[i]), bottom);
 source.data[col_lower] = logySetBottom(val.map((v, i) => v - err[i]), bottom);
@@ -1018,16 +1038,22 @@ source.change.emit();
         for title, (val, var, axis) in data.items():
             logger(f'Rendering histogram "{title}"')
             # construct figure
+            tooltip_source = {"total": ColumnDataSource(data={})}
             tooltip = HoverTool(
                 tooltips=[
-                    ("x\u00B1\u03C3", "@$name"),
+                    ("value", "@$name"),
+                    ("total", "$total{custom}"),
                     ("bin", "@edge"),
                     ("dataset", "$name{custom}"),
                 ],
                 formatters={
                     "$name": CustomJSHover(
                         code=f"return special_vars.name.slice({len(_PlotField.label_count(''))});"
-                    )
+                    ),
+                    "$total": CustomJSHover(
+                        args=dict(source=tooltip_source["total"]),
+                        code="return source.data[special_vars.name][0];",
+                    ),
                 },
                 point_policy="follow_mouse",
             )
@@ -1043,7 +1069,7 @@ source.change.emit();
                 bhaxis,
             )
             fig.add_tools(tooltip)
-            plots.extend((Div(text=title), fig))
+            plots.extend((Div(text=title + tags), fig))
 
             # initialize data
             _left, _right = self.__edges(axis, bhaxis)
@@ -1062,12 +1088,21 @@ source.change.emit();
                 render_glyphs, bottom=_bottom, fig=fig, renderers=tooltip.renderers
             )
             _plot_stack = partial(render_glyphs, fig=fig, renderers=tooltip.renderers)
-            _setup_source = partial(setup_source, bottom=_bottom, width=_width)
+            _setup_source = partial(
+                setup_source,
+                bottom=_bottom,
+                width=_width,
+                tooltip=tooltip_source,
+            )
             _setup_bottom = partial(
                 self.__logy_set_bottom, bottom=_bottom if log_y else None
             )
             _js_model = partial(
-                js_model, bottom=_bottom, width=_width, sliders=coupling_sliders
+                js_model,
+                bottom=_bottom,
+                width=_width,
+                sliders=coupling_sliders,
+                tooltip=tooltip_source,
             )
 
             # render regular histograms
@@ -1136,10 +1171,13 @@ source.change.emit();
                         lower = _setup_bottom(base - _err)
                     source.data[_PlotField.upper(field)] = upper
                     source.data[_PlotField.lower(field)] = lower
-                    source.data[_PlotField.label_count(p)] = self.__tooltip_x(
-                        *self.__preprocess(
-                            val[p], var[p], normalized, density, _width, _total
-                        ),
+                    label_count = _PlotField.label_count(p)
+                    (
+                        _,
+                        tooltip_source["total"].data[label_count],
+                        source.data[label_count],
+                    ) = self.__preprocess(
+                        val[p], var[p], normalized, density, _width, _total
                     )
                     _plot_stack(
                         field=field,
@@ -1233,11 +1271,6 @@ source.change.emit();
             return edges - 0.5, edges + 0.5
 
     @staticmethod
-    def __tooltip_x(val: pd.Series, err: pd.Series):
-        total = f"{_FF(val.sum())} \u00B1 {_FF(np.sqrt((err**2).sum()))}"
-        return [f"{_FF(v)} \u00B1 {_FF(e)} ({total})" for v, e in zip(val, err)]
-
-    @staticmethod
     def __logy_find_bottom(val: pd.DataFrame):
         return 10 ** np.floor(np.log10(val[val > 0].min().min()))
 
@@ -1252,14 +1285,22 @@ source.change.emit();
         normalize: bool,
         density: bool,
         width: npt.NDArray,
-        total: float = None,
+        norm: float = None,
     ):
+        total = val.sum()
+        label_sum = [f"{_FF(total)} \u00B1 {_FF(np.sqrt(var.sum()))}"]
         err = np.sqrt(var)
+        label_bin = [f"{_FF(v)} \u00B1 {_FF(e)}" for v, e in zip(val, err)]
         if normalize:
-            total = np.abs(val.sum(axis=0)) if total is None else total
-            val /= total
-            err /= total
+            norm = np.abs(total) if norm is None else norm
+            val /= norm
+            err /= norm
         if density and width is not None:
             val /= width
             err /= width
-        return val, err
+        if normalize or density:
+            label_bin = [
+                f"{b} ({_FF(v)} \u00B1 {_FF(e)})"
+                for b, v, e in zip(label_bin, val, err)
+            ]
+        return (val, err), label_sum, label_bin
