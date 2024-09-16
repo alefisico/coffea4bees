@@ -163,6 +163,7 @@ elements.forEach(e => e.visible = !full);
         self._dom_plot = Button(label="Plot", button_type="success", **self._BUTTON)
         self._dom_plot.on_click(self._dom_select_plot)
         self._dom_profile = ExternalLink(
+            shared=self.shared,
             label="Profile",
             button_type="primary",
             **self._BUTTON,
@@ -211,7 +212,7 @@ tr:hover {background-color: rgb(175, 225, 255);}
         # hist options
         self._dom_normalized = Checkbox(label="normalized", active=False)
         self._dom_density = Checkbox(
-            label="density (Regular/Variable only)", active=False
+            label="density (Regular/Variable axis)", active=False
         )
         self._dom_log_y = Checkbox(label="log y-axis", active=False)
         self._dom_flow = Checkbox(label="under/overflow", active=False)
@@ -248,10 +249,14 @@ tr:hover {background-color: rgb(175, 225, 255);}
         self._dom_upload_resource = Select(value=_RESOURCE[0], options=_RESOURCE)
         self._dom_upload_confirm = Confirmation(self.shared, "upload")
         self._dom_upload_confirm.on_click(self._dom_upload_plot)
-        self._dom_download = DownloadLink(**self.shared._icon_button_style)
+        self._dom_download = DownloadLink(
+            shared=self.shared, **self.shared._icon_button_style
+        )
         self._dom_download._icon.size = "1.5em"
         self._dom_download.add_page("plots", self._static_plot_page)
-        self._dom_upload_preview = ExternalLink(**self.shared._icon_button_style)
+        self._dom_upload_preview = ExternalLink(
+            shared=self.shared, **self.shared._icon_button_style
+        )
         self._dom_upload_preview._icon.size = "1.5em"
         self._dom_upload_preview.add_page(self._static_plot_page)
         # main

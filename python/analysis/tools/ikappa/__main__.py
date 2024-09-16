@@ -40,57 +40,6 @@ class Main(Component):
 
     def __init__(self):
         super().__init__()
-        # file
-        self._dom_new = Button(label="New", button_type="warning", **self._BUTTON)
-        self._dom_new.on_click(partial(self._dom_load_hist, "new"))
-        self._dom_add = Button(label="Add", button_type="success", **self._BUTTON)
-        self._dom_add.on_click(partial(self._dom_load_hist, "add"))
-        self._dom_status = ExternalLink(
-            label="Status", button_type="primary", **self._BUTTON
-        )
-        self._dom_status.add_page(
-            self._dom_show_status,
-            """         
-text = `<!DOCTYPE html><html><head><title>Status</title><style>
-div.kappa-framework {white-space: pre;}
-div.box {background-color: #f0f0f0; border: 1px solid #d0d0d0; width: fit-content; min-width: calc(100% - 20px); padding: 10px;}
-div.code {font-family: monospace; white-space: pre; display: block;}
-div.itemize {white-space: break-spaces;}
-</style></head><body><div class="kappa-framework" style="width: auto;">`+ text + "</div></body></html>"
-""",
-        )
-        self._dom_hist_input = PathInput(
-            title="File:",
-            sizing_mode="stretch_width",
-            description=Tooltip(
-                content=HTML(
-                    """
-<b>New</b> overwrite the loaded data<br>
-<b>Add</b> extend the loaded data<br>
-<b>File Extensions:</b><br>
-- profiles: <code>.yml .json</code><br>
-- histograms: any other files<br>
-"""
-                ),
-                position="right",
-            ),
-        )
-        self._dom_hist_compression = Select(
-            title="Compression:",
-            value="lz4",
-            options=[*map(str, fsspec.compression.compr)],
-        )
-
-        # blocks
-        self._file_dom = row(
-            self._dom_new,
-            self._dom_add,
-            self._dom_hist_input,
-            self._dom_hist_compression,
-            *self._dom_status,
-            sizing_mode="stretch_width",
-        )
-
         # data
         self._hists: tuple[dict[str, Hist], set[str]] = {}, None
         self._profiles: dict[str, Profile] = {}
@@ -186,6 +135,56 @@ div.itemize {white-space: break-spaces;}
         self.log = BokehLog(doc)
         self.shared = SharedDOM(doc)
         self.plotter = Plotter(parent=self, **self.inherit_global_states)
+        # file
+        self._dom_new = Button(label="New", button_type="warning", **self._BUTTON)
+        self._dom_new.on_click(partial(self._dom_load_hist, "new"))
+        self._dom_add = Button(label="Add", button_type="success", **self._BUTTON)
+        self._dom_add.on_click(partial(self._dom_load_hist, "add"))
+        self._dom_status = ExternalLink(
+            shared=self.shared, label="Status", button_type="primary", **self._BUTTON
+        )
+        self._dom_status.add_page(
+            self._dom_show_status,
+            """         
+text = `<!DOCTYPE html><html><head><title>Status</title><style>
+div.kappa-framework {white-space: pre;}
+div.box {background-color: #f0f0f0; border: 1px solid #d0d0d0; width: fit-content; min-width: calc(100% - 20px); padding: 10px;}
+div.code {font-family: monospace; white-space: pre; display: block;}
+div.itemize {white-space: break-spaces;}
+</style></head><body><div class="kappa-framework" style="width: auto;">`+ text + "</div></body></html>"
+""",
+        )
+        self._dom_hist_input = PathInput(
+            title="File:",
+            sizing_mode="stretch_width",
+            description=Tooltip(
+                content=HTML(
+                    """
+<b>New</b> overwrite the loaded data<br>
+<b>Add</b> extend the loaded data<br>
+<b>File Extensions:</b><br>
+- profiles: <code>.yml .json</code><br>
+- histograms: any other files<br>
+"""
+                ),
+                position="right",
+            ),
+        )
+        self._dom_hist_compression = Select(
+            title="Compression:",
+            value="lz4",
+            options=[*map(str, fsspec.compression.compr)],
+        )
+
+        # blocks
+        self._file_dom = row(
+            self._dom_new,
+            self._dom_add,
+            self._dom_hist_input,
+            self._dom_hist_compression,
+            *self._dom_status,
+            sizing_mode="stretch_width",
+        )
         doc.add_root(
             column(
                 self.log.dom,

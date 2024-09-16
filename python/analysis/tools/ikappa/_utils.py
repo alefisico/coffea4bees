@@ -54,7 +54,7 @@ window.open(url, '_blank');
 URL.revokeObjectURL(url);
 """
 
-    def __init__(self, **kwargs):
+    def __init__(self, shared: SharedDOM, **kwargs):
         kwargs.pop("icon", None)
         self._icon = TablerIcon(icon_name=self._ICON)
         self._button = Button(icon=self._icon, **kwargs)
@@ -63,19 +63,39 @@ URL.revokeObjectURL(url);
 
         self._button.js_on_click(
             CustomJS(
-                args=dict(icon=self._icon, button=self._button),
-                code='icon.icon_name="loader"; button.disabled=true;',
+                args=dict(
+                    icon=self._icon,
+                    button=self._button,
+                    spinner=shared._spinner_icon_css,
+                ),
+                code="""
+icon.icon_name="loader";
+const index = icon.stylesheets.indexOf(spinner);
+if (index === -1) {
+    icon.stylesheets = icon.stylesheets.concat(spinner);
+}
+button.disabled=true;
+""",
             )
         )
         self._icon.on_change("icon_name", self._dom_send_page)
         self._div.js_on_change(
             "text",
             CustomJS(
-                args=dict(div=self._div, button=self._button, icon=self._icon),
+                args=dict(
+                    div=self._div,
+                    button=self._button,
+                    icon=self._icon,
+                    spinner=shared._spinner_icon_css,
+                ),
                 # fmt: off
                 code="""
 if (div.text !== "") {
     button.disabled = false;
+    const index = icon.stylesheets.indexOf(spinner);
+    if (index !== -1) {
+        icon.stylesheets = icon.stylesheets.slice(0, index).concat(icon.stylesheets.slice(index+1));
+    }
 """ + 
   f'icon.icon_name = "{self._ICON}";' + """
     let pages = JSON.parse(div.text);
@@ -361,6 +381,19 @@ span.badge {
 
         self._nonempty_css = InlineStyleSheet(
             css="div.choices__inner {background-color: pink;}"
+        )
+
+        self._spinner_icon_css = InlineStyleSheet(
+            css="""
+span.ti {
+    display: inline-block;
+    animation: spin 1s infinite linear;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); } 
+}
+"""
         )
 
     @staticmethod
