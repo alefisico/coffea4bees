@@ -99,6 +99,19 @@ class analysis(processor.ProcessorABC):
         kFactor = event.metadata.get('kFactor', 1.0)
         nEvent = len(event)
 
+        #
+        #  Nominal config (...what we would do for data)
+        #
+        cut_on_lumimask         = True
+        do_lepton_jet_cleaning  = True
+
+        if isMC:
+            cut_on_lumimask     = False
+
+        if isMixedData:
+            cut_on_lumimask     = False
+            do_lepton_jet_cleaning  = False
+
         processOutput = {}
         processOutput['nEvent'] = {}
         processOutput['nEvent'][event.metadata['dataset']] = nEvent
@@ -166,15 +179,14 @@ class analysis(processor.ProcessorABC):
         logging.debug(f"event['weight'] = {event.weight}")
 
         ### Event selection (function only adds flags, not remove events)
-        event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year])
+        event = apply_event_selection_4b( event, self.corrections_metadata[year], cut_on_lumimask=cut_on_lumimask)
 
         self._cutFlow.fill("all",  event[event.lumimask], allTag=True)
         self._cutFlow.fill("passNoiseFilter",  event[ event.lumimask & event.passNoiseFilter], allTag=True)
         self._cutFlow.fill("passHLT",  event[ event.lumimask & event.passNoiseFilter & event.passHLT], allTag=True)
 
         ### Apply object selection (function does not remove events, adds content to objects)
-        doLeptonRemoval = not isMixedData
-        event =  apply_object_selection_4b( event, self.corrections_metadata[year], doLeptonRemoval=doLeptonRemoval  )
+        event =  apply_object_selection_4b( event, self.corrections_metadata[year], doLeptonRemoval=do_lepton_jet_cleaning  )
         self._cutFlow.fill("passJetMult",  event[ event.lumimask & event.passNoiseFilter & event.passHLT & event.passJetMult ], allTag=True)
 
         ### Filtering object and event selection

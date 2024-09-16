@@ -116,25 +116,83 @@ class analysis(processor.ProcessorABC):
         self.year    = event.metadata['year']
         self.year_label = self.corrections_metadata[self.year]['year_label']
         self.processName = event.metadata['processName']
-        self.isMC    = False if "data" in self.processName else True
 
         if self.top_reconstruction_override:
             self.top_reconstruction = self.top_reconstruction_override
-            logging.info(f"top_reconstruction overridden to {self.top_reconstruction}")
+            logging.info(f"top_reconstruction overridden to {self.top_reconstruction}\n")
         else:
             self.top_reconstruction = event.metadata.get("top_reconstruction", None)
 
+
+        #
+        # Set process type flags
+        #
+        self.isMC     = False if "data"    in self.processName else True
+        self.isPSData = True  if "ps_data" in self.processName else False
         self.isMixedData    = not (self.dataset.find("mix_v") == -1)
+        if self.isMixedData:
+            self.isMC = False
         self.isDataForMixed = not (self.dataset.find("data_3b_for_mixed") == -1)
         self.isTTForMixed   = not (self.dataset.find("TTTo") == -1) and not ( self.dataset.find("_for_mixed") == -1 )
 
+
+        #
+        #  Nominal config (...what we would do for data)
+        #
+        self.cut_on_lumimask         = True
+        self.cut_on_HLT_decision     = True
+        self.do_MC_weights           = False
+        self.do_jet_calibration      = False
+        self.do_lepton_jet_cleaning  = True
+        self.override_selected_with_flavor_bit  = False
+        self.use_prestored_btag_SF  = False
+
+        if self.isMC:
+            self.cut_on_lumimask     = False
+            self.cut_on_HLT_decision = False
+            self.do_jet_calibration  = True
+            self.do_MC_weights       = True
+
+
+        if self.isSyntheticData:
+            self.do_lepton_jet_cleaning  = False
+            self.override_selected_with_flavor_bit  = True
+
+            if self.isMC:
+                self.do_jet_calibration     = False
+                self.do_MC_weights          = True
+                self.use_prestored_btag_SF  = True
+                self.cut_on_HLT_decision    = False
+
+
+        if self.isPSData:
+            self.cut_on_lumimask     = False
+            self.cut_on_HLT_decision = False
+
+
         if self.isMixedData:
-            self.isMC = False
+            self.cut_on_lumimask     = False
+            self.cut_on_HLT_decision = False
+            self.do_lepton_jet_cleaning  = False
+
+        if self.isTTForMixed:
+            self.cut_on_lumimask        = False
+            self.cut_on_HLT_decision    = False
+            self.do_lepton_jet_cleaning = False
+            self.do_jet_calibration     = False
+
+        if self.isDataForMixed:
+            self.cut_on_HLT_decision = False
+            self.do_lepton_jet_cleaning  = False
+
+
+        logging.debug(f'{self.chunk} isData={False}, isMC={self.isMC}, isMixedData={self.isMixedData}, isDataForMixed={self.isDataForMixed}, isTTForMixed={self.isTTForMixed},  isSyntheticData={self.isSyntheticData}, isPSData={self.isPSData} for file {fname}\n')
+        logging.debug(f'{self.chunk} isMC {self.isMC}, isSyntheticData {self.isSyntheticData}, isPSData={self.isPSData}\n\n')
+
+
+
 
         self.nEvent = len(event)
-
-        logging.debug(fname)
-        logging.debug(f'{self.chunk}Process {self.nEvent} Events')
 
         #
         # Reading SvB friend trees
@@ -229,14 +287,14 @@ class analysis(processor.ProcessorABC):
         #
         # Event selection
         #
-        event = apply_event_selection_4b( event, self.isMC, self.corrections_metadata[self.year], self.isMixedData)
+        event = apply_event_selection_4b( event, self.corrections_metadata[self.year], cut_on_lumimask=self.cut_on_lumimask)
 
 
         # target = Chunk.from_coffea_events(event)
         # event['tmptrigWeight'] = self.friend.arrays(target)
 
         ### adds all the event mc weights and 1 for data
-        weights, list_weight_names = add_weights( event, self.isMC, self.dataset, self.year_label,
+        weights, list_weight_names = add_weights( event, self.do_MC_weights, self.dataset, self.year_label,
                                                   self.estart, self.estop,
                                                   self.corrections_metadata[self.year],
                                                   self.apply_trigWeight,
@@ -253,16 +311,15 @@ class analysis(processor.ProcessorABC):
         #
         # Calculate and apply Jet Energy Calibration
         #
-        if ( self.isSyntheticData or self.isMixedData or self.isDataForMixed or self.isTTForMixed or not self.isMC ):  #### AGE: data corrections are not applied. Should be changed
-            jets = event.Jet
-
-        else:
+        if self.do_jet_calibration:
             juncWS = [ self.corrections_metadata[self.year]["JERC"][0].replace("STEP", istep)
                        for istep in ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"] ] #+ self.corrections_metadata[self.year]["JERC"][2:]
 
             if self.run_systematics:
                 juncWS += [self.corrections_metadata[self.year]["JERC"][1]]
             jets = init_jet_factory(juncWS, event, self.isMC)
+        else:
+            jets = event.Jet
 
         shifts = [({"Jet": jets}, None)]
         if self.run_systematics:
@@ -281,15 +338,14 @@ class analysis(processor.ProcessorABC):
 
 
         # Apply object selection (function does not remove events, adds content to objects)
-        doLeptonRemoval = not (self.isSyntheticData or self.isMixedData or self.isTTForMixed or self.isDataForMixed)
         event = apply_object_selection_4b( event, self.corrections_metadata[self.year],
-                                           doLeptonRemoval=doLeptonRemoval, isSyntheticData=self.isSyntheticData )
+                                           doLeptonRemoval=self.do_lepton_jet_cleaning, override_selected_with_flavor_bit=self.override_selected_with_flavor_bit )
 
         selections = PackedSelection()
         selections.add( "lumimask", event.lumimask)
         selections.add( "passNoiseFilter", event.passNoiseFilter)
-        skip_HLT_cut = (self.isMC or self.isMixedData or self.isTTForMixed or self.isDataForMixed)
-        selections.add( "passHLT", ( np.full(len(event), True) if skip_HLT_cut else event.passHLT ) )
+        #selections.add( "passHLT", ( np.full(len(event), True) if skip_HLT_cut else event.passHLT ) )
+        selections.add( "passHLT", ( event.passHLT if self.cut_on_HLT_decision else np.full(len(event), True)  ) )
         selections.add( 'passJetMult', event.passJetMult )
         allcuts = [ 'lumimask', 'passNoiseFilter', 'passHLT', 'passJetMult' ]
         event['weight'] = weights.weight()   ### this is for _cutflow
@@ -328,7 +384,7 @@ class analysis(processor.ProcessorABC):
             weights, list_weight_names = add_btagweights( event, weights,
                                                          list_weight_names=list_weight_names,
                                                          shift_name=shift_name,
-                                                         isSyntheticData=self.isSyntheticData,
+                                                         use_prestored_btag_SF=self.use_prestored_btag_SF,
                                                          run_systematics=self.run_systematics,
                                                          corrections_metadata=self.corrections_metadata[self.year]
             )
@@ -384,7 +440,6 @@ class analysis(processor.ProcessorABC):
         create_cand_jet_dijet_quadjet( selev, event.event,
                                       isMC = self.isMC,
                                       apply_FvT=self.apply_FvT,
-                                      isSyntheticData=self.isSyntheticData,
                                       apply_boosted_veto=self.apply_boosted_veto,
                                       run_SvB=self.run_SvB,
                                       run_systematics=self.run_systematics,
@@ -406,7 +461,7 @@ class analysis(processor.ProcessorABC):
                                                             apply_FvT=self.apply_FvT,
                                                             isDataForMixed=self.isDataForMixed,
                                                             list_weight_names=list_weight_names,
-                                                            event_metadata=event.metadata, 
+                                                            event_metadata=event.metadata,
                                                             year_label=self.year_label,
                                                             len_event=len(event),
             )
@@ -465,9 +520,7 @@ class analysis(processor.ProcessorABC):
                                               apply_FvT=self.apply_FvT,
                                               run_SvB=self.run_SvB,
                                               top_reconstruction=self.top_reconstruction,
-                                              isMixedData=self.isMixedData,
                                               isDataForMixed=self.isDataForMixed,
-                                              isTTForMixed=self.isTTForMixed,
                                               event_metadata=event.metadata)
 
 

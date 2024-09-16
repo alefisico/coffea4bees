@@ -14,13 +14,13 @@ cd python/
 # fi
 # echo "############### Modifying dataset file with skimmer ci output"
 # cat metadata/datasets_ci.yml
-#python metadata/merge_yaml_datasets.py -m metadata/datasets_HH4b.yml -f skimmer/metadata/picoaod_datasets_declustered_data_Run2_seed17.yml -o metadata/datasets_synthetic_seed17.yml
+python metadata/merge_yaml_datasets.py -m metadata/datasets_HH4b.yml -f skimmer/metadata/picoaod_datasets_declustered_data_Run2_seed0.yml -o metadata/datasets_synthetic_seed0.yml
 
 # echo "############### Changing metadata"
 # sed -e "s/apply_FvT.*/apply_FvT: false/" -e "s/apply_trig.*/apply_trigWeight: false/" -e "s/run_SvB.*/run_SvB: false/"  analysis/metadata/HH4b.yml > analysis/metadata/tmp.yml
 # cat analysis/metadata/tmp.yml
 echo "############### Running test processor"
-time python runner.py -o test_synthetic_data_seed17.coffea -d data -p analysis/processors/processor_HH4b.py -y UL17 UL18 UL16_preVFP UL16_postVFP -op analysis/hists/ -c analysis/metadata/HH4b_synthetic_data.yml -m metadata/datasets_synthetic_seed17.yml
+time python runner.py -o test_synthetic_data_seed0.coffea -d data -p analysis/processors/processor_HH4b.py -y UL17 UL18 UL16_preVFP UL16_postVFP -op analysis/hists/ -c analysis/metadata/HH4b_synthetic_data.yml -m metadata/datasets_synthetic_seed0.yml
 
 time python runner.py -o nominal_noTT.coffea -d data -p analysis/processors/processor_HH4b.py -y UL17 UL18 UL16_preVFP UL16_postVFP -op analysis/hists/ -c analysis/metadata/HH4b_subtract_tt.yml
 
