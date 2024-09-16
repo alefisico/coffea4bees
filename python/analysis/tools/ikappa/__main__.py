@@ -5,6 +5,7 @@ python -m analysis.tools.ikappa
 """
 
 import json
+from argparse import ArgumentParser
 from functools import partial
 from queue import Queue
 from threading import Thread
@@ -263,9 +264,14 @@ div.itemize {white-space: break-spaces;}
 
 
 if __name__ == "__main__":
+    argparser = ArgumentParser()
+    argparser.add_argument("-p", "--port", type=int, default=10200)
+    args = argparser.parse_args()
+
     server = Server(
         {"/": Main.page},
         num_procs=1,
+        port=args.port,
     )
     server.start()
     server.io_loop.add_callback(server.show, "/")

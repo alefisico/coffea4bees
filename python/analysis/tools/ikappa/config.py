@@ -1,5 +1,4 @@
 from types import MappingProxyType
-from typing import Callable
 
 Datasets: dict[str, tuple[str, ...]] = MappingProxyType(
     {
@@ -49,22 +48,23 @@ Palette: tuple[str, ...] = (
 )
 
 
-class UI:
-    # plot
+class Plot:
     figure_height = 400
+    fill_alpha = 0.2
     legend_width = 200
     legend_checkbox_width = 27
     legend_glyph_width = legend_checkbox_width * 3
-    # browser
+    tooltip_float_precision = 4
+
+
+class UI:
+    # layout
     log_height = 50
     sidebar_width = 200
     # widgets
     multichoice_height = 40
     numeric_input_width = 80
-
+    # colors
     background_color = "#E8E8E8"
     border_color = "#C8C8C8"
     border = f"1px solid {border_color}"
-
-
-FloatingPrecision: int = 6

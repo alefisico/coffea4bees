@@ -53,7 +53,7 @@ from hist.axis import (
 )
 
 from ._utils import RGB, Component
-from .config import UI, CouplingScan, Datasets, FloatingPrecision, Palette, Stacks
+from .config import UI, CouplingScan, Datasets, Palette, Plot, Stacks
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -121,7 +121,7 @@ _GLYPH_ICONS = {
 
 
 # functions
-_FF = f"{{:.{FloatingPrecision}g}}".format
+_FF = f"{{:.{Plot.tooltip_float_precision}g}}".format
 
 
 def _find_process(categories: Collection[str]):
@@ -160,8 +160,9 @@ function logySetBottom(val, bottom) {
     "tooltip_x": """
 function tooltipX(val, err, precision) {
     let labels = new Array(val.length);
+    const total = `(${pyFloatFormat(val.reduce((a, b) => a + b, 0), precision)} \u00B1 ${pyFloatFormat(err.reduce((a, b) => Math.sqrt(a**2 + b**2), 0), precision)})`;
     for (let i = 0; i < val.length; i++) {
-        labels[i] = `${pyFloatFormat(val[i], precision)} \u00B1 ${pyFloatFormat(err[i], precision)}`;
+        labels[i] = `${pyFloatFormat(val[i], precision)} \u00B1 ${pyFloatFormat(err[i], precision)} ${total}`;
     }
     return labels;
 }
@@ -182,6 +183,7 @@ class _DataField:
 class _PlotField:
     upper = "upper_{}".format
     lower = "lower_{}".format
+    bottom = "bottom_{}".format
     label_count = "label_count_{}".format
 
 
@@ -193,6 +195,11 @@ class _ColumnLike:
 
     def zeros(self) -> npt.NDArray:
         return np.zeros(self._shape, self._dtype)
+
+    def copy(self, arr: npt.NDArray) -> npt.NDArray:
+        new = self.zeros()
+        new[:] = arr
+        return new
 
 
 class BHAxis:
@@ -329,7 +336,7 @@ def _btn(label: str, *onclick):
 def _checkbox():
     return Checkbox(
         active=True,
-        width=UI.legend_checkbox_width - 10,  # 5px margin
+        width=Plot.legend_checkbox_width - 10,  # 5px margin
     )
 
 
@@ -429,6 +436,9 @@ class _KappaModel(_Matched):
     def __contains__(self, item):
         return item in self.matched._match
 
+    def __len__(self):
+        return len(self.matched._match)
+
     def update(self, processes: Iterable[str]):
         self.matched = _KappaMatch(
             self._dom_patterns.value, processes, self._dom_model.value
@@ -483,6 +493,9 @@ class _StackGroup(_Matched):
 
     def __contains__(self, item):
         return item in self.matched
+
+    def __len__(self):
+        return len(self.matched)
 
     def update(self, processes: Iterable[str]):
         if set(self._dom_bins.value) <= set(processes):
@@ -731,8 +744,7 @@ class HistGroup(Component):
             _palette(
                 (
                     len(self._processes)
-                    + sum(len(v) for v in models.values())
-                    + sum(len(v.matched) for v in stacks)
+                    + sum(len(v) for v in chain(models.values(), stacks))
                 )
             )
         )
@@ -767,12 +779,12 @@ class HistGroup(Component):
                 *(
                     TablerIcon(
                         icon_name=v,
-                        size=f"{UI.legend_checkbox_width-6}px",
+                        size=f"{Plot.legend_checkbox_width-6}px",
                         styles={"padding": "0 3px", "title": k},
                     )
                     for k, v in _GLYPH_ICONS.items()
                 ),
-                width=UI.legend_glyph_width,
+                width=Plot.legend_glyph_width,
                 visible=False,
             ),
             row(*glyph_all.values(), visible=False),
@@ -811,7 +823,9 @@ class HistGroup(Component):
             )
 
         def legend_title(title: str, *badges: str):
-            padding = Div(text="", width=UI.legend_glyph_width, visible=False, margin=0)
+            padding = Div(
+                text="", width=Plot.legend_glyph_width, visible=False, margin=0
+            )
             div = Div(text=title, align="start", styles={"font-size": "1.2em"})
             if badges:
                 div = self.shared.with_badge(div)
@@ -838,7 +852,7 @@ class HistGroup(Component):
 
         legend_dom = ScrollBox(
             child=column(*legend_doms, sizing_mode="stretch_height"),
-            width=UI.legend_width,
+            width=Plot.legend_width,
             styles=_BOX_STYLE,
             sizing_mode="stretch_height",
         )
@@ -860,7 +874,7 @@ for (let glyph of glyphs) {
 button.icon.icon_name = icon;
 """
                 + f"""
-legend.width = (legend.width + {UI.legend_glyph_width} * modifier);
+legend.width = (legend.width + {Plot.legend_glyph_width} * modifier);
 """,
             )
         )
@@ -889,7 +903,7 @@ legend.width = (legend.width + {UI.legend_glyph_width} * modifier);
             field: str,
             name: str,
             source: ColumnDataSource,
-            bottom: float,
+            bottom: float | str,
             fig: figure,
             renderers: list,
         ):
@@ -899,7 +913,7 @@ legend.width = (legend.width + {UI.legend_glyph_width} * modifier);
                 top=field,
                 bottom=bottom,
                 source=source,
-                fill_color=color.copy(0.1).rgba,
+                fill_color=color.copy(Plot.fill_alpha).rgba,
                 **_HIST_FILL,
                 name=_PlotField.label_count(name),
             )
@@ -951,7 +965,7 @@ legend.width = (legend.width + {UI.legend_glyph_width} * modifier);
         ):
             couplings = model.matched.model.diagrams[0]
             sliders = {k: v for k, v in sliders.items() if k in couplings}
-            basis = [*map(_DataField.basis, range(len(model.matched._match)))]
+            basis = [*map(_DataField.basis, range(len(model)))]
             js_change = CustomJS(
                 args=dict(
                     col_field=field,
@@ -967,7 +981,7 @@ legend.width = (legend.width + {UI.legend_glyph_width} * modifier);
                     normalized=normalized,
                     density=density,
                     log_y=log_y,
-                    precision=FloatingPrecision,
+                    precision=Plot.tooltip_float_precision,
                 ),
                 # fmt: off
                 code=
@@ -999,8 +1013,7 @@ source.change.emit();
             for slider in sliders.values():
                 slider.js_on_change("value", js_change)
 
-        # TODO render plots
-
+        # render plots
         plots = []
         for title, (val, var, axis) in data.items():
             logger(f'Rendering histogram "{title}"')
@@ -1021,7 +1034,7 @@ source.change.emit();
             tooltip.renderers = []
             fig = self.__ticks(
                 figure(
-                    height=UI.figure_height,
+                    height=Plot.figure_height,
                     sizing_mode="stretch_width",
                     tools="pan,wheel_zoom,box_zoom,reset",
                     y_axis_type=y_axis_type,
@@ -1048,7 +1061,11 @@ source.change.emit();
             _plot = partial(
                 render_glyphs, bottom=_bottom, fig=fig, renderers=tooltip.renderers
             )
-            _source = partial(setup_source, bottom=_bottom, width=_width)
+            _plot_stack = partial(render_glyphs, fig=fig, renderers=tooltip.renderers)
+            _setup_source = partial(setup_source, bottom=_bottom, width=_width)
+            _setup_bottom = partial(
+                self.__logy_set_bottom, bottom=_bottom if log_y else None
+            )
             _js_model = partial(
                 js_model, bottom=_bottom, width=_width, sliders=coupling_sliders
             )
@@ -1061,7 +1078,7 @@ source.change.emit();
                 _plot(
                     field=field,
                     name=p,
-                    source=_source(
+                    source=_setup_source(
                         field=field, name=p, source=source, val=val[p], var=var[p]
                     ),
                 )
@@ -1083,13 +1100,53 @@ source.change.emit();
                     _plot(
                         field=field,
                         name=m.name,
-                        source=_source(
+                        source=_setup_source(
                             field=field, name=m.name, source=source, val=_val, var=_var
                         ),
                     )
                     _js_model(model=m, field=field, name=m.name, source=source)
 
-            # TODO render stacks, js normalize, js density, js stack, one errorbar
+            # render stacks
+            for i, stack in enumerate(stacks):
+                source = ColumnDataSource(data=_edges)
+                _vals, _err, _total = [_np.zeros()], _np.zeros(), None
+                for j, p in enumerate(stack):
+                    field = _DataField.stack(i, j)
+                    source.data[_DataField.raw(field)] = val[p]
+                    source.data[_DataField.raw(_DataField.var(field))] = var[p]
+                    _vals.append(_vals[-1] + val[p])
+                    _err += var[p]
+                _err = np.sqrt(_err)
+                if normalized:
+                    _total = _vals[-1].sum()
+                    for v in _vals + [_err]:
+                        v /= _total
+                if density and _width is not None:
+                    for v in _vals + [_err]:
+                        v /= _width
+                for j, p in enumerate(stack):
+                    field = _DataField.stack(i, j)
+                    base = _vals[j + 1]
+                    source.data[_PlotField.bottom(field)] = _setup_bottom(_vals[j])
+                    source.data[field] = _setup_bottom(base)
+                    if j != len(stack) - 1:
+                        upper = lower = source.data[field]
+                    else:
+                        upper = _setup_bottom(base + _err)
+                        lower = _setup_bottom(base - _err)
+                    source.data[_PlotField.upper(field)] = upper
+                    source.data[_PlotField.lower(field)] = lower
+                    source.data[_PlotField.label_count(p)] = self.__tooltip_x(
+                        *self.__preprocess(
+                            val[p], var[p], normalized, density, _width, _total
+                        ),
+                    )
+                    _plot_stack(
+                        field=field,
+                        name=p,
+                        source=source,
+                        bottom=_PlotField.bottom(field),
+                    )
 
         return column(
             *coupling_doms,
@@ -1177,15 +1234,16 @@ source.change.emit();
 
     @staticmethod
     def __tooltip_x(val: pd.Series, err: pd.Series):
-        return [f"{_FF(v)} \u00B1 {_FF(e)}" for v, e in zip(val, err)]
+        total = f"{_FF(val.sum())} \u00B1 {_FF(np.sqrt((err**2).sum()))}"
+        return [f"{_FF(v)} \u00B1 {_FF(e)} ({total})" for v, e in zip(val, err)]
 
     @staticmethod
     def __logy_find_bottom(val: pd.DataFrame):
         return 10 ** np.floor(np.log10(val[val > 0].min().min()))
 
     @staticmethod
-    def __logy_set_bottom(val: pd.DataFrame, bottom: Optional[float]):
-        return val.clip(lower=bottom) if bottom is not None else val
+    def __logy_set_bottom(val: pd.Series | npt.NDArray, bottom: Optional[float]):
+        return np.clip(val, bottom, None) if bottom is not None else val
 
     @staticmethod
     def __preprocess(
@@ -1194,10 +1252,11 @@ source.change.emit();
         normalize: bool,
         density: bool,
         width: npt.NDArray,
+        total: float = None,
     ):
         err = np.sqrt(var)
         if normalize:
-            total = np.abs(val.sum(axis=0))
+            total = np.abs(val.sum(axis=0)) if total is None else total
             val /= total
             err /= total
         if density and width is not None:
