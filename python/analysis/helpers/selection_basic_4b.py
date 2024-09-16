@@ -138,6 +138,7 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
                                    apply_FvT:bool = False,
                                    apply_boosted_veto:bool = False,
                                    run_SvB:bool = False,
+                                   run_systematics:bool = False,
                                    classifier_SvB = None,
                                    classifier_SvB_MA = None,
                                    ):
@@ -245,30 +246,6 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
     quadJet["dphi"] = quadJet["lead"].delta_phi(quadJet["subl"])
     quadJet["deta"] = quadJet["lead"].eta - quadJet["subl"].eta
 
-    if apply_FvT:
-        quadJet["FvT_q_score"] = np.concatenate( [
-            selev.FvT.q_1234[:, np.newaxis],
-            selev.FvT.q_1324[:, np.newaxis],
-            selev.FvT.q_1423[:, np.newaxis],
-        ], axis=1, )
-
-    if run_SvB:
-
-        if (classifier_SvB is not None) | (classifier_SvB_MA is not None):
-            compute_SvB(selev, classifier_SvB, classifier_SvB_MA)
-
-        quadJet["SvB_q_score"] = np.concatenate( [
-            selev.SvB.q_1234[:, np.newaxis],
-            selev.SvB.q_1324[:, np.newaxis],
-            selev.SvB.q_1423[:, np.newaxis],
-            ], axis=1, )
-
-        quadJet["SvB_MA_q_score"] = np.concatenate( [
-            selev.SvB_MA.q_1234[:, np.newaxis],
-            selev.SvB_MA.q_1324[:, np.newaxis],
-            selev.SvB_MA.q_1423[:, np.newaxis],
-            ], axis=1, )
-
     #
     # Compute Signal Regions
     #
@@ -286,6 +263,49 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
     quadJet["SB"] = quadJet.passDiJetMass & ~quadJet.SR
 
     #
+    # pick quadJet at random giving preference to ones which passDiJetMass and MDRs
+    #
+    quadJet["rank"] = ( 10 * quadJet.passDiJetMass + quadJet.lead.passMDR + quadJet.subl.passMDR + quadJet.random )
+    quadJet["selected"] = quadJet.rank == np.max(quadJet.rank, axis=1)
+
+
+    if apply_FvT:
+        quadJet["FvT_q_score"] = np.concatenate( [
+            selev.FvT.q_1234[:, np.newaxis],
+            selev.FvT.q_1324[:, np.newaxis],
+            selev.FvT.q_1423[:, np.newaxis],
+        ], axis=1, )
+
+    if run_SvB:
+
+        if (classifier_SvB is not None) | (classifier_SvB_MA is not None):
+
+            ##### AGE: I dont understand why synthetic does not run without this
+            if run_systematics: tmp_mask = (selev.fourTag & quadJet[quadJet.selected][:, 0].SR)
+            else: tmp_mask = np.full(len(selev), True)
+            compute_SvB(selev,
+                        tmp_mask,
+                        classifier_SvB,
+                        classifier_SvB_MA,
+                        doCheck=False)
+
+        quadJet["SvB_q_score"] = np.concatenate( [
+            selev.SvB.q_1234[:, np.newaxis],
+            selev.SvB.q_1324[:, np.newaxis],
+            selev.SvB.q_1423[:, np.newaxis],
+            ], axis=1, )
+
+        quadJet["SvB_MA_q_score"] = np.concatenate( [
+            selev.SvB_MA.q_1234[:, np.newaxis],
+            selev.SvB_MA.q_1324[:, np.newaxis],
+            selev.SvB_MA.q_1423[:, np.newaxis],
+            ], axis=1, )
+
+    selev["diJet"] = diJet
+    selev["quadJet"] = quadJet
+    selev["quadJet_selected"] = quadJet[quadJet.selected][:, 0]
+    selev["passDiJetMass"] = ak.any(quadJet.passDiJetMass, axis=1)
+    #
     #  Build the close dR and other quadjets
     #    (There is Probably a better way to do this ...
     #
@@ -293,16 +313,7 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
     arg_min_close_dr = arg_min_close_dr.to_numpy()
     selev["quadJet_min_dr"] = quadJet[ np.array(range(len(quadJet))), arg_min_close_dr ]
 
-    #
-    # pick quadJet at random giving preference to ones which passDiJetMass and MDRs
-    #
-    quadJet["rank"] = ( 10 * quadJet.passDiJetMass + quadJet.lead.passMDR + quadJet.subl.passMDR + quadJet.random )
-    quadJet["selected"] = quadJet.rank == np.max(quadJet.rank, axis=1)
 
-    selev["diJet"] = diJet
-    selev["quadJet"] = quadJet
-    selev["quadJet_selected"] = quadJet[quadJet.selected][:, 0]
-    selev["passDiJetMass"] = ak.any(quadJet.passDiJetMass, axis=1)
     selev["m4j"] = selev.v4j.mass
     selev["m4j_HHSR"] = ak.where(~selev.quadJet_selected.HHSR, -2, selev.m4j)
     selev["m4j_ZHSR"] = ak.where(~selev.quadJet_selected.ZHSR, -2, selev.m4j)

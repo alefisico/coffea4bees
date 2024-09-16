@@ -114,6 +114,7 @@ class analysis(processor.ProcessorABC):
         self.estop   = event.metadata['entrystop']
         self.chunk   = f'{self.dataset}::{self.estart:6d}:{self.estop:6d} >>> '
         self.year    = event.metadata['year']
+        self.year_label = self.corrections_metadata[self.year]['year_label']
         self.processName = event.metadata['processName']
 
         if self.top_reconstruction_override:
@@ -288,6 +289,17 @@ class analysis(processor.ProcessorABC):
         #
         event = apply_event_selection_4b( event, self.corrections_metadata[self.year], cut_on_lumimask=self.cut_on_lumimask)
 
+
+        # target = Chunk.from_coffea_events(event)
+        # event['tmptrigWeight'] = self.friend.arrays(target)
+
+        ### adds all the event mc weights and 1 for data
+        weights, list_weight_names = add_weights( event, self.do_MC_weights, self.dataset, self.year_label,
+                                                  self.estart, self.estop,
+                                                  self.corrections_metadata[self.year],
+                                                  self.apply_trigWeight,
+                                                  self.isTTForMixed
+                                                 )
         #
         # Checking boosted selection (should change in the future)
         #
@@ -315,27 +327,15 @@ class analysis(processor.ProcessorABC):
                 shifts.extend( [ ({"Jet": jets[f"JES_{jesunc}"].up}, f"CMS_scale_j_{jesunc}Up"),
                                  ({"Jet": jets[f"JES_{jesunc}"].down}, f"CMS_scale_j_{jesunc}Down"), ] )
 
-            # shifts.extend( [({"Jet": jets.JER.up}, f"CMS_res_j_{year_label}Up"), ({"Jet": jets.JER.down}, f"CMS_res_j_{year_label}Down")] )
+            # shifts.extend( [({"Jet": jets.JER.up}, f"CMS_res_j_{self.year_label}Up"), ({"Jet": jets.JER.down}, f"CMS_res_j_{self.year_label}Down")] )
 
             logging.info(f"\nJet variations {[name for _, name in shifts]}")
 
-        return processor.accumulate( self.process_shift(update_events(event, collections), name) for collections, name in shifts )
+        return processor.accumulate( self.process_shift(update_events(event, collections), name, weights, list_weight_names) for collections, name in shifts )
 
-    def process_shift(self, event, shift_name):
+    def process_shift(self, event, shift_name, weights, list_weight_names):
         """For different jet variations. It computes event variations for the nominal case."""
 
-        year_label = self.corrections_metadata[self.year]['year_label']
-
-        # target = Chunk.from_coffea_events(event)
-        # event['tmptrigWeight'] = self.friend.arrays(target)
-
-        ### adds all the event mc weights and 1 for data
-        weights, list_weight_names = add_weights( event, self.do_MC_weights, self.dataset, year_label,
-                                                  self.estart, self.estop,
-                                                  self.corrections_metadata[self.year],
-                                                  self.apply_trigWeight,
-                                                  self.isTTForMixed
-                                                 )
 
         # Apply object selection (function does not remove events, adds content to objects)
         event = apply_object_selection_4b( event, self.corrections_metadata[self.year],
@@ -378,7 +378,6 @@ class analysis(processor.ProcessorABC):
 
         #
         # Calculate and apply btag scale factors
-        #### AGE to add btag JES
         #
         if self.isMC and self.apply_btagSF:
 
@@ -443,6 +442,7 @@ class analysis(processor.ProcessorABC):
                                       apply_FvT=self.apply_FvT,
                                       apply_boosted_veto=self.apply_boosted_veto,
                                       run_SvB=self.run_SvB,
+                                      run_systematics=self.run_systematics,
                                       classifier_SvB=self.classifier_SvB,
                                       classifier_SvB_MA=self.classifier_SvB_MA,
                                       )
@@ -462,7 +462,7 @@ class analysis(processor.ProcessorABC):
                                                             isDataForMixed=self.isDataForMixed,
                                                             list_weight_names=list_weight_names,
                                                             event_metadata=event.metadata,
-                                                            year_label=year_label,
+                                                            year_label=self.year_label,
                                                             len_event=len(event),
             )
 
