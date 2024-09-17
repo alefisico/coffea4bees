@@ -8,7 +8,7 @@ analysis-makeweights-job:
     - source .ci-workflows/analysis-makeweights-job.sh
   artifacts:
     paths:
-      - python/analysis/testJCM_Coffea/
+      - python/analysis/testJCM_ROOT/jetCombinatoricModel_SB_.yml
 
 twoStageClosure-test-job:   
   stage: fits
