@@ -517,9 +517,9 @@ if __name__ == '__main__':
                         },
                         sync=True,
                     )
-                    friends = merged_friends
                     for v in friends.values():
                         v.reset(confirm=False)
+                    friends = merged_friends
                 else:
                     for k, v in friends.items():
                         friends[k] = v.merge(

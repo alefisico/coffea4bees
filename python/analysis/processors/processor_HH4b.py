@@ -47,21 +47,22 @@ class analysis(processor.ProcessorABC):
     def __init__(
         self,
         *,
-        JCM=None,
-        SvB=None,
-        SvB_MA=None,
-        blind=False,
-        apply_trigWeight=True,
-        apply_btagSF=True,
-        apply_FvT=True,
-        apply_boosted_veto=False,
-        run_SvB=True,
-        corrections_metadata="analysis/metadata/corrections.yml",
-        top_reconstruction_override = False,
-        run_systematics=[],
+        JCM: callable = None,
+        SvB: str = None,
+        SvB_MA: str = None,
+        blind: bool = False,
+        apply_trigWeight: bool = True,
+        apply_btagSF: bool = True,
+        apply_FvT: bool = True,
+        apply_boosted_veto: bool = False,
+        run_SvB: bool = True,
+        corrections_metadata: str = "analysis/metadata/corrections.yml",
+        top_reconstruction_override: bool = False,
+        run_systematics: list = [],
         make_classifier_input: str = None,
-        isSyntheticData=False,
-        subtract_ttbar_with_weights = False,
+        isSyntheticData: bool = False,
+        subtract_ttbar_with_weights: bool = False,
+        friend_trigWeight: str = None,
     ):
 
         logging.debug("\nInitialize Analysis Processor")
@@ -78,10 +79,17 @@ class analysis(processor.ProcessorABC):
         self.classifier_SvB_MA = HCREnsemble(SvB_MA) if SvB_MA else None
         with open(corrections_metadata, "r") as f:
             self.corrections_metadata = yaml.safe_load(f)
+        
+        self.run_systematics = run_systematics
+        self.make_classifier_input = make_classifier_input
         self.top_reconstruction_override = top_reconstruction_override
         self.subtract_ttbar_with_weights = subtract_ttbar_with_weights
-
         self.isSyntheticData = isSyntheticData
+        self.friend_trigWeight = friend_trigWeight
+
+        if self.friend_trigWeight:
+            with open(friend_trigWeight, 'r') as f:
+                self.friend_trigWeight = Friend.from_json(json.load(f)['trigWeight'])
 
         self.cutFlowCuts = [
             "all",
@@ -99,12 +107,6 @@ class analysis(processor.ProcessorABC):
         if self.run_SvB:
             self.cutFlowCuts += ["passSvB", "failSvB"]
             self.histCuts += ["passSvB", "failSvB"]
-
-        self.run_systematics = run_systematics
-        self.make_classifier_input = make_classifier_input
-
-        # with open("hists/local/friends.json", 'r') as f:
-        #     self.friend = Friend.from_json(json.load(f)['trigWeight'])
 
     def process(self, event):
 
@@ -290,15 +292,19 @@ class analysis(processor.ProcessorABC):
         event = apply_event_selection_4b( event, self.corrections_metadata[self.year], cut_on_lumimask=self.cut_on_lumimask)
 
 
-        # target = Chunk.from_coffea_events(event)
-        # event['tmptrigWeight'] = self.friend.arrays(target)
+        target = Chunk.from_coffea_events(event)
 
         ### adds all the event mc weights and 1 for data
-        weights, list_weight_names = add_weights( event, self.do_MC_weights, self.dataset, self.year_label,
-                                                  self.estart, self.estop,
-                                                  self.corrections_metadata[self.year],
-                                                  self.apply_trigWeight,
-                                                  self.isTTForMixed
+        weights, list_weight_names = add_weights( event, target=target,
+                                                 do_MC_weights=self.do_MC_weights, 
+                                                 dataset=self.dataset, 
+                                                 year_label=self.year_label,
+                                                 estart=self.estart, 
+                                                 estop=self.estop,
+                                                 friend_trigWeight=self.friend_trigWeight,
+                                                 corrections_metadata=self.corrections_metadata[self.year],
+                                                 apply_trigWeight=self.apply_trigWeight,
+                                                 isTTForMixed=self.isTTForMixed
                                                  )
         #
         # Checking boosted selection (should change in the future)
@@ -481,6 +487,8 @@ class analysis(processor.ProcessorABC):
         #
         logging.debug(f"final weight {weights.weight()[:10]}")
         selev["weight"] = weights.weight()[analysis_selections]
+        selev["trigWeight"] = weights.partial_weight(include=['CMS_bbbb_resolved_ggf_triggerEffSF'])[analysis_selections]
+        selev["no_weight"] = np.ones(len(selev))
         if not shift_name:
             self._cutFlow.fill("passPreSel", selev)
             self._cutFlow.fill("passPreSel_woTrig", selev,

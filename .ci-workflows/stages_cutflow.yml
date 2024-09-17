@@ -72,4 +72,15 @@ synthetic-dataset-analyze-cutflow:
    paths:
      - python/analysis/tests/test_dump_cutflow_synthetic_datasets.yml
 
+weights-trigger-cutflow:
+ stage: cutflow
+ extends:
+   - .base_analysis
+ needs: 
+   - weights-trigger-analysis-job
+ script:
+   - source .ci-workflows/weights-trigger-cutflow-job.sh
+ artifacts:
+   paths:
+     - python/analysis/tests/test_dump_cutflow_trigWeight.yml
 

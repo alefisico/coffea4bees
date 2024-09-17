@@ -13,7 +13,9 @@ def add_weights(event, do_MC_weights: bool = True,
                 estop: int = None,
                 corrections_metadata: dict = None,
                 apply_trigWeight: bool = True,
+                friend_trigWeight: callable = None,
                 isTTForMixed: bool = False,
+                target: callable = None,
                 ):
     """Add weights to the event.
     """
@@ -33,18 +35,25 @@ def add_weights(event, do_MC_weights: bool = True,
 
         # trigger Weight (to be updated)
         if apply_trigWeight:
-            if "GluGlu" in dataset and "trigWeight" not in event.fields:
+            if ("GluGlu" in dataset) and ("trigWeight" not in event.fields):
                 ### this is temporary until trigWeight is computed in new code
-                trigWeight_file = uproot.open(f'{event.metadata["filename"].replace("picoAOD", "trigWeights")}')['Events']
-                trigWeight = trigWeight_file.arrays(['event', 'trigWeight_Data', 'trigWeight_MC'], entry_start=estart,entry_stop=estop)
+                if friend_trigWeight:
+                    trigWeight = friend_trigWeight.arrays(target)
+                    weights.add( 'CMS_bbbb_resolved_ggf_triggerEffSF',
+                                trigWeight.Data,
+                                trigWeight.MC,
+                                ak.where(event.passHLT, 1., 0.) )
+                else:
+                    trigWeight_file = uproot.open(f'{event.metadata["filename"].replace("picoAOD", "trigWeights")}')['Events']
+                    trigWeight = trigWeight_file.arrays(['event', 'trigWeight_Data', 'trigWeight_MC'], entry_start=estart,entry_stop=estop)
+                    if not ak.all(trigWeight.event == event.event):
+                        raise ValueError('trigWeight events do not match events ttree')
 
-                if not ak.all(trigWeight.event == event.event):
-                    raise ValueError('trigWeight events do not match events ttree')
+                    weights.add( 'CMS_bbbb_resolved_ggf_triggerEffSF',
+                                trigWeight["trigWeight_Data"],
+                                trigWeight["trigWeight_MC"],
+                                ak.where(event.passHLT, 1., 0.) )
 
-                weights.add( 'CMS_bbbb_resolved_ggf_triggerEffSF',
-                            trigWeight["trigWeight_Data"],
-                            trigWeight["trigWeight_MC"],
-                            ak.where(event.passHLT, 1., 0.) )
             else:
                 weights.add( "CMS_bbbb_resolved_ggf_triggerEffSF",
                             event.trigWeight.Data,
