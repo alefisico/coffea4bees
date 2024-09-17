@@ -295,7 +295,6 @@ class analysis(processor.ProcessorABC):
         target = Chunk.from_coffea_events(event)
 
         ### adds all the event mc weights and 1 for data
-<<<<<<< HEAD
         weights, list_weight_names = add_weights( event, target=target,
                                                  do_MC_weights=self.do_MC_weights, 
                                                  dataset=self.dataset, 
@@ -306,13 +305,6 @@ class analysis(processor.ProcessorABC):
                                                  corrections_metadata=self.corrections_metadata[self.year],
                                                  apply_trigWeight=self.apply_trigWeight,
                                                  isTTForMixed=self.isTTForMixed
-=======
-        weights, list_weight_names = add_weights( event, self.do_MC_weights, self.dataset, self.year_label,
-                                                  self.estart, self.estop,
-                                                  self.corrections_metadata[self.year],
-                                                  self.apply_trigWeight,
-                                                  self.isTTForMixed
->>>>>>> 53a4ccd0dde0f8f661d1a1710af4f9fcf621a154
                                                  )
         #
         # Checking boosted selection (should change in the future)
