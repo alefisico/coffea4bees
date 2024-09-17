@@ -98,16 +98,15 @@ synthetic-dataset-analyze:
     paths:
       - python/analysis/hists/test_synthetic_datasets.coffea
 
-weights-trigger-test-job:   
+weights-trigger-analysis-job:   
   stage: analysis-test   
   extends:
     - .base_analysis
-  needs: 
+  needs:
     - voms_proxy
+    - weights-trigger-friendtree-job
   script:
-    - source .ci-workflows/weights-trigger-test-job.sh
-  artifacts: 
+    - source .ci-workflows/weights-trigger-analysis-job.sh
+  artifacts:
     paths:
-    paths:
-      - python/analysis/trigger_weights/trigger_weights_friends.json
-      - python/analysis/trigger_weights/GluGluToHHTo4B_cHHH1_UL18/trigWeight.chunk2.root
+      - python/analysis/trigger_weights/test_trigWeight.coffea
