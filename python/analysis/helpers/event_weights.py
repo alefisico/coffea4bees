@@ -37,22 +37,26 @@ def add_weights(event, target,
         if apply_trigWeight:
             if "GluGlu" in dataset and "trigWeight" not in event.fields:
                 ### this is temporary until trigWeight is computed in new code
-                trigWeight_file = uproot.open(f'{event.metadata["filename"].replace("picoAOD", "trigWeights")}')['Events']
-                trigWeight = trigWeight_file.arrays(['event', 'trigWeight_Data', 'trigWeight_MC'], entry_start=estart,entry_stop=estop)
-                if not ak.all(trigWeight.event == event.event):
-                    raise ValueError('trigWeight events do not match events ttree')
+                if friend_trigWeight:
+                    trigWeight = friend_trigWeight.arrays(target)
+                    weights.add( 'CMS_bbbb_resolved_ggf_triggerEffSF',
+                                trigWeight.Data,
+                                trigWeight.MC,
+                                ak.where(event.passHLT, 1., 0.) )
+                    event['trigWeight'] = ak.zip({"Data": trigWeight.Data})
+                else:
+                    trigWeight_file = uproot.open(f'{event.metadata["filename"].replace("picoAOD", "trigWeights")}')['Events']
+                    trigWeight = trigWeight_file.arrays(['event', 'trigWeight_Data', 'trigWeight_MC'], entry_start=estart,entry_stop=estop)
+                    if not ak.all(trigWeight.event == event.event):
+                        raise ValueError('trigWeight events do not match events ttree')
 
-                # trigWeight = friend_trigWeight.arrays(target)
+                    weights.add( 'CMS_bbbb_resolved_ggf_triggerEffSF',
+                                trigWeight["trigWeight_Data"],
+                                trigWeight["trigWeight_MC"],
+                                ak.where(event.passHLT, 1., 0.) )
 
-                weights.add( 'CMS_bbbb_resolved_ggf_triggerEffSF',
-                            trigWeight["trigWeight_Data"],
-                            trigWeight["trigWeight_MC"],
-                            # trigWeight.Data,
-                            # trigWeight.MC,
-                            ak.where(event.passHLT, 1., 0.) )
-
-                event['trigWeight'] = trigWeight["trigWeight_Data"]  ### this is temporary
-                # event['trigWeight'] = trigWeight.Data
+                    event['trigWeight'] = trigWeight["trigWeight_Data"]  ### this is temporary
+                    event['trigWeight'] = ak.zip({"Data": trigWeight['trigWeight_Data']})
             else:
                 weights.add( "CMS_bbbb_resolved_ggf_triggerEffSF",
                             event.trigWeight.Data,

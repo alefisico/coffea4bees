@@ -40,12 +40,12 @@ def filling_nominal_histograms(selev, JCM,
     #    m4j_vs_leadSt_dR = dir.make<TH2F>("m4j_vs_leadSt_dR", (name+"/m4j_vs_leadSt_dR; m_{4j} [GeV]; S_{T} leading boson candidate #DeltaR(j,j); Entries").c_str(), 40,100,1100, 25,0,5);
     #    m4j_vs_sublSt_dR = dir.make<TH2F>("m4j_vs_sublSt_dR", (name+"/m4j_vs_sublSt_dR; m_{4j} [GeV]; S_{T} subleading boson candidate #DeltaR(j,j); Entries").c_str(), 40,100,1100, 25,0,5);
 
-    fill += hist.add( "trigWeight", (40, 0, 2, ("trigWeight", 'Trigger weight')), weight='no_weight' )
+    fill += hist.add( "trigWeight", (40, 0, 2, ("trigWeight.Data", 'Trigger weight')), weight='no_weight' )
 
     fill += hist.add( "nPVs", (101, -0.5, 100.5, ("PV.npvs", "Number of Primary Vertices")) )
     fill += hist.add( "nPVsGood", (101, -0.5, 100.5, ("PV.npvsGood", "Number of Good Primary Vertices")), )
 
-    fill += hist.add( "hT", (50, 0, 1500, ("hT", "h_{T} [GeV]")), weight="no_weight" )
+    fill += hist.add( "hT", (50, 0, 1500, ("hT", "h_{T} [GeV]")) )
     fill += hist.add( "hT_selected", (50, 0, 1500, ("hT_selected", "h_{T} [GeV]")), )
 
     fill += hist.add("xW",  (100, -12, 12, ("xW", "xW")))
