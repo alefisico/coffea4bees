@@ -9,7 +9,7 @@ if [[ $(hostname) = *fnal* ]]; then
 else
     DATASETS=metadata/datasets_HH4b_cernbox.yml
     echo "############### Modifying config"
-    sed -e "s|# friend_.*|friend_trigWeight: \/builds\/${CI_PROJECT_PATH}\/python\/analysis\/trigger_weights\/|" analysis/metadata/HH4b.yml > analysis/metadata/trigger_weights_HH4b.yml
+    sed -e "s|# friend_.*|friend_trigWeight: \/builds\/${CI_PROJECT_PATH}\/python\/analysis\/trigger_weights\/trigger_weights_friends.json|" analysis/metadata/HH4b.yml > analysis/metadata/trigger_weights_HH4b.yml
     cat analysis/metadata/trigger_weights_HH4b.yml
 fi
 echo "############### Running datasets from " $DATASETS

@@ -6,7 +6,7 @@ import numpy as np
 import uproot
 import logging
 
-def add_weights(event, target, 
+def add_weights(event, 
                 isMC: bool = True,
                 dataset: str = None,
                 year_label: str = None,
@@ -16,6 +16,7 @@ def add_weights(event, target,
                 apply_trigWeight: bool = True,
                 friend_trigWeight: callable = None,
                 isTTForMixed: bool = False,
+                target: callable = None,
                 ):
     """Add weights to the event.
     """
@@ -35,7 +36,7 @@ def add_weights(event, target,
 
         # trigger Weight (to be updated)
         if apply_trigWeight:
-            if "GluGlu" in dataset and "trigWeight" not in event.fields:
+            if ("GluGlu" in dataset) and ("trigWeight" not in event.fields):
                 ### this is temporary until trigWeight is computed in new code
                 if friend_trigWeight:
                     trigWeight = friend_trigWeight.arrays(target)

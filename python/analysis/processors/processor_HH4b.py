@@ -237,7 +237,7 @@ class analysis(processor.ProcessorABC):
         target = Chunk.from_coffea_events(event)
 
         ### adds all the event mc weights and 1 for data
-        weights, list_weight_names = add_weights( event, target,
+        weights, list_weight_names = add_weights( event, target=target,
                                                  isMC=self.isMC, 
                                                  dataset=self.dataset, 
                                                  year_label=self.year_label,
