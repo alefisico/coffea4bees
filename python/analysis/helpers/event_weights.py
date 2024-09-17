@@ -6,13 +6,15 @@ import numpy as np
 import uproot
 import logging
 
-def add_weights(event, isMC: bool = True,
+def add_weights(event, target, 
+                isMC: bool = True,
                 dataset: str = None,
                 year_label: str = None,
                 estart: int = 0,
                 estop: int = None,
                 corrections_metadata: dict = None,
                 apply_trigWeight: bool = True,
+                friend_trigWeight: callable = None,
                 isTTForMixed: bool = False,
                 ):
     """Add weights to the event.
@@ -37,14 +39,20 @@ def add_weights(event, isMC: bool = True,
                 ### this is temporary until trigWeight is computed in new code
                 trigWeight_file = uproot.open(f'{event.metadata["filename"].replace("picoAOD", "trigWeights")}')['Events']
                 trigWeight = trigWeight_file.arrays(['event', 'trigWeight_Data', 'trigWeight_MC'], entry_start=estart,entry_stop=estop)
-
                 if not ak.all(trigWeight.event == event.event):
                     raise ValueError('trigWeight events do not match events ttree')
+
+                # trigWeight = friend_trigWeight.arrays(target)
 
                 weights.add( 'CMS_bbbb_resolved_ggf_triggerEffSF',
                             trigWeight["trigWeight_Data"],
                             trigWeight["trigWeight_MC"],
+                            # trigWeight.Data,
+                            # trigWeight.MC,
                             ak.where(event.passHLT, 1., 0.) )
+
+                event['trigWeight'] = trigWeight["trigWeight_Data"]  ### this is temporary
+                # event['trigWeight'] = trigWeight.Data
             else:
                 weights.add( "CMS_bbbb_resolved_ggf_triggerEffSF",
                             event.trigWeight.Data,
