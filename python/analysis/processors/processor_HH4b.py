@@ -432,6 +432,7 @@ class analysis(processor.ProcessorABC):
         #
         logging.debug(f"final weight {weights.weight()[:10]}")
         selev["weight"] = weights.weight()[analysis_selections]
+        selev["trigWeight"] = weights.partial_weight(include=['CMS_bbbb_resolved_ggf_triggerEffSF'])[analysis_selections]
         selev["no_weight"] = np.ones(len(selev))
         if not shift_name:
             self._cutFlow.fill("passPreSel", selev)

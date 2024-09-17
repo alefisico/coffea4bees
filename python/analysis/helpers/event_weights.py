@@ -44,7 +44,6 @@ def add_weights(event,
                                 trigWeight.Data,
                                 trigWeight.MC,
                                 ak.where(event.passHLT, 1., 0.) )
-                    event['trigWeight'] = ak.zip({"Data": trigWeight.Data})
                 else:
                     trigWeight_file = uproot.open(f'{event.metadata["filename"].replace("picoAOD", "trigWeights")}')['Events']
                     trigWeight = trigWeight_file.arrays(['event', 'trigWeight_Data', 'trigWeight_MC'], entry_start=estart,entry_stop=estop)
@@ -56,8 +55,6 @@ def add_weights(event,
                                 trigWeight["trigWeight_MC"],
                                 ak.where(event.passHLT, 1., 0.) )
 
-                    event['trigWeight'] = trigWeight["trigWeight_Data"]  ### this is temporary
-                    event['trigWeight'] = ak.zip({"Data": trigWeight['trigWeight_Data']})
             else:
                 weights.add( "CMS_bbbb_resolved_ggf_triggerEffSF",
                             event.trigWeight.Data,
