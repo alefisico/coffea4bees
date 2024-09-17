@@ -56,12 +56,23 @@ class analysis(processor.ProcessorABC):
         if self.isMixedData:
             self.isMC = False
 
+        #
+        #  Nominal config (...what we would do for data)
+        #
+        self.cut_on_lumimask         = True
+        self.do_lepton_jet_cleaning  = True
+
+        if self.isMC:
+            self.cut_on_lumimask     = False
+            self.do_jet_calibration  = True
+
+
         self.nEvent = len(event)
 
         #
         # Event selection
         #
-        event = apply_event_selection_4b( event, self.isMC, self.corrections_metadata[self.year], self.isMixedData)
+        event = apply_event_selection_4b( event, self.corrections_metadata[self.year], cut_on_lumimask=self.cut_on_lumimask)
 
         #
         # Calculate and apply Jet Energy Calibration
@@ -75,7 +86,7 @@ class analysis(processor.ProcessorABC):
 
         # Apply object selection (function does not remove events, adds content to objects)
         event = apply_object_selection_4b( event, self.corrections_metadata[self.year],
-                                           doLeptonRemoval=True, isSyntheticData=False )
+                                           doLeptonRemoval=self.do_lepton_jet_cleaning )
 
         year_label = self.corrections_metadata[self.year]['year_label'].replace("UL", "20").split("_")[0]
         emulator_data = TrigEmulatorTool("Test", year=year_label)
@@ -86,7 +97,7 @@ class analysis(processor.ProcessorABC):
 
         logging.debug(f"trigger weight data: {event['trigWeight'].Data}")
         logging.debug(f"trigger weight mc: {event['trigWeight'].MC}")
-        
+
         selections = PackedSelection()
         selections.add( "lumimask", event.lumimask)
         selections.add( "passNoiseFilter", event.passNoiseFilter)
@@ -94,7 +105,7 @@ class analysis(processor.ProcessorABC):
 
         friends = {}
 
-        friends["friends"] = dump_trigger_weight( event, self.make_classifier_input, 
+        friends["friends"] = dump_trigger_weight( event, self.make_classifier_input,
                                                  "trigWeight",
                                                   selections.all(*allcuts))
 

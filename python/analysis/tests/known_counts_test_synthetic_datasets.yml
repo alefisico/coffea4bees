@@ -2,38 +2,38 @@ counts4:
     data_UL18D:
         passJetMult: 20.0
         passPreSel: 20.0
-        passDiJetMass: 10.0
-        SR: 4.0
+        passDiJetMass: 9.0
+        SR: 3.0
         SB: 6.0
         passSvB: 0.0
-        failSvB: 12.0
+        failSvB: 11.0
 
     data_UL18C:
         passJetMult: 29.0
         passPreSel: 29.0
-        passDiJetMass: 7.0
+        passDiJetMass: 12.0
         SR: 3.0
-        SB: 4.0
-        passSvB: 0.0
-        failSvB: 15.0
+        SB: 9.0
+        passSvB: 1.0
+        failSvB: 18.0
 
     data_UL18B:
         passJetMult: 41.0
         passPreSel: 41.0
-        passDiJetMass: 18.0
+        passDiJetMass: 17.0
         SR: 5.0
-        SB: 13.0
-        passSvB: 0.0
-        failSvB: 27.0
+        SB: 12.0
+        passSvB: 1.0
+        failSvB: 30.0
 
     data_UL18A:
         passJetMult: 38.0
         passPreSel: 38.0
-        passDiJetMass: 11.0
-        SR: 4.0
-        SB: 7.0
+        passDiJetMass: 10.0
+        SR: 6.0
+        SB: 4.0
         passSvB: 0.0
-        failSvB: 25.0
+        failSvB: 31.0
 
     GluGluToHHTo4B_cHHH1_UL18:
         passJetMult: 0.07
@@ -98,47 +98,47 @@ counts4_unit:
     data_UL18D:
         passJetMult: 20.0
         passPreSel: 20.0
-        passDiJetMass: 10.0
-        SR: 4.0
+        passDiJetMass: 9.0
+        SR: 3.0
         SB: 6.0
         passSvB: 0.0
-        failSvB: 12.0
+        failSvB: 11.0
 
     data_UL18C:
         passJetMult: 29.0
         passPreSel: 29.0
-        passDiJetMass: 7.0
+        passDiJetMass: 12.0
         SR: 3.0
-        SB: 4.0
-        passSvB: 0.0
-        failSvB: 15.0
+        SB: 9.0
+        passSvB: 1.0
+        failSvB: 18.0
 
     data_UL18B:
         passJetMult: 41.0
         passPreSel: 41.0
-        passDiJetMass: 18.0
+        passDiJetMass: 17.0
         SR: 5.0
-        SB: 13.0
-        passSvB: 0.0
-        failSvB: 27.0
+        SB: 12.0
+        passSvB: 1.0
+        failSvB: 30.0
 
     data_UL18A:
         passJetMult: 38.0
         passPreSel: 38.0
-        passDiJetMass: 11.0
-        SR: 4.0
-        SB: 7.0
+        passDiJetMass: 10.0
+        SR: 6.0
+        SB: 4.0
         passSvB: 0.0
-        failSvB: 25.0
+        failSvB: 31.0
 
     GluGluToHHTo4B_cHHH1_UL18:
         passJetMult: 220.0
         passPreSel: 220.0
-        passDiJetMass: 139.0
-        SR: 61.0
-        SB: 78.0
-        passSvB: 8.0
-        failSvB: 102.0
+        passDiJetMass: 133.0
+        SR: 56.0
+        SB: 77.0
+        passSvB: 10.0
+        failSvB: 110.0
 
 
 

@@ -6,8 +6,7 @@ import numpy as np
 import uproot
 import logging
 
-def add_weights(event, 
-                isMC: bool = True,
+def add_weights(event, do_MC_weights: bool = True,
                 dataset: str = None,
                 year_label: str = None,
                 estart: int = 0,
@@ -24,7 +23,7 @@ def add_weights(event,
     weights = Weights(len(event), storeIndividual=True)
     list_weight_names = []
 
-    if isMC:
+    if do_MC_weights:
         # genWeight
         lumi    = event.metadata.get('lumi',    1.0)
         xs      = event.metadata.get('xs',      1.0)
@@ -207,11 +206,11 @@ def add_btagweights( event, weights,
                     list_weight_names: list = [],
                     shift_name: str = None,
                     run_systematics: bool = False,
-                    isSyntheticData: bool = False,
+                    use_prestored_btag_SF: bool = False,
                     corrections_metadata: dict = None,
                     ):
 
-    if isSyntheticData:
+    if use_prestored_btag_SF:
         weights.add( "CMS_btag", event.CMSbtag )
     else:
 

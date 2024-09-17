@@ -11,16 +11,14 @@ from base_class.physics.object import Elec, Jet, LorentzVector, Muon
 import logging
 
 def filling_nominal_histograms(selev, JCM,
-                               processName: str = None, 
-                               year: str = 'UL18', 
-                               isMC: bool = False, 
-                               histCuts: list = [], 
-                               apply_FvT: bool = False, 
-                               run_SvB: bool = False, 
-                               top_reconstruction: bool = False, 
-                               isMixedData: bool = False, 
-                               isDataForMixed: bool = False, 
-                               isTTForMixed: bool = False, 
+                               processName: str = None,
+                               year: str = 'UL18',
+                               isMC: bool = False,
+                               histCuts: list = [],
+                               apply_FvT: bool = False,
+                               run_SvB: bool = False,
+                               top_reconstruction: bool = False,
+                               isDataForMixed: bool = False,
                                event_metadata: dict = {},
                                ):
 
@@ -86,7 +84,7 @@ def filling_nominal_histograms(selev, JCM,
     #
     if apply_FvT:
         FvT_skip = []
-        if isMixedData or isDataForMixed or isTTForMixed:
+        if "pt" not in selev.FvT.fields:
             FvT_skip = ["pt", "pm3", "pm4"]
 
         fill += FvTHists(("FvT", "FvT Classifier"), "FvT", skip=FvT_skip)
@@ -114,7 +112,7 @@ def filling_nominal_histograms(selev, JCM,
         skip_muons += ["genPartFlav"]
     fill += Muon.plot( ("selMuons", "Selected Muons"), "selMuon", skip=skip_muons )
 
-    if not isMixedData:
+    if "Elec" in selev.fields:
         skip_elecs = ["charge"] + Elec.skip_detailed_plots
         if not isMC:
             skip_elecs += ["genPartFlav"]
@@ -146,10 +144,10 @@ def filling_nominal_histograms(selev, JCM,
     return hist.output
 
 
-def filling_syst_histograms(selev, weights, analysis_selections,  
-                            shift_name: str = 'nominal', 
-                            processName: str = None, 
-                            year: str = 'UL18', 
+def filling_syst_histograms(selev, weights, analysis_selections,
+                            shift_name: str = 'nominal',
+                            processName: str = None,
+                            year: str = 'UL18',
                             histCuts: list = []
                             ):
 

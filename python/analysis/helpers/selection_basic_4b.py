@@ -5,14 +5,14 @@ from analysis.helpers.SvB_helpers import compute_SvB
 from coffea.lumi_tools import LumiMask
 from base_class.math.random import Squares
 
-def apply_event_selection_4b( event, isMC, corrections_metadata, isMixedData = False):
+def apply_event_selection_4b( event, corrections_metadata, *, cut_on_lumimask=True):
 
     lumimask = LumiMask(corrections_metadata['goldenJSON'])
-    event['lumimask'] = np.full(len(event), True) \
-            if (isMC or isMixedData) else np.array( lumimask(event.run, event.luminosityBlock) )
+    event['lumimask'] = np.array( lumimask(event.run, event.luminosityBlock) ) \
+            if cut_on_lumimask else np.full(len(event), True)
 
     event['passHLT'] = np.full(len(event), True) \
-            if 'HLT' not in event.fields else mask_event_decision( event,
+            if ('HLT' not in event.fields) else mask_event_decision( event,
                     decision="OR", branch="HLT", list_to_mask=event.metadata['trigger']  )
 
     event['passNoiseFilter'] = np.full(len(event), True) \
@@ -23,7 +23,7 @@ def apply_event_selection_4b( event, isMC, corrections_metadata, isMixedData = F
 
     return event
 
-def apply_object_selection_4b( event, corrections_metadata, *, doLeptonRemoval=True, loosePtForSkim=False, isSyntheticData=False  ):
+def apply_object_selection_4b( event, corrections_metadata, *, doLeptonRemoval=True, loosePtForSkim=False, override_selected_with_flavor_bit=False  ):
     """docstring for apply_basic_selection_4b. This fuction is not modifying the content of anything in events. it is just adding it"""
 
     #
@@ -61,7 +61,7 @@ def apply_object_selection_4b( event, corrections_metadata, *, doLeptonRemoval=T
     event['Jet', 'selected_loose'] = (event.Jet.pt >= 20) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
     event['Jet', 'selected'] = (event.Jet.pt >= 40) & (np.abs(event.Jet.eta) <= 2.4) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
 
-    if isSyntheticData:
+    if override_selected_with_flavor_bit:
         event['Jet', 'selected'] = (event.Jet.selected) | (event.Jet.jet_flavor_bit == 1)
 
 
@@ -139,7 +139,6 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
                                    apply_boosted_veto:bool = False,
                                    run_SvB:bool = False,
                                    run_systematics:bool = False,
-                                   isSyntheticData:bool = False,
                                    classifier_SvB = None,
                                    classifier_SvB_MA = None,
                                    ):
@@ -156,7 +155,8 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
     canJet["btagDeepFlavB"] = selev.Jet.btagDeepFlavB[canJet_idx]
     canJet["puId"] = selev.Jet.puId[canJet_idx]
     canJet["jetId"] = selev.Jet.puId[canJet_idx]
-    if isMC and not isSyntheticData:
+
+    if "hadronFlavour" in selev.Jet.fields:
         canJet["hadronFlavour"] = selev.Jet.hadronFlavour[canJet_idx]
     canJet["calibration"] = selev.Jet.calibration[canJet_idx]
 
@@ -270,12 +270,12 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
 
 
     if apply_FvT:
-        quadJet["FvT_q_score"] = np.concatenate( [ 
+        quadJet["FvT_q_score"] = np.concatenate( [
             selev.FvT.q_1234[:, np.newaxis],
             selev.FvT.q_1324[:, np.newaxis],
             selev.FvT.q_1423[:, np.newaxis],
         ], axis=1, )
-    
+
     if run_SvB:
 
         if (classifier_SvB is not None) | (classifier_SvB_MA is not None):
@@ -283,19 +283,19 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
             ##### AGE: I dont understand why synthetic does not run without this
             if run_systematics: tmp_mask = (selev.fourTag & quadJet[quadJet.selected][:, 0].SR)
             else: tmp_mask = np.full(len(selev), True)
-            compute_SvB(selev, 
+            compute_SvB(selev,
                         tmp_mask,
-                        classifier_SvB, 
-                        classifier_SvB_MA, 
+                        classifier_SvB,
+                        classifier_SvB_MA,
                         doCheck=False)
 
-        quadJet["SvB_q_score"] = np.concatenate( [ 
+        quadJet["SvB_q_score"] = np.concatenate( [
             selev.SvB.q_1234[:, np.newaxis],
             selev.SvB.q_1324[:, np.newaxis],
             selev.SvB.q_1423[:, np.newaxis],
             ], axis=1, )
 
-        quadJet["SvB_MA_q_score"] = np.concatenate( [ 
+        quadJet["SvB_MA_q_score"] = np.concatenate( [
             selev.SvB_MA.q_1234[:, np.newaxis],
             selev.SvB_MA.q_1324[:, np.newaxis],
             selev.SvB_MA.q_1423[:, np.newaxis],
