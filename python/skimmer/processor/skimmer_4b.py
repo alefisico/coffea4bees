@@ -48,7 +48,7 @@ class Skimmer(PicoAOD):
 
 
         juncWS = [ self.corrections_metadata[year]["JERC"][0].replace("STEP", istep)
-                   for istep in ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"] ] #+ self.corrections_metadata[year]["JERC"][2:]
+                   for istep in ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"] ] + self.corrections_metadata[year]["JERC"][2:]
 
         #old_jets = copy(event.Jet)
         jets = init_jet_factory(juncWS, event, isMC)

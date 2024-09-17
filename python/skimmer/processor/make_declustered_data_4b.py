@@ -110,7 +110,7 @@ class DeClusterer(PicoAOD):
         #
         if do_jet_calibration:
             juncWS = [ self.corrections_metadata[year]["JERC"][0].replace("STEP", istep)
-                       for istep in ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"] ] #+ self.corrections_metadata[self.year]["JERC"][2:]
+                       for istep in ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"] ] + self.corrections_metadata[self.year]["JERC"][2:]
 
             jets = init_jet_factory(juncWS, event, isMC)
         else:
