@@ -11,6 +11,7 @@ from typing import Any, Callable, Optional, TypeVar, overload
 
 from base_class.typetools import check_type
 from bokeh.document import Document
+from bokeh.events import ButtonClick
 from bokeh.layouts import row
 from bokeh.models import (
     AutocompleteInput,
@@ -26,6 +27,7 @@ from bokeh.models import (
 )
 from bokeh.util.callback_manager import EventCallback
 
+from ._models import ClickableDiv
 from .config import UI, XRootD
 
 _STYLESHEETS = "stylesheets"
@@ -484,6 +486,26 @@ if (element.value.length === 0) {
             stylesheets.append(self._nonempty_css)
         element.stylesheets = stylesheets
         return element
+
+    def toggle(self, **kwargs):
+        styles = kwargs.get("styles", {})
+        toggle = ClickableDiv(**kwargs)
+        toggle.js_on_event(
+            ButtonClick,
+            CustomJS(
+                args=dict(toggle=toggle, styles=styles, color=UI.disabled_color),
+                code="""
+toggle.disabled = !toggle.disabled;
+if (toggle.disabled) {
+    styles = {...styles};
+    styles["background-color"] = color;
+    styles["color"] = "white";
+}
+toggle.styles = styles;
+""",
+            ),
+        )
+        return toggle
 
 
 class Component:

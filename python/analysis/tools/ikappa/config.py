@@ -44,7 +44,6 @@ Palette: tuple[str, ...] = (
     "#D2B48C",
     "#66CDAA",
     "#EE82EE",
-    "#808080",
 )
 
 
@@ -65,6 +64,7 @@ class UI:
     multichoice_height = 40
     numeric_input_width = 80
     # colors
+    disabled_color = "#E5E5E5"
     background_color = "#E8E8E8"
     border_color = "#C8C8C8"
     border = f"1px solid {border_color}"

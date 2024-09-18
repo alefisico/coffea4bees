@@ -1,5 +1,9 @@
 from bokeh.core.properties import Bool, Dict, List, String
-from bokeh.models import Widget
+from bokeh.models import Div, Widget
+
+
+class ClickableDiv(Div):
+    __implementation__ = "clickable_div.ts"
 
 
 class TreeView(Widget):

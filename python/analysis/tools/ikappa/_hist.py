@@ -58,6 +58,7 @@ from .config import UI, CouplingScan, Datasets, Palette, Plot, Stacks
 if TYPE_CHECKING:
     import pandas as pd
 
+    from ._models import ClickableDiv
     from ._plot import AxisProjector
 
     class Hist1D(NamedTuple):
@@ -166,8 +167,8 @@ function preprocess(val, err, normalize, density, width) {
 }
 """,
     "logy_set_bottom": """
-function logySetBottom(val, bottom) {
-    return val.map(v => v < bottom ? bottom : v);
+function logySetBottom(val, bottom, log_y) {
+    return log_y ? val.map(v => v < bottom ? bottom : v) : val;
 }
 """,
 }
@@ -285,9 +286,10 @@ class BHAxis:
         under, over = self.flow(axis)
         _rebin.insert(0, 0)
         _idx = np.cumsum(_rebin)
+        _meta = dict(name=axis.name, label=axis.label)
         match axis:
             case Boolean():
-                _axis = StrCategory(["All"], flow=False)
+                _axis = StrCategory(["All"], flow=False, **_meta)
             case IntCategory() | StrCategory():
                 cats = [*axis]
                 _axis = StrCategory(
@@ -296,6 +298,7 @@ class BHAxis:
                         for i in range(len(_idx) - 1)
                     ],
                     flow=over,
+                    **_meta,
                 )
             case Integer():
                 cats = [*axis]
@@ -309,11 +312,12 @@ class BHAxis:
                         + ([f">{cats[-1]}"] if over else [])
                     ),
                     flow=False,
+                    **_meta,
                 )
             case Regular() | Variable():
                 edges = axis.edges
                 _axis = Variable(
-                    [edges[i] for i in _idx], underflow=under, overflow=over
+                    [edges[i] for i in _idx], underflow=under, overflow=over, **_meta
                 )
         if under:
             _rebin.insert(1, 1)
@@ -388,7 +392,7 @@ class _Matched(ABC):
 
     def _disable(self, value: bool):
         if value:
-            matched = sorted(self) if self.matched else []
+            matched = [*self]
             self.dom_matched.menu = [(m, m) for m in matched]
             self.dom_matched.label = "Matched" if matched else "No Match"
             self.dom_matched.button_type = "success" if matched else "danger"
@@ -454,7 +458,6 @@ class _KappaModel(_Matched):
     @disabled.setter
     def disabled(self, value: bool):
         self._dom_model.disabled = value
-        self._dom_patterns.disabled = value
         self._disable(value)
 
     @property
@@ -513,7 +516,6 @@ class _StackGroup(_Matched):
     @disabled.setter
     def disabled(self, value: bool):
         self._dom_name.disabled = value
-        self._dom_bins.disabled = value
         self._disable(value)
 
     @property
@@ -776,7 +778,8 @@ class HistGroup(Component):
 
         # render legend and glyph controls
         legends: dict[str, Checkbox] = {}
-        legends_all = _checkbox()
+        legend_all = _checkbox()
+        legend_toggles: dict[str, ClickableDiv] = {}
         glyphs: dict[str, dict[str, Checkbox]] = {}
         glyph_all: dict[str, Checkbox] = {}
         glyph_expand = self.shared.icon_button(
@@ -784,7 +787,7 @@ class HistGroup(Component):
         )
         for k in _GLYPH_ICONS:
             glyph_all[k] = _checkbox()
-            legends_all.js_link("active", glyph_all[k], "active")
+            legend_all.js_link("active", glyph_all[k], "active")
 
         glyph_doms = [
             row(
@@ -806,33 +809,29 @@ class HistGroup(Component):
         if not coupling_doms:
             legend_title_style.pop("margin-top")
 
-        def legend_add(field: str, label: str):
+        def legend_add(field: str, label: str, stack: bool = False):
             colors[field] = color = RGB(next(palette))
             legends[field] = legend = _checkbox()
-            legends_all.js_link("active", legends[field], "active")
+            legend_all.js_link("active", legends[field], "active")
             glyphs[field] = glyph = {}
             for k in _GLYPH_ICONS:
                 glyph[k] = _checkbox()
                 legend.js_link("active", glyph[k], "active")
                 glyph_all[k].js_link("active", glyph[k], "active")
             glyph_doms.append(row(*glyph.values(), visible=False))
-            legend_doms.append(
-                row(
-                    glyph_doms[-1],
-                    legend,
-                    Div(
-                        text=escape(label),
-                        sizing_mode="stretch_width",
-                        styles={
-                            "background-color": color.rgb,
-                            "color": color.contrast_best(_WHITE, _BLACK).rgb,
-                            "border-radius": "4px",
-                            "padding": "2px 5px 2px 5px",
-                            "word-wrap": "anywhere",
-                        },
-                    ),
-                )
+            title = (self.shared.toggle if stack else Div)(
+                text=escape(label),
+                sizing_mode="stretch_width",
+                styles={
+                    "background-color": color.rgb,
+                    "color": color.contrast_best(_WHITE, _BLACK).rgb,
+                    "border-radius": "4px",
+                    "padding": "2px 5px 2px 5px",
+                    "word-wrap": "anywhere",
+                },
             )
+            legend_doms.append(row(glyph_doms[-1], legend, title))
+            return title
 
         def legend_title(title: str, *badges: str):
             padding = Div(
@@ -859,7 +858,8 @@ class HistGroup(Component):
         for i, s in enumerate(stacks):
             legend_title(f"{s.name or i+1}", s.badge)
             for j, p in enumerate(s):
-                legend_add(_DataField.stack(i, j), p)
+                field = _DataField.stack(i, j)
+                legend_toggles[field] = legend_add(field, p, stack=True)
             legend_hr()
 
         legend_dom = ScrollBox(
@@ -913,7 +913,7 @@ legend.width = (legend.width + {Plot.legend_glyph_width} * modifier);
                 _PlotField.upper(field): val + err,
                 _PlotField.lower(field): val - err,
             }.items():
-                source.data[k] = self.__logy_set_bottom(v, bottom if log_y else None)
+                source.data[k] = self.__logy_set_bottom(v, bottom, log_y)
             return source
 
         def render_glyphs(
@@ -979,10 +979,9 @@ legend.width = (legend.width + {Plot.legend_glyph_width} * modifier);
             tooltip: dict[str, ColumnDataSource],
             bottom: float,
             width: list[float] | None,
-            sliders: dict[str, Slider],
         ):
             couplings = model.matched.model.diagrams[0]
-            sliders = {k: v for k, v in sliders.items() if k in couplings}
+            sliders = {k: v for k, v in coupling_sliders.items() if k in couplings}
             basis = [*map(_DataField.basis, range(len(model)))]
             js_change = CustomJS(
                 args=dict(
@@ -992,11 +991,11 @@ legend.width = (legend.width + {Plot.legend_glyph_width} * modifier);
                     col_var=[*map(lambda x: _DataField.raw(_DataField.var(x)), basis)],
                     col_upper=_PlotField.upper(field),
                     col_lower=_PlotField.lower(field),
+                    sliders=sliders,
                     source=source,
                     tooltip=tooltip,
                     bottom=bottom,
                     width=width,
-                    sliders=sliders,
                     normalized=normalized,
                     density=density,
                     log_y=log_y,
@@ -1012,10 +1011,11 @@ const weight = (function() {
 + "\n".join(model.matched.model.js_weight(**{k: f"__{k}" for k in couplings})) + """
     return __w;
 })();
-let val = new Float64Array(source.data[col_field].length);
-let err = new Float64Array(source.data[col_field].length);
+const shape = source.data[col_field].length;
+let val = new Float64Array(shape);
+let err = new Float64Array(shape);
 for (let i = 0; i < val.length; i++) {
-    for (let j=0; j< weight.length; j++) {
+    for (let j = 0; j < weight.length; j++) {
         val[i] += source.data[col_val[j]][i] * weight[j];
         err[i] += source.data[col_var[j]][i] * (weight[j] ** 2);
     }
@@ -1024,14 +1024,101 @@ let label_sum, label_bin;
 [[val, err], label_sum, label_bin] = preprocess(val, err, normalized, density, width);
 tooltip["total"].data[col_name] = label_sum;
 source.data[col_name] = label_bin;
-source.data[col_field] = logySetBottom(val, bottom);
-source.data[col_upper] = logySetBottom(val.map((v, i) => v + err[i]), bottom);
-source.data[col_lower] = logySetBottom(val.map((v, i) => v - err[i]), bottom);
+source.data[col_field] = logySetBottom(val, bottom, log_y);
+source.data[col_upper] = logySetBottom(val.map((v, i) => v + err[i]), bottom, log_y);
+source.data[col_lower] = logySetBottom(val.map((v, i) => v - err[i]), bottom, log_y);
 source.change.emit();
 """,
             )
             for slider in sliders.values():
                 slider.js_on_change("value", js_change)
+
+        def js_stack(
+            norm: Optional[float],
+            fields: str,
+            source: ColumnDataSource,
+            bottom: float,
+            width: list[float] | None,
+        ):
+            toggles = [legend_toggles[f] for f in fields]
+            js_change = CustomJS(
+                args=dict(
+                    col_fields=fields,
+                    col_val=[*map(_DataField.raw, fields)],
+                    col_var=[*map(lambda x: _DataField.raw(_DataField.var(x)), fields)],
+                    col_upper=[*map(_PlotField.upper, fields)],
+                    col_lower=[*map(_PlotField.lower, fields)],
+                    col_bottom=[*map(_PlotField.bottom, fields)],
+                    norm=norm,
+                    toggles=toggles,
+                    source=source,
+                    bottom=bottom,
+                    width=width,
+                    normalized=normalized,
+                    density=density,
+                    log_y=log_y,
+                ),
+                # fmt: off
+                code=
+_CODES["logy_set_bottom"] + """
+function _normalize(val){
+    val.forEach((_, j) => val[j] /= norm);
+}
+function _density(val){
+    val.forEach((_, j) => val[j] /= width[j]);
+}
+const enabled = toggles.map(t => !t.disabled);
+const shape = source.data[col_fields[0]].length;
+const nan = new Array(shape).fill(null);
+let vals = new Array(col_fields.length + 1);
+vals[0] = new Float64Array(shape);
+let errs = vals[vals.length] = new Float64Array(shape);
+for (let i = 0; i < col_fields.length; i++) {
+    if (enabled[i]) {
+        let val = source.data[col_val[i]];
+        let err = source.data[col_var[i]];
+        vals[i + 1] = vals[i].map((v, j) => v + val[j]);
+        errs.forEach((_, j) => errs[j] += err[j]);
+    }
+    else {
+        vals[i + 1] = vals[i].slice();
+    }
+}
+errs.forEach((v, j) => errs[j] = Math.sqrt(v));
+if (normalized && norm !== null) {
+    vals.forEach(_normalize);
+}
+if (density && width !== null) {
+    vals.forEach(_density);
+}
+const last = enabled.lastIndexOf(true);
+for (let i = 0; i < col_fields.length; i++) {
+    if (enabled[i]) {
+        let base = logySetBottom(vals[i + 1], bottom, log_y);
+        source.data[col_bottom[i]] = logySetBottom(vals[i], bottom, log_y);
+        source.data[col_fields[i]] = base;
+        if (i !== last) {
+            source.data[col_upper[i]] = base;
+            source.data[col_lower[i]] = base;
+        }
+        else {
+            source.data[col_upper[i]] = logySetBottom(vals[i + 1].map((v, j) => v + errs[j]), bottom, log_y);
+            source.data[col_lower[i]] = logySetBottom(vals[i + 1].map((v, j) => v - errs[j]), bottom, log_y);
+        }
+    }
+    else {
+        source.data[col_bottom[i]] = nan;
+        source.data[col_fields[i]] = nan;
+        source.data[col_upper[i]] = nan;
+        source.data[col_lower[i]] = nan;
+    }
+}
+source.change.emit();
+"""
+                # fmt: on
+            )
+            for toggle in toggles:
+                toggle.js_on_change("disabled", js_change)
 
         # render plots
         plots = []
@@ -1094,15 +1181,17 @@ source.change.emit();
                 width=_width,
                 tooltip=tooltip_source,
             )
-            _setup_bottom = partial(
-                self.__logy_set_bottom, bottom=_bottom if log_y else None
-            )
+            _setup_bottom = partial(self.__logy_set_bottom, bottom=_bottom, log_y=log_y)
             _js_model = partial(
                 js_model,
+                tooltip=tooltip_source,
                 bottom=_bottom,
                 width=_width,
-                sliders=coupling_sliders,
-                tooltip=tooltip_source,
+            )
+            _js_stack = partial(
+                js_stack,
+                bottom=_bottom,
+                width=_width,
             )
 
             # render regular histograms
@@ -1185,6 +1274,11 @@ source.change.emit();
                         source=source,
                         bottom=_PlotField.bottom(field),
                     )
+                _js_stack(
+                    norm=_total,
+                    fields=[_DataField.stack(i, j) for j in range(len(stack))],
+                    source=source,
+                )
 
         return column(
             *coupling_doms,
@@ -1206,7 +1300,7 @@ source.change.emit();
                     ),
                     row(
                         glyph_doms[1],
-                        legends_all,
+                        legend_all,
                         glyph_expand,
                         sizing_mode="stretch_width",
                         styles=_BOX_STYLE,
@@ -1275,8 +1369,8 @@ source.change.emit();
         return 10 ** np.floor(np.log10(val[val > 0].min().min()))
 
     @staticmethod
-    def __logy_set_bottom(val: pd.Series | npt.NDArray, bottom: Optional[float]):
-        return np.clip(val, bottom, None) if bottom is not None else val
+    def __logy_set_bottom(val: pd.Series | npt.NDArray, bottom: float, log_y: bool):
+        return np.clip(val, bottom, None) if log_y else val
 
     @staticmethod
     def __preprocess(
@@ -1293,11 +1387,11 @@ source.change.emit();
         label_bin = [f"{_FF(v)} \u00B1 {_FF(e)}" for v, e in zip(val, err)]
         if normalize:
             norm = np.abs(total) if norm is None else norm
-            val /= norm
-            err /= norm
+            val = val / norm
+            err = err / norm
         if density and width is not None:
-            val /= width
-            err /= width
+            val = val / width
+            err = err / width
         if normalize or density:
             label_bin = [
                 f"{b} ({_FF(v)} \u00B1 {_FF(e)})"

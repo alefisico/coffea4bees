@@ -25,7 +25,7 @@ from hist import Hist
 from hist.axis import AxesMixin
 
 from ._hist import BHAxis, HistGroup
-from ._treeview import TreeView
+from ._models import TreeView
 from ._utils import Component, Confirmation, DownloadLink, ExternalLink, PathInput
 from .config import UI
 
