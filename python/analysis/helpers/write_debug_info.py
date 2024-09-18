@@ -96,3 +96,33 @@ def add_debug_info_to_output_declustering_outputs(event, declustered_jets, proce
     for out_k, out_v in out_data.items():
         processOutput[out_k] = {}
         processOutput[out_k][event.metadata['dataset']] = list(out_v)
+
+
+def debug_three_tag_events(event, processOutput):
+
+    for iEvent in range(5):
+
+        print(f'event num: {event["event"][event.threeTag][iEvent]}')
+        print(f'event run: {event["run"][event.threeTag][iEvent]}')
+        print(f'event fourTag: {event.fourTag[event.threeTag][iEvent]}')
+        print(f'event threeTag: {event.fourTag[event.threeTag][iEvent]}')
+        print(f'event jetPt:  {[i for i in event.Jet.pt    [event.threeTag][iEvent]]}')
+        print(f'event eta:    {[i for i in event.Jet.eta   [event.threeTag][iEvent]]}')
+        print(f'event phi:    {[i for i in event.Jet.phi   [event.threeTag][iEvent]]}')
+        print(f'event selected: {[i for i in event.Jet.selected[event.threeTag][iEvent]]}')
+        print(f'\t event pileup: {[i for i in event.Jet.pileup[event.threeTag][iEvent]]}')
+        print(f'\t\t event puId: {[i for i in event.Jet.puId[event.threeTag][iEvent]]}')
+        print(f'\t event jetId: {[i for i in event.Jet.jetId[event.threeTag][iEvent]]}')
+        print(f'\t event lepton_cleaned: {[i for i in event.Jet.lepton_cleaned[event.threeTag][iEvent]]}')
+        print(f'event tagged: {[i for i in event.Jet.tagged[event.threeTag][iEvent]]}')
+        print(f'event btagDeepFlavB: {[i for i in event.Jet.btagDeepFlavB[event.threeTag][iEvent]]}')
+        print("\n")
+
+    #out_data["passJetMult_event"  ]    = event["event"][event.threeTag]
+    #out_data["passJetMult_run"    ]    = event["run"][event.passJetMult]
+    #out_data["passJetMult_jet_pt"    ] = event.Jet.pt[event.passJetMult].to_list()
+    #out_data["passJetMult_jet_eta"   ] = event.Jet.eta[event.passJetMult].to_list()
+    #out_data["passJetMult_jet_phi"   ] = event.Jet.phi[event.passJetMult].to_list()
+    #out_data["passJetMult_jet_pu"    ] = event.Jet.pileup[event.passJetMult].to_list()
+    #out_data["passJetMult_jet_jetId" ] = event.Jet.jetId[event.passJetMult].to_list()
+    #out_data["passJetMult_jet_lep"   ] = event.Jet.lepton_cleaned[event.passJetMult].to_list()
