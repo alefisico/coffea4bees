@@ -29,6 +29,7 @@ stages:
   - proxy
   - code 
   - skimmer-test
+  - friendtree-test
   - analysis-test
   - fits
   - plot

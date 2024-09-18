@@ -73,7 +73,6 @@ class SubSampler(PicoAOD):
         #
         event = apply_event_selection_4b( event, self.corrections_metadata[year], cut_on_lumimask=cut_on_lumimask )
 
-
         ## adds all the event mc weights and 1 for data
         weights, list_weight_names = add_weights( event, do_MC_weights, dataset, year_label,
                                                   estart, estop,
@@ -87,7 +86,7 @@ class SubSampler(PicoAOD):
         #
         if do_jet_calibration:
             juncWS = [ self.corrections_metadata[year]["JERC"][0].replace("STEP", istep)
-                       for istep in ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"] ] #+ self.corrections_metadata[self.year]["JERC"][2:]
+                       for istep in ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"] ] + self.corrections_metadata[self.year]["JERC"][2:]
 
             jets = init_jet_factory(juncWS, event, isMC)
         else:
