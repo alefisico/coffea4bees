@@ -17,16 +17,16 @@ class HLTHtEmulator:
         htRand = self.m_rand.random()  # Generate a random number in [0, 1)
         return self.passHtThreshold(ht, htRand, smearFactor)
 
-    def passHtThreshold(self, ht, htRand, smearFactor=0.0):
-        debug = False
+    def passHtThreshold(self, ht, htRand, smearFactor=0.0, debug=False):
 
         eff = -99
         effErr = -99
-
+        if debug: print(f" HLTHtEmulator.passHtThreshold m_nBins = {self.m_nBins}")
         for iBin in range(self.m_nBins):
             if debug:
-                logging.debug(f"{iBin} comparing {ht} to {self.m_highBinEdge[iBin]}")
-            if np.all(ht) < self.m_highBinEdge[iBin]:
+                print(f"{iBin} comparing {ht} to {self.m_highBinEdge[iBin]} ")
+
+            if ht < self.m_highBinEdge[iBin]:
                 eff = self.m_eff[iBin]
                 effErr = self.m_effErr[iBin]
                 if debug:

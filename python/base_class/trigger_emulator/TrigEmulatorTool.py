@@ -107,7 +107,7 @@ class TrigEmulatorTool:
         return self.m_emulatedWeights[trigName]
 
     #  Calculate the weight of the OR of the menu defined
-    def GetWeightOR(self, offline_jet_pts, offline_btagged_jet_pts, ht=-1, setSeed=False):
+    def GetWeightOR(self, offline_jet_pts, offline_btagged_jet_pts, ht=-1, setSeed=False, debug=False):
         nPass = 0
 
         for iToy in range(self.m_nToys):
@@ -121,7 +121,12 @@ class TrigEmulatorTool:
             ht_weights = [self.m_rand.random() for _ in range(3)]
 
             for trigName, trigEmulator in self.m_emulatedTrigMenu.items():
-                if trigEmulator.passTrigCorrelated(offline_jet_pts, offline_btagged_jet_pts, ht, btag_weights, ht_weights, iToy):
+
+                _passTrig = trigEmulator.passTrigCorrelated(offline_jet_pts, offline_btagged_jet_pts, ht, btag_weights, ht_weights, iToy, debug=debug)
+
+                if debug: print(f"Did pass {trigName} = {_passTrig}")
+
+                if _passTrig:
                     passAny = True
 
             if passAny:
