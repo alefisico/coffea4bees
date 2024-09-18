@@ -170,7 +170,7 @@ class analysis(processor.ProcessorABC):
         if self.isPSData:
             self.cut_on_lumimask     = False
             self.cut_on_HLT_decision = False
-
+            self.do_jet_calibration  = False
 
         if self.isMixedData:
             self.cut_on_lumimask     = False
@@ -327,6 +327,7 @@ class analysis(processor.ProcessorABC):
         else:
             jets = event.Jet
 
+
         shifts = [({"Jet": jets}, None)]
         if self.run_systematics:
             for jesunc in self.corrections_metadata[self.year]["JES_uncertainties"]:
@@ -458,7 +459,6 @@ class analysis(processor.ProcessorABC):
         #
         # from analysis.helpers.write_debug_info import add_debug_info_to_output
         # add_debug_info_to_output(selev, processOutput)
-
 
         if self.JCM:
             weights, list_weight_names = add_pseudotagweights( selev, weights,

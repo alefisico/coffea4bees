@@ -34,6 +34,7 @@ class SubSampler(PicoAOD):
         ]
 
 
+
     def select(self, event):
 
         isMC    = True if event.run[0] == 1 else False
@@ -47,35 +48,55 @@ class SubSampler(PicoAOD):
         chunk   = f'{dataset}::{estart:6d}:{estop:6d} >>> '
         logging.debug( f"{chunk} file is {fname}\n" )
 
+        #
+        #  Nominal config (...what we would do for data)
+        #
+        cut_on_lumimask         = True
+        cut_on_HLT_decision     = True
+        do_MC_weights           = False
+        do_jet_calibration      = False
+        do_lepton_jet_cleaning  = True
+
+        if isMC:
+            cut_on_lumimask     = False
+            cut_on_HLT_decision = False
+            do_jet_calibration  = True
+            do_MC_weights       = True
+
+        logging.debug(f'isMC={isMC}, for file {fname}\n')
+        logging.debug(f'cut_on_lumimask={cut_on_lumimask}, cut_on_HLT_decision={cut_on_HLT_decision}, do_MC_weights={do_MC_weights}, do_jet_calibration={do_jet_calibration}, do_lepton_jet_cleaning={do_lepton_jet_cleaning} for file {fname}\n')
+
         path = fname.replace(fname.split("/")[-1], "")
 
         #
         # Event selection
         #
-        event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year] )
-
-        #
-        # Calculate and apply Jet Energy Calibration
-        #
-        if ( not isMC ):  #### AGE: data corrections are not applied. Should be changed
-            jets = event.Jet
-
-        else:
-            juncWS = [ self.corrections_metadata[year]["JERC"][0].replace("STEP", istep)
-                       for istep in ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"] ] + self.corrections_metadata[self.year]["JERC"][2:]
-            jets = init_jet_factory(juncWS, event, isMC)
-
-        event = update_events(event, {"Jet": jets})
+        event = apply_event_selection_4b( event, self.corrections_metadata[year], cut_on_lumimask=cut_on_lumimask )
 
         ## adds all the event mc weights and 1 for data
-        weights, list_weight_names = add_weights( event, isMC, dataset, year_label,
+        weights, list_weight_names = add_weights( event, do_MC_weights, dataset, year_label,
                                                   estart, estop,
                                                   self.corrections_metadata[year],
                                                   apply_trigWeight = True,
                                                   isTTForMixed = False,
                                                  )
+
+        #
+        # Calculate and apply Jet Energy Calibration
+        #
+        if do_jet_calibration:
+            juncWS = [ self.corrections_metadata[year]["JERC"][0].replace("STEP", istep)
+                       for istep in ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"] ] + self.corrections_metadata[self.year]["JERC"][2:]
+
+            jets = init_jet_factory(juncWS, event, isMC)
+        else:
+            jets = event.Jet
+
+
+        event = update_events(event, {"Jet": jets})
+
         # Apply object selection (function does not remove events, adds content to objects)
-        event = apply_object_selection_4b( event, self.corrections_metadata[year]  )
+        event = apply_object_selection_4b( event, self.corrections_metadata[year], doLeptonRemoval=do_lepton_jet_cleaning  )
 
         selections = PackedSelection()
         selections.add( "lumimask", event.lumimask)
@@ -135,5 +156,21 @@ class SubSampler(PicoAOD):
 
         #logging.info(f"Weigthts are {selev.weight}\n")
         selection = selection & pass_sub_sample_filter
+        selev = event[selections.all(*cumulative_cuts)]
 
-        return selection
+        out_branches = {
+            # Update jets with new kinematics
+            "Jet_pt":              selev.Jet.pt,
+            "Jet_eta":             selev.Jet.eta,
+            "Jet_phi":             selev.Jet.phi,
+            }
+
+        branches = ak.Array(out_branches)
+
+        processOutput = {}
+        processOutput["total_event"] = len(event)
+        processOutput["pass_skim"]   = len(selev)
+
+        return (selection,
+                branches,
+                processOutput)
