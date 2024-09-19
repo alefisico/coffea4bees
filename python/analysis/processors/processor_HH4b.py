@@ -60,7 +60,6 @@ class analysis(processor.ProcessorABC):
         top_reconstruction_override: bool = False,
         run_systematics: list = [],
         make_classifier_input: str = None,
-        isSyntheticData: bool = False,
         subtract_ttbar_with_weights: bool = False,
         friend_trigWeight: str = None,
     ):
@@ -84,7 +83,6 @@ class analysis(processor.ProcessorABC):
         self.make_classifier_input = make_classifier_input
         self.top_reconstruction_override = top_reconstruction_override
         self.subtract_ttbar_with_weights = subtract_ttbar_with_weights
-        self.isSyntheticData = isSyntheticData
         self.friend_trigWeight = friend_trigWeight
 
         if self.friend_trigWeight:
@@ -134,6 +132,11 @@ class analysis(processor.ProcessorABC):
         self.isMixedData    = not (self.dataset.find("mix_v") == -1)
         if self.isMixedData:
             self.isMC = False
+
+        self.isSyntheticData  = not (self.dataset.find("syn_v") == -1)
+        if self.isSyntheticData:
+            self.isMC = False
+
         self.isDataForMixed = not (self.dataset.find("data_3b_for_mixed") == -1)
         self.isTTForMixed   = not (self.dataset.find("TTTo") == -1) and not ( self.dataset.find("_for_mixed") == -1 )
 
