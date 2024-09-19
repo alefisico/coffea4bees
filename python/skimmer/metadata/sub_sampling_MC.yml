@@ -23,9 +23,9 @@ runner:
     - T3_US_NotreDame
 
 config:
-  base_path: /srv/python/skimmer/test/
-  sub_sampling_rand_seed: 5
+  base_path: root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v1
   # base_path: /srv/python/skimmer/test/
+  sub_sampling_rand_seed: 5
   step: 100000
   skip_collections:
     - notCanJet

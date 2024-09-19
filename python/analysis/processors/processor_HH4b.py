@@ -79,7 +79,7 @@ class analysis(processor.ProcessorABC):
         self.classifier_SvB_MA = HCREnsemble(SvB_MA) if SvB_MA else None
         with open(corrections_metadata, "r") as f:
             self.corrections_metadata = yaml.safe_load(f)
-        
+
         self.run_systematics = run_systematics
         self.make_classifier_input = make_classifier_input
         self.top_reconstruction_override = top_reconstruction_override
@@ -166,6 +166,7 @@ class analysis(processor.ProcessorABC):
                 self.use_prestored_btag_SF  = True
                 self.cut_on_HLT_decision    = False
 
+            self.isPSData = True if event.run[0] == 1 else False
 
         if self.isPSData:
             self.cut_on_lumimask     = False
@@ -296,10 +297,10 @@ class analysis(processor.ProcessorABC):
 
         ### adds all the event mc weights and 1 for data
         weights, list_weight_names = add_weights( event, target=target,
-                                                 do_MC_weights=self.do_MC_weights, 
-                                                 dataset=self.dataset, 
+                                                 do_MC_weights=self.do_MC_weights,
+                                                 dataset=self.dataset,
                                                  year_label=self.year_label,
-                                                 estart=self.estart, 
+                                                 estart=self.estart,
                                                  estop=self.estop,
                                                  friend_trigWeight=self.friend_trigWeight,
                                                  corrections_metadata=self.corrections_metadata[self.year],

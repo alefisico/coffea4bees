@@ -61,7 +61,7 @@ def apply_object_selection_4b( event, corrections_metadata, *, doLeptonRemoval=T
     event['Jet', 'selected_loose'] = (event.Jet.pt >= 20) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
     event['Jet', 'selected'] = (event.Jet.pt >= 40) & (np.abs(event.Jet.eta) <= 2.4) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
 
-    if override_selected_with_flavor_bit:
+    if override_selected_with_flavor_bit and "jet_flavor_bit" in event.Jet.fields:
         event['Jet', 'selected'] = (event.Jet.selected) | (event.Jet.jet_flavor_bit == 1)
 
 
