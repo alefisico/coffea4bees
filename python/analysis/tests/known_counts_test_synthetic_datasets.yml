@@ -1,54 +1,27 @@
 counts4:
-    data_UL18D:
-        passJetMult: 20.0
-        passPreSel: 20.0
-        passDiJetMass: 9.0
-        SR: 3.0
-        SB: 6.0
-        passSvB: 0.0
-        failSvB: 11.0
+    synthetic_mc_GluGluToHHTo4B_cHHH1_UL18:
+        passJetMult: 12.15
+        passPreSel: 12.15
+        passDiJetMass: 6.73
+        SR: 3.43
+        SB: 3.3
+        passSvB: 1.09
+        failSvB: 5.67
 
-    data_UL18C:
-        passJetMult: 29.0
-        passPreSel: 29.0
-        passDiJetMass: 12.0
-        SR: 3.0
-        SB: 9.0
-        passSvB: 1.0
-        failSvB: 18.0
-
-    data_UL18B:
-        passJetMult: 41.0
-        passPreSel: 41.0
-        passDiJetMass: 17.0
-        SR: 5.0
-        SB: 12.0
-        passSvB: 1.0
-        failSvB: 30.0
-
-    data_UL18A:
-        passJetMult: 38.0
-        passPreSel: 38.0
-        passDiJetMass: 10.0
-        SR: 6.0
-        SB: 4.0
-        passSvB: 0.0
-        failSvB: 31.0
-
-    GluGluToHHTo4B_cHHH1_UL18:
-        passJetMult: 0.07
-        passPreSel: 0.05
-        passDiJetMass: 0.03
-        SR: 0.01
-        SB: 0.01
-        passSvB: 0.0
-        failSvB: 0.02
+    syn_v0_UL18:
+        passJetMult: 128.0
+        passPreSel: 128.0
+        passDiJetMass: 48.0
+        SR: 17.0
+        SB: 31.0
+        passSvB: 2.0
+        failSvB: 90.0
 
 
 
 counts3:
-    data_UL18D:
-        passJetMult: 20.0
+    synthetic_mc_GluGluToHHTo4B_cHHH1_UL18:
+        passJetMult: 12.15
         passPreSel: 0.0
         passDiJetMass: 0.0
         SR: 0.0
@@ -56,35 +29,8 @@ counts3:
         passSvB: 0.0
         failSvB: 0.0
 
-    data_UL18C:
-        passJetMult: 29.0
-        passPreSel: 0.0
-        passDiJetMass: 0.0
-        SR: 0.0
-        SB: 0.0
-        passSvB: 0.0
-        failSvB: 0.0
-
-    data_UL18B:
-        passJetMult: 41.0
-        passPreSel: 0.0
-        passDiJetMass: 0.0
-        SR: 0.0
-        SB: 0.0
-        passSvB: 0.0
-        failSvB: 0.0
-
-    data_UL18A:
-        passJetMult: 38.0
-        passPreSel: 0.0
-        passDiJetMass: 0.0
-        SR: 0.0
-        SB: 0.0
-        passSvB: 0.0
-        failSvB: 0.0
-
-    GluGluToHHTo4B_cHHH1_UL18:
-        passJetMult: 0.07
+    syn_v0_UL18:
+        passJetMult: 128.0
         passPreSel: 0.0
         passDiJetMass: 0.0
         SR: 0.0
@@ -95,43 +41,7 @@ counts3:
 
 
 counts4_unit:
-    data_UL18D:
-        passJetMult: 20.0
-        passPreSel: 20.0
-        passDiJetMass: 9.0
-        SR: 3.0
-        SB: 6.0
-        passSvB: 0.0
-        failSvB: 11.0
-
-    data_UL18C:
-        passJetMult: 29.0
-        passPreSel: 29.0
-        passDiJetMass: 12.0
-        SR: 3.0
-        SB: 9.0
-        passSvB: 1.0
-        failSvB: 18.0
-
-    data_UL18B:
-        passJetMult: 41.0
-        passPreSel: 41.0
-        passDiJetMass: 17.0
-        SR: 5.0
-        SB: 12.0
-        passSvB: 1.0
-        failSvB: 30.0
-
-    data_UL18A:
-        passJetMult: 38.0
-        passPreSel: 38.0
-        passDiJetMass: 10.0
-        SR: 6.0
-        SB: 4.0
-        passSvB: 0.0
-        failSvB: 31.0
-
-    GluGluToHHTo4B_cHHH1_UL18:
+    synthetic_mc_GluGluToHHTo4B_cHHH1_UL18:
         passJetMult: 215.0
         passPreSel: 215.0
         passDiJetMass: 127.0
@@ -140,47 +50,29 @@ counts4_unit:
         passSvB: 10.0
         failSvB: 99.0
 
+    syn_v0_UL18:
+        passJetMult: 128.0
+        passPreSel: 128.0
+        passDiJetMass: 48.0
+        SR: 17.0
+        SB: 31.0
+        passSvB: 2.0
+        failSvB: 90.0
+
 
 
 counts3_unit:
-    data_UL18D:
-        passJetMult: 20.0
-        passPreSel: 0.0
-        passDiJetMass: 0.0
-        SR: 0.0
-        SB: 0.0
-        passSvB: 0.0
-        failSvB: 0.0
-
-    data_UL18C:
-        passJetMult: 29.0
-        passPreSel: 0.0
-        passDiJetMass: 0.0
-        SR: 0.0
-        SB: 0.0
-        passSvB: 0.0
-        failSvB: 0.0
-
-    data_UL18B:
-        passJetMult: 41.0
-        passPreSel: 0.0
-        passDiJetMass: 0.0
-        SR: 0.0
-        SB: 0.0
-        passSvB: 0.0
-        failSvB: 0.0
-
-    data_UL18A:
-        passJetMult: 38.0
-        passPreSel: 0.0
-        passDiJetMass: 0.0
-        SR: 0.0
-        SB: 0.0
-        passSvB: 0.0
-        failSvB: 0.0
-
-    GluGluToHHTo4B_cHHH1_UL18:
+    synthetic_mc_GluGluToHHTo4B_cHHH1_UL18:
         passJetMult: 215.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+    syn_v0_UL18:
+        passJetMult: 128.0
         passPreSel: 0.0
         passDiJetMass: 0.0
         SR: 0.0
