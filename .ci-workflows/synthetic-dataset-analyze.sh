@@ -13,7 +13,7 @@ else
     cat metadata/datasets_synthetic_test.yml
     pwd
     echo ${CI_PROJECT_PATH}
-    sed -i "s|\/builds/$CI_PROJECT_PATH\/python\/||g"  metadata/datasets_synthetic_test.yml
+    sed -i  -e "s|\/srv/python\/||g" -e "s|test\/||g"  python/metadata/datasets_synthetic_test.ym
     echo "NEW"
     cat metadata/datasets_synthetic_test.yml
 fi
