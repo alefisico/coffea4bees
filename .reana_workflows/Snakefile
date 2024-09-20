@@ -13,7 +13,6 @@ rule all:
         # expand("output/histAll__{dataset}__{year}.coffea", year=config['year'], dataset=config['dataset']),
         expand("output/histsyst_{samplesyst}-{iysyst}.coffea", samplesyst=config['dataset_systematics'], iysyst=config['year']),
         #expand("output/histsystpreUL_{samplesystpreUL}-{iysystpreUL}.coffea", samplesystpreUL=config['dataset_preUL'], iysystpreUL=config['year_preUL']),
-        expand("output/histsignal_{samplesignal}-{iysignal}.coffea", samplesignal=config['dataset_signal'], iysignal=config['year']),
         "output/histMixedBkg_data_3b_for_mixed.coffea",
         "output/histMixedBkg_TT.coffea",
         "output/histMixedData.coffea",
@@ -135,16 +134,6 @@ cd ../
 mprof plot -o output/mprofile_{params.logname}.png python/mprofile_{params.logname}.dat
 xrdcp {output} root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/{params.output}
         """
-
-use rule analysis_systematics as analysis_signal with:
-    output: "output/histsignal_{samplesignal}-{iysignal}.coffea"
-    params:
-        hash=config['hash'],
-        diff=config['diff'],
-        isam="{samplesignal}",
-        iy="{iysignal}",
-        output="histsignal_{samplesignal}-{iysignal}.coffea",
-        logname="histsignal_{samplesignal}-{iysignal}"
 
 #use rule analysis_systematics as analysis_systematics_preUL with:
 #    output:
