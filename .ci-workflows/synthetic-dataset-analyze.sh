@@ -9,13 +9,13 @@ if [[ $(hostname) = *fnal* ]]; then
 else
     echo "############### Modifying previous dataset file (to read local files)"
     ls -lR skimmer/
-    cat skimmer/metadata/picoaod_datasets_declustered_test_UL18.yml
     echo "TEST"
+    cat metadata/datasets_synthetic_test.yml
     pwd
     echo ${CI_PROJECT_PATH}
-    sed -i "s|\/builds/$CI_PROJECT_PATH\/python\/||g"  skimmer/metadata/picoaod_datasets_declustered_test_UL18.yml
+    sed -i  -e "s|\/srv/python\/||g" -e "s|test\/||g"  metadata/datasets_synthetic_test.yml
     echo "NEW"
-    cat skimmer/metadata/picoaod_datasets_declustered_test_UL18.yml
+    cat metadata/datasets_synthetic_test.yml
 fi
 # echo "############### Modifying dataset file with skimmer ci output"
 # cat metadata/datasets_ci.yml
@@ -35,8 +35,11 @@ fi
 
 
 echo "############### Running test processor "
-python metadata/merge_yaml_datasets.py -m metadata/datasets_HH4b.yml -f skimmer/metadata/picoaod_datasets_declustered_test_UL18.yml  -o metadata/datasets_synthetic_test.yml
+# python metadata/merge_yaml_datasets.py -m metadata/datasets_HH4b.yml -f skimmer/metadata/picoaod_datasets_declustered_test_UL18.yml  -o metadata/datasets_synthetic_test.yml
 # python metadata/merge_yaml_datasets.py -m metadata/datasets_synthetic_seed17.yml -f skimmer/metadata/picoaod_datasets_declustered_GluGluToHHTo4B_cHHH1_Run2_seed17.yml -o metadata/datasets_synthetic_seed17.yml
-cat metadata/datasets_synthetic_test.yml
-time python runner.py -o test_synthetic_datasets.coffea -d data GluGluToHHTo4B_cHHH1 -p analysis/processors/processor_HH4b.py -y UL18  -op analysis/hists/ -c analysis/metadata/HH4b_synthetic_data.yml -m metadata/datasets_synthetic_test.yml
+#cat metadata/datasets_synthetic_test.yml
+
+time python runner.py -o test_synthetic_datasets.coffea -d synthetic_data synthetic_mc_GluGluToHHTo4B_cHHH1 -p analysis/processors/processor_HH4b.py -y UL18  -op analysis/hists/ -c analysis/metadata/HH4b_synthetic_data.yml -m metadata/datasets_synthetic_test.yml
+
+# time python runner.py -o test_synthetic_datasets.coffea -d data GluGluToHHTo4B_cHHH1 -p analysis/processors/processor_HH4b.py -y UL18  -op analysis/hists/ -c analysis/metadata/HH4b_synthetic_data.yml -m metadata/datasets_synthetic_test.yml
 cd ../

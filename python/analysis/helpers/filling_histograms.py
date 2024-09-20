@@ -128,6 +128,8 @@ def filling_nominal_histograms(selev, JCM,
 
         fill += SvBHists(("SvB",    "SvB Classifier"),    "SvB")
         fill += SvBHists(("SvB_MA", "SvB MA Classifier"), "SvB_MA")
+        fill += SvBHists(("SvB_noFvT",    "SvB Classifier"),    "SvB",   weight="weight_noFvT")
+        fill += SvBHists(("SvB_MA_noFvT", "SvB MA Classifier"), "SvB_MA",weight="weight_noFvT")
         fill += hist.add( "quadJet_selected_SvB_q_score", ( 100, 0, 1, ( "quadJet_selected.SvB_q_score",  "Selected Quad Jet Diboson SvB q score") ) )
         fill += hist.add( "quadJet_min_SvB_MA_q_score",   ( 100, 0, 1, ( "quadJet_min_dr.SvB_MA_q_score", "Min dR Quad Jet Diboson SvB MA q score") ) )
         if isDataForMixed:
