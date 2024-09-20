@@ -146,8 +146,8 @@ From left to right:
 
 - A list of plots:
   - for stack plots, the errorbar is the sum of the errors in quadrature for the top stack and zero for the rest.
-  - a tooltip is available when hovering over the filled area.
-  ![tooltip](readme/tooltip.png)
+  - a tooltip is available when hovering over the filled area.  
+    ![tooltip](readme/tooltip.png)
     - **value:** the raw bin value (and the actual bin value in the plot if **normalized** or **density** is checked)
     - **total:** summed over all bins (including the flow bins if **under/overflow** is checked)
     - **bin:** edge or category name
