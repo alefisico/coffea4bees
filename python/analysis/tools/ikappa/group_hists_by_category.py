@@ -7,7 +7,7 @@ import pandas as pd
 from base_class.system.eos import EOS
 from rich.logging import RichHandler
 
-from .ikappa._sanity import group_by_categories, group_to_str
+from ._sanity import group_by_categories, group_to_str
 
 if __name__ == "__main__":
     logging.basicConfig(
@@ -21,14 +21,14 @@ if __name__ == "__main__":
         "--input",
         type=str,
         required=True,
-        help="Input file",
+        help="input file",
     )
     parser.add_argument(
         "-o",
         "--output",
         type=str,
         required=True,
-        help="Output file",
+        help="output file",
     )
     args = parser.parse_args()
 

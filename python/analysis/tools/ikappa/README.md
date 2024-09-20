@@ -191,8 +191,15 @@ From left to right:
 
 Group the hists based on category axes and save in separate files.
 
-```bash
-python -m analysis.tools.group_hists_by_category -i INPUT -o OUTPUT
+```console
+python -m analysis.tools.ikappa.group_hists_by_category [-h] -i INPUT -o OUTPUT
+
+options:
+  -h, --help            show this help message and exit
+  -i INPUT, --input INPUT
+                        input file
+  -o OUTPUT, --output OUTPUT
+                        output file
 ```
 
 ### Copy data to multijet
@@ -201,7 +208,7 @@ TODO: WIP
 Since, the reweighted 3b data are treated as 4b multijet background model, to make it compatible with the plotting tool, the hists under `{process: data, ntag: 3}` need to be copied to `{process: multijet, ntag: 4}`.
 
 ```bash
-python -m analysis.tools.data_to_multijet -i INPUT -o OUTPUT
+python -m analysis.tools.ikappa.data_to_multijet -i INPUT -o OUTPUT
 ```
 
 ## Tips
