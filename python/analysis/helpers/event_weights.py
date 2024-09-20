@@ -44,15 +44,16 @@ def add_weights(event, do_MC_weights: bool = True,
                                 trigWeight.MC,
                                 ak.where(event.passHLT, 1., 0.) )
                 else:
-                    trigWeight_file = uproot.open(f'{event.metadata["filename"].replace("picoAOD", "trigWeights")}')['Events']
-                    trigWeight = trigWeight_file.arrays(['event', 'trigWeight_Data', 'trigWeight_MC'], entry_start=estart,entry_stop=estop)
-                    if not ak.all(trigWeight.event == event.event):
-                        raise ValueError('trigWeight events do not match events ttree')
+                    logging.error(f"No friend tree for trigWeight found.")
+                    # trigWeight_file = uproot.open(f'{event.metadata["filename"].replace("picoAOD", "trigWeights")}')['Events']
+                    # trigWeight = trigWeight_file.arrays(['event', 'trigWeight_Data', 'trigWeight_MC'], entry_start=estart,entry_stop=estop)
+                    # if not ak.all(trigWeight.event == event.event):
+                    #     raise ValueError('trigWeight events do not match events ttree')
 
-                    weights.add( 'CMS_bbbb_resolved_ggf_triggerEffSF',
-                                trigWeight["trigWeight_Data"],
-                                trigWeight["trigWeight_MC"],
-                                ak.where(event.passHLT, 1., 0.) )
+                    # weights.add( 'CMS_bbbb_resolved_ggf_triggerEffSF',
+                    #             trigWeight["trigWeight_Data"],
+                    #             trigWeight["trigWeight_MC"],
+                    #             ak.where(event.passHLT, 1., 0.) )
 
             else:
                 weights.add( "CMS_bbbb_resolved_ggf_triggerEffSF",
