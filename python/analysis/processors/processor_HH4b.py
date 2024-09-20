@@ -549,7 +549,7 @@ class analysis(processor.ProcessorABC):
                                                 year=self.year,
                                                 histCuts=self.histCuts)
 
-        friends = { 'friends': None }
+        friends = { 'friends': {} }
         if self.make_classifier_input is not None:
             _all_selection = analysis_selections
             for k in ["ZZSR", "ZHSR", "HHSR", "SR", "SB"]:
