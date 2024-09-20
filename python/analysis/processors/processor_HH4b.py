@@ -60,7 +60,6 @@ class analysis(processor.ProcessorABC):
         top_reconstruction_override: bool = False,
         run_systematics: list = [],
         make_classifier_input: str = None,
-        isSyntheticData: bool = False,
         subtract_ttbar_with_weights: bool = False,
         friend_trigWeight: str = None,
     ):
@@ -79,12 +78,11 @@ class analysis(processor.ProcessorABC):
         self.classifier_SvB_MA = HCREnsemble(SvB_MA) if SvB_MA else None
         with open(corrections_metadata, "r") as f:
             self.corrections_metadata = yaml.safe_load(f)
-        
+
         self.run_systematics = run_systematics
         self.make_classifier_input = make_classifier_input
         self.top_reconstruction_override = top_reconstruction_override
         self.subtract_ttbar_with_weights = subtract_ttbar_with_weights
-        self.isSyntheticData = isSyntheticData
         self.friend_trigWeight = friend_trigWeight
 
         if self.friend_trigWeight:
@@ -134,6 +132,15 @@ class analysis(processor.ProcessorABC):
         self.isMixedData    = not (self.dataset.find("mix_v") == -1)
         if self.isMixedData:
             self.isMC = False
+
+        self.isSyntheticData  = not (self.dataset.find("syn_v") == -1)
+        if self.isSyntheticData:
+            self.isMC = False
+
+        self.isSyntheticMC  = not (self.dataset.find("synthetic_mc") == -1)
+        if self.isSyntheticMC:
+            self.isMC = False
+
         self.isDataForMixed = not (self.dataset.find("data_3b_for_mixed") == -1)
         self.isTTForMixed   = not (self.dataset.find("TTTo") == -1) and not ( self.dataset.find("_for_mixed") == -1 )
 
@@ -155,17 +162,19 @@ class analysis(processor.ProcessorABC):
             self.do_jet_calibration  = True
             self.do_MC_weights       = True
 
-
         if self.isSyntheticData:
             self.do_lepton_jet_cleaning  = False
             self.override_selected_with_flavor_bit  = True
+            self.isPSData = True if event.run[0] == 1 else False
 
-            if self.isMC:
-                self.do_jet_calibration     = False
-                self.do_MC_weights          = True
-                self.use_prestored_btag_SF  = True
-                self.cut_on_HLT_decision    = False
-
+        if self.isSyntheticMC:
+            self.cut_on_lumimask         = False
+            self.cut_on_HLT_decision     = False
+            self.do_MC_weights           = True
+            self.do_jet_calibration     = False
+            self.do_lepton_jet_cleaning  = False
+            self.override_selected_with_flavor_bit  = True
+            self.use_prestored_btag_SF  = True
 
         if self.isPSData:
             self.cut_on_lumimask     = False
@@ -189,9 +198,7 @@ class analysis(processor.ProcessorABC):
 
 
         logging.debug(f'{self.chunk} isData={False}, isMC={self.isMC}, isMixedData={self.isMixedData}, isDataForMixed={self.isDataForMixed}, isTTForMixed={self.isTTForMixed},  isSyntheticData={self.isSyntheticData}, isPSData={self.isPSData} for file {fname}\n')
-        logging.debug(f'{self.chunk} isMC {self.isMC}, isSyntheticData {self.isSyntheticData}, isPSData={self.isPSData}\n\n')
-
-
+        logging.debug(f'{self.chunk} isMC {self.isMC}, isSyntheticData {self.isSyntheticData}, isPSData={self.isPSData}, isSyntheticMC={self.isSyntheticMC}\n\n')
 
 
         self.nEvent = len(event)
@@ -296,10 +303,10 @@ class analysis(processor.ProcessorABC):
 
         ### adds all the event mc weights and 1 for data
         weights, list_weight_names = add_weights( event, target=target,
-                                                 do_MC_weights=self.do_MC_weights, 
-                                                 dataset=self.dataset, 
+                                                 do_MC_weights=self.do_MC_weights,
+                                                 dataset=self.dataset,
                                                  year_label=self.year_label,
-                                                 estart=self.estart, 
+                                                 estart=self.estart,
                                                  estop=self.estop,
                                                  friend_trigWeight=self.friend_trigWeight,
                                                  corrections_metadata=self.corrections_metadata[self.year],

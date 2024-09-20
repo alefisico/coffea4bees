@@ -163,6 +163,7 @@ if __name__ == '__main__':
 
     if 'all' in args.datasets:
         metadata['datasets'].pop("mixeddata")   # AGE: this is temporary
+        metadata['datasets'].pop("synthetic_data")   # AGE: this is temporary
         metadata['datasets'].pop("data_3b_for_mixed")   # AGE: this is temporary
         args.datasets = metadata['datasets'].keys()
 
@@ -181,7 +182,7 @@ if __name__ == '__main__':
                     f"{year} name not in metadatafile for {dataset}")
                 continue
 
-            if dataset in ['data', 'mixeddata', 'data_3b_for_mixed'] or not ('xs' in metadata['datasets'][dataset].keys()):
+            if dataset in ['data', 'mixeddata', 'data_3b_for_mixed', 'synthetic_data'] or not ('xs' in metadata['datasets'][dataset].keys()):
                 xsec = 1.
             elif isinstance(metadata['datasets'][dataset]['xs'], float):
                 xsec = metadata['datasets'][dataset]['xs']
@@ -203,10 +204,11 @@ if __name__ == '__main__':
                                          }
             isData = (dataset == 'data')
             isMixedData = (dataset == 'mixeddata')
+            isSyntheticData = (dataset == 'synthetic_data')
             isDataForMix = (dataset == 'data_3b_for_mixed')
             isTTForMixed = (dataset in ['TTToHadronic_for_mixed', 'TTToSemiLeptonic_for_mixed', 'TTTo2L2Nu_for_mixed'])
 
-            if not ( isData or isMixedData or isDataForMix or isTTForMixed):
+            if not ( isData or isSyntheticData or isMixedData or isDataForMix or isTTForMixed):
                 logging.info("\nConfig MC")
                 if config_runner['data_tier'].startswith('pico'):
                     if 'data' not in dataset:
@@ -248,6 +250,31 @@ if __name__ == '__main__':
 
                     logging.info(
                         f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
+
+            elif isSyntheticData:
+                logging.info("\nConfig Synthetic Data ")
+
+                nSyntheticSamples = metadata['datasets'][dataset]["nSamples"]
+                synthetic_config = metadata['datasets'][dataset][year][config_runner['data_tier']]
+                logging.info(f"\nNumber of synthetic samples is {nSyntheticSamples}")
+                for v in range(nSyntheticSamples):
+
+                    synthetic_name = f"syn_v{v}"
+                    idataset = f'{synthetic_name}_{year}'
+
+                    metadata_dataset[idataset] = copy(metadata_dataset[dataset])
+                    metadata_dataset[idataset]['processName'] = synthetic_name
+                    # metadata_dataset[idataset]['FvT_name'] = synthetic_config['FvT_name_template'].replace("XXX",str(v))
+                    # metadata_dataset[idataset]['FvT_file'] = synthetic_config['FvT_file_template'].replace("XXX",str(v))
+                    synthetic_files = [f.replace("XXX",str(v)) for f in synthetic_config['files_template']]
+                    fileset[idataset] = {'files': list_of_files(synthetic_files,
+                                                                test=args.test, test_files=config_runner['test_files'],
+                                                                allowlist_sites=config_runner['allowlist_sites']),
+                                         'metadata': metadata_dataset[idataset]}
+
+                    logging.info(
+                        f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
+
 
             elif isDataForMix:
                 logging.info("\nConfig Data for Mixed ")

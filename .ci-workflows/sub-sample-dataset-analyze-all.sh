@@ -4,20 +4,6 @@ echo "############### Checking proxy"
 voms-proxy-info
 echo "############### Moving to python folder"
 cd python/
-if [[ $(hostname) = *fnal* ]]; then
-    echo "No changing files"
-else
-    echo "############### Modifying previous dataset file (to read local files)"
-    ls -lR skimmer/
-    echo "TEST"
-    cat skimmer/metadata/picoaod_datasets_TT_pseudodata_Run2.yml
-    pwd
-    echo ${CI_PROJECT_PATH}
-    sed -i "s|\/builds/$CI_PROJECT_PATH\/python\/||g"  skimmer/metadata/picoaod_datasets_TTToHadronic_pseudodata_test_UL18.yml
-    echo "NEW"
-    cat skimmer/metadata/picoaod_datasets_TTToHadronic_pseudodata_test_UL18.yml
-fi
-
 
 # echo "############### Changing metadata"
 # sed -e "s/apply_FvT.*/apply_FvT: false/" -e "s/apply_trig.*/apply_trigWeight: false/" -e "s/run_SvB.*/run_SvB: false/"  analysis/metadata/HH4b.yml > analysis/metadata/tmp.yml
