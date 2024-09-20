@@ -58,7 +58,7 @@ class Main(Component):
         super().__init__()
         # data
         self._hists: tuple[dict[str, Hist], set[str]] = {}, None
-        self._profiles: dict[str, Profile] = {}
+        self._profiles: list[Profile] = []
         self._status = {"Histograms": [], "Profiles": []}
 
         # async
@@ -111,7 +111,14 @@ class Main(Component):
             content.append("<b>Profiles</b>:<br>")
             content.append("<div class='code box'>")
             content.append(
-                yaml.dump(self._profiles, Dumper=_ProfileStyle).replace("\n", "<br>")
+                "<br>".join(
+                    map(
+                        lambda x: yaml.dump(x, Dumper=_ProfileStyle).replace(
+                            "\n", "<br>"
+                        ),
+                        self._profiles,
+                    )
+                )
             )
             content.append("</div>")
 
@@ -259,7 +266,7 @@ div.itemize {white-space: break-spaces;}
     def _ext_profile(self, path: EOS, action: _Actions):
         with fsspec.open(path, mode="rt") as file:
             self.log(f'[async] Loading profile from "{path}"...')
-            data: dict[str, Profile]
+            data: list[Profile]
             match ext := path.extension:
                 case "yml":
                     data = yaml.safe_load(file)
@@ -273,7 +280,7 @@ div.itemize {white-space: break-spaces;}
                     self._profiles = data
                 case "add":
                     self.log("Adding to existing profile.")
-                    self._profiles.update(data)
+                    self._profiles.extend(data)
             self.log("Updating plotter...")
             self.plotter.update_profile(self._profiles)
         self._update_status(str(path), category="Profiles", action=action)

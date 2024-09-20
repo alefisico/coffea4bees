@@ -58,8 +58,8 @@ from .config import UI, CouplingScan, Datasets, Palette, Plot, Stacks
 if TYPE_CHECKING:
     import pandas as pd
 
-    from ._models import ClickableDiv
     from ._plot import AxisProjector
+    from ._widget import ClickableDiv
 
     class Hist1D(NamedTuple):
         values: pd.DataFrame
@@ -856,7 +856,7 @@ class HistGroup(Component):
                 legend_add(_DataField.model(k, i), m.name)
             legend_hr()
         for i, s in enumerate(stacks):
-            legend_title(f"{s.name or i+1}", s.badge)
+            legend_title(s.name or f"Stack{i+1}", s.badge)
             for j, p in enumerate(s):
                 field = _DataField.stack(i, j)
                 legend_toggles[field] = legend_add(field, p, stack=True)

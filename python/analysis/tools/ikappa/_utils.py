@@ -27,8 +27,8 @@ from bokeh.models import (
 )
 from bokeh.util.callback_manager import EventCallback
 
-from ._models import ClickableDiv
-from .config import UI, XRootD
+from ._widget import ClickableDiv
+from .config import UI, XRootD, Plot
 
 _STYLESHEETS = "stylesheets"
 
@@ -493,7 +493,9 @@ if (element.value.length === 0) {
         toggle.js_on_event(
             ButtonClick,
             CustomJS(
-                args=dict(toggle=toggle, styles=styles, color=UI.disabled_color),
+                args=dict(
+                    toggle=toggle, styles=styles, color=Plot.legend_disabled_color
+                ),
                 code="""
 toggle.disabled = !toggle.disabled;
 if (toggle.disabled) {

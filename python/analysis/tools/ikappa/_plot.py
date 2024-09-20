@@ -25,8 +25,8 @@ from hist import Hist
 from hist.axis import AxesMixin
 
 from ._hist import BHAxis, HistGroup
-from ._models import TreeView
 from ._utils import Component, Confirmation, DownloadLink, ExternalLink, PathInput
+from ._widget import TreeView
 from .config import UI
 
 if TYPE_CHECKING:
@@ -39,20 +39,37 @@ _RESOURCE = ["cdn", "inline"]
 
 
 class Profile(TypedDict):
+    name: str
     rebin: int | list[int]
 
 
+class _Profile:
+    _KEYS = frozenset(Profile.__annotations__.keys()) - {"name"}
+
+    def __init__(self, profile: Profile):
+        self._keys = self._KEYS & profile.keys()
+        self._profile = profile
+        self._name = re.compile(profile["name"])
+
+    def match(self, name: str) -> bool:
+        return self._name.fullmatch(name) is not None
+
+    def keys(self):
+        return self._keys
+
+    def __getitem__(self, key):
+        return self._profile[key]
+
+
 class Profiler:
-    def __init__(self, profiles: dict[str, Profile] = None):
-        self._profiles = (
-            [(re.compile(k), v) for k, v in profiles.items()] if profiles else []
-        )
+    def __init__(self, profiles: list[Profile] = None):
+        self._profiles = [*map(_Profile, profiles)] if profiles else []
 
     def generate(self, name: str) -> Profile:
         profile = {}
-        for k, v in self._profiles:
-            if k.fullmatch(name) is not None:
-                profile.update(v)
+        for k in self._profiles:
+            if k.match(name):
+                profile.update(k)
         return profile
 
 
@@ -127,7 +144,7 @@ class Plotter(Component):
     def reset(self):
         self.doc.add_next_tick_callback(self._dom_reset)
 
-    def update_profile(self, profiles: dict[str, Profile]):
+    def update_profile(self, profiles: list[Profile]):
         self._profile = Profiler(profiles)
 
     def update_data(self, hists: dict[str, Hist], categories: set[str]):
@@ -171,7 +188,7 @@ elements.forEach(e => e.visible = !full);
         self._dom_profile.add_page(
             self._dom_check_profile,
             f"""
-const columns = {str(["hist", *Profile.__annotations__.keys()])};
+const columns = {str(["hist", *_Profile._KEYS])};
 console.log(columns);
 """
             + """
@@ -221,7 +238,7 @@ tr:hover {background-color: rgb(175, 225, 255);}
         self._dom_hist_tree = TreeView(
             paths={k: f"hist{len(v.axes)-ncats}d" for k, v in self.data.items()},
             root="hists",
-            separator=".",
+            separator=UI.path_separator,
             icons={
                 "hist1d": "ti ti-chart-histogram",
                 "hist2d": "ti ti-chart-scatter",
