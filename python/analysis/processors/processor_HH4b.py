@@ -61,6 +61,8 @@ class analysis(processor.ProcessorABC):
         top_reconstruction_override: bool = False,
         run_systematics: list = [],
         make_classifier_input: str = None,
+        make_friend_JCM_weight: str = None,
+        make_friend_FvT_weight: str = None,
         isSyntheticData: bool = False,
         subtract_ttbar_with_weights: bool = False,
         friend_trigWeight: str = None,
@@ -84,6 +86,8 @@ class analysis(processor.ProcessorABC):
         
         self.run_systematics = run_systematics
         self.make_classifier_input = make_classifier_input
+        self.make_friend_JCM_weight = make_friend_JCM_weight
+        self.make_friend_FvT_weight = make_friend_FvT_weight
         self.top_reconstruction_override = top_reconstruction_override
         self.subtract_ttbar_with_weights = subtract_ttbar_with_weights
         self.isSyntheticData = isSyntheticData
@@ -545,17 +549,17 @@ class analysis(processor.ProcessorABC):
                                                 year=self.year,
                                                 histCuts=self.histCuts)
 
-        friends = {}
+        friends = { 'friends': None }
         if self.make_classifier_input is not None:
             _all_selection = analysis_selections
             for k in ["ZZSR", "ZHSR", "HHSR", "SR", "SB"]:
                 selev[k] = selev["quadJet_selected"][k]
             selev["nSelJets"] = ak.num(selev.selJet)
 
-            from ..helpers.dump_friendtrees import dump_input_friend, dump_JCM_weight, dump_FvT_weight
+            from ..helpers.dump_friendtrees import dump_input_friend
 
-            friends["friends"] = (
-                dump_input_friend(
+            friends["friends"] = ( friends["friends"]
+                | dump_input_friend(
                     selev,
                     self.make_classifier_input,
                     "HCR_input",
@@ -563,7 +567,18 @@ class analysis(processor.ProcessorABC):
                     weight="weight" if self.isMC else "weight_noJCM_noFvT",
                     NotCanJet="notCanJet_coffea",
                 )
+            )
+        if self.make_friend_JCM_weight is not None:
+            from ..helpers.dump_friendtrees import dump_JCM_weight
+
+            friends["friends"] = ( friends["friends"]
                 | dump_JCM_weight(selev, self.make_classifier_input, "JCM_weight", _all_selection)
+            )
+
+        if self.make_friend_FvT_weight is not None:
+            from ..helpers.dump_friendtrees import dump_FvT_weight
+
+            friends["friends"] = ( friends["friends"]
                 | dump_FvT_weight(selev, self.make_classifier_input, "FvT_weight", _all_selection)
             )
 

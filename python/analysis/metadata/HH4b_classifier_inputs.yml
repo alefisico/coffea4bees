@@ -17,6 +17,10 @@ config:
   top_reconstruction_override: false
   fill_histograms: false 
   # make_classifier_input: root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v1/
+  # make_friend_JCM_weight: root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v1/
+  # make_friend_FvT_weight: root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v1/
   make_classifier_input: /srv/python/hists/local/   ### local
+  make_friend_JCM_weight: /srv/python/hists/local/   ### local
+  make_friend_FvT_weight: /srv/python/hists/local/   ### local
 
   
