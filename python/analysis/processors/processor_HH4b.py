@@ -61,12 +61,9 @@ class analysis(processor.ProcessorABC):
         top_reconstruction_override: bool = False,
         run_systematics: list = [],
         make_classifier_input: str = None,
-<<<<<<< HEAD
         make_friend_JCM_weight: str = None,
         make_friend_FvT_weight: str = None,
         isSyntheticData: bool = False,
-=======
->>>>>>> 9ebfcc6a8f46d585aad63204c30d2c9eb349ef5e
         subtract_ttbar_with_weights: bool = False,
         friend_trigWeight: str = None,
     ):
