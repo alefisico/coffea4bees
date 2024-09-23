@@ -63,6 +63,7 @@ class analysis(processor.ProcessorABC):
         run_systematics: list = [],
         make_classifier_input: str = None,
         make_top_reconstruction: str = None,
+        make_friend_top_reconstruction: bool = False,  ### temporary
         make_friend_JCM_weight: str = None,
         make_friend_FvT_weight: str = None,
         isSyntheticData: bool = False,
@@ -89,6 +90,7 @@ class analysis(processor.ProcessorABC):
 
         self.run_systematics = run_systematics
         self.make_top_reconstruction = make_top_reconstruction
+        self.make_friend_top_reconstruction = make_friend_top_reconstruction  #### temporary
         self.make_classifier_input = make_classifier_input
         self.make_friend_JCM_weight = make_friend_JCM_weight
         self.make_friend_FvT_weight = make_friend_FvT_weight
@@ -570,7 +572,7 @@ class analysis(processor.ProcessorABC):
                                                 histCuts=self.histCuts)
 
         friends = { 'friends': {} }
-        if self.make_top_reconstruction is not None:
+        if self.make_friend_top_reconstruction: # is not None:
             from ..helpers.dump_friendtrees import dump_top_reconstruction
 
             friends["friends"] = ( friends["friends"]

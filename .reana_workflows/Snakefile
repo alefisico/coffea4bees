@@ -1,7 +1,7 @@
 from datetime import datetime
 
 TIMESTAMP = datetime.now().strftime('%Y%m%d_%H%M%S')
-analysis_container = "gitlab-registry.cern.ch/cms-cmu/coffea4bees:766323bc"   ### actual tag for reproducibility
+analysis_container = "gitlab-registry.cern.ch/cms-cmu/coffea4bees:fd85472f"   ### actual tag for reproducibility
 combine_container = "gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0"
 
 #
