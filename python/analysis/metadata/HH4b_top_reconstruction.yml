@@ -1,0 +1,22 @@
+runner:
+  workers: 4
+  condor_memory: 8GB
+  friend_metafile: top_reconstruction_friendtree
+  friend_base: /srv/python/hists/local/ 
+  chunksize: 10000
+
+config:
+  JCM: 'analysis/weights/JCM/2023/dataRunII/jetCombinatoricModel_SB_00-00-02.yml'
+  blind: false
+  apply_FvT: false
+  apply_trigWeight: false
+  apply_btagSF: false
+  apply_boosted_veto: false
+  run_SvB: false 
+  run_systematics: false 
+  top_reconstruction_override: false
+  fill_histograms: false 
+  # make_top_reconstruction: root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v1/
+  make_top_reconstruction: /srv/python/hists/local/   ### local
+
+  
