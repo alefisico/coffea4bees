@@ -74,6 +74,9 @@ def examples():
         '# Can overlay processes  \n'
         'plot("v4j.mass", region="SR", cut="passPreSel",norm=1,process=["data","TTTo2L2Nu","HH4b","Multijet"],doRatio=1)\n\n'
 
+        '# Can overlay years\n'
+        'plot("canJet0.pt", region="SR",cut="passPreSel",doRatio=1,process="data", year=["UL16_preVFP","UL16_postVFP","UL17","UL18"])\n'
+
         '# Plot 2d hists \n'
         'plot2d("quadJet_min_dr.close_vs_other_m",process="Multijet",region="SR",cut="failSvB")\n'
         'plot2d("quadJet_min_dr.close_vs_other_m",process="Multijet",region="SR",cut="failSvB",full=True)\n\n'
@@ -83,6 +86,8 @@ def examples():
         'plot2d("quadJet_selected.lead_vs_subl_m",process="data3b",region="SRSB") \n'
         'plot("leadStM_selected", region="SB", cut="passPreSel", process = ["data3b","mixeddata"]) \n'
         'plot("v4j.mass", region=["SR", "SB"], cut="passPreSel", process = "data3b") \n\n'
+
+
     )
 
 
