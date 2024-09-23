@@ -88,6 +88,15 @@ class iPlotTestCase(unittest.TestCase):
         print(f"plot with {args | doRatio | norm | rlim | manyVars}")
         plot(**(args | doRatio | norm | rlim | manyVars))
 
+
+        manyYears = {"cut": "passPreSel",
+                     "var": "canJet0.pt",
+                     "year":  ["UL16_preVFP","UL16_postVFP","UL17","UL18"],
+                     "process": "data"}
+        print(f"plot with {args | doRatio | norm | rlim | manyYears}")
+        plot(**(args | doRatio | norm | rlim | manyYears))
+
+
         args["var"] = "v4j.mass"
         invalid_region = {"region": "InvalidRegion"}
         print(f"plot with {args | invalid_region}")

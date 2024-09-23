@@ -336,6 +336,14 @@ def _draw_plot(hist_list, stack_dict, **kwargs):
 
     return
 
+def get_year_str(year):
+
+    if type(year) is list:
+        year_str = "_vs_".join(year)
+    else:
+        year_str = year.replace("UL", "20")
+    return year_str
+
 
 def _plot(hist_list, stack_dict, plotConfig, **kwargs):
     if kwargs.get("debug", False):
@@ -348,9 +356,11 @@ def _plot(hist_list, stack_dict, plotConfig, **kwargs):
 
     _draw_plot(hist_list, stack_dict, **kwargs)
 
+    year_str = get_year_str(year = kwargs.get('year',"RunII"))
+
     ax = fig.gca()
     hep.cms.label("Internal", data=True,
-                  year=kwargs.get('year',"RunII").replace("UL", "20"), loc=0, ax=ax)
+                  year=year_str, loc=0, ax=ax)
 
 
     return fig, ax
@@ -402,9 +412,11 @@ def _plot_ratio(hist_list, stack_dict, ratio_list, **kwargs):
     grid = fig.add_gridspec(2, 1, hspace=0.06, height_ratios=[3, 1],
                             left=0.1, right=0.95, top=0.95, bottom=0.1)
 
+    year_str = get_year_str(year = kwargs.get('year',"RunII"))
+
     main_ax = fig.add_subplot(grid[0])
     hep.cms.label("Internal", data=True,
-                  year=kwargs.get('year',"RunII").replace("UL", "20"), loc=0, ax=main_ax)
+                  year=year_str, loc=0, ax=main_ax)
 
     _draw_plot(hist_list, stack_dict, **kwargs)
 
@@ -582,6 +594,27 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
 
             hists.append( (_hist, _process_config) )
 
+    #
+    #  year list
+    #
+    elif type(year) is list:
+        for iy, _year in enumerate(year):
+
+            if kwargs.get("debug", False):
+                print_list_debug_info(process, process_config.get("tag"), cut, region)
+
+            _process_config = copy.copy(process_config)
+            _process_config["fillcolor"] = _colors[iy]
+            _process_config["label"]     = get_label(f"{process_config['label']} { _year}", label_override, iy)
+            _process_config["histtype"]  = kwargs.get("histtype","errorbar")
+
+            _hist = get_hist(cfg, _process_config,
+                             var=var, region=region, cut=cut, rebin=rebin, year=_year,
+                             debug=kwargs.get("debug", False))
+
+            hists.append( (_hist, _process_config) )
+
+
     else:
         raise Exception("Error something needs to be a list!")
 
@@ -628,7 +661,7 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
 
 
 def makePlot(cfg, var='selJets.pt',
-             cut="passPreSel", region="SR", year="RunII", **kwargs):
+             cut="passPreSel", region="SR", **kwargs):
     r"""
     Takes Options:
 
@@ -645,9 +678,10 @@ def makePlot(cfg, var='selJets.pt',
     process = kwargs.get("process", None)
     rebin   = kwargs.get("rebin", 1)
     year    = kwargs.get("year", "RunII")
+    debug   = kwargs.get("debug", False)
+    if debug: print(f"In makePlot kwargs={kwargs}")
 
-
-    if (type(cut) is list) or (type(region) is list) or (len(cfg.hists) > 1 and not cfg.combine_input_files) or (type(var) is list) or (type(process) is list):
+    if (type(cut) is list) or (type(region) is list) or (len(cfg.hists) > 1 and not cfg.combine_input_files) or (type(var) is list) or (type(process) is list) or (type(year) is list):
         return _makeHistsFromList(cfg, var, cut, region, **kwargs)
 
     # Make process a list if it exits and isnt one already
