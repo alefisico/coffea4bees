@@ -133,7 +133,8 @@ def get_hist(cfg, config, var, region, cut, rebin, year, file_index=None, debug=
                  "tag":   hist.loc(tag_code),
                  }
 
-    if type(codes["region"][region]) is list:
+
+    if (not region  == "sum") and (type(codes["region"][region]) is list):
         region_dict = {"region":  [hist.loc(r) for r in codes["region"][region]]}
     else:
         if region == "sum":
@@ -513,7 +514,7 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
     #
     #  input file list
     #
-    elif len(cfg.hists) > 1:
+    elif len(cfg.hists) > 1 and not cfg.combine_input_files:
         if kwargs.get("debug", False):
             print_list_debug_info(process, process_config.get("tag"), cut, region)
 
