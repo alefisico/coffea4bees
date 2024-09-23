@@ -10,10 +10,9 @@ combine_container = "gitlab-registry.cern.ch/cms-analysis/general/combine-contai
 #
 rule all:
     input:
-        expand("output/histAll__{dataset}__{year}.coffea", year=config['year'], dataset=config['dataset']),
+        # expand("output/histAll__{dataset}__{year}.coffea", year=config['year'], dataset=config['dataset']),
         expand("output/histsyst_{samplesyst}-{iysyst}.coffea", samplesyst=config['dataset_systematics'], iysyst=config['year']),
         #expand("output/histsystpreUL_{samplesystpreUL}-{iysystpreUL}.coffea", samplesystpreUL=config['dataset_preUL'], iysystpreUL=config['year_preUL']),
-        expand("output/histsignal_{samplesignal}-{iysignal}.coffea", samplesignal=config['dataset_signal'], iysignal=config['year']),
         "output/histMixedBkg_data_3b_for_mixed.coffea",
         "output/histMixedBkg_TT.coffea",
         "output/histMixedData.coffea",
@@ -29,15 +28,15 @@ rule all:
 
 
 rule analysis_databkgs:
-    output: "output/histAll__{dataset}__{year}.coffea"
+    output: "output/histAll.coffea" 
     container: analysis_container
     params:
         hash=config['hash'],
         diff=config['diff'],
-        isam="{dataset}",
-        iy="{year}",
-        output="histAll__{dataset}__{year}.coffea",
-        logname="histAll__{dataset}__{year}"
+        isam=config['dataset'],
+        iy=config['year'],
+        output="histAll.coffea",
+        logname="histAll"
     resources:
         voms_proxy=True,
         kerberos=True,
@@ -136,16 +135,6 @@ mprof plot -o output/mprofile_{params.logname}.png python/mprofile_{params.logna
 xrdcp {output} root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/{params.output}
         """
 
-use rule analysis_systematics as analysis_signal with:
-    output: "output/histsignal_{samplesignal}-{iysignal}.coffea"
-    params:
-        hash=config['hash'],
-        diff=config['diff'],
-        isam="{samplesignal}",
-        iy="{iysignal}",
-        output="histsignal_{samplesignal}-{iysignal}.coffea",
-        logname="histsignal_{samplesignal}-{iysignal}"
-
 #use rule analysis_systematics as analysis_systematics_preUL with:
 #    output:
 #        "output/histsystpreUL_{samplesystpreUL}-{iysystpreUL}.coffea"
@@ -159,12 +148,17 @@ use rule analysis_systematics as analysis_signal with:
 
 rule merging_coffea_files_databkgs:
    input:
-       files = expand(['output/histAll__{dataset}__{iyear}.coffea'], iyear=config['year'], dataset=config['dataset'])
-   output: "output/histAll.coffea"
+    #    files = expand(['output/histAll__{dataset}__{iyear}.coffea'], iyear=config['year'], dataset=config['dataset'])
+        files = expand(['output/histsyst_{idatsyst}-{iyear}.coffea'], idatsyst=config['dataset_systematics'], iyear=config['year']) #+ expand(['output/histsystpreUL_{idat}-{iyear}.coffea'], idat=config['dataset_preUL'], iyear=config['year_preUL'])
+   output: 
+        # "output/histAll.coffea"
+       "output/histAll_syst.coffea"
    container: "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
    params:
-       output= "histAll.coffea",
-       logname= "databkgs"
+    #    output= "histAll.coffea",
+    #    logname= "databkgs"
+        output= "histAll_syst.coffea",
+        logname= "syst"
    resources:
        kerberos=True,
        compute_backend="kubernetes",
@@ -177,14 +171,14 @@ xrdcp {output} root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/reana/{T
 cp {output} /eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/{params.output}
        """
 
-use rule merging_coffea_files_databkgs as rule merging_coffea_files_syst with:
-    input:
-        files = expand(['output/histsyst_{idatsyst}-{iyear}.coffea'], idatsyst=config['dataset_systematics'], iyear=config['year']) #+ expand(['output/histsystpreUL_{idat}-{iyear}.coffea'], idat=config['dataset_preUL'], iyear=config['year_preUL'])
-    output:
-        "output/histAll_syst.coffea"
-    params:
-        output= "histAll_syst.coffea",
-        logname= "syst"
+# use rule merging_coffea_files_databkgs as rule merging_coffea_files_syst with:
+#     input:
+#         files = expand(['output/histsyst_{idatsyst}-{iyear}.coffea'], idatsyst=config['dataset_systematics'], iyear=config['year']) #+ expand(['output/histsystpreUL_{idat}-{iyear}.coffea'], idat=config['dataset_preUL'], iyear=config['year_preUL'])
+#     output:
+#         "output/histAll_syst.coffea"
+#     params:
+#         output= "histAll_syst.coffea",
+#         logname= "syst"
 
 use rule merging_coffea_files_databkgs as merging_coffea_files_signal_diffHHH with:
     input:
@@ -297,8 +291,9 @@ cmsenv || true
 cd -
 cat {input}
 echo "RUNNING COMBINE"
-source python/stats_analysis/run_combine.sh output/datacards/ --postfit
-python3 make_postfit_plot.py -i output/datacards/postfit_s.root -o {output} --do_postfit False
+cd python/stats_analysis/
+source run_combine.sh ../../output/datacards/ --postfit
+python3 make_postfit_plot.py -i ../../output/datacards/postfit_s.root -o {output} --do_postfit False
         """
 
 rule make_syst_plots:

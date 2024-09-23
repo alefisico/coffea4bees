@@ -31,18 +31,31 @@ class Skimmer(PicoAOD):
         year    = event.metadata['year']
         dataset = event.metadata['dataset']
 
-        event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year] )
+
+        #
+        #  Nominal config (...what we would do for data)
+        #
+        cut_on_lumimask         = True
+        cut_on_HLT_decision     = True
+        do_lepton_jet_cleaning  = True
+
+        if isMC:
+            cut_on_lumimask     = False
+            cut_on_HLT_decision = False
+
+
+        event = apply_event_selection_4b( event, self.corrections_metadata[year], cut_on_lumimask=cut_on_lumimask )
 
 
         juncWS = [ self.corrections_metadata[year]["JERC"][0].replace("STEP", istep)
-                   for istep in ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"] ] #+ self.corrections_metadata[year]["JERC"][2:]
+                   for istep in ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"] ] + self.corrections_metadata[year]["JERC"][2:]
 
         #old_jets = copy(event.Jet)
         jets = init_jet_factory(juncWS, event, isMC)
         event["Jet"] = jets
 
 
-        event = apply_object_selection_4b( event, self.corrections_metadata[year], loosePtForSkim=self.loosePtForSkim  )
+        event = apply_object_selection_4b( event, self.corrections_metadata[year], doLeptonRemoval=do_lepton_jet_cleaning, loosePtForSkim=self.loosePtForSkim  )
 
         weights = Weights(len(event), storeIndividual=True)
 
@@ -55,7 +68,7 @@ class Skimmer(PicoAOD):
         selections = PackedSelection()
         selections.add( "lumimask", event.lumimask)
         selections.add( "passNoiseFilter", event.passNoiseFilter)
-        selections.add( "passHLT", ( np.full(len(event), True) if isMC else event.passHLT ) )
+        selections.add( "passHLT", ( event.passHLT if cut_on_HLT_decision else np.full(len(event), True)  ) )
         if self.loosePtForSkim:
             selections.add( 'passJetMult_lowpt_forskim', event.passJetMult_lowpt_forskim )
         selections.add( 'passJetMult',   event.passJetMult )

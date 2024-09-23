@@ -1,5 +1,6 @@
 import random
 import yaml
+import logging
 
 from ..trigger_emulator.HLTBTagEmulator    import HLTBTagEmulator
 from ..trigger_emulator.HLTHtEmulator      import HLTHtEmulator
@@ -42,17 +43,17 @@ class TrigEmulatorTool:
 
 
         else:
-            print(f"TrigEmulatorTool::ERROR year has to be 2018, 2017 or 2016. Not {year}")
+            logging.info(f"TrigEmulatorTool::ERROR year has to be 2018, 2017 or 2016. Not {year}")
 
 
 
 
     def AddTrig(self, trigName, HTNames=None, JetNames=None, JetMults=None, TagNames=None, TagMults=None):
         if self.m_debug:
-            print(f"TrigEmulatorTool::AddTrig Enter {trigName}")
+            logging.debug(f"TrigEmulatorTool::AddTrig Enter {trigName}")
 
         if trigName in self.m_emulatedTrigMenu:
-            print(f"TrigEmulatorTool::AddTrig ERROR {trigName} already included")
+            logging.info(f"TrigEmulatorTool::AddTrig ERROR {trigName} already included")
             return
 
         if HTNames is None:
@@ -75,7 +76,7 @@ class TrigEmulatorTool:
         BTagPtCuts = [self.m_BTag[bt] for bt in TagNames if bt in self.m_BTag]
 
         if self.m_debug:
-            print(f"TrigEmulatorTool::AddTrig inserting {trigName}")
+            logging.debug(f"TrigEmulatorTool::AddTrig inserting {trigName}")
 
         self.m_emulatedTrigMenu[trigName] = TrigEmulator(HTCuts, JetPtCuts, JetMults, BTagPtCuts, TagMults, nToys=self.m_nToys)
         self.m_emulatedDecisions[trigName] = False
@@ -89,7 +90,7 @@ class TrigEmulatorTool:
     # Return the value set in SetDecisions.  (So must call SetDecisions before GetDecision/Passed)
     def GetDecision(self, trigName):
         if trigName not in self.m_emulatedDecisions:
-            print(f"TrigEmulatorTool::GetDecisions ERROR {trigName} not defined. Returning false")
+            logging.info(f"TrigEmulatorTool::GetDecisions ERROR {trigName} not defined. Returning false")
             return False
         return self.m_emulatedDecisions[trigName]
 
@@ -101,12 +102,12 @@ class TrigEmulatorTool:
     #    Return the value set in SetWeights.  (So must call SetWeights before GetWeight)
     def GetWeight(self, trigName):
         if trigName not in self.m_emulatedWeights:
-            print(f"TrigEmulatorTool::GetWeight ERROR {trigName} not defined. Returning 0.0")
+            logging.info(f"TrigEmulatorTool::GetWeight ERROR {trigName} not defined. Returning 0.0")
             return 0.0
         return self.m_emulatedWeights[trigName]
 
     #  Calculate the weight of the OR of the menu defined
-    def GetWeightOR(self, offline_jet_pts, offline_btagged_jet_pts, ht=-1, setSeed=False):
+    def GetWeightOR(self, offline_jet_pts, offline_btagged_jet_pts, ht=-1, setSeed=False, debug=False):
         nPass = 0
 
         for iToy in range(self.m_nToys):
@@ -120,7 +121,12 @@ class TrigEmulatorTool:
             ht_weights = [self.m_rand.random() for _ in range(3)]
 
             for trigName, trigEmulator in self.m_emulatedTrigMenu.items():
-                if trigEmulator.passTrigCorrelated(offline_jet_pts, offline_btagged_jet_pts, ht, btag_weights, ht_weights, iToy):
+
+                _passTrig = trigEmulator.passTrigCorrelated(offline_jet_pts, offline_btagged_jet_pts, ht, btag_weights, ht_weights, iToy, debug=debug)
+
+                if debug: print(f"Did pass {trigName} = {_passTrig}")
+
+                if _passTrig:
                     passAny = True
 
             if passAny:
@@ -143,17 +149,17 @@ class TrigEmulatorTool:
 
     def dumpResults(self):
         for trigName, trigEmulator in self.m_emulatedTrigMenu.items():
-            print(trigName, end=" ")
+            logging.info(f"{trigName}")
             trigEmulator.dumpResults()
 
 
     def config2018Filters(self):
-        print("TrigEmulatorTool::configuring for 2018 ")
+        logging.info("TrigEmulatorTool::configuring for 2018 ")
 
         fileName2018 = "base_class/trigger_emulator/data/haddOutput_All_Data2018_11Nov_fittedTurnOns.yaml"
         if self.m_useMCTurnOns:
             fileName2018 = "base_class/trigger_emulator/data/haddOutput_All_MC2018_11Nov_fittedTurnOns.yaml"
-        print("TrigEmulatorTool::using file \t ", fileName2018)
+        logging.info(f"TrigEmulatorTool::using file {fileName2018}\n")
 
         with open(fileName2018, 'r') as infile:
             data = yaml.safe_load(infile)
@@ -208,7 +214,7 @@ class TrigEmulatorTool:
     def config2018Menu(self):
 
         if self.m_is3b:
-            print("Configuring 2018 menu for 3b events")
+            logging.info("Configuring 2018 menu for 3b events")
 
             self.AddTrig("EMU_4j_3b",
                          HTNames=["hTTurnOn::L1ORAll_Ht330_4j_3b","hTTurnOn::PFHt330"],
@@ -224,7 +230,7 @@ class TrigEmulatorTool:
 
 
         else:
-            print("Configuring 2018 menu for 4b events")
+            logging.info("Configuring 2018 menu for 4b events")
 
             self.AddTrig("EMU_4j_3b",
 	    	         HTNames=["hTTurnOn::L1ORAll_Ht330_4j_3b","hTTurnOn::PFHt330"],
@@ -242,12 +248,12 @@ class TrigEmulatorTool:
 
 
     def config2017Filters(self):
-        print("TrigEmulatorTool::configuring for 2017 ")
+        logging.info("TrigEmulatorTool::configuring for 2017 ")
 
         fileName2017 = "base_class/trigger_emulator/data/haddOutput_All_Data2017_11Nov_fittedTurnOns.yaml"
         if self.m_useMCTurnOns:
             fileName2017 = "base_class/trigger_emulator/data/haddOutput_All_MC2017_11Nov_fittedTurnOns.yaml"
-        print("TrigEmulatorTool::using file \t ",fileName2017)
+        logging.info(f"TrigEmulatorTool::using file {fileName2017}\n")
 
         with open(fileName2017, 'r') as infile:
             data = yaml.safe_load(infile)
@@ -297,7 +303,7 @@ class TrigEmulatorTool:
     def config2017Menu(self):
 
         if self.m_is3b:
-            print("Configuring 2017 menu for 3b events")
+            logging.info("Configuring 2017 menu for 3b events")
 
             self.AddTrig("EMU_4j_3b",
 			 HTNames=["hTTurnOn::L1ORAll_Ht300_4j_3b","hTTurnOn::PFHt300"],
@@ -315,7 +321,7 @@ class TrigEmulatorTool:
 
 
         else:
-            print("Configuring 2017 menu for 4b events")
+            logging.info("Configuring 2017 menu for 4b events")
 
             self.AddTrig("EMU_4j_3b",
 			 HTNames=["hTTurnOn::L1ORAll_Ht300_4j_3b","hTTurnOn::PFHt300"],
@@ -333,12 +339,12 @@ class TrigEmulatorTool:
 
 
     def config2016Filters(self):
-        print("TrigEmulatorTool::configuring for 2016 ")
+        logging.info("TrigEmulatorTool::configuring for 2016 ")
 
         fileName2016 = "base_class/trigger_emulator/data/haddOutput_All_Data2016_11Nov_fittedTurnOns.yaml"
         if self.m_useMCTurnOns:
             fileName2016 = "base_class/trigger_emulator/data/haddOutput_All_MC2016_11Nov_fittedTurnOns.yaml"
-        print("TrigEmulatorTool::using file \t ",fileName2016)
+        logging.info(f"TrigEmulatorTool::using file {fileName2016}\n")
 
         with open(fileName2016, 'r') as infile:
             data = yaml.safe_load(infile)
@@ -378,7 +384,7 @@ class TrigEmulatorTool:
     def config2016Menu(self):
 
         if self.m_is3b:
-            print("Configuring 2016 menu for 3b events")
+            logging.info("Configuring 2016 menu for 3b events")
 
             self.AddTrig("EMU_4j_3b",
 		         HTNames=["hTTurnOn::L1ORAll_4j_3b"],
@@ -396,7 +402,7 @@ class TrigEmulatorTool:
 
 
         else:
-            print("Configuring 2016 menu for 4b events")
+            logging.info("Configuring 2016 menu for 4b events")
 
             self.AddTrig("EMU_4j_3b",
 			 HTNames=["hTTurnOn::L1ORAll_4j_3b"],

@@ -34,7 +34,7 @@ skimmer-analysis-cutflow-job:
   artifacts:
     paths:
       - python/analysis/tests/test_dump_skimmer_cutflow.yml
-  allow_failure: true
+  # allow_failure: true
 
 analysis-systematics-cutflow-job:    
   stage: cutflow
@@ -46,7 +46,7 @@ analysis-systematics-cutflow-job:
     - source .ci-workflows/analysis-systematics-cutflow-job.sh
   artifacts:
     paths:
-      - python/analysis/tests/test_systematics_dump_cutflow.yml
+      - python/analysis/tests/test_dump_systematics_cutflow.yml
 
 analysis-cutflow-job-unsup:    
  stage: cutflow
@@ -59,4 +59,28 @@ analysis-cutflow-job-unsup:
  artifacts:
    paths:
      - python/analysis/tests/test_dump_cutflow_job_unsup.yml
+
+synthetic-dataset-analyze-cutflow:
+ stage: cutflow
+ extends:
+   - .base_analysis
+ needs: 
+   - synthetic-dataset-analyze
+ script:
+   - source .ci-workflows/synthetic-dataset-analyze-cutflow.sh
+ artifacts:
+   paths:
+     - python/analysis/tests/test_dump_cutflow_synthetic_datasets.yml
+
+weights-trigger-cutflow:
+ stage: cutflow
+ extends:
+   - .base_analysis
+ needs: 
+   - weights-trigger-analysis-job
+ script:
+   - source .ci-workflows/weights-trigger-cutflow-job.sh
+ artifacts:
+   paths:
+     - python/analysis/tests/test_dump_cutflow_trigWeight.yml
 

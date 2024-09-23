@@ -1,0 +1,29 @@
+weights-trigger-friendtree-job:   
+  stage: friendtree-test   
+  extends:
+    - .base_analysis
+  needs: 
+    - voms_proxy
+  script:
+    - source .ci-workflows/weights-trigger-friendtree-job.sh
+  artifacts: 
+    paths:
+      - python/analysis/trigger_weights/trigger_weights_friends.json
+      - python/analysis/trigger_weights/GluGluToHHTo4B_cHHH1_UL18/trigWeight.chunk2.root
+
+classifier-friendtree-job:   
+  stage: friendtree-test   
+  extends:
+    - .base_analysis
+  needs: 
+    - voms_proxy
+  script:
+    - source .ci-workflows/classifier-friendtree-job.sh
+  artifacts: 
+    paths:
+      - python/analysis/classifier_input/classifier_input_friend.json
+      - python/analysis/classifier_input/GluGluToHHTo4B_cHHH1_UL18/
+      - python/analysis/classifier_input/data2018A/
+      - python/analysis/classifier_input/data2018B/
+      - python/analysis/classifier_input/data2018C/
+      - python/analysis/classifier_input/data2018D/

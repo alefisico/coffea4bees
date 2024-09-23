@@ -1,11 +1,12 @@
 FROM coffeateam/coffea-base-almalinux8:0.7.22-py3.10
 
 RUN dnf update -y && dnf install -y poppler-utils 
-RUN mamba install -y conda-forge::root=6.30
+RUN mamba install -y conda-forge::nodejs
 RUN pip install --upgrade pip
 RUN pip install pycodestyle 
 RUN pip install memory-profiler
 RUN pip install fsspec-xrootd
+RUN pip install dbs3-client
 
 RUN mkdir -p /home/user/coffea4bees/python/
 COPY python/ /home/user/coffea4bees/python/

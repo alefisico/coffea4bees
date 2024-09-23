@@ -35,17 +35,24 @@ def add(thisKey):
 
 if __name__ == '__main__':
 
-    run2_eras = ["UL16_postVFPF" , "UL16_postVFPG" , "UL16_postVFPH" , "UL16_preVFPB" , "UL16_preVFPC" , "UL16_preVFPD" , "UL16_preVFPE" , "UL17C" , "UL17D" , "UL17E" , "UL17F" , "UL18A" , "UL18B" , "UL18C" , "UL18D"]
-    run2_eras = ["UL16_postVFP" , "UL16_preVFP" , "UL17" ,  "UL18"]
+    run2_eras_data = ["UL16_postVFPF" , "UL16_postVFPG" , "UL16_postVFPH" , "UL16_preVFPB" , "UL16_preVFPC" , "UL16_preVFPD" , "UL16_preVFPE" , "UL17C" , "UL17D" , "UL17E" , "UL17F" , "UL18A" , "UL18B" , "UL18C" , "UL18D"]
+    run2_eras_mc   = ["UL16_postVFP" , "UL16_preVFP" , "UL17" ,  "UL18"]
 
     parser = argparse.ArgumentParser(description='uproot_plots')
     parser.add_argument('-i','--inputFile', default='hists.pkl', help='Input File. Default: hists.pkl')
     parser.add_argument('-p','--process',   default='data', help='Input process. Default: hists.pkl')
-    parser.add_argument('-e','--era',   nargs='+', dest='eras', default=run2_eras, help='Input process. Default: hists.pkl')
+    parser.add_argument('-e','--era',   nargs='+', dest='eras', default=run2_eras_data, help='Input process. Default: hists.pkl')
     #parser.add_argument('-d', '--datasets', nargs='+', dest='datasets', , help="Name of dataset to run. Example if more than one: -d HH4b ZZ4b")
     args = parser.parse_args()
 
-    eras = args.eras
+    if "Run2" in args.eras:
+        if args.process == "data":
+            eras = run2_eras_data
+        else:
+            eras = run2_eras_mc
+    else:
+        eras = args.eras
+
     eraString = "_".join(eras)
     print(eras)
     print(eraString)

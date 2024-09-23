@@ -1,4 +1,5 @@
 import numpy as np
+import logging
 
 class HLTHtEmulator:
     def __init__(self, high_bin_edge, eff, eff_err):
@@ -16,20 +17,20 @@ class HLTHtEmulator:
         htRand = self.m_rand.random()  # Generate a random number in [0, 1)
         return self.passHtThreshold(ht, htRand, smearFactor)
 
-    def passHtThreshold(self, ht, htRand, smearFactor=0.0):
-        debug = False
+    def passHtThreshold(self, ht, htRand, smearFactor=0.0, debug=False):
 
         eff = -99
         effErr = -99
-
+        if debug: print(f" HLTHtEmulator.passHtThreshold m_nBins = {self.m_nBins}")
         for iBin in range(self.m_nBins):
             if debug:
-                print(f"{iBin} comparing {ht} to {self.m_highBinEdge[iBin]}")
+                print(f"{iBin} comparing {ht} to {self.m_highBinEdge[iBin]} ")
+
             if ht < self.m_highBinEdge[iBin]:
                 eff = self.m_eff[iBin]
                 effErr = self.m_effErr[iBin]
                 if debug:
-                    print(f"eff is {eff}")
+                    logging.debug(f"eff is {eff}")
                 break
 
         if eff < 0:
@@ -40,5 +41,5 @@ class HLTHtEmulator:
 
         thisTagEff = eff + effErr * smearFactor
         if debug:
-            print(f"thisTagEff {thisTagEff} for ht = {ht}")
+            logging.debug(f"thisTagEff {thisTagEff} for ht = {ht}")
         return thisTagEff > htRand

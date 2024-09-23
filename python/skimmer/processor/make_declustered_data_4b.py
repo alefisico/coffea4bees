@@ -8,11 +8,11 @@ from jet_clustering.declustering import make_synthetic_event, clean_ISR
 from analysis.helpers.SvB_helpers import setSvBVars, subtract_ttbar_with_SvB
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
 from base_class.math.random import Squares
-from analysis.helpers.event_weights import add_weights
+from analysis.helpers.event_weights import add_weights, add_btagweights
 
 from coffea.analysis_tools import Weights, PackedSelection
 import numpy as np
-from analysis.helpers.common import init_jet_factory, apply_btag_sf
+from analysis.helpers.common import init_jet_factory, update_events
 from copy import copy
 import logging
 import awkward as ak
@@ -39,7 +39,8 @@ class DeClusterer(PicoAOD):
             "passHLT",
             "passNoiseFilter",
             "passJetMult",
-            "passPreSel",
+            "passFourTag",
+            "passFourTag_btagSF",
             "pass_ttbar_filter",
         ]
 
@@ -57,6 +58,26 @@ class DeClusterer(PicoAOD):
         estop   = event.metadata['entrystop']
         nEvent = len(event)
         year_label = self.corrections_metadata[year]['year_label']
+        chunk   = f'{dataset}::{estart:6d}:{estop:6d} >>> '
+
+
+        #
+        #  Nominal config (...what we would do for data)
+        #
+        cut_on_lumimask         = True
+        cut_on_HLT_decision     = True
+        do_MC_weights           = False
+        do_jet_calibration      = False
+        do_lepton_jet_cleaning  = True
+
+        if isMC:
+            cut_on_lumimask     = False
+            cut_on_HLT_decision = False
+            do_jet_calibration  = True
+            do_MC_weights       = True
+
+
+
 
         path = fname.replace(fname.split("/")[-1], "")
 
@@ -72,21 +93,34 @@ class DeClusterer(PicoAOD):
             # defining SvB_MA
             setSvBVars("SvB_MA", event)
 
+        event = apply_event_selection_4b( event, self.corrections_metadata[year], cut_on_lumimask=cut_on_lumimask )
 
-        event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year] )
 
         ## adds all the event mc weights and 1 for data
-        weights, list_weight_names = add_weights( event, isMC, dataset, year_label,
+        weights, list_weight_names = add_weights( event, do_MC_weights, dataset, year_label,
                                                   estart, estop,
                                                   self.corrections_metadata[year],
-                                                  apply_trigWeight = True,
                                                   isTTForMixed=False,
                                                  )
 
-        event = apply_object_selection_4b( event, self.corrections_metadata[year]  )
 
 
-        #weights = Weights(len(event), storeIndividual=True)
+        #
+        # Calculate and apply Jet Energy Calibration
+        #
+        if do_jet_calibration:
+            juncWS = [ self.corrections_metadata[year]["JERC"][0].replace("STEP", istep)
+                       for istep in ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"] ] + self.corrections_metadata[year]["JERC"][2:]
+
+            jets = init_jet_factory(juncWS, event, isMC)
+        else:
+            jets = event.Jet
+
+
+        event = update_events(event, {"Jet": jets})
+
+        event = apply_object_selection_4b( event, self.corrections_metadata[year], doLeptonRemoval=do_lepton_jet_cleaning  )
+
 
         #
         # Get the trigger weights
@@ -106,7 +140,7 @@ class DeClusterer(PicoAOD):
         selections = PackedSelection()
         selections.add( "lumimask", event.lumimask)
         selections.add( "passNoiseFilter", event.passNoiseFilter)
-        selections.add( "passHLT", ( np.full(len(event), True) if isMC else event.passHLT ) )
+        selections.add( "passHLT", ( event.passHLT if cut_on_HLT_decision else np.full(len(event), True)  ) )
         selections.add( 'passJetMult',   event.passJetMult )
         selections.add( "passFourTag", event.fourTag)
 
@@ -115,9 +149,9 @@ class DeClusterer(PicoAOD):
         cumulative_cuts = ["lumimask"]
         self._cutFlow.fill( "all",             event[selections.all(*cumulative_cuts)], allTag=True )
 
-        all_cuts = ["passNoiseFilter", "passHLT", "passJetMult","passFourTag"]
+        other_cuts = ["passNoiseFilter", "passHLT", "passJetMult","passFourTag"]
 
-        for cut in all_cuts:
+        for cut in other_cuts:
             cumulative_cuts.append(cut)
             self._cutFlow.fill( cut, event[selections.all(*cumulative_cuts)], allTag=True )
 
@@ -125,14 +159,15 @@ class DeClusterer(PicoAOD):
         # Add Btag SF
         #
         if isMC:
-            weights.add( "CMS_btag",
-                         apply_btag_sf( event.selJet, correction_file=self.corrections_metadata[year]["btagSF"], btag_uncertainties=None, )["btagSF_central"], )
-            list_weight_names.append(f"CMS_btag")
 
+            weights, list_weight_names = add_btagweights( event, weights,
+                                                          list_weight_names=list_weight_names,
+                                                          corrections_metadata=self.corrections_metadata[year]
+            )
             logging.debug( f"Btag weight {weights.partial_weight(include=['CMS_btag'])[:10]}\n" )
             event["weight"] = weights.weight()
 
-
+            self._cutFlow.fill( "passFourTag_btagSF", event[selections.all(*cumulative_cuts)], allTag=True )
 
         selection = event.lumimask & event.passNoiseFilter & event.passJetMult & event.fourTag
         if not isMC: selection = selection & event.passHLT
@@ -190,6 +225,11 @@ class DeClusterer(PicoAOD):
         jets_for_clustering = ak.concatenate([canJet, notCanJet], axis=1)
         jets_for_clustering = jets_for_clustering[ak.argsort(jets_for_clustering.pt, axis=1, ascending=False)]
 
+        processOutput = {}
+
+        # from analysis.helpers.write_debug_info import add_debug_info_to_output_clustering_inputs
+        # add_debug_info_to_output_clustering_inputs(selev, jets_for_clustering, processOutput)
+
         clustered_jets, _clustered_splittings = cluster_bs(jets_for_clustering, debug=False)
         clustered_jets = clean_ISR(clustered_jets, _clustered_splittings)
 
@@ -199,9 +239,16 @@ class DeClusterer(PicoAOD):
         #
         # Declustering
         #
-        declustered_jets = make_synthetic_event(clustered_jets, self.clustering_pdfs, declustering_rand_seed=self.declustering_rand_seed)
+        # from analysis.helpers.write_debug_info import add_debug_info_to_output_clustering_outputs
+        # add_debug_info_to_output_clustering_outputs(selev, clustered_jets, processOutput)
+
+        declustered_jets = make_synthetic_event(clustered_jets, self.clustering_pdfs, declustering_rand_seed=self.declustering_rand_seed, chunk=chunk)
 
         declustered_jets = declustered_jets[ak.argsort(declustered_jets.pt, axis=1, ascending=False)]
+
+        # from analysis.helpers.write_debug_info import add_debug_info_to_output_declustering_outputs
+        # add_debug_info_to_output_declustering_outputs(selev, declustered_jets, processOutput)
+
 
         n_jet = ak.num(declustered_jets)
         total_jet = int(ak.sum(n_jet))
@@ -238,12 +285,9 @@ class DeClusterer(PicoAOD):
         self.update_branch_filter(self.skip_collections, self.skip_branches)
         branches = ak.Array(out_branches)
 
-        result = {"total_jet": total_jet}
-
-        if isMC:
-            result["sumw"] = event.metadata["genEventSumw"]
+        processOutput["total_jet"] = total_jet
 
         return (selection,
                 branches,
-                result,
+                processOutput,
                 )

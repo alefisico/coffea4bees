@@ -98,4 +98,15 @@ synthetic-dataset-analyze:
     paths:
       - python/analysis/hists/test_synthetic_datasets.coffea
 
-
+weights-trigger-analysis-job:   
+  stage: analysis-test   
+  extends:
+    - .base_analysis
+  needs:
+    - voms_proxy
+    - weights-trigger-friendtree-job
+  script:
+    - source .ci-workflows/weights-trigger-analysis-job.sh
+  artifacts:
+    paths:
+      - python/analysis/trigger_weights/test_trigWeight.coffea

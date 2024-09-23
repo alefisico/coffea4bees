@@ -1,6 +1,7 @@
 import numpy as np
 import awkward as ak
 from base_class.math.random import Squares
+import logging
 
 def setSvBVars(SvBName, event):
 
@@ -38,102 +39,121 @@ def setSvBVars(SvBName, event):
     event[SvBName, "ps_hh"] = this_ps_hh
 
 
-def compute_SvB(event, classifier_SvB, classifier_SvB_MA, logging, doCheck=True):
+def compute_SvB(events, mask, classifier_SvB, classifier_SvB_MA, doCheck=True):
+
     # import torch on demand
     import torch
     import torch.nn.functional as F
 
-    n = len(event)
+    masked_events = events[mask]
+    n = len(masked_events)
 
     j = torch.zeros(n, 4, 4)
-    j[:, 0, :] = torch.tensor(event.canJet.pt)
-    j[:, 1, :] = torch.tensor(event.canJet.eta)
-    j[:, 2, :] = torch.tensor(event.canJet.phi)
-    j[:, 3, :] = torch.tensor(event.canJet.mass)
+    j[:, 0, :] = torch.tensor(masked_events.canJet.pt)
+    j[:, 1, :] = torch.tensor(masked_events.canJet.eta)
+    j[:, 2, :] = torch.tensor(masked_events.canJet.phi)
+    j[:, 3, :] = torch.tensor(masked_events.canJet.mass)
 
     o = torch.zeros(n, 5, 8)
-    o[:, 0, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(event.notCanJet_coffea.pt,       target=8, clip=True) ), -1, ) )
-    o[:, 1, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(event.notCanJet_coffea.eta,      target=8, clip=True) ), -1, ) )
-    o[:, 2, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(event.notCanJet_coffea.phi,      target=8, clip=True) ), -1, ) )
-    o[:, 3, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(event.notCanJet_coffea.mass,     target=8, clip=True) ), -1, ) )
-    o[:, 4, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(event.notCanJet_coffea.isSelJet, target=8, clip=True) ), -1, ) )
+    o[:, 0, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(masked_events.notCanJet_coffea.pt,       target=8, clip=True) ), -1, ) )
+    o[:, 1, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(masked_events.notCanJet_coffea.eta,      target=8, clip=True) ), -1, ) )
+    o[:, 2, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(masked_events.notCanJet_coffea.phi,      target=8, clip=True) ), -1, ) )
+    o[:, 3, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(masked_events.notCanJet_coffea.mass,     target=8, clip=True) ), -1, ) )
+    o[:, 4, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(masked_events.notCanJet_coffea.isSelJet, target=8, clip=True) ), -1, ) )
 
     a = torch.zeros(n, 4)
-    a[:, 0] = float(event.metadata["year"][3])
-    a[:, 1] = torch.tensor(event.nJet_selected)
-    a[:, 2] = torch.tensor(event.xW)
-    a[:, 3] = torch.tensor(event.xbW)
+    a[:, 0] = float(masked_events.metadata["year"][3])
+    a[:, 1] = torch.tensor(masked_events.nJet_selected)
+    a[:, 2] = torch.tensor(masked_events.xW)
+    a[:, 3] = torch.tensor(masked_events.xbW)
 
-    e = torch.tensor(event.event) % 3
+    e = torch.tensor(masked_events.event) % 3
 
     for classifier in ["SvB", "SvB_MA"]:
 
+        if classifier in events.fields: 
+            events[f"old_{classifier}"] = events[classifier]
+        
         if classifier == "SvB":
             c_logits, q_logits = classifier_SvB(j, o, a, e)
 
         if classifier == "SvB_MA":
             c_logits, q_logits = classifier_SvB_MA(j, o, a, e)
 
-        c_score, q_score = ( F.softmax(c_logits, dim=-1).numpy(), F.softmax(q_logits, dim=-1).numpy(), )
+        tmp_c_score, tmp_q_score = ( F.softmax(c_logits, dim=-1).numpy(), F.softmax(q_logits, dim=-1).numpy(), )
+        c_score = np.zeros((events.__len__(),5))
+        c_score[mask] = tmp_c_score
+        q_score = np.zeros((events.__len__(),3))
+        q_score[mask] = tmp_q_score
 
         # classes = [mj,tt,zz,zh,hh]
-        SvB = ak.zip( { "pmj": c_score[:, 0],
-                        "ptt": c_score[:, 1],
-                        "pzz": c_score[:, 2],
-                        "pzh": c_score[:, 3],
-                        "phh": c_score[:, 4],
-                        "q_1234": q_score[:, 0],
-                        "q_1324": q_score[:, 1],
-                        "q_1423": q_score[:, 2],
-                        }
-                        )
+        pmj = c_score[:, 0]
+        ptt = c_score[:, 1]
+        pzz = c_score[:, 2]
+        pzh = c_score[:, 3]
+        phh = c_score[:, 4]
+        ps = pzz + pzh + phh
+        passMinPs = (pzz > 0.01) | (pzh > 0.01) | (phh > 0.01)
+
+        zz = (pzz > pzh) & (pzz > phh)
+        this_ps_zz = np.full(len(events), -1, dtype=float)
+        this_ps_zz[ zz ] = ps[zz]
+        this_ps_zz[ passMinPs == False ] = -2
+        ps_zz = this_ps_zz
+
+        zh = (pzh > pzz) & (pzh > phh)  
+        this_ps_zh = np.full(len(events), -1, dtype=float)
+        this_ps_zh[ zh ] = ps[zh]
+        this_ps_zh[ passMinPs == False ] = -2
+        ps_zh = this_ps_zh
+
+        hh = (phh > pzz) & (phh > pzh)  
+        this_ps_hh = np.full(len(events), -1, dtype=float)
+        this_ps_hh[ hh ] = ps[hh]
+        this_ps_hh[ passMinPs == False ] = -2
+        ps_hh = this_ps_hh
 
         largest_name = np.array(["None", "ZZ", "ZH", "HH"])
-        SvB["ps"] = SvB.pzz + SvB.pzh + SvB.phh
-        SvB["passMinPs"] = (SvB.pzz > 0.01) | (SvB.pzh > 0.01) | (SvB.phh > 0.01)
-        SvB["zz"] = (SvB.pzz > SvB.pzh) & (SvB.pzz > SvB.phh)
-        SvB["zh"] = (SvB.pzh > SvB.pzz) & (SvB.pzh > SvB.phh)
-        SvB["hh"] = (SvB.phh > SvB.pzz) & (SvB.phh > SvB.pzh)
-        SvB["largest"] = largest_name[ SvB.passMinPs * ( 1 * SvB.zz + 2* SvB.zh + 3*SvB.hh ) ]
+        events[classifier] = ak.zip({
+            "pmj": pmj,
+            "ptt": ptt,
+            "pzz": pzz,
+            "pzh": pzh,
+            "phh": phh,
+            "q_1234": q_score[:, 0],
+            "q_1324": q_score[:, 1],
+            "q_1423": q_score[:, 2],
+            "ps": ps,
+            "passMinPs": passMinPs,
+            "zz": zz,
+            "zh": zh,
+            "hh": hh,
+            "ps_zz": ps_zz,
+            "ps_zh": ps_zh,
+            "ps_hh": ps_hh,
+            "largest": largest_name[ (passMinPs * ( 1 * zz + 2* zh + 3*hh ) ) ],
+            "tt_vs_mj": ( ptt / (ptt + pmj) )
+        })
 
-        this_ps_zz = np.full(len(event), -1, dtype=float)
-        this_ps_zz[ SvB.zz ] = SvB.ps[ SvB.zz ]
-        this_ps_zz[ SvB.passMinPs == False ] = -2
-        SvB['ps_zz'] = this_ps_zz
-
-        this_ps_zh = np.full(len(event), -1, dtype=float)
-        this_ps_zh[ SvB.zh ] = SvB.ps[ SvB.zh ]
-        this_ps_zh[ SvB.passMinPs == False ] = -2
-        SvB['ps_zh'] = this_ps_zh
-
-        this_ps_hh = np.full(len(event), -1, dtype=float)
-        this_ps_hh[ SvB.hh ] = SvB.ps[ SvB.hh ]
-        this_ps_hh[ SvB.passMinPs == False ] = -2
-        SvB['ps_hh'] = this_ps_hh
-
-        SvB['tt_vs_mj'] = ( SvB.ptt / (SvB.ptt + SvB.pmj) )
-
-        if doCheck and classifier in event.fields:
-            error = ~np.isclose(event[classifier].ps, SvB.ps, atol=1e-5, rtol=1e-3)
+        if doCheck and f"old_{classifier}" in events.fields:
+            error = ~np.isclose(events[f"old_{classifier}"].ps, events[classifier].ps, atol=1e-5, rtol=1e-3)
             if np.any(error):
-                delta = np.abs(event[classifier].ps - SvB.ps)
+                delta = np.abs(events[f"old_{classifier}"].ps - events[classifier].ps)
                 worst = np.max(delta) == delta
-                worst_event = event[worst][0]
+                worst_events = events[worst][0]
 
                 logging.warning( f"WARNING: Calculated {classifier} does not agree within tolerance for some events ({np.sum(error)}/{len(error)}) {delta[worst]}" )
 
                 logging.warning("----------")
 
-                for field in event[classifier].fields:
-                    logging.warning(f"{field} {worst_event[classifier][field]}")
+                for field in events[classifier].fields:
+                    logging.warning(f"{field} {worst_events[classifier][field]}")
 
                 logging.warning("----------")
 
-                for field in SvB.fields:
-                    logging.warning(f"{field} {SvB[worst][field]}")
+                for field in events[classifier].fields:
+                    logging.warning(f"{field} {events[classifier][worst][field]}")
 
-        # del event[classifier]
-        event[classifier] = SvB
 
 
 def subtract_ttbar_with_SvB(selev, dataset, year):

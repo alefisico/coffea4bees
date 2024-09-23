@@ -399,8 +399,8 @@ class analysis(processor.ProcessorABC):
 
         friends = {}
         if self.make_classifier_input is not None:
-            from analysis.processors.friendmaker_unsup import dump_input_friend
-            friends["friends"] = dump_input_friend(
+            from analysis.helpers.dump_friendtrees import dump_unsup_friend
+            friends["friends"] = dump_unsup_friend(
                 selev,
                 self.make_classifier_input,   #### output file: return pathlike
                 "classifier_input",

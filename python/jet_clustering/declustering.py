@@ -141,6 +141,7 @@ def get_list_of_combined_jet_types(jets):
 
         splitting_types.append(_s)
 
+    splitting_types.sort()
     return splitting_types
 
 
@@ -175,18 +176,22 @@ def get_list_of_ISR_splittings(splitting_types):
             continue
 
         ISR_splittings.append(_s)
-
+    ISR_splittings.sort()
     return ISR_splittings
 
 
 def get_list_of_splitting_types(splittings):
     unique_splittings = set(ak.flatten(splittings.jet_flavor).to_list())
-    return list(unique_splittings)
+    unique_splittings_list = list(unique_splittings)
+    unique_splittings_list.sort()
+    return unique_splittings_list
 
 
 def get_list_of_splitting_names(splittings):
     unique_splittings = set(ak.flatten(splittings.splitting_name).to_list())
-    return list(unique_splittings)
+    unique_splittings_list = list(unique_splittings)
+    unique_splittings_list.sort()
+    return unique_splittings_list
 
 
 def compute_decluster_variables(clustered_splittings):
@@ -422,7 +427,10 @@ def decluster_combined_jets(input_jet, debug=False):
     return pA, pB
 
 
-def decluster_splitting_types(input_jets, splitting_types, input_pdfs, rand_seed, debug=False):
+def decluster_splitting_types(input_jets, splitting_types, input_pdfs, rand_seed, chunk=None, debug=False):
+
+    if debug:
+        print(f"{chunk} decluster_splitting_types input rand_seed {rand_seed}\n")
 
     #
     #  Create a mask for all the jets that need declustered
@@ -454,6 +462,10 @@ def decluster_splitting_types(input_jets, splitting_types, input_pdfs, rand_seed
     while ak.any(input_jets_to_decluster):
 
         if debug:
+            print(f"{chunk} decluster_splitting_types num_trys {num_trys}\n")
+            print(f"{chunk} decluster_splitting_types splitting_types {splitting_types}\n")
+
+        if debug:
             print(f" (decluster_splitting_types) num_trys {num_trys} ")
 
         splittings_info = []
@@ -474,10 +486,13 @@ def decluster_splitting_types(input_jets, splitting_types, input_pdfs, rand_seed
 
             splittings_info.append((get_splitting_name(_s), _num_samples, _indicies_tuple))
 
+        if debug:
+            print(f"{chunk} decluster_splitting_types rand_seed {rand_seed}\n")
+
         #
         #  Sample the PDFs,  add sampled varibales to the jets to be declustered
         #
-        sample_PDFs_vs_pT(input_jets_to_decluster, input_pdfs, 11 * num_trys + rand_seed, splittings_info)
+        sample_PDFs_vs_pT(input_jets_to_decluster, input_pdfs, 11 * num_trys + rand_seed, splittings_info, chunk=chunk)
 
         #
         #  do the declustering
@@ -524,7 +539,10 @@ def decluster_splitting_types(input_jets, splitting_types, input_pdfs, rand_seed
     return unclustered_jets
 
 
-def make_synthetic_event_core(input_jets, input_pdfs, rand_seed, debug=False):
+def make_synthetic_event_core(input_jets, input_pdfs, rand_seed, chunk=None, debug=False):
+
+    if debug:
+        print(f"{chunk} make_synthetic_event_core rand_seed {rand_seed}\n")
 
     #
     #  Get all the different types of splitted needed
@@ -539,7 +557,7 @@ def make_synthetic_event_core(input_jets, input_pdfs, rand_seed, debug=False):
         if debug:
             print(f"(make_synthetic_event_core) splitting_types was {splitting_types}")
 
-        input_jets = decluster_splitting_types(input_jets, splitting_types, input_pdfs, rand_seed, debug=debug)
+        input_jets = decluster_splitting_types(input_jets, splitting_types, input_pdfs, rand_seed, chunk=chunk, debug=debug)
 
         splitting_types = get_list_of_combined_jet_types(input_jets)
 
@@ -556,7 +574,10 @@ def make_synthetic_event_core(input_jets, input_pdfs, rand_seed, debug=False):
 #   return make_synthetic_event_core(input_jets, input_pdfs, debug=debug)
 
 
-def make_synthetic_event(input_jets, input_pdfs, declustering_rand_seed=66, debug=False):
+def make_synthetic_event(input_jets, input_pdfs, declustering_rand_seed=66, chunk=None, debug=False):
+
+    if debug:
+        print(f"{chunk} make_synthetic_event rand_seed {declustering_rand_seed}\n")
 
     # Start with all True
     events_to_decluster_mask = np.ones(len(input_jets), dtype=bool)
@@ -585,7 +606,7 @@ def make_synthetic_event(input_jets, input_pdfs, declustering_rand_seed=66, debu
 
         to_decluster_indicies = np.where(events_to_decluster_mask)[0]
 
-        declustered_events = make_synthetic_event_core(input_jets[to_decluster_indicies], input_pdfs, 7 * num_trys + declustering_rand_seed)
+        declustered_events = make_synthetic_event_core(input_jets[to_decluster_indicies], input_pdfs, 7 * num_trys + declustering_rand_seed, chunk=chunk)
 
         #
         #  Check the min dr

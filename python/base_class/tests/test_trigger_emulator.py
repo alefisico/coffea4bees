@@ -35,8 +35,6 @@ class trigger_emulator_TestCase(unittest.TestCase):
         # Instantiate the trigger emulator
         self.emulator_test = TrigEmulator(ht_thresholds_test, jet_thresholds_test, jet_multiplicities_test, btag_op_points_test, btag_multiplicities_test)
 
-
-
         self.debug = False
 
         self.sel_jet_pt_16_4b      = [[214.2285919189453, 175.33358764648438, 72.2542953491211, 54.064632415771484, 43.83559799194336], [313.07275390625, 164.7066192626953, 60.53831100463867, 49.591590881347656, 41.23313522338867], [64.79883575439453, 55.24069595336914, 49.24174118041992, 47.53494644165039, 46.778785705566406], [80.96756744384766, 58.90700912475586, 58.61721420288086, 41.028564453125], [178.8778839111328, 171.28480529785156, 104.02735900878906, 53.293739318847656], [67.74431610107422, 64.71231079101562, 47.229087829589844, 40.9347038269043], [105.04517364501953, 62.51596450805664, 57.60894012451172, 40.83856964111328], [282.6947326660156, 232.3583221435547, 58.91689682006836, 49.292232513427734], [154.27865600585938, 142.9830780029297, 124.93125915527344, 92.64350128173828, 64.56129455566406, 51.21128845214844], [91.31659698486328, 68.07000732421875, 55.7465705871582, 44.88181686401367], [213.5711212158203, 137.84873962402344, 51.063594818115234, 44.52283477783203, 40.00929641723633], [82.43749237060547, 72.76111602783203, 67.66842651367188, 61.59606170654297, 49.54731369018555], [198.0215301513672, 139.66342163085938, 82.0792007446289, 58.84580612182617], [283.4134826660156, 198.2870330810547, 78.14665985107422, 70.44496154785156, 50.30134582519531], [57.091102600097656, 48.24381637573242, 48.16244888305664, 46.01519775390625]]
@@ -88,7 +86,11 @@ class trigger_emulator_TestCase(unittest.TestCase):
         self.trigWeightMC_18_3b    = [1.0, 1.0, 2.5, 0.06000000238418579, 1.0, 0.0, 1.0, 0.18000000715255737, 1.4285715818405151, 0.06000000238418579, 0.0, 0.7777777910232544, 1.7999998331069946, 0.0, 1.0]
         self.trigWeightData_18_3b  = [0.6000000238418579, 0.6000000238418579, 0.12000000476837158, 0.0, 0.41999998688697815, 0.0, 0.6000000238418579, 0.0, 0.41999998688697815, 0.0, 0.12000000476837158, 0.5399999618530273, 0.30000001192092896, 0.0, 0.6000000238418579]
 
-
+        self.event_num_cpp = [725363, 725378, 725412, 725416, 725441]
+        self.sel_jet_pt_cpp_18 = [[166.75,  136.875,  68.9375,  52.5,  49.0625], [65.6875,  63.9375,  50.6875,  40.625], [145.25,  73.25,  42.375,  40.1562], [91.875,  70.375,  68.25,  49], [172.875,  69.375,  63.9688,  60.875,  42.3125]]
+        self.can_jet_pt_cpp_18 = [[136.875, 68.9375,  52.5,  49.0625], [50.6875,  63.9375,  65.6875,  40.625], [145.25,  73.25,  42.375,  40.1562], [91.875,  70.375,  68.25,  49], [69.375,  60.875,  63.9688,  42.3125]]
+        self.hT_trigger_cpp_18 = [474.125, 220.938, 301.031, 279.5, 445.844]
+        self.trigWeightData_cpp_18 =  [0.9, 0, 0, 0, 0.5]
 
 
 
@@ -143,7 +145,7 @@ class trigger_emulator_TestCase(unittest.TestCase):
 
     def _test_trig_weights(self, emulator_data, emulator_mc, sel_jets, can_jets, ht, trigWeights_data, trigWeights_mc):
 
-        for iE in range(len(self.sel_jet_pt_17_4b)):
+        for iE in range(len(sel_jets)):
             _sel_jet_pt = sel_jets[iE]
             _can_jet_pt = can_jets[iE]
             _hT         = ht[iE]
@@ -180,6 +182,18 @@ class trigger_emulator_TestCase(unittest.TestCase):
         self._test_trig_weights(emulator_test_tool_data_2018, emulator_test_tool_mc_2018,
                                 self.sel_jet_pt_18_4b, self.can_jet_pt_18_4b, self.hT_18_4b,
                                 self.trigWeightData_18_4b, self.trigWeightMC_18_4b)
+
+
+    def test_trig_weight_cpp_18(self):
+        emulator_test_tool_data_2018 = TrigEmulatorTool("Test", year="2018", nToys=10)
+
+        print("test_trig_weight_cpp_18\n")
+
+        for iE in range(len(self.sel_jet_pt_cpp_18)):
+            _sel_jet_pt = self.sel_jet_pt_cpp_18[iE]
+            _can_jet_pt = self.can_jet_pt_cpp_18[iE]
+            _hT         = self.hT_trigger_cpp_18[iE]
+            print(f"Data Emulation \t {emulator_test_tool_data_2018.GetWeightOR(_sel_jet_pt, _can_jet_pt, _hT, debug=False)} vs {self.trigWeightData_cpp_18[iE]}")
 
 
 
