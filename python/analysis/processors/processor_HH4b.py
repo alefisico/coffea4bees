@@ -461,7 +461,8 @@ class analysis(processor.ProcessorABC):
                 ### with top friendtree we dont need the next two lines
                 selev["xbW"] = selev.top_cand.xbW
                 selev["xW"] = selev.top_cand.xW
-        else:
+        # else:
+        if self.friend_top_reconstruction:  ## temporary until we create friend trees
             with open(self.friend_top_reconstruction, 'r') as f:
                 self.friend_top_reconstruction = Friend.from_json(json.load(f)[f'top_reco{"_"+shift_name if shift_name else ""}'])
             top_cand = self.friend_top_reconstruction.arrays(target)[analysis_selections]

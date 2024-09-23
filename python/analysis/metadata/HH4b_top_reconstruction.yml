@@ -14,7 +14,7 @@ config:
   apply_boosted_veto: false
   run_SvB: false 
   run_systematics: false 
-  top_reconstruction_override: false
+  top_reconstruction_override: fast
   fill_histograms: false 
   # make_top_reconstruction: root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v1/
   make_top_reconstruction: /srv/python/hists/local/   ### local
