@@ -1,6 +1,8 @@
 import awkward as ak
 import numpy as np
 import numba
+# from memory_profiler import profile
+
 
 mW, mt = 80.4, 173.0
 
@@ -48,6 +50,7 @@ def find_tops_kernel(events_jets, builder):
 
     return builder
 
+# @profile
 def find_tops_kernel_slow(events_jets, builder):
     """Search for valid 4-lepton combinations from an array of events * leptons {charge, ...}
 
@@ -206,3 +209,67 @@ def buildTop(input_jets, top_cand_idx):
     top_cand["xW_reco"] = top_cand.xW
 
     return top_cand, rec_top_cands
+
+def adding_top_reco_to_event(event, top_cand):
+    """dictionary to convert friend trees back to event variables
+    """
+
+    event['top_cand'] = ak.zip({
+        "p": ak.zip({ 
+            "pt" : top_cand.p_pt,
+            "eta" : top_cand.p_eta,
+            "phi" : top_cand.p_phi,
+            "mass" : top_cand.p_mass,
+            }),
+        "b": ak.zip({ 
+            "pt" : top_cand.b_pt,
+            "eta" : top_cand.b_eta,
+            "phi" : top_cand.b_phi,
+            "mass" : top_cand.b_mass,
+            "puId" : top_cand.b_puId,
+            "jetId" : top_cand.b_jetId,
+            'btagDeepFlavB' : top_cand.b_btagDeepFlavB,
+            
+            }),
+        'W' : ak.zip({ 
+            "p" : ak.zip({ 
+                "pt" : top_cand.W_p_pt,
+                "eta" : top_cand.W_p_eta,
+                "phi" : top_cand.W_p_phi,
+                "mass" : top_cand.W_p_mass,
+                }),
+            "pW" : ak.zip({ 
+                "pt" : top_cand.W_pW_pt,
+                "eta" : top_cand.W_pW_eta,
+                "phi" : top_cand.W_pW_phi,
+                "mass" : top_cand.W_pW_mass,
+                }),
+                "l": ak.zip({ 
+                    "pt" : top_cand.W_l_pt,
+                    "eta" : top_cand.W_l_eta,
+                    "phi" : top_cand.W_l_phi,
+                    "mass" : top_cand.W_l_mass,
+                    "puId" : top_cand.W_l_puId,
+                    "jetId" : top_cand.W_l_jetId,
+                    'btagDeepFlavB' : top_cand.W_l_btagDeepFlavB,
+                    }),
+                "j": ak.zip({ 
+                    "pt" : top_cand.W_j_pt,
+                    "eta" : top_cand.W_j_eta,
+                    "phi" : top_cand.W_j_phi,
+                    "mass" : top_cand.W_j_mass,
+                    "puId" : top_cand.W_j_puId,
+                    "jetId" : top_cand.W_j_jetId,
+                    'btagDeepFlavB' : top_cand.W_j_btagDeepFlavB,
+                    }),
+        }),
+        "mbW": top_cand.mbW,
+        "xW": top_cand.xW,
+        "xt": top_cand.xt,
+        "xbW": top_cand.xbW,
+        "xWt": top_cand.xWt,
+        "xWbW": top_cand.xWbW,
+        "rWbW": top_cand.rWbW,
+    }) 
+    event['xbW'] = top_cand['xbW']
+    event['xW'] = top_cand['xW']

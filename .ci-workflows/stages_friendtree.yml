@@ -27,3 +27,20 @@ classifier-friendtree-job:
       - python/analysis/classifier_input/data2018B/
       - python/analysis/classifier_input/data2018C/
       - python/analysis/classifier_input/data2018D/
+
+topreco-friendtree-job:   
+  stage: friendtree-test   
+  extends:
+    - .base_analysis
+  needs: 
+    - voms_proxy
+  script:
+    - source .ci-workflows/topreco-friendtree-job.sh
+  artifacts: 
+    paths:
+      - python/analysis/top_reco/top_reconstruction_friendtree.json
+      - python/analysis/top_reco/GluGluToHHTo4B_cHHH1_UL18/
+      - python/analysis/top_reco/data2018A/
+      - python/analysis/top_reco/data2018B/
+      - python/analysis/top_reco/data2018C/
+      - python/analysis/top_reco/data2018D/
