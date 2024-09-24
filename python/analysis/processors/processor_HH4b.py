@@ -55,11 +55,15 @@ class analysis(processor.ProcessorABC):
         apply_btagSF: bool = True,
         apply_FvT: bool = True,
         apply_boosted_veto: bool = False,
+        fill_histograms: bool = True,
         run_SvB: bool = True,
         corrections_metadata: str = "analysis/metadata/corrections.yml",
         top_reconstruction_override: bool = False,
         run_systematics: list = [],
         make_classifier_input: str = None,
+        make_friend_JCM_weight: str = None,
+        make_friend_FvT_weight: str = None,
+        isSyntheticData: bool = False,
         subtract_ttbar_with_weights: bool = False,
         friend_trigWeight: str = None,
     ):
@@ -71,6 +75,7 @@ class analysis(processor.ProcessorABC):
         self.apply_btagSF = apply_btagSF
         self.apply_FvT = apply_FvT
         self.run_SvB = run_SvB
+        self.fill_histograms = fill_histograms
         self.apply_boosted_veto = apply_boosted_veto
         if SvB or SvB_MA: # import torch on demand
             from analysis.helpers.networks import HCREnsemble
@@ -81,6 +86,8 @@ class analysis(processor.ProcessorABC):
 
         self.run_systematics = run_systematics
         self.make_classifier_input = make_classifier_input
+        self.make_friend_JCM_weight = make_friend_JCM_weight
+        self.make_friend_FvT_weight = make_friend_FvT_weight
         self.top_reconstruction_override = top_reconstruction_override
         self.subtract_ttbar_with_weights = subtract_ttbar_with_weights
         self.friend_trigWeight = friend_trigWeight
@@ -299,6 +306,7 @@ class analysis(processor.ProcessorABC):
         event = apply_event_selection_4b( event, self.corrections_metadata[self.year], cut_on_lumimask=self.cut_on_lumimask)
 
 
+        ### target is for new friend trees
         target = Chunk.from_coffea_events(event)
 
         ### adds all the event mc weights and 1 for data
@@ -524,48 +532,65 @@ class analysis(processor.ProcessorABC):
         #
         # Hists
         #
+        hist = {}
+        if self.fill_histograms:
+            if not self.run_systematics:
+                ## this can be simplified
+                hist = filling_nominal_histograms(selev, self.JCM,
+                                                processName=self.processName,
+                                                year=self.year,
+                                                isMC=self.isMC,
+                                                histCuts=self.histCuts,
+                                                apply_FvT=self.apply_FvT,
+                                                run_SvB=self.run_SvB,
+                                                top_reconstruction=self.top_reconstruction,
+                                                isDataForMixed=self.isDataForMixed,
+                                                event_metadata=event.metadata)
+            #
+            # Run systematics
+            #
+            else:
+                hist = filling_syst_histograms(selev, weights,
+                                                analysis_selections,
+                                                shift_name=shift_name,
+                                                processName=self.processName,
+                                                year=self.year,
+                                                histCuts=self.histCuts)
 
-        if not self.run_systematics:
-            ## this can be simplified
-            hist = filling_nominal_histograms(selev, self.JCM,
-                                              processName=self.processName,
-                                              year=self.year,
-                                              isMC=self.isMC,
-                                              histCuts=self.histCuts,
-                                              apply_FvT=self.apply_FvT,
-                                              run_SvB=self.run_SvB,
-                                              top_reconstruction=self.top_reconstruction,
-                                              isDataForMixed=self.isDataForMixed,
-                                              event_metadata=event.metadata)
+        friends = { 'friends': {} }
+        if self.make_classifier_input is not None:
+            _all_selection = analysis_selections
+            for k in ["ZZSR", "ZHSR", "HHSR", "SR", "SB"]:
+                selev[k] = selev["quadJet_selected"][k]
+            selev["nSelJets"] = ak.num(selev.selJet)
 
+            from ..helpers.dump_friendtrees import dump_input_friend
 
-            friends = {}
-            if self.make_classifier_input is not None:
-                _all_selection = analysis_selections
-                for k in ["ZZSR", "ZHSR", "HHSR", "SR", "SB"]:
-                    selev[k] = selev["quadJet_selected"][k]
-                selev["nSelJets"] = ak.num(selev.selJet)
+            friends["friends"] = ( friends["friends"]
+                | dump_input_friend(
+                    selev,
+                    self.make_classifier_input,
+                    "HCR_input",
+                    _all_selection,
+                    weight="weight" if self.isMC else "weight_noJCM_noFvT",
+                    NotCanJet="notCanJet_coffea",
+                )
+            )
+        if self.make_friend_JCM_weight is not None:
+            from ..helpers.dump_friendtrees import dump_JCM_weight
 
-                ####
-                from ..helpers.dump_friendtrees import dump_input_friend, dump_JCM_weight, dump_FvT_weight
+            friends["friends"] = ( friends["friends"]
+                | dump_JCM_weight(selev, self.make_classifier_input, "JCM_weight", _all_selection)
+            )
 
-                friends["friends"] = dump_input_friend( selev, self.make_classifier_input, "HCR_input", _all_selection, weight="weight" if self.isMC else "weight_noJCM_noFvT", NotCanJet="notCanJet_coffea") | dump_JCM_weight( selev, self.make_classifier_input, "JCM_weight", _all_selection) | dump_FvT_weight( selev, self.make_classifier_input, "FvT_weight", _all_selection)
+        if self.make_friend_FvT_weight is not None:
+            from ..helpers.dump_friendtrees import dump_FvT_weight
 
-            output = hist | processOutput | friends
+            friends["friends"] = ( friends["friends"]
+                | dump_FvT_weight(selev, self.make_classifier_input, "FvT_weight", _all_selection)
+            )
 
-        #
-        # Run systematics
-        #
-        else:
-            hist_SvB = filling_syst_histograms(selev, weights,
-                                               analysis_selections,
-                                               shift_name=shift_name,
-                                               processName=self.processName,
-                                               year=self.year,
-                                               histCuts=self.histCuts)
-            output = hist_SvB | processOutput
-
-        return output
+        return hist | processOutput | friends
 
     def postprocess(self, accumulator):
         return accumulator

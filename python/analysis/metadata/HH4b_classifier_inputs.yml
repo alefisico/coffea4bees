@@ -1,0 +1,26 @@
+runner:
+  workers: 4
+  condor_memory: 8GB
+  friend_metafile: classifier_inputs_friend
+  # friend_base: /srv/python/hists/local/ 
+  chunksize: 10000
+
+config:
+  JCM: 'analysis/weights/JCM/2023/dataRunII/jetCombinatoricModel_SB_00-00-02.yml'
+  blind: false
+  apply_FvT: false
+  apply_trigWeight: true
+  apply_btagSF: true
+  apply_boosted_veto: false
+  run_SvB: false 
+  run_systematics: false
+  top_reconstruction_override: false
+  fill_histograms: false 
+  # make_classifier_input: root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v1/
+  # make_friend_JCM_weight: root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v1/
+  # make_friend_FvT_weight: root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v1/
+  make_classifier_input: /srv/python/hists/local/   ### local
+  make_friend_JCM_weight: /srv/python/hists/local/   ### local
+  make_friend_FvT_weight: /srv/python/hists/local/   ### local
+
+  
