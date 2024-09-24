@@ -63,7 +63,6 @@ class analysis(processor.ProcessorABC):
         run_systematics: list = [],
         make_classifier_input: str = None,
         make_top_reconstruction: str = None,
-        make_friend_top_reconstruction: bool = False,  ### temporary
         make_friend_JCM_weight: str = None,
         make_friend_FvT_weight: str = None,
         isSyntheticData: bool = False,
@@ -90,7 +89,6 @@ class analysis(processor.ProcessorABC):
 
         self.run_systematics = run_systematics
         self.make_top_reconstruction = make_top_reconstruction
-        self.make_friend_top_reconstruction = make_friend_top_reconstruction  #### temporary
         self.make_classifier_input = make_classifier_input
         self.make_friend_JCM_weight = make_friend_JCM_weight
         self.make_friend_FvT_weight = make_friend_FvT_weight
@@ -448,7 +446,13 @@ class analysis(processor.ProcessorABC):
         #
         #  Build the top Candiates
         #
-        if self.make_top_reconstruction:
+        if self.friend_top_reconstruction:  ## temporary until we create friend trees
+            with open(self.friend_top_reconstruction, 'r') as f:
+                self.friend_top_reconstruction = Friend.from_json(json.load(f)[f'top_reco{"_"+shift_name if shift_name else ""}'])
+            top_cand = self.friend_top_reconstruction.arrays(target)[analysis_selections]
+            adding_top_reco_to_event( selev, top_cand )
+
+        else:
             if self.top_reconstruction in ["slow","fast"]:
 
                 # sort the jets by btagging
@@ -463,12 +467,6 @@ class analysis(processor.ProcessorABC):
                 ### with top friendtree we dont need the next two lines
                 selev["xbW"] = selev.top_cand.xbW
                 selev["xW"] = selev.top_cand.xW
-        # else:
-        if self.friend_top_reconstruction:  ## temporary until we create friend trees
-            with open(self.friend_top_reconstruction, 'r') as f:
-                self.friend_top_reconstruction = Friend.from_json(json.load(f)[f'top_reco{"_"+shift_name if shift_name else ""}'])
-            top_cand = self.friend_top_reconstruction.arrays(target)[analysis_selections]
-            adding_top_reco_to_event( selev, top_cand )
 
         #
         #  Build di-jets and Quad-jets
@@ -572,7 +570,7 @@ class analysis(processor.ProcessorABC):
                                                 histCuts=self.histCuts)
 
         friends = { 'friends': {} }
-        if self.make_friend_top_reconstruction: # is not None:
+        if self.make_top_reconstruction is not None:
             from ..helpers.dump_friendtrees import dump_top_reconstruction
 
             friends["friends"] = ( friends["friends"]
