@@ -46,14 +46,13 @@ class Skimmer(PicoAOD):
 
         event = apply_event_selection_4b( event, self.corrections_metadata[year], cut_on_lumimask=cut_on_lumimask )
 
+        if isMC:  
+            juncWS = [ self.corrections_metadata[year]["JERC"][0].replace("STEP", istep)
+                    for istep in ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"] ] + self.corrections_metadata[year]["JERC"][2:]
 
-        juncWS = [ self.corrections_metadata[year]["JERC"][0].replace("STEP", istep)
-                   for istep in ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"] ] + self.corrections_metadata[year]["JERC"][2:]
-
-        #old_jets = copy(event.Jet)
-        jets = init_jet_factory(juncWS, event, isMC)
-        event["Jet"] = jets
-
+            #old_jets = copy(event.Jet)
+            jets = init_jet_factory(juncWS, event, isMC)
+            event["Jet"] = jets
 
         event = apply_object_selection_4b( event, self.corrections_metadata[year], doLeptonRemoval=do_lepton_jet_cleaning, loosePtForSkim=self.loosePtForSkim  )
 
