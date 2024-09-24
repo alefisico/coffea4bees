@@ -60,10 +60,10 @@ def filling_nominal_histograms(selev, JCM,
     #
     # Jets
     #
-    fill += Jet.plot(("selJets", "Selected Jets"),        "selJet",           skip=["deepjet_c"])
-    fill += Jet.plot(("canJets", "Higgs Candidate Jets"), "canJet",           skip=["deepjet_c"])
-    fill += Jet.plot(("othJets", "Other Jets"),           "notCanJet_coffea", skip=["deepjet_c"])
-    fill += Jet.plot(("tagJets", "Tag Jets"),             "tagJet",           skip=["deepjet_c"])
+    fill += Jet.plot(("selJets", "Selected Jets"),        "selJet",           skip=["deepjet_c"], bins={"mass": (50, 0, 100)})
+    fill += Jet.plot(("canJets", "Higgs Candidate Jets"), "canJet",           skip=["deepjet_c"], bins={"mass": (50, 0, 100)})
+    fill += Jet.plot(("othJets", "Other Jets"),           "notCanJet_coffea", skip=["deepjet_c"], bins={"mass": (50, 0, 100)})
+    fill += Jet.plot(("tagJets", "Tag Jets"),             "tagJet",           skip=["deepjet_c"], bins={"mass": (50, 0, 100)})
 
     #
     #  Make quad jet hists
@@ -102,7 +102,7 @@ def filling_nominal_histograms(selev, JCM,
     fill += Jet.plot( ("tagJets_loose_noJCM", "Loose Tag Jets"), "tagJet_loose", weight="weight_noJCM_noFvT", skip=skip_all_but_n, )
 
     for iJ in range(4):
-        fill += Jet.plot( (f"canJet{iJ}", f"Higgs Candidate Jets {iJ}"), f"canJet{iJ}", skip=["n", "deepjet_c"], )
+        fill += Jet.plot( (f"canJet{iJ}", f"Higgs Candidate Jets {iJ}"), f"canJet{iJ}", skip=["n", "deepjet_c"], bins={"mass": (50, 0, 100)} )
 
     #
     #  Leptons

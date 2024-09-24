@@ -9,9 +9,11 @@ import logging
 import awkward as ak
 
 class Skimmer(PicoAOD):
-    def __init__(self, loosePtForSkim=False, *args, **kwargs):
+    def __init__(self, loosePtForSkim=False, skim4b=False, *args, **kwargs):
+        kwargs["pico_base_name"] = f'picoAOD_fourTag'
         super().__init__(*args, **kwargs)
         self.loosePtForSkim = loosePtForSkim
+        self.skim4b = skim4b
         self.corrections_metadata = yaml.safe_load(open('analysis/metadata/corrections.yml', 'r'))
         self.cutFlowCuts = [
             "all",
@@ -48,12 +50,14 @@ class Skimmer(PicoAOD):
 
 
         juncWS = [ self.corrections_metadata[year]["JERC"][0].replace("STEP", istep)
-                   for istep in ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"] ] + self.corrections_metadata[year]["JERC"][2:]
+                   for istep in ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"] ]
+
+        if isMC:
+            juncWS += self.corrections_metadata[year]["JERC"][2:]
 
         #old_jets = copy(event.Jet)
         jets = init_jet_factory(juncWS, event, isMC)
         event["Jet"] = jets
-
 
         event = apply_object_selection_4b( event, self.corrections_metadata[year], doLeptonRemoval=do_lepton_jet_cleaning, loosePtForSkim=self.loosePtForSkim  )
 
@@ -75,6 +79,8 @@ class Skimmer(PicoAOD):
         if self.loosePtForSkim:
             selections.add( "passPreSel_lowpt_forskim",  event.passPreSel_lowpt_forskim)
         selections.add( "passPreSel",    event.passPreSel)
+        if self.skim4b:
+            selections.add( "passFourTag",    event.fourTag)
 
         event["weight"] = weights.weight()
 
@@ -86,6 +92,9 @@ class Skimmer(PicoAOD):
         else:
             all_cuts = ["passNoiseFilter", "passHLT", "passJetMult", "passPreSel"]
 
+        if self.skim4b:
+            all_cuts.append("passFourTag")
+
         for cut in all_cuts:
             cumulative_cuts.append(cut)
             self._cutFlow.fill( cut, event[selections.all(*cumulative_cuts)], allTag=True )
@@ -94,6 +103,11 @@ class Skimmer(PicoAOD):
             selection = event.lumimask & event.passNoiseFilter & event.passJetMult_lowpt_forskim & event.passPreSel_lowpt_forskim
         else:
             selection = event.lumimask & event.passNoiseFilter & event.passJetMult & event.passPreSel
+
+        if self.skim4b:
+            selection = selection * event.fourTag
+
         if not isMC: selection = selection & event.passHLT
+
 
         return selection
