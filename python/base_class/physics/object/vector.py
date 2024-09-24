@@ -11,8 +11,8 @@ class _PlotLorentzVector(Template):
     mass    = H((30, 0, 300,       ('mass', R'Mass [GeV]')))
     eta     = H((50, -5, 5,        ('eta', R'$\eta$')))
     phi     = H((30, -np.pi, np.pi, ('phi', R'$\phi$')))
-    pz      = H((50, -1000, 1000,  ('pz', R'$p_{\mathrm{z}}$ [GeV]')))
-    energy  = H((15, 0, 1500,      ('energy', R'Energy [GeV]')))
+    # pz      = H((50, -1000, 1000,  ('pz', R'$p_{\mathrm{z}}$ [GeV]')))
+    # energy  = H((15, 0, 1500,      ('energy', R'Energy [GeV]')))
 
 
 class _PlotDiLorentzVector(_PlotLorentzVector):

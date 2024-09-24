@@ -28,6 +28,7 @@ from analysis.helpers.topCandReconstruction import (
     dumpTopCandidateTestVectors,
     find_tops,
     find_tops_slow,
+    adding_top_reco_to_event,
 )
 from base_class.root import Chunk, TreeReader, Friend
 from base_class.utils.json import DefaultEncoder
@@ -61,11 +62,13 @@ class analysis(processor.ProcessorABC):
         top_reconstruction_override: bool = False,
         run_systematics: list = [],
         make_classifier_input: str = None,
+        make_top_reconstruction: str = None,
         make_friend_JCM_weight: str = None,
         make_friend_FvT_weight: str = None,
         isSyntheticData: bool = False,
         subtract_ttbar_with_weights: bool = False,
         friend_trigWeight: str = None,
+        friend_top_reconstruction: str = None,
     ):
 
         logging.debug("\nInitialize Analysis Processor")
@@ -85,12 +88,14 @@ class analysis(processor.ProcessorABC):
             self.corrections_metadata = yaml.safe_load(f)
 
         self.run_systematics = run_systematics
+        self.make_top_reconstruction = make_top_reconstruction
         self.make_classifier_input = make_classifier_input
         self.make_friend_JCM_weight = make_friend_JCM_weight
         self.make_friend_FvT_weight = make_friend_FvT_weight
         self.top_reconstruction_override = top_reconstruction_override
         self.subtract_ttbar_with_weights = subtract_ttbar_with_weights
         self.friend_trigWeight = friend_trigWeight
+        self.friend_top_reconstruction = friend_top_reconstruction
 
         if self.friend_trigWeight:
             with open(friend_trigWeight, 'r') as f:
@@ -353,9 +358,9 @@ class analysis(processor.ProcessorABC):
 
             logging.info(f"\nJet variations {[name for _, name in shifts]}")
 
-        return processor.accumulate( self.process_shift(update_events(event, collections), name, weights, list_weight_names) for collections, name in shifts )
+        return processor.accumulate( self.process_shift(update_events(event, collections), name, weights, list_weight_names, target) for collections, name in shifts )
 
-    def process_shift(self, event, shift_name, weights, list_weight_names):
+    def process_shift(self, event, shift_name, weights, list_weight_names, target):
         """For different jet variations. It computes event variations for the nominal case."""
 
 
@@ -441,20 +446,27 @@ class analysis(processor.ProcessorABC):
         #
         #  Build the top Candiates
         #
-        if self.top_reconstruction in ["slow","fast"]:
+        if self.friend_top_reconstruction:  ## temporary until we create friend trees
+            with open(self.friend_top_reconstruction, 'r') as f:
+                self.friend_top_reconstruction = Friend.from_json(json.load(f)[f'top_reco{"_"+shift_name if shift_name else ""}'])
+            top_cand = self.friend_top_reconstruction.arrays(target)[analysis_selections]
+            adding_top_reco_to_event( selev, top_cand )
 
-            # sort the jets by btagging
-            selev.selJet = selev.selJet[ ak.argsort(selev.selJet.btagDeepFlavB, axis=1, ascending=False) ]
+        else:
+            if self.top_reconstruction in ["slow","fast"]:
 
-            if self.top_reconstruction == "slow":
-                top_cands = find_tops_slow(selev.selJet)
-            else:
-                top_cands = find_tops(selev.selJet)
+                # sort the jets by btagging
+                selev.selJet = selev.selJet[ ak.argsort(selev.selJet.btagDeepFlavB, axis=1, ascending=False) ]
 
-            selev['top_cand'], _ = buildTop(selev.selJet, top_cands)
+                if self.top_reconstruction == "slow":
+                    top_cands = find_tops_slow(selev.selJet)
+                else:
+                    top_cands = find_tops(selev.selJet)
 
-            selev["xbW"] = selev.top_cand.xbW
-            selev["xW"] = selev.top_cand.xW
+                selev['top_cand'], _ = buildTop(selev.selJet, top_cands)
+                ### with top friendtree we dont need the next two lines
+                selev["xbW"] = selev.top_cand.xbW
+                selev["xW"] = selev.top_cand.xW
 
         #
         #  Build di-jets and Quad-jets
@@ -558,8 +570,19 @@ class analysis(processor.ProcessorABC):
                                                 histCuts=self.histCuts)
 
         friends = { 'friends': {} }
+        if self.make_top_reconstruction is not None:
+            from ..helpers.dump_friendtrees import dump_top_reconstruction
+
+            friends["friends"] = ( friends["friends"]
+                | dump_top_reconstruction(
+                    selev,
+                    self.make_top_reconstruction,
+                    f"top_reco{'_'+shift_name if shift_name else ''}",
+                    analysis_selections,
+                )
+            )
+
         if self.make_classifier_input is not None:
-            _all_selection = analysis_selections
             for k in ["ZZSR", "ZHSR", "HHSR", "SR", "SB"]:
                 selev[k] = selev["quadJet_selected"][k]
             selev["nSelJets"] = ak.num(selev.selJet)
@@ -571,7 +594,7 @@ class analysis(processor.ProcessorABC):
                     selev,
                     self.make_classifier_input,
                     "HCR_input",
-                    _all_selection,
+                    analysis_selections,
                     weight="weight" if self.isMC else "weight_noJCM_noFvT",
                     NotCanJet="notCanJet_coffea",
                 )
@@ -580,14 +603,14 @@ class analysis(processor.ProcessorABC):
             from ..helpers.dump_friendtrees import dump_JCM_weight
 
             friends["friends"] = ( friends["friends"]
-                | dump_JCM_weight(selev, self.make_classifier_input, "JCM_weight", _all_selection)
+                | dump_JCM_weight(selev, self.make_classifier_input, "JCM_weight", analysis_selections)
             )
 
         if self.make_friend_FvT_weight is not None:
             from ..helpers.dump_friendtrees import dump_FvT_weight
 
             friends["friends"] = ( friends["friends"]
-                | dump_FvT_weight(selev, self.make_classifier_input, "FvT_weight", _all_selection)
+                | dump_FvT_weight(selev, self.make_classifier_input, "FvT_weight", analysis_selections)
             )
 
         return hist | processOutput | friends
