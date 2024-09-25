@@ -13,17 +13,16 @@ import logging
 import pickle
 import correctionlib
 import tarfile
+import tempfile
 import os
 
 def extract_jetmet_tar_files(tar_file_name: str=None, 
-                            extract_path: str="/tmp/", 
                             jet_type: str='AK4PFchs'
                             ):
   """Extracts a tar.gz file to a specified path and returns a list of extracted files with their locations.
 
   Args:
     tar_file_name: The name of the tar.gz file.
-    extract_path: The path where the files should be extracted. Defaults to "/tmp/".
     jet_type: The type of jet to apply correction
 
   Returns:
@@ -31,6 +30,11 @@ def extract_jetmet_tar_files(tar_file_name: str=None,
   """
 
   extracted_files = []
+  
+  # Create a unique temporary directory if extract_path is not specified
+  with tempfile.TemporaryDirectory() as tmpdirname:
+    extract_path = tmpdirname
+
   with tarfile.open(tar_file_name, "r:gz") as tar:
     for member in tar.getmembers():
       if member.isfile():
