@@ -427,7 +427,7 @@ class analysis(processor.ProcessorABC):
                                                            analysis_selections,
                                                            JCM=self.JCM,
                                                            apply_FvT=self.apply_FvT,
-                                                           isDataForMixed=config["isDataForMixed"],
+                                                           isDataForMixed=self.config["isDataForMixed"],
                                                            list_weight_names=list_weight_names,
                                                            event_metadata=event.metadata,
                                                            year_label=self.year_label,
