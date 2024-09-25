@@ -4,7 +4,7 @@ from analysis.helpers.selection_basic_4b import apply_event_selection_4b, apply_
 from coffea.analysis_tools import Weights, PackedSelection
 import numpy as np
 from analysis.helpers.processor_config import processor_config
-from analysis.helpers.common import init_jet_factory
+from analysis.helpers.common import apply_jerc_corrections
 from copy import copy
 import logging
 import awkward as ak
@@ -42,15 +42,12 @@ class Skimmer(PicoAOD):
 
         event = apply_event_selection_4b( event, self.corrections_metadata[year], cut_on_lumimask=config["cut_on_lumimask"] )
 
-
-        juncWS = [ self.corrections_metadata[year]["JERC"][0].replace("STEP", istep)
-                   for istep in ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"] ]
-
-        if config["isMC"]:
-            juncWS += self.corrections_metadata[year]["JERC"][2:]
-
-        #old_jets = copy(event.Jet)
-        jets = init_jet_factory(juncWS, event, config["isMC"])
+        jets = apply_jerc_corrections(event,
+                                      corrections_metadata=self.corrections_metadata[year],
+                                      isMC=config["isMC"],
+                                      run_systematics=False,
+                                      dataset=dataset
+                                      )
         event["Jet"] = jets
 
         event = apply_object_selection_4b( event, self.corrections_metadata[year], doLeptonRemoval=config["do_lepton_jet_cleaning"], loosePtForSkim=self.loosePtForSkim  )

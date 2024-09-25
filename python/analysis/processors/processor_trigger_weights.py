@@ -3,7 +3,7 @@ import warnings
 import awkward as ak
 import yaml
 import numpy as np
-from analysis.helpers.common import init_jet_factory
+from analysis.helpers.common import apply_jerc_corrections
 from base_class.trigger_emulator.TrigEmulatorTool   import TrigEmulatorTool
 from analysis.helpers.selection_basic_4b import (
     apply_event_selection_4b,
@@ -65,10 +65,12 @@ class analysis(processor.ProcessorABC):
         #
         # Calculate and apply Jet Energy Calibration
         #
-        juncWS = [ self.corrections_metadata[self.year]["JERC"][0].replace("STEP", istep)
-                    for istep in ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"] ] + self.corrections_metadata[self.year]["JERC"][2:]
-
-        jets = init_jet_factory(juncWS, event, self.config["isMC"])
+        jets = apply_jerc_corrections(event,
+                                corrections_metadata=self.corrections_metadata[self.year],
+                                isMC=config["isMC"],
+                                run_systematics=False,
+                                dataset=self.dataset
+                                )
         event["Jet"] = jets
 
         # Apply object selection (function does not remove events, adds content to objects)

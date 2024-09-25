@@ -12,9 +12,64 @@ ak.behavior.update(vector.behavior)
 import logging
 import pickle
 import correctionlib
+import tarfile
+import tempfile
+import os
+
+def extract_jetmet_tar_files(tar_file_name: str=None, 
+                            jet_type: str='AK4PFchs'
+                            ):
+  """Extracts a tar.gz file to a specified path and returns a list of extracted files with their locations.
+
+  Args:
+    tar_file_name: The name of the tar.gz file.
+    jet_type: The type of jet to apply correction
+
+  Returns:
+    A list of tuples, where each tuple contains the file name and its full path.
+  """
+
+  extracted_files = []
+  
+  # Create a unique temporary directory if extract_path is not specified
+  with tempfile.TemporaryDirectory() as tmpdirname:
+    extract_path = tmpdirname
+
+  with tarfile.open(tar_file_name, "r:gz") as tar:
+    for member in tar.getmembers():
+      if member.isfile():
+        # Extract the file to the specified path
+        member.name = os.path.basename(member.name)  # Remove any directory structure from the archive
+        tar.extract(member, path=extract_path)
+        # Get the full path of the extracted file
+        file_path = os.path.join(extract_path, member.name)
+        if jet_type in member.name:
+            extracted_files.append(f"* * {file_path}")
+  return extracted_files
 
 # following example here: https://github.com/CoffeaTeam/coffea/blob/master/tests/test_jetmet_tools.py#L529
-def init_jet_factory(weight_sets, event, isMC):   #### AGE: this is temporary, it should be updated with correctionlib
+def apply_jerc_corrections( event, 
+                    corrections_metadata: dict = {}, 
+                    run_systematics: bool = False,
+                    isMC: bool = False,
+                    dataset: str = None,
+                    jec_levels: list = ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"],
+                    jer_levels: list = ["PtResolution", "SF"],
+                    ):
+
+    logging.info(f"Applying JEC/JER corrections for {dataset}")
+
+    jec_file = corrections_metadata['JEC_MC'] if isMC else corrections_metadata['JEC_DATA'][dataset[-1]]
+    extracted_files = extract_jetmet_tar_files(jec_file)
+    if run_systematics: jec_levels.append("RegroupedV2")
+    weight_sets = [file for level in jec_levels for file in extracted_files if level in file]
+
+    if isMC:
+        jer_file = corrections_metadata["JER_MC"]
+        extracted_files = extract_jetmet_tar_files(jer_file)
+        weight_sets += [file for level in jer_levels for file in extracted_files if level in file]
+
+    logging.debug(f"For {dataset}, applying these corrections: {weight_sets}")
 
     event['Jet', 'pt_raw']    = (1 - event.Jet.rawFactor) * event.Jet.pt
     event['Jet', 'mass_raw']  = (1 - event.Jet.rawFactor) * event.Jet.mass
@@ -50,7 +105,7 @@ def init_jet_factory(weight_sets, event, isMC):   #### AGE: this is temporary, i
     name_map["JetMass"]  = "mass"
     name_map["JetEta"]   = "eta"
     name_map["JetA"]     = "area"
-    if isMC: name_map['ptGenJet'] = 'pt_gen'
+    name_map['ptGenJet'] = 'pt_gen'
     name_map['ptRaw']    = 'pt_raw'
     name_map['massRaw']  = 'mass_raw'
     name_map['Rho']      = 'rho'

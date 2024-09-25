@@ -27,9 +27,8 @@ from analysis.helpers.FriendTreeSchema import FriendTreeSchema
 
 
 from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
-from analysis.helpers.common import init_jet_factory, apply_btag_sf, update_events
+from analysis.helpers.common import apply_jerc_corrections, apply_btag_sf, update_events
 from analysis.helpers.event_weights import add_weights
-
 
 from analysis.helpers.SvB_helpers import setSvBVars, subtract_ttbar_with_SvB
 from analysis.helpers.selection_basic_4b import (
@@ -174,10 +173,12 @@ class analysis(processor.ProcessorABC):
         # Calculate and apply Jet Energy Calibration
         #
         if config["do_jet_calibration"]:
-            juncWS = [ self.corrections_metadata[self.year]["JERC"][0].replace("STEP", istep)
-                       for istep in ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"] ] + self.corrections_metadata[self.year]["JERC"][2:]
-
-            jets = init_jet_factory(juncWS, event, config["isMC"])
+            jets = apply_jerc_corrections(event,
+                                    corrections_metadata=self.corrections_metadata[self.year],
+                                    isMC=config["isMC"],
+                                    run_systematics=False,
+                                    dataset=dataset
+                                    )
         else:
             jets = event.Jet
 

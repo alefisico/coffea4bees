@@ -7,7 +7,7 @@ def processor_config(processName, dataset, event):
     #
     # Set process type flags
     #
-    config["isMC"]  = False if "data"    in processName else True
+    config["isMC"]     = False if "data"    in processName else True
     config["isPSData"] = True  if "ps_data" in processName else False
     config["isMixedData"]    = not (dataset.find("mix_v") == -1)
     if config["isMixedData"]:
@@ -31,7 +31,7 @@ def processor_config(processName, dataset, event):
     config["cut_on_lumimask"]         = True
     config["cut_on_HLT_decision"]     = True
     config["do_MC_weights"]           = False
-    config["do_jet_calibration"]      = False
+    config["do_jet_calibration"]      = True
     config["do_lepton_jet_cleaning"]  = True
     config["override_selected_with_flavor_bit"]  = False
     config["use_prestored_btag_SF"]  = False
@@ -46,6 +46,7 @@ def processor_config(processName, dataset, event):
         config["do_lepton_jet_cleaning"]  = False
         config["override_selected_with_flavor_bit"]  = True
         config["isPSData"] = True if event.run[0] == 1 else False
+        config["do_jet_calibration"]      = False
 
     if config["isSyntheticMC"]:
         config["cut_on_lumimask"]         = False
@@ -65,6 +66,7 @@ def processor_config(processName, dataset, event):
         config["cut_on_lumimask"]     = False
         config["cut_on_HLT_decision"] = False
         config["do_lepton_jet_cleaning"]  = False
+        config["do_jet_calibration"]  = False
 
     if config["isTTForMixed"]:
         config["cut_on_lumimask"]        = False
@@ -75,6 +77,6 @@ def processor_config(processName, dataset, event):
     if config["isDataForMixed"]:
         config["cut_on_HLT_decision"] = False
         config["do_lepton_jet_cleaning"]  = False
-
+        config["do_jet_calibration"]  = False
 
     return config
