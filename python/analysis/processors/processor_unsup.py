@@ -19,6 +19,7 @@ from base_class.hist import Collection, Fill
 from base_class.hist import H, Template
 from base_class.physics.object import LorentzVector, Jet, Muon, Elec
 
+from analysis.helpers.processor_config import processor_config
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
 from analysis.helpers.cutflow import cutFlow
 from analysis.helpers.topCandReconstruction import find_tops, dumpTopCandidateTestVectors, buildTop
@@ -92,25 +93,16 @@ class analysis(processor.ProcessorABC):
         year    = event.metadata['year']
         era     = event.metadata.get('era', '')
         processName = event.metadata['processName']
-        isMC    = True if event.run[0] == 1 else False
-        isMixedData = not (dataset.find("mix_v") == -1)
         lumi    = event.metadata.get('lumi',    1.0)
         xs      = event.metadata.get('xs',      1.0)
         kFactor = event.metadata.get('kFactor', 1.0)
         nEvent = len(event)
 
         #
-        #  Nominal config (...what we would do for data)
+        # Set process and datset dependent flags
         #
-        cut_on_lumimask         = True
-        do_lepton_jet_cleaning  = True
-
-        if isMC:
-            cut_on_lumimask     = False
-
-        if isMixedData:
-            cut_on_lumimask     = False
-            do_lepton_jet_cleaning  = False
+        config = processor_config(processName, dataset, event)
+        logging.debug(f'{chunk} config={config}, for file {fname}\n')
 
         processOutput = {}
         processOutput['nEvent'] = {}
@@ -148,7 +140,7 @@ class analysis(processor.ProcessorABC):
 
         ##############################################
         ### general event weights
-        if isMC:
+        if config["isMC"]:
             ### genWeight
             with uproot.open(fname) as rfile:
                 Runs = rfile['Runs']
@@ -179,14 +171,14 @@ class analysis(processor.ProcessorABC):
         logging.debug(f"event['weight'] = {event.weight}")
 
         ### Event selection (function only adds flags, not remove events)
-        event = apply_event_selection_4b( event, self.corrections_metadata[year], cut_on_lumimask=cut_on_lumimask)
+        event = apply_event_selection_4b( event, self.corrections_metadata[year], cut_on_lumimask=config["cut_on_lumimask"])
 
         self._cutFlow.fill("all",  event[event.lumimask], allTag=True)
         self._cutFlow.fill("passNoiseFilter",  event[ event.lumimask & event.passNoiseFilter], allTag=True)
         self._cutFlow.fill("passHLT",  event[ event.lumimask & event.passNoiseFilter & event.passHLT], allTag=True)
 
         ### Apply object selection (function does not remove events, adds content to objects)
-        event =  apply_object_selection_4b( event, self.corrections_metadata[year], doLeptonRemoval=do_lepton_jet_cleaning  )
+        event =  apply_object_selection_4b( event, self.corrections_metadata[year], doLeptonRemoval=config["do_lepton_jet_cleaning"]  )
         self._cutFlow.fill("passJetMult",  event[ event.lumimask & event.passNoiseFilter & event.passHLT & event.passJetMult ], allTag=True)
 
         ### Filtering object and event selection
@@ -194,7 +186,7 @@ class analysis(processor.ProcessorABC):
 
 
         ##### Calculate and apply btag scale factors
-        if isMC:
+        if config["isMC"]:
             btagSF = correctionlib.CorrectionSet.from_file(self.corrections_metadata[year]['btagSF'])['deepJet_shape']
             btag_SF_weights = apply_btag_sf(selev.selJet,
                                             correction_file=self.corrections_metadata[year]['btagSF'],
@@ -235,7 +227,7 @@ class analysis(processor.ProcessorABC):
         canJet['btagDeepFlavB'] = selev.Jet.btagDeepFlavB[canJet_idx]
         canJet['puId'] = selev.Jet.puId[canJet_idx]
         canJet['jetId'] = selev.Jet.puId[canJet_idx]
-        if isMC:
+        if config["isMC"]:
             canJet['hadronFlavour'] = selev.Jet.hadronFlavour[canJet_idx]
         canJet['calibration'] = selev.Jet.calibration[canJet_idx]
 

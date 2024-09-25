@@ -3,6 +3,7 @@ from skimmer.processor.picoaod import PicoAOD, fetch_metadata, resize
 from analysis.helpers.selection_basic_4b import apply_event_selection_4b, apply_object_selection_4b
 from coffea.analysis_tools import Weights, PackedSelection
 import numpy as np
+from analysis.helpers.processor_config import processor_config
 from analysis.helpers.common import init_jet_factory
 from copy import copy
 import logging
@@ -29,50 +30,43 @@ class Skimmer(PicoAOD):
 
     def select(self, event):
 
-        isMC    = True if event.run[0] == 1 else False
         year    = event.metadata['year']
         dataset = event.metadata['dataset']
-
+        processName = event.metadata['processName']
 
         #
-        #  Nominal config (...what we would do for data)
+        # Set process and datset dependent flags
         #
-        cut_on_lumimask         = True
-        cut_on_HLT_decision     = True
-        do_lepton_jet_cleaning  = True
+        config = processor_config(processName, dataset, event)
+        logging.debug(f'config={config}\n')
 
-        if isMC:
-            cut_on_lumimask     = False
-            cut_on_HLT_decision = False
-
-
-        event = apply_event_selection_4b( event, self.corrections_metadata[year], cut_on_lumimask=cut_on_lumimask )
+        event = apply_event_selection_4b( event, self.corrections_metadata[year], cut_on_lumimask=config["cut_on_lumimask"] )
 
 
         juncWS = [ self.corrections_metadata[year]["JERC"][0].replace("STEP", istep)
                    for istep in ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"] ]
 
-        if isMC:
+        if config["isMC"]:
             juncWS += self.corrections_metadata[year]["JERC"][2:]
 
         #old_jets = copy(event.Jet)
-        jets = init_jet_factory(juncWS, event, isMC)
+        jets = init_jet_factory(juncWS, event, config["isMC"])
         event["Jet"] = jets
 
-        event = apply_object_selection_4b( event, self.corrections_metadata[year], doLeptonRemoval=do_lepton_jet_cleaning, loosePtForSkim=self.loosePtForSkim  )
+        event = apply_object_selection_4b( event, self.corrections_metadata[year], doLeptonRemoval=config["do_lepton_jet_cleaning"], loosePtForSkim=self.loosePtForSkim  )
 
         weights = Weights(len(event), storeIndividual=True)
 
         #
         # general event weights
         #
-        if isMC:
+        if config["isMC"]:
             weights.add( "genweight_", event.genWeight )
 
         selections = PackedSelection()
         selections.add( "lumimask", event.lumimask)
         selections.add( "passNoiseFilter", event.passNoiseFilter)
-        selections.add( "passHLT", ( event.passHLT if cut_on_HLT_decision else np.full(len(event), True)  ) )
+        selections.add( "passHLT", ( event.passHLT if config["cut_on_HLT_decision"] else np.full(len(event), True)  ) )
         if self.loosePtForSkim:
             selections.add( 'passJetMult_lowpt_forskim', event.passJetMult_lowpt_forskim )
         selections.add( 'passJetMult',   event.passJetMult )
@@ -107,7 +101,7 @@ class Skimmer(PicoAOD):
         if self.skim4b:
             selection = selection * event.fourTag
 
-        if not isMC: selection = selection & event.passHLT
+        if not config["isMC"]: selection = selection & event.passHLT
 
 
         return selection
