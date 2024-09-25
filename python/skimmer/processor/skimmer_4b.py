@@ -49,6 +49,7 @@ class Skimmer(PicoAOD):
         jets = apply_jerc_corrections(event, 
                                 corrections_metadata=self.corrections_metadata[year], 
                                 isMC=isMC,
+                                run_systematics=False,
                                 dataset=dataset
                                 )
         event["Jet"] = jets

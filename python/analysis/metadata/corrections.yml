@@ -5,11 +5,11 @@
   JEC_MC: 'data/JEC/Summer19UL16APV_V7_MC.tar.gz'
   JER_MC: 'data/JEC/Summer20UL16APV_JRV3_MC.tar.gz'
   JEC_DATA:
-    B: 'data/JEC/Summer19UL16_RunBCD_V7_DATA.tar.gz'
-    C: 'data/JEC/Summer19UL16_RunBCD_V7_DATA.tar.gz'
-    D: 'data/JEC/Summer19UL16_RunBCD_V7_DATA.tar.gz'
-    E: 'data/JEC/Summer19UL16_RunEF_V7_DATA.tar.gz'
-    F: 'data/JEC/Summer19UL16_RunEF_V7_DATA.tar.gz'
+    B: 'data/JEC/Summer19UL16APV_RunBCD_V7_DATA.tar.gz'
+    C: 'data/JEC/Summer19UL16APV_RunBCD_V7_DATA.tar.gz'
+    D: 'data/JEC/Summer19UL16APV_RunBCD_V7_DATA.tar.gz'
+    E: 'data/JEC/Summer19UL16APV_RunEF_V7_DATA.tar.gz'
+    F: 'data/JEC/Summer19UL16APV_RunEF_V7_DATA.tar.gz'
   JES_uncertainties:
     - Absolute
     - Absolute_2016
