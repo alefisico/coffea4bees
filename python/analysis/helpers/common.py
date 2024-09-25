@@ -61,7 +61,7 @@ def apply_jerc_corrections( event,
     weight_sets = [file for level in jec_levels for file in extracted_files if level in file]
 
     if isMC:
-        jer_file = corrections_metadata["JER_MC'"]
+        jer_file = corrections_metadata["JER_MC"]
         extracted_files = extract_jetmet_tar_files(jer_file)
         weight_sets += [file for level in jer_levels for file in extracted_files if level in file]
 

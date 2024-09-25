@@ -110,7 +110,7 @@ class DeClusterer(PicoAOD):
         #
         if do_jet_calibration:
             jets = apply_jerc_corrections(event, 
-                                    corrections_metadata=self.corrections_metadata[self.year], 
+                                    corrections_metadata=self.corrections_metadata[year], 
                                     isMC=isMC,
                                     dataset=dataset
                                     )

@@ -173,13 +173,14 @@ class analysis(processor.ProcessorABC):
         if self.isMC:
             self.cut_on_lumimask     = False
             self.cut_on_HLT_decision = False
-            self.do_jet_calibration  = True
             self.do_MC_weights       = True
+            self.do_jet_calibration      = True
 
         if self.isSyntheticData:
             self.do_lepton_jet_cleaning  = False
             self.override_selected_with_flavor_bit  = True
             self.isPSData = True if event.run[0] == 1 else False
+            self.do_jet_calibration      = False
 
         if self.isSyntheticMC:
             self.cut_on_lumimask         = False
@@ -199,6 +200,7 @@ class analysis(processor.ProcessorABC):
             self.cut_on_lumimask     = False
             self.cut_on_HLT_decision = False
             self.do_lepton_jet_cleaning  = False
+            self.do_jet_calibration      = False
 
         if self.isTTForMixed:
             self.cut_on_lumimask        = False
@@ -209,6 +211,7 @@ class analysis(processor.ProcessorABC):
         if self.isDataForMixed:
             self.cut_on_HLT_decision = False
             self.do_lepton_jet_cleaning  = False
+            self.do_jet_calibration      = False
 
 
         logging.debug(f'{self.chunk} isData={False}, isMC={self.isMC}, isMixedData={self.isMixedData}, isDataForMixed={self.isDataForMixed}, isTTForMixed={self.isTTForMixed},  isSyntheticData={self.isSyntheticData}, isPSData={self.isPSData} for file {fname}\n')
