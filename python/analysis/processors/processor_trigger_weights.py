@@ -67,7 +67,7 @@ class analysis(processor.ProcessorABC):
         #
         jets = apply_jerc_corrections(event,
                                 corrections_metadata=self.corrections_metadata[self.year],
-                                isMC=config["isMC"],
+                                isMC=self.config["isMC"],
                                 run_systematics=False,
                                 dataset=self.dataset
                                 )
