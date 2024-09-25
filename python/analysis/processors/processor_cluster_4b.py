@@ -12,6 +12,7 @@ from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
 from coffea import processor
 from coffea.util import load
 from coffea.analysis_tools import Weights, PackedSelection
+from analysis.helpers.processor_config import processor_config
 
 from base_class.hist import Collection, Fill
 from base_class.physics.object import LorentzVector, Jet, Muon, Elec
@@ -27,6 +28,7 @@ from analysis.helpers.FriendTreeSchema import FriendTreeSchema
 
 from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
 from analysis.helpers.common import apply_jerc_corrections, apply_btag_sf, update_events
+from analysis.helpers.event_weights import add_weights
 
 from analysis.helpers.SvB_helpers import setSvBVars, subtract_ttbar_with_SvB
 from analysis.helpers.selection_basic_4b import (
@@ -101,30 +103,16 @@ class analysis(processor.ProcessorABC):
         year    = event.metadata['year']
         year_label = self.corrections_metadata[year]['year_label']
         processName = event.metadata['processName']
-        isMC    = True if event.run[0] == 1 else False
         lumi    = event.metadata.get('lumi',    1.0)
         xs      = event.metadata.get('xs',      1.0)
         kFactor = event.metadata.get('kFactor', 1.0)
         nEvent = len(event)
 
-
         #
-        #  Nominal config (...what we would do for data)
+        # Set process and datset dependent flags
         #
-        cut_on_lumimask         = True
-        cut_on_HLT_decision     = True
-        do_jet_calibration      = False
-        do_lepton_jet_cleaning  = True
-
-        if isMC:
-            cut_on_lumimask     = False
-            cut_on_HLT_decision = False
-            do_jet_calibration  = True
-
-
-
-        logging.debug(fname)
-        logging.debug(f'{chunk}Process {nEvent} Events')
+        config = processor_config(processName, dataset, event)
+        logging.debug(f'{chunk} config={config}, for file {fname}\n')
 
         #
         # Reading SvB friend trees (for TTbar subtraction)
@@ -157,15 +145,37 @@ class analysis(processor.ProcessorABC):
         #
         # Event selection
         #
-        event = apply_event_selection_4b( event, self.corrections_metadata[year], cut_on_lumimask=cut_on_lumimask)
+        event = apply_event_selection_4b( event, self.corrections_metadata[year], cut_on_lumimask=config["cut_on_lumimask"])
+
+
+        ### target is for new friend trees
+        target = Chunk.from_coffea_events(event)
+
+        ### adds all the event mc weights and 1 for data
+        weights, list_weight_names = add_weights( event, target=target,
+                                                  do_MC_weights=config["do_MC_weights"],
+                                                  dataset=dataset,
+                                                  year_label=year_label,
+                                                  estart=estart,
+                                                  estop=estop,
+                                                  friend_trigWeight=None,
+                                                  corrections_metadata=self.corrections_metadata[year],
+                                                  apply_trigWeight=True,
+                                                  isTTForMixed=config["isTTForMixed"]
+                                                 )
+
+
+        logging.debug(f"weights event {weights.weight()[:10]}")
+        logging.debug(f"Weight Statistics {weights.weightStatistics}")
+
 
         #
         # Calculate and apply Jet Energy Calibration
         #
-        if do_jet_calibration:
-            jets = apply_jerc_corrections(event, 
-                                    corrections_metadata=self.corrections_metadata[self.year], 
-                                    isMC=self.isMC,
+        if config["do_jet_calibration"]:
+            jets = apply_jerc_corrections(event,
+                                    corrections_metadata=self.corrections_metadata[year],
+                                    isMC=config["isMC"],
                                     run_systematics=False,
                                     dataset=dataset
                                     )
@@ -174,19 +184,14 @@ class analysis(processor.ProcessorABC):
 
         event = update_events(event, {"Jet": jets})
 
-        weights = Weights(len(event), storeIndividual=True)
-        list_weight_names = []
-
-        logging.debug(f"weights event {weights.weight()[:10]}")
-        logging.debug(f"Weight Statistics {weights.weightStatistics}")
 
         # Apply object selection (function does not remove events, adds content to objects)
-        event = apply_object_selection_4b( event, self.corrections_metadata[year], doLeptonRemoval=do_lepton_jet_cleaning )
+        event = apply_object_selection_4b( event, self.corrections_metadata[year], doLeptonRemoval=config["do_lepton_jet_cleaning"], override_selected_with_flavor_bit=config["override_selected_with_flavor_bit"] )
 
         selections = PackedSelection()
         selections.add( "lumimask", event.lumimask)
         selections.add( "passNoiseFilter", event.passNoiseFilter)
-        selections.add( "passHLT", ( event.passHLT if cut_on_HLT_decision else np.full(len(event), True)  ) )
+        selections.add( "passHLT", ( event.passHLT if config["cut_on_HLT_decision"] else np.full(len(event), True)  ) )
         selections.add( 'passJetMult', event.passJetMult )
         allcuts = [ 'lumimask', 'passNoiseFilter', 'passHLT', 'passJetMult' ]
         event['weight'] = weights.weight()   ### this is for _cutflow
@@ -199,7 +204,7 @@ class analysis(processor.ProcessorABC):
         processOutput['nEvent'] = {}
         processOutput['nEvent'][event.metadata['dataset']] = {
             'nEvent' : nEvent,
-            'genWeights': np.sum(event.genWeight) if isMC else nEvent
+            'genWeights': np.sum(event.genWeight) if config["isMC"] else nEvent
 
         }
 
@@ -265,7 +270,7 @@ class analysis(processor.ProcessorABC):
         canJet["btagDeepFlavB"] = selev.Jet.btagDeepFlavB[canJet_idx]
         canJet["puId"] = selev.Jet.puId[canJet_idx]
         canJet["jetId"] = selev.Jet.puId[canJet_idx]
-        if isMC:
+        if config["isMC"]:
             canJet["hadronFlavour"] = selev.Jet.hadronFlavour[canJet_idx]
         canJet["calibration"] = selev.Jet.calibration[canJet_idx]
 
@@ -284,7 +289,6 @@ class analysis(processor.ProcessorABC):
         selev["canJet2"] = canJet[:, 2]
         selev["canJet3"] = canJet[:, 3]
 
-        # selev['v4j', 'n'] = 1
         # print(selev.v4j.n)
         # selev['Jet', 'canJet'] = False
         notCanJet = selev.Jet[notCanJet_idx]
@@ -295,10 +299,8 @@ class analysis(processor.ProcessorABC):
         selev["notCanJet_coffea"] = notCanJet
 
         #
-        # Build diJets, indexed by diJet[event,pairing,0/1]
+        # Do the Clustering
         #
-        #canJet = selev["canJet"]
-
         canJet["jet_flavor"] = "b"
         notCanJet["jet_flavor"] = "j"
 
@@ -317,7 +319,6 @@ class analysis(processor.ProcessorABC):
             print(f'{chunk} self.input_jet_mass  = {[jets_for_clustering[iE].mass.tolist() for iE in range(10)]}')
             print(f'{chunk} self.input_jet_flavor  = {[jets_for_clustering[iE].jet_flavor.tolist() for iE in range(10)]}')
             print(f'{chunk}\n\n')
-
 
 
         #clustered_jets, clustered_splittings = cluster_bs_fast(jets_for_clustering, debug=False)
@@ -383,8 +384,6 @@ class analysis(processor.ProcessorABC):
         # from jet_clustering.dumpTestVectors   import dumpTestVectors_bbj
         # dumpTestVectors_bbj(chunk, selev, jets_for_clustering)
 
-
-
         #
         # writing out bb splitting for Chris Berman
         #
@@ -419,6 +418,8 @@ class analysis(processor.ProcessorABC):
 
             declustered_jets = make_synthetic_event(clustered_jets, self.clustering_pdfs)
 
+            declustered_jets = declustered_jets[ak.argsort(declustered_jets.pt, axis=1, ascending=False)]
+
             is_b_mask = declustered_jets.jet_flavor == "b"
             canJet_re = declustered_jets[is_b_mask]
 
@@ -436,7 +437,7 @@ class analysis(processor.ProcessorABC):
             #
             #  Recluster
             #
-            jets_for_clustering = ak.concatenate([canJet_re, notCanJet_sel_re], axis=1)
+            jets_for_clustering = ak.concatenate([canJet_re, notCanJet_re], axis=1)
             jets_for_clustering = jets_for_clustering[ak.argsort(jets_for_clustering.pt, axis=1, ascending=False)]
 
             clustered_jets_reclustered, clustered_splittings_reclustered = cluster_bs(jets_for_clustering, debug=False)

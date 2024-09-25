@@ -6,6 +6,7 @@ from coffea.nanoevents import NanoEventsFactory
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
 from base_class.math.random import Squares
 from analysis.helpers.event_weights import add_weights, add_btagweights
+from analysis.helpers.processor_config import processor_config
 
 from coffea.analysis_tools import Weights, PackedSelection
 import numpy as np
@@ -37,7 +38,6 @@ class SubSampler(PicoAOD):
 
     def select(self, event):
 
-        isMC    = True if event.run[0] == 1 else False
         year    = event.metadata['year']
         dataset = event.metadata['dataset']
         fname   = event.metadata['filename']
@@ -49,32 +49,20 @@ class SubSampler(PicoAOD):
         logging.debug( f"{chunk} file is {fname}\n" )
 
         #
-        #  Nominal config (...what we would do for data)
+        # Set process and datset dependent flags
         #
-        cut_on_lumimask         = True
-        cut_on_HLT_decision     = True
-        do_MC_weights           = False
-        do_jet_calibration      = False
-        do_lepton_jet_cleaning  = True
-
-        if isMC:
-            cut_on_lumimask     = False
-            cut_on_HLT_decision = False
-            do_jet_calibration  = True
-            do_MC_weights       = True
-
-        logging.debug(f'isMC={isMC}, for file {fname}\n')
-        logging.debug(f'cut_on_lumimask={cut_on_lumimask}, cut_on_HLT_decision={cut_on_HLT_decision}, do_MC_weights={do_MC_weights}, do_jet_calibration={do_jet_calibration}, do_lepton_jet_cleaning={do_lepton_jet_cleaning} for file {fname}\n')
+        config = processor_config(processName, dataset, event)
+        logging.debug(f'{chunk} config={config}, for file {fname}\n')
 
         path = fname.replace(fname.split("/")[-1], "")
 
         #
         # Event selection
         #
-        event = apply_event_selection_4b( event, self.corrections_metadata[year], cut_on_lumimask=cut_on_lumimask )
+        event = apply_event_selection_4b( event, self.corrections_metadata[year], cut_on_lumimask=config["cut_on_lumimask"] )
 
         ## adds all the event mc weights and 1 for data
-        weights, list_weight_names = add_weights( event, do_MC_weights, dataset, year_label,
+        weights, list_weight_names = add_weights( event, config["do_MC_weights"], dataset, year_label,
                                                   estart, estop,
                                                   self.corrections_metadata[year],
                                                   apply_trigWeight = True,
@@ -84,10 +72,10 @@ class SubSampler(PicoAOD):
         #
         # Calculate and apply Jet Energy Calibration
         #
-        if do_jet_calibration:
-            jets = apply_jerc_corrections(event, 
-                                    corrections_metadata=self.corrections_metadata[self.year], 
-                                    isMC=isMC,
+        if config["do_jet_calibration"]:
+            jets = apply_jerc_corrections(event,
+                                    corrections_metadata=self.corrections_metadata[self.year],
+                                    isMC=config["isMC"],
                                     dataset=dataset
                                     )
         else:
@@ -97,12 +85,12 @@ class SubSampler(PicoAOD):
         event = update_events(event, {"Jet": jets})
 
         # Apply object selection (function does not remove events, adds content to objects)
-        event = apply_object_selection_4b( event, self.corrections_metadata[year], doLeptonRemoval=do_lepton_jet_cleaning  )
+        event = apply_object_selection_4b( event, self.corrections_metadata[year], doLeptonRemoval=config["do_lepton_jet_cleaning"]  )
 
         selections = PackedSelection()
         selections.add( "lumimask", event.lumimask)
         selections.add( "passNoiseFilter", event.passNoiseFilter)
-        selections.add( "passHLT", ( np.full(len(event), True) if isMC else event.passHLT ) )
+        selections.add( "passHLT", ( event.passHLT if config["cut_on_HLT_decision"] else np.full(len(event), True)  ) )
         selections.add( 'passJetMult',   event.passJetMult )
         selections.add( "passFourTag", event.fourTag)
         event["weight"] = weights.weight()
@@ -121,7 +109,7 @@ class SubSampler(PicoAOD):
         # Calculate and apply btag scale factors
         #### AGE to add btag JES
         #
-        if isMC:
+        if config["isMC"]:
 
             weights, list_weight_names = add_btagweights( event, weights,
                                                           list_weight_names=list_weight_names,
@@ -134,7 +122,7 @@ class SubSampler(PicoAOD):
 
 
         selection = event.lumimask & event.passNoiseFilter & event.passJetMult & event.fourTag
-        if not isMC: selection = selection & event.passHLT
+        if not config["isMC"]: selection = selection & event.passHLT
         selev = event[selections.all(*cumulative_cuts)]
 
         #
