@@ -23,7 +23,11 @@ def apply_event_selection_4b( event, corrections_metadata, *, cut_on_lumimask=Tr
 
     return event
 
-def apply_object_selection_4b( event, corrections_metadata, *, doLeptonRemoval=True, loosePtForSkim=False, override_selected_with_flavor_bit=False  ):
+def apply_object_selection_4b(event, corrections_metadata, *, 
+                              doLeptonRemoval: bool = True, 
+                              loosePtForSkim: bool = False, 
+                              override_selected_with_flavor_bit: bool = False,
+                              run_lowpt_selection: bool = False):
     """docstring for apply_basic_selection_4b. This fuction is not modifying the content of anything in events. it is just adding it"""
 
     #
@@ -93,13 +97,14 @@ def apply_object_selection_4b( event, corrections_metadata, *, doLeptonRemoval=T
     event["hT_trigger"] = ak.sum(event.Jet[event.Jet.ht_selected].pt, axis=1)
 
     # # For low pt selection
-    # event['Jet', 'selected_lowpt'] = (event.Jet.pt >= 15) & (np.abs(event.Jet.eta) <= 2.4) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned & ~event.Jet.selected
-    # event['lowptJet'] = event.Jet[event.Jet.selected_lowpt]
-    # event['Jet', 'tagged_lowpt']       = event.Jet.selected_lowpt & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['M'])
-    # event['nJet_tagged_lowpt'] = ak.num(event.Jet[event.Jet.tagged_lowpt])
-    # event['tagJet_lowpt'] = event.Jet[event.Jet.tagged_lowpt]
-    # event['lowpt_fourTag']  = (event['nJet_tagged']==3) & (event['nJet_tagged_lowpt'] >= 0)
-    # event['lowpt_threeTag'] = event.threeTag & ~event.lowpt_fourTag
+    if run_lowpt_selection:
+        event['Jet', 'selected_lowpt'] = (event.Jet.pt >= 15) & (np.abs(event.Jet.eta) <= 2.4) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned & ~event.Jet.selected
+        event['lowptJet'] = event.Jet[event.Jet.selected_lowpt]
+        event['Jet', 'tagged_lowpt'] = event.Jet.selected_lowpt & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['M'])
+        event['nJet_tagged_lowpt'] = ak.num(event.Jet[event.Jet.tagged_lowpt])
+        event['tagJet_lowpt'] = event.Jet[event.Jet.tagged_lowpt]
+        event['lowpt_fourTag']  = (event['nJet_tagged']==3) & (event['nJet_tagged_lowpt'] >= 0)
+        event['lowpt_threeTag'] = event.threeTag & ~event.lowpt_fourTag
 
 
     # Only need 30 GeV jets for signal systematics

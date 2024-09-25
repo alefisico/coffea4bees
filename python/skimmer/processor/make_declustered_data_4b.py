@@ -12,7 +12,7 @@ from analysis.helpers.event_weights import add_weights, add_btagweights
 
 from coffea.analysis_tools import Weights, PackedSelection
 import numpy as np
-from analysis.helpers.common import init_jet_factory, update_events
+from analysis.helpers.common import apply_jerc_corrections, update_events
 from copy import copy
 import logging
 import awkward as ak
@@ -109,10 +109,11 @@ class DeClusterer(PicoAOD):
         # Calculate and apply Jet Energy Calibration
         #
         if do_jet_calibration:
-            juncWS = [ self.corrections_metadata[year]["JERC"][0].replace("STEP", istep)
-                       for istep in ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"] ] + self.corrections_metadata[year]["JERC"][2:]
-
-            jets = init_jet_factory(juncWS, event, isMC)
+            jets = apply_jerc_corrections(event, 
+                                    corrections_metadata=self.corrections_metadata[year], 
+                                    isMC=isMC,
+                                    dataset=dataset
+                                    )
         else:
             jets = event.Jet
 
