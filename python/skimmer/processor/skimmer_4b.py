@@ -9,9 +9,11 @@ import logging
 import awkward as ak
 
 class Skimmer(PicoAOD):
-    def __init__(self, loosePtForSkim=False, *args, **kwargs):
+    def __init__(self, loosePtForSkim=False, skim4b=False, *args, **kwargs):
+        kwargs["pico_base_name"] = f'picoAOD_fourTag'
         super().__init__(*args, **kwargs)
         self.loosePtForSkim = loosePtForSkim
+        self.skim4b = skim4b
         self.corrections_metadata = yaml.safe_load(open('analysis/metadata/corrections.yml', 'r'))
         self.cutFlowCuts = [
             "all",
@@ -74,6 +76,8 @@ class Skimmer(PicoAOD):
         if self.loosePtForSkim:
             selections.add( "passPreSel_lowpt_forskim",  event.passPreSel_lowpt_forskim)
         selections.add( "passPreSel",    event.passPreSel)
+        if self.skim4b:
+            selections.add( "passFourTag",    event.fourTag)
 
         event["weight"] = weights.weight()
 
@@ -85,6 +89,9 @@ class Skimmer(PicoAOD):
         else:
             all_cuts = ["passNoiseFilter", "passHLT", "passJetMult", "passPreSel"]
 
+        if self.skim4b:
+            all_cuts.append("passFourTag")
+
         for cut in all_cuts:
             cumulative_cuts.append(cut)
             self._cutFlow.fill( cut, event[selections.all(*cumulative_cuts)], allTag=True )
@@ -93,6 +100,11 @@ class Skimmer(PicoAOD):
             selection = event.lumimask & event.passNoiseFilter & event.passJetMult_lowpt_forskim & event.passPreSel_lowpt_forskim
         else:
             selection = event.lumimask & event.passNoiseFilter & event.passJetMult & event.passPreSel
+
+        if self.skim4b:
+            selection = selection * event.fourTag
+
         if not isMC: selection = selection & event.passHLT
+
 
         return selection
