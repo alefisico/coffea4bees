@@ -174,7 +174,7 @@ class analysis(processor.ProcessorABC):
         #
         if config["do_jet_calibration"]:
             jets = apply_jerc_corrections(event,
-                                    corrections_metadata=self.corrections_metadata[self.year],
+                                    corrections_metadata=self.corrections_metadata[year],
                                     isMC=config["isMC"],
                                     run_systematics=False,
                                     dataset=dataset
