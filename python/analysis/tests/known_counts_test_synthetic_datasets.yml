@@ -11,11 +11,11 @@ counts4:
     syn_v0_UL18:
         passJetMult: 128.0
         passPreSel: 128.0
-        passDiJetMass: 48.0
-        SR: 17.0
-        SB: 31.0
-        passSvB: 2.0
-        failSvB: 90.0
+        passDiJetMass: 51.0
+        SR: 19.0
+        SB: 32.0
+        passSvB: 0.0
+        failSvB: 88.0
 
 
 
@@ -53,11 +53,11 @@ counts4_unit:
     syn_v0_UL18:
         passJetMult: 128.0
         passPreSel: 128.0
-        passDiJetMass: 48.0
-        SR: 17.0
-        SB: 31.0
-        passSvB: 2.0
-        failSvB: 90.0
+        passDiJetMass: 51.0
+        SR: 19.0
+        SB: 32.0
+        passSvB: 0.0
+        failSvB: 88.0
 
 
 
