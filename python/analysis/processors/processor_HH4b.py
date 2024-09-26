@@ -47,7 +47,6 @@ from coffea.util import load
 NanoAODSchema.warn_missing_crossrefs = False
 warnings.filterwarnings("ignore")
 
-
 class analysis(processor.ProcessorABC):
     def __init__(
         self,
@@ -86,7 +85,7 @@ class analysis(processor.ProcessorABC):
         self.run_SvB = run_SvB
         self.fill_histograms = fill_histograms
         self.apply_boosted_veto = apply_boosted_veto
-        if SvB or SvB_MA:  # import torch on demand
+        if SvB or SvB_MA: # import torch on demand
             from analysis.helpers.networks import HCREnsemble
         self.classifier_SvB = HCREnsemble(SvB) if SvB else None
         self.classifier_SvB_MA = HCREnsemble(SvB_MA) if SvB_MA else None
@@ -177,9 +176,7 @@ class analysis(processor.ProcessorABC):
                 event["FvT"] = getattr( NanoEventsFactory.from_root( f'{event.metadata["FvT_files"][0]}', entry_start=self.estart, entry_stop=self.estop, schemaclass=FriendTreeSchema, ).events(),
                                         event.metadata["FvT_names"][0], )
 
-                event["FvT", "FvT"] = getattr(
-                    event["FvT"], event.metadata["FvT_names"][0]
-                )
+                event["FvT", "FvT"] = getattr( event["FvT"], event.metadata["FvT_names"][0] )
 
                 #
                 # Dummies
@@ -188,9 +185,7 @@ class analysis(processor.ProcessorABC):
                 event["FvT", "q_1324"] = np.full(len(event), -1, dtype=int)
                 event["FvT", "q_1423"] = np.full(len(event), -1, dtype=int)
 
-                for _FvT_name, _FvT_file in zip(
-                    event.metadata["FvT_names"], event.metadata["FvT_files"]
-                ):
+                for _FvT_name, _FvT_file in zip( event.metadata["FvT_names"], event.metadata["FvT_files"] ):
 
                     event[_FvT_name] = getattr( NanoEventsFactory.from_root( f"{_FvT_file}", entry_start=self.estart, entry_stop=self.estop, schemaclass=FriendTreeSchema, ).events(),
                                                 _FvT_name, )
@@ -238,11 +233,7 @@ class analysis(processor.ProcessorABC):
             #
             # Load the different JCMs
             #
-            JCM_array = TreeReader(
-                lambda x: [
-                    s for s in x if s.startswith("pseudoTagWeight_3bDvTMix4bDvT_v")
-                ]
-            ).arrays(Chunk.from_coffea_events(event))
+            JCM_array = TreeReader( lambda x: [ s for s in x if s.startswith("pseudoTagWeight_3bDvTMix4bDvT_v") ] ).arrays(Chunk.from_coffea_events(event))
 
             for _JCM_load in event.metadata["JCM_loads"]:
                 event[_JCM_load] = JCM_array[_JCM_load]
@@ -335,74 +326,18 @@ class analysis(processor.ProcessorABC):
             }
 
             self._cutFlow = cutFlow(self.cutFlowCuts)
-            self._cutFlow.fill(
-                "all", event[selections.require(lumimask=True)], allTag=True
-            )
-            self._cutFlow.fill(
-                "all_woTrig",
-                event[selections.require(lumimask=True)],
-                allTag=True,
-                wOverride=np.sum(
-                    weights.partial_weight(
-                        exclude=["CMS_bbbb_resolved_ggf_triggerEffSF"]
-                    )[selections.require(lumimask=True)]
-                ),
-            )
-            self._cutFlow.fill(
-                "passNoiseFilter",
-                event[selections.require(lumimask=True, passNoiseFilter=True)],
-                allTag=True,
-            )
-            self._cutFlow.fill(
-                "passNoiseFilter_woTrig",
-                event[selections.require(lumimask=True, passNoiseFilter=True)],
-                allTag=True,
-                wOverride=np.sum(
-                    weights.partial_weight(
-                        exclude=["CMS_bbbb_resolved_ggf_triggerEffSF"]
-                    )[selections.require(lumimask=True, passNoiseFilter=True)]
-                ),
-            )
-            self._cutFlow.fill(
-                "passHLT",
-                event[
-                    selections.require(
-                        lumimask=True, passNoiseFilter=True, passHLT=True
-                    )
-                ],
-                allTag=True,
-            )
-            self._cutFlow.fill(
-                "passHLT_woTrig",
-                event[
-                    selections.require(
-                        lumimask=True, passNoiseFilter=True, passHLT=True
-                    )
-                ],
-                allTag=True,
-                wOverride=np.sum(
-                    weights.partial_weight(
-                        exclude=["CMS_bbbb_resolved_ggf_triggerEffSF"]
-                    )[
-                        selections.require(
-                            lumimask=True, passNoiseFilter=True, passHLT=True
-                        )
-                    ]
-                ),
-            )
-            self._cutFlow.fill(
-                "passJetMult", event[selections.all(*allcuts)], allTag=True
-            )
-            self._cutFlow.fill(
-                "passJetMult_woTrig",
-                event[selections.all(*allcuts)],
-                allTag=True,
-                wOverride=np.sum(
-                    weights.partial_weight(
-                        exclude=["CMS_bbbb_resolved_ggf_triggerEffSF"]
-                    )[selections.all(*allcuts)]
-                ),
-            )
+            self._cutFlow.fill( "all", event[selections.require(lumimask=True)], allTag=True)
+            self._cutFlow.fill( "all_woTrig", event[selections.require(lumimask=True)], allTag=True,
+                               wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[selections.require(lumimask=True)] ))
+            self._cutFlow.fill( "passNoiseFilter", event[selections.require(lumimask=True, passNoiseFilter=True)], allTag=True)
+            self._cutFlow.fill( "passNoiseFilter_woTrig", event[selections.require(lumimask=True, passNoiseFilter=True)], allTag=True,
+                               wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[selections.require(lumimask=True, passNoiseFilter=True)] ))
+            self._cutFlow.fill( "passHLT", event[ selections.require( lumimask=True, passNoiseFilter=True, passHLT=True ) ], allTag=True, )
+            self._cutFlow.fill( "passHLT_woTrig", event[ selections.require( lumimask=True, passNoiseFilter=True, passHLT=True ) ], allTag=True,
+                               wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[selections.require(lumimask=True, passNoiseFilter=True, passHLT=True)] ))
+            self._cutFlow.fill( "passJetMult", event[ selections.all(*allcuts)], allTag=True )
+            self._cutFlow.fill( "passJetMult_woTrig", event[ selections.all(*allcuts)], allTag=True,
+                               wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[selections.all(*allcuts)] ))
 
         #
         # Calculate and apply btag scale factors
@@ -419,19 +354,9 @@ class analysis(processor.ProcessorABC):
             logging.debug( f"Btag weight {weights.partial_weight(include=['CMS_btag'])[:10]}\n" )
             event["weight"] = weights.weight()
             if not shift_name:
-                self._cutFlow.fill(
-                    "passJetMult_btagSF", event[selections.all(*allcuts)], allTag=True
-                )
-                self._cutFlow.fill(
-                    "passJetMult_btagSF_woTrig",
-                    event[selections.all(*allcuts)],
-                    allTag=True,
-                    wOverride=np.sum(
-                        weights.partial_weight(
-                            exclude=["CMS_bbbb_resolved_ggf_triggerEffSF"]
-                        )[selections.all(*allcuts)]
-                    ),
-                )
+                self._cutFlow.fill( "passJetMult_btagSF", event[selections.all(*allcuts)], allTag=True )
+                self._cutFlow.fill( "passJetMult_btagSF_woTrig", event[selections.all(*allcuts)], allTag=True,
+                               wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[selections.all(*allcuts)] ))
 
         #
         # Preselection: keep only three or four tag events
