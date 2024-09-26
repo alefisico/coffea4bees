@@ -245,3 +245,8 @@ python/skimmer/metadata/picoaod_datasets_declustered_data_UL18.yml
 python/skimmer/metadata/picoaod_datasets_declustered_test_UL18.yml
 python/skimmer/metadata/picoaod_datasets_declustered_test_UL18_CI.yml
 python/skimmer/metadata/tmp.yml
+
+*/*/.DS_Store
+python/myPyPlotEnv/
+python/*tex
+python/Makefile
