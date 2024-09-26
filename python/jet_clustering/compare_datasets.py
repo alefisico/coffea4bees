@@ -82,14 +82,16 @@ def plotCut(args):
     #
     # Top cand
     #
-    for v in ["top_cand.xW", "xW",  "xbW", "top_cand.xWt", "top_cand.xWbW", "top_cand.xbW", "top_cand.rWbW",
-              "top_cand.W.p.mass",  "top_cand.W.p.eta", "top_cand.W.p.pt",
-              "top_cand.W.l.pt", "top_cand.W.j.pt", "top_cand.b.pt",
-              "top_cand.W.l.phi", "top_cand.W.j.phi", "top_cand.b.phi",
-              "top_cand.W.l.eta", "top_cand.W.j.eta", "top_cand.b.eta",
-              "top_cand.t.mass",  "top_cand.t.eta", "top_cand.t.pt",
-              ]:
-        plot(v, **args)
+    doTopCands = True
+    if doTopCands:
+        for v in ["top_cand.xW", "xW",  "xbW", "top_cand.xWt", "top_cand.xWbW", "top_cand.xbW", "top_cand.rWbW",
+                  "top_cand.W.p.mass",  "top_cand.W.p.eta", "top_cand.W.p.pt",
+                  "top_cand.W.l.pt", "top_cand.W.j.pt", "top_cand.b.pt",
+                  "top_cand.W.l.phi", "top_cand.W.j.phi", "top_cand.b.phi",
+                  "top_cand.W.l.eta", "top_cand.W.j.eta", "top_cand.b.eta",
+                  "top_cand.t.mass",  "top_cand.t.eta", "top_cand.t.pt",
+                  ]:
+            plot(v, **args)
 
     #
     #  Event Level
@@ -101,21 +103,20 @@ def plotCut(args):
     plot("hT", **args, yscale="linear")
     plot("hT_selected", **args, yscale="linear")
 
+    plot("SvB_MA.ptt", **args, yscale="log")
+    plot("SvB_MA.tt_vs_mj", **args, yscale="log")
+    plot("SvB.tt_vs_mj", **args, yscale="log")
+    plot("SvB.ptt", **args, yscale="log")
+
+
     args["rebin"] = 4
     plot("SvB_MA.ps_zh", **args, yscale="log")
     plot("SvB_MA.ps_zz", **args, yscale="log")
     plot("SvB_MA.ps_hh", **args, yscale="log")
-    plot("SvB_MA.ptt", **args, yscale="log")
-    plot("SvB_MA.tt_vs_mj", **args, yscale="log")
     plot("SvB_MA.ps_hh", **args, yscale="linear")
-    #plot("SvB_MA.ps_hh", **args, yscale="linear")
-
     plot("SvB.ps_zh", **args, yscale="log")
     plot("SvB.ps_zz", **args, yscale="log")
     plot("SvB.ps_hh", **args, yscale="log")
-    plot("SvB.tt_vs_mj", **args, yscale="log")
-    plot("SvB.ptt", **args, yscale="log")
-
     plot("SvB.ps_hh", **args, yscale="linear")
 
 
@@ -133,8 +134,8 @@ def doPlots(doSignal=False, debug=False):
             "cut":"passPreSel",
             "doRatio":1,
             "rebin":1,
-            "process":"data",
-            "histtype":"step",
+            #"process":["data","syn_v0"],
+            #"histtype":"step",
             }
 
     if doSignal:
@@ -156,7 +157,7 @@ if __name__ == '__main__':
 
     cfg.plotConfig = load_config(args.metadata)
     cfg.outputFolder = args.outputFolder
-
+    cfg.combine_input_files = args.combine_input_files
     cfg.plotModifiers = yaml.safe_load(open(args.modifiers, 'r'))
 
     if cfg.outputFolder:

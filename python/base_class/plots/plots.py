@@ -14,9 +14,9 @@ import inspect
 
 _phi = (1 + np.sqrt(5)) / 2
 _epsilon = 0.001
-_colors = ["xkcd:blue", "xkcd:red", "xkcd:off green",
+_colors = ["xkcd:black", "xkcd:blue", "xkcd:red", "xkcd:off green",
            "xkcd:orange", "xkcd:violet", "xkcd:grey",
-           "xkcd:black", "xkcd:pink" , "xkcd:pale blue"]
+           "xkcd:pink" , "xkcd:pale blue"]
 
 
 def load_config(metadata):
@@ -563,7 +563,7 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
                 print_list_debug_info(_proc_conf["process"], _proc_conf.get("tag"), cut, region)
 
             _process_config = copy.copy(_proc_conf)
-            _process_config["fillcolor"] = _proc_conf.get("fillcolor", None).replace("yellow", "orange")
+            _process_config["fillcolor"] = _proc_conf.get("fillcolor", None)#.replace("yellow", "orange")
             _process_config["histtype"]  = kwargs.get("histtype","errorbar")
 
             var_to_plot = var_over_ride.get(_proc_conf["process"], var)
