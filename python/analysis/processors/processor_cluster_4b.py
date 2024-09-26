@@ -12,6 +12,7 @@ from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
 from coffea import processor
 from coffea.util import load
 from coffea.analysis_tools import Weights, PackedSelection
+from analysis.helpers.processor_config import processor_config
 
 from base_class.hist import Collection, Fill
 from base_class.physics.object import LorentzVector, Jet, Muon, Elec
@@ -24,9 +25,12 @@ from analysis.helpers.networks import HCREnsemble
 from analysis.helpers.cutflow import cutFlow
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
 
-from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
-from analysis.helpers.common import init_jet_factory, apply_btag_sf, update_events
 
+from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
+from analysis.helpers.common import apply_jerc_corrections, apply_btag_sf, update_events
+from analysis.helpers.event_weights import add_weights
+
+from analysis.helpers.SvB_helpers import setSvBVars, subtract_ttbar_with_SvB
 from analysis.helpers.selection_basic_4b import (
     apply_event_selection_4b,
     apply_object_selection_4b
@@ -43,42 +47,6 @@ NanoAODSchema.warn_missing_crossrefs = False
 warnings.filterwarnings("ignore")
 
 
-
-def setSvBVars(SvBName, event):
-
-    event[SvBName, "passMinPs"] = ( (getattr(event, SvBName).pzz > 0.01)
-                                    | (getattr(event, SvBName).pzh > 0.01)
-                                    | (getattr(event, SvBName).phh > 0.01) )
-
-    event[SvBName, "zz"] = ( getattr(event, SvBName).pzz >  getattr(event, SvBName).pzh ) & (getattr(event, SvBName).pzz > getattr(event, SvBName).phh)
-
-    event[SvBName, "zh"] = ( getattr(event, SvBName).pzh >  getattr(event, SvBName).pzz ) & (getattr(event, SvBName).pzh > getattr(event, SvBName).phh)
-
-    event[SvBName, "hh"] = ( getattr(event, SvBName).phh >= getattr(event, SvBName).pzz ) & (getattr(event, SvBName).phh >= getattr(event, SvBName).pzh)
-
-    event[SvBName, "tt_vs_mj"] = ( getattr(event, SvBName).ptt / (getattr(event, SvBName).ptt + getattr(event, SvBName).pmj) )
-
-
-    #
-    #  Set ps_{bb}
-    #
-    this_ps_zz = np.full(len(event), -1, dtype=float)
-    this_ps_zz[getattr(event, SvBName).zz] = getattr(event, SvBName).ps[ getattr(event, SvBName).zz ]
-
-    this_ps_zz[getattr(event, SvBName).passMinPs == False] = -2
-    event[SvBName, "ps_zz"] = this_ps_zz
-
-    this_ps_zh = np.full(len(event), -1, dtype=float)
-    this_ps_zh[getattr(event, SvBName).zh] = getattr(event, SvBName).ps[ getattr(event, SvBName).zh ]
-
-    this_ps_zh[getattr(event, SvBName).passMinPs == False] = -2
-    event[SvBName, "ps_zh"] = this_ps_zh
-
-    this_ps_hh = np.full(len(event), -1, dtype=float)
-    this_ps_hh[getattr(event, SvBName).hh] = getattr(event, SvBName).ps[ getattr(event, SvBName).hh ]
-
-    this_ps_hh[getattr(event, SvBName).passMinPs == False] = -2
-    event[SvBName, "ps_hh"] = this_ps_hh
 
 
 
@@ -135,14 +103,16 @@ class analysis(processor.ProcessorABC):
         year    = event.metadata['year']
         year_label = self.corrections_metadata[year]['year_label']
         processName = event.metadata['processName']
-        isMC    = True if event.run[0] == 1 else False
         lumi    = event.metadata.get('lumi',    1.0)
         xs      = event.metadata.get('xs',      1.0)
         kFactor = event.metadata.get('kFactor', 1.0)
         nEvent = len(event)
 
-        logging.debug(fname)
-        logging.debug(f'{chunk}Process {nEvent} Events')
+        #
+        # Set process and datset dependent flags
+        #
+        config = processor_config(processName, dataset, event)
+        logging.debug(f'{chunk} config={config}, for file {fname}\n')
 
         #
         # Reading SvB friend trees (for TTbar subtraction)
@@ -175,30 +145,53 @@ class analysis(processor.ProcessorABC):
         #
         # Event selection
         #
-        event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year] )
+        event = apply_event_selection_4b( event, self.corrections_metadata[year], cut_on_lumimask=config["cut_on_lumimask"])
 
-        juncWS = [ self.corrections_metadata[year]["JERC"][0].replace("STEP", istep)
-                   for istep in ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"] ] #+ self.corrections_metadata[year]["JERC"][2:]
 
-        jets = init_jet_factory(juncWS, event, isMC)
+        ### target is for new friend trees
+        target = Chunk.from_coffea_events(event)
 
-        shifts = [({"Jet": jets}, None)]
+        ### adds all the event mc weights and 1 for data
+        weights, list_weight_names = add_weights( event, target=target,
+                                                  do_MC_weights=config["do_MC_weights"],
+                                                  dataset=dataset,
+                                                  year_label=year_label,
+                                                  estart=estart,
+                                                  estop=estop,
+                                                  friend_trigWeight=None,
+                                                  corrections_metadata=self.corrections_metadata[year],
+                                                  apply_trigWeight=True,
+                                                  isTTForMixed=config["isTTForMixed"]
+                                                 )
 
-        weights = Weights(len(event), storeIndividual=True)
-        list_weight_names = []
 
         logging.debug(f"weights event {weights.weight()[:10]}")
         logging.debug(f"Weight Statistics {weights.weightStatistics}")
 
+
+        #
+        # Calculate and apply Jet Energy Calibration
+        #
+        if config["do_jet_calibration"]:
+            jets = apply_jerc_corrections(event,
+                                    corrections_metadata=self.corrections_metadata[year],
+                                    isMC=config["isMC"],
+                                    run_systematics=False,
+                                    dataset=dataset
+                                    )
+        else:
+            jets = event.Jet
+
+        event = update_events(event, {"Jet": jets})
+
+
         # Apply object selection (function does not remove events, adds content to objects)
-        event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year] )
-
-
+        event = apply_object_selection_4b( event, self.corrections_metadata[year], doLeptonRemoval=config["do_lepton_jet_cleaning"], override_selected_with_flavor_bit=config["override_selected_with_flavor_bit"] )
 
         selections = PackedSelection()
         selections.add( "lumimask", event.lumimask)
         selections.add( "passNoiseFilter", event.passNoiseFilter)
-        selections.add( "passHLT", ( np.full(len(event), True) if isMC else event.passHLT ) )
+        selections.add( "passHLT", ( event.passHLT if config["cut_on_HLT_decision"] else np.full(len(event), True)  ) )
         selections.add( 'passJetMult', event.passJetMult )
         allcuts = [ 'lumimask', 'passNoiseFilter', 'passHLT', 'passJetMult' ]
         event['weight'] = weights.weight()   ### this is for _cutflow
@@ -211,7 +204,7 @@ class analysis(processor.ProcessorABC):
         processOutput['nEvent'] = {}
         processOutput['nEvent'][event.metadata['dataset']] = {
             'nEvent' : nEvent,
-            'genWeights': np.sum(event.genWeight) if isMC else nEvent
+            'genWeights': np.sum(event.genWeight) if config["isMC"] else nEvent
 
         }
 
@@ -251,12 +244,14 @@ class analysis(processor.ProcessorABC):
 
         ## TTbar subtractions
         if self.subtract_ttbar_with_weights:
-            ttbar_rand = np.random.uniform(low=0, high=1.0, size=len(selev))
+
+            pass_ttbar_filter_selev = subtract_ttbar_with_SvB(selev, dataset, year)
+
             pass_ttbar_filter = np.full( len(event), True)
-            pass_ttbar_filter[ selections.all(*allcuts) ] = (ttbar_rand > selev.SvB_MA.tt_vs_mj)
+            pass_ttbar_filter[ selections.all(*allcuts) ] = pass_ttbar_filter_selev
             selections.add( 'pass_ttbar_filter', pass_ttbar_filter )
             allcuts.append("pass_ttbar_filter")
-            selev = selev[(ttbar_rand > selev.SvB_MA.tt_vs_mj)]
+            selev = selev[pass_ttbar_filter_selev]
 
 
         # logging.info( f"\n {chunk} Event:  nSelJets {selev['nJet_selected']}\n")
@@ -275,7 +270,7 @@ class analysis(processor.ProcessorABC):
         canJet["btagDeepFlavB"] = selev.Jet.btagDeepFlavB[canJet_idx]
         canJet["puId"] = selev.Jet.puId[canJet_idx]
         canJet["jetId"] = selev.Jet.puId[canJet_idx]
-        if isMC:
+        if config["isMC"]:
             canJet["hadronFlavour"] = selev.Jet.hadronFlavour[canJet_idx]
         canJet["calibration"] = selev.Jet.calibration[canJet_idx]
 
@@ -294,7 +289,6 @@ class analysis(processor.ProcessorABC):
         selev["canJet2"] = canJet[:, 2]
         selev["canJet3"] = canJet[:, 3]
 
-        # selev['v4j', 'n'] = 1
         # print(selev.v4j.n)
         # selev['Jet', 'canJet'] = False
         notCanJet = selev.Jet[notCanJet_idx]
@@ -305,10 +299,8 @@ class analysis(processor.ProcessorABC):
         selev["notCanJet_coffea"] = notCanJet
 
         #
-        # Build diJets, indexed by diJet[event,pairing,0/1]
+        # Do the Clustering
         #
-        #canJet = selev["canJet"]
-
         canJet["jet_flavor"] = "b"
         notCanJet["jet_flavor"] = "j"
 
@@ -329,7 +321,6 @@ class analysis(processor.ProcessorABC):
             print(f'{chunk}\n\n')
 
 
-
         #clustered_jets, clustered_splittings = cluster_bs_fast(jets_for_clustering, debug=False)
         clustered_jets, clustered_splittings = cluster_bs(jets_for_clustering, debug=False)
         compute_decluster_variables(clustered_splittings)
@@ -341,7 +332,6 @@ class analysis(processor.ProcessorABC):
         split_name_flat = [get_splitting_name(i) for i in ak.flatten(clustered_splittings.jet_flavor)]
         split_name = ak.unflatten(split_name_flat, ak.num(clustered_splittings))
         clustered_splittings["splitting_name"] = split_name
-
 
 
         #
@@ -391,34 +381,8 @@ class analysis(processor.ProcessorABC):
         #     print(f'{chunk}\n\n')
 
 
-        dumpTestVectors_bbj = False
-        if dumpTestVectors_bbj:
-            # bbj_mask = ak.num(selev["splitting_b(bj)"]) == 1
-            # bbj_partA = selev["splitting_b(bj)"][bbj_mask].part_A
-            # bbj_partB = selev["splitting_b(bj)"][bbj_mask].part_B
-            #
-            # if ak.sum(ak.num(selev["splitting_b(bj)"])) > 4:
-            #     print(f'{chunk}\n\n')
-            #     print(f'{chunk} self.input_jet_pt      = {[bbj_partA[iE].pt.tolist()         + bbj_partB[iE].pt.tolist()         for iE in range(5)]}')
-            #     print(f'{chunk} self.input_jet_eta     = {[bbj_partA[iE].eta.tolist()        + bbj_partB[iE].eta.tolist()        for iE in range(5)]}')
-            #     print(f'{chunk} self.input_jet_phi     = {[bbj_partA[iE].phi.tolist()        + bbj_partB[iE].phi.tolist()        for iE in range(5)]}')
-            #     print(f'{chunk} self.input_jet_mass    = {[bbj_partA[iE].mass.tolist()       + bbj_partB[iE].mass.tolist()       for iE in range(5)]}')
-            #     print(f'{chunk} self.input_jet_flavor  = {[bbj_partA[iE].jet_flavor.tolist() + bbj_partB[iE].jet_flavor.tolist() for iE in range(5)]}')
-            #     print(f'{chunk}\n\n')
-
-            print(f'{chunk} num splitting {ak.num(selev["splitting_b(bj)"])}')
-            print(f'{chunk} mask {ak.num(selev["splitting_b(bj)"]) > 0}')
-            bbj_mask = ak.num(selev["splitting_b(bj)"]) > 0
-            jets_for_clustering_bbj = jets_for_clustering[bbj_mask]
-            print(f'{chunk}\n\n')
-            print(f'{chunk} self.input_jet_pt      = {[jets_for_clustering_bbj[iE].pt.tolist()         for iE in range(10)]}')
-            print(f'{chunk} self.input_jet_eta     = {[jets_for_clustering_bbj[iE].eta.tolist()        for iE in range(10)]}')
-            print(f'{chunk} self.input_jet_phi     = {[jets_for_clustering_bbj[iE].phi.tolist()        for iE in range(10)]}')
-            print(f'{chunk} self.input_jet_mass    = {[jets_for_clustering_bbj[iE].mass.tolist()       for iE in range(10)]}')
-            print(f'{chunk} self.input_jet_flavor  = {[jets_for_clustering_bbj[iE].jet_flavor.tolist() for iE in range(10)]}')
-            print(f'{chunk}\n\n')
-
-
+        # from jet_clustering.dumpTestVectors   import dumpTestVectors_bbj
+        # dumpTestVectors_bbj(chunk, selev, jets_for_clustering)
 
         #
         # writing out bb splitting for Chris Berman
@@ -454,19 +418,18 @@ class analysis(processor.ProcessorABC):
 
             declustered_jets = make_synthetic_event(clustered_jets, self.clustering_pdfs)
 
+            declustered_jets = declustered_jets[ak.argsort(declustered_jets.pt, axis=1, ascending=False)]
+
             is_b_mask = declustered_jets.jet_flavor == "b"
             canJet_re = declustered_jets[is_b_mask]
 
             canJet_re["puId"] = 7
             canJet_re["jetId"] = 7 # selev.Jet.puId[canJet_idx]
-            canJet_re["btagDeepFlavB"] = 1.0 # Set bs to 1 and ls to 0
 
 
             notCanJet_re = declustered_jets[~is_b_mask]
             notCanJet_re["puId"] = 7
             notCanJet_re["jetId"] = 7 # selev.Jet.puId[canJet_idx]
-            notCanJet_re["btagDeepFlavB"] = 0 # Set bs to 1 and ls to 0
-
 
             selev["canJet_re"] = canJet_re
             selev["notCanJet_coffea_re"] = notCanJet_re
@@ -474,7 +437,7 @@ class analysis(processor.ProcessorABC):
             #
             #  Recluster
             #
-            jets_for_clustering = ak.concatenate([canJet_re, notCanJet_sel_re], axis=1)
+            jets_for_clustering = ak.concatenate([canJet_re, notCanJet_re], axis=1)
             jets_for_clustering = jets_for_clustering[ak.argsort(jets_for_clustering.pt, axis=1, ascending=False)]
 
             clustered_jets_reclustered, clustered_splittings_reclustered = cluster_bs(jets_for_clustering, debug=False)
@@ -557,12 +520,6 @@ class analysis(processor.ProcessorABC):
                            region=[2, 1, 0],  # SR / SB / Other
                            **dict((s, ...) for s in self.histCuts)
                            )
-
-        #
-        # To Add
-        #
-        # fill += hist.add( "nPVs", (101, -0.5, 100.5, ("PV.npvs", "Number of Primary Vertices")) )
-        # fill += hist.add( "nPVsGood", (101, -0.5, 100.5, ("PV.npvsGood", "Number of Good Primary Vertices")), )
 
         #
         # Jets

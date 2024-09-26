@@ -1,0 +1,82 @@
+from collections import defaultdict
+
+def processor_config(processName, dataset, event):
+
+    config = defaultdict(lambda : False)
+
+    #
+    # Set process type flags
+    #
+    config["isMC"]     = False if "data"    in processName else True
+    config["isPSData"] = True  if "ps_data" in processName else False
+    config["isMixedData"]    = not (dataset.find("mix_v") == -1)
+    if config["isMixedData"]:
+        config["isMC"] = False
+
+    config["isSyntheticData"]  = not (dataset.find("syn_v") == -1)
+    if config["isSyntheticData"]:
+        config["isMC"] = False
+
+    config["isSyntheticMC"]  = not (dataset.find("synthetic_mc") == -1)
+    if config["isSyntheticMC"]:
+        config["isMC"] = False
+
+    config["isDataForMixed"] = not (dataset.find("data_3b_for_mixed") == -1)
+    config["isTTForMixed"]   = not (dataset.find("TTTo") == -1) and not ( dataset.find("_for_mixed") == -1 )
+
+
+    #
+    #  Nominal config (...what we would do for data)
+    #
+    config["cut_on_lumimask"]         = True
+    config["cut_on_HLT_decision"]     = True
+    config["do_MC_weights"]           = False
+    config["do_jet_calibration"]      = True
+    config["do_lepton_jet_cleaning"]  = True
+    config["override_selected_with_flavor_bit"]  = False
+    config["use_prestored_btag_SF"]  = False
+
+    if config["isMC"]:
+        config["cut_on_lumimask"]     = False
+        config["cut_on_HLT_decision"] = False
+        config["do_jet_calibration"]  = True
+        config["do_MC_weights"]       = True
+
+    if config["isSyntheticData"]:
+        config["do_lepton_jet_cleaning"]  = False
+        config["override_selected_with_flavor_bit"]  = True
+        config["isPSData"] = True if event.run[0] == 1 else False
+        config["do_jet_calibration"]      = False
+
+    if config["isSyntheticMC"]:
+        config["cut_on_lumimask"]         = False
+        config["cut_on_HLT_decision"]     = False
+        config["do_MC_weights"]           = True
+        config["do_jet_calibration"]     = False
+        config["do_lepton_jet_cleaning"]  = False
+        config["override_selected_with_flavor_bit"]  = True
+        config["use_prestored_btag_SF"]  = True
+
+    if config["isPSData"]:
+        config["cut_on_lumimask"]     = False
+        config["cut_on_HLT_decision"] = False
+        config["do_jet_calibration"]  = False
+
+    if config["isMixedData"]:
+        config["cut_on_lumimask"]     = False
+        config["cut_on_HLT_decision"] = False
+        config["do_lepton_jet_cleaning"]  = False
+        config["do_jet_calibration"]  = False
+
+    if config["isTTForMixed"]:
+        config["cut_on_lumimask"]        = False
+        config["cut_on_HLT_decision"]    = False
+        config["do_lepton_jet_cleaning"] = False
+        config["do_jet_calibration"]     = False
+
+    if config["isDataForMixed"]:
+        config["cut_on_HLT_decision"] = False
+        config["do_lepton_jet_cleaning"]  = False
+        config["do_jet_calibration"]  = False
+
+    return config

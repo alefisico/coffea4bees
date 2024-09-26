@@ -19,6 +19,7 @@ from base_class.hist import Collection, Fill
 from base_class.hist import H, Template
 from base_class.physics.object import LorentzVector, Jet, Muon, Elec
 
+from analysis.helpers.processor_config import processor_config
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
 from analysis.helpers.cutflow import cutFlow
 from analysis.helpers.topCandReconstruction import find_tops, dumpTopCandidateTestVectors, buildTop
@@ -63,7 +64,7 @@ ak.behavior.update(vector.behavior)
 
 
 class analysis(processor.ProcessorABC):
-    def __init__(self, JCM='', threeTag = True, corrections_metadata='analysis/metadata/corrections.yml', run_systematics=[], SRno = '4'):
+    def __init__(self, JCM='', threeTag = True, corrections_metadata='analysis/metadata/corrections.yml', run_systematics=[], SRno = '4',make_classifier_input=None):
         logging.debug('\nInitialize Analysis Processor')
         self.cutFlowCuts = ["all", "passHLT", "passNoiseFilter", "passJetMult", "passJetMult_btagSF", "passPreSel"]
         self.histCuts = ['passPreSel']
@@ -92,12 +93,16 @@ class analysis(processor.ProcessorABC):
         year    = event.metadata['year']
         era     = event.metadata.get('era', '')
         processName = event.metadata['processName']
-        isMC    = True if event.run[0] == 1 else False
-        isMixedData = not (dataset.find("mix_v") == -1)
         lumi    = event.metadata.get('lumi',    1.0)
         xs      = event.metadata.get('xs',      1.0)
         kFactor = event.metadata.get('kFactor', 1.0)
         nEvent = len(event)
+
+        #
+        # Set process and datset dependent flags
+        #
+        config = processor_config(processName, dataset, event)
+        logging.debug(f'{chunk} config={config}, for file {fname}\n')
 
         processOutput = {}
         processOutput['nEvent'] = {}
@@ -113,8 +118,10 @@ class analysis(processor.ProcessorABC):
 
 
         if 'picoAOD_3b_wJCM_newSBDef' in fname:
-            fname_w3to4 = f"/smurthy/condor/unsupervised4b/randPair/w3to4hist/data20{year[2:4]}_picoAOD_3b_wJCM_newSBDef_w3to4_hist.root"
-            fname_wDtoM = f"/smurthy/condor/unsupervised4b/randPair/wDtoMwJMC/data20{year[2:4]}_picoAOD_3b_wJCM_newSBDef_wDtoM.root"
+            # fname_w3to4 = f"/smurthy/condor/unsupervised4b/randPair/w3to4hist/data20{year[2:4]}_picoAOD_3b_wJCM_newSBDef_w3to4_hist.root"
+            # fname_wDtoM = f"/smurthy/condor/unsupervised4b/randPair/wDtoMwJMC/data20{year[2:4]}_picoAOD_3b_wJCM_newSBDef_wDtoM.root"
+            fname_w3to4 = f"/smurthy/condor/unsup4b_coff/w3to4/data20{year[2:4]}_picoAOD_3b_wJCM_newSBDef_w3to4.root"
+            fname_wDtoM = f"/smurthy/condor/unsup4b_coff/wDtoM/data20{year[2:4]}_picoAOD_3b_wJCM_newSBDef_wDtoM.root"
             event['w3to4'] = NanoEventsFactory.from_root(f'{path}{fname_w3to4}',
                             entry_start=estart, entry_stop=estop, schemaclass=FriendTreeSchema).events().w3to4.w3to4
 
@@ -133,7 +140,7 @@ class analysis(processor.ProcessorABC):
 
         ##############################################
         ### general event weights
-        if isMC:
+        if config["isMC"]:
             ### genWeight
             with uproot.open(fname) as rfile:
                 Runs = rfile['Runs']
@@ -164,14 +171,14 @@ class analysis(processor.ProcessorABC):
         logging.debug(f"event['weight'] = {event.weight}")
 
         ### Event selection (function only adds flags, not remove events)
-        event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year])
+        event = apply_event_selection_4b( event, self.corrections_metadata[year], cut_on_lumimask=config["cut_on_lumimask"])
 
         self._cutFlow.fill("all",  event[event.lumimask], allTag=True)
         self._cutFlow.fill("passNoiseFilter",  event[ event.lumimask & event.passNoiseFilter], allTag=True)
         self._cutFlow.fill("passHLT",  event[ event.lumimask & event.passNoiseFilter & event.passHLT], allTag=True)
 
         ### Apply object selection (function does not remove events, adds content to objects)
-        event =  apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year], isMixedData=isMixedData  )
+        event =  apply_object_selection_4b( event, self.corrections_metadata[year], doLeptonRemoval=config["do_lepton_jet_cleaning"]  )
         self._cutFlow.fill("passJetMult",  event[ event.lumimask & event.passNoiseFilter & event.passHLT & event.passJetMult ], allTag=True)
 
         ### Filtering object and event selection
@@ -179,7 +186,7 @@ class analysis(processor.ProcessorABC):
 
 
         ##### Calculate and apply btag scale factors
-        if isMC:
+        if config["isMC"]:
             btagSF = correctionlib.CorrectionSet.from_file(self.corrections_metadata[year]['btagSF'])['deepJet_shape']
             btag_SF_weights = apply_btag_sf(selev.selJet,
                                             correction_file=self.corrections_metadata[year]['btagSF'],
@@ -220,10 +227,9 @@ class analysis(processor.ProcessorABC):
         canJet['btagDeepFlavB'] = selev.Jet.btagDeepFlavB[canJet_idx]
         canJet['puId'] = selev.Jet.puId[canJet_idx]
         canJet['jetId'] = selev.Jet.puId[canJet_idx]
-        if isMC:
+        if config["isMC"]:
             canJet['hadronFlavour'] = selev.Jet.hadronFlavour[canJet_idx]
-        if not isMixedData:
-            canJet['calibration'] = selev.Jet.calibration[canJet_idx]
+        canJet['calibration'] = selev.Jet.calibration[canJet_idx]
 
         ### pt sort canJets
         canJet = canJet[ak.argsort(canJet.pt, axis=1, ascending=False)]
@@ -321,8 +327,7 @@ class analysis(processor.ProcessorABC):
         ### sort the jets by btagging
         selev.selJet  = selev.selJet[ak.argsort(selev.selJet.btagDeepFlavB, axis=1, ascending=False)]
         top_cands     = find_tops(selev.selJet)
-        rec_top_cands = buildTop(selev.selJet, top_cands)
-        selev["top_cand"] = rec_top_cands[:, 0]
+        selev["top_cand"], _ = buildTop(selev.selJet, top_cands)
         selev["xbW_reco"] = selev.top_cand.xbW
         selev["xW_reco"]  = selev.top_cand.xW
         selev["delta_xbW"] = selev.xbW - selev.xbW_reco
@@ -365,9 +370,9 @@ class analysis(processor.ProcessorABC):
         fill += hist.add('hT_no3to4DtoM',          (100,  0,   1000,  ('hT',          'H_{T} [GeV}')), weight="wNo3to4DtoM")
         fill += hist.add('hT_selected_no3to4DtoM', (100,  0,   1000,  ('hT_selected', 'H_{T} (selected jets) [GeV}')), weight="wNo3to4DtoM")
         fill += LorentzVector.plot_pair(('v4j_no3to4DtoM'), 'v4j', skip=['n', 'dr', 'dphi', 'st'], bins={'mass': (120, 0, 1200)}, weight="wNo3to4DtoM")
-        fill += QuadJetHistsUnsup(('quadJet_selected_no3to4DtoM', 'Selected Quad Jet no3to4DtoM'), 'quadJet_selected', weight = "wNo3to4DtoM")  
-        
-        
+        fill += QuadJetHistsUnsup(('quadJet_selected_no3to4DtoM', 'Selected Quad Jet no3to4DtoM'), 'quadJet_selected', weight = "wNo3to4DtoM")
+
+
         fill += Jet.plot(('selJets', 'Selected Jets'),        'selJet',           skip=['deepjet_c'])
         fill += Jet.plot(('tagJets', 'Tag Jets'),             'tagJet',           skip=['deepjet_c'])
         fill += Jet.plot(('othJets', 'Other Jets'),           'notCanJet_coffea', skip=['deepjet_c'])

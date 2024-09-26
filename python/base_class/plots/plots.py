@@ -89,7 +89,7 @@ def _savefig(fig, var, *args):
         os.makedirs(outputPath)
 
     varStr = var if type(var) is str else "_vs_".join(var)
-    fig.savefig(outputPath + "/" + varStr.replace(".", '_') + ".pdf")
+    fig.savefig(outputPath + "/" + varStr.replace(".", '_').replace("/","_") + ".pdf")
     return
 
 
@@ -115,11 +115,13 @@ def get_label(default_str, override_list, i):
 #
 #  Get hist from input file(s)
 #
-def get_hist(cfg, config, var, region, cut, rebin, file_index=None, debug=False):
+def get_hist(cfg, config, var, region, cut, rebin, year, file_index=None, debug=False):
 
     codes = cfg.plotConfig["codes"]
 
-    year     = sum if config["year"] == "RunII" else config["year"]
+    if year == "RunII":
+        year     = sum
+
     tag_code = codes["tag"][config["tag"]]
 
     if debug:
@@ -131,7 +133,8 @@ def get_hist(cfg, config, var, region, cut, rebin, file_index=None, debug=False)
                  "tag":   hist.loc(tag_code),
                  }
 
-    if type(codes["region"][region]) is list:
+
+    if (not region  == "sum") and (type(codes["region"][region]) is list):
         region_dict = {"region":  [hist.loc(r) for r in codes["region"][region]]}
     else:
         if region == "sum":
@@ -333,6 +336,14 @@ def _draw_plot(hist_list, stack_dict, **kwargs):
 
     return
 
+def get_year_str(year):
+
+    if type(year) is list:
+        year_str = "_vs_".join(year)
+    else:
+        year_str = year.replace("UL", "20")
+    return year_str
+
 
 def _plot(hist_list, stack_dict, plotConfig, **kwargs):
     if kwargs.get("debug", False):
@@ -345,9 +356,11 @@ def _plot(hist_list, stack_dict, plotConfig, **kwargs):
 
     _draw_plot(hist_list, stack_dict, **kwargs)
 
+    year_str = get_year_str(year = kwargs.get('year',"RunII"))
+
     ax = fig.gca()
     hep.cms.label("Internal", data=True,
-                  year=kwargs['year'].replace("UL", "20"), loc=0, ax=ax)
+                  year=year_str, loc=0, ax=ax)
 
 
     return fig, ax
@@ -378,7 +391,7 @@ def _plot2d(hist, plotConfig, **kwargs):
     ax = fig.gca()
 
     hep.cms.label("Internal", data=True,
-                  year=kwargs['year'].replace("UL", "20"), loc=0, ax=ax)
+                  year=kwargs.get('year',"RunII").replace("UL", "20"), loc=0, ax=ax)
 
     return fig, ax
 
@@ -399,9 +412,11 @@ def _plot_ratio(hist_list, stack_dict, ratio_list, **kwargs):
     grid = fig.add_gridspec(2, 1, hspace=0.06, height_ratios=[3, 1],
                             left=0.1, right=0.95, top=0.95, bottom=0.1)
 
+    year_str = get_year_str(year = kwargs.get('year',"RunII"))
+
     main_ax = fig.add_subplot(grid[0])
     hep.cms.label("Internal", data=True,
-                  year=kwargs['year'].replace("UL", "20"), loc=0, ax=main_ax)
+                  year=year_str, loc=0, ax=main_ax)
 
     _draw_plot(hist_list, stack_dict, **kwargs)
 
@@ -452,6 +467,7 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
     rebin = kwargs.get("rebin", 1)
     var_over_ride = kwargs.get("var_over_ride", {})
     label_override = kwargs.get("labels", None)
+    year = kwargs.get("year", "RunII")
 
     #
     #  Unstacked hists
@@ -482,7 +498,7 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
             _process_config["histtype"]  = kwargs.get("histtype","errorbar")
 
             _hist = get_hist(cfg, _process_config,
-                             var=var_to_plot, region=region, cut=_cut, rebin=rebin,
+                             var=var_to_plot, region=region, cut=_cut, rebin=rebin, year=year,
                              debug=kwargs.get("debug", False))
 
             hists.append( (_hist, _process_config) )
@@ -502,7 +518,7 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
             _process_config["histtype"]  = kwargs.get("histtype","errorbar")
 
             _hist = get_hist(cfg, _process_config,
-                             var=var_to_plot, region=_reg, cut=cut, rebin=rebin,
+                             var=var_to_plot, region=_reg, cut=cut, rebin=rebin, year=year,
                              debug=kwargs.get("debug", False))
 
             hists.append( (_hist, _process_config) )
@@ -510,7 +526,7 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
     #
     #  input file list
     #
-    elif len(cfg.hists) > 1:
+    elif len(cfg.hists) > 1 and not cfg.combine_input_files:
         if kwargs.get("debug", False):
             print_list_debug_info(process, process_config.get("tag"), cut, region)
 
@@ -531,7 +547,7 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
             _process_config["histtype"]  = kwargs.get("histtype","errorbar")
 
             _hist = get_hist(cfg, _process_config,
-                             var=var_to_plot, region=region, cut=cut, rebin=rebin,
+                             var=var_to_plot, region=region, cut=cut, rebin=rebin, year=year,
                              file_index=iF,
                              debug=kwargs.get("debug", False))
 
@@ -553,7 +569,7 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
             var_to_plot = var_over_ride.get(_proc_conf["process"], var)
 
             _hist = get_hist(cfg, _process_config,
-                             var=var_to_plot, region=region, cut=cut, rebin=rebin,
+                             var=var_to_plot, region=region, cut=cut, rebin=rebin, year=year,
                              debug=kwargs.get("debug", False))
 
             hists.append( (_hist, _process_config) )
@@ -573,19 +589,35 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
             _process_config["histtype"]  = kwargs.get("histtype","errorbar")
 
             _hist = get_hist(cfg, _process_config,
-                             var=_var, region=region, cut=cut, rebin=rebin,
+                             var=_var, region=region, cut=cut, rebin=rebin, year=year,
                              debug=kwargs.get("debug", False))
 
             hists.append( (_hist, _process_config) )
 
+    #
+    #  year list
+    #
+    elif type(year) is list:
+        for iy, _year in enumerate(year):
+
+            if kwargs.get("debug", False):
+                print_list_debug_info(process, process_config.get("tag"), cut, region)
+
+            _process_config = copy.copy(process_config)
+            _process_config["fillcolor"] = _colors[iy]
+            _process_config["label"]     = get_label(f"{process_config['label']} { _year}", label_override, iy)
+            _process_config["histtype"]  = kwargs.get("histtype","errorbar")
+
+            _hist = get_hist(cfg, _process_config,
+                             var=var, region=region, cut=cut, rebin=rebin, year=_year,
+                             debug=kwargs.get("debug", False))
+
+            hists.append( (_hist, _process_config) )
+
+
     else:
         raise Exception("Error something needs to be a list!")
 
-    #
-    # Add args
-    #
-    yearStr = get_value_nested_dict(cfg.plotConfig, "year", default="RunII")
-    kwargs["year"] = yearStr
 
     if kwargs.get("doRatio", kwargs.get("doratio", False)):
 
@@ -607,9 +639,11 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
             ratio_plots.append((denCenters, ratios, ratio_uncert, ratio_config))
 
         fig, main_ax, ratio_ax = _plot_ratio(hists, {}, ratio_plots, **kwargs)
+        main_ax.set_title(f"{region}")
         ax = (main_ax, ratio_ax)
     else:
         fig, ax = _plot(hists, {}, cfg.plotConfig, **kwargs)
+        ax.set_title(f"{region}")
 
     if kwargs.get("outputFolder", None):
 
@@ -618,7 +652,10 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
         else:
             tagName = process_config.get("tag", "fourTag")
 
-        _savefig(fig, var, kwargs.get("outputFolder"), yearStr, cut, tagName, region, process)
+        if kwargs.get("yscale", None) == "log":
+            _savefig(fig, var+"_logy", kwargs.get("outputFolder"), kwargs.get("year","RunII"), cut, tagName, region, process)
+        else:
+            _savefig(fig, var, kwargs.get("outputFolder"), kwargs.get("year","RunII"), cut, tagName, region, process)
 
     return fig, ax
 
@@ -630,7 +667,6 @@ def makePlot(cfg, var='selJets.pt',
 
        debug    : False,
        var      : 'selJets.pt',
-       year     : "2017",
        cut      : "passPreSel",
        region   : "SR",
 
@@ -641,8 +677,11 @@ def makePlot(cfg, var='selJets.pt',
 
     process = kwargs.get("process", None)
     rebin   = kwargs.get("rebin", 1)
+    year    = kwargs.get("year", "RunII")
+    debug   = kwargs.get("debug", False)
+    if debug: print(f"In makePlot kwargs={kwargs}")
 
-    if (type(cut) is list) or (type(region) is list) or (len(cfg.hists) > 1 and not cfg.combine_input_files) or (type(var) is list) or (type(process) is list):
+    if (type(cut) is list) or (type(region) is list) or (len(cfg.hists) > 1 and not cfg.combine_input_files) or (type(var) is list) or (type(process) is list) or (type(year) is list):
         return _makeHistsFromList(cfg, var, cut, region, **kwargs)
 
     # Make process a list if it exits and isnt one already
@@ -688,7 +727,7 @@ def makePlot(cfg, var='selJets.pt',
         #  Get the hist object from the input data file(s)
         #
         _hist = get_hist(cfg, _proc_config,
-                         var=var_to_plot, region=region, cut=cut, rebin=rebin,
+                         var=var_to_plot, region=region, cut=cut, rebin=rebin, year=year,
                          debug=kwargs.get("debug", False))
 
         hists.append( (_hist, _proc_config) )
@@ -696,8 +735,9 @@ def makePlot(cfg, var='selJets.pt',
     #
     # Add args
     #
-    yearName = get_value_nested_dict(cfg.plotConfig,  "year", default="RunII")
-    kwargs["year"] = yearName
+
+    #yearName = get_value_nested_dict(cfg.plotConfig,  "year", default="RunII")
+    #
 
     #
     #  The stack
@@ -728,7 +768,7 @@ def makePlot(cfg, var='selJets.pt',
             #  Get the hist object from the input data file(s)
             #
             _hist = get_hist(cfg, _proc_config,
-                             var=var_to_plot, region=region, cut=cut, rebin=rebin,
+                             var=var_to_plot, region=region, cut=cut, rebin=rebin, year=year,
                              debug=kwargs.get("debug", False))
 
             stack_dict[_proc_name] = (_hist, _proc_config)
@@ -749,7 +789,7 @@ def makePlot(cfg, var='selJets.pt',
                 #  Get the hist object from the input data file(s)
                 #
                 _hist = get_hist(cfg, sum_proc_config,
-                                 var=var_to_plot, region=region, cut=cut, rebin=rebin,
+                                 var=var_to_plot, region=region, cut=cut, rebin=rebin, year=year,
                                  debug=kwargs.get("debug", False))
 
                 if hist_sum:
@@ -788,16 +828,21 @@ def makePlot(cfg, var='selJets.pt',
             ratio_plots.append((numCenters, ratios, ratio_uncert, ratio_config))
 
         fig, main_ax, ratio_ax = _plot_ratio(hists, stack_dict, ratio_plots,  **kwargs)
+        main_ax.set_title(f"{region}")
         ax = (main_ax, ratio_ax)
     else:
         fig, ax = _plot(hists, stack_dict, cfg.plotConfig, **kwargs)
+        ax.set_title(f"{region}")
 
     #
     # Save Fig
     #
     if kwargs.get("outputFolder", None):
         tagName = "fourTag" if "fourTag" in tagNames else "threeTag"
-        _savefig(fig, var, kwargs.get("outputFolder"), yearName, cut, tagName, region)
+        if kwargs.get("yscale", "linear") == "log":
+            _savefig(fig, var+"_logy", kwargs.get("outputFolder"), kwargs.get("year","RunII"), cut, tagName, region)
+        else:
+            _savefig(fig, var, kwargs.get("outputFolder"), kwargs.get("year","RunII"), cut, tagName, region)
 
     return fig, ax
 
@@ -830,8 +875,8 @@ def make2DPlot(cfg, process, var='selJets.pt',
     #  Get the year
     #    (Got to be a better way to do this....)
     #
-    yearStr = get_value_nested_dict(cfg.plotConfig, "year", default="RunII")
-    year = sum if yearStr == "RunII" else yearStr
+    year = kwargs.get("year","RunII")
+    year = sum if year == "RunII" else year
 
     #
     #  Unstacked hists
@@ -867,22 +912,19 @@ def make2DPlot(cfg, process, var='selJets.pt',
     if len(_hist.shape) == 3:  # for 2D plots
         _hist = _hist[sum, :, :]
 
-    #
-    # Add args
-    #
-    kwargs["year"] = yearStr
 
     #
     # Make the plot
     #
     fig, ax = _plot2d(_hist, cfg.plotConfig, **kwargs)
+    ax.set_title(f"{region}")
 
     #
     # Save Fig
     #
     if kwargs.get("outputFolder", None):
         _savefig(fig, var, kwargs.get("outputFolder"),
-                 yearStr, cut, tagName, region, process)
+                 kwargs.get("year","RunII"), cut, tagName, region, process)
 
     return fig, ax
 
@@ -916,6 +958,7 @@ def parse_args():
 
     parser.add_argument('--doTest', action="store_true", help='Metadata file.')
     parser.add_argument('--debug', action="store_true", help='')
+    parser.add_argument('--signal', action="store_true", help='')
     parser.add_argument('--combine_input_files', action="store_true", help='')
 
     args = parser.parse_args()

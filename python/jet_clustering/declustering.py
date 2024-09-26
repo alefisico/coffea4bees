@@ -29,6 +29,37 @@ def extract_all_parentheses_substrings(s):
     return substrings
 
 
+def extract_outermost_pair(s):
+    # Trim leading and trailing whitespaces and ensure it starts with '(' and ends with ')'
+    s = s.strip()
+
+    if not (s.startswith("(") and s.endswith(")")):
+        raise ValueError("Input must start with '(' and end with ')'")
+
+    # We will count the open and close parentheses
+    open_count = 0
+    comma_index = -1  # To store the position of the main separating comma
+
+    # Traverse the string to find the outermost comma
+    for i, char in enumerate(s):
+        if char == '(':
+            open_count += 1
+        elif char == ')':
+            open_count -= 1
+        elif char == ',' and open_count == 1:  # The outermost comma is when open_count == 1
+            comma_index = i
+            break
+
+    if comma_index == -1:
+        raise ValueError("Input doesn't seem to have a valid '(A, B)' format")
+
+    # Extract A and B by splitting at the found comma
+    A = s[1:comma_index].strip()   # Everything after '(' up to the comma
+    B = s[comma_index + 1:-1].strip()  # Everything after the comma up to ')'
+
+    return A, B
+
+
 def children_jet_flavors(comb_flavor):
 
     if len(comb_flavor) < 2:
@@ -110,6 +141,7 @@ def get_list_of_combined_jet_types(jets):
 
         splitting_types.append(_s)
 
+    splitting_types.sort()
     return splitting_types
 
 
@@ -144,18 +176,22 @@ def get_list_of_ISR_splittings(splitting_types):
             continue
 
         ISR_splittings.append(_s)
-
+    ISR_splittings.sort()
     return ISR_splittings
 
 
 def get_list_of_splitting_types(splittings):
     unique_splittings = set(ak.flatten(splittings.jet_flavor).to_list())
-    return list(unique_splittings)
+    unique_splittings_list = list(unique_splittings)
+    unique_splittings_list.sort()
+    return unique_splittings_list
 
 
 def get_list_of_splitting_names(splittings):
     unique_splittings = set(ak.flatten(splittings.splitting_name).to_list())
-    return list(unique_splittings)
+    unique_splittings_list = list(unique_splittings)
+    unique_splittings_list.sort()
+    return unique_splittings_list
 
 
 def compute_decluster_variables(clustered_splittings):
@@ -280,6 +316,13 @@ def decluster_combined_jets(input_jet, debug=False):
     jet_flavor_A = ak.unflatten(jet_flav_child_A, ak.num(input_jet))
     jet_flavor_B = ak.unflatten(jet_flav_child_B, ak.num(input_jet))
 
+    flat_jet_btag_string = ak.flatten(input_jet.btag_string)
+    _btag_string_pairs = [extract_outermost_pair(str(s)) for s in flat_jet_btag_string]
+    flat_jet_btag_string_A = [p[0] for p in  _btag_string_pairs]
+    flat_jet_btag_string_B = [p[1] for p in  _btag_string_pairs]
+    jet_btag_string_A = ak.unflatten(flat_jet_btag_string_A, ak.num(input_jet))
+    jet_btag_string_B = ak.unflatten(flat_jet_btag_string_B, ak.num(input_jet))
+
     combined_pt = input_jet.pt
     tanThetaA = np.tan(input_jet.thetaA)
     tanThetaB = input_jet.zA / (1 - input_jet.zA) * tanThetaA
@@ -362,6 +405,7 @@ def decluster_combined_jets(input_jet, debug=False):
             "phi":        pA.phi,
             "mass":       pA.mass,
             "jet_flavor": jet_flavor_A,
+            "btag_string": jet_btag_string_A,
         },
         with_name="PtEtaPhiMLorentzVector",
         behavior=vector.behavior,
@@ -374,6 +418,7 @@ def decluster_combined_jets(input_jet, debug=False):
             "phi":        pB.phi,
             "mass":       pB.mass,
             "jet_flavor": jet_flavor_B,
+            "btag_string": jet_btag_string_B,
         },
         with_name="PtEtaPhiMLorentzVector",
         behavior=vector.behavior,
@@ -382,7 +427,10 @@ def decluster_combined_jets(input_jet, debug=False):
     return pA, pB
 
 
-def decluster_splitting_types(input_jets, splitting_types, input_pdfs, rand_seed, debug=False):
+def decluster_splitting_types(input_jets, splitting_types, input_pdfs, rand_seed, chunk=None, debug=False):
+
+    if debug:
+        print(f"{chunk} decluster_splitting_types input rand_seed {rand_seed}\n")
 
     #
     #  Create a mask for all the jets that need declustered
@@ -414,6 +462,10 @@ def decluster_splitting_types(input_jets, splitting_types, input_pdfs, rand_seed
     while ak.any(input_jets_to_decluster):
 
         if debug:
+            print(f"{chunk} decluster_splitting_types num_trys {num_trys}\n")
+            print(f"{chunk} decluster_splitting_types splitting_types {splitting_types}\n")
+
+        if debug:
             print(f" (decluster_splitting_types) num_trys {num_trys} ")
 
         splittings_info = []
@@ -434,10 +486,13 @@ def decluster_splitting_types(input_jets, splitting_types, input_pdfs, rand_seed
 
             splittings_info.append((get_splitting_name(_s), _num_samples, _indicies_tuple))
 
+        if debug:
+            print(f"{chunk} decluster_splitting_types rand_seed {rand_seed}\n")
+
         #
         #  Sample the PDFs,  add sampled varibales to the jets to be declustered
         #
-        sample_PDFs_vs_pT(input_jets_to_decluster, input_pdfs, 11 * num_trys + rand_seed, splittings_info)
+        sample_PDFs_vs_pT(input_jets_to_decluster, input_pdfs, 11 * num_trys + rand_seed, splittings_info, chunk=chunk)
 
         #
         #  do the declustering
@@ -484,7 +539,10 @@ def decluster_splitting_types(input_jets, splitting_types, input_pdfs, rand_seed
     return unclustered_jets
 
 
-def make_synthetic_event_core(input_jets, input_pdfs, rand_seed, debug=False):
+def make_synthetic_event_core(input_jets, input_pdfs, rand_seed, chunk=None, debug=False):
+
+    if debug:
+        print(f"{chunk} make_synthetic_event_core rand_seed {rand_seed}\n")
 
     #
     #  Get all the different types of splitted needed
@@ -499,7 +557,7 @@ def make_synthetic_event_core(input_jets, input_pdfs, rand_seed, debug=False):
         if debug:
             print(f"(make_synthetic_event_core) splitting_types was {splitting_types}")
 
-        input_jets = decluster_splitting_types(input_jets, splitting_types, input_pdfs, rand_seed, debug=debug)
+        input_jets = decluster_splitting_types(input_jets, splitting_types, input_pdfs, rand_seed, chunk=chunk, debug=debug)
 
         splitting_types = get_list_of_combined_jet_types(input_jets)
 
@@ -516,14 +574,15 @@ def make_synthetic_event_core(input_jets, input_pdfs, rand_seed, debug=False):
 #   return make_synthetic_event_core(input_jets, input_pdfs, debug=debug)
 
 
-def make_synthetic_event(input_jets, input_pdfs, debug=False):
+def make_synthetic_event(input_jets, input_pdfs, declustering_rand_seed=66, chunk=None, debug=False):
+
+    if debug:
+        print(f"{chunk} make_synthetic_event rand_seed {declustering_rand_seed}\n")
 
     # Start with all True
     events_to_decluster_mask = np.ones(len(input_jets), dtype=bool)
 
     n_events = len(input_jets)
-
-    declustering_rand_seed = 66
 
     # Get number of expected output jets
     jet_clustering_summary = ["".join(ak.to_list(i)) for i in input_jets.jet_flavor]
@@ -536,6 +595,7 @@ def make_synthetic_event(input_jets, input_pdfs, debug=False):
     flat_declustered_phi        = np.zeros(n_total_declustered_jets)
     flat_declustered_mass       = np.zeros(n_total_declustered_jets)
     flat_declustered_jet_flavor = np.full (n_total_declustered_jets, "X")
+    flat_declustered_btagDeepFlavB = np.full(n_total_declustered_jets, -1.0)
 
     num_trys = 0
 
@@ -546,7 +606,7 @@ def make_synthetic_event(input_jets, input_pdfs, debug=False):
 
         to_decluster_indicies = np.where(events_to_decluster_mask)[0]
 
-        declustered_events = make_synthetic_event_core(input_jets[to_decluster_indicies], input_pdfs, 7 * num_trys + declustering_rand_seed)
+        declustered_events = make_synthetic_event_core(input_jets[to_decluster_indicies], input_pdfs, 7 * num_trys + declustering_rand_seed, chunk=chunk)
 
         #
         #  Check the min dr
@@ -577,16 +637,22 @@ def make_synthetic_event(input_jets, input_pdfs, debug=False):
 
         new_jets_flat = ak.flatten(declustered_events[sucessful_deccluster_event_indicies])
 
-        flat_declustered_pt        [jet_replace_mask] = new_jets_flat.pt
-        flat_declustered_eta       [jet_replace_mask] = new_jets_flat.eta
-        flat_declustered_phi       [jet_replace_mask] = new_jets_flat.phi
-        flat_declustered_mass      [jet_replace_mask] = new_jets_flat.mass
-        flat_declustered_jet_flavor[jet_replace_mask] = new_jets_flat.jet_flavor
-
+        flat_declustered_pt        [jet_replace_mask]    = new_jets_flat.pt
+        flat_declustered_eta       [jet_replace_mask]    = new_jets_flat.eta
+        flat_declustered_phi       [jet_replace_mask]    = new_jets_flat.phi
+        flat_declustered_mass      [jet_replace_mask]    = new_jets_flat.mass
+        flat_declustered_jet_flavor[jet_replace_mask]    = new_jets_flat.jet_flavor
+        flat_declustered_btagDeepFlavB[jet_replace_mask] = [float(str(i)) for i in new_jets_flat.btag_string]
         events_to_decluster_mask[update_indicies_global] = False
         num_trys += 1
 
-    #    declustered_pt =
+    #
+    #  Assigning the flavor bit (for writting out the synthetic datasets
+    #
+    flat_declustered_flavor_bit  = np.full(shape=len(flat_declustered_pt), fill_value=1)
+    flat_is_j_mask = flat_declustered_jet_flavor == "j"
+    flat_declustered_flavor_bit[flat_is_j_mask] = 0
+
     newly_declustered_events = ak.zip(
         {
             "pt":         ak.unflatten(flat_declustered_pt,         n_declustered_jets_per_event),
@@ -594,6 +660,8 @@ def make_synthetic_event(input_jets, input_pdfs, debug=False):
             "phi":        ak.unflatten(flat_declustered_phi,        n_declustered_jets_per_event),
             "mass":       ak.unflatten(flat_declustered_mass,       n_declustered_jets_per_event),
             "jet_flavor": ak.unflatten(flat_declustered_jet_flavor, n_declustered_jets_per_event),
+            "btagDeepFlavB": ak.unflatten(flat_declustered_btagDeepFlavB, n_declustered_jets_per_event),
+            "jet_flavor_bit": ak.unflatten(flat_declustered_flavor_bit, n_declustered_jets_per_event),
         },
         with_name="PtEtaPhiMLorentzVector",
         behavior=vector.behavior,

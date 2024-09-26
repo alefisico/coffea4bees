@@ -277,9 +277,13 @@ def doPlots(debug=False):
     #
     splitting_config = {}
 
-    s_XX     = { "mA":("mA",   1),  "mB":("mB",   1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_vs_thetaA", 1) }
-    s_XX_X   = { "mA":("mA_l", 1),  "mB":("mB",   1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_vs_thetaA", 1) }
-    s_XX_XX  = { "mA":("mA_l", 1),  "mB":("mB_l", 1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_vs_thetaA", 1) }
+    zA_mA_mB         = { "mA":("mA",    1),  "mB":("mB",    1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_vs_thetaA",   1) }
+    zA_l_mA_mB       = { "mA":("mA",    1),  "mB":("mB",    1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_l_vs_thetaA", 1) }
+    zA_l_mA_l_mB     = { "mA":("mA_l",  1),  "mB":("mB",    1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_l_vs_thetaA", 1) }
+    zA_mA_l_mB_l     = { "mA":("mA_l",  1),  "mB":("mB_l",  1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_vs_thetaA",   1) }
+    zA_l_mA_l_mB_l   = { "mA":("mA_l",  1),  "mB":("mB_l",  1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_l_vs_thetaA", 1) }
+    zA_l_mA_vl_mB    = { "mA":("mA_vl", 1),  "mB":("mB",    1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_l_vs_thetaA", 1) }
+    zA_l_mA_vl_mB_vl = { "mA":("mA_vl", 1),  "mB":("mB_vl", 1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_l_vs_thetaA", 1) }
 
 
     #
@@ -287,36 +291,42 @@ def doPlots(debug=False):
     #
     #pattern = r'[01]b[01]j(/[01]b[01]j)?'
 
-    p_XX = r'[01]b[01]j/[01]b[01]j'
+    patterns = { '1b0j/1b0j' : zA_mA_mB,
+                 '0b1j/0b1j' : zA_mA_mB,
+                 "1b0j/0b1j" : zA_l_mA_mB,
 
-    p_1bNj_X = r'1b[1-9]\d*j/[01]b[01]j'
-    p_0bNj_X = r'0b[2-9]\d*j/[01]b[01]j'
+                 "1b1j/1b0j" : zA_l_mA_l_mB,
+                 "0b2j/0b1j" : zA_l_mA_l_mB,
 
-    p_0bNj_0bNj = r'0b[2-9]\d*j/[01]b[2-9]\d*j'
-    p_1bNj_0bNj = r'1b[1-9]\d*j/[01]b[2-9]\d*j'
+                 "0b2j/1b0j" : zA_l_mA_l_mB,
+                 "1b1j/0b1j" : zA_l_mA_l_mB,
 
-    #p_C_X  = r'\([()jb]*\)[bj]'
-    p_N_N  = r'\d+/\d+'
-    p_X_1  = r'X/1'
-    p_X_2  = r'X/2'
-    p_X_X  = r'X/X'
+                 "0b2j/0b2j" : zA_l_mA_l_mB_l,
+                 "1b1j/1b1j" : zA_l_mA_l_mB_l,
 
+                 "1b1j/0b2j" : zA_l_mA_l_mB_l,
 
-    patterns = { p_XX    : s_XX,
-                 p_1bNj_X   : s_XX_X,
-                 p_0bNj_X   : s_XX_X,
-                 p_0bNj_0bNj : s_XX_XX,
-                 p_1bNj_0bNj : s_XX_XX,
-                 p_N_N       : s_XX_XX,
-                 p_X_X       : s_XX_XX,
-                 p_X_1       : s_XX_X,
-                 p_X_2       : s_XX_XX,
+                 "1b2j/1b0j" : zA_l_mA_l_mB,
+                 "0b3j/0b1j" : zA_l_mA_l_mB,
+
+                 "1b2j/0b1j" : zA_l_mA_l_mB,
+                 "0b3j/1b0j" : zA_l_mA_l_mB,
+
+                 "4/1" : zA_l_mA_vl_mB,
+                 "X/1" : zA_l_mA_vl_mB,
+
+                 "4/2" : zA_l_mA_vl_mB_vl,
+                 "3/3" : zA_l_mA_vl_mB_vl,
+                 "X/2" : zA_l_mA_vl_mB_vl,
+                 "3/2" : zA_l_mA_vl_mB_vl,
+                 "X/X" : zA_l_mA_vl_mB_vl,
+
                 }
 
     #
     #  Get All splittings
     #
-    all_splittings = [i.replace("splitting_","").replace(".zA_l","").replace("_","/") for i in cfg.hists[0]["hists"].keys() if not i.find("zA_l") == -1 and i.find("detailed") == -1]
+    all_splittings = [i.replace("splitting_","").replace(".pt_l","").replace("_","/") for i in cfg.hists[0]["hists"].keys() if not i.find("pt_l") == -1 and i.find("detailed") == -1]
 
     unconfig_splitting = []
 

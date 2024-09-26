@@ -21,21 +21,21 @@ counts4:
         SB: 199.0
 
     data_3b_for_mixed_UL18:
-        passJetMult: 906.0
+        passJetMult: 910.0
         passPreSel: 0.0
         passDiJetMass: 0.0
         SR: 0.0
         SB: 0.0
 
     data_3b_for_mixed_UL17:
-        passJetMult: 884.0
+        passJetMult: 886.0
         passPreSel: 0.0
         passDiJetMass: 0.0
         SR: 0.0
         SB: 0.0
 
     data_3b_for_mixed_UL16_preVFP:
-        passJetMult: 924.0
+        passJetMult: 928.0
         passPreSel: 0.0
         passDiJetMass: 0.0
         SR: 0.0
@@ -150,25 +150,25 @@ counts3:
         SB: 5.0
 
     data_3b_for_mixed_UL18:
-        passJetMult: 906.0
-        passPreSel: 53.35
-        passDiJetMass: 53.35
-        SR: 4.17
-        SB: 8.6
+        passJetMult: 910.0
+        passPreSel: 4.13
+        passDiJetMass: 4.13
+        SR: 3.96
+        SB: 0.12
 
     data_3b_for_mixed_UL17:
-        passJetMult: 884.0
-        passPreSel: 65.12
-        passDiJetMass: 65.12
-        SR: 4.11
-        SB: 11.0
+        passJetMult: 886.0
+        passPreSel: 4.1
+        passDiJetMass: 4.1
+        SR: 3.97
+        SB: 0.06
 
     data_3b_for_mixed_UL16_preVFP:
-        passJetMult: 924.0
-        passPreSel: 42.38
-        passDiJetMass: 42.38
-        SR: 2.8
-        SB: 5.41
+        passJetMult: 928.0
+        passPreSel: 2.71
+        passDiJetMass: 2.71
+        SR: 2.71
+        SB: 0.0
 
     TTToSemiLeptonic_UL18:
         passJetMult: 14.98
@@ -279,21 +279,21 @@ counts4_unit:
         SB: 199.0
 
     data_3b_for_mixed_UL18:
-        passJetMult: 906.0
+        passJetMult: 910.0
         passPreSel: 0.0
         passDiJetMass: 0.0
         SR: 0.0
         SB: 0.0
 
     data_3b_for_mixed_UL17:
-        passJetMult: 884.0
+        passJetMult: 886.0
         passPreSel: 0.0
         passDiJetMass: 0.0
         SR: 0.0
         SB: 0.0
 
     data_3b_for_mixed_UL16_preVFP:
-        passJetMult: 924.0
+        passJetMult: 928.0
         passPreSel: 0.0
         passDiJetMass: 0.0
         SR: 0.0
@@ -408,25 +408,25 @@ counts3_unit:
         SB: 5.0
 
     data_3b_for_mixed_UL18:
-        passJetMult: 906.0
-        passPreSel: 879.0
-        passDiJetMass: 878.0
-        SR: 88.0
-        SB: 181.0
+        passJetMult: 910.0
+        passPreSel: 887.0
+        passDiJetMass: 886.0
+        SR: 89.0
+        SB: 182.0
 
     data_3b_for_mixed_UL17:
-        passJetMult: 884.0
-        passPreSel: 860.0
-        passDiJetMass: 860.0
+        passJetMult: 886.0
+        passPreSel: 864.0
+        passDiJetMass: 864.0
         SR: 71.0
-        SB: 183.0
+        SB: 182.0
 
     data_3b_for_mixed_UL16_preVFP:
-        passJetMult: 924.0
-        passPreSel: 905.0
-        passDiJetMass: 905.0
-        SR: 93.0
-        SB: 173.0
+        passJetMult: 928.0
+        passPreSel: 911.0
+        passDiJetMass: 911.0
+        SR: 94.0
+        SB: 177.0
 
     TTToSemiLeptonic_UL18:
         passJetMult: 334.0

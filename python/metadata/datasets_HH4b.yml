@@ -43,7 +43,7 @@ datasets:
         sumw2: 615626.6029922854
         total_events: 978000
     xs: 0.07038*0.5824**2   #### from https://twiki.cern.ch/twiki/bin/view/LHCPhysics/LHCHWGHH
-    top_reconstruction: slow
+    top_reconstruction: fast
   GluGluToHHTo4B_cHHH1:
     UL16_postVFP:
       nanoAOD: /GluGluToHHTo4B_cHHH1_TuneCP5_PSWeights_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v1/NANOAODSIM
@@ -90,7 +90,7 @@ datasets:
         sumw2: 1193909.4220537543
         total_events: 1000000
     xs: 0.03105*0.5824**2
-    top_reconstruction: slow
+    top_reconstruction: fast
   GluGluToHHTo4B_cHHH2p45:
     UL16_postVFP:
       nanoAOD: /GluGluToHHTo4B_cHHH2p45_TuneCP5_PSWeights_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v1/NANOAODSIM
@@ -137,7 +137,7 @@ datasets:
         sumw2: 357.94212966148234
         total_events: 950000
     xs: 0.01310*0.5824**2
-    top_reconstruction: slow
+    top_reconstruction: fast
   GluGluToHHTo4B_cHHH5:
     UL16_postVFP:
       nanoAOD: /GluGluToHHTo4B_cHHH5_TuneCP5_PSWeights_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v1/NANOAODSIM
@@ -182,7 +182,7 @@ datasets:
         sumw2: 6400.488181203013
         total_events: 994000
     xs: 0.09482*0.5824**2
-    top_reconstruction: slow
+    top_reconstruction: fast
   HH4b:
     '2016':
       nanoAOD: /GluGluToHHTo4B_node_SM_13TeV-madgraph/RunIISummer16NanoAODv7-PUMoriond17_Nano02Apr2020_102X_mcRun2_asymptotic_v8-v1/NANOAODSIM
@@ -720,3 +720,48 @@ datasets:
         files_template:
         - root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig/mixed2018_3bDvTMix4bDvT_vXXX/picoAOD_3bDvTMix4bDvT_4b_wJCM_vXXX_newSBDef.root
     nSamples: 15
+
+
+
+  synthetic_data:
+    nSamples: 1
+    UL16_postVFP:
+      picoAOD:
+        files_template:
+          - root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v1/data_UL16_postVFPF/picoAOD_seedXXX.root
+          - root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v1/data_UL16_postVFPG/picoAOD_seedXXX.root
+          - root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v1/data_UL16_postVFPH/picoAOD_seedXXX.root
+          - root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v1/TTTo2L2Nu_UL16_postVFP/picoAOD_PSData.root
+          - root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v1/TTToHadronic_UL16_postVFP/picoAOD_PSData.root
+          - root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v1/TTToSemiLeptonic_UL16_postVFP/picoAOD_PSData.root      
+    UL16_preVFP:
+      picoAOD:
+        files_template:
+          - root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v1/data_UL16_preVFPB/picoAOD_seedXXX.root
+          - root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v1/data_UL16_preVFPC/picoAOD_seedXXX.root
+          - root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v1/data_UL16_preVFPD/picoAOD_seedXXX.root
+          - root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v1/data_UL16_preVFPE/picoAOD_seedXXX.root
+          - root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v1/TTTo2L2Nu_UL16_preVFP/picoAOD_PSData.root
+          - root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v1/TTToHadronic_UL16_preVFP/picoAOD_PSData.root
+          - root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v1/TTToSemiLeptonic_UL16_preVFP/picoAOD_PSData.root      
+    UL17:
+      picoAOD:
+        files_template:
+          - root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v1/data_UL17C/picoAOD_seedXXX.root
+          - root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v1/data_UL17D/picoAOD_seedXXX.root
+          - root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v1/data_UL17E/picoAOD_seedXXX.root
+          - root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v1/data_UL17F/picoAOD_seedXXX.root      
+          - root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v1/TTTo2L2Nu_UL17/picoAOD_PSData.root
+          - root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v1/TTToHadronic_UL17/picoAOD_PSData.root
+          - root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v1/TTToSemiLeptonic_UL17/picoAOD_PSData.root      
+    UL18:
+      picoAOD:
+        files_template:
+          - root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v1/data_UL18A/picoAOD_seedXXX.root
+          - root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v1/data_UL18B/picoAOD_seedXXX.root
+          - root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v1/data_UL18C/picoAOD_seedXXX.root
+          - root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v1/data_UL18D/picoAOD_seedXXX.root
+          - root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v1/TTTo2L2Nu_UL18/picoAOD_PSData.root
+          - root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v1/TTToHadronic_UL18/picoAOD_PSData.root
+          - root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v1/TTToSemiLeptonic_UL18/picoAOD_PSData.root
+

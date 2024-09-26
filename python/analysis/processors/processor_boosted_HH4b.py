@@ -1,28 +1,15 @@
 import time
-import gc
 import awkward as ak
 import numpy as np
-import correctionlib
 import yaml
 import warnings
-import uproot
-
-from analysis.helpers.networks import HCREnsemble
-from analysis.helpers.topCandReconstruction import find_tops, dumpTopCandidateTestVectors, buildTop, mW, mt, find_tops_slow
 
 from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
 from coffea import processor
 from coffea.analysis_tools import Weights, PackedSelection
 
-from base_class.hist import Collection, Fill
-from base_class.physics.object import LorentzVector, Jet, Muon, Elec
-
-
 from analysis.helpers.cutflow import cutFlow
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
-
-from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
-from analysis.helpers.common import init_jet_factory, apply_btag_sf, update_events
 
 from analysis.helpers.selection_basic_4b import (
     apply_event_selection_4b,
@@ -31,8 +18,6 @@ from analysis.helpers.selection_basic_4b import (
 )
 
 import logging
-
-from base_class.root import TreeReader, Chunk
 
 #
 # Setup

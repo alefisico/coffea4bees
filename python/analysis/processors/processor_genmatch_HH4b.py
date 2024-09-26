@@ -20,7 +20,7 @@ from base_class.physics.object import LorentzVector, Jet
 from analysis.helpers.cutflow import cutFlow
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
 
-from analysis.helpers.common import init_jet_factory, apply_btag_sf, update_events
+from analysis.helpers.common import apply_btag_sf, update_events
 
 from analysis.helpers.selection_basic_4b import (
     apply_event_selection_4b,
@@ -110,17 +110,16 @@ class analysis(processor.ProcessorABC):
         isMC    = True if event.run[0] == 1 else False
         nEvent = len(event)
         weights = Weights(len(event), storeIndividual=True)
-
         logging.debug(fname)
         logging.debug(f'Process {nEvent} Events')
 
         #
         # Event selection
         #
-        event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year], False)
+        event = apply_event_selection_4b( event, self.corrections_metadata[year], cut_on_lumimask=False)
 
         # Apply object selection (function does not remove events, adds content to objects)
-        event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year] )
+        event = apply_object_selection_4b( event, self.corrections_metadata[year] )
         #event = apply_object_selection_boosted_4b( event )
 
         # selections.add( 'passJetMult', event.passJetMult )
