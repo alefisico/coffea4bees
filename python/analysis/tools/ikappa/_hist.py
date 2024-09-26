@@ -132,7 +132,8 @@ def _find_process(categories: Collection[str]):
 
 
 # html & js
-_badge = '<span class="badge" style="background-color: {color};">{text}</span>'.format
+BADGE = '<span class="badge" style="background-color: {color};">{text}</span>'.format
+INTERNAL = '<span style="font-style: italic; font-weight: bold;">{text}</span>'.format
 
 _CODES = {
     "py_float_format": """
@@ -177,7 +178,7 @@ function logySetBottom(val, bottom, log_y) {
 class _DataField:
     regular = "r_{:d}".format
     model = "m_{}__p_{:d}".format
-    basis = "b_{:d}".format
+    basis = "{}__b_{:d}".format
     stack = "s_{:d}__p_{:d}".format
 
     raw = "raw_{}".format
@@ -209,7 +210,7 @@ class _ColumnLike:
 class BHAxis:
     _TRUE = "True"
     _FALSE = "False"
-    _OTHERS = '<span style="font-style: italic; font-weight: bold;">Others</span>'
+    _OTHERS = INTERNAL(text="Others")
 
     def __init__(self, flow: bool):
         self._flow = flow
@@ -381,11 +382,14 @@ class _KappaMatch:
 
 
 class _Matched(ABC):
+    badge: str
+    index: int
+    matched: bool
+
     dom_hint: list
     dom_hide: list
     dom_matched: Dropdown
     dom: Row
-    matched: bool
 
     @abstractmethod
     def __iter__(self): ...
@@ -401,12 +405,23 @@ class _Matched(ABC):
         else:
             self.dom.children = self.dom_hint + self.dom_hide
 
+    @property
+    def _index(self):
+        return self.index + 1
+
 
 class _KappaModel(_Matched):
-    badge = _badge(color="#385CB4", text="model")
+    badge = BADGE(color="#385CB4", text="model")
     matched: _KappaMatch
 
-    def __init__(self, model: str, pattern: str, matched: _KappaMatch = None):
+    def __init__(
+        self,
+        index: int,
+        model: str,
+        pattern: str,
+        matched: _KappaMatch = None,
+    ):
+        self.index = index
         self.matched = _KappaMatch() if matched is None else matched
 
         self._dom_model = Select(options=_DIHIGGS, align="center")
@@ -430,7 +445,7 @@ class _KappaModel(_Matched):
         )
         self._dom_model.value = model
 
-        self.dom_hint = [_label(text="Model:"), self._dom_model]
+        self.dom_hint = [_label(text=f"Model{self._index}:"), self._dom_model]
         self.dom_hide = [_label(text="Pattern:"), self._dom_patterns]
         self.dom_matched = Dropdown(sizing_mode="stretch_width", align="center")
         self.dom = row(sizing_mode="stretch_width")
@@ -468,14 +483,29 @@ class _KappaModel(_Matched):
     def model(self) -> str:
         return self._dom_model.value
 
+    @property
+    def field(self):
+        return _DataField.model(self.model, self.index)
+
+    @property
+    def fields(self):
+        field = self.field
+        for i, p in enumerate(self):
+            yield _DataField.basis(field, i), p
+
 
 class _StackGroup(_Matched):
-    badge = _badge(color="#29855A", text="stack")
+    badge = BADGE(color="#29855A", text="stack")
     matched: list[str]
 
     def __init__(
-        self, name: str, processes: MultiChoice, matched: Iterable[str] = None
+        self,
+        index: int,
+        name: str,
+        processes: MultiChoice,
+        matched: Iterable[str] = None,
     ):
+        self.index = index
         self.matched = list(matched or ())
 
         self._dom_name = TextInput(value=name or "")
@@ -487,7 +517,7 @@ class _StackGroup(_Matched):
         )
         self._dom_bins.js_link("options", processes, "value")
 
-        self.dom_hint = [_label(text="Stack:"), self._dom_name]
+        self.dom_hint = [_label(text=f"Stack{self._index}:"), self._dom_name]
         self.dom_hide = [_label(text="Bins:"), self._dom_bins]
         self.dom_matched = Dropdown(sizing_mode="stretch_width", align="center")
         self.dom = row(sizing_mode="stretch_width")
@@ -520,7 +550,17 @@ class _StackGroup(_Matched):
 
     @property
     def name(self):
-        return self._dom_name.value
+        return self._dom_name.value or f"Stack{self._index}"
+
+    @property
+    def fields(self):
+        for i, p in enumerate(self):
+            yield _DataField.stack(self.index, i), p
+
+
+class _Ratio(_Matched):  # TODO
+    badge = BADGE(color="#E02D4B", text="ratio")
+    matched: tuple[str, str]
 
 
 class HistGroup(Component):
@@ -627,7 +667,14 @@ class HistGroup(Component):
     def add_model(
         self, model: str = "", pattern: str = "", matched: _KappaMatch = None
     ):
-        self._models.append(_KappaModel(model=model, pattern=pattern, matched=matched))
+        self._models.append(
+            _KappaModel(
+                index=len(self._models),
+                model=model,
+                pattern=pattern,
+                matched=matched,
+            )
+        )
         self._dom_models.children.append(self._models[-1].dom)
 
     def remove_model(self):
@@ -637,7 +684,12 @@ class HistGroup(Component):
 
     def add_stack(self, name: Optional[str] = None, stacks: Iterable[str] = None):
         self._stacks.append(
-            _StackGroup(name=name, processes=self._dom_cats_selected, matched=stacks)
+            _StackGroup(
+                index=len(self._stacks),
+                name=name,
+                processes=self._dom_cats_selected,
+                matched=stacks,
+            )
         )
         self._dom_stacks.children.append(self._stacks[-1].dom)
 
@@ -852,13 +904,12 @@ class HistGroup(Component):
         legend_hr()
         for k, ms in models.items():
             legend_title(k, m.badge)
-            for i, m in enumerate(ms):
-                legend_add(_DataField.model(k, i), m.name)
+            for m in ms:
+                legend_add(m.field, m.name)
             legend_hr()
-        for i, s in enumerate(stacks):
-            legend_title(s.name or f"Stack{i+1}", s.badge)
-            for j, p in enumerate(s):
-                field = _DataField.stack(i, j)
+        for s in stacks:
+            legend_title(s.name, s.badge)
+            for field, p in s.fields:
                 legend_toggles[field] = legend_add(field, p, stack=True)
             legend_hr()
 
@@ -982,7 +1033,7 @@ legend.width = (legend.width + {Plot.legend_glyph_width} * modifier);
         ):
             couplings = model.matched.model.diagrams[0]
             sliders = {k: v for k, v in coupling_sliders.items() if k in couplings}
-            basis = [*map(_DataField.basis, range(len(model)))]
+            basis = [f for f, _ in model.fields]
             js_change = CustomJS(
                 args=dict(
                     col_field=field,
@@ -1214,13 +1265,12 @@ source.change.emit();
                     source = ColumnDataSource(data=_edges)
                     weight = m.matched.model.weight(sm)[0]
                     _val, _var = _np.zeros(), _np.zeros()
-                    for j, p in enumerate(m):
-                        field = _DataField.basis(j)
+                    for j, (field, p) in enumerate(m.fields):
                         source.data[_DataField.raw(field)] = val[p]
                         source.data[_DataField.raw(_DataField.var(field))] = var[p]
                         _val += val[p] * weight[j]
                         _var += var[p] * (weight[j] ** 2)
-                    field = _DataField.model(k, i)
+                    field = m.field
                     _plot(
                         field=field,
                         name=m.name,
@@ -1234,8 +1284,7 @@ source.change.emit();
             for i, stack in enumerate(stacks):
                 source = ColumnDataSource(data=_edges)
                 _vals, _err, _total = [_np.zeros()], _np.zeros(), None
-                for j, p in enumerate(stack):
-                    field = _DataField.stack(i, j)
+                for field, p in stack.fields:
                     source.data[_DataField.raw(field)] = val[p]
                     source.data[_DataField.raw(_DataField.var(field))] = var[p]
                     _vals.append(_vals[-1] + val[p])
@@ -1248,8 +1297,7 @@ source.change.emit();
                 if density and _width is not None:
                     for v in _vals + [_err]:
                         v /= _width
-                for j, p in enumerate(stack):
-                    field = _DataField.stack(i, j)
+                for j, (field, p) in enumerate(stack.fields):
                     base = _vals[j + 1]
                     source.data[_PlotField.bottom(field)] = _setup_bottom(_vals[j])
                     source.data[field] = _setup_bottom(base)
@@ -1276,7 +1324,7 @@ source.change.emit();
                     )
                 _js_stack(
                     norm=_total,
-                    fields=[_DataField.stack(i, j) for j in range(len(stack))],
+                    fields=[f for f, _ in stack.fields],
                     source=source,
                 )
 

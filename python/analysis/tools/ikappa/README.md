@@ -203,7 +203,6 @@ options:
 ```
 
 ### Copy data to multijet
-TODO: WIP
 
 Since, the reweighted 3b data are treated as 4b multijet background model, to make it compatible with the plotting tool, the hists under `{process: data, ntag: 3}` need to be copied to `{process: multijet, ntag: 4}`.
 
@@ -220,3 +219,8 @@ python -m analysis.tools.ikappa.data_to_multijet -i INPUT -o OUTPUT
 ## Config
 
 A global [config file](config.py) is used to maintain constants, default values and styles.
+
+## TODO
+
+- add ratio plot and update readme
+- copy data to multijet script

@@ -13,7 +13,7 @@ if __name__ == "__main__":
     logging.basicConfig(
         level=logging.INFO,
         format="%(message)s",
-        handlers=[RichHandler(show_time=False, show_path=False)],
+        handlers=[RichHandler(show_time=False, show_path=False, markup=True)],
     )
     parser = ArgumentParser()
     parser.add_argument(
