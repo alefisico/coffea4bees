@@ -43,10 +43,10 @@ class QuadJetHists(Template):
     close_vs_other_m = H((50, 0, 250, ('close.mass', 'Close Boson Candidate Mass')),
                          (50, 0, 250, ('other.mass', 'Other Boson Candidate Mass')))
 
-    lead            = LorentzVector.plot_pair(('...', R'Lead Boson Candidate'),  'lead',  skip=['n'])
-    subl            = LorentzVector.plot_pair(('...', R'Subl Boson Candidate'),  'subl',  skip=['n'])
-    close           = LorentzVector.plot_pair(('...', R'Close Boson Candidate'), 'close', skip=['n'])
-    other           = LorentzVector.plot_pair(('...', R'Other Boson Candidate'), 'other', skip=['n'])
+    lead            = LorentzVector.plot_pair(('...', R'Lead Boson Candidate'),  'lead',  skip=['n'], bins={"pt": (50, 0, 1000)})
+    subl            = LorentzVector.plot_pair(('...', R'Subl Boson Candidate'),  'subl',  skip=['n'], bins={"pt": (50, 0, 1000)})
+    close           = LorentzVector.plot_pair(('...', R'Close Boson Candidate'), 'close', skip=['n'], bins={"pt": (50, 0, 1000)})
+    other           = LorentzVector.plot_pair(('...', R'Other Boson Candidate'), 'other', skip=['n'], bins={"pt": (50, 0, 1000)})
 
 class QuadJetHistsUnsup(Template):
     dr              = H((50,     0, 5,   ("dr",          'Diboson Candidate $\\Delta$R(d,d)')))
@@ -72,16 +72,16 @@ class QuadJetHistsSRSingle(Template):
 
 class WCandHists(Template):
 
-    p  = LorentzVector.plot(('...', R'W Candidate'), 'p',  skip=['n'])
-    pW = LorentzVector.plot(('...', R'W Candidate'), 'pW', skip=['n'])
+    p  = LorentzVector.plot(('...', R'W Candidate'), 'p',  skip=['n'], bins={"mass": (60, 0, 600), "pt": (60, 0, 600)})
+    pW = LorentzVector.plot(('...', R'W Candidate'), 'pW', skip=['n'], bins={"mass": (60, 0, 600), "pt": (60, 0, 600)})
 
-    j = Jet.plot(('...', R'W j jet Candidate'), 'j',     skip=['deepjet_c','n'])
-    l = Jet.plot(('...', R'W l jet Candidate'), 'l',     skip=['deepjet_c','n'])
+    j = Jet.plot(('...', R'W j jet Candidate'), 'j',     skip=['deepjet_c','n'], bins={"mass": (50, 0, 100)})
+    l = Jet.plot(('...', R'W l jet Candidate'), 'l',     skip=['deepjet_c','n'], bins={"mass": (50, 0, 100)})
 
 class TopCandHists(Template):
 
-    t = LorentzVector.plot(('...', R'Top Candidate'), 'p', skip=['n'])
-    b = Jet.plot(('...', R'Top b jet Candidate'), 'b', skip=['deepjet_c','n'])
+    t = LorentzVector.plot(('...', R'Top Candidate'), 'p', skip=['n'], bins={"mass": (80, 0, 800), "pt": (50, 0, 1000)})
+    b = Jet.plot(('...', R'Top b jet Candidate'), 'b', skip=['deepjet_c','n'], bins={"mass": (50, 0, 100)})
     W = WCandHists(('...', R'W boson Candidate'), 'W')
 
     mbW  = H(( 50, 80, 280,   ("mbW",  'm_{b,W}')))

@@ -20,7 +20,7 @@ from base_class.physics.object import LorentzVector, Jet
 from analysis.helpers.cutflow import cutFlow
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
 
-from analysis.helpers.common import init_jet_factory, apply_btag_sf, update_events
+from analysis.helpers.common import apply_btag_sf, update_events
 
 from analysis.helpers.selection_basic_4b import (
     apply_event_selection_4b,

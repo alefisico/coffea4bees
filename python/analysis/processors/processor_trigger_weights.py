@@ -3,7 +3,7 @@ import warnings
 import awkward as ak
 import yaml
 import numpy as np
-from analysis.helpers.common import init_jet_factory
+from analysis.helpers.common import apply_jerc_corrections
 from base_class.trigger_emulator.TrigEmulatorTool   import TrigEmulatorTool
 from analysis.helpers.selection_basic_4b import (
     apply_event_selection_4b,
@@ -14,7 +14,7 @@ from coffea import processor
 from coffea.analysis_tools import PackedSelection
 from coffea.nanoevents import NanoAODSchema
 from analysis.helpers.dump_friendtrees import dump_trigger_weight
-
+from analysis.helpers.processor_config import processor_config
 
 #
 # Setup
@@ -48,48 +48,37 @@ class analysis(processor.ProcessorABC):
         self.dataset = event.metadata['dataset']
         self.year    = event.metadata['year']
         self.processName = event.metadata['processName']
-        self.isMC    = False if "data" in self.processName else True
-
-        self.isMixedData    = not (self.dataset.find("mix_v") == -1)
-        self.isDataForMixed = not (self.dataset.find("data_3b_for_mixed") == -1)
-        self.isTTForMixed   = not (self.dataset.find("TTTo") == -1) and not ( self.dataset.find("_for_mixed") == -1 )
-
-        if self.isMixedData:
-            self.isMC = False
 
         #
-        #  Nominal config (...what we would do for data)
+        # Set process and datset dependent flags
         #
-        self.cut_on_lumimask         = True
-        self.do_lepton_jet_cleaning  = True
-
-        if self.isMC:
-            self.cut_on_lumimask     = False
-            self.do_jet_calibration  = True
-
+        self.config = processor_config(self.processName, self.dataset, event)
+        logging.debug(f' config={self.config} \n')
 
         self.nEvent = len(event)
 
         #
         # Event selection
         #
-        event = apply_event_selection_4b( event, self.corrections_metadata[self.year], cut_on_lumimask=self.cut_on_lumimask)
+        event = apply_event_selection_4b( event, self.corrections_metadata[self.year], cut_on_lumimask=self.config["cut_on_lumimask"])
 
         #
         # Calculate and apply Jet Energy Calibration
         #
-        juncWS = [ self.corrections_metadata[self.year]["JERC"][0].replace("STEP", istep)
-                    for istep in ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"] ] + self.corrections_metadata[self.year]["JERC"][2:]
-
-        jets = init_jet_factory(juncWS, event, self.isMC)
+        jets = apply_jerc_corrections(event,
+                                corrections_metadata=self.corrections_metadata[self.year],
+                                isMC=self.config["isMC"],
+                                run_systematics=False,
+                                dataset=self.dataset
+                                )
         event["Jet"] = jets
 
         # Apply object selection (function does not remove events, adds content to objects)
         event = apply_object_selection_4b( event, self.corrections_metadata[self.year],
-                                           doLeptonRemoval=self.do_lepton_jet_cleaning )
+                                           doLeptonRemoval=self.config["do_lepton_jet_cleaning"] )
 
         create_cand_jet_dijet_quadjet( event, event.event,
-                                      isMC = self.isMC,
+                                      isMC = self.config["isMC"],
                                       apply_FvT=False,
                                       apply_boosted_veto=False,
                                       run_SvB=False,

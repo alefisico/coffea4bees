@@ -9,10 +9,11 @@ from analysis.helpers.SvB_helpers import setSvBVars, subtract_ttbar_with_SvB
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
 from base_class.math.random import Squares
 from analysis.helpers.event_weights import add_weights, add_btagweights
+from analysis.helpers.processor_config import processor_config
 
 from coffea.analysis_tools import Weights, PackedSelection
 import numpy as np
-from analysis.helpers.common import init_jet_factory, update_events
+from analysis.helpers.common import apply_jerc_corrections, update_events
 from copy import copy
 import logging
 import awkward as ak
@@ -50,7 +51,6 @@ class DeClusterer(PicoAOD):
 
     def select(self, event):
 
-        isMC    = True if event.run[0] == 1 else False
         year    = event.metadata['year']
         dataset = event.metadata['dataset']
         fname   = event.metadata['filename']
@@ -59,25 +59,13 @@ class DeClusterer(PicoAOD):
         nEvent = len(event)
         year_label = self.corrections_metadata[year]['year_label']
         chunk   = f'{dataset}::{estart:6d}:{estop:6d} >>> '
-
+        processName = event.metadata['processName']
 
         #
-        #  Nominal config (...what we would do for data)
+        # Set process and datset dependent flags
         #
-        cut_on_lumimask         = True
-        cut_on_HLT_decision     = True
-        do_MC_weights           = False
-        do_jet_calibration      = False
-        do_lepton_jet_cleaning  = True
-
-        if isMC:
-            cut_on_lumimask     = False
-            cut_on_HLT_decision = False
-            do_jet_calibration  = True
-            do_MC_weights       = True
-
-
-
+        config = processor_config(processName, dataset, event)
+        logging.debug(f'{chunk} config={config}, for file {fname}\n')
 
         path = fname.replace(fname.split("/")[-1], "")
 
@@ -93,11 +81,11 @@ class DeClusterer(PicoAOD):
             # defining SvB_MA
             setSvBVars("SvB_MA", event)
 
-        event = apply_event_selection_4b( event, self.corrections_metadata[year], cut_on_lumimask=cut_on_lumimask )
+        event = apply_event_selection_4b( event, self.corrections_metadata[year], cut_on_lumimask=config["cut_on_lumimask"] )
 
 
         ## adds all the event mc weights and 1 for data
-        weights, list_weight_names = add_weights( event, do_MC_weights, dataset, year_label,
+        weights, list_weight_names = add_weights( event, config["do_MC_weights"], dataset, year_label,
                                                   estart, estop,
                                                   self.corrections_metadata[year],
                                                   isTTForMixed=False,
@@ -108,24 +96,25 @@ class DeClusterer(PicoAOD):
         #
         # Calculate and apply Jet Energy Calibration
         #
-        if do_jet_calibration:
-            juncWS = [ self.corrections_metadata[year]["JERC"][0].replace("STEP", istep)
-                       for istep in ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"] ] + self.corrections_metadata[year]["JERC"][2:]
-
-            jets = init_jet_factory(juncWS, event, isMC)
+        if config["do_jet_calibration"]:
+            jets = apply_jerc_corrections(event,
+                                          corrections_metadata=self.corrections_metadata[year],
+                                          isMC=config["isMC"],
+                                          dataset=dataset
+                                          )
         else:
             jets = event.Jet
 
 
         event = update_events(event, {"Jet": jets})
 
-        event = apply_object_selection_4b( event, self.corrections_metadata[year], doLeptonRemoval=do_lepton_jet_cleaning  )
+        event = apply_object_selection_4b( event, self.corrections_metadata[year], doLeptonRemoval=config["do_lepton_jet_cleaning"]  )
 
 
         #
         # Get the trigger weights
         #
-        if isMC:
+        if config["isMC"]:
             if "GluGlu" in dataset:
                 ### this is temporary until trigWeight is computed in new code
                 trigWeight_file = uproot.open(f'{event.metadata["filename"].replace("picoAOD", "trigWeights")}')['Events']
@@ -140,7 +129,7 @@ class DeClusterer(PicoAOD):
         selections = PackedSelection()
         selections.add( "lumimask", event.lumimask)
         selections.add( "passNoiseFilter", event.passNoiseFilter)
-        selections.add( "passHLT", ( event.passHLT if cut_on_HLT_decision else np.full(len(event), True)  ) )
+        selections.add( "passHLT", ( event.passHLT if config["cut_on_HLT_decision"] else np.full(len(event), True)  ) )
         selections.add( 'passJetMult',   event.passJetMult )
         selections.add( "passFourTag", event.fourTag)
 
@@ -158,7 +147,7 @@ class DeClusterer(PicoAOD):
         #
         # Add Btag SF
         #
-        if isMC:
+        if config["isMC"]:
 
             weights, list_weight_names = add_btagweights( event, weights,
                                                           list_weight_names=list_weight_names,
@@ -170,7 +159,7 @@ class DeClusterer(PicoAOD):
             self._cutFlow.fill( "passFourTag_btagSF", event[selections.all(*cumulative_cuts)], allTag=True )
 
         selection = event.lumimask & event.passNoiseFilter & event.passJetMult & event.fourTag
-        if not isMC: selection = selection & event.passHLT
+        if not config["isMC"]: selection = selection & event.passHLT
 
         selev = event[selections.all(*cumulative_cuts)]
 
@@ -202,7 +191,7 @@ class DeClusterer(PicoAOD):
         canJet = canJet * canJet.bRegCorr
         canJet["bRegCorr"] = selev.Jet.bRegCorr[canJet_idx]
         canJet["btagDeepFlavB"] = selev.Jet.btagDeepFlavB[canJet_idx]
-        if isMC:
+        if config["isMC"]:
             canJet["hadronFlavour"] = selev.Jet.hadronFlavour[canJet_idx]
 
         canJet["calibration"] = selev.Jet.calibration[canJet_idx]
@@ -269,7 +258,7 @@ class DeClusterer(PicoAOD):
                 "nClusteredJets":      selev.nClusteredJets,
             }
 
-        if isMC:
+        if config["isMC"]:
             out_branches["trigWeight_Data"] = selev.trigWeight_Data
             out_branches["trigWeight_MC"]   = selev.trigWeight_MC
             out_branches["CMSbtag"]        = weights.partial_weight(include=["CMS_btag"])[selections.all(*cumulative_cuts)]

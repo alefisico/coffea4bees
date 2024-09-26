@@ -471,6 +471,9 @@ if __name__ == '__main__':
             if configs['runner'].get("class_name", None) == "SubSampler":
                 kwargs["pico_base_name"] = f'picoAOD_PSData'
 
+            if configs['runner'].get("class_name", None) == "Skimmer" and configs["config"].get("skim4b", False):
+                kwargs["pico_base_name"] = f'picoAOD_fourTag'
+
             if client is not None:
                 output = client.compute(resize(**kwargs), sync=True)
             else:
