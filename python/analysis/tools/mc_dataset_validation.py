@@ -105,8 +105,8 @@ class sanity_check:
         result = {}
         errors = []
         runs = file["Runs"].arrays(["genEventCount", "genEventSumw"])
-        count = int(ak.sum(runs["genEventCount"]))
-        sumw = float(ak.sum(runs["genEventSumw"]))
+        count = int(np.sum(runs["genEventCount"]))
+        sumw = float(np.sum(runs["genEventSumw"].to_numpy().astype(np.float64)))
         if count != nevents:
             errors.append(
                 {
@@ -121,7 +121,7 @@ class sanity_check:
         minimum = float(np.min(genWeight))
         _sumw = float(
             np.sum(events.genWeight.to_numpy().astype(np.float64))
-        )  # avoid numerical error # TODO propagate to skimmer
+        )  # avoid numerical error
         if count != len(events):
             errors.append(
                 {
