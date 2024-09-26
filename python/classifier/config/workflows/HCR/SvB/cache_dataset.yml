@@ -1,4 +1,4 @@
-# template: norm
+# template: norm, dataset
 main:
   module: cache
   option:
@@ -28,4 +28,4 @@ dataset:
 setting:
   - module: IO
     option:
-      - output: root://cmseos.fnal.gov//store/user/{user}/HH4b/classifier/SvB/dataset/
+      - output: root://cmseos.fnal.gov//store/user/{{user}}/HH4b/classifier/SvB/dataset/{dataset}/

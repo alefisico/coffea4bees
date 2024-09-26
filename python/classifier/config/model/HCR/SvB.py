@@ -11,11 +11,12 @@ from .FvT import _ROC_BIN, _roc_nominal_selection
 if TYPE_CHECKING:
     from classifier.ml.skimmer import BatchType
 
+_BKG = ("data", "ttbar")
 
-class _roc_select_kl:
-    def __init__(self, signal: str, kl: float):
-        self.signal = signal
-        self.kl = kl
+
+class _roc_select_sig:
+    def __init__(self, sig: str):
+        self.sig = sig
 
     def __call__(self, batch: BatchType):
         selected = self._select(batch)
@@ -26,10 +27,24 @@ class _roc_select_kl:
         }
 
     def _select(self, batch: BatchType):
-        is_signal = batch[Input.label] == MultiClass.index(self.signal)
-        not_kl = batch["kl"] != self.kl
+        import torch
 
-        return ~(is_signal & not_kl)
+        label = batch[Input.label]
+        return torch.isin(label, label.new_tensor(MultiClass.indices(*_BKG, self.sig)))
+
+
+class _roc_select_ggF(_roc_select_sig):
+    def __init__(self, *labels: str, kl: float):
+        self.bkg = labels
+        self.kl = kl
+
+    def _select(self, batch: BatchType):
+        import torch
+
+        label = batch[Input.label]
+        return torch.isin(label, label.new_tensor(MultiClass.indices(*self.bkg))) | (
+            (batch["kl"] == self.kl) & (label == MultiClass.index("ggF"))
+        )
 
 
 class ggF_SM(HCR):
@@ -37,7 +52,9 @@ class ggF_SM(HCR):
     def loss(batch: BatchType):
         import torch.nn.functional as F
 
-        bkg_sigsm = _roc_select_kl("ggF", 1.0)._select(batch)
+        bkg_sigsm = ~(
+            (batch[Input.label] == MultiClass.index("ggF")) & (batch["kl"] != 1.0)
+        )
 
         c_score = batch[Output.class_raw][bkg_sigsm]
         weight = batch[Input.weight][bkg_sigsm]
@@ -50,36 +67,52 @@ class ggF_SM(HCR):
 
     @property
     def rocs(self):
-        from classifier.ml.roc import MulticlassROC
+        from classifier.ml.benchmarks.multiclass import ROC
 
         return [
-            MulticlassROC(
+            ROC(
                 name="background vs signal",
                 selection=_roc_nominal_selection,
                 bins=_ROC_BIN,
-                pos=("data", "ttbar"),
+                pos=_BKG,
             ),
             *(
-                MulticlassROC(
+                ROC(
                     name=f"background vs {sig}",
-                    selection=_roc_nominal_selection,
+                    selection=_roc_select_sig(sig),
                     bins=_ROC_BIN,
-                    pos=(sig,),
-                    neg=("data", "ttbar"),
-                    score="differ",
+                    pos=_BKG,
                 )
                 for sig in ("ZZ", "ZH", "ggF")
             ),
             *(
-                MulticlassROC(
+                ROC(
                     name=f"background vs ggF (kl={kl:.6g})",
-                    selection=_roc_select_kl("ggF", kl),
+                    selection=_roc_select_ggF(*_BKG, kl=kl),
                     bins=_ROC_BIN,
-                    pos=("ggF",),
-                    neg=("data", "ttbar"),
-                    score="differ",
+                    pos=_BKG,
                 )
                 for kl in MC_HH_ggF.kl
+            ),
+            *(
+                ROC(
+                    name=f"{sig} vs ggF (kl={kl:.6g})",
+                    selection=_roc_select_ggF(sig, kl=kl),
+                    bins=_ROC_BIN,
+                    pos=(sig,),
+                    neg=("ggF",),
+                    score="differ",
+                )
+                for sig in ("ZZ", "ZH")
+                for kl in MC_HH_ggF.kl
+            ),
+            ROC(
+                name="ZZ vs ZH",
+                selection=_roc_nominal_selection,
+                bins=_ROC_BIN,
+                pos=("ZZ",),
+                neg=("ZH",),
+                score="differ",
             ),
         ]
 
