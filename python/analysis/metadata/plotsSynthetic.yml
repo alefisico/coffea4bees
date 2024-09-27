@@ -4,16 +4,16 @@ hists:
                 tag: fourTag
                 year: RunII
                 label: Mixed Data (v0)
-                edgecolor: k
-                fillcolor: k            
+                edgecolor: r
+                fillcolor: r            
 
         data:
                 process: data
                 tag: fourTag
                 year: RunII
                 label: Data
-                edgecolor: r
-                fillcolor: r            
+                edgecolor: k
+                fillcolor: k            
 
 
 stack:

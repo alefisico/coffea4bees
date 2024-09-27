@@ -58,7 +58,7 @@ def write_2D_pdf(output_file, varName, hist, n_spaces=4):
     output_file.write(f"{spaces}    probabilities_flat:  {probabilities_flat.tolist()}\n")
 
 
-def make_PDFs_vs_Pt(config, output_file_name_vs_pT):
+def make_PDFs_vs_Pt(config, output_file_name_vs_pT, year):
 
     splittings = list(config.keys())
     varNames   = list(config[splittings[0]].keys())
@@ -102,7 +102,7 @@ def make_PDFs_vs_Pt(config, output_file_name_vs_pT):
                 for _iPt in range(len(pt_bins) - 1):
 
                     cut_dict = get_cut_dict("passPreSel", cfg.cutList)
-                    plot_dict = {"process":"data", "year":sum, "tag":1,"region":sum, "pt":_iPt}
+                    plot_dict = {"process":"data", "year":year, "tag":1,"region":sum, "pt":_iPt}
                     plot_dict = plot_dict | cut_dict
 
 
@@ -153,7 +153,7 @@ def get_bins_xMin_xMax_from_centers(centers):
     return nBins, xMin, xMax
 
 
-def test_PDFs_vs_Pt(config, output_file_name):
+def test_PDFs_vs_Pt(config, output_file_name, year):
     splittings = list(config.keys())
     varNames   = list(config[splittings[0]].keys())
 
@@ -233,11 +233,11 @@ def test_PDFs_vs_Pt(config, output_file_name):
 
 
         sorted_counts = dict(sorted(total_counts.items(), key=lambda item: item[1], reverse=True) )
-        with open(args.outputFolder+'/all_splittings_multiplicities.yaml', 'w') as splitting_mult_file:
+        with open(args.outputFolder+f'/all_splittings_multiplicities_{year}.yml', 'w') as splitting_mult_file:
             yaml.dump(sorted_counts, splitting_mult_file, default_flow_style=False)
 
 
-        with open(args.outputFolder+"/all_splittings_multiplicities.txt", "w") as splitting_mult_file:
+        with open(args.outputFolder+f"/all_splittings_multiplicities_{year}.txt", "w") as splitting_mult_file:
             for k, v, in sorted_counts.items():
                 #nJets, nbs = get_splitting_summary(k)
 
@@ -270,7 +270,7 @@ def test_PDFs_vs_Pt(config, output_file_name):
 
 
 
-def doPlots(debug=False):
+def doPlots(year, debug=False):
 
     #
     #  config Setup
@@ -369,15 +369,15 @@ def doPlots(debug=False):
     #splitting_config["((bj)j)b"] = s_XX_X_X
 
 
-    with open(args.outputFolder+"/all_splittings.txt", "w") as splitting_out_file:
+    with open(args.outputFolder+f"/all_splittings_{year}.txt", "w") as splitting_out_file:
         all_splittings.sort(reverse=True)
         for _s in all_splittings:
 
             splitting_out_file.write(f"{_s}\n")
 
-    output_file_name_vs_pT = args.outputFolder+"/clustering_pdfs_vs_pT.yml"
-    make_PDFs_vs_Pt(splitting_config, output_file_name_vs_pT)
-    test_PDFs_vs_Pt(splitting_config, output_file_name_vs_pT)
+    output_file_name_vs_pT = args.outputFolder+f"/clustering_pdfs_vs_pT_{year}.yml"
+    make_PDFs_vs_Pt(splitting_config, output_file_name_vs_pT, year)
+    test_PDFs_vs_Pt(splitting_config, output_file_name_vs_pT, year)
 
 
 
@@ -400,4 +400,5 @@ if __name__ == '__main__':
     cfg.axisLabels, cfg.cutList = read_axes_and_cuts(cfg.hists, cfg.plotConfig)
 
     #varList = [ h for h in cfg.hists[0]['hists'].keys() if not h in args.skip_hists ]
-    doPlots(debug=args.debug)
+    for y in ["UL18", "UL17", "UL16_preVFP", "UL16_postVFP"]:
+        doPlots(year=y, debug=args.debug)
