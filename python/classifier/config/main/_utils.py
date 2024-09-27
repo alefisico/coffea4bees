@@ -50,6 +50,7 @@ class SelectDevice(Main):
     argparser.add_argument(
         "--device",
         nargs="+",
+        choices=["cpu", "cuda"],
         default=["cuda"],
         help="the device used for training",
     )

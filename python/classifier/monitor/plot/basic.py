@@ -14,8 +14,10 @@ from bokeh.models import (
     HoverTool,
     Legend,
     LegendItem,
+    ScrollBox,
     Slider,
     Toggle,
+    UIElement,
 )
 from bokeh.plotting import figure
 
@@ -30,12 +32,11 @@ _VSPAN_KWARGS = {
     "color": "green",
     "alpha": 0.3,
 }
-_SIZE = {"sizing_mode": "stretch_width"}
 _SCALAR_FIGURE = {
     "height": 300,
     "toolbar_location": "left",
     "tools": "xpan,xwheel_zoom,reset,save",
-    **_SIZE,
+    "sizing_mode": "stretch_width",
 }
 _CURVE_FIGURE = {
     "toolbar_location": "left",
@@ -45,7 +46,7 @@ _SLIDER_KWARGS = {
     "start": 1,
     "step": 1,
     "margin": (0, 20, 0, 20),
-    **_SIZE,
+    "sizing_mode": "stretch_width",
 }
 _LEGEND_KWARGS = {
     "location": "top_center",
@@ -80,7 +81,18 @@ def generate_toggles(keys: set[str], category: dict[str, list[str]]):
             for toggle in group[1:]:
                 group[0].js_link("active", toggle, "active")
             layout.extend(group)
-    return toggles, row(*layout)
+    return toggles, row(*layout, sizing_mode="stretch_width")
+
+
+def generate_layout(toggles: UIElement, plots: list[UIElement]):
+    return column(
+        toggles,
+        ScrollBox(
+            child=column(plots, sizing_mode="stretch_width"),
+            sizing_mode="stretch_both",
+        ),
+        sizing_mode="stretch_both",
+    )
 
 
 def plot_multiphase_scalar(
@@ -90,22 +102,15 @@ def plot_multiphase_scalar(
     phase: pd.DataFrame,
     phase_milestone: list[str],
     style: StyleDict,
-    category: dict[str, list[str]] = None,
-    shared_category_toggles: dict[str, Toggle] = None,
+    category: dict[str, list[str]],
 ):
     layout = []
     data = plot_data
     milestone = phase_milestone
     # generate toggles
-    if shared_category_toggles is not None:
-        cat_toggles = shared_category_toggles
-    elif category is not None:
-        cat_toggles, toggle_row = generate_toggles(
-            set(chain.from_iterable(data.keys())), category
-        )
-        layout.append(toggle_row)
-    else:
-        raise ValueError("Either category or shared_category_toggles must be provided.")
+    cat_toggles, toggle_row = generate_toggles(
+        set(chain.from_iterable(data.keys())), category
+    )
     # generate phase separator
     separators = {"x": [], "label": []}
     _nulls = phase.isnull()
@@ -188,7 +193,7 @@ def plot_multiphase_scalar(
         phase_hover.renderers.append(vs)
         layout.append(fig)
 
-    return column(*layout, **_SIZE)
+    return generate_layout(toggle_row, layout)
 
 
 def plot_multiphase_curve(
@@ -196,8 +201,7 @@ def plot_multiphase_curve(
     phase: pd.DataFrame,
     data: dict[str, dict[tuple[str, ...], list[pd.DataFrame]]],
     style: StyleDict,
-    category: dict[str, list[str]] = None,
-    shared_category_toggles: dict[str, Toggle] = None,
+    category: dict[str, list[str]],
     x_axis: LabelLike = "x",
     y_axis: LabelLike = "y",
     figure_kwargs: dict[str] = None,
@@ -207,20 +211,14 @@ def plot_multiphase_curve(
     figure_kwargs = figure_kwargs or {}
     layout = []
     # generate toggles
-    if shared_category_toggles is not None:
-        cat_toggles = shared_category_toggles
-    elif category is not None:
-        cat_toggles, toggle_row = generate_toggles(
-            set(
-                chain.from_iterable(
-                    chain.from_iterable(map(lambda x: x.keys(), data.values()))
-                )
-            ),
-            category,
-        )
-        layout.append(toggle_row)
-    else:
-        raise ValueError("Either category or shared_category_toggles must be provided.")
+    cat_toggles, toggle_row = generate_toggles(
+        set(
+            chain.from_iterable(
+                chain.from_iterable(map(lambda x: x.keys(), data.values()))
+            )
+        ),
+        category,
+    )
     # generate phases
     phases = {}
     for i, r in phase.astype(str).iterrows():
@@ -297,6 +295,6 @@ def plot_multiphase_curve(
                     ),
                 )
         fig.add_layout(Legend(items=legends, **_LEGEND_KWARGS), "right")
-        layout.append(column(slider, row(fig, banner), **_SIZE))
+        layout.append(column(slider, row(fig, banner), sizing_mode="stretch_width"))
 
-    return column(*layout, **_SIZE)
+    return generate_layout(toggle_row, layout)

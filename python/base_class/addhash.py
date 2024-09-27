@@ -19,5 +19,13 @@ def get_git_diff_master() -> str:
     else: return 'Not run locally.'
 
 def get_git_diff() -> str:
-    if is_git_directory(): return subprocess.check_output(['git', 'diff', 'HEAD'])#.decode('ascii')
-    else: return 'Not run locally.'
+    if is_git_directory():
+        # Get the list of files not ignored
+        files = subprocess.check_output(['git', 'ls-files']).decode('ascii').strip().split('\n')
+        if files:
+            # Pass these files to git diff
+            return subprocess.check_output(['git', 'diff', 'HEAD'] + files).decode('ascii')
+        else:
+            return 'No changes to show.'
+    else:
+        return 'Not run locally'

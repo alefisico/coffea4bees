@@ -25,7 +25,7 @@ from . import (
     OutputStage,
     TrainingStage,
 )
-from .roc import MulticlassROC
+from .benchmarks.multiclass import ROC
 from .skimmer import Skimmer, Splitter
 
 
@@ -57,7 +57,7 @@ class GBNSchedule(MilestoneStep):
 
 @dataclass
 class HCRBenchmarks:
-    rocs: Iterable[MulticlassROC]
+    rocs: Iterable[ROC]
 
 
 def _HCRInput(batch: BatchType, device: tt.Device, selection: Tensor = None):
@@ -151,7 +151,7 @@ class HCRModel(Model):
             weight += sumw
             for roc in rocs:
                 roc.update(batch)
-        return {"loss": loss / weight, "roc": [r.roc() for r in rocs]}
+        return {"loss": loss / weight, "roc": [r.to_json() for r in rocs]}
 
     def step(self, epoch: int = None):
         if self.ghost_batch is not None and self.ghost_batch.step(epoch):

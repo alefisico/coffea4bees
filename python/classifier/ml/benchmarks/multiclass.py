@@ -1,11 +1,12 @@
-from typing import Callable, Iterable, Literal, TypedDict
+from typing import Callable, Iterable, Literal, Optional, TypedDict
 
-import base_class.numpy as npext
+import torch
+from classifier.config.state.label import MultiClass
 from torch import Tensor
 
-from ..algorithm.metrics.roc import FixedThresholdROC, HistRegularAxis, linear_differ
-from ..config.state.label import MultiClass
-from . import BatchType
+from ...algorithm.hist import FloatWeighted, RegularAxis
+from ...algorithm.metrics.roc import FixedThresholdROC, linear_differ
+from .. import BatchType
 
 
 class ROCInputType(TypedDict):
@@ -14,18 +15,18 @@ class ROCInputType(TypedDict):
     weights: Tensor | None
 
 
-class MulticlassROC(FixedThresholdROC):
+class ROC(FixedThresholdROC):
     def __init__(
         self,
         name: str,
         selection: Callable[[BatchType], ROCInputType],
-        bins: HistRegularAxis | Iterable[float],
+        bins: RegularAxis | Iterable[float],
         pos: Iterable[str],
         neg: Iterable[str] = None,
         score: Literal["differ"] | None = None,
     ):
-        self.name = name
-        self.selection = selection
+        self._name = name
+        self._select = selection
         pos = MultiClass.indices(*pos)
         if neg is not None:
             neg = MultiClass.indices(*neg)
@@ -40,12 +41,13 @@ class MulticlassROC(FixedThresholdROC):
         )
 
     def update(self, batch: BatchType):
-        super().update(**self.selection(batch))
+        super().update(**self._select(batch))
 
-    def roc(self):
-        fpr, tpr, auc = super().roc()
+    def to_json(self):
+        return {"name": self._name} | super().to_json()
+
         return {
-            "name": self.name,
+            "name": self._name,
             "FPR": npext.to.base64(fpr),
             "TPR": npext.to.base64(tpr),
             "AUC": auc,

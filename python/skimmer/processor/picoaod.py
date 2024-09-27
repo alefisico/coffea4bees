@@ -28,7 +28,7 @@ class SkimmingError(Exception):
 
 
 def _log_exception(e, *_):
-    logging.error(f"The following exception occurred during skimming:", exc_info=e)
+    logging.error("The following exception occurred during skimming:", exc_info=e)
     return {}
 
 
@@ -48,8 +48,6 @@ def _branch_filter(collections: Iterable[str], branches: Iterable[str]):
     return rf'^(?!({"|".join(branches)})$).*$'
 
 
-
-
 class PicoAOD(ProcessorABC):
     def __init__(
         self,
@@ -57,7 +55,7 @@ class PicoAOD(ProcessorABC):
         step: int,
         skip_collections: Iterable[str] = None,
         skip_branches: Iterable[str] = None,
-        pico_base_name: str = _PICOAOD
+        pico_base_name: str = _PICOAOD,
     ):
         self._base = EOS(base_path)
         self._step = step
@@ -76,7 +74,6 @@ class PicoAOD(ProcessorABC):
             _branch_filter(skip_collections, skip_branches)
         )
 
-
     @abstractmethod
     def select(
         self, events: ak.Array
@@ -92,6 +89,7 @@ class PicoAOD(ProcessorABC):
     def process(self, events: ak.Array):
         EOS.set_retry(3, 10)  # 3 retries with 10 seconds interval
         self._cutFlow = cutFlow(self.cutFlowCuts)
+        # TODO remove events with huge weight
         selected = self.select(events)
         added, result = None, {}
         if isinstance(selected, tuple):
@@ -104,6 +102,7 @@ class PicoAOD(ProcessorABC):
         dataset = events.metadata["dataset"]
 
         # construct output
+        # TODO calculate sumw and sumw2
         result = {
             dataset: {
                 "total_events": len(events),
@@ -123,7 +122,9 @@ class PicoAOD(ProcessorABC):
             added is not None
             and (size := len(added)) != result[dataset]["saved_events"]
         ):
-            raise SkimmingError(f"Length of additional branches ({size}) does not match the number of selected events ({result[dataset]['saved_events']})")
+            raise SkimmingError(
+                f"Length of additional branches ({size}) does not match the number of selected events ({result[dataset]['saved_events']})"
+            )
         # clear cache
         _clear_cache(events)
         # save selected events
@@ -169,9 +170,13 @@ def _fetch_metadata(dataset: str, path: PathLike, dask: bool = False):
                 )
                 return {
                     dataset: {
-                        "count": float(ak.sum(data["genEventCount"])),
-                        "sumw": float(ak.sum(data["genEventSumw"])),
-                        "sumw2": float(ak.sum(data["genEventSumw2"])),
+                        "count": int(np.sum(data["genEventCount"])),
+                        "sumw": float(
+                            np.sum(data["genEventSumw"].to_numpy().astype(np.float64))
+                        ),
+                        "sumw2": float(
+                            np.sum(data["genEventSumw2"].to_numpy().astype(np.float64))
+                        ),
                     }
                 }
             else:
@@ -195,6 +200,7 @@ def fetch_metadata(
             results = [task.result() for task in tasks]
     else:
         from dask import delayed
+
         func = delayed(_fetch_metadata)
         results = []
         for dataset, files in fileset.items():
@@ -262,7 +268,6 @@ def resize(
     chunk_size: int,
     dask: bool = True,
     pico_base_name: str = _PICOAOD,
-
 ):
     base = EOS(base_path)
     transform = NanoAOD(regular=False, jagged=True)

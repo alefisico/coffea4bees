@@ -61,6 +61,7 @@ class Log(Cascade):
     file: str = "logs.html"
 
     level: int = 20
+    forward_exception: bool = True
 
 
 class Progress(Cascade):

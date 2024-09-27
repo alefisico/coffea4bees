@@ -8,7 +8,7 @@ from classifier.task import ArgParser, Dataset, EntryPoint, parse
 
 
 class cache(Dataset):
-    argparser = ArgParser(description="Load datasets saved by [blue]cache[/blue].")
+    argparser = ArgParser(description="Load the datasets saved by [blue]cache[/blue].")
     argparser.add_argument(
         "--input",
         default=argparse.SUPPRESS,
