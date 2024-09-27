@@ -400,5 +400,10 @@ if __name__ == '__main__':
     cfg.axisLabels, cfg.cutList = read_axes_and_cuts(cfg.hists, cfg.plotConfig)
 
     #varList = [ h for h in cfg.hists[0]['hists'].keys() if not h in args.skip_hists ]
-    for y in ["UL18", "UL17", "UL16_preVFP", "UL16_postVFP"]:
+    years = ["UL18", "UL17", "UL16_preVFP", "UL16_postVFP"]
+
+    if args.doTest:
+        years = [sum]
+
+    for y in years:
         doPlots(year=y, debug=args.debug)
