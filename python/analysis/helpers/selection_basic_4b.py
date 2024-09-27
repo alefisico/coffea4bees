@@ -86,10 +86,9 @@ def apply_object_selection_4b(event, corrections_metadata, *,
 
     event['passPreSel'] = event.threeTag | event.fourTag
 
-    tagCode = np.full(len(event), 0, dtype=int)
+    tagCode = np.zeros(len(event), dtype=int)
     tagCode[event.fourTag]  = 4
     tagCode[event.threeTag] = 3
-    event['tag'] = tagCode
 
     #  Calculate hT
     event["hT"] = ak.sum(event.Jet[event.Jet.selected_loose].pt, axis=1)
@@ -101,10 +100,40 @@ def apply_object_selection_4b(event, corrections_metadata, *,
         event['Jet', 'selected_lowpt'] = (event.Jet.pt >= 15) & (np.abs(event.Jet.eta) <= 2.4) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned & ~event.Jet.selected
         event['lowptJet'] = event.Jet[event.Jet.selected_lowpt]
         event['Jet', 'tagged_lowpt'] = event.Jet.selected_lowpt & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['M'])
+        event['Jet', 'tagged_loose_lowpt'] = event.Jet.selected_lowpt & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['L'])
         event['nJet_tagged_lowpt'] = ak.num(event.Jet[event.Jet.tagged_lowpt])
+        event['nJet_tagged_loose_lowpt'] = ak.num(event.Jet[event.Jet.tagged_loose_lowpt])
         event['tagJet_lowpt'] = event.Jet[event.Jet.tagged_lowpt]
-        event['lowpt_fourTag']  = (event['nJet_tagged']==3) & (event['nJet_tagged_lowpt'] >= 0)
-        event['lowpt_threeTag'] = event.threeTag & ~event.lowpt_fourTag
+        event['lowpt_fourTag']  = (event['nJet_tagged']==3) & (event['nJet_tagged_lowpt'] > 0) & ~event.fourTag
+        event['lowpt_threeTag_3b1j_0b'] = (event['nJet_tagged_loose'] == 3) & (event['nJet_selected'] >= 4) & (event['nJet_tagged_loose_lowpt']==0) & (ak.num(event['lowptJet'])>0)
+        event['lowpt_threeTag_2b2j_1b'] = (event['nJet_tagged_loose'] == 2) & (event['nJet_selected'] >= 4) & (event['nJet_tagged_loose_lowpt']==1) 
+        event['lowpt_threeTag_1b3j_2b'] = (event['nJet_tagged_loose'] == 1) & (event['nJet_selected'] >= 4) & (event['nJet_tagged_loose_lowpt']==2) 
+        event['lowpt_threeTag_0b4j_3b'] = (event['nJet_tagged_loose'] == 0) & (event['nJet_selected'] >= 4) & (event['nJet_tagged_loose_lowpt']==3) 
+        event['lowpt_threeTag'] = event['lowpt_threeTag_3b1j_0b'] | event['lowpt_threeTag_2b2j_1b'] | event['lowpt_threeTag_1b3j_2b'] | event['lowpt_threeTag_0b4j_3b'] 
+        tagCode[event["lowpt_fourTag"]] = 14
+        tagCode[event["lowpt_threeTag"]] = 13
+        event['lowpt_categories'] = np.where(
+            event['fourTag'], 1,
+            np.where(
+                event['lowpt_fourTag'], 3,
+                np.where(
+                    event["lowpt_threeTag_3b1j_0b"], 5,
+                    np.where(
+                        event["lowpt_threeTag_2b2j_1b"], 7,
+                        np.where(
+                            event["lowpt_threeTag_1b3j_2b"], 9,
+                            np.where(
+                                event["lowpt_threeTag_0b4j_3b"], 11,
+                                np.where(event['threeTag'], 13, 15)
+                            )
+                        )
+                    )
+                )
+            )
+        )   ### these is the category for the low pt selection
+
+        event['passPreSel'] = event.lowpt_threeTag | event.lowpt_fourTag
+    event['tag'] = tagCode
 
 
     # Only need 30 GeV jets for signal systematics
