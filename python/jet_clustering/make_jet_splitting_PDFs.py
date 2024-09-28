@@ -380,7 +380,7 @@ def doPlots(year, debug=False):
 
             splitting_out_file.write(f"{_s}\n")
 
-    output_file_name_vs_pT = args.outputFolder+f"/clustering_pdfs_vs_pT_{year}.yml"
+    output_file_name_vs_pT = args.outputFolder+f"/clustering_pdfs_vs_pT_{year_str}.yml"
     make_PDFs_vs_Pt(splitting_config, output_file_name_vs_pT, year)
     test_PDFs_vs_Pt(splitting_config, output_file_name_vs_pT, year)
 
