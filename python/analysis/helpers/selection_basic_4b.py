@@ -90,6 +90,8 @@ def apply_object_selection_4b(event, corrections_metadata, *,
     event['selJet', "puId"]          = event.Jet.puId         [event.Jet.selected]
     event['selJet', "jetId"]         = event.Jet.jetId        [event.Jet.selected]
     event['selJet', "tagged"]        = event.Jet.tagged       [event.Jet.selected]
+    if "hadronFlavour" in event.Jet.fields:
+        event['selJet', "hadronFlavour"] = event.Jet.hadronFlavour[event.Jet.selected]
 
     event['passJetMult'] = event.nJet_selected >= 4
 
