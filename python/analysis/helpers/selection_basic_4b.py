@@ -23,9 +23,9 @@ def apply_event_selection_4b( event, corrections_metadata, *, cut_on_lumimask=Tr
 
     return event
 
-def apply_object_selection_4b(event, corrections_metadata, *, 
-                              doLeptonRemoval: bool = True, 
-                              loosePtForSkim: bool = False, 
+def apply_object_selection_4b(event, corrections_metadata, *,
+                              doLeptonRemoval: bool = True,
+                              loosePtForSkim: bool = False,
                               override_selected_with_flavor_bit: bool = False,
                               run_lowpt_selection: bool = False):
     """docstring for apply_basic_selection_4b. This fuction is not modifying the content of anything in events. it is just adding it"""
@@ -67,18 +67,36 @@ def apply_object_selection_4b(event, corrections_metadata, *,
 
     if override_selected_with_flavor_bit and "jet_flavor_bit" in event.Jet.fields:
         event['Jet', 'selected'] = (event.Jet.selected) | (event.Jet.jet_flavor_bit == 1)
+        event['Jet', 'selected_loose'] = True
 
 
     event['nJet_selected'] = ak.sum(event.Jet.selected, axis=1)
-    event['selJet'] = event.Jet[event.Jet.selected]
+
     event['Jet', 'tagged']       = event.Jet.selected & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['M'])
     event['Jet', 'tagged_loose'] = event.Jet.selected & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['L'])
+
+    #
+    # Apply the bRegCorr to the tagged jets
+    #
+    bRegCorr_factor_flat = ak.flatten(event.Jet.bRegCorr).to_numpy()
+    tagged_flag_flat    = ak.flatten(event.Jet.tagged)
+    bRegCorr_factor_flat[~tagged_flag_flat] = 1.0
+    bRegCorr_factor = ak.unflatten(bRegCorr_factor_flat, ak.num(event.Jet.bRegCorr) )
+
+    selJet = event.Jet[event.Jet.selected] * bRegCorr_factor[event.Jet.selected]
+    event['selJet'] = selJet
+    event['selJet', "bRegCorr"]      = event.Jet.bRegCorr     [event.Jet.selected]
+    event['selJet', "btagDeepFlavB"] = event.Jet.btagDeepFlavB[event.Jet.selected]
+    event['selJet', "puId"]          = event.Jet.puId         [event.Jet.selected]
+    event['selJet', "jetId"]         = event.Jet.jetId        [event.Jet.selected]
+    event['selJet', "tagged"]        = event.Jet.tagged       [event.Jet.selected]
 
     event['passJetMult'] = event.nJet_selected >= 4
 
     event['nJet_tagged']         = ak.num(event.Jet[event.Jet.tagged])
     event['nJet_tagged_loose']   = ak.num(event.Jet[event.Jet.tagged_loose])
-    event['tagJet']              = event.Jet[event.Jet.tagged]
+    event['tagJet']              = event.selJet[event.selJet.tagged]
+
     event['tagJet_loose']        = event.Jet[event.Jet.tagged_loose]
 
     event['fourTag']    = (event['nJet_tagged']       >= 4)
@@ -159,7 +177,7 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
     canJet["bRegCorr"] = selev.Jet.bRegCorr[canJet_idx]
     canJet["btagDeepFlavB"] = selev.Jet.btagDeepFlavB[canJet_idx]
     canJet["puId"] = selev.Jet.puId[canJet_idx]
-    canJet["jetId"] = selev.Jet.puId[canJet_idx]
+    canJet["jetId"] = selev.Jet.jetId[canJet_idx]
 
     if "hadronFlavour" in selev.Jet.fields:
         canJet["hadronFlavour"] = selev.Jet.hadronFlavour[canJet_idx]
