@@ -1,4 +1,5 @@
 import os
+import sys
 import hist
 import yaml
 import copy
@@ -14,9 +15,9 @@ import inspect
 
 _phi = (1 + np.sqrt(5)) / 2
 _epsilon = 0.001
-_colors = ["xkcd:blue", "xkcd:red", "xkcd:off green",
+_colors = ["xkcd:black", "xkcd:red", "xkcd:off green", "xkcd:blue",
            "xkcd:orange", "xkcd:violet", "xkcd:grey",
-           "xkcd:black", "xkcd:pink" , "xkcd:pale blue"]
+           "xkcd:pink" , "xkcd:pale blue"]
 
 
 def load_config(metadata):
@@ -38,7 +39,7 @@ def load_config(metadata):
     return plotConfig
 
 
-def get_value_nested_dict(nested_dict, target_key, default=None):
+def get_value_nested_dict(nested_dict, target_key):
     """ Return the first value from mathching key from nested dict
     """
     for k, v in nested_dict.items():
@@ -46,11 +47,12 @@ def get_value_nested_dict(nested_dict, target_key, default=None):
             return v
 
         if type(v) is dict:
-            return_value = get_value_nested_dict(v, target_key, default)
-            if not return_value == default:
-                return return_value
+            try:
+                return get_value_nested_dict(v, target_key)
+            except ValueError:
+                continue
 
-    return default
+    raise ValueError(f"\t target_key {target_key} not in nested_dict")
 
 
 def get_values_centers_from_dict(hist_config, hists, stack_dict):
@@ -480,7 +482,11 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
     if type(process) is list:
         process_config = [get_value_nested_dict(cfg.plotConfig, p) for p in process]
     else:
-        process_config = get_value_nested_dict(cfg.plotConfig, process)
+        try:
+            process_config = get_value_nested_dict(cfg.plotConfig, process)
+        except ValueError:
+            raise ValueError(f"\t ERROR process = {process} not in plotConfig! \n")
+
         var_to_plot = var_over_ride.get(process, var)
 
     #
@@ -563,7 +569,7 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
                 print_list_debug_info(_proc_conf["process"], _proc_conf.get("tag"), cut, region)
 
             _process_config = copy.copy(_proc_conf)
-            _process_config["fillcolor"] = _proc_conf.get("fillcolor", None).replace("yellow", "orange")
+            _process_config["fillcolor"] = _proc_conf.get("fillcolor", None)#.replace("yellow", "orange")
             _process_config["histtype"]  = kwargs.get("histtype","errorbar")
 
             var_to_plot = var_over_ride.get(_proc_conf["process"], var)
@@ -682,7 +688,10 @@ def makePlot(cfg, var='selJets.pt',
     if debug: print(f"In makePlot kwargs={kwargs}")
 
     if (type(cut) is list) or (type(region) is list) or (len(cfg.hists) > 1 and not cfg.combine_input_files) or (type(var) is list) or (type(process) is list) or (type(year) is list):
-        return _makeHistsFromList(cfg, var, cut, region, **kwargs)
+        try:
+            return _makeHistsFromList(cfg, var, cut, region, **kwargs)
+        except ValueError as e:
+            raise ValueError(e)
 
     # Make process a list if it exits and isnt one already
     if process is not None and type(process) is not list:
@@ -732,12 +741,6 @@ def makePlot(cfg, var='selJets.pt',
 
         hists.append( (_hist, _proc_config) )
 
-    #
-    # Add args
-    #
-
-    #yearName = get_value_nested_dict(cfg.plotConfig,  "year", default="RunII")
-    #
 
     #
     #  The stack
@@ -863,12 +866,18 @@ def make2DPlot(cfg, process, var='selJets.pt',
     """
 
     if len(cfg.hists) > 1:
-        input_data = cfg.hists
+        #
+        # Find which file has the process we are looking for
+        #
+        for _input_data in cfg.hists:
+            _hist_to_plot = _input_data['hists'][var]
+            if process in _hist_to_plot.axes["process"]:
+                hist_to_plot = _hist_to_plot
+
     else:
         input_data = cfg.hists[0]
+        hist_to_plot = input_data['hists'][var]
 
-    hist_to_plot = input_data['hists'][var]
-    varName = hist_to_plot.axes[-1].name
     cut_dict = get_cut_dict(cut, cfg.cutList)
 
     #
@@ -900,6 +909,7 @@ def make2DPlot(cfg, process, var='selJets.pt',
         print(f" hist process={process}, "
               f"tag={tag}, year={year}")
 
+    varName = hist_to_plot.axes[-1].name
     hist_dict = {"process": process_config["process"],
                  "year":    year,
                  "tag":     hist.loc(tag),
