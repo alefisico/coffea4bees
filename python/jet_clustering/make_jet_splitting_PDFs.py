@@ -231,13 +231,15 @@ def test_PDFs_vs_Pt(config, output_file_name, year):
         #all_splitting_names = set(all_splitting_names) # make unique
         #breakpoint()
 
-
+        year_str = year
+        if year_str == sum:
+            year_str = "RunII"
         sorted_counts = dict(sorted(total_counts.items(), key=lambda item: item[1], reverse=True) )
-        with open(args.outputFolder+f'/all_splittings_multiplicities_{year}.yml', 'w') as splitting_mult_file:
+        with open(args.outputFolder+f'/all_splittings_multiplicities_{year_str}.yml', 'w') as splitting_mult_file:
             yaml.dump(sorted_counts, splitting_mult_file, default_flow_style=False)
 
 
-        with open(args.outputFolder+f"/all_splittings_multiplicities_{year}.txt", "w") as splitting_mult_file:
+        with open(args.outputFolder+f"/all_splittings_multiplicities_{year_str}.txt", "w") as splitting_mult_file:
             for k, v, in sorted_counts.items():
                 #nJets, nbs = get_splitting_summary(k)
 
@@ -368,8 +370,11 @@ def doPlots(year, debug=False):
     #splitting_config["((jj)b)b"] = s_XX_X_X
     #splitting_config["((bj)j)b"] = s_XX_X_X
 
+    year_str = year
+    if year_str == sum:
+        year_str = "RunII"
 
-    with open(args.outputFolder+f"/all_splittings_{year}.txt", "w") as splitting_out_file:
+    with open(args.outputFolder+f"/all_splittings_{year_str}.txt", "w") as splitting_out_file:
         all_splittings.sort(reverse=True)
         for _s in all_splittings:
 
