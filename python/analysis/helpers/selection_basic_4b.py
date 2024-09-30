@@ -74,6 +74,7 @@ def apply_object_selection_4b(event, corrections_metadata, *,
 
     event['Jet', 'tagged']       = event.Jet.selected & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['M'])
     event['Jet', 'tagged_loose'] = event.Jet.selected & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['L'])
+    event['selJet_no_bRegCorr']  = event.Jet[event.Jet.selected]
 
     #
     # Apply the bRegCorr to the tagged jets
