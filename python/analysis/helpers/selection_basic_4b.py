@@ -84,15 +84,16 @@ def apply_object_selection_4b(event, corrections_metadata, *,
     bRegCorr_factor_flat[~tagged_flag_flat] = 1.0
     bRegCorr_factor = ak.unflatten(bRegCorr_factor_flat, ak.num(event.Jet.bRegCorr) )
 
-    selJet = event.Jet[event.Jet.selected] * bRegCorr_factor[event.Jet.selected]
-    event['selJet'] = selJet
-    event['selJet', "bRegCorr"]      = event.Jet.bRegCorr     [event.Jet.selected]
-    event['selJet', "btagDeepFlavB"] = event.Jet.btagDeepFlavB[event.Jet.selected]
-    event['selJet', "puId"]          = event.Jet.puId         [event.Jet.selected]
-    event['selJet', "jetId"]         = event.Jet.jetId        [event.Jet.selected]
-    event['selJet', "tagged"]        = event.Jet.tagged       [event.Jet.selected]
-    if "hadronFlavour" in event.Jet.fields:
-        event['selJet', "hadronFlavour"] = event.Jet.hadronFlavour[event.Jet.selected]
+    selJet_pvec = event.Jet[event.Jet.selected] * bRegCorr_factor[event.Jet.selected]
+    event['selJet'] = event.Jet[event.Jet.selected]
+
+    # Note following lines throw exception in find_tops (fast)
+    #   (Happens sporadically, unclear why)
+    # JA
+    event['selJet', "pt"]      = selJet_pvec.pt
+    event['selJet', "eta"]     = selJet_pvec.eta
+    event['selJet', "phi"]     = selJet_pvec.phi
+    event['selJet', "mass"]    = selJet_pvec.mass
 
     event['passJetMult'] = event.nJet_selected >= 4
 
