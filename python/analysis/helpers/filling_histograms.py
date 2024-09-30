@@ -27,7 +27,7 @@ def filling_nominal_histograms(selev, JCM,
 
     hist = Collection( process=[processName],
                         year=[year],
-                        tag=[3, 4, 13, 14, 0],  # 3 / 4/ Other
+                        tag=[3, 4, 0, 13, 14],  # 3 / 4/ Other
                         region=[2, 1, 0],  # SR / SB / Other
                         **dict((s, ...) for s in histCuts)
                         )
