@@ -10,8 +10,6 @@ import warnings
 from datetime import datetime
 from typing import TYPE_CHECKING
 from copy import copy
-from tqdm import tqdm
-from time import sleep
 import psutil
 
 import dask
@@ -36,7 +34,12 @@ dask.config.set({'logging.distributed': 'error'})
 NanoAODSchema.warn_missing_crossrefs = False
 warnings.filterwarnings("ignore")
 
-def list_of_files(ifile, allowlist_sites=['T3_US_FNALLPC'], test=False, test_files=5):
+def list_of_files(ifile, 
+                  allowlist_sites: list =['T3_US_FNALLPC'], 
+                  rucio_regex_sites: str ='T[23]', 
+                  test: bool = False, 
+                  test_files: int = 5
+                  ):
     '''Check if ifile is root file or dataset to check in rucio'''
 
     if isinstance(ifile, list):
@@ -48,7 +51,7 @@ def list_of_files(ifile, allowlist_sites=['T3_US_FNALLPC'], test=False, test_fil
     else:
         rucio_client = rucio_utils.get_rucio_client()
         outfiles, outsite, sites_counts = rucio_utils.get_dataset_files_replicas(
-            ifile, client=rucio_client, mode="first", allowlist_sites=allowlist_sites)
+            ifile, client=rucio_client, regex_sites=fr"{rucio_regex_sites}", mode="first", allowlist_sites=allowlist_sites)
         return outfiles[:(test_files if test else None)]
 
 
@@ -142,6 +145,7 @@ if __name__ == '__main__':
     config_runner.setdefault('schema', NanoAODSchema)
     config_runner.setdefault('test_files', 5)
     config_runner.setdefault('allowlist_sites', ['T3_US_FNALLPC'])
+    config_runner.setdefault('rucio_regex_sites', "T[23]")
     config_runner.setdefault('class_name', 'analysis')
     config_runner.setdefault('condor_cores', 2)
     config_runner.setdefault('condor_memory', '4GB')
@@ -221,7 +225,7 @@ if __name__ == '__main__':
                 else:
                     meta_files = metadata['datasets'][dataset][year][config_runner['data_tier']]
 
-                fileset[dataset + "_" + year] = {'files': list_of_files(meta_files, test=args.test, test_files=config_runner['test_files'], allowlist_sites=config_runner['allowlist_sites']),
+                fileset[dataset + "_" + year] = {'files': list_of_files(meta_files, test=args.test, test_files=config_runner['test_files'], allowlist_sites=config_runner['allowlist_sites'], rucio_regex_sites=config_runner['rucio_regex_sites']),
                                                  'metadata': metadata_dataset[dataset]}
 
                 logging.info(f'\nDataset {dataset+"_"+year} with '
@@ -245,7 +249,8 @@ if __name__ == '__main__':
                     mixed_files = [f.replace("XXX",str(v)) for f in mixed_config['files_template']]
                     fileset[idataset] = {'files': list_of_files(mixed_files,
                                                                 test=args.test, test_files=config_runner['test_files'],
-                                                                allowlist_sites=config_runner['allowlist_sites']),
+                                                                allowlist_sites=config_runner['allowlist_sites'],
+                                                                rucio_regex_sites=config_runner['rucio_regex_sites']),
                                          'metadata': metadata_dataset[idataset]}
 
                     logging.info(
@@ -269,7 +274,8 @@ if __name__ == '__main__':
                     synthetic_files = [f.replace("XXX",str(v)) for f in synthetic_config['files_template']]
                     fileset[idataset] = {'files': list_of_files(synthetic_files,
                                                                 test=args.test, test_files=config_runner['test_files'],
-                                                                allowlist_sites=config_runner['allowlist_sites']),
+                                                                allowlist_sites=config_runner['allowlist_sites'],
+                                                                rucio_regex_sites=config_runner['rucio_regex_sites']),
                                          'metadata': metadata_dataset[idataset]}
 
                     logging.info(
@@ -298,7 +304,7 @@ if __name__ == '__main__':
 
                 fileset[idataset] = {'files': list_of_files(data_3b_mix_config['files'],
                                                             test=args.test, test_files=config_runner['test_files'],
-                                                            allowlist_sites=config_runner['allowlist_sites']),
+                                                            allowlist_sites=config_runner['allowlist_sites'], rucio_regex_sites=config_runner['rucio_regex_sites']),
                                      'metadata': metadata_dataset[idataset]}
 
                 logging.info(f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
@@ -319,7 +325,8 @@ if __name__ == '__main__':
 
                 fileset[idataset] = {'files': list_of_files(TT_3b_mix_config['files'],
                                                             test=args.test, test_files=config_runner['test_files'],
-                                                            allowlist_sites=config_runner['allowlist_sites']),
+                                                            allowlist_sites=config_runner['allowlist_sites'],
+                                                            rucio_regex_sites=config_runner['rucio_regex_sites']),
                                      'metadata': metadata_dataset[idataset]}
 
                 logging.info(f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
@@ -332,7 +339,7 @@ if __name__ == '__main__':
                         idataset = f'{dataset}_{year}{iera}'
                         metadata_dataset[idataset] = metadata_dataset[dataset]
                         metadata_dataset[idataset]['era'] = iera
-                        fileset[idataset] = {'files': list_of_files((ifile['files'] if config_runner['data_tier'].startswith('pico') else ifile), test=args.test, test_files=config_runner['test_files'], allowlist_sites=config_runner['allowlist_sites']),
+                        fileset[idataset] = {'files': list_of_files((ifile['files'] if config_runner['data_tier'].startswith('pico') else ifile), test=args.test, test_files=config_runner['test_files'], allowlist_sites=config_runner['allowlist_sites'], rucio_regex_sites=config_runner['rucio_regex_sites']),
                                              'metadata': metadata_dataset[idataset]}
 
                         logging.info(

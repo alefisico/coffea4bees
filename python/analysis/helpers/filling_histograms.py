@@ -19,14 +19,17 @@ def filling_nominal_histograms(selev, JCM,
                                run_SvB: bool = False,
                                top_reconstruction: bool = False,
                                isDataForMixed: bool = False,
+                               run_lowpt_selection: bool = False,
                                event_metadata: dict = {},
                                ):
 
     fill = Fill(process=processName, year=year, weight="weight")
 
+    tag_list = [3, 4, 0, 13, 14] if run_lowpt_selection else [3, 4, 0]   # 3 / 4/ Other
+
     hist = Collection( process=[processName],
                         year=[year],
-                        tag=[3, 4, 0],  # 3 / 4/ Other
+                        tag=tag_list,
                         region=[2, 1, 0],  # SR / SB / Other
                         **dict((s, ...) for s in histCuts)
                         )
@@ -37,6 +40,7 @@ def filling_nominal_histograms(selev, JCM,
 
     #    m4j_vs_leadSt_dR = dir.make<TH2F>("m4j_vs_leadSt_dR", (name+"/m4j_vs_leadSt_dR; m_{4j} [GeV]; S_{T} leading boson candidate #DeltaR(j,j); Entries").c_str(), 40,100,1100, 25,0,5);
     #    m4j_vs_sublSt_dR = dir.make<TH2F>("m4j_vs_sublSt_dR", (name+"/m4j_vs_sublSt_dR; m_{4j} [GeV]; S_{T} subleading boson candidate #DeltaR(j,j); Entries").c_str(), 40,100,1100, 25,0,5);
+
 
     fill += hist.add( "trigWeight", (40, 0, 2, ("trigWeight", 'Trigger weight')), weight='no_weight' )
 
@@ -64,6 +68,11 @@ def filling_nominal_histograms(selev, JCM,
     fill += Jet.plot(("canJets", "Higgs Candidate Jets"), "canJet",           skip=["deepjet_c"], bins={"mass": (50, 0, 100)})
     fill += Jet.plot(("othJets", "Other Jets"),           "notCanJet_coffea", skip=["deepjet_c"], bins={"mass": (50, 0, 100)})
     fill += Jet.plot(("tagJets", "Tag Jets"),             "tagJet",           skip=["deepjet_c"], bins={"mass": (50, 0, 100)})
+    if run_lowpt_selection:
+        fill += hist.add('lowpt_categories', (21, -0.5, 20.5, ('lowpt_categories', 'lowpt_categories')))
+        fill += Jet.plot(("lowptJet", "Selected lowpt Jets"),        "lowptJet",           skip=["deepjet_c"], bins={"mass": (50, 0, 100)})
+        fill += Jet.plot(("tagJet_lowpt", "Selected lowpt Jets"),        "tagJet_lowpt",           skip=["deepjet_c"], bins={"mass": (50, 0, 100)})
+
 
     #
     #  Make quad jet hists

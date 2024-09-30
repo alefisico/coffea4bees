@@ -498,7 +498,8 @@ class analysis(processor.ProcessorABC):
                                                 apply_FvT=self.apply_FvT,
                                                 run_SvB=self.run_SvB,
                                                 top_reconstruction=self.top_reconstruction,
-                                                isDataForMixed=self.config["isDataForMixed"],
+                                                isDataForMixed=self.config['isDataForMixed'],
+                                                run_lowpt_selection=self.run_lowpt_selection,
                                                 event_metadata=event.metadata)
             #
             # Run systematics
