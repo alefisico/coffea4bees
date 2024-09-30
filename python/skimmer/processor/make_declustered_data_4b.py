@@ -25,12 +25,7 @@ class DeClusterer(PicoAOD):
         super().__init__(*args, **kwargs)
 
         logging.info(f"\nRunning Declusterer with these parameters: clustering_pdfs_file = {clustering_pdfs_file}, subtract_ttbar_with_weights = {subtract_ttbar_with_weights}, declustering_rand_seed = {declustering_rand_seed}, args = {args}, kwargs = {kwargs}")
-
-        if not clustering_pdfs_file == "None":
-            self.clustering_pdfs = yaml.safe_load(open(clustering_pdfs_file, "r"))
-            logging.info(f"Loaded {len(self.clustering_pdfs.keys())} PDFs from {clustering_pdfs_file}")
-        else:
-            self.clustering_pdfs = None
+        self.clustering_pdfs_file = clustering_pdfs_file
 
         self.subtract_ttbar_with_weights = subtract_ttbar_with_weights
         self.declustering_rand_seed = declustering_rand_seed
@@ -60,6 +55,15 @@ class DeClusterer(PicoAOD):
         year_label = self.corrections_metadata[year]['year_label']
         chunk   = f'{dataset}::{estart:6d}:{estop:6d} >>> '
         processName = event.metadata['processName']
+
+        clustering_pdfs_file = self.clustering_pdfs_file.replace("XXX", year)
+
+        print(f"clustering_pdfs_file is {clustering_pdfs_file}")
+        if not clustering_pdfs_file == "None":
+            clustering_pdfs = yaml.safe_load(open(clustering_pdfs_file, "r"))
+            logging.info(f"Loaded {len(clustering_pdfs.keys())} PDFs from {clustering_pdfs_file}")
+        else:
+            clustering_pdfs = None
 
         #
         # Set process and datset dependent flags
@@ -231,7 +235,7 @@ class DeClusterer(PicoAOD):
         # from analysis.helpers.write_debug_info import add_debug_info_to_output_clustering_outputs
         # add_debug_info_to_output_clustering_outputs(selev, clustered_jets, processOutput)
 
-        declustered_jets = make_synthetic_event(clustered_jets, self.clustering_pdfs, declustering_rand_seed=self.declustering_rand_seed, chunk=chunk)
+        declustered_jets = make_synthetic_event(clustered_jets, clustering_pdfs, declustering_rand_seed=self.declustering_rand_seed, chunk=chunk)
 
         declustered_jets = declustered_jets[ak.argsort(declustered_jets.pt, axis=1, ascending=False)]
 
