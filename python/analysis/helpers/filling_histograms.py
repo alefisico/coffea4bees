@@ -25,9 +25,11 @@ def filling_nominal_histograms(selev, JCM,
 
     fill = Fill(process=processName, year=year, weight="weight")
 
+    tag_list = [3, 4, 0] if run_lowpt_selection else [3, 4, 0, 13, 14] 
+
     hist = Collection( process=[processName],
                         year=[year],
-                        tag=[3, 4, 0, 13, 14],  # 3 / 4/ Other
+                        tag=tag_list,  # 3 / 4/ Other
                         region=[2, 1, 0],  # SR / SB / Other
                         **dict((s, ...) for s in histCuts)
                         )
