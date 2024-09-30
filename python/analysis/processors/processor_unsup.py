@@ -326,7 +326,14 @@ class analysis(processor.ProcessorABC):
         ###  Build the top Candiates
         ### sort the jets by btagging
         selev.selJet  = selev.selJet[ak.argsort(selev.selJet.btagDeepFlavB, axis=1, ascending=False)]
-        top_cands     = find_tops(selev.selJet)
+        try:
+            top_cands = find_tops(selev.selJet)
+        except Exception as e:
+            print("WARNING: Fast top_reconstruction failed with exception: ")
+            print(f"{e}\n")
+            print("... Trying the slow top_reconstruction")
+            top_cands = find_tops_slow(selev.selJet)
+
         selev["top_cand"], _ = buildTop(selev.selJet, top_cands)
         selev["xbW_reco"] = selev.top_cand.xbW
         selev["xW_reco"]  = selev.top_cand.xW
