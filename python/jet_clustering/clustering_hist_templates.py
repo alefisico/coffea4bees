@@ -6,12 +6,13 @@ class ClusterHists(Template):
     pt        = H((100,  0, 300, ('pt',    "pt [GeV]")))
     pt_l      = H((100,  0, 500, ('pt',    "pt [GeV]")))
 
-    mA        = H((100, 0, 100, ('part_A.mass', "mA [GeV]")))
-    mB        = H((100, 0,  60, ('mB', "mB [GeV]")))
-    mB_l      = H((100, 0, 400, ('mB', "mB [GeV]")))
-    mA_l      = H((100, 0, 400, ('mA', "mA [GeV]")))
-    mB_vl     = H((100, 0, 600, ('mB', "mB [GeV]")))
+    mA        = H((100, 0, 100,  ('mA', "mA [GeV]")))
+    mA_l      = H((100, 0, 400,  ('mA', "mA [GeV]")))
     mA_vl     = H((100, 0, 1000, ('mA', "mA [GeV]")))
+
+    mB        = H((100, 0,  60,  ('mB', "mB [GeV]")))
+    mB_l      = H((100, 0, 400,  ('mB', "mB [GeV]")))
+    mB_vl     = H((100, 0, 600,  ('mB', "mB [GeV]")))
 
     zA        = H((100,  0.5, 1.3, ('zA', "z fraction")))
     zA_l      = H((100,  0, 1.5, ('zA', "z fraction")))

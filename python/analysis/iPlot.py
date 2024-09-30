@@ -120,8 +120,12 @@ def plot(var='selJets.pt', *, cut="passPreSel", region="SR", **kwargs):
 
 
     if len(cfg.hists) > 1:
-        fig, ax = makePlot(cfg, var=var, cut=cut, region=region,
-                           outputFolder=cfg.outputFolder, fileLabels=cfg.fileLabels, **kwargs)
+        try:
+            fig, ax = makePlot(cfg, var=var, cut=cut, region=region,
+                               outputFolder=cfg.outputFolder, fileLabels=cfg.fileLabels, **kwargs)
+        except ValueError as e:
+            print(e)
+            return
     else:
         fig, ax = makePlot(cfg, var=var, cut=cut, region=region,
                            outputFolder=cfg.outputFolder, **kwargs)
