@@ -20,4 +20,4 @@ setting:
 
   - module: torch.DataLoader
     option:
-      - num_workers: 8
+      - num_workers: 4

@@ -85,3 +85,7 @@ class YamlIndentSequence(yaml.Dumper):
 
     def increase_indent(self, flow=False, indentless=False):
         return super().increase_indent(flow, False)
+
+
+def not_none(*values):
+    return next((v for v in values if v is not None), None)

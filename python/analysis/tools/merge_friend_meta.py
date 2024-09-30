@@ -38,24 +38,24 @@ def merge_friend_metas(output: PathLike, *metafiles: PathLike, cleanup: bool = T
 if __name__ == "__main__":
     argparser = ArgumentParser()
     argparser.add_argument(
-        "-o",
-        "--output",
-        required=True,
-        help="Output metafile",
-    )
-    argparser.add_argument(
         "-i",
         "--input",
         nargs="+",
         required=True,
-        help="Input metafiles",
+        help="input metafiles",
         action="extend",
         default=[],
     )
     argparser.add_argument(
+        "-o",
+        "--output",
+        required=True,
+        help="output metafile",
+    )
+    argparser.add_argument(
         "--cleanup",
         action="store_true",
-        help="Remove input metafiles after merging",
+        help="remove input metafiles after merging",
     )
     args = argparser.parse_args()
     merge_friend_metas(args.output, *args.input, cleanup=args.cleanup)

@@ -190,11 +190,8 @@ TODO
 
 ## TODO
 
-- HCR:
-  - Add die loss?
 - main:
+  - Add simple torch histogram
   - Add train/plot from saved model
   - Add evaluation
-  - Add plotting
-- Add SvB
 - Add DvT

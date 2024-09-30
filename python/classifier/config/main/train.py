@@ -16,12 +16,12 @@ if TYPE_CHECKING:
 
 
 class _train_model:
-    def __init__(self, device: Device, datasets: StackDataset):
+    def __init__(self, device: Device, dataset: StackDataset):
         self._device = device
-        self._datasets = datasets
+        self._dataset = dataset
 
     def __call__(self, trainer: ModelTrainer):
-        return trainer(self._device, self._datasets)
+        return trainer(device=self._device, dataset=self._dataset)
 
 
 class Main(SelectDevice, LoadTrainingSets):
@@ -31,7 +31,7 @@ class Main(SelectDevice, LoadTrainingSets):
         workflow=[
             *LoadTrainingSets._workflow,
             ("main", "[blue]\[trainer, ...]=model.train()[/blue] initialize models"),
-            ("sub", "[blue]trainer(device, datasets)[/blue] train models"),
+            ("sub", "[blue]trainer(device, dataset)[/blue] train models"),
         ],
     )
     argparser.add_argument(

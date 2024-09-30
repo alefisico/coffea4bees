@@ -10,14 +10,14 @@ _SCHEDULER = "classifier.config.scheduler"
 
 
 if TYPE_CHECKING:
-    from classifier.ml.roc import MulticlassROC
+    from classifier.ml.benchmarks.multiclass import ROC
     from classifier.ml.skimmer import BatchType, Splitter
     from torch import Tensor
 
 
 class HCR(KFoldClassifier):
     loss: Callable[[BatchType], Tensor]
-    rocs: Iterable[MulticlassROC] = ()
+    rocs: Iterable[ROC] = ()
 
     argparser = ArgParser()
     argparser.add_argument(

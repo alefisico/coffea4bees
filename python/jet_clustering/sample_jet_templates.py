@@ -1,6 +1,10 @@
 import numpy as np
 import awkward as ak
-from base_class.math.random import Squares
+try:
+    from base_class.math.random import Squares
+except:
+    print("Warning ... Squares not availible")
+    pass
 
 
 #def sample_PDFs(input_jets_decluster, input_pdfs, splittings):

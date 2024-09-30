@@ -44,62 +44,70 @@ def doPlots(debug=False):
     #
     #  Compare Splittings
     #
-    splittings = ["bb", "bj", "b(bj)", ]
+    #splittings = ["bb", "bj", "b(bj)", ]
 
-    for _split in splittings:
+    splittings = [i.replace("splitting_","").replace(".pt_l","").replace("_","/") for i in cfg.hists[0]["hists"].keys() if not i.find("pt_l") == -1 and i.find("detailed") == -1]
 
-    
+    for _year in ["RunII","UL18","UL17","UL16_preVFP","UL16_postVFP"]:
+
+        for _split in splittings:
+
+
+            #
+            #  config Setup
+            #
+
+            args = {"norm": True,
+                    "doRatio": 1,
+                    "region":"sum",
+                    "cut":"passPreSel",
+                    "rebin":1,
+                    "year":_year,
+                    #"process":"data",
+                    #"histtype":"step",
+                    }
+
+            _split_name = "splitting_" + _split
+
+
+            plot(f"{_split_name}.mA",          **args)
+            plot(f"{_split_name}.mA_l",        **args)
+            plot(f"{_split_name}.mA_vl",        **args)
+            plot(f"{_split_name}.mB",          **args)
+            plot(f"{_split_name}.mB_l",        **args)
+            plot(f"{_split_name}.mB_vl",        **args)
+
+            plot(f"{_split_name}.pt_l",        **args)
+            plot(f"{_split_name}.n",           **args)
+
+            args["rebin"] = 2
+            plot(f"{_split_name}.decay_phi",   **args)
+            plot(f"{_split_name}.zA",          **args)
+            plot(f"{_split_name}.zA_l",          **args)
+            plot(f"{_split_name}.thetaA",      **args)
+
+            #plot(f"{_split_name}.eta",         **args)
+
+            # args["doRatio"] = 0
+            # plot(f"{_split_name_0}.n", **args)
+            # plot(f"{_split_name_1}.n", **args)
+
+
+            plot2d(var=f"{_split_name}.zA_l_vs_thetaA_pT", region="sum", cut="passPreSel",doRatio=0,rebin=1,process="data"  , year=_year)
+            plot2d(var=f"{_split_name}.zA_l_vs_thetaA_pT", region="sum", cut="passPreSel",doRatio=0,rebin=1,process="syn_v0", year=_year)
+
         #
-        #  config Setup
+        # add vs PT plots ?
         #
 
-        args = {"norm": True,
-                "doRatio": 1,
-                "labels":["clustered", "re-clustered"],
-                "norm": True,
-                "region":"SR",
-                "cut":"passPreSel",
-                "doRatio":1,
-                "rebin":1,
-                "process":"data",
-                "histtype":"step",
-                }
 
-        _split_name_0 = "splitting_" + _split
-        _split_name_1 = "splitting_" + _split + "_re"
-        
-        
-        plot([f"{_split_name_0}.drAB",       f"{_split_name_1}.drAB"],      **args)
-        plot([f"{_split_name_0}.thetaA",     f"{_split_name_1}.thetaA"],    **args)
-        plot([f"{_split_name_0}.decay_phi",  f"{_split_name_1}.decay_phi"], **args)
-        plot([f"{_split_name_0}.mA",         f"{_split_name_1}.mA"],        **args)
-        plot([f"{_split_name_0}.mA_l",       f"{_split_name_1}.mA_l"],      **args)
-        plot([f"{_split_name_0}.mB",         f"{_split_name_1}.mB"],        **args)
-        plot([f"{_split_name_0}.mB_l",       f"{_split_name_1}.mB_l"],      **args)
-        plot([f"{_split_name_0}.zA",         f"{_split_name_1}.zA"],        **args)
-        plot([f"{_split_name_0}.pt_l",       f"{_split_name_1}.pt_l"],      **args)
-        plot([f"{_split_name_0}.eta",        f"{_split_name_1}.eta"],       **args)
-    
-        args["doRatio"] = 0
-        plot(f"{_split_name_0}.n", **args)
-        plot(f"{_split_name_1}.n", **args)    
-    
-    
-        plot2d(var=f"{_split_name_1}.zA_vs_thetaA", region="SR", cut="passPreSel",doRatio=0,rebin=1,process="data",histtype="step",debug=0,norm=1)
-        plot2d(var=f"{_split_name_0}.zA_vs_thetaA", region="SR", cut="passPreSel",doRatio=0,rebin=1,process="data",histtype="step",debug=0,norm=1)
-
-        #
-        # add vs PT plots ? 
-        #
-        
-    
 if __name__ == '__main__':
 
     args = parse_args()
-
+    print(args.metadata)
     cfg.plotConfig = load_config(args.metadata)
     cfg.outputFolder = args.outputFolder
-
+    cfg.combine_input_files = args.combine_input_files
     cfg.plotModifiers = yaml.safe_load(open(args.modifiers, 'r'))
 
     if cfg.outputFolder:
