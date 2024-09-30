@@ -22,7 +22,7 @@ from base_class.physics.object import LorentzVector, Jet, Muon, Elec
 from analysis.helpers.processor_config import processor_config
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
 from analysis.helpers.cutflow import cutFlow
-from analysis.helpers.topCandReconstruction import find_tops, dumpTopCandidateTestVectors, buildTop
+from analysis.helpers.topCandReconstruction import find_tops, find_tops_slow, dumpTopCandidateTestVectors, buildTop
 from analysis.helpers.hist_templates import SvBHists, FvTHists, QuadJetHistsUnsup, WCandHists, TopCandHists
 
 from functools import partial
