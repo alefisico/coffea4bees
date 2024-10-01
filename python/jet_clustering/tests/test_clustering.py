@@ -251,7 +251,7 @@ class clusteringTestCase(unittest.TestCase):
         split_name = ak.unflatten(split_name_flat, ak.num(clustered_splittings))
         clustered_splittings["splitting_name"] = split_name
 
-        if self.debug:
+        if debug:
             for iEvent, jets in enumerate(clustered_jets):
                 print(f"Event {iEvent}")
                 for i, jet in enumerate(jets):
@@ -269,10 +269,6 @@ class clusteringTestCase(unittest.TestCase):
         #
 
         # Eventually will
-        #   Lookup thetaA, Z, mA, and mB
-        #   radom draw phi  (np.random.uniform(-np.pi, np.pi, len()) ? )
-        #
-        #  For now use known inputs
         #   (should get exact jets back!)
         clustered_splittings["decluster_mask"] = True
         pA, pB = decluster_combined_jets(clustered_splittings)
@@ -537,7 +533,7 @@ class clusteringTestCase(unittest.TestCase):
 
         match_n_jets = ak.num(declustered_jets) == n_jets_expected
         if not all(match_n_jets) or debug:
-            print("ERROR number of declustered_jets")
+            if not debug: print("ERROR number of declustered_jets")
             print(f"ak.num(declustered_jets)        {ak.num(declustered_jets)}")
             print(f"clustered_jets.jet_flavor     {clustered_jets.jet_flavor}")
             print(f"clustered_jets.pt             {clustered_jets.pt}")
@@ -574,7 +570,7 @@ class clusteringTestCase(unittest.TestCase):
         self._synthetic_datasets_test(self.input_jets_5, n_jets_expected = 5, debug=False)
 
     def test_synthetic_datasets_bbjjets(self):
-        self._synthetic_datasets_test(self.input_jets_bbj, n_jets_expected = ak.num(self.input_jet_pt_bbj))
+        self._synthetic_datasets_test(self.input_jets_bbj, n_jets_expected = ak.num(self.input_jet_pt_bbj), debug=False)
 
     def test_synthetic_datasets_6jets(self):
         self._synthetic_datasets_test(self.input_jets_6, n_jets_expected = 6, debug = False)

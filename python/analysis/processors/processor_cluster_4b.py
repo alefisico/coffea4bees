@@ -58,7 +58,7 @@ class analysis(processor.ProcessorABC):
             SvB_MA=None,
             threeTag=False,
             corrections_metadata="analysis/metadata/corrections.yml",
-            clustering_pdfs_file = "jet_clustering/jet-splitting-PDFs-00-03-00/clustering_pdfs_vs_pT.yml",
+            clustering_pdfs_file = "jet_clustering/jet-splitting-PDFs-00-07-02/clustering_pdfs_vs_pT_XXX.yml",
             run_SvB=True,
             do_declustering=False,
             subtract_ttbar_with_weights = False,
@@ -66,11 +66,7 @@ class analysis(processor.ProcessorABC):
 
         logging.debug("\nInitialize Analysis Processor")
         self.corrections_metadata = yaml.safe_load(open(corrections_metadata, "r"))
-        if not clustering_pdfs_file == "None":
-            self.clustering_pdfs = yaml.safe_load(open(clustering_pdfs_file, "r"))
-            logging.info(f"Loaded {len(self.clustering_pdfs.keys())} PDFs from {clustering_pdfs_file}")
-        else:
-            self.clustering_pdfs = None
+        self.clustering_pdfs_file = clustering_pdfs_file
         self.classifier_SvB = HCREnsemble(SvB) if SvB else None
         self.classifier_SvB_MA = HCREnsemble(SvB_MA) if SvB_MA else None
         self.run_SvB = run_SvB
@@ -107,6 +103,15 @@ class analysis(processor.ProcessorABC):
         xs      = event.metadata.get('xs',      1.0)
         kFactor = event.metadata.get('kFactor', 1.0)
         nEvent = len(event)
+
+        clustering_pdfs_file = self.clustering_pdfs_file.replace("XXX", year)
+
+        if not clustering_pdfs_file == "None":
+            clustering_pdfs = yaml.safe_load(open(clustering_pdfs_file, "r"))
+            logging.info(f"Loaded {len(clustering_pdfs.keys())} PDFs from {clustering_pdfs_file}")
+        else:
+            clustering_pdfs = None
+
 
         #
         # Set process and datset dependent flags
@@ -416,7 +421,7 @@ class analysis(processor.ProcessorABC):
             #  Read in the pdfs
             #
 
-            declustered_jets = make_synthetic_event(clustered_jets, self.clustering_pdfs)
+            declustered_jets = make_synthetic_event(clustered_jets, clustering_pdfs)
 
             declustered_jets = declustered_jets[ak.argsort(declustered_jets.pt, axis=1, ascending=False)]
 
