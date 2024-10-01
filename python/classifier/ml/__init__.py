@@ -102,10 +102,10 @@ class TrainingStage(BenchmarkStage):
             and (self.validation is not None)
             and (self.model.validate is not NotImplemented)
         ):
-            benchmark = []
+            benchmarks = []
             validation = self._init_benchmark()
         else:
-            benchmark = None
+            benchmarks = None
         # training
         p_epoch = Progress.new(self.schedule.epoch, ("epoch", self.name))
         logging.info(f"Start {self.name}")
@@ -123,20 +123,18 @@ class TrainingStage(BenchmarkStage):
                 loss.backward()
                 opt.step()
                 p_batch.update(i + 1, ("batch", "training", f"loss={loss.item():.4g}"))
-            if benchmark is not None:
-                benchmark.append(
-                    {
-                        "hyperparameters": {
-                            "epoch": epoch,
-                            "learning rate": lr.get_last_lr(),
-                            "batch size": bs.dataloader.batch_size,
-                        }
-                        | self.model.hyperparameters,
-                        "benchmarks": self._iter_benchmark(trainer, validation),
-                    }
-                )
-            lr.step()
-            bs.step()
+            benchmark = {
+                "hyperparameters": {
+                    "epoch": epoch,
+                    "learning rate": lr.get_last_lr(),
+                    "batch size": bs.dataloader.batch_size,
+                }
+                | self.model.hyperparameters,
+            }
+            if benchmarks is not None:
+                benchmark["benchmarks"] = self._iter_benchmark(trainer, validation)
+                benchmarks.append(benchmark)
+            self.schedule.step(bs, lr, benchmark)
             if self.model.step is not NotImplemented:
                 self.model.step()
             p_epoch.update(epoch)
@@ -144,8 +142,8 @@ class TrainingStage(BenchmarkStage):
         logging.info(
             f"{self.name}: run {self.schedule.epoch} epochs in {datetime.now() - start}"
         )
-        if benchmark is not None:
-            history["training"] = benchmark
+        if benchmarks is not None:
+            history["training"] = benchmarks
         return history
 
 
