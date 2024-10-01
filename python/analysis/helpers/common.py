@@ -13,7 +13,6 @@ import logging
 import pickle
 import correctionlib
 import tarfile
-import tempfile
 import os
 
 def extract_jetmet_tar_files(tar_file_name: str=None, 
@@ -30,10 +29,7 @@ def extract_jetmet_tar_files(tar_file_name: str=None,
   """
 
   extracted_files = []
-  
-  # Create a unique temporary directory if extract_path is not specified
-  with tempfile.TemporaryDirectory() as tmpdirname:
-    extract_path = tmpdirname
+  extract_path = '/tmp/coffea4bees/'
 
   with tarfile.open(tar_file_name, "r:gz") as tar:
     for member in tar.getmembers():
@@ -62,7 +58,7 @@ def apply_jerc_corrections( event,
     jec_file = corrections_metadata['JEC_MC'] if isMC else corrections_metadata['JEC_DATA'][dataset[-1]]
     extracted_files = extract_jetmet_tar_files(jec_file)
     if run_systematics: jec_levels.append("RegroupedV2")
-    weight_sets = [file for level in jec_levels for file in extracted_files if level in file]
+    weight_sets = list(set([file for level in jec_levels for file in extracted_files if level in file]))  ## list(set()) to remove duplicates
 
     if isMC:
         jer_file = corrections_metadata["JER_MC"]
@@ -74,8 +70,6 @@ def apply_jerc_corrections( event,
     event['Jet', 'pt_raw']    = (1 - event.Jet.rawFactor) * event.Jet.pt
     event['Jet', 'mass_raw']  = (1 - event.Jet.rawFactor) * event.Jet.mass
     nominal_jet = event.Jet
-    # nominal_jet['pt_raw']   = (1 - nominal_jet.rawFactor) * nominal_jet.pt
-    # nominal_jet['mass_raw'] = (1 - nominal_jet.rawFactor) * nominal_jet.mass
     if isMC: nominal_jet['pt_gen'] = ak.values_astype(ak.fill_none(nominal_jet.matched_gen.pt, 0), np.float32)
     nominal_jet['rho']      = ak.broadcast_arrays(event.fixedGridRhoFastjetAll, nominal_jet.pt)[0]
 
