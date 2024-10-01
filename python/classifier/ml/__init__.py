@@ -107,7 +107,7 @@ class TrainingStage(BenchmarkStage):
         else:
             benchmark = None
         # training
-        p_epoch = Progress.new(self.schedule.epoch, (f"epoch", self.name))
+        p_epoch = Progress.new(self.schedule.epoch, ("epoch", self.name))
         logging.info(f"Start {self.name}")
         start = datetime.now()
         for epoch in range(self.schedule.epoch):
