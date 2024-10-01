@@ -4,13 +4,11 @@ import numpy as np
 import yaml
 import warnings
 
-from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
+from coffea.nanoevents import NanoAODSchema
 from coffea import processor
-from coffea.analysis_tools import Weights, PackedSelection
+from coffea.analysis_tools import PackedSelection
 
 from analysis.helpers.cutflow import cutFlow
-from analysis.helpers.FriendTreeSchema import FriendTreeSchema
-
 from analysis.helpers.selection_basic_4b import (
     apply_event_selection_4b,
     apply_object_selection_4b,
@@ -45,12 +43,8 @@ class analysis(processor.ProcessorABC):
             "passPreSel",
             "passDiJetMass",
             "SR",
-            "SB",
         ]
 
-        self.histCuts = ["passPreSel"]
-        self.cutFlowCuts += ["passSvB", "failSvB"]
-        self.histCuts += ["passSvB", "failSvB"]
 
 
     def process(self, event):
@@ -69,16 +63,16 @@ class analysis(processor.ProcessorABC):
         #
         # Event selection
         #
-        event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year], False)
+        event = apply_event_selection_4b( event, self.corrections_metadata[year], cut_on_lumimask=False)
 
         # Apply object selection (function does not remove events, adds content to objects)
-        event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year] )
+        event = apply_object_selection_4b( event, self.corrections_metadata[year] )
         event = apply_object_selection_boosted_4b( event )
 
         selections = PackedSelection()
         selections.add( "lumimask", event.lumimask)
         selections.add( "passNoiseFilter", event.passNoiseFilter)
-        selections.add( "passHLT", ( np.full(len(event), True) if (isMC or isMixedData or isTTForMixed or isDataForMixed) else event.passHLT ) )
+        selections.add( "passHLT", ( np.full(len(event), True) if isMC else event.passHLT ) )
         selections.add( 'passJetMult', event.passJetMult )
         selections.add( "passPreSel", event.passPreSel )
         selections.add( "passFourTag", ( event.passJetMult & event.passPreSel & event.fourTag) )
@@ -128,13 +122,6 @@ class analysis(processor.ProcessorABC):
         output = processOutput
 
         return output
-
-        #
-        # Done
-        #
-        elapsed = time.time() - tstart
-        logging.debug(f"{chunk}{nEvent/elapsed:,.0f} events/s")
-
 
     def postprocess(self, accumulator):
         return accumulator

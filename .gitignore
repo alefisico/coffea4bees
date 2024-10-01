@@ -226,14 +226,16 @@ python/stats_analysis/files*
 python/stats_analysis/HIG*
 python/stats_analysis/old*
 python/stats_analysis/tmp*
-python/stats_analysis/hists*
+python/stats_analysis/hists/histAll*
+python/stats_analysis/hists/histSignal*
+python/stats_analysis/hists/kfold/
 python/stats_analysis/workflow*
 python/hists/
 
 python/analysis/testJCM_Coffea/
 python/analysis/testJCM_ROOT/
 
-python/skimmer/metadata/picoaod_datasets_GluGluToHHTo4B_cHHH0_UL18.yml
+python/skimmer/metadata/picoaod_datasets*
 python/skimmer/metadata/picoaod_datasets_TTToHadronic_pseudodata_UL18.yml
 python/skimmer/metadata/picoaod_datasets_TTToHadronic_pseudodata_test_UL18.yml
 python/skimmer/metadata/picoaod_datasets_declustered_GluGluToHHTo4B_cHHH1_Run2_seed17.yml
@@ -246,6 +248,13 @@ python/skimmer/metadata/picoaod_datasets_declustered_test_UL18.yml
 python/skimmer/metadata/picoaod_datasets_declustered_test_UL18_CI.yml
 python/skimmer/metadata/tmp.yml
 
+
+*/*/.DS_Store
+python/myPyPlotEnv/
+python/*tex
+python/Makefile
+
 python/analysis/debugMakeSyntheticEvents.py
 python/analysis/debugSyntheticEvents.py
 python/analysis/metadata/HH4b_systematics_ci.yml
+

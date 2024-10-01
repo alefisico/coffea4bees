@@ -4,6 +4,7 @@ from analysis.helpers.common import mask_event_decision, drClean
 from analysis.helpers.SvB_helpers import compute_SvB
 from coffea.lumi_tools import LumiMask
 from base_class.math.random import Squares
+from copy import copy
 
 def apply_event_selection_4b( event, corrections_metadata, *, cut_on_lumimask=True):
 
@@ -23,9 +24,9 @@ def apply_event_selection_4b( event, corrections_metadata, *, cut_on_lumimask=Tr
 
     return event
 
-def apply_object_selection_4b(event, corrections_metadata, *, 
-                              doLeptonRemoval: bool = True, 
-                              loosePtForSkim: bool = False, 
+def apply_object_selection_4b(event, corrections_metadata, *,
+                              doLeptonRemoval: bool = True,
+                              loosePtForSkim: bool = False,
                               override_selected_with_flavor_bit: bool = False,
                               run_lowpt_selection: bool = False):
     """docstring for apply_basic_selection_4b. This fuction is not modifying the content of anything in events. it is just adding it"""
@@ -67,18 +68,40 @@ def apply_object_selection_4b(event, corrections_metadata, *,
 
     if override_selected_with_flavor_bit and "jet_flavor_bit" in event.Jet.fields:
         event['Jet', 'selected'] = (event.Jet.selected) | (event.Jet.jet_flavor_bit == 1)
+        event['Jet', 'selected_loose'] = True
 
 
     event['nJet_selected'] = ak.sum(event.Jet.selected, axis=1)
-    event['selJet'] = event.Jet[event.Jet.selected]
+
     event['Jet', 'tagged']       = event.Jet.selected & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['M'])
     event['Jet', 'tagged_loose'] = event.Jet.selected & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['L'])
+    event['selJet_no_bRegCorr']  = event.Jet[event.Jet.selected]
+
+    #
+    # Apply the bRegCorr to the tagged jets
+    #
+    bRegCorr_factor_flat = copy(ak.flatten(event.Jet.bRegCorr).to_numpy())
+    tagged_flag_flat    = ak.flatten(event.Jet.tagged)
+    bRegCorr_factor_flat[~tagged_flag_flat] = 1.0
+    bRegCorr_factor = ak.unflatten(bRegCorr_factor_flat, ak.num(event.Jet.bRegCorr) )
+
+    selJet_pvec = event.Jet[event.Jet.selected] * bRegCorr_factor[event.Jet.selected]
+    event['selJet'] = event.Jet[event.Jet.selected]
+
+    # Note following lines throw exception in find_tops (fast)
+    #   (Happens sporadically, unclear why)
+    # JA
+    event['selJet', "pt"]      = selJet_pvec.pt
+    event['selJet', "eta"]     = selJet_pvec.eta
+    event['selJet', "phi"]     = selJet_pvec.phi
+    event['selJet', "mass"]    = selJet_pvec.mass
 
     event['passJetMult'] = event.nJet_selected >= 4
 
     event['nJet_tagged']         = ak.num(event.Jet[event.Jet.tagged])
     event['nJet_tagged_loose']   = ak.num(event.Jet[event.Jet.tagged_loose])
-    event['tagJet']              = event.Jet[event.Jet.tagged]
+    event['tagJet']              = event.selJet[event.selJet.tagged]
+
     event['tagJet_loose']        = event.Jet[event.Jet.tagged_loose]
 
     event['fourTag']    = (event['nJet_tagged']       >= 4)
@@ -86,10 +109,9 @@ def apply_object_selection_4b(event, corrections_metadata, *,
 
     event['passPreSel'] = event.threeTag | event.fourTag
 
-    tagCode = np.full(len(event), 0, dtype=int)
+    tagCode = np.zeros(len(event), dtype=int)
     tagCode[event.fourTag]  = 4
     tagCode[event.threeTag] = 3
-    event['tag'] = tagCode
 
     #  Calculate hT
     event["hT"] = ak.sum(event.Jet[event.Jet.selected_loose].pt, axis=1)
@@ -101,10 +123,40 @@ def apply_object_selection_4b(event, corrections_metadata, *,
         event['Jet', 'selected_lowpt'] = (event.Jet.pt >= 15) & (np.abs(event.Jet.eta) <= 2.4) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned & ~event.Jet.selected
         event['lowptJet'] = event.Jet[event.Jet.selected_lowpt]
         event['Jet', 'tagged_lowpt'] = event.Jet.selected_lowpt & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['M'])
+        event['Jet', 'tagged_loose_lowpt'] = event.Jet.selected_lowpt & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['L'])
         event['nJet_tagged_lowpt'] = ak.num(event.Jet[event.Jet.tagged_lowpt])
+        event['nJet_tagged_loose_lowpt'] = ak.num(event.Jet[event.Jet.tagged_loose_lowpt])
         event['tagJet_lowpt'] = event.Jet[event.Jet.tagged_lowpt]
-        event['lowpt_fourTag']  = (event['nJet_tagged']==3) & (event['nJet_tagged_lowpt'] >= 0)
-        event['lowpt_threeTag'] = event.threeTag & ~event.lowpt_fourTag
+        event['lowpt_fourTag']  = (event['nJet_tagged']==3) & (event['nJet_tagged_lowpt'] > 0) & ~event.fourTag
+        event['lowpt_threeTag_3b1j_0b'] = (event['nJet_tagged_loose'] == 3) & (event['nJet_selected'] >= 4) & (event['nJet_tagged_loose_lowpt']==0) & (ak.num(event['lowptJet'])>0)
+        event['lowpt_threeTag_2b2j_1b'] = (event['nJet_tagged_loose'] == 2) & (event['nJet_selected'] >= 4) & (event['nJet_tagged_loose_lowpt']==1) 
+        event['lowpt_threeTag_1b3j_2b'] = (event['nJet_tagged_loose'] == 1) & (event['nJet_selected'] >= 4) & (event['nJet_tagged_loose_lowpt']==2) 
+        event['lowpt_threeTag_0b4j_3b'] = (event['nJet_tagged_loose'] == 0) & (event['nJet_selected'] >= 4) & (event['nJet_tagged_loose_lowpt']==3) 
+        event['lowpt_threeTag'] = event['lowpt_threeTag_3b1j_0b'] | event['lowpt_threeTag_2b2j_1b'] | event['lowpt_threeTag_1b3j_2b'] | event['lowpt_threeTag_0b4j_3b'] 
+        tagCode[event["lowpt_fourTag"]] = 14
+        tagCode[event["lowpt_threeTag"]] = 13
+        event['lowpt_categories'] = np.where(
+            event['fourTag'], 1,
+            np.where(
+                event['lowpt_fourTag'], 3,
+                np.where(
+                    event["lowpt_threeTag_3b1j_0b"], 5,
+                    np.where(
+                        event["lowpt_threeTag_2b2j_1b"], 7,
+                        np.where(
+                            event["lowpt_threeTag_1b3j_2b"], 9,
+                            np.where(
+                                event["lowpt_threeTag_0b4j_3b"], 11,
+                                np.where(event['threeTag'], 13, 15)
+                            )
+                        )
+                    )
+                )
+            )
+        )   ### these is the category for the low pt selection
+
+        event['passPreSel'] = event.lowpt_threeTag | event.lowpt_fourTag
+    event['tag'] = tagCode
 
 
     # Only need 30 GeV jets for signal systematics
@@ -130,9 +182,12 @@ def apply_object_selection_boosted_4b( event ):
     tmp_selev = event[ event.passBoostedKin ]
     candJet1 = (tmp_selev.FatJet[:,0].msoftdrop > 50) & (tmp_selev.FatJet[:,0].particleNetMD_Xbb > 0.8)
     candJet2 = (tmp_selev.FatJet[:,1].particleNet_mass > 50)
+    if 'bdt' in tmp_selev.fields:
+        passBDT = (tmp_selev.FatJet[:,1].particleNetMD_Xbb > 0.950) & (tmp_selev.bdt['score']> 0.03)  ### bdt_score only in picoAOD.chunk.withBDT.root files
+    else: passBDT = np.full( len(tmp_selev), True )
 
     passBoostedSel = np.full( len(event), False )
-    passBoostedSel[event.passBoostedKin] = (candJet1 & candJet2)
+    passBoostedSel[event.passBoostedKin] = (candJet1 & candJet2 & passBDT)
     event['passBoostedSel'] = passBoostedSel
 
 
@@ -159,7 +214,7 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
     canJet["bRegCorr"] = selev.Jet.bRegCorr[canJet_idx]
     canJet["btagDeepFlavB"] = selev.Jet.btagDeepFlavB[canJet_idx]
     canJet["puId"] = selev.Jet.puId[canJet_idx]
-    canJet["jetId"] = selev.Jet.puId[canJet_idx]
+    canJet["jetId"] = selev.Jet.jetId[canJet_idx]
 
     if "hadronFlavour" in selev.Jet.fields:
         canJet["hadronFlavour"] = selev.Jet.hadronFlavour[canJet_idx]

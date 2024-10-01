@@ -1,0 +1,44 @@
+hists:
+        syn_v0:
+                process: syn_v0
+                tag: fourTag
+                year: RunII
+                label: Synthetic Data (0)
+                fillcolor: k
+                edgecolor: k
+
+stack:
+        data:
+                process: data
+                tag: fourTag
+                year: RunII
+                label: Data
+                fillcolor: xkcd:bright yellow
+                edgecolor: k
+
+ratios:
+        dataToBkg:
+                numerator:
+                        type: hists
+                        key: syn_v0
+                denominator:
+                        type: stack
+                uncertianty:
+                        nominal
+                color: k
+                marker: "o"
+
+
+codes:
+   region:
+      SR: 2
+      SB: 1
+      other: 0
+   tag:
+      threeTag: 3
+      fourTag: 4
+      other: 0
+
+doRatio:
+    1
+    

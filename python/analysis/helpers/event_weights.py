@@ -207,7 +207,7 @@ def add_btagweights( event, weights,
     else:
 
         btag_SF_weights = apply_btag_sf(
-            event.selJet,
+            event.selJet_no_bRegCorr,
             correction_file=corrections_metadata["btagSF"],
             btag_uncertainties=corrections_metadata["btag_uncertainties"] if (not shift_name) & run_systematics else None
         )

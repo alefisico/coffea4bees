@@ -397,7 +397,13 @@ class analysis(processor.ProcessorABC):
                 if self.top_reconstruction == "slow":
                     top_cands = find_tops_slow(selev.selJet)
                 else:
-                    top_cands = find_tops(selev.selJet)
+                    try:
+                        top_cands = find_tops(selev.selJet)
+                    except Exception as e:
+                        print("WARNING: Fast top_reconstruction failed with exception: ")
+                        print(f"{e}\n")
+                        print("... Trying the slow top_reconstruction")
+                        top_cands = find_tops_slow(selev.selJet)
 
                 selev['top_cand'], _ = buildTop(selev.selJet, top_cands)
                 ### with top friendtree we dont need the next two lines
@@ -492,7 +498,8 @@ class analysis(processor.ProcessorABC):
                                                 apply_FvT=self.apply_FvT,
                                                 run_SvB=self.run_SvB,
                                                 top_reconstruction=self.top_reconstruction,
-                                                isDataForMixed=self.config["isDataForMixed"],
+                                                isDataForMixed=self.config['isDataForMixed'],
+                                                run_lowpt_selection=self.run_lowpt_selection,
                                                 event_metadata=event.metadata)
             #
             # Run systematics
