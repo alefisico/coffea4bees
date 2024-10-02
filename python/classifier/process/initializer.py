@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Callable, Literal
 
 from base_class.utils import unique
-from classifier.config.setting import Multiprocessing as cfg
 
 from ..utils import append_unique_instance
 
@@ -67,6 +66,8 @@ class torch_set_sharing_strategy:
 
 
 def setup_context():
+    from classifier.config.setting import Multiprocessing as cfg
+
     from . import get_context
 
     status.context = get_context(
