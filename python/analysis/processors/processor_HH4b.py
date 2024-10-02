@@ -450,6 +450,7 @@ class analysis(processor.ProcessorABC):
             blind_sel[ analysis_selections ] = ~(selev["quadJet_selected"].SR & selev.fourTag)
             selections.add( 'blind', blind_sel )
             allcuts.append( 'blind' )
+            analysis_selections = selections.all(*allcuts)
             selev = selev[~(selev["quadJet_selected"].SR & selev.fourTag)]
 
         #
