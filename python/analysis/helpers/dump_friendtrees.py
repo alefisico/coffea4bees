@@ -155,16 +155,16 @@ def dump_unsup_friend(
     dump_naming: str = "{path1}/{name}_{start}_{stop}_{path0}",
 ):
     data = ak.zip(
-        {   
-            'run':events['run'], 
+        {
+            'run':events['run'],
             'event': events['event'],
             "m4j":  events["m4j"],
-            "leadStM":  events["leadStM"], 
-            "sublStM":  events["sublStM"], 
+            "leadStM":  events["leadStM"],
+            "sublStM":  events["sublStM"],
             "nSelJets": events["nSelJets"],
             "weight": events["weight"],
             "passHLT": events["passHLT"],
-            "lumimask": events["lumimask"], 
+            "lumimask": events["lumimask"],
             "passNoiseFilter": events["passNoiseFilter"],
             "passJetMult" :events["passJetMult"],
             "fourTag" :events["fourTag"],
@@ -219,10 +219,6 @@ def dump_top_reconstruction(
         "b_puId": events["top_cand"].b.puId,
         "b_jetId": events["top_cand"].b.jetId,
         "b_btagDeepFlavB": events["top_cand"].b.btagDeepFlavB,
-        "bReg_p_pt": events["top_cand"].bReg_p.pt,
-        "bReg_p_eta": events["top_cand"].bReg_p.eta,
-        "bReg_p_phi": events["top_cand"].bReg_p.phi,
-        "bReg_p_mass": events["top_cand"].bReg_p.mass,
         "p_pt": events["top_cand"].p.pt,
         "p_eta": events["top_cand"].p.eta,
         "p_phi": events["top_cand"].p.phi,
