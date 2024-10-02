@@ -533,6 +533,9 @@ if __name__ == '__main__':
                 'diff': args.gitdiff if args.gitdiff else get_git_diff(),
             }
 
+            if not os.path.exists(args.output_path):
+                os.makedirs(args.output_path)
+
             #
             # Save friend tree metadata if exists
             #
@@ -579,8 +582,6 @@ if __name__ == '__main__':
             #  Saving file
             #
             if config_runner['write_coffea_output']:
-                if not os.path.exists(args.output_path):
-                    os.makedirs(args.output_path)
                 hfile = f'{args.output_path}/{args.output_file}'
                 logging.info(f'\nSaving file {hfile}')
                 save(output, hfile)
