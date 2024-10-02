@@ -49,24 +49,15 @@ data_UL16_postVFPF:
       'UL18', 'UL16_preVFP', 'UL16_postVFP'], datasets=['data'], era=['A', 'B', 'C',
       'D', 'E', 'F', 'G', 'H'], systematics=False, skimming=True, run_dask=False,
       condor=False, debug=False, githash='', gitdiff='')
-    date: '2024-09-26 20:25:32'
-    diff: 'b''diff --git a/.ci-workflows/synthetic-dataset-make-dataset-all.sh b/.ci-workflows/synthetic-dataset-make-dataset-all.sh\nindex
-      d5a3f44..8b8f317 100644\n--- a/.ci-workflows/synthetic-dataset-make-dataset-all.sh\n+++
-      b/.ci-workflows/synthetic-dataset-make-dataset-all.sh\n@@ -6,11 +6,11 @@ echo
-      "############### Moving to python folder"\n cd python/\n echo "###############
-      Running test processor"\n \n-new_seed=99\n+new_seed=0\n \n sed -e "s/declustering_rand_seed:
-      [0-9]/declustering_rand_seed: $new_seed/" skimmer/metadata/declustering.yml
-      > skimmer/metadata/declustering_seed_${new_seed}.yml\n cat skimmer/metadata/declustering_seed_${new_seed}.yml\n-time
-      python runner.py -s -p skimmer/processor/make_declustered_data_4b.py -c skimmer/metadata/declustering_seed_${new_seed}.yml
-      -y UL17 UL18 UL16_preVFP UL16_postVFP -d data -op skimmer/metadata/ -o picoaod_datasets_declustered_data_Run2_seed${new_seed}.yml
-      -m metadata/datasets_HH4b_fourTag.yml   # --dask\n+time python runner.py -s
-      -p skimmer/processor/make_declustered_data_4b.py -c skimmer/metadata/declustering_seed_${new_seed}.yml
-      -y UL17 UL18 UL16_preVFP UL16_postVFP -d data -op skimmer/metadata/ -o picoaod_datasets_declustered_data_Run2_seed${new_seed}.yml
-      -m metadata/datasets_HH4b.yml   # --dask\n # time python runner.py -s -p skimmer/processor/make_declustered_data_4b.py
-      -c skimmer/metadata/declustering_signal.yml -y UL17 UL18 UL16_preVFP UL16_postVFP
-      -d GluGluToHHTo4B_cHHH1 -op skimmer/metadata/ -o picoaod_datasets_declustered_GluGluToHHTo4B_cHHH1_Run2_seed17.yml
-      -m metadata/datasets_HH4b.yml\n \n #ls -R skimmer/\n'''
-    hash: 74fa9ffebd85c3a9744bea5c6796943d8383b9e6
+    date: '2024-10-01 11:10:37'
+    diff: "diff --git a/python/analysis/processors/processor_HH4b.py b/python/analysis/processors/processor_HH4b.py\n\
+      index 163e2d0..c68813c 100644\n--- a/python/analysis/processors/processor_HH4b.py\n\
+      +++ b/python/analysis/processors/processor_HH4b.py\n@@ -73,6 +73,7 @@ class\
+      \ analysis(processor.ProcessorABC):\n         subtract_ttbar_with_weights: bool\
+      \ = False,\n         friend_trigWeight: str = None,\n         friend_top_reconstruction:\
+      \ str = None,\n+        skip_PSData: bool = False\n     ):\n \n         logging.debug(\"\
+      \\nInitialize Analysis Processor\")\n"
+    hash: 63899d92a2a12639f5e017ee218596aadfd6db5f
   saved_events: 6789
   source:
     root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/data2016F/picoAOD.root:
@@ -148,24 +139,15 @@ data_UL16_postVFPG:
       'UL18', 'UL16_preVFP', 'UL16_postVFP'], datasets=['data'], era=['A', 'B', 'C',
       'D', 'E', 'F', 'G', 'H'], systematics=False, skimming=True, run_dask=False,
       condor=False, debug=False, githash='', gitdiff='')
-    date: '2024-09-26 20:25:32'
-    diff: 'b''diff --git a/.ci-workflows/synthetic-dataset-make-dataset-all.sh b/.ci-workflows/synthetic-dataset-make-dataset-all.sh\nindex
-      d5a3f44..8b8f317 100644\n--- a/.ci-workflows/synthetic-dataset-make-dataset-all.sh\n+++
-      b/.ci-workflows/synthetic-dataset-make-dataset-all.sh\n@@ -6,11 +6,11 @@ echo
-      "############### Moving to python folder"\n cd python/\n echo "###############
-      Running test processor"\n \n-new_seed=99\n+new_seed=0\n \n sed -e "s/declustering_rand_seed:
-      [0-9]/declustering_rand_seed: $new_seed/" skimmer/metadata/declustering.yml
-      > skimmer/metadata/declustering_seed_${new_seed}.yml\n cat skimmer/metadata/declustering_seed_${new_seed}.yml\n-time
-      python runner.py -s -p skimmer/processor/make_declustered_data_4b.py -c skimmer/metadata/declustering_seed_${new_seed}.yml
-      -y UL17 UL18 UL16_preVFP UL16_postVFP -d data -op skimmer/metadata/ -o picoaod_datasets_declustered_data_Run2_seed${new_seed}.yml
-      -m metadata/datasets_HH4b_fourTag.yml   # --dask\n+time python runner.py -s
-      -p skimmer/processor/make_declustered_data_4b.py -c skimmer/metadata/declustering_seed_${new_seed}.yml
-      -y UL17 UL18 UL16_preVFP UL16_postVFP -d data -op skimmer/metadata/ -o picoaod_datasets_declustered_data_Run2_seed${new_seed}.yml
-      -m metadata/datasets_HH4b.yml   # --dask\n # time python runner.py -s -p skimmer/processor/make_declustered_data_4b.py
-      -c skimmer/metadata/declustering_signal.yml -y UL17 UL18 UL16_preVFP UL16_postVFP
-      -d GluGluToHHTo4B_cHHH1 -op skimmer/metadata/ -o picoaod_datasets_declustered_GluGluToHHTo4B_cHHH1_Run2_seed17.yml
-      -m metadata/datasets_HH4b.yml\n \n #ls -R skimmer/\n'''
-    hash: 74fa9ffebd85c3a9744bea5c6796943d8383b9e6
+    date: '2024-10-01 11:10:37'
+    diff: "diff --git a/python/analysis/processors/processor_HH4b.py b/python/analysis/processors/processor_HH4b.py\n\
+      index 163e2d0..c68813c 100644\n--- a/python/analysis/processors/processor_HH4b.py\n\
+      +++ b/python/analysis/processors/processor_HH4b.py\n@@ -73,6 +73,7 @@ class\
+      \ analysis(processor.ProcessorABC):\n         subtract_ttbar_with_weights: bool\
+      \ = False,\n         friend_trigWeight: str = None,\n         friend_top_reconstruction:\
+      \ str = None,\n+        skip_PSData: bool = False\n     ):\n \n         logging.debug(\"\
+      \\nInitialize Analysis Processor\")\n"
+    hash: 63899d92a2a12639f5e017ee218596aadfd6db5f
   saved_events: 21244
   source:
     root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/data2016G/picoAOD.root:
@@ -179,11 +161,11 @@ data_UL16_postVFPG:
       - 195090
       - 292635
     - !!python/tuple
-      - 292635
-      - 390180
-    - !!python/tuple
       - 487725
       - 585270
+    - !!python/tuple
+      - 292635
+      - 390180
     - !!python/tuple
       - 390180
       - 487725
@@ -272,24 +254,15 @@ data_UL16_postVFPH:
       'UL18', 'UL16_preVFP', 'UL16_postVFP'], datasets=['data'], era=['A', 'B', 'C',
       'D', 'E', 'F', 'G', 'H'], systematics=False, skimming=True, run_dask=False,
       condor=False, debug=False, githash='', gitdiff='')
-    date: '2024-09-26 20:25:32'
-    diff: 'b''diff --git a/.ci-workflows/synthetic-dataset-make-dataset-all.sh b/.ci-workflows/synthetic-dataset-make-dataset-all.sh\nindex
-      d5a3f44..8b8f317 100644\n--- a/.ci-workflows/synthetic-dataset-make-dataset-all.sh\n+++
-      b/.ci-workflows/synthetic-dataset-make-dataset-all.sh\n@@ -6,11 +6,11 @@ echo
-      "############### Moving to python folder"\n cd python/\n echo "###############
-      Running test processor"\n \n-new_seed=99\n+new_seed=0\n \n sed -e "s/declustering_rand_seed:
-      [0-9]/declustering_rand_seed: $new_seed/" skimmer/metadata/declustering.yml
-      > skimmer/metadata/declustering_seed_${new_seed}.yml\n cat skimmer/metadata/declustering_seed_${new_seed}.yml\n-time
-      python runner.py -s -p skimmer/processor/make_declustered_data_4b.py -c skimmer/metadata/declustering_seed_${new_seed}.yml
-      -y UL17 UL18 UL16_preVFP UL16_postVFP -d data -op skimmer/metadata/ -o picoaod_datasets_declustered_data_Run2_seed${new_seed}.yml
-      -m metadata/datasets_HH4b_fourTag.yml   # --dask\n+time python runner.py -s
-      -p skimmer/processor/make_declustered_data_4b.py -c skimmer/metadata/declustering_seed_${new_seed}.yml
-      -y UL17 UL18 UL16_preVFP UL16_postVFP -d data -op skimmer/metadata/ -o picoaod_datasets_declustered_data_Run2_seed${new_seed}.yml
-      -m metadata/datasets_HH4b.yml   # --dask\n # time python runner.py -s -p skimmer/processor/make_declustered_data_4b.py
-      -c skimmer/metadata/declustering_signal.yml -y UL17 UL18 UL16_preVFP UL16_postVFP
-      -d GluGluToHHTo4B_cHHH1 -op skimmer/metadata/ -o picoaod_datasets_declustered_GluGluToHHTo4B_cHHH1_Run2_seed17.yml
-      -m metadata/datasets_HH4b.yml\n \n #ls -R skimmer/\n'''
-    hash: 74fa9ffebd85c3a9744bea5c6796943d8383b9e6
+    date: '2024-10-01 11:10:37'
+    diff: "diff --git a/python/analysis/processors/processor_HH4b.py b/python/analysis/processors/processor_HH4b.py\n\
+      index 163e2d0..c68813c 100644\n--- a/python/analysis/processors/processor_HH4b.py\n\
+      +++ b/python/analysis/processors/processor_HH4b.py\n@@ -73,6 +73,7 @@ class\
+      \ analysis(processor.ProcessorABC):\n         subtract_ttbar_with_weights: bool\
+      \ = False,\n         friend_trigWeight: str = None,\n         friend_top_reconstruction:\
+      \ str = None,\n+        skip_PSData: bool = False\n     ):\n \n         logging.debug(\"\
+      \\nInitialize Analysis Processor\")\n"
+    hash: 63899d92a2a12639f5e017ee218596aadfd6db5f
   saved_events: 22575
   total_events: 903644
   total_jet: 128707
@@ -360,24 +333,15 @@ data_UL16_preVFPB:
       'UL18', 'UL16_preVFP', 'UL16_postVFP'], datasets=['data'], era=['A', 'B', 'C',
       'D', 'E', 'F', 'G', 'H'], systematics=False, skimming=True, run_dask=False,
       condor=False, debug=False, githash='', gitdiff='')
-    date: '2024-09-26 20:25:32'
-    diff: 'b''diff --git a/.ci-workflows/synthetic-dataset-make-dataset-all.sh b/.ci-workflows/synthetic-dataset-make-dataset-all.sh\nindex
-      d5a3f44..8b8f317 100644\n--- a/.ci-workflows/synthetic-dataset-make-dataset-all.sh\n+++
-      b/.ci-workflows/synthetic-dataset-make-dataset-all.sh\n@@ -6,11 +6,11 @@ echo
-      "############### Moving to python folder"\n cd python/\n echo "###############
-      Running test processor"\n \n-new_seed=99\n+new_seed=0\n \n sed -e "s/declustering_rand_seed:
-      [0-9]/declustering_rand_seed: $new_seed/" skimmer/metadata/declustering.yml
-      > skimmer/metadata/declustering_seed_${new_seed}.yml\n cat skimmer/metadata/declustering_seed_${new_seed}.yml\n-time
-      python runner.py -s -p skimmer/processor/make_declustered_data_4b.py -c skimmer/metadata/declustering_seed_${new_seed}.yml
-      -y UL17 UL18 UL16_preVFP UL16_postVFP -d data -op skimmer/metadata/ -o picoaod_datasets_declustered_data_Run2_seed${new_seed}.yml
-      -m metadata/datasets_HH4b_fourTag.yml   # --dask\n+time python runner.py -s
-      -p skimmer/processor/make_declustered_data_4b.py -c skimmer/metadata/declustering_seed_${new_seed}.yml
-      -y UL17 UL18 UL16_preVFP UL16_postVFP -d data -op skimmer/metadata/ -o picoaod_datasets_declustered_data_Run2_seed${new_seed}.yml
-      -m metadata/datasets_HH4b.yml   # --dask\n # time python runner.py -s -p skimmer/processor/make_declustered_data_4b.py
-      -c skimmer/metadata/declustering_signal.yml -y UL17 UL18 UL16_preVFP UL16_postVFP
-      -d GluGluToHHTo4B_cHHH1 -op skimmer/metadata/ -o picoaod_datasets_declustered_GluGluToHHTo4B_cHHH1_Run2_seed17.yml
-      -m metadata/datasets_HH4b.yml\n \n #ls -R skimmer/\n'''
-    hash: 74fa9ffebd85c3a9744bea5c6796943d8383b9e6
+    date: '2024-10-01 11:10:37'
+    diff: "diff --git a/python/analysis/processors/processor_HH4b.py b/python/analysis/processors/processor_HH4b.py\n\
+      index 163e2d0..c68813c 100644\n--- a/python/analysis/processors/processor_HH4b.py\n\
+      +++ b/python/analysis/processors/processor_HH4b.py\n@@ -73,6 +73,7 @@ class\
+      \ analysis(processor.ProcessorABC):\n         subtract_ttbar_with_weights: bool\
+      \ = False,\n         friend_trigWeight: str = None,\n         friend_top_reconstruction:\
+      \ str = None,\n+        skip_PSData: bool = False\n     ):\n \n         logging.debug(\"\
+      \\nInitialize Analysis Processor\")\n"
+    hash: 63899d92a2a12639f5e017ee218596aadfd6db5f
   saved_events: 16502
   source:
     root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/data2016B/picoAOD.root:
@@ -388,17 +352,17 @@ data_UL16_preVFPB:
       - 199564
       - 299346
     - !!python/tuple
-      - 99782
-      - 199564
-    - !!python/tuple
       - 299346
       - 399128
     - !!python/tuple
-      - 399128
-      - 498910
+      - 99782
+      - 199564
     - !!python/tuple
       - 498910
       - 598690
+    - !!python/tuple
+      - 399128
+      - 498910
   total_events: 598690
   total_jet: 95127
   xs:
@@ -459,24 +423,15 @@ data_UL16_preVFPC:
       'UL18', 'UL16_preVFP', 'UL16_postVFP'], datasets=['data'], era=['A', 'B', 'C',
       'D', 'E', 'F', 'G', 'H'], systematics=False, skimming=True, run_dask=False,
       condor=False, debug=False, githash='', gitdiff='')
-    date: '2024-09-26 20:25:32'
-    diff: 'b''diff --git a/.ci-workflows/synthetic-dataset-make-dataset-all.sh b/.ci-workflows/synthetic-dataset-make-dataset-all.sh\nindex
-      d5a3f44..8b8f317 100644\n--- a/.ci-workflows/synthetic-dataset-make-dataset-all.sh\n+++
-      b/.ci-workflows/synthetic-dataset-make-dataset-all.sh\n@@ -6,11 +6,11 @@ echo
-      "############### Moving to python folder"\n cd python/\n echo "###############
-      Running test processor"\n \n-new_seed=99\n+new_seed=0\n \n sed -e "s/declustering_rand_seed:
-      [0-9]/declustering_rand_seed: $new_seed/" skimmer/metadata/declustering.yml
-      > skimmer/metadata/declustering_seed_${new_seed}.yml\n cat skimmer/metadata/declustering_seed_${new_seed}.yml\n-time
-      python runner.py -s -p skimmer/processor/make_declustered_data_4b.py -c skimmer/metadata/declustering_seed_${new_seed}.yml
-      -y UL17 UL18 UL16_preVFP UL16_postVFP -d data -op skimmer/metadata/ -o picoaod_datasets_declustered_data_Run2_seed${new_seed}.yml
-      -m metadata/datasets_HH4b_fourTag.yml   # --dask\n+time python runner.py -s
-      -p skimmer/processor/make_declustered_data_4b.py -c skimmer/metadata/declustering_seed_${new_seed}.yml
-      -y UL17 UL18 UL16_preVFP UL16_postVFP -d data -op skimmer/metadata/ -o picoaod_datasets_declustered_data_Run2_seed${new_seed}.yml
-      -m metadata/datasets_HH4b.yml   # --dask\n # time python runner.py -s -p skimmer/processor/make_declustered_data_4b.py
-      -c skimmer/metadata/declustering_signal.yml -y UL17 UL18 UL16_preVFP UL16_postVFP
-      -d GluGluToHHTo4B_cHHH1 -op skimmer/metadata/ -o picoaod_datasets_declustered_GluGluToHHTo4B_cHHH1_Run2_seed17.yml
-      -m metadata/datasets_HH4b.yml\n \n #ls -R skimmer/\n'''
-    hash: 74fa9ffebd85c3a9744bea5c6796943d8383b9e6
+    date: '2024-10-01 11:10:37'
+    diff: "diff --git a/python/analysis/processors/processor_HH4b.py b/python/analysis/processors/processor_HH4b.py\n\
+      index 163e2d0..c68813c 100644\n--- a/python/analysis/processors/processor_HH4b.py\n\
+      +++ b/python/analysis/processors/processor_HH4b.py\n@@ -73,6 +73,7 @@ class\
+      \ analysis(processor.ProcessorABC):\n         subtract_ttbar_with_weights: bool\
+      \ = False,\n         friend_trigWeight: str = None,\n         friend_top_reconstruction:\
+      \ str = None,\n+        skip_PSData: bool = False\n     ):\n \n         logging.debug(\"\
+      \\nInitialize Analysis Processor\")\n"
+    hash: 63899d92a2a12639f5e017ee218596aadfd6db5f
   saved_events: 6695
   source:
     root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/data2016C/picoAOD.root:
@@ -548,36 +503,27 @@ data_UL16_preVFPD:
       'UL18', 'UL16_preVFP', 'UL16_postVFP'], datasets=['data'], era=['A', 'B', 'C',
       'D', 'E', 'F', 'G', 'H'], systematics=False, skimming=True, run_dask=False,
       condor=False, debug=False, githash='', gitdiff='')
-    date: '2024-09-26 20:25:32'
-    diff: 'b''diff --git a/.ci-workflows/synthetic-dataset-make-dataset-all.sh b/.ci-workflows/synthetic-dataset-make-dataset-all.sh\nindex
-      d5a3f44..8b8f317 100644\n--- a/.ci-workflows/synthetic-dataset-make-dataset-all.sh\n+++
-      b/.ci-workflows/synthetic-dataset-make-dataset-all.sh\n@@ -6,11 +6,11 @@ echo
-      "############### Moving to python folder"\n cd python/\n echo "###############
-      Running test processor"\n \n-new_seed=99\n+new_seed=0\n \n sed -e "s/declustering_rand_seed:
-      [0-9]/declustering_rand_seed: $new_seed/" skimmer/metadata/declustering.yml
-      > skimmer/metadata/declustering_seed_${new_seed}.yml\n cat skimmer/metadata/declustering_seed_${new_seed}.yml\n-time
-      python runner.py -s -p skimmer/processor/make_declustered_data_4b.py -c skimmer/metadata/declustering_seed_${new_seed}.yml
-      -y UL17 UL18 UL16_preVFP UL16_postVFP -d data -op skimmer/metadata/ -o picoaod_datasets_declustered_data_Run2_seed${new_seed}.yml
-      -m metadata/datasets_HH4b_fourTag.yml   # --dask\n+time python runner.py -s
-      -p skimmer/processor/make_declustered_data_4b.py -c skimmer/metadata/declustering_seed_${new_seed}.yml
-      -y UL17 UL18 UL16_preVFP UL16_postVFP -d data -op skimmer/metadata/ -o picoaod_datasets_declustered_data_Run2_seed${new_seed}.yml
-      -m metadata/datasets_HH4b.yml   # --dask\n # time python runner.py -s -p skimmer/processor/make_declustered_data_4b.py
-      -c skimmer/metadata/declustering_signal.yml -y UL17 UL18 UL16_preVFP UL16_postVFP
-      -d GluGluToHHTo4B_cHHH1 -op skimmer/metadata/ -o picoaod_datasets_declustered_GluGluToHHTo4B_cHHH1_Run2_seed17.yml
-      -m metadata/datasets_HH4b.yml\n \n #ls -R skimmer/\n'''
-    hash: 74fa9ffebd85c3a9744bea5c6796943d8383b9e6
+    date: '2024-10-01 11:10:37'
+    diff: "diff --git a/python/analysis/processors/processor_HH4b.py b/python/analysis/processors/processor_HH4b.py\n\
+      index 163e2d0..c68813c 100644\n--- a/python/analysis/processors/processor_HH4b.py\n\
+      +++ b/python/analysis/processors/processor_HH4b.py\n@@ -73,6 +73,7 @@ class\
+      \ analysis(processor.ProcessorABC):\n         subtract_ttbar_with_weights: bool\
+      \ = False,\n         friend_trigWeight: str = None,\n         friend_top_reconstruction:\
+      \ str = None,\n+        skip_PSData: bool = False\n     ):\n \n         logging.debug(\"\
+      \\nInitialize Analysis Processor\")\n"
+    hash: 63899d92a2a12639f5e017ee218596aadfd6db5f
   saved_events: 10398
   source:
     root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/data2016D/picoAOD.root:
     - !!python/tuple
-      - 0
-      - 105275
-    - !!python/tuple
-      - 105275
-      - 210550
-    - !!python/tuple
       - 210550
       - 315825
+    - !!python/tuple
+      - 105275
+      - 210550
+    - !!python/tuple
+      - 0
+      - 105275
     - !!python/tuple
       - 315825
       - 421098
@@ -641,24 +587,15 @@ data_UL16_preVFPE:
       'UL18', 'UL16_preVFP', 'UL16_postVFP'], datasets=['data'], era=['A', 'B', 'C',
       'D', 'E', 'F', 'G', 'H'], systematics=False, skimming=True, run_dask=False,
       condor=False, debug=False, githash='', gitdiff='')
-    date: '2024-09-26 20:25:32'
-    diff: 'b''diff --git a/.ci-workflows/synthetic-dataset-make-dataset-all.sh b/.ci-workflows/synthetic-dataset-make-dataset-all.sh\nindex
-      d5a3f44..8b8f317 100644\n--- a/.ci-workflows/synthetic-dataset-make-dataset-all.sh\n+++
-      b/.ci-workflows/synthetic-dataset-make-dataset-all.sh\n@@ -6,11 +6,11 @@ echo
-      "############### Moving to python folder"\n cd python/\n echo "###############
-      Running test processor"\n \n-new_seed=99\n+new_seed=0\n \n sed -e "s/declustering_rand_seed:
-      [0-9]/declustering_rand_seed: $new_seed/" skimmer/metadata/declustering.yml
-      > skimmer/metadata/declustering_seed_${new_seed}.yml\n cat skimmer/metadata/declustering_seed_${new_seed}.yml\n-time
-      python runner.py -s -p skimmer/processor/make_declustered_data_4b.py -c skimmer/metadata/declustering_seed_${new_seed}.yml
-      -y UL17 UL18 UL16_preVFP UL16_postVFP -d data -op skimmer/metadata/ -o picoaod_datasets_declustered_data_Run2_seed${new_seed}.yml
-      -m metadata/datasets_HH4b_fourTag.yml   # --dask\n+time python runner.py -s
-      -p skimmer/processor/make_declustered_data_4b.py -c skimmer/metadata/declustering_seed_${new_seed}.yml
-      -y UL17 UL18 UL16_preVFP UL16_postVFP -d data -op skimmer/metadata/ -o picoaod_datasets_declustered_data_Run2_seed${new_seed}.yml
-      -m metadata/datasets_HH4b.yml   # --dask\n # time python runner.py -s -p skimmer/processor/make_declustered_data_4b.py
-      -c skimmer/metadata/declustering_signal.yml -y UL17 UL18 UL16_preVFP UL16_postVFP
-      -d GluGluToHHTo4B_cHHH1 -op skimmer/metadata/ -o picoaod_datasets_declustered_GluGluToHHTo4B_cHHH1_Run2_seed17.yml
-      -m metadata/datasets_HH4b.yml\n \n #ls -R skimmer/\n'''
-    hash: 74fa9ffebd85c3a9744bea5c6796943d8383b9e6
+    date: '2024-10-01 11:10:37'
+    diff: "diff --git a/python/analysis/processors/processor_HH4b.py b/python/analysis/processors/processor_HH4b.py\n\
+      index 163e2d0..c68813c 100644\n--- a/python/analysis/processors/processor_HH4b.py\n\
+      +++ b/python/analysis/processors/processor_HH4b.py\n@@ -73,6 +73,7 @@ class\
+      \ analysis(processor.ProcessorABC):\n         subtract_ttbar_with_weights: bool\
+      \ = False,\n         friend_trigWeight: str = None,\n         friend_top_reconstruction:\
+      \ str = None,\n+        skip_PSData: bool = False\n     ):\n \n         logging.debug(\"\
+      \\nInitialize Analysis Processor\")\n"
+    hash: 63899d92a2a12639f5e017ee218596aadfd6db5f
   saved_events: 8729
   source:
     root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/data2016E/picoAOD.root:
@@ -666,11 +603,11 @@ data_UL16_preVFPE:
       - 0
       - 98994
     - !!python/tuple
-      - 197988
-      - 296982
-    - !!python/tuple
       - 98994
       - 197988
+    - !!python/tuple
+      - 197988
+      - 296982
     - !!python/tuple
       - 296982
       - 395976
@@ -736,24 +673,15 @@ data_UL17C:
       'UL18', 'UL16_preVFP', 'UL16_postVFP'], datasets=['data'], era=['A', 'B', 'C',
       'D', 'E', 'F', 'G', 'H'], systematics=False, skimming=True, run_dask=False,
       condor=False, debug=False, githash='', gitdiff='')
-    date: '2024-09-26 20:25:29'
-    diff: 'b''diff --git a/.ci-workflows/synthetic-dataset-make-dataset-all.sh b/.ci-workflows/synthetic-dataset-make-dataset-all.sh\nindex
-      d5a3f44..8b8f317 100644\n--- a/.ci-workflows/synthetic-dataset-make-dataset-all.sh\n+++
-      b/.ci-workflows/synthetic-dataset-make-dataset-all.sh\n@@ -6,11 +6,11 @@ echo
-      "############### Moving to python folder"\n cd python/\n echo "###############
-      Running test processor"\n \n-new_seed=99\n+new_seed=0\n \n sed -e "s/declustering_rand_seed:
-      [0-9]/declustering_rand_seed: $new_seed/" skimmer/metadata/declustering.yml
-      > skimmer/metadata/declustering_seed_${new_seed}.yml\n cat skimmer/metadata/declustering_seed_${new_seed}.yml\n-time
-      python runner.py -s -p skimmer/processor/make_declustered_data_4b.py -c skimmer/metadata/declustering_seed_${new_seed}.yml
-      -y UL17 UL18 UL16_preVFP UL16_postVFP -d data -op skimmer/metadata/ -o picoaod_datasets_declustered_data_Run2_seed${new_seed}.yml
-      -m metadata/datasets_HH4b_fourTag.yml   # --dask\n+time python runner.py -s
-      -p skimmer/processor/make_declustered_data_4b.py -c skimmer/metadata/declustering_seed_${new_seed}.yml
-      -y UL17 UL18 UL16_preVFP UL16_postVFP -d data -op skimmer/metadata/ -o picoaod_datasets_declustered_data_Run2_seed${new_seed}.yml
-      -m metadata/datasets_HH4b.yml   # --dask\n # time python runner.py -s -p skimmer/processor/make_declustered_data_4b.py
-      -c skimmer/metadata/declustering_signal.yml -y UL17 UL18 UL16_preVFP UL16_postVFP
-      -d GluGluToHHTo4B_cHHH1 -op skimmer/metadata/ -o picoaod_datasets_declustered_GluGluToHHTo4B_cHHH1_Run2_seed17.yml
-      -m metadata/datasets_HH4b.yml\n \n #ls -R skimmer/\n'''
-    hash: 74fa9ffebd85c3a9744bea5c6796943d8383b9e6
+    date: '2024-10-01 11:10:28'
+    diff: "diff --git a/python/analysis/processors/processor_HH4b.py b/python/analysis/processors/processor_HH4b.py\n\
+      index 163e2d0..c68813c 100644\n--- a/python/analysis/processors/processor_HH4b.py\n\
+      +++ b/python/analysis/processors/processor_HH4b.py\n@@ -73,6 +73,7 @@ class\
+      \ analysis(processor.ProcessorABC):\n         subtract_ttbar_with_weights: bool\
+      \ = False,\n         friend_trigWeight: str = None,\n         friend_top_reconstruction:\
+      \ str = None,\n+        skip_PSData: bool = False\n     ):\n \n         logging.debug(\"\
+      \\nInitialize Analysis Processor\")\n"
+    hash: 63899d92a2a12639f5e017ee218596aadfd6db5f
   saved_events: 23164
   source:
     root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/data2017C/picoAOD.root:
@@ -829,24 +757,15 @@ data_UL17D:
       'UL18', 'UL16_preVFP', 'UL16_postVFP'], datasets=['data'], era=['A', 'B', 'C',
       'D', 'E', 'F', 'G', 'H'], systematics=False, skimming=True, run_dask=False,
       condor=False, debug=False, githash='', gitdiff='')
-    date: '2024-09-26 20:25:31'
-    diff: 'b''diff --git a/.ci-workflows/synthetic-dataset-make-dataset-all.sh b/.ci-workflows/synthetic-dataset-make-dataset-all.sh\nindex
-      d5a3f44..8b8f317 100644\n--- a/.ci-workflows/synthetic-dataset-make-dataset-all.sh\n+++
-      b/.ci-workflows/synthetic-dataset-make-dataset-all.sh\n@@ -6,11 +6,11 @@ echo
-      "############### Moving to python folder"\n cd python/\n echo "###############
-      Running test processor"\n \n-new_seed=99\n+new_seed=0\n \n sed -e "s/declustering_rand_seed:
-      [0-9]/declustering_rand_seed: $new_seed/" skimmer/metadata/declustering.yml
-      > skimmer/metadata/declustering_seed_${new_seed}.yml\n cat skimmer/metadata/declustering_seed_${new_seed}.yml\n-time
-      python runner.py -s -p skimmer/processor/make_declustered_data_4b.py -c skimmer/metadata/declustering_seed_${new_seed}.yml
-      -y UL17 UL18 UL16_preVFP UL16_postVFP -d data -op skimmer/metadata/ -o picoaod_datasets_declustered_data_Run2_seed${new_seed}.yml
-      -m metadata/datasets_HH4b_fourTag.yml   # --dask\n+time python runner.py -s
-      -p skimmer/processor/make_declustered_data_4b.py -c skimmer/metadata/declustering_seed_${new_seed}.yml
-      -y UL17 UL18 UL16_preVFP UL16_postVFP -d data -op skimmer/metadata/ -o picoaod_datasets_declustered_data_Run2_seed${new_seed}.yml
-      -m metadata/datasets_HH4b.yml   # --dask\n # time python runner.py -s -p skimmer/processor/make_declustered_data_4b.py
-      -c skimmer/metadata/declustering_signal.yml -y UL17 UL18 UL16_preVFP UL16_postVFP
-      -d GluGluToHHTo4B_cHHH1 -op skimmer/metadata/ -o picoaod_datasets_declustered_GluGluToHHTo4B_cHHH1_Run2_seed17.yml
-      -m metadata/datasets_HH4b.yml\n \n #ls -R skimmer/\n'''
-    hash: 74fa9ffebd85c3a9744bea5c6796943d8383b9e6
+    date: '2024-10-01 11:10:36'
+    diff: "diff --git a/python/analysis/processors/processor_HH4b.py b/python/analysis/processors/processor_HH4b.py\n\
+      index 163e2d0..c68813c 100644\n--- a/python/analysis/processors/processor_HH4b.py\n\
+      +++ b/python/analysis/processors/processor_HH4b.py\n@@ -73,6 +73,7 @@ class\
+      \ analysis(processor.ProcessorABC):\n         subtract_ttbar_with_weights: bool\
+      \ = False,\n         friend_trigWeight: str = None,\n         friend_top_reconstruction:\
+      \ str = None,\n+        skip_PSData: bool = False\n     ):\n \n         logging.debug(\"\
+      \\nInitialize Analysis Processor\")\n"
+    hash: 63899d92a2a12639f5e017ee218596aadfd6db5f
   saved_events: 11147
   source:
     root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/data2017D/picoAOD.root:
@@ -916,24 +835,15 @@ data_UL17E:
       'UL18', 'UL16_preVFP', 'UL16_postVFP'], datasets=['data'], era=['A', 'B', 'C',
       'D', 'E', 'F', 'G', 'H'], systematics=False, skimming=True, run_dask=False,
       condor=False, debug=False, githash='', gitdiff='')
-    date: '2024-09-26 20:25:31'
-    diff: 'b''diff --git a/.ci-workflows/synthetic-dataset-make-dataset-all.sh b/.ci-workflows/synthetic-dataset-make-dataset-all.sh\nindex
-      d5a3f44..8b8f317 100644\n--- a/.ci-workflows/synthetic-dataset-make-dataset-all.sh\n+++
-      b/.ci-workflows/synthetic-dataset-make-dataset-all.sh\n@@ -6,11 +6,11 @@ echo
-      "############### Moving to python folder"\n cd python/\n echo "###############
-      Running test processor"\n \n-new_seed=99\n+new_seed=0\n \n sed -e "s/declustering_rand_seed:
-      [0-9]/declustering_rand_seed: $new_seed/" skimmer/metadata/declustering.yml
-      > skimmer/metadata/declustering_seed_${new_seed}.yml\n cat skimmer/metadata/declustering_seed_${new_seed}.yml\n-time
-      python runner.py -s -p skimmer/processor/make_declustered_data_4b.py -c skimmer/metadata/declustering_seed_${new_seed}.yml
-      -y UL17 UL18 UL16_preVFP UL16_postVFP -d data -op skimmer/metadata/ -o picoaod_datasets_declustered_data_Run2_seed${new_seed}.yml
-      -m metadata/datasets_HH4b_fourTag.yml   # --dask\n+time python runner.py -s
-      -p skimmer/processor/make_declustered_data_4b.py -c skimmer/metadata/declustering_seed_${new_seed}.yml
-      -y UL17 UL18 UL16_preVFP UL16_postVFP -d data -op skimmer/metadata/ -o picoaod_datasets_declustered_data_Run2_seed${new_seed}.yml
-      -m metadata/datasets_HH4b.yml   # --dask\n # time python runner.py -s -p skimmer/processor/make_declustered_data_4b.py
-      -c skimmer/metadata/declustering_signal.yml -y UL17 UL18 UL16_preVFP UL16_postVFP
-      -d GluGluToHHTo4B_cHHH1 -op skimmer/metadata/ -o picoaod_datasets_declustered_GluGluToHHTo4B_cHHH1_Run2_seed17.yml
-      -m metadata/datasets_HH4b.yml\n \n #ls -R skimmer/\n'''
-    hash: 74fa9ffebd85c3a9744bea5c6796943d8383b9e6
+    date: '2024-10-01 11:10:36'
+    diff: "diff --git a/python/analysis/processors/processor_HH4b.py b/python/analysis/processors/processor_HH4b.py\n\
+      index 163e2d0..c68813c 100644\n--- a/python/analysis/processors/processor_HH4b.py\n\
+      +++ b/python/analysis/processors/processor_HH4b.py\n@@ -73,6 +73,7 @@ class\
+      \ analysis(processor.ProcessorABC):\n         subtract_ttbar_with_weights: bool\
+      \ = False,\n         friend_trigWeight: str = None,\n         friend_top_reconstruction:\
+      \ str = None,\n+        skip_PSData: bool = False\n     ):\n \n         logging.debug(\"\
+      \\nInitialize Analysis Processor\")\n"
+    hash: 63899d92a2a12639f5e017ee218596aadfd6db5f
   saved_events: 22842
   source:
     root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/data2017E/picoAOD.root:
@@ -941,11 +851,11 @@ data_UL17E:
       - 0
       - 109806
     - !!python/tuple
-      - 219612
-      - 329418
-    - !!python/tuple
       - 109806
       - 219612
+    - !!python/tuple
+      - 219612
+      - 329418
     - !!python/tuple
       - 329418
       - 439224
@@ -1019,24 +929,15 @@ data_UL17F:
       'UL18', 'UL16_preVFP', 'UL16_postVFP'], datasets=['data'], era=['A', 'B', 'C',
       'D', 'E', 'F', 'G', 'H'], systematics=False, skimming=True, run_dask=False,
       condor=False, debug=False, githash='', gitdiff='')
-    date: '2024-09-26 20:25:31'
-    diff: 'b''diff --git a/.ci-workflows/synthetic-dataset-make-dataset-all.sh b/.ci-workflows/synthetic-dataset-make-dataset-all.sh\nindex
-      d5a3f44..8b8f317 100644\n--- a/.ci-workflows/synthetic-dataset-make-dataset-all.sh\n+++
-      b/.ci-workflows/synthetic-dataset-make-dataset-all.sh\n@@ -6,11 +6,11 @@ echo
-      "############### Moving to python folder"\n cd python/\n echo "###############
-      Running test processor"\n \n-new_seed=99\n+new_seed=0\n \n sed -e "s/declustering_rand_seed:
-      [0-9]/declustering_rand_seed: $new_seed/" skimmer/metadata/declustering.yml
-      > skimmer/metadata/declustering_seed_${new_seed}.yml\n cat skimmer/metadata/declustering_seed_${new_seed}.yml\n-time
-      python runner.py -s -p skimmer/processor/make_declustered_data_4b.py -c skimmer/metadata/declustering_seed_${new_seed}.yml
-      -y UL17 UL18 UL16_preVFP UL16_postVFP -d data -op skimmer/metadata/ -o picoaod_datasets_declustered_data_Run2_seed${new_seed}.yml
-      -m metadata/datasets_HH4b_fourTag.yml   # --dask\n+time python runner.py -s
-      -p skimmer/processor/make_declustered_data_4b.py -c skimmer/metadata/declustering_seed_${new_seed}.yml
-      -y UL17 UL18 UL16_preVFP UL16_postVFP -d data -op skimmer/metadata/ -o picoaod_datasets_declustered_data_Run2_seed${new_seed}.yml
-      -m metadata/datasets_HH4b.yml   # --dask\n # time python runner.py -s -p skimmer/processor/make_declustered_data_4b.py
-      -c skimmer/metadata/declustering_signal.yml -y UL17 UL18 UL16_preVFP UL16_postVFP
-      -d GluGluToHHTo4B_cHHH1 -op skimmer/metadata/ -o picoaod_datasets_declustered_GluGluToHHTo4B_cHHH1_Run2_seed17.yml
-      -m metadata/datasets_HH4b.yml\n \n #ls -R skimmer/\n'''
-    hash: 74fa9ffebd85c3a9744bea5c6796943d8383b9e6
+    date: '2024-10-01 11:10:36'
+    diff: "diff --git a/python/analysis/processors/processor_HH4b.py b/python/analysis/processors/processor_HH4b.py\n\
+      index 163e2d0..c68813c 100644\n--- a/python/analysis/processors/processor_HH4b.py\n\
+      +++ b/python/analysis/processors/processor_HH4b.py\n@@ -73,6 +73,7 @@ class\
+      \ analysis(processor.ProcessorABC):\n         subtract_ttbar_with_weights: bool\
+      \ = False,\n         friend_trigWeight: str = None,\n         friend_top_reconstruction:\
+      \ str = None,\n+        skip_PSData: bool = False\n     ):\n \n         logging.debug(\"\
+      \\nInitialize Analysis Processor\")\n"
+    hash: 63899d92a2a12639f5e017ee218596aadfd6db5f
   saved_events: 23153
   source:
     root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/data2017F/picoAOD.root:
@@ -1134,24 +1035,15 @@ data_UL18A:
       'UL18', 'UL16_preVFP', 'UL16_postVFP'], datasets=['data'], era=['A', 'B', 'C',
       'D', 'E', 'F', 'G', 'H'], systematics=False, skimming=True, run_dask=False,
       condor=False, debug=False, githash='', gitdiff='')
-    date: '2024-09-26 20:25:31'
-    diff: 'b''diff --git a/.ci-workflows/synthetic-dataset-make-dataset-all.sh b/.ci-workflows/synthetic-dataset-make-dataset-all.sh\nindex
-      d5a3f44..8b8f317 100644\n--- a/.ci-workflows/synthetic-dataset-make-dataset-all.sh\n+++
-      b/.ci-workflows/synthetic-dataset-make-dataset-all.sh\n@@ -6,11 +6,11 @@ echo
-      "############### Moving to python folder"\n cd python/\n echo "###############
-      Running test processor"\n \n-new_seed=99\n+new_seed=0\n \n sed -e "s/declustering_rand_seed:
-      [0-9]/declustering_rand_seed: $new_seed/" skimmer/metadata/declustering.yml
-      > skimmer/metadata/declustering_seed_${new_seed}.yml\n cat skimmer/metadata/declustering_seed_${new_seed}.yml\n-time
-      python runner.py -s -p skimmer/processor/make_declustered_data_4b.py -c skimmer/metadata/declustering_seed_${new_seed}.yml
-      -y UL17 UL18 UL16_preVFP UL16_postVFP -d data -op skimmer/metadata/ -o picoaod_datasets_declustered_data_Run2_seed${new_seed}.yml
-      -m metadata/datasets_HH4b_fourTag.yml   # --dask\n+time python runner.py -s
-      -p skimmer/processor/make_declustered_data_4b.py -c skimmer/metadata/declustering_seed_${new_seed}.yml
-      -y UL17 UL18 UL16_preVFP UL16_postVFP -d data -op skimmer/metadata/ -o picoaod_datasets_declustered_data_Run2_seed${new_seed}.yml
-      -m metadata/datasets_HH4b.yml   # --dask\n # time python runner.py -s -p skimmer/processor/make_declustered_data_4b.py
-      -c skimmer/metadata/declustering_signal.yml -y UL17 UL18 UL16_preVFP UL16_postVFP
-      -d GluGluToHHTo4B_cHHH1 -op skimmer/metadata/ -o picoaod_datasets_declustered_GluGluToHHTo4B_cHHH1_Run2_seed17.yml
-      -m metadata/datasets_HH4b.yml\n \n #ls -R skimmer/\n'''
-    hash: 74fa9ffebd85c3a9744bea5c6796943d8383b9e6
+    date: '2024-10-01 11:10:36'
+    diff: "diff --git a/python/analysis/processors/processor_HH4b.py b/python/analysis/processors/processor_HH4b.py\n\
+      index 163e2d0..c68813c 100644\n--- a/python/analysis/processors/processor_HH4b.py\n\
+      +++ b/python/analysis/processors/processor_HH4b.py\n@@ -73,6 +73,7 @@ class\
+      \ analysis(processor.ProcessorABC):\n         subtract_ttbar_with_weights: bool\
+      \ = False,\n         friend_trigWeight: str = None,\n         friend_top_reconstruction:\
+      \ str = None,\n+        skip_PSData: bool = False\n     ):\n \n         logging.debug(\"\
+      \\nInitialize Analysis Processor\")\n"
+    hash: 63899d92a2a12639f5e017ee218596aadfd6db5f
   saved_events: 29988
   source:
     root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/data2018A/picoAOD.root:
@@ -1247,24 +1139,15 @@ data_UL18B:
       'UL18', 'UL16_preVFP', 'UL16_postVFP'], datasets=['data'], era=['A', 'B', 'C',
       'D', 'E', 'F', 'G', 'H'], systematics=False, skimming=True, run_dask=False,
       condor=False, debug=False, githash='', gitdiff='')
-    date: '2024-09-26 20:25:31'
-    diff: 'b''diff --git a/.ci-workflows/synthetic-dataset-make-dataset-all.sh b/.ci-workflows/synthetic-dataset-make-dataset-all.sh\nindex
-      d5a3f44..8b8f317 100644\n--- a/.ci-workflows/synthetic-dataset-make-dataset-all.sh\n+++
-      b/.ci-workflows/synthetic-dataset-make-dataset-all.sh\n@@ -6,11 +6,11 @@ echo
-      "############### Moving to python folder"\n cd python/\n echo "###############
-      Running test processor"\n \n-new_seed=99\n+new_seed=0\n \n sed -e "s/declustering_rand_seed:
-      [0-9]/declustering_rand_seed: $new_seed/" skimmer/metadata/declustering.yml
-      > skimmer/metadata/declustering_seed_${new_seed}.yml\n cat skimmer/metadata/declustering_seed_${new_seed}.yml\n-time
-      python runner.py -s -p skimmer/processor/make_declustered_data_4b.py -c skimmer/metadata/declustering_seed_${new_seed}.yml
-      -y UL17 UL18 UL16_preVFP UL16_postVFP -d data -op skimmer/metadata/ -o picoaod_datasets_declustered_data_Run2_seed${new_seed}.yml
-      -m metadata/datasets_HH4b_fourTag.yml   # --dask\n+time python runner.py -s
-      -p skimmer/processor/make_declustered_data_4b.py -c skimmer/metadata/declustering_seed_${new_seed}.yml
-      -y UL17 UL18 UL16_preVFP UL16_postVFP -d data -op skimmer/metadata/ -o picoaod_datasets_declustered_data_Run2_seed${new_seed}.yml
-      -m metadata/datasets_HH4b.yml   # --dask\n # time python runner.py -s -p skimmer/processor/make_declustered_data_4b.py
-      -c skimmer/metadata/declustering_signal.yml -y UL17 UL18 UL16_preVFP UL16_postVFP
-      -d GluGluToHHTo4B_cHHH1 -op skimmer/metadata/ -o picoaod_datasets_declustered_GluGluToHHTo4B_cHHH1_Run2_seed17.yml
-      -m metadata/datasets_HH4b.yml\n \n #ls -R skimmer/\n'''
-    hash: 74fa9ffebd85c3a9744bea5c6796943d8383b9e6
+    date: '2024-10-01 11:10:36'
+    diff: "diff --git a/python/analysis/processors/processor_HH4b.py b/python/analysis/processors/processor_HH4b.py\n\
+      index 163e2d0..c68813c 100644\n--- a/python/analysis/processors/processor_HH4b.py\n\
+      +++ b/python/analysis/processors/processor_HH4b.py\n@@ -73,6 +73,7 @@ class\
+      \ analysis(processor.ProcessorABC):\n         subtract_ttbar_with_weights: bool\
+      \ = False,\n         friend_trigWeight: str = None,\n         friend_top_reconstruction:\
+      \ str = None,\n+        skip_PSData: bool = False\n     ):\n \n         logging.debug(\"\
+      \\nInitialize Analysis Processor\")\n"
+    hash: 63899d92a2a12639f5e017ee218596aadfd6db5f
   saved_events: 14409
   source:
     root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/data2018B/picoAOD.root:
@@ -1340,24 +1223,15 @@ data_UL18C:
       'UL18', 'UL16_preVFP', 'UL16_postVFP'], datasets=['data'], era=['A', 'B', 'C',
       'D', 'E', 'F', 'G', 'H'], systematics=False, skimming=True, run_dask=False,
       condor=False, debug=False, githash='', gitdiff='')
-    date: '2024-09-26 20:25:31'
-    diff: 'b''diff --git a/.ci-workflows/synthetic-dataset-make-dataset-all.sh b/.ci-workflows/synthetic-dataset-make-dataset-all.sh\nindex
-      d5a3f44..8b8f317 100644\n--- a/.ci-workflows/synthetic-dataset-make-dataset-all.sh\n+++
-      b/.ci-workflows/synthetic-dataset-make-dataset-all.sh\n@@ -6,11 +6,11 @@ echo
-      "############### Moving to python folder"\n cd python/\n echo "###############
-      Running test processor"\n \n-new_seed=99\n+new_seed=0\n \n sed -e "s/declustering_rand_seed:
-      [0-9]/declustering_rand_seed: $new_seed/" skimmer/metadata/declustering.yml
-      > skimmer/metadata/declustering_seed_${new_seed}.yml\n cat skimmer/metadata/declustering_seed_${new_seed}.yml\n-time
-      python runner.py -s -p skimmer/processor/make_declustered_data_4b.py -c skimmer/metadata/declustering_seed_${new_seed}.yml
-      -y UL17 UL18 UL16_preVFP UL16_postVFP -d data -op skimmer/metadata/ -o picoaod_datasets_declustered_data_Run2_seed${new_seed}.yml
-      -m metadata/datasets_HH4b_fourTag.yml   # --dask\n+time python runner.py -s
-      -p skimmer/processor/make_declustered_data_4b.py -c skimmer/metadata/declustering_seed_${new_seed}.yml
-      -y UL17 UL18 UL16_preVFP UL16_postVFP -d data -op skimmer/metadata/ -o picoaod_datasets_declustered_data_Run2_seed${new_seed}.yml
-      -m metadata/datasets_HH4b.yml   # --dask\n # time python runner.py -s -p skimmer/processor/make_declustered_data_4b.py
-      -c skimmer/metadata/declustering_signal.yml -y UL17 UL18 UL16_preVFP UL16_postVFP
-      -d GluGluToHHTo4B_cHHH1 -op skimmer/metadata/ -o picoaod_datasets_declustered_GluGluToHHTo4B_cHHH1_Run2_seed17.yml
-      -m metadata/datasets_HH4b.yml\n \n #ls -R skimmer/\n'''
-    hash: 74fa9ffebd85c3a9744bea5c6796943d8383b9e6
+    date: '2024-10-01 11:10:37'
+    diff: "diff --git a/python/analysis/processors/processor_HH4b.py b/python/analysis/processors/processor_HH4b.py\n\
+      index 163e2d0..c68813c 100644\n--- a/python/analysis/processors/processor_HH4b.py\n\
+      +++ b/python/analysis/processors/processor_HH4b.py\n@@ -73,6 +73,7 @@ class\
+      \ analysis(processor.ProcessorABC):\n         subtract_ttbar_with_weights: bool\
+      \ = False,\n         friend_trigWeight: str = None,\n         friend_top_reconstruction:\
+      \ str = None,\n+        skip_PSData: bool = False\n     ):\n \n         logging.debug(\"\
+      \\nInitialize Analysis Processor\")\n"
+    hash: 63899d92a2a12639f5e017ee218596aadfd6db5f
   saved_events: 13425
   source:
     root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/data2018C/picoAOD.root:
@@ -1463,39 +1337,30 @@ data_UL18D:
       'UL18', 'UL16_preVFP', 'UL16_postVFP'], datasets=['data'], era=['A', 'B', 'C',
       'D', 'E', 'F', 'G', 'H'], systematics=False, skimming=True, run_dask=False,
       condor=False, debug=False, githash='', gitdiff='')
-    date: '2024-09-26 20:25:32'
-    diff: 'b''diff --git a/.ci-workflows/synthetic-dataset-make-dataset-all.sh b/.ci-workflows/synthetic-dataset-make-dataset-all.sh\nindex
-      d5a3f44..8b8f317 100644\n--- a/.ci-workflows/synthetic-dataset-make-dataset-all.sh\n+++
-      b/.ci-workflows/synthetic-dataset-make-dataset-all.sh\n@@ -6,11 +6,11 @@ echo
-      "############### Moving to python folder"\n cd python/\n echo "###############
-      Running test processor"\n \n-new_seed=99\n+new_seed=0\n \n sed -e "s/declustering_rand_seed:
-      [0-9]/declustering_rand_seed: $new_seed/" skimmer/metadata/declustering.yml
-      > skimmer/metadata/declustering_seed_${new_seed}.yml\n cat skimmer/metadata/declustering_seed_${new_seed}.yml\n-time
-      python runner.py -s -p skimmer/processor/make_declustered_data_4b.py -c skimmer/metadata/declustering_seed_${new_seed}.yml
-      -y UL17 UL18 UL16_preVFP UL16_postVFP -d data -op skimmer/metadata/ -o picoaod_datasets_declustered_data_Run2_seed${new_seed}.yml
-      -m metadata/datasets_HH4b_fourTag.yml   # --dask\n+time python runner.py -s
-      -p skimmer/processor/make_declustered_data_4b.py -c skimmer/metadata/declustering_seed_${new_seed}.yml
-      -y UL17 UL18 UL16_preVFP UL16_postVFP -d data -op skimmer/metadata/ -o picoaod_datasets_declustered_data_Run2_seed${new_seed}.yml
-      -m metadata/datasets_HH4b.yml   # --dask\n # time python runner.py -s -p skimmer/processor/make_declustered_data_4b.py
-      -c skimmer/metadata/declustering_signal.yml -y UL17 UL18 UL16_preVFP UL16_postVFP
-      -d GluGluToHHTo4B_cHHH1 -op skimmer/metadata/ -o picoaod_datasets_declustered_GluGluToHHTo4B_cHHH1_Run2_seed17.yml
-      -m metadata/datasets_HH4b.yml\n \n #ls -R skimmer/\n'''
-    hash: 74fa9ffebd85c3a9744bea5c6796943d8383b9e6
+    date: '2024-10-01 11:10:37'
+    diff: "diff --git a/python/analysis/processors/processor_HH4b.py b/python/analysis/processors/processor_HH4b.py\n\
+      index 163e2d0..c68813c 100644\n--- a/python/analysis/processors/processor_HH4b.py\n\
+      +++ b/python/analysis/processors/processor_HH4b.py\n@@ -73,6 +73,7 @@ class\
+      \ analysis(processor.ProcessorABC):\n         subtract_ttbar_with_weights: bool\
+      \ = False,\n         friend_trigWeight: str = None,\n         friend_top_reconstruction:\
+      \ str = None,\n+        skip_PSData: bool = False\n     ):\n \n         logging.debug(\"\
+      \\nInitialize Analysis Processor\")\n"
+    hash: 63899d92a2a12639f5e017ee218596aadfd6db5f
   saved_events: 58799
   source:
     root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/data2018D/picoAOD.root:
     - !!python/tuple
+      - 98676
+      - 197352
+    - !!python/tuple
       - 0
       - 98676
     - !!python/tuple
-      - 98676
       - 197352
+      - 296028
     - !!python/tuple
       - 296028
       - 394704
-    - !!python/tuple
-      - 197352
-      - 296028
     - !!python/tuple
       - 394704
       - 493380

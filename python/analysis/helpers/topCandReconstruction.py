@@ -150,10 +150,10 @@ def dumpTopCandidateTestVectors(event, logging, chunk, nEvent):
 #    logging.info(f'{chunk}\n\n')
 
     print(f'{chunk}\n\n')
-    print(f'{chunk} self.input_jet_pt  = {[event[iE].Jet[event[iE].Jet.selected].pt.tolist() for iE in range(nEvent)]}')
-    print(f'{chunk} self.input_jet_eta = {[event[iE].Jet[event[iE].Jet.selected].eta.tolist() for iE in range(nEvent)]}')
-    print(f'{chunk} self.input_jet_phi = {[event[iE].Jet[event[iE].Jet.selected].phi.tolist() for iE in range(nEvent)]}')
-    print(f'{chunk} self.input_jet_mass = {[event[iE].Jet[event[iE].Jet.selected].mass.tolist() for iE in range(nEvent)]}')
+    print(f'{chunk} self.input_jet_pt   = {[event[iE].selJet.pt  .tolist() for iE in range(nEvent)]}')
+    print(f'{chunk} self.input_jet_eta  = {[event[iE].selJet.eta .tolist() for iE in range(nEvent)]}')
+    print(f'{chunk} self.input_jet_phi  = {[event[iE].selJet.phi .tolist() for iE in range(nEvent)]}')
+    print(f'{chunk} self.input_jet_mass = {[event[iE].selJet.mass.tolist() for iE in range(nEvent)]}')
     print(f'{chunk} self.input_jet_btagDeepFlavB = {[event[iE].Jet[event[iE].Jet.selected].btagDeepFlavB.tolist() for iE in range(nEvent)]}')
     print(f'{chunk} self.input_jet_bRegCorr = {[event[iE].Jet[event[iE].Jet.selected].bRegCorr.tolist() for iE in range(nEvent)]}')
     print(f'{chunk} self.output_xbW = {[event[iE].xbW for iE in range(nEvent)]}')
@@ -165,16 +165,15 @@ def dumpTopCandidateTestVectors(event, logging, chunk, nEvent):
 def buildTop(input_jets, top_cand_idx):
     """ Takes indices of jets and returns reconstructed top candidate
     """
-    # Extract jets based on indices 
+    # Extract jets based on indices
     b, j, l = input_jets[top_cand_idx["0"]], input_jets[top_cand_idx["1"]], input_jets[top_cand_idx["2"]]
 
-    # Compute W properties 
+    # Compute W properties
     W_p = j + l
     xW = (W_p.mass - mW) / (0.10 * W_p.mass)
-    pW = W_p * (mW / W_p.mass)  
+    pW = W_p * (mW / W_p.mass)
 
-    bReg_p = b * b.bRegCorr
-    mbW = (bReg_p + pW).mass
+    mbW = (b + pW).mass
 
     # smaller resolution term because there are fewer degrees of freedom. FWHM=25GeV, about the same as mW
     xbW = (mbW - mt) / (0.05 * mbW)
@@ -185,7 +184,6 @@ def buildTop(input_jets, top_cand_idx):
         "l": l,
         "xW": xW,
         "xbW": xbW,
-        "bReg_p": bReg_p,
         "mbW": mbW,
         "W": ak.zip({
             "p": W_p,
@@ -199,7 +197,7 @@ def buildTop(input_jets, top_cand_idx):
     rec_top_cands = rec_top_cands[ak.argsort(rec_top_cands.xW ** 2 + rec_top_cands.xbW ** 2, axis=1, ascending=True)]
 
     top_cand = rec_top_cands[:,0]
-    top_cand["p"] = top_cand.bReg_p + top_cand.j + top_cand.l
+    top_cand["p"] = top_cand.b + top_cand.j + top_cand.l
     top_cand["xt"] = (top_cand.p.mass - mt) / (0.10 * top_cand.p.mass)
     top_cand["xWt"] = np.sqrt(top_cand.xW ** 2 + top_cand.xt ** 2)
     top_cand["xWbW"] = np.sqrt(top_cand.xW ** 2 + top_cand.xbW ** 2)
@@ -215,13 +213,13 @@ def adding_top_reco_to_event(event, top_cand):
     """
 
     event['top_cand'] = ak.zip({
-        "p": ak.zip({ 
+        "p": ak.zip({
             "pt" : top_cand.p_pt,
             "eta" : top_cand.p_eta,
             "phi" : top_cand.p_phi,
             "mass" : top_cand.p_mass,
             }),
-        "b": ak.zip({ 
+        "b": ak.zip({
             "pt" : top_cand.b_pt,
             "eta" : top_cand.b_eta,
             "phi" : top_cand.b_phi,
@@ -229,22 +227,22 @@ def adding_top_reco_to_event(event, top_cand):
             "puId" : top_cand.b_puId,
             "jetId" : top_cand.b_jetId,
             'btagDeepFlavB' : top_cand.b_btagDeepFlavB,
-            
+
             }),
-        'W' : ak.zip({ 
-            "p" : ak.zip({ 
+        'W' : ak.zip({
+            "p" : ak.zip({
                 "pt" : top_cand.W_p_pt,
                 "eta" : top_cand.W_p_eta,
                 "phi" : top_cand.W_p_phi,
                 "mass" : top_cand.W_p_mass,
                 }),
-            "pW" : ak.zip({ 
+            "pW" : ak.zip({
                 "pt" : top_cand.W_pW_pt,
                 "eta" : top_cand.W_pW_eta,
                 "phi" : top_cand.W_pW_phi,
                 "mass" : top_cand.W_pW_mass,
                 }),
-                "l": ak.zip({ 
+                "l": ak.zip({
                     "pt" : top_cand.W_l_pt,
                     "eta" : top_cand.W_l_eta,
                     "phi" : top_cand.W_l_phi,
@@ -253,7 +251,7 @@ def adding_top_reco_to_event(event, top_cand):
                     "jetId" : top_cand.W_l_jetId,
                     'btagDeepFlavB' : top_cand.W_l_btagDeepFlavB,
                     }),
-                "j": ak.zip({ 
+                "j": ak.zip({
                     "pt" : top_cand.W_j_pt,
                     "eta" : top_cand.W_j_eta,
                     "phi" : top_cand.W_j_phi,
@@ -270,6 +268,6 @@ def adding_top_reco_to_event(event, top_cand):
         "xWt": top_cand.xWt,
         "xWbW": top_cand.xWbW,
         "rWbW": top_cand.rWbW,
-    }) 
+    })
     event['xbW'] = top_cand['xbW']
     event['xW'] = top_cand['xW']
