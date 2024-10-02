@@ -3,7 +3,7 @@ from __future__ import annotations
 import getpass
 import os
 import pickle
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import fsspec
 from classifier.task.state import Cascade, _share_global_state
@@ -141,7 +141,7 @@ class Monitor(Cascade):
                 port = int(parts[1])
                 host = parts[0] or None
                 return host, port
-            except:
+            except Exception:
                 pass
         return value or None, None
 
@@ -149,3 +149,10 @@ class Monitor(Cascade):
 class Analysis(Cascade):
     enable: bool = True
     max_workers: int = 1
+
+
+class Multiprocessing(Cascade):
+    context_method: Literal["fork", "forkserver", "spawn"] = "forkserver"
+    context_library: Literal["torch", "builtins"] = "torch"
+    preload: list[str] = ["torch"]
+    torch_sharing_strategy: Literal["file_system", "file_descriptor"] = "file_system"

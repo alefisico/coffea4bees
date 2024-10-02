@@ -6,7 +6,6 @@ from functools import cached_property
 from itertools import chain
 from typing import TYPE_CHECKING
 
-from base_class.utils import unique
 from classifier.task import ArgParser, EntryPoint, Main, converter
 from classifier.utils import call
 
@@ -22,27 +21,6 @@ class progress_advance:
 
     def __call__(self, _):
         self._progress.advance(step=self._step)
-
-
-class SetupMultiprocessing(Main):
-    argparser = ArgParser()
-    argparser.add_argument(
-        "--preload",
-        action="extend",
-        nargs="+",
-        default=["torch"],
-        help="preloaded imports when using multiprocessing",
-    )
-
-    def __init__(self):
-        super().__init__()
-        from classifier.process import get_context, status
-        from classifier.process.initializer import torch_set_sharing_strategy
-
-        status.context = get_context(
-            method="forkserver", library="torch", preload=unique(self.opts.preload)
-        )
-        status.initializer.add(torch_set_sharing_strategy("file_system"))
 
 
 class SelectDevice(Main):
@@ -62,7 +40,7 @@ class SelectDevice(Main):
         return Device(*self.opts.device)
 
 
-class LoadTrainingSets(SetupMultiprocessing):
+class LoadTrainingSets(Main):
     _workflow = [
         ("main", "[blue]\[loader, ...]=dataset.train()[/blue] initialize datasets"),
         ("sub", "[blue]loader()[/blue] load datasets"),

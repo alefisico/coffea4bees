@@ -202,7 +202,10 @@ class EntryPoint:
             disable_monitor()
 
         if not cls._no_init:
+            from ..process import setup_context
+
             self._fetch_all(*all_cats[1:])
+            setup_context()
 
         self.main: Main = new(cls, self.args[_MAIN][1])
 

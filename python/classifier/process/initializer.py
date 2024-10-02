@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Callable, Literal
 
+from base_class.utils import unique
+from classifier.config.setting import Multiprocessing as cfg
+
 from ..utils import append_unique_instance
 
 if TYPE_CHECKING:
@@ -61,3 +64,14 @@ class torch_set_sharing_strategy:
         import torch.multiprocessing as mp
 
         mp.set_sharing_strategy(self.strategy)
+
+
+def setup_context():
+    from . import get_context
+
+    status.context = get_context(
+        method=cfg.context_method,
+        library=cfg.context_library,
+        preload=unique(cfg.preload),
+    )
+    status.initializer.add(torch_set_sharing_strategy("file_system"))

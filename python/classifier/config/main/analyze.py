@@ -1,13 +1,13 @@
 from itertools import chain
 
-from classifier.task import Analysis, ArgParser, EntryPoint
+from classifier.task import Analysis, ArgParser, EntryPoint, main
 from classifier.utils import call
 
 from .. import setting as cfg
-from ._utils import SetupMultiprocessing, progress_advance
+from ._utils import progress_advance
 
 
-class Main(SetupMultiprocessing):
+class Main(main.Main):
     _no_state = True
 
     argparser = ArgParser(
@@ -38,24 +38,21 @@ def run_analyzer(parser: EntryPoint, output: dict):
     if not analyzers:
         return []
 
-    if status.context is not None:
-        with (
-            ProcessPoolExecutor(
-                max_workers=cfg.Analysis.max_workers,
-                mp_context=status.context,
-                initializer=status.initializer,
-            ) as executor,
-            Progress.new(total=len(analyzers), msg=("analysis", "Running")) as progress,
-        ):
-            results = [
-                *pool.submit(
-                    executor,
-                    call,
-                    analyzers,
-                    callbacks=[lambda _: progress_advance(progress)],
-                )
-            ]
-    else:
-        results = [*map(call, analyzers)]
+    with (
+        ProcessPoolExecutor(
+            max_workers=cfg.Analysis.max_workers,
+            mp_context=status.context,
+            initializer=status.initializer,
+        ) as executor,
+        Progress.new(total=len(analyzers), msg=("analysis", "Running")) as progress,
+    ):
+        results = [
+            *pool.submit(
+                executor,
+                call,
+                analyzers,
+                callbacks=[lambda _: progress_advance(progress)],
+            )
+        ]
     Index.render()
     return [*filter(lambda x: x is not None, results)]
