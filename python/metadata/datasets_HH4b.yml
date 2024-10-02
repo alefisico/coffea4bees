@@ -62,7 +62,7 @@ datasets:
         count: 460000.0
         files:
         # - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v1/GluGluToHHTo4B_cHHH1_UL16_preVFP/picoAOD.withBDT.root
-        - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v1/GluGluToHHTo4B_cHHH1_UL16_postVFP/picoAOD.root
+        - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v1/GluGluToHHTo4B_cHHH1_UL16_preVFP/picoAOD.root
         saved_events: 82250
         sumw: 12347.151023600001
         sumw2: 898.1264641586223
