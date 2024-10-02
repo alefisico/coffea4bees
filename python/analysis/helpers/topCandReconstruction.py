@@ -150,10 +150,10 @@ def dumpTopCandidateTestVectors(event, logging, chunk, nEvent):
 #    logging.info(f'{chunk}\n\n')
 
     print(f'{chunk}\n\n')
-    print(f'{chunk} self.input_jet_pt  = {[event[iE].Jet[event[iE].Jet.selected].pt.tolist() for iE in range(nEvent)]}')
-    print(f'{chunk} self.input_jet_eta = {[event[iE].Jet[event[iE].Jet.selected].eta.tolist() for iE in range(nEvent)]}')
-    print(f'{chunk} self.input_jet_phi = {[event[iE].Jet[event[iE].Jet.selected].phi.tolist() for iE in range(nEvent)]}')
-    print(f'{chunk} self.input_jet_mass = {[event[iE].Jet[event[iE].Jet.selected].mass.tolist() for iE in range(nEvent)]}')
+    print(f'{chunk} self.input_jet_pt   = {[event[iE].selJet.pt  .tolist() for iE in range(nEvent)]}')
+    print(f'{chunk} self.input_jet_eta  = {[event[iE].selJet.eta .tolist() for iE in range(nEvent)]}')
+    print(f'{chunk} self.input_jet_phi  = {[event[iE].selJet.phi .tolist() for iE in range(nEvent)]}')
+    print(f'{chunk} self.input_jet_mass = {[event[iE].selJet.mass.tolist() for iE in range(nEvent)]}')
     print(f'{chunk} self.input_jet_btagDeepFlavB = {[event[iE].Jet[event[iE].Jet.selected].btagDeepFlavB.tolist() for iE in range(nEvent)]}')
     print(f'{chunk} self.input_jet_bRegCorr = {[event[iE].Jet[event[iE].Jet.selected].bRegCorr.tolist() for iE in range(nEvent)]}')
     print(f'{chunk} self.output_xbW = {[event[iE].xbW for iE in range(nEvent)]}')
@@ -173,7 +173,6 @@ def buildTop(input_jets, top_cand_idx):
     xW = (W_p.mass - mW) / (0.10 * W_p.mass)
     pW = W_p * (mW / W_p.mass)
 
-    #bReg_p = b * b.bRegCorr
     mbW = (b + pW).mass
 
     # smaller resolution term because there are fewer degrees of freedom. FWHM=25GeV, about the same as mW
