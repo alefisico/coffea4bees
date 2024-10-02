@@ -91,7 +91,7 @@ class LoadTrainingSets(Main):
         kept = sorted(kept)
         logging.info(f"The following keys will be kept: {kept}")
         if ignored:
-            logging.warn(f"The following keys will be ignored: {sorted(ignored)}")
+            logging.warning(f"The following keys will be ignored: {sorted(ignored)}")
         datasets = {k: ConcatDataset(d[k] for d in datasets) for k in kept}
         logging.info(f"Loaded {len(next(iter(datasets.values())))} data entries")
         return StackDataset(**datasets)

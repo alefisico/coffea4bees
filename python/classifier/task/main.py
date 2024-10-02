@@ -187,7 +187,7 @@ class EntryPoint:
                 address = Monitor.current()._address
                 if isinstance(address, tuple):
                     address = f"{address[0]}:{address[1]}"
-                logging.info(f"Started Monitor at {address}")
+                logging.info(f"Monitor is running at {address}")
             else:
                 from ..monitor import setup_reporter
                 from ..process.monitor import connect_to_monitor
@@ -195,7 +195,7 @@ class EntryPoint:
                 connect_to_monitor()
                 setup_reporter()
                 address = host if port is None else f"{host}:{port}"
-                logging.info(f"Connecting to Monitor {address}")
+                logging.info(f"Connected to Monitor {address}")
         else:
             from ..monitor import disable_monitor
 

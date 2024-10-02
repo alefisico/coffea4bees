@@ -50,12 +50,12 @@ def get_context(
     if method is ...:
         method = "forkserver" if is_poxis() else "spawn"
     if not is_poxis() and method.startswith("fork"):
-        logging.warn(
-            f'"{method}" is not supported on non-posix systems, fallback to "spawn"'
+        logging.warning(
+            f'"{method}" is not supported on non-posix systems, falling back to "spawn"'
         )
         method = "spawn"
     if method == "fork":
-        logging.warn(
+        logging.warning(
             f'"{method}" is unsafe, consider using "spawn" or "forkserver" instead'
         )
     match library:

@@ -45,7 +45,7 @@ class cache(Dataset):
         else:
             chunks = list(range(total))
         if len(chunks) == 0:
-            logging.warn("No chunk to load")
+            logging.warning("No chunk to load")
         else:
             count = len(chunks) * metadata["chunksize"]
             if chunks[-1] == total - 1:
