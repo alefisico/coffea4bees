@@ -264,7 +264,7 @@ class analysis(processor.ProcessorABC):
         #
         event['vetoBoostedSel'] = np.full(len(event), False)
         if self.apply_boosted_veto & self.dataset.startswith("GluGluToHHTo4B_cHHH1"):
-            boosted_file = load("analysis/hists/counts_boosted.coffea")['boosted']
+            boosted_file = load("analysis/metadata/counts_boosted.coffea")['boosted']
             boosted_events = boosted_file[self.dataset]['event'] if self.dataset in boosted_file.keys() else event.event
             event['vetoBoostedSel'] = ~np.isin( event.event.to_numpy(), boosted_events )
 
