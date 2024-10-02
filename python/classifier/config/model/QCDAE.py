@@ -9,13 +9,14 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from classifier.task import ArgParser, Model, parse
+from classifier.task.special import WorkInProgress
 
 if TYPE_CHECKING:
     from classifier.ml import BatchType
     from torch import Tensor
 
 
-class HCR(Model):
+class HCR(WorkInProgress, Model):
     argparser = ArgParser()
     argparser.add_argument(
         "--training",

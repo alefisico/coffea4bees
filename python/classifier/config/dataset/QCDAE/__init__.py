@@ -10,6 +10,7 @@ from functools import cache
 from typing import TYPE_CHECKING, Iterable
 
 from classifier.task import ArgParser
+from classifier.task.special import WorkInProgress
 
 from ...setting.QCDAE import Input, InputBranch
 from .._df import LoadGroupedRoot
@@ -23,7 +24,7 @@ if TYPE_CHECKING:
     from classifier.df.tools import DFProcessor
 
 
-class Toy(LoadGroupedRoot):
+class Toy(WorkInProgress, LoadGroupedRoot):
     argparser = ArgParser(prog="load the toy dataset")
     argparser.add_argument(
         "--some-arg",  # add arguments if needed
