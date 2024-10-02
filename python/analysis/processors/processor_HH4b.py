@@ -146,6 +146,14 @@ class analysis(processor.ProcessorABC):
         self.config = processor_config(self.processName, self.dataset, event)
         logging.debug(f'{self.chunk} config={self.config}, for file {fname}\n')
 
+        #
+        #  If doing RW
+        #
+        # if self.config["isSyntheticData"] and not self.config["isPSData"]:
+        #     with open(f"jet_clustering/jet-splitting-PDFs-00-08-00/hT-reweight-00-00-01/hT_weights_{self.year}.yml", "r") as f:
+        #         self.hT_weights= yaml.safe_load(f)
+
+
         self.nEvent = len(event)
 
         #
@@ -259,6 +267,8 @@ class analysis(processor.ProcessorABC):
                                                   apply_trigWeight=self.apply_trigWeight,
                                                   isTTForMixed=self.config["isTTForMixed"]
                                                  )
+
+
         #
         # Checking boosted selection (should change in the future)
         #
@@ -303,6 +313,21 @@ class analysis(processor.ProcessorABC):
                                            override_selected_with_flavor_bit=self.config["override_selected_with_flavor_bit"],
                                            run_lowpt_selection=self.run_lowpt_selection
                                            )
+
+
+        #
+        #  Test hT reweighting the synthetic data
+        #
+        # if self.config["isSyntheticData"] and not self.config["isPSData"]:
+        #     hT_index = np.floor_divide(event.hT_selected,30).to_numpy()
+        #     hT_index[hT_index > 48] = 48
+        #
+        #     vectorized_hT = np.vectorize(lambda i: self.hT_weights["weights"][int(i)])
+        #     weights_hT = vectorized_hT(hT_index)
+        #
+        #     weights.add( "hT_reweight", weights_hT )
+        #     list_weight_names.append(f"hT_reweight")
+
 
         selections = PackedSelection()
         selections.add( "lumimask", event.lumimask)
