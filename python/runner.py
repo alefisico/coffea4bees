@@ -160,6 +160,7 @@ if __name__ == '__main__':
     config_runner.setdefault('friend_base_argname', "make_classifier_input")
     config_runner.setdefault('friend_metafile', 'friends')
     config_runner.setdefault('friend_merge_step', 100_000)
+    config_runner.setdefault('write_coffea_output', True)
     config_runner.setdefault('override_top_reconstruction', None)
     if args.systematics:
         logging.info("\nRunning with systematics")
@@ -566,7 +567,8 @@ if __name__ == '__main__':
                         )
                 from base_class.system.eos import EOS
                 from base_class.utils.json import DefaultEncoder
-                metafile = EOS(friend_base) / f'{config_runner["friend_metafile"]}.json'
+                metafile = f'{args.output_path}/{args.output_file.replace("coffea", "json")}'
+                # metafile = EOS(friend_base) / f'{config_runner["friend_metafile"]}.json'
                 with fsspec.open(metafile, "wt") as f:
                     json.dump(friends, f, cls=DefaultEncoder)
                 logging.info("The following frends trees are created:")
@@ -576,11 +578,12 @@ if __name__ == '__main__':
             #
             #  Saving file
             #
-            if not os.path.exists(args.output_path):
-                os.makedirs(args.output_path)
-            hfile = f'{args.output_path}/{args.output_file}'
-            logging.info(f'\nSaving file {hfile}')
-            save(output, hfile)
+            if config_runner['write_coffea_output']:
+                if not os.path.exists(args.output_path):
+                    os.makedirs(args.output_path)
+                hfile = f'{args.output_path}/{args.output_file}'
+                logging.info(f'\nSaving file {hfile}')
+                save(output, hfile)
 
     #
     # Run dask performance only in dask jobs
