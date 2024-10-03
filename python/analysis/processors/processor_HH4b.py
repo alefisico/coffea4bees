@@ -4,6 +4,7 @@ import warnings
 import awkward as ak
 import numpy as np
 import yaml, json
+import copy
 
 from analysis.helpers.processor_config import processor_config
 from analysis.helpers.common import apply_jerc_corrections, update_events
@@ -307,6 +308,8 @@ class analysis(processor.ProcessorABC):
     def process_shift(self, event, shift_name, weights, list_weight_names, target):
         """For different jet variations. It computes event variations for the nominal case."""
 
+        # Copy the weights to avoid modifying the original
+        weights = copy.copy(weights)
 
         # Apply object selection (function does not remove events, adds content to objects)
         event = apply_object_selection_4b( event, self.corrections_metadata[self.year],
