@@ -36,7 +36,7 @@ class cache(Dataset):
             logging.info(f"The following states will be loaded {sorted(states)}")
             for state in states:
                 mod, var = state.rsplit(".", 1)
-                mod = EntryPoint._fetch_module(mod, "state")[1]
+                mod = EntryPoint._fetch_module(mod, "state", True)[1]
                 setattr(mod, var, states[state])
         # load datasets
         total = math.ceil(metadata["size"] / metadata["chunksize"])

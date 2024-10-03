@@ -46,21 +46,29 @@ def call(func: Callable):
     return func()
 
 
-def import_(modname: str, clsname: str):
+def import_(modname: str, clsname: str, raise_error: bool = False):
     _mod, _cls = None, None
     try:
         _mod = importlib.import_module(modname)
-    except ModuleNotFoundError:
-        ...
+    except ModuleNotFoundError as e:
+        if raise_error:
+            raise e
     except Exception as e:
-        logging.error(e, exc_info=e)
+        if raise_error:
+            raise e
+        else:
+            logging.error(e, exc_info=e)
     if _mod is not None and clsname != "*":
         try:
             _cls = getattr(_mod, clsname)
-        except AttributeError:
-            ...
+        except AttributeError as e:
+            if raise_error:
+                raise e
         except Exception as e:
-            logging.error(e, exc_info=e)
+            if raise_error:
+                raise e
+            else:
+                logging.error(e, exc_info=e)
     return _mod, _cls
 
 

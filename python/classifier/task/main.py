@@ -66,8 +66,10 @@ class EntryPoint:
         return ".".join(mods[:-1]), mods[-1]
 
     @classmethod
-    def _fetch_module(cls, module: str, key: str) -> tuple[ModuleType, type[Task]]:
-        return import_(*cls._fetch_module_name(module, key))
+    def _fetch_module(
+        cls, module: str, key: str, raise_error: bool = False
+    ) -> tuple[ModuleType, type[Task]]:
+        return import_(*cls._fetch_module_name(module, key), raise_error)
 
     def _fetch_all(self, *cats: str):
         self.mods: dict[str, list[Task]] = {}
@@ -75,21 +77,14 @@ class EntryPoint:
             target = self._keys[cat]
             self.mods[cat] = []
             for imp, opts in self.args[cat]:
-                modname, clsname = self._fetch_module_name(imp, cat)
-                mod, cls = self._fetch_module(imp, cat)
-                if mod is None:
-                    raise ModuleNotFoundError(f'Module "{modname}" not found')
-                elif cls is None:
-                    raise AttributeError(
-                        f'Class "{clsname}" not found in module "{modname}"'
+                _, clsname = self._fetch_module_name(imp, cat)
+                _, cls = self._fetch_module(imp, cat, True)
+                if not issubclass(cls, target):
+                    raise TypeError(
+                        f'Class "{clsname}" is not a subclass of "{target.__name__}"'
                     )
                 else:
-                    if not issubclass(cls, target):
-                        raise TypeError(
-                            f'Class "{clsname}" is not a subclass of "{target.__name__}"'
-                        )
-                    else:
-                        self.mods[cat].append(new(cls, opts))
+                    self.mods[cat].append(new(cls, opts))
 
     @classmethod
     def _expand_module(cls, data: dict):
@@ -163,9 +158,9 @@ class EntryPoint:
             )
         RunInfo.main_task = main
 
-        cls: type[Main] = self._fetch_module(f"{self.args[_MAIN][0]}.Main", _MAIN)[1]
-        if cls is None:
-            raise AttributeError(f'Task "{self.args[_MAIN][0]}" not found')
+        cls: type[Main] = self._fetch_module(
+            f"{self.args[_MAIN][0]}.Main", _MAIN, True
+        )[1]
 
         if cls.prelude is not NotImplemented:
             cls.prelude()

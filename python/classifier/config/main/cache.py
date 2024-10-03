@@ -69,7 +69,7 @@ class Main(LoadTrainingSets):
             logging.info(f"The following states will be cached {sorted(states)}")
             for state in states:
                 mod, var = state.rsplit(".", 1)
-                mod = EntryPoint._fetch_module(mod, "state")[1]
+                mod = EntryPoint._fetch_module(mod, "state", True)[1]
                 states[state] = getattr(mod, var)
         # cache datasets
         datasets = self.load_training_sets(parser)
