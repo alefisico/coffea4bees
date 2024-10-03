@@ -47,8 +47,8 @@ rule analysis_databkgs:
         kubernetes_memory_limit="9.5Gi"
     shell:
         """
-# echo "Blinding Signal Region"
-# sed -i "s#blind.*#blind: True# python/analysis/metadata/HH4b.yml
+echo "Blinding SR region"
+sed -i 's/blind.*/blind: true/' analysis/metadata/HH4b.yml
 echo "Running {params.isam} {params.iy} - output {output}"
 cd python/ 
 mprof run -C -o mprofile_{params.logname}.dat python runner.py -d {params.isam} -p analysis/processors/processor_HH4b.py -y {params.iy} -o ../{output} -op ../output/ -m {dataset_location} --githash {params.hash} --gitdiff {params.diff}  #--dask
