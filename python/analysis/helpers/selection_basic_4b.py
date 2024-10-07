@@ -94,6 +94,9 @@ def apply_object_selection_4b(event, corrections_metadata, *,
         selJet_pvec["puId"] = event.Jet[event.Jet.selected].puId
         selJet_pvec["jetId"] = event.Jet[event.Jet.selected].jetId
 
+        if "hadronFlavour" in selev.Jet.fields:
+            selJet_pvec["hadronFlavour"] = selev.Jet[event.Jet.selected].hadronFlavour
+
         event['selJet']  = selJet_pvec
     else:
         event['selJet'] = event.Jet[event.Jet.selected]
