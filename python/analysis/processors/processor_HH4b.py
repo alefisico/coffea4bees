@@ -70,7 +70,6 @@ class analysis(processor.ProcessorABC):
         make_top_reconstruction: str = None,
         make_friend_JCM_weight: str = None,
         make_friend_FvT_weight: str = None,
-        isSyntheticData: bool = False,
         subtract_ttbar_with_weights: bool = False,
         friend_trigWeight: str = None,
         friend_top_reconstruction: str = None,

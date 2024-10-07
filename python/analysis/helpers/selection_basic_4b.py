@@ -77,24 +77,29 @@ def apply_object_selection_4b(event, corrections_metadata, *,
     event['Jet', 'tagged_loose'] = event.Jet.selected & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['L'])
     event['selJet_no_bRegCorr']  = event.Jet[event.Jet.selected]
 
-    #
-    # Apply the bRegCorr to the tagged jets
-    #
-    bRegCorr_factor_flat = copy(ak.flatten(event.Jet.bRegCorr).to_numpy())
-    tagged_flag_flat    = ak.flatten(event.Jet.tagged)
-    bRegCorr_factor_flat[~tagged_flag_flat] = 1.0
-    bRegCorr_factor = ak.unflatten(bRegCorr_factor_flat, ak.num(event.Jet.bRegCorr) )
+    do_bRegCor = True
+    if do_bRegCor:
 
-    selJet_pvec = event.Jet[event.Jet.selected] * bRegCorr_factor[event.Jet.selected]
-    event['selJet'] = event.Jet[event.Jet.selected]
+        #
+        # Apply the bRegCorr to the tagged jets
+        #
+        bRegCorr_factor_flat = copy(ak.flatten(event.Jet.bRegCorr).to_numpy())
+        tagged_flag_flat    = ak.flatten(event.Jet.tagged)
+        bRegCorr_factor_flat[~tagged_flag_flat] = 1.0
+        bRegCorr_factor = ak.unflatten(bRegCorr_factor_flat, ak.num(event.Jet.bRegCorr) )
+        selJet_pvec = event.Jet[event.Jet.selected]  * bRegCorr_factor[event.Jet.selected]
+        selJet_pvec["tagged"] = event.Jet[event.Jet.selected].tagged
+        selJet_pvec["tagged_loose"] = event.Jet[event.Jet.selected].tagged_loose
+        selJet_pvec["btagDeepFlavB"] = event.Jet[event.Jet.selected].btagDeepFlavB
+        selJet_pvec["puId"] = event.Jet[event.Jet.selected].puId
+        selJet_pvec["jetId"] = event.Jet[event.Jet.selected].jetId
 
-    # Note following lines throw exception in find_tops (fast)
-    #   (Happens sporadically, unclear why)
-    # JA
-    event['selJet', "pt"]      = selJet_pvec.pt
-    event['selJet', "eta"]     = selJet_pvec.eta
-    event['selJet', "phi"]     = selJet_pvec.phi
-    event['selJet', "mass"]    = selJet_pvec.mass
+        if "hadronFlavour" in event.Jet.fields:
+            selJet_pvec["hadronFlavour"] = event.Jet[event.Jet.selected].hadronFlavour
+
+        event['selJet']  = selJet_pvec
+    else:
+        event['selJet'] = event.Jet[event.Jet.selected]
 
     event['passJetMult'] = event.nJet_selected >= 4
 
@@ -108,6 +113,7 @@ def apply_object_selection_4b(event, corrections_metadata, *,
     event['threeTag']   = (event['nJet_tagged_loose'] == 3) & (event['nJet_selected'] >= 4)
 
     event['passPreSel'] = event.threeTag | event.fourTag
+
 
     tagCode = np.zeros(len(event), dtype=int)
     tagCode[event.fourTag]  = 4
@@ -129,10 +135,10 @@ def apply_object_selection_4b(event, corrections_metadata, *,
         event['tagJet_lowpt'] = event.Jet[event.Jet.tagged_lowpt]
         event['lowpt_fourTag']  = (event['nJet_tagged']==3) & (event['nJet_tagged_lowpt'] > 0) & ~event.fourTag
         event['lowpt_threeTag_3b1j_0b'] = (event['nJet_tagged_loose'] == 3) & (event['nJet_selected'] >= 4) & (event['nJet_tagged_loose_lowpt']==0) & (ak.num(event['lowptJet'])>0)
-        event['lowpt_threeTag_2b2j_1b'] = (event['nJet_tagged_loose'] == 2) & (event['nJet_selected'] >= 4) & (event['nJet_tagged_loose_lowpt']==1) 
-        event['lowpt_threeTag_1b3j_2b'] = (event['nJet_tagged_loose'] == 1) & (event['nJet_selected'] >= 4) & (event['nJet_tagged_loose_lowpt']==2) 
-        event['lowpt_threeTag_0b4j_3b'] = (event['nJet_tagged_loose'] == 0) & (event['nJet_selected'] >= 4) & (event['nJet_tagged_loose_lowpt']==3) 
-        event['lowpt_threeTag'] = event['lowpt_threeTag_3b1j_0b'] | event['lowpt_threeTag_2b2j_1b'] | event['lowpt_threeTag_1b3j_2b'] | event['lowpt_threeTag_0b4j_3b'] 
+        event['lowpt_threeTag_2b2j_1b'] = (event['nJet_tagged_loose'] == 2) & (event['nJet_selected'] >= 4) & (event['nJet_tagged_loose_lowpt']==1)
+        event['lowpt_threeTag_1b3j_2b'] = (event['nJet_tagged_loose'] == 1) & (event['nJet_selected'] >= 4) & (event['nJet_tagged_loose_lowpt']==2)
+        event['lowpt_threeTag_0b4j_3b'] = (event['nJet_tagged_loose'] == 0) & (event['nJet_selected'] >= 4) & (event['nJet_tagged_loose_lowpt']==3)
+        event['lowpt_threeTag'] = event['lowpt_threeTag_3b1j_0b'] | event['lowpt_threeTag_2b2j_1b'] | event['lowpt_threeTag_1b3j_2b'] | event['lowpt_threeTag_0b4j_3b']
         tagCode[event["lowpt_fourTag"]] = 14
         tagCode[event["lowpt_threeTag"]] = 13
         event['lowpt_categories'] = np.where(
