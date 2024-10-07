@@ -274,10 +274,20 @@ class analysis(processor.ProcessorABC):
         #
         event['vetoBoostedSel'] = np.full(len(event), False)
         if self.apply_boosted_veto & self.dataset.startswith("GluGluToHHTo4B_cHHH1"):
-            boosted_file = load("analysis/metadata/counts_boosted.coffea")['boosted']
-            boosted_events = boosted_file[self.dataset]['event'] if self.dataset in boosted_file.keys() else event.event
-            event['vetoBoostedSel'] = ~np.isin( event.event.to_numpy(), boosted_events )
+            boosted_file = load("metadata/boosted_overlap_signal.coffea")['boosted']
+            boosted_events = boosted_file.get(self.dataset, {}).get('event', event.event)
+            boosted_events_set = set(boosted_events)
+            event['vetoBoostedSel'] = ~np.array([e in boosted_events_set for e in event.event.to_numpy()])
 
+        if self.apply_boosted_veto and self.dataset.startswith("data"):
+            boosted_file = load("metadata/boosted_overlap_data.coffea")
+            boosted_runs = boosted_file.get('run', [])
+            boosted_lumis = boosted_file.get('luminosityBlock', [])
+            boosted_events = boosted_file.get('event', [])
+            boosted_events_set = set(zip(boosted_runs, boosted_lumis, boosted_events))
+            event_tuples = zip(event.run.to_numpy(), event.luminosityBlock.to_numpy(), event.event.to_numpy())
+            event['vetoBoostedSel'] = ~np.array([t in boosted_events_set for t in event_tuples])
+            
         #
         # Calculate and apply Jet Energy Calibration
         #
@@ -312,6 +322,7 @@ class analysis(processor.ProcessorABC):
 
         # Apply object selection (function does not remove events, adds content to objects)
         event = apply_object_selection_4b( event, self.corrections_metadata[self.year],
+                                           dataset=self.dataset,
                                            doLeptonRemoval=self.config["do_lepton_jet_cleaning"],
                                            override_selected_with_flavor_bit=self.config["override_selected_with_flavor_bit"],
                                            run_lowpt_selection=self.run_lowpt_selection

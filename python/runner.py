@@ -99,7 +99,7 @@ if __name__ == '__main__':
     parser.add_argument('-op', '--outputPath', dest="output_path", default="hists/",
                         help='Output path, if you want to save file somewhere else.')
     parser.add_argument('-y', '--year', nargs='+', dest='years', default=['UL18'], choices=[
-                        '2016', '2017', '2018', 'UL16_postVFP', 'UL16_preVFP', 'UL17', 'UL18'],
+                        '2016', '2017', '2018', 'UL16_postVFP', 'UL16_preVFP', 'UL17', 'UL18', '2022_preEE', '2022_EE', '2023_preBPix', '2023_BPix'],
                         help="Year of data to run. Example if more than one: --year UL17 UL18")
     parser.add_argument('-d', '--datasets', nargs='+', dest='datasets', default=[
                         'HH4b', 'ZZ4b', 'ZH4b'], help="Name of dataset to run. Example if more than one: -d HH4b ZZ4b")

@@ -50,7 +50,7 @@ class Skimmer(PicoAOD):
                                       )
         event["Jet"] = jets
 
-        event = apply_object_selection_4b( event, self.corrections_metadata[year], doLeptonRemoval=config["do_lepton_jet_cleaning"], loosePtForSkim=self.loosePtForSkim  )
+        event = apply_object_selection_4b( event, self.corrections_metadata[year], dataset=dataset, doLeptonRemoval=config["do_lepton_jet_cleaning"], loosePtForSkim=self.loosePtForSkim  )
 
         weights = Weights(len(event), storeIndividual=True)
 
