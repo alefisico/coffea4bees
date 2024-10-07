@@ -37,6 +37,14 @@ def extract_jetmet_tar_files(tar_file_name: str=None,
         # Extract the file to the specified path
         member.name = os.path.basename(member.name)  # Remove any directory structure from the archive
         tar.extract(member, path=extract_path)
+        if 'Puppi' in jet_type:  ### this is only for Run3, temporary fix
+            old_file_path = os.path.join(extract_path, member.name)
+            new_file_name = member.name.replace('_', '', 1)
+            new_file_path = os.path.join(extract_path, new_file_name)
+            # Rename the file if the name was changed
+            if old_file_path != new_file_path:
+                os.rename(old_file_path, new_file_path)
+                member.name = new_file_name
         # Get the full path of the extracted file
         file_path = os.path.join(extract_path, member.name)
         if jet_type in member.name:
@@ -55,14 +63,15 @@ def apply_jerc_corrections( event,
 
     logging.info(f"Applying JEC/JER corrections for {dataset}")
 
+    jet_type = 'AK4PFchs' if '202' not in dataset else 'AK4PFPuppiPNetRegressionPlusNeutrino'
     jec_file = corrections_metadata['JEC_MC'] if isMC else corrections_metadata['JEC_DATA'][dataset[-1]]
-    extracted_files = extract_jetmet_tar_files(jec_file)
+    extracted_files = extract_jetmet_tar_files(jec_file, jet_type=jet_type)
     if run_systematics: jec_levels.append("RegroupedV2")
     weight_sets = list(set([file for level in jec_levels for file in extracted_files if level in file]))  ## list(set()) to remove duplicates
 
-    if isMC:
+    if isMC and ('202' not in dataset):
         jer_file = corrections_metadata["JER_MC"]
-        extracted_files = extract_jetmet_tar_files(jer_file)
+        extracted_files = extract_jetmet_tar_files(jer_file, jet_type=jet_type)
         weight_sets += [file for level in jer_levels for file in extracted_files if level in file]
 
     logging.debug(f"For {dataset}, applying these corrections: {weight_sets}")
@@ -71,7 +80,8 @@ def apply_jerc_corrections( event,
     event['Jet', 'mass_raw']  = (1 - event.Jet.rawFactor) * event.Jet.mass
     nominal_jet = event.Jet
     if isMC: nominal_jet['pt_gen'] = ak.values_astype(ak.fill_none(nominal_jet.matched_gen.pt, 0), np.float32)
-    nominal_jet['rho']      = ak.broadcast_arrays(event.fixedGridRhoFastjetAll, nominal_jet.pt)[0]
+    
+    nominal_jet['rho'] = ak.broadcast_arrays((event.Rho.fixedGridRhoFastjetAll if 'Rho' in event.fields else fixedGridRhoFastjetAll), nominal_jet.pt)[0]
 
     from coffea.lookup_tools import extractor
     extract = extractor()
