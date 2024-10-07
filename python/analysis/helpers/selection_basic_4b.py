@@ -83,7 +83,7 @@ def apply_object_selection_4b(event, corrections_metadata, *,
         #
         # Apply the bRegCorr to the tagged jets
         #
-        bRegCorr_factor_flat = ak.flatten(event.Jet.bRegCorr).to_numpy()
+        bRegCorr_factor_flat = copy(ak.flatten(event.Jet.bRegCorr).to_numpy())
         tagged_flag_flat    = ak.flatten(event.Jet.tagged)
         bRegCorr_factor_flat[~tagged_flag_flat] = 1.0
         bRegCorr_factor = ak.unflatten(bRegCorr_factor_flat, ak.num(event.Jet.bRegCorr) )
