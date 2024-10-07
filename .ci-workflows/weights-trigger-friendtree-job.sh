@@ -14,6 +14,6 @@ else
 fi
 echo "############### Running datasets from " $DATASETS
 echo "############### Running test processor"
-python runner.py -t -o dummy.coffea -d GluGluToHHTo4B_cHHH1 -p analysis/processors/processor_trigger_weights.py -y UL18 -op analysis/trigger_weights/ -c analysis/metadata/trigger_weights.yml -m $DATASETS
+python runner.py -t -o trigger_weights_friends.json -d GluGluToHHTo4B_cHHH1 -p analysis/processors/processor_trigger_weights.py -y UL18 -op analysis/trigger_weights  -c analysis/metadata/trigger_weights.yml -m $DATASETS
 ls
 cd ../

@@ -4,6 +4,7 @@ import warnings
 import awkward as ak
 import numpy as np
 import yaml, json
+import copy
 
 from analysis.helpers.processor_config import processor_config
 from analysis.helpers.common import apply_jerc_corrections, update_events
@@ -271,8 +272,9 @@ class analysis(processor.ProcessorABC):
         #
         # Checking boosted selection (should change in the future)
         #
-        if self.apply_boosted_veto:
-            boosted_file = load("analysis/hists/counts_boosted.coffea")['boosted']
+        event['vetoBoostedSel'] = np.full(len(event), False)
+        if self.apply_boosted_veto & self.dataset.startswith("GluGluToHHTo4B_cHHH1"):
+            boosted_file = load("analysis/metadata/counts_boosted.coffea")['boosted']
             boosted_events = boosted_file[self.dataset]['event'] if self.dataset in boosted_file.keys() else event.event
             event['vetoBoostedSel'] = ~np.isin( event.event.to_numpy(), boosted_events )
 
@@ -305,6 +307,8 @@ class analysis(processor.ProcessorABC):
     def process_shift(self, event, shift_name, weights, list_weight_names, target):
         """For different jet variations. It computes event variations for the nominal case."""
 
+        # Copy the weights to avoid modifying the original
+        weights = copy.copy(weights)
 
         # Apply object selection (function does not remove events, adds content to objects)
         event = apply_object_selection_4b( event, self.corrections_metadata[self.year],
@@ -473,6 +477,7 @@ class analysis(processor.ProcessorABC):
             blind_sel[ analysis_selections ] = ~(selev["quadJet_selected"].SR & selev.fourTag)
             selections.add( 'blind', blind_sel )
             allcuts.append( 'blind' )
+            analysis_selections = selections.all(*allcuts)
             selev = selev[~(selev["quadJet_selected"].SR & selev.fourTag)]
 
         #
