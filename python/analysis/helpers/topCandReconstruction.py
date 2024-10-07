@@ -150,14 +150,14 @@ def dumpTopCandidateTestVectors(event, logging, chunk, nEvent):
 #    logging.info(f'{chunk}\n\n')
 
     print(f'{chunk}\n\n')
-    print(f'{chunk} self.input_jet_pt   = {[event[iE].selJet.pt  .tolist() for iE in range(nEvent)]}')
-    print(f'{chunk} self.input_jet_eta  = {[event[iE].selJet.eta .tolist() for iE in range(nEvent)]}')
-    print(f'{chunk} self.input_jet_phi  = {[event[iE].selJet.phi .tolist() for iE in range(nEvent)]}')
-    print(f'{chunk} self.input_jet_mass = {[event[iE].selJet.mass.tolist() for iE in range(nEvent)]}')
-    print(f'{chunk} self.input_jet_btagDeepFlavB = {[event[iE].Jet[event[iE].Jet.selected].btagDeepFlavB.tolist() for iE in range(nEvent)]}')
-    print(f'{chunk} self.input_jet_bRegCorr = {[event[iE].Jet[event[iE].Jet.selected].bRegCorr.tolist() for iE in range(nEvent)]}')
-    print(f'{chunk} self.output_xbW = {[event[iE].xbW for iE in range(nEvent)]}')
-    print(f'{chunk} self.output_xW = {[event[iE].xW for iE in range(nEvent)]}')
+    print(f'{chunk} self.input_jet_pt            = {[event[iE].selJet.pt  .tolist() for iE in range(nEvent)]}')
+    print(f'{chunk} self.input_jet_eta           = {[event[iE].selJet.eta .tolist() for iE in range(nEvent)]}')
+    print(f'{chunk} self.input_jet_phi           = {[event[iE].selJet.phi .tolist() for iE in range(nEvent)]}')
+    print(f'{chunk} self.input_jet_mass          = {[event[iE].selJet.mass.tolist() for iE in range(nEvent)]}')
+    print(f'{chunk} self.input_jet_btagDeepFlavB = {[event[iE].selJet.btagDeepFlavB.tolist() for iE in range(nEvent)]}')
+    print(f'{chunk} self.input_jet_bRegCorr      = {[event[iE].selJet.bRegCorr.tolist() for iE in range(nEvent)]}')
+    print(f'{chunk} self.output_xbW              = {[event[iE].xbW for iE in range(nEvent)]}')
+    print(f'{chunk} self.output_xW               = {[event[iE].xW for iE in range(nEvent)]}')
     print(f'{chunk}\n\n')
 
 
