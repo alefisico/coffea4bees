@@ -25,7 +25,7 @@ def apply_event_selection_4b( event, corrections_metadata, *, cut_on_lumimask=Tr
     return event
 
 def apply_object_selection_4b(event, corrections_metadata, *,
-                              dataset: str = None,
+                              dataset: str = '',
                               doLeptonRemoval: bool = True,
                               loosePtForSkim: bool = False,
                               override_selected_with_flavor_bit: bool = False,
