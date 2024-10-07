@@ -81,7 +81,7 @@ def apply_jerc_corrections( event,
     nominal_jet = event.Jet
     if isMC: nominal_jet['pt_gen'] = ak.values_astype(ak.fill_none(nominal_jet.matched_gen.pt, 0), np.float32)
     
-    nominal_jet['rho'] = ak.broadcast_arrays((event.Rho.fixedGridRhoFastjetAll if 'Rho' in event.fields else fixedGridRhoFastjetAll), nominal_jet.pt)[0]
+    nominal_jet['rho'] = ak.broadcast_arrays((event.Rho.fixedGridRhoFastjetAll if 'Rho' in event.fields else event.fixedGridRhoFastjetAll), nominal_jet.pt)[0]
 
     from coffea.lookup_tools import extractor
     extract = extractor()

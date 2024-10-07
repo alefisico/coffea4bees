@@ -102,24 +102,29 @@ def apply_object_selection_4b(event, corrections_metadata, *,
         event['Jet', 'tagged_loose'] = event.Jet.selected & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['L'])
         event['selJet_no_bRegCorr']  = event.Jet[event.Jet.selected]
 
-        #
-        # Apply the bRegCorr to the tagged jets
-        #
-        bRegCorr_factor_flat = copy(ak.flatten(event.Jet.bRegCorr).to_numpy())
-        tagged_flag_flat    = ak.flatten(event.Jet.tagged)
-        bRegCorr_factor_flat[~tagged_flag_flat] = 1.0
-        bRegCorr_factor = ak.unflatten(bRegCorr_factor_flat, ak.num(event.Jet.bRegCorr) )
+        do_bRegCor = True
+        if do_bRegCor:
 
-        selJet_pvec = event.Jet[event.Jet.selected] * bRegCorr_factor[event.Jet.selected]
-        event['selJet'] = event.Jet[event.Jet.selected]
+            #
+            # Apply the bRegCorr to the tagged jets
+            #
+            bRegCorr_factor_flat = copy(ak.flatten(event.Jet.bRegCorr).to_numpy())
+            tagged_flag_flat    = ak.flatten(event.Jet.tagged)
+            bRegCorr_factor_flat[~tagged_flag_flat] = 1.0
+            bRegCorr_factor = ak.unflatten(bRegCorr_factor_flat, ak.num(event.Jet.bRegCorr) )
+            selJet_pvec = event.Jet[event.Jet.selected]  * bRegCorr_factor[event.Jet.selected]
+            selJet_pvec["tagged"] = event.Jet[event.Jet.selected].tagged
+            selJet_pvec["tagged_loose"] = event.Jet[event.Jet.selected].tagged_loose
+            selJet_pvec["btagDeepFlavB"] = event.Jet[event.Jet.selected].btagDeepFlavB
+            selJet_pvec["puId"] = event.Jet[event.Jet.selected].puId
+            selJet_pvec["jetId"] = event.Jet[event.Jet.selected].jetId
 
-        # Note following lines throw exception in find_tops (fast)
-        #   (Happens sporadically, unclear why)
-        # JA
-        event['selJet', "pt"]      = selJet_pvec.pt
-        event['selJet', "eta"]     = selJet_pvec.eta
-        event['selJet', "phi"]     = selJet_pvec.phi
-        event['selJet', "mass"]    = selJet_pvec.mass
+            if "hadronFlavour" in event.Jet.fields:
+                selJet_pvec["hadronFlavour"] = event.Jet[event.Jet.selected].hadronFlavour
+
+            event['selJet']  = selJet_pvec
+        else:
+            event['selJet'] = event.Jet[event.Jet.selected]
 
         event['passJetMult'] = event.nJet_selected >= 4
 
