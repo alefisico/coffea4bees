@@ -1,0 +1,44 @@
+datasets:
+  data:
+    2022_preEE:
+      lumi: 7.98e3
+      nanoAOD:
+        B: /JetHT/Run2022C-22Sep2023-v1/NANOAOD    ### RunB does not officially exist, it is a simplification
+        c: /JetMET/Run2022C-22Sep2023-v1/NANOAOD
+        D: /JetMET/Run2022D-22Sep2023-v1/NANOAOD 
+      trigger:
+      - QuadPFJet70_50_40_35_PFBTagParticleNet_2BTagSum0p65
+      - PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepJet_4p5
+      - PFHT1050
+    2022_EE:
+      lumi: 26.77e3
+      nanoAOD:
+        E: /JetMET/Run2022E-22Sep2023-v1/NANOAOD
+        F: /JetMET/Run2022F-22Sep2023-v2/NANOAOD
+        G: /JetMET/Run2022G-22Sep2023-v2/NANOAOD
+      trigger:
+      - QuadPFJet70_50_40_35_PFBTagParticleNet_2BTagSum0p65
+      - PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepJet_4p5
+      - PFHT1050
+    2023_preBPix:
+      lumi: 1.0
+      nanoAOD:
+        A: /JetMET0/Run2023C-22Sep2023_v1-v1/NANOAOD
+        B: /JetMET0/Run2023C-22Sep2023_v2-v1/NANOAOD
+        C: /JetMET1/Run2023C-22Sep2023_v1-v1/NANOAOD 
+        D: /JetMET1/Run2023C-22Sep2023_v2-v1/NANOAOD
+        E: /ParkingHH/Run2023C-22Sep2023_v3-v1/NANOAOD
+        F: /ParkingHH/Run2023C-22Sep2023_v4-v1/NANOAOD 
+      trigger:
+      - QuadPFJet70_50_40_35_PNet2BTagMean0p65
+      - PFHT280_QuadPFJet30_PNet2BTagMean0p55
+      - PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepJet_4p5  
+    2023_BPix:
+      lumi: 1.0
+      nanoAOD:
+        D: /ParkingHH/Run2023D-22Sep2023_v1-v1/NANOAOD
+        E: /ParkingHH/Run2023D-22Sep2023_v2-v1/NANOAOD
+      trigger:
+      - QuadPFJet70_50_40_35_PNet2BTagMean0p65
+      - PFHT280_QuadPFJet30_PNet2BTagMean0p55
+      - PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepJet_4p5  
