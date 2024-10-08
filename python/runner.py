@@ -99,7 +99,7 @@ if __name__ == '__main__':
     parser.add_argument('-op', '--outputPath', dest="output_path", default="hists/",
                         help='Output path, if you want to save file somewhere else.')
     parser.add_argument('-y', '--year', nargs='+', dest='years', default=['UL18'], choices=[
-                        '2016', '2017', '2018', 'UL16_postVFP', 'UL16_preVFP', 'UL17', 'UL18'],
+                        '2016', '2017', '2018', 'UL16_postVFP', 'UL16_preVFP', 'UL17', 'UL18', '2022_preEE', '2022_EE', '2023_preBPix', '2023_BPix'],
                         help="Year of data to run. Example if more than one: --year UL17 UL18")
     parser.add_argument('-d', '--datasets', nargs='+', dest='datasets', default=[
                         'HH4b', 'ZZ4b', 'ZH4b'], help="Name of dataset to run. Example if more than one: -d HH4b ZZ4b")
@@ -160,6 +160,7 @@ if __name__ == '__main__':
     config_runner.setdefault('friend_base_argname', "make_classifier_input")
     config_runner.setdefault('friend_metafile', 'friends')
     config_runner.setdefault('friend_merge_step', 100_000)
+    config_runner.setdefault('write_coffea_output', True)
     config_runner.setdefault('override_top_reconstruction', None)
     if args.systematics:
         logging.info("\nRunning with systematics")
@@ -532,6 +533,9 @@ if __name__ == '__main__':
                 'diff': args.gitdiff if args.gitdiff else get_git_diff(),
             }
 
+            if not os.path.exists(args.output_path):
+                os.makedirs(args.output_path)
+
             #
             # Save friend tree metadata if exists
             #
@@ -566,7 +570,8 @@ if __name__ == '__main__':
                         )
                 from base_class.system.eos import EOS
                 from base_class.utils.json import DefaultEncoder
-                metafile = EOS(friend_base) / f'{config_runner["friend_metafile"]}.json'
+                metafile = f'{args.output_path}/{args.output_file.replace("coffea", "json")}'
+                # metafile = EOS(friend_base) / f'{config_runner["friend_metafile"]}.json'
                 with fsspec.open(metafile, "wt") as f:
                     json.dump(friends, f, cls=DefaultEncoder)
                 logging.info("The following frends trees are created:")
@@ -576,11 +581,10 @@ if __name__ == '__main__':
             #
             #  Saving file
             #
-            if not os.path.exists(args.output_path):
-                os.makedirs(args.output_path)
-            hfile = f'{args.output_path}/{args.output_file}'
-            logging.info(f'\nSaving file {hfile}')
-            save(output, hfile)
+            if config_runner['write_coffea_output']:
+                hfile = f'{args.output_path}/{args.output_file}'
+                logging.info(f'\nSaving file {hfile}')
+                save(output, hfile)
 
     #
     # Run dask performance only in dask jobs

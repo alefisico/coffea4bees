@@ -4,6 +4,7 @@ import warnings
 import awkward as ak
 import numpy as np
 import yaml, json
+import copy
 
 from analysis.helpers.processor_config import processor_config
 from analysis.helpers.common import apply_jerc_corrections, update_events
@@ -69,7 +70,6 @@ class analysis(processor.ProcessorABC):
         make_top_reconstruction: str = None,
         make_friend_JCM_weight: str = None,
         make_friend_FvT_weight: str = None,
-        isSyntheticData: bool = False,
         subtract_ttbar_with_weights: bool = False,
         friend_trigWeight: str = None,
         friend_top_reconstruction: str = None,
@@ -145,6 +145,14 @@ class analysis(processor.ProcessorABC):
         #
         self.config = processor_config(self.processName, self.dataset, event)
         logging.debug(f'{self.chunk} config={self.config}, for file {fname}\n')
+
+        #
+        #  If doing RW
+        #
+        # if self.config["isSyntheticData"] and not self.config["isPSData"]:
+        #     with open(f"jet_clustering/jet-splitting-PDFs-00-08-00/hT-reweight-00-00-01/hT_weights_{self.year}.yml", "r") as f:
+        #         self.hT_weights= yaml.safe_load(f)
+
 
         self.nEvent = len(event)
 
@@ -259,14 +267,27 @@ class analysis(processor.ProcessorABC):
                                                   apply_trigWeight=self.apply_trigWeight,
                                                   isTTForMixed=self.config["isTTForMixed"]
                                                  )
+
+
         #
         # Checking boosted selection (should change in the future)
         #
-        if self.apply_boosted_veto:
-            boosted_file = load("analysis/hists/counts_boosted.coffea")['boosted']
-            boosted_events = boosted_file[self.dataset]['event'] if self.dataset in boosted_file.keys() else event.event
-            event['vetoBoostedSel'] = ~np.isin( event.event.to_numpy(), boosted_events )
+        event['vetoBoostedSel'] = np.full(len(event), False)
+        if self.apply_boosted_veto & self.dataset.startswith("GluGluToHHTo4B_cHHH1"):
+            boosted_file = load("metadata/boosted_overlap_signal.coffea")['boosted']
+            boosted_events = boosted_file.get(self.dataset, {}).get('event', event.event)
+            boosted_events_set = set(boosted_events)
+            event['vetoBoostedSel'] = ~np.array([e in boosted_events_set for e in event.event.to_numpy()])
 
+        if self.apply_boosted_veto and self.dataset.startswith("data"):
+            boosted_file = load("metadata/boosted_overlap_data.coffea")
+            boosted_runs = boosted_file.get('run', [])
+            boosted_lumis = boosted_file.get('luminosityBlock', [])
+            boosted_events = boosted_file.get('event', [])
+            boosted_events_set = set(zip(boosted_runs, boosted_lumis, boosted_events))
+            event_tuples = zip(event.run.to_numpy(), event.luminosityBlock.to_numpy(), event.event.to_numpy())
+            event['vetoBoostedSel'] = ~np.array([t in boosted_events_set for t in event_tuples])
+            
         #
         # Calculate and apply Jet Energy Calibration
         #
@@ -296,13 +317,31 @@ class analysis(processor.ProcessorABC):
     def process_shift(self, event, shift_name, weights, list_weight_names, target):
         """For different jet variations. It computes event variations for the nominal case."""
 
+        # Copy the weights to avoid modifying the original
+        weights = copy.copy(weights)
 
         # Apply object selection (function does not remove events, adds content to objects)
         event = apply_object_selection_4b( event, self.corrections_metadata[self.year],
+                                           dataset=self.dataset,
                                            doLeptonRemoval=self.config["do_lepton_jet_cleaning"],
                                            override_selected_with_flavor_bit=self.config["override_selected_with_flavor_bit"],
                                            run_lowpt_selection=self.run_lowpt_selection
                                            )
+
+
+        #
+        #  Test hT reweighting the synthetic data
+        #
+        # if self.config["isSyntheticData"] and not self.config["isPSData"]:
+        #     hT_index = np.floor_divide(event.hT_selected,30).to_numpy()
+        #     hT_index[hT_index > 48] = 48
+        #
+        #     vectorized_hT = np.vectorize(lambda i: self.hT_weights["weights"][int(i)])
+        #     weights_hT = vectorized_hT(hT_index)
+        #
+        #     weights.add( "hT_reweight", weights_hT )
+        #     list_weight_names.append(f"hT_reweight")
+
 
         selections = PackedSelection()
         selections.add( "lumimask", event.lumimask)
@@ -449,6 +488,7 @@ class analysis(processor.ProcessorABC):
             blind_sel[ analysis_selections ] = ~(selev["quadJet_selected"].SR & selev.fourTag)
             selections.add( 'blind', blind_sel )
             allcuts.append( 'blind' )
+            analysis_selections = selections.all(*allcuts)
             selev = selev[~(selev["quadJet_selected"].SR & selev.fourTag)]
 
         #
