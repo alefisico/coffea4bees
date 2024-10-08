@@ -74,7 +74,7 @@ class analysis(processor.ProcessorABC):
         event["Jet"] = jets
 
         # Apply object selection (function does not remove events, adds content to objects)
-        event = apply_object_selection_4b( event, self.corrections_metadata[self.year],
+        event = apply_object_selection_4b( event, self.corrections_metadata[self.year], dataset=self.dataset,
                                            doLeptonRemoval=self.config["do_lepton_jet_cleaning"] )
 
         create_cand_jet_dijet_quadjet( event, event.event,
