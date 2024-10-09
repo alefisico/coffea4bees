@@ -4,9 +4,14 @@ reana-job:
   tags:
     - k8s-cvmfs
   script:
-    - source .ci-workflows/reana-job.sh
+    - source .ci-workflows/reana-job.sh $NAME
   rules:
-    - if: $CI_PIPELINE_SOURCE == "web"
+     - if: $CI_PIPELINE_SOURCE == "web"
+      variables:
+        NAME: "coffea4bees"
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      variables:
+        NAME: "coffea4bees_schedule_$(date +%Y%m%d)"
     - if: $CI_PIPELINE_SOURCE == "push"
       when: never
   allow_failure: true
