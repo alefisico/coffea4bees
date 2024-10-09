@@ -10,38 +10,11 @@ We need two sets of environemnts. One with `coffea` to take the outputs of analy
 
 We can use the combine/combineHarvester container. For that you can run:
 ```
-cd coffea4bees/  ### if you are not there
-./shell_combine
-```
-And after that you **must** run the following script inside the container:
-```
-cd coffea4bees/python/stats_analysis/   #### if you are not there
-source set_cmssw.sh
+cd coffea4bees/python/stats_analysis  ### if you are not there
+./shell_combine combine --help
 ```
 
-### In sl7 machines
-
-
-For the second part ( with `root` and `combine`), we will set a `CMSSW` environment. You can run the next lines outside your `coffea4bees` directory if you want to. 
-
-```
-cmsrel CMSSW_11_3_4
-cd CMSSW_11_3_4/src
-cmsenv
-git clone https://github.com/cms-analysis/HiggsAnalysis-CombinedLimit.git HiggsAnalysis/CombinedLimit
-cd HiggsAnalysis/CombinedLimit
-git fetch origin
-git checkout v9.2.0
-scram b -j 5
-cd $CMSSW_BASE/src/
-bash <(curl -s https://raw.githubusercontent.com/cms-analysis/CombineHarvester/main/CombineTools/scripts/sparse-checkout-https.sh)
-scram b -j 5
-cmsenv
-```
-
-This steps follow the environment recommended for the combine team,  [here](https://cms-analysis.github.io/HiggsAnalysis-CombinedLimit/latest/#combine-v9-recommended-version)).
-This setup you have to do it only once, however **you need to set this environment anytime you want to use root or combine**.
-
+The script `./shell_combine` runs your command inside a container, for simplicity.
 
 ## Convert hist to json
 
