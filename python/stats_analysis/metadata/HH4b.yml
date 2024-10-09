@@ -30,30 +30,30 @@ uncertainty:
   lumi_13TeV_correlated: 
     type: 'lnN'
     years:
-      *16: '1.006'
-      *17: '1.009'
-      *18: '1.020'
+      *16: 1.006
+      *17: 1.009
+      *18: 1.020
 
   lumi_13TeV_1718:
     type: 'lnN'
     years:
-      *17: '1.006'
-      *18: '1.002'
+      *17: 1.006
+      *18: 1.002
 
   uncert_lumi_2016:
     type: 'lnN'
     years:
-      *16: '1.010' 
+      *16: 1.010
 
   uncert_lumi_2017:
     type: 'lnN'
     years:
-      *17: '1.020'
+      *17: 1.020
 
   uncert_lumi_2018: 
     type: 'lnN'
     years:
-      *18: '1.015'
+      *18: 1.015
 
   BR_hbb:
     type: 'lnN'
@@ -65,9 +65,9 @@ uncertainty:
   xs_hbbhbb:
     type: 'lnN'
     years:
-      *16: 0.942/1.037
-      *17: 0.942/1.037 
-      *18: 0.942/1.037
+      *16: [0.942, 1.037]
+      *17: [0.942, 1.037]
+      *18: [0.942, 1.037]
 
 # https://gitlab.cern.ch/hh/naming-conventions https://twiki.cern.ch/twiki/bin/view/LHCPhysics/CERNYellowReportPageBR?rev=22#Higgs_2_fermions
 #uncert_pdf_HH = {'HH': '1.030'} #https://gitlab.cern.ch/hh/naming-conventions
