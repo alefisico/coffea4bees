@@ -50,7 +50,7 @@ do
         # --PO 'map=.*/ZH:rZH[1,-10,10]' --PO 'map=.*/ZZ:rZZ[1,-10,10]'
     combine -M AsymptoticLimits ${datacard}.root --redefineSignalPOIs r${signallabel} \
         -n _${iclass} --run blind \
-        # --setParameters rggHH_kl_0_kt_1=0,rggHH_kl_2p45_kt_1=0,rggHH_kl_5_kt_1=0 \
+        --setParameters rggHH_kl_0_kt_1=0,rggHH_kl_2p45_kt_1=0,rggHH_kl_5_kt_1=0 \
         > limits.txt
     cat limits.txt
     combineTool.py -M CollectLimits higgsCombine_${iclass}.AsymptoticLimits.mH120.root -o limits.json
@@ -75,6 +75,7 @@ do
 
         combine -M MultiDimFit \
         --setParameters r${signallabel}=1,rggHH_kl_0_kt_1=0,rggHH_kl_2p45_kt_1=0,rggHH_kl_5_kt_1=0 \
+        # --setParameters r${signallabel}=1,rggHH_kl_0_kt_1=0,rggHH_kl_5_kt_1=0 \
         --robustFit 1 -n _${iclass}_fit_s --saveWorkspace --saveFitResult -d ${datacard}.root
 
         PostFitShapesFromWorkspace -w higgsCombine_${iclass}_fit_s.MultiDimFit.mH120.root -f multidimfit_${iclass}_fit_s.root:fit_mdf --total-shapes --postfit --output postfit_s.root
