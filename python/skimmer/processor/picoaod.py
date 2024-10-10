@@ -112,10 +112,7 @@ class PicoAOD(ProcessorABC):
             }
             | result
         }
-        lumi = events.metadata.get("lumi", 1.0)
-        xs = events.metadata.get("xs", 1.0)
-        kFactor = events.metadata.get("kFactor", 1.0)
-        self._cutFlow.addOutputSkim(result, dataset, lumi=lumi, xs=xs, kFactor=kFactor)
+        self._cutFlow.addOutputSkim(result, dataset)
         self._cutFlow.addOutputLumisProcessed(result, dataset, events.run, events.luminosityBlock)
 
         # sanity check
