@@ -927,7 +927,7 @@ def make2DPlot(cfg, process, var='selJets.pt',
     # Make the plot
     #
     fig, ax = _plot2d(_hist, cfg.plotConfig, **kwargs)
-    ax.set_title(f"{region}")
+    ax.set_title(f"{region}  ({cut})", fontsize=16)
 
     #
     # Save Fig
