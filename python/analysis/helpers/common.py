@@ -29,7 +29,7 @@ def extract_jetmet_tar_files(tar_file_name: str=None,
   """
 
   extracted_files = []
-  extract_path = '/tmp/coffea4bees/'
+  extract_path = f"/tmp/{os.getenv('USER')}/coffea4bees/"
 
   with tarfile.open(tar_file_name, "r:gz") as tar:
     for member in tar.getmembers():
