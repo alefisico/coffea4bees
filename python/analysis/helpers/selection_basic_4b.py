@@ -51,10 +51,23 @@ def apply_object_selection_4b(event, corrections_metadata, *,
                 )
         else:
             event['passJetMult'] = ak.where( event.nJet_selected >= 4, True, False)
-        event['passPreSel'] = event.passJetMult  ## simple presel for skims, needs to be updated
-        event['passJetMult_lowpt_forskim'] = event.passJetMult
-        event['passPreSel_lowpt_forskim'] = event.passJetMult 
 
+        event['Jet', 'tagged']       = event.Jet.selected & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['M'])
+        # event['Jet', 'tagged_loose'] = event.Jet.selected & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['L'])
+
+        event['tagJet']              = event.selJet[event.selJet.tagged]
+        # event['tagJet_loose']        = event.Jet[event.Jet.tagged_loose]
+
+        event['fourTag']  = (event['nJet_tagged']       >= 4)
+        event['twoTag']   = (event['nJet_tagged'] == 2) & (event['nJet_selected'] >= 4)
+
+        event['passPreSel'] = event.twoTag | event.fourTag
+
+        ## for skims
+        event['passJetMult_lowpt_forskim'] = event.passJetMult
+        event['passPreSel_lowpt_forskim'] = event.passPreSel 
+
+    ## For Run 2
     else:
         #
         # Adding muons (loose muon id definition)
