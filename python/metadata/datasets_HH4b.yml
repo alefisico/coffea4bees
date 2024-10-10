@@ -672,40 +672,6 @@ datasets:
     nSamples: 15
     use_kfold: True
 
-  ggZH4b:
-    UL16_postVFP:
-      nanoAOD: /dataset/dataset/NANOAODSIM
-      picoAOD:
-        files:
-        - root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/ggZH4b2016_postVFP/picoAOD.root
-        sumw: 92902.47143300001
-        sumw2: 4012.87580231272
-        total_events: 2150794.0
-    UL16_preVFP:
-      nanoAOD: /dataset/dataset/NANOAODSIM
-      picoAOD:
-        files:
-        - root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/ggZH4b2016_preVFP/picoAOD.root
-        sumw: 104596.25925100001
-        sumw2: 4517.98312021732
-        total_events: 2421518.0
-    UL17:
-      nanoAOD: /dataset/dataset/NANOAODSIM
-      picoAOD:
-        files:
-        - root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/ggZH4b2017/picoAOD.root
-        sumw: 201947.59140600002
-        sumw2: 8723.025236986468
-        total_events: 4675308.0
-    UL18:
-      nanoAOD: /dataset/dataset/NANOAODSIM
-      picoAOD:
-        files:
-        - root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/ggZH4b2018/picoAOD.root
-        sumw: 201885.7800765
-        sumw2: 8720.35532751438
-        total_events: 4673877.0
-    xs: 0.1227*0.5824*0.1512
   mixeddata:
     '2016':
       picoAOD:

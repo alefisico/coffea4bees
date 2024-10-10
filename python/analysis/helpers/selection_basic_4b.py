@@ -36,6 +36,8 @@ def apply_object_selection_4b(event, corrections_metadata, *,
     if '202' in dataset:  ### Run 3 is only with 202X years
         event['Jet', 'selected_loose'] = (event.Jet.pt >= 10) & (np.abs(event.Jet.eta) <= 4.7)
         event['Jet', 'selected'] = (event.Jet.pt >= 30) & (np.abs(event.Jet.eta) <= 2.4) & (event.Jet.jetId>=2)         
+        event['Jet', 'tagged']       = event.Jet.selected & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['M'])
+        # event['Jet', 'tagged_loose'] = event.Jet.selected & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['L'])
         event['selJet'] = event.Jet[event.Jet.selected]
         event['nJet_selected'] = ak.sum(event.Jet.selected, axis=1)
         
@@ -52,16 +54,16 @@ def apply_object_selection_4b(event, corrections_metadata, *,
         else:
             event['passJetMult'] = ak.where( event.nJet_selected >= 4, True, False)
 
-        event['Jet', 'tagged']       = event.Jet.selected & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['M'])
-        # event['Jet', 'tagged_loose'] = event.Jet.selected & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['L'])
-
+        event['nJet_tagged']         = ak.num(event.Jet[event.Jet.tagged])
+        # event['nJet_tagged_loose']   = ak.num(event.Jet[event.Jet.tagged_loose])
         event['tagJet']              = event.selJet[event.selJet.tagged]
         # event['tagJet_loose']        = event.Jet[event.Jet.tagged_loose]
 
-        event['fourTag']  = (event['nJet_tagged']       >= 4)
+        event['fourTag']  = (event['nJet_tagged'] >= 4)
+        event['threeTag']   = (event['nJet_tagged'] == 3) & (event['nJet_selected'] >= 4)
         event['twoTag']   = (event['nJet_tagged'] == 2) & (event['nJet_selected'] >= 4)
 
-        event['passPreSel'] = event.twoTag | event.fourTag
+        event['passPreSel'] = event.twoTag | event.threeTag | event.fourTag
 
         ## for skims
         event['passJetMult_lowpt_forskim'] = event.passJetMult
