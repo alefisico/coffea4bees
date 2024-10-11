@@ -40,6 +40,6 @@ alias python=python3.10"
 
 elif [ "$combine" = true ]; then
 
-    APPTAINER_SHELL=$(which bash) apptainer shell -B /afs -B /eos -B /cvmfs -B ${PWD}:/home/cmsusr/coffea4bees --pwd /home/cmsusr/coffea4bees/ /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0 -c "source /cvmfs/cms.cern.ch/cmsset_default.sh && cd /home/cmsusr/CMSSW_11_3_4/ && cmsenv && cd /home/cmsusr/coffea4bees/python/stats_analysis/
+    APPTAINER_SHELL=$(which bash) apptainer shell -B /afs -B /eos -B /cvmfs -B ${PWD}:/home/cmsusr/coffea4bees --pwd /home/cmsusr/coffea4bees/ /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0 -c "source /cvmfs/cms.cern.ch/cmsset_default.sh && cd /home/cmsusr/CMSSW_11_3_4/ && cmsenv && cd /home/cmsusr/coffea4bees/python/stats_analysis/"
 
 fi
