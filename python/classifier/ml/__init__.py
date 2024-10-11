@@ -215,7 +215,7 @@ class MultiStageTraining(WithUUID, ABC):
     @abstractmethod
     def stages(self) -> Iterable[Stage]: ...
 
-    def train(self, dataset: Dataset, device: Device):
+    def train(self, device: Device, dataset: Dataset):
         self.device = device.get(self.min_memory)
         self.dataset = dataset
         result = {

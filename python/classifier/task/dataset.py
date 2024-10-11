@@ -32,6 +32,3 @@ class TrainingSetLoader(Protocol):
 
 class EvaluationSetLoader(Protocol):  # TODO evaluation
     ...
-
-
-def sizeof(dataset: TorchDataset) -> int: ...
