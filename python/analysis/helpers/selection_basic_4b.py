@@ -35,22 +35,24 @@ def apply_object_selection_4b(event, corrections_metadata, *,
     ## Very simplified selection for Run 3
     if '202' in dataset:  ### Run 3 is only with 202X years
         event['Jet', 'selected_loose'] = (event.Jet.pt >= 10) & (np.abs(event.Jet.eta) <= 4.7)
-        event['Jet', 'selected'] = (event.Jet.pt >= 30) & (np.abs(event.Jet.eta) <= 2.4) & (event.Jet.jetId>=2)         
+        event['Jet', 'selected'] = (event.Jet.pt >= 30) & (np.abs(event.Jet.eta) <= 2.4) & (event.Jet.jetId>=2)
         event['Jet', 'tagged']       = event.Jet.selected & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['M'])
         # event['Jet', 'tagged_loose'] = event.Jet.selected & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['L'])
         event['selJet'] = event.Jet[event.Jet.selected]
         event['nJet_selected'] = ak.sum(event.Jet.selected, axis=1)
-        
+
         if '2022' in dataset:
-            event['selJet'] = ak.pad_none(event.selJet, 4, axis=1)
-            event['passJetMult'] = ak.where( 
-                event.nJet_selected >= 4, 
-                (event.selJet[:, 0].pt > 70) &
-                (event.selJet[:, 1].pt > 50) &
-                (event.selJet[:, 2].pt > 40) &
-                (event.selJet[:, 3].pt > 35),
-                False
-                )
+            event['passJetMult'] = ak.where( event.nJet_selected >= 4, True, False)
+            #event['selJet'] = ak.pad_none(event.selJet, 4, axis=1)
+            #event['passJetMult'] = ak.where(
+            #    (event.nJet_selected >= 4) &
+            #    (event.selJet[:, 0].pt > 70) &
+            #    (event.selJet[:, 1].pt > 50) &
+            #    (event.selJet[:, 2].pt > 40) &
+            #    (event.selJet[:, 3].pt > 35),
+            #    True,
+            #    False
+            #    )
         else:
             event['passJetMult'] = ak.where( event.nJet_selected >= 4, True, False)
 
@@ -67,7 +69,7 @@ def apply_object_selection_4b(event, corrections_metadata, *,
 
         ## for skims
         event['passJetMult_lowpt_forskim'] = event.passJetMult
-        event['passPreSel_lowpt_forskim'] = event.passPreSel 
+        event['passPreSel_lowpt_forskim'] = event.passPreSel
 
     ## For Run 2
     else:
@@ -174,10 +176,10 @@ def apply_object_selection_4b(event, corrections_metadata, *,
             event['tagJet_lowpt'] = event.Jet[event.Jet.tagged_lowpt]
             event['lowpt_fourTag']  = (event['nJet_tagged']==3) & (event['nJet_tagged_lowpt'] > 0) & ~event.fourTag
             event['lowpt_threeTag_3b1j_0b'] = (event['nJet_tagged_loose'] == 3) & (event['nJet_selected'] >= 4) & (event['nJet_tagged_loose_lowpt']==0) & (ak.num(event['lowptJet'])>0)
-            event['lowpt_threeTag_2b2j_1b'] = (event['nJet_tagged_loose'] == 2) & (event['nJet_selected'] >= 4) & (event['nJet_tagged_loose_lowpt']==1) 
-            event['lowpt_threeTag_1b3j_2b'] = (event['nJet_tagged_loose'] == 1) & (event['nJet_selected'] >= 4) & (event['nJet_tagged_loose_lowpt']==2) 
-            event['lowpt_threeTag_0b4j_3b'] = (event['nJet_tagged_loose'] == 0) & (event['nJet_selected'] >= 4) & (event['nJet_tagged_loose_lowpt']==3) 
-            event['lowpt_threeTag'] = event['lowpt_threeTag_3b1j_0b'] | event['lowpt_threeTag_2b2j_1b'] | event['lowpt_threeTag_1b3j_2b'] | event['lowpt_threeTag_0b4j_3b'] 
+            event['lowpt_threeTag_2b2j_1b'] = (event['nJet_tagged_loose'] == 2) & (event['nJet_selected'] >= 4) & (event['nJet_tagged_loose_lowpt']==1)
+            event['lowpt_threeTag_1b3j_2b'] = (event['nJet_tagged_loose'] == 1) & (event['nJet_selected'] >= 4) & (event['nJet_tagged_loose_lowpt']==2)
+            event['lowpt_threeTag_0b4j_3b'] = (event['nJet_tagged_loose'] == 0) & (event['nJet_selected'] >= 4) & (event['nJet_tagged_loose_lowpt']==3)
+            event['lowpt_threeTag'] = event['lowpt_threeTag_3b1j_0b'] | event['lowpt_threeTag_2b2j_1b'] | event['lowpt_threeTag_1b3j_2b'] | event['lowpt_threeTag_0b4j_3b']
             tagCode[event["lowpt_fourTag"]] = 14
             tagCode[event["lowpt_threeTag"]] = 13
             event['lowpt_categories'] = np.where(
