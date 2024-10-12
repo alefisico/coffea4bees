@@ -245,7 +245,7 @@ python/skimmer/metadata/picoaod_datasets_declustered_data_UL18.yml
 python/skimmer/metadata/picoaod_datasets_declustered_test_UL18.yml
 python/skimmer/metadata/picoaod_datasets_declustered_test_UL18_CI.yml
 python/skimmer/metadata/tmp.yml
-
+python/skimmer/metadata/das_summary_*.json
 
 */*/.DS_Store
 python/myPyPlotEnv/
@@ -256,3 +256,4 @@ python/analysis/debugMakeSyntheticEvents.py
 python/analysis/debugSyntheticEvents.py
 python/analysis/metadata/HH4b_systematics_ci.yml
 
+python/skimmer/metadata/declustering_seed_*.yml
