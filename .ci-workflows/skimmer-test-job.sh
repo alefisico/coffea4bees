@@ -12,7 +12,7 @@ echo "############### Moving to python folder"
 cd python/
 
 OUTPUT_DIR="output/skimmer_test_job"
-echo "############### Checking and creating output/skimmer directory"
+echo "############### Checking and creating output directory"
 if [ ! -d $OUTPUT_DIR ]; then
     mkdir -p $OUTPUT_DIR
 fi

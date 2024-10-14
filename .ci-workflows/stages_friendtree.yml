@@ -8,8 +8,8 @@ weights-trigger-friendtree-job:
     - source .ci-workflows/weights-trigger-friendtree-job.sh
   artifacts: 
     paths:
-      - python/analysis/trigger_weights/trigger_weights_friends.json
-      - python/analysis/trigger_weights/GluGluToHHTo4B_cHHH1_UL18/trigWeight.chunk2.root
+      - python/output/weighs_trigger_friendtree_job/trigger_weights_friends.json
+      - python/output/weighs_trigger_friendtree_job/GluGluToHHTo4B_cHHH1_UL18/trigWeight.chunk2.root
 
 classifier-friendtree-job:   
   stage: friendtree-test   
@@ -21,12 +21,12 @@ classifier-friendtree-job:
     - source .ci-workflows/classifier-friendtree-job.sh
   artifacts: 
     paths:
-      - python/analysis/classifier_input/classifier_input_friend.json
-      - python/analysis/classifier_input/GluGluToHHTo4B_cHHH1_UL18/
-      - python/analysis/classifier_input/data2018A/
-      - python/analysis/classifier_input/data2018B/
-      - python/analysis/classifier_input/data2018C/
-      - python/analysis/classifier_input/data2018D/
+      - python/output/classifier_friendtree_job/classifier_friendtree.yml
+      - python/output/classifier_friendtree_job/GluGluToHHTo4B_cHHH1_UL18/
+      - python/output/classifier_friendtree_job/data2018A/
+      - python/output/classifier_friendtree_job/data2018B/
+      - python/output/classifier_friendtree_job/data2018C/
+      - python/output/classifier_friendtree_job/data2018D/
 
 topreco-friendtree-job:   
   stage: friendtree-test   
@@ -38,9 +38,9 @@ topreco-friendtree-job:
     - source .ci-workflows/topreco-friendtree-job.sh
   artifacts: 
     paths:
-      - python/analysis/top_reco/top_reconstruction_friendtree.json
-      - python/analysis/top_reco/GluGluToHHTo4B_cHHH1_UL18/
-      - python/analysis/top_reco/data2018A/
-      - python/analysis/top_reco/data2018B/
-      - python/analysis/top_reco/data2018C/
-      - python/analysis/top_reco/data2018D/
+      - python/output/topreco_friendtree_job/top_reconstruction_friendtree.json
+      - python/output/topreco_friendtree_job/GluGluToHHTo4B_cHHH1_UL18/
+      - python/output/topreco_friendtree_job/data2018A/
+      - python/output/topreco_friendtree_job/data2018B/
+      - python/output/topreco_friendtree_job/data2018C/
+      - python/output/topreco_friendtree_job/data2018D/
