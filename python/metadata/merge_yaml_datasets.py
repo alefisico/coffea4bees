@@ -28,12 +28,17 @@ if __name__ == '__main__':
                               'lumi', 'xs',
                               'cutFlowFourTag', 'cutFlowFourTagUnitWeight',
                               'cutFlowThreeTag', 'cutFlowThreeTagUnitWeight',
-                              'reproducible',
+                              'reproducible', 'lumis_processed',
                               ]:
                     if iname in tmp_file[ikey].keys(): tmp_file[ikey].pop(iname)
+
                 if 'data' in dataset:
                     era = year[-1]
                     year = ''.join(year[:-1])
+
+                    if 'picoAOD' not in main_file['datasets'][dataset][year]:
+                        main_file['datasets'][dataset][year]['picoAOD'] = {}
+
                     main_file['datasets'][dataset][year]['picoAOD'][era] = tmp_file[ikey]
                 else:
                     main_file['datasets'][dataset][year]['picoAOD'] = tmp_file[ikey]

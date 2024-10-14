@@ -46,3 +46,12 @@ Compares processed lumi sections against those expected in json
 ```
 python skimmer/metadata/check_lumi_sections.py -j data/goldenJSON/Cert_Collisions2023_366442_370790_Golden.json -y skimmer/metadata/picoaod_datasets_data_2023_BPix.yml
 ```
+
+
+### Add skims to dataset 
+
+Add output of skims to input data sets
+
+```
+python metadata/merge_yaml_datasets.py -m metadata/datasets_HH4b_Run3.yml -o metadata/datasets_HH4b_Run3_merged.yml -f metadata/archive/skims_Run3_2024_v2/picoaod_datasets_data_202*
+```
