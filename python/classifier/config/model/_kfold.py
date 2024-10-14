@@ -9,8 +9,6 @@ from classifier.task import ArgParser, Model, converter, parse
 if TYPE_CHECKING:
     from classifier.ml import MultiStageTraining
     from classifier.ml.skimmer import Splitter
-    from classifier.process.device import Device
-    from torch.utils.data import StackDataset
 
 
 class _KFold(Model):

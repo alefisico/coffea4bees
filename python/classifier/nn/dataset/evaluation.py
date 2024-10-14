@@ -41,13 +41,22 @@ if TYPE_CHECKING:
 
         def __len__(self) -> int: ...
 
+    class EvalLoaderLike(Protocol):
+        @property
+        def result(self): ...
+
+        def __iter__(self) -> Generator[tuple[BatchDumper, BatchType], None, None]: ...
+
+    class EvalDatasetLike(Protocol):
+        def load(self, batch_size: int) -> EvalLoaderLike: ...
+
     _ToLoadQ = Queue[tuple[int, BatchLoader]]
     _LoadedQ = Queue[tuple[int, BatchType]]
     _EvaledQ = Queue[tuple[BatchDumper, BatchType]]
     _ResultQ = Queue[tuple[int, _ResultT]]
 
 
-class EvaluationLoader(ABC, Generic[_ResultT]):
+class EvalLoader(ABC, Generic[_ResultT]):
     __results: _ResultQ
 
     def _init(
@@ -116,10 +125,10 @@ class EvaluationLoader(ABC, Generic[_ResultT]):
         del self.__results
 
 
-class EvaluationDataset(ABC, Generic[_ResultT]):
-    __loader__ = EvaluationLoader
+class EvalDataset(ABC, Generic[_ResultT]):
+    __loader__ = EvalLoader
 
-    _progress_msg: MessageType = ("Entries", "Evaluated")
+    __progress_msg: MessageType = ("Entries", "Evaluated")
 
     @abstractmethod
     def batches(
@@ -128,16 +137,16 @@ class EvaluationDataset(ABC, Generic[_ResultT]):
 
     def setup(self, msg: MessageType = ...):
         if msg is not ...:
-            self._progress_msg = msg
+            self.__progress_msg = msg
         return self
 
-    def load(self, batch_size: int) -> EvaluationLoader[_ResultT]:
-        return self.__loader__()._init(self.batches(batch_size), self._progress_msg)
+    def load(self, batch_size: int) -> EvalLoader[_ResultT]:
+        return self.__loader__()._init(self.batches(batch_size), self.__progress_msg)
 
     def __add__(
-        self, other: EvaluationDataset[_OtherResultT]
+        self, other: EvalDataset[_OtherResultT]
     ) -> ChainDataset[_ResultT, _OtherResultT]:
-        if not isinstance(other, EvaluationDataset):
+        if not isinstance(other, EvalDataset):
             return NotImplemented
         return ChainDataset(self, other)
 
@@ -182,7 +191,7 @@ class _nonblocking_dumper:
         self.queue.put((self.dumper, batch))
 
 
-class AddableResultLoader(EvaluationLoader):
+class AddableResultLoader(EvalLoader):
     def __init__(self):
         self.__result = None
 
@@ -198,7 +207,7 @@ class AddableResultLoader(EvaluationLoader):
 
 
 class ChainLoader(Generic[Unpack[_ChainResultT]]):
-    def __init__(self, *loaders: EvaluationLoader, msg: MessageType):
+    def __init__(self, *loaders: EvalLoader, msg: MessageType):
         self.__loaders = loaders
         self.__msg = msg
 
@@ -214,38 +223,38 @@ class ChainLoader(Generic[Unpack[_ChainResultT]]):
 
 
 class ChainDataset(Generic[Unpack[_ChainResultT]]):
-    _progress_msg: MessageType = ("Datasets", "Evaluated")
+    __progress_msg: MessageType = ("Datasets", "Evaluated")
 
-    def __init__(self, *datasets: EvaluationDataset):
+    def __init__(self, *datasets: EvalDataset):
         self.__datasets = datasets
 
     def setup(self, msg: MessageType = ...):
         if msg is not ...:
-            self._progress_msg = msg
+            self.__progress_msg = msg
         return self
 
     def load(self, batch_size: int) -> ChainLoader[Unpack[_ChainResultT]]:
         return ChainLoader(
             *(dataset.load(batch_size) for dataset in self.__datasets),
-            msg=self._progress_msg,
+            msg=self.__progress_msg,
         )
 
     def __radd__(
-        self, other: EvaluationDataset[_OtherResultT]
+        self, other: EvalDataset[_OtherResultT]
     ) -> ChainDataset[_OtherResultT, Unpack[_ChainResultT]]:
         return ChainDataset(other, *self.__datasets)
 
     @overload
     def __add__(
         self,
-        other: EvaluationDataset[_OtherResultT],
+        other: EvalDataset[_OtherResultT],
     ) -> ChainDataset[Unpack[_ChainResultT], _OtherResultT]: ...
     @overload
     def __add__(
         self,
         other: ChainDataset[Unpack[_OtherChainResultT]],
     ) -> ChainDataset[Unpack[_ChainResultT], Unpack[_OtherChainResultT]]: ...
-    def __add__(self, other: EvaluationDataset | ChainDataset):
+    def __add__(self, other: EvalDataset | ChainDataset):
         if isinstance(other, ChainDataset):
             return ChainDataset(*self.__datasets, *other.__datasets)
         return ChainDataset(*self.__datasets, other)
