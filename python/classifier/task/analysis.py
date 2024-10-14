@@ -8,7 +8,7 @@ from .task import Task
 
 class Analysis(Task):
     @interface
-    def analyze(self, output: dict = None) -> list[Analyzer]:
+    def analyze(self, results: list[dict]) -> list[Analyzer]:
         """
         Prepare analyzers.
         """

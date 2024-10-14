@@ -1,5 +1,7 @@
+import json
 from itertools import chain
 
+import fsspec
 from classifier.task import Analysis, ArgParser, EntryPoint, main
 from classifier.utils import call
 
@@ -18,15 +20,28 @@ class Main(main.Main):
             ("sub", "[blue]analyzer()[/blue] run"),
         ],
     )
+    argparser.add_argument(
+        "--results",
+        help="Path to result json files.",
+        nargs="+",
+        action="extend",
+        default=[],
+    )
 
     @classmethod
     def prelude(cls):
         cfg.IO.monitor = None
+        cfg.Analysis.enable = False
 
-    def run(self, _): ...
+    def run(self, parser: EntryPoint):
+        results = []
+        for path in self.opts.results:
+            with fsspec.open(path, "rt") as f:
+                results.append(json.load(f))
+        return run_analyzer(parser, results)
 
 
-def run_analyzer(parser: EntryPoint, output: dict):
+def run_analyzer(parser: EntryPoint, results: list[dict]):
     from concurrent.futures import ProcessPoolExecutor
 
     from classifier.monitor import Index
@@ -34,9 +49,9 @@ def run_analyzer(parser: EntryPoint, output: dict):
     from classifier.process import pool, status
 
     analysis: list[Analysis] = parser.mods["analysis"]
-    analyzers = [*chain(*(a.analyze(output) for a in analysis))]
+    analyzers = [*chain(*(a.analyze(results) for a in analysis))]
     if not analyzers:
-        return []
+        return None
 
     with (
         ProcessPoolExecutor(
@@ -55,4 +70,8 @@ def run_analyzer(parser: EntryPoint, output: dict):
             )
         ]
     Index.render()
-    return [*filter(lambda x: x is not None, results)]
+    outputs = [*filter(lambda x: x is not None, results)]
+    if outputs:
+        return {"analysis": outputs}
+    else:
+        return None

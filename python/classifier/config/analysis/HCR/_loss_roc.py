@@ -1,4 +1,3 @@
-import json
 from collections import defaultdict
 from itertools import chain, cycle
 
@@ -9,25 +8,8 @@ from classifier.task import Analysis, ArgParser
 
 class LossROC(Analysis):
     argparser = ArgParser()
-    argparser.add_argument(
-        "--inputs",
-        help="the path to results. Will be ignored if result is provided.",
-        nargs="+",
-        action="extend",
-        default=[],
-    )
 
-    def analyze(self, result=None):
-        paths = self.opts.inputs
-        results = []
-        if result is None:
-            if not paths:
-                return []
-            for path in paths:
-                with fsspec.open(path) as f:
-                    results.append(json.load(f))
-        else:
-            results.append(result)
+    def analyze(self, results: list[dict]):
         return _collect_loss_roc(results=results)
 
 

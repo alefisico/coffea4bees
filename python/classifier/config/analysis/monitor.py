@@ -9,7 +9,7 @@ from ..setting import IO
 class Usage(Analysis):
     argparser = ArgParser()
     argparser.add_argument(
-        "--input",
+        "--usage",
         help="the path to usage data. If not provided, the current usage data will be used.",
         default=None,
     )
@@ -20,8 +20,8 @@ class Usage(Analysis):
         default=0,
     )
 
-    def analyze(self, _=None):
-        path = self.opts.input
+    def analyze(self, _):
+        path = self.opts.usage
         if path is None:
             from classifier.monitor.usage import Usage as _Usage
 

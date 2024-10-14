@@ -1,12 +1,12 @@
 # template: tag
 main:
   module: analyze
+  option:
+    - --results 
+    - root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/classifier/SvB/train/{tag}/result.json
 
 analysis:
   - module: HCR.LossROC
-    option:
-      - --input
-      - root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/classifier/SvB/train/{tag}/result.json
 
 setting:
   - module: IO
