@@ -15,8 +15,9 @@ In this folder you can also find the `runner.py`, which is the master runner for
 
 ```
 usage: runner.py [-h] [-t] [-o OUTPUT_FILE] [-p PROCESSOR] [-c CONFIGS] [-m METADATA] [-op OUTPUT_PATH]
-                 [-y {UL16_postVFP,UL16_preVFP,UL17,UL18} [{UL16_postVFP,UL16_preVFP,UL17,UL18} ...]]
-                 [-d DATASETS [DATASETS ...]] [-s] [--condor] [--debug]
+                 [-y {2016,2017,2018,UL16_postVFP,UL16_preVFP,UL17,UL18,2022_preEE,2022_EE,2023_preBPix,2023_BPix} [{2016,2017,2018,UL16_postVFP,UL16_preVFP,UL17,UL18,2022_preEE,2022_EE,2023_preBPix,2023_BPix} ...]]
+                 [-d DATASETS [DATASETS ...]] [-e ERA [ERA ...]] [--systematics] [-s] [--dask] [--condor] [--debug]
+                 [--githash GITHASH] [--gitdiff GITDIFF]
 
 Run coffea processor
 
@@ -33,15 +34,19 @@ options:
                         Metadata datasets file. (default: metadata/datasets_HH4b.yml)
   -op OUTPUT_PATH, --outputPath OUTPUT_PATH
                         Output path, if you want to save file somewhere else. (default: hists/)
-  -y {UL16_postVFP,UL16_preVFP,UL17,UL18} [{UL16_postVFP,UL16_preVFP,UL17,UL18} ...], --year {UL16_postVFP,UL16_pre
-VFP,UL17,UL18} [{UL16_postVFP,UL16_preVFP,UL17,UL18} ...]
+  -y {2016,2017,2018,UL16_postVFP,UL16_preVFP,UL17,UL18,2022_preEE,2022_EE,2023_preBPix,2023_BPix} [{2016,2017,2018,UL16_postVFP,UL16_preVFP,UL17,UL18,2022_preEE,2022_EE,2023_preBPix,2023_BPix} ...], --year {2016,2017,2018,UL16_postVFP,UL16_preVFP,UL17,UL18,2022_preEE,2022_EE,2023_preBPix,2023_BPix} [{2016,2017,2018,UL16_postVFP,UL16_preVFP,UL17,UL18,2022_preEE,2022_EE,2023_preBPix,2023_BPix} ...]
                         Year of data to run. Example if more than one: --year UL17 UL18 (default: ['UL18'])
   -d DATASETS [DATASETS ...], --datasets DATASETS [DATASETS ...]
-                        Name of dataset to run. Example if more than one: -d HH4b ZZ4b (default: ['HH4b', 'ZZ4b',
-                        'ZH4b'])
+                        Name of dataset to run. Example if more than one: -d HH4b ZZ4b (default: ['HH4b', 'ZZ4b', 'ZH4b'])
+  -e ERA [ERA ...], --era ERA [ERA ...]
+                        For data only. To run only on one data era. (default: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'])
+  --systematics         Run Systematics for analysis processor (default: False)
   -s, --skimming        Run skimming instead of analysis (default: False)
+  --dask                Run with dask (default: False)
   --condor              Run in condor (default: False)
   --debug               Print lots of debugging statements (default: False)
+  --githash GITHASH     Overwrite git hash for reproducible (default: )
+  --gitdiff GITDIFF     Overwrite git diff for reproducible (default: )
 ```
 
 More information about each process in the README.md of each folder.
