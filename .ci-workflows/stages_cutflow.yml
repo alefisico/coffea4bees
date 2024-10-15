@@ -8,7 +8,7 @@ analysis-cutflow-job:
     - source .ci-workflows/analysis-cutflow-job.sh
   artifacts:
     paths:
-      - python/analysis/tests/test_dump_cutflow.yml
+      - python/output/analysis_cutflow_job/test_dump_cutflow.yml
 
 analysis-mixed-cutflow-job:    
   stage: cutflow
@@ -20,8 +20,8 @@ analysis-mixed-cutflow-job:
     - source .ci-workflows/analysis-mixed-cutflow-job.sh
   artifacts:
     paths:
-      - python/analysis/tests/test_dump_cutflow_mixed_data.yml
-      - python/analysis/tests/test_dump_cutflow_mixed_bkg.yml
+      - python/output/analysis_mixed_cutflow_job/test_dump_cutflow_mixed_data.yml
+      - python/output/analysis_mixed_cutflow_job/test_dump_cutflow_mixed_bkg.yml
 
 skimmer-analysis-cutflow-job:    
   stage: cutflow
@@ -33,7 +33,7 @@ skimmer-analysis-cutflow-job:
     - source .ci-workflows/skimmer-analysis-cutflow-job.sh
   artifacts:
     paths:
-      - python/analysis/tests/test_dump_skimmer_cutflow.yml
+      - python/output/skimmer_analysis_cutflow_job/test_dump_skimmer_cutflow.yml
   # allow_failure: true
 
 analysis-systematics-cutflow-job:    
@@ -46,7 +46,7 @@ analysis-systematics-cutflow-job:
     - source .ci-workflows/analysis-systematics-cutflow-job.sh
   artifacts:
     paths:
-      - python/analysis/tests/test_dump_systematics_cutflow.yml
+      - python/output/analysis_systematics_cutflow_job/test_dump_systematics_cutflow.yml
 
 analysis-cutflow-job-unsup:    
  stage: cutflow
@@ -58,7 +58,7 @@ analysis-cutflow-job-unsup:
    - source .ci-workflows/analysis-cutflow-job-unsup.sh
  artifacts:
    paths:
-     - python/analysis/tests/test_dump_cutflow_job_unsup.yml
+     - python/output/analysis_cutflow_job_unsup/test_dump_cutflow_job_unsup.yml
 
 synthetic-dataset-analyze-cutflow:
  stage: cutflow
@@ -70,7 +70,7 @@ synthetic-dataset-analyze-cutflow:
    - source .ci-workflows/synthetic-dataset-analyze-cutflow.sh
  artifacts:
    paths:
-     - python/analysis/tests/test_dump_cutflow_synthetic_datasets.yml
+     - python/output/synthetic_dataset_analyze_cutflow/test_dump_cutflow_synthetic_datasets.yml
 
 weights-trigger-cutflow:
  stage: cutflow
@@ -82,5 +82,5 @@ weights-trigger-cutflow:
    - source .ci-workflows/weights-trigger-cutflow-job.sh
  artifacts:
    paths:
-     - python/analysis/tests/test_dump_cutflow_trigWeight.yml
+     - python/output/weights_trigger_cutflow/test_dump_cutflow_trigWeight.yml
 

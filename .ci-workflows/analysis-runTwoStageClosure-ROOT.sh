@@ -54,11 +54,7 @@ python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 20 --o
 #
 #  python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 20 --outputPath stats_analysis/tests --skip_closure
 
-python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 20 --outputPath $OUTPUT_DIR --do_CI \
-    --input_file_data3b $OUTPUT_DIR/testMixedBkg_data_3b_for_mixed.root \
-    --input_file_TT     $OUTPUT_DIR/testMixedBkg_TT.root \
-    --input_file_mix    $OUTPUT_DIR/testMixedData.root \
-    --input_file_sig    $OUTPUT_DIR/testSignal_UL.root 
+python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 20 --outputPath $OUTPUT_DIR --do_CI --reuse-inputs 
 python3 stats_analysis/tests/test_runTwoStageClosure.py --knownCounts stats_analysis/tests/known_twoStageClosure_counts_SvB_MA_ps_hh_rebin20.yml --output_path $OUTPUT_DIR --inputFile $OUTPUT_DIR/3bDvTMix4bDvT/SvB_MA/rebin20/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin20.root
 
 python3 stats_analysis/tests/dumpTwoStageInputs.py --input stats_analysis/tests/3bDvTMix4bDvT/SvB_MA/rebin20/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin20.root   --output $OUTPUT_DIR/test_dump_twoStageClosureInputsCounts.yml
