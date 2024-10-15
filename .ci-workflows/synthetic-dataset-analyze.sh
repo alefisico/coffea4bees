@@ -18,7 +18,14 @@ if [ ! -d $OUTPUT_DIR ]; then
     mkdir -p $OUTPUT_DIR
 fi
 
-
+echo "############### Changing metadata"
+if [[ $(hostname) = *fnal* ]]; then
+    echo "No change in metadata."
+    cp metadata/datasets_synthetic_test.yml $OUTPUT_DIR/datasets_synthetic_test.yml
+else
+    sed -e "s#\/srv\/#base_path: \/builds\/${CI_PROJECT_PATH}#" metadata/datasets_synthetic_test.yml > $OUTPUT_DIR/datasets_synthetic_test.yml
+fi
+cat $OUTPUT_DIR/datasets_synthetic_test.yml
 # echo "############### Modifying dataset file with skimmer ci output"
 # cat metadata/datasets_ci.yml
 # python metadata/merge_yaml_datasets.py -m metadata/datasets_HH4b.yml -f skimmer/metadata/picoaod_datasets_declustered_data_test_UL18A.yml  -o metadata/datasets_synthetic_seed17_test.yml
@@ -41,7 +48,7 @@ echo "############### Running test processor "
 # python metadata/merge_yaml_datasets.py -m metadata/datasets_synthetic_seed17.yml -f skimmer/metadata/picoaod_datasets_declustered_GluGluToHHTo4B_cHHH1_Run2_seed17.yml -o metadata/datasets_synthetic_seed17.yml
 #cat metadata/datasets_synthetic_test.yml
 
-time python runner.py -o test_synthetic_datasets.coffea -d synthetic_data synthetic_mc_GluGluToHHTo4B_cHHH1 -p analysis/processors/processor_HH4b.py -y UL18  -op $OUTPUT_DIR/ -c analysis/metadata/HH4b_synthetic_data.yml -m metadata/datasets_synthetic_test.yml
+time python runner.py -o test_synthetic_datasets.coffea -d synthetic_data synthetic_mc_GluGluToHHTo4B_cHHH1 -p analysis/processors/processor_HH4b.py -y UL18  -op $OUTPUT_DIR/ -c analysis/metadata/HH4b_synthetic_data.yml -m $OUTPUT_DIR/datasets_synthetic_test.yml
 
 # time python runner.py -o test_synthetic_datasets.coffea -d data GluGluToHHTo4B_cHHH1 -p analysis/processors/processor_HH4b.py -y UL18  -op $OUTPUT_DIR/ -c analysis/metadata/HH4b_synthetic_data.yml -m $OUTPUT_DIR/datasets_synthetic_test.yml
 cd ../
