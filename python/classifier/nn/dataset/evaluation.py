@@ -126,7 +126,7 @@ class EvalLoader(ABC, Generic[_ResultT]):
 
 
 class EvalDataset(ABC, Generic[_ResultT]):
-    __loader__ = EvalLoader
+    __eval_loader__ = EvalLoader
 
     __progress_msg: MessageType = ("Entries", "Evaluated")
 
@@ -141,7 +141,9 @@ class EvalDataset(ABC, Generic[_ResultT]):
         return self
 
     def load(self, batch_size: int) -> EvalLoader[_ResultT]:
-        return self.__loader__()._init(self.batches(batch_size), self.__progress_msg)
+        return self.__eval_loader__()._init(
+            self.batches(batch_size), self.__progress_msg
+        )
 
     def __add__(
         self, other: EvalDataset[_OtherResultT]
@@ -191,7 +193,7 @@ class _nonblocking_dumper:
         self.queue.put((self.dumper, batch))
 
 
-class AddableResultLoader(EvalLoader):
+class AddableResultLoader(EvalLoader[_ResultT]):
     def __init__(self):
         self.__result = None
 
