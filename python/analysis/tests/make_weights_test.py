@@ -47,8 +47,8 @@ class TestJCM(unittest.TestCase):
         for test_pair in [#('analysis/testJCM_ROOT_tests/jetCombinatoricModel_SB_.yml', 'analysis/tests/jetCombinatoricModel_SB_ROOT.yml'),
                           #('analysis/testJCM_Coffea_tests/jetCombinatoricModel_SB_.yml', 'analysis/tests/jetCombinatoricModel_SB_Coffea.yml'),
 
-                          ('analysis/testJCM_ROOT/jetCombinatoricModel_SB_.yml',   'analysis/tests/jetCombinatoricModel_SB_ROOT_new.yml'),
-                          ('analysis/testJCM_Coffea/jetCombinatoricModel_SB_.yml', 'analysis/tests/jetCombinatoricModel_SB_Coffea_new.yml'),
+                          ('output/analysis_makeweights_job/testJCM_ROOT/jetCombinatoricModel_SB_.yml',   'analysis/tests/jetCombinatoricModel_SB_ROOT_new.yml'),
+                          ('output/analysis_makeweights_job/testJCM_Coffea/jetCombinatoricModel_SB_.yml', 'analysis/tests/jetCombinatoricModel_SB_Coffea_new.yml'),
 
                           ]:
 

@@ -23,7 +23,7 @@ if [[ $(hostname) = *fnal* ]]; then
     echo "No change in metadata."
     cp metadata/datasets_synthetic_test.yml $OUTPUT_DIR/datasets_synthetic_test.yml
 else
-    sed -e "s#\/srv#base_path: \/builds\/${CI_PROJECT_PATH}#" metadata/datasets_synthetic_test.yml > $OUTPUT_DIR/datasets_synthetic_test.yml
+    sed -e "s#\/srv#\/builds\/${CI_PROJECT_PATH}#" metadata/datasets_synthetic_test.yml > $OUTPUT_DIR/datasets_synthetic_test.yml
 fi
 cat $OUTPUT_DIR/datasets_synthetic_test.yml
 # echo "############### Modifying dataset file with skimmer ci output"
