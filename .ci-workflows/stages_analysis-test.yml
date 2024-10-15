@@ -70,7 +70,7 @@ analysis-systematics-test-job:
     - source .ci-workflows/analysis-systematics-test-job.sh
   artifacts: 
     paths:
-      - python/analysis/hists/test_systematics.coffea
+      - python/output/analysis_systematics_test_job/test_systematics.coffea
 
 skimmer-analysis-test-job:   
   stage: analysis-test   
@@ -83,7 +83,7 @@ skimmer-analysis-test-job:
     - source .ci-workflows/skimmer-analysis-test-job.sh
   artifacts: 
     paths:
-      - python/analysis/hists/test_skimmer.coffea
+      - python/output/skimmer_analysis_test_job/test_skimmer.coffea
 
 synthetic-dataset-analyze:   
   stage: analysis-test   
@@ -96,7 +96,7 @@ synthetic-dataset-analyze:
     - source .ci-workflows/synthetic-dataset-analyze.sh
   artifacts:
     paths:
-      - python/analysis/hists/test_synthetic_datasets.coffea
+      - python/output/synthetic_dataset_analyze/test_synthetic_datasets.coffea
 
 weights-trigger-analysis-job:   
   stage: analysis-test   
@@ -109,4 +109,4 @@ weights-trigger-analysis-job:
     - source .ci-workflows/weights-trigger-analysis-job.sh
   artifacts:
     paths:
-      - python/analysis/trigger_weights/test_trigWeight.coffea
+      - python/output/weights_trigger_analysis_job/test_trigWeight.coffea
