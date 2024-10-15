@@ -59,7 +59,7 @@ def _remove_outlier(df: pd.DataFrame):
     return df.loc[df["weight"] < 1]
 
 
-class _Base(Common):
+class _Train(Common):
     argparser = ArgParser()
     argparser.add_argument(
         "--regions",
@@ -90,7 +90,7 @@ class _Base(Common):
         ]
 
 
-class Background(_picoAOD.Background, _Base):
+class Background(_picoAOD.Background, _Train):
     argparser = ArgParser()
     argparser.add_argument(
         "--norm",
@@ -115,7 +115,7 @@ class Background(_picoAOD.Background, _Base):
         return df
 
 
-class Signal(_picoAOD.Signal, _Base):
+class Signal(_picoAOD.Signal, _Train):
     def __init__(self):
         super().__init__()
         self.postprocessors.append(self.normalize)

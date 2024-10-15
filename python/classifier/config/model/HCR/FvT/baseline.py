@@ -2,22 +2,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ...setting.HCR import Input, MassRegion, Output
-from ...state.label import MultiClass
-from ._HCR import HCR
+from classifier.config.setting.HCR import Input, MassRegion, Output
+from classifier.config.state.label import MultiClass
+from .._HCR import HCRTrain, ROC_BIN, roc_nominal_selection
 
 if TYPE_CHECKING:
     from classifier.ml.skimmer import BatchType
-
-_ROC_BIN = (1000, 0, 1)
-
-
-def _roc_nominal_selection(batch: BatchType):
-    return {
-        "y_pred": batch[Output.class_prob],
-        "y_true": batch[Input.label],
-        "weight": batch[Input.weight],
-    }
 
 
 def _roc_data_selection(batch: BatchType):
@@ -32,7 +22,7 @@ def _roc_data_selection(batch: BatchType):
     }
 
 
-class Baseline(HCR):
+class Train(HCRTrain):
     @staticmethod
     def loss(batch: BatchType):
         import torch
@@ -68,19 +58,19 @@ class Baseline(HCR):
             ROC(
                 name="4b vs 3b data",
                 selection=_roc_data_selection,
-                bins=_ROC_BIN,
+                bins=ROC_BIN,
                 pos=("d4", "t4"),
             ),
             ROC(
                 name="4b vs 3b",
-                selection=_roc_nominal_selection,
-                bins=_ROC_BIN,
+                selection=roc_nominal_selection,
+                bins=ROC_BIN,
                 pos=("d4", "t4"),
             ),
             ROC(
                 name="ttbar vs data",
-                selection=_roc_nominal_selection,
-                bins=_ROC_BIN,
+                selection=roc_nominal_selection,
+                bins=ROC_BIN,
                 pos=("t4", "t3"),
             ),
         )

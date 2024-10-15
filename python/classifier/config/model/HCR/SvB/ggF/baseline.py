@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ...setting.cms import MC_HH_ggF
-from ...setting.HCR import Input, Output
-from ...state.label import MultiClass
-from ._HCR import HCR
-from .FvT import _ROC_BIN, _roc_nominal_selection
+from classifier.config.setting.cms import MC_HH_ggF
+from classifier.config.setting.HCR import Input, Output
+from classifier.config.state.label import MultiClass
+
+from ..._HCR import ROC_BIN, HCRTrain, roc_nominal_selection
 
 if TYPE_CHECKING:
     from classifier.ml.skimmer import BatchType
@@ -47,7 +47,7 @@ class _roc_select_ggF(_roc_select_sig):
         )
 
 
-class ggF_SM(HCR):
+class Train(HCRTrain):
     @staticmethod
     def loss(batch: BatchType):
         import torch.nn.functional as F
@@ -72,15 +72,15 @@ class ggF_SM(HCR):
         return [
             ROC(
                 name="background vs signal",
-                selection=_roc_nominal_selection,
-                bins=_ROC_BIN,
+                selection=roc_nominal_selection,
+                bins=ROC_BIN,
                 pos=_BKG,
             ),
             *(
                 ROC(
                     name=f"background vs {sig}",
                     selection=_roc_select_sig(sig),
-                    bins=_ROC_BIN,
+                    bins=ROC_BIN,
                     pos=_BKG,
                 )
                 for sig in ("ZZ", "ZH", "ggF")
@@ -89,7 +89,7 @@ class ggF_SM(HCR):
                 ROC(
                     name=f"background vs ggF (kl={kl:.6g})",
                     selection=_roc_select_ggF(*_BKG, kl=kl),
-                    bins=_ROC_BIN,
+                    bins=ROC_BIN,
                     pos=_BKG,
                 )
                 for kl in MC_HH_ggF.kl
@@ -98,7 +98,7 @@ class ggF_SM(HCR):
                 ROC(
                     name=f"{sig} vs ggF (kl={kl:.6g})",
                     selection=_roc_select_ggF(sig, kl=kl),
-                    bins=_ROC_BIN,
+                    bins=ROC_BIN,
                     pos=(sig,),
                     neg=("ggF",),
                     score="differ",
@@ -108,25 +108,10 @@ class ggF_SM(HCR):
             ),
             ROC(
                 name="ZZ vs ZH",
-                selection=_roc_nominal_selection,
-                bins=_ROC_BIN,
+                selection=roc_nominal_selection,
+                bins=ROC_BIN,
                 pos=("ZZ",),
                 neg=("ZH",),
                 score="differ",
             ),
         ]
-
-
-class ggF_All(ggF_SM):
-    @staticmethod
-    def loss(batch: BatchType):
-        import torch.nn.functional as F
-
-        c_score = batch[Output.class_raw]
-        weight = batch[Input.weight]
-        label = batch[Input.label]
-
-        # calculate loss
-        cross_entropy = F.cross_entropy(c_score, label, reduction="none")
-        loss = (cross_entropy * weight).sum() / weight.sum()
-        return loss

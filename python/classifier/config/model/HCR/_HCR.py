@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Callable, Iterable
 
+from classifier.config.setting.HCR import Input, Output
 from classifier.task import ArgParser, parse
 
-from .._kfold import KFoldClassifier
+from .._kfold import KFoldTrain
 
 _SCHEDULER = "classifier.config.scheduler"
 
@@ -14,8 +15,18 @@ if TYPE_CHECKING:
     from classifier.ml.skimmer import BatchType, Splitter
     from torch import Tensor
 
+ROC_BIN = (1000, 0, 1)
 
-class HCR(KFoldClassifier):
+
+def roc_nominal_selection(batch: BatchType):
+    return {
+        "y_pred": batch[Output.class_prob],
+        "y_true": batch[Input.label],
+        "weight": batch[Input.weight],
+    }
+
+
+class HCRTrain(KFoldTrain):
     loss: Callable[[BatchType], Tensor]
     rocs: Iterable[ROC] = ()
 

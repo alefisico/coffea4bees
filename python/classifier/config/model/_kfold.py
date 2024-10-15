@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from classifier.ml.skimmer import Splitter
 
 
-class _KFold(Model):
+class KFoldTrain(ABC, Model):
     argparser = ArgParser()
     argparser.add_argument(
         "--kfolds",
@@ -64,8 +64,6 @@ class _KFold(Model):
             return []
         return [(*seed, offset) for offset in offsets]
 
-
-class KFoldClassifier(ABC, _KFold):
     @abstractmethod
     def initializer(self, splitter: Splitter, **kwargs) -> MultiStageTraining: ...
 

@@ -5,7 +5,7 @@ main:
     - --max-trainers 1 # train 1 model at a time for testing
 
 model:
-  - module: HCR.FvT
+  - module: HCR.FvT.Train
     option:
       - --kfolds 3
       - --kfold-offsets 0 # use 1 offset out 3 for testing

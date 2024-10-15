@@ -6,7 +6,7 @@ main:
     - --max-trainers 1
 
 model:
-  - module: HCR.SvB.ggF_All
+  - module: HCR.SvB.ggF.baseline.Train
     option:
       - --kfolds 3
       - --training FixedStep
