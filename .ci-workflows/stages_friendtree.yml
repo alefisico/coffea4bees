@@ -8,8 +8,8 @@ weights-trigger-friendtree-job:
     - source .ci-workflows/weights-trigger-friendtree-job.sh
   artifacts: 
     paths:
-      - python/output/weighs_trigger_friendtree_job/trigger_weights_friends.json
-      - python/output/weighs_trigger_friendtree_job/GluGluToHHTo4B_cHHH1_UL18/trigWeight.chunk2.root
+      - python/output/weights_trigger_friendtree_job/trigger_weights_friends.json
+      - python/output/weights_trigger_friendtree_job/GluGluToHHTo4B_cHHH1_UL18/trigWeight.chunk2.root
 
 classifier-friendtree-job:   
   stage: friendtree-test   
