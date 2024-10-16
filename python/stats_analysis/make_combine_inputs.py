@@ -51,8 +51,6 @@ def create_combine_root_file( file_to_convert,
     if bkg_systematics_file and not stat_only:
         logging.info(f"Reading {bkg_systematics_file}")
         bkg_syst_file = pickle.load(open(bkg_systematics_file, 'rb'))
-    else:
-        logging.info("Running bkg systematics needs bkg file. It is missing")
 
     for iclass in classifier:
 
@@ -68,11 +66,16 @@ def create_combine_root_file( file_to_convert,
             root_hists[iyear]['multijet']['nominal'] = json_to_TH1(
                 coffea_hists[ih]['data'][iyear]['threeTag']['SR'], 'multijet_'+iyear+iclass, rebin )
 
-            ### For ZH ZZ
+            ### signals
             for iprocess in coffea_hists[ih].keys():
                 if iprocess not in metadata['processes']['signal']:
                     root_hists[iyear][iprocess] = json_to_TH1( coffea_hists[ih][iprocess][iyear]['fourTag']['SR'], 
                                                               f'{iprocess.split("4b")[0]}_{iyear}', rebin )
+                else:
+                    root_hists[iyear][iprocess] = {}
+                    root_hists[iyear][iprocess]['nominal'] = json_to_TH1(
+                        coffea_hists[ih][iprocess][iyear]['fourTag']['SR'], iprocess+'_'+iyear, rebin )
+
 
             if systematics_file and not use_preUL:
                 for iprocess in metadata['processes']['signal']:
@@ -192,7 +195,7 @@ def create_combine_root_file( file_to_convert,
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
 
-        output_file = "shapes.root" #"hists_"+iclass+".root"
+        output_file = "shapes.root" 
         output = output_dir+"/"+output_file
 
         root_file = ROOT.TFile(output, 'recreate')
@@ -227,46 +230,55 @@ def create_combine_root_file( file_to_convert,
         signals = [ metadata['processes']['all'][ibin]['label'] for ibin in metadata['processes']['signal'] ]
         cb.AddProcesses(['*'], [''], ['13TeV'], ['*'], signals, cats, True)
 
-        for nuisance in closureSysts:
-            cb.cp().process(["multijet"]).AddSyst(cb, nuisance, 'shape', ch.SystMap()(1.0))
-        
-        for nuisance in mcSysts:
-            if '2016' in nuisance:
-                cb.cp().signals().AddSyst(cb, nuisance, 'shape', ch.SystMap('bin')(['HHbb_2016'],1.0))
-            elif '2017' in nuisance:
-                cb.cp().signals().AddSyst(cb, nuisance, 'shape', ch.SystMap('bin')(['HHbb_2017'],1.0))
-            elif '2018' in nuisance:
-                cb.cp().signals().AddSyst(cb, nuisance, 'shape', ch.SystMap('bin')(['HHbb_2018'],1.0))
-            else:
-                cb.cp().signals().AddSyst(cb, nuisance, 'shape', ch.SystMap()(1.0))
+        if stat_only:
+            cb.cp().backgrounds().ExtractShapes(
+                output_dir+"/"+output_file, '$BIN/$PROCESS', '')
+            cb.cp().signals().ExtractShapes(
+                output_dir+"/"+output_file, '$BIN/$PROCESS', '')
+            cb.PrintAll()
+            cb.WriteDatacard(f"{output_dir}/datacard.txt", f"{output_dir}/{output_file}")
 
-        for isyst in metadata['uncertainty']:
-            if '2016' in isyst:
-                cb.cp().signals().AddSyst(cb, isyst, metadata['uncertainty'][isyst]['type'], ch.SystMap('bin')(['HHbb_2016'],metadata['uncertainty'][isyst]['years']['HHbb_2016']))
-            elif '2017' in isyst:
-                cb.cp().signals().AddSyst(cb, isyst, metadata['uncertainty'][isyst]['type'], ch.SystMap('bin')(['HHbb_2017'],metadata['uncertainty'][isyst]['years']['HHbb_2017']))
-            elif '2018' in isyst:
-                cb.cp().signals().AddSyst(cb, isyst, metadata['uncertainty'][isyst]['type'], ch.SystMap('bin')(['HHbb_2018'],metadata['uncertainty'][isyst]['years']['HHbb_2018']))
-            elif '1718' in isyst:
-                cb.cp().signals().AddSyst(cb, isyst, metadata['uncertainty'][isyst]['type'], ch.SystMap('bin')
-                                          (['HHbb_2017'],metadata['uncertainty'][isyst]['years']['HHbb_2017'])
-                                          (['HHbb_2018'],metadata['uncertainty'][isyst]['years']['HHbb_2018']))
-            else:
-                cb.cp().signals().AddSyst(cb, isyst, metadata['uncertainty'][isyst]['type'], ch.SystMap('bin')
-                                          (['HHbb_2016'], metadata['uncertainty'][isyst]['years']['HHbb_2016'])
-                                          (['HHbb_2017'], metadata['uncertainty'][isyst]['years']['HHbb_2017'])
-                                          (['HHbb_2018'], metadata['uncertainty'][isyst]['years']['HHbb_2018'])
-                                          )
-        
-        cb.cp().backgrounds().ExtractShapes(
-            output_dir+"/"+output_file, '$BIN/$PROCESS', '$BIN/$PROCESS_$SYSTEMATIC')
-        cb.cp().signals().ExtractShapes(
-            output_dir+"/"+output_file, '$BIN/$PROCESS', '$BIN/$PROCESS_$SYSTEMATIC')
-        
-        cb.cp().SetAutoMCStats(cb, 0, 1, 1)
+        else:
+            for nuisance in closureSysts:
+                cb.cp().process(["multijet"]).AddSyst(cb, nuisance, 'shape', ch.SystMap()(1.0))
+            
+            for nuisance in mcSysts:
+                if '2016' in nuisance:
+                    cb.cp().signals().AddSyst(cb, nuisance, 'shape', ch.SystMap('bin')(['HHbb_2016'],1.0))
+                elif '2017' in nuisance:
+                    cb.cp().signals().AddSyst(cb, nuisance, 'shape', ch.SystMap('bin')(['HHbb_2017'],1.0))
+                elif '2018' in nuisance:
+                    cb.cp().signals().AddSyst(cb, nuisance, 'shape', ch.SystMap('bin')(['HHbb_2018'],1.0))
+                else:
+                    cb.cp().signals().AddSyst(cb, nuisance, 'shape', ch.SystMap()(1.0))
 
-        cb.PrintAll()
-        cb.WriteDatacard(f"{output_dir}/datacard.txt", f"{output_dir}/{output_file}")
+            for isyst in metadata['uncertainty']:
+                if '2016' in isyst:
+                    cb.cp().signals().AddSyst(cb, isyst, metadata['uncertainty'][isyst]['type'], ch.SystMap('bin')(['HHbb_2016'],metadata['uncertainty'][isyst]['years']['HHbb_2016']))
+                elif '2017' in isyst:
+                    cb.cp().signals().AddSyst(cb, isyst, metadata['uncertainty'][isyst]['type'], ch.SystMap('bin')(['HHbb_2017'],metadata['uncertainty'][isyst]['years']['HHbb_2017']))
+                elif '2018' in isyst:
+                    cb.cp().signals().AddSyst(cb, isyst, metadata['uncertainty'][isyst]['type'], ch.SystMap('bin')(['HHbb_2018'],metadata['uncertainty'][isyst]['years']['HHbb_2018']))
+                elif '1718' in isyst:
+                    cb.cp().signals().AddSyst(cb, isyst, metadata['uncertainty'][isyst]['type'], ch.SystMap('bin')
+                                            (['HHbb_2017'],metadata['uncertainty'][isyst]['years']['HHbb_2017'])
+                                            (['HHbb_2018'],metadata['uncertainty'][isyst]['years']['HHbb_2018']))
+                else:
+                    cb.cp().signals().AddSyst(cb, isyst, metadata['uncertainty'][isyst]['type'], ch.SystMap('bin')
+                                            (['HHbb_2016'], metadata['uncertainty'][isyst]['years']['HHbb_2016'])
+                                            (['HHbb_2017'], metadata['uncertainty'][isyst]['years']['HHbb_2017'])
+                                            (['HHbb_2018'], metadata['uncertainty'][isyst]['years']['HHbb_2018'])
+                                            )
+
+            cb.cp().backgrounds().ExtractShapes(
+                output_dir+"/"+output_file, '$BIN/$PROCESS', '$BIN/$PROCESS_$SYSTEMATIC')
+            cb.cp().signals().ExtractShapes(
+                output_dir+"/"+output_file, '$BIN/$PROCESS', '$BIN/$PROCESS_$SYSTEMATIC')
+            
+            cb.cp().SetAutoMCStats(cb, 0, 1, 1)
+
+            cb.PrintAll()
+            cb.WriteDatacard(f"{output_dir}/datacard.txt", f"{output_dir}/{output_file}")
 
         if make_syst_plots:
 
