@@ -10,7 +10,7 @@ from classifier.task import ArgParser
 from ..._HCR import ROC_BIN, HCRTrain, roc_nominal_selection
 
 if TYPE_CHECKING:
-    from classifier.ml.skimmer import BatchType
+    from classifier.ml import BatchType
 
 _BKG = ("data", "ttbar")
 

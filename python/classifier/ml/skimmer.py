@@ -2,19 +2,17 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from fractions import Fraction
-from typing import TYPE_CHECKING
 
+import numpy.typing as npt
 import torch
 from base_class.math.random import SeedLike, Squares
+from torch import BoolTensor
 from torch.utils.data import Dataset, Subset
 
 from ..config.setting import torch as cfg
 from ..utils import keep_fraction, noop
-from . import BatchType, Model
-
-if TYPE_CHECKING:
-    import numpy.typing as npt
-    from torch import BoolTensor
+from . import BatchType
+from .training import Model
 
 
 class Skimmer(Model):

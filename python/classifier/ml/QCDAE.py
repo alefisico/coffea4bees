@@ -1,5 +1,6 @@
 # QCDAE: setup training and validation steps
 # see classifier.ml.HCR for more details
+from __future__ import annotations
 
 from typing import Iterable
 
@@ -9,8 +10,8 @@ from torch import Tensor
 
 from ..nn.blocks.QCDAE import PlaceholderBlock  # import the actual model here
 from ..nn.schedule import Schedule
-from . import (
-    BatchType,
+from . import BatchType
+from .training import (
     BenchmarkStage,
     Model,
     MultiStageTraining,

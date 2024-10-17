@@ -8,7 +8,7 @@ from classifier.task import ArgParser
 from . import baseline
 
 if TYPE_CHECKING:
-    from classifier.ml.skimmer import BatchType
+    from classifier.ml import BatchType
 
 
 class Train(baseline.Train):

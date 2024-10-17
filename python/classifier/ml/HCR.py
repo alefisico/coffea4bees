@@ -17,16 +17,16 @@ from ..config.setting.HCR import Input, InputBranch, Output
 from ..config.state.label import MultiClass
 from ..nn.blocks.HCR import HCR
 from ..nn.schedule import MilestoneStep, Schedule
-from . import (
-    BatchType,
+from . import BatchType
+from .benchmarks.multiclass import ROC
+from .skimmer import Skimmer, Splitter
+from .training import (
     BenchmarkStage,
     Model,
     MultiStageTraining,
     OutputStage,
     TrainingStage,
 )
-from .benchmarks.multiclass import ROC
-from .skimmer import Skimmer, Splitter
 
 
 @dataclass

@@ -1,15 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from numbers import Number
 
+import numpy.typing as npt
 import torch
 
-if TYPE_CHECKING:
-    from numbers import Number
-
-    import numpy.typing as npt
-
-    from ..ml import BatchType
+from ..ml import BatchType
 
 
 def to_num(tensor: torch.Tensor):

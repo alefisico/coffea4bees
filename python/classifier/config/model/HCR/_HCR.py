@@ -11,8 +11,9 @@ _SCHEDULER = "classifier.config.scheduler"
 
 
 if TYPE_CHECKING:
+    from classifier.ml import BatchType
     from classifier.ml.benchmarks.multiclass import ROC
-    from classifier.ml.skimmer import BatchType, Splitter
+    from classifier.ml.skimmer import Splitter
     from torch import Tensor
 
 ROC_BIN = (1000, 0, 1)

@@ -4,10 +4,11 @@ from typing import TYPE_CHECKING
 
 from classifier.config.setting.HCR import Input, MassRegion, Output
 from classifier.config.state.label import MultiClass
-from .._HCR import HCRTrain, ROC_BIN, roc_nominal_selection
+
+from .._HCR import ROC_BIN, HCRTrain, roc_nominal_selection
 
 if TYPE_CHECKING:
-    from classifier.ml.skimmer import BatchType
+    from classifier.ml import BatchType
 
 
 def _roc_data_selection(batch: BatchType):
