@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from classifier.config.setting.cms import MC_HH_ggF
 from classifier.config.setting.HCR import Input, Output
 from classifier.config.state.label import MultiClass
+from classifier.task import ArgParser
 
 from ..._HCR import ROC_BIN, HCRTrain, roc_nominal_selection
 
@@ -48,6 +49,8 @@ class _roc_select_ggF(_roc_select_sig):
 
 
 class Train(HCRTrain):
+    argparser = ArgParser(description="Train with SM ggF signal.")
+
     @staticmethod
     def loss(batch: BatchType):
         import torch.nn.functional as F

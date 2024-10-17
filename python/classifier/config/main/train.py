@@ -5,8 +5,9 @@ from datetime import datetime
 from itertools import chain
 from typing import TYPE_CHECKING
 
-from classifier.task import ArgParser, EntryPoint, Model, converter
+from classifier.task import ArgParser, EntryPoint, Model, TaskOptions, converter
 
+from ..setting import ResultKey
 from ._utils import LoadTrainingSets, SelectDevice, progress_advance
 
 if TYPE_CHECKING:
@@ -50,7 +51,7 @@ class Main(SelectDevice, LoadTrainingSets):
         # load datasets in parallel
         datasets = self.load_training_sets(parser)
         # initialize datasets
-        models: list[Model] = parser.mods["model"]
+        models: list[Model] = parser.mods[TaskOptions.model.name]
         timer = datetime.now()
         trainers = [*chain(*(m.train() for m in models))]
         logging.info(f"Initialized {len(trainers)} models in {datetime.now() - timer}")
@@ -72,4 +73,4 @@ class Main(SelectDevice, LoadTrainingSets):
                 )
             ]
 
-        return {"models": results}
+        return {ResultKey.models: results}

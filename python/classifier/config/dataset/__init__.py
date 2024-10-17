@@ -6,6 +6,8 @@ import math
 import fsspec
 from classifier.task import ArgParser, Dataset, EntryPoint, parse
 
+from ..setting import ResultKey
+
 
 class cache(Dataset):
     argparser = ArgParser(description="Load the datasets saved by [blue]cache[/blue].")
@@ -29,7 +31,7 @@ class cache(Dataset):
         metafile = EOS(self.opts.input)
         base = metafile.parent
         with fsspec.open(metafile) as f:
-            metadata = json.load(f)
+            metadata = json.load(f)[ResultKey.cache]
         # load states
         states = metadata["states"]
         if states:

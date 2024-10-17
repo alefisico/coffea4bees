@@ -30,8 +30,7 @@ class FromRoot:
             self.chain += friends
 
     def read(self, chunk: Chunk) -> Optional[pd.DataFrame]:
-        chain = self.chain.copy()
-        chain += chunk
+        chain = self.chain.copy().add_chunk(chunk)
         df = chain.concat(library="pd", reader_options={"branch_filter": self.branches})
         for preprocessor in self.preprocessors:
             if len(df) == 0:

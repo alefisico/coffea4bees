@@ -48,7 +48,7 @@ class FriendTreeEvalDataset(EvalDataset[Friend]):
             yield self.__dumper.new(chunk), self.__loader.new(chunk)
 
 
-@dataclass
+@dataclass(kw_only=True)
 class _chunk_processor:
     chunk: Chunk = None
 

@@ -43,7 +43,7 @@ if TYPE_CHECKING:
 
     class EvalLoaderLike(Protocol):
         @property
-        def result(self): ...
+        def result(self) -> tuple: ...
 
         def __iter__(self) -> Generator[tuple[BatchDumper, BatchType], None, None]: ...
 
@@ -80,7 +80,7 @@ class EvalLoader(ABC, Generic[_ResultT]):
 
     @property
     @abstractmethod
-    def result(self) -> _ResultT: ...
+    def result(self) -> tuple[_ResultT]: ...
 
     def __iter__(self) -> Generator[tuple[BatchDumper, BatchType], None, None]:
         batches = [*self.__batches]
@@ -204,8 +204,8 @@ class AddableResultLoader(EvalLoader[_ResultT]):
             self.__result += result
 
     @property
-    def result(self) -> _ResultT:
-        return self.__result
+    def result(self) -> tuple[_ResultT]:
+        return (self.__result,)
 
 
 class ChainLoader(Generic[Unpack[_ChainResultT]]):

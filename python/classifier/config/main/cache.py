@@ -9,6 +9,7 @@ import fsspec
 from classifier.task import ArgParser, EntryPoint, converter
 
 from ..setting import IO as IOSetting
+from ..setting import ResultKey
 from ._utils import LoadTrainingSets, progress_advance
 
 if TYPE_CHECKING:
@@ -107,11 +108,13 @@ class Main(LoadTrainingSets):
             f"Wrote {size} entries to {len(chunks)} files in {datetime.now() - timer}"
         )
         return {
-            "size": size,
-            "chunksize": chunksize,
-            "shuffle": self.opts.shuffle,
-            "compression": self.opts.compression,
-            "states": states,
+            ResultKey.cache: {
+                "size": size,
+                "chunksize": chunksize,
+                "shuffle": self.opts.shuffle,
+                "compression": self.opts.compression,
+                "states": states,
+            }
         }
 
 

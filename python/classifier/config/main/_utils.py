@@ -6,7 +6,7 @@ from functools import cached_property
 from itertools import chain
 from typing import TYPE_CHECKING
 
-from classifier.task import ArgParser, EntryPoint, Main, converter
+from classifier.task import ArgParser, EntryPoint, Main, converter, TaskOptions
 from classifier.utils import call
 
 if TYPE_CHECKING:
@@ -61,7 +61,7 @@ class LoadTrainingSets(Main):
         from torch.utils.data import ConcatDataset, StackDataset
 
         # load datasets in parallel
-        mods: list[Dataset] = parser.mods["dataset"]
+        mods: list[Dataset] = parser.mods[TaskOptions.dataset.name]
         loaders = [*chain(*(k.train() for k in mods))]
         if len(loaders) == 0:
             raise ValueError("No dataset to load")

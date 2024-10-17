@@ -5,6 +5,7 @@ import logging
 import os
 import sys
 from collections import deque
+from dataclasses import dataclass
 from itertools import chain
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Optional
@@ -33,8 +34,33 @@ _MODULE = "module"
 _OPTION = "option"
 
 
+class _Opts:
+    opts: dict[str, type[Task]]
+
+    @dataclass
+    class T:
+        type: type[Task]
+        name: str = None
+
+    def __init_subclass__(cls):
+        cls.opts = {}
+        for k, v in vars(cls).items():
+            if isinstance(v, _Opts.T):
+                v.name = k
+                cls.opts[k] = v.type
+
+
+class TaskOptions(_Opts):
+    _T = _Opts.T
+
+    setting = _T(Cascade)
+    dataset = _T(Dataset)
+    model = _T(Model)
+    analysis = _T(Analysis)
+
+
 class EntryPoint:
-    _tasks = list(
+    _mains = list(
         map(
             lambda x: x.removesuffix(".py"),
             filter(
@@ -43,20 +69,15 @@ class EntryPoint:
             ),
         )
     )
-    _keys = {
-        "setting": Cascade,
-        "dataset": Dataset,
-        "model": Model,
-        "analysis": Analysis,
-    }
-    _preserved = [
-        *(f"{_DASH}{k}" for k in chain(_keys, (_FROM, _TEMPLATE))),
+    _tasks = TaskOptions.opts
+    _reserved = [
+        *(f"{_DASH}{k}" for k in chain(_tasks, (_FROM, _TEMPLATE))),
     ]
 
     @classmethod
     def _fetch_subargs(cls, args: deque):
         subargs = []
-        while len(args) > 0 and args[0] not in cls._preserved:
+        while len(args) > 0 and args[0] not in cls._reserved:
             subargs.append(args.popleft())
         return subargs
 
@@ -74,7 +95,7 @@ class EntryPoint:
     def _fetch_all(self, *cats: str):
         self.mods: dict[str, list[Task]] = {}
         for cat in cats:
-            target = self._keys[cat]
+            target = self._tasks[cat]
             self.mods[cat] = []
             for imp, opts in self.args[cat]:
                 _, clsname = self._fetch_module_name(imp, cat)
@@ -110,7 +131,7 @@ class EntryPoint:
             args = parse.mapping(file, "file", formatter)
             if fetch_main and _MAIN in args:
                 self.args[_MAIN] = self._expand_module(args[_MAIN])
-            for cat in self._keys:
+            for cat in self._tasks:
                 if cat in args:
                     for arg in args[cat]:
                         self.args[cat].append(self._expand_module(arg))
@@ -125,7 +146,7 @@ class EntryPoint:
 
         self.entrypoint = Path(argv[0]).name
         self.cmd = " ".join(argv)
-        self.args: dict[str, list[tuple[str, list[str]]]] = {k: [] for k in self._keys}
+        self.args: dict[str, list[tuple[str, list[str]]]] = {k: [] for k in self._tasks}
 
         args = deque(argv[1:])
         if len(args) == 0:
@@ -152,9 +173,9 @@ class EntryPoint:
                 self.args[cat].append((mod, opts))
 
         main: str = self.args[_MAIN][0]
-        if main not in self._tasks:
+        if main not in self._mains:
             raise ValueError(
-                f'The first argument must be one of {self._tasks}, got "{main}"'
+                f'The first argument must be one of {self._mains}, got "{main}"'
             )
         RunInfo.main_task = main
 
@@ -165,7 +186,7 @@ class EntryPoint:
         if cls.prelude is not NotImplemented:
             cls.prelude()
 
-        all_cats = [*self._keys]
+        all_cats = [*self._tasks]
         if not cls._no_init:
             self._fetch_all(all_cats[0])
 
@@ -226,10 +247,11 @@ class EntryPoint:
         # dump result
         if (result is not None) and (not cfg.IO.result.is_null):
             from base_class.utils.json import DefaultEncoder
+            from classifier.config.setting import ResultKey
 
-            result["command"] = self.cmd
+            result[ResultKey.command] = self.cmd
             if reproducible is not None:
-                result["reproducible"] = reproducible()
+                result[ResultKey.reproducible] = reproducible()
             with fsspec.open(cfg.IO.result, "wt") as f:
                 json.dump(result, f, cls=DefaultEncoder)
 

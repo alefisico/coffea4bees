@@ -156,3 +156,20 @@ class Multiprocessing(Cascade):
     context_library: Literal["torch", "builtins"] = "torch"
     preload: list[str] = ["torch"]
     torch_sharing_strategy: Literal["file_system", "file_descriptor"] = "file_system"
+
+
+class ResultKey(Cascade):
+    command: str = "command"
+    reproducible: str = "reproducible"
+
+    # analyze
+    analysis: str = "analysis"
+
+    # cache
+    cache: str = "cache"
+
+    # evaluate
+    predictions: str = "predictions"
+
+    # train
+    models: str = "models"

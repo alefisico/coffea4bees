@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from classifier.config.setting.HCR import Input, Output
+from classifier.task import ArgParser
 
 from . import baseline
 
@@ -11,6 +12,8 @@ if TYPE_CHECKING:
 
 
 class Train(baseline.Train):
+    argparser = ArgParser(description="Train with SM and BSM ggF signals.")
+
     @staticmethod
     def loss(batch: BatchType):
         import torch.nn.functional as F

@@ -2,7 +2,7 @@ import json
 from itertools import chain
 
 import fsspec
-from classifier.task import Analysis, ArgParser, EntryPoint, main
+from classifier.task import Analysis, ArgParser, EntryPoint, main, TaskOptions
 from classifier.utils import call
 
 from .. import setting as cfg
@@ -48,7 +48,7 @@ def run_analyzer(parser: EntryPoint, results: list[dict]):
     from classifier.monitor.progress import Progress
     from classifier.process import pool, status
 
-    analysis: list[Analysis] = parser.mods["analysis"]
+    analysis: list[Analysis] = parser.mods[TaskOptions.analysis.name]
     analyzers = [*chain(*(a.analyze(results) for a in analysis))]
     if not analyzers:
         return None
@@ -72,6 +72,6 @@ def run_analyzer(parser: EntryPoint, results: list[dict]):
     Index.render()
     outputs = [*filter(lambda x: x is not None, results)]
     if outputs:
-        return {"analysis": outputs}
+        return {cfg.ResultKey.analysis: outputs}
     else:
         return None

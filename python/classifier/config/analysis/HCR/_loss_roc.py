@@ -2,7 +2,7 @@ from collections import defaultdict
 from itertools import chain, cycle
 
 import fsspec
-from classifier.config.setting import IO
+from classifier.config.setting import IO, ResultKey
 from classifier.task import Analysis, ArgParser
 
 
@@ -85,7 +85,7 @@ class _collect_loss_roc:
         g_data = defaultdict(dict)
         g_rocs = defaultdict(_dict_dict)
         # initialize data
-        for model in chain.from_iterable(map(lambda x: x["models"], results)):
+        for model in chain.from_iterable(map(lambda x: x[ResultKey.models], results)):
             name = model["name"].replace("__", ",").replace("_", ":")
             _data = defaultdict(list)
             _rocs = defaultdict(_dict_list)
