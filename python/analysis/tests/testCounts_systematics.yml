@@ -1,24 +1,24 @@
 counts4:
     GluGluToHHTo4B_cHHH1_UL18:
-        passJetMult: 2.42
-        passPreSel: 0.38
-        passDiJetMass: 0.36
-        SR: 0.31
+        passJetMult: 2.73
+        passPreSel: 0.5
+        passDiJetMass: 0.47
+        SR: 0.42
         SB: 0.05
-        passSvB: 0.13
-        failSvB: 0.07
+        passSvB: 0.21
+        failSvB: 0.08
 
 
 
 counts3:
     GluGluToHHTo4B_cHHH1_UL18:
-        passJetMult: 2.42
-        passPreSel: 0.08
-        passDiJetMass: 0.06
-        SR: 0.04
-        SB: 0.01
+        passJetMult: 2.73
+        passPreSel: 0.09
+        passDiJetMass: 0.07
+        SR: 0.05
+        SB: 0.02
         passSvB: 0.0
-        failSvB: 0.08
+        failSvB: 0.09
 
 
 

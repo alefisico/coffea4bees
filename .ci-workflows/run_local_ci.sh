@@ -8,6 +8,12 @@ fi
 JOB_NAME=$1
 SNAKEFILE=".ci-workflows/Snakefile_testCI"
 
+# Check if JOB_NAME contains '-'
+if [[ "$JOB_NAME" == *-* ]]; then
+  # Replace '-' with '_'
+  JOB_NAME=${JOB_NAME//-/_}
+fi
+
 # Check if the folder named 'output' exists
 if [ -d "python/output" ]; then
   echo "The folder 'python/output' exists. Remember that snakemake will not run a step if the output files already exist."
@@ -16,7 +22,7 @@ else
 fi
 
 # Search for the job name and assign the output list it belongs to a variable
-OUTPUT_LIST=$(awk -v job="$JOB_NAME" '
+OUTPUT_LIST=$(awk -v job="/$JOB_NAME/" '
   BEGIN { found=0; }
   /^output_/ { in_list=1; output_list=$1; next; }
   in_list && /^\]/ { in_list=0; }
