@@ -1,63 +1,44 @@
-data_UL16_postVFPF:
-  count: 4852270.0
+ggZH4b_UL16_postVFP:
+  count: 2150794
   cutFlowFourTag:
-    all: 4839791.0
-    passHLT: 1596685.0
-    passJetMult: 1076608.0
-    passJetMult_lowpt_forskim: 1485307.0
-    passNoiseFilter: 4832998.0
-    passPreSel: 44420.0
-    passPreSel_lowpt_forskim: 44811.0
+    all: 92902.4689957127
+    passHLT: 92847.26642616093
+    passJetMult: 35814.58915190771
+    passJetMult_lowpt_forskim: 71525.38192303851
+    passNoiseFilter: 92847.26642616093
+    passPreSel: 16726.119407191873
+    passPreSel_lowpt_forskim: 16955.39580717683
   cutFlowFourTagUnitWeight:
-    all: 4839791
-    passHLT: 1596685
-    passJetMult: 1076608
-    passJetMult_lowpt_forskim: 1485307
-    passNoiseFilter: 4832998
-    passPreSel: 44420
-    passPreSel_lowpt_forskim: 44811
+    all: 2150794
+    passHLT: 2149516
+    passJetMult: 829147
+    passJetMult_lowpt_forskim: 1655891
+    passNoiseFilter: 2149516
+    passPreSel: 387228
+    passPreSel_lowpt_forskim: 392536
   cutFlowThreeTag:
-    all: 4839791.0
-    passHLT: 1596685.0
-    passJetMult: 1076608.0
-    passJetMult_lowpt_forskim: 1485307.0
-    passNoiseFilter: 4832998.0
-    passPreSel: 44420.0
-    passPreSel_lowpt_forskim: 44811.0
+    all: 92902.4689957127
+    passHLT: 92847.26642616093
+    passJetMult: 35814.58915190771
+    passJetMult_lowpt_forskim: 71525.38192303851
+    passNoiseFilter: 92847.26642616093
+    passPreSel: 16726.119407191873
+    passPreSel_lowpt_forskim: 16955.39580717683
   cutFlowThreeTagUnitWeight:
-    all: 4839791
-    passHLT: 1596685
-    passJetMult: 1076608
-    passJetMult_lowpt_forskim: 1485307
-    passNoiseFilter: 4832998
-    passPreSel: 44420
-    passPreSel_lowpt_forskim: 44811
+    all: 2150794
+    passHLT: 2149516
+    passJetMult: 829147
+    passJetMult_lowpt_forskim: 1655891
+    passNoiseFilter: 2149516
+    passPreSel: 387228
+    passPreSel_lowpt_forskim: 392536
   files:
-  - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL16_postVFPF/picoAOD.root
+  - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/ggZH4b_UL16_postVFP/picoAOD.chunk0.root
+  - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/ggZH4b_UL16_postVFP/picoAOD.chunk1.root
+  - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/ggZH4b_UL16_postVFP/picoAOD.chunk2.root
+  - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/ggZH4b_UL16_postVFP/picoAOD.chunk3.root
+  - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/ggZH4b_UL16_postVFP/picoAOD.chunk4.root
   kFactor:
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
   - 1.0
   - 1.0
   - 1.0
@@ -207,47 +188,18 @@ data_UL16_postVFPF:
   - 16500.0
   - 16500.0
   - 16500.0
-  - 16500.0
-  - 16500.0
-  - 16500.0
-  - 16500.0
-  - 16500.0
-  - 16500.0
-  - 16500.0
-  - 16500.0
-  - 16500.0
-  - 16500.0
-  - 16500.0
-  - 16500.0
-  - 16500.0
-  - 16500.0
-  - 16500.0
-  - 16500.0
-  - 16500.0
-  - 16500.0
-  - 16500.0
-  - 16500.0
-  - 16500.0
-  - 16500.0
-  - 16500.0
   missing: {}
   reproducible:
-    args: Namespace(test=False, output_file='picoaod_datasets_data_UL16_postVFPF.yml',
+    args: Namespace(test=False, output_file='picoaod_datasets_ggZH4b_UL16_postVFP.yml',
       processor='skimmer/processor/skimmer_4b.py', configs='skimmer/metadata/HH4b.yml',
       metadata='metadata/datasets_HH4b.yml', output_path='tmp/', years=['UL16_postVFP'],
-      datasets=['data'], era=['F'], systematics=False, skimming=True, run_dask=True,
-      condor=True, debug=False, githash='', gitdiff='')
-    date: '2024-10-10 11:15:30'
+      datasets=['ggZH4b'], era=['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], systematics=False,
+      skimming=True, run_dask=True, condor=True, debug=False, githash='', gitdiff='')
+    date: '2024-10-09 15:17:34'
     diff: "diff --git a/python/metadata/datasets_HH4b.yml b/python/metadata/datasets_HH4b.yml\n\
-      index d572760..9af2772 100644\n--- a/python/metadata/datasets_HH4b.yml\n+++\
-      \ b/python/metadata/datasets_HH4b.yml\n@@ -541,9 +541,9 @@ datasets:\n     UL16_postVFP:\n\
-      \       lumi: 16.5e3\n       nanoAOD:\n-        F: /BtagCSV/Run2016F-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD\n\
-      -        G: /BtagCSV/Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD\n-     \
-      \   H: /BtagCSV/Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD\n+        F:\
-      \ /BTagCSV/Run2016F-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD\n+        G: /BTagCSV/Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD\n\
-      +        H: /BTagCSV/Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD\n      \
-      \ picoAOD:\n         F:\n           files:\n@@ -671,41 +671,7 @@ datasets:\n\
-      \         - root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//data2018_3b/picoAOD_3b_wJCM_newSBDef.root\n\
+      index d572760..516a6c2 100644\n--- a/python/metadata/datasets_HH4b.yml\n+++\
+      \ b/python/metadata/datasets_HH4b.yml\n@@ -671,41 +671,7 @@ datasets:\n    \
+      \     - root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//data2018_3b/picoAOD_3b_wJCM_newSBDef.root\n\
       \     nSamples: 15\n     use_kfold: True\n-\n-  ggZH4b:\n-    UL16_postVFP:\n\
       -      nanoAOD: /dataset/dataset/NANOAODSIM\n-      picoAOD:\n-        files:\n\
       -        - root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/ggZH4b2016_postVFP/picoAOD.root\n\
@@ -277,103 +229,82 @@ data_UL16_postVFPF:
       @@ -1 +1 @@\n-Subproject commit 15e1a3d9fc5901234306f163e8dc114b03cad5b6\n+Subproject\
       \ commit ba6bba7397f9f46196691a5f80dfc39fb70d6661\n"
     hash: 4f02ace2f000ba74b2a2c6eb4c2097f2971416f1
-  saved_events: 45436
-  total_events: 4852270
+  saved_events: 443095
+  sumw: 92902.471433
+  sumw2: 4012.8758023127193
+  total_events: 2150794
   xs:
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576
+  - 0.010804824576

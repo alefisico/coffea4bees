@@ -1,37 +1,37 @@
 TTToSemiLeptonic_UL17:
-  count: 346052000.0
+  count: 346052000
   cutFlowFourTag:
-    all: 104129959629.04999
-    passHLT: 104043608773.86353
-    passJetMult: 27707807071.87149
-    passJetMult_lowpt_forskim: 76703638446.96426
-    passNoiseFilter: 104043608773.86353
-    passPreSel: 1394196366.1782837
-    passPreSel_lowpt_forskim: 1408830356.180725
+    all: 104070685902.38007
+    passHLT: 103984384191.18988
+    passJetMult: 27926583098.901978
+    passJetMult_lowpt_forskim: 75972850537.63733
+    passNoiseFilter: 103984384191.18988
+    passPreSel: 1404147418.7083435
+    passPreSel_lowpt_forskim: 1418305440.0061035
   cutFlowFourTagUnitWeight:
-    all: 346052000
-    passHLT: 345763798
-    passJetMult: 92096713
-    passJetMult_lowpt_forskim: 254665655
-    passNoiseFilter: 345763798
-    passPreSel: 4635666
-    passPreSel_lowpt_forskim: 4684222
+    all: 345855076
+    passHLT: 345567038
+    passJetMult: 92822628
+    passJetMult_lowpt_forskim: 252237008
+    passNoiseFilter: 345567038
+    passPreSel: 4668783
+    passPreSel_lowpt_forskim: 4715758
   cutFlowThreeTag:
-    all: 104129959629.04999
-    passHLT: 104043608773.86353
-    passJetMult: 27707807071.87149
-    passJetMult_lowpt_forskim: 76703638446.96426
-    passNoiseFilter: 104043608773.86353
-    passPreSel: 1394196366.1782837
-    passPreSel_lowpt_forskim: 1408830356.180725
+    all: 104070685902.38007
+    passHLT: 103984384191.18988
+    passJetMult: 27926583098.901978
+    passJetMult_lowpt_forskim: 75972850537.63733
+    passNoiseFilter: 103984384191.18988
+    passPreSel: 1404147418.7083435
+    passPreSel_lowpt_forskim: 1418305440.0061035
   cutFlowThreeTagUnitWeight:
-    all: 346052000
-    passHLT: 345763798
-    passJetMult: 92096713
-    passJetMult_lowpt_forskim: 254665655
-    passNoiseFilter: 345763798
-    passPreSel: 4635666
-    passPreSel_lowpt_forskim: 4684222
+    all: 345855076
+    passHLT: 345567038
+    passJetMult: 92822628
+    passJetMult_lowpt_forskim: 252237008
+    passNoiseFilter: 345567038
+    passPreSel: 4668783
+    passPreSel_lowpt_forskim: 4715758
   files:
   - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/TTToSemiLeptonic_UL17/picoAOD.chunk0.root
   - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/TTToSemiLeptonic_UL17/picoAOD.chunk1.root
@@ -82,8 +82,6 @@ TTToSemiLeptonic_UL17:
   - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/TTToSemiLeptonic_UL17/picoAOD.chunk46.root
   - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/TTToSemiLeptonic_UL17/picoAOD.chunk47.root
   kFactor:
-  - 1.0
-  - 1.0
   - 1.0
   - 1.0
   - 1.0
@@ -7093,42 +7091,24 @@ TTToSemiLeptonic_UL17:
   - 41500.0
   - 41500.0
   - 41500.0
-  - 41500.0
-  - 41500.0
-  missing: {}
+  missing:
+    chunk_missing:
+    - '[0, 98462) in "root://xrootd.cmsaf.mit.edu:1094//store/mc/RunIISummer20UL17NanoAODv9/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/130000/0EBFC1BC-0176-224E-9840-B4E027CBD5D3.root"'
+    - '[984620, 1083082) in "root://cmseos.fnal.gov//eos/uscms/store/mc/RunIISummer20UL17NanoAODv9/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/130000/5669AB65-83CF-3D45-9190-6D765216ED67.root"'
   reproducible:
     args: Namespace(test=False, output_file='picoaod_datasets_TTToSemiLeptonic_UL17.yml',
       processor='skimmer/processor/skimmer_4b.py', configs='skimmer/metadata/HH4b.yml',
-      metadata='metadata/datasets_HH4b.yml', output_path='skimmer/metadata/', years=['UL17'],
-      datasets=['TTToSemiLeptonic'], era=['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
-      systematics=False, skimming=True, run_dask=True, condor=True, debug=False, githash='',
-      gitdiff='')
-    date: '2024-08-10 06:40:49'
-    diff: 'b"diff --git a/python/metadata/datasets_HH4b.yml b/python/metadata/datasets_HH4b.yml\nindex
-      722fed1..9d9418b 100644\n--- a/python/metadata/datasets_HH4b.yml\n+++ b/python/metadata/datasets_HH4b.yml\n@@
-      -501,9 +501,9 @@ datasets:\n     UL16_postVFP:\n       lumi: 16.5e3\n       nanoAOD:\n-        F:
-      /BtagCSV/Run2016F-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD\n-        G: /BtagCSV/Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD\n-        H:
-      /BtagCSV/Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD\n+        F: /BTagCSV/Run2016F-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD\n+        G:
-      /BTagCSV/Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD\n+        H: /BTagCSV/Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD\n       picoAOD:\n         F:\n           files:\ndiff
-      --git a/python/skimmer/metadata/HH4b.yml b/python/skimmer/metadata/HH4b.yml\nindex
-      38beb56..068d7ba 100644\n--- a/python/skimmer/metadata/HH4b.yml\n+++ b/python/skimmer/metadata/HH4b.yml\n@@
-      -15,12 +15,26 @@ runner:\n     - analysis\n     - skimmer\n     - data\n-  allowlist_sites:\n-    -
-      T2_US_Nebraska\n-    - T2_US_Purdue\n-    - T3_US_FNALLPC\n-    - T3_US_NotreDame\n-\n+  allowlist_sites:
-      ''''\n+  # - T2_US_Florida\n+  # - T2_US_MIT\n+  # - T2_US_Nebraska\n+  # -
-      T2_US_Purdue\n+  # - T2_US_UCSD\n+  # - T2_US_Wisconsin\n+  # - T2_BE_IIHE\n+  #
-      - T2_BE_UCL\n+  # - T2_BR_SPRACE\n+  # - T2_DE_RWTH\n+  # - T2_EE_Estonia\n+  #
-      - T2_ES_CIEMAT\n+  # - T2_IN_TIFR\n+  # - T2_IT_Legnaro\n+  # - T2_KR_KISTI\n+  #
-      - T2_PL_Swierk\n+  # - T2_TR_METU\n+  # - T2_UA_KIPT\n+  # - T2_UK_London_IC\n
-      config:\n   base_path: root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/\n   #
-      base_path: /srv/python/skimmer/test/   ### local\n"'
-    hash: 2d8e08f72f8d9008ba2cc3573387a770e55d50a0
-  saved_events: 4768394
+      metadata='metadata/datasets_HH4b.yml', output_path='tmp/', years=['UL17'], datasets=['TTToSemiLeptonic'],
+      era=['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], systematics=False, skimming=True,
+      run_dask=True, condor=True, debug=False, githash='', gitdiff='')
+    date: '2024-10-03 12:58:34'
+    diff: Not run locally
+    hash: Not run locally.
+  saved_events: 4796311
   sumw: 104129959042.42807
   sumw2: 31845807708704.68
-  total_events: 346052000
+  total_events: 345855076
   xs:
-  - 365.7826460496
-  - 365.7826460496
   - 365.7826460496
   - 365.7826460496
   - 365.7826460496

@@ -439,9 +439,9 @@ class analysis(processor.ProcessorABC):
                     try:
                         top_cands = find_tops(selev.selJet)
                     except Exception as e:
-                        print("WARNING: Fast top_reconstruction failed with exception: ")
-                        print(f"{e}\n")
-                        print("... Trying the slow top_reconstruction")
+                        logging.warning("WARNING: Fast top_reconstruction failed with exception: ")
+                        logging.warning(f"{e}\n")
+                        logging.warning("... Trying the slow top_reconstruction")
                         top_cands = find_tops_slow(selev.selJet)
 
                 selev['top_cand'], _ = buildTop(selev.selJet, top_cands)
@@ -478,8 +478,6 @@ class analysis(processor.ProcessorABC):
                                                            year_label=self.year_label,
                                                            len_event=len(event),
                                                           )
-
-
         #
         # Blind data in fourTag SR
         #
@@ -490,6 +488,20 @@ class analysis(processor.ProcessorABC):
             allcuts.append( 'blind' )
             analysis_selections = selections.all(*allcuts)
             selev = selev[~(selev["quadJet_selected"].SR & selev.fourTag)]
+
+        # Checking for outliners in weights
+        if 'GluGlu' in self.dataset:
+            tmp_weights = weights.weight()
+            mean_weights = np.mean(tmp_weights)
+            std_weights = np.std(tmp_weights)
+            z_scores = np.abs((tmp_weights - mean_weights) / std_weights)
+            not_outliers = z_scores < 30    
+            if np.any(~not_outliers) and std_weights > 0:
+                logging.warning(f"Outliers in weights:{tmp_weights[~not_outliers]}, while mean is {mean_weights} and std is {std_weights} for {self.dataset}\n")
+                selections.add( 'outliers', not_outliers )
+                allcuts.append( 'outliers' )
+                selev = selev[not_outliers[analysis_selections]]
+                analysis_selections = selections.all(*allcuts)
 
         #
         # CutFlow
