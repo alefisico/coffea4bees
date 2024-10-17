@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import json
 from itertools import chain
 
 import fsspec
-from classifier.task import Analysis, ArgParser, EntryPoint, main, TaskOptions
-from classifier.utils import call
+from classifier.task import Analysis, ArgParser, EntryPoint, TaskOptions, main
+from classifier.task.analysis import Analyzer
 
 from .. import setting as cfg
 from ._utils import progress_advance
@@ -21,11 +23,10 @@ class Main(main.Main):
         ],
     )
     argparser.add_argument(
-        "--results",
-        help="Path to result json files.",
+        "results",
+        metavar="RESULT",
         nargs="+",
-        action="extend",
-        default=[],
+        help="path to result json files.",
     )
 
     @classmethod
@@ -39,6 +40,10 @@ class Main(main.Main):
             with fsspec.open(path, "rt") as f:
                 results.append(json.load(f))
         return run_analyzer(parser, results)
+
+
+def _analyze(analyzer: Analyzer):
+    return analyzer()
 
 
 def run_analyzer(parser: EntryPoint, results: list[dict]):
@@ -61,16 +66,16 @@ def run_analyzer(parser: EntryPoint, results: list[dict]):
         ) as executor,
         Progress.new(total=len(analyzers), msg=("analysis", "Running")) as progress,
     ):
-        results = [
+        outputs = [
             *pool.submit(
                 executor,
-                call,
+                _analyze,
                 analyzers,
                 callbacks=[lambda _: progress_advance(progress)],
             )
         ]
     Index.render()
-    outputs = [*filter(lambda x: x is not None, results)]
+    outputs = [*filter(lambda x: x is not None, outputs)]
     if outputs:
         return {cfg.ResultKey.analysis: outputs}
     else:

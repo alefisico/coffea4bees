@@ -3,7 +3,7 @@ from __future__ import annotations
 import importlib
 import logging
 from fractions import Fraction
-from typing import Callable, TypeVar
+from typing import TypeVar
 
 import yaml
 
@@ -40,10 +40,6 @@ class _NoopMeta(NOOP, type): ...
 
 
 class noop(metaclass=_NoopMeta): ...
-
-
-def call(func: Callable):
-    return func()
 
 
 def import_(modname: str, clsname: str, raise_error: bool = False):

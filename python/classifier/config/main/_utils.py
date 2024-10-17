@@ -6,12 +6,11 @@ from functools import cached_property
 from itertools import chain
 from typing import TYPE_CHECKING
 
-from classifier.task import ArgParser, EntryPoint, Main, converter, TaskOptions
-from classifier.utils import call
+from classifier.task import ArgParser, Dataset, EntryPoint, Main, TaskOptions, converter
+from classifier.task.dataset import TrainingSetLoader
 
 if TYPE_CHECKING:
     from classifier.monitor.progress import ProgressTracker
-    from classifier.task.dataset import Dataset
 
 
 class progress_advance:
@@ -21,6 +20,10 @@ class progress_advance:
 
     def __call__(self, _):
         self._progress.advance(step=self._step)
+
+
+def _load_dataset(loader: TrainingSetLoader):
+    return loader()
 
 
 class SelectDevice(Main):
@@ -78,7 +81,7 @@ class LoadTrainingSets(Main):
             datasets = [
                 *pool.submit(
                     executor,
-                    call,
+                    _load_dataset,
                     loaders,
                     callbacks=[lambda _: progress_advance(progress)],
                 )

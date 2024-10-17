@@ -50,6 +50,8 @@ if TYPE_CHECKING:
     class EvalDatasetLike(Protocol):
         def load(self, batch_size: int) -> EvalLoaderLike: ...
 
+        def __add__(self, other: EvalDatasetLike) -> EvalDatasetLike: ...
+
     _ToLoadQ = Queue[tuple[int, BatchLoader]]
     _LoadedQ = Queue[tuple[int, BatchType]]
     _EvaledQ = Queue[tuple[BatchDumper, BatchType]]
@@ -59,21 +61,33 @@ if TYPE_CHECKING:
 class EvalLoader(ABC, Generic[_ResultT]):
     __results: _ResultQ
 
+    @staticmethod
+    def _pool():
+        return ProcessPoolExecutor(
+            max_workers=cfg.num_workers * 2,
+            mp_context=status.context,
+            initializer=status.initializer,
+        )
+
     def _init(
         self,
         batches: Generator[tuple[BatchDumper, BatchLoader], None, None],
         msg: MessageType,
     ):
         self.__batches = batches
-        self._progress_msg = msg
+        self.__progress_msg = msg
+        self.__pool = None
         return self
 
     def _collect_result(self, nbatches: int, total: int):
-        with Progress.new(total, self._progress_msg) as progress:
+        with Progress.new(total, self.__progress_msg) as progress:
             for _ in range(nbatches):
                 size, result = self.__results.get()
                 self.accumulate(result)
                 progress.advance(size)
+
+    def _recycle_pool(self, pool: ProcessPoolExecutor):
+        self.__pool = pool
 
     @abstractmethod
     def accumulate(self, result: _ResultT): ...
@@ -81,6 +95,12 @@ class EvalLoader(ABC, Generic[_ResultT]):
     @property
     @abstractmethod
     def result(self) -> tuple[_ResultT]: ...
+
+    def __enter__(self):
+        return self.__pool
+
+    def __exit__(self, *_):
+        self.__pool = None
 
     def __iter__(self) -> Generator[tuple[BatchDumper, BatchType], None, None]:
         batches = [*self.__batches]
@@ -106,11 +126,8 @@ class EvalLoader(ABC, Generic[_ResultT]):
             # generate batches
             for i, (_, loader) in enumerate(batches):
                 toload_queue.put((i, loader))
-            with ProcessPoolExecutor(
-                max_workers=cfg.num_workers * 2,
-                mp_context=status.context,
-                initializer=status.initializer,
-            ) as pool:
+
+            with self._pool() if self.__pool is None else self as pool:
                 for _ in range(cfg.num_workers):
                     pool.submit(_load_worker, toload_queue, loaded_queue)
                 for _ in range(cfg.num_workers):
@@ -213,13 +230,22 @@ class ChainLoader(Generic[Unpack[_ChainResultT]]):
         self.__loaders = loaders
         self.__msg = msg
 
+    def __enter__(self):
+        return None
+
+    def __exit__(self, *_): ...
+
     @property
     def result(self) -> tuple[Unpack[_ChainResultT]]:
         return (*(loader.result for loader in self.__loaders),)
 
     def __iter__(self) -> Generator[tuple[BatchDumper, BatchType], None, None]:
-        with Progress.new(len(self.__loaders), self.__msg) as progress:
+        with (
+            self if cfg.num_workers == 0 else EvalLoader._pool() as pool,
+            Progress.new(len(self.__loaders), self.__msg) as progress,
+        ):
             for loader in self.__loaders:
+                loader._recycle_pool(pool)
                 yield from loader
                 progress.advance(1)
 
