@@ -38,7 +38,7 @@ class Label:
     def askwarg(self, code: str = 'code', display: str = 'display'):
         return {code: self.code, display: self.display}
 
-    def __repr__(self) -> str:  # TODO __repr__
+    def __repr__(self) -> str:
         return f'Label({self.code}, {self.display})'
 
 
