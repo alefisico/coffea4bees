@@ -22,7 +22,6 @@ class FriendTreeEvalDataset(EvalDataset[Friend]):
     def __init__(
         self,
         chunks: Iterable[Chunk],
-        friend_name: str,
         dump_base_path: PathLike = ...,
         dump_naming: str | NameMapping = ...,
     ):
@@ -30,7 +29,6 @@ class FriendTreeEvalDataset(EvalDataset[Friend]):
         self.__loader = _chunk_loader(method=self.load_chunk)
         self.__dumper = _chunk_dumper(
             method=self.dump_chunk,
-            name=friend_name,
             base_path=dump_base_path,
             naming=dump_naming,
         )
@@ -43,17 +41,17 @@ class FriendTreeEvalDataset(EvalDataset[Friend]):
     @abstractmethod
     def dump_chunk(cls, batch: BatchType) -> RecordLike: ...
 
-    def batches(self, batch_size: int):
+    def batches(self, batch_size: int, name: str, **_):
         for chunk in Chunk.balance(batch_size, *self.__chunks):
-            yield self.__dumper.new(chunk), self.__loader.new(chunk)
+            yield self.__dumper.new(chunk, name), self.__loader.new(chunk)
 
 
 @dataclass(kw_only=True)
 class _chunk_processor:
     chunk: Chunk = None
 
-    def new(self, chunk: Chunk):
-        return replace(self, chunk=chunk)
+    def new(self, chunk: Chunk, name: str):
+        return replace(self, chunk=chunk, name=name)
 
 
 @dataclass(kw_only=True)
@@ -67,9 +65,9 @@ class _chunk_loader(_chunk_processor):
 @dataclass(kw_only=True)
 class _chunk_dumper(_chunk_processor):
     method: Callable[[BatchType], RecordLike]
-    name: str
     base_path: PathLike
     naming: str | NameMapping
+    name: str = None
 
     def __len__(self):
         return len(self.chunk)

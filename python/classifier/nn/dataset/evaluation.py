@@ -37,6 +37,8 @@ if TYPE_CHECKING:
     BatchLoader = Callable[[], BatchType]
 
     class BatchDumper(Protocol):
+        def __init__(self, **kwargs): ...
+
         def __call__(self, batch: BatchType) -> _ResultT: ...
 
         def __len__(self) -> int: ...
@@ -48,7 +50,7 @@ if TYPE_CHECKING:
         def __iter__(self) -> Generator[tuple[BatchDumper, BatchType], None, None]: ...
 
     class EvalDatasetLike(Protocol):
-        def load(self, batch_size: int) -> EvalLoaderLike: ...
+        def load(self, batch_size: int, **kwargs) -> EvalLoaderLike: ...
 
         def __add__(self, other: EvalDatasetLike) -> EvalDatasetLike: ...
 
@@ -149,7 +151,7 @@ class EvalDataset(ABC, Generic[_ResultT]):
 
     @abstractmethod
     def batches(
-        self, batch_size: int
+        self, batch_size: int, **kwargs
     ) -> Generator[tuple[BatchDumper, BatchLoader], None, None]: ...
 
     def setup(self, msg: MessageType = ...):
@@ -157,9 +159,9 @@ class EvalDataset(ABC, Generic[_ResultT]):
             self.__progress_msg = msg
         return self
 
-    def load(self, batch_size: int) -> EvalLoader[_ResultT]:
+    def load(self, batch_size: int, **kwargs) -> EvalLoader[_ResultT]:
         return self.__eval_loader__()._init(
-            self.batches(batch_size), self.__progress_msg
+            self.batches(batch_size, **kwargs), self.__progress_msg
         )
 
     def __add__(
@@ -261,9 +263,9 @@ class ChainDataset(Generic[Unpack[_ChainResultT]]):
             self.__progress_msg = msg
         return self
 
-    def load(self, batch_size: int) -> ChainLoader[Unpack[_ChainResultT]]:
+    def load(self, batch_size: int, **kwargs) -> ChainLoader[Unpack[_ChainResultT]]:
         return ChainLoader(
-            *(dataset.load(batch_size) for dataset in self.__datasets),
+            *(dataset.load(batch_size, **kwargs) for dataset in self.__datasets),
             msg=self.__progress_msg,
         )
 

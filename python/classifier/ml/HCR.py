@@ -10,7 +10,7 @@ import torch.nn.functional as F
 import torch.types as tt
 from torch import Tensor
 
-from ..algorithm.utils import to_num
+from ..algorithm.utils import Selector, to_num
 from ..config import setting as cfg
 from ..config.scheduler import SkimStep
 from ..config.setting.HCR import Input, InputBranch, Output
@@ -85,7 +85,6 @@ class _HCRSkim(Skimmer):
     def train(self, batch: BatchType):
         training, _ = self._splitter.step(batch)
         self._nn.updateMeanStd(*_HCRInput(batch, self._device, training))
-        # TODO compute die loss
         return super().train(batch)
 
 
@@ -120,7 +119,7 @@ class HCRModel(Model):
             self._nn.setGhostBatches(0, False)
         else:
             self._gbn.reset()
-            self._nn.setGhostBatches(self._gbn.n_batches, True)  # TODO check subset
+            self._nn.setGhostBatches(self._gbn.n_batches, True)  # TODO subset?
 
     @property
     def hyperparameters(self) -> dict[str]:
@@ -131,8 +130,8 @@ class HCRModel(Model):
         return self._nn
 
     def train(self, batch: BatchType) -> Tensor:
-        c, p = self._nn(*_HCRInput(batch, self._device))
-        batch[Output.quadjet_raw] = p
+        c, q = self._nn(*_HCRInput(batch, self._device))
+        batch[Output.quadjet_raw] = q
         batch[Output.class_raw] = c
         return self._loss(batch)
 
@@ -140,9 +139,9 @@ class HCRModel(Model):
         loss, weight = 0.0, 0.0
         rocs = [r.copy() for r in self._benchmarks.rocs]
         for batch in batches:
-            c, p = self._nn(*_HCRInput(batch, self._device))
+            c, q = self._nn(*_HCRInput(batch, self._device))
             batch |= {
-                Output.quadjet_raw: p,
+                Output.quadjet_raw: q,
                 Output.class_raw: c,
                 Output.class_prob: F.softmax(c, dim=1),
             }
@@ -237,7 +236,51 @@ class HCRTraining(MultiStageTraining):
                         "metadata": self.metadata,
                         "uuid": self.uuid,
                         "label": MultiClass.labels,
+                        "arch": {
+                            "n_features": self._arch.n_features,
+                            "attention": self._arch.use_attention_block,
+                        },
                     },
                     f,
                 )
             yield OutputStage(name="Final", path=output)
+
+
+class HCRModelEval(Model):
+    def __init__(
+        self,
+        device: tt.Device,
+        saved: dict[str],
+        splitter: Splitter,
+    ):
+        self._device = device
+        self._splitter = splitter
+        self._classes = saved["label"]
+        self._nn = HCR(
+            dijetFeatures=saved["arch"]["n_features"],
+            quadjetFeatures=saved["arch"]["n_features"],
+            ancillaryFeatures=InputBranch.feature_ancillary,
+            useOthJets=("attention" if saved["arch"]["attention"] else ""),
+            device=device,
+            nClasses=len(self._classes),
+        )
+        self._nn.load_state_dict(saved["model"])
+
+    @property
+    def nn(self):
+        return self._nn
+
+    def evaluate(self, batch: BatchType) -> BatchType:
+        _, selection = self._splitter.split(batch)
+        selector = Selector(selection)
+        c, q = self._nn(*_HCRInput(batch, self._device, selection))
+        c_prob = F.softmax(c, dim=1).cpu()
+        q_prob = F.softmax(q, dim=1).cpu()
+        output = {
+            "q_1234": q_prob[:, 0],
+            "q_1324": q_prob[:, 1],
+            "q_1423": q_prob[:, 2],
+        }
+        for i, label in enumerate(self._classes):
+            output[f"p_{label}"] = c_prob[:, i]
+        return selector.pad(output)

@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import sys
+import uuid
 from collections import deque
 from dataclasses import dataclass
 from itertools import chain
@@ -249,6 +250,7 @@ class EntryPoint:
             from base_class.utils.json import DefaultEncoder
             from classifier.config.setting import ResultKey
 
+            result[ResultKey.uuid] = str(uuid.uuid4())
             result[ResultKey.command] = self.cmd
             if reproducible is not None:
                 result[ResultKey.reproducible] = reproducible()

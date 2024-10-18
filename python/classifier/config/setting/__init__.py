@@ -159,6 +159,7 @@ class Multiprocessing(Cascade):
 
 
 class ResultKey(Cascade):
+    uuid: str = "uuid"
     command: str = "command"
     reproducible: str = "reproducible"
 

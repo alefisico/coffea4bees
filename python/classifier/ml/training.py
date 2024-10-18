@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import gc
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
-from functools import cached_property
 from typing import TYPE_CHECKING, Iterable
 
 import torch
@@ -21,7 +19,7 @@ from ..nn.schedule import Schedule
 from ..process.device import Device
 from ..task.special import interface
 from ..typetools import WithUUID, filename
-from . import BatchType
+from . import BatchType, clear_cache
 
 if TYPE_CHECKING:
     from base_class.system.eos import PathLike
@@ -201,15 +199,13 @@ class MultiStageTraining(WithUUID, ABC):
         super().__init__()
         self.metadata = kwargs
         self.name = filename(kwargs)
-        self.device: tt.Device = None
+        self.device: torch.device = None
         self.dataset: Dataset = None
 
     def cleanup(self):
-        if self.device.type == "cuda":
-            torch.cuda.empty_cache()
-        gc.collect()
+        clear_cache(self.device)
 
-    @cached_property
+    @property
     def min_memory(self):
         return 0
 
