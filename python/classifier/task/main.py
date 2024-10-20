@@ -250,7 +250,7 @@ class EntryPoint:
             from base_class.utils.json import DefaultEncoder
             from classifier.config.setting import ResultKey
 
-            result[ResultKey.uuid] = str(uuid.uuid4())
+            result[ResultKey.uuid] = str(uuid.uuid1())
             result[ResultKey.command] = self.cmd
             if reproducible is not None:
                 result[ResultKey.reproducible] = reproducible()
