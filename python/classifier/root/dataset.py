@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from abc import abstractmethod
 from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING, Callable, Iterable
 
@@ -16,30 +15,28 @@ if TYPE_CHECKING:
     from ..ml import BatchType
 
 
+def numpy_dumper(batch: BatchType) -> RecordLike:
+    return {k: v.numpy(force=True) for k, v in batch.items()}
+
+
 class FriendTreeEvalDataset(EvalDataset[Friend]):
     __eval_loader__ = AddableResultLoader[Friend]
 
     def __init__(
         self,
         chunks: Iterable[Chunk],
+        load_method: Callable[[Chunk], BatchType],
+        dump_method: Callable[[BatchType], RecordLike] = ...,
         dump_base_path: PathLike = ...,
         dump_naming: str | NameMapping = ...,
     ):
         self.__chunks = [*chunks]
-        self.__loader = _chunk_loader(method=self.load_chunk)
+        self.__loader = _chunk_loader(method=load_method)
         self.__dumper = _chunk_dumper(
-            method=self.dump_chunk,
+            method=numpy_dumper if dump_method is ... else dump_method,
             base_path=dump_base_path,
             naming=dump_naming,
         )
-
-    @classmethod
-    @abstractmethod
-    def load_chunk(cls, chunk: Chunk) -> BatchType: ...
-
-    @classmethod
-    def dump_chunk(cls, batch: BatchType) -> RecordLike:
-        return {k: v.numpy(force=True) for k, v in batch.items()}
 
     def batches(self, batch_size: int, name: str, **_):
         for chunk in Chunk.balance(batch_size, *self.__chunks):

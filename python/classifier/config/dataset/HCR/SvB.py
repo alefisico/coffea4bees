@@ -60,6 +60,8 @@ def _remove_outlier(df: pd.DataFrame):
 
 
 class _Train(Common):
+    trainable = True
+
     argparser = ArgParser()
     argparser.add_argument(
         "--regions",

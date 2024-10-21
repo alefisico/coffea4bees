@@ -10,6 +10,8 @@ from base_class.utils import unique
 from classifier.config.main._utils import progress_advance
 from classifier.task import ArgParser, Dataset, converter, parse
 
+from ..setting import IO as IOSetting
+
 if TYPE_CHECKING:
     import pandas as pd
     from base_class.root import Friend
@@ -20,6 +22,9 @@ if TYPE_CHECKING:
 
 
 class LoadRoot(ABC, Dataset):
+    trainable: bool = False
+    evaluable: bool = False
+
     argparser = ArgParser()
     argparser.add_argument(
         "--files",
@@ -46,18 +51,31 @@ class LoadRoot(ABC, Dataset):
         "--max-workers",
         type=converter.int_pos,
         default=1,
-        help="the maximum number of workers to use when reading the ROOT files in parallel",
-    )
-    argparser.add_argument(
-        "--chunksize",
-        type=converter.int_pos,
-        default=1_000_000,
-        help="the size of chunk to read ROOT files",
+        help="the maximum number of workers to fetch metadata and load training set",
     )
     argparser.add_argument(
         "--tree",
         default="Events",
         help="the name of the TTree",
+    )
+    argparser.add_argument(
+        "--train-chunksize",
+        type=converter.int_pos,
+        default=1_000_000,
+        help="the size of chunk to load training set",
+        condition="trainable",
+    )
+    argparser.add_argument(
+        "--eval-base",
+        default="eval",
+        help="the base path to store the evaluation results",
+        condition="evaluable",
+    )
+    argparser.add_argument(
+        "--eval-naming",
+        default=...,
+        help="the rule to name friend tree files for evaluation",
+        condition="evaluable",
     )
 
     def __init__(self):
@@ -97,10 +115,14 @@ class LoadRoot(ABC, Dataset):
         yield self.from_root(), self.files
 
     def train(self):
+        if not self.trainable:
+            raise NotImplementedError(
+                f"{type(self).__name__} does not support training"
+            )
         loader = _load_root(
             *self._from_root(),
             max_workers=self.opts.max_workers,
-            chunksize=self.opts.chunksize,
+            chunksize=self.opts.train_chunksize,
             tree=self.opts.tree,
         )
         loader.to_tensor = self.to_tensor

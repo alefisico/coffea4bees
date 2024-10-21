@@ -33,6 +33,8 @@ def _ttbar_3b_prescale(df: pd.DataFrame):
 
 
 class Train(_picoAOD.Background, Common):
+    trainable = True
+
     argparser = ArgParser()
     argparser.add_argument(
         "--ttbar-3b-prescale",
