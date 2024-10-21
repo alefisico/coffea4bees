@@ -7,7 +7,7 @@ from classifier.config.setting.HCR import Input, Output
 from classifier.config.state.label import MultiClass
 from classifier.task import ArgParser
 
-from ..._HCR import ROC_BIN, HCRTrain, roc_nominal_selection
+from ..._HCR import ROC_BIN, HCREval, HCRTrain, roc_nominal_selection
 
 if TYPE_CHECKING:
     from classifier.ml import BatchType
@@ -49,7 +49,8 @@ class _roc_select_ggF(_roc_select_sig):
 
 
 class Train(HCRTrain):
-    argparser = ArgParser(description="Train with SM ggF signal.")
+    argparser = ArgParser(description="Train SvB with SM ggF signal.")
+    model = "SvB_ggF_baseline"
 
     @staticmethod
     def loss(batch: BatchType):
@@ -118,3 +119,22 @@ class Train(HCRTrain):
                 score="differ",
             ),
         ]
+
+
+class Eval(HCREval):
+    model = "SvB_ggF_baseline"
+
+    @staticmethod
+    def output_interpretation(batch: BatchType):
+        return {
+            "q_1234": ...,
+            "q_1324": ...,
+            "q_1423": ...,
+            "p_ZZ": ...,
+            "p_ZH": ...,
+            "p_ggF": ...,
+            "p_data": ...,
+            "p_ttbar": ...,
+            "p_sig": batch["p_ZZ"] + batch["p_ZH"] + batch["p_ggF"],
+            "p_bkg": batch["p_data"] + batch["p_ttbar"],
+        }

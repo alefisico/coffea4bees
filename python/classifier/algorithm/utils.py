@@ -27,7 +27,7 @@ class Selector:
         self,
         batch: BatchType,
         values: Number | dict[torch.dtype | None, Number] = torch.nan,
-    ):
+    ) -> BatchType:
         length = self._selection.shape[0]
         padded = {}
         for k, v in batch.items():

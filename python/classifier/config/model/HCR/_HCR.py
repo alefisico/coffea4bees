@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Callable, Iterable
 from classifier.config.setting.HCR import Input, Output
 from classifier.task import ArgParser, parse
 
-from .._kfold import KFoldTrain
+from .._kfold import KFoldEval, KFoldTrain
 
 _SCHEDULER = "classifier.config.scheduler"
 
@@ -28,6 +28,7 @@ def roc_nominal_selection(batch: BatchType):
 
 
 class HCRTrain(KFoldTrain):
+    model: str
     loss: Callable[[BatchType], Tensor]
     rocs: Iterable[ROC] = ()
 
@@ -60,7 +61,7 @@ class HCRTrain(KFoldTrain):
     )
 
     def initializer(self, splitter: Splitter, **kwargs):
-        from classifier.ml.HCR import (
+        from classifier.ml.models.HCR import (
             GBNSchedule,
             HCRArch,
             HCRBenchmarks,
@@ -81,5 +82,22 @@ class HCRTrain(KFoldTrain):
             benchmarks=HCRBenchmarks(
                 rocs=self.rocs,
             ),
+            model=self.model,
+            **kwargs,
+        )
+
+
+class HCREval(KFoldEval):
+    model: str
+    output_interpretation: Callable[[BatchType], BatchType]
+
+    def initializer(self, model, splitter, **kwargs):
+        from classifier.ml.models.HCR import HCREvaluation
+
+        return HCREvaluation(
+            saved_model=model,
+            cross_validation=splitter,
+            output_interpretation=self.output_interpretation,
+            model=self.model,
             **kwargs,
         )

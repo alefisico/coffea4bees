@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Generator
 
 import torch
+from classifier.config.setting import torch as cfg
 
 from ..process.device import Device
 from ..typetools import filename
@@ -19,19 +20,22 @@ if TYPE_CHECKING:
 class EvaluationStage(Stage):
     model: Model
     dataset: EvalDatasetLike
-    batch_size: int
     dumper_kwargs: dict[str]
+    batch_size: int = ...
 
     @torch.no_grad()
     def run(self, _):
+        batch_size = self.batch_size
+        if batch_size is ...:
+            batch_size = cfg.DataLoader.batch_eval
         self.model.nn.eval()
-        loader = self.dataset.load(batch_size=self.batch_size, **self.dumper_kwargs)
+        loader = self.dataset.load(batch_size=batch_size, **self.dumper_kwargs)
         for dump, batch in loader:
             dump(self.model.evaluate(batch))
         return {
             "stage": self.stage,
             "name": self.name,
-            "output": loader.result,
+            "output": [*loader.result],
         }
 
 

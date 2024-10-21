@@ -8,10 +8,10 @@ import torch
 import torch.types as tt
 from torch import Tensor
 
-from ..nn.blocks.QCDAE import PlaceholderBlock  # import the actual model here
-from ..nn.schedule import Schedule
-from . import BatchType
-from .training import (
+from ...nn.blocks.QCDAE import PlaceholderBlock  # import the actual model here
+from ...nn.schedule import Schedule
+from .. import BatchType
+from ..training import (
     BenchmarkStage,
     Model,
     MultiStageTraining,

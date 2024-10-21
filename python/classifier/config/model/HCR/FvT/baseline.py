@@ -4,8 +4,9 @@ from typing import TYPE_CHECKING
 
 from classifier.config.setting.HCR import Input, MassRegion, Output
 from classifier.config.state.label import MultiClass
+from classifier.task import ArgParser
 
-from .._HCR import ROC_BIN, HCRTrain, roc_nominal_selection
+from .._HCR import ROC_BIN, HCREval, HCRTrain, roc_nominal_selection
 
 if TYPE_CHECKING:
     from classifier.ml import BatchType
@@ -24,6 +25,9 @@ def _roc_data_selection(batch: BatchType):
 
 
 class Train(HCRTrain):
+    argparser = ArgParser(description="Train FvT")
+    model = "FvT"
+
     @staticmethod
     def loss(batch: BatchType):
         import torch
@@ -75,3 +79,28 @@ class Train(HCRTrain):
                 pos=("t4", "t3"),
             ),
         )
+
+
+class Eval(HCREval):
+    model = "FvT"
+
+    @staticmethod
+    def output_interpretation(batch: BatchType):
+        p_m4 = batch["p_d4"] - batch["p_t4"]
+        p_m3 = batch["p_d3"] - batch["p_t3"]
+        return {
+            "q_1234": ...,
+            "q_1324": ...,
+            "q_1423": ...,
+            "p_d4": ...,
+            "p_d3": ...,
+            "p_t4": ...,
+            "p_t3": ...,
+            "p_m4": p_m4,
+            "p_m3": p_m3,
+            "p_data": batch["p_d4"] + batch["p_d3"],
+            "p_ttbar": batch["p_t4"] + batch["p_t3"],
+            "p_4b": batch["p_d4"] + batch["p_t4"],
+            "p_3b": batch["p_d3"] + batch["p_t3"],
+            "weight": p_m4 / batch["p_d3"],
+        }

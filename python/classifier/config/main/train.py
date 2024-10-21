@@ -50,7 +50,7 @@ class Main(SelectDevice, LoadTrainingSets):
 
         # load datasets in parallel
         datasets = self.load_training_sets(parser)
-        # initialize datasets
+        # initialize models
         models: list[Model] = parser.mods[TaskOptions.model.name]
         timer = datetime.now()
         trainers = [*chain(*(m.train() for m in models))]

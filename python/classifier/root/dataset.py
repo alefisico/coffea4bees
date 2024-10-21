@@ -38,8 +38,8 @@ class FriendTreeEvalDataset(EvalDataset[Friend]):
     def load_chunk(cls, chunk: Chunk) -> BatchType: ...
 
     @classmethod
-    @abstractmethod
-    def dump_chunk(cls, batch: BatchType) -> RecordLike: ...
+    def dump_chunk(cls, batch: BatchType) -> RecordLike:
+        return {k: v.numpy(force=True) for k, v in batch.items()}
 
     def batches(self, batch_size: int, name: str, **_):
         for chunk in Chunk.balance(batch_size, *self.__chunks):

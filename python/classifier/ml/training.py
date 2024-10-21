@@ -8,10 +8,10 @@ from typing import TYPE_CHECKING, Iterable
 
 import torch
 import torch.types as tt
+from classifier.config.setting import torch as cfg
 from torch import Tensor, nn
 from torch.utils.data import Dataset
 
-from ..config.setting import torch as cfg
 from ..monitor.progress import MessageType, Progress
 from ..monitor.usage import Usage
 from ..nn.dataset import simple_loader

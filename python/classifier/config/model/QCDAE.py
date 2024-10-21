@@ -30,7 +30,7 @@ class HCR(WorkInProgress, Model):
     )  # add more arguments as needed
 
     def train(self):
-        from classifier.ml.QCDAE import (
+        from classifier.ml.models.QCDAE import (
             QCDAETraining,
         )
 

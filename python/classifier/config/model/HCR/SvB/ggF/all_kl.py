@@ -12,7 +12,8 @@ if TYPE_CHECKING:
 
 
 class Train(baseline.Train):
-    argparser = ArgParser(description="Train with SM and BSM ggF signals.")
+    argparser = ArgParser(description="Train SvB with SM and BSM ggF signals.")
+    model = "SvB_ggF_all_kl"
 
     @staticmethod
     def loss(batch: BatchType):
@@ -26,3 +27,7 @@ class Train(baseline.Train):
         cross_entropy = F.cross_entropy(c_score, label, reduction="none")
         loss = (cross_entropy * weight).sum() / weight.sum()
         return loss
+
+
+class Eval(baseline.Eval):
+    model = "SvB_ggF_all_kl"

@@ -26,8 +26,10 @@ class _merge_worker(_chunk_processor):
     def __call__(self) -> Friend:
         chain = self.chain.copy().add_chunk(self.chunk)
         data = chain.concat(library="pd", friend_only=True)
-        branches = set(map(lambda x: x[0], data.columns))
-        data = {k: np.nanmean(data.loc[:, k], axis=1) for k in branches}
+        data = {
+            k: np.nanmean(data.loc[:, k], axis=1)
+            for k in data.columns.get_level_values(0)
+        }
         with Friend(name=self.name).auto_dump(
             base_path=self.base_path, naming=self.naming
         ) as friend:

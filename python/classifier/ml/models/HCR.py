@@ -2,31 +2,35 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Callable, Iterable
+from typing import TYPE_CHECKING, Callable, Iterable
 
 import fsspec
 import torch
 import torch.nn.functional as F
 import torch.types as tt
+from classifier.config import setting as cfg
+from classifier.config.scheduler import SkimStep
+from classifier.config.setting.HCR import Input, InputBranch, Output
+from classifier.config.state.label import MultiClass
 from torch import Tensor
 
-from ..algorithm.utils import Selector, to_num
-from ..config import setting as cfg
-from ..config.scheduler import SkimStep
-from ..config.setting.HCR import Input, InputBranch, Output
-from ..config.state.label import MultiClass
-from ..nn.blocks.HCR import HCR
-from ..nn.schedule import MilestoneStep, Schedule
-from . import BatchType
-from .benchmarks.multiclass import ROC
-from .skimmer import Skimmer, Splitter
-from .training import (
+from ...algorithm.utils import Selector, to_num
+from ...nn.blocks.HCR import HCR
+from ...nn.schedule import MilestoneStep, Schedule
+from .. import BatchType
+from ..benchmarks.multiclass import ROC
+from ..evaluation import Evaluation, EvaluationStage
+from ..skimmer import Skimmer, Splitter
+from ..training import (
     BenchmarkStage,
     Model,
     MultiStageTraining,
     OutputStage,
     TrainingStage,
 )
+
+if TYPE_CHECKING:
+    from base_class.system.eos import PathLike
 
 
 @dataclass
@@ -252,9 +256,11 @@ class HCRModelEval(Model):
         device: tt.Device,
         saved: dict[str],
         splitter: Splitter,
+        record: Callable[[BatchType], BatchType],
     ):
         self._device = device
         self._splitter = splitter
+        self._record = record
         self._classes = saved["label"]
         self._nn = HCR(
             dijetFeatures=saved["arch"]["n_features"],
@@ -283,4 +289,38 @@ class HCRModelEval(Model):
         }
         for i, label in enumerate(self._classes):
             output[f"p_{label}"] = c_prob[:, i]
-        return selector.pad(output)
+        record = self._record(batch)
+        for k, v in [*record.items()]:
+            if v is ...:
+                record[k] = output[k]
+        return selector.pad()
+
+
+class HCREvaluation(Evaluation):
+    def __init__(
+        self,
+        saved_model: PathLike,
+        cross_validation: Splitter,
+        output_interpretation: Callable[[BatchType], BatchType],
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self._model = saved_model
+        self._splitter = cross_validation
+        self._record = output_interpretation
+
+    def stages(self):
+        with fsspec.open(self._model, "rb") as f:
+            saved = torch.load(f)
+        self._HCR = HCRModelEval(
+            device=self.device,
+            saved=saved,
+            splitter=self._splitter,
+            record=self._record,
+        )
+        yield EvaluationStage(
+            name="Evaluation",
+            model=self._HCR,
+            dataset=self.dataset,
+            dumper_kwargs={"name": self.name},
+        )
