@@ -10,7 +10,7 @@ from classifier.typetools import enum_dict
 from ...setting.df import Columns
 from ...setting.HCR import Input, InputBranch, MassRegion, NTag
 from ...setting.torch import KFold
-from .._df import LoadGroupedRoot
+from .._root import LoadGroupedRoot
 from . import _group
 
 

@@ -16,55 +16,10 @@ if TYPE_CHECKING:
     from classifier.df.io import FromRoot, ToTensor
     from classifier.df.tools import DFProcessor
 
-# basic
-
-
-class Dataframe(Dataset):
-    def __init__(self):
-        from classifier.df.io import ToTensor
-
-        self._to_tensor = ToTensor()
-        self._preprocessors: list[DFProcessor] = []
-        self._postprocessors: list[DFProcessor] = []
-        self._trainables: list[_load_df] = []
-
-    @property
-    def to_tensor(self):
-        return self._to_tensor
-
-    @property
-    def preprocessors(self):
-        return self._preprocessors
-
-    @property
-    def postprocessors(self):
-        return self._postprocessors
-
-    def train(self):
-        for t in self._trainables:
-            t.to_tensor = self.to_tensor
-            t.postprocessors = self.postprocessors
-        return self._trainables
-
-
-class _load_df(ABC):
-    to_tensor: ToTensor
-    postprocessors: list[DFProcessor]
-
-    def __call__(self):
-        data = self.load()
-        for p in self.postprocessors:
-            data = p(data)
-        return self.to_tensor.tensor(data)
-
-    @abstractmethod
-    def load(self) -> pd.DataFrame: ...
-
-
 # ROOT
 
 
-class LoadRoot(ABC, Dataframe):
+class LoadRoot(ABC, Dataset):
     argparser = ArgParser()
     argparser.add_argument(
         "--files",
@@ -105,6 +60,25 @@ class LoadRoot(ABC, Dataframe):
         help="the name of the TTree",
     )
 
+    def __init__(self):
+        from classifier.df.io import ToTensor
+
+        self._to_tensor = ToTensor()
+        self._preprocessors: list[DFProcessor] = []
+        self._postprocessors: list[DFProcessor] = []
+
+    @property
+    def to_tensor(self):
+        return self._to_tensor
+
+    @property
+    def preprocessors(self):
+        return self._preprocessors
+
+    @property
+    def postprocessors(self):
+        return self._postprocessors
+
     def _parse_files(self, files: list[str], filelists: list[str]) -> list[str]:
         return unique(
             reduce(
@@ -123,15 +97,15 @@ class LoadRoot(ABC, Dataframe):
         yield self.from_root(), self.files
 
     def train(self):
-        self._trainables.append(
-            _load_df_from_root(
-                *self._from_root(),
-                max_workers=self.opts.max_workers,
-                chunksize=self.opts.chunksize,
-                tree=self.opts.tree,
-            )
+        loader = _load_root(
+            *self._from_root(),
+            max_workers=self.opts.max_workers,
+            chunksize=self.opts.chunksize,
+            tree=self.opts.tree,
         )
-        return super().train()
+        loader.to_tensor = self.to_tensor
+        loader.postprocessors = self.postprocessors
+        return [loader]
 
     @cached_property
     def files(self) -> list[str]:
@@ -208,7 +182,10 @@ class _fetch:
         return chunk
 
 
-class _load_df_from_root(_load_df):
+class _load_root:
+    to_tensor: ToTensor
+    postprocessors: list[DFProcessor]
+
     def __init__(
         self,
         *from_root: tuple[FromRoot, list[str]],
@@ -220,6 +197,12 @@ class _load_df_from_root(_load_df):
         self._max_workers = max_workers
         self._chunksize = chunksize
         self._tree = tree
+
+    def __call__(self):
+        data = self.load()
+        for p in self.postprocessors:
+            data = p(data)
+        return self.to_tensor.tensor(data)
 
     def load(self) -> pd.DataFrame:
         from concurrent.futures import ProcessPoolExecutor
