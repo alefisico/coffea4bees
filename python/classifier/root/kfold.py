@@ -103,7 +103,7 @@ class merge_kfolds:
             ) as pool,
         ):
             jobs = []
-            for chunk in Chunk.balance(self._step, targets):
+            for chunk in Chunk.balance(self._step, *targets):
                 job = pool.submit(self._job.new(chunk))
                 job.add_done_callback(result)
                 job.add_done_callback(_update_progress(progress, len(chunk)))

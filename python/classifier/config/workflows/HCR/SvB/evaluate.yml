@@ -3,7 +3,7 @@ main:
   module: evaluate
   option:
     - --max-evaluators 1
-  
+
 dataset:
   - module: HCR.SvB.Eval
     option:
@@ -13,7 +13,7 @@ dataset:
       - root://cmseos.fnal.gov//store/user/{user}/HH4b/friend/friend.json@@HCR_input
       - root://cmseos.fnal.gov//store/user/{user}/HH4b/friend/friend.json@@JCM_weight
       - root://cmseos.fnal.gov//store/user/{user}/HH4b/friend/friend.json@@FvT_weight
-  
+
 model:
   - module: HCR.SvB.ggF.baseline.Eval
     option:
@@ -22,8 +22,7 @@ model:
 analysis:
   - module: kfold.Merge
     option:
-      - --name SvB 
-
+      - --name SvB
 
 setting:
   - module: IO

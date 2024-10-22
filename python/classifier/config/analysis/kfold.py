@@ -18,15 +18,13 @@ class Merge(Analysis):
     )
     argparser.add_argument(
         "--base",
-        default="eval",
+        default="chunks",
         help="the base path to store the evaluation results",
-        condition="evaluable",
     )
     argparser.add_argument(
         "--naming",
         default=...,
         help="the rule to name friend tree files for evaluation",
-        condition="evaluable",
     )
     argparser.add_argument(
         "--step",

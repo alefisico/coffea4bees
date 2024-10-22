@@ -65,7 +65,7 @@ class LoadRoot(ABC, Dataset):
     )
     argparser.add_argument(
         "--eval-base",
-        default="eval",
+        default="chunks",
         help="the base path to store the evaluation results",
         condition="evaluable",
     )
@@ -165,7 +165,9 @@ class LoadRoot(ABC, Dataset):
                 yield FriendTreeEvalDataset(
                     chunks=Chunk.common(*chain(*map(lambda x: x[1], groups))),
                     load_method=_eval_root(
-                        *groups, self.to_tensor, self.postprocessors
+                        *groups,
+                        to_tensor=self.to_tensor,
+                        postprocessors=self.postprocessors,
                     ),
                     dump_base_path=IOSetting.output / self.opts.eval_base,
                     dump_naming=self.opts.eval_naming,
