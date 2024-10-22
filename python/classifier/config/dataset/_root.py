@@ -2,10 +2,9 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from functools import cached_property, reduce
 from itertools import chain
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterable
 
 from base_class.utils import unique
 from classifier.config.main._utils import progress_advance
@@ -149,7 +148,7 @@ class LoadRoot(ABC, Dataset):
                 total=sum(map(lambda x: len(x[1]), from_roots)),
                 msg=("files", "Fetching metadata"),
             ) as progress:
-                datasets = [
+                groups = [
                     (
                         from_root,
                         pool.submit(
@@ -161,15 +160,15 @@ class LoadRoot(ABC, Dataset):
                     )
                     for from_root, files in from_roots
                 ]
-                for from_root, chunks in datasets:
-                    yield FriendTreeEvalDataset(
-                        chunks=chunks,
-                        load_method=_load_root(
-                            self.to_tensor, self.postprocessors, from_root
-                        ),
-                        dump_base_path=IOSetting.output / self.opts.eval_base,
-                        dump_naming=self.opts.eval_naming,
-                    )
+                groups = [(from_root, [*files]) for from_root, files in groups]
+                yield FriendTreeEvalDataset(
+                    chunks=Chunk.common(*chain(*map(lambda x: x[1], groups))),
+                    load_method=_eval_root(
+                        *groups, self.to_tensor, self.postprocessors
+                    ),
+                    dump_base_path=IOSetting.output / self.opts.eval_base,
+                    dump_naming=self.opts.eval_naming,
+                )
 
     @cached_property
     def files(self) -> list[str]:
@@ -330,14 +329,25 @@ class _load_root:
         return df
 
 
-@dataclass
-class _load_root:
-    to_tensor: ToTensor
-    postprocessors: list[DFProcessor]
-    from_root: FromRoot
+class _eval_root:
+    def __init__(
+        self,
+        *from_root: tuple[FromRoot, Iterable[Chunk]],
+        to_tensor: ToTensor,
+        postprocessors: list[DFProcessor],
+    ):
+        self._from_roots: list[FromRoot] = []
+        self._lookup: dict[Chunk, int] = {}
+        for from_root, chunks in from_root:
+            idx = len(self._from_roots)
+            self._from_roots.append(from_root)
+            for chunk in chunks:
+                self._lookup[chunk.key()] = idx
+        self._postprocessors = postprocessors
+        self._to_tensor = to_tensor
 
     def __call__(self, chunk: Chunk):
-        data = self.from_root(chunk)
-        for p in self.postprocessors:
+        data = self._from_roots[self._lookup[chunk]](chunk)
+        for p in self._postprocessors:
             data = p(data)
-        return self.to_tensor.tensor(data)
+        return self._to_tensor.tensor(data)
