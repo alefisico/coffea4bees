@@ -48,9 +48,9 @@ do
     # datacard="combine_"${iclass}
     cd ${datacard_folder}/
     
-    if [ "$impacts" = true ]; then
+    if [ "$limits" = true ]; then
         
-        text2workspace.py ${datacard}.txt -P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel --PO verbose --PO "map=.*/${signallabel}:r${signallabel}[1,-10,10]" \
+        text2workspace.py ${datacard}.txt -P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel --PO verbose --PO "map=.*/${signallabel}:r${signallabel}[1,-20,20]" \
             --PO "map=.*/ggHH_kl_0_kt_1:rggHH_kl_0_kt_1[0,0,0]" \
             --PO "map=.*/ggHH_kl_2p45_kt_1:rggHH_kl_2p45_kt_1[0,0,0]" \
             --PO "map=.*/ggHH_kl_5_kt_1:rggHH_kl_5_kt_1[0,0,0]" 
@@ -78,7 +78,7 @@ do
 
             combineTool.py -M Impacts -d ${datacard}.root -o impacts_combine_${iclass}_exp.json -m 125 -n ${iclass}
 
-            plotImpacts.py -i impacts_combine_${iclass}_exp.json -o impacts_combine_${iclass}_exp_HH --POI r${signallabel} --per-page 20 --left-margin 0.3 --height 400 --label-size 0.04 --translate ../nuisance_names.json
+            plotImpacts.py -i impacts_combine_${iclass}_exp.json -o impacts_combine_${iclass}_exp_HH --POI r${signallabel} --per-page 20 --left-margin 0.3 --height 400 --label-size 0.04 --translate ${currentDir}/nuisance_names.json
         else
             echo "File ${datacard}.root does not exist."
         fi
@@ -86,7 +86,9 @@ do
     elif [ "$postfit" = true ]; then
 
         if [ -f "${datacard}.root" ]; then
-            combine -M MultiDimFit --robustFit 1 -n _${iclass}_fit_s --saveWorkspace --saveFitResult -d ${datacard}.root --setParameters r${signallabel}=1,rggHH_kl_0_kt_1=0,rggHH_kl_2p45_kt_1=0,rggHH_kl_5_kt_1=0
+            combine -M MultiDimFit --robustFit 1 -n _${iclass}_fit_s \
+            --saveWorkspace --saveFitResult -d ${datacard}.root \
+            --setParameters r${signallabel}=1,rggHH_kl_0_kt_1=0,rggHH_kl_2p45_kt_1=0,rggHH_kl_5_kt_1=0
 
             PostFitShapesFromWorkspace -w higgsCombine_${iclass}_fit_s.MultiDimFit.mH120.root -f multidimfit_${iclass}_fit_s.root:fit_mdf --total-shapes --postfit --output postfit_s.root
 

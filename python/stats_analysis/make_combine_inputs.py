@@ -1,5 +1,4 @@
 import os, sys
-from typing import OrderedDict
 import ROOT
 import argparse
 import logging
@@ -7,7 +6,6 @@ import json
 import yaml
 import numpy as np
 import pickle
-import pandas as pd
 from copy import copy, deepcopy
 from convert_json_to_root import json_to_TH1
 import CombineHarvester.CombineTools.ch as ch
