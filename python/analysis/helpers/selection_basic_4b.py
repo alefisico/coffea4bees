@@ -359,7 +359,6 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
     quadJet["ZZSR"] = quadJet.xZZ < max_xZZ
     quadJet["ZHSR"] = quadJet.xZH < max_xZH
     quadJet["HHSR"] = ((quadJet.xHH < max_xHH) & selev.notInBoostedSel ) if 'notInBoostedSel' in selev.fields else (quadJet.xHH < max_xHH)  ## notInBoostedSel is true by default
-    print(quadJet[])
     quadJet["SR"] = quadJet.ZZSR | quadJet.ZHSR | quadJet.HHSR
     quadJet["SB"] = quadJet.passDiJetMass & ~quadJet.SR
 
