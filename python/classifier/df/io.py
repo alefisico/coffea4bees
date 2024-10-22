@@ -29,7 +29,7 @@ class FromRoot:
         if friends:
             self.chain += friends
 
-    def read(self, chunk: Chunk) -> Optional[pd.DataFrame]:
+    def __call__(self, chunk: Chunk) -> Optional[pd.DataFrame]:
         chain = self.chain.copy().add_chunk(chunk)
         df = chain.concat(library="pd", reader_options={"branch_filter": self.branches})
         for preprocessor in self.preprocessors:

@@ -302,7 +302,7 @@ class _load_root:
                         *(
                             pool.submit(
                                 executor,
-                                self._from_root[i][0].read,
+                                self._from_root[i][0],
                                 Chunk.balance(
                                     self._chunksize,
                                     *chunks[i],
