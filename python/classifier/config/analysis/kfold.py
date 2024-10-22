@@ -14,18 +14,6 @@ class Merge(Analysis):
         default=None,
     )
     argparser.add_argument(
-        "--step",
-        type=converter.int_pos,
-        default=sys.maxsize,
-        help="the number of entries for each chunk",
-    )
-    argparser.add_argument(
-        "--workers",
-        type=converter.int_pos,
-        default=1,
-        help="the number of workers to run in parallel",
-    )
-    argparser.add_argument(
         "--base",
         default="eval",
         help="the base path to store the evaluation results",
@@ -36,6 +24,18 @@ class Merge(Analysis):
         default=...,
         help="the rule to name friend tree files for evaluation",
         condition="evaluable",
+    )
+    argparser.add_argument(
+        "--step",
+        type=converter.int_pos,
+        default=sys.maxsize,
+        help="the number of entries for each chunk",
+    )
+    argparser.add_argument(
+        "--workers",
+        type=converter.int_pos,
+        default=1,
+        help="the number of workers to run in parallel",
     )
     argparser.add_argument(
         "--clean",

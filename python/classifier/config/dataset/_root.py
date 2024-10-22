@@ -127,7 +127,7 @@ class LoadRoot(ABC, Dataset):
         loader.postprocessors = self.postprocessors
         return [loader]
 
-    def eval(self):
+    def evaluate(self):
         if not self.evaluable:
             raise NotImplementedError(
                 f"{type(self).__name__} does not support evaluation"

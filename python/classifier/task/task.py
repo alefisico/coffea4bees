@@ -108,7 +108,7 @@ class Task(TaskBase):
 
     def __init_subclass__(cls):
         defaults, parents, kwargs, conditionals = [], [], {}, []
-        for base in cls.__bases__:
+        for base in cls.__bases__[::-1]:
             if issubclass(base, Task):
                 if base.argparser is not NotImplemented:
                     conditionals.extend(base.argparser._conditionals)

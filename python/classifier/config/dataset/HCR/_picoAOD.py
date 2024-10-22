@@ -18,6 +18,7 @@ class _PicoAOD(Dataset):
         default=["datasets_HH4b"],
         help="names of the metadata files.",
     )
+    defaults = {"files": []}
 
     def __init__(self):
         super().__init__()

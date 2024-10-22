@@ -1,9 +1,9 @@
-# template: tag
+# template: tag, lpcuser, cernuser
 main:
   module: analyze
   option:
     - --results 
-    - root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/classifier/SvB/train/{tag}/result.json
+    - root://cmseos.fnal.gov//store/user/{lpcuser}/HH4b/classifier/SvB/train/{tag}/result.json
 
 analysis:
   - module: HCR.LossROC
@@ -11,5 +11,5 @@ analysis:
 setting:
   - module: IO
     option:
-      - output: root://eosuser.cern.ch//eos/user/c/chuyuan/www/HH4b/classifier/SvB/
+      - output: root://eosuser.cern.ch//eos/user/{cernuser}/www/HH4b/classifier/SvB/
         report: {tag}

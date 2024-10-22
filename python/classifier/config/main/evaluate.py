@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import operator as op
 from datetime import datetime
@@ -58,9 +60,11 @@ class Main(SelectDevice, main.Main):
         # prepare datasets
         tasks: list[Dataset] = parser.tasks[TaskOptions.dataset.name]
         timer = datetime.now()
-        loaders = [*chain(*(t.evaluate() for t in tasks))]
-        datasets: EvalDatasetLike = reduce(op.add, map(lambda x: x(), loaders))
-        logging.info(f"Initialized {len(loaders)} datasets in {datetime.now() - timer}")
+        datasets = [*chain(*(t.evaluate() for t in tasks))]
+        dataset: EvalDatasetLike = reduce(op.add, datasets)
+        logging.info(
+            f"Initialized {len(datasets)} datasets in {datetime.now() - timer}"
+        )
         # initialize models
         models: list[Dataset] = parser.tasks[TaskOptions.model.name]
         timer = datetime.now()
@@ -71,7 +75,7 @@ class Main(SelectDevice, main.Main):
         # evaluate models in parallel
         with (
             ProcessPoolExecutor(
-                max_workers=self.opts.max_trainers,
+                max_workers=self.opts.max_evaluators,
                 mp_context=status.context,
                 initializer=status.initializer,
             ) as executor,
@@ -82,7 +86,7 @@ class Main(SelectDevice, main.Main):
             results = [
                 *pool.submit(
                     executor,
-                    _eval_model(self.device, datasets),
+                    _eval_model(self.device, dataset),
                     evaluators,
                     callbacks=[lambda _: progress_advance(progress)],
                 )
