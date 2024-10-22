@@ -228,6 +228,7 @@ python/stats_analysis/old*
 python/stats_analysis/tmp*
 python/stats_analysis/hists/
 python/stats_analysis/workflow*
+python/stats_analysis/inference/data/
 python/hists/
 
 python/analysis/testJCM_Coffea/

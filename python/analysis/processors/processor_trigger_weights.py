@@ -78,9 +78,7 @@ class analysis(processor.ProcessorABC):
                                            doLeptonRemoval=self.config["do_lepton_jet_cleaning"] )
 
         create_cand_jet_dijet_quadjet( event, event.event,
-                                      isMC = self.config["isMC"],
                                       apply_FvT=False,
-                                      apply_boosted_veto=False,
                                       run_SvB=False,
                                       run_systematics=False,
                                       classifier_SvB=None,

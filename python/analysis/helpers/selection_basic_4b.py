@@ -236,9 +236,7 @@ def apply_object_selection_boosted_4b( event ):
     return event
 
 def create_cand_jet_dijet_quadjet( selev, event_event,
-                                   isMC:bool = False,
                                    apply_FvT:bool = False,
-                                   apply_boosted_veto:bool = False,
                                    run_SvB:bool = False,
                                    run_systematics:bool = False,
                                    classifier_SvB = None,
@@ -360,7 +358,7 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
     max_xHH = 1.9
     quadJet["ZZSR"] = quadJet.xZZ < max_xZZ
     quadJet["ZHSR"] = quadJet.xZH < max_xZH
-    quadJet["HHSR"] = ((quadJet.xHH < max_xHH) & selev.vetoBoostedSel ) if apply_boosted_veto else (quadJet.xHH < max_xHH)
+    quadJet["HHSR"] = ((quadJet.xHH < max_xHH) & selev.notInBoostedSel ) if 'notInBoostedSel' in selev.fields else (quadJet.xHH < max_xHH)  ## notInBoostedSel is true by default
     quadJet["SR"] = quadJet.ZZSR | quadJet.ZHSR | quadJet.HHSR
     quadJet["SB"] = quadJet.passDiJetMass & ~quadJet.SR
 
