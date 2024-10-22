@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from concurrent.futures import Future, ProcessPoolExecutor, wait
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -9,7 +9,6 @@ from base_class.root import Chain, Chunk, Friend
 
 from ..monitor.progress import Progress, ProgressTracker
 from ..process import status
-from .dataset import _chunk_processor
 
 if TYPE_CHECKING:
     from base_class.root.chain import NameMapping
@@ -17,11 +16,15 @@ if TYPE_CHECKING:
 
 
 @dataclass(kw_only=True)
-class _merge_worker(_chunk_processor):
+class _merge_worker:
+    chunk: Chunk = None
     chain: Chain
     name: str
     base_path: PathLike
     naming: str | NameMapping
+
+    def new(self, chunk: Chunk):
+        return replace(self, chunk=chunk)
 
     def __call__(self) -> Friend:
         chain = self.chain.copy().add_chunk(self.chunk)
@@ -109,4 +112,7 @@ class merge_kfolds:
             if self._clean:
                 for friend in self._friends:
                     friend.reset(confirm=False, executor=pool)
-        return {"merged": result.friend, "clean": self._clean}
+        output = {"merged": result.friend}
+        if not self._clean:
+            output["original"] = [*self._friends]
+        return output

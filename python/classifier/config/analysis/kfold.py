@@ -1,4 +1,7 @@
+import operator as op
 import sys
+from collections import defaultdict
+from functools import reduce
 from typing import Iterable
 
 from classifier.task import Analysis, ArgParser, converter
@@ -38,6 +41,11 @@ class Merge(Analysis):
         help="the number of workers to run in parallel",
     )
     argparser.add_argument(
+        "--stage",
+        default=...,
+        help="the name of the evaluation stage to merge",
+    )
+    argparser.add_argument(
         "--clean",
         action="store_true",
         help="remove the original friend trees after merging",
@@ -57,19 +65,27 @@ class Merge(Analysis):
                 if not isinstance(outputs, Iterable):
                     continue
                 for output in outputs:
-                    if output.get("stage") != "Evaluation":
+                    if (output.get("stage") != "Evaluation") or (
+                        (self.opts.stage is not ...)
+                        and (output.get("name") != self.opts.stage)
+                    ):
                         continue
                     friends: dict = output.get("output")
                     if not isinstance(friends, Iterable):
                         continue
+                    datasets: dict[str, list[Friend]] = defaultdict(list)
                     for friend in friends:
+                        dataset = None
                         if isinstance(friend, Friend):
-                            kfolds.append(friend)
+                            dataset = friend
                         else:
                             try:
-                                kfolds.append(Friend.from_json(friend))
+                                dataset = Friend.from_json(friend)
                             except Exception:
                                 ...
+                        if dataset is not None:
+                            datasets[dataset.name].append(dataset)
+                    kfolds.extend(reduce(op.add, v) for v in datasets.values())
 
         if len(kfolds) > 1:
             return [
