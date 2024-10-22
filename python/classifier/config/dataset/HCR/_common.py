@@ -24,7 +24,47 @@ def _sort_map(obj: dict[frozenset[str]]):
     return {k: obj[k] for k in sorted(obj)}
 
 
-class CommonTrain(LoadGroupedRoot):
+class Common(LoadGroupedRoot):
+    @cache
+    def from_root(self, groups: frozenset[str]):
+        from classifier.df.io import FromRoot
+
+        friends = []
+        for k, v in self.friends.items():
+            if k <= groups:
+                friends.extend(v)
+
+        pres = []
+        for g in self._preprocess_by_group:
+            pres.extend(g(groups))
+        pres.extend(self.preprocessors)
+
+        return FromRoot(
+            friends=friends,
+            branches=self._branches.intersection,
+            preprocessors=pres,
+        )
+
+    @cached_property
+    def _preprocess_by_group(self):
+        return self.preprocess_by_group()
+
+    @abstractmethod
+    def preprocess_by_group(self) -> Iterable[_group.ProcessorGenerator]: ...
+
+    @cached_property
+    def _branches(self):
+        return self.other_branches().union(
+            InputBranch.feature_ancillary,
+            InputBranch.feature_CanJet,
+            InputBranch.feature_NotCanJet,
+        )
+
+    @abstractmethod
+    def other_branches(self) -> set[str]: ...
+
+
+class CommonTrain(Common):
     trainable = True
 
     def __init__(self):
@@ -58,41 +98,6 @@ class CommonTrain(LoadGroupedRoot):
             ]
         )
         # fmt: on
-
-    @cache
-    def from_root(self, groups: frozenset[str]):
-        from classifier.df.io import FromRoot
-
-        friends = []
-        for k, v in self.friends.items():
-            if k <= groups:
-                friends.extend(v)
-
-        pres = []
-        for g in self._preprocess_by_group:
-            pres.extend(g(groups))
-        pres.extend(self.preprocessors)
-
-        return FromRoot(
-            friends=friends,
-            branches=self._branches.intersection,
-            preprocessors=pres,
-        )
-
-    @cached_property
-    def _preprocess_by_group(self):
-        return self.preprocess_by_group()
-
-    @cached_property
-    def _branches(self):
-        return self.other_branches().union(
-            InputBranch.feature_ancillary,
-            InputBranch.feature_CanJet,
-            InputBranch.feature_NotCanJet,
-        )
-
-    @abstractmethod
-    def preprocess_by_group(self) -> Iterable[_group.ProcessorGenerator]: ...
 
     def other_branches(self):
         return {
@@ -128,7 +133,7 @@ class CommonTrain(LoadGroupedRoot):
         logging.debug("tensor:", pretty_repr(self.to_tensor._columns))
 
 
-class CommonEval(LoadGroupedRoot):
+class CommonEval(Common):
     evaluable = True
 
     def __init__(self):
@@ -144,27 +149,15 @@ class CommonEval(LoadGroupedRoot):
         )
         # fmt: on
 
-    @cache
-    def from_root(self, groups: frozenset[str]):
-        from classifier.df.io import FromRoot
+    def other_branches(self):
+        return {
+            Columns.event,
+        }
 
-        friends = []
-        for k, v in self.friends.items():
-            if k <= groups:
-                friends.extend(v)
-
-        return FromRoot(
-            friends=friends,
-            branches=self._branches.intersection,
-        )
-
-    @cached_property
-    def _branches(self):
-        return set().union(
-            InputBranch.feature_ancillary,
-            InputBranch.feature_CanJet,
-            InputBranch.feature_NotCanJet,
-        )
+    def preprocess_by_group(self):
+        return [
+            _group.add_year(),
+        ]
 
     def debug(self):
         import logging

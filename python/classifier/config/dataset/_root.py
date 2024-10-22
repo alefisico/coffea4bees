@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from functools import cached_property, reduce
 from itertools import chain
 from typing import TYPE_CHECKING
@@ -14,7 +15,7 @@ from ..setting import IO as IOSetting
 
 if TYPE_CHECKING:
     import pandas as pd
-    from base_class.root import Friend
+    from base_class.root import Chunk, Friend
     from classifier.df.io import FromRoot, ToTensor
     from classifier.df.tools import DFProcessor
 
@@ -138,19 +139,19 @@ class LoadRoot(ABC, Dataset):
         from classifier.process import pool, status
         from classifier.root.dataset import FriendTreeEvalDataset
 
-        _from_root = [*self._from_root()]
+        from_roots = [*self._from_root()]
         with ProcessPoolExecutor(
             max_workers=self.opts.max_workers,
             mp_context=status.context,
             initializer=status.initializer,
         ) as executor:
             with Progress.new(
-                total=sum(map(lambda x: len(x[1]), _from_root)),
+                total=sum(map(lambda x: len(x[1]), from_roots)),
                 msg=("files", "Fetching metadata"),
             ) as progress:
                 datasets = [
                     (
-                        loader,
+                        from_root,
                         pool.submit(
                             executor,
                             _fetch(tree=self.opts.tree),
@@ -158,12 +159,14 @@ class LoadRoot(ABC, Dataset):
                             callbacks=[lambda _: progress_advance(progress)],
                         ),
                     )
-                    for loader, files in _from_root
+                    for from_root, files in from_roots
                 ]
-                for loader, chunks in datasets:
+                for from_root, chunks in datasets:
                     yield FriendTreeEvalDataset(
                         chunks=chunks,
-                        load_method=loader,
+                        load_method=_load_root(
+                            self.to_tensor, self.postprocessors, from_root
+                        ),
                         dump_base_path=IOSetting.output / self.opts.eval_base,
                         dump_naming=self.opts.eval_naming,
                     )
@@ -325,3 +328,16 @@ class _load_root:
             f"columns: {sorted(df.columns)}",
         )
         return df
+
+
+@dataclass
+class _load_root:
+    to_tensor: ToTensor
+    postprocessors: list[DFProcessor]
+    from_root: FromRoot
+
+    def __call__(self, chunk: Chunk):
+        data = self.from_root(chunk)
+        for p in self.postprocessors:
+            data = p(data)
+        return self.to_tensor.tensor(data)

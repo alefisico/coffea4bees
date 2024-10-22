@@ -314,6 +314,7 @@ class HCREvaluation(Evaluation):
             splitter=self._splitter,
             mapping=self._mapping,
         )
+        self._HCR.to(self.device)
         yield EvaluationStage(
             name="Evaluation",
             model=self._HCR,
