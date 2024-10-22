@@ -1,5 +1,5 @@
 # template:
-# - user: username, usually ${USER}
+# - user: username, usually $USER
 # - dataset: name of the dataset (only used in the directory name)
 
 dataset:

@@ -1,5 +1,5 @@
 # template:
-# - user: username, usually ${USER}
+# - user: username, usually $USER
 # - cernuser: CERN username in the format of "INITIAL/USERNAME" e.g. c/chuyuan
 # - tag: name of the model (only used in the directory name)
 
