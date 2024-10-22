@@ -1,4 +1,7 @@
-# template: tag, offset
+# template:
+# - tag: name of the model (only used in the directory name)
+# - offset: offset of the random seed e.g. 1-15
+
 main:
   module: train
   option:

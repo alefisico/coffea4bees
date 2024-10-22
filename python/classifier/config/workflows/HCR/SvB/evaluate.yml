@@ -1,4 +1,7 @@
-# template: tag, user
+# template:
+# - user: username, usually ${USER}
+# - tag: name of the model (only used in the directory name)
+
 main:
   module: evaluate
   option:
@@ -25,6 +28,7 @@ analysis:
   - module: kfold.Merge
     option:
       - --name SvB
+      - --workers 8
 
 setting:
   - module: IO

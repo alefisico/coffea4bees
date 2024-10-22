@@ -1,4 +1,8 @@
-# template: user, norm, dataset
+# template:
+# - user: username, usually ${USER}
+# - norm: total normalization of all signals
+# - dataset: name of the dataset (only used in the directory name)
+
 main:
   module: cache
   option:

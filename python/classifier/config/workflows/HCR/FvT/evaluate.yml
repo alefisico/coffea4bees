@@ -1,4 +1,7 @@
-# template: tag, user
+# template:
+# - user: username, usually ${USER}
+# - tag: name of the model (only used in the directory name)
+
 main:
   module: evaluate
   option:
