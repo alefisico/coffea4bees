@@ -134,6 +134,7 @@ class LoadRoot(ABC, Dataset):
             )
         from concurrent.futures import ProcessPoolExecutor
 
+        from base_class.root import Chunk
         from classifier.monitor.progress import Progress
         from classifier.process import pool, status
         from classifier.root.dataset import FriendTreeEvalDataset

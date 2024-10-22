@@ -1,9 +1,9 @@
-# template: tag, lpcuser, cernuser
+# template: tag, user, cernuser
 main:
   module: analyze
   option:
     - --results 
-    - root://cmseos.fnal.gov//store/user/{lpcuser}/HH4b/classifier/SvB/train/{tag}/result.json
+    - root://cmseos.fnal.gov//store/user/{user}/HH4b/classifier/SvB/train/{tag}/result.json
 
 analysis:
   - module: HCR.LossROC
