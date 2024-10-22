@@ -44,23 +44,20 @@ class FriendTreeEvalDataset(EvalDataset[Friend]):
 
 
 @dataclass(kw_only=True)
-class _chunk_processor:
+class _chunk_loader:
     chunk: Chunk = None
-
-    def new(self, chunk: Chunk, name: str):
-        return replace(self, chunk=chunk, name=name)
-
-
-@dataclass(kw_only=True)
-class _chunk_loader(_chunk_processor):
     method: Callable[[Chunk], BatchType]
 
     def __call__(self) -> BatchType:
         return self.method(self.chunk)
 
+    def new(self, chunk: Chunk):
+        return replace(self, chunk=chunk)
+
 
 @dataclass(kw_only=True)
-class _chunk_dumper(_chunk_processor):
+class _chunk_dumper:
+    chunk: Chunk = None
     method: Callable[[BatchType], RecordLike]
     base_path: PathLike
     naming: str | NameMapping
@@ -75,3 +72,6 @@ class _chunk_dumper(_chunk_processor):
         ) as friend:
             friend.add(self.chunk, self.method(batch))
             return friend
+
+    def new(self, chunk: Chunk, name: str):
+        return replace(self, chunk=chunk, name=name)

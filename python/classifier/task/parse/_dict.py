@@ -75,7 +75,11 @@ def _deserialize_file(path: str, formatter: str):
         with fsspec.open(path, "rt") as f:
             data = f.read()
             if formatter is not None:
-                data = data.format(**mapping(formatter))
+                try:
+                    data = data.format(**mapping(formatter))
+                except Exception as e:
+                    logging.error(exc_info=e)
+                    raise
             return _deserialize(data, protocol)
     except Exception:
         raise DeserializationError(f'Failed to read file "{path}"')
