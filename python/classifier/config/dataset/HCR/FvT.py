@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from classifier.task import ArgParser
 
 from . import _group, _picoAOD
-from ._common import Common
+from ._common import CommonEval, CommonTrain
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -32,9 +32,7 @@ def _ttbar_3b_prescale(df: pd.DataFrame):
     return df["threeTag"]
 
 
-class Train(_picoAOD.Background, Common):
-    trainable = True
-
+class Train(_picoAOD.Background, CommonTrain):
     argparser = ArgParser()
     argparser.add_argument(
         "--ttbar-3b-prescale",
@@ -71,3 +69,6 @@ class Train(_picoAOD.Background, Common):
             ),
             _group.add_year(),
         ]
+
+
+class Eval(_picoAOD.Background, CommonEval): ...

@@ -85,7 +85,7 @@ class Eval(HCREval):
     model = "FvT"
 
     @staticmethod
-    def output_interpretation(batch: BatchType):
+    def output_definition(batch: BatchType):
         p_m4 = batch["p_d4"] - batch["p_t4"]
         p_m3 = batch["p_d3"] - batch["p_t3"]
         return {

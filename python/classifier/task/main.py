@@ -94,10 +94,10 @@ class EntryPoint:
         return import_(*cls._fetch_module_name(module, key), raise_error)
 
     def _fetch_all(self, *cats: str):
-        self.mods: dict[str, list[Task]] = {}
+        self.tasks: dict[str, list[Task]] = {}
         for cat in cats:
             target = self._tasks[cat]
-            self.mods[cat] = []
+            self.tasks[cat] = []
             for imp, opts in self.args[cat]:
                 _, clsname = self._fetch_module_name(imp, cat)
                 _, cls = self._fetch_module(imp, cat, True)
@@ -106,7 +106,7 @@ class EntryPoint:
                         f'Class "{clsname}" is not a subclass of "{target.__name__}"'
                     )
                 else:
-                    self.mods[cat].append(new(cls, opts))
+                    self.tasks[cat].append(new(cls, opts))
 
     @classmethod
     def _expand_module(cls, data: dict):

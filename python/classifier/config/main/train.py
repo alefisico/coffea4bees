@@ -28,7 +28,7 @@ class _train_model:
 class Main(SelectDevice, LoadTrainingSets):
     argparser = ArgParser(
         prog="train",
-        description="Train multiple models using one dataset.",
+        description="Train multiple models with the same dataset.",
         workflow=[
             *LoadTrainingSets._workflow,
             ("main", "[blue]\[trainer, ...]=model.train()[/blue] initialize models"),
@@ -51,7 +51,7 @@ class Main(SelectDevice, LoadTrainingSets):
         # load datasets in parallel
         datasets = self.load_training_sets(parser)
         # initialize models
-        models: list[Model] = parser.mods[TaskOptions.model.name]
+        models: list[Model] = parser.tasks[TaskOptions.model.name]
         timer = datetime.now()
         trainers = [*chain(*(m.train() for m in models))]
         logging.info(f"Initialized {len(trainers)} models in {datetime.now() - timer}")

@@ -14,7 +14,7 @@ from classifier.config.setting.HCR import Input, InputBranch, Output
 from classifier.config.state.label import MultiClass
 from torch import Tensor
 
-from ...algorithm.utils import Selector, to_num
+from ...algorithm.utils import Selector, map_batch, to_num
 from ...nn.blocks.HCR import HCR
 from ...nn.schedule import MilestoneStep, Schedule
 from .. import BatchType
@@ -256,11 +256,11 @@ class HCRModelEval(Model):
         device: tt.Device,
         saved: dict[str],
         splitter: Splitter,
-        record: Callable[[BatchType], BatchType],
+        mapping: Callable[[BatchType], BatchType],
     ):
         self._device = device
         self._splitter = splitter
-        self._record = record
+        self._mapping = mapping
         self._classes = saved["label"]
         self._nn = HCR(
             dijetFeatures=saved["arch"]["n_features"],
@@ -289,11 +289,7 @@ class HCRModelEval(Model):
         }
         for i, label in enumerate(self._classes):
             output[f"p_{label}"] = c_prob[:, i]
-        record = self._record(batch)
-        for k, v in [*record.items()]:
-            if v is ...:
-                record[k] = output[k]
-        return selector.pad()
+        return selector.pad(map_batch(self._mapping, output))
 
 
 class HCREvaluation(Evaluation):
@@ -301,13 +297,13 @@ class HCREvaluation(Evaluation):
         self,
         saved_model: PathLike,
         cross_validation: Splitter,
-        output_interpretation: Callable[[BatchType], BatchType],
+        output_definition: Callable[[BatchType], BatchType],
         **kwargs,
     ):
         super().__init__(**kwargs)
         self._model = saved_model
         self._splitter = cross_validation
-        self._record = output_interpretation
+        self._mapping = output_definition
 
     def stages(self):
         with fsspec.open(self._model, "rb") as f:
@@ -316,7 +312,7 @@ class HCREvaluation(Evaluation):
             device=self.device,
             saved=saved,
             splitter=self._splitter,
-            record=self._record,
+            mapping=self._mapping,
         )
         yield EvaluationStage(
             name="Evaluation",

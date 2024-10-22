@@ -8,7 +8,7 @@ from classifier.config.setting.df import Columns
 from classifier.task import ArgParser, converter
 
 from . import _group, _picoAOD
-from ._common import Common
+from ._common import CommonEval, CommonTrain
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -59,9 +59,7 @@ def _remove_outlier(df: pd.DataFrame):
     return df.loc[df["weight"] < 1]
 
 
-class _Train(Common):
-    trainable = True
-
+class _Train(CommonTrain):
     argparser = ArgParser()
     argparser.add_argument(
         "--regions",
@@ -117,7 +115,7 @@ class Background(_picoAOD.Background, _Train):
         return df
 
 
-class Signal(_picoAOD.Signal, _Train):
+class Signal(_picoAOD.Signal_ggF, _Train):
     def __init__(self):
         super().__init__()
         self.postprocessors.append(self.normalize)
@@ -133,3 +131,6 @@ class Signal(_picoAOD.Signal, _Train):
         )
         df.loc[:, "weight"] = group["weight"].transform(lambda x: x / x.sum())
         return df
+
+
+class Eval(_picoAOD.Background, _picoAOD.Signal_ggF, CommonEval): ...

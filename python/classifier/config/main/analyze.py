@@ -53,7 +53,7 @@ def run_analyzer(parser: EntryPoint, results: list[dict]):
     from classifier.monitor.progress import Progress
     from classifier.process import pool, status
 
-    analysis: list[Analysis] = parser.mods[TaskOptions.analysis.name]
+    analysis: list[Analysis] = parser.tasks[TaskOptions.analysis.name]
     analyzers = [*chain(*(a.analyze(results) for a in analysis))]
     if not analyzers:
         return None

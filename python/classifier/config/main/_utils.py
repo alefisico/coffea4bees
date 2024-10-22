@@ -64,8 +64,8 @@ class LoadTrainingSets(Main):
         from torch.utils.data import ConcatDataset, StackDataset
 
         # load datasets in parallel
-        mods: list[Dataset] = parser.mods[TaskOptions.dataset.name]
-        loaders = [*chain(*(k.train() for k in mods))]
+        tasks: list[Dataset] = parser.tasks[TaskOptions.dataset.name]
+        loaders = [*chain(*(k.train() for k in tasks))]
         if len(loaders) == 0:
             raise ValueError("No dataset to load")
         logging.info(f"Loading {len(loaders)} datasets")

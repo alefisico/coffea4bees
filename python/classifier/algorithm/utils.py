@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from numbers import Number
+from typing import Callable
 
 import numpy.typing as npt
 import torch
@@ -41,3 +42,11 @@ class Selector:
             new[self._selection] = v
             padded[k] = new
         return padded
+
+
+def map_batch(mapping: Callable[[BatchType], BatchType], batch: BatchType) -> BatchType:
+    new = mapping(batch)
+    for k, v in new.items():
+        if v is ...:
+            new[k] = batch[k]
+    return new

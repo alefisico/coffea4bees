@@ -1,12 +1,15 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
+from inspect import getmro
+from typing import Callable, Iterable
 
 from classifier.config.setting.cms import CollisionData, MC_HH_ggF, MC_TTbar
 from classifier.task import ArgParser, Dataset
 
 
-class _PicoAOD(ABC, Dataset):
+class _PicoAOD(Dataset):
+    datasets: Iterable[Callable[[str], Iterable[list[str]]]]
+
     argparser = ArgParser()
     argparser.remove_argument("--files", "--filelists")
     argparser.add_argument(
@@ -27,8 +30,15 @@ class _PicoAOD(ABC, Dataset):
                 )
             )
 
-    @abstractmethod
-    def _filelists(self, metadata: str) -> list[list[str]]: ...
+    def _filelists(self, metadata: str):
+        filelists = []
+        for base in getmro(self.__class__):
+            if issubclass(base, _PicoAOD) and (
+                (datasets := vars(base).get("datasets")) is not None
+            ):
+                for dataset in datasets:
+                    filelists.extend(dataset(metadata))
+        return filelists
 
 
 def _ttbar(metadata: str):
@@ -113,10 +123,8 @@ class _ggF:
 
 
 class Background(_PicoAOD):
-    def _filelists(self, metadata: str):
-        return sum(map(lambda func: func(metadata), [_ttbar, _data]), [])
+    datasets = (_ttbar, _data)
 
 
-class Signal(_PicoAOD):
-    def _filelists(self, metadata: str):
-        return sum(map(lambda func: func(metadata), [_ZZ_ZH, _ggF]), [])
+class Signal_ggF(_PicoAOD):
+    datasets = (_ZZ_ZH, _ggF)

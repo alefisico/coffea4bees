@@ -89,7 +89,7 @@ class HCRTrain(KFoldTrain):
 
 class HCREval(KFoldEval):
     model: str
-    output_interpretation: Callable[[BatchType], BatchType]
+    output_definition: Callable[[BatchType], BatchType]
 
     def initializer(self, model, splitter, **kwargs):
         from classifier.ml.models.HCR import HCREvaluation
@@ -97,7 +97,7 @@ class HCREval(KFoldEval):
         return HCREvaluation(
             saved_model=model,
             cross_validation=splitter,
-            output_interpretation=self.output_interpretation,
+            output_definition=self.output_definition,
             model=self.model,
             **kwargs,
         )

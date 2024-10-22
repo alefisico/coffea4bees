@@ -18,8 +18,6 @@ if TYPE_CHECKING:
     from classifier.df.io import FromRoot, ToTensor
     from classifier.df.tools import DFProcessor
 
-# ROOT
-
 
 class LoadRoot(ABC, Dataset):
     trainable: bool = False
@@ -128,6 +126,47 @@ class LoadRoot(ABC, Dataset):
         loader.to_tensor = self.to_tensor
         loader.postprocessors = self.postprocessors
         return [loader]
+
+    def eval(self):
+        if not self.evaluable:
+            raise NotImplementedError(
+                f"{type(self).__name__} does not support evaluation"
+            )
+        from concurrent.futures import ProcessPoolExecutor
+
+        from classifier.monitor.progress import Progress
+        from classifier.process import pool, status
+        from classifier.root.dataset import FriendTreeEvalDataset
+
+        _from_root = [*self._from_root()]
+        with ProcessPoolExecutor(
+            max_workers=self.opts.max_workers,
+            mp_context=status.context,
+            initializer=status.initializer,
+        ) as executor:
+            with Progress.new(
+                total=sum(map(lambda x: len(x[1]), _from_root)),
+                msg=("files", "Fetching metadata"),
+            ) as progress:
+                datasets = [
+                    (
+                        loader,
+                        pool.submit(
+                            executor,
+                            _fetch(tree=self.opts.tree),
+                            files,
+                            callbacks=[lambda _: progress_advance(progress)],
+                        ),
+                    )
+                    for loader, files in _from_root
+                ]
+                for loader, chunks in datasets:
+                    yield FriendTreeEvalDataset(
+                        chunks=chunks,
+                        load_method=loader,
+                        dump_base_path=IOSetting.output / self.opts.eval_base,
+                        dump_naming=self.opts.eval_naming,
+                    )
 
     @cached_property
     def files(self) -> list[str]:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from concurrent.futures import Future, ProcessPoolExecutor
+from concurrent.futures import Future, ProcessPoolExecutor, wait
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -71,9 +71,9 @@ class merge_kfolds:
         friend_name: str,
         dump_base_path: PathLike,
         dump_naming: str | NameMapping = ...,
+        clean: bool = False,
     ):
-        # assume all friend trees have the same structure
-        self._targets = [*friends[0].targets]
+        self._friends = friends
         self._job = _merge_worker(
             chain=Chain().add_friend(*friends, renaming=self._rename_column),
             name=friend_name,
@@ -82,12 +82,15 @@ class merge_kfolds:
         )
         self._step = step
         self._workers = workers
+        self._clean = clean
 
     def __call__(self):
+        # assume all friend trees have the same structure
+        targets = [*self._friends[0].targets]
         result = _update_friend()
         with (
             Progress.new(
-                total=sum(map(len, self._targets)),
+                total=sum(map(len, targets)),
                 msg=("entries", "Merging", "k-folds"),
             ) as progress,
             ProcessPoolExecutor(
@@ -96,8 +99,14 @@ class merge_kfolds:
                 initializer=status.initializer,
             ) as pool,
         ):
-            for chunk in Chunk.balance(self._step, *self._targets):
+            jobs = []
+            for chunk in Chunk.balance(self._step, targets):
                 job = pool.submit(self._job.new(chunk))
                 job.add_done_callback(result)
                 job.add_done_callback(_update_progress(progress, len(chunk)))
-        return result.friend
+                jobs.append(job)
+            wait(jobs)
+            if self._clean:
+                for friend in self._friends:
+                    friend.reset(confirm=False, executor=pool)
+        return {"merged": result.friend, "clean": self._clean}

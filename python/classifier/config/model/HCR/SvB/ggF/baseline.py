@@ -125,7 +125,7 @@ class Eval(HCREval):
     model = "SvB_ggF_baseline"
 
     @staticmethod
-    def output_interpretation(batch: BatchType):
+    def output_definition(batch: BatchType):
         return {
             "q_1234": ...,
             "q_1324": ...,

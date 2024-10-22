@@ -24,7 +24,9 @@ def _sort_map(obj: dict[frozenset[str]]):
     return {k: obj[k] for k in sorted(obj)}
 
 
-class Common(LoadGroupedRoot):
+class CommonTrain(LoadGroupedRoot):
+    trainable = True
+
     def __init__(self):
         super().__init__()
         from classifier.df.tools import drop_columns, map_selection_to_flag
@@ -123,4 +125,52 @@ class Common(LoadGroupedRoot):
             pretty_repr(_sort_map(pres) | {"common": self.preprocessors}),
         )
         logging.debug("postprocessors:", pretty_repr(self.postprocessors))
+        logging.debug("tensor:", pretty_repr(self.to_tensor._columns))
+
+
+class CommonEval(LoadGroupedRoot):
+    evaluable = True
+
+    def __init__(self):
+        super().__init__()
+
+        # fmt: off
+        (
+            self.to_tensor
+            .add(KFold.offset, KFold.offset_dtype).columns(Columns.event)
+            .add(Input.ancillary, "float32").columns(*InputBranch.feature_ancillary)
+            .add(Input.CanJet, "float32").columns(*InputBranch.feature_CanJet, target=InputBranch.n_CanJet)
+            .add(Input.NotCanJet, "float32").columns(*InputBranch.feature_NotCanJet, target=InputBranch.n_NotCanJet)
+        )
+        # fmt: on
+
+    @cache
+    def from_root(self, groups: frozenset[str]):
+        from classifier.df.io import FromRoot
+
+        friends = []
+        for k, v in self.friends.items():
+            if k <= groups:
+                friends.extend(v)
+
+        return FromRoot(
+            friends=friends,
+            branches=self._branches.intersection,
+        )
+
+    @cached_property
+    def _branches(self):
+        return set().union(
+            InputBranch.feature_ancillary,
+            InputBranch.feature_CanJet,
+            InputBranch.feature_NotCanJet,
+        )
+
+    def debug(self):
+        import logging
+
+        from rich.pretty import pretty_repr
+
+        logging.debug("files:", pretty_repr(_sort_map(self.files)))
+        logging.debug("friends:", pretty_repr(_sort_map(self.friends)))
         logging.debug("tensor:", pretty_repr(self.to_tensor._columns))
