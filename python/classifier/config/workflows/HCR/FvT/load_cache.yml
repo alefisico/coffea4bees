@@ -1,0 +1,6 @@
+# template: dataset, user
+dataset:
+  - module: cache
+    option:
+      - --input
+      - root://cmseos.fnal.gov//store/user/{user}/HH4b/classifier/FvT/dataset/{dataset}/result.json

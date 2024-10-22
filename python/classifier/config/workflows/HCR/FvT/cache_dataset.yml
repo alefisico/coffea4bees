@@ -1,0 +1,24 @@
+# template: user, dataset
+main:
+  module: cache
+  option:
+    - --max-loaders 1
+    - --max-writers 10
+    - --nchunks 10
+    - --shuffle
+    - --states label.MultiClass.labels
+
+dataset:
+  - module: HCR.FvT.Train
+    option:
+      - --friends
+      -
+      - root://cmseos.fnal.gov//store/user/{user}/HH4b/friend/friend.json@@HCR_input
+      - root://cmseos.fnal.gov//store/user/{user}/HH4b/friend/friend.json@@JCM_weight
+      - --max-workers 8
+
+
+setting:
+  - module: IO
+    option:
+      - output: root://cmseos.fnal.gov//store/user/{user}/HH4b/classifier/FvT/dataset/{dataset}/
