@@ -237,7 +237,8 @@ rule run_impacts:
     resources:
         voms_proxy=True,
         kerberos=True,
-        compute_backend="kubernetes"
+        compute_backend="kubernetes",
+        kubernetes_memory_limit="9.5Gi"
     shell:
         """
 source /cvmfs/cms.cern.ch/cmsset_default.sh
@@ -301,4 +302,4 @@ rule kappa_scan:
         bash setup.sh
         law run PlotUpperLimits --version dev --datacards output/datacards/datacard.txt --xsec fb --y-log --scan-parameters kl,20,20,5
         cp data/store/PlotUpperLimits/hh_model__model_default/datacards_716fa319cb/m125.0/poi_r/dev/limits__poi_r__scan_kl_20.0_20.0_n5__params_r_gghh1.0_r_qqhh1.0_kt1.0_CV1.0_C2V1.0__fb_log.pdf ../../../output/datacards/kappa_scan.pdf
-        ""
+        """
