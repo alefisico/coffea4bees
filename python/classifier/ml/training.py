@@ -76,7 +76,11 @@ class BenchmarkStage(Stage):
         return {
             "stage": self.stage,
             "name": self.name,
-            "benchmarks": self._iter_benchmark(trainer, self._init_benchmark()),
+            "benchmarks": (
+                self._iter_benchmark(trainer, self._init_benchmark())
+                if not cfg.Training.disable_benchmark
+                else None
+            ),
         }
 
 
