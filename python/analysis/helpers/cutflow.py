@@ -55,14 +55,7 @@ class cutFlow:
         return
 
 
-    def addOutputSkim(self, o, dataset, lumi=1.0, xs=1.0, kFactor=1.0):
-
-        if "lumi" not in o[dataset]:
-            o[dataset]["lumi"] = [lumi]
-        if "xs" not in o[dataset]:
-            o[dataset]["xs"] = [xs]
-        if "kFactor" not in o[dataset]:
-            o[dataset]["kFactor"] = [kFactor]
+    def addOutputSkim(self, o, dataset):
 
         o[dataset]["cutFlowFourTag"]           = {}
         o[dataset]["cutFlowFourTagUnitWeight"] = {}
@@ -77,3 +70,12 @@ class cutFlow:
             o[dataset]["cutFlowThreeTagUnitWeight"][k] = v[1]
 
         return
+
+    def addOutputLumisProcessed(self, o, dataset, runs, luminosityBlocks):
+
+        o[dataset]["lumis_processed"]           = {}
+        run_list = set(runs)
+        for r in run_list:
+            run_mask = (runs == r)
+            lbs_per_run = list(set(luminosityBlocks[run_mask]))
+            o[dataset]["lumis_processed"][r] = list(lbs_per_run)

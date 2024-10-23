@@ -3,8 +3,8 @@ runner:
   condor_memory: 2GB
   chunksize: 1000
   write_coffea_output: false
-  # dashboard_address: 10201
+  dashboard_address: 10200
 
 config:
-  make_classifier_input: root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/
-  # make_classifier_input: /srv/python/hists/local/   ### local
+  # make_classifier_input: root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/
+  make_classifier_input: /srv/python/hists/local/   ### local

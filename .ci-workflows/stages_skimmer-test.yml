@@ -6,9 +6,10 @@ skimmer-test-job:
     - source .ci-workflows/skimmer-test-job.sh
   artifacts: 
     paths:
-      - python/skimmer/metadata/picoaod_datasets_GluGluToHHTo4B_cHHH0_UL18.yml
-      - python/skimmer/GluGluToHHTo4B_cHHH0_UL18/picoAOD.chunk0.root
-      - python/skimmer/GluGluToHHTo4B_cHHH0_UL18/picoAOD.chunk1.root
+      - python/output/skimmer_test_job/picoaod_datasets_GluGluToHHTo4B_cHHH0_UL18.yml
+      - python/output/skimmer_test_job/GluGluToHHTo4B_cHHH0_UL18/picoAOD.chunk0.root
+      - python/output/skimmer_test_job/GluGluToHHTo4B_cHHH0_UL18/picoAOD.chunk1.root
+      - python/output/skimmer_test_job/datasets_HH4b.yml
 
 skimmer-basic-test-job:   
   stage: skimmer-test   
@@ -25,9 +26,9 @@ synthetic-dataset-make-dataset:
     - source .ci-workflows/synthetic-dataset-make-dataset.sh
   artifacts:
     paths:
-      - python/skimmer/metadata/picoaod_datasets_declustered_test_UL18.yml
-      - python/skimmer/data_UL18A/picoAOD_seed5.root
-      - python/skimmer/data_UL18B/picoAOD_seed5.root
-      - python/skimmer/data_UL18C/picoAOD_seed5.root
-      - python/skimmer/data_UL18D/picoAOD_seed5.root
-      - python/skimmer/GluGluToHHTo4B_cHHH1_UL18/picoAOD_seed5.root
+      - python/output/synthetic_dataset_make_dataset/picoaod_datasets_declustered_test_UL18.yml
+      - python/output/synthetic_dataset_make_dataset/data_UL18A/picoAOD_seed5.root
+      - python/output/synthetic_dataset_make_dataset/data_UL18B/picoAOD_seed5.root
+      - python/output/synthetic_dataset_make_dataset/data_UL18C/picoAOD_seed5.root
+      - python/output/synthetic_dataset_make_dataset/data_UL18D/picoAOD_seed5.root
+      - python/output/synthetic_dataset_make_dataset/GluGluToHHTo4B_cHHH1_UL18/picoAOD_seed5.root

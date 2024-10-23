@@ -78,9 +78,7 @@ class analysis(processor.ProcessorABC):
                                            doLeptonRemoval=self.config["do_lepton_jet_cleaning"] )
 
         create_cand_jet_dijet_quadjet( event, event.event,
-                                      isMC = self.config["isMC"],
                                       apply_FvT=False,
-                                      apply_boosted_veto=False,
                                       run_SvB=False,
                                       run_systematics=False,
                                       classifier_SvB=None,
@@ -88,8 +86,8 @@ class analysis(processor.ProcessorABC):
                                       )
 
         year_label = self.corrections_metadata[self.year]['year_label'].replace("UL", "20").split("_")[0]
-        emulator_data = TrigEmulatorTool("Test", year=year_label, nToys=100)
-        emulator_mc   = TrigEmulatorTool("Test", year=year_label, nToys=100, useMCTurnOns=True)
+        emulator_data = TrigEmulatorTool("Test", year=year_label)
+        emulator_mc   = TrigEmulatorTool("Test", year=year_label, useMCTurnOns=True)
         event['trigWeight'] = {}
         event['trigWeight', "Data"] = ak.Array([ emulator_data.GetWeightOR(selJet_pt, tagJet_pt, hT_trigger) for selJet_pt, tagJet_pt, hT_trigger in zip(event.selJet.pt, event.canJet.pt, event.hT_trigger) ])
         event['trigWeight', 'MC' ] = ak.Array([ emulator_mc.GetWeightOR(selJet_pt, tagJet_pt, hT_trigger) for selJet_pt, tagJet_pt, hT_trigger in zip(event.selJet.pt, event.canJet.pt, event.hT_trigger) ])

@@ -8,7 +8,7 @@ analysis-plot-job:
     - source .ci-workflows/analysis-plot-job.sh
   artifacts:
     paths:
-      - python/analysis/testCoffeaPlots/RunII/
+      - python/output/analysis_plot_job/RunII/
 
 analysis-plot-job-unsup:    
   stage: plot 
@@ -20,7 +20,7 @@ analysis-plot-job-unsup:
     - source .ci-workflows/analysis-plot-job-unsup.sh
   artifacts:
     paths:
-      - python/analysis/testCoffeaPlots/RunII/
+      - python/output/analysis_plot_job_unsup/RunII/
 
 analysis-iplot-job:    
   stage: plot 
@@ -40,18 +40,19 @@ baseclass-test-job:
   script:
     - source .ci-workflows/baseclass-test-job.sh
 
-histtojson-test-job:   
-  stage: plot
-  extends:
-    - .base_analysis
-  needs: 
-    - analysis-test-job
-  script:
-    - cd python/stats_analysis/
-    - python convert_hist_to_json.py -o hists/histAll.json -i ../analysis/hists/test.coffea
-  artifacts: 
-    paths:
-      - python/stats_analysis/hists/histAll.json
+# Needs review
+# histtojson-test-job:   
+#   stage: plot
+#   extends:
+#     - .base_analysis
+#   needs: 
+#     - analysis-test-job
+#   script:
+#     - cd python/stats_analysis/
+#     - python convert_hist_to_json.py -o hists/histAll.json -i ../analysis/hists/test.coffea
+#   artifacts: 
+#     paths:
+#       - python/stats_analysis/hists/histAll.json
 
 synthetic-dataset-plot-job:    
   stage: plot 
@@ -63,4 +64,4 @@ synthetic-dataset-plot-job:
     - source .ci-workflows/synthetic-dataset-plot-job.sh
   artifacts:
     paths:
-      - python/jet_clustering/jet-splitting-PDFs-test/
+      - python/output/synthetic_dataset_plot_job/jet-splitting-PDFs-test/
