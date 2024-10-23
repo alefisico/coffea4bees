@@ -220,7 +220,7 @@ export WFS="classifier/config/workflows/HCR/FvT"
 # make benchmark plots
 ./pyml.py template "{tag: test, user: ${USER}, cernuser: CERN_USERNAME}" ${WFS}/plot_roc.yml
 # evaluate the classifier (without merging k-folds)
-./pyml.py template "{tag: test, user: ${USER}}" ${WFS}/evaluate.yml -setting torch.DataLoader "{num_workers: 4, batch_eval: 100000}"
+./pyml.py template "{tag: test, user: ${USER}}" ${WFS}/evaluate.yml -setting torch.DataLoader "{num_workers: 4}"
 ```
 
 where the `tag` and `dataset` can be any string. The `offset` is used to make different random k-foldings, e.g.
@@ -254,6 +254,7 @@ To merge k-folds from multiple results:
   - in main task `train`, consider parallel multiple models by increasing `--max-trainers` (CPU, GPU, memory bounded)
   - in `-setting torch.DataLoader`, consider increase `num_workers` to speed up batch generation (mainly CPU bounded, require extra memory)
   - in `-setting torch.DataLoader`, consider increase `batch_eval`  to speed up evaluation (mainly GPU bounded)
+  - in `-setting torch.Training`, the `disable_benchmark` can be enabled to skip all benchmarking steps.
 - Evaluation:
   - in main task `evaluate`, consider parallel multiple models by increasing `--max-evaluators` (CPU, GPU, memory bounded)
   - in `-setting torch.DataLoader`, consider increase `num_workers` and `batch_eval`. (see above)

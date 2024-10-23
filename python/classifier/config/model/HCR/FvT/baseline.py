@@ -87,7 +87,6 @@ class Eval(HCREval):
     @staticmethod
     def output_definition(batch: BatchType):
         p_m4 = batch["p_d4"] - batch["p_t4"]
-        p_m3 = batch["p_d3"] - batch["p_t3"]
         return {
             "q_1234": ...,
             "q_1324": ...,
@@ -95,12 +94,19 @@ class Eval(HCREval):
             "p_d4": ...,
             "p_d3": ...,
             "p_t4": ...,
-            "p_t3": ...,
             "p_m4": p_m4,
-            "p_m3": p_m3,
             "p_data": batch["p_d4"] + batch["p_d3"],
-            "p_ttbar": batch["p_t4"] + batch["p_t3"],
+            "p_ttbar": batch["p_t4"],
             "p_4b": batch["p_d4"] + batch["p_t4"],
-            "p_3b": batch["p_d3"] + batch["p_t3"],
+            "p_3b": batch["p_d3"],
             "weight": p_m4 / batch["p_d3"],
-        }
+        } | (
+            {
+                "p_t3": ...,
+                "p_m3": batch["p_d3"] - batch["p_t3"],
+                "p_ttbar": batch["p_t4"] + batch["p_t3"],
+                "p_3b": batch["p_d3"] + batch["p_t3"],
+            }
+            if "p_t3" in batch
+            else {}
+        )

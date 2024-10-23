@@ -117,6 +117,7 @@ class CommonTrain(Common):
     def debug(self):
         import logging
 
+        from classifier.config.state.label import MultiClass
         from rich.pretty import pretty_repr
 
         pres = defaultdict(list)
@@ -131,6 +132,7 @@ class CommonTrain(Common):
         )
         logging.debug("postprocessors:", pretty_repr(self.postprocessors))
         logging.debug("tensor:", pretty_repr(self.to_tensor._columns))
+        logging.debug("labels:", pretty_repr(MultiClass.labels))
 
 
 class CommonEval(Common):

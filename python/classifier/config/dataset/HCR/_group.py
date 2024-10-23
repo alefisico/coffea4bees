@@ -11,9 +11,15 @@ if TYPE_CHECKING:
 
 
 class fullmatch:
-    def __init__(self, *groups: Iterable[str], processors: Iterable[DFProcessor]):
+    def __init__(
+        self,
+        *groups: Iterable[str],
+        processors: Iterable[DFProcessor],
+        name: str = None,
+    ):
         self._gs = (*map(frozenset, groups),)
         self._ps = (*processors,)
+        self.name = name
 
     def __call__(self, groups: frozenset[str]):
         if any(g <= groups for g in self._gs):
