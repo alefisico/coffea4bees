@@ -73,6 +73,7 @@ class Main(SelectDevice, main.Main):
             f"Initialized {len(evaluators)} models in {datetime.now() - timer}"
         )
         # evaluate models in parallel
+        timer = datetime.now()
         with (
             ProcessPoolExecutor(
                 max_workers=self.opts.max_evaluators,
@@ -91,5 +92,5 @@ class Main(SelectDevice, main.Main):
                     callbacks=[lambda _: progress_advance(progress)],
                 )
             ]
-
+        logging.info(f"Evaluated {len(evaluators)} models in {datetime.now() - timer}")
         return {ResultKey.predictions: results}
