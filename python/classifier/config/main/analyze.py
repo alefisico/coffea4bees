@@ -1,13 +1,17 @@
+from __future__ import annotations
+
+import json
 from itertools import chain
 
-from classifier.task import Analysis, ArgParser, EntryPoint
-from classifier.utils import call
+import fsspec
+from classifier.task import Analysis, ArgParser, EntryPoint, TaskOptions, main
+from classifier.task.analysis import Analyzer
 
 from .. import setting as cfg
-from ._utils import SetupMultiprocessing, progress_advance
+from ._utils import progress_advance
 
 
-class Main(SetupMultiprocessing):
+class Main(main.Main):
     _no_state = True
 
     argparser = ArgParser(
@@ -18,44 +22,61 @@ class Main(SetupMultiprocessing):
             ("sub", "[blue]analyzer()[/blue] run"),
         ],
     )
+    argparser.add_argument(
+        "results",
+        metavar="RESULT",
+        nargs="+",
+        help="path to result json files.",
+    )
 
     @classmethod
     def prelude(cls):
         cfg.IO.monitor = None
+        cfg.Analysis.enable = False
 
-    def run(self, _): ...
+    def run(self, parser: EntryPoint):
+        results = []
+        for path in self.opts.results:
+            with fsspec.open(path, "rt") as f:
+                results.append(json.load(f))
+        return run_analyzer(parser, results)
 
 
-def run_analyzer(parser: EntryPoint, output: dict):
+def _analyze(analyzer: Analyzer):
+    return analyzer()
+
+
+def run_analyzer(parser: EntryPoint, results: list[dict]):
     from concurrent.futures import ProcessPoolExecutor
 
     from classifier.monitor import Index
     from classifier.monitor.progress import Progress
     from classifier.process import pool, status
 
-    analysis: list[Analysis] = parser.mods["analysis"]
-    analyzers = [*chain(*(a.analyze(output) for a in analysis))]
+    analysis: list[Analysis] = parser.tasks[TaskOptions.analysis.name]
+    analyzers = [*chain(*(a.analyze(results) for a in analysis))]
     if not analyzers:
-        return []
+        return None
 
-    if status.context is not None:
-        with (
-            ProcessPoolExecutor(
-                max_workers=cfg.Analysis.max_workers,
-                mp_context=status.context,
-                initializer=status.initializer,
-            ) as executor,
-            Progress.new(total=len(analyzers), msg=("analysis", "Running")) as progress,
-        ):
-            results = [
-                *pool.submit(
-                    executor,
-                    call,
-                    analyzers,
-                    callbacks=[lambda _: progress_advance(progress)],
-                )
-            ]
-    else:
-        results = [*map(call, analyzers)]
+    with (
+        ProcessPoolExecutor(
+            max_workers=cfg.Analysis.max_workers,
+            mp_context=status.context,
+            initializer=status.initializer,
+        ) as executor,
+        Progress.new(total=len(analyzers), msg=("analysis", "Running")) as progress,
+    ):
+        outputs = [
+            *pool.submit(
+                executor,
+                _analyze,
+                analyzers,
+                callbacks=[lambda _: progress_advance(progress)],
+            )
+        ]
     Index.render()
-    return [*filter(lambda x: x is not None, results)]
+    outputs = [*filter(lambda x: x is not None, outputs)]
+    if outputs:
+        return {cfg.ResultKey.analysis: outputs}
+    else:
+        return None

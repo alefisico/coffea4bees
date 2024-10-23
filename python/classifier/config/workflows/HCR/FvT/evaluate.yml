@@ -1,0 +1,29 @@
+# template:
+# - user: username, usually $USER
+# - tag: name of the model (only used in the directory name)
+
+main:
+  module: evaluate
+  option:
+    - --max-evaluators 1
+
+dataset:
+  - module: HCR.FvT.Eval
+    option:
+      - --max-workers 8
+      - --friends
+      -
+      - root://cmseos.fnal.gov//store/user/{user}/HH4b/friend/friend.json@@HCR_input
+      - root://cmseos.fnal.gov//store/user/{user}/HH4b/friend/friend.json@@JCM_weight
+
+model:
+  - module: HCR.FvT.baseline.Eval
+    option:
+      - --models
+      - Final
+      - root://cmseos.fnal.gov//store/user/{user}/HH4b/classifier/FvT/train/{tag}/result.json
+
+setting:
+  - module: IO
+    option:
+      - output: root://cmseos.fnal.gov//store/user/{user}/HH4b/classifier/FvT/eval/{tag}/
