@@ -6,7 +6,7 @@ analysis-test-job:
     - source .ci-workflows/analysis-test-job.sh
   artifacts: 
     paths:
-      - python/analysis/hists/test.coffea
+      - python/output/analysis_test_job/test.coffea
 
 analysis-test-truthStudy:   
   stage: analysis-test   
@@ -16,7 +16,7 @@ analysis-test-truthStudy:
     - source .ci-workflows/analysis-test-job-truthStudy.sh
   artifacts: 
     paths:
-      - python/analysis/hists/testTruth.coffea
+      - python/output/analysis_test_truthStudy/testTruth.coffea
 
 
 synthetic-dataset-cluster:   
@@ -27,7 +27,7 @@ synthetic-dataset-cluster:
     - source .ci-workflows/synthetic-dataset-cluster.sh
   artifacts: 
     paths:
-      - python/analysis/hists/test_synthetic_datasets.coffea
+      - python/output/synthetic_dataset_cluster/test_synthetic_datasets.coffea
 
 
 analysis-test-job-unsup:   
@@ -38,7 +38,7 @@ analysis-test-job-unsup:
     - source .ci-workflows/analysis-test-job-unsup.sh
   artifacts: 
     paths:
-      - python/analysis/hists/test_unsup.coffea
+      - python/output/analysis_test_job_unsup/test_unsup.coffea
 
 analysis-test-mixed-job:   
   stage: analysis-test   
@@ -48,18 +48,18 @@ analysis-test-mixed-job:
     - source .ci-workflows/analysis-test-mixed-job.sh
   artifacts: 
     paths:
-      - python/analysis/hists/testMixedBkg_TT.coffea
-      - python/analysis/hists/testMixedBkg_data_3b_for_mixed.coffea
-      - python/analysis/hists/testMixedBkg_data_3b_for_mixed_kfold.coffea
-      - python/analysis/hists/testMixedData.coffea
-      - python/analysis/hists/testMixedBkg_TT.json
-      - python/analysis/hists/testMixedBkg_data_3b_for_mixed.json
-      - python/analysis/hists/testMixedBkg_data_3b_for_mixed_kfold.json      
-      - python/analysis/hists/testMixedData.json
-      - python/analysis/hists/testSignal_preUL.coffea
-      - python/analysis/hists/testSignal_preUL.json
-      - python/analysis/hists/testSignal_UL.coffea
-      - python/analysis/hists/testSignal_UL.json
+      - python/output/analysis_test_mixed_job/testMixedBkg_TT.coffea
+      - python/output/analysis_test_mixed_job/testMixedBkg_data_3b_for_mixed.coffea
+      - python/output/analysis_test_mixed_job/testMixedBkg_data_3b_for_mixed_kfold.coffea
+      - python/output/analysis_test_mixed_job/testMixedData.coffea
+      - python/output/analysis_test_mixed_job/testMixedBkg_TT.json
+      - python/output/analysis_test_mixed_job/testMixedBkg_data_3b_for_mixed.json
+      - python/output/analysis_test_mixed_job/testMixedBkg_data_3b_for_mixed_kfold.json      
+      - python/output/analysis_test_mixed_job/testMixedData.json
+      - python/output/analysis_test_mixed_job/testSignal_preUL.coffea
+      - python/output/analysis_test_mixed_job/testSignal_preUL.json
+      - python/output/analysis_test_mixed_job/testSignal_UL.coffea
+      - python/output/analysis_test_mixed_job/testSignal_UL.json
 
 
 analysis-systematics-test-job:   
@@ -70,7 +70,7 @@ analysis-systematics-test-job:
     - source .ci-workflows/analysis-systematics-test-job.sh
   artifacts: 
     paths:
-      - python/analysis/hists/test_systematics.coffea
+      - python/output/analysis_systematics_test_job/test_systematics.coffea
 
 skimmer-analysis-test-job:   
   stage: analysis-test   
@@ -83,7 +83,7 @@ skimmer-analysis-test-job:
     - source .ci-workflows/skimmer-analysis-test-job.sh
   artifacts: 
     paths:
-      - python/analysis/hists/test_skimmer.coffea
+      - python/output/skimmer_analysis_test_job/test_skimmer.coffea
 
 synthetic-dataset-analyze:   
   stage: analysis-test   
@@ -96,7 +96,7 @@ synthetic-dataset-analyze:
     - source .ci-workflows/synthetic-dataset-analyze.sh
   artifacts:
     paths:
-      - python/analysis/hists/test_synthetic_datasets.coffea
+      - python/output/synthetic_dataset_analyze/test_synthetic_datasets.coffea
 
 weights-trigger-analysis-job:   
   stage: analysis-test   
@@ -109,4 +109,4 @@ weights-trigger-analysis-job:
     - source .ci-workflows/weights-trigger-analysis-job.sh
   artifacts:
     paths:
-      - python/analysis/trigger_weights/test_trigWeight.coffea
+      - python/output/weights_trigger_analysis_job/test_trigWeight.coffea

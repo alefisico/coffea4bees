@@ -541,9 +541,9 @@ datasets:
     UL16_postVFP:
       lumi: 16.5e3
       nanoAOD:
-        F: /BtagCSV/Run2016F-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD
-        G: /BtagCSV/Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD
-        H: /BtagCSV/Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD
+        F: /BTagCSV/Run2016F-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD
+        G: /BTagCSV/Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD
+        H: /BTagCSV/Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD
       picoAOD:
         F:
           files:

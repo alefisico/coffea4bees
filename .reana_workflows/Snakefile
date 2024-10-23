@@ -14,20 +14,19 @@ dataset_location = "metadata/datasets_HH4b.yml"
 rule all:
     input:
         # expand("output/histAll__{dataset}__{year}.coffea", year=config['year'], dataset=config['dataset']),
-        expand("output/histsyst_{samplesyst}-{iysyst}.coffea", samplesyst=config['dataset_systematics'], iysyst=config['year']),
-        #expand("output/histsystpreUL_{samplesystpreUL}-{iysystpreUL}.coffea", samplesystpreUL=config['dataset_preUL'], iysystpreUL=config['year_preUL']),
+        # expand("output/histsyst_{samplesyst}-{iysyst}.coffea", samplesyst=config['dataset_systematics'], iysyst=config['year']),
         "output/histMixedBkg_data_3b_for_mixed.coffea",
         "output/histMixedBkg_TT.coffea",
         "output/histMixedData.coffea",
-        'output/histAll.coffea',
-        'output/histAll_syst.coffea',
-        "output/histAll_signals_cHHHX.coffea",
-        'output/histSignal_UL.coffea',
+        # 'output/histAll.coffea',
+        # "output/histAll_signals_cHHHX.coffea",
+        # 'output/histSignal_UL.coffea',
         "output/RunII/passPreSel/fourTag/SB/nPVs.pdf",
         "output/datacards/shapes.root",
         "output/tmp.log",
-        'output/datacards/limits.json',
-        "output/datacards/plots/SvB_postfit.png"
+        'output/datacards/impacts_combine_SvB_MA_exp_HH.pdf',
+        # "output/datacards/plots/SvB_postfit.png"   ### Blinded analysis, no postfits.
+        # "output/datacards/kappa_scan.pdf"
 
 
 rule analysis_databkgs:
@@ -60,16 +59,6 @@ xrdcp {output} root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/reana/{T
 cp gitdiff.txt output/   ### only one time
 #cp /tmp/coffea4bees-dask-report-* ../output/coffea4bees-dask-report_{params.logname}_{params.iy}.html
         """
-
-#use rule analysis_databkgs as analysis_signals_preUL with:
-#    output: "output/histAll_signal_preUL.coffea"
-#    params:
-#        hash=config['hash'],
-#        diff=config['diff'],
-#        isam=config['dataset_preUL'],
-#        iy=config['year_preUL'],
-#        output="histAll_signal_preUL.coffea",
-#        logname="histAll_signal_preUL"
 
 use rule analysis_databkgs as analysis_signals_mix with:
     output: "output/histSignal_UL.coffea"
@@ -138,30 +127,16 @@ mprof plot -o output/mprofile_{params.logname}.png python/mprofile_{params.logna
 xrdcp {output} root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/{params.output}
         """
 
-#use rule analysis_systematics as analysis_systematics_preUL with:
-#    output:
-#        "output/histsystpreUL_{samplesystpreUL}-{iysystpreUL}.coffea"
-#    params:
-#        hash=config['hash'],
-#        diff=config['diff'],
-#        isam="{samplesystpreUL}",
-#        iy="{iysystpreUL}",
-#        output="histsystpreUL_{samplesystpreUL}-{iysystpreUL}.coffea",
-#        logname="syst_preUL_{samplesystpreUL}-{iysystpreUL}"
 
 rule merging_coffea_files_databkgs:
    input:
-    #    files = expand(['output/histAll__{dataset}__{iyear}.coffea'], iyear=config['year'], dataset=config['dataset'])
-        files = expand(['output/histsyst_{idatsyst}-{iyear}.coffea'], idatsyst=config['dataset_systematics'], iyear=config['year']) #+ expand(['output/histsystpreUL_{idat}-{iyear}.coffea'], idat=config['dataset_preUL'], iyear=config['year_preUL'])
+        files = expand(['output/histsyst_{idatsyst}-{iyear}.coffea'], idatsyst=config['dataset_systematics'], iyear=config['year']) 
    output: 
-        # "output/histAll.coffea"
-       "output/histAll_syst.coffea"
+       "output/histAll_signals_cHHHX.coffea"
    container: "docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
    params:
-    #    output= "histAll.coffea",
-    #    logname= "databkgs"
-        output= "histAll_syst.coffea",
-        logname= "syst"
+        output= "histAll_signals_cHHHX.coffea",
+        logname= "signals_cHHHX"
    resources:
        kerberos=True,
        compute_backend="kubernetes",
@@ -173,25 +148,6 @@ mprof plot -o output/mprofile_merge_{params.logname}.png python/mprofile_merge_{
 xrdcp {output} root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/{params.output}
 cp {output} /eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/{params.output}
        """
-
-# use rule merging_coffea_files_databkgs as rule merging_coffea_files_syst with:
-#     input:
-#         files = expand(['output/histsyst_{idatsyst}-{iyear}.coffea'], idatsyst=config['dataset_systematics'], iyear=config['year']) #+ expand(['output/histsystpreUL_{idat}-{iyear}.coffea'], idat=config['dataset_preUL'], iyear=config['year_preUL'])
-#     output:
-#         "output/histAll_syst.coffea"
-#     params:
-#         output= "histAll_syst.coffea",
-#         logname= "syst"
-
-use rule merging_coffea_files_databkgs as merging_coffea_files_signal_diffHHH with:
-    input:
-        files = expand(['output/histsyst_{idatsyst}-{iyear}.coffea'], idatsyst=config['dataset_systematics'], iyear=config['year'])
-
-    output:
-        "output/histAll_signals_cHHHX.coffea"
-    params:
-        output= "histAll_signals_cHHHX.coffea",
-        logname= "signals_cHHHX"
 
 
 rule make_plots:
@@ -215,11 +171,9 @@ python .php-plots/bin/pb_deploy_plots.py ../output/RunII/ /eos/user/a/algomez/wo
 rule convert_hist_to_json:
     input:
         inall = "output/histAll.coffea",
-        insyst = "output/histAll_syst.coffea",
         insystcHHHX = "output/histAll_signals_cHHHX.coffea"
     output:
         outall = "output/histAll.json",
-        outsyst = "output/histAll_syst.json",
         outsystcHHHX = "output/histAll_signals_cHHHX.json"
     container: analysis_container
     resources:
@@ -228,7 +182,6 @@ rule convert_hist_to_json:
     shell:
         """
 python python/stats_analysis/convert_hist_to_json.py -o {output.outall} -i {input.inall}
-python python/stats_analysis/convert_hist_to_json.py -o {output.outsyst} -i {input.insyst} -s
 python python/stats_analysis/convert_hist_to_json.py -o {output.outsystcHHHX} -i {input.insystcHHHX} -s
         """
 
@@ -258,7 +211,7 @@ rule run_combine:
     input:
         "output/datacards/datacard.txt"
     output:
-        "output/datacards/limits.json"
+        "output/datacards/datacard.root"
     container: combine_container
     resources:
         voms_proxy=True,
@@ -272,13 +225,33 @@ cmsenv || true
 cd -
 cat {input}
 echo "RUNNING COMBINE"
-source python/stats_analysis/run_combine.sh output/datacards/ 
+source python/stats_analysis/run_combine.sh output/datacards/ --limits
+        """
+
+rule run_impacts:
+    input:
+        "output/datacards/datacard.root"
+    output:
+        "output/datacards/impacts_combine_SvB_MA_exp_HH.pdf"
+    container: combine_container
+    resources:
+        voms_proxy=True,
+        kerberos=True,
+        compute_backend="kubernetes"
+    shell:
+        """
+source /cvmfs/cms.cern.ch/cmsset_default.sh
+cd /home/cmsusr/CMSSW_11_3_4/
+cmsenv || true
+cd -
+cat {input}
+echo "RUNNING COMBINE"
 source python/stats_analysis/run_combine.sh output/datacards/ --impacts
         """
 
 rule run_postfit:
     input:
-        "output/datacards/datacard.txt"
+        "output/datacards/datacard.root"
     output:
         "output/datacards/plots/SvB_postfit.png"
     container: combine_container
@@ -313,3 +286,19 @@ rule move_syst_plots:
         """
 python python/.php-plots/bin/pb_deploy_plots.py output/datacards/ /eos/user/a/algomez/work/HH4b/reana/{TIMESTAMP}/ -r -c -j 4 -e pdf > {log}
         """
+
+rule kappa_scan:
+    input: "output/datacards/datacard.root"
+    output: "output/datacards/kappa_scan.pdf"
+    container: "docker://docker.io/cmssw/el7:aarch64"
+    resources:
+        voms_proxy=True,
+        kerberos=True,
+        compute_backend="kubernetes"
+    shell:
+        """
+        cd python/stats_analysis/inference/
+        bash setup.sh
+        law run PlotUpperLimits --version dev --datacards output/datacards/datacard.txt --xsec fb --y-log --scan-parameters kl,20,20,5
+        cp data/store/PlotUpperLimits/hh_model__model_default/datacards_716fa319cb/m125.0/poi_r/dev/limits__poi_r__scan_kl_20.0_20.0_n5__params_r_gghh1.0_r_qqhh1.0_kt1.0_CV1.0_C2V1.0__fb_log.pdf ../../../output/datacards/kappa_scan.pdf
+        ""
