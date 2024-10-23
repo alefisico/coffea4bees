@@ -1,6 +1,12 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from classifier.nn.schedule import MultiStepBS, Schedule
+
+if TYPE_CHECKING:
+    from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 
 @dataclass
@@ -27,7 +33,7 @@ class FixedStep(Schedule):
             parameters,
             lr=self.lr_init,
             # amsgrad=True, # PLAN test performance
-            **kwargs
+            **kwargs,
         )
 
     def bs_scheduler(self, dataset, **kwargs):
@@ -36,7 +42,7 @@ class FixedStep(Schedule):
             batch_size=self.bs_init,
             milestones=self.bs_milestones,
             gamma=self.bs_scale,
-            **kwargs
+            **kwargs,
         )
 
     def lr_scheduler(self, optimizer, **kwargs):
@@ -46,7 +52,7 @@ class FixedStep(Schedule):
             optimizer=optimizer,
             milestones=self.lr_milestones,
             gamma=self.lr_scale,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -56,6 +62,7 @@ class AutoStep(FixedStep):
     lr_patience: int = 1
     lr_cooldown: int = 1
     lr_min: float = 2e-4
+    lr_metric: tuple[str, ...] = ("benchmarks", "validation", "loss")
 
     def lr_scheduler(self, optimizer, **kwargs):
         from torch.optim.lr_scheduler import ReduceLROnPlateau
@@ -68,5 +75,15 @@ class AutoStep(FixedStep):
             patience=self.lr_patience,
             cooldown=self.lr_cooldown,
             min_lr=self.lr_min,
-            **kwargs
+            **kwargs,
         )
+
+    def lr_step(self, lr: ReduceLROnPlateau, benchmark: dict = None):
+        try:
+            metric = float(self._get_key(self.lr_metric, benchmark))
+        except Exception:
+            raise ValueError(
+                f"ReduceLROnPlateau requires a float metric at {self.lr_metric}"
+            )
+        epoch = self._get_key(self.epoch_key, benchmark)
+        lr.step(metric, epoch)

@@ -72,7 +72,7 @@ class Main(main.Main):
             if k in args:
                 args.remove(k)
         workflow[main._MAIN] = self._parse_opts(self.opts.main, args)
-        for k in parser._keys:
+        for k in parser._tasks:
             for mod, opts in parser.args[k]:
                 workflow[k].append(self._parse_opts(mod, opts))
 

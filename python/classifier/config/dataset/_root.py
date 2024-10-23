@@ -4,67 +4,25 @@ import logging
 from abc import ABC, abstractmethod
 from functools import cached_property, reduce
 from itertools import chain
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterable
 
 from base_class.utils import unique
 from classifier.config.main._utils import progress_advance
 from classifier.task import ArgParser, Dataset, converter, parse
 
+from ..setting import IO as IOSetting
+
 if TYPE_CHECKING:
     import pandas as pd
-    from base_class.root import Friend
+    from base_class.root import Chunk, Friend
     from classifier.df.io import FromRoot, ToTensor
     from classifier.df.tools import DFProcessor
 
-# basic
 
+class LoadRoot(ABC, Dataset):
+    trainable: bool = False
+    evaluable: bool = False
 
-class Dataframe(Dataset):
-    def __init__(self):
-        from classifier.df.io import ToTensor
-
-        self._to_tensor = ToTensor()
-        self._preprocessors: list[DFProcessor] = []
-        self._postprocessors: list[DFProcessor] = []
-        self._trainables: list[_load_df] = []
-
-    @property
-    def to_tensor(self):
-        return self._to_tensor
-
-    @property
-    def preprocessors(self):
-        return self._preprocessors
-
-    @property
-    def postprocessors(self):
-        return self._postprocessors
-
-    def train(self):
-        for t in self._trainables:
-            t.to_tensor = self.to_tensor
-            t.postprocessors = self.postprocessors
-        return self._trainables
-
-
-class _load_df(ABC):
-    to_tensor: ToTensor
-    postprocessors: list[DFProcessor]
-
-    def __call__(self):
-        data = self.load()
-        for p in self.postprocessors:
-            data = p(data)
-        return self.to_tensor.tensor(data)
-
-    @abstractmethod
-    def load(self) -> pd.DataFrame: ...
-
-
-# ROOT
-
-
-class LoadRoot(ABC, Dataframe):
     argparser = ArgParser()
     argparser.add_argument(
         "--files",
@@ -91,19 +49,51 @@ class LoadRoot(ABC, Dataframe):
         "--max-workers",
         type=converter.int_pos,
         default=1,
-        help="the maximum number of workers to use when reading the ROOT files in parallel",
-    )
-    argparser.add_argument(
-        "--chunksize",
-        type=converter.int_pos,
-        default=1_000_000,
-        help="the size of chunk to read ROOT files",
+        help="the maximum number of workers to fetch metadata and load training set",
     )
     argparser.add_argument(
         "--tree",
         default="Events",
         help="the name of the TTree",
     )
+    argparser.add_argument(
+        "--train-chunksize",
+        type=converter.int_pos,
+        default=1_000_000,
+        help="the size of chunk to load training set",
+        condition="trainable",
+    )
+    argparser.add_argument(
+        "--eval-base",
+        default="chunks",
+        help="the base path to store the evaluation results",
+        condition="evaluable",
+    )
+    argparser.add_argument(
+        "--eval-naming",
+        default=...,
+        help="the rule to name friend tree files for evaluation",
+        condition="evaluable",
+    )
+
+    def __init__(self):
+        from classifier.df.io import ToTensor
+
+        self._to_tensor = ToTensor()
+        self._preprocessors: list[DFProcessor] = []
+        self._postprocessors: list[DFProcessor] = []
+
+    @property
+    def to_tensor(self):
+        return self._to_tensor
+
+    @property
+    def preprocessors(self):
+        return self._preprocessors
+
+    @property
+    def postprocessors(self):
+        return self._postprocessors
 
     def _parse_files(self, files: list[str], filelists: list[str]) -> list[str]:
         return unique(
@@ -123,15 +113,65 @@ class LoadRoot(ABC, Dataframe):
         yield self.from_root(), self.files
 
     def train(self):
-        self._trainables.append(
-            _load_df_from_root(
-                *self._from_root(),
-                max_workers=self.opts.max_workers,
-                chunksize=self.opts.chunksize,
-                tree=self.opts.tree,
+        if not self.trainable:
+            raise NotImplementedError(
+                f"{type(self).__name__} does not support training"
             )
+        loader = _load_root(
+            *self._from_root(),
+            max_workers=self.opts.max_workers,
+            chunksize=self.opts.train_chunksize,
+            tree=self.opts.tree,
         )
-        return super().train()
+        loader.to_tensor = self.to_tensor
+        loader.postprocessors = self.postprocessors
+        return [loader]
+
+    def evaluate(self):
+        if not self.evaluable:
+            raise NotImplementedError(
+                f"{type(self).__name__} does not support evaluation"
+            )
+        from concurrent.futures import ProcessPoolExecutor
+
+        from base_class.root import Chunk
+        from classifier.monitor.progress import Progress
+        from classifier.process import pool, status
+        from classifier.root.dataset import FriendTreeEvalDataset
+
+        from_roots = [*self._from_root()]
+        with ProcessPoolExecutor(
+            max_workers=self.opts.max_workers,
+            mp_context=status.context,
+            initializer=status.initializer,
+        ) as executor:
+            with Progress.new(
+                total=sum(map(lambda x: len(x[1]), from_roots)),
+                msg=("files", "Fetching metadata"),
+            ) as progress:
+                groups = [
+                    (
+                        from_root,
+                        pool.submit(
+                            executor,
+                            _fetch(tree=self.opts.tree),
+                            files,
+                            callbacks=[lambda _: progress_advance(progress)],
+                        ),
+                    )
+                    for from_root, files in from_roots
+                ]
+                groups = [(from_root, [*files]) for from_root, files in groups]
+                yield FriendTreeEvalDataset(
+                    chunks=Chunk.common(*chain(*map(lambda x: x[1], groups))),
+                    load_method=_eval_root(
+                        *groups,
+                        to_tensor=self.to_tensor,
+                        postprocessors=self.postprocessors,
+                    ),
+                    dump_base_path=IOSetting.output / self.opts.eval_base,
+                    dump_naming=self.opts.eval_naming,
+                )
 
     @cached_property
     def files(self) -> list[str]:
@@ -208,7 +248,10 @@ class _fetch:
         return chunk
 
 
-class _load_df_from_root(_load_df):
+class _load_root:
+    to_tensor: ToTensor
+    postprocessors: list[DFProcessor]
+
     def __init__(
         self,
         *from_root: tuple[FromRoot, list[str]],
@@ -220,6 +263,12 @@ class _load_df_from_root(_load_df):
         self._max_workers = max_workers
         self._chunksize = chunksize
         self._tree = tree
+
+    def __call__(self):
+        data = self.load()
+        for p in self.postprocessors:
+            data = p(data)
+        return self.to_tensor.tensor(data)
 
     def load(self) -> pd.DataFrame:
         from concurrent.futures import ProcessPoolExecutor
@@ -258,7 +307,7 @@ class _load_df_from_root(_load_df):
                         *(
                             pool.submit(
                                 executor,
-                                self._from_root[i][0].read,
+                                self._from_root[i][0],
                                 Chunk.balance(
                                     self._chunksize,
                                     *chunks[i],
@@ -281,3 +330,27 @@ class _load_df_from_root(_load_df):
             f"columns: {sorted(df.columns)}",
         )
         return df
+
+
+class _eval_root:
+    def __init__(
+        self,
+        *from_root: tuple[FromRoot, Iterable[Chunk]],
+        to_tensor: ToTensor,
+        postprocessors: list[DFProcessor],
+    ):
+        self._from_roots: list[FromRoot] = []
+        self._lookup: dict[Chunk, int] = {}
+        for from_root, chunks in from_root:
+            idx = len(self._from_roots)
+            self._from_roots.append(from_root)
+            for chunk in chunks:
+                self._lookup[chunk.key()] = idx
+        self._postprocessors = postprocessors
+        self._to_tensor = to_tensor
+
+    def __call__(self, chunk: Chunk):
+        data = self._from_roots[self._lookup[chunk]](chunk)
+        for p in self._postprocessors:
+            data = p(data)
+        return self._to_tensor.tensor(data)

@@ -18,7 +18,7 @@ class _filedir(Exception): ...
 
 def _subcomplete(cls: type[TaskBase], args: list[str]):
     last = args[-1] if args else ""
-    yield from (i for i in m.EntryPoint._preserved if i.startswith(last))
+    yield from (i for i in m.EntryPoint._reserved if i.startswith(last))
     if (
         isinstance(cls, type)
         and issubclass(cls, TaskBase)
@@ -46,13 +46,13 @@ def autocomplete(args: Iterable[str]):
     args = deque(args[1:])
     main = args.popleft() if args else ""
     if len(args) == 0:
-        for part in m.EntryPoint._tasks + [m._FROM, m._TEMPLATE]:
+        for part in m.EntryPoint._mains + [m._FROM, m._TEMPLATE]:
             if part.startswith(main):
                 yield part
         return
     subargs = m.EntryPoint._fetch_subargs(args)
     if len(args) == 0:
-        if main in m.EntryPoint._tasks:
+        if main in m.EntryPoint._mains:
             yield from _subcomplete(
                 m.EntryPoint._fetch_module(f"{main}.Main", m._MAIN)[1], subargs
             )
@@ -63,9 +63,9 @@ def autocomplete(args: Iterable[str]):
         cat = args.popleft().removeprefix(m._DASH)
         mod = args.popleft() if args else None
         if len(args) == 0:
-            if cat in m.EntryPoint._keys:
+            if cat in m.EntryPoint._tasks:
                 mod = mod or ""
-                target = m.EntryPoint._keys[cat]
+                target = m.EntryPoint._tasks[cat]
                 for imp in _walk_packages(f"{m._CLASSIFIER}/{m._CONFIG}/{cat}/"):
                     if imp:
                         imp = f"{imp}."
@@ -84,7 +84,7 @@ def autocomplete(args: Iterable[str]):
                 return
         subargs = m.EntryPoint._fetch_subargs(args)
         if len(args) == 0:
-            if cat in m.EntryPoint._keys:
+            if cat in m.EntryPoint._tasks:
                 yield from _subcomplete(
                     m.EntryPoint._fetch_module(mod or "", cat)[1], subargs
                 )

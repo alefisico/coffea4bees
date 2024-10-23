@@ -20,7 +20,7 @@ class Main(main.Main):
     def run(self, parser: EntryPoint):
         logger = logging.getLogger()
         logger.setLevel(logging.DEBUG)
-        for k, v in parser.mods.items():
+        for k, v in parser.tasks.items():
             logging.debug(f"Checking [blue]{k}[/blue]...")
             args = parser.args[k]
             for t, arg in zip(v, args):

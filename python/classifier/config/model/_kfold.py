@@ -1,19 +1,23 @@
 from __future__ import annotations
 
+import json
 from abc import ABC, abstractmethod
 from functools import cached_property
 from typing import TYPE_CHECKING
 
+import fsspec
 from classifier.task import ArgParser, Model, converter, parse
 
+from ..setting import ResultKey
+
 if TYPE_CHECKING:
-    from classifier.ml import MultiStageTraining
+    from base_class.system.eos import PathLike
+    from classifier.ml.evaluation import Evaluation
     from classifier.ml.skimmer import Splitter
-    from classifier.process.device import Device
-    from torch.utils.data import StackDataset
+    from classifier.ml.training import MultiStageTraining
 
 
-class _KFold(Model):
+class KFoldTrain(ABC, Model):
     argparser = ArgParser()
     argparser.add_argument(
         "--kfolds",
@@ -66,8 +70,6 @@ class _KFold(Model):
             return []
         return [(*seed, offset) for offset in offsets]
 
-
-class KFoldClassifier(ABC, _KFold):
     @abstractmethod
     def initializer(self, splitter: Splitter, **kwargs) -> MultiStageTraining: ...
 
@@ -78,7 +80,6 @@ class KFoldClassifier(ABC, _KFold):
             return [
                 self.initializer(
                     KFold(self.kfolds, offset),
-                    model=type(self).__name__,
                     kfolds=self.kfolds,
                     offset=offset,
                 ).train
@@ -90,7 +91,6 @@ class KFoldClassifier(ABC, _KFold):
             return [
                 self.initializer(
                     RandomKFold(seed, self.kfolds, offset),
-                    model=type(self).__name__,
                     kfolds=self.kfolds,
                     offset=offset,
                     seed=seed,
@@ -98,3 +98,71 @@ class KFoldClassifier(ABC, _KFold):
                 for seed in self.seeds
                 for offset in self.offsets
             ]
+
+
+class KFoldEval(ABC, Model):
+    argparser = ArgParser()
+    argparser.add_argument(
+        "--models",
+        action="append",
+        metavar=("NAME", "PATH"),
+        nargs="+",
+        default=[],
+        help="name of the output stage and path to model json files",
+    )
+
+    @abstractmethod
+    def initializer(
+        self, model: PathLike, splitter: Splitter, **kwargs
+    ) -> Evaluation: ...
+
+    def evaluate(self):
+        models = []
+        for args in self.opts.models:
+            name = args[0]
+            paths = args[1:]
+            for path in paths:
+                with fsspec.open(path, "rt") as f:
+                    results: list[dict[str, dict]] = json.load(f).get(
+                        ResultKey.models, []
+                    )
+                for result in results:
+                    metadata = result.get("metadata", {})
+                    if ("kfolds" not in metadata) or ("offset" not in metadata):
+                        continue
+                    kfolds = metadata["kfolds"]
+                    offset = metadata["offset"]
+                    model = None
+                    for stage in result.get("history", [])[::-1]:
+                        if (stage.get("stage") == "Output") and (
+                            stage.get("name") == name
+                        ):
+                            model = stage["path"]
+                    if model is None:
+                        continue
+                    if "seed" in metadata:
+                        from classifier.ml.skimmer import RandomKFold
+
+                        seed = metadata["seed"]
+                        models.append(
+                            self.initializer(
+                                model=model,
+                                splitter=RandomKFold(seed, kfolds, offset),
+                                kfolds=kfolds,
+                                offset=offset,
+                                seed=seed,
+                            ).eval
+                        )
+                    else:
+                        from classifier.ml.skimmer import KFold
+
+                        models.append(
+                            self.initializer(
+                                model=model,
+                                splitter=KFold(kfolds, offset),
+                                kfolds=kfolds,
+                                offset=offset,
+                            ).eval
+                        )
+
+        return models
