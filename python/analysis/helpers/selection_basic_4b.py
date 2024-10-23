@@ -37,6 +37,8 @@ def apply_object_selection_4b(event, corrections_metadata, *,
         event['Jet', 'selected_loose'] = (event.Jet.pt >= 10) & (np.abs(event.Jet.eta) <= 4.7)
         event['Jet', 'selected'] = (event.Jet.pt >= 30) & (np.abs(event.Jet.eta) <= 2.4) & (event.Jet.jetId>=2)
         event['Jet', 'tagged']       = event.Jet.selected & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['M'])
+        event['Jet', 'bRegCorr']       = event.Jet.PNetRegPtRawCorr * event.Jet.PNetRegPtRawCorrNeutrino
+        event['Jet', 'puId']       = 10
         # event['Jet', 'tagged_loose'] = event.Jet.selected & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['L'])
         event['selJet'] = event.Jet[event.Jet.selected]
         event['nJet_selected'] = ak.sum(event.Jet.selected, axis=1)
@@ -70,6 +72,13 @@ def apply_object_selection_4b(event, corrections_metadata, *,
         ## for skims
         event['passJetMult_lowpt_forskim'] = event.passJetMult
         event['passPreSel_lowpt_forskim'] = event.passPreSel
+
+        tagCode = np.zeros(len(event), dtype=int)
+        tagCode[event.fourTag]  = 4
+        tagCode[event.threeTag] = 3
+        tagCode[event.twoTag] = 2
+
+        event['tag'] = tagCode
 
     ## For Run 2
     else:
@@ -265,7 +274,6 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
 
     if "hadronFlavour" in selev.Jet.fields:
         canJet["hadronFlavour"] = selev.Jet.hadronFlavour[canJet_idx]
-    canJet["calibration"] = selev.Jet.calibration[canJet_idx]
 
     #
     # pt sort canJets
