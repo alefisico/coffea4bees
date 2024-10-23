@@ -191,7 +191,9 @@ class analysis(processor.ProcessorABC):
 
 
         # Apply object selection (function does not remove events, adds content to objects)
-        event = apply_object_selection_4b( event, self.corrections_metadata[year], doLeptonRemoval=config["do_lepton_jet_cleaning"], override_selected_with_flavor_bit=config["override_selected_with_flavor_bit"] )
+        event = apply_object_selection_4b( event, self.corrections_metadata[year],
+                                           dataset=dataset,
+                                           doLeptonRemoval=config["do_lepton_jet_cleaning"], override_selected_with_flavor_bit=config["override_selected_with_flavor_bit"] )
 
         selections = PackedSelection()
         selections.add( "lumimask", event.lumimask)
@@ -277,8 +279,6 @@ class analysis(processor.ProcessorABC):
         canJet["jetId"] = selev.Jet.puId[canJet_idx]
         if config["isMC"]:
             canJet["hadronFlavour"] = selev.Jet.hadronFlavour[canJet_idx]
-        canJet["calibration"] = selev.Jet.calibration[canJet_idx]
-
 
         #
         # pt sort canJets
