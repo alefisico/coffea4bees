@@ -35,26 +35,43 @@ def apply_object_selection_4b(event, corrections_metadata, *,
     ## Very simplified selection for Run 3
     if '202' in dataset:  ### Run 3 is only with 202X years
         event['Jet', 'selected_loose'] = (event.Jet.pt >= 10) & (np.abs(event.Jet.eta) <= 4.7)
-        event['Jet', 'selected'] = (event.Jet.pt >= 30) & (np.abs(event.Jet.eta) <= 2.4) & (event.Jet.jetId>=2)         
+        event['Jet', 'selected'] = (event.Jet.pt >= 30) & (np.abs(event.Jet.eta) <= 2.4) & (event.Jet.jetId>=2)
+        event['Jet', 'tagged']       = event.Jet.selected & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['M'])
+        # event['Jet', 'tagged_loose'] = event.Jet.selected & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['L'])
         event['selJet'] = event.Jet[event.Jet.selected]
         event['nJet_selected'] = ak.sum(event.Jet.selected, axis=1)
-        
+
         if '2022' in dataset:
-            event['selJet'] = ak.pad_none(event.selJet, 4, axis=1)
-            event['passJetMult'] = ak.where( 
-                event.nJet_selected >= 4, 
-                (event.selJet[:, 0].pt > 70) &
-                (event.selJet[:, 1].pt > 50) &
-                (event.selJet[:, 2].pt > 40) &
-                (event.selJet[:, 3].pt > 35),
-                False
-                )
+            event['passJetMult'] = ak.where( event.nJet_selected >= 4, True, False)
+            #event['selJet'] = ak.pad_none(event.selJet, 4, axis=1)
+            #event['passJetMult'] = ak.where(
+            #    (event.nJet_selected >= 4) &
+            #    (event.selJet[:, 0].pt > 70) &
+            #    (event.selJet[:, 1].pt > 50) &
+            #    (event.selJet[:, 2].pt > 40) &
+            #    (event.selJet[:, 3].pt > 35),
+            #    True,
+            #    False
+            #    )
         else:
             event['passJetMult'] = ak.where( event.nJet_selected >= 4, True, False)
-        event['passPreSel'] = event.passJetMult  ## simple presel for skims, needs to be updated
-        event['passJetMult_lowpt_forskim'] = event.passJetMult
-        event['passPreSel_lowpt_forskim'] = event.passJetMult 
 
+        event['nJet_tagged']         = ak.num(event.Jet[event.Jet.tagged])
+        # event['nJet_tagged_loose']   = ak.num(event.Jet[event.Jet.tagged_loose])
+        event['tagJet']              = event.selJet[event.selJet.tagged]
+        # event['tagJet_loose']        = event.Jet[event.Jet.tagged_loose]
+
+        event['fourTag']  = (event['nJet_tagged'] >= 4)
+        event['threeTag']   = (event['nJet_tagged'] == 3) & (event['nJet_selected'] >= 4)
+        event['twoTag']   = (event['nJet_tagged'] == 2) & (event['nJet_selected'] >= 4)
+
+        event['passPreSel'] = event.twoTag | event.threeTag | event.fourTag
+
+        ## for skims
+        event['passJetMult_lowpt_forskim'] = event.passJetMult
+        event['passPreSel_lowpt_forskim'] = event.passPreSel
+
+    ## For Run 2
     else:
         #
         # Adding muons (loose muon id definition)
@@ -102,29 +119,24 @@ def apply_object_selection_4b(event, corrections_metadata, *,
         event['Jet', 'tagged_loose'] = event.Jet.selected & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['L'])
         event['selJet_no_bRegCorr']  = event.Jet[event.Jet.selected]
 
-        do_bRegCor = True
-        if do_bRegCor:
+        #
+        # Apply the bRegCorr to the tagged jets
+        #
+        bRegCorr_factor_flat = copy(ak.flatten(event.Jet.bRegCorr).to_numpy())
+        tagged_flag_flat    = ak.flatten(event.Jet.tagged)
+        bRegCorr_factor_flat[~tagged_flag_flat] = 1.0
+        bRegCorr_factor = ak.unflatten(bRegCorr_factor_flat, ak.num(event.Jet.bRegCorr) )
+        selJet_pvec = event.Jet[event.Jet.selected]  * bRegCorr_factor[event.Jet.selected]
+        selJet_pvec["tagged"] = event.Jet[event.Jet.selected].tagged
+        selJet_pvec["tagged_loose"] = event.Jet[event.Jet.selected].tagged_loose
+        selJet_pvec["btagDeepFlavB"] = event.Jet[event.Jet.selected].btagDeepFlavB
+        selJet_pvec["puId"] = event.Jet[event.Jet.selected].puId
+        selJet_pvec["jetId"] = event.Jet[event.Jet.selected].jetId
 
-            #
-            # Apply the bRegCorr to the tagged jets
-            #
-            bRegCorr_factor_flat = copy(ak.flatten(event.Jet.bRegCorr).to_numpy())
-            tagged_flag_flat    = ak.flatten(event.Jet.tagged)
-            bRegCorr_factor_flat[~tagged_flag_flat] = 1.0
-            bRegCorr_factor = ak.unflatten(bRegCorr_factor_flat, ak.num(event.Jet.bRegCorr) )
-            selJet_pvec = event.Jet[event.Jet.selected]  * bRegCorr_factor[event.Jet.selected]
-            selJet_pvec["tagged"] = event.Jet[event.Jet.selected].tagged
-            selJet_pvec["tagged_loose"] = event.Jet[event.Jet.selected].tagged_loose
-            selJet_pvec["btagDeepFlavB"] = event.Jet[event.Jet.selected].btagDeepFlavB
-            selJet_pvec["puId"] = event.Jet[event.Jet.selected].puId
-            selJet_pvec["jetId"] = event.Jet[event.Jet.selected].jetId
+        if "hadronFlavour" in event.Jet.fields:
+            selJet_pvec["hadronFlavour"] = event.Jet[event.Jet.selected].hadronFlavour
 
-            if "hadronFlavour" in event.Jet.fields:
-                selJet_pvec["hadronFlavour"] = event.Jet[event.Jet.selected].hadronFlavour
-
-            event['selJet']  = selJet_pvec
-        else:
-            event['selJet'] = event.Jet[event.Jet.selected]
+        event['selJet']  = selJet_pvec
 
         event['passJetMult'] = event.nJet_selected >= 4
 
@@ -159,10 +171,10 @@ def apply_object_selection_4b(event, corrections_metadata, *,
             event['tagJet_lowpt'] = event.Jet[event.Jet.tagged_lowpt]
             event['lowpt_fourTag']  = (event['nJet_tagged']==3) & (event['nJet_tagged_lowpt'] > 0) & ~event.fourTag
             event['lowpt_threeTag_3b1j_0b'] = (event['nJet_tagged_loose'] == 3) & (event['nJet_selected'] >= 4) & (event['nJet_tagged_loose_lowpt']==0) & (ak.num(event['lowptJet'])>0)
-            event['lowpt_threeTag_2b2j_1b'] = (event['nJet_tagged_loose'] == 2) & (event['nJet_selected'] >= 4) & (event['nJet_tagged_loose_lowpt']==1) 
-            event['lowpt_threeTag_1b3j_2b'] = (event['nJet_tagged_loose'] == 1) & (event['nJet_selected'] >= 4) & (event['nJet_tagged_loose_lowpt']==2) 
-            event['lowpt_threeTag_0b4j_3b'] = (event['nJet_tagged_loose'] == 0) & (event['nJet_selected'] >= 4) & (event['nJet_tagged_loose_lowpt']==3) 
-            event['lowpt_threeTag'] = event['lowpt_threeTag_3b1j_0b'] | event['lowpt_threeTag_2b2j_1b'] | event['lowpt_threeTag_1b3j_2b'] | event['lowpt_threeTag_0b4j_3b'] 
+            event['lowpt_threeTag_2b2j_1b'] = (event['nJet_tagged_loose'] == 2) & (event['nJet_selected'] >= 4) & (event['nJet_tagged_loose_lowpt']==1)
+            event['lowpt_threeTag_1b3j_2b'] = (event['nJet_tagged_loose'] == 1) & (event['nJet_selected'] >= 4) & (event['nJet_tagged_loose_lowpt']==2)
+            event['lowpt_threeTag_0b4j_3b'] = (event['nJet_tagged_loose'] == 0) & (event['nJet_selected'] >= 4) & (event['nJet_tagged_loose_lowpt']==3)
+            event['lowpt_threeTag'] = event['lowpt_threeTag_3b1j_0b'] | event['lowpt_threeTag_2b2j_1b'] | event['lowpt_threeTag_1b3j_2b'] | event['lowpt_threeTag_0b4j_3b']
             tagCode[event["lowpt_fourTag"]] = 14
             tagCode[event["lowpt_threeTag"]] = 13
             event['lowpt_categories'] = np.where(
@@ -224,9 +236,7 @@ def apply_object_selection_boosted_4b( event ):
     return event
 
 def create_cand_jet_dijet_quadjet( selev, event_event,
-                                   isMC:bool = False,
                                    apply_FvT:bool = False,
-                                   apply_boosted_veto:bool = False,
                                    run_SvB:bool = False,
                                    run_systematics:bool = False,
                                    classifier_SvB = None,
@@ -348,7 +358,7 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
     max_xHH = 1.9
     quadJet["ZZSR"] = quadJet.xZZ < max_xZZ
     quadJet["ZHSR"] = quadJet.xZH < max_xZH
-    quadJet["HHSR"] = ((quadJet.xHH < max_xHH) & selev.vetoBoostedSel ) if apply_boosted_veto else (quadJet.xHH < max_xHH)
+    quadJet["HHSR"] = ((quadJet.xHH < max_xHH) & selev.notInBoostedSel ) if 'notInBoostedSel' in selev.fields else (quadJet.xHH < max_xHH)  ## notInBoostedSel is true by default
     quadJet["SR"] = quadJet.ZZSR | quadJet.ZHSR | quadJet.HHSR
     quadJet["SB"] = quadJet.passDiJetMass & ~quadJet.SR
 

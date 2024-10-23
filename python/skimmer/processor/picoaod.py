@@ -112,10 +112,8 @@ class PicoAOD(ProcessorABC):
             }
             | result
         }
-        lumi = events.metadata.get("lumi", 1.0)
-        xs = events.metadata.get("xs", 1.0)
-        kFactor = events.metadata.get("kFactor", 1.0)
-        self._cutFlow.addOutputSkim(result, dataset, lumi=lumi, xs=xs, kFactor=kFactor)
+        self._cutFlow.addOutputSkim(result, dataset)
+        self._cutFlow.addOutputLumisProcessed(result, dataset, events.run, events.luminosityBlock)
 
         # sanity check
         if (
@@ -234,7 +232,7 @@ def integrity_check(
         chunk_missing = []
         for file in inputs:
             if file not in outputs:
-                logging.error(f'The whole file is missing: "{file}"')
+                logging.error(f'The whole file is missing in outputs: "{file}"')
                 file_missing.append(str(file))
             else:
                 chunks = sorted(outputs[file], key=lambda x: x[0])

@@ -224,11 +224,8 @@
     - DUMMY
   btagSF: '/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/DUMMY/btagging.json.gz'
   btagWP:
-    #L: 0.0508
-    #M: 0.2598
-    #T: 0.6502
-    L: 0.3
-    M: 0.6
+    L: 0.047
+    M: 0.245
   btag_uncertainties:
     - cferr1
     - cferr2
@@ -263,11 +260,8 @@
     - DUMMY
   btagSF: '/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/DUMMY/btagging.json.gz'
   btagWP:
-    #L: 0.0508
-    #M: 0.2598
-    #T: 0.6502
-    L: 0.3
-    M: 0.6
+    L: 0.0499
+    M: 0.2605
   btag_uncertainties:
     - cferr1
     - cferr2
@@ -305,11 +299,8 @@
     - DUMMY
   btagSF: '/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/DUMMY/btagging.json.gz'
   btagWP:
-    #L: 0.0508
-    #M: 0.2598
-    #T: 0.6502
-    L: 0.3
-    M: 0.6
+    L: 0.0358
+    M: 0.1917
   btag_uncertainties:
     - cferr1
     - cferr2
@@ -343,11 +334,8 @@
     - DUMMY
   btagSF: '/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/DUMMY/btagging.json.gz'
   btagWP:
-    #L: 0.0508
-    #M: 0.2598
-    #T: 0.6502
-    L: 0.3
-    M: 0.6
+    L: 0.0359
+    M: 0.1919
   btag_uncertainties:
     - cferr1
     - cferr2

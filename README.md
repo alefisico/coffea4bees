@@ -1,6 +1,9 @@
 # Coffea4bees
 
 
+[![pipeline status](https://gitlab.cern.ch/cms-cmu/coffea4bees/badges/master/pipeline.svg)](https://gitlab.cern.ch/cms-cmu/coffea4bees/-/commits/master)
+
+
 This is the repository for the 4b analyses at CMU based in coffea. 
 
 The package has a python component, where most of the analysis is made, and a c++ component meant to be run inside CMSSW.
@@ -95,17 +98,29 @@ The CI runs on remote files and therefore it needs your grid certificate. If you
 
 If you did this step correctly, then you can check in your pipelines and see that the stage `build`, job `voms-proxy` ran succesfully.
 
+### To run the ci workflow locally in your machine
+
+We are using [Snakemake](https://snakemake.readthedocs.io/en/stable/) to recreate the workflow run in the GitLab CI. Snakemake is the workflow management package that REANA uses to submit the jobs. 
+
+Inside the [.ci-workflows](.ci-workflows) folder there are two files: `run_local_ci.sh` and `Snakefile_testCI`. The `run_local_ci.sh` file is a convenient way to run the part of the CI workflow that needs to be run locally, while the `Snakefile_testCI` defines the workflow. If you need to run the CI locally, you can just run **from the root folder coffea4bees/**:
+
+```
+source .ci-workflows/run_local_ci.sh NAME_OF_CI_JOB
+```
+where `NAME_OF_CI_JOB` corresponds to the job's name in the GitLab CI workflow. This command will automatically run the part of the CI to which the job belongs. All the output files will be located inside the `python/output/` folder, and each step will create a separate folder with the job's name. 
+
+Remember, that is a **feature** of `Snakemake` to first check if the output files of each job exist. If the files exist, the job will be skipped to the next part of the workflow. Therefore, if you are debugging and need to rerun the workflow, remember to manually remove the folder containing the output files. 
+
+If you are interested in `Snakemake`, the file `Snakefile_testCI` defines a "rule" (job) similar to the job defined for gitlab CI. Also, the way of including rules in the workflow depends on the input to `rule all`. Rules can be defined anywhere after `rule all` but will only be run IF the output files are listed in `rule all`. Finally, unlike gitlab CI, where the output files **should** be listed, in snakemake, the output files need to define the subsequent rule to follow. 
+
+
 ## Information about the container
 
 This packages uses its own container. It is based on `coffeateam/coffea-dask:latest` including some additional python packages. This container is created automatically in the gitlab CI step **IF** the name of the branch (and the merging branch in the case of a pull request to the master) starts with `container_`. Additionally, one can take a look at the file [.dockerfiles/Dockerfile_analysis](.dockerfiles/Dockerfile_analysis) which is the one used to create the container.
 
 ## Python sytle tips:
 
-PEP8
-
-https://peps.python.org/pep-0008/
-https://pypi.org/project/pycodestyle/
-
+If you want to test your code against the PEP8 style, you can use this:
 
 ```
 > pycodestyle  --show-source base_class/plots.py

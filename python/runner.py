@@ -35,7 +35,8 @@ NanoAODSchema.warn_missing_crossrefs = False
 warnings.filterwarnings("ignore")
 
 def list_of_files(ifile, 
-                  allowlist_sites: list =['T3_US_FNALLPC'], 
+                  allowlist_sites: list =['T3_US_FNALLPC'],
+                  blocklist_sites: list =[], 
                   rucio_regex_sites: str ='T[23]', 
                   test: bool = False, 
                   test_files: int = 5
@@ -51,7 +52,7 @@ def list_of_files(ifile,
     else:
         rucio_client = rucio_utils.get_rucio_client()
         outfiles, outsite, sites_counts = rucio_utils.get_dataset_files_replicas(
-            ifile, client=rucio_client, regex_sites=fr"{rucio_regex_sites}", mode="first", allowlist_sites=allowlist_sites)
+            ifile, client=rucio_client, regex_sites=fr"{rucio_regex_sites}", mode="first", allowlist_sites=allowlist_sites, blocklist_sites=blocklist_sites)
         return outfiles[:(test_files if test else None)]
 
 
@@ -145,6 +146,7 @@ if __name__ == '__main__':
     config_runner.setdefault('schema', NanoAODSchema)
     config_runner.setdefault('test_files', 5)
     config_runner.setdefault('allowlist_sites', ['T3_US_FNALLPC'])
+    config_runner.setdefault('blocklist_sites', [''])
     config_runner.setdefault('rucio_regex_sites', "T[23]")
     config_runner.setdefault('class_name', 'analysis')
     config_runner.setdefault('condor_cores', 2)
