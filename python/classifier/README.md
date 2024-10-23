@@ -216,11 +216,11 @@ export WFS="classifier/config/workflows/HCR/FvT"
 # cache the datasets
 ./pyml.py template "{user: ${USER}, dataset: default}" ${WFS}/cache_dataset.yml
 # train the classifier
-./pyml.py template "{tag: test, offset: 0-2}" ${WFS}/train_random.yml -template "{user: ${USER}, dataset: default}" ${WFS}/load_cache.yml -setting torch.DataLoader "{num_workers: 4, batch_eval: 100000}"
+./pyml.py template "{tag: test, offset: 0-2}" ${WFS}/train_random.yml -template "{user: ${USER}, dataset: default}" ${WFS}/load_cache.yml -setting torch.DataLoader "{num_workers: 4}"
 # make benchmark plots
 ./pyml.py template "{tag: test, user: ${USER}, cernuser: CERN_USERNAME}" ${WFS}/plot_roc.yml
 # evaluate the classifier (without merging k-folds)
-./pyml.py template "{tag: test, user: ${USER}}" ${WFS}/evaluate.yml -setting torch.DataLoader "{num_workers: 4}"
+./pyml.py template "{tag: test, user: ${USER}}" ${WFS}/evaluate.yml -setting torch.DataLoader "{num_workers: 4, batch_eval: 100000}"
 ```
 
 where the `tag` and `dataset` can be any string. The `offset` is used to make different random k-foldings, e.g.
