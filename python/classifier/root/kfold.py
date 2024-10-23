@@ -94,7 +94,7 @@ class merge_kfolds:
         with (
             Progress.new(
                 total=sum(map(len, targets)),
-                msg=("entries", "Merging", "k-folds"),
+                msg=("entries", "Merging", f"{len(self._friends)}-folds"),
             ) as progress,
             ProcessPoolExecutor(
                 max_workers=self._workers,
