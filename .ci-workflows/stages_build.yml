@@ -1,3 +1,12 @@
+include:
+  - project: 'ci-tools/container-image-ci-templates'
+    file:
+      - 'kaniko-image.gitlab-ci.yml'
+
+
+
+
+
 #### from https://gitlab.cern.ch/gitlabci-examples/build_docker_image/-/blob/master/.gitlab-ci.yml?ref_type=heads
 .base_build_container:
     stage: build
@@ -20,17 +29,19 @@
         - echo "Image pushed successfully to ${IMAGE_DESTINATION}"
     rules:
       - if: $CI_COMMIT_BRANCH =~ /^container.*/ 
-      - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^container.*/'
+      - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master" && $CI_PIPELINE_SOURCE == "merge_request_event"'
 
 build_container_lpccondor:
   extends:
-    - .base_build_container
+    - .build_kaniko
   variables:
-      # To push to a specific docker tag other than latest(the default), amend the --destination parameter, e.g. --destination $CI_REGISTRY_IMAGE:$CI_BUILD_REF_NAME
-      # See https://docs.gitlab.com/ee/ci/variables/predefined_variables.html#variables-reference for available variables
-      DOCKER_FILE: $CI_PROJECT_DIR/.dockerfiles/Dockerfile_analysis
-      IMAGE_DESTINATION_LATEST: ${CI_REGISTRY_IMAGE}:latest
-      IMAGE_DESTINATION: ${CI_REGISTRY_IMAGE}:$CI_COMMIT_SHORT_SHA
+    CONTEXT_DIR: ""
+    DOCKER_FILE_NAME: ".dockerfiles/Dockerfile_analysis"
+    GIT_SUBMODULE_STRATEGY: recursive
+    PUSH_IMAGE: "true"
+    REGISTRY_IMAGE_PATH: ${CI_REGISTRY_IMAGE}
+    EXTRA_TAGS: "latest $CI_COMMIT_SHORT_SHA"
+
 
 build_container_reana:
   extends:
