@@ -115,8 +115,8 @@ rule trig_emulator:
 
 rule skimmer_test_job:
     container: analysis_container
-    output:
-      f"{output_dir}/skimmer_test_job/picoaod_datasets_GluGluToHHTo4B_cHHH0_UL18.yml"
+    log: f"{output_dir}/skimmer_test_job.log"
+    output: f"{output_dir}/skimmer_test_job/picoaod_datasets_GluGluToHHTo4B_cHHH0_UL18.yml"
     shell: "source .ci-workflows/skimmer-test-job.sh"
 
 rule skimmer_basic_test_job:
@@ -126,13 +126,14 @@ rule skimmer_basic_test_job:
 
 rule synthetic_dataset_make_dataset:
     container: analysis_container
-    output:
-      f"{output_dir}/synthetic_dataset_make_dataset/picoaod_datasets_declustered_test_UL18.yml",
+    log: f"{output_dir}/synthetic_dataset_make_dataset.log"
+    output: f"{output_dir}/synthetic_dataset_make_dataset/picoaod_datasets_declustered_test_UL18.yml",
     shell: "source .ci-workflows/synthetic-dataset-make-dataset.sh"
 
 
 rule weights_trigger_friendtree_job:
     container: analysis_container
+    log: f"{output_dir}/weights_trigger_friendtree_job.log"
     output: 
       f"{output_dir}/weights_trigger_friendtree_job/trigger_weights_friends.json",
       f"{output_dir}/weights_trigger_friendtree_job/GluGluToHHTo4B_cHHH1_UL18/trigWeight.chunk2.root"
@@ -140,40 +141,40 @@ rule weights_trigger_friendtree_job:
 
 rule classifier_friendtree_job:
     container: analysis_container
-    output: 
-      f"{output_dir}/classifier_friendtree_job/classifier_friendtree.yml"
+    log: f"{output_dir}/classifier_friendtree_job.log"
+    output: f"{output_dir}/classifier_friendtree_job/classifier_friendtree.yml"
     shell: "source .ci-workflows/classifier-friendtree-job.sh"
 
 rule topreco_friendtree_job:
     container: analysis_container
-    output: 
-      f"{output_dir}/topreco_friendtree_job/top_reconstruction_friendtree.json"
+    log: f"{output_dir}/topreco_friendtree_job.log"
+    output: f"{output_dir}/topreco_friendtree_job/top_reconstruction_friendtree.json"
     shell: "source .ci-workflows/topreco-friendtree-job.sh"
 
 
 rule analysis_test_job:
-    output: 
-        f"{output_dir}/analysis_test_job/test.coffea" 
+    output: f"{output_dir}/analysis_test_job/test.coffea" 
+    log: f"{output_dir}/analysis_test_job.log"
     container: analysis_container
     shell: "source .ci-workflows/analysis-test-job.sh"
 
 
 rule analysis_test_job_truthStudy:
-    output: 
-        f"{output_dir}/analysis_test_job_truthStudy/test_truthStudy.coffea" 
+    output: f"{output_dir}/analysis_test_job_truthStudy/test_truthStudy.coffea" 
+    log: f"{output_dir}/analysis_test_job_truthStudy.log"
     container: analysis_container
     shell: "source .ci-workflows/analysis-test-job-truthStudy.sh"
 
 rule synthetic_dataset_cluster:
-    output: 
-        f"{output_dir}/synthetic_dataset_cluster/test_synthetic_datasets.coffea" 
+    output: f"{output_dir}/synthetic_dataset_cluster/test_synthetic_datasets.coffea" 
+    log: f"{output_dir}/synthetic_dataset_cluster.log"
     container: analysis_container
     shell: "source .ci-workflows/synthetic-dataset-cluster.sh"
 
 
 rule analysis_test_job_unsup:
-    output: 
-        f"{output_dir}/analysis_test_job_unsup/test_unsup.coffea" 
+    output: f"{output_dir}/analysis_test_job_unsup/test_unsup.coffea" 
+    log: f"{output_dir}/analysis_test_job_unsup.log"
     container: analysis_container
     shell: "source .ci-workflows/analysis-test-job-unsup.sh"
 
@@ -181,51 +182,48 @@ rule analysis_test_mixed_job:
     output: 
         f"{output_dir}/analysis_test_mixed_job/testMixedData.json",
         f"{output_dir}/analysis_test_mixed_job/testMixedData.coffea"
+    log: f"{output_dir}/analysis_test_mixed_job.log"
     container: analysis_container
     shell: "source .ci-workflows/analysis-test-mixed-job.sh"
 
 rule analysis_systematics_test_job:
-    output: 
-        f"{output_dir}/analysis_systematics_test_job/test_systematics.coffea" 
+    output: f"{output_dir}/analysis_systematics_test_job/test_systematics.coffea" 
+    log: f"{output_dir}/analysis_systematics_test_job.log"
     container: analysis_container
     shell: "source .ci-workflows/analysis-systematics-test-job.sh"
 
 rule skimmer_analysis_test_job:
     input: f"{output_dir}/skimmer_test_job/picoaod_datasets_GluGluToHHTo4B_cHHH0_UL18.yml"
-    output: 
-        f"{output_dir}/skimmer_analysis_test_job/test_skimmer.coffea"
+    output: f"{output_dir}/skimmer_analysis_test_job/test_skimmer.coffea"
+    log: f"{output_dir}/skimmer_analysis_test_job.log"
     container: analysis_container
     shell: "source .ci-workflows/skimmer-analysis-test-job.sh"
 
 rule synthetic_dataset_analyze:
-    input:
-        f"{output_dir}/synthetic_dataset_make_dataset/picoaod_datasets_declustered_test_UL18.yml"
-    output: 
-        f"{output_dir}/synthetic_dataset_analyze/test_synthetic_datasets.coffea" 
+    input: f"{output_dir}/synthetic_dataset_make_dataset/picoaod_datasets_declustered_test_UL18.yml"
+    output: f"{output_dir}/synthetic_dataset_analyze/test_synthetic_datasets.coffea" 
+    log: f"{output_dir}/synthetic_dataset_analyze.log"
     container: analysis_container
     shell: "source .ci-workflows/synthetic-dataset-analyze.sh"
 
 rule weights_trigger_analysis_job:
-    input: 
-        f"{output_dir}/weights_trigger_friendtree_job/trigger_weights_friends.json"
-    output: 
-        f"{output_dir}/weights_trigger_analysis_job/test_trigWeight.coffea"
+    input: f"{output_dir}/weights_trigger_friendtree_job/trigger_weights_friends.json"
+    output: f"{output_dir}/weights_trigger_analysis_job/test_trigWeight.coffea"
+    log: f"{output_dir}/weights_trigger_analysis_job.log"
     container: analysis_container
     shell: "source .ci-workflows/weights-trigger-analysis-job.sh"
 
 rule analysis_makeweights_job:
-    input: 
-        f"{output_dir}/analysis_test_job/test.coffea"
-    output: 
-        f"{output_dir}/analysis_makeweights_job/testJCM_ROOT/jetCombinatoricModel_SB_.yml"
+    input: f"{output_dir}/analysis_test_job/test.coffea"
+    output: f"{output_dir}/analysis_makeweights_job/testJCM_ROOT/jetCombinatoricModel_SB_.yml"
+    log: f"{output_dir}/analysis_makeweights_job.log"
     container: analysis_container
     shell: "source .ci-workflows/analysis-makeweights-job.sh"
 
 rule analysis_runTwoStageClosure_ROOT:
-    input: 
-        f"{output_dir}/analysis_test_mixed_job/testMixedData.json"
-    output: 
-        f"{output_dir}/analysis_runTwoStageClosure_ROOT/test_dump_twoStageClosureInputsCounts.yml"
+    input: f"{output_dir}/analysis_test_mixed_job/testMixedData.json"
+    output: f"{output_dir}/analysis_runTwoStageClosure_ROOT/test_dump_twoStageClosureInputsCounts.yml"
+    log: f"{output_dir}/analysis_runTwoStageClosure_ROOT.log"
     shell:
       """
       export APPTAINER_BINDPATH=/uscmst1b_scratch,/cvmfs,/cvmfs/grid.cern.ch/etc/grid-security/vomses:/etc/vomses,/cvmfs/grid.cern.ch/etc/grid-security:/etc/grid-security,/tmp
@@ -244,88 +242,85 @@ rule analysis_runTwoStageClosure_ROOT:
       """
 
 rule analysis_plot_job:
-    input: 
-        f"{output_dir}/analysis_test_job/test.coffea"
-    output: 
-        f"{output_dir}/analysis_plot_job/RunII/passPreSel/fourTag/SR/SvB_MA_ps_zz.pdf"
+    input: f"{output_dir}/analysis_test_job/test.coffea"
+    output: f"{output_dir}/analysis_plot_job/RunII/passPreSel/fourTag/SR/SvB_MA_ps_zz.pdf"
+    log: f"{output_dir}/analysis_plot_job.log"
     container: analysis_container
     shell: "source .ci-workflows/analysis-plot-job.sh"
 
 rule analysis_plot_job_unsup:
-    input: 
-        f"{output_dir}/analysis_test_job_unsup/test_unsup.coffea"
-    output: 
-        f"{output_dir}/analysis_plot_job_unsup/RunII/passPreSel/fourTag/SR/mix_v0/v4j_mass.pdf"
+    input: f"{output_dir}/analysis_test_job_unsup/test_unsup.coffea"
+    output: f"{output_dir}/analysis_plot_job_unsup/RunII/passPreSel/fourTag/SR/mix_v0/v4j_mass.pdf"
+    log: f"{output_dir}/analysis_plot_job_unsup.log"
     container: analysis_container
     shell: "source .ci-workflows/analysis-plot-job-unsup.sh"
 
 rule analysis_iplot_job:
-    input: 
-        f"{output_dir}/analysis_test_job/test.coffea"
+    input: f"{output_dir}/analysis_test_job/test.coffea"
     log: f"{output_dir}/analysis_iplot_job.log"
     container: analysis_container
     shell: "source .ci-workflows/analysis-iplot-job.sh"
 
 rule baseclass_test_job:
-    input: 
-        f"{output_dir}/analysis_test_job/test.coffea"
+    input: f"{output_dir}/analysis_test_job/test.coffea"
     output: f"{output_dir}/baseclass_test_job/test_dumpPlotCounts.yml"
+    log: f"{output_dir}/baseclass_test_job.log"
     container: analysis_container
     shell: "source .ci-workflows/baseclass-test-job.sh"
 
 rule synthetic_dataset_plot_job:
-    input: 
-        f"{output_dir}/synthetic_dataset_cluster/test_synthetic_datasets.coffea"
+    input: f"{output_dir}/synthetic_dataset_cluster/test_synthetic_datasets.coffea"
     output: f"{output_dir}/synthetic_dataset_plot_job/jet-splitting-PDFs-test/clustering_pdfs_vs_pT_RunII.yml"
+    log: f"{output_dir}/synthetic_dataset_plot_job.log"
     container: analysis_container
     shell: "source .ci-workflows/synthetic-dataset-plot-job.sh"
 
 
 rule analysis_cutflow_job:    
     input: f"{output_dir}/analysis_test_job/test.coffea"
-    output: 
-        f"{output_dir}/analysis_cutflow_job/test_dump_cutflow.yml"
+    output: f"{output_dir}/analysis_cutflow_job/test_dump_cutflow.yml"
+    log: f"{output_dir}/analysis_cutflow_job.log"
     container: analysis_container
     shell: "source .ci-workflows/analysis-cutflow-job.sh"
 
 rule analysis_mixed_cutflow_job:    
     input: f"{output_dir}/analysis_test_mixed_job/testMixedData.coffea"
-    output: 
-        f"{output_dir}/analysis_mixed_cutflow_job/test_dump_MixedData.yml"
+    output: f"{output_dir}/analysis_mixed_cutflow_job/test_dump_MixedData.yml"
+    log: f"{output_dir}/analysis_mixed_cutflow_job.log"
     container: analysis_container
     shell: "source .ci-workflows/analysis-mixed-cutflow-job.sh"
 
 rule skimmer_analysis_cutflow_job:    
     input: f"{output_dir}/skimmer_analysis_test_job/test_skimmer.coffea"
-    output: 
-        f"{output_dir}/skimmer_analysis_cutflow_job/test_dump_skimmer_cutflow.yml"
+    output: f"{output_dir}/skimmer_analysis_cutflow_job/test_dump_skimmer_cutflow.yml"
+    log: f"{output_dir}/skimmer_analysis_cutflow_job.log"
     container: analysis_container
     shell: "source .ci-workflows/skimmer-analysis-cutflow-job.sh"
 
 rule analysis_systematics_cutflow_job:    
     input: f"{output_dir}/analysis_systematics_test_job/test_systematics.coffea"
-    output: 
-        f"{output_dir}/analysis_systematics_cutflow_job/test_dump_systematics_cutflow.yml"
+    output: f"{output_dir}/analysis_systematics_cutflow_job/test_dump_systematics_cutflow.yml"
+    log: f"{output_dir}/analysis_systematics_cutflow_job.log"
     container: analysis_container
     shell: "source .ci-workflows/analysis-systematics-cutflow-job.sh"
 
 rule analysis_cutflow_job_unsup:    
     input: f"{output_dir}/analysis_test_job_unsup/test_unsup.coffea"
-    output: 
-        f"{output_dir}/analysis_cutflow_job_unsup/test_dump_cutflow_unsup.yml"
+    output: f"{output_dir}/analysis_cutflow_job_unsup/test_dump_cutflow_unsup.yml"
+    log: f"{output_dir}/analysis_cutflow_job_unsup.log"
     container: analysis_container
     shell: "source .ci-workflows/analysis-cutflow-job-unsup.sh"
 
 rule synthetic_dataset_analyze_cutflow:
     input: f"{output_dir}/synthetic_dataset_analyze/test_synthetic_datasets.coffea"
-    output: 
-        f"{output_dir}/synthetic_dataset_analyze_cutflow/test_dump_cutflow_synthetic_datasets.yml"
+    output: f"{output_dir}/synthetic_dataset_analyze_cutflow/test_dump_cutflow_synthetic_datasets.yml"
+    log: f"{output_dir}/synthetic_dataset_analyze_cutflow.log"
     container: analysis_container
     shell: "source .ci-workflows/synthetic-dataset-analyze-cutflow.sh"
 
 rule weights_trigger_analysis_cutflow_job:
     input: f"{output_dir}/weights_trigger_analysis_job/test_trigWeight.coffea"
-    output: 
-        f"{output_dir}/weights_trigger_cutflow_job/test_dump_cutflow_trigWeight.yml"
+    output: f"{output_dir}/weights_trigger_cutflow_job/test_dump_cutflow_trigWeight.yml"
+    log: f"{output_dir}/weights_trigger_cutflow_job.log"
     container: analysis_container
     shell: "source .ci-workflows/weights-trigger-cutflow-job.sh"

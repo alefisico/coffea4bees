@@ -21,8 +21,17 @@ else
   echo "Output files will be created in the 'python/output' folder."
 fi
 
+# Check if the file ~/x509up* exists
+if ls ~/x509up* 1> /dev/null 2>&1; then
+  echo "Copying ~/x509up* to /proxy/x509_proxy."
+  cp ~/x509up* proxy/x509_proxy
+else
+  echo "File ~/x509up* does not exist. Run voms-proxy-init -voms cms before running this script."
+  return 0
+fi
+
 # Search for the job name and assign the output list it belongs to a variable
-OUTPUT_LIST=$(awk -v job="/$JOB_NAME/" '
+OUTPUT_LIST=$(awk -v job="/$JOB_NAME" '
   BEGIN { found=0; }
   /^output_/ { in_list=1; output_list=$1; next; }
   in_list && /^\]/ { in_list=0; }

@@ -282,10 +282,11 @@ class analysis(processor.ProcessorABC):
                 event['notInBoostedSel'] = np.array([e not in boosted_events_set for e in event.event.to_numpy()])
             elif self.dataset.startswith("data"):
                 boosted_file = load("metadata/boosted_overlap_data.coffea")
-                boosted_runs = boosted_file.get('run', [])
-                boosted_lumis = boosted_file.get('luminosityBlock', [])
-                boosted_events = boosted_file.get('event', [])
-                boosted_events_set = set(zip(boosted_runs, boosted_lumis, boosted_events))
+                mask = np.array(boosted_file['BDTcat_index']) > 0  ### > 0 is all boosted categories, 1 is most sensitive
+                filtered_runs = np.array(boosted_file['run'])[mask]
+                filtered_lumis = np.array(boosted_file['luminosityBlock'])[mask]
+                filtered_events = np.array(boosted_file['event'])[mask]
+                boosted_events_set = set(zip(filtered_runs, filtered_lumis, filtered_events))        
                 event_tuples = zip(event.run.to_numpy(), event.luminosityBlock.to_numpy(), event.event.to_numpy())
                 event['notInBoostedSel'] = np.array([t not in boosted_events_set for t in event_tuples])
             else:
@@ -518,6 +519,8 @@ class analysis(processor.ProcessorABC):
             self._cutFlow.fill("passDiJetMass", selev[selev.passDiJetMass])
             self._cutFlow.fill("passDiJetMass_woTrig", selev[selev.passDiJetMass],
                                wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[analysis_selections][selev.passDiJetMass] ))
+            self._cutFlow.fill("boosted_veto_passPreSel", selev[selev.notInBoostedSel])
+            self._cutFlow.fill("boosted_veto_SR", selev[selev.notInBoostedSel & selev["quadJet_selected"].SR])
             if self.run_SvB:
                 selev['passSR'] = selev.passDiJetMass & selev["quadJet_selected"].SR
                 self._cutFlow.fill( "SR", selev[selev.passSR] )
