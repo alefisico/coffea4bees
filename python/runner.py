@@ -34,11 +34,11 @@ dask.config.set({'logging.distributed': 'error'})
 NanoAODSchema.warn_missing_crossrefs = False
 warnings.filterwarnings("ignore")
 
-def list_of_files(ifile, 
+def list_of_files(ifile,
                   allowlist_sites: list =['T3_US_FNALLPC'],
-                  blocklist_sites: list =[], 
-                  rucio_regex_sites: str ='T[23]', 
-                  test: bool = False, 
+                  blocklist_sites: list =[],
+                  rucio_regex_sites: str ='T[23]',
+                  test: bool = False,
                   test_files: int = 5
                   ):
     '''Check if ifile is root file or dataset to check in rucio'''
@@ -290,9 +290,13 @@ if __name__ == '__main__':
 
                 nMixedSamples = metadata['datasets'][dataset]["nSamples"]
                 use_kfold = metadata['datasets'][dataset].get("use_kfold", False)
+                use_ZZinSB = metadata['datasets'][dataset].get("use_ZZinSB", False)
+                use_ZZandZHinSB = metadata['datasets'][dataset].get("use_ZZandZHinSB", False)
                 data_3b_mix_config = metadata['datasets'][dataset][year][config_runner['data_tier']]
                 logging.info(f"\nNumber of mixed samples is {nMixedSamples}")
                 logging.info(f"\nUsing kfolding? {use_kfold}")
+                logging.info(f"\nUsing ZZinSB? {use_ZZinSB}")
+                logging.info(f"\nUsing ZZandZHinSB? {use_ZZandZHinSB}")
 
                 idataset = f'{dataset}_{year}'
 
@@ -301,6 +305,12 @@ if __name__ == '__main__':
                 if use_kfold:
                     metadata_dataset[idataset]['FvT_files'] = [data_3b_mix_config['FvT_file_kfold_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
                     metadata_dataset[idataset]['FvT_names'] = [data_3b_mix_config['FvT_name_kfold_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
+                elif use_ZZinSB:
+                    metadata_dataset[idataset]['FvT_files'] = [data_3b_mix_config['FvT_file_ZZinSB_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
+                    metadata_dataset[idataset]['FvT_names'] = [data_3b_mix_config['FvT_name_ZZinSB_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
+                elif use_ZZandZHinSB:
+                    metadata_dataset[idataset]['FvT_files'] = [data_3b_mix_config['FvT_file_ZZandZHinSB_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
+                    metadata_dataset[idataset]['FvT_names'] = [data_3b_mix_config['FvT_name_ZZandZHinSB_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
                 else:
                     metadata_dataset[idataset]['FvT_files'] = [data_3b_mix_config['FvT_file_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
                     metadata_dataset[idataset]['FvT_names'] = [data_3b_mix_config['FvT_name_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
