@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Protocol
+from typing import Optional, Protocol
 
 from .special import interface
 from .task import Task
@@ -8,7 +8,7 @@ from .task import Task
 
 class Analysis(Task):
     @interface
-    def analyze(self, output: dict = None) -> list[Analyzer]:
+    def analyze(self, results: list[dict]) -> list[Analyzer]:
         """
         Prepare analyzers.
         """
@@ -16,7 +16,7 @@ class Analysis(Task):
 
 
 class Analyzer(Protocol):
-    def __call__(self):
+    def __call__(self) -> Optional[dict[str]]:
         """
         Run analysis.
         """

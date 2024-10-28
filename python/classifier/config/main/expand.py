@@ -42,6 +42,6 @@ class Main(main.Main):
         else:
             parser._expand(*self.opts.files, fetch_main=True)
         print(_print_mod(None, parser.args["main"][0], parser.args["main"][1]))
-        for cat in parser._keys:
+        for cat in parser._tasks:
             for mod, opts in parser.args[cat]:
                 print(_print_mod(cat, mod, opts))

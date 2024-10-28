@@ -6,6 +6,7 @@ from .special import interface
 from .task import Task
 
 if TYPE_CHECKING:
+    from classifier.nn.dataset.evaluation import EvalDatasetLike
     from torch.utils.data import StackDataset
 
     from ..process.device import Device
@@ -20,13 +21,24 @@ class Model(Task):
         ...
 
     @interface
-    def evaluate(self):  # TODO evaluation
+    def evaluate(self) -> list[ModelRunner]:
+        """
+        Prepare models for evaluation.
+        """
         ...
 
 
 class ModelTrainer(Protocol):
-    def __call__(self, device: Device, dataset: StackDataset) -> dict[str]: ...
+    def __call__(self, device: Device, dataset: StackDataset) -> dict[str]:
+        """
+        Train model on dataset.
+        """
+        ...
 
 
-class ModelRunner(Protocol):  # TODO evaluation
-    ...
+class ModelRunner(Protocol):
+    def __call__(self, device: Device, dataset: EvalDatasetLike) -> dict[str]:
+        """
+        Run model on dataset.
+        """
+        ...

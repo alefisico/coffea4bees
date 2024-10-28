@@ -6,13 +6,11 @@ from functools import cached_property
 from itertools import chain
 from typing import TYPE_CHECKING
 
-from base_class.utils import unique
-from classifier.task import ArgParser, EntryPoint, Main, converter
-from classifier.utils import call
+from classifier.task import ArgParser, Dataset, EntryPoint, Main, TaskOptions, converter
+from classifier.task.dataset import TrainingSetLoader
 
 if TYPE_CHECKING:
     from classifier.monitor.progress import ProgressTracker
-    from classifier.task.dataset import Dataset
 
 
 class progress_advance:
@@ -24,25 +22,8 @@ class progress_advance:
         self._progress.advance(step=self._step)
 
 
-class SetupMultiprocessing(Main):
-    argparser = ArgParser()
-    argparser.add_argument(
-        "--preload",
-        action="extend",
-        nargs="+",
-        default=["torch"],
-        help="preloaded imports when using multiprocessing",
-    )
-
-    def __init__(self):
-        super().__init__()
-        from classifier.process import get_context, status
-        from classifier.process.initializer import torch_set_sharing_strategy
-
-        status.context = get_context(
-            method="forkserver", library="torch", preload=unique(self.opts.preload)
-        )
-        status.initializer.add(torch_set_sharing_strategy("file_system"))
+def _load_dataset(loader: TrainingSetLoader):
+    return loader()
 
 
 class SelectDevice(Main):
@@ -62,7 +43,7 @@ class SelectDevice(Main):
         return Device(*self.opts.device)
 
 
-class LoadTrainingSets(SetupMultiprocessing):
+class LoadTrainingSets(Main):
     _workflow = [
         ("main", "[blue]\[loader, ...]=dataset.train()[/blue] initialize datasets"),
         ("sub", "[blue]loader()[/blue] load datasets"),
@@ -83,8 +64,8 @@ class LoadTrainingSets(SetupMultiprocessing):
         from torch.utils.data import ConcatDataset, StackDataset
 
         # load datasets in parallel
-        mods: list[Dataset] = parser.mods["dataset"]
-        loaders = [*chain(*(k.train() for k in mods))]
+        tasks: list[Dataset] = parser.tasks[TaskOptions.dataset.name]
+        loaders = [*chain(*(k.train() for k in tasks))]
         if len(loaders) == 0:
             raise ValueError("No dataset to load")
         logging.info(f"Loading {len(loaders)} datasets")
@@ -100,7 +81,7 @@ class LoadTrainingSets(SetupMultiprocessing):
             datasets = [
                 *pool.submit(
                     executor,
-                    call,
+                    _load_dataset,
                     loaders,
                     callbacks=[lambda _: progress_advance(progress)],
                 )
@@ -113,7 +94,7 @@ class LoadTrainingSets(SetupMultiprocessing):
         kept = sorted(kept)
         logging.info(f"The following keys will be kept: {kept}")
         if ignored:
-            logging.warn(f"The following keys will be ignored: {sorted(ignored)}")
+            logging.warning(f"The following keys will be ignored: {sorted(ignored)}")
         datasets = {k: ConcatDataset(d[k] for d in datasets) for k in kept}
         logging.info(f"Loaded {len(next(iter(datasets.values())))} data entries")
         return StackDataset(**datasets)

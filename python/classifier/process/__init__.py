@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 from uuid import uuid4
 
-from .initializer import status
+from .initializer import setup_context, status
 
 if TYPE_CHECKING:
     from multiprocessing.context import BaseContext
@@ -16,7 +16,14 @@ if TYPE_CHECKING:
         Process: type[BaseProcess]
 
 
-__all__ = ["status", "is_poxis", "n_cpu", "get_context"]
+__all__ = [
+    "status",
+    "is_poxis",
+    "n_cpu",
+    "get_context",
+    "pipe_address",
+    "setup_context",
+]
 
 
 def pipe_address(*prefix: str, uuid: bool = True):
@@ -43,12 +50,12 @@ def get_context(
     if method is ...:
         method = "forkserver" if is_poxis() else "spawn"
     if not is_poxis() and method.startswith("fork"):
-        logging.warn(
-            f'"{method}" is not supported on non-posix systems, fallback to "spawn"'
+        logging.warning(
+            f'"{method}" is not supported on non-posix systems, falling back to "spawn"'
         )
         method = "spawn"
     if method == "fork":
-        logging.warn(
+        logging.warning(
             f'"{method}" is unsafe, consider using "spawn" or "forkserver" instead'
         )
     match library:

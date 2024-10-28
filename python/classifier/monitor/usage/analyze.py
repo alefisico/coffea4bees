@@ -163,7 +163,7 @@ def _plot_process_tree(ps: list[ProcessInfo], start_t: int):
         G.add_node(
             p,
             label=f"{p}",
-            title=f"Unknown",
+            title="Unknown",
             group="unknown",
             **_GRAPH_KWARGS,
         )
@@ -243,7 +243,7 @@ def generate_report(
                 f.write(_plot_process_tree(dump["process"][ip], start_t))
             tree_btn.js_on_event(
                 "button_click",
-                CustomJS(code=code.js("open_url", url=f"process.html", mode="_blank")),
+                CustomJS(code=code.js("open_url", url="process.html", mode="_blank")),
             )
         # plot usage by pid
         for pid in sorted(pids):

@@ -1,4 +1,6 @@
-# template: tag
+# template:
+# - tag: name of the model (only used in the directory name)
+
 main:
   module: train
   option:
@@ -6,7 +8,7 @@ main:
     - --max-trainers 1
 
 model:
-  - module: HCR.SvB.ggF_All
+  - module: HCR.SvB.ggF.baseline.Train
     option:
       - --kfolds 3
       - --training FixedStep
@@ -17,7 +19,3 @@ setting:
   - module: IO
     option:
       - output: root://cmseos.fnal.gov//store/user/{{user}}/HH4b/classifier/SvB/train/{tag}/
-
-  - module: torch.DataLoader
-    option:
-      - num_workers: 4
