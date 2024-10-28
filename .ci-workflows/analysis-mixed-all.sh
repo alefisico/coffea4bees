@@ -22,8 +22,13 @@ python runner.py  -o histMixedBkg_data_3b_for_mixed.coffea -d   data_3b_for_mixe
 sed -e "s/use_ZZinSB: False/use_ZZinSB: True/" -i $DATASETS
 python runner.py  -o histMixedBkg_data_3b_for_mixed_ZZinSB.coffea -d   data_3b_for_mixed  -p analysis/processors/processor_HH4b.py -y 2016 2017 2018    -op hists/ -m $DATASETS
 
-sed -e "s/use_kfold: False/use_kfold: True/" -i $DATASETS
 sed -e "s/use_ZZinSB: True/use_ZZinSB: False/" -i $DATASETS
+sed -e "s/use_ZZandZHinSB: False/use_ZZandZHinSB: True/" -i $DATASETS
+python runner.py  -o histMixedBkg_data_3b_for_mixed_ZZandZHinSB.coffea -d   data_3b_for_mixed  -p analysis/processors/processor_HH4b.py -y 2016 2017 2018    -op hists/ -m $DATASETS
+
+sed -e "s/use_ZZandZHinSB: True/use_ZZandZHinSB: False/" -i $DATASETS
+sed -e "s/use_kfold: False/use_kfold: True/" -i $DATASETS
+
 
 python runner.py  -o histMixedData.coffea -d    mixeddata  -p analysis/processors/processor_HH4b.py -y 2016 2017 2018    -op hists/ -m $DATASETS
 python runner.py  -o histSignal.coffea -d    GluGluToHHTo4B_cHHH1 ZH4b ZZ4b  -p analysis/processors/processor_HH4b.py -y UL17 UL18 UL16_preVFP UL16_postVFP    -op hists/ -m $DATASETS
@@ -36,6 +41,7 @@ python stats_analysis/convert_hist_to_json_closure.py --input hists/histMixedBkg
 python stats_analysis/convert_hist_to_json_closure.py --input hists/histMixedBkg_data_3b_for_mixed_kfold.coffea
 python stats_analysis/convert_hist_to_json_closure.py --input hists/histMixedBkg_data_3b_for_mixed.coffea
 python stats_analysis/convert_hist_to_json_closure.py --input hists/histMixedBkg_data_3b_for_mixed_ZZinSB.coffea
+python stats_analysis/convert_hist_to_json_closure.py --input hists/histMixedBkg_data_3b_for_mixed_ZZandZHinSB.coffea
 python stats_analysis/convert_hist_to_json_closure.py --input hists/histSignal.coffea
 
 

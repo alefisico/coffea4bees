@@ -174,6 +174,9 @@ def writeYears(f, input_file_data3b, input_file_TT, input_file_mix, mix, channel
         elif args.use_ZZinSB:
             var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDefSeedAve_ps")
             var_name_multijet = var_name_multijet.replace("_v","ZZinSB_v")
+        elif args.use_ZZandZHinSB:
+            var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDefSeedAve_ps")
+            var_name_multijet = var_name_multijet.replace("_v","ZZandZHinSB_v")
         else:
             var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDef_ps")
 
@@ -238,6 +241,9 @@ def addYears(f, input_file_data3b, input_file_TT, input_file_mix, mix, channel):
     elif args.use_ZZinSB:
         var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDefSeedAve_ps")
         var_name_multijet = var_name_multijet.replace("_v","ZZinSB_v")
+    elif args.use_ZZandZHinSB:
+        var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDefSeedAve_ps")
+        var_name_multijet = var_name_multijet.replace("_v","ZZandZHinSB_v")
     else:
         var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDef_ps")
 
@@ -2095,6 +2101,7 @@ if __name__ == "__main__":
     parser.add_argument('--skip_closure', dest="run_closure", action="store_false")
     parser.add_argument('--use_kfold',    action="store_true")
     parser.add_argument('--use_ZZinSB',   action="store_true")
+    parser.add_argument('--use_ZZandZHinSB',   action="store_true")
     #parser.add_argument('--skip_plots',   dest="do_plots",    action="store_false")
     parser.add_argument('--do_CI',   action="store_true")
 
@@ -2153,6 +2160,8 @@ if __name__ == "__main__":
 
     if args.use_ZZinSB:
         print_log(f"\t Using ZZinSB")
+    if args.use_ZZandZHinSB:
+        print_log(f"\t Using ZZandZHinSB")
 
 
     doPrepInputs = True
