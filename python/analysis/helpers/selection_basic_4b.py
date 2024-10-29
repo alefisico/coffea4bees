@@ -10,7 +10,7 @@ from coffea.lumi_tools import LumiMask
 from base_class.math.random import Squares
 from copy import copy
 
-def apply_event_selection_4b( event, corrections_metadata, *, cut_on_lumimask=True):
+def apply_event_selection_4b( event, corrections_metadata, *, cut_on_lumimask=True, do_jet_veto_maps=True):
 
     lumimask = LumiMask(corrections_metadata['goldenJSON'])
     event['lumimask'] = np.array( lumimask(event.run, event.luminosityBlock) ) \
@@ -27,7 +27,7 @@ def apply_event_selection_4b( event, corrections_metadata, *, cut_on_lumimask=Tr
                     list_to_skip=['BadPFMuonDzFilter', 'hfNoisyHitsFilter']  )
 
     event['passJetVetoMaps'] = np.full(len(event), True) \
-            if ('neEmEF' not in event.Jet.fields) else \
+            if not do_jet_veto_maps else \
             apply_jet_veto_maps( corrections_metadata['jet_veto_maps'], event.Jet )
 
     return event
@@ -171,6 +171,10 @@ def apply_object_selection_4b(event, corrections_metadata, *,
         tagCode = np.zeros(len(event), dtype=int)
         tagCode[event.fourTag]  = 4
         tagCode[event.threeTag] = 3
+        # event['tag'] = ak.zip({
+        #     'fourTag': event.fourTag,
+        #     'threeTag': event.threeTag,
+        # })
 
         #  Calculate hT
         event["hT"] = ak.sum(event.Jet[event.Jet.selected_loose].pt, axis=1)

@@ -251,7 +251,11 @@ class analysis(processor.ProcessorABC):
         #
         # Event selection
         #
-        event = apply_event_selection_4b( event, self.corrections_metadata[self.year], cut_on_lumimask=self.config["cut_on_lumimask"])
+        event = apply_event_selection_4b( event, 
+                                        self.corrections_metadata[self.year], 
+                                        cut_on_lumimask=self.config["cut_on_lumimask"],
+                                        do_jet_veto_maps=self.config["do_jet_veto_maps"],
+                                        )
 
 
         ### target is for new friend trees
