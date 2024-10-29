@@ -5,10 +5,6 @@ from typing import Optional
 
 import torch
 
-# PLAN balance based on usage if memory is satisfied
-# PLAN balance jobs during the first round of pool
-# PLAN raise error if no valid device found then handle in train.py to retry
-
 
 class Device:
     def __init__(
@@ -58,7 +54,7 @@ class Device:
                 else:
                     available = list(filter(lambda x: x < count, indices))
                     if len(available) == 0:
-                        logging.warn(
+                        logging.warning(
                             f"Only {count} CUDA devices available on this system, got indices {list(sorted(indices))}"
                         )
                 if len(available) > 0:
@@ -73,7 +69,7 @@ class Device:
                         )
                         return d
                     else:
-                        logging.warn(
+                        logging.warning(
                             f"No CUDA device with at least {self.cuda_min_memory//1024**2} MiB of memory available"
                         )
         if "cpu" in self._devices:

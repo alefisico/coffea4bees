@@ -49,7 +49,7 @@ def _walk_packages(base):
 class Main(main.Main):
     _no_state = True
 
-    _keys = " ".join(f"{main._DASH}{k}" for k in EntryPoint._keys)
+    _keys = " ".join(f"{main._DASH}{k}" for k in EntryPoint._tasks)
     argparser = ArgParser(
         prog="help",
         description="Print help information.",
@@ -115,19 +115,19 @@ class Main(main.Main):
                     f"{parser.entrypoint} [blue]task[/blue] [yellow]\[args ...][/yellow]",
                     *(
                         f"[blue]{main._DASH}{k}[/blue] [green]module.class[/green] [yellow]\[args ...][/yellow]"
-                        for k in parser._keys
+                        for k in parser._tasks
                     ),
                 ]
             )
         )
         self._print(
             indent(
-                f'[blue]task[/blue] = [blue]{"|".join(parser._tasks)}[/blue]', _INDENT
+                f'[blue]task[/blue] = [blue]{"|".join(parser._mains)}[/blue]', _INDENT
             )
         )
         self._print(
             indent(
-                f'[green]module.class[/green] = [purple]from[/purple] [green]{main._CLASSIFIER}.{main._CONFIG}.\[{"|".join(parser._keys)}].module[/green] [purple]import[/purple] [green]class[/green]',
+                f'[green]module.class[/green] = [purple]from[/purple] [green]{main._CLASSIFIER}.{main._CONFIG}.\[{"|".join(parser._tasks)}].module[/green] [purple]import[/purple] [green]class[/green]',
                 _INDENT,
             )
         )
@@ -138,7 +138,7 @@ class Main(main.Main):
         self._print("\n[orange3]\[Tasks][orange3]")
         self._print("[blue]help[/blue]")
         self._print_help(self)
-        for task in parser._tasks:
+        for task in parser._mains:
             if task != "help":
                 _, cls = parser._fetch_module(f"{task}.Main", main._MAIN)
                 if self._check_wip(cls):
@@ -146,8 +146,8 @@ class Main(main.Main):
                     self._print_help(cls)
         self._print("\n[orange3]\[Options][orange3]")
         self._print(_print_mod(None, "task", tasks[1]))
-        for cat in parser._keys:
-            target = EntryPoint._keys[cat]
+        for cat in parser._tasks:
+            target = EntryPoint._tasks[cat]
             for imp, opts in parser.args[cat]:
                 modname, clsname = parser._fetch_module_name(imp, cat)
                 mod, cls = parser._fetch_module(imp, cat)
@@ -170,8 +170,8 @@ class Main(main.Main):
                         self._print_help(cls)
         if self.opts.all:
             self._print("\n[orange3]\[Modules][/orange3]")
-            for cat in parser._keys:
-                target = EntryPoint._keys[cat]
+            for cat in parser._tasks:
+                target = EntryPoint._tasks[cat]
                 self._print(f"[blue]{main._DASH}{cat}[/blue]")
                 for imp in _walk_packages(f"{main._CLASSIFIER}/{main._CONFIG}/{cat}/"):
                     if imp:

@@ -12,11 +12,11 @@ class CutFlowTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        
+
         inputFile = wrapper.args["inputFile"]
         with open(f'{inputFile}', 'rb') as hfile:
             hists = load(hfile)
-        
+
         self.cf4      = hists["cutFlowFourTag"]
         self.cf4_unit = hists["cutFlowFourTagUnitWeight"]
         self.cf3      = hists["cutFlowThreeTag"]
@@ -28,7 +28,7 @@ class CutFlowTestCase(unittest.TestCase):
         #  >  python     analysis/tests/dumpCutFlow.py --input [inputFileName] -o [outputFielName]
         #       (python analysis/tests/dumpCutFlow.py --input hists/histAll.coffea -o analysis/tests/histAllCounts.yml )
         #
-        knownCountFile = wrapper.args["knownCounts"] 
+        knownCountFile = wrapper.args["knownCounts"]
         self.knownCounts = yaml.safe_load(open(knownCountFile, 'r'))
         self.cf_names = ["counts4", "counts3", "counts4_unit", "counts3_unit"]
 
@@ -40,7 +40,7 @@ class CutFlowTestCase(unittest.TestCase):
                 if abs(count - exp) > 0.1:
                     failures.append( (datasetAndEra, cut, count, exp) )
         return failures
-        
+
 
     def print_test_results(self, failures):
         print()
@@ -50,7 +50,7 @@ class CutFlowTestCase(unittest.TestCase):
                 print(f"Failed {k}:")
                 for datasetAndEra, cut, count, exp in v:
                     percentFail = count/exp if exp else count
-                    print(f"\t{datasetAndEra} {round(percentFail,4)} {cut} {count} {exp}")
+                    print(f"\t{datasetAndEra:40} {str(round(percentFail,4)):20} {cut:20} {count:10} {exp:10}")
         print()
         print()
 
@@ -69,9 +69,8 @@ class CutFlowTestCase(unittest.TestCase):
         #
         for name in self.cf_names:
             self.assertIs(len(failures[name]),0,f'incorrect number of {name} for {failures[name]} ')
-                
+
 
 if __name__ == '__main__':
     wrapper.parse_args()
     unittest.main(argv=sys.argv)
-

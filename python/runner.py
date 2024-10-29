@@ -10,8 +10,6 @@ import warnings
 from datetime import datetime
 from typing import TYPE_CHECKING
 from copy import copy
-from tqdm import tqdm
-from time import sleep
 import psutil
 
 import dask
@@ -36,7 +34,13 @@ dask.config.set({'logging.distributed': 'error'})
 NanoAODSchema.warn_missing_crossrefs = False
 warnings.filterwarnings("ignore")
 
-def list_of_files(ifile, allowlist_sites=['T3_US_FNALLPC'], test=False, test_files=5):
+def list_of_files(ifile,
+                  allowlist_sites: list =['T3_US_FNALLPC'],
+                  blocklist_sites: list =[],
+                  rucio_regex_sites: str ='T[23]',
+                  test: bool = False,
+                  test_files: int = 5
+                  ):
     '''Check if ifile is root file or dataset to check in rucio'''
 
     if isinstance(ifile, list):
@@ -48,7 +52,7 @@ def list_of_files(ifile, allowlist_sites=['T3_US_FNALLPC'], test=False, test_fil
     else:
         rucio_client = rucio_utils.get_rucio_client()
         outfiles, outsite, sites_counts = rucio_utils.get_dataset_files_replicas(
-            ifile, client=rucio_client, mode="first", allowlist_sites=allowlist_sites)
+            ifile, client=rucio_client, regex_sites=fr"{rucio_regex_sites}", mode="first", allowlist_sites=allowlist_sites, blocklist_sites=blocklist_sites)
         return outfiles[:(test_files if test else None)]
 
 
@@ -96,7 +100,7 @@ if __name__ == '__main__':
     parser.add_argument('-op', '--outputPath', dest="output_path", default="hists/",
                         help='Output path, if you want to save file somewhere else.')
     parser.add_argument('-y', '--year', nargs='+', dest='years', default=['UL18'], choices=[
-                        '2016', '2017', '2018', 'UL16_postVFP', 'UL16_preVFP', 'UL17', 'UL18'],
+                        '2016', '2017', '2018', 'UL16_postVFP', 'UL16_preVFP', 'UL17', 'UL18', '2022_preEE', '2022_EE', '2023_preBPix', '2023_BPix'],
                         help="Year of data to run. Example if more than one: --year UL17 UL18")
     parser.add_argument('-d', '--datasets', nargs='+', dest='datasets', default=[
                         'HH4b', 'ZZ4b', 'ZH4b'], help="Name of dataset to run. Example if more than one: -d HH4b ZZ4b")
@@ -142,6 +146,8 @@ if __name__ == '__main__':
     config_runner.setdefault('schema', NanoAODSchema)
     config_runner.setdefault('test_files', 5)
     config_runner.setdefault('allowlist_sites', ['T3_US_FNALLPC'])
+    config_runner.setdefault('blocklist_sites', [''])
+    config_runner.setdefault('rucio_regex_sites', "T[23]")
     config_runner.setdefault('class_name', 'analysis')
     config_runner.setdefault('condor_cores', 2)
     config_runner.setdefault('condor_memory', '4GB')
@@ -156,6 +162,7 @@ if __name__ == '__main__':
     config_runner.setdefault('friend_base_argname', "make_classifier_input")
     config_runner.setdefault('friend_metafile', 'friends')
     config_runner.setdefault('friend_merge_step', 100_000)
+    config_runner.setdefault('write_coffea_output', True)
     config_runner.setdefault('override_top_reconstruction', None)
     if args.systematics:
         logging.info("\nRunning with systematics")
@@ -221,7 +228,7 @@ if __name__ == '__main__':
                 else:
                     meta_files = metadata['datasets'][dataset][year][config_runner['data_tier']]
 
-                fileset[dataset + "_" + year] = {'files': list_of_files(meta_files, test=args.test, test_files=config_runner['test_files'], allowlist_sites=config_runner['allowlist_sites']),
+                fileset[dataset + "_" + year] = {'files': list_of_files(meta_files, test=args.test, test_files=config_runner['test_files'], allowlist_sites=config_runner['allowlist_sites'], rucio_regex_sites=config_runner['rucio_regex_sites']),
                                                  'metadata': metadata_dataset[dataset]}
 
                 logging.info(f'\nDataset {dataset+"_"+year} with '
@@ -245,7 +252,8 @@ if __name__ == '__main__':
                     mixed_files = [f.replace("XXX",str(v)) for f in mixed_config['files_template']]
                     fileset[idataset] = {'files': list_of_files(mixed_files,
                                                                 test=args.test, test_files=config_runner['test_files'],
-                                                                allowlist_sites=config_runner['allowlist_sites']),
+                                                                allowlist_sites=config_runner['allowlist_sites'],
+                                                                rucio_regex_sites=config_runner['rucio_regex_sites']),
                                          'metadata': metadata_dataset[idataset]}
 
                     logging.info(
@@ -269,7 +277,8 @@ if __name__ == '__main__':
                     synthetic_files = [f.replace("XXX",str(v)) for f in synthetic_config['files_template']]
                     fileset[idataset] = {'files': list_of_files(synthetic_files,
                                                                 test=args.test, test_files=config_runner['test_files'],
-                                                                allowlist_sites=config_runner['allowlist_sites']),
+                                                                allowlist_sites=config_runner['allowlist_sites'],
+                                                                rucio_regex_sites=config_runner['rucio_regex_sites']),
                                          'metadata': metadata_dataset[idataset]}
 
                     logging.info(
@@ -281,9 +290,13 @@ if __name__ == '__main__':
 
                 nMixedSamples = metadata['datasets'][dataset]["nSamples"]
                 use_kfold = metadata['datasets'][dataset].get("use_kfold", False)
+                use_ZZinSB = metadata['datasets'][dataset].get("use_ZZinSB", False)
+                use_ZZandZHinSB = metadata['datasets'][dataset].get("use_ZZandZHinSB", False)
                 data_3b_mix_config = metadata['datasets'][dataset][year][config_runner['data_tier']]
                 logging.info(f"\nNumber of mixed samples is {nMixedSamples}")
                 logging.info(f"\nUsing kfolding? {use_kfold}")
+                logging.info(f"\nUsing ZZinSB? {use_ZZinSB}")
+                logging.info(f"\nUsing ZZandZHinSB? {use_ZZandZHinSB}")
 
                 idataset = f'{dataset}_{year}'
 
@@ -292,13 +305,19 @@ if __name__ == '__main__':
                 if use_kfold:
                     metadata_dataset[idataset]['FvT_files'] = [data_3b_mix_config['FvT_file_kfold_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
                     metadata_dataset[idataset]['FvT_names'] = [data_3b_mix_config['FvT_name_kfold_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
+                elif use_ZZinSB:
+                    metadata_dataset[idataset]['FvT_files'] = [data_3b_mix_config['FvT_file_ZZinSB_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
+                    metadata_dataset[idataset]['FvT_names'] = [data_3b_mix_config['FvT_name_ZZinSB_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
+                elif use_ZZandZHinSB:
+                    metadata_dataset[idataset]['FvT_files'] = [data_3b_mix_config['FvT_file_ZZandZHinSB_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
+                    metadata_dataset[idataset]['FvT_names'] = [data_3b_mix_config['FvT_name_ZZandZHinSB_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
                 else:
                     metadata_dataset[idataset]['FvT_files'] = [data_3b_mix_config['FvT_file_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
                     metadata_dataset[idataset]['FvT_names'] = [data_3b_mix_config['FvT_name_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
 
                 fileset[idataset] = {'files': list_of_files(data_3b_mix_config['files'],
                                                             test=args.test, test_files=config_runner['test_files'],
-                                                            allowlist_sites=config_runner['allowlist_sites']),
+                                                            allowlist_sites=config_runner['allowlist_sites'], rucio_regex_sites=config_runner['rucio_regex_sites']),
                                      'metadata': metadata_dataset[idataset]}
 
                 logging.info(f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
@@ -319,7 +338,8 @@ if __name__ == '__main__':
 
                 fileset[idataset] = {'files': list_of_files(TT_3b_mix_config['files'],
                                                             test=args.test, test_files=config_runner['test_files'],
-                                                            allowlist_sites=config_runner['allowlist_sites']),
+                                                            allowlist_sites=config_runner['allowlist_sites'],
+                                                            rucio_regex_sites=config_runner['rucio_regex_sites']),
                                      'metadata': metadata_dataset[idataset]}
 
                 logging.info(f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
@@ -332,7 +352,7 @@ if __name__ == '__main__':
                         idataset = f'{dataset}_{year}{iera}'
                         metadata_dataset[idataset] = metadata_dataset[dataset]
                         metadata_dataset[idataset]['era'] = iera
-                        fileset[idataset] = {'files': list_of_files((ifile['files'] if config_runner['data_tier'].startswith('pico') else ifile), test=args.test, test_files=config_runner['test_files'], allowlist_sites=config_runner['allowlist_sites']),
+                        fileset[idataset] = {'files': list_of_files((ifile['files'] if config_runner['data_tier'].startswith('pico') else ifile), test=args.test, test_files=config_runner['test_files'], allowlist_sites=config_runner['allowlist_sites'], rucio_regex_sites=config_runner['rucio_regex_sites']),
                                              'metadata': metadata_dataset[idataset]}
 
                         logging.info(
@@ -525,6 +545,9 @@ if __name__ == '__main__':
                 'diff': args.gitdiff if args.gitdiff else get_git_diff(),
             }
 
+            if not os.path.exists(args.output_path):
+                os.makedirs(args.output_path)
+
             #
             # Save friend tree metadata if exists
             #
@@ -559,7 +582,8 @@ if __name__ == '__main__':
                         )
                 from base_class.system.eos import EOS
                 from base_class.utils.json import DefaultEncoder
-                metafile = EOS(friend_base) / f'{config_runner["friend_metafile"]}.json'
+                metafile = f'{args.output_path}/{args.output_file.replace("coffea", "json")}'
+                # metafile = EOS(friend_base) / f'{config_runner["friend_metafile"]}.json'
                 with fsspec.open(metafile, "wt") as f:
                     json.dump(friends, f, cls=DefaultEncoder)
                 logging.info("The following frends trees are created:")
@@ -569,11 +593,10 @@ if __name__ == '__main__':
             #
             #  Saving file
             #
-            if not os.path.exists(args.output_path):
-                os.makedirs(args.output_path)
-            hfile = f'{args.output_path}/{args.output_file}'
-            logging.info(f'\nSaving file {hfile}')
-            save(output, hfile)
+            if config_runner['write_coffea_output']:
+                hfile = f'{args.output_path}/{args.output_file}'
+                logging.info(f'\nSaving file {hfile}')
+                save(output, hfile)
 
     #
     # Run dask performance only in dask jobs

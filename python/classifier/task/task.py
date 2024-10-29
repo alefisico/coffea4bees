@@ -4,7 +4,7 @@ import argparse
 from collections import ChainMap
 from copy import deepcopy
 from textwrap import indent
-from typing import Iterable, Literal
+from typing import Iterable, Literal, overload
 
 from .special import TaskBase
 
@@ -17,10 +17,30 @@ class _Formatter(
 ): ...
 
 
+class _ConditionalArg:
+    def __init__(
+        self, condition: str, name_or_flags: tuple[str, ...], kwargs: dict[str]
+    ):
+        self._condition = condition
+        self._name_or_flags = name_or_flags
+        self._kwargs = kwargs
+
+    def update(self, cls, argparser: ArgParser):
+        condition = vars(cls).get(self._condition, None)
+        if condition is None:
+            return
+        if condition:
+            argparser.add_argument(*self._name_or_flags, **self._kwargs)
+        else:
+            argparser.remove_argument(*self._name_or_flags)
+
+
 class ArgParser(argparse.ArgumentParser):
     def __init__(
         self, workflow: Iterable[tuple[Literal["main", "sub"], str]] = None, **kwargs
     ):
+        self._conditionals: list[_ConditionalArg] = []
+
         kwargs["prog"] = kwargs.get("prog", None) or ""
         kwargs["add_help"] = False
         kwargs["conflict_handler"] = "resolve"
@@ -49,6 +69,34 @@ class ArgParser(argparse.ArgumentParser):
             default=argparse.SUPPRESS,
         )
 
+    @overload
+    def add_argument(
+        self,
+        *name_or_flags,
+        action=...,
+        nargs=None,
+        const=...,
+        default=...,
+        type=...,
+        choices=...,
+        required=...,
+        help=...,
+        metavar=...,
+        dest=...,
+        version=...,
+        **kwargs,
+    ): ...
+    def add_argument(self, *name_or_flags, **kwargs):
+        condition = kwargs.pop("condition", None)
+        if condition is not None:
+            self._conditionals.append(_ConditionalArg(condition, name_or_flags, kwargs))
+        else:
+            super().add_argument(*name_or_flags, **kwargs)
+
+    def update(self, cls):
+        for cond in self._conditionals:
+            cond.update(cls, self)
+
 
 class Task(TaskBase):
     argparser: ArgParser = NotImplemented
@@ -59,14 +107,16 @@ class Task(TaskBase):
         return ".".join(f"{cls.__module__}.{cls.__name__}".split(".")[3:])
 
     def __init_subclass__(cls):
-        defaults, parents, kwargs = [], [], {}
-        for base in cls.__bases__:
+        defaults, parents, kwargs, conditionals = [], [], {}, []
+        for base in cls.__bases__[::-1]:
             if issubclass(base, Task):
                 if base.argparser is not NotImplemented:
+                    conditionals.extend(base.argparser._conditionals)
                     parents.append(deepcopy(base.argparser))
                 if base.defaults is not NotImplemented:
                     defaults.append(base.defaults)
         if "argparser" in vars(cls):
+            conditionals.extend(cls.argparser._conditionals)
             parents.append(cls.argparser)
             kwargs["prog"] = cls.argparser.prog or cls.__mod_name__()
             for k in ["usage", "description", "epilog"]:
@@ -76,6 +126,8 @@ class Task(TaskBase):
         if "defaults" in vars(cls):
             defaults.append(cls.defaults)
         cls.argparser = ArgParser(**kwargs, parents=parents)
+        cls.argparser._conditionals = conditionals
+        cls.argparser.update(cls)
         cls.defaults = (
             NotImplemented if len(defaults) == 0 else dict(ChainMap(*defaults[::-1]))
         )

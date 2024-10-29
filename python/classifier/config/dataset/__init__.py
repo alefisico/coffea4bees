@@ -6,6 +6,8 @@ import math
 import fsspec
 from classifier.task import ArgParser, Dataset, EntryPoint, parse
 
+from ..setting import ResultKey
+
 
 class cache(Dataset):
     argparser = ArgParser(description="Load the datasets saved by [blue]cache[/blue].")
@@ -29,14 +31,14 @@ class cache(Dataset):
         metafile = EOS(self.opts.input)
         base = metafile.parent
         with fsspec.open(metafile) as f:
-            metadata = json.load(f)
+            metadata = json.load(f)[ResultKey.cache]
         # load states
         states = metadata["states"]
         if states:
             logging.info(f"The following states will be loaded {sorted(states)}")
             for state in states:
                 mod, var = state.rsplit(".", 1)
-                mod = EntryPoint._fetch_module(mod, "state")[1]
+                mod = EntryPoint._fetch_module(mod, "state", True)[1]
                 setattr(mod, var, states[state])
         # load datasets
         total = math.ceil(metadata["size"] / metadata["chunksize"])
@@ -45,7 +47,7 @@ class cache(Dataset):
         else:
             chunks = list(range(total))
         if len(chunks) == 0:
-            logging.warn("No chunk to load")
+            logging.warning("No chunk to load")
         else:
             count = len(chunks) * metadata["chunksize"]
             if chunks[-1] == total - 1:

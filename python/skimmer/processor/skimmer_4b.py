@@ -11,7 +11,8 @@ import awkward as ak
 
 class Skimmer(PicoAOD):
     def __init__(self, loosePtForSkim=False, skim4b=False, *args, **kwargs):
-        kwargs["pico_base_name"] = f'picoAOD_fourTag'
+        if skim4b:
+            kwargs["pico_base_name"] = f'picoAOD_fourTag'
         super().__init__(*args, **kwargs)
         self.loosePtForSkim = loosePtForSkim
         self.skim4b = skim4b
@@ -50,7 +51,7 @@ class Skimmer(PicoAOD):
                                       )
         event["Jet"] = jets
 
-        event = apply_object_selection_4b( event, self.corrections_metadata[year], doLeptonRemoval=config["do_lepton_jet_cleaning"], loosePtForSkim=self.loosePtForSkim  )
+        event = apply_object_selection_4b( event, self.corrections_metadata[year], dataset=dataset, doLeptonRemoval=config["do_lepton_jet_cleaning"], loosePtForSkim=self.loosePtForSkim  )
 
         weights = Weights(len(event), storeIndividual=True)
 

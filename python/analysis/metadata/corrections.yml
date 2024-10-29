@@ -210,12 +210,151 @@
     jer_campaign: JRV2
   rochesterCorrections: data/Muon/RoccoR2018UL.txt
 
-'2022':
+'2022_preEE':
+  year_label: '2022'
   goldenJSON: 'data/goldenJSON/Cert_Collisions2022_355100_362760_Golden.json'
+  PU: '/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/LUM/2022_Summer22/puWeights.json.gz'
+  JEC_MC: 'data/JEC/Summer22_22Sep2023_V2_MC.tar.gz'
+  # JER_MC: 'data/JEC/Summer20UL16APV_JRV3_MC.tar.gz'
+  JEC_DATA: 
+    B: 'data/JEC/Summer22_22Sep2023_RunCD_V2_DATA.tar.gz' 
+    C: 'data/JEC/Summer22_22Sep2023_RunCD_V2_DATA.tar.gz'
+    D: 'data/JEC/Summer22_22Sep2023_RunCD_V2_DATA.tar.gz'
+  JES_uncertainties:
+    - DUMMY
+  btagSF: '/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/DUMMY/btagging.json.gz'
+  btagWP:
+    L: 0.047
+    M: 0.245
+  btag_uncertainties:
+    - cferr1
+    - cferr2
+    - hf
+    - hfstats1
+    - hfstats2
+    - lf
+    - lfstats1
+    - lfstats2
+  NoiseFilter:
+    - goodVertices
+    - globalSuperTightHalo2016Filter
+    - EcalDeadCellTriggerPrimitiveFilter    
+    - BadPFMuonFilter
+    - BadPFMuonDzFilter
+    - hfNoisyHitsFilter
+    - eeBadScFilter
+    - ecalBadCalibFilter
+  rochesterCorrections: data/Muon/DUMMY.txt
 
+'2022_EE':
+  year_label: '2022'
+  goldenJSON: 'data/goldenJSON/Cert_Collisions2022_355100_362760_Golden.json'
+  PU: '/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/LUM/2022_Summer22EE/puWeights.json.gz'
+  JEC_MC: 'data/JEC/Summer19UL16APV_V7_MC.tar.gz'
+  # JER_MC: 'data/JEC/Summer20UL16APV_JRV3_MC.tar.gz'
+  JEC_DATA:
+    E: 'data/JEC/Summer22EE_22Sep2023_RunE_V2_DATA.tar.gz'
+    F: 'data/JEC/Summer22EE_22Sep2023_RunF_V2_DATA.tar.gz'
+    G: 'data/JEC/Summer22EE_22Sep2023_RunG_V2_DATA.tar.gz'
+  JES_uncertainties:
+    - DUMMY
+  btagSF: '/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/DUMMY/btagging.json.gz'
+  btagWP:
+    L: 0.0499
+    M: 0.2605
+  btag_uncertainties:
+    - cferr1
+    - cferr2
+    - hf
+    - hfstats1
+    - hfstats2
+    - lf
+    - lfstats1
+    - lfstats2
+  NoiseFilter:
+    - goodVertices
+    - globalSuperTightHalo2016Filter
+    - EcalDeadCellTriggerPrimitiveFilter    
+    - BadPFMuonFilter
+    - BadPFMuonDzFilter
+    - hfNoisyHitsFilter
+    - eeBadScFilter
+    - ecalBadCalibFilter
+  rochesterCorrections: data/Muon/DUMMY.txt
 
-'2023':
+'2023_preBPix':
+  year_label: '2023'
   goldenJSON: 'data/goldenJSON/Cert_Collisions2023_366442_370790_Golden.json'
+  PU: '/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/LUM/2023_Summer23/puWeights.json.gz'
+  JEC_MC: 'data/JEC/Summer23Prompt23_V1_MC.tar.gz'
+  # JER_MC: 'data/JEC/Summer20UL16APV_JRV3_MC.tar.gz'
+  JEC_DATA:  ### all eras are C. Labels in the code are arbitrary
+    A: 'data/JEC/Summer23Prompt23_RunCv123_V1_DATA.tar.gz'
+    B: 'data/JEC/Summer23Prompt23_RunCv123_V1_DATA.tar.gz'
+    C: 'data/JEC/Summer23Prompt23_RunCv123_V1_DATA.tar.gz'
+    D: 'data/JEC/Summer23Prompt23_RunCv123_V1_DATA.tar.gz'
+    E: 'data/JEC/Summer23Prompt23_RunCv123_V1_DATA.tar.gz'
+    F: 'data/JEC/Summer23Prompt23_RunCv123_V1_DATA.tar.gz'
+  JES_uncertainties:
+    - DUMMY
+  btagSF: '/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/DUMMY/btagging.json.gz'
+  btagWP:
+    L: 0.0358
+    M: 0.1917
+  btag_uncertainties:
+    - cferr1
+    - cferr2
+    - hf
+    - hfstats1
+    - hfstats2
+    - lf
+    - lfstats1
+    - lfstats2
+  NoiseFilter:
+    - goodVertices
+    - globalSuperTightHalo2016Filter
+    - EcalDeadCellTriggerPrimitiveFilter    
+    - BadPFMuonFilter
+    - BadPFMuonDzFilter
+    - hfNoisyHitsFilter
+    - eeBadScFilter
+    - ecalBadCalibFilter
+  rochesterCorrections: data/Muon/DUMMY.txt
+
+'2023_BPix':
+  year_label: '2023'
+  goldenJSON: 'data/goldenJSON/Cert_Collisions2023_366442_370790_Golden.json'
+  PU: '/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/LUM/2023_Summer23BPix/puWeights.json.gz'
+  JEC_MC: 'data/JEC/Summer23BPixPrompt23_V1_MC.tar.gz'
+  # JER_MC: 'data/JEC/Summer20UL16APV_JRV3_MC.tar.gz'
+  JEC_DATA:  ### all eras here are officially era D. Labels in the code are arbitrary
+    D: 'data/JEC/Summer23BPixPrompt23_RunD_V1_DATA.tar.gz'
+    E: 'data/JEC/Summer23BPixPrompt23_RunD_V1_DATA.tar.gz'
+  JES_uncertainties:
+    - DUMMY
+  btagSF: '/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/BTV/DUMMY/btagging.json.gz'
+  btagWP:
+    L: 0.0359
+    M: 0.1919
+  btag_uncertainties:
+    - cferr1
+    - cferr2
+    - hf
+    - hfstats1
+    - hfstats2
+    - lf
+    - lfstats1
+    - lfstats2
+  NoiseFilter:
+    - goodVertices
+    - globalSuperTightHalo2016Filter
+    - EcalDeadCellTriggerPrimitiveFilter    
+    - BadPFMuonFilter
+    - BadPFMuonDzFilter
+    - hfNoisyHitsFilter
+    - eeBadScFilter
+    - ecalBadCalibFilter
+  rochesterCorrections: data/Muon/DUMMY.txt
 
 # legacy for non UL HH4b sample
 '2016': 

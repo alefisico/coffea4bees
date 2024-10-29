@@ -38,7 +38,7 @@ class Template:
                         _axes.append(args)
             return _axes
 
-        def __repr__(self):  # TODO __repr__
+        def __repr__(self):
             return ', '.join(str(axis) for _, axis in self._axes)
 
     def __init__(

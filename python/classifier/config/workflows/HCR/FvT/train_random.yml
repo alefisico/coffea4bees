@@ -1,0 +1,24 @@
+# template:
+# - tag: name of the model (only used in the directory name)
+# - offset: offset of the random seed e.g. 1-15
+
+main:
+  module: train
+  option:
+    - --max-loaders 10
+    - --max-trainers 1
+
+model:
+  - module: HCR.FvT.baseline.Train
+    option:
+      - --kfolds 3
+      - --kfold-seed FvT random
+      - --kfold-seed-offsets {offset}
+      - --training FixedStep
+      - epoch: 20
+        bs_init: 1024
+
+setting:
+  - module: IO
+    option:
+      - output: root://cmseos.fnal.gov//store/user/{{user}}/HH4b/classifier/FvT/train/{tag}/

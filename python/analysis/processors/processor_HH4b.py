@@ -4,6 +4,7 @@ import warnings
 import awkward as ak
 import numpy as np
 import yaml, json
+import copy
 
 from analysis.helpers.processor_config import processor_config
 from analysis.helpers.common import apply_jerc_corrections, update_events
@@ -69,7 +70,6 @@ class analysis(processor.ProcessorABC):
         make_top_reconstruction: str = None,
         make_friend_JCM_weight: str = None,
         make_friend_FvT_weight: str = None,
-        isSyntheticData: bool = False,
         subtract_ttbar_with_weights: bool = False,
         friend_trigWeight: str = None,
         friend_top_reconstruction: str = None,
@@ -145,6 +145,14 @@ class analysis(processor.ProcessorABC):
         #
         self.config = processor_config(self.processName, self.dataset, event)
         logging.debug(f'{self.chunk} config={self.config}, for file {fname}\n')
+
+        #
+        #  If doing RW
+        #
+        # if self.config["isSyntheticData"] and not self.config["isPSData"]:
+        #     with open(f"jet_clustering/jet-splitting-PDFs-00-08-00/hT-reweight-00-00-01/hT_weights_{self.year}.yml", "r") as f:
+        #         self.hT_weights= yaml.safe_load(f)
+
 
         self.nEvent = len(event)
 
@@ -259,14 +267,31 @@ class analysis(processor.ProcessorABC):
                                                   apply_trigWeight=self.apply_trigWeight,
                                                   isTTForMixed=self.config["isTTForMixed"]
                                                  )
+
+
         #
         # Checking boosted selection (should change in the future)
         #
+        event['notInBoostedSel'] = np.full(len(event), True)
         if self.apply_boosted_veto:
-            boosted_file = load("analysis/hists/counts_boosted.coffea")['boosted']
-            boosted_events = boosted_file[self.dataset]['event'] if self.dataset in boosted_file.keys() else event.event
-            event['vetoBoostedSel'] = ~np.isin( event.event.to_numpy(), boosted_events )
 
+            if self.dataset.startswith("GluGluToHHTo4B_cHHH1"):
+                boosted_file = load("metadata/boosted_overlap_signal.coffea")['boosted']
+                boosted_events = boosted_file.get(self.dataset, {}).get('event', event.event)
+                boosted_events_set = set(boosted_events)
+                event['notInBoostedSel'] = np.array([e not in boosted_events_set for e in event.event.to_numpy()])
+            elif self.dataset.startswith("data"):
+                boosted_file = load("metadata/boosted_overlap_data.coffea")
+                mask = np.array(boosted_file['BDTcat_index']) > 0  ### > 0 is all boosted categories, 1 is most sensitive
+                filtered_runs = np.array(boosted_file['run'])[mask]
+                filtered_lumis = np.array(boosted_file['luminosityBlock'])[mask]
+                filtered_events = np.array(boosted_file['event'])[mask]
+                boosted_events_set = set(zip(filtered_runs, filtered_lumis, filtered_events))        
+                event_tuples = zip(event.run.to_numpy(), event.luminosityBlock.to_numpy(), event.event.to_numpy())
+                event['notInBoostedSel'] = np.array([t not in boosted_events_set for t in event_tuples])
+            else:
+                logging.info(f"Boosted veto not applied for dataset {self.dataset}")
+            
         #
         # Calculate and apply Jet Energy Calibration
         #
@@ -296,13 +321,31 @@ class analysis(processor.ProcessorABC):
     def process_shift(self, event, shift_name, weights, list_weight_names, target):
         """For different jet variations. It computes event variations for the nominal case."""
 
+        # Copy the weights to avoid modifying the original
+        weights = copy.copy(weights)
 
         # Apply object selection (function does not remove events, adds content to objects)
         event = apply_object_selection_4b( event, self.corrections_metadata[self.year],
+                                           dataset=self.dataset,
                                            doLeptonRemoval=self.config["do_lepton_jet_cleaning"],
                                            override_selected_with_flavor_bit=self.config["override_selected_with_flavor_bit"],
                                            run_lowpt_selection=self.run_lowpt_selection
                                            )
+
+
+        #
+        #  Test hT reweighting the synthetic data
+        #
+        # if self.config["isSyntheticData"] and not self.config["isPSData"]:
+        #     hT_index = np.floor_divide(event.hT_selected,30).to_numpy()
+        #     hT_index[hT_index > 48] = 48
+        #
+        #     vectorized_hT = np.vectorize(lambda i: self.hT_weights["weights"][int(i)])
+        #     weights_hT = vectorized_hT(hT_index)
+        #
+        #     weights.add( "hT_reweight", weights_hT )
+        #     list_weight_names.append(f"hT_reweight")
+
 
         selections = PackedSelection()
         selections.add( "lumimask", event.lumimask)
@@ -397,7 +440,13 @@ class analysis(processor.ProcessorABC):
                 if self.top_reconstruction == "slow":
                     top_cands = find_tops_slow(selev.selJet)
                 else:
-                    top_cands = find_tops(selev.selJet)
+                    try:
+                        top_cands = find_tops(selev.selJet)
+                    except Exception as e:
+                        logging.warning("WARNING: Fast top_reconstruction failed with exception: ")
+                        logging.warning(f"{e}\n")
+                        logging.warning("... Trying the slow top_reconstruction")
+                        top_cands = find_tops_slow(selev.selJet)
 
                 selev['top_cand'], _ = buildTop(selev.selJet, top_cands)
                 ### with top friendtree we dont need the next two lines
@@ -408,9 +457,7 @@ class analysis(processor.ProcessorABC):
         #  Build di-jets and Quad-jets
         #
         create_cand_jet_dijet_quadjet( selev, event.event,
-                                      isMC = self.config["isMC"],
                                       apply_FvT=self.apply_FvT,
-                                      apply_boosted_veto=self.apply_boosted_veto,
                                       run_SvB=self.run_SvB,
                                       run_systematics=self.run_systematics,
                                       classifier_SvB=self.classifier_SvB,
@@ -433,8 +480,6 @@ class analysis(processor.ProcessorABC):
                                                            year_label=self.year_label,
                                                            len_event=len(event),
                                                           )
-
-
         #
         # Blind data in fourTag SR
         #
@@ -443,7 +488,22 @@ class analysis(processor.ProcessorABC):
             blind_sel[ analysis_selections ] = ~(selev["quadJet_selected"].SR & selev.fourTag)
             selections.add( 'blind', blind_sel )
             allcuts.append( 'blind' )
+            analysis_selections = selections.all(*allcuts)
             selev = selev[~(selev["quadJet_selected"].SR & selev.fourTag)]
+
+        # Checking for outliners in weights
+        if 'GluGlu' in self.dataset:
+            tmp_weights = weights.weight()
+            mean_weights = np.mean(tmp_weights)
+            std_weights = np.std(tmp_weights)
+            z_scores = np.abs((tmp_weights - mean_weights) / std_weights)
+            not_outliers = z_scores < 30    
+            if np.any(~not_outliers) and std_weights > 0:
+                logging.warning(f"Outliers in weights:{tmp_weights[~not_outliers]}, while mean is {mean_weights} and std is {std_weights} for {self.dataset}\n")
+                selections.add( 'outliers', not_outliers )
+                allcuts.append( 'outliers' )
+                selev = selev[not_outliers[analysis_selections]]
+                analysis_selections = selections.all(*allcuts)
 
         #
         # CutFlow
@@ -459,6 +519,8 @@ class analysis(processor.ProcessorABC):
             self._cutFlow.fill("passDiJetMass", selev[selev.passDiJetMass])
             self._cutFlow.fill("passDiJetMass_woTrig", selev[selev.passDiJetMass],
                                wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[analysis_selections][selev.passDiJetMass] ))
+            self._cutFlow.fill("boosted_veto_passPreSel", selev[selev.notInBoostedSel])
+            self._cutFlow.fill("boosted_veto_SR", selev[selev.notInBoostedSel & selev["quadJet_selected"].SR])
             if self.run_SvB:
                 selev['passSR'] = selev.passDiJetMass & selev["quadJet_selected"].SR
                 self._cutFlow.fill( "SR", selev[selev.passSR] )
@@ -492,7 +554,8 @@ class analysis(processor.ProcessorABC):
                                                 apply_FvT=self.apply_FvT,
                                                 run_SvB=self.run_SvB,
                                                 top_reconstruction=self.top_reconstruction,
-                                                isDataForMixed=self.config["isDataForMixed"],
+                                                isDataForMixed=self.config['isDataForMixed'],
+                                                run_lowpt_selection=self.run_lowpt_selection,
                                                 event_metadata=event.metadata)
             #
             # Run systematics

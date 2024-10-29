@@ -558,7 +558,7 @@ class _StackGroup(_Matched):
             yield _DataField.stack(self.index, i), p
 
 
-class _Ratio(_Matched):  # TODO
+class _Ratio(_Matched):  # TODO add ratio plot
     badge = BADGE(color="#E02D4B", text="ratio")
     matched: tuple[str, str]
 

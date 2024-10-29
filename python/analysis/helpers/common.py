@@ -13,10 +13,9 @@ import logging
 import pickle
 import correctionlib
 import tarfile
-import tempfile
 import os
 
-def extract_jetmet_tar_files(tar_file_name: str=None, 
+def extract_jetmet_tar_files(tar_file_name: str=None,
                             jet_type: str='AK4PFchs'
                             ):
   """Extracts a tar.gz file to a specified path and returns a list of extracted files with their locations.
@@ -30,26 +29,44 @@ def extract_jetmet_tar_files(tar_file_name: str=None,
   """
 
   extracted_files = []
-  
-  # Create a unique temporary directory if extract_path is not specified
-  with tempfile.TemporaryDirectory() as tmpdirname:
-    extract_path = tmpdirname
+  extract_path = f"/tmp/{os.getenv('USER', 'default_user')}/coffea4bees/"
 
   with tarfile.open(tar_file_name, "r:gz") as tar:
     for member in tar.getmembers():
       if member.isfile():
         # Extract the file to the specified path
         member.name = os.path.basename(member.name)  # Remove any directory structure from the archive
-        tar.extract(member, path=extract_path)
+
+        new_file_name = member.name
+        if 'Puppi' in jet_type and jet_type in member.name:  ### this is only for Run3, temporary fix
+          new_file_name = member.name.replace('_', '', 1)
+          member.name = new_file_name
+
+        new_file_path = os.path.join(extract_path, new_file_name)
+
+        if not os.path.isfile(new_file_path):
+          tar.extract(member, path=extract_path)
+
+          old_file_path = os.path.join(extract_path, member.name)
+          #new_file_name = member.name.replace('_', '', 1)
+          #new_file_path = os.path.join(extract_path, new_file_name)
+          #print(f"new_file_name is {new_file_name}\n")
+          #print(f"member.name is {member.name}\n")
+          # Rename the file if the name was changed
+          if old_file_path != new_file_path:
+            os.rename(old_file_path, new_file_path)
+
+
         # Get the full path of the extracted file
         file_path = os.path.join(extract_path, member.name)
         if jet_type in member.name:
             extracted_files.append(f"* * {file_path}")
+
   return extracted_files
 
 # following example here: https://github.com/CoffeaTeam/coffea/blob/master/tests/test_jetmet_tools.py#L529
-def apply_jerc_corrections( event, 
-                    corrections_metadata: dict = {}, 
+def apply_jerc_corrections( event,
+                    corrections_metadata: dict = {},
                     run_systematics: bool = False,
                     isMC: bool = False,
                     dataset: str = None,
@@ -59,14 +76,15 @@ def apply_jerc_corrections( event,
 
     logging.info(f"Applying JEC/JER corrections for {dataset}")
 
+    jet_type = 'AK4PFchs' if '202' not in dataset else 'AK4PFPuppiPNetRegressionPlusNeutrino'
     jec_file = corrections_metadata['JEC_MC'] if isMC else corrections_metadata['JEC_DATA'][dataset[-1]]
-    extracted_files = extract_jetmet_tar_files(jec_file)
+    extracted_files = extract_jetmet_tar_files(jec_file, jet_type=jet_type)
     if run_systematics: jec_levels.append("RegroupedV2")
-    weight_sets = [file for level in jec_levels for file in extracted_files if level in file]
+    weight_sets = list(set([file for level in jec_levels for file in extracted_files if level in file]))  ## list(set()) to remove duplicates
 
-    if isMC:
+    if isMC and ('202' not in dataset):
         jer_file = corrections_metadata["JER_MC"]
-        extracted_files = extract_jetmet_tar_files(jer_file)
+        extracted_files = extract_jetmet_tar_files(jer_file, jet_type=jet_type)
         weight_sets += [file for level in jer_levels for file in extracted_files if level in file]
 
     logging.debug(f"For {dataset}, applying these corrections: {weight_sets}")
@@ -74,10 +92,9 @@ def apply_jerc_corrections( event,
     event['Jet', 'pt_raw']    = (1 - event.Jet.rawFactor) * event.Jet.pt
     event['Jet', 'mass_raw']  = (1 - event.Jet.rawFactor) * event.Jet.mass
     nominal_jet = event.Jet
-    # nominal_jet['pt_raw']   = (1 - nominal_jet.rawFactor) * nominal_jet.pt
-    # nominal_jet['mass_raw'] = (1 - nominal_jet.rawFactor) * nominal_jet.mass
     if isMC: nominal_jet['pt_gen'] = ak.values_astype(ak.fill_none(nominal_jet.matched_gen.pt, 0), np.float32)
-    nominal_jet['rho']      = ak.broadcast_arrays(event.fixedGridRhoFastjetAll, nominal_jet.pt)[0]
+
+    nominal_jet['rho'] = ak.broadcast_arrays((event.Rho.fixedGridRhoFastjetAll if 'Rho' in event.fields else event.fixedGridRhoFastjetAll), nominal_jet.pt)[0]
 
     from coffea.lookup_tools import extractor
     extract = extractor()
