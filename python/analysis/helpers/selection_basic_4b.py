@@ -26,7 +26,9 @@ def apply_event_selection_4b( event, corrections_metadata, *, cut_on_lumimask=Tr
                     list_to_mask=corrections_metadata['NoiseFilter'],
                     list_to_skip=['BadPFMuonDzFilter', 'hfNoisyHitsFilter']  )
 
-    event['passJetVetoMaps'] = apply_jet_veto_maps( corrections_metadata['jet_veto_maps'], event.Jet )
+    event['passJetVetoMaps'] = np.full(len(event), True) \
+            if ('neEmEF' not in event.Jet.fields) else \
+            apply_jet_veto_maps( corrections_metadata['jet_veto_maps'], event.Jet )
 
     return event
 
@@ -448,6 +450,10 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
                                     } )
 
     selev["region"] = ( selev["quadJet_selected"].SR * 0b10 + selev["quadJet_selected"].SB * 0b01 )
+    # selev["region"] = ak.zip({ 
+    #     "SR": selev["quadJet_selected"].SR,
+    #     "SB": selev["quadJet_selected"].SB 
+    #     })
 
     if run_SvB:
         selev["passSvB"] = selev["SvB_MA"].ps > 0.80
