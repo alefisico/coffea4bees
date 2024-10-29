@@ -523,7 +523,7 @@ class analysis(processor.ProcessorABC):
         if not shift_name:
             self._cutFlow.fill("passPreSel", selev)
             self._cutFlow.fill("passPreSel_woTrig", selev,
-                               wOverride=np.sum(selev['weight_woTrig'])) ))
+                               wOverride=np.sum(selev['weight_woTrig']))
             self._cutFlow.fill("passDiJetMass", selev[selev.passDiJetMass])
             self._cutFlow.fill("passDiJetMass_woTrig", selev[selev.passDiJetMass],
                                wOverride=np.sum(selev['weight_woTrig'][selev.passDiJetMass] ))
