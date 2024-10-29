@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from itertools import repeat
+from typing import overload
 
 import numpy as np
 import numpy.typing as npt
 from hist.axis import (
-    AxesMixin,
     Boolean,
     IntCategory,
     Integer,
@@ -15,6 +15,7 @@ from hist.axis import (
 )
 
 INTERNAL = '<span style="font-style: italic; font-weight: bold;">{text}</span>'.format
+HistAxis = Boolean | IntCategory | Integer | Regular | StrCategory | Variable
 
 
 class BHAxis:
@@ -26,13 +27,13 @@ class BHAxis:
         self._flow = flow
         self._ff = floating_format
 
-    def flow(self, axis: AxesMixin) -> tuple[bool, bool]:
+    def flow(self, axis: HistAxis) -> tuple[bool, bool]:
         if not self._flow:
             return False, False
-        _ax = axis._ax  # HACK: Accessing private attribute in boost-histogram
-        return _ax.traits_underflow, _ax.traits_overflow
+        ax = axis.traits
+        return ax.underflow, ax.overflow
 
-    def widths(self, axis: AxesMixin) -> list[float] | None:
+    def widths(self, axis: HistAxis) -> list[float] | None:
         if not isinstance(axis, (Regular, Variable)):
             return None
         under, over = self.flow(axis)
@@ -54,7 +55,7 @@ class BHAxis:
                 edges.append(edges[-1] + flow)
         return edges
 
-    def labels(self, axis: AxesMixin) -> list[str]:
+    def labels(self, axis: HistAxis) -> list[str]:
         under, over = self.flow(axis)
         cats = [*axis]
         match axis:
@@ -83,8 +84,8 @@ class BHAxis:
                 )
 
     def rebin(
-        self, axis: AxesMixin, rebin: int | list[int]
-    ) -> tuple[AxesMixin, npt.NDArray]:
+        self, axis: HistAxis, rebin: int | list[int]
+    ) -> tuple[HistAxis, npt.NDArray]:
         if (isinstance(rebin, int) and rebin <= 1) or (
             isinstance(rebin, list) and any(r < 1 for r in rebin)
         ):

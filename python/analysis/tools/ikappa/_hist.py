@@ -43,13 +43,12 @@ from bokeh.models import (
 )
 from bokeh.plotting import figure
 from hist.axis import (
-    AxesMixin,
     Regular,
     StrCategory,
     Variable,
 )
 
-from ._bh import BHAxis
+from ._bh import BHAxis, HistAxis
 from ._utils import RGB, Component
 from .config import UI, CouplingScan, Datasets, Palette, Plot, Stacks
 
@@ -62,12 +61,12 @@ if TYPE_CHECKING:
     class Hist1D(NamedTuple):
         values: pd.DataFrame
         variances: pd.DataFrame
-        edge: AxesMixin
+        edge: HistAxis
 
     class Hist2D(NamedTuple):
         values: pd.DataFrame
         variances: pd.DataFrame
-        edges: tuple[AxesMixin, AxesMixin]
+        edges: tuple[HistAxis, HistAxis]
 
 
 # constants
@@ -1269,7 +1268,7 @@ source.change.emit();
         )
 
     @staticmethod
-    def __ticks(fig: figure, edge: AxesMixin, bhaxis: BHAxis):
+    def __ticks(fig: figure, edge: HistAxis, bhaxis: BHAxis):
         fig.xaxis.axis_label = (edge.label or edge.name).replace("$", "$$")
         fig.yaxis.axis_label = "Events"
         if isinstance(edge, (Regular, Variable)):
@@ -1281,7 +1280,7 @@ source.change.emit();
         return fig
 
     @staticmethod
-    def __edges(edge: AxesMixin, bhaxis: BHAxis):
+    def __edges(edge: HistAxis, bhaxis: BHAxis):
         if isinstance(edge, (Regular, Variable)):
             edges = np.asarray(bhaxis.edges(edge, finite=True))
             return edges[:-1], edges[1:]

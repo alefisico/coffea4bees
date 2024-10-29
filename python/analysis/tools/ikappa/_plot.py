@@ -22,9 +22,9 @@ from bokeh.models import (
 )
 from bokeh.resources import Resources
 from hist import Hist
-from hist.axis import AxesMixin
 
-from ._hist import _FF, BHAxis, HistGroup
+from ._bh import BHAxis, HistAxis
+from ._hist import _FF, HistGroup
 from ._utils import Component, Confirmation, DownloadLink, ExternalLink, PathInput
 from ._widget import TreeView
 from .config import UI
@@ -74,7 +74,7 @@ class Profiler:
 
 
 class AxisProjector(Component):
-    def __init__(self, axis: AxesMixin, dist: Hist, **kwargs):
+    def __init__(self, axis: HistAxis, dist: Hist, **kwargs):
         super().__init__(**kwargs)
         self._type = type(axis)
         self._name = axis.name
