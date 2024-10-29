@@ -12,6 +12,7 @@ import numpy as np
 import mplhep as hep  # HEP (CMS) extensions/styling on top of mpl
 plt.style.use([hep.style.CMS, {'font.size': 16}])
 import inspect
+import base_class.plots.iPlot_config as cfg
 
 _phi = (1 + np.sqrt(5)) / 2
 _epsilon = 0.001
@@ -64,7 +65,8 @@ def get_values_centers_from_dict(hist_config, hists, stack_dict):
             if h_config["name"] == hist_config["key"]:
                 return h_data.values(), h_data.axes[0].centers
 
-        print(f"ERROR: input to ratio of key {hist_config['key']} not found in hists")
+        raise ValueError(f"ERROR: input to ratio of key {hist_config['key']} not found in hists")
+
 
     if hist_config["type"] == "stack":
         stack_dict_for_hist = {k: v[0] for k, v in stack_dict.items() }
@@ -73,8 +75,24 @@ def get_values_centers_from_dict(hist_config, hists, stack_dict):
         return_values = np.sum(return_values, axis=0)
         return return_values, hStackHists[0].axes[0].centers
 
-    print("ERROR: ratio needs to be of type 'hists' or 'stack'")
+    raise ValueError("ERROR: ratio needs to be of type 'hists' or 'stack'")
 
+
+def init_config(args):
+    cfg.plotConfig = load_config(args.metadata)
+    cfg.outputFolder = args.outputFolder
+    cfg.combine_input_files = args.combine_input_files
+    cfg.plotModifiers = yaml.safe_load(open(args.modifiers, 'r'))
+
+    if cfg.outputFolder:
+        if not os.path.exists(cfg.outputFolder):
+            os.makedirs(cfg.outputFolder)
+
+    cfg.hists = load_hists(args.inputFile)
+    cfg.fileLabels = args.fileLabels
+    cfg.axisLabels, cfg.cutList = read_axes_and_cuts(cfg.hists, cfg.plotConfig)
+
+    return cfg
 
 def _savefig(fig, var, *args):
 
