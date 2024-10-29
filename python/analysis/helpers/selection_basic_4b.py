@@ -1,6 +1,10 @@
 import numpy as np
 import awkward as ak
-from analysis.helpers.common import mask_event_decision, drClean
+from analysis.helpers.common import (
+    mask_event_decision, 
+    drClean, 
+    apply_jet_veto_maps
+)
 from analysis.helpers.SvB_helpers import compute_SvB
 from coffea.lumi_tools import LumiMask
 from base_class.math.random import Squares
@@ -21,6 +25,8 @@ def apply_event_selection_4b( event, corrections_metadata, *, cut_on_lumimask=Tr
                     decision="AND", branch="Flag",
                     list_to_mask=corrections_metadata['NoiseFilter'],
                     list_to_skip=['BadPFMuonDzFilter', 'hfNoisyHitsFilter']  )
+
+    event['passJetVetoMaps'] = apply_jet_veto_maps( corrections_metadata['jet_veto_maps'], event.Jet )
 
     return event
 

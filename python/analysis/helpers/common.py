@@ -181,6 +181,31 @@ def jet_corrections( uncorr_jets,
 
     return corr_jets
 
+def apply_jet_veto_maps( corrections_metadata, jets ):
+    '''
+    taken from https://github.com/PocketCoffea/PocketCoffea/blob/main/pocket_coffea/lib/cut_functions.py#L65
+    '''
+
+    mask_for_VetoMap = (
+        ((jets.jetId & 2)==2) # Must fulfill tight jetId
+        & (abs(jets.eta) < 5.19) # Must be within HCal acceptance
+        & ((jets["neEmEF"]+jets["chEmEF"])<0.9) # Energy fraction not dominated by ECal
+    )
+    if 'muonSubtrFactor' in jets.fields:  ### AGE: this should be temporary
+        mask_for_VetoMap = mask_for_VetoMap & (jets.muonSubtrFactor < 0.8) # May no be Muons misreconstructed as jets
+    masked_jets = jets[mask_for_VetoMap]
+
+    corr = correctionlib.CorrectionSet.from_file(corrections_metadata['file'])[corrections_metadata['tag']]
+    
+    etaFlat, phiFlat, etaCounts = ak.flatten(masked_jets.eta), ak.flatten(masked_jets.phi), ak.num(masked_jets.eta)
+    phiFlat = np.clip(phiFlat, -3.14159, 3.14159) # Needed since no overflow included in phi binning
+    weight = ak.unflatten(
+        corr.evaluate("jetvetomap", etaFlat, phiFlat),
+        counts=etaCounts,
+    )
+    eventMask = ak.sum(weight, axis=-1)==0 # if at least one jet is vetoed, reject it event
+    return ak.where(ak.is_none(eventMask), False, eventMask)
+
 
 def mask_event_decision(event, decision='OR', branch='HLT', list_to_mask=[''], list_to_skip=['']):
     '''
