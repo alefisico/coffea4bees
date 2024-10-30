@@ -204,6 +204,7 @@ source /cvmfs/cms.cern.ch/cmsset_default.sh
 cd /home/cmsusr/CMSSW_11_3_4/
 cmsenv || true
 cd -
+python3 python/stats_analysis/make_combine_inputs.py --classifier SvB_MA -f {input.injson} --syst_file {input.injsonsyst} --bkg_syst_file python/stats_analysis/files/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin2.pkl --output_dir output/datacards/stat_only/ --rebin 2 --metadata python/stats_analysis/metadata/HH4b.yml --stat_only
 python3 python/stats_analysis/make_combine_inputs.py --classifier SvB_MA -f {input.injson} --syst_file {input.injsonsyst} --bkg_syst_file python/stats_analysis/files/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin2.pkl --output_dir output/datacards/ --rebin 2 --metadata python/stats_analysis/metadata/HH4b.yml --make_syst_plots 
         """
 
@@ -225,6 +226,7 @@ cmsenv || true
 cd -
 cat {input}
 echo "RUNNING COMBINE"
+source python/stats_analysis/run_combine.sh output/datacards/stat_only --limits
 source python/stats_analysis/run_combine.sh output/datacards/ --limits
         """
 
