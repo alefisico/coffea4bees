@@ -1,12 +1,16 @@
 import numpy as np
 import awkward as ak
-from analysis.helpers.common import mask_event_decision, drClean
+from analysis.helpers.common import (
+    mask_event_decision, 
+    drClean, 
+    apply_jet_veto_maps
+)
 from analysis.helpers.SvB_helpers import compute_SvB
 from coffea.lumi_tools import LumiMask
 from base_class.math.random import Squares
 from copy import copy
 
-def apply_event_selection_4b( event, corrections_metadata, *, cut_on_lumimask=True):
+def apply_event_selection_4b( event, corrections_metadata, *, cut_on_lumimask=True, do_jet_veto_maps=True):
 
     lumimask = LumiMask(corrections_metadata['goldenJSON'])
     event['lumimask'] = np.array( lumimask(event.run, event.luminosityBlock) ) \
@@ -21,6 +25,10 @@ def apply_event_selection_4b( event, corrections_metadata, *, cut_on_lumimask=Tr
                     decision="AND", branch="Flag",
                     list_to_mask=corrections_metadata['NoiseFilter'],
                     list_to_skip=['BadPFMuonDzFilter', 'hfNoisyHitsFilter']  )
+
+    event['passJetVetoMaps'] = np.full(len(event), True) \
+            if not do_jet_veto_maps else \
+            apply_jet_veto_maps( corrections_metadata['jet_veto_maps'], event.Jet )
 
     return event
 
@@ -163,6 +171,10 @@ def apply_object_selection_4b(event, corrections_metadata, *,
         tagCode = np.zeros(len(event), dtype=int)
         tagCode[event.fourTag]  = 4
         tagCode[event.threeTag] = 3
+        # event['tag'] = ak.zip({
+        #     'fourTag': event.fourTag,
+        #     'threeTag': event.threeTag,
+        # })
 
         #  Calculate hT
         event["hT"] = ak.sum(event.Jet[event.Jet.selected_loose].pt, axis=1)
@@ -442,6 +454,10 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
                                     } )
 
     selev["region"] = ( selev["quadJet_selected"].SR * 0b10 + selev["quadJet_selected"].SB * 0b01 )
+    # selev["region"] = ak.zip({ 
+    #     "SR": selev["quadJet_selected"].SR,
+    #     "SB": selev["quadJet_selected"].SB 
+    #     })
 
     if run_SvB:
         selev["passSvB"] = selev["SvB_MA"].ps > 0.80
