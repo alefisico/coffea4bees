@@ -161,6 +161,7 @@
     - BadPFMuonDzFilter
     - hfNoisyHitsFilter
     - ecalBadCalibFilter
+  rochesterCorrections: data/Muon/RoccoR2017UL.txt
 
 'UL18': 
   year_label: '2018'
