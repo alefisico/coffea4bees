@@ -30,3 +30,4 @@ build_container_reana:
   rules:
       - if: $CI_COMMIT_BRANCH =~ /^container.*/ 
       - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+        when: always
