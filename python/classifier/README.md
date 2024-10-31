@@ -90,6 +90,10 @@ mamba env create -f env.yml
         source ./classifier/install.sh
         ```
 
+Notes:
+
+- use e.g. "localhost:10200" when connecting to the monitor started in the same rogue node
+
 ### Run Command Line Interface by examples
 
 #### Setup
@@ -169,8 +173,12 @@ It will print the IP address and port number that the monitor is listening to. e
 Which port to use:
 
 - LPC: 10000-10200 is usally safe to use
-- PSC: TBD
-- LXPLUS: TBD
+
+Connect to the monitor:
+
+```bash
+./pyml.py ... -setting Monitor "{address: 127.0.1.1:10200, connect: true}"
+```
 
 #### Quick start
 

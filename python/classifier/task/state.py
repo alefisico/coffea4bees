@@ -9,6 +9,10 @@ from .special import Static
 
 _MAX_WIDTH = 30
 
+_RAW = "raw__"
+_GET = "get__"
+_SET = "set__"
+
 
 def _is_private(name: str):
     return name.startswith("_")
@@ -21,30 +25,6 @@ def _is_special(name: str):
 def _is_state(var: tuple[str, Any]):
     name, value = var
     return not _is_special(name) and not isinstance(value, classmethod)
-
-
-class _ClassPropertyMeta(type):
-    __cached_states__ = {}
-
-    def __getattribute__(cls, __name: str):
-        if not _is_private(__name):
-            value = vars(cls).get(__name)
-            parser = vars(cls).get(f"get__{__name}")
-            if isinstance(parser, classmethod):
-                if __name not in cls.__cached_states__:
-                    cls.__cached_states__[__name] = parser.__func__(cls, value)
-                return cls.__cached_states__[__name]
-        return super().__getattribute__(__name)
-
-    def __setattr__(cls, __name: str, __value: Any):
-        __new = None
-        if not _is_private(__name):
-            parser = vars(cls).get(f"set__{__name}")
-            if isinstance(parser, classmethod):
-                __new = parser.__func__(cls, __value)
-        if __new is not None:
-            __value = __new
-        super().__setattr__(__name, __value)
 
 
 class GlobalState:
@@ -66,7 +46,7 @@ class _share_global_state:
             ),
         )
 
-    def __setstate__(self, states: tuple[tuple[type[GlobalState], dict[str]]]):
+    def __setstate__(self, states: tuple[tuple[type[GlobalState], dict[str]], ...]):
         self._states = states
 
     def __call__(self):
@@ -79,8 +59,36 @@ class _share_global_state:
 status.initializer.add_unique(_share_global_state)
 
 
+class _ClassPropertyMeta(type):
+    __cached_states__: dict
+
+    def __getattribute__(cls, __name: str):
+        if not _is_private(__name):
+            if __name.startswith(_RAW):
+                return vars(cls).get(__name.removeprefix(_RAW))
+            value = vars(cls).get(__name)
+            parser = vars(cls).get(f"{_GET}{__name}")
+            if isinstance(parser, classmethod):
+                if __name not in cls.__cached_states__:
+                    cls.__cached_states__[__name] = parser.__func__(cls, value)
+                return cls.__cached_states__[__name]
+        return super().__getattribute__(__name)
+
+    def __setattr__(cls, __name: str, __value: Any):
+        __new = None
+        if not _is_private(__name):
+            cls.__cached_states__.pop(__name, None)
+            parser = vars(cls).get(f"{_SET}{__name}")
+            if isinstance(parser, classmethod):
+                __new = parser.__func__(cls, __value)
+        if __new is not None:
+            __value = __new
+        super().__setattr__(__name, __value)
+
+
 class Cascade(GlobalState, Static, metaclass=_ClassPropertyMeta):
     def __init_subclass__(cls):
+        cls.__cached_states__ = {}
         super().__init_subclass__()
         for k, v in vars(cls).items():
             if _is_state((k, v)):
