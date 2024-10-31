@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-import logging
 from textwrap import indent
-from typing import Any, Mapping
+from typing import Any
 
 from ..process import status
 from ..typetools import dict_proxy
@@ -97,25 +96,24 @@ class Cascade(GlobalState, Static, metaclass=_ClassPropertyMeta):
 
         proxy = dict_proxy(cls)
         for opt in opts:
-            data = parse.mapping(opt)
-            if isinstance(data, Mapping):
-                proxy.update(dict(filter(_is_state, data.items())))
-            else:
-                logging.error(
-                    f"Unsupported data {data} when updating {cls.__name__}, expect a mapping."
-                )
+            proxy.update(
+                dict(filter(_is_state, dict_proxy(parse.mapping(opt)).items()))
+            )
 
     @classmethod
     def autocomplete(cls, opts: list[str]):
         import json
 
-        yield from filter(
-            lambda x: x.startswith(opts[-1]),
-            map(
-                lambda x: f'"{x[0]}: {json.dumps(x[1])}"',
-                filter(_is_state, dict_proxy(cls).items()),
-            ),
-        )
+        for k, v in vars(cls).items():
+            if not _is_state((k, v)):
+                continue
+            try:
+                parsed = json.dumps(v)
+            except Exception:
+                parsed = "null"
+            opt = f'"{k}: {parsed}"'
+            if opt.startswith(opts[-1]):
+                yield opt
 
     @classmethod
     def help(cls):

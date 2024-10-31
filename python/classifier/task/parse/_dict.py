@@ -7,6 +7,8 @@ from typing import Literal, overload
 
 import fsspec
 
+from ...typetools import dict_proxy
+
 _SCHEMA = ":##"
 _KEY = "@@"
 
@@ -52,7 +54,7 @@ def _deserialize(data: str, protocol: str):
             mods = data.split(".")
             try:
                 mod = importlib.import_module(".".join(mods[:-1]))
-                return vars(getattr(mod, mods[-1]))
+                return getattr(mod, mods[-1])
             except Exception:
                 raise DeserializationError(f'Failed to import "{data}"')
         case "csv":
@@ -88,12 +90,13 @@ def _deserialize_file(path: str, formatter: str):
 
 
 def _fetch_key(mapping, key):
+    proxy = dict_proxy(mapping)
     try:
-        return mapping[key]
+        return proxy[key]
     except Exception:
         ...
     try:
-        return mapping[int(key)]
+        return proxy[int(key)]
     except Exception:
         ...
     raise KeyError()

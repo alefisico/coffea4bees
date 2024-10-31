@@ -1,7 +1,5 @@
-import builtins
 from _thread import LockType
 from enum import Enum
-from functools import partial
 from threading import Lock
 from typing import (
     Any,
@@ -9,7 +7,6 @@ from typing import (
     Generic,
     Iterable,
     Mapping,
-    MutableMapping,
     ParamSpec,
     Protocol,
     TypeVar,
@@ -54,35 +51,18 @@ class PicklableLock:
         self.lock = Lock() if self.lock else None
 
 
-class dict_proxy(MutableMapping):
-    def __init__(self, obj):
-        self._object = obj
+class dict_proxy:
+    def __new__(cls, obj):
         if isinstance(obj, Mapping):
-            self._mapping = obj
-        else:
-            self._mapping = obj.__dict__
+            return super().__new__(_dictlike)
+        return super().__new__(_classlike)
 
-        for k in ("set", "del"):
-            if hasattr(self._mapping, f"__{k}item__"):
-                func = getattr(self._mapping, f"__{k}item__")
-            else:
-                func = partial(getattr(builtins, f"{k}attr"), self._object)
-            setattr(self, f"_{k}", func)
+    def __init__(self, obj):
+        self._obj = obj
 
-    def __getitem__(self, __key):
-        return self._mapping.__getitem__(__key)
-
-    def __iter__(self):
-        return self._mapping.__iter__()
-
-    def __len__(self):
-        return len(self._mapping)
-
-    def __delitem__(self, __key):
-        return self._del(__key)
-
-    def __setitem__(self, __key, __value):
-        return self._set(__key, __value)
+    def items(self):
+        for k in self:
+            yield k, self[k]
 
     def update(self, *mappings: Mapping):
         for mapping in mappings:
@@ -98,6 +78,42 @@ class dict_proxy(MutableMapping):
                 else:
                     self[k] = v
         return self
+
+
+class _dictlike(dict_proxy):
+    _obj: Mapping
+
+    def __iter__(self):
+        yield from self._obj
+
+    def __getitem__(self, __key):
+        return self._obj[__key]
+
+    def __setitem__(self, __key, __value):
+        self._obj[__key] = __value
+
+    def __delitem__(self, __key):
+        del self._obj[__key]
+
+    def __contains__(self, __key):
+        return __key in self._obj
+
+
+class _classlike(dict_proxy):
+    def __iter__(self):
+        yield from dir(self._obj)
+
+    def __getitem__(self, __key):
+        return getattr(self._obj, __key)
+
+    def __setitem__(self, __key, __value):
+        setattr(self._obj, __key, __value)
+
+    def __delitem__(self, __key):
+        delattr(self._obj, __key)
+
+    def __contains__(self, __key):
+        return hasattr(self._obj, __key)
 
 
 def enum_dict(enum: type[Enum]):
