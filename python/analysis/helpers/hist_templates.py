@@ -29,7 +29,7 @@ class FvTHists(Template):
     frac_err = H((50, 0, 5, ("frac_err",  'FvT std/FvT')))
     #'q_1234', 'q_1324', 'q_1423',
 
-class QuadJetHists(Template):
+class QuadJetHistsBasic(Template):
     dr              = H((50,     0, 5,   ("dr",          'Diboson Candidate $\\Delta$R(d,d)')))
     dphi            = H((50, -3.2, 3.2, ("dphi",        'Diboson Candidate $\\Delta$R(d,d)')))
     deta            = H((50,   -5, 5,   ("deta",        'Diboson Candidate $\\Delta$R(d,d)')))
@@ -43,8 +43,12 @@ class QuadJetHists(Template):
     close_vs_other_m = H((50, 0, 250, ('close.mass', 'Close Boson Candidate Mass')),
                          (50, 0, 250, ('other.mass', 'Other Boson Candidate Mass')))
 
+class QuadJetHistsSelected(QuadJetHistsBasic):
+
     lead            = LorentzVector.plot_pair(('...', R'Lead Boson Candidate'),  'lead',  skip=['n'], bins={"pt": (50, 0, 1000)})
     subl            = LorentzVector.plot_pair(('...', R'Subl Boson Candidate'),  'subl',  skip=['n'], bins={"pt": (50, 0, 1000)})
+
+class QuadJetHistsMinDr(QuadJetHistsBasic):
     close           = LorentzVector.plot_pair(('...', R'Close Boson Candidate'), 'close', skip=['n'], bins={"pt": (50, 0, 1000)})
     other           = LorentzVector.plot_pair(('...', R'Other Boson Candidate'), 'other', skip=['n'], bins={"pt": (50, 0, 1000)})
 
