@@ -35,7 +35,7 @@ def json_to_TH1( coffea_hist, iname, rebin ):
 
     return rHist
 
-def create_root_file(file_to_convert, _, output_dir):
+def create_root_file(file_to_convert, histos, output_dir):
     logging.info( "in create_root_file")
     coffea_hists = json.load(open(file_to_convert, 'r'))
     logging.info( "leaded coffea_hists")
@@ -48,19 +48,25 @@ def create_root_file(file_to_convert, _, output_dir):
     output = output_dir + "/" + (file_to_convert.split("/")
                                  [-1].replace(".json", "")) + ".root"
 
+    # Check if the output file exists and delete it if it does
+    if os.path.exists(output):
+        os.remove(output)
+        logging.info(f"Deleted existing file: {output}")
+
     root_file = ROOT.TFile(output, 'recreate')
 
     for ih in coffea_hists.keys():
-        for iprocess in coffea_hists[ih].keys():
-            for iy in coffea_hists[ih][iprocess].keys():
-                for itag in coffea_hists[ih][iprocess][iy].keys():
-                    for iregion in coffea_hists[ih][iprocess][iy][itag].keys():
-                        this_hist = json_to_TH1(
-                            coffea_hists[ih][iprocess][iy][itag][iregion],
-                            ih.replace(".", "_") + "_" + iprocess + "_" + iy + "_" + itag + "_" + iregion,
-                            1)
-                        print( 'Converting hist', ih, ih.replace(".", "_") + "_" + iprocess + "_" + iy + "_" + itag + "_" + iregion)
-                        this_hist.Write()
+        if len(histos) > 0 and ((ih in histos) or (ih.replace(".", "_") in histos)):
+            for iprocess in coffea_hists[ih].keys():
+                for iy in coffea_hists[ih][iprocess].keys():
+                    for itag in coffea_hists[ih][iprocess][iy].keys():
+                        for iregion in coffea_hists[ih][iprocess][iy][itag].keys():
+                            this_hist = json_to_TH1(
+                                coffea_hists[ih][iprocess][iy][itag][iregion],
+                                ih.replace(".", "_") + "_" + iprocess + "_" + iy + "_" + itag + "_" + iregion,
+                                1)
+                            print( 'Converting hist', ih, ih.replace(".", "_") + "_" + iprocess + "_" + iy + "_" + itag + "_" + iregion)
+                            this_hist.Write()
 
     root_file.Close()
     logging.info("\n File " + output + " created.")
