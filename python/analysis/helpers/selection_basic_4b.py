@@ -235,6 +235,7 @@ def apply_object_selection_boosted_4b( event ):
     candJet2 = (tmp_selev.FatJet[:,1].particleNet_mass > 50)
     if 'bdt' in tmp_selev.fields:
         passBDT = (tmp_selev.FatJet[:,1].particleNetMD_Xbb > 0.950) & (tmp_selev.bdt['score']> 0.03)  ### bdt_score only in picoAOD.chunk.withBDT.root files
+        # passBDT = (tmp_selev.FatJet[:,1].particleNetMD_Xbb > 0.980) & (tmp_selev.bdt['score']> 0.43)  ### bdt_score only in picoAOD.chunk.withBDT.root files
     else: passBDT = np.full( len(tmp_selev), True )
 
     passBoostedSel = np.full( len(event), False )

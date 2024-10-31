@@ -222,9 +222,7 @@ python/jet_clustering/*/*pdf
 *png 
 *pdf 
 python/stats_analysis/coffea4bees*
-python/stats_analysis/files_*
-python/stats_analysis/HIG*
-python/stats_analysis/old*
+python/stats_analysis/archive/
 python/stats_analysis/tmp*
 python/stats_analysis/hists/
 python/stats_analysis/workflow*
