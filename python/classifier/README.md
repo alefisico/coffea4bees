@@ -59,9 +59,9 @@ mamba env create -f env.yml
 
 #### Server Specific
 
-##### falcon/rogue01
+##### falcon/rogue
 
-`singularity` is now available in rogue01.
+`singularity` is now available on rogue01/rogue02.
 
 1. change the cache directory for singularity:
     1. `mkdir -p /mnt/scratch/${USER}/.apptainer`
