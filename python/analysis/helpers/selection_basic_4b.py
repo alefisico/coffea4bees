@@ -34,14 +34,27 @@ def apply_object_selection_4b(event, corrections_metadata, *,
 
     ## Very simplified selection for Run 3
     if '202' in dataset:  ### Run 3 is only with 202X years
-        event['Jet', 'selected_loose'] = (event.Jet.pt >= 10) & (np.abs(event.Jet.eta) <= 4.7)
+        event['Muon', 'selected'] = (event.Muon.pt > 10) & (abs(event.Muon.eta) < 2.5) & (event.Muon.pfRelIso04_all < 0.15) & (event.Muon.looseId)
+        event['nMuon_selected'] = ak.sum(event.Muon.selected, axis=1)
+        event['selMuon'] = event.Muon[event.Muon.selected]
+
+        event['Jet', 'selected_loose'] = (event.Jet.pt >= 20) & (np.abs(event.Jet.eta) <= 4.7)
+        #event['Jet', 'selected_loose'] = (event.Jet.pt >= 20) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
         event['Jet', 'selected'] = (event.Jet.pt >= 30) & (np.abs(event.Jet.eta) <= 2.4) & (event.Jet.jetId>=2)
         event['Jet', 'tagged']       = event.Jet.selected & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['M'])
         event['Jet', 'bRegCorr']       = event.Jet.PNetRegPtRawCorr * event.Jet.PNetRegPtRawCorrNeutrino
         event['Jet', 'puId']       = 10
-        # event['Jet', 'tagged_loose'] = event.Jet.selected & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['L'])
+        event['Jet', 'muon_cleaned'] = drClean( event.Jet, event.selMuon )[1]  ### 0 is the collection of jets, 1 is the flag
+
+        event['Jet', 'ht_selected'] = (event.Jet.pt >= 30) & (np.abs(event.Jet.eta) < 2.4) & event.Jet.muon_cleaned
+
+
+
+        event['Jet', 'tagged_loose'] = event.Jet.selected & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['L'])
         event['selJet'] = event.Jet[event.Jet.selected]
         event['nJet_selected'] = ak.sum(event.Jet.selected, axis=1)
+
+
 
         if '2022' in dataset:
             event['passJetMult'] = ak.where( event.nJet_selected >= 4, True, False)
@@ -61,7 +74,7 @@ def apply_object_selection_4b(event, corrections_metadata, *,
         event['nJet_tagged']         = ak.num(event.Jet[event.Jet.tagged])
         # event['nJet_tagged_loose']   = ak.num(event.Jet[event.Jet.tagged_loose])
         event['tagJet']              = event.selJet[event.selJet.tagged]
-        # event['tagJet_loose']        = event.Jet[event.Jet.tagged_loose]
+        event['tagJet_loose']        = event.Jet[event.Jet.tagged_loose]
 
         event['fourTag']  = (event['nJet_tagged'] >= 4)
         event['threeTag']   = (event['nJet_tagged'] == 3) & (event['nJet_selected'] >= 4)
@@ -79,6 +92,15 @@ def apply_object_selection_4b(event, corrections_metadata, *,
         tagCode[event.twoTag] = 2
 
         event['tag'] = tagCode
+
+
+
+
+        #  Calculate hT
+        event["hT"] = ak.sum(event.Jet[event.Jet.selected_loose].pt, axis=1)
+        event["hT_selected"] = ak.sum(event.Jet[event.Jet.selected].pt, axis=1)
+        event["hT_trigger"] = ak.sum(event.Jet[event.Jet.ht_selected].pt, axis=1)
+
 
     ## For Run 2
     else:
