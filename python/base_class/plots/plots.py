@@ -178,7 +178,7 @@ def get_hist(cfg, config, var, region, cut, rebin, year, file_index=None, debug=
                 hist_obj = _input_data['hists'][var]
 
     if hist_obj is None:
-        print(f"ERROR did not find var {var} with process {config['process']} in inputs")
+        raise ValueError(f"ERROR did not find var {var} with process {config['process']} in inputs")
 
     #
     #  Add rebin Options
@@ -957,7 +957,7 @@ def make2DPlot(cfg, process, var='selJets.pt',
     return fig, ax
 
 
-def parse_args():
+def init_arg_parser():
 
     parser = argparse.ArgumentParser(description='plots', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
@@ -988,6 +988,13 @@ def parse_args():
     parser.add_argument('--debug', action="store_true", help='')
     parser.add_argument('--signal', action="store_true", help='')
     parser.add_argument('--combine_input_files', action="store_true", help='')
+
+
+    return parser
+
+def parse_args():
+
+    parser = init_arg_parser()
 
     args = parser.parse_args()
     return args
@@ -1027,6 +1034,8 @@ def read_axes_and_cuts(hists, plotConfig):
         for iBin in range(a.extent):
 
             if axisName in plotConfig["codes"]:
+                if a.value(iBin) not in plotConfig["codes"][axisName]:
+                    continue
                 value = plotConfig["codes"][axisName][a.value(iBin)]
             else:
                 value = a.value(iBin)

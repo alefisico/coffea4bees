@@ -7,21 +7,21 @@ hists:
                 fillcolor: k
                 edgecolor: k
 
-        syn_v1:
-                process: syn_v1
-                tag: fourTag
-                year: RunII
-                label: Synthetic Data (1)
-                fillcolor: r
-                edgecolor: r
-
-        syn_v2:
-                process: syn_v2
-                tag: fourTag
-                year: RunII
-                label: Synthetic Data (2)
-                fillcolor: xkcd:sky blue
-                edgecolor: xkcd:sky blue
+#        syn_v1:
+#                process: syn_v1
+#                tag: fourTag
+#                year: RunII
+#                label: Synthetic Data (1)
+#                fillcolor: r
+#                edgecolor: r
+#
+#        syn_v2:
+#                process: syn_v2
+#                tag: fourTag
+#                year: RunII
+#                label: Synthetic Data (2)
+#                fillcolor: xkcd:sky blue
+#                edgecolor: xkcd:sky blue
 
 
 
@@ -54,32 +54,32 @@ ratios:
                 marker: "o"
 
 
-        dataToSyn1:
-                numerator:
-                        type: hists
-                        key: syn_v1
-                denominator:
-                        type: stack
-
-
-                uncertianty:
-                        nominal
-                color: r
-                marker: "o"
-
-
-        dataToSyn2:
-                numerator:
-                        type: hists
-                        key: syn_v2
-                denominator:
-                        type: stack
-
-
-                uncertianty:
-                        nominal
-                color: xkcd:sky blue
-                marker: "o"
+#        dataToSyn1:
+#                numerator:
+#                        type: hists
+#                        key: syn_v1
+#                denominator:
+#                        type: stack
+#
+#
+#                uncertianty:
+#                        nominal
+#                color: r
+#                marker: "o"
+#
+#
+#        dataToSyn2:
+#                numerator:
+#                        type: hists
+#                        key: syn_v2
+#                denominator:
+#                        type: stack
+#
+#
+#                uncertianty:
+#                        nominal
+#                color: xkcd:sky blue
+#                marker: "o"
 
 
 
