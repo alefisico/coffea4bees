@@ -3,7 +3,7 @@ from ...utils import import_
 from ._dict import mapping
 
 
-def instance(opt: list[str], pkg: str):
+def instance(opt: list[str], pkg: str, /, **kwargs):
     if len(opt) < 1:
         return None
     parts = f"{pkg}.{opt[0]}".split(".")
@@ -11,6 +11,5 @@ def instance(opt: list[str], pkg: str):
     if cls is None:
         return None
     if len(opt) > 1:
-        return cls(**dict_proxy({}).update(*map(mapping, opt[1:])))
-    else:
-        return cls()
+        dict_proxy(kwargs).update(*map(mapping, opt[1:]))
+    return cls(**kwargs)
