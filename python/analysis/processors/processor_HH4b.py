@@ -614,14 +614,14 @@ class analysis(processor.ProcessorABC):
             from ..helpers.dump_friendtrees import dump_JCM_weight
 
             friends["friends"] = ( friends["friends"]
-                | dump_JCM_weight(selev, self.make_classifier_input, "JCM_weight", analysis_selections)
+                | dump_JCM_weight(selev, self.make_friend_JCM_weight, "JCM_weight", analysis_selections)
             )
 
         if self.make_friend_FvT_weight is not None:
             from ..helpers.dump_friendtrees import dump_FvT_weight
 
             friends["friends"] = ( friends["friends"]
-                | dump_FvT_weight(selev, self.make_classifier_input, "FvT_weight", analysis_selections)
+                | dump_FvT_weight(selev, self.make_friend_FvT_weight, "FvT_weight", analysis_selections)
             )
 
         return hist | processOutput | friends
