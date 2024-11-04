@@ -51,4 +51,6 @@ echo "############### Running test processor "
 time python runner.py -o test_synthetic_datasets.coffea -d synthetic_data synthetic_mc_GluGluToHHTo4B_cHHH1 -p analysis/processors/processor_HH4b.py -y UL18  -op $OUTPUT_DIR/ -c analysis/metadata/HH4b_synthetic_data.yml -m $OUTPUT_DIR/datasets_synthetic_test.yml
 
 # time python runner.py -o test_synthetic_datasets.coffea -d data GluGluToHHTo4B_cHHH1 -p analysis/processors/processor_HH4b.py -y UL18  -op $OUTPUT_DIR/ -c analysis/metadata/HH4b_synthetic_data.yml -m $OUTPUT_DIR/datasets_synthetic_test.yml
+# time python runner.py -o test_synthetic_datasets_Run3.coffea -d data  -p analysis/processors/processor_HH4b.py -y 2022_EE  -op hists/ -c analysis/metadata/HH4b_synthetic_data.yml -m metadata/datasets_HH4b_Run3_fourTag.yml
+
 cd ../

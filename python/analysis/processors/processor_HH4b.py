@@ -251,8 +251,8 @@ class analysis(processor.ProcessorABC):
         #
         # Event selection
         #
-        event = apply_event_selection_4b( event, 
-                                        self.corrections_metadata[self.year], 
+        event = apply_event_selection_4b( event,
+                                        self.corrections_metadata[self.year],
                                         cut_on_lumimask=self.config["cut_on_lumimask"],
                                         do_jet_veto_maps=self.config["do_jet_veto_maps"],
                                         )
@@ -292,12 +292,12 @@ class analysis(processor.ProcessorABC):
                 filtered_runs = np.array(boosted_file['run'])[mask]
                 filtered_lumis = np.array(boosted_file['luminosityBlock'])[mask]
                 filtered_events = np.array(boosted_file['event'])[mask]
-                boosted_events_set = set(zip(filtered_runs, filtered_lumis, filtered_events))        
+                boosted_events_set = set(zip(filtered_runs, filtered_lumis, filtered_events))
                 event_tuples = zip(event.run.to_numpy(), event.luminosityBlock.to_numpy(), event.event.to_numpy())
                 event['notInBoostedSel'] = np.array([t not in boosted_events_set for t in event_tuples])
             else:
                 logging.info(f"Boosted veto not applied for dataset {self.dataset}")
-            
+
         #
         # Calculate and apply Jet Energy Calibration
         #
@@ -361,7 +361,7 @@ class analysis(processor.ProcessorABC):
         selections.add( "passJetVetoMaps", event.passJetVetoMaps )
         selections.add( 'passJetMult', event.passJetMult )
         allcuts = [ 'lumimask', 'passNoiseFilter', 'passHLT', ]
-        if '202' in self.dataset : allcuts += [ 'passJetVetoMaps', 'passJetMult' ]
+        if '202' in self.dataset : allcuts += [ 'passJetMult' ] # allcuts += [ 'passJetVetoMaps', 'passJetMult' ]
         else: allcuts += [ 'passJetMult' ]
         event['weight'] = weights.weight()   ### this is for _cutflow
 
@@ -387,11 +387,11 @@ class analysis(processor.ProcessorABC):
 
             self._cutFlow = cutFlow(self.cutFlowCuts)
             for cut, sel in sel_dict.items():
-                if ('passJetVetoMaps' in cut) and ('202' not in self.dataset): continue 
+                if ('passJetVetoMaps' in cut) and ('202' not in self.dataset): continue
                 self._cutFlow.fill( cut, event[sel], allTag=True )
-                self._cutFlow.fill( f"{cut}_woTrig", event[sel], allTag=True, 
+                self._cutFlow.fill( f"{cut}_woTrig", event[sel], allTag=True,
                                     wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[sel]) )
-            
+
 
         #
         # Calculate and apply btag scale factors
@@ -508,7 +508,7 @@ class analysis(processor.ProcessorABC):
             mean_weights = np.mean(tmp_weights)
             std_weights = np.std(tmp_weights)
             z_scores = np.abs((tmp_weights - mean_weights) / std_weights)
-            not_outliers = z_scores < 30    
+            not_outliers = z_scores < 30
             if np.any(~not_outliers) and std_weights > 0:
                 logging.warning(f"Outliers in weights:{tmp_weights[~not_outliers]}, while mean is {mean_weights} and std is {std_weights} for {self.dataset}\n")
                 selections.add( 'outliers', not_outliers )

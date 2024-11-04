@@ -40,7 +40,7 @@ python runner.py -t -o test_synthetic_datasets.coffea -d data  -p analysis/proce
 # time python runner.py  -o cluster_data_Run2_noTT.coffea -d data  -p analysis/processors/processor_cluster_4b.py -y UL17 UL18 UL16_preVFP UL16_postVFP  -op $OUTPUT_DIR -m $DATASETS -c analysis/metadata/cluster_4b.yml
 # time python runner.py  -o cluster_synthetic_data_Run2.coffea -d synthetic_data  -p analysis/processors/processor_cluster_4b.py -y UL17 UL18 UL16_preVFP UL16_postVFP  -op $OUTPUT_DIR -m $DATASETS -c analysis/metadata/cluster_4b_noTTSubtraction.yml
 # python runner.py -t -o test_synthetic_datasets_upto6j.coffea -d data  -p analysis/processors/processor_cluster_4b.py -y UL18  -op $OUTPUT_DIR -m $DATASETS -c analysis/metadata/cluster_and_decluster.yml
-
+# python runner.py  -o test_synthetic_datasets_cluster_2023_preBPix.coffea -d data  -p analysis/processors/processor_cluster_4b.py -y 2023_preBPix   -op hists/ -m metadata/datasets_HH4b_Run3_fourTag.yml -c analysis/metadata/cluster_4b_noTTSubtraction.yml
 
 # python  jet_clustering/make_jet_splitting_PDFs.py $OUTPUT_DIR/test_synthetic_datasets_4j_and_5j.coffea  --out jet_clustering/jet-splitting-PDFs-00-02-00 
 
