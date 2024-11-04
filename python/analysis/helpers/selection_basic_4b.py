@@ -1,8 +1,8 @@
 import numpy as np
 import awkward as ak
 from analysis.helpers.common import (
-    mask_event_decision, 
-    drClean, 
+    mask_event_decision,
+    drClean,
     apply_jet_veto_maps
 )
 from analysis.helpers.SvB_helpers import compute_SvB
@@ -50,7 +50,8 @@ def apply_object_selection_4b(event, corrections_metadata, *,
         #event['Jet', 'selected_loose'] = (event.Jet.pt >= 20) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
         event['Jet', 'selected'] = (event.Jet.pt >= 30) & (np.abs(event.Jet.eta) <= 2.4) & (event.Jet.jetId>=2)
         event['Jet', 'tagged']       = event.Jet.selected & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['M'])
-        event['Jet', 'bRegCorr']       = event.Jet.PNetRegPtRawCorr * event.Jet.PNetRegPtRawCorrNeutrino
+        if "PNetRegPtRawCorr" in event.Jet.fields:
+            event['Jet', 'bRegCorr']       = event.Jet.PNetRegPtRawCorr * event.Jet.PNetRegPtRawCorrNeutrino
         event['Jet', 'puId']       = 10
         event['Jet', 'muon_cleaned'] = drClean( event.Jet, event.selMuon )[1]  ### 0 is the collection of jets, 1 is the flag
 
@@ -476,9 +477,9 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
                                     } )
 
     selev["region"] = ( selev["quadJet_selected"].SR * 0b10 + selev["quadJet_selected"].SB * 0b01 )
-    # selev["region"] = ak.zip({ 
+    # selev["region"] = ak.zip({
     #     "SR": selev["quadJet_selected"].SR,
-    #     "SB": selev["quadJet_selected"].SB 
+    #     "SB": selev["quadJet_selected"].SB
     #     })
 
     if run_SvB:
