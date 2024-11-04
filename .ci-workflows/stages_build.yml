@@ -15,6 +15,7 @@ build_container:
     EXTRA_TAGS: "latest $CI_COMMIT_SHORT_SHA"
   rules:
       - if: $CI_COMMIT_BRANCH =~ /^container.*/ 
+      - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"
       - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
 build_container_reana:
@@ -29,5 +30,5 @@ build_container_reana:
     EXTRA_TAGS: "reana_latest reana_$CI_COMMIT_SHORT_SHA"
   rules:
       - if: $CI_COMMIT_BRANCH =~ /^container.*/ 
+      - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"
       - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-        when: always

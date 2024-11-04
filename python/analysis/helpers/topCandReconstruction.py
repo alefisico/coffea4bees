@@ -165,8 +165,13 @@ def dumpTopCandidateTestVectors(event, logging, chunk, nEvent):
 def buildTop(input_jets, top_cand_idx):
     """ Takes indices of jets and returns reconstructed top candidate
     """
+
     # Extract jets based on indices
-    b, j, l = input_jets[top_cand_idx["0"]], input_jets[top_cand_idx["1"]], input_jets[top_cand_idx["2"]]
+    try:
+        b, j, l = input_jets[top_cand_idx["0"]], input_jets[top_cand_idx["1"]], input_jets[top_cand_idx["2"]]
+    except IndexError as e:
+        raise ValueError(f"Index error while accessing input_jets: {e}")
+
 
     # Compute W properties
     W_p = j + l

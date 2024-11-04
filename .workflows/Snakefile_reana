@@ -172,9 +172,15 @@ rule convert_hist_to_json:
     input:
         inall = "output/histAll.coffea",
         insystcHHHX = "output/histAll_signals_cHHHX.coffea"
+        inmixdata3b = "output/histMixedBkg_data_3b_for_mixed.coffea"
+        inmixbkgtt = "output/histMixedBkg_TT.coffea"
+        inmixdata = "output/histMixedData.coffea"
     output:
         outall = "output/histAll.json",
         outsystcHHHX = "output/histAll_signals_cHHHX.json"
+        outmixdata3b = "output/histMixedBkg_data_3b_for_mixed.json"
+        outmixbkgtt = "output/histMixedBkg_TT.json"
+        outmixdata = "output/histMixedData.json"
     container: analysis_container
     resources:
         compute_backend="kubernetes",
@@ -183,6 +189,9 @@ rule convert_hist_to_json:
         """
 python python/stats_analysis/convert_hist_to_json.py -o {output.outall} -i {input.inall}
 python python/stats_analysis/convert_hist_to_json.py -o {output.outsystcHHHX} -i {input.insystcHHHX} -s
+python python/stats_analysis/convert_hist_to_json.py -o {output.outmixdata3b} -i {input.inmixdata3b}
+python python/stats_analysis/convert_hist_to_json.py -o {output.outmixbkgtt} -i {input.inmixbkgtt}
+python python/stats_analysis/convert_hist_to_json.py -o {output.outmixdata} -i {input.inmixdata}
         """
 
 rule make_combine_inputs:
