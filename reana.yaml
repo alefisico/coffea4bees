@@ -9,15 +9,15 @@ inputs:
     - python/skimmer/processor/
     - python/stats_analysis/
   parameters:
-    input: .reana_workflows/inputs.yaml
+    input: .workflows/inputs_reana.yaml
   files:
     - gitdiff.txt
     - python/runner.py
-    - .reana_workflows/Snakefile
-    - .reana_workflows/input.yaml
+    - .workflows/Snakefile_reana
+    - .workflows/input_reana.yaml
 workflow:
   type: snakemake
-  file: .reana_workflows/Snakefile
+  file: .workflows/Snakefile_reana
   resources:
     cvmfs:
       - cms.cern.ch
