@@ -99,7 +99,7 @@ class Eval(HCREval):
             "p_ttbar": batch["p_t4"],
             "p_4b": batch["p_d4"] + batch["p_t4"],
             "p_3b": batch["p_d3"],
-            "weight": p_m4 / batch["p_d3"],
+            "FvT": p_m4 / batch["p_d3"],
         } | (
             {
                 "p_t3": ...,

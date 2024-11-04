@@ -94,7 +94,7 @@ class Main(LoadTrainingSets):
                 mp_context=status.context,
                 initializer=status.initializer,
             ) as executor,
-            Progress.new(total=size, msg=("chunks", "Caching")) as progress,
+            Progress.new(total=size, msg=("entries", "Caching")) as progress,
         ):
             tasks = pool.submit(
                 executor,

@@ -142,10 +142,14 @@ class Monitor(Server, _Singleton):
 
     def __init__(self):
         # address
-        _, port = cfg.Monitor.address
-        super().__init__(
-            address=pipe_address("monitor") if port is None else (_get_host(), port)
-        )
+        host, port = cfg.Monitor.address
+        if port is None:
+            address = pipe_address(host)
+            cfg.Monitor.address = address
+        else:
+            address = ("localhost", port)
+            cfg.Monitor.address = f"{_get_host()}:{port}"
+        super().__init__(address=address)
 
     def _start(self):
         return super().start()

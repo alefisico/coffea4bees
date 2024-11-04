@@ -34,6 +34,7 @@ __all__ = [
 ]
 
 _Address = str | tuple[str, int]
+_RETRY_PRIORITY = int(1e9 * 1)  # seconds
 
 
 class _ClientError(Exception):
@@ -87,14 +88,12 @@ class Packet:
                 return False
             elif other.obj is None:
                 return True
-            return (
-                self._retried,
-                self._timestamp,
-            ) < (
-                other._retried,
-                other._timestamp,
-            )
+            return self._priority < other._priority
         return NotImplemented
+
+    @property
+    def _priority(self):
+        return self._retried * _RETRY_PRIORITY + self._timestamp
 
 
 @dataclass

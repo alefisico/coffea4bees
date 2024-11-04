@@ -17,6 +17,8 @@ model:
       - --training FixedStep
       - epoch: 20
         bs_init: 1024
+      - --finetuning FinetuneStep
+      - epoch: 1
 
 setting:
   - module: IO

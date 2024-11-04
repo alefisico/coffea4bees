@@ -26,7 +26,17 @@ python convert_hist_to_json.py -o histos/histAll.json -i ../analysis/hists/histA
 
 ## Convert json to root (for combine)
 
-Using the CMSSW environment described before:
+With the combine container:
 ```
-./../shell_combine python3 stats_analysis/convert_json_to_root.py --classifier SvB_MA SvB -f histos/histAll.json --merge2016 --output_dir stats_analysis/datacards/ --plot
+cd python/
+../shell_combine python3 stats_analysis/convert_json_to_root.py --classifier SvB_MA SvB -f histos/histAll.json --merge2016 --output_dir stats_analysis/datacards/ --plot
 ```
+
+## How to run make_variable_binning:
+
+Using the combine container:
+```
+cd python/
+../shell_combine python3 stats_analysis/make_variable_binning.py -i hists/test_coffea4bees/histAll.json -t 10 -o stats_analysis/tmp/histAll_rebinned.root
+```
+`-i` can take json or root files. The output is a root file.

@@ -25,7 +25,7 @@ If `/cvmfs` is not available, consider use the container directly from [Docker H
 export SINGULARITY_IMAGE="docker://chuyuanliu/heptools:ml"
 ```
 
-which may take a huge amount of time (~30min) and disk space to download, unpack and convert the image for the first time.
+which may take a few minutes and ~20GB disk space to download, unpack and convert the image for the first time.
 
 On LPC, to avoid run out of quota, change the temp and cache directory to a different location:
 
@@ -56,6 +56,43 @@ or use [mamba](https://mamba.readthedocs.io/en/latest/installation/mamba-install
 ```bash
 mamba env create -f env.yml
 ```
+
+#### Server Specific
+
+##### falcon/rogue
+
+`singularity` is now available on rogue01/rogue02.
+
+1. change the cache directory for singularity:
+    1. `mkdir -p /mnt/scratch/${USER}/.apptainer`
+    2. add the following to `~/.bashrc`
+
+        ```bash
+        export SINGULARITY_CACHEDIR="/mnt/scratch/${USER}/.apptainer/"
+        export SINGULARITY_TMPDIR="/mnt/scratch/${USER}/.apptainer/"
+        ```
+
+2. install grid certificate:
+    1. `mkdir -p ~/.globus/`
+    2. upload the certificate file e.g. `mycert.p12` to `~/.globus/`
+    3. follow the instructions in this [twiki](https://twiki.cern.ch/twiki/bin/view/CMSPublic/WorkBookStartingGrid#ObtainingCert) page until `voms-proxy-init` step.
+  
+3. start a container:
+    1. `cd` into the the working directory (e.g. `/mnt/scratch/${USER}/coffea4bees/python/`)
+    2. create a container from the docker image and setup the proxy:
+
+        ```bash
+        singularity shell -B .:/srv --nv --pwd /srv docker://chuyuanliu/heptools:ml
+        # this may take a while for the first time
+        # inside the container (when you see Singularity>)
+        voms-proxy-init --rfc --voms cms -valid 192:00
+        # setup the autocomplete
+        source ./classifier/install.sh
+        ```
+
+Notes:
+
+- use e.g. "localhost:10200" when connecting to the monitor started in the same rogue node
 
 ### Run Command Line Interface by examples
 
@@ -136,8 +173,12 @@ It will print the IP address and port number that the monitor is listening to. e
 Which port to use:
 
 - LPC: 10000-10200 is usally safe to use
-- PSC: TBD
-- LXPLUS: TBD
+
+Connect to the monitor:
+
+```bash
+./pyml.py ... -setting Monitor "{address: 127.0.1.1:10200, connect: true}"
+```
 
 #### Quick start
 

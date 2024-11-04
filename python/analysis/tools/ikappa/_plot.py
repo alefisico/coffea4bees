@@ -22,9 +22,9 @@ from bokeh.models import (
 )
 from bokeh.resources import Resources
 from hist import Hist
-from hist.axis import AxesMixin
 
-from ._hist import BHAxis, HistGroup
+from ._bh import BHAxis, HistAxis
+from ._hist import _FF, HistGroup
 from ._utils import Component, Confirmation, DownloadLink, ExternalLink, PathInput
 from ._widget import TreeView
 from .config import UI
@@ -74,13 +74,13 @@ class Profiler:
 
 
 class AxisProjector(Component):
-    def __init__(self, axis: AxesMixin, dist: Hist, **kwargs):
+    def __init__(self, axis: HistAxis, dist: Hist, **kwargs):
         super().__init__(**kwargs)
         self._type = type(axis)
         self._name = axis.name
         self._label = axis.label or axis.name
 
-        self._choices = BHAxis(flow=True).labels(axis)
+        self._choices = BHAxis(flow=True, floating_format=_FF).labels(axis)
         self._indices: dict[str, int] = dict(
             zip(self._choices, range(len(self._choices)))
         )
@@ -393,7 +393,7 @@ tr:hover {background-color: rgb(175, 225, 255);}
             return self.log.error(*errs)
 
         projected = {}
-        bhaxis = BHAxis(flow=cfg["flow"])
+        bhaxis = BHAxis(flow=cfg["flow"], floating_format=_FF)
         for name in hists:
             hist = self.data[name]
             profile = self._profile.generate(name)
@@ -451,7 +451,7 @@ tr:hover {background-color: rgb(175, 225, 255);}
         val, var = self.__project(_slice, _sum, _transpose, val, var)
         _slice = slice(None)
         if not flow:
-            under, over = BHAxis(flow=True).flow(edge)
+            under, over = BHAxis(flow=True, floating_format=_FF).flow(edge)
             _slice = slice(under, -1 if over else None)
         return (
             pd.DataFrame(val[_slice, :], columns=processes),

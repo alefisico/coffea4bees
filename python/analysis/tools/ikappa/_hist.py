@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from functools import partial
 from html import escape
-from itertools import chain, cycle, repeat
+from itertools import chain, cycle
 from typing import (
     TYPE_CHECKING,
     Callable,
@@ -43,15 +43,12 @@ from bokeh.models import (
 )
 from bokeh.plotting import figure
 from hist.axis import (
-    AxesMixin,
-    Boolean,
-    IntCategory,
-    Integer,
     Regular,
     StrCategory,
     Variable,
 )
 
+from ._bh import BHAxis, HistAxis
 from ._utils import RGB, Component
 from .config import UI, CouplingScan, Datasets, Palette, Plot, Stacks
 
@@ -64,12 +61,12 @@ if TYPE_CHECKING:
     class Hist1D(NamedTuple):
         values: pd.DataFrame
         variances: pd.DataFrame
-        edge: AxesMixin
+        edge: HistAxis
 
     class Hist2D(NamedTuple):
         values: pd.DataFrame
         variances: pd.DataFrame
-        edges: tuple[AxesMixin, AxesMixin]
+        edges: tuple[HistAxis, HistAxis]
 
 
 # constants
@@ -133,7 +130,6 @@ def _find_process(categories: Collection[str]):
 
 # html & js
 BADGE = '<span class="badge" style="background-color: {color};">{text}</span>'.format
-INTERNAL = '<span style="font-style: italic; font-weight: bold;">{text}</span>'.format
 
 _CODES = {
     "py_float_format": """
@@ -205,126 +201,6 @@ class _ColumnLike:
         new = self.zeros()
         new[:] = arr
         return new
-
-
-class BHAxis:
-    _TRUE = "True"
-    _FALSE = "False"
-    _OTHERS = INTERNAL(text="Others")
-
-    def __init__(self, flow: bool):
-        self._flow = flow
-
-    def flow(self, axis: AxesMixin) -> tuple[bool, bool]:
-        if not self._flow:
-            return False, False
-        _ax = axis._ax  # Note: Accessing private attribute in boost-histogram
-        return _ax.traits_underflow, _ax.traits_overflow
-
-    def widths(self, axis: AxesMixin) -> list[float] | None:
-        if not isinstance(axis, (Regular, Variable)):
-            return None
-        under, over = self.flow(axis)
-        width = [*axis.widths]
-        if under:
-            width.insert(0, np.inf)
-        if over:
-            width.append(np.inf)
-        return width
-
-    def edges(self, axis: Regular | Variable, finite: bool = False) -> list[float]:
-        under, over = self.flow(axis)
-        edges = [*axis.edges]
-        if under or over:
-            flow = np.min(axis.widths) if finite else np.inf
-            if under:
-                edges.insert(0, edges[0] - flow)
-            if over:
-                edges.append(edges[-1] + flow)
-        return edges
-
-    def labels(self, axis: AxesMixin) -> list[str]:
-        under, over = self.flow(axis)
-        cats = [*axis]
-        match axis:
-            case Boolean():
-                return [self._FALSE, self._TRUE]
-            case IntCategory():
-                return [*map(str, cats)] + ([self._OTHERS] if over else [])
-            case StrCategory():
-                return cats + ([self._OTHERS] if over else [])
-            case Integer():
-                return (
-                    ([f"<{cats[0]}"] if under else [])
-                    + [*map(str, cats)]
-                    + ([f">{cats[-1]}"] if over else [])
-                )
-            case Regular() | Variable():
-                _cats = []
-                for a, b in cats[:-1]:
-                    _cats.append(f"[{_FF(a)},{_FF(b)})")
-                a, b = cats[-1]
-                _cats.append(f"[{_FF(a)},{_FF(b)}{')' if over else ']'}")
-                return (
-                    ([f"(-\u221E,{_FF(cats[0][0])})"] if under else [])
-                    + _cats
-                    + ([f"[{_FF(cats[-1][-1])}, \u221E)"] if over else [])
-                )
-
-    def rebin(
-        self, axis: AxesMixin, rebin: int | list[int]
-    ) -> tuple[AxesMixin, npt.NDArray]:
-        if (isinstance(rebin, int) and rebin <= 1) or (
-            isinstance(rebin, list) and any(r < 1 for r in rebin)
-        ):
-            return axis, None
-        if isinstance(rebin, int):
-            _rebin = [*repeat(rebin, len(axis) // rebin)]
-        else:
-            _rebin = rebin.copy()
-        if sum(_rebin) != len(axis):
-            raise ValueError(f'Rebin "{rebin}" does not match axis "{axis}"')
-        under, over = self.flow(axis)
-        _rebin.insert(0, 0)
-        _idx = np.cumsum(_rebin)
-        _meta = dict(name=axis.name, label=axis.label)
-        match axis:
-            case Boolean():
-                _axis = StrCategory(["All"], flow=False, **_meta)
-            case IntCategory() | StrCategory():
-                cats = [*axis]
-                _axis = StrCategory(
-                    [
-                        "|".join(map(str, cats[_idx[i] : _idx[i + 1]]))
-                        for i in range(len(_idx) - 1)
-                    ],
-                    flow=over,
-                    **_meta,
-                )
-            case Integer():
-                cats = [*axis]
-                _axis = StrCategory(
-                    (
-                        ([f"<{cats[0]}"] if under else [])
-                        + [
-                            f"{cats[_idx[i]]}-{cats[_idx[i + 1]-1]}"
-                            for i in range(len(_idx) - 1)
-                        ]
-                        + ([f">{cats[-1]}"] if over else [])
-                    ),
-                    flow=False,
-                    **_meta,
-                )
-            case Regular() | Variable():
-                edges = axis.edges
-                _axis = Variable(
-                    [edges[i] for i in _idx], underflow=under, overflow=over, **_meta
-                )
-        if under:
-            _rebin.insert(1, 1)
-        if over:
-            _rebin.append(1)
-        return _axis, np.cumsum(_rebin)[:-1]
 
 
 def _label(text: str):
@@ -782,7 +658,7 @@ class HistGroup(Component):
         flow: bool,
         **_,
     ):
-        bhaxis = BHAxis(flow)
+        bhaxis = BHAxis(flow=flow, floating_format=_FF)
         # config
         y_axis_type = "log" if log_y else "linear"
         tags = []
@@ -1392,7 +1268,7 @@ source.change.emit();
         )
 
     @staticmethod
-    def __ticks(fig: figure, edge: AxesMixin, bhaxis: BHAxis):
+    def __ticks(fig: figure, edge: HistAxis, bhaxis: BHAxis):
         fig.xaxis.axis_label = (edge.label or edge.name).replace("$", "$$")
         fig.yaxis.axis_label = "Events"
         if isinstance(edge, (Regular, Variable)):
@@ -1404,7 +1280,7 @@ source.change.emit();
         return fig
 
     @staticmethod
-    def __edges(edge: AxesMixin, bhaxis: BHAxis):
+    def __edges(edge: HistAxis, bhaxis: BHAxis):
         if isinstance(edge, (Regular, Variable)):
             edges = np.asarray(bhaxis.edges(edge, finite=True))
             return edges[:-1], edges[1:]
