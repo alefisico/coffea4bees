@@ -195,6 +195,10 @@ class DeClusterer(PicoAOD):
         canJet = canJet * canJet.bRegCorr
         canJet["bRegCorr"] = selev.Jet.bRegCorr[canJet_idx]
         canJet["btagDeepFlavB"] = selev.Jet.btagDeepFlavB[canJet_idx]
+        if '202' in dataset:
+            canJet["btagPNetB"] = selev.Jet.btagPNetB[canJet_idx]
+
+
         if config["isMC"]:
             canJet["hadronFlavour"] = selev.Jet.hadronFlavour[canJet_idx]
 
@@ -215,6 +219,12 @@ class DeClusterer(PicoAOD):
 
         jets_for_clustering = ak.concatenate([canJet, notCanJet], axis=1)
         jets_for_clustering = jets_for_clustering[ak.argsort(jets_for_clustering.pt, axis=1, ascending=False)]
+
+        # Set btagScorring
+        if '202' in dataset:
+            jets_for_clustering["btagScore"] = jets_for_clustering.btagPNetB
+        else:
+            jets_for_clustering["btagScore"] = jets_for_clustering.btagDeepFlavB
 
         processOutput = {}
 
@@ -251,11 +261,9 @@ class DeClusterer(PicoAOD):
                 "Jet_eta":             declustered_jets.eta,
                 "Jet_phi":             declustered_jets.phi,
                 "Jet_mass":            declustered_jets.mass,
-                "Jet_btagDeepFlavB":   declustered_jets.btagDeepFlavB,
                 "Jet_jet_flavor_bit":  declustered_jets.jet_flavor_bit,
                 "Jet_jetId":           ak.unflatten(np.full(total_jet, 7), n_jet),
                 "Jet_puId":            ak.unflatten(np.full(total_jet, 7), n_jet),
-                "Jet_bRegCorr":        ak.unflatten(np.full(total_jet, 1), n_jet),
                 # create new regular branch
                 "nClusteredJets":      selev.nClusteredJets,
             }
@@ -264,6 +272,15 @@ class DeClusterer(PicoAOD):
             out_branches["trigWeight_Data"] = selev.trigWeight_Data
             out_branches["trigWeight_MC"]   = selev.trigWeight_MC
             out_branches["CMSbtag"]        = weights.partial_weight(include=["CMS_btag"])[selections.all(*cumulative_cuts)]
+
+        if '202' in dataset:
+            out_branches["Jet_PNetRegPtRawCorr"]         = ak.unflatten(np.full(total_jet, 1), n_jet)
+            out_branches["Jet_PNetRegPtRawCorrNeutrino"] = ak.unflatten(np.full(total_jet, 1), n_jet)
+            out_branches["Jet_btagPNetB"]                = declustered_jets.btagScore
+
+        else:
+            out_branches["Jet_bRegCorr"] = ak.unflatten(np.full(total_jet, 1), n_jet)
+            out_branches["Jet_btagDeepFlavB"] = declustered_jets.btagScore
 
         #
         #  Need to skip all the other jet branches to make sure they have the same number of jets
