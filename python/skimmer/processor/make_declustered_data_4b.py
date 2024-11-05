@@ -186,7 +186,7 @@ class DeClusterer(PicoAOD):
         #
         # Build and select boson candidate jets with bRegCorr applied
         #
-        sorted_idx = ak.argsort( selev.Jet.btagDeepFlavB * selev.Jet.selected, axis=1, ascending=False )
+        sorted_idx = ak.argsort( selev.Jet.btagScore * selev.Jet.selected, axis=1, ascending=False )
         canJet_idx = sorted_idx[:, 0:4]
         notCanJet_idx = sorted_idx[:, 4:]
         canJet = selev.Jet[canJet_idx]
@@ -194,9 +194,9 @@ class DeClusterer(PicoAOD):
         # apply bJES to canJets
         canJet = canJet * canJet.bRegCorr
         canJet["bRegCorr"] = selev.Jet.bRegCorr[canJet_idx]
-        canJet["btagDeepFlavB"] = selev.Jet.btagDeepFlavB[canJet_idx]
-        if '202' in dataset:
-            canJet["btagPNetB"] = selev.Jet.btagPNetB[canJet_idx]
+        canJet["btagScore"] = selev.Jet.btagScore[canJet_idx]
+        #if '202' in dataset:
+        #    canJet["btagPNetB"] = selev.Jet.btagPNetB[canJet_idx]
 
 
         if config["isMC"]:
@@ -219,12 +219,6 @@ class DeClusterer(PicoAOD):
 
         jets_for_clustering = ak.concatenate([canJet, notCanJet], axis=1)
         jets_for_clustering = jets_for_clustering[ak.argsort(jets_for_clustering.pt, axis=1, ascending=False)]
-
-        # Set btagScorring
-        if '202' in dataset:
-            jets_for_clustering["btagScore"] = jets_for_clustering.btagPNetB
-        else:
-            jets_for_clustering["btagScore"] = jets_for_clustering.btagDeepFlavB
 
         processOutput = {}
 

@@ -59,6 +59,7 @@ def apply_object_selection_4b(event, corrections_metadata, *,
 
         # Hack for plotting
         event['Jet', 'puId']       = 10
+        event['Jet', 'btagScore']  = event.Jet.btagPNetB
 
         if doLeptonRemoval:
             event['Jet', 'lepton_cleaned'] = drClean( event.Jet, selLepton )[1]  ### 0 is the collection of jets, 1 is the flag
@@ -98,7 +99,7 @@ def apply_object_selection_4b(event, corrections_metadata, *,
         selJet_pvec = event.Jet[event.Jet.selected]  * bRegCorr_factor[event.Jet.selected]
         selJet_pvec["tagged"] = event.Jet[event.Jet.selected].tagged
         selJet_pvec["tagged_loose"] = event.Jet[event.Jet.selected].tagged_loose
-        selJet_pvec["btagDeepFlavB"] = event.Jet[event.Jet.selected].btagDeepFlavB
+        selJet_pvec["btagScore"] = event.Jet[event.Jet.selected].btagScore
         selJet_pvec["puId"] = event.Jet[event.Jet.selected].puId
         selJet_pvec["jetId"] = event.Jet[event.Jet.selected].jetId
 
@@ -174,6 +175,8 @@ def apply_object_selection_4b(event, corrections_metadata, *,
         else: selLepton = event.selMuon
 
         event['Jet', 'calibration'] = event.Jet.pt / ( event.Jet.pt_raw if 'pt_raw' in event.Jet.fields else ak.full_like(event.Jet.pt, 1) )
+        event['Jet', 'btagScore']  = event.Jet.btagDeepFlavB
+
 
         if doLeptonRemoval:
             event['Jet', 'lepton_cleaned'] = drClean( event.Jet, selLepton )[1]  ### 0 is the collection of jets, 1 is the flag
@@ -209,7 +212,7 @@ def apply_object_selection_4b(event, corrections_metadata, *,
         selJet_pvec = event.Jet[event.Jet.selected]  * bRegCorr_factor[event.Jet.selected]
         selJet_pvec["tagged"] = event.Jet[event.Jet.selected].tagged
         selJet_pvec["tagged_loose"] = event.Jet[event.Jet.selected].tagged_loose
-        selJet_pvec["btagDeepFlavB"] = event.Jet[event.Jet.selected].btagDeepFlavB
+        selJet_pvec["btagScore"] = event.Jet[event.Jet.selected].btagScore
         selJet_pvec["puId"] = event.Jet[event.Jet.selected].puId
         selJet_pvec["jetId"] = event.Jet[event.Jet.selected].jetId
 
@@ -330,14 +333,14 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
     #
     # Build and select boson candidate jets with bRegCorr applied
     #
-    sorted_idx = ak.argsort( selev.Jet.btagDeepFlavB * selev.Jet.selected, axis=1, ascending=False )
+    sorted_idx = ak.argsort( selev.Jet.btagScore * selev.Jet.selected, axis=1, ascending=False )
     canJet_idx = sorted_idx[:, 0:4]
     notCanJet_idx = sorted_idx[:, 4:]
 
     # # apply bJES to canJets
     canJet = selev.Jet[canJet_idx] * selev.Jet[canJet_idx].bRegCorr
     canJet["bRegCorr"] = selev.Jet.bRegCorr[canJet_idx]
-    canJet["btagDeepFlavB"] = selev.Jet.btagDeepFlavB[canJet_idx]
+    canJet["btagScore"] = selev.Jet.btagScore[canJet_idx]
     canJet["puId"] = selev.Jet.puId[canJet_idx]
     canJet["jetId"] = selev.Jet.jetId[canJet_idx]
 
