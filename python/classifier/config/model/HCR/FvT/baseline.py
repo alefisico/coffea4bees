@@ -64,7 +64,7 @@ class Train(HCRTrain):
                 name="4b vs 3b data",
                 selection=_roc_data_selection,
                 bins=ROC_BIN,
-                pos=("d4"),
+                pos=("d4",),
             ),
         ]
         if "t4" in MultiClass.labels:
