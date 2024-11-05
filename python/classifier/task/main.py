@@ -4,7 +4,9 @@ import json
 import logging
 import os
 import sys
+import uuid
 from collections import deque
+from dataclasses import dataclass
 from itertools import chain
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Optional
@@ -33,8 +35,33 @@ _MODULE = "module"
 _OPTION = "option"
 
 
+class _Opts:
+    opts: dict[str, type[Task]]
+
+    @dataclass
+    class T:
+        type: type[Task]
+        name: str = None
+
+    def __init_subclass__(cls):
+        cls.opts = {}
+        for k, v in vars(cls).items():
+            if isinstance(v, _Opts.T):
+                v.name = k
+                cls.opts[k] = v.type
+
+
+class TaskOptions(_Opts):
+    _T = _Opts.T
+
+    setting = _T(Cascade)
+    dataset = _T(Dataset)
+    model = _T(Model)
+    analysis = _T(Analysis)
+
+
 class EntryPoint:
-    _tasks = list(
+    _mains = list(
         map(
             lambda x: x.removesuffix(".py"),
             filter(
@@ -43,20 +70,15 @@ class EntryPoint:
             ),
         )
     )
-    _keys = {
-        "setting": Cascade,
-        "dataset": Dataset,
-        "model": Model,
-        "analysis": Analysis,
-    }
-    _preserved = [
-        *(f"{_DASH}{k}" for k in chain(_keys, (_FROM, _TEMPLATE))),
+    _tasks = TaskOptions.opts
+    _reserved = [
+        *(f"{_DASH}{k}" for k in chain(_tasks, (_FROM, _TEMPLATE))),
     ]
 
     @classmethod
     def _fetch_subargs(cls, args: deque):
         subargs = []
-        while len(args) > 0 and args[0] not in cls._preserved:
+        while len(args) > 0 and args[0] not in cls._reserved:
             subargs.append(args.popleft())
         return subargs
 
@@ -66,30 +88,25 @@ class EntryPoint:
         return ".".join(mods[:-1]), mods[-1]
 
     @classmethod
-    def _fetch_module(cls, module: str, key: str) -> tuple[ModuleType, type[Task]]:
-        return import_(*cls._fetch_module_name(module, key))
+    def _fetch_module(
+        cls, module: str, key: str, raise_error: bool = False
+    ) -> tuple[ModuleType, type[Task]]:
+        return import_(*cls._fetch_module_name(module, key), raise_error)
 
     def _fetch_all(self, *cats: str):
-        self.mods: dict[str, list[Task]] = {}
+        self.tasks: dict[str, list[Task]] = {}
         for cat in cats:
-            target = self._keys[cat]
-            self.mods[cat] = []
+            target = self._tasks[cat]
+            self.tasks[cat] = []
             for imp, opts in self.args[cat]:
-                modname, clsname = self._fetch_module_name(imp, cat)
-                mod, cls = self._fetch_module(imp, cat)
-                if mod is None:
-                    raise ModuleNotFoundError(f'Module "{modname}" not found')
-                elif cls is None:
-                    raise AttributeError(
-                        f'Class "{clsname}" not found in module "{modname}"'
+                _, clsname = self._fetch_module_name(imp, cat)
+                _, cls = self._fetch_module(imp, cat, True)
+                if not issubclass(cls, target):
+                    raise TypeError(
+                        f'Class "{clsname}" is not a subclass of "{target.__name__}"'
                     )
                 else:
-                    if not issubclass(cls, target):
-                        raise TypeError(
-                            f'Class "{clsname}" is not a subclass of "{target.__name__}"'
-                        )
-                    else:
-                        self.mods[cat].append(new(cls, opts))
+                    self.tasks[cat].append(new(cls, opts))
 
     @classmethod
     def _expand_module(cls, data: dict):
@@ -115,7 +132,7 @@ class EntryPoint:
             args = parse.mapping(file, "file", formatter)
             if fetch_main and _MAIN in args:
                 self.args[_MAIN] = self._expand_module(args[_MAIN])
-            for cat in self._keys:
+            for cat in self._tasks:
                 if cat in args:
                     for arg in args[cat]:
                         self.args[cat].append(self._expand_module(arg))
@@ -130,7 +147,7 @@ class EntryPoint:
 
         self.entrypoint = Path(argv[0]).name
         self.cmd = " ".join(argv)
-        self.args: dict[str, list[tuple[str, list[str]]]] = {k: [] for k in self._keys}
+        self.args: dict[str, list[tuple[str, list[str]]]] = {k: [] for k in self._tasks}
 
         args = deque(argv[1:])
         if len(args) == 0:
@@ -157,52 +174,50 @@ class EntryPoint:
                 self.args[cat].append((mod, opts))
 
         main: str = self.args[_MAIN][0]
-        if main not in self._tasks:
+        if main not in self._mains:
             raise ValueError(
-                f'The first argument must be one of {self._tasks}, got "{main}"'
+                f'The first argument must be one of {self._mains}, got "{main}"'
             )
         RunInfo.main_task = main
 
-        cls: type[Main] = self._fetch_module(f"{self.args[_MAIN][0]}.Main", _MAIN)[1]
-        if cls is None:
-            raise AttributeError(f'Task "{self.args[_MAIN][0]}" not found')
+        cls: type[Main] = self._fetch_module(
+            f"{self.args[_MAIN][0]}.Main", _MAIN, True
+        )[1]
 
         if cls.prelude is not NotImplemented:
             cls.prelude()
 
-        all_cats = [*self._keys]
+        all_cats = [*self._tasks]
         if not cls._no_init:
             self._fetch_all(all_cats[0])
 
         from ..config import setting as cfg
 
         if cfg.Monitor.enable:
-            host, port = cfg.Monitor.address
-            if host is None:
+            if not cfg.Monitor.connect:
                 from ..monitor import setup_monitor
                 from ..process.monitor import Monitor
 
                 Monitor().start()
                 setup_monitor()
-                address = Monitor.current()._address
-                if isinstance(address, tuple):
-                    address = f"{address[0]}:{address[1]}"
-                logging.info(f"Started Monitor at {address}")
+                logging.info(f"Monitor is running at {cfg.Monitor.raw__address}")
             else:
                 from ..monitor import setup_reporter
                 from ..process.monitor import connect_to_monitor
 
                 connect_to_monitor()
                 setup_reporter()
-                address = host if port is None else f"{host}:{port}"
-                logging.info(f"Connecting to Monitor {address}")
+                logging.info(f"Connected to Monitor {cfg.Monitor.raw__address}")
         else:
             from ..monitor import disable_monitor
 
             disable_monitor()
 
         if not cls._no_init:
+            from ..process import setup_context
+
             self._fetch_all(*all_cats[1:])
+            setup_context()
 
         self.main: Main = new(cls, self.args[_MAIN][1])
 
@@ -215,10 +230,9 @@ class EntryPoint:
         result = self.main.run(self)
         # run analysis on result
         if cfg.Analysis.enable:
-            analysis = run_analyzer(self, result)
+            analysis = run_analyzer(self, [result])
             if analysis:
-                result = result or {}
-                result["analysis"] = analysis
+                result = (result or {}) | analysis
         # wait for monitor
         wait_for_monitor()
         # dump state
@@ -229,10 +243,12 @@ class EntryPoint:
         # dump result
         if (result is not None) and (not cfg.IO.result.is_null):
             from base_class.utils.json import DefaultEncoder
+            from classifier.config.setting import ResultKey
 
-            result["command"] = self.cmd
+            result[ResultKey.uuid] = str(uuid.uuid1())
+            result[ResultKey.command] = self.cmd
             if reproducible is not None:
-                result["reproducible"] = reproducible()
+                result[ResultKey.reproducible] = reproducible()
             with fsspec.open(cfg.IO.result, "wt") as f:
                 json.dump(result, f, cls=DefaultEncoder)
 

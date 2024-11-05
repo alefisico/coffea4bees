@@ -157,6 +157,13 @@ class Friend:
     """str : Name of the collection."""
 
     @property
+    def branches(self):
+        """
+        frozenset[str]: All branches in the friend tree.
+        """
+        return self._branches
+
+    @property
     def targets(self):
         """
         Generator[:class:`~Chunk`]: All contiguous target chunks.
@@ -255,17 +262,6 @@ class Friend:
         if hasattr(self, _FRIEND_AUTO):
             del self.__auto
 
-    @classmethod
-    def _construct_key(cls, chunk: Chunk):
-        return Chunk(
-            source=(chunk.path, chunk.uuid),
-            name=chunk.name,
-            num_entries=None,
-            branches=None,
-            entry_start=None,
-            entry_stop=None,
-        )
-
     @property
     def _has_dump(self):
         if hasattr(self, _FRIEND_DUMP):
@@ -337,7 +333,7 @@ class Friend:
             Addtional branches added to ``target``.
         """
         item = _FriendItem(target.entry_start, target.entry_stop, data)
-        key = self._construct_key(target)
+        key = target.key()
         if not item.on_disk:
             self._init_dump()
             self.__dump.append((key, item))
@@ -1017,6 +1013,8 @@ class Chain:
 
         - ``{friend}``: :data:`Friend.name`
         - ``{branch}``: branch name
+
+        If the `renaming` function returns a tuple, the data will be stored in a nested record.
         """
         for friend in friends:
             name = friend.name
@@ -1039,6 +1037,7 @@ class Chain:
         chain = Chain()
         chain._chunks += self._chunks
         chain._friends |= self._friends
+        chain._rename |= self._rename
         return chain
 
     def __iadd__(self, other) -> Chain:
@@ -1067,43 +1066,75 @@ class Chain:
     def _rename_wrapper(self, branch: str, friend: str) -> str:
         return _apply_naming(self._rename[friend], {"friend": friend, "branch": branch})
 
+    def _filter(
+        self, chunks: tuple[Chunk], reader_options: ReaderOptions, friend_only: bool
+    ) -> tuple[dict[str, ReaderOptions], ReaderOptions]:
+        output = set()
+        b_filter = reader_options.get(_BRANCH_FILTER, lambda x: x)
+        b_friends: list[tuple[str, set[str], dict[str, str] | None]] = []
+        for name, friend in self._friends.items():
+            branches = b_filter(friend.branches)
+            renames = None
+            if name in self._rename:
+                renames = {}
+                for branch in sorted(branches):
+                    renames[self._rename_wrapper(branch, name)] = branch
+                branches = set(renames)
+            b_friends.append((name, branches, renames))
+            output.update(branches)
+        if not friend_only:
+            b_main = b_filter(Chunk.common(*chunks)[0].branches)
+            output.update(b_main)
+        opt_friends = {}
+        for name, branches, renames in b_friends[::-1]:
+            branches = branches.intersection(output)
+            if not branches:
+                opt_friends[name] = None
+            else:
+                output.difference_update(branches)
+                if renames is not None:
+                    branches = {renames[b] for b in branches}
+                opt = reader_options.copy()
+                opt[_BRANCH_FILTER] = branches.intersection
+                opt_friends[name] = opt
+        opt_main = None
+        if not friend_only:
+            branches = b_main.intersection(output)
+            if branches:
+                opt_main = reader_options.copy()
+                opt_main[_BRANCH_FILTER] = branches.intersection
+        return opt_friends, opt_main
+
     def _fetch(
         self,
         *chunks: Chunk,
         library: Literal["ak", "pd", "np"],
         reader_options: ReaderOptions,
         friend_only: bool = False,
-        awkward_nested: bool = True,
     ) -> RecordLike:
-        reader_options = reader_options or {}
+        opt_friends, opt_main = self._filter(chunks, reader_options or {}, friend_only)
         friends = {}
         for name, friend in self._friends.items():
-            data = friend.concat(
-                *chunks,
-                library=library,
-                reader_options=reader_options,
-            )
-            if name in self._rename:
-                data = rename_record(
-                    data,
-                    partial(self._rename_wrapper, friend=name),
+            opt = opt_friends[name]
+            if opt is not None:
+                data = friend.concat(
+                    *chunks,
                     library=library,
+                    reader_options=opt,
                 )
-            friends[name] = data
+                if name in self._rename:
+                    data = rename_record(
+                        data,
+                        partial(self._rename_wrapper, friend=name),
+                        library=library,
+                    )
+                friends[name] = data
         if library == "ak":
             friends = {k: v for k, v in friends.items() if len(v.fields) > 0}
-        if friend_only:
-            if library == "ak" and awkward_nested:
-                import awkward as ak
-
-                return ak.Array(friends)
+        if friend_only or (opt_main is None):
             return merge_record([*friends.values()], library=library)
         else:
-            main = TreeReader(**reader_options).concat(*chunks, library=library)
-            if library == "ak" and awkward_nested:
-                for name, friend in friends.items():
-                    main[name] = friend
-                return main
+            main = TreeReader(**opt_main).concat(*chunks, library=library)
             return merge_record([main, *friends.values()], library=library)
 
     @overload
@@ -1112,7 +1143,6 @@ class Chain:
         library: Literal["ak"] = "ak",
         reader_options: ReaderOptions = None,
         friend_only: bool = False,
-        awkward_nested: bool = True,
     ) -> ak.Array: ...
     @overload
     def concat(
@@ -1133,7 +1163,6 @@ class Chain:
         library: Literal["ak", "pd", "np"] = "ak",
         reader_options: ReaderOptions = None,
         friend_only: bool = False,
-        awkward_nested: bool = True,
     ) -> RecordLike:
         """
         Read all chunks and friend trees into one record.
@@ -1146,8 +1175,6 @@ class Chain:
             Additional options passed to :class:`~.io.TreeReader`.
         friend_only : bool, optional, default=False
             If ``True``, only read friend trees.
-        awkward_nested: bool, optional, default=True
-            If ``True``, the output will be a nested array. Only works for ``library='ak'``.
 
         Returns
         -------
@@ -1159,7 +1186,6 @@ class Chain:
             library=library,
             reader_options=reader_options,
             friend_only=friend_only,
-            awkward_nested=awkward_nested,
         )
 
     @overload
@@ -1169,7 +1195,6 @@ class Chain:
         library: Literal["ak"] = "ak",
         mode: Literal["balance", "partition"] = "partition",
         reader_options: ReaderOptions = None,
-        awkward_nested: bool = True,
     ) -> Generator[ak.Array, None, None]: ...
     @overload
     def iterate(
@@ -1193,7 +1218,6 @@ class Chain:
         library: Literal["ak", "pd", "np"] = "ak",
         mode: Literal["balance", "partition"] = "partition",
         reader_options: ReaderOptions = None,
-        awkward_nested: bool = True,
     ) -> Generator[RecordLike, None, None]:
         """
         Iterate over chunks and friend trees.
@@ -1208,8 +1232,6 @@ class Chain:
             The mode to generate iteration steps. See :meth:`~.io.TreeReader.iterate` for details.
         reader_options : dict, optional
             Additional options passed to :class:`~.io.TreeReader`.
-        awkward_nested: bool, optional, default=True
-            If ``True``, the output will be a nested array. Only works for ``library='ak'``.
 
         Yields
         ------
@@ -1232,7 +1254,6 @@ class Chain:
                 library=library,
                 reader_options=reader_options,
                 friend_only=False,
-                awkward_nested=awkward_nested,
             )
 
     @overload

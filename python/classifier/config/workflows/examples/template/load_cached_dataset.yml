@@ -1,6 +1,0 @@
-dataset:
-  - module: cache
-    option:
-      - --input
-      - root://cmseos.fnal.gov//store/user/{user}/HH4b/classifier/cache/result.json
-      - --chunk 1-3 # use 3 chunks out of 10 for testing

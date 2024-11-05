@@ -15,7 +15,7 @@ import correctionlib
 import tarfile
 import os
 
-def extract_jetmet_tar_files(tar_file_name: str=None, 
+def extract_jetmet_tar_files(tar_file_name: str=None,
                             jet_type: str='AK4PFchs'
                             ):
   """Extracts a tar.gz file to a specified path and returns a list of extracted files with their locations.
@@ -29,31 +29,44 @@ def extract_jetmet_tar_files(tar_file_name: str=None,
   """
 
   extracted_files = []
-  extract_path = f"/tmp/{os.getenv('USER')}/coffea4bees/"
+  extract_path = f"/tmp/{os.getenv('USER', 'default_user')}/coffea4bees/"
 
   with tarfile.open(tar_file_name, "r:gz") as tar:
     for member in tar.getmembers():
       if member.isfile():
         # Extract the file to the specified path
         member.name = os.path.basename(member.name)  # Remove any directory structure from the archive
-        tar.extract(member, path=extract_path)
-        if 'Puppi' in jet_type:  ### this is only for Run3, temporary fix
-            old_file_path = os.path.join(extract_path, member.name)
-            new_file_name = member.name.replace('_', '', 1)
-            new_file_path = os.path.join(extract_path, new_file_name)
-            # Rename the file if the name was changed
-            if old_file_path != new_file_path:
-                os.rename(old_file_path, new_file_path)
-                member.name = new_file_name
+
+        new_file_name = member.name
+        if 'Puppi' in jet_type and jet_type in member.name:  ### this is only for Run3, temporary fix
+          new_file_name = member.name.replace('_', '', 1)
+          member.name = new_file_name
+
+        new_file_path = os.path.join(extract_path, new_file_name)
+
+        if not os.path.isfile(new_file_path):
+          tar.extract(member, path=extract_path)
+
+          old_file_path = os.path.join(extract_path, member.name)
+          #new_file_name = member.name.replace('_', '', 1)
+          #new_file_path = os.path.join(extract_path, new_file_name)
+          #print(f"new_file_name is {new_file_name}\n")
+          #print(f"member.name is {member.name}\n")
+          # Rename the file if the name was changed
+          if old_file_path != new_file_path:
+            os.rename(old_file_path, new_file_path)
+
+
         # Get the full path of the extracted file
         file_path = os.path.join(extract_path, member.name)
         if jet_type in member.name:
             extracted_files.append(f"* * {file_path}")
+
   return extracted_files
 
 # following example here: https://github.com/CoffeaTeam/coffea/blob/master/tests/test_jetmet_tools.py#L529
-def apply_jerc_corrections( event, 
-                    corrections_metadata: dict = {}, 
+def apply_jerc_corrections( event,
+                    corrections_metadata: dict = {},
                     run_systematics: bool = False,
                     isMC: bool = False,
                     dataset: str = None,
@@ -80,7 +93,7 @@ def apply_jerc_corrections( event,
     event['Jet', 'mass_raw']  = (1 - event.Jet.rawFactor) * event.Jet.mass
     nominal_jet = event.Jet
     if isMC: nominal_jet['pt_gen'] = ak.values_astype(ak.fill_none(nominal_jet.matched_gen.pt, 0), np.float32)
-    
+
     nominal_jet['rho'] = ak.broadcast_arrays((event.Rho.fixedGridRhoFastjetAll if 'Rho' in event.fields else event.fixedGridRhoFastjetAll), nominal_jet.pt)[0]
 
     from coffea.lookup_tools import extractor
@@ -167,6 +180,31 @@ def jet_corrections( uncorr_jets,
     corr_jets['mass'] = corr_jets.mass_raw * jec
 
     return corr_jets
+
+def apply_jet_veto_maps( corrections_metadata, jets ):
+    '''
+    taken from https://github.com/PocketCoffea/PocketCoffea/blob/main/pocket_coffea/lib/cut_functions.py#L65
+    '''
+
+    mask_for_VetoMap = (
+        ((jets.jetId & 2)==2) # Must fulfill tight jetId
+        & (abs(jets.eta) < 5.19) # Must be within HCal acceptance
+        & ((jets["neEmEF"]+jets["chEmEF"])<0.9) # Energy fraction not dominated by ECal
+    )
+    if 'muonSubtrFactor' in jets.fields:  ### AGE: this should be temporary
+        mask_for_VetoMap = mask_for_VetoMap & (jets.muonSubtrFactor < 0.8) # May no be Muons misreconstructed as jets
+    masked_jets = jets[mask_for_VetoMap]
+
+    corr = correctionlib.CorrectionSet.from_file(corrections_metadata['file'])[corrections_metadata['tag']]
+    
+    etaFlat, phiFlat, etaCounts = ak.flatten(masked_jets.eta), ak.flatten(masked_jets.phi), ak.num(masked_jets.eta)
+    phiFlat = np.clip(phiFlat, -3.14159, 3.14159) # Needed since no overflow included in phi binning
+    weight = ak.unflatten(
+        corr.evaluate("jetvetomap", etaFlat, phiFlat),
+        counts=etaCounts,
+    )
+    eventMask = ak.sum(weight, axis=-1)==0 # if at least one jet is vetoed, reject it event
+    return ak.where(ak.is_none(eventMask), False, eventMask)
 
 
 def mask_event_decision(event, decision='OR', branch='HLT', list_to_mask=[''], list_to_skip=['']):

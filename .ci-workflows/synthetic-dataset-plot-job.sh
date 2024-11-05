@@ -1,10 +1,15 @@
-echo "############### Checking ls"
-ls
 echo "############### Moving to python folder"
 cd python/
+
+INPUT_DIR="output/synthetic_dataset_cluster"
+OUTPUT_DIR="output/synthetic_dataset_plot_job"
+echo "############### Checking and creating output directory"
+if [ ! -d $OUTPUT_DIR ]; then
+    mkdir -p $OUTPUT_DIR
+fi
 echo "############### Running test processor"
-python  jet_clustering/make_jet_splitting_PDFs.py analysis/hists/test_synthetic_datasets.coffea --doTest  --out jet_clustering/jet-splitting-PDFs-test
+python  jet_clustering/make_jet_splitting_PDFs.py $INPUT_DIR/test_synthetic_datasets.coffea --doTest  --out $OUTPUT_DIR/jet-splitting-PDFs-test
 echo "############### Checking if pdf files exist"
-ls jet_clustering/jet-splitting-PDFs-test/clustering_pdfs_vs_pT_RunII.yml 
-ls jet_clustering/jet-splitting-PDFs-test/test_sampling_pt_1b0j_1b0j_mA.pdf 
+ls $OUTPUT_DIR/jet-splitting-PDFs-test/clustering_pdfs_vs_pT_RunII.yml 
+ls $OUTPUT_DIR/jet-splitting-PDFs-test/test_sampling_pt_1b0j_1b0j_mA.pdf 
 cd ../

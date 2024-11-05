@@ -8,6 +8,7 @@ class CollisionData(Cascade):
         "UL17": ["B", "C", "D", "E", "F"],
         "UL18": ["A", "B", "C", "D"],
     }
+    years: list[str] = ["2016", "2017", "2018"]
 
 
 class MC_TTbar(Cascade):

@@ -1,18 +1,23 @@
-
-# In coffea envi
 echo "############### Moving to python folder"
 cd python/
 
+INPUT_DIR="output/analysis_test_mixed_job"
+OUTPUT_DIR="output/analysis_runTwoStageClosure_ROOT"
+echo "############### Checking and creating output directory"
+if [ ! -d $OUTPUT_DIR ]; then
+    mkdir -p $OUTPUT_DIR
+fi
+
 
 ## In root envirornment
-#
+
 echo "############### Convert json to root"
-python3 stats_analysis/convert_json_to_root.py -f analysis/hists/testMixedData.json                  --output analysis/hists/
-python3 stats_analysis/convert_json_to_root.py -f analysis/hists/testMixedBkg_TT.json                --output analysis/hists/
-python3 stats_analysis/convert_json_to_root.py -f analysis/hists/testMixedBkg_data_3b_for_mixed_kfold.json --output analysis/hists/
-python3 stats_analysis/convert_json_to_root.py -f analysis/hists/testMixedBkg_data_3b_for_mixed.json --output analysis/hists/
-python3 stats_analysis/convert_json_to_root.py -f analysis/hists/testSignal_UL.json                  --output analysis/hists/
-#python3 stats_analysis/convert_json_to_root.py -f analysis/hists/testSignal_preUL.json               --output analysis/hists/
+python3 stats_analysis/convert_json_to_root.py -f $INPUT_DIR/testMixedData.json --output $OUTPUT_DIR --histos SvB_MA_ps_hh
+python3 stats_analysis/convert_json_to_root.py -f $INPUT_DIR/testMixedBkg_TT.json --output $OUTPUT_DIR --histos SvB_MA_ps_hh
+python3 stats_analysis/convert_json_to_root.py -f $INPUT_DIR/testMixedBkg_data_3b_for_mixed_kfold.json --output $OUTPUT_DIR --histos SvB_MA_ps_hh
+python3 stats_analysis/convert_json_to_root.py -f $INPUT_DIR/testMixedBkg_data_3b_for_mixed.json --output $OUTPUT_DIR --histos SvB_MA_ps_hh
+python3 stats_analysis/convert_json_to_root.py -f $INPUT_DIR/testSignal_UL.json                  --output $OUTPUT_DIR --histos SvB_MA_ps_hh
+#python3 stats_analysis/convert_json_to_root.py -f $INPUT_DIR/testSignal_preUL.json               --output $OUTPUT_DIR --histos SvB_MA_ps_hh
 
 
 
@@ -20,22 +25,19 @@ python3 stats_analysis/convert_json_to_root.py -f analysis/hists/testSignal_UL.j
 # Test it with the
 #
 echo "############### Run test runTwoStageClosure"
-python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 20 --outputPath stats_analysis/testsLocal  --do_CI \
-    --input_file_data3b analysis/hists/testMixedBkg_data_3b_for_mixed.root \
-    --input_file_TT     analysis/hists/testMixedBkg_TT.root \
-    --input_file_mix    analysis/hists/testMixedData.root \
-    --input_file_sig    analysis/hists/testSignal_UL.root \
-#    --input_file_sig_preUL    analysis/hists/testSignal_preUL.root
-
-    
+python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 20 --outputPath $OUTPUT_DIR/testsLocal  --do_CI \
+    --input_file_data3b $OUTPUT_DIR/testMixedBkg_data_3b_for_mixed.root \
+    --input_file_TT     $OUTPUT_DIR/testMixedBkg_TT.root \
+    --input_file_mix    $OUTPUT_DIR/testMixedData.root \
+    --input_file_sig    $OUTPUT_DIR/testSignal_UL.root \
     
 echo "############### Run test runTwoStageClosure kfold"
-ls -lrt analysis/hists/
-python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 20 --outputPath stats_analysis/testsLocal_kfold  --do_CI --use_kfold  \
-    --input_file_data3b analysis/hists/testMixedBkg_data_3b_for_mixed_kfold.root \
-    --input_file_TT     analysis/hists/testMixedBkg_TT.root \
-    --input_file_mix    analysis/hists/testMixedData.root \
-    --input_file_sig    analysis/hists/testSignal_UL.root \
+ls -lrt $OUTPUT_DIR/
+python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 20 --outputPath $OUTPUT_DIR/testsLocal_kfold/  --do_CI --use_kfold  \
+    --input_file_data3b $OUTPUT_DIR/testMixedBkg_data_3b_for_mixed_kfold.root \
+    --input_file_TT     $OUTPUT_DIR/testMixedBkg_TT.root \
+    --input_file_mix    $OUTPUT_DIR/testMixedData.root \
+    --input_file_sig    $OUTPUT_DIR/testSignal_UL.root \
 
 
 #python old_make_combine_hists.py -i ./files_HIG-20-011/hists_closure_3bDvTMix4bDvT_SR_weights_newSBDef.root -o HIG-20-011/hist_closure_SvB_MA.root --TDirectory 3bDvTMix4bDvT_v0/hh2018 --var multijet --channel hh2018 -n mj --rebin 10 --systematics ./files_HIG-20-011/closureResults_SvB_MA_hh.pkl
@@ -51,10 +53,11 @@ python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 20 --o
 #
 #  python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 20 --outputPath stats_analysis/tests --skip_closure
 
-python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 20 --outputPath stats_analysis/tests --reuse_inputs --do_CI
-python3 stats_analysis/tests/test_runTwoStageClosure.py --knownCounts stats_analysis/tests/known_twoStageClosure_counts_SvB_MA_ps_hh_rebin20.yml --output_path stats_analysis/tests/ --inputFile stats_analysis/tests/3bDvTMix4bDvT/SvB_MA/rebin20/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin20.root
+cp -r stats_analysis/tests/3bDvTMix4bDvT/ $OUTPUT_DIR/
 
-python3 stats_analysis/tests/dumpTwoStageInputs.py --input stats_analysis/tests/3bDvTMix4bDvT/SvB_MA/rebin20/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin20.root   --output stats_analysis/tests/test_dump_twoStageClosureInputsCounts.yml
+python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 20 --outputPath $OUTPUT_DIR --reuse_inputs --do_CI
+python3 stats_analysis/tests/test_runTwoStageClosure.py --knownCounts stats_analysis/tests/known_twoStageClosure_counts_SvB_MA_ps_hh_rebin20.yml --output_path $OUTPUT_DIR --inputFile $OUTPUT_DIR/3bDvTMix4bDvT/SvB_MA/rebin20/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin20.root
 
+python3 stats_analysis/tests/dumpTwoStageInputs.py --input $OUTPUT_DIR/3bDvTMix4bDvT/SvB_MA/rebin20/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin20.root   --output $OUTPUT_DIR/test_dump_twoStageClosureInputsCounts.yml
 
 cd ../

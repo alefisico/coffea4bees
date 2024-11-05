@@ -1,6 +1,7 @@
 from analysis.helpers.hist_templates import (
     FvTHists,
-    QuadJetHists,
+    QuadJetHistsSelected,
+    QuadJetHistsMinDr,
     QuadJetHistsSRSingle,
     SvBHists,
     TopCandHists,
@@ -9,7 +10,9 @@ from analysis.helpers.hist_templates import (
 from base_class.hist import Collection, Fill
 from base_class.physics.object import Elec, Jet, LorentzVector, Muon
 import logging
+from memory_profiler import profile
 
+# @profile
 def filling_nominal_histograms(selev, JCM,
                                processName: str = None,
                                year: str = 'UL18',
@@ -25,12 +28,12 @@ def filling_nominal_histograms(selev, JCM,
 
     fill = Fill(process=processName, year=year, weight="weight")
 
-    tag_list = [3, 4, 0, 13, 14] if run_lowpt_selection else [3, 4, 0]   # 3 / 4/ Other
+    tag_list = [13, 14] if run_lowpt_selection else [3, 4]   # 3 / 4/ Other
 
     hist = Collection( process=[processName],
                         year=[year],
                         tag=tag_list,
-                        region=[2, 1, 0],  # SR / SB / Other
+                        region=[2, 1],  # SR / SB / Other
                         **dict((s, ...) for s in histCuts)
                         )
 
@@ -50,36 +53,26 @@ def filling_nominal_histograms(selev, JCM,
     fill += hist.add( "hT", (50, 0, 1500, ("hT", "h_{T} [GeV]")) )
     fill += hist.add( "hT_selected", (50, 0, 1500, ("hT_selected", "h_{T} [GeV]")), )
 
-    fill += hist.add("xW",  (100, -12, 12, ("xW", "xW")))
-    fill += hist.add("xbW", (100, -15, 15, ("xbW", "xbW")))
-
-    #
-    # Separate reweighting for the different mixed samples
-    #
-    if isDataForMixed:
-        for _FvT_name in event_metadata["FvT_names"]:
-            fill += SvBHists( (f"SvB_{_FvT_name}",    "SvB Classifier"),    "SvB",    weight=f"weight_{_FvT_name}" )
-            fill += SvBHists( (f"SvB_MA_{_FvT_name}", "SvB MA Classifier"), "SvB_MA", weight=f"weight_{_FvT_name}" )
-
     #
     # Jets
     #
-    fill += Jet.plot(("selJets", "Selected Jets"),        "selJet",           skip=["deepjet_c"], bins={"mass": (50, 0, 100)})
-    fill += Jet.plot(("canJets", "Higgs Candidate Jets"), "canJet",           skip=["deepjet_c"], bins={"mass": (50, 0, 100)})
-    fill += Jet.plot(("othJets", "Other Jets"),           "notCanJet_coffea", skip=["deepjet_c"], bins={"mass": (50, 0, 100)})
-    fill += Jet.plot(("tagJets", "Tag Jets"),             "tagJet",           skip=["deepjet_c"], bins={"mass": (50, 0, 100)})
+    skip_jet_list = ['energy', 'deepjet_c']
+    fill += Jet.plot(("selJets", "Selected Jets"),        "selJet",           skip=skip_jet_list, bins={"mass": (50, 0, 100)})
+    fill += Jet.plot(("canJets", "Higgs Candidate Jets"), "canJet",           skip=skip_jet_list, bins={"mass": (50, 0, 100)})
+    fill += Jet.plot(("othJets", "Other Jets"),           "notCanJet_coffea", skip=skip_jet_list, bins={"mass": (50, 0, 100)})
+    fill += Jet.plot(("tagJets", "Tag Jets"),             "tagJet",           skip=skip_jet_list, bins={"mass": (50, 0, 100)})
     if run_lowpt_selection:
         fill += hist.add('lowpt_categories', (21, -0.5, 20.5, ('lowpt_categories', 'lowpt_categories')))
-        fill += Jet.plot(("lowptJet", "Selected lowpt Jets"),        "lowptJet",           skip=["deepjet_c"], bins={"mass": (50, 0, 100)})
-        fill += Jet.plot(("tagJet_lowpt", "Selected lowpt Jets"),        "tagJet_lowpt",           skip=["deepjet_c"], bins={"mass": (50, 0, 100)})
+        fill += Jet.plot(("lowptJet", "Selected lowpt Jets"), "lowptJet", skip=skip_jet_list, bins={"mass": (50, 0, 100)})
+        fill += Jet.plot(("tagJet_lowpt", "Selected lowpt Jets"), "tagJet_lowpt", skip=skip_jet_list, bins={"mass": (50, 0, 100)})
 
 
     #
     #  Make quad jet hists
     #
     fill += LorentzVector.plot_pair( ("v4j", R"$HH_{4b}$"), "v4j", skip=["n", "dr", "dphi", "st"], bins={"mass": (120, 0, 1200)}, )
-    fill += QuadJetHists( ("quadJet_selected", "Selected Quad Jet"), "quadJet_selected" )
-    fill += QuadJetHists( ("quadJet_min_dr", "Min dR Quad Jet"), "quadJet_min_dr" )
+    fill += QuadJetHistsSelected( ("quadJet_selected", "Selected Quad Jet"), "quadJet_selected" )
+    fill += QuadJetHistsMinDr( ("quadJet_min_dr", "Min dR Quad Jet"), "quadJet_min_dr" )
     fill += hist.add( "m4j_HHSR", (120, 0, 1200, ("m4j_HHSR", "m4j HHSR")) )
     fill += hist.add( "m4j_ZHSR", (120, 0, 1200, ("m4j_ZHSR", "m4j ZHSR")) )
     fill += hist.add( "m4j_ZZSR", (120, 0, 1200, ("m4j_ZZSR", "m4j ZZSR")) )
@@ -132,6 +125,8 @@ def filling_nominal_histograms(selev, JCM,
     #
     if top_reconstruction in ["slow","fast"]:
         fill += TopCandHists(("top_cand", "Top Candidate"), "top_cand")
+        fill += hist.add("xW",  (100, -12, 12, ("xW", "xW")))
+        fill += hist.add("xbW", (100, -15, 15, ("xbW", "xbW")))
 
     if run_SvB:
 

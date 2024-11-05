@@ -19,15 +19,35 @@ class BSScheduler(ABC):
 
 class Schedule(ABC):
     epoch: int
+    epoch_key: tuple[str, ...] = ("hyperparameters", "epoch")
 
     @abstractmethod
-    def optimizer(cls, parameters, **kwargs) -> optim.Optimizer: ...
+    def optimizer(self, parameters, **kwargs) -> optim.Optimizer: ...
 
     @abstractmethod
-    def bs_scheduler(cls, dataset: Dataset, **kwargs) -> BSScheduler: ...
+    def bs_scheduler(self, dataset: Dataset, **kwargs) -> BSScheduler: ...
 
     @abstractmethod
-    def lr_scheduler(cls, optimizer: optim.Optimizer, **kwargs) -> LRScheduler: ...
+    def lr_scheduler(self, optimizer: optim.Optimizer, **kwargs) -> LRScheduler: ...
+
+    def _get_key(self, keys: tuple[str, ...], benchmark: dict):
+        try:
+            value = benchmark
+            for key in keys:
+                value = value[key]
+        except Exception:
+            value = None
+        return value
+
+    def bs_step(self, bs: BSScheduler, benchmark: dict = None):
+        bs.step(self._get_key(self.epoch_key, benchmark))
+
+    def lr_step(self, lr: LRScheduler, benchmark: dict = None):
+        lr.step(self._get_key(self.epoch_key, benchmark))
+
+    def step(self, bs: BSScheduler, lr: LRScheduler, benchmark: dict = None):
+        self.bs_step(bs, benchmark)
+        self.lr_step(lr, benchmark)
 
 
 class MilestoneStep:

@@ -3,7 +3,7 @@ from __future__ import annotations
 import getpass
 import os
 import pickle
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import fsspec
 from classifier.task.state import Cascade, _share_global_state
@@ -60,7 +60,7 @@ class IO(Cascade):
 
     @classmethod
     def _generate_path(cls, value: str):
-        return (cls.output / value).mkdir(recursive=True)
+        return cls.output / value
 
     @classmethod
     def set__output(cls, value: str):
@@ -78,7 +78,7 @@ class IO(Cascade):
     def get__output(cls, value: str):
         from base_class.system.eos import EOS
 
-        return EOS(value).mkdir(recursive=True)
+        return EOS(value)
 
     @classmethod
     def get__monitor(cls, value: str):
@@ -105,6 +105,7 @@ class Monitor(Cascade):
     enable: bool = True
     file: str = "meta.json"
     address: tuple[str, int] = ":10200"
+    connect: bool = False
 
     # performance
     retry_max: int = 1
@@ -141,7 +142,7 @@ class Monitor(Cascade):
                 port = int(parts[1])
                 host = parts[0] or None
                 return host, port
-            except:
+            except Exception:
                 pass
         return value or None, None
 
@@ -149,3 +150,28 @@ class Monitor(Cascade):
 class Analysis(Cascade):
     enable: bool = True
     max_workers: int = 1
+
+
+class Multiprocessing(Cascade):
+    context_method: Literal["fork", "forkserver", "spawn"] = "forkserver"
+    context_library: Literal["torch", "builtins"] = "torch"
+    preload: list[str] = ["torch"]
+    torch_sharing_strategy: Literal["file_system", "file_descriptor"] = "file_system"
+
+
+class ResultKey(Cascade):
+    uuid: str = "uuid"
+    command: str = "command"
+    reproducible: str = "reproducible"
+
+    # analyze
+    analysis: str = "analysis"
+
+    # cache
+    cache: str = "cache"
+
+    # evaluate
+    predictions: str = "predictions"
+
+    # train
+    models: str = "models"

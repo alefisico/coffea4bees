@@ -198,8 +198,6 @@ class DeClusterer(PicoAOD):
         if config["isMC"]:
             canJet["hadronFlavour"] = selev.Jet.hadronFlavour[canJet_idx]
 
-        canJet["calibration"] = selev.Jet.calibration[canJet_idx]
-
         #
         # pt sort canJets
         #

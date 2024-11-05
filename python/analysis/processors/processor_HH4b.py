@@ -5,6 +5,7 @@ import awkward as ak
 import numpy as np
 import yaml, json
 import copy
+from collections import OrderedDict
 
 from analysis.helpers.processor_config import processor_config
 from analysis.helpers.common import apply_jerc_corrections, update_events
@@ -110,6 +111,7 @@ class analysis(processor.ProcessorABC):
             "all",
             "passHLT",
             "passNoiseFilter",
+            "passJetVetoMaps",
             "passJetMult",
             "passJetMult_btagSF",
             "passPreSel",
@@ -118,7 +120,7 @@ class analysis(processor.ProcessorABC):
             "SB",
         ]
 
-        self.histCuts = ["passPreSel"]
+        self.histCuts = ['passPreSel']
         if self.run_SvB:
             self.cutFlowCuts += ["passSvB", "failSvB"]
             self.histCuts += ["passSvB", "failSvB"]
@@ -249,7 +251,11 @@ class analysis(processor.ProcessorABC):
         #
         # Event selection
         #
-        event = apply_event_selection_4b( event, self.corrections_metadata[self.year], cut_on_lumimask=self.config["cut_on_lumimask"])
+        event = apply_event_selection_4b( event,
+                                        self.corrections_metadata[self.year],
+                                        cut_on_lumimask=self.config["cut_on_lumimask"],
+                                        do_jet_veto_maps=self.config["do_jet_veto_maps"],
+                                        )
 
 
         ### target is for new friend trees
@@ -272,22 +278,26 @@ class analysis(processor.ProcessorABC):
         #
         # Checking boosted selection (should change in the future)
         #
-        event['vetoBoostedSel'] = np.full(len(event), False)
-        if self.apply_boosted_veto & self.dataset.startswith("GluGluToHHTo4B_cHHH1"):
-            boosted_file = load("metadata/boosted_overlap_signal.coffea")['boosted']
-            boosted_events = boosted_file.get(self.dataset, {}).get('event', event.event)
-            boosted_events_set = set(boosted_events)
-            event['vetoBoostedSel'] = ~np.array([e in boosted_events_set for e in event.event.to_numpy()])
+        event['notInBoostedSel'] = np.full(len(event), True)
+        if self.apply_boosted_veto:
 
-        if self.apply_boosted_veto and self.dataset.startswith("data"):
-            boosted_file = load("metadata/boosted_overlap_data.coffea")
-            boosted_runs = boosted_file.get('run', [])
-            boosted_lumis = boosted_file.get('luminosityBlock', [])
-            boosted_events = boosted_file.get('event', [])
-            boosted_events_set = set(zip(boosted_runs, boosted_lumis, boosted_events))
-            event_tuples = zip(event.run.to_numpy(), event.luminosityBlock.to_numpy(), event.event.to_numpy())
-            event['vetoBoostedSel'] = ~np.array([t in boosted_events_set for t in event_tuples])
-            
+            if self.dataset.startswith("GluGluToHHTo4B_cHHH1"):
+                boosted_file = load("metadata/boosted_overlap_signal.coffea")['boosted']
+                boosted_events = boosted_file.get(self.dataset, {}).get('event', event.event)
+                boosted_events_set = set(boosted_events)
+                event['notInBoostedSel'] = np.array([e not in boosted_events_set for e in event.event.to_numpy()])
+            elif self.dataset.startswith("data"):
+                boosted_file = load("metadata/boosted_overlap_data.coffea")
+                mask = np.array(boosted_file['BDTcat_index']) > 0  ### > 0 is all boosted categories, 1 is most sensitive
+                filtered_runs = np.array(boosted_file['run'])[mask]
+                filtered_lumis = np.array(boosted_file['luminosityBlock'])[mask]
+                filtered_events = np.array(boosted_file['event'])[mask]
+                boosted_events_set = set(zip(filtered_runs, filtered_lumis, filtered_events))
+                event_tuples = zip(event.run.to_numpy(), event.luminosityBlock.to_numpy(), event.event.to_numpy())
+                event['notInBoostedSel'] = np.array([t not in boosted_events_set for t in event_tuples])
+            else:
+                logging.info(f"Boosted veto not applied for dataset {self.dataset}")
+
         #
         # Calculate and apply Jet Energy Calibration
         #
@@ -348,8 +358,11 @@ class analysis(processor.ProcessorABC):
         selections.add( "passNoiseFilter", event.passNoiseFilter)
         #selections.add( "passHLT", ( np.full(len(event), True) if skip_HLT_cut else event.passHLT ) )
         selections.add( "passHLT", ( event.passHLT if self.config["cut_on_HLT_decision"] else np.full(len(event), True)  ) )
+        selections.add( "passJetVetoMaps", event.passJetVetoMaps )
         selections.add( 'passJetMult', event.passJetMult )
-        allcuts = [ 'lumimask', 'passNoiseFilter', 'passHLT', 'passJetMult' ]
+        allcuts = [ 'lumimask', 'passNoiseFilter', 'passHLT', ]
+        if '202' in self.dataset : allcuts += [ 'passJetMult' ] # allcuts += [ 'passJetVetoMaps', 'passJetMult' ]
+        else: allcuts += [ 'passJetMult' ]
         event['weight'] = weights.weight()   ### this is for _cutflow
 
         #
@@ -364,19 +377,21 @@ class analysis(processor.ProcessorABC):
 
             }
 
+            sel_dict = OrderedDict({
+                'all': selections.require(lumimask=True),
+                'passNoiseFilter': selections.require(lumimask=True, passNoiseFilter=True),
+                'passHLT': selections.require(lumimask=True, passNoiseFilter=True, passHLT=True),
+            })
+            if '202' in self.dataset: sel_dict['passJetVetoMaps'] = selections.require(lumimask=True, passNoiseFilter=True, passHLT=True, passJetVetoMaps=True)
+            sel_dict['passJetMult'] = selections.all(*allcuts)
+
             self._cutFlow = cutFlow(self.cutFlowCuts)
-            self._cutFlow.fill( "all", event[selections.require(lumimask=True)], allTag=True)
-            self._cutFlow.fill( "all_woTrig", event[selections.require(lumimask=True)], allTag=True,
-                               wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[selections.require(lumimask=True)] ))
-            self._cutFlow.fill( "passNoiseFilter", event[selections.require(lumimask=True, passNoiseFilter=True)], allTag=True)
-            self._cutFlow.fill( "passNoiseFilter_woTrig", event[selections.require(lumimask=True, passNoiseFilter=True)], allTag=True,
-                               wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[selections.require(lumimask=True, passNoiseFilter=True)] ))
-            self._cutFlow.fill( "passHLT", event[ selections.require( lumimask=True, passNoiseFilter=True, passHLT=True ) ], allTag=True, )
-            self._cutFlow.fill( "passHLT_woTrig", event[ selections.require( lumimask=True, passNoiseFilter=True, passHLT=True ) ], allTag=True,
-                               wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[selections.require(lumimask=True, passNoiseFilter=True, passHLT=True)] ))
-            self._cutFlow.fill( "passJetMult", event[ selections.all(*allcuts)], allTag=True )
-            self._cutFlow.fill( "passJetMult_woTrig", event[ selections.all(*allcuts)], allTag=True,
-                               wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[selections.all(*allcuts)] ))
+            for cut, sel in sel_dict.items():
+                if ('passJetVetoMaps' in cut) and ('202' not in self.dataset): continue
+                self._cutFlow.fill( cut, event[sel], allTag=True )
+                self._cutFlow.fill( f"{cut}_woTrig", event[sel], allTag=True,
+                                    wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[sel]) )
+
 
         #
         # Calculate and apply btag scale factors
@@ -439,9 +454,9 @@ class analysis(processor.ProcessorABC):
                     try:
                         top_cands = find_tops(selev.selJet)
                     except Exception as e:
-                        print("WARNING: Fast top_reconstruction failed with exception: ")
-                        print(f"{e}\n")
-                        print("... Trying the slow top_reconstruction")
+                        logging.warning("WARNING: Fast top_reconstruction failed with exception: ")
+                        logging.warning(f"{e}\n")
+                        logging.warning("... Trying the slow top_reconstruction")
                         top_cands = find_tops_slow(selev.selJet)
 
                 selev['top_cand'], _ = buildTop(selev.selJet, top_cands)
@@ -453,9 +468,7 @@ class analysis(processor.ProcessorABC):
         #  Build di-jets and Quad-jets
         #
         create_cand_jet_dijet_quadjet( selev, event.event,
-                                      isMC = self.config["isMC"],
                                       apply_FvT=self.apply_FvT,
-                                      apply_boosted_veto=self.apply_boosted_veto,
                                       run_SvB=self.run_SvB,
                                       run_systematics=self.run_systematics,
                                       classifier_SvB=self.classifier_SvB,
@@ -478,8 +491,6 @@ class analysis(processor.ProcessorABC):
                                                            year_label=self.year_label,
                                                            len_event=len(event),
                                                           )
-
-
         #
         # Blind data in fourTag SR
         #
@@ -491,35 +502,52 @@ class analysis(processor.ProcessorABC):
             analysis_selections = selections.all(*allcuts)
             selev = selev[~(selev["quadJet_selected"].SR & selev.fourTag)]
 
+        # Checking for outliners in weights
+        if 'GluGlu' in self.dataset:
+            tmp_weights = weights.weight()
+            mean_weights = np.mean(tmp_weights)
+            std_weights = np.std(tmp_weights)
+            z_scores = np.abs((tmp_weights - mean_weights) / std_weights)
+            not_outliers = z_scores < 30
+            if np.any(~not_outliers) and std_weights > 0:
+                logging.warning(f"Outliers in weights:{tmp_weights[~not_outliers]}, while mean is {mean_weights} and std is {std_weights} for {self.dataset}\n")
+                selections.add( 'outliers', not_outliers )
+                allcuts.append( 'outliers' )
+                selev = selev[not_outliers[analysis_selections]]
+                analysis_selections = selections.all(*allcuts)
+
         #
         # CutFlow
         #
         logging.debug(f"final weight {weights.weight()[:10]}")
         selev["weight"] = weights.weight()[analysis_selections]
         selev["trigWeight"] = weights.partial_weight(include=['CMS_bbbb_resolved_ggf_triggerEffSF'])[analysis_selections]
+        selev['weight_woTrig'] = weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[analysis_selections]
         selev["no_weight"] = np.ones(len(selev))
         if not shift_name:
             self._cutFlow.fill("passPreSel", selev)
             self._cutFlow.fill("passPreSel_woTrig", selev,
-                               wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[analysis_selections] ))
+                               wOverride=np.sum(selev['weight_woTrig']))
             self._cutFlow.fill("passDiJetMass", selev[selev.passDiJetMass])
             self._cutFlow.fill("passDiJetMass_woTrig", selev[selev.passDiJetMass],
-                               wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[analysis_selections][selev.passDiJetMass] ))
+                               wOverride=np.sum(selev['weight_woTrig'][selev.passDiJetMass] ))
+            self._cutFlow.fill("boosted_veto_passPreSel", selev[selev.notInBoostedSel])
+            self._cutFlow.fill("boosted_veto_SR", selev[selev.notInBoostedSel & selev["quadJet_selected"].SR])
             if self.run_SvB:
                 selev['passSR'] = selev.passDiJetMass & selev["quadJet_selected"].SR
                 self._cutFlow.fill( "SR", selev[selev.passSR] )
                 self._cutFlow.fill( "SR_woTrig", selev[selev.passSR],
-                               wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[analysis_selections][selev.passSR] ))
+                               wOverride=np.sum(selev['weight_woTrig'][selev.passSR] ))
                 selev['passSB'] = selev.passDiJetMass & selev["quadJet_selected"].SB
                 self._cutFlow.fill( "SB", selev[(selev.passDiJetMass & selev["quadJet_selected"].SB)] )
                 self._cutFlow.fill( "SB_woTrig", selev[(selev.passDiJetMass & selev["quadJet_selected"].SB)],
-                               wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[analysis_selections][selev.passSB] ))
+                               wOverride=np.sum(selev['weight_woTrig'][selev.passSB] ))
                 self._cutFlow.fill("passSvB", selev[selev.passSvB])
                 self._cutFlow.fill("passSvB_woTrig", selev[selev.passSvB],
-                               wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[analysis_selections][selev.passSvB] ))
+                               wOverride=np.sum(selev['weight_woTrig'][selev.passSvB] ))
                 self._cutFlow.fill("failSvB", selev[selev.failSvB])
                 self._cutFlow.fill("failSvB_woTrig", selev[selev.failSvB],
-                               wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[analysis_selections][selev.failSvB] ))
+                               wOverride=np.sum(selev['weight_woTrig'][selev.failSvB] ))
 
             self._cutFlow.addOutput(processOutput, event.metadata["dataset"])
 

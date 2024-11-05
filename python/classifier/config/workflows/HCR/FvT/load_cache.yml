@@ -1,0 +1,9 @@
+# template:
+# - user: username, usually $USER
+# - dataset: name of the dataset (only used in the directory name)
+
+dataset:
+  - module: cache
+    option:
+      - --input
+      - root://cmseos.fnal.gov//store/user/{user}/HH4b/classifier/FvT/dataset/{dataset}/result.json

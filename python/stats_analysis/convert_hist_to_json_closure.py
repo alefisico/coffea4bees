@@ -24,7 +24,7 @@ if __name__ == '__main__':
                         default=None, help='Output file and directory.')
 
     parser.add_argument('-i', '--input_file', dest='input_file',
-                        default="../analysis/hists/histAll.coffea", help="File with coffea hists")
+                        default="../hists/histAll.coffea", help="File with coffea hists")
 
     parser.add_argument("--debug", action="store_true")
     #parser.add_argument("--signal", action="store_true")

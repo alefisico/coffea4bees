@@ -9,6 +9,7 @@ import fsspec
 from classifier.task import ArgParser, EntryPoint, converter
 
 from ..setting import IO as IOSetting
+from ..setting import ResultKey
 from ._utils import LoadTrainingSets, progress_advance
 
 if TYPE_CHECKING:
@@ -69,7 +70,7 @@ class Main(LoadTrainingSets):
             logging.info(f"The following states will be cached {sorted(states)}")
             for state in states:
                 mod, var = state.rsplit(".", 1)
-                mod = EntryPoint._fetch_module(mod, "state")[1]
+                mod = EntryPoint._fetch_module(mod, "state", True)[1]
                 states[state] = getattr(mod, var)
         # cache datasets
         datasets = self.load_training_sets(parser)
@@ -93,7 +94,7 @@ class Main(LoadTrainingSets):
                 mp_context=status.context,
                 initializer=status.initializer,
             ) as executor,
-            Progress.new(total=size, msg=("chunks", "Caching")) as progress,
+            Progress.new(total=size, msg=("entries", "Caching")) as progress,
         ):
             tasks = pool.submit(
                 executor,
@@ -107,11 +108,13 @@ class Main(LoadTrainingSets):
             f"Wrote {size} entries to {len(chunks)} files in {datetime.now() - timer}"
         )
         return {
-            "size": size,
-            "chunksize": chunksize,
-            "shuffle": self.opts.shuffle,
-            "compression": self.opts.compression,
-            "states": states,
+            ResultKey.cache: {
+                "size": size,
+                "chunksize": chunksize,
+                "shuffle": self.opts.shuffle,
+                "compression": self.opts.compression,
+                "states": states,
+            }
         }
 
 

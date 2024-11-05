@@ -34,11 +34,11 @@ dask.config.set({'logging.distributed': 'error'})
 NanoAODSchema.warn_missing_crossrefs = False
 warnings.filterwarnings("ignore")
 
-def list_of_files(ifile, 
+def list_of_files(ifile,
                   allowlist_sites: list =['T3_US_FNALLPC'],
-                  blocklist_sites: list =[], 
-                  rucio_regex_sites: str ='T[23]', 
-                  test: bool = False, 
+                  blocklist_sites: list =[],
+                  rucio_regex_sites: str ='T[23]',
+                  test: bool = False,
                   test_files: int = 5
                   ):
     '''Check if ifile is root file or dataset to check in rucio'''
@@ -169,9 +169,9 @@ if __name__ == '__main__':
         configs['config']['run_systematics'] = True
 
     if 'all' in args.datasets:
-        metadata['datasets'].pop("mixeddata")   # AGE: this is temporary
-        metadata['datasets'].pop("synthetic_data")   # AGE: this is temporary
-        metadata['datasets'].pop("data_3b_for_mixed")   # AGE: this is temporary
+        metadata['datasets'].pop("mixeddata")  
+        metadata['datasets'].pop("synthetic_data")
+        metadata['datasets'].pop("data_3b_for_mixed")
         args.datasets = metadata['datasets'].keys()
 
     metadata_dataset = {}
@@ -226,6 +226,7 @@ if __name__ == '__main__':
                 #         metadata_dataset[dataset]['genEventSumw'] = metadata['datasets'][dataset][year][config_runner['data_tier']]['sumw']
                 #         meta_files = metadata['datasets'][dataset][year][config_runner['data_tier']]['files']
                 else:
+                    metadata_dataset[dataset]['genEventSumw'] = 1
                     meta_files = metadata['datasets'][dataset][year][config_runner['data_tier']]
 
                 fileset[dataset + "_" + year] = {'files': list_of_files(meta_files, test=args.test, test_files=config_runner['test_files'], allowlist_sites=config_runner['allowlist_sites'], rucio_regex_sites=config_runner['rucio_regex_sites']),
@@ -289,10 +290,14 @@ if __name__ == '__main__':
                 logging.info("\nConfig Data for Mixed ")
 
                 nMixedSamples = metadata['datasets'][dataset]["nSamples"]
-                use_kfold = metadata['datasets'][dataset].get("use_kfold", False)
+                use_kfold = config_runner.get("use_kfold", False)
+                use_ZZinSB = config_runner.get("use_ZZinSB", False)
+                use_ZZandZHinSB = config_runner.get("use_ZZandZHinSB", False)
                 data_3b_mix_config = metadata['datasets'][dataset][year][config_runner['data_tier']]
                 logging.info(f"\nNumber of mixed samples is {nMixedSamples}")
                 logging.info(f"\nUsing kfolding? {use_kfold}")
+                logging.info(f"\nUsing ZZinSB? {use_ZZinSB}")
+                logging.info(f"\nUsing ZZandZHinSB? {use_ZZandZHinSB}")
 
                 idataset = f'{dataset}_{year}'
 
@@ -301,6 +306,12 @@ if __name__ == '__main__':
                 if use_kfold:
                     metadata_dataset[idataset]['FvT_files'] = [data_3b_mix_config['FvT_file_kfold_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
                     metadata_dataset[idataset]['FvT_names'] = [data_3b_mix_config['FvT_name_kfold_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
+                elif use_ZZinSB:
+                    metadata_dataset[idataset]['FvT_files'] = [data_3b_mix_config['FvT_file_ZZinSB_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
+                    metadata_dataset[idataset]['FvT_names'] = [data_3b_mix_config['FvT_name_ZZinSB_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
+                elif use_ZZandZHinSB:
+                    metadata_dataset[idataset]['FvT_files'] = [data_3b_mix_config['FvT_file_ZZandZHinSB_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
+                    metadata_dataset[idataset]['FvT_names'] = [data_3b_mix_config['FvT_name_ZZandZHinSB_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
                 else:
                     metadata_dataset[idataset]['FvT_files'] = [data_3b_mix_config['FvT_file_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]
                     metadata_dataset[idataset]['FvT_names'] = [data_3b_mix_config['FvT_name_template'].replace("XXX",str(v)) for v in range(nMixedSamples)]

@@ -728,15 +728,15 @@ datasets:
     UL18:
       picoAOD:
         files_template:
-          - /srv/python/skimmer/test/data_UL18A/picoAOD_seed5.root
-          - /srv/python/skimmer/test/data_UL18B/picoAOD_seed5.root
-          - /srv/python/skimmer/test/data_UL18C/picoAOD_seed5.root
-          - /srv/python/skimmer/test/data_UL18D/picoAOD_seed5.root
+          - /srv/python/output/synthetic_dataset_make_dataset/data_UL18A/picoAOD_seed5.root
+          - /srv/python/output/synthetic_dataset_make_dataset/data_UL18B/picoAOD_seed5.root
+          - /srv/python/output/synthetic_dataset_make_dataset/data_UL18C/picoAOD_seed5.root
+          - /srv/python/output/synthetic_dataset_make_dataset/data_UL18D/picoAOD_seed5.root
 
   synthetic_mc_GluGluToHHTo4B_cHHH1:
     nSamples: 1
     UL18:
         picoAOD:
           files:
-           - /srv/python/skimmer/test/GluGluToHHTo4B_cHHH1_UL18/picoAOD_seed5.root
+           - /srv/python/output/synthetic_dataset_make_dataset/GluGluToHHTo4B_cHHH1_UL18/picoAOD_seed5.root
           sumw: 14442.908792499999

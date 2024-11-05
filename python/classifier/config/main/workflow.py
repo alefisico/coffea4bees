@@ -4,7 +4,7 @@ from collections import defaultdict
 import fsspec
 import yaml
 from classifier.task import ArgParser, EntryPoint, main
-from classifier.task.parse._dict import _mapping_scheme, mapping
+from classifier.task.parse._dict import _mapping_schema, mapping
 from classifier.utils import YamlIndentSequence
 from yaml.representer import Representer
 
@@ -72,7 +72,7 @@ class Main(main.Main):
             if k in args:
                 args.remove(k)
         workflow[main._MAIN] = self._parse_opts(self.opts.main, args)
-        for k in parser._keys:
+        for k in parser._tasks:
             for mod, opts in parser.args[k]:
                 workflow[k].append(self._parse_opts(mod, opts))
 
@@ -85,14 +85,14 @@ class Main(main.Main):
         merged = []
         group = []
         for opt in opts:
-            scheme = _mapping_scheme(opt)[0]
-            if (scheme is not None) or (opt.startswith(main._DASH)):
+            schema = _mapping_schema(opt)[0]
+            if (schema is not None) or (opt.startswith(main._DASH)):
                 merged.extend(_merge_args(group))
                 group.clear()
             if (
-                scheme is not None
-                and (scheme != "py")
-                and (self.opts.embed_file or scheme != "file")
+                schema is not None
+                and (schema != "py")
+                and (self.opts.embed_file or schema != "file")
             ):
                 merged.append(mapping(opt))
             else:

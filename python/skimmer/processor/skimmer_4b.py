@@ -11,7 +11,8 @@ import awkward as ak
 
 class Skimmer(PicoAOD):
     def __init__(self, loosePtForSkim=False, skim4b=False, *args, **kwargs):
-        kwargs["pico_base_name"] = f'picoAOD_fourTag'
+        if skim4b:
+            kwargs["pico_base_name"] = f'picoAOD_fourTag'
         super().__init__(*args, **kwargs)
         self.loosePtForSkim = loosePtForSkim
         self.skim4b = skim4b
