@@ -196,7 +196,7 @@ def apply_jet_veto_maps( corrections_metadata, jets ):
     masked_jets = jets[mask_for_VetoMap]
 
     corr = correctionlib.CorrectionSet.from_file(corrections_metadata['file'])[corrections_metadata['tag']]
-    
+
     etaFlat, phiFlat, etaCounts = ak.flatten(masked_jets.eta), ak.flatten(masked_jets.phi), ak.num(masked_jets.eta)
     phiFlat = np.clip(phiFlat, -3.14159, 3.14159) # Needed since no overflow included in phi binning
     weight = ak.unflatten(
@@ -242,12 +242,12 @@ def apply_btag_sf( jets,
 
     weights = {}
     j, nj = ak.flatten(jets), ak.num(jets)
-    hf, eta, pt, tag = ak.to_numpy(j.hadronFlavour), ak.to_numpy(abs(j.eta)), ak.to_numpy(j.pt), ak.to_numpy(j.btagDeepFlavB)
+    hf, eta, pt, tag = ak.to_numpy(j.hadronFlavour), ak.to_numpy(abs(j.eta)), ak.to_numpy(j.pt), ak.to_numpy(j.btagScore)
 
     cj_bl = jets[jets.hadronFlavour!=4]
     nj_bl = ak.num(cj_bl)
     cj_bl = ak.flatten(cj_bl)
-    hf_bl, eta_bl, pt_bl, tag_bl = ak.to_numpy(cj_bl.hadronFlavour), ak.to_numpy(abs(cj_bl.eta)), ak.to_numpy(cj_bl.pt), ak.to_numpy(cj_bl.btagDeepFlavB)
+    hf_bl, eta_bl, pt_bl, tag_bl = ak.to_numpy(cj_bl.hadronFlavour), ak.to_numpy(abs(cj_bl.eta)), ak.to_numpy(cj_bl.pt), ak.to_numpy(cj_bl.btagScore)
     SF_bl= btagSF.evaluate('central', hf_bl, eta_bl, pt_bl, tag_bl)
     SF_bl = ak.unflatten(SF_bl, nj_bl)
     SF_bl = np.prod(SF_bl, axis=1)
@@ -255,7 +255,7 @@ def apply_btag_sf( jets,
     cj_c = jets[jets.hadronFlavour==4]
     nj_c = ak.num(cj_c)
     cj_c = ak.flatten(cj_c)
-    hf_c, eta_c, pt_c, tag_c = ak.to_numpy(cj_c.hadronFlavour), ak.to_numpy(abs(cj_c.eta)), ak.to_numpy(cj_c.pt), ak.to_numpy(cj_c.btagDeepFlavB)
+    hf_c, eta_c, pt_c, tag_c = ak.to_numpy(cj_c.hadronFlavour), ak.to_numpy(abs(cj_c.eta)), ak.to_numpy(cj_c.pt), ak.to_numpy(cj_c.btagScore)
     SF_c= btagSF.evaluate('central', hf_c, eta_c, pt_c, tag_c)
     SF_c = ak.unflatten(SF_c, nj_c)
     SF_c = np.prod(SF_c, axis=1)
