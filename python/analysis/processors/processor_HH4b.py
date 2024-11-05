@@ -446,7 +446,7 @@ class analysis(processor.ProcessorABC):
             if self.top_reconstruction in ["slow","fast"]:
 
                 # sort the jets by btagging
-                selev.selJet = selev.selJet[ ak.argsort(selev.selJet.btagDeepFlavB, axis=1, ascending=False) ]
+                selev.selJet = selev.selJet[ ak.argsort(selev.selJet.btagScore, axis=1, ascending=False) ]
 
                 if self.top_reconstruction == "slow":
                     top_cands = find_tops_slow(selev.selJet)

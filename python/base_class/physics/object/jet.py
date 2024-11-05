@@ -7,7 +7,7 @@ class _PlotCommon:
 
 
 class _PlotJet(_PlotCommon, _PlotLorentzVector):
-    deepjet_b = H((50, 0, 1, ('btagDeepFlavB', 'DeepJet $b$')))
+    deepjet_b = H((50, 0, 1, ('btagScore', 'btagScore $b$')))
     deepjet_c = H((50, 0, 1, ('btagDeepFlavCvL', 'DeepJet $c$ vs $uds+g$')),
                   (50, 0, 1, ('btagDeepFlavCvB', 'DeepJet $c$ vs $b$')))
     id_pileup = H(([0b000, 0b100, 0b110, 0b111], ('puId', 'Pileup ID')))
