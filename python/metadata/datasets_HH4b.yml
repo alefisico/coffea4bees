@@ -538,6 +538,22 @@ datasets:
         sumw2: 31992474.261828292
         total_events: 39650048.0
     xs: 15.5   *0.1512*0.1512
+  
+  ggHbb:
+    UL18:
+      nanoAOD: /GluGluHToBB_M-125_TuneCP5_13TeV-amcatnloFXFX-pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v2/NANOAODSIM
+      picoAOD:
+        files:
+        - root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/ttHbb2018/picoAOD.root
+        sumw: 0.507
+        sumw2: 0.507
+        total_events: 1000.0
+    xs: 35.81
+  ttHbb:
+    UL18:
+      nanoAOD: /ttHTobb_M125_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL18NanoAODv9-BPH_106X_upgrade2018_realistic_v16_L1v1-v2/NANOAODSIM
+    xs: 0.5269
+  
   data:
     UL16_postVFP:
       lumi: 16.5e3
@@ -682,10 +698,7 @@ datasets:
         JCM_load_template: 3bDvTMix4bDvT_vXXX
         files:
         - root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//data2018_3b/picoAOD_3b_wJCM_newSBDef.root
-    nSamples: 15
-    use_kfold: True
-    use_ZZinSB: False
-    use_ZZandZHinSB: False    
+    nSamples: 15 
 
   mixeddata:
     '2016':

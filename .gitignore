@@ -176,6 +176,7 @@ proxy/
 python/analysis/hists/
 runCITests.sh
 .bashrc
+python/output/
 
 .local/
 set_ROOT.sh
