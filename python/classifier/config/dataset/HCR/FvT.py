@@ -36,7 +36,7 @@ def _ttbar_4b_selection(df: pd.DataFrame):
     return df[df["fourTag"]]
 
 
-class Train(_picoAOD.Background, CommonTrain):
+class _Train(CommonTrain):
     argparser = ArgParser()
     argparser.add_argument(
         "--no-JCM",
@@ -61,8 +61,8 @@ class Train(_picoAOD.Background, CommonTrain):
             _group.fullmatch(
                 ("label:data",),
                 processors=[
-                    _data_selection,
-                    add_label_index_from_column(threeTag="d3", fourTag="d4"),
+                    lambda: _data_selection,
+                    lambda: add_label_index_from_column(threeTag="d3", fourTag="d4"),
                 ],
                 name="data selection",
             ),
@@ -70,13 +70,15 @@ class Train(_picoAOD.Background, CommonTrain):
                 _group.fullmatch(
                     ("label:ttbar",),
                     processors=[
-                        prescale(
+                        lambda: prescale(
                             scale=self.opts.ttbar_3b_prescale,
                             selection=_ttbar_3b_selection,
                             seed=("ttbar", 0),
                         ),
-                        _ttbar_selection,
-                        add_label_index_from_column(threeTag="t3", fourTag="t4"),
+                        lambda: _ttbar_selection,
+                        lambda: add_label_index_from_column(
+                            threeTag="t3", fourTag="t4"
+                        ),
                     ],
                     name="ttbar selection",
                 )
@@ -84,9 +86,9 @@ class Train(_picoAOD.Background, CommonTrain):
                 else _group.fullmatch(
                     ("label:ttbar",),
                     processors=[
-                        _ttbar_4b_selection,
-                        _ttbar_selection,
-                        add_label_index_from_column(fourTag="t4"),
+                        lambda: _ttbar_4b_selection,
+                        lambda: _ttbar_selection,
+                        lambda: add_label_index_from_column(fourTag="t4"),
                     ],
                     name="ttbar 4b selection",
                 )
@@ -95,7 +97,9 @@ class Train(_picoAOD.Background, CommonTrain):
                 (
                     _group.fullmatch(
                         (),
-                        processors=[_apply_JCM],
+                        processors=[
+                            lambda: _apply_JCM,
+                        ],
                         name="apply JCM",
                     ),
                 )
@@ -106,4 +110,13 @@ class Train(_picoAOD.Background, CommonTrain):
         ]
 
 
+class Train(_picoAOD.Background, _Train): ...
+
+
+class TrainDataOnly(_picoAOD.Data, _Train): ...
+
+
 class Eval(_picoAOD.Background, CommonEval): ...
+
+
+class EvalDataOnly(_picoAOD.Data, CommonEval): ...

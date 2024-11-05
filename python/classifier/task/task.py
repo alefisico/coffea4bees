@@ -88,6 +88,10 @@ class ArgParser(argparse.ArgumentParser):
     ): ...
     def add_argument(self, *name_or_flags, **kwargs):
         condition = kwargs.pop("condition", None)
+        if kwargs.get("choices") is not None and kwargs.get("help") is not None:
+            kwargs["help"] = (
+                f"{kwargs['help']} (choices: [green]{[*kwargs['choices']]}[/green])"
+            )
         if condition is not None:
             self._conditionals.append(_ConditionalArg(condition, name_or_flags, kwargs))
         else:

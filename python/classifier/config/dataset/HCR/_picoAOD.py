@@ -160,6 +160,7 @@ class Data(_PicoAOD):
     argparser = ArgParser()
     argparser.add_argument(
         "--data-source",
+        metavar="SOURCE",
         default=["detector"],
         choices=("detector", "mixed", "synthetic"),
         help="choose the source of the data",
@@ -167,6 +168,7 @@ class Data(_PicoAOD):
     )
     argparser.add_argument(
         "--data-mixed-samples",
+        metavar="SAMPLE",
         action="extend",
         nargs="+",
         default=["0"],
