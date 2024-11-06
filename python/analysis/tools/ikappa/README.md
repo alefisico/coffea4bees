@@ -197,17 +197,32 @@ python -m analysis.tools.ikappa.group_hists_by_category [-h] -i INPUT -o OUTPUT
 options:
   -h, --help            show this help message and exit
   -i INPUT, --input INPUT
-                        input file
+                        path to the input hist file (default: None)
   -o OUTPUT, --output OUTPUT
-                        output file
+                        path to the output hist file (default: None)
 ```
 
 ### Copy data to multijet
 
-Since, the reweighted 3b data are treated as 4b multijet background model, to make it compatible with the plotting tool, the hists under `{process: data, ntag: 3}` need to be copied to `{process: multijet, ntag: 4}`.
+Since, the reweighted 3b data are treated as 4b multijet background model, to make it compatible with the plotting tool, the hists under `{process: data, ntag: 3}` need to be copied to `{process: QCD Multijet, ntag: 4}`.
 
-```bash
-python -m analysis.tools.ikappa.data_to_multijet -i INPUT -o OUTPUT
+```console
+python -m analysis.tools.ikappa.data_to_multijet [-h] -i INPUT_FILES [INPUT_FILES ...] [-o OUTPUT_PATTERN] [-d DATA_PROCESS] [-mj MULTIJET_PROCESS] [--process-axis PROCESS_AXIS]
+                           [--tag-axis TAG_AXIS]
+
+options:
+  -h, --help            show this help message and exit
+  -i INPUT_FILES [INPUT_FILES ...], --input-files INPUT_FILES [INPUT_FILES ...]
+                        path to input hist files (default: [])
+  -o OUTPUT_PATTERN, --output-pattern OUTPUT_PATTERN
+                        output path pattern (see documentation for path_from_pattern) (default: {host}{parent1}/{name}_mj.{ext})
+  -d DATA_PROCESS, --data-process DATA_PROCESS
+                        name of input data process (default: data)
+  -mj MULTIJET_PROCESS, --multijet-process MULTIJET_PROCESS
+                        name of input multijet process (default: QCD Multijet)
+  --process-axis PROCESS_AXIS
+                        name of process axis (default: process)
+  --tag-axis TAG_AXIS   name of tag axis (default: tag)
 ```
 
 ## Tips
@@ -223,4 +238,3 @@ A global [config file](config.py) is used to maintain constants, default values 
 ## TODO
 
 - add ratio plot and update readme
-- copy data to multijet script

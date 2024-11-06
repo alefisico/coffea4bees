@@ -14,10 +14,10 @@ Stacks: tuple[tuple[str, tuple[str, ...]]] = (
     (
         "Background",
         (
-            "Multijet",
+            "TTTo2L2Nu",
             "TTToSemiLeptonic",
             "TTToHadronic",
-            "TTTo2L2Nu",
+            "QCD Multijet",
         ),
     ),
 )

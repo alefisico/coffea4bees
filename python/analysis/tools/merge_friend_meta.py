@@ -4,6 +4,7 @@ from argparse import ArgumentParser
 import fsspec
 from base_class.root.chain import Friend
 from base_class.system.eos import EOS, PathLike
+from base_class.utils.argparser import DefaultFormatter
 from base_class.utils.json import DefaultEncoder
 
 
@@ -36,7 +37,7 @@ def merge_friend_metas(output: PathLike, *metafiles: PathLike, cleanup: bool = T
 
 
 if __name__ == "__main__":
-    argparser = ArgumentParser()
+    argparser = ArgumentParser(formatter_class=DefaultFormatter)
     argparser.add_argument(
         "-i",
         "--input",

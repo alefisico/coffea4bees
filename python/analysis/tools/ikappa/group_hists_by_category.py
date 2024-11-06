@@ -5,6 +5,7 @@ import cloudpickle
 import fsspec
 import pandas as pd
 from base_class.system.eos import EOS
+from base_class.utils.argparser import DefaultFormatter
 from rich.logging import RichHandler
 
 from ._sanity import group_by_categories, group_to_str
@@ -15,20 +16,20 @@ if __name__ == "__main__":
         format="%(message)s",
         handlers=[RichHandler(show_time=False, show_path=False, markup=True)],
     )
-    parser = ArgumentParser()
+    parser = ArgumentParser(formatter_class=DefaultFormatter)
     parser.add_argument(
         "-i",
         "--input",
         type=str,
         required=True,
-        help="input file",
+        help="path to the input hist file",
     )
     parser.add_argument(
         "-o",
         "--output",
         type=str,
         required=True,
-        help="output file",
+        help="path to the output hist file",
     )
     args = parser.parse_args()
 
@@ -43,17 +44,15 @@ if __name__ == "__main__":
     output = EOS(args.output)
     for i, group in enumerate(groups.values()):
         g = i + 1
-        file = output.parent / f"{output.stem}.{g}.coffea"
+        file = output.parent / f"{output.stem}_{g}.coffea"
         axis = axes.iloc[i]
         logging.info(f"Group {g}: {file}")
         for k, v in axis.items():
             logging.info(f"{k}: {group_to_str(v)}")
         logging.info("histograms: " + ", ".join(group))
+        data = {
+            "hists": {k: data["hists"][k] for k in group},
+            "categories": data["categories"],
+        }
         with fsspec.open(file, "wb", compression="lz4") as f:
-            cloudpickle.dump(
-                {
-                    "hists": {k: data["hists"][k] for k in group},
-                    "categories": data["categories"],
-                },
-                f,
-            )
+            cloudpickle.dump(data, f)
