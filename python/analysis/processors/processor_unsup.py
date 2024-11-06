@@ -216,7 +216,7 @@ class analysis(processor.ProcessorABC):
 
 
         ### Build and select boson candidate jets with bRegCorr applied
-        sorted_idx = ak.argsort(selev.Jet.btagDeepFlavB * selev.Jet.selected, axis=1, ascending=False)
+        sorted_idx = ak.argsort(selev.Jet.btagScore * selev.Jet.selected, axis=1, ascending=False)
         canJet_idx    = sorted_idx[:, 0:4]
         notCanJet_idx = sorted_idx[:, 4:]
         canJet = selev.Jet[canJet_idx]
@@ -224,7 +224,7 @@ class analysis(processor.ProcessorABC):
         ### apply bJES to canJets
         canJet = canJet * canJet.bRegCorr
         canJet['bRegCorr'] = selev.Jet.bRegCorr[canJet_idx]
-        canJet['btagDeepFlavB'] = selev.Jet.btagDeepFlavB[canJet_idx]
+        canJet['btagScore'] = selev.Jet.btagScore[canJet_idx]
         canJet['puId'] = selev.Jet.puId[canJet_idx]
         canJet['jetId'] = selev.Jet.puId[canJet_idx]
         if config["isMC"]:
@@ -325,7 +325,7 @@ class analysis(processor.ProcessorABC):
 
         ###  Build the top Candiates
         ### sort the jets by btagging
-        selev.selJet  = selev.selJet[ak.argsort(selev.selJet.btagDeepFlavB, axis=1, ascending=False)]
+        selev.selJet  = selev.selJet[ak.argsort(selev.selJet.btagScore, axis=1, ascending=False)]
         try:
             top_cands = find_tops(selev.selJet)
         except Exception as e:

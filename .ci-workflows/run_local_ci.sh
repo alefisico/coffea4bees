@@ -46,7 +46,7 @@ else
 
   sed -e "s/input: outputs/input: $OUTPUT_LIST/" "$SNAKEFILE" > /tmp/Snakefile_testCI
 
-  export APPTAINER_BINDPATH=/uscms_data/,/uscmst1b_scratch,/cvmfs,/cvmfs/grid.cern.ch/etc/grid-security:/etc/grid-security 
+  export APPTAINER_BINDPATH=/uscms_data/,/uscmst1b_scratch,/cvmfs,/cvmfs/grid.cern.ch/etc/grid-security:/etc/grid-security,/tmp 
   apptainer exec -B ${PWD}:/srv --pwd /srv docker://snakemake/snakemake snakemake --snakefile /tmp/Snakefile_testCI --use-apptainer --printshellcmds --keep-incomplete
 fi
 
