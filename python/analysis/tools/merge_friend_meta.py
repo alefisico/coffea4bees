@@ -2,7 +2,7 @@ import json
 from argparse import ArgumentParser
 
 import fsspec
-from base_class.root.chain import Friend
+from base_class.root import Friend
 from base_class.system.eos import EOS, PathLike
 from base_class.utils.argparser import DefaultFormatter
 from base_class.utils.json import DefaultEncoder
