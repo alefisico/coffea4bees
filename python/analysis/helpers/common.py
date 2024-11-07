@@ -18,51 +18,51 @@ import os
 def extract_jetmet_tar_files(tar_file_name: str=None,
                             jet_type: str='AK4PFchs'
                             ):
-  """Extracts a tar.gz file to a specified path and returns a list of extracted files with their locations.
+    """Extracts a tar.gz file to a specified path and returns a list of extracted files with their locations.
 
-  Args:
-    tar_file_name: The name of the tar.gz file.
-    jet_type: The type of jet to apply correction
+    Args:
+        tar_file_name: The name of the tar.gz file.
+        jet_type: The type of jet to apply correction
 
-  Returns:
-    A list of tuples, where each tuple contains the file name and its full path.
-  """
+    Returns:
+        A list of tuples, where each tuple contains the file name and its full path.
+    """
 
-  extracted_files = []
-  extract_path = f"/tmp/{os.getenv('USER', 'default_user')}/coffea4bees/"
+    extracted_files = []
+    extract_path = f"/tmp/{os.getenv('USER', 'default_user')}/coffea4bees/"
 
-  with tarfile.open(tar_file_name, "r:gz") as tar:
-    for member in tar.getmembers():
-      if member.isfile():
-        # Extract the file to the specified path
-        member.name = os.path.basename(member.name)  # Remove any directory structure from the archive
+    # Ensure the extraction path exists
+    try:
+        os.makedirs(extract_path, exist_ok=True)
+    except FileExistsError:
+        pass
 
-        new_file_name = member.name
-        if 'Puppi' in jet_type and jet_type in member.name:  ### this is only for Run3, temporary fix
-          new_file_name = member.name.replace('_', '', 1)
-          member.name = new_file_name
+    with tarfile.open(tar_file_name, "r:gz") as tar:
+        for member in tar.getmembers():
+            if member.isfile():
+                # Extract the file to the specified path
+                member.name = os.path.basename(member.name)  # Remove any directory structure from the archive
 
-        new_file_path = os.path.join(extract_path, new_file_name)
+                new_file_name = member.name
+                if 'Puppi' in jet_type and jet_type in member.name:  ### this is only for Run3, temporary fix
+                    new_file_name = member.name.replace('_', '', 1)
+                    member.name = new_file_name
 
-        if not os.path.isfile(new_file_path):
-          tar.extract(member, path=extract_path)
+                new_file_path = os.path.join(extract_path, new_file_name)
 
-          old_file_path = os.path.join(extract_path, member.name)
-          #new_file_name = member.name.replace('_', '', 1)
-          #new_file_path = os.path.join(extract_path, new_file_name)
-          #print(f"new_file_name is {new_file_name}\n")
-          #print(f"member.name is {member.name}\n")
-          # Rename the file if the name was changed
-          if old_file_path != new_file_path:
-            os.rename(old_file_path, new_file_path)
+                if not os.path.isfile(new_file_path):
+                    tar.extract(member, path=extract_path)
+                    old_file_path = os.path.join(extract_path, member.name)
+                    # Rename the file if the name was changed
+                    if old_file_path != new_file_path:
+                        os.rename(old_file_path, new_file_path)
 
+                # Get the full path of the extracted file
+                file_path = os.path.join(extract_path, member.name)
+                if jet_type in member.name:
+                    extracted_files.append(f"* * {file_path}")
 
-        # Get the full path of the extracted file
-        file_path = os.path.join(extract_path, member.name)
-        if jet_type in member.name:
-            extracted_files.append(f"* * {file_path}")
-
-  return extracted_files
+    return extracted_files
 
 # following example here: https://github.com/CoffeaTeam/coffea/blob/master/tests/test_jetmet_tools.py#L529
 def apply_jerc_corrections( event,

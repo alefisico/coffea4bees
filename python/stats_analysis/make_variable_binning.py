@@ -38,7 +38,7 @@ def rebin_histogram(hist, variable_binning):
     rebinned_hist = hist.Rebin(len(variable_binning) - 1, hist.GetName()+'_rebin', array.array('d', variable_binning))
     return rebinned_hist
 
-def main(input_file, hist_name, threshold, output_file):
+def make_variable_binning(input_file, hist_name, threshold, output_file):
     
     # Open the ROOT file
     file = ROOT.TFile.Open(input_file)
@@ -71,6 +71,7 @@ def main(input_file, hist_name, threshold, output_file):
     # Close the ROOT file
     file.Close()
     output.Close()
+    return variable_binning
 
 
 
@@ -84,4 +85,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    main(args.input_file, args.hist_name, args.threshold, args.output_file)
+    make_variable_binning(args.input_file, args.hist_name, args.threshold, args.output_file)

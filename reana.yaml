@@ -21,6 +21,7 @@ workflow:
   resources:
     cvmfs:
       - cms.cern.ch
+      - sft.cern.ch
 workspace:
   retention_days:
     python/*: 1
