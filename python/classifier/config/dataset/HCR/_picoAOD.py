@@ -171,7 +171,7 @@ class Data(_PicoAOD):
         metavar="SAMPLE",
         action="extend",
         nargs="+",
-        default=["0"],
+        default=[],
         help="index of mixed samples",
     )
 
