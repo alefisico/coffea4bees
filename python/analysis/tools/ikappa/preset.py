@@ -60,13 +60,19 @@ SelectedHists: list[str]
 
 
 def update(module: str):
-    import importlib
+    if isinstance(module, str):
+        import importlib
 
-    mod = importlib.import_module(module)
-    globals().update(mod.__dict__)
+        mod = importlib.import_module(module)
+    else:
+        mod = module
+    globals().update({k: v for k, v in mod.__dict__.items() if k in __annotations__})
 
 
 def reset():
     from .presets import default
 
-    globals().update(default.__dict__)
+    update(default)
+
+
+reset()
