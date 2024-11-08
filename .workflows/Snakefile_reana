@@ -13,7 +13,7 @@ dataset_location = "metadata/datasets_HH4b.yml"
 #
 rule all:
     input:
-        "output/RunII/passPreSel/fourTag/SB/nPVs.pdf",
+        "output/plots/RunII/passPreSel/fourTag/SB/nPVs.pdf",
         "output/datacards/shapes.root",
         "output/tmp.log",
         'output/datacards/impacts_combine_SvB_MA_exp_HH.pdf',
@@ -45,7 +45,8 @@ echo "Running {params.isam} {params.iy} - output {output}"
 cd python/ 
 mprof run -C -o mprofile_{params.logname}.dat python runner.py -d {params.isam} -p analysis/processors/processor_HH4b.py -y {params.iy} -o ../{output} -op ../output/ -m {dataset_location} --githash {params.hash} --gitdiff {params.diff} -c {params.metadata} 
 cd ../
-mprof plot -o output/mprofile_{params.logname}.png python/mprofile_{params.logname}.dat
+mkdir -p output/performance/
+mprof plot -o output/performance/mprofile_{params.logname}.png python/mprofile_{params.logname}.dat
 xrdcp {output} root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/{params.output}
 cp gitdiff.txt output/   ### only one time
 #cp /tmp/coffea4bees-dask-report-* ../output/coffea4bees-dask-report_{params.logname}_{params.iy}.html
@@ -125,7 +126,7 @@ rule merging_coffea_files_databkgs:
    shell:
        """
 mprof run -C -o python/mprofile_merge_{params.logname}.dat python python/analysis/merge_coffea_files.py -f {input.files} -o {output}
-mprof plot -o output/mprofile_merge_{params.logname}.png python/mprofile_merge_{params.logname}.dat
+mprof plot -o output/performance/mprofile_merge_{params.logname}.png python/mprofile_merge_{params.logname}.dat
 xrdcp {output} root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/{params.output}
 cp {output} /eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/{params.output}
        """
@@ -142,7 +143,7 @@ rule make_plots:
     input:
         "output/histAll.coffea"
     output:
-        "output/RunII/passPreSel/fourTag/SB/nPVs.pdf"
+        "output/plots/RunII/passPreSel/fourTag/SB/nPVs.pdf"
     container: analysis_container
     resources:
         kerberos=True,
@@ -150,10 +151,10 @@ rule make_plots:
         kubernetes_memory_limit="8Gi"
     shell:
         """
-cd python/ 
-mprof run -C -o mprofile_makeplots.dat python analysis/makePlots.py ../output/histAll.coffea -o ../output/ -m analysis/metadata/plotsAll.yml -s xW
-mprof plot -o mprofile_makeplots.png ../output/mprofile_makeplots.dat
-python .php-plots/bin/pb_deploy_plots.py ../output/RunII/ /eos/user/a/algomez/work/HH4b/reana/{TIMESTAMP}/ -r -c -j 4
+        cd python/ 
+        mprof run -C -o mprofile_makeplots.dat python analysis/makePlots.py ../output/histAll.coffea -o ../output/plots/ -m analysis/metadata/plotsAll.yml -s xW
+        mprof plot -o ../output/performance/mprofile_makeplots.png ../output/mprofile_makeplots.dat
+        python .php-plots/bin/pb_deploy_plots.py ../output/plots/RunII/ /eos/user/a/algomez/work/HH4b/reana/{TIMESTAMP}/ -r -c -j 4
         """
         
 rule convert_hist_to_json:

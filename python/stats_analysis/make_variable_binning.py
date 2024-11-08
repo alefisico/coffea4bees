@@ -35,8 +35,7 @@ def rebin_histogram(hist, variable_binning):
     """
        hist is a ROOT TH1 histogram
     """
-    rebinned_hist = hist.Rebin(len(variable_binning) - 1, hist.GetName()+'_rebin', array.array('d', variable_binning))
-    return rebinned_hist
+    return hist.Rebin(len(variable_binning) - 1, hist.GetName()+'_rebin', array.array('d', variable_binning))
 
 def make_variable_binning(input_file, hist_name, threshold, output_file):
     
