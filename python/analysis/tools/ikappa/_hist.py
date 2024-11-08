@@ -50,18 +50,10 @@ from hist.axis import (
     Variable,
 )
 
+from . import preset
 from ._bh import BHAxis, HistAxis
 from ._utils import RGB, Component
 from .config import UI, Plot
-from .preset import (
-    CouplingScan,
-    ModelPatterns,
-    Palette,
-    StackGroups,
-    VisibleGlyphs,
-)
-
-_VisibleGlyphs = set(VisibleGlyphs)
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -236,7 +228,7 @@ def _checkbox(active: bool = True):
 
 
 def _palette(n: int):
-    selected = cycle(Palette)
+    selected = cycle(preset.Palette)
     return [next(selected) for _ in range(n)]
 
 
@@ -329,7 +321,7 @@ class _Model(_Matched):
             "value",
             CustomJS(
                 args=dict(
-                    patterns={k: list(v) for k, v in ModelPatterns.items()},
+                    patterns={k: list(v) for k, v in preset.ModelPatterns.items()},
                     select=self._dom_model,
                     input=self._dom_patterns,
                 ),
@@ -589,7 +581,7 @@ class HistGroup(Component):
         categories = _find_process(self._categories)
         for cat in categories:
             processes = set(self._categories[cat]._choices)
-            for k, vs in ModelPatterns.items():
+            for k, vs in preset.ModelPatterns.items():
                 for v in vs:
                     matched = _KappaMatch(v, processes, k)
                     if matched:
@@ -601,7 +593,7 @@ class HistGroup(Component):
         if not self._models:
             self._setup_categories(categories[0])
             processes = set(self._categories[self.process]._choices)
-        for k, vs in StackGroups:
+        for k, vs in preset.StackGroups:
             if set(vs) <= processes:
                 self.add_stack(k, vs)
                 processes -= set(self._stacks[-1])
@@ -753,6 +745,8 @@ class HistGroup(Component):
         legend_title_style = _BOX_STYLE.copy()
         if not coupling_doms:
             legend_title_style.pop("margin-top")
+
+        _VisibleGlyphs = set(preset.VisibleGlyphs)
 
         def legend_add(field: str, label: str, stack: bool = False):
             colors[field] = color = RGB(next(palette))
@@ -1260,7 +1254,9 @@ source.change.emit();
         )
 
     def _render_slider(self, coupling: str):
-        start, end, step = CouplingScan[coupling if coupling in CouplingScan else None]
+        start, end, step = preset.CouplingScan[
+            coupling if coupling in preset.CouplingScan else None
+        ]
         slider = Slider(
             start=start,
             end=end,

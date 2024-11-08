@@ -23,14 +23,12 @@ from bokeh.models import (
 from bokeh.resources import Resources
 from hist import Hist
 
+from . import preset
 from ._bh import BHAxis, HistAxis
 from ._hist import _FF, HistGroup
 from ._utils import Component, Confirmation, DownloadLink, ExternalLink, PathInput
 from ._widget import TreeView
 from .config import UI
-from .preset import SelectedHists
-
-_SelectedHists = re.compile("|".join(map("({})".format, SelectedHists)))
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -228,6 +226,7 @@ tr:hover {background-color: rgb(175, 225, 255);}
 </style></head><body>` + table.outerHTML + "</body></html>";
 """,
         )
+        _SelectedHists = re.compile("|".join(map("({})".format, preset.SelectedHists)))
         selected_hists = [h for h in self.data if _SelectedHists.fullmatch(h)]
         self._dom_hist_select = self.shared.nonempty(
             self.shared.multichoice(

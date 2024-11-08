@@ -27,16 +27,16 @@ from bokeh.models import (
 )
 from bokeh.util.callback_manager import EventCallback
 
+from . import preset
 from ._widget import ClickableDiv
 from .config import UI, Plot
-from .preset import XRootD
 
 _STYLESHEETS = "stylesheets"
 
 
 def _change_input_glob(self: AutocompleteInput, attr, old, new: str):
     empty = not (paths := glob(f"{new}*"))
-    paths.extend(XRootD)
+    paths.extend(preset.XRootD)
     if empty:
         paths.append(new)
     self.completions = paths
