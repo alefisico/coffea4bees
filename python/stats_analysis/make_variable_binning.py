@@ -56,20 +56,22 @@ def make_variable_binning(input_file, hist_name, threshold, output_file):
     
     variable_binning = compute_variable_binning(multijet_hist, signal_hist, threshold)
 
-    # Create a new ROOT file to save the rebinned histograms
-    output = ROOT.TFile(output_file, "RECREATE")
+    if output_file:
+        # Create a new ROOT file to save the rebinned histograms
+        output = ROOT.TFile(output_file, "RECREATE")
 
-    # Rebin all histograms in the file using variable_binning
-    for key in file.GetListOfKeys():
-        hist = key.ReadObj()
-        if isinstance(hist, ROOT.TH1) and (hist_name in hist.GetName()):
-            rebinned_hist = rebin_histogram( hist, variable_binning)
-            rebinned_hist.Write()
-            print(f"Rebinned histogram '{hist.GetName()}'")
+        # Rebin all histograms in the file using variable_binning
+        for key in file.GetListOfKeys():
+            hist = key.ReadObj()
+            if isinstance(hist, ROOT.TH1) and (hist_name in hist.GetName()):
+                rebinned_hist = rebin_histogram( hist, variable_binning)
+                rebinned_hist.Write()
+                print(f"Rebinned histogram '{hist.GetName()}'")
 
-    # Close the ROOT file
-    file.Close()
-    output.Close()
+        # Close the ROOT file
+        file.Close()
+        output.Close()
+        
     return variable_binning
 
 
