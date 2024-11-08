@@ -1,0 +1,42 @@
+# template:
+# - mixed: mixed data index
+# - offset: offset for kfold
+
+main:
+  module: train
+  option:
+    - --max-loaders 10
+    - --max-trainers 3
+
+model:
+  - module: HCR.FvT.baseline.Train
+    option:
+      - --kfolds 3
+      - --kfold-seed FvT random
+      - --kfold-seed-offsets {offset}
+      - --training FixedStep
+      - epoch: 20
+        bs_init: 1024
+      - --finetuning FinetuneStep
+      - epoch: 1
+        bs_init: 16384
+
+dataset:
+  - module: HCR.FvT.TrainDataOnly
+    option:
+      - --no-JCM
+      - --data-source mixed
+      - --data-mixed-samples {mixed}
+      - --friends
+      -
+      - root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/friend/friend.json@@HCR_input
+      - root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/friend/friend.json@@JCM_weight
+      - --max-workers 16
+
+setting:
+  - module: IO
+    option:
+      - output: root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/classifier/FvT/nott/nott-{mixed}/
+  - module: torch.DataLoader
+    option:
+      - num_workers: 4
