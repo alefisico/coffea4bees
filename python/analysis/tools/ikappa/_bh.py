@@ -137,3 +137,22 @@ class BHAxis:
         if over:
             _rebin.append(1)
         return _axis, np.cumsum(_rebin)[:-1]
+
+    @overload
+    def extend(self, axis: StrCategory, *values: str) -> StrCategory: ...
+    @overload
+    def extend(self, axis: IntCategory, *values: int) -> IntCategory: ...
+    def extend(self, axis: HistAxis, *values):
+        ax = axis.traits
+        match axis:
+            case IntCategory() | StrCategory():
+                return type(axis)(
+                    (*axis, *values),
+                    name=axis.name,
+                    label=axis.label,
+                    growth=ax.growth,
+                    overflow=ax.overflow,
+                )
+            case _:
+                raise TypeError(f"Cannot extend <{axis.__class__.__name__}> axis")
+

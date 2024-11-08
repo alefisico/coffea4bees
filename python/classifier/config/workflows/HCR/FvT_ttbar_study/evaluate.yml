@@ -1,0 +1,41 @@
+# template:
+# - mixed: mixed data index
+# - tag: tag of the model
+
+main:
+  module: evaluate
+  option:
+    - --max-evaluators 3
+
+dataset:
+  - module: HCR.FvT.Eval
+    option:
+      - --data-source mixed
+      - --data-mixed-samples {mixed}
+      - --max-workers 8
+      - --friends
+      -
+      - root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/friend/friend.json@@HCR_input
+      - root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/friend/friend.json@@JCM_weight
+
+model:
+  - module: HCR.FvT.baseline.Eval
+    option:
+      - --models
+      - Final
+      - root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/classifier/FvT/nott/{tag}-{mixed}/result.json
+
+analysis:
+  - module: kfold.Merge
+    option:
+      - --name FvT
+      - --workers 3
+      - --clean
+
+setting:
+  - module: IO
+    option:
+      - output: root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/friend/FvT/nott/{tag}-{mixed}/
+  - module: torch.DataLoader
+    option:
+      - num_workers: 4

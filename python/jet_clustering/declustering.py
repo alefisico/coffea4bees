@@ -595,7 +595,7 @@ def make_synthetic_event(input_jets, input_pdfs, declustering_rand_seed=66, chun
     flat_declustered_phi        = np.zeros(n_total_declustered_jets)
     flat_declustered_mass       = np.zeros(n_total_declustered_jets)
     flat_declustered_jet_flavor = np.full (n_total_declustered_jets, "X")
-    flat_declustered_btagDeepFlavB = np.full(n_total_declustered_jets, -1.0)
+    flat_declustered_btagScore  = np.full(n_total_declustered_jets, -1.0)
 
     num_trys = 0
 
@@ -642,7 +642,7 @@ def make_synthetic_event(input_jets, input_pdfs, declustering_rand_seed=66, chun
         flat_declustered_phi       [jet_replace_mask]    = new_jets_flat.phi
         flat_declustered_mass      [jet_replace_mask]    = new_jets_flat.mass
         flat_declustered_jet_flavor[jet_replace_mask]    = new_jets_flat.jet_flavor
-        flat_declustered_btagDeepFlavB[jet_replace_mask] = [float(str(i)) for i in new_jets_flat.btag_string]
+        flat_declustered_btagScore [jet_replace_mask] = [float(str(i)) for i in new_jets_flat.btag_string]
         events_to_decluster_mask[update_indicies_global] = False
         num_trys += 1
 
@@ -655,12 +655,12 @@ def make_synthetic_event(input_jets, input_pdfs, declustering_rand_seed=66, chun
 
     newly_declustered_events = ak.zip(
         {
-            "pt":         ak.unflatten(flat_declustered_pt,         n_declustered_jets_per_event),
-            "eta":        ak.unflatten(flat_declustered_eta,        n_declustered_jets_per_event),
-            "phi":        ak.unflatten(flat_declustered_phi,        n_declustered_jets_per_event),
-            "mass":       ak.unflatten(flat_declustered_mass,       n_declustered_jets_per_event),
-            "jet_flavor": ak.unflatten(flat_declustered_jet_flavor, n_declustered_jets_per_event),
-            "btagDeepFlavB": ak.unflatten(flat_declustered_btagDeepFlavB, n_declustered_jets_per_event),
+            "pt":         ak.unflatten(flat_declustered_pt,             n_declustered_jets_per_event),
+            "eta":        ak.unflatten(flat_declustered_eta,            n_declustered_jets_per_event),
+            "phi":        ak.unflatten(flat_declustered_phi,            n_declustered_jets_per_event),
+            "mass":       ak.unflatten(flat_declustered_mass,           n_declustered_jets_per_event),
+            "jet_flavor": ak.unflatten(flat_declustered_jet_flavor,     n_declustered_jets_per_event),
+            "btagScore":  ak.unflatten(flat_declustered_btagScore,      n_declustered_jets_per_event),
             "jet_flavor_bit": ak.unflatten(flat_declustered_flavor_bit, n_declustered_jets_per_event),
         },
         with_name="PtEtaPhiMLorentzVector",

@@ -1,8 +1,8 @@
 import numpy as np
 import awkward as ak
 from analysis.helpers.common import (
-    mask_event_decision, 
-    drClean, 
+    mask_event_decision,
+    drClean,
     apply_jet_veto_maps
 )
 from analysis.helpers.SvB_helpers import compute_SvB
@@ -42,14 +42,72 @@ def apply_object_selection_4b(event, corrections_metadata, *,
 
     ## Very simplified selection for Run 3
     if '202' in dataset:  ### Run 3 is only with 202X years
-        event['Jet', 'selected_loose'] = (event.Jet.pt >= 10) & (np.abs(event.Jet.eta) <= 4.7)
-        event['Jet', 'selected'] = (event.Jet.pt >= 30) & (np.abs(event.Jet.eta) <= 2.4) & (event.Jet.jetId>=2)
-        event['Jet', 'tagged']       = event.Jet.selected & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['M'])
-        event['Jet', 'bRegCorr']       = event.Jet.PNetRegPtRawCorr * event.Jet.PNetRegPtRawCorrNeutrino
+        event['Muon', 'selected'] = (event.Muon.pt > 10) & (abs(event.Muon.eta) < 2.5) & (event.Muon.pfRelIso04_all < 0.15) & (event.Muon.looseId)
+        event['nMuon_selected'] = ak.sum(event.Muon.selected, axis=1)
+        event['selMuon'] = event.Muon[event.Muon.selected]
+
+        #
+        # Adding electrons (loose electron id)
+        # https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedElectronIdentificationRun2
+        #
+        if 'Electron' in event.fields:
+            event['Electron', 'selected'] = (event.Electron.pt > 15) & (abs(event.Electron.eta) < 2.5) & (event.Electron.pfRelIso03_all < 0.15) & getattr(event.Electron, 'mvaNoIso_WP90' )
+            event['nElectron_selected'] = ak.sum(event.Electron.selected, axis=1)
+            event['selElec'] = event.Electron[event.Electron.selected]
+            selLepton = ak.concatenate( [event.selElec, event.selMuon], axis=1 )
+        else: selLepton = event.selMuon
+
+        # Hack for plotting
         event['Jet', 'puId']       = 10
-        # event['Jet', 'tagged_loose'] = event.Jet.selected & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['L'])
-        event['selJet'] = event.Jet[event.Jet.selected]
+        event['Jet', 'btagScore']  = event.Jet.btagPNetB
+
+        if doLeptonRemoval:
+            event['Jet', 'lepton_cleaned'] = drClean( event.Jet, selLepton )[1]  ### 0 is the collection of jets, 1 is the flag
+        else:
+            event['Jet', 'lepton_cleaned'] = np.full(len(event), True)
+
+
+        # For trigger emulation
+        event['Jet', 'muon_cleaned'] = drClean( event.Jet, event.selMuon )[1]  ### 0 is the collection of jets, 1 is the flag
+        event['Jet', 'ht_selected'] = (event.Jet.pt >= 30) & (np.abs(event.Jet.eta) < 2.4) & event.Jet.muon_cleaned
+
+        event['Jet', 'selected_loose'] = (event.Jet.pt >= 20) & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned & (np.abs(event.Jet.eta) <= 4.7)
+        event['Jet', 'selected'] = (event.Jet.pt >= 40) & (np.abs(event.Jet.eta) <= 2.4) & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
+
+        if override_selected_with_flavor_bit and "jet_flavor_bit" in event.Jet.fields:
+            event['Jet', 'selected'] = (event.Jet.selected) | (event.Jet.jet_flavor_bit == 1)
+            event['Jet', 'selected_loose'] = True
+
+
         event['nJet_selected'] = ak.sum(event.Jet.selected, axis=1)
+
+        event['Jet', 'tagged']       = event.Jet.selected & (event.Jet.btagPNetB >= corrections_metadata['btagWP']['M'])
+        event['Jet', 'tagged_loose'] = event.Jet.selected & (event.Jet.btagPNetB >= corrections_metadata['btagWP']['L'])
+        event['selJet_no_bRegCorr']  = event.Jet[event.Jet.selected]
+
+        if "PNetRegPtRawCorr" in event.Jet.fields:
+            #event['Jet', 'bRegCorr']       = event.Jet.PNetRegPtRawCorr * event.Jet.PNetRegPtRawCorrNeutrino
+            event['Jet', 'bRegCorr']       = event.Jet.PNetRegPtRawCorr # * event.Jet.PNetRegPtRawCorrNeutrino
+
+        #
+        # Apply the bRegCorr to the tagged jets
+        #
+        bRegCorr_factor_flat = copy(ak.flatten(event.Jet.bRegCorr).to_numpy())
+        tagged_flag_flat    = ak.flatten(event.Jet.tagged)
+        bRegCorr_factor_flat[~tagged_flag_flat] = 1.0
+        bRegCorr_factor = ak.unflatten(bRegCorr_factor_flat, ak.num(event.Jet.bRegCorr) )
+        selJet_pvec = event.Jet[event.Jet.selected]  * bRegCorr_factor[event.Jet.selected]
+        selJet_pvec["tagged"] = event.Jet[event.Jet.selected].tagged
+        selJet_pvec["tagged_loose"] = event.Jet[event.Jet.selected].tagged_loose
+        selJet_pvec["btagScore"] = event.Jet[event.Jet.selected].btagScore
+        selJet_pvec["puId"] = event.Jet[event.Jet.selected].puId
+        selJet_pvec["jetId"] = event.Jet[event.Jet.selected].jetId
+
+        if "hadronFlavour" in event.Jet.fields:
+            selJet_pvec["hadronFlavour"] = event.Jet[event.Jet.selected].hadronFlavour
+
+        event['selJet']  = selJet_pvec
+
 
         if '2022' in dataset:
             event['passJetMult'] = ak.where( event.nJet_selected >= 4, True, False)
@@ -67,12 +125,12 @@ def apply_object_selection_4b(event, corrections_metadata, *,
             event['passJetMult'] = ak.where( event.nJet_selected >= 4, True, False)
 
         event['nJet_tagged']         = ak.num(event.Jet[event.Jet.tagged])
-        # event['nJet_tagged_loose']   = ak.num(event.Jet[event.Jet.tagged_loose])
+        event['nJet_tagged_loose']   = ak.num(event.Jet[event.Jet.tagged_loose])
         event['tagJet']              = event.selJet[event.selJet.tagged]
-        # event['tagJet_loose']        = event.Jet[event.Jet.tagged_loose]
+        event['tagJet_loose']        = event.Jet[event.Jet.tagged_loose]
 
         event['fourTag']  = (event['nJet_tagged'] >= 4)
-        event['threeTag']   = (event['nJet_tagged'] == 3) & (event['nJet_selected'] >= 4)
+        event['threeTag']   = (event['nJet_tagged_loose'] == 3) & (event['nJet_selected'] >= 4)
         event['twoTag']   = (event['nJet_tagged'] == 2) & (event['nJet_selected'] >= 4)
 
         event['passPreSel'] = event.twoTag | event.threeTag | event.fourTag
@@ -87,6 +145,13 @@ def apply_object_selection_4b(event, corrections_metadata, *,
         tagCode[event.twoTag] = 2
 
         event['tag'] = tagCode
+
+
+        #  Calculate hT
+        event["hT"] = ak.sum(event.Jet[event.Jet.selected_loose].pt, axis=1)
+        event["hT_selected"] = ak.sum(event.Jet[event.Jet.selected].pt, axis=1)
+        event["hT_trigger"] = ak.sum(event.Jet[event.Jet.ht_selected].pt, axis=1)
+
 
     ## For Run 2
     else:
@@ -109,8 +174,9 @@ def apply_object_selection_4b(event, corrections_metadata, *,
             selLepton = ak.concatenate( [event.selElec, event.selMuon], axis=1 )
         else: selLepton = event.selMuon
 
-
         event['Jet', 'calibration'] = event.Jet.pt / ( event.Jet.pt_raw if 'pt_raw' in event.Jet.fields else ak.full_like(event.Jet.pt, 1) )
+        event['Jet', 'btagScore']  = event.Jet.btagDeepFlavB
+
 
         if doLeptonRemoval:
             event['Jet', 'lepton_cleaned'] = drClean( event.Jet, selLepton )[1]  ### 0 is the collection of jets, 1 is the flag
@@ -146,7 +212,7 @@ def apply_object_selection_4b(event, corrections_metadata, *,
         selJet_pvec = event.Jet[event.Jet.selected]  * bRegCorr_factor[event.Jet.selected]
         selJet_pvec["tagged"] = event.Jet[event.Jet.selected].tagged
         selJet_pvec["tagged_loose"] = event.Jet[event.Jet.selected].tagged_loose
-        selJet_pvec["btagDeepFlavB"] = event.Jet[event.Jet.selected].btagDeepFlavB
+        selJet_pvec["btagScore"] = event.Jet[event.Jet.selected].btagScore
         selJet_pvec["puId"] = event.Jet[event.Jet.selected].puId
         selJet_pvec["jetId"] = event.Jet[event.Jet.selected].jetId
 
@@ -267,14 +333,14 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
     #
     # Build and select boson candidate jets with bRegCorr applied
     #
-    sorted_idx = ak.argsort( selev.Jet.btagDeepFlavB * selev.Jet.selected, axis=1, ascending=False )
+    sorted_idx = ak.argsort( selev.Jet.btagScore * selev.Jet.selected, axis=1, ascending=False )
     canJet_idx = sorted_idx[:, 0:4]
     notCanJet_idx = sorted_idx[:, 4:]
 
     # # apply bJES to canJets
     canJet = selev.Jet[canJet_idx] * selev.Jet[canJet_idx].bRegCorr
     canJet["bRegCorr"] = selev.Jet.bRegCorr[canJet_idx]
-    canJet["btagDeepFlavB"] = selev.Jet.btagDeepFlavB[canJet_idx]
+    canJet["btagScore"] = selev.Jet.btagScore[canJet_idx]
     canJet["puId"] = selev.Jet.puId[canJet_idx]
     canJet["jetId"] = selev.Jet.jetId[canJet_idx]
 
@@ -454,9 +520,9 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
                                     } )
 
     selev["region"] = ( selev["quadJet_selected"].SR * 0b10 + selev["quadJet_selected"].SB * 0b01 )
-    # selev["region"] = ak.zip({ 
+    # selev["region"] = ak.zip({
     #     "SR": selev["quadJet_selected"].SR,
-    #     "SB": selev["quadJet_selected"].SB 
+    #     "SB": selev["quadJet_selected"].SB
     #     })
 
     if run_SvB:

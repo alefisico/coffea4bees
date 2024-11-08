@@ -127,7 +127,11 @@ class HCRModel(Model):
 
     @property
     def hyperparameters(self) -> dict[str]:
-        return {"n ghost batch": self.ghost_batch.get_last_bs()}
+        return {
+            "n ghost batch": (
+                self.ghost_batch.get_last_bs() if self.ghost_batch is not None else 0
+            )
+        }
 
     @property
     def nn(self):

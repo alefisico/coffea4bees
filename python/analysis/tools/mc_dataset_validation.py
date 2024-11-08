@@ -1,12 +1,17 @@
 import logging
 import math
+from argparse import ArgumentParser
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 
-import awkward as ak
+import fsspec
 import numpy as np
 import uproot
+import yaml
+from base_class.utils.argparser import DefaultFormatter
 from dask.delayed import delayed
 from dask.distributed import Client, LocalCluster
+from rich.logging import RichHandler
 
 _NANOAOD = "nanoAOD"
 
@@ -152,19 +157,12 @@ class sanity_check:
 
 
 if __name__ == "__main__":
-    from argparse import ArgumentParser
-    from concurrent.futures import ThreadPoolExecutor
-
-    import fsspec
-    import yaml
-    from rich.logging import RichHandler
-
     logging.basicConfig(
         level=logging.INFO,
         format="%(message)s",
         handlers=[RichHandler(show_time=False, show_path=False, markup=True)],
     )
-    argparser = ArgumentParser()
+    argparser = ArgumentParser(formatter_class=DefaultFormatter)
     argparser.add_argument(
         "-m",
         "--metadatas",

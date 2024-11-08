@@ -183,7 +183,7 @@ class analysis(processor.ProcessorABC):
 
         ## Filtering object and event selection
         selev = event[filters]
-        
+
         ##### Calculate and apply btag scale factors
         if isMC:
             btagSF = correctionlib.CorrectionSet.from_file(self.corrections_metadata[year]['btagSF'])['deepJet_shape']
@@ -196,7 +196,7 @@ class analysis(processor.ProcessorABC):
 
         ## Preselection: keep only three or four tag events
         selev = selev[selev.passPreSel]
-        
+
         selev['wNo3to4DtoM'] = selev.weight
         selev['wNo3to4'] = selev.weight
 
@@ -217,7 +217,7 @@ class analysis(processor.ProcessorABC):
 
 
         ### Build and select boson candidate jets with bRegCorr applied
-        sorted_idx = ak.argsort(selev.Jet.btagDeepFlavB * selev.Jet.selected, axis=1, ascending=False)
+        sorted_idx = ak.argsort(selev.Jet.btagScore * selev.Jet.selected, axis=1, ascending=False)
         canJet_idx    = sorted_idx[:, 0:4]
         notCanJet_idx = sorted_idx[:, 4:]
         canJet = selev.Jet[canJet_idx]
@@ -225,7 +225,7 @@ class analysis(processor.ProcessorABC):
         ### apply bJES to canJets
         canJet = canJet * canJet.bRegCorr
         canJet['bRegCorr'] = selev.Jet.bRegCorr[canJet_idx]
-        canJet['btagDeepFlavB'] = selev.Jet.btagDeepFlavB[canJet_idx]
+        canJet['btagScore'] = selev.Jet.btagScore[canJet_idx]
         canJet['puId'] = selev.Jet.puId[canJet_idx]
         canJet['jetId'] = selev.Jet.puId[canJet_idx]
         if isMC:
@@ -321,7 +321,7 @@ class analysis(processor.ProcessorABC):
 
         ###  Build the top Candiates
         ### sort the jets by btagging
-        selev.selJet  = selev.selJet[ak.argsort(selev.selJet.btagDeepFlavB, axis=1, ascending=False)]
+        selev.selJet  = selev.selJet[ak.argsort(selev.selJet.btagScore, axis=1, ascending=False)]
         selev["nSelJets"] = ak.num(selev.selJet)
         top_cands     = find_tops(selev.selJet)
         rec_top_cands = buildTop(selev.selJet, top_cands)
@@ -340,7 +340,7 @@ class analysis(processor.ProcessorABC):
         ###########################################################
         ######################### Hists ##########################
         #########################################################
-        
+
         fill = Fill(process=processName, year=year, weight='weight')
 
         hist = Collection(process = [processName],
@@ -368,14 +368,14 @@ class analysis(processor.ProcessorABC):
         fill += hist.add('hT_no3to4DtoM',          (100,  0,   1000,  ('hT',          'H_{T} [GeV}')), weight="wNo3to4DtoM")
         fill += hist.add('hT_selected_no3to4DtoM', (100,  0,   1000,  ('hT_selected', 'H_{T} (selected jets) [GeV}')), weight="wNo3to4DtoM")
         fill += LorentzVector.plot_pair(('v4j_no3to4DtoM'), 'v4j', skip=['n', 'dr', 'dphi', 'st'], bins={'mass': (120, 0, 1200)}, weight="wNo3to4DtoM")
-        fill += QuadJetHistsUnsup(('quadJet_selected_no3to4DtoM', 'Selected Quad Jet no3to4DtoM'), 'quadJet_selected', weight = "wNo3to4DtoM")  
-        
-        
+        fill += QuadJetHistsUnsup(('quadJet_selected_no3to4DtoM', 'Selected Quad Jet no3to4DtoM'), 'quadJet_selected', weight = "wNo3to4DtoM")
+
+
         fill += Jet.plot(('selJets', 'Selected Jets'),        'selJet',           skip=['deepjet_c'])
         fill += Jet.plot(('tagJets', 'Tag Jets'),             'tagJet',           skip=['deepjet_c'])
         fill += Jet.plot(('othJets', 'Other Jets'),           'notCanJet_coffea', skip=['deepjet_c'])
         fill += Jet.plot(('canJets', 'Candidate Jets'),        'canJet',           skip=['deepjet_c'])
-        
+
 
         ### fill histograms ###
         # fill.cache(selev)

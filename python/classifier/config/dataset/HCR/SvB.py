@@ -78,15 +78,25 @@ class _Train(CommonTrain):
         return [
             _group.regex(
                 "label:data",
-                (_data_selection(*self.opts.regions), _reweight_bkg),
-                (_mc_selection(*self.opts.regions),),
+                [
+                    lambda: _data_selection(*self.opts.regions),
+                    lambda: _reweight_bkg,
+                ],
+                [
+                    lambda: _mc_selection(*self.opts.regions),
+                ],
             ),
             _group.add_year(),
             _group.add_column(
                 key="kl", pattern=r"kl:(?P<kl>.*)", default=np.nan, dtype=float
             ),
             _group.add_single_label(),
-            _group.regex(r"kl:(2.45|5)", (_remove_outlier,)),
+            _group.regex(
+                r"kl:(2.45|5)",
+                [
+                    lambda: _remove_outlier,
+                ],
+            ),
         ]
 
 

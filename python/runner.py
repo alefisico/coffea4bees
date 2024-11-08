@@ -27,7 +27,7 @@ from rich.pretty import pretty_repr
 from skimmer.processor.picoaod import fetch_metadata, integrity_check, resize
 
 if TYPE_CHECKING:
-    from base_class.root.chain import Friend
+    from base_class.root import Friend
 
 dask.config.set({'logging.distributed': 'error'})
 
@@ -169,9 +169,9 @@ if __name__ == '__main__':
         configs['config']['run_systematics'] = True
 
     if 'all' in args.datasets:
-        metadata['datasets'].pop("mixeddata")   # AGE: this is temporary
-        metadata['datasets'].pop("synthetic_data")   # AGE: this is temporary
-        metadata['datasets'].pop("data_3b_for_mixed")   # AGE: this is temporary
+        metadata['datasets'].pop("mixeddata")  
+        metadata['datasets'].pop("synthetic_data")
+        metadata['datasets'].pop("data_3b_for_mixed")
         args.datasets = metadata['datasets'].keys()
 
     metadata_dataset = {}
@@ -226,6 +226,7 @@ if __name__ == '__main__':
                 #         metadata_dataset[dataset]['genEventSumw'] = metadata['datasets'][dataset][year][config_runner['data_tier']]['sumw']
                 #         meta_files = metadata['datasets'][dataset][year][config_runner['data_tier']]['files']
                 else:
+                    metadata_dataset[dataset]['genEventSumw'] = 1
                     meta_files = metadata['datasets'][dataset][year][config_runner['data_tier']]
 
                 fileset[dataset + "_" + year] = {'files': list_of_files(meta_files, test=args.test, test_files=config_runner['test_files'], allowlist_sites=config_runner['allowlist_sites'], rucio_regex_sites=config_runner['rucio_regex_sites']),
@@ -289,9 +290,9 @@ if __name__ == '__main__':
                 logging.info("\nConfig Data for Mixed ")
 
                 nMixedSamples = metadata['datasets'][dataset]["nSamples"]
-                use_kfold = metadata['datasets'][dataset].get("use_kfold", False)
-                use_ZZinSB = metadata['datasets'][dataset].get("use_ZZinSB", False)
-                use_ZZandZHinSB = metadata['datasets'][dataset].get("use_ZZandZHinSB", False)
+                use_kfold = config_runner.get("use_kfold", False)
+                use_ZZinSB = config_runner.get("use_ZZinSB", False)
+                use_ZZandZHinSB = config_runner.get("use_ZZandZHinSB", False)
                 data_3b_mix_config = metadata['datasets'][dataset][year][config_runner['data_tier']]
                 logging.info(f"\nNumber of mixed samples is {nMixedSamples}")
                 logging.info(f"\nUsing kfolding? {use_kfold}")

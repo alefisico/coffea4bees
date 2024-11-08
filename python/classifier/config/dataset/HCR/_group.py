@@ -14,7 +14,7 @@ class fullmatch:
     def __init__(
         self,
         *groups: Iterable[str],
-        processors: Iterable[DFProcessor],
+        processors: Iterable[Callable[[], DFProcessor]],
         name: str = None,
     ):
         self._gs = (*map(frozenset, groups),)
@@ -23,7 +23,8 @@ class fullmatch:
 
     def __call__(self, groups: frozenset[str]):
         if any(g <= groups for g in self._gs):
-            yield from self._ps
+            for p in self._ps:
+                yield p()
 
 
 @dataclass
@@ -53,14 +54,16 @@ class _regex:
 
 @dataclass
 class regex(_regex):
-    processors: Iterable[DFProcessor]
-    default: Iterable[DFProcessor] = ()
+    processors: Iterable[Callable[[], DFProcessor]]
+    default: Iterable[Callable[[], DFProcessor]] = ()
 
     def any(self, _):
-        yield from self.processors
+        for p in self.processors:
+            yield p()
 
     def none(self):
-        yield from self.default
+        for p in self.default:
+            yield p()
 
 
 @dataclass
