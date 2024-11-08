@@ -28,7 +28,8 @@ from bokeh.models import (
 from bokeh.util.callback_manager import EventCallback
 
 from ._widget import ClickableDiv
-from .config import UI, XRootD, Plot
+from .config import UI, Plot
+from .preset import XRootD
 
 _STYLESHEETS = "stylesheets"
 

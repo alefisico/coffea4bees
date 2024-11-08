@@ -13,6 +13,7 @@ from typing import (
     Collection,
     Generator,
     Iterable,
+    Literal,
     NamedTuple,
     Optional,
 )
@@ -33,6 +34,7 @@ from bokeh.models import (
     Dropdown,
     HoverTool,
     MultiChoice,
+    Renderer,
     Row,
     ScrollBox,
     Select,
@@ -50,7 +52,16 @@ from hist.axis import (
 
 from ._bh import BHAxis, HistAxis
 from ._utils import RGB, Component
-from .config import UI, CouplingScan, Datasets, Palette, Plot, Stacks
+from .config import UI, Plot
+from .preset import (
+    CouplingScan,
+    ModelPatterns,
+    Palette,
+    StackGroups,
+    VisibleGlyphs,
+)
+
+_VisibleGlyphs = set(VisibleGlyphs)
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -217,9 +228,9 @@ def _btn(label: str, *onclick):
     return btn
 
 
-def _checkbox():
+def _checkbox(active: bool = True):
     return Checkbox(
-        active=True,
+        active=active,
         width=Plot.legend_checkbox_width - 10,  # 5px margin
     )
 
@@ -227,6 +238,12 @@ def _checkbox():
 def _palette(n: int):
     selected = cycle(Palette)
     return [next(selected) for _ in range(n)]
+
+
+def _link_checkbox(checkbox: Checkbox, plot: Renderer):
+    checkbox.js_link("active", plot, "visible")
+    if not checkbox.active:
+        plot.visible = False
 
 
 class _KappaMatch:
@@ -286,8 +303,8 @@ class _Matched(ABC):
         return self.index + 1
 
 
-class _KappaModel(_Matched):
-    badge = BADGE(color="#385CB4", text="model")
+class _Model(_Matched):
+    badge = BADGE(color=UI.badge_color["model"], text="model")
     matched: _KappaMatch
 
     def __init__(
@@ -312,7 +329,7 @@ class _KappaModel(_Matched):
             "value",
             CustomJS(
                 args=dict(
-                    patterns={k: list(v) for k, v in Datasets.items()},
+                    patterns={k: list(v) for k, v in ModelPatterns.items()},
                     select=self._dom_model,
                     input=self._dom_patterns,
                 ),
@@ -370,8 +387,8 @@ class _KappaModel(_Matched):
             yield _DataField.basis(field, i), p
 
 
-class _StackGroup(_Matched):
-    badge = BADGE(color="#29855A", text="stack")
+class _Stack(_Matched):
+    badge = BADGE(color=UI.badge_color["stack"], text="stack")
     matched: list[str]
 
     def __init__(
@@ -435,7 +452,7 @@ class _StackGroup(_Matched):
 
 
 class _Ratio(_Matched):  # TODO add ratio plot
-    badge = BADGE(color="#E02D4B", text="ratio")
+    badge = BADGE(color=UI.badge_color["ratio"], text="ratio")
     matched: tuple[str, str]
 
 
@@ -458,14 +475,6 @@ class HistGroup(Component):
         )
         # controls
         self._dom_freeze = _btn("", self._dom_freeze_click)
-        self._dom_add_model = self.shared.icon_button("plus", self._dom_add_model_click)
-        self._dom_remove_model = self.shared.icon_button(
-            "minus", self._dom_remove_model_click
-        )
-        self._dom_add_stack = self.shared.icon_button("plus", self._dom_add_stack_click)
-        self._dom_remove_stack = self.shared.icon_button(
-            "minus", self._dom_remove_stack_click
-        )
         self._dom_cats = Select(options=[*self._categories], align="center")
         self._dom_cats_selected = self.shared.multichoice()
         self._dom_cats_all = _btn(
@@ -494,22 +503,18 @@ class HistGroup(Component):
             ),
         )
         self._controls = [
-            self._dom_add_model,
-            self._dom_remove_model,
-            self._dom_add_stack,
-            self._dom_remove_stack,
             self._dom_cats,
             self._dom_cats_all,
             self._dom_cats_clear,
             self._dom_cats_selected,
         ]
         # models
-        self._models: list[_KappaModel] = []
+        self._models: list[_Model] = []
         self._dom_models = column(
             sizing_mode="stretch_width", background=UI.background_color
         )
         # stacks
-        self._stacks: list[_StackGroup] = []
+        self._stacks: list[_Stack] = []
         self._dom_stacks = column(
             sizing_mode="stretch_width", background=UI.background_color
         )
@@ -519,17 +524,17 @@ class HistGroup(Component):
         self.dom = column(
             row(
                 self._dom_freeze,
-                _label(text="Model:"),
-                self._dom_add_model,
-                self._dom_remove_model,
-                _label(text="Stack:"),
-                self._dom_add_stack,
-                self._dom_remove_stack,
                 _label(text="Axis:"),
                 self._dom_cats,
                 self._dom_cats_all,
                 self._dom_cats_clear,
                 self._dom_cats_selected,
+                sizing_mode="stretch_width",
+            ),
+            row(
+                *self._dom_transform("model"),
+                *self._dom_transform("stack"),
+                *self._dom_transform("ratio"),
                 sizing_mode="stretch_width",
             ),
             self._dom_models,
@@ -544,7 +549,7 @@ class HistGroup(Component):
         self, model: str = "", pattern: str = "", matched: _KappaMatch = None
     ):
         self._models.append(
-            _KappaModel(
+            _Model(
                 index=len(self._models),
                 model=model,
                 pattern=pattern,
@@ -560,7 +565,7 @@ class HistGroup(Component):
 
     def add_stack(self, name: Optional[str] = None, stacks: Iterable[str] = None):
         self._stacks.append(
-            _StackGroup(
+            _Stack(
                 index=len(self._stacks),
                 name=name,
                 processes=self._dom_cats_selected,
@@ -584,7 +589,7 @@ class HistGroup(Component):
         categories = _find_process(self._categories)
         for cat in categories:
             processes = set(self._categories[cat]._choices)
-            for k, vs in Datasets.items():
+            for k, vs in ModelPatterns.items():
                 for v in vs:
                     matched = _KappaMatch(v, processes, k)
                     if matched:
@@ -596,7 +601,7 @@ class HistGroup(Component):
         if not self._models:
             self._setup_categories(categories[0])
             processes = set(self._categories[self.process]._choices)
-        for k, vs in Stacks:
+        for k, vs in StackGroups:
             if set(vs) <= processes:
                 self.add_stack(k, vs)
                 processes -= set(self._stacks[-1])
@@ -604,17 +609,29 @@ class HistGroup(Component):
     def _dom_freeze_click(self):
         self.frozen = not self.frozen
 
-    def _dom_add_model_click(self):
-        self.add_model()
+    def _dom_transform_click(
+        self,
+        transform: str,
+        action: Literal["add", "remove"],
+    ):
+        getattr(self, f"{action}_{transform}")()
 
-    def _dom_remove_model_click(self):
-        self.remove_model()
-
-    def _dom_add_stack_click(self):
-        self.add_stack()
-
-    def _dom_remove_stack_click(self):
-        self.remove_stack()
+    def _dom_transform(self, transform: str):
+        doms = (
+            _label(text=f"{transform.capitalize()}:"),
+            self.shared.icon_button(
+                "plus",
+                partial(self._dom_transform_click, transform=transform, action="add"),
+            ),
+            self.shared.icon_button(
+                "minus",
+                partial(
+                    self._dom_transform_click, transform=transform, action="remove"
+                ),
+            ),
+        )
+        self._controls.extend(doms)
+        return doms
 
     @property
     def process(self):
@@ -671,11 +688,11 @@ class HistGroup(Component):
             tags = f" ({tags})"
 
         # preprocessing
-        models: dict[str, list[_KappaModel]] = defaultdict(list)
+        models: dict[str, list[_Model]] = defaultdict(list)
         for m in self._models:
             if m.matched:
                 models[m.model].append(m)
-        stacks: list[_StackGroup] = []
+        stacks: list[_Stack] = []
         for s in self._stacks:
             if s.matched:
                 stacks.append(s)
@@ -741,11 +758,16 @@ class HistGroup(Component):
             colors[field] = color = RGB(next(palette))
             legends[field] = legend = _checkbox()
             legend_all.js_link("active", legends[field], "active")
-            glyphs[field] = glyph = {}
+            glyphs[field] = glyph = dict[str, Checkbox]()
+            active = False
             for k in _GLYPH_ICONS:
-                glyph[k] = _checkbox()
+                glyph[k] = _checkbox((label, k) in _VisibleGlyphs)
+                active |= glyph[k].active
                 legend.js_link("active", glyph[k], "active")
                 glyph_all[k].js_link("active", glyph[k], "active")
+            if not active:
+                for v in glyph.values():
+                    v.active = True
             glyph_doms.append(row(*glyph.values(), visible=False))
             title = (self.shared.toggle if stack else Div)(
                 text=escape(label),
@@ -861,7 +883,7 @@ legend.width = (legend.width + {Plot.legend_glyph_width} * modifier);
                 **_HIST_FILL,
                 name=_PlotField.label_count(name),
             )
-            glyphs[field]["fill"].js_link("active", fill, "visible")
+            _link_checkbox(glyphs[field]["fill"], fill)
             renderers.append(fill)
             # step glyph
             step_left = fig.step(
@@ -870,14 +892,14 @@ legend.width = (legend.width + {Plot.legend_glyph_width} * modifier);
                 line_color=color.rgba,
                 **_HIST_STEP_LEFT,
             )
-            glyphs[field]["step"].js_link("active", step_left, "visible")
+            _link_checkbox(glyphs[field]["step"], step_left)
             step_right = fig.step(
                 y=field,
                 source=source,
                 line_color=color.rgba,
                 **_HIST_STEP_RIGHT,
             )
-            glyphs[field]["step"].js_link("active", step_right, "visible")
+            _link_checkbox(glyphs[field]["step"], step_right)
             # errorbar glyph
             errorbar_bar = Whisker(
                 upper=_PlotField.upper(field),
@@ -887,19 +909,19 @@ legend.width = (legend.width + {Plot.legend_glyph_width} * modifier);
                 **_HIST_ERRORBAR_BAR,
             )
             fig.add_layout(errorbar_bar)
-            glyphs[field]["errorbar"].js_link("active", errorbar_bar, "visible")
+            _link_checkbox(glyphs[field]["errorbar"], errorbar_bar)
             errorbar_dot = fig.scatter(
                 y=field,
                 source=source,
                 fill_color=color.rgba,
                 **_HIST_ERRORBAR_DOT,
             )
-            glyphs[field]["errorbar"].js_link("active", errorbar_dot, "visible")
+            _link_checkbox(glyphs[field]["errorbar"], errorbar_dot)
 
             return fill, step_left, step_right, errorbar_bar, errorbar_dot
 
         def js_model(
-            model: _KappaModel,
+            model: _Model,
             field: str,
             name: str,
             source: ColumnDataSource,

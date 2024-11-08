@@ -26,6 +26,7 @@ Suitable for:
 ### Load data
 
 ![load](readme/load.png)
+
 From left to right:
 
 - New: overwrite the loaded data. (hists and profiles are treated separately)
@@ -72,6 +73,7 @@ If multiple profiles match the same hist, the `[style]` appear in the later ones
 When a hist file is loaded, a default setup is generated based on the categories and [config](#config).
 
 ![setup](readme/setup.png)
+
 From left to right:
 
 - Setup(Unset): switch between frozen and unfrozen mode.
@@ -174,6 +176,7 @@ From left to right:
 The rendered plots can be saved as a standalone html file.
 
 ![upload](readme/upload.png)
+
 From left to right:
 
 - The path to upload the html file.
