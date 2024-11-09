@@ -115,7 +115,7 @@ def debug_three_tag_events(event, processOutput):
         print(f'\t event jetId: {[i for i in event.Jet.jetId[event.threeTag][iEvent]]}')
         print(f'\t event lepton_cleaned: {[i for i in event.Jet.lepton_cleaned[event.threeTag][iEvent]]}')
         print(f'event tagged: {[i for i in event.Jet.tagged[event.threeTag][iEvent]]}')
-        print(f'event btagDeepFlavB: {[i for i in event.Jet.btagDeepFlavB[event.threeTag][iEvent]]}')
+        print(f'event btagScore: {[i for i in event.Jet.btagScore[event.threeTag][iEvent]]}')
         print("\n")
 
     #out_data["passJetMult_event"  ]    = event["event"][event.threeTag]

@@ -29,7 +29,7 @@ def find_tops_kernel(events_jets, builder):
                 if (ib, ij) not in valid_pair_indices:
                     continue
 
-                if jets[ib].btagDeepFlavB < jets[ij].btagDeepFlavB:
+                if jets[ib].btagScore < jets[ij].btagScore:
                     continue
 
                 for il in range(2, nJets):
@@ -37,7 +37,7 @@ def find_tops_kernel(events_jets, builder):
                         continue
 
                     # don't consider W pairs where j is more b-like than b.
-                    if jets[ij].btagDeepFlavB < jets[il].btagDeepFlavB:
+                    if jets[ij].btagScore < jets[il].btagScore:
                         continue
 
                     builder.begin_tuple(3)
@@ -75,7 +75,7 @@ def find_tops_kernel_slow(events_jets, builder):
                 if (ib, ij) not in valid_pair_indices:
                     continue
 
-                if jets[ib].btagDeepFlavB < jets[ij].btagDeepFlavB:
+                if jets[ib].btagScore < jets[ij].btagScore:
                     continue
 
                 for il in range(2, nJets):
@@ -83,7 +83,7 @@ def find_tops_kernel_slow(events_jets, builder):
                         continue
 
                     # don't consider W pairs where j is more b-like than b.
-                    if jets[ij].btagDeepFlavB < jets[il].btagDeepFlavB:
+                    if jets[ij].btagScore < jets[il].btagScore:
                         continue
 
                     builder.begin_tuple(3)
@@ -102,7 +102,7 @@ def find_tops(events_jets):
     #    raise Exception("typetracer")
     #    # here we fake the output of find_4lep_kernel since
     #    # operating on length-zero data returns the wrong layout!
-    #    ak.typetracer.length_zero_if_typetracer(events_jets.btagDeepFlavB) # force touching of the necessary data
+    #    ak.typetracer.length_zero_if_typetracer(events_jets.btagScore) # force touching of the necessary data
     #    return ak.Array(ak.Array([[(0,0,0)]]).layout.to_typetracer(forget_length=True))
     return find_tops_kernel(events_jets, ak.ArrayBuilder()).snapshot()
 
@@ -130,8 +130,8 @@ def find_tops_no_numba(events_jest):
     j1 = events_jest[combs[:, :, 1]]
     j2 = events_jest[combs[:, :, 2]]
     combs = combs[
-        (j0.btagDeepFlavB >= j1.btagDeepFlavB)
-        & (j1.btagDeepFlavB >= j2.btagDeepFlavB),
+        (j0.btagScore >= j1.btagScore)
+        & (j1.btagScore >= j2.btagScore),
         :,
     ]
     return combs
@@ -143,7 +143,7 @@ def dumpTopCandidateTestVectors(event, logging, chunk, nEvent):
 #    logging.info(f'{chunk} self.input_jet_eta = {[event[iE].Jet[event[iE].Jet.selected].eta.tolist() for iE in range(nEvent)]}')
 #    logging.info(f'{chunk} self.input_jet_phi = {[event[iE].Jet[event[iE].Jet.selected].phi.tolist() for iE in range(nEvent)]}')
 #    logging.info(f'{chunk} self.input_jet_mass = {[event[iE].Jet[event[iE].Jet.selected].mass.tolist() for iE in range(nEvent)]}')
-#    logging.info(f'{chunk} self.input_jet_btagDeepFlavB = {[event[iE].Jet[event[iE].Jet.selected].btagDeepFlavB.tolist() for iE in range(nEvent)]}')
+#    logging.info(f'{chunk} self.input_jet_btagScore = {[event[iE].Jet[event[iE].Jet.selected].btagScore.tolist() for iE in range(nEvent)]}')
 #    logging.info(f'{chunk} self.input_jet_bRegCorr = {[event[iE].Jet[event[iE].Jet.selected].bRegCorr.tolist() for iE in range(nEvent)]}')
 #    logging.info(f'{chunk} self.output_xbW = {[event[iE].xbW for iE in range(nEvent)]}')
 #    logging.info(f'{chunk} self.output_xW = {[event[iE].xW for iE in range(nEvent)]}')
@@ -154,7 +154,7 @@ def dumpTopCandidateTestVectors(event, logging, chunk, nEvent):
     print(f'{chunk} self.input_jet_eta           = {[event[iE].selJet.eta .tolist() for iE in range(nEvent)]}')
     print(f'{chunk} self.input_jet_phi           = {[event[iE].selJet.phi .tolist() for iE in range(nEvent)]}')
     print(f'{chunk} self.input_jet_mass          = {[event[iE].selJet.mass.tolist() for iE in range(nEvent)]}')
-    print(f'{chunk} self.input_jet_btagDeepFlavB = {[event[iE].selJet.btagDeepFlavB.tolist() for iE in range(nEvent)]}')
+    print(f'{chunk} self.input_jet_btagScore = {[event[iE].selJet.btagScore.tolist() for iE in range(nEvent)]}')
     print(f'{chunk} self.input_jet_bRegCorr      = {[event[iE].selJet.bRegCorr.tolist() for iE in range(nEvent)]}')
     print(f'{chunk} self.output_xbW              = {[event[iE].xbW for iE in range(nEvent)]}')
     print(f'{chunk} self.output_xW               = {[event[iE].xW for iE in range(nEvent)]}')
@@ -231,7 +231,7 @@ def adding_top_reco_to_event(event, top_cand):
             "mass" : top_cand.b_mass,
             "puId" : top_cand.b_puId,
             "jetId" : top_cand.b_jetId,
-            'btagDeepFlavB' : top_cand.b_btagDeepFlavB,
+            'btagScore' : top_cand.b_btagScore,
 
             }),
         'W' : ak.zip({
@@ -254,7 +254,7 @@ def adding_top_reco_to_event(event, top_cand):
                     "mass" : top_cand.W_l_mass,
                     "puId" : top_cand.W_l_puId,
                     "jetId" : top_cand.W_l_jetId,
-                    'btagDeepFlavB' : top_cand.W_l_btagDeepFlavB,
+                    'btagScore' : top_cand.W_l_btagScore,
                     }),
                 "j": ak.zip({
                     "pt" : top_cand.W_j_pt,
@@ -263,7 +263,7 @@ def adding_top_reco_to_event(event, top_cand):
                     "mass" : top_cand.W_j_mass,
                     "puId" : top_cand.W_j_puId,
                     "jetId" : top_cand.W_j_jetId,
-                    'btagDeepFlavB' : top_cand.W_j_btagDeepFlavB,
+                    'btagScore' : top_cand.W_j_btagScore,
                     }),
         }),
         "mbW": top_cand.mbW,

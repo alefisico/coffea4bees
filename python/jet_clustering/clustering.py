@@ -209,7 +209,7 @@ def cluster_bs_core(event_jets, distance_function, *, debug=False):
     clustered_jets = []
     splittings = []
 
-    event_jets["btag_string"] = [[str(round(v,3)) for v in sublist] for sublist in event_jets.btagDeepFlavB]
+    event_jets["btag_string"] = [[str(round(v,3)) for v in sublist] for sublist in event_jets.btagScore]
 
 
     nevents = len(event_jets)
