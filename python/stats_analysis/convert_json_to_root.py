@@ -3,6 +3,7 @@ import ROOT
 import argparse
 import logging
 import json
+import array
 ROOT.gROOT.SetBatch(True)
 
 
@@ -31,7 +32,10 @@ def json_to_TH1( coffea_hist, iname, rebin ):
     rHist.SetBinContent( len(centers)+1, overflow_value)
     rHist.SetBinError( len(centers)+1, ROOT.TMath.Sqrt(overflow_variance))
 
-    rHist.Rebin( rebin )
+    if isinstance(rebin, list):
+        rHist = rHist.Rebin( len(rebin)-1, f"{iname}_rebinned", array.array('d', rebin))
+    else:
+        rHist.Rebin( rebin )
 
     return rHist
 
