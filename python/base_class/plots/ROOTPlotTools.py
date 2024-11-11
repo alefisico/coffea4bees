@@ -11,6 +11,8 @@ import random
 import collections
 import json
 from array import array
+from stats_analysis.make_variable_binning import rebin_histogram                        
+
 ROOT.gROOT.SetBatch(True)
 #ROOT.gStyle.SetErrorX(0)
 ROOT.gErrorIgnoreLevel = ROOT.kWarning
@@ -522,9 +524,11 @@ def plot(sampleDictionary, plotParameters,debug=False):
 
                     if isinstance(rebin,list): 
                         varBins = True
-                        hists[f][p], binWidth = do_variable_rebinning(thisHist, rebin)
-                        thisHist = hists[f][p]
-                        thisHist.GetYaxis().SetTitle(plotParameters["yTitle"].replace("Bin",str(int(binWidth))+" GeV"))
+                        # hists[f][p], binWidth = do_variable_rebinning(thisHist, rebin)
+                        # thisHist = hists[f][p]
+                        # thisHist.GetYaxis().SetTitle(plotParameters["yTitle"].replace("Bin",str(int(binWidth))+" GeV"))
+                        thisHist = rebin_histogram(hists[f][p], rebin)
+                        hists[f][p] = thisHist
                         setStyle(thisHist,ratio,plotParameters)
                         x_min = rebin[0]
                         x_max = rebin[-1]
@@ -556,7 +560,9 @@ def plot(sampleDictionary, plotParameters,debug=False):
                             divideByBinWidth(systHists[-1],plotParameters)
                         if rebin:
                             if isinstance(rebin,list): 
-                                systHists[-1], binWidth = do_variable_rebinning(systHists[-1], rebin)
+                                # systHists[-1], binWidth = do_variable_rebinning(systHists[-1], rebin)
+                                systematics[f][p][syst] = rebin_histogram(systHists[-1], rebin)
+                                thisHist = rebin_histogram(thisHist, rebin)
                             else: thisHist.Rebin(int(rebin))
                             
                     #if not in stack, modify errors to include systematic variation

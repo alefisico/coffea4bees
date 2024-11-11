@@ -4,6 +4,7 @@ import os
 import ROOT
 import pickle
 import argparse
+import array
 import collections
 import numpy as np
 import scipy.stats
@@ -12,6 +13,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
 sys.path.insert(0, os.getcwd())
 import base_class.plots.ROOTPlotTools as ROOTPlotTools
+from stats_analysis.make_variable_binning import make_variable_binning, rebin_histogram
 
 CMURED = '#d34031'
 # https://xkcd.com/color/rgb/
@@ -179,7 +181,6 @@ def writeYears(f, input_file_data3b, input_file_TT, input_file_mix, mix, channel
             var_name_multijet = var_name_multijet.replace("_v","ZZandZHinSB_v")
         else:
             var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDef_ps")
-
 
 
         hist_multijet = combine_hists(input_file_data3b,
@@ -402,13 +403,16 @@ class multijetEnsemble:
         self.channel = channel
         self.rebin = rebin
 
-        self.output_yml = open(f'{args.outputPath}/{args.mix_name}/{classifier}/rebin{self.rebin}/{args.region}/{self.channel}/0_variance_results.yml', 'w')
+        self.output_yml = open(f'{output_dir}/0_variance_results.yml', 'w')
 
         self.data_minus_ttbar = f.Get(f'{self.channel}/ttbar')
         self.data_minus_ttbar.SetName(f'data_minus_ttbar_average_{self.channel}')
         self.data_minus_ttbar.Scale(-1)
         self.data_minus_ttbar.Add( f.Get(f'{self.channel}/data_obs') )
-        self.data_minus_ttbar.Rebin(self.rebin)
+        if isinstance(self.rebin, array.array):
+            self.data_minus_ttbar = rebin_histogram(self.data_minus_ttbar, self.rebin)
+        else:
+            self.data_minus_ttbar.Rebin(self.rebin)
 
         self.average = f.Get(f'{self.channel}/multijet')
         self.average.SetName('%s_average_%s' % (self.average.GetName(), self.channel))
@@ -419,23 +423,31 @@ class multijetEnsemble:
 
         print(f"Reading {self.channel}/signal")
         self.signal = f.Get('%s/signal' % self.channel)
-        print(self.signal)
-        self.signal.Rebin(self.rebin)
+        if isinstance(self.rebin, array.array):
+            self.signal = rebin_histogram(self.signal, self.rebin)
+        else:
+            self.signal.Rebin(self.rebin)
 
         self.f = f
         self.f.cd(self.channel)
 
         self.average_rebin = self.average.Clone()
         self.average_rebin.SetName('%s_rebin' % self.average.GetName())
-        self.average_rebin.Rebin(self.rebin)
+        if isinstance(self.rebin, array.array):
+            self.average_rebin = rebin_histogram(self.average_rebin, self.rebin)
+        else:
+            self.average_rebin.Rebin(self.rebin)
 
-        self.models_rebin = [model.Clone() for model in self.models]
+        self.models_rebin = []
 
-        for model in self.models_rebin:
-            model.SetName('%s_rebin' % model.GetName())
+        for imodel in [model.Clone() for model in self.models]:
+            if isinstance(self.rebin, array.array):
+                imodel = rebin_histogram(imodel, self.rebin)
+            else:
+                imodel.SetName('%s_rebin' % model.GetName())
+                imodel.Rebin(self.rebin)
+            self.models_rebin.append(imodel)
 
-        for model in self.models_rebin:
-            model.Rebin(self.rebin)
         self.nBins_rebin = self.average_rebin.GetSize() - 2
 
         self.f.cd(self.channel)
@@ -455,14 +467,13 @@ class multijetEnsemble:
                 error = (self.models_rebin[m].GetBinError(local_bin)**2 + (2 / nMixes)**2)**0.5
                 self.multijet_ensemble_average.SetBinContent(ensemble_bin, self.average_rebin.GetBinContent(local_bin))
                 self.multijet_ensemble_average.SetBinError  (ensemble_bin, error)
-
-                self.multijet_ensemble        .SetBinContent(ensemble_bin, self.models_rebin[m].GetBinContent(local_bin))
-                # self.multijet_ensemble        .SetBinError  (ensemble_bin, self.models_rebin[m].GetBinError  (local_bin))
-                self.multijet_ensemble        .SetBinError  (ensemble_bin, 0.0)
+                self.multijet_ensemble.SetBinContent(ensemble_bin, self.models_rebin[m].GetBinContent(local_bin))
+                # self.multijet_ensemble.SetBinError(ensemble_bin, self.models_rebin[m].GetBinError  (local_bin))
+                self.multijet_ensemble.SetBinError(ensemble_bin, 0.0)
 
                 self.data_minus_ttbar_ensemble.SetBinContent(ensemble_bin, self.data_minus_ttbar.GetBinContent(local_bin))
                 self.data_minus_ttbar_ensemble.SetBinError  (ensemble_bin, self.data_minus_ttbar.GetBinError  (local_bin))
-
+        
         self.f.cd(self.channel)
         self.multijet_ensemble_average.Write()
         self.multijet_ensemble        .Write()
@@ -786,14 +797,9 @@ class multijetEnsemble:
         ax.legend(fontsize='small', loc='best')
 
         rebin_name = '' if rebin else '_no_rebin'
-        if type(self.rebin) is list:
-            figname = f'{args.outputPath}/{args.mix_name}/{classifier}/variable_rebin/{args.region}/{self.channel}/{name}_basis{rebin_name}{basis}.pdf'
-        else:
-            figname = f'{args.outputPath}/{args.mix_name}/{classifier}/rebin{self.rebin}/{args.region}/{self.channel}/{name}_basis{rebin_name}{basis}.pdf'
-
-        # print('fig.savefig( '+figname+' )')
+        
         plt.tight_layout()
-        fig.savefig( figname )
+        fig.savefig( f"{output_dir}/{name}_basis{rebin_name}{basis}.pdf" )
         plt.close(fig)
 
         fig, (ax) = plt.subplots(nrows=1)
@@ -820,13 +826,8 @@ class multijetEnsemble:
 
         ax.legend(fontsize='small', loc='best')
 
-        if type(self.rebin) is list:
-            figname = f'{args.outputPath}/{args.mix_name}/{classifier}/variable_rebin/{args.region}/{self.channel}/{name}_additive_basis{rebin_name}{basis}.pdf'
-        else:
-            figname = f'{args.outputPath}/{args.mix_name}/{classifier}/rebin{self.rebin}/{args.region}/{self.channel}/{name}_additive_basis{rebin_name}{basis}.pdf'
-        # print('fig.savefig( '+figname+' )')
         plt.tight_layout()
-        fig.savefig( figname )
+        fig.savefig( f"{output_dir}/{name}_additive_basis{rebin_name}{basis}.pdf" )
         plt.close(fig)
 
     def plotPearson(self):
@@ -864,13 +865,8 @@ class multijetEnsemble:
         ax.set_ylabel('Adjacent Bin Pearson Correlation (r) and p-value')
         plt.legend(fontsize='small', loc='best')
 
-        if type(self.rebin) is list:
-            name = f'{args.outputPath}/{args.mix_name}/{classifier}/variable_rebin/{args.region}/{self.channel}/0_variance_pearsonr_multijet_variance.pdf'
-        else:
-            name = f'{args.outputPath}/{args.mix_name}/{classifier}/rebin{self.rebin}/{args.region}/{self.channel}/0_variance_pearsonr_multijet_variance.pdf'
-        # print('fig.savefig( ' + name+' )')
         plt.tight_layout()
-        fig.savefig( name )
+        fig.savefig( f"{output_dir}/0_variance_pearsonr_multijet_variance.pdf" )
         plt.close(fig)
 
     def plotFitResults(self, basis, projection=(0, 1)):
@@ -1031,13 +1027,8 @@ class multijetEnsemble:
                              scatterpoints=1)
 
         projection = '_'.join([str(d) for d in projection])
-        if type(self.rebin) is list:
-            name = f'{args.outputPath}/{args.mix_name}/{classifier}/variable_rebin/{args.region}/{self.channel}/0_variance_parameters_basis{basis}_projection_{projection}.pdf'
-        else:
-            name = f'{args.outputPath}/{args.mix_name}/{classifier}/rebin{self.rebin}/{args.region}/{self.channel}/0_variance_parameters_basis{basis}_projection_{projection}.pdf'
-        # print('fig.savefig( ' + name+' )')
         try:
-            fig.savefig( name )
+            fig.savefig( f"{output_dir}/0_variance_parameters_basis{basis}_projection_{projection}.pdf" )
             plt.close(fig)
         except IndexError:
             print('Weird index error...')
@@ -1098,13 +1089,7 @@ class multijetEnsemble:
         (r, p) = self.pearsonr[basis]['total']
 
         plt.legend(fontsize='small', loc='upper left', ncol=2, title='Overall r=%0.2f (%2.0f%s)' % (r, p * 100, '\%'))
-
-        if type(self.rebin) is list:
-            name = f'{args.outputPath}/{args.mix_name}/{classifier}/variable_rebin/{args.region}/{self.channel}/0_variance_pull_correlation_basis{basis}.pdf'
-        else:
-            name = f'{args.outputPath}/{args.mix_name}/{classifier}/rebin{self.rebin}/{args.region}/{self.channel}/0_variance_pull_correlation_basis{basis}.pdf'
-        # print('fig.savefig( ' + name+' )')
-        fig.savefig( name )
+        fig.savefig( f'{output_dir}/0_variance_pull_correlation_basis{basis}.pdf' )
         plt.close(fig)
 
     def plotFit(self, basis):
@@ -1165,10 +1150,7 @@ class multijetEnsemble:
 
         parameters['ratioLines'] = [[self.nBins_rebin * m + 0.5, parameters['rMin'], self.nBins_rebin * m + 0.5, parameters['rMax']] for m in range(1, nMixes + 1)]
 
-        if type(self.rebin) is list:
-            parameters['outputDir'] = f'{args.outputPath}/{args.mix_name}/{classifier}/variable_rebin/{args.region}/{self.channel}/'
-        else:
-            parameters['outputDir'] = f'{args.outputPath}/{args.mix_name}/{classifier}/rebin{self.rebin}/{args.region}/{self.channel}/'
+        parameters['outputDir'] = output_dir
 
         # print('make ',parameters['outputDir']+parameters['outputName']+'.pdf')
         ROOTPlotTools.plot(samples, parameters, debug=False)
@@ -1185,7 +1167,7 @@ class closure:
         self.data_obs.SetName('%s_average_%s' % (self.data_obs.GetName(), self.channel))
         self.nBins = self.data_obs.GetSize() - 2  # GetSize includes under/overflow bins
 
-        self.output_yml = open(f'{args.outputPath}/{args.mix_name}/{classifier}/rebin{self.rebin}/{args.region}/{self.channel}/1_bias_results.yml', 'w')
+        self.output_yml = open(f'{output_dir}/1_bias_results.yml', 'w')
 
         self.doSpuriousSignal = False
         self.spuriousSignal = {}
@@ -1201,10 +1183,16 @@ class closure:
 
         self.ttbar_rebin = self.ttbar.Clone()
         self.ttbar_rebin.SetName('%s_rebin' % self.ttbar.GetName())
-        self.ttbar_rebin.Rebin(self.rebin)
+        if isinstance( self.rebin, array.array ):
+            self.ttbar_rebin = rebin_histogram(self.ttbar_rebin, self.rebin)
+        else:
+            self.ttbar_rebin.Rebin(self.rebin)
         self.data_obs_rebin = self.data_obs.Clone()
         self.data_obs_rebin.SetName('%s_rebin' % self.data_obs.GetName())
-        self.data_obs_rebin.Rebin(self.rebin)
+        if isinstance( self.rebin, array.array ):
+            self.data_obs_rebin = rebin_histogram(self.data_obs_rebin, self.rebin)
+        else:
+            self.data_obs_rebin.Rebin(self.rebin)
         self.nBins_rebin = self.data_obs_rebin.GetSize() - 2
 
         self.bin_width = 1. / self.nBins_rebin
@@ -1789,15 +1777,9 @@ class closure:
         projection = '_'.join([str(d) for d in projection])
 
         if not doSpuriousSignal:
-            if type(self.rebin) is list:
-                name = f'{args.outputPath}/{args.mix_name}/{classifier}/variable_rebin/{args.region}/{self.channel}/1_bais_parameters_basis{basis}_projection_{projection}.pdf'
-            else:
-                name = f'{args.outputPath}/{args.mix_name}/{classifier}/rebin{self.rebin}/{args.region}/{self.channel}/1_bias_parameters_basis{basis}_projection_{projection}.pdf'
+            name = f'{output_dir}/1_basis_parameters_basis{basis}_projection_{projection}.pdf'
         else:
-            if type(self.rebin) is list:
-                name = f'{args.outputPath}/{args.mix_name}/{classifier}/variable_rebin/{args.region}/{self.channel}/2_spurious_signal_parameters_basis{basis}_projection_{projection}.pdf'
-            else:
-                name = f'{args.outputPath}/{args.mix_name}/{classifier}/rebin{self.rebin}/{args.region}/{self.channel}/2_spurious_signal_parameters_basis{basis}_projection_{projection}.pdf'
+            name = f'{output_dir}/2_spurious_signal_parameters_basis{basis}_projection_{projection}.pdf'
 
         # print('fig.savefig( ' + name+' )')
         plt.tight_layout()
@@ -1836,14 +1818,8 @@ class closure:
         ax.set_ylabel('Fit p-value')
         ax.legend(loc='upper left', fontsize='small')
 
-        if type(self.rebin) is list:
-            name = f'{args.outputPath}/{args.mix_name}/{classifier}/variable_rebin/{args.region}/{self.channel}/1_bias_pvalues.pdf'
-        else:
-            name = f'{args.outputPath}/{args.mix_name}/{classifier}/rebin{self.rebin}/{args.region}/{self.channel}/1_bias_pvalues.pdf'
-
-        # print('fig.savefig( ' + name+' )')
         plt.tight_layout()
-        fig.savefig( name )
+        fig.savefig( f'{output_dir}/1_bias_pvalues.pdf' )
         plt.close(fig)
 
     def plotMix(self, mix):
@@ -1905,11 +1881,11 @@ class closure:
                       'ratio'     : True,
                       'rMin'      : 0.9,
                       'rMax'      : 1.1,
-                      'rebin'     : self.rebin,
+                      'rebin'     : list(self.rebin) if isinstance(self.rebin, array.array) else self.rebin,
                       'rTitle'    : 'Data / Bkgd.',
                       'xTitle'    : xTitle,
                       'yTitle'    : 'Events',
-                      'yMax'      : 1.4 * (self.ymax[0]),  # *ymaxScale, # make room to show fit parameters
+                    #   'yMax'      : 1.4 * (self.ymax[0]),  # *ymaxScale, # make room to show fit parameters
                       # 'xleg'      : [0.13, 0.13 + 0.5] if 'SR' in region else ,
                       #  'legendSubText' : ['#bf{Fit:}',
                       #                     '#chi^{2}/DoF = %2.1f/%d = %1.2f'%(self.chi2[basis],self.ndf[basis],self.chi2[basis]/self.ndf[basis]),
@@ -1918,11 +1894,7 @@ class closure:
                       'lstLocation' : 'right',
                       'outputName': 'mix_%s' % (str(mix))}
 
-        if type(self.rebin) is list:
-            parameters['outputDir'] = f'{args.outputPath}/{args.mix_name}/{classifier}/variable_rebin/{args.region}/{self.channel}/'
-        else:
-            parameters['outputDir'] = f'{args.outputPath}/{args.mix_name}/{classifier}/rebin{self.rebin}/{args.region}/{self.channel}/'
-
+        parameters['outputDir'] = output_dir
         # print('make ',parameters['outputDir'] + parameters['outputName']+'.pdf')
         ROOTPlotTools.plot(samples, parameters, debug=False)
 
@@ -2028,10 +2000,7 @@ class closure:
         else:
             parameters['xMax'] = self.nBins_rebin + 0.5 + max(self.multijet.basis - basis, 0)
 
-        if type(self.rebin) is list:
-            parameters['outputDir'] = f'{args.outputPath}/{args.mix_name}/{classifier}/variable_rebin/{args.region}/{self.channel}/'
-        else:
-            parameters['outputDir'] = f'{args.outputPath}/{args.mix_name}/{classifier}/rebin{self.rebin}/{args.region}/{self.channel}/'
+        parameters['outputDir'] = output_dir
 
         # print(f'make {parameters["outputDir"]}{parameters["outputName"]}.pdf')
         ROOTPlotTools.plot(samples, parameters, debug=False)
@@ -2050,10 +2019,6 @@ def run():
     # make multijet ensembles and perform fits
     #
     multijetEnsembles = {}
-    if type(rebin) is list:
-        mkpath(f'{args.outputPath}/{args.mix_name}/{classifier}/variable_rebin/{args.region}/{channel}')
-    else:
-        mkpath(f'{args.outputPath}/{args.mix_name}/{classifier}/rebin{rebin}/{args.region}/{channel}')
     multijetEnsembles[channel] = multijetEnsemble(f, channel)
 
     #
@@ -2083,7 +2048,7 @@ def run():
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description='make JCM weights', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(description='run two stage closure', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--debug',                 action="store_true")
     parser.add_argument('-l', '--lumi',                 dest="lumi",          default="133",    help="Luminosity for MC normalization: units [pb]")
     parser.add_argument('--mix_name', default="3bDvTMix4bDvT")
@@ -2096,6 +2061,7 @@ if __name__ == "__main__":
     #parser.add_argument('--input_file_sig_preUL',   default="analysis/hists/histSignal_preUL.root")
     parser.add_argument('--var', default="SvB_MA_ps_hh", help="SvB_MA_ps_XX or SvB_MA_ps_XX_fine")
     parser.add_argument('--rebin', default=1)
+    parser.add_argument('--variable_binning', action="store_true")
     parser.add_argument('--outputPath', default="stats_analysis/closureFitsNew")
     parser.add_argument('--reuse_inputs', action="store_true")
     parser.add_argument('--skip_closure', dest="run_closure", action="store_false")
@@ -2132,11 +2098,11 @@ if __name__ == "__main__":
         sys.exit(-1)
 
     rebin = int(args.rebin)
+    rebin_label = f"varrebin{rebin}" if args.variable_binning else f"rebin{rebin}"
+    output_dir = f'{args.outputPath}/{args.mix_name}/{classifier}/{rebin_label}/{args.region}/{channel}/'
+    mkpath(output_dir)
 
-    #mkpath(f'{args.outputPath}')
-    mkpath(f'{args.outputPath}/{args.mix_name}/{classifier}/rebin{rebin}/{args.region}/{channel}')
-
-    closure_file_out = f"{args.outputPath}/{args.mix_name}/{classifier}/rebin{rebin}/{args.region}/{channel}/hists_closure_{args.mix_name}_{args.var}_rebin{rebin}.root"
+    closure_file_out = f"{output_dir}/hists_closure_{args.mix_name}_{args.var}_{rebin_label}.root"
     closure_file_out_pkl = closure_file_out.replace("root", "pkl")
     closure_file_out_log = closure_file_out.replace("root", "log")
 
@@ -2163,6 +2129,10 @@ if __name__ == "__main__":
     if args.use_ZZandZHinSB:
         print_log(f"\t Using ZZandZHinSB")
 
+    if args.variable_binning:
+        print(f"Computing variable binning, with threshold {args.rebin}")
+        rebin = make_variable_binning(args.input_file_sig, args.var, int(args.rebin), f"{output_dir}/{os.path.basename(args.input_file_sig).replace('.root', '_rebinned.root')}" )
+        print_log(f"New rebin value is {list(rebin)}")
 
     doPrepInputs = True
     if args.reuse_inputs:
