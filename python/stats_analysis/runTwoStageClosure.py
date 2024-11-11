@@ -345,7 +345,7 @@ def prepInput():
     hist_signal = combine_hists(input_file_sig,
                                 f"{var_name}_PROC_YEAR_fourTag_SR",
                                 years=["UL16_preVFP", "UL16_postVFP", "UL17", "UL18"],
-                                procs=["ZZ4b", "ZH4b"], #"GluGluToHHTo4B_cHHH1", 
+                                procs=["GluGluToHHTo4B_cHHH1", "ZZ4b", "ZH4b"], 
                                 debug=args.debug)
 
 #    hist_signal_preUL = combine_hists(input_file_sig_preUL,
