@@ -345,7 +345,7 @@ def prepInput():
     hist_signal = combine_hists(input_file_sig,
                                 f"{var_name}_PROC_YEAR_fourTag_SR",
                                 years=["UL16_preVFP", "UL16_postVFP", "UL17", "UL18"],
-                                procs=["GluGluToHHTo4B_cHHH1", "ZZ4b", "ZH4b"],
+                                procs=["ZZ4b", "ZH4b"], #"GluGluToHHTo4B_cHHH1", 
                                 debug=args.debug)
 
 #    hist_signal_preUL = combine_hists(input_file_sig_preUL,
@@ -2084,7 +2084,9 @@ if __name__ == "__main__":
         channel = "zz"
     else:
         print(f"ERROR cannot parse chanel from {args.var}")
-        sys.exit(-1)
+        print(f"Defaulting to zz")
+        channel = "zz"
+        # sys.exit(-1)
 
     #
     #  Parse classifier
@@ -2095,7 +2097,9 @@ if __name__ == "__main__":
         classifier = "SvB"
     else:
         print(f"ERROR cannot parse classifier from {args.var}")
-        sys.exit(-1)
+        print(f"Defaulting to SvB")
+        classifier = "SvB"
+        # sys.exit(-1)
 
     rebin = int(args.rebin)
     rebin_label = f"varrebin{rebin}" if args.variable_binning else f"rebin{rebin}"
