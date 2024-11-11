@@ -321,8 +321,12 @@ div.itemize {white-space: break-spaces;}
 
 if __name__ == "__main__":
     argparser = ArgumentParser()
-    argparser.add_argument("files", nargs="+", help="preloaded files", default=[])
-    argparser.add_argument("-p", "--port", type=int, default=10200)
+    argparser.add_argument(
+        "files", metavar="FILE", nargs="+", help="files to preload", default=[]
+    )
+    argparser.add_argument(
+        "-p", "--port", type=int, default=10200, help="port for server"
+    )
     args = argparser.parse_args()
 
     server = Server(

@@ -18,7 +18,10 @@ Suitable for:
 ## Getting started
 
 1. Install the dependencies from `env.yml`.
-2. Run `python -m analysis.tools.ikappa -p PORT`. (default port is 10200)
+2. Run `python -m analysis.tools.ikappa [-p PORT] [FILE ...]`.
+   - `-p PORT`: (optional) the port for the server (default: 10200).
+   - `FILE`: (optional) the files to preload. (see [Load data](#load-data))
+
 3. Open `http://localhost:PORT`.
 
 ## User guide
@@ -241,4 +244,4 @@ A global [config file](config.py) is used to maintain constants, default values 
 ## TODO
 
 - add ratio plot and update readme
-- readme update: ratio, preset, cli
+- readme update: ratio, preset
