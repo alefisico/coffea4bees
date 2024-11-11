@@ -8,6 +8,8 @@ import numpy as np
 import pickle
 from copy import copy, deepcopy
 from convert_json_to_root import json_to_TH1
+from make_variable_binning import make_variable_binning
+
 import CombineHarvester.CombineTools.ch as ch
 ROOT.gROOT.SetBatch(True)
 
@@ -28,7 +30,7 @@ def make_trigger_syst( json_input, root_output, name, rebin ):
 
 def create_combine_root_file( file_to_convert,
                              rebin,
-                             classifier,
+                             var,
                              output_dir,
                              systematics_file,
                              bkg_systematics_file,
@@ -36,6 +38,7 @@ def create_combine_root_file( file_to_convert,
                              make_syst_plots=False,
                              use_preUL=False,
                              add_old_bkg=False,
+                             variable_binning=False,
                              stat_only=False ):
 
     logging.info(f"Reading {metadata_file}")
@@ -50,374 +53,375 @@ def create_combine_root_file( file_to_convert,
         logging.info(f"Reading {bkg_systematics_file}")
         bkg_syst_file = pickle.load(open(bkg_systematics_file, 'rb'))
 
-    for iclass in classifier:
 
-        root_hists = {}
-        mcSysts, closureSysts = [], []
-        ih = iclass+'.ps_hh'
-        for iyear in coffea_hists[ih]['data'].keys():
-            root_hists[iyear] = {}
+    root_hists = {}
+    mcSysts, closureSysts = [], []
+    for iyear in coffea_hists[var]['data'].keys():
+        root_hists[iyear] = {}
 
-            ### For multijets
+        ### For multijets
 
-            root_hists[iyear]['multijet'] = {}
-            root_hists[iyear]['multijet']['nominal'] = json_to_TH1(
-                coffea_hists[ih]['data'][iyear]['threeTag']['SR'], 'multijet_'+iyear+iclass, rebin )
+        root_hists[iyear]['multijet'] = {}
+        root_hists[iyear]['multijet']['nominal'] = json_to_TH1(
+            coffea_hists[var]['data'][iyear]['threeTag']['SR'], 'multijet_'+iyear+var, rebin )
 
-            ### signals
-            for iprocess in coffea_hists[ih].keys():
-                if iprocess not in metadata['processes']['signal']:
-                    root_hists[iyear][iprocess] = json_to_TH1( coffea_hists[ih][iprocess][iyear]['fourTag']['SR'], 
-                                                              f'{iprocess.split("4b")[0]}_{iyear}', rebin )
-                else:
-                    root_hists[iyear][iprocess] = {}
-                    root_hists[iyear][iprocess]['nominal'] = json_to_TH1(
-                        coffea_hists[ih][iprocess][iyear]['fourTag']['SR'], iprocess+'_'+iyear, rebin )
-
-
-            if systematics_file and not use_preUL:
-                for iprocess in metadata['processes']['signal']:
-
-                    root_hists[iyear][iprocess] = {}
-                    for ivar in coffea_hists_syst[ih][iprocess][iyear].keys():
-                        
-                        ## renaming syst
-                        if 'prefire' in ivar: namevar = ivar.replace("CMS_prefire", 'CMS_l1_ecal_prefiring')
-                        else: namevar = ivar
-                        namevar = namevar.replace('_Up', 'Up').replace('_Down', 'Down')
-
-                        ### check for dedicated JESUnc per year, if not conitnue
-                        tmpvar = namevar.replace('Up','').replace('Down', '')
-                        if tmpvar not in mcSysts and not 'nominal' in tmpvar: mcSysts.append( tmpvar )
-                        tmpvar = ''.join(tmpvar[-2:])
-                        if tmpvar.isdigit() and int(tmpvar) != int(iyear[2:4]): continue
-
-                        ### trigger efficiency
-                        if 'triggerEffSFUp' in namevar:
-                            make_trigger_syst(coffea_hists_syst[ih][iprocess][iyear],
-                                              root_hists[iyear][iprocess],
-                                              f'{iprocess}_{ivar}_{iyear}', rebin)
-                        elif 'triggerEffSFDown' in namevar: continue
-                        else:
-                            root_hists[iyear][iprocess][namevar] = json_to_TH1(
-                                                            coffea_hists_syst[ih][iprocess][iyear][ivar]['fourTag']['SR'], 
-                                                            f'{iprocess}_{ivar}_{iyear}', rebin )
-        
-        if systematics_file and use_preUL:
-            iprocess = 'HH4b'
-            for iyear in coffea_hists_syst[ih]['HH4b'].keys():
-                tmpname=iyear.replace('20', 'UL') + ('_preVFP' if '16' in iyear else '')
-                root_hists[tmpname][iprocess] = {}
-                for ivar in coffea_hists_syst[ih][iprocess][iyear].keys():
-                    root_hists[tmpname][iprocess][ivar] = json_to_TH1(
-                        coffea_hists_syst[ih][iprocess][iyear][ivar]['fourTag']['SR'], iprocess+"_"+ivar+"_"+iyear, rebin )
-
-
-        # if "UL16_preVFP" not in metadata['bin']:
-        logging.info("\n Merging UL16_preVFP and UL16_postVFP")
-        for iy in list(root_hists.keys()):
-            if 'UL16_preVFP' in iy:
-                for ip, _ in list(root_hists[iy].items()):
-                    if isinstance(root_hists[iy][ip], dict):
-                        for iv, _ in list(root_hists[iy][ip].items()):
-                            root_hists[iy][ip][iv].Add( root_hists[iy.replace('pre', 'post')][ip][iv] )
-                    elif 'HH4b' in ip:   ### AGE: temporary, HH4b is preUL
-                        continue
-                    else:
-                        root_hists[iy][ip].Add( root_hists[iy.replace('pre', 'post')][ip] )
-                del root_hists[iy.replace('pre', 'post')]
-                root_hists['_'.join(iy.split('_')[:-1])] = root_hists.pop(iy)
-
-        for iy in list(root_hists.keys()):
-            for jy in metadata['bin']:
-                if ''.join(iy[-2:]) == ''.join(jy[-2:]):
-                    root_hists[jy] = root_hists.pop(iy)
-
-
-        if not stat_only:
-            if add_old_bkg:
-                old_bkg_file = ROOT.TFile(f'HIG-22-011/hist_{iclass}.root', 'read' )
-                for channel in metadata['bin']:
-                    for iy in ['UL16', 'UL17', 'UL18']:
-                        for i in ['0', '1', '2']:
-                            for ivar in ['Up', 'Down']:
-                                root_hists[f"{channel}_{iy}"]['multijet'][f'basis{i}_bias_hh{ivar}'] = old_bkg_file.Get(f"hh{iy[-1]}/mj_basis{i}_bias_hh{ivar}")
-                                root_hists[f"{channel}_{iy}"]['multijet'][f'basis{i}_vari_hh{ivar}'] = old_bkg_file.Get(f"hh{iy[-1]}/mj_basis{i}_vari_hh{ivar}")
+        ### signals
+        for iprocess in coffea_hists[var].keys():
+            if iprocess not in metadata['processes']['signal']:
+                root_hists[iyear][iprocess] = json_to_TH1( coffea_hists[var][iprocess][iyear]['fourTag']['SR'], 
+                                                            f'{iprocess.split("4b")[0]}_{iyear}', rebin )
             else:
-                for channel in metadata['bin']:
-                    for ibin, ivalues in bkg_syst_file.items():
-                        bkg_name_syst = f"CMS_bbbb_resolved_bkg_datadriven_{ibin.replace('_hh', '').replace('vari', 'variance')}"
-                        root_hists[channel]['multijet'][bkg_name_syst] = root_hists[channel]['multijet']['nominal'].Clone()
-                        root_hists[channel]['multijet'][bkg_name_syst].SetName(f'multijet_{bkg_name_syst}')
-                        for i in range(len(ivalues)):
-                            nom_val = root_hists[channel]['multijet'][bkg_name_syst].GetBinContent( i+1 )
-                            root_hists[channel]['multijet'][bkg_name_syst].SetBinContent( i+1, nom_val*ivalues[i]  )
+                root_hists[iyear][iprocess] = {}
+                root_hists[iyear][iprocess]['nominal'] = json_to_TH1(
+                    coffea_hists[var][iprocess][iyear]['fourTag']['SR'], iprocess+'_'+iyear, rebin )
 
-            closureSysts = [ i.replace('Up', '') for i in root_hists[next(iter(root_hists))]['multijet'].keys() if i.endswith('Up') ]
 
-        ### renaming histos for final combine inputs
-        for channel in root_hists.keys():
-            tt_label = metadata['processes']['background']['tt']['label']
-            root_hists[channel][tt_label] = root_hists[channel]['data'].Clone()
-            root_hists[channel][tt_label].SetName(tt_label)
-            root_hists[channel][tt_label].SetTitle('tt_'+channel)
-            root_hists[channel][tt_label].Reset()
-            for ip, _ in list(root_hists[channel].items()):
-                if 'TTTo' in ip:
-                    root_hists[channel][tt_label].Add( root_hists[channel][ip] )
-                    del root_hists[channel][ip]
-                elif 'data' in ip:
-                    root_hists[channel]['data_obs'] = root_hists[channel][ip]
-                    root_hists[channel]['data_obs'].SetName("data_obs")
-                    root_hists[channel]['data_obs'].SetTitle("data_obs_"+channel)
-                    del root_hists[channel][ip]
-                elif ip in metadata['processes']['all'].keys():
-                    label = metadata['processes']['signal'][ip]['label'] if ip in metadata['processes']['signal'].keys() else metadata['processes']['background'][ip]['label']
-                    root_hists[channel][label] = deepcopy(root_hists[channel][ip])
-                    if isinstance(root_hists[channel][label], ROOT.TH1F):
-                        root_hists[channel][label].SetName(label)
-                        root_hists[channel][label].SetTitle(f'{label}_{channel}')
+        if systematics_file and not use_preUL:
+            for iprocess in metadata['processes']['signal']:
+
+                root_hists[iyear][iprocess] = {}
+                for ivar in coffea_hists_syst[var][iprocess][iyear].keys():
+                    
+                    ## renaming syst
+                    if 'prefire' in ivar: namevar = ivar.replace("CMS_prefire", 'CMS_l1_ecal_prefiring')
+                    else: namevar = ivar
+                    namevar = namevar.replace('_Up', 'Up').replace('_Down', 'Down')
+
+                    ### check for dedicated JESUnc per year, if not conitnue
+                    tmpvar = namevar.replace('Up','').replace('Down', '')
+                    if tmpvar not in mcSysts and not 'nominal' in tmpvar: mcSysts.append( tmpvar )
+                    tmpvar = ''.join(tmpvar[-2:])
+                    if tmpvar.isdigit() and int(tmpvar) != int(iyear[2:4]): continue
+
+                    ### trigger efficiency
+                    if 'triggerEffSFUp' in namevar:
+                        make_trigger_syst(coffea_hists_syst[var][iprocess][iyear],
+                                            root_hists[iyear][iprocess],
+                                            f'{iprocess}_{ivar}_{iyear}', rebin)
+                    elif 'triggerEffSFDown' in namevar: continue
                     else:
-                        for ivar, _ in root_hists[channel][label].items():
-                            if 'nominal' in ivar: 
-                                root_hists[channel][label][ivar].SetName(label)
-                                root_hists[channel][label][ivar].SetTitle(f'{label}_{channel}')
-                            else: 
-                                root_hists[channel][label][ivar].SetName(f'{label}_{ivar}')
-                                root_hists[channel][label][ivar].SetTitle(f'{label}_{ivar}_{channel}')
-                    if not ip.startswith(label): del root_hists[channel][ip]
-                else: 
-                    logging.info(f"{ip} not in metadata processes, removing from root file.")
-                    del root_hists[channel][ip]
+                        root_hists[iyear][iprocess][namevar] = json_to_TH1(
+                                                        coffea_hists_syst[var][iprocess][iyear][ivar]['fourTag']['SR'], 
+                                                        f'{iprocess}_{ivar}_{iyear}', rebin )
+    
+    if systematics_file and use_preUL:
+        iprocess = 'HH4b'
+        for iyear in coffea_hists_syst[var]['HH4b'].keys():
+            tmpname=iyear.replace('20', 'UL') + ('_preVFP' if '16' in iyear else '')
+            root_hists[tmpname][iprocess] = {}
+            for ivar in coffea_hists_syst[var][iprocess][iyear].keys():
+                root_hists[tmpname][iprocess][ivar] = json_to_TH1(
+                    coffea_hists_syst[var][iprocess][iyear][ivar]['fourTag']['SR'], iprocess+"_"+ivar+"_"+iyear, rebin )
 
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
 
-        output_file = "shapes.root" 
-        output = output_dir+"/"+output_file
-
-        root_file = ROOT.TFile(output, 'recreate')
-
-        for channel in root_hists.keys():
-            root_file.cd()
-            try:
-                directory = root_file.Get(channel)
-                directory.IsZombie()
-            except ReferenceError:
-                directory = root_file.mkdir(channel)
-
-            root_file.cd(channel)
-            for ih_name, ih in root_hists[channel].items():
-                if isinstance(ih, dict):
-                    for _, ih2 in root_hists[channel][ih_name].items():
-                        ih2.Write()
+    # if "UL16_preVFP" not in metadata['bin']:
+    logging.info("\n Merging UL16_preVFP and UL16_postVFP")
+    for iy in list(root_hists.keys()):
+        if 'UL16_preVFP' in iy:
+            for ip, _ in list(root_hists[iy].items()):
+                if isinstance(root_hists[iy][ip], dict):
+                    for iv, _ in list(root_hists[iy][ip].items()):
+                        root_hists[iy][ip][iv].Add( root_hists[iy.replace('pre', 'post')][ip][iv] )
+                elif 'HH4b' in ip:   ### AGE: temporary, HH4b is preUL
+                    continue
                 else:
-                    ih.Write()
-        root_file.Close()
+                    root_hists[iy][ip].Add( root_hists[iy.replace('pre', 'post')][ip] )
+            del root_hists[iy.replace('pre', 'post')]
+            root_hists['_'.join(iy.split('_')[:-1])] = root_hists.pop(iy)
 
-        logging.info("\n File "+output+" created.")
+    for iy in list(root_hists.keys()):
+        for jy in metadata['bin']:
+            if ''.join(iy[-2:]) == ''.join(jy[-2:]):
+                root_hists[jy] = root_hists.pop(iy)
 
 
-        #### make datacard
+    if not stat_only:
+        if add_old_bkg:
+            old_bkg_file = ROOT.TFile(f"HIG-22-011/hist_{var.replace('.', '_')}.root", 'read' )
+            for channel in metadata['bin']:
+                for iy in ['UL16', 'UL17', 'UL18']:
+                    for i in ['0', '1', '2']:
+                        for ivar in ['Up', 'Down']:
+                            root_hists[f"{channel}_{iy}"]['multijet'][f'basis{i}_bias_hh{ivar}'] = old_bkg_file.Get(f"hh{iy[-1]}/mj_basis{i}_bias_hh{ivar}")
+                            root_hists[f"{channel}_{iy}"]['multijet'][f'basis{i}_vari_hh{ivar}'] = old_bkg_file.Get(f"hh{iy[-1]}/mj_basis{i}_vari_hh{ivar}")
+        else:
+            for channel in metadata['bin']:
+                for ibin, ivalues in bkg_syst_file.items():
+                    bkg_name_syst = f"CMS_bbbb_resolved_bkg_datadriven_{ibin.replace('_hh', '').replace('vari', 'variance')}"
+                    root_hists[channel]['multijet'][bkg_name_syst] = root_hists[channel]['multijet']['nominal'].Clone()
+                    root_hists[channel]['multijet'][bkg_name_syst].SetName(f'multijet_{bkg_name_syst}')
+                    for i in range(len(ivalues)):
+                        nom_val = root_hists[channel]['multijet'][bkg_name_syst].GetBinContent( i+1 )
+                        root_hists[channel]['multijet'][bkg_name_syst].SetBinContent( i+1, nom_val*ivalues[i]  )
+
+        closureSysts = [ i.replace('Up', '') for i in root_hists[next(iter(root_hists))]['multijet'].keys() if i.endswith('Up') ]
+
+    ### renaming histos for final combine inputs
+    for channel in root_hists.keys():
+        tt_label = metadata['processes']['background']['tt']['label']
+        root_hists[channel][tt_label] = root_hists[channel]['data'].Clone()
+        root_hists[channel][tt_label].SetName(tt_label)
+        root_hists[channel][tt_label].SetTitle(f"{tt_label}_{channel}")
+        root_hists[channel][tt_label].Reset()
+        for ip, _ in list(root_hists[channel].items()):
+            if 'TTTo' in ip:
+                root_hists[channel][tt_label].Add( root_hists[channel][ip] )
+                del root_hists[channel][ip]
+            elif 'data' in ip:
+                root_hists[channel]['data_obs'] = root_hists[channel][ip]
+                root_hists[channel]['data_obs'].SetName("data_obs")
+                root_hists[channel]['data_obs'].SetTitle("data_obs_"+channel)
+                del root_hists[channel][ip]
+            elif ip in metadata['processes']['all'].keys():
+                label = metadata['processes']['signal'][ip]['label'] if ip in metadata['processes']['signal'].keys() else metadata['processes']['background'][ip]['label']
+                root_hists[channel][label] = deepcopy(root_hists[channel][ip])
+                if isinstance(root_hists[channel][label], ROOT.TH1F):
+                    root_hists[channel][label].SetName(label)
+                    root_hists[channel][label].SetTitle(f'{label}_{channel}')
+                else:
+                    for ivar, _ in root_hists[channel][label].items():
+                        if 'nominal' in ivar: 
+                            root_hists[channel][label][ivar].SetName(label)
+                            root_hists[channel][label][ivar].SetTitle(f'{label}_{channel}')
+                        else: 
+                            root_hists[channel][label][ivar].SetName(f'{label}_{ivar}')
+                            root_hists[channel][label][ivar].SetTitle(f'{label}_{ivar}_{channel}')
+                if not ip.startswith(label): del root_hists[channel][ip]
+            else: 
+                logging.info(f"{ip} not in metadata processes, removing from root file.")
+                del root_hists[channel][ip]
+
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    output_file = "shapes.root" 
+    output = output_dir+"/"+output_file
+
+    root_file = ROOT.TFile(output, 'recreate')
+
+    for channel in root_hists.keys():
+        root_file.cd()
+        try:
+            directory = root_file.Get(channel)
+            directory.IsZombie()
+        except ReferenceError:
+            directory = root_file.mkdir(channel)
+
+        root_file.cd(channel)
+        for ih_name, ih in root_hists[channel].items():
+            if isinstance(ih, dict):
+                for _, ih2 in root_hists[channel][ih_name].items():
+                    ih2.Write()
+            else:
+                ih.Write()
+    root_file.Close()
+
+    logging.info("\n File "+output+" created.")
+
+    #### make datacard
+    for i, ibin in enumerate(metadata['bin']):
+
         cb = ch.CombineHarvester()
         cb.SetVerbosity(3)
 
-        cats = [(i, ibin) for i, ibin in enumerate(metadata['bin'])]
+        cats = [(i, ibin)]
         cb.AddObservations(['*'], [''], ['13TeV'], ['*'], cats)
         cb.AddProcesses(['*'], [''], ['13TeV'], ['*'], [ metadata['processes']['all'][ibin]['label'] for ibin in metadata['processes']['background'] ], cats, False)
         signals = [ metadata['processes']['all'][ibin]['label'] for ibin in metadata['processes']['signal'] ]
         cb.AddProcesses(['*'], [''], ['13TeV'], ['*'], signals, cats, True)
 
         if stat_only:
-            cb.cp().backgrounds().ExtractShapes(
-                output_dir+"/"+output_file, '$BIN/$PROCESS', '')
-            cb.cp().signals().ExtractShapes(
-                output_dir+"/"+output_file, '$BIN/$PROCESS', '')
+            cb.cp().backgrounds().ExtractShapes( output, '$BIN/$PROCESS', '')
+            cb.cp().signals().ExtractShapes( output, '$BIN/$PROCESS', '')
             cb.PrintAll()
-            cb.WriteDatacard(f"{output_dir}/datacard.txt", f"{output_dir}/{output_file}")
+            cb.WriteDatacard(f"{output_dir}/datacard.txt", f"{output_dir}/{ibin}_{output_file}")
 
         else:
             for nuisance in closureSysts:
                 cb.cp().process(["multijet"]).AddSyst(cb, nuisance, 'shape', ch.SystMap()(1.0))
             
             for nuisance in mcSysts:
-                if '2016' in nuisance:
-                    cb.cp().signals().AddSyst(cb, nuisance, 'shape', ch.SystMap('bin')(['HHbb_2016'],1.0))
-                elif '2017' in nuisance:
-                    cb.cp().signals().AddSyst(cb, nuisance, 'shape', ch.SystMap('bin')(['HHbb_2017'],1.0))
-                elif '2018' in nuisance:
-                    cb.cp().signals().AddSyst(cb, nuisance, 'shape', ch.SystMap('bin')(['HHbb_2018'],1.0))
+                if ('2016' in nuisance):
+                    if ('2016' in ibin):
+                        cb.cp().signals().AddSyst(cb, nuisance, 'shape', ch.SystMap('bin')(['HHbb_2016'],1.0))
+                elif ('2017' in nuisance):
+                    if('2017' in ibin):
+                        cb.cp().signals().AddSyst(cb, nuisance, 'shape', ch.SystMap('bin')(['HHbb_2017'],1.0))
+                elif ('2018' in nuisance): 
+                    if ('2018' in ibin):
+                        cb.cp().signals().AddSyst(cb, nuisance, 'shape', ch.SystMap('bin')(['HHbb_2018'],1.0))
                 else:
                     cb.cp().signals().AddSyst(cb, nuisance, 'shape', ch.SystMap()(1.0))
 
             for isyst in metadata['uncertainty']:
-                if '2016' in isyst:
-                    cb.cp().signals().AddSyst(cb, isyst, metadata['uncertainty'][isyst]['type'], ch.SystMap('bin')(['HHbb_2016'],metadata['uncertainty'][isyst]['years']['HHbb_2016']))
-                elif '2017' in isyst:
-                    cb.cp().signals().AddSyst(cb, isyst, metadata['uncertainty'][isyst]['type'], ch.SystMap('bin')(['HHbb_2017'],metadata['uncertainty'][isyst]['years']['HHbb_2017']))
-                elif '2018' in isyst:
-                    cb.cp().signals().AddSyst(cb, isyst, metadata['uncertainty'][isyst]['type'], ch.SystMap('bin')(['HHbb_2018'],metadata['uncertainty'][isyst]['years']['HHbb_2018']))
-                elif '1718' in isyst:
-                    cb.cp().signals().AddSyst(cb, isyst, metadata['uncertainty'][isyst]['type'], ch.SystMap('bin')
-                                            (['HHbb_2017'],metadata['uncertainty'][isyst]['years']['HHbb_2017'])
-                                            (['HHbb_2018'],metadata['uncertainty'][isyst]['years']['HHbb_2018']))
+                if ('2016' in isyst):
+                    if ('2016' in ibin):
+                        cb.cp().signals().AddSyst(cb, isyst, metadata['uncertainty'][isyst]['type'], ch.SystMap('bin')(['HHbb_2016'],metadata['uncertainty'][isyst]['years']['HHbb_2016']))
+                elif ('2017' in isyst):
+                    if ('2017' in ibin):
+                        cb.cp().signals().AddSyst(cb, isyst, metadata['uncertainty'][isyst]['type'], ch.SystMap('bin')(['HHbb_2017'],metadata['uncertainty'][isyst]['years']['HHbb_2017']))
+                elif ('2018' in isyst):
+                    if ('2018' in ibin):
+                        cb.cp().signals().AddSyst(cb, isyst, metadata['uncertainty'][isyst]['type'], ch.SystMap('bin')(['HHbb_2018'],metadata['uncertainty'][isyst]['years']['HHbb_2018']))
+                elif ('1718' in isyst):
+                    if '2017' in ibin or '2018' in ibin:
+                        cb.cp().signals().AddSyst(cb, isyst, metadata['uncertainty'][isyst]['type'], ch.SystMap('bin')
+                                            ([ibin],metadata['uncertainty'][isyst]['years'][ibin]))
                 else:
                     cb.cp().signals().AddSyst(cb, isyst, metadata['uncertainty'][isyst]['type'], ch.SystMap('bin')
-                                            (['HHbb_2016'], metadata['uncertainty'][isyst]['years']['HHbb_2016'])
-                                            (['HHbb_2017'], metadata['uncertainty'][isyst]['years']['HHbb_2017'])
-                                            (['HHbb_2018'], metadata['uncertainty'][isyst]['years']['HHbb_2018'])
+                                            ([ibin], metadata['uncertainty'][isyst]['years'][ibin])
                                             )
 
             cb.cp().backgrounds().ExtractShapes(
-                output_dir+"/"+output_file, '$BIN/$PROCESS', '$BIN/$PROCESS_$SYSTEMATIC')
+                output, '$BIN/$PROCESS', '$BIN/$PROCESS_$SYSTEMATIC')
             cb.cp().signals().ExtractShapes(
-                output_dir+"/"+output_file, '$BIN/$PROCESS', '$BIN/$PROCESS_$SYSTEMATIC')
+                output, '$BIN/$PROCESS', '$BIN/$PROCESS_$SYSTEMATIC')
             
             cb.cp().SetAutoMCStats(cb, 0, 1, 1)
 
             cb.PrintAll()
-            cb.WriteDatacard(f"{output_dir}/datacard.txt", f"{output_dir}/{output_file}")
+            cb.WriteDatacard(f"{output_dir}/datacard_{ibin}.txt", f"{output_dir}/{ibin}_{output_file}")
 
-        if make_syst_plots:
+    if make_syst_plots:
 
-            import cmsstyle as CMS
+        import cmsstyle as CMS
 
-            if not systematics_file:
-                logging.info(f'For make_syst_plots it is require to provide syst_file.')
-                sys.exit(0)
-            if not os.path.exists(f"{output_dir}/plots/"):
-                os.makedirs(f"{output_dir}/plots/")
+        if not systematics_file:
+            logging.info(f'For make_syst_plots it is require to provide syst_file.')
+            sys.exit(0)
+        if not os.path.exists(f"{output_dir}/plots/"):
+            os.makedirs(f"{output_dir}/plots/")
 
-            # Styling
-            CMS.SetExtraText("Preliminary")
-            iPos = 0
-            CMS.SetLumi("")
-            CMS.SetEnergy("13")
-            CMS.ResetAdditionalInfo()
-            nominal_can = CMS.cmsDiCanvas('nominal_can',0,1,0,2500,0.8,1.2,
-                                        "SvB MA Classifier Regressed P(Signal) | P(HH) is largest",
-                                        "Events", 'Data/Pred.',
-                                          square=CMS.kSquare, extraSpace=0.05, iPos=iPos)
-            nominal_can.cd(1)
-            leg = CMS.cmsLeg(0.81, 0.89 - 0.05 * 7, 0.99, 0.89, textSize=0.04)
+        # Styling
+        CMS.SetExtraText("Preliminary")
+        iPos = 0
+        CMS.SetLumi("")
+        CMS.SetEnergy("13")
+        CMS.ResetAdditionalInfo()
+        nominal_can = CMS.cmsDiCanvas('nominal_can',0,1,0,2500,0.8,1.2,
+                                    "SvB MA Classifier Regressed P(Signal) | P(HH) is largest",
+                                    "Events", 'Data/Pred.',
+                                        square=CMS.kSquare, extraSpace=0.05, iPos=iPos)
+        nominal_can.cd(1)
+        leg = CMS.cmsLeg(0.81, 0.89 - 0.05 * 7, 0.99, 0.89, textSize=0.04)
 
-            nom_data = root_hists[next(iter(root_hists))]['data_obs'].Clone('data_obs')
-            nom_data.Reset()
-            nom_tt = nom_data.Clone(metadata['processes']['all']['tt']['label'])
-            nom_mj = nom_data.Clone(metadata['processes']['all']['multijet']['label'])
-            nom_signal = nom_data.Clone(metadata['processes']['all']['GluGluToHHTo4B_cHHH1']['label'])
-            for ichannel in root_hists.keys():
-                nom_data.Add( root_hists[ichannel]['data_obs'] )
-                nom_tt.Add( root_hists[ichannel][metadata['processes']['all']['tt']['label']] )
-                nom_mj.Add( root_hists[ichannel][metadata['processes']['all']['multijet']['label']]['nominal'] )
-                nom_signal.Add( root_hists[ichannel][metadata['processes']['all']['GluGluToHHTo4B_cHHH1']['label']]['nominal'] )
-            nom_signal.Scale( 100 )
+        nom_data = root_hists[next(iter(root_hists))]['data_obs'].Clone('data_obs')
+        nom_data.Reset()
+        nom_tt = nom_data.Clone(metadata['processes']['all']['tt']['label'])
+        nom_mj = nom_data.Clone(metadata['processes']['all']['multijet']['label'])
+        nom_signal = nom_data.Clone(metadata['processes']['all']['GluGluToHHTo4B_cHHH1']['label'])
+        for ichannel in root_hists.keys():
+            nom_data.Add( root_hists[ichannel]['data_obs'] )
+            nom_tt.Add( root_hists[ichannel][metadata['processes']['all']['tt']['label']] )
+            nom_mj.Add( root_hists[ichannel][metadata['processes']['all']['multijet']['label']]['nominal'] )
+            nom_signal.Add( root_hists[ichannel][metadata['processes']['all']['GluGluToHHTo4B_cHHH1']['label']]['nominal'] )
+        nom_signal.Scale( 100 )
 
-            stack = ROOT.THStack()
-            CMS.cmsDrawStack(stack, leg, {'ttbar': nom_tt, 'Multijet': nom_mj }, data= nom_data )
-            #CMS.GetcmsCanvasHist(nominal_can).GetYaxis().SetTitleOffset(1.6)
-            CMS.fixOverlay()
+        stack = ROOT.THStack()
+        CMS.cmsDrawStack(stack, leg, {'ttbar': nom_tt, 'Multijet': nom_mj }, data= nom_data )
+        #CMS.GetcmsCanvasHist(nominal_can).GetYaxis().SetTitleOffset(1.6)
+        CMS.fixOverlay()
 
-            nominal_can.cd(2)
+        nominal_can.cd(2)
 
-            bkg = nom_mj.Clone()
-            bkg.Add( nom_tt )
-            ratio = ROOT.TGraphAsymmErrors()
-            ratio.Divide( nom_data, bkg, 'pois' )
-            CMS.cmsDraw( ratio, 'P', mcolor=ROOT.kBlack )
+        bkg = nom_mj.Clone()
+        bkg.Add( nom_tt )
+        ratio = ROOT.TGraphAsymmErrors()
+        ratio.Divide( nom_data, bkg, 'pois' )
+        CMS.cmsDraw( ratio, 'P', mcolor=ROOT.kBlack )
 
-            ref_line = ROOT.TLine(0, 1, 1, 1)
-            CMS.cmsDrawLine(ref_line, lcolor=ROOT.kBlack, lstyle=ROOT.kDotted)
+        ref_line = ROOT.TLine(0, 1, 1, 1)
+        CMS.cmsDrawLine(ref_line, lcolor=ROOT.kBlack, lstyle=ROOT.kDotted)
 
-            CMS.SaveCanvas( nominal_can, f"{output_dir}/plots/{iclass}_nominal.pdf" )
+        CMS.SaveCanvas( nominal_can, f"{output_dir}/plots/{var.replace('.', '_')}_nominal.pdf" )
 
-            for ichannel in root_hists.keys():
+        for ichannel in root_hists.keys():
 
-                for isyst in closureSysts:
-                    logging.info(f"Plotting {ichannel} {isyst}")
+            for isyst in closureSysts:
+                logging.info(f"Plotting {ichannel} {isyst}")
 
-                    CMS.SetExtraText("Simulation Preliminary")
-                    iPos = 0
-                    CMS.SetLumi("")
-                    CMS.SetEnergy("13")
-                    CMS.ResetAdditionalInfo()
-                    bkg_syst_can = CMS.cmsDiCanvas('bkg_syst_can',0,1,0,1000,0.8,1.2,
-                                                "SvB MA Classifier Regressed P(Signal) | P(HH) is largest",
-                                                "Events", 'Var/Nom',
-                                                  square=CMS.kSquare, extraSpace=0.05, iPos=iPos)
-                    bkg_syst_can.cd(1)
-                    leg = CMS.cmsLeg(0.55, 0.89 - 0.05 * 3, 0.99, 0.89, textSize=0.04)
+                CMS.SetExtraText("Simulation Preliminary")
+                iPos = 0
+                CMS.SetLumi("")
+                CMS.SetEnergy("13")
+                CMS.ResetAdditionalInfo()
+                bkg_syst_can = CMS.cmsDiCanvas('bkg_syst_can',0,1,0,1000,0.8,1.2,
+                                            "SvB MA Classifier Regressed P(Signal) | P(HH) is largest",
+                                            "Events", 'Var/Nom',
+                                                square=CMS.kSquare, extraSpace=0.05, iPos=iPos)
+                bkg_syst_can.cd(1)
+                leg = CMS.cmsLeg(0.55, 0.89 - 0.05 * 3, 0.99, 0.89, textSize=0.04)
 
-                    mj_nominal = root_hists[ichannel][metadata['processes']['all']['multijet']['label']]['nominal'].Clone()
-                    mj_var_up = root_hists[ichannel][metadata['processes']['all']['multijet']['label']][f"{isyst}Up"]
-                    mj_var_dn = root_hists[ichannel][metadata['processes']['all']['multijet']['label']][f"{isyst}Down"]
+                mj_nominal = root_hists[ichannel][metadata['processes']['all']['multijet']['label']]['nominal'].Clone()
+                mj_var_up = root_hists[ichannel][metadata['processes']['all']['multijet']['label']][f"{isyst}Up"]
+                mj_var_dn = root_hists[ichannel][metadata['processes']['all']['multijet']['label']][f"{isyst}Down"]
 
-                    leg.AddEntry( mj_nominal, 'Nominal Multijet', 'lp' )
-                    CMS.cmsDraw( mj_nominal, 'P', mcolor=ROOT.kBlack )
-                    leg.AddEntry( mj_var_up, f'{isyst} Up', 'lp' )
-                    CMS.cmsDraw( mj_var_up, 'hist', fstyle=0, marker=1, alpha=1, lcolor=ROOT.kBlue, fcolor=ROOT.kBlue )
-                    leg.AddEntry( mj_var_dn, f'{isyst} Down', 'lp' )
-                    CMS.cmsDraw( mj_var_dn, 'hist', fstyle=0,  marker=1, alpha=1, lcolor=ROOT.kRed, fcolor=ROOT.kRed )
-                    CMS.fixOverlay()
+                leg.AddEntry( mj_nominal, 'Nominal Multijet', 'lp' )
+                CMS.cmsDraw( mj_nominal, 'P', mcolor=ROOT.kBlack )
+                leg.AddEntry( mj_var_up, f'{isyst} Up', 'lp' )
+                CMS.cmsDraw( mj_var_up, 'hist', fstyle=0, marker=1, alpha=1, lcolor=ROOT.kBlue, fcolor=ROOT.kBlue )
+                leg.AddEntry( mj_var_dn, f'{isyst} Down', 'lp' )
+                CMS.cmsDraw( mj_var_dn, 'hist', fstyle=0,  marker=1, alpha=1, lcolor=ROOT.kRed, fcolor=ROOT.kRed )
+                CMS.fixOverlay()
 
-                    bkg_syst_can.cd(2)
+                bkg_syst_can.cd(2)
 
-                    ratio_up = ROOT.TGraphAsymmErrors()
-                    ratio_up.Divide( mj_nominal, mj_var_up, 'pois' )
-                    CMS.cmsDraw( ratio_up, 'hist', fstyle=0, marker=1, alpha=1, lcolor=ROOT.kBlue, fcolor=ROOT.kBlue )
-                    ratio_dn = ROOT.TGraphAsymmErrors()
-                    ratio_dn.Divide( mj_nominal, mj_var_dn, 'pois' )
-                    CMS.cmsDraw( ratio_dn, 'hist', fstyle=0,  marker=1, alpha=1, lcolor=ROOT.kRed, fcolor=ROOT.kRed )
+                ratio_up = ROOT.TGraphAsymmErrors()
+                ratio_up.Divide( mj_nominal, mj_var_up, 'pois' )
+                CMS.cmsDraw( ratio_up, 'hist', fstyle=0, marker=1, alpha=1, lcolor=ROOT.kBlue, fcolor=ROOT.kBlue )
+                ratio_dn = ROOT.TGraphAsymmErrors()
+                ratio_dn.Divide( mj_nominal, mj_var_dn, 'pois' )
+                CMS.cmsDraw( ratio_dn, 'hist', fstyle=0,  marker=1, alpha=1, lcolor=ROOT.kRed, fcolor=ROOT.kRed )
 
-                    ref_line = ROOT.TLine(0, 1, 1, 1)
-                    CMS.cmsDrawLine(ref_line, lcolor=ROOT.kBlack, lstyle=ROOT.kDotted)
+                ref_line = ROOT.TLine(0, 1, 1, 1)
+                CMS.cmsDrawLine(ref_line, lcolor=ROOT.kBlack, lstyle=ROOT.kDotted)
 
-                    CMS.SaveCanvas( bkg_syst_can, f"{output_dir}/plots/{iclass}_{isyst}_{ichannel}.pdf" )
+                CMS.SaveCanvas( bkg_syst_can, f"{output_dir}/plots/{var.replace('.','_')}_{isyst}_{ichannel}.pdf" )
 
-                for isyst in root_hists[ichannel][metadata['processes']['all']['GluGluToHHTo4B_cHHH1']['label']].keys():
-                    if ('nominal' in isyst) or ('Down' in isyst): continue
-                    isyst = isyst.replace('Up', '')
-                    logging.info(f"Plotting {ichannel} {isyst}")
+            for isyst in root_hists[ichannel][metadata['processes']['all']['GluGluToHHTo4B_cHHH1']['label']].keys():
+                if ('nominal' in isyst) or ('Down' in isyst): continue
+                isyst = isyst.replace('Up', '')
+                logging.info(f"Plotting {ichannel} {isyst}")
 
-                    CMS.SetExtraText("Simulation Preliminary")
-                    iPos = 0
-                    CMS.SetLumi("")
-                    CMS.SetEnergy("13")
-                    CMS.ResetAdditionalInfo()
-                    mc_syst_can = CMS.cmsDiCanvas('bkg_syst_can',0,1,0,3.,0.9,1.1,
-                                                "SvB MA Classifier Regressed P(Signal) | P(HH) is largest",
-                                                "Events", 'Var/Nom',
-                                                  square=CMS.kSquare, extraSpace=0.05, iPos=iPos)
-                    mc_syst_can.cd(1)
-                    leg = CMS.cmsLeg(0.2, 0.89 - 0.05 * 3, 0.4, 0.89, textSize=0.04)
+                CMS.SetExtraText("Simulation Preliminary")
+                iPos = 0
+                CMS.SetLumi("")
+                CMS.SetEnergy("13")
+                CMS.ResetAdditionalInfo()
+                mc_syst_can = CMS.cmsDiCanvas('bkg_syst_can',0,1,0,3.,0.9,1.1,
+                                            "SvB MA Classifier Regressed P(Signal) | P(HH) is largest",
+                                            "Events", 'Var/Nom',
+                                                square=CMS.kSquare, extraSpace=0.05, iPos=iPos)
+                mc_syst_can.cd(1)
+                leg = CMS.cmsLeg(0.2, 0.89 - 0.05 * 3, 0.4, 0.89, textSize=0.04)
 
-                    HH_nominal = root_hists[ichannel][metadata['processes']['all']['GluGluToHHTo4B_cHHH1']['label']]['nominal'].Clone()
-                    HH_var_up = root_hists[ichannel][metadata['processes']['all']['GluGluToHHTo4B_cHHH1']['label']][f"{isyst}Up"]
-                    HH_var_dn = root_hists[ichannel][metadata['processes']['all']['GluGluToHHTo4B_cHHH1']['label']][f"{isyst}Down"]
+                HH_nominal = root_hists[ichannel][metadata['processes']['all']['GluGluToHHTo4B_cHHH1']['label']]['nominal'].Clone()
+                HH_var_up = root_hists[ichannel][metadata['processes']['all']['GluGluToHHTo4B_cHHH1']['label']][f"{isyst}Up"]
+                HH_var_dn = root_hists[ichannel][metadata['processes']['all']['GluGluToHHTo4B_cHHH1']['label']][f"{isyst}Down"]
 
-                    leg.AddEntry( HH_nominal, 'Nominal HH', 'lp' )
-                    CMS.cmsDraw( HH_nominal, 'P', mcolor=ROOT.kBlack )
-                    leg.AddEntry( HH_var_up, f'{isyst} Up', 'lp' )
-                    CMS.cmsDraw( HH_var_up, 'hist', fstyle=0, marker=1, alpha=1, lcolor=ROOT.kBlue, fcolor=ROOT.kBlue )
-                    leg.AddEntry( HH_var_dn, f'{isyst} Down', 'lp' )
-                    CMS.cmsDraw( HH_var_dn, 'hist', fstyle=0,  marker=1, alpha=1, lcolor=ROOT.kRed, fcolor=ROOT.kRed )
-                    CMS.fixOverlay()
+                leg.AddEntry( HH_nominal, 'Nominal HH', 'lp' )
+                CMS.cmsDraw( HH_nominal, 'P', mcolor=ROOT.kBlack )
+                leg.AddEntry( HH_var_up, f'{isyst} Up', 'lp' )
+                CMS.cmsDraw( HH_var_up, 'hist', fstyle=0, marker=1, alpha=1, lcolor=ROOT.kBlue, fcolor=ROOT.kBlue )
+                leg.AddEntry( HH_var_dn, f'{isyst} Down', 'lp' )
+                CMS.cmsDraw( HH_var_dn, 'hist', fstyle=0,  marker=1, alpha=1, lcolor=ROOT.kRed, fcolor=ROOT.kRed )
+                CMS.fixOverlay()
 
-                    mc_syst_can.cd(2)
+                mc_syst_can.cd(2)
 
-                    ratio_up = ROOT.TGraphAsymmErrors()
-                    ratio_up.Divide( HH_nominal, HH_var_up, 'pois' )
-                    CMS.cmsDraw( ratio_up, 'hist', fstyle=0, marker=1, alpha=1, lcolor=ROOT.kBlue )
-                    ratio_dn = ROOT.TGraphAsymmErrors()
-                    ratio_dn.Divide( HH_nominal, HH_var_dn, 'pois' )
-                    CMS.cmsDraw( ratio_dn, 'hist', fstyle=0,  marker=1, alpha=1, lcolor=ROOT.kRed )
+                ratio_up = ROOT.TGraphAsymmErrors()
+                ratio_up.Divide( HH_nominal, HH_var_up, 'pois' )
+                CMS.cmsDraw( ratio_up, 'hist', fstyle=0, marker=1, alpha=1, lcolor=ROOT.kBlue )
+                ratio_dn = ROOT.TGraphAsymmErrors()
+                ratio_dn.Divide( HH_nominal, HH_var_dn, 'pois' )
+                CMS.cmsDraw( ratio_dn, 'hist', fstyle=0,  marker=1, alpha=1, lcolor=ROOT.kRed )
 
-                    ref_line = ROOT.TLine(0, 1, 1, 1)
-                    CMS.cmsDrawLine(ref_line, lcolor=ROOT.kBlack, lstyle=ROOT.kDotted)
+                ref_line = ROOT.TLine(0, 1, 1, 1)
+                CMS.cmsDrawLine(ref_line, lcolor=ROOT.kBlack, lstyle=ROOT.kDotted)
 
-                    CMS.SaveCanvas( mc_syst_can, f"{output_dir}/plots/{iclass}_{isyst}_{ichannel}.pdf" )
+                CMS.SaveCanvas( mc_syst_can, f"{output_dir}/plots/{iclass}_{isyst}_{ichannel}.pdf" )
 
-                    del HH_nominal, HH_var_up, HH_var_dn, ratio_up, ratio_dn
+                del HH_nominal, HH_var_up, HH_var_dn, ratio_up, ratio_dn
 
 
 
@@ -430,22 +434,22 @@ if __name__ == '__main__':
         description='Convert json hist to root TH1F', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-o', '--output_dir', dest="output_dir",
                         default="./datacards/", help='Output directory.')
-    parser.add_argument('--histos', dest="histos", nargs="+",
-                        default=[ ], help='List of histograms to convert')
-    parser.add_argument('--classifier', dest="classifier", nargs="+",
-                        default=["SvB_MA", "SvB"], help='Classifier to make histograms.')
+    parser.add_argument('--var', dest="variable", 
+                        default="SvB_MA.ps_hh_fine", help='Variable to make histograms.')
     parser.add_argument('-f', '--file', dest='file_to_convert',
                         default="histos/histAll.json", help="File with coffea hists")
     parser.add_argument('--make_syst_plots', dest='make_syst_plots', action="store_true",
                         default=False, help="Make a plots for systematics with root objects")
     parser.add_argument('-r', '--rebin', dest='rebin', type=int,
                         default=15, help="Rebin")
+    parser.add_argument('--variable_binning', dest='variable_binning', action="store_true",
+                        default=False, help="Make variable binning based on the amount of signal. (ran make_variable_binning.py)")
     parser.add_argument('-s', '--syst_file', dest='systematics_file',
                         default='', help="File contain systematic variations")
     parser.add_argument('-b', '--bkg_syst_file', dest='bkg_systematics_file',
                         default='', help="File contain background systematic variations")
     parser.add_argument('-m', '--metadata', dest='metadata',
-                        default='metadata/HH4b.yml', help="File contain systematic variations")
+                        default='stats_analysis/metadata/HH4b.yml', help="File contain systematic variations")
     parser.add_argument('--use_preUL', dest='use_preUL', action="store_true",
                         default=False, help="(Temporary. Use preUL samples)")
     parser.add_argument('--add_old_bkg', dest='add_old_bkg', action="store_true",
@@ -458,11 +462,15 @@ if __name__ == '__main__':
     logging.info("\nRunning with these parameters: ")
     logging.info(args)
 
+    if args.variable_binning:
+        logging.info(f"Creating variable binning and using {args.rebin} as threshold for data and signal.")
+        args.rebin = list(make_variable_binning(args.file_to_convert, args.variable, args.rebin, None ))
+    
     logging.info("Creating root files for combine")
     create_combine_root_file(
         args.file_to_convert,
         args.rebin,
-        args.classifier,
+        args.variable,
         args.output_dir,
         args.systematics_file,
         args.bkg_systematics_file,
@@ -470,6 +478,5 @@ if __name__ == '__main__':
         make_syst_plots=args.make_syst_plots,
         use_preUL=args.use_preUL,
         add_old_bkg=args.add_old_bkg,
-        stat_only=args.stat_only
+        stat_only=args.stat_only,
     )
-

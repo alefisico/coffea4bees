@@ -10,6 +10,7 @@ parse_aruments() {
   datacard_folder="$1"
 
   # Set defaults for flags
+  limits=false
   impacts=false
   postfit=false
 
@@ -42,6 +43,24 @@ currentDir=$PWD
 signallabel="ggHH_kl_1_kt_1_hbbhbb"
 # signallabel="ggHH"
 
+run_limits() {
+  local datacard=$1
+  local signallabel=$2
+  local iclass=$3
+
+  text2workspace.py ${datacard}.txt -P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel --PO verbose --PO "map=.*/${signallabel}:r${signallabel}[1,-20,20]" \
+    --PO "map=.*/ggHH_kl_0_kt_1_hbbhbb:rggHH_kl_0_kt_1_hbbhbb[0,0,0]" \
+    --PO "map=.*/ggHH_kl_2p45_kt_1_hbbhbb:rggHH_kl_2p45_kt_1_hbbhbb[0,0,0]" \
+    --PO "map=.*/ggHH_kl_5_kt_1_hbbhbb:rggHH_kl_5_kt_1_hbbhbb[0,0,0]" 
+    # --PO 'map=.*/ZH:rZH[1,-10,10]' --PO 'map=.*/ZZ:rZZ[1,-10,10]'
+  combine -M AsymptoticLimits ${datacard}.root --redefineSignalPOIs r${signallabel} \
+    -n _${iclass} --run blind \
+    --setParameters rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0 \
+    > limits_${datacard}.txt
+  cat limits_${datacard}.txt
+  combineTool.py -M CollectLimits higgsCombine_${iclass}.AsymptoticLimits.mH120.root -o limits_${datacard}.json
+}
+
 for iclass in SvB_MA;
 do
     datacard="datacard"
@@ -49,18 +68,13 @@ do
     cd ${datacard_folder}/
     
     if [ "$limits" = true ]; then
-        
-        text2workspace.py ${datacard}.txt -P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel --PO verbose --PO "map=.*/${signallabel}:r${signallabel}[1,-20,20]" \
-            --PO "map=.*/ggHH_kl_0_kt_1_hbbhbb:rggHH_kl_0_kt_1_hbbhbb[0,0,0]" \
-            --PO "map=.*/ggHH_kl_2p45_kt_1_hbbhbb:rggHH_kl_2p45_kt_1_hbbhbb[0,0,0]" \
-            --PO "map=.*/ggHH_kl_5_kt_1_hbbhbb:rggHH_kl_5_kt_1_hbbhbb[0,0,0]" 
-            # --PO 'map=.*/ZH:rZH[1,-10,10]' --PO 'map=.*/ZZ:rZZ[1,-10,10]'
-        combine -M AsymptoticLimits ${datacard}.root --redefineSignalPOIs r${signallabel} \
-            -n _${iclass} --run blind \
-            --setParameters rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0 \
-            > limits.txt
-        cat limits.txt
-        combineTool.py -M CollectLimits higgsCombine_${iclass}.AsymptoticLimits.mH120.root -o limits.json
+
+        combineCards.py datacard_*txt > ${datacard}.txt
+        run_limits $datacard $signallabel $iclass
+
+        run_limits datacard_HHbb_2016 $signallabel $iclass
+        run_limits datacard_HHbb_2017 $signallabel $iclass
+        run_limits datacard_HHbb_2018 $signallabel $iclass
 
     elif [ "$impacts" = true ]; then
 
