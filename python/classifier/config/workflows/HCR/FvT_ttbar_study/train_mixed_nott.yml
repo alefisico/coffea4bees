@@ -1,6 +1,7 @@
 # template:
 # - mixed: mixed data index
 # - offset: offset for kfold
+# - user: lpc username
 
 main:
   module: train
@@ -29,14 +30,14 @@ dataset:
       - --data-mixed-samples {mixed}
       - --friends
       -
-      - root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/friend/friend.json@@HCR_input
-      - root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/friend/friend.json@@JCM_weight
+      - root://cmseos.fnal.gov//store/user/{user}/HH4b/friend/friend.json@@HCR_input
+      - root://cmseos.fnal.gov//store/user/{user}/HH4b/friend/friend.json@@JCM_weight
       - --max-workers 16
 
 setting:
   - module: IO
     option:
-      - output: root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/classifier/FvT/nott/nott-{mixed}/
+      - output: root://cmseos.fnal.gov//store/user/{user}/HH4b/classifier/FvT/nott/nott-{mixed}/
   - module: torch.DataLoader
     option:
       - num_workers: 4

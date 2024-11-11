@@ -1,6 +1,7 @@
 # template:
 # - mixed: mixed data index
 # - tag: tag of the model
+# - user: lpc username
 
 main:
   module: evaluate
@@ -15,15 +16,15 @@ dataset:
       - --max-workers 8
       - --friends
       -
-      - root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/friend/friend.json@@HCR_input
-      - root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/friend/friend.json@@JCM_weight
+      - root://cmseos.fnal.gov//store/user/{user}/HH4b/friend/friend.json@@HCR_input
+      - root://cmseos.fnal.gov//store/user/{user}/HH4b/friend/friend.json@@JCM_weight
 
 model:
   - module: HCR.FvT.baseline.Eval
     option:
       - --models
       - Final
-      - root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/classifier/FvT/nott/{tag}-{mixed}/result.json
+      - root://cmseos.fnal.gov//store/user/{user}/HH4b/classifier/FvT/nott/{tag}-{mixed}/result.json
 
 analysis:
   - module: kfold.Merge
@@ -35,7 +36,7 @@ analysis:
 setting:
   - module: IO
     option:
-      - output: root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/friend/FvT/nott/{tag}-{mixed}/
+      - output: root://cmseos.fnal.gov//store/user/{user}/HH4b/friend/FvT/nott/{tag}-{mixed}/
   - module: torch.DataLoader
     option:
       - num_workers: 4
