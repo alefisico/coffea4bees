@@ -4,6 +4,7 @@ Interactive plot for kappa framework analysis.
 python -m analysis.tools.ikappa
 """
 
+import importlib
 import json
 from argparse import ArgumentParser
 from functools import partial
@@ -22,6 +23,7 @@ from bokeh.models.dom import HTML
 from bokeh.server.server import Server
 from hist import Hist
 
+from . import preset
 from ._plot import Plotter, Profile
 from ._sanity import sanitized
 from ._utils import BokehLog, Component, ExternalLink, PathInput, SharedDOM
@@ -59,7 +61,7 @@ class Main(Component):
         # data
         self._hists: tuple[dict[str, Hist], set[str]] = {}, None
         self._profiles: list[Profile] = []
-        self._status = {"Histograms": [], "Profiles": []}
+        self._status = {"Histograms": [], "Profiles": [], "Presets": []}
 
         # async
         self._load_queue: Queue[tuple[str, _Actions]] = Queue()
@@ -112,28 +114,36 @@ class Main(Component):
             content.append("<div class='code box'>")
             content.append(
                 "<br>".join(
-                    map(
-                        lambda x: yaml.dump(x, Dumper=_ProfileStyle).replace(
-                            "\n", "<br>"
-                        ),
-                        self._profiles,
-                    )
+                    yaml.dump(line, Dumper=_ProfileStyle).replace("\n", "<br>")
+                    for line in self._profiles
                 )
             )
             content.append("</div>")
-
+        content.append("<b>Presets</b>:<br>")
+        content.append("<div class='code box'>")
+        content.append(
+            "<br>".join(
+                f"{k}: {v}<br>{_INDENT*2}{getattr(preset, k)}"
+                for k, v in preset.__annotations__.items()
+            )
+        )
+        content.append("</div>")
         return "".join(content)
 
     def _load_hist(self):
         while task := self._load_queue.get():
-            path, action = task
-            path = EOS(path)
+            raw, action = task
+            if not raw:
+                continue
+            path = EOS(raw)
             try:
                 match path.extension:
                     case "yml" | "json":
-                        self._ext_profile(path, action)
-                    case _:
+                        self._ext_config(path, action)
+                    case "pkl" | "coffea":
                         self._ext_data(path, action)
+                    case _:
+                        self._ext_preset(raw, raw, action)
             except Exception as e:
                 self.log.error(exec_info=e)
 
@@ -154,7 +164,7 @@ class Main(Component):
     def upload(self, path: str, content: str):
         self._upload_queue.put((path, content))
 
-    def _dom_render(self, doc: Document):
+    def _dom_render(self, doc: Document, files: list[str]):
         doc.title = "i\u03BA"
         self.doc = doc
         self.log = BokehLog(doc)
@@ -188,8 +198,9 @@ div.itemize {white-space: break-spaces;}
 <b>New</b> overwrite the loaded data<br>
 <b>Add</b> extend the loaded data<br>
 <b>File Extensions:</b><br>
-- profiles: <code>.yml .json</code><br>
-- histograms: any other files<br>
+- profiles: <code>list</code> in <code>.yml .json</code><br>
+- preset: <code>dict</code> in <code>.yml .json</code> or python module<br>
+- histograms: <code>.pkl .coffea</code><br>
 """
                 ),
                 position="right",
@@ -219,11 +230,13 @@ div.itemize {white-space: break-spaces;}
                 margin=(0, 0, 5, 0),
             )
         )
+        for file in files:
+            self._load_queue.put((file, "add"))
         self.log("Ready.")
 
     @staticmethod
-    def page(doc):
-        Main()._dom_render(doc)
+    def page(doc, files: list[str]):
+        Main()._dom_render(doc, files=files)
 
     def _update_status(self, *status: str, category: str, action: _Actions):
         match action:
@@ -263,10 +276,9 @@ div.itemize {white-space: break-spaces;}
         self._update_status(str(path), category="Histograms", action=action)
         self.log("Done.")
 
-    def _ext_profile(self, path: EOS, action: _Actions):
+    def _ext_config(self, path: EOS, action: _Actions):
         with fsspec.open(path, mode="rt") as file:
-            self.log(f'[async] Loading profile from "{path}"...')
-            data: list[Profile]
+            self.log(f'[async] Loading data from "{path}"...')
             match ext := path.extension:
                 case "yml":
                     data = yaml.safe_load(file)
@@ -274,26 +286,47 @@ div.itemize {white-space: break-spaces;}
                     data = json.load(file)
                 case _:
                     raise ValueError(f'Unsupported file format "{ext}".')
-            match action:
-                case "new":
-                    self.log("Applying new profile.")
-                    self._profiles = data
-                case "add":
-                    self.log("Adding to existing profile.")
-                    self._profiles.extend(data)
-            self.log("Updating plotter...")
-            self.plotter.update_profile(self._profiles)
+        if isinstance(data, dict):
+            self._ext_preset(path, data, action)
+        elif isinstance(data, list):
+            self._ext_profile(path, data, action)
+        else:
+            raise ValueError(f'Unsupported data type "{type(data)}".')
+
+    def _ext_profile(self, path: EOS, data: list, action: _Actions):
+        match action:
+            case "new":
+                self.log("Resetting profile.")
+                self._profiles = data
+            case "add":
+                self.log("Updating profile.")
+                self._profiles.extend(data)
+        self.log("Updating plotter...")
+        self.plotter.update_profile(self._profiles)
         self._update_status(str(path), category="Profiles", action=action)
+        self.log("Done.")
+
+    def _ext_preset(self, path: EOS, module: str | dict, action: _Actions):
+        if not isinstance(module, dict):
+            module = importlib.import_module(module)
+        if action == "new":
+            self.log("Resetting preset.")
+            preset.reset()
+        self.log("Updating preset.")
+        preset.update(module)
+        self.plotter.update_data(*self._hists)
+        self._update_status(str(path), category="Presets", action=action)
         self.log("Done.")
 
 
 if __name__ == "__main__":
     argparser = ArgumentParser()
+    argparser.add_argument("files", nargs="+", help="preloaded files", default=[])
     argparser.add_argument("-p", "--port", type=int, default=10200)
     args = argparser.parse_args()
 
     server = Server(
-        {"/": Main.page},
+        {"/": partial(Main.page, files=args.files)},
         num_procs=1,
         port=args.port,
     )

@@ -26,3 +26,10 @@ VisibleGlyphs = [
 SelectedHists = [
     r"SvB_MA\.ps.*fine",
 ]
+SelectedCategories = {
+    "failSvB": [True, False],
+    "passSvB": [True, False],
+    "region": [0, 1],
+    "tag": [4],
+    "year": ["UL16_preVFP", "UL16_postVFP", "UL17", "UL18"],
+}

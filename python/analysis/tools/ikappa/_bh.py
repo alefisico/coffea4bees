@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from itertools import repeat
-from typing import overload
+from typing import Iterable, overload
 
 import numpy as np
 import numpy.typing as npt
+from hist import Hist
 from hist.axis import (
     Boolean,
     IntCategory,
@@ -82,6 +83,17 @@ class BHAxis:
                     + _cats
                     + ([f"[{self._ff(cats[-1][-1])}, \u221E)"] if over else [])
                 )
+
+    def indexof(self, axis: HistAxis, bins: Iterable[str | int | bool]) -> list[int]:
+        if isinstance(axis, (Regular, Variable)):
+            return []
+        under, _ = self.flow(axis)
+        cats = [*axis]
+        indices = []
+        for b in bins:
+            if (idx := cats.index(b)) >= 0:
+                indices.append(idx + under)
+        return indices
 
     def rebin(
         self, axis: HistAxis, rebin: int | list[int]

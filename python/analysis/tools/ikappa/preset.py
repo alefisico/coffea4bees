@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from types import ModuleType
     from typing import Literal
 
 #
@@ -58,21 +59,26 @@ VisibleGlyphs: list[tuple[str, Literal["fill", "step", "errorbar"]]]
 # format: regex pattern
 SelectedHists: list[str]
 
+#
+# plotting: selected categories
+#
+# used for initialization
+# format: [category1, category2, ...]
+SelectedCategories: dict[str, list[str | int | bool]]
 
-def update(module: str):
-    if isinstance(module, str):
-        import importlib
 
-        mod = importlib.import_module(module)
-    else:
+def update(module: ModuleType | dict):
+    if isinstance(module, dict):
         mod = module
-    globals().update({k: v for k, v in mod.__dict__.items() if k in __annotations__})
+    else:
+        mod = module.__dict__
+    globals().update({k: v for k, v in mod.items() if k in __annotations__})
 
 
 def reset():
-    from .presets import default
+    from . import _preset_default
 
-    update(default)
+    update(_preset_default)
 
 
 reset()

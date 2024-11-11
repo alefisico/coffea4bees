@@ -86,10 +86,15 @@ class AxisProjector(Component):
             zip(self._choices, range(len(self._choices)))
         )
 
+        if selected := preset.SelectedCategories.get(self._name, []):
+            selected = BHAxis(flow=True).indexof(axis, selected)
+        if not selected:
+            selected = [np.argmax(dist.values(flow=True))]
+
         self.dom = self.shared.nonempty(
             MultiChoice(
                 title=self._label,
-                value=[self._choices[np.argmax(dist.values(flow=True))]],
+                value=[self._choices[i] for i in selected],
                 options=self._choices,
                 sizing_mode="stretch_width",
             )

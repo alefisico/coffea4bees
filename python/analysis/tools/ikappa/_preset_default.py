@@ -26,3 +26,4 @@ Palette = [
 ]
 VisibleGlyphs = []
 SelectedHists = []
+SelectedCategories = {}
