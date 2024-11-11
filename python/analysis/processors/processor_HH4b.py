@@ -533,15 +533,15 @@ class analysis(processor.ProcessorABC):
                                wOverride=np.sum(selev['weight_woTrig'][selev.passDiJetMass] ))
             self._cutFlow.fill("boosted_veto_passPreSel", selev[selev.notInBoostedSel])
             self._cutFlow.fill("boosted_veto_SR", selev[selev.notInBoostedSel & selev["quadJet_selected"].SR])
+            selev['passSR'] = selev.passDiJetMass & selev["quadJet_selected"].SR
+            self._cutFlow.fill( "SR", selev[selev.passSR] )
+            self._cutFlow.fill( "SR_woTrig", selev[selev.passSR],
+                            wOverride=np.sum(selev['weight_woTrig'][selev.passSR] ))
+            selev['passSB'] = selev.passDiJetMass & selev["quadJet_selected"].SB
+            self._cutFlow.fill( "SB", selev[(selev.passDiJetMass & selev["quadJet_selected"].SB)] )
+            self._cutFlow.fill( "SB_woTrig", selev[(selev.passDiJetMass & selev["quadJet_selected"].SB)],
+                            wOverride=np.sum(selev['weight_woTrig'][selev.passSB] ))
             if self.run_SvB:
-                selev['passSR'] = selev.passDiJetMass & selev["quadJet_selected"].SR
-                self._cutFlow.fill( "SR", selev[selev.passSR] )
-                self._cutFlow.fill( "SR_woTrig", selev[selev.passSR],
-                               wOverride=np.sum(selev['weight_woTrig'][selev.passSR] ))
-                selev['passSB'] = selev.passDiJetMass & selev["quadJet_selected"].SB
-                self._cutFlow.fill( "SB", selev[(selev.passDiJetMass & selev["quadJet_selected"].SB)] )
-                self._cutFlow.fill( "SB_woTrig", selev[(selev.passDiJetMass & selev["quadJet_selected"].SB)],
-                               wOverride=np.sum(selev['weight_woTrig'][selev.passSB] ))
                 self._cutFlow.fill("passSvB", selev[selev.passSvB])
                 self._cutFlow.fill("passSvB_woTrig", selev[selev.passSvB],
                                wOverride=np.sum(selev['weight_woTrig'][selev.passSvB] ))
