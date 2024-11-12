@@ -1,8 +1,8 @@
 import copy
-import json
 import logging
 import warnings
 from collections import OrderedDict
+from typing import TypedDict
 
 import awkward as ak
 import numpy as np
@@ -33,8 +33,8 @@ from analysis.helpers.topCandReconstruction import (
     find_tops,
     find_tops_slow,
 )
-from base_class.root import Chunk, Friend, TreeReader
 from base_class.hist import Fill
+from base_class.root import Chunk, Friend, TreeReader
 from coffea import processor
 from coffea.analysis_tools import PackedSelection
 from coffea.nanoevents import NanoAODSchema, NanoEventsFactory
@@ -46,6 +46,11 @@ from coffea.util import load
 Fill.allow_missing = True
 NanoAODSchema.warn_missing_crossrefs = False
 warnings.filterwarnings("ignore")
+
+class _FriendTemplate(TypedDict):
+    name: str
+    path: str
+    keys: str | list[dict[str, str]]
 
 class analysis(processor.ProcessorABC):
     def __init__(
@@ -70,7 +75,8 @@ class analysis(processor.ProcessorABC):
         make_friend_JCM_weight: str = None,
         make_friend_FvT_weight: str = None,
         subtract_ttbar_with_weights: bool = False,
-        friends: dict[str, str] = None
+        friends: dict[str, str] = None,
+        friend_templates: list[_FriendTemplate] = None,
     ):
 
         logging.debug("\nInitialize Analysis Processor")
@@ -108,6 +114,17 @@ class analysis(processor.ProcessorABC):
 
             for name, path in friends.items():
                 self.friends[name] = Friend.from_json(parse.mapping(path, "file"))
+        if friend_templates:
+            for template in friend_templates:
+                name = template["name"]
+                path = template["path"]
+                keys = template["keys"]
+                if isinstance(keys, str):
+                    keys = eval(keys)
+                for key in keys:
+                    self.friends[name.format(**key)] = Friend.from_json(
+                        parse.mapping(path.format(**key), "file")
+                    )
 
         self.cutFlowCuts = [
             "all",
@@ -171,6 +188,10 @@ class analysis(processor.ProcessorABC):
             if "FvT" in self.friends:
                 from ..helpers.load_friend import rename_FvT_friend
                 event["FvT"] = rename_FvT_friend(target, self.friends["FvT"])
+                if self.config["isDataForMixed"] or self.config["isTTForMixed"]:
+                    for _FvT_name in event.metadata["FvT_names"]:
+                        event[_FvT_name] = rename_FvT_friend(target, self.friends[_FvT_name])
+                        event[_FvT_name, _FvT_name] = event[_FvT_name].FvT
             else:
                 # TODO: remove backward compatibility in the future
                 if self.config["isMixedData"]:
