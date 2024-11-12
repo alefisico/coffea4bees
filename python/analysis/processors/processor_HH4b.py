@@ -1,51 +1,49 @@
+import copy
+import json
 import logging
 import warnings
+from collections import OrderedDict
 
 import awkward as ak
 import numpy as np
-import yaml, json
-import copy
-from collections import OrderedDict
-
-from analysis.helpers.processor_config import processor_config
+import yaml
 from analysis.helpers.common import apply_jerc_corrections, update_events
-
+from analysis.helpers.cutflow import cutFlow
+from analysis.helpers.event_weights import (
+    add_btagweights,
+    add_pseudotagweights,
+    add_weights,
+)
 from analysis.helpers.filling_histograms import (
     filling_nominal_histograms,
-    filling_syst_histograms
+    filling_syst_histograms,
 )
-from analysis.helpers.event_weights import (
-    add_weights,
-    add_pseudotagweights,
-    add_btagweights,
-)
-from analysis.helpers.cutflow import cutFlow
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
-from analysis.helpers.SvB_helpers import setSvBVars, subtract_ttbar_with_SvB
 from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
+from analysis.helpers.processor_config import processor_config
 from analysis.helpers.selection_basic_4b import (
     apply_event_selection_4b,
     apply_object_selection_4b,
     create_cand_jet_dijet_quadjet,
 )
+from analysis.helpers.SvB_helpers import setSvBVars, subtract_ttbar_with_SvB
 from analysis.helpers.topCandReconstruction import (
+    adding_top_reco_to_event,
     buildTop,
-    dumpTopCandidateTestVectors,
     find_tops,
     find_tops_slow,
-    adding_top_reco_to_event,
 )
-from base_class.root import Chunk, TreeReader, Friend
-from base_class.utils.json import DefaultEncoder
+from base_class.root import Chunk, Friend, TreeReader
+from base_class.hist import Fill
 from coffea import processor
 from coffea.analysis_tools import PackedSelection
 from coffea.nanoevents import NanoAODSchema, NanoEventsFactory
 from coffea.util import load
 
-
 #
 # Setup
 #
+Fill.allow_missing = True
 NanoAODSchema.warn_missing_crossrefs = False
 warnings.filterwarnings("ignore")
 
@@ -74,6 +72,7 @@ class analysis(processor.ProcessorABC):
         subtract_ttbar_with_weights: bool = False,
         friend_trigWeight: str = None,
         friend_top_reconstruction: str = None,
+        friends: dict[str, str] = None
     ):
 
         logging.debug("\nInitialize Analysis Processor")
@@ -107,6 +106,15 @@ class analysis(processor.ProcessorABC):
             with open(friend_trigWeight, 'r') as f:
                 self.friend_trigWeight = Friend.from_json(json.load(f)['trigWeight'])
 
+        # the following friends may be used:
+        # - FvT
+        self.friends: dict[str, Friend] = {}
+        if self.friends:
+            from classifier.task import parse
+
+            for name, path in friends.items():
+                self.friends[name] = Friend.from_json(parse.mapping(path, "file"))
+
         self.cutFlowCuts = [
             "all",
             "passHLT",
@@ -136,6 +144,9 @@ class analysis(processor.ProcessorABC):
         self.year_label = self.corrections_metadata[self.year]['year_label']
         self.processName = event.metadata['processName']
 
+        ### target is for new friend trees
+        target = Chunk.from_coffea_events(event)
+
         if self.top_reconstruction_override:
             self.top_reconstruction = self.top_reconstruction_override
             logging.info(f"top_reconstruction overridden to {self.top_reconstruction}\n")
@@ -163,58 +174,63 @@ class analysis(processor.ProcessorABC):
         #
         path = fname.replace(fname.split("/")[-1], "")
         if self.apply_FvT:
-            if self.config["isMixedData"]:
-
-                FvT_name = event.metadata["FvT_name"]
-                event["FvT"] = getattr( NanoEventsFactory.from_root( f'{event.metadata["FvT_file"]}', entry_start=self.estart, entry_stop=self.estop, schemaclass=FriendTreeSchema, ).events(),
-                                        FvT_name )
-
-                event["FvT", "FvT"] = getattr(event["FvT"], FvT_name)
-
-                #
-                # Dummies
-                #
-                event["FvT", "q_1234"] = np.full(len(event), -1, dtype=int)
-                event["FvT", "q_1324"] = np.full(len(event), -1, dtype=int)
-                event["FvT", "q_1423"] = np.full(len(event), -1, dtype=int)
-
-            elif self.config["isDataForMixed"] or self.config["isTTForMixed"]:
-
-                #
-                # Use the first to define the FvT weights
-                #
-                event["FvT"] = getattr( NanoEventsFactory.from_root( f'{event.metadata["FvT_files"][0]}', entry_start=self.estart, entry_stop=self.estop, schemaclass=FriendTreeSchema, ).events(),
-                                        event.metadata["FvT_names"][0], )
-
-                event["FvT", "FvT"] = getattr( event["FvT"], event.metadata["FvT_names"][0] )
-
-                #
-                # Dummies
-                #
-                event["FvT", "q_1234"] = np.full(len(event), -1, dtype=int)
-                event["FvT", "q_1324"] = np.full(len(event), -1, dtype=int)
-                event["FvT", "q_1423"] = np.full(len(event), -1, dtype=int)
-
-                for _FvT_name, _FvT_file in zip( event.metadata["FvT_names"], event.metadata["FvT_files"] ):
-
-                    event[_FvT_name] = getattr( NanoEventsFactory.from_root( f"{_FvT_file}", entry_start=self.estart, entry_stop=self.estop, schemaclass=FriendTreeSchema, ).events(),
-                                                _FvT_name, )
-
-                    event[_FvT_name, _FvT_name] = getattr(event[_FvT_name], _FvT_name)
-
+            if "FvT" in self.friends:
+                from ..helpers.load_friend import rename_FvT_friend
+                event["FvT"] = rename_FvT_friend(target, self.friends["FvT"])
             else:
-                event["FvT"] = ( NanoEventsFactory.from_root( f'{fname.replace("picoAOD", "FvT")}', entry_start=self.estart, entry_stop=self.estop, schemaclass=FriendTreeSchema).events().FvT )
+                # TODO: remove backward compatibility in the future
+                if self.config["isMixedData"]:
 
-            if "std" not in event.FvT.fields:
-                event["FvT", "std"] = np.ones(len(event))
-                event["FvT", "pt4"] = np.ones(len(event))
-                event["FvT", "pt3"] = np.ones(len(event))
-                event["FvT", "pd4"] = np.ones(len(event))
-                event["FvT", "pd3"] = np.ones(len(event))
+                    FvT_name = event.metadata["FvT_name"]
+                    event["FvT"] = getattr( NanoEventsFactory.from_root( f'{event.metadata["FvT_file"]}', entry_start=self.estart, entry_stop=self.estop, schemaclass=FriendTreeSchema, ).events(),
+                                            FvT_name )
 
-            event["FvT", "frac_err"] = event["FvT"].std / event["FvT"].FvT
-            if not ak.all(event.FvT.event == event.event):
-                raise ValueError("ERROR: FvT events do not match events ttree")
+                    event["FvT", "FvT"] = getattr(event["FvT"], FvT_name)
+
+                    #
+                    # Dummies
+                    #
+                    event["FvT", "q_1234"] = np.full(len(event), -1, dtype=int)
+                    event["FvT", "q_1324"] = np.full(len(event), -1, dtype=int)
+                    event["FvT", "q_1423"] = np.full(len(event), -1, dtype=int)
+
+                elif self.config["isDataForMixed"] or self.config["isTTForMixed"]:
+
+                    #
+                    # Use the first to define the FvT weights
+                    #
+                    event["FvT"] = getattr( NanoEventsFactory.from_root( f'{event.metadata["FvT_files"][0]}', entry_start=self.estart, entry_stop=self.estop, schemaclass=FriendTreeSchema, ).events(),
+                                            event.metadata["FvT_names"][0], )
+
+                    event["FvT", "FvT"] = getattr( event["FvT"], event.metadata["FvT_names"][0] )
+
+                    #
+                    # Dummies
+                    #
+                    event["FvT", "q_1234"] = np.full(len(event), -1, dtype=int)
+                    event["FvT", "q_1324"] = np.full(len(event), -1, dtype=int)
+                    event["FvT", "q_1423"] = np.full(len(event), -1, dtype=int)
+
+                    for _FvT_name, _FvT_file in zip( event.metadata["FvT_names"], event.metadata["FvT_files"] ):
+
+                        event[_FvT_name] = getattr( NanoEventsFactory.from_root( f"{_FvT_file}", entry_start=self.estart, entry_stop=self.estop, schemaclass=FriendTreeSchema, ).events(),
+                                                    _FvT_name, )
+
+                        event[_FvT_name, _FvT_name] = getattr(event[_FvT_name], _FvT_name)
+
+                else:
+                    event["FvT"] = ( NanoEventsFactory.from_root( f'{fname.replace("picoAOD", "FvT")}', entry_start=self.estart, entry_stop=self.estop, schemaclass=FriendTreeSchema).events().FvT )
+
+                if "std" not in event.FvT.fields:
+                    event["FvT", "std"] = np.ones(len(event))
+                    event["FvT", "pt4"] = np.ones(len(event))
+                    event["FvT", "pt3"] = np.ones(len(event))
+                    event["FvT", "pd4"] = np.ones(len(event))
+                    event["FvT", "pd3"] = np.ones(len(event))
+
+                event["FvT", "frac_err"] = event["FvT"].std / event["FvT"].FvT
+                if not ak.all(event.FvT.event == event.event):
+                    raise ValueError("ERROR: FvT events do not match events ttree")
 
         if self.run_SvB:
             if (self.classifier_SvB is None) | (self.classifier_SvB_MA is None):
@@ -257,9 +273,6 @@ class analysis(processor.ProcessorABC):
                                         do_jet_veto_maps=self.config["do_jet_veto_maps"],
                                         )
 
-
-        ### target is for new friend trees
-        target = Chunk.from_coffea_events(event)
 
         ### adds all the event mc weights and 1 for data
         weights, list_weight_names = add_weights( event, target=target,
