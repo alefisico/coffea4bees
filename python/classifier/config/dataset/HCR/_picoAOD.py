@@ -118,7 +118,7 @@ def _data(self: Data, metadata: str):
         for year, eras in CollisionData.eras.items():
             filelists.append(
                 [
-                    f"label:data,year:{year}",
+                    f"label:data,year:{year},source:detector",
                     *(metadata + f".data.{year}.picoAOD.{e}.files" for e in eras),
                 ]
             )
@@ -140,7 +140,7 @@ def _mixeddata(self: Data, metadata: str):
                     urls.append(template(sample=i))
             files.append(
                 [
-                    f"label:data,year:{year}",
+                    f"label:data,year:{year},source:mixed",
                     *urls,
                 ]
             )

@@ -11,8 +11,7 @@ main:
 dataset:
   - module: HCR.FvT.Eval
     option:
-      - --data-source mixed
-      - --data-mixed-samples {mixed}
+      - --data-source detector
       - --max-workers 8
       - --friends
       -

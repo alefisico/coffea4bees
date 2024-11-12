@@ -2,6 +2,8 @@
 # - mixed: mixed data index
 # - offset: offset for kfold
 # - user: lpc username
+# - source: data source
+# - option: data option
 
 main:
   module: train
@@ -23,9 +25,11 @@ model:
         bs_init: 16384
 
 dataset:
-  - module: HCR.FvT.Train
+  - module: HCR.FvT.TrainDataOnly
     option:
-      - --data-source mixed
+      - --no-JCM
+      - --data-source {source}
+      - --{option}
       - --data-mixed-samples {mixed}
       - --friends
       -
@@ -36,7 +40,7 @@ dataset:
 setting:
   - module: IO
     option:
-      - output: root://cmseos.fnal.gov//store/user/{user}/HH4b/classifier/FvT/nott/baseline-{mixed}/
+      - output: root://cmseos.fnal.gov//store/user/{user}/HH4b/classifier/FvT/nott/nott-{mixed}/
   - module: torch.DataLoader
     option:
       - num_workers: 4
