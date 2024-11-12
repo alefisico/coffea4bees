@@ -18,7 +18,7 @@ if __name__ == '__main__':
     parser.add_argument('-i', '--input_file', dest='input_file',
                         default='post_fit.root', help="Root file after PostFitShapesFromWorkspace")
     parser.add_argument('--do_postfit', dest='do_postfit',
-                        default=True, help="Do postfit plots. If False, does prefit")
+                        default=False, help="Do postfit plots. If False, does prefit")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
@@ -26,13 +26,14 @@ if __name__ == '__main__':
 
     label = 'postfit' if args.do_postfit else 'prefit'
 
-    metadata_file = 'metadata/HH4b.yml'
+    metadata_file = 'stats_analysis/metadata/HH4b.yml'
     logging.info(f"Reading {metadata_file}")
     metadata = yaml.safe_load(open(metadata_file, 'r'))
 
     hists = { }
-    channels = metadata['bin'] #[ 'hh_UL16', 'hh_UL17', 'hh_UL18' ]
+    # channels = metadata['bin'] #[ 'hh_UL16', 'hh_UL17', 'hh_UL18' ]
     # channels = [ 'hh6', 'hh7', 'hh8' ]
+    channels = [ 'ch1', 'ch2', 'ch3' ]
     mj = metadata['processes']['background']['multijet']['label']
     tt = metadata['processes']['background']['tt']['label']
     signal = metadata['processes']['signal']['GluGluToHHTo4B_cHHH1']['label']
@@ -51,21 +52,24 @@ if __name__ == '__main__':
             hists['TotalBkg'].Add( infile.Get(f'{ichannel}_{label}/TotalBkg') )
             hists[signal].Add( infile.Get(f'{ichannel}_{label}/{signal}') )
 
-    # Rescaling histogram
+    ## Rescaling histogram
     for _, ih in hists.items():
-        ih.Rebin(2)
+        # ih.Rebin(2)
         ax = ih.GetXaxis()
         ax.Set( ax.GetNbins(), 0, 1.0 )
         ih.ResetStats()
-
-    ymax = hists['data'].GetMaximum()*1.2
+    for i in range(hists['TotalBkg'].GetNbinsX()):
+        print(hists['TotalBkg'].GetBinContent(i))
+    
+    xmax = hists['TotalBkg'].GetXaxis().GetXmax()
+    ymax = hists['TotalBkg'].GetMaximum()*1.2
     # Styling
     CMS.SetExtraText("Preliminary")
     iPos = 0
     CMS.SetLumi("")
     CMS.SetEnergy("13")
     CMS.ResetAdditionalInfo()
-    nominal_can = CMS.cmsDiCanvas('nominal_can',0,1,0,ymax,0.8,1.2,
+    nominal_can = CMS.cmsDiCanvas('nominal_can',0,xmax,0,ymax,0.8,1.2,
                                   "SvB MA Classifier Regressed P(Signal) | P(HH) is largest",
                                   "Events", 'Data/Pred.',
                                   square=CMS.kSquare, extraSpace=0.05, iPos=iPos)
@@ -76,7 +80,7 @@ if __name__ == '__main__':
     CMS.cmsDrawStack(stack, leg, {'ttbar': hists[tt].Clone(), 'Multijet': hists[mj].Clone() }, data= hists['data'], palette=['#85D1FBff', '#FFDF7Fff'] )
     #CMS.GetcmsCanvasHist(nominal_can).GetYaxis().SetTitleOffset(1.6)
     CMS.fixOverlay()
-    hists[signal].Scale( 100 )
+    hists[signal].Scale( 1000 )
     leg.AddEntry( hists[signal], 'HH4b (x100)', 'lp' )
     CMS.cmsDraw( hists[signal], 'hist', fstyle=0, marker=1, alpha=1, lcolor=ROOT.TColor.GetColor("#e42536" ), fcolor=ROOT.TColor.GetColor("#e42536"))
 
