@@ -75,6 +75,13 @@ class _Train(CommonTrain):
                 ],
                 name="data selection",
             ),
+            _group.fullmatch(
+                ("source:mixed",),
+                processors=[
+                    lambda: _select_4b,
+                ],
+                name="remove 3b mixed data",
+            ),
             _group.add_year(),
         ]
         if self.opts.no_detector_4b:
