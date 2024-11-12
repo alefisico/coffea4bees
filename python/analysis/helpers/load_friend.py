@@ -18,5 +18,5 @@ def rename_FvT_friend(chunk: Chunk, friend: Friend):
         ("p_ttbar", "pt"),
     ):
         if k in fields:
-            renamed[k] = FvT[v]
+            renamed[v] = FvT[k]
     return ak.zip(renamed)
