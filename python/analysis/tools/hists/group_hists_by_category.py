@@ -8,7 +8,7 @@ from base_class.system.eos import EOS
 from base_class.utils.argparser import DefaultFormatter
 from rich.logging import RichHandler
 
-from ._sanity import group_by_categories, group_to_str
+from ..ikappa._sanity import group_by_categories, group_to_str
 
 if __name__ == "__main__":
     logging.basicConfig(

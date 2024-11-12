@@ -27,3 +27,4 @@ Palette = [
 VisibleGlyphs = []
 SelectedHists = []
 SelectedCategories = {}
+StackAllowDuplicate = False

@@ -128,7 +128,7 @@ _FF = f"{{:.{Plot.tooltip_float_precision}g}}".format
 
 
 def _find_process(categories: Collection[str]):
-    return difflib.get_close_matches("process", categories, n=len(categories), cutoff=0)
+    return difflib.get_close_matches("process", categories, n=1, cutoff=0)[0]
 
 
 # html & js
@@ -578,25 +578,26 @@ class HistGroup(Component):
         _select.value = _select.options
 
     def _setup_default(self):
-        categories = _find_process(self._categories)
-        for cat in categories:
-            processes = set(self._categories[cat]._choices)
-            for k, vs in preset.ModelPatterns.items():
-                for v in vs:
-                    matched = _KappaMatch(v, processes, k)
-                    if matched:
-                        self.add_model(k, v, matched)
-                        processes -= set(self._models[-1])
-            if self._models:
-                self._setup_categories(cat)
-                break
-        if not self._models:
-            self._setup_categories(categories[0])
-            processes = set(self._categories[self.process]._choices)
+        cat = _find_process(self._categories)
+        self._setup_categories(cat)
+        processes = set(self._categories[cat]._choices)
+        # update models
+        for k, vs in preset.ModelPatterns.items():
+            for v in vs:
+                matched = _KappaMatch(v, processes, k)
+                if matched:
+                    self.add_model(k, v, matched)
+                    processes -= set(self._models[-1])
+        # update stacks
+        stack_processes = set()
         for k, vs in preset.StackGroups:
             if set(vs) <= processes:
                 self.add_stack(k, vs)
-                processes -= set(self._stacks[-1])
+                if preset.StackAllowDuplicate:
+                    stack_processes.update(self._stacks[-1])
+                else:
+                    processes -= set(self._stacks[-1])
+        processes -= stack_processes
 
     def _dom_freeze_click(self):
         self.frozen = not self.frozen
@@ -642,12 +643,19 @@ class HistGroup(Component):
         self._frozen = value
         if self._frozen:
             processes = set(self._dom_cats_selected.value)
+            # update models
             for model in self._models:
                 model.update(processes)
                 processes -= set(model)
+            # update stacks
+            stack_processes = set()
             for stacks in self._stacks:
                 stacks.update(processes)
-                processes -= set(stacks)
+                if preset.StackAllowDuplicate:
+                    stack_processes.update(stacks)
+                else:
+                    processes -= set(stacks)
+            processes -= stack_processes
             self._processes = sorted(processes)
 
         for control in chain(self._controls, self._models, self._stacks):
@@ -746,7 +754,7 @@ class HistGroup(Component):
         if not coupling_doms:
             legend_title_style.pop("margin-top")
 
-        _VisibleGlyphs = set(preset.VisibleGlyphs)
+        _VisibleGlyphs = set((*pair,) for pair in preset.VisibleGlyphs)
 
         def legend_add(field: str, label: str, stack: bool = False):
             colors[field] = color = RGB(next(palette))

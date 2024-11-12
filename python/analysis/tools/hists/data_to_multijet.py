@@ -10,7 +10,7 @@ from base_class.utils.argparser import DefaultFormatter
 from hist import Hist
 from rich.logging import RichHandler
 
-from ._bh import BHAxis, HistAxis
+from ..ikappa._bh import BHAxis, HistAxis
 
 
 def path_from_pattern(pattern: str, path: PathLike):
@@ -54,15 +54,14 @@ def path_from_pattern(pattern: str, path: PathLike):
 @dataclass(kw_only=True)
 class Data3bToMultijet4b:
     output: str
-    bin_data: str
-    bin_multijet: str
+    bins: list[tuple[str, str]]
     ax_process: str
     ax_tag: str
 
     def __post_init__(self):
         self.bh = BHAxis(flow=True)
 
-    def extend(self, hist: Hist, name: str) -> Hist:
+    def _extend(self, hist: Hist, name: str, data: str, multijet: str) -> Hist:
         axes: list[HistAxis] = [*hist.axes]
         # find axes
         i_process = None
@@ -78,7 +77,7 @@ class Data3bToMultijet4b:
         # copy hist
         ax_process = axes[i_process]
         n_process = len(ax_process)
-        axes[i_process] = self.bh.extend(ax_process, self.bin_multijet)
+        axes[i_process] = self.bh.extend(ax_process, multijet)
         slicers = [*repeat(slice(None), len(axes))]
         slicers[i_process] = slice(0, n_process)
         new = Hist(*axes, storage=hist.storage_type())
@@ -95,9 +94,9 @@ class Data3bToMultijet4b:
         new_slicers = slicers.copy()
         old_slicers = slicers.copy()
         for i, process in enumerate(axes[i_process]):
-            if process == self.bin_multijet:
+            if process == multijet:
                 new_slicers[i_process] = i
-            elif process == self.bin_data:
+            elif process == data:
                 old_slicers[i_process] = i
         for i, tag in enumerate(axes[i_tag]):
             if tag == 4:
@@ -106,6 +105,11 @@ class Data3bToMultijet4b:
                 old_slicers[i_tag] = i
         new_view[(*new_slicers,)] = old_view[(*old_slicers,)]
         return new
+
+    def extend(self, hist: Hist, name: str):
+        for data, multijet in self.bins:
+            hist = self._extend(hist, name, data, multijet)
+        return hist
 
     def __call__(self, input: str):
         output = path_from_pattern(self.output, input)
@@ -146,16 +150,13 @@ if __name__ == "__main__":
         default="{host}{parent1}/{name}_mj.{ext}",
     )
     parser.add_argument(
-        "-d",
-        "--data-process",
-        default="data",
-        help="name of input data process",
-    )
-    parser.add_argument(
-        "-mj",
-        "--multijet-process",
-        default="QCD Multijet",
-        help="name of input multijet process",
+        "-p",
+        "--processes",
+        nargs=2,
+        metavar=("data", "multijet"),
+        action="append",
+        default=[],
+        help="name of data and multijet processes",
     )
     parser.add_argument(
         "--process-axis",
@@ -172,8 +173,7 @@ if __name__ == "__main__":
 
     d3tomj4 = Data3bToMultijet4b(
         output=args.output_pattern,
-        bin_data=args.data_process,
-        bin_multijet=args.multijet_process,
+        bins=args.processes,
         ax_process=args.process_axis,
         ax_tag=args.tag_axis,
     )
