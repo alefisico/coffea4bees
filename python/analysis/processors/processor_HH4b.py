@@ -70,8 +70,6 @@ class analysis(processor.ProcessorABC):
         make_friend_JCM_weight: str = None,
         make_friend_FvT_weight: str = None,
         subtract_ttbar_with_weights: bool = False,
-        friend_trigWeight: str = None,
-        friend_top_reconstruction: str = None,
         friends: dict[str, str] = None
     ):
 
@@ -99,17 +97,13 @@ class analysis(processor.ProcessorABC):
         self.make_friend_FvT_weight = make_friend_FvT_weight
         self.top_reconstruction_override = top_reconstruction_override
         self.subtract_ttbar_with_weights = subtract_ttbar_with_weights
-        self.friend_trigWeight = friend_trigWeight
-        self.friend_top_reconstruction = friend_top_reconstruction
-
-        if self.friend_trigWeight:
-            with open(friend_trigWeight, 'r') as f:
-                self.friend_trigWeight = Friend.from_json(json.load(f)['trigWeight'])
 
         # the following friends may be used:
+        # - trigWeight
         # - FvT
+        # - top_reconstruction?
         self.friends: dict[str, Friend] = {}
-        if self.friends:
+        if friends:
             from classifier.task import parse
 
             for name, path in friends.items():
@@ -275,17 +269,18 @@ class analysis(processor.ProcessorABC):
 
 
         ### adds all the event mc weights and 1 for data
-        weights, list_weight_names = add_weights( event, target=target,
-                                                  do_MC_weights=self.config["do_MC_weights"],
-                                                  dataset=self.dataset,
-                                                  year_label=self.year_label,
-                                                  estart=self.estart,
-                                                  estop=self.estop,
-                                                  friend_trigWeight=self.friend_trigWeight,
-                                                  corrections_metadata=self.corrections_metadata[self.year],
-                                                  apply_trigWeight=self.apply_trigWeight,
-                                                  isTTForMixed=self.config["isTTForMixed"]
-                                                 )
+        weights, list_weight_names = add_weights(
+            event, target=target,
+            do_MC_weights=self.config["do_MC_weights"],
+            dataset=self.dataset,
+            year_label=self.year_label,
+            estart=self.estart,
+            estop=self.estop,
+            friend_trigWeight=self.friends.get("trigWeight"),
+            corrections_metadata=self.corrections_metadata[self.year],
+            apply_trigWeight=self.apply_trigWeight,
+            isTTForMixed=self.config["isTTForMixed"]
+        )
 
 
         #
@@ -449,10 +444,8 @@ class analysis(processor.ProcessorABC):
         #
         #  Build the top Candiates
         #
-        if self.friend_top_reconstruction:  ## temporary until we create friend trees
-            with open(self.friend_top_reconstruction, 'r') as f:
-                self.friend_top_reconstruction = Friend.from_json(json.load(f)[f'top_reco{"_"+shift_name if shift_name else ""}'])
-            top_cand = self.friend_top_reconstruction.arrays(target)[analysis_selections]
+        if friend := self.friends.get("top_reconstruction"):
+            top_cand = friend.arrays(target)[analysis_selections]
             adding_top_reco_to_event( selev, top_cand )
 
         else:
