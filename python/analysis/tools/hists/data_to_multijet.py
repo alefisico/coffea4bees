@@ -74,13 +74,10 @@ class Data3bToMultijet4b:
     def __call__(self, in_path: str, out_path: str):
         with fsspec.open(in_path, mode="rb", compression="lz4") as f:
             data: dict[str, dict[str, Hist]] = cloudpickle.load(f)
-        data = {
-            "hists": {
-                k: h
-                for k, v in data["hists"].items()
-                if (h := self.extend(v, k)) is not None
-            },
-            "categories": data["categories"],
+        data["hists"] = {
+            k: h
+            for k, v in data["hists"].items()
+            if (h := self.extend(v, k)) is not None
         }
         with fsspec.open(out_path, mode="wb", compression="lz4") as f:
             cloudpickle.dump(data, f)
