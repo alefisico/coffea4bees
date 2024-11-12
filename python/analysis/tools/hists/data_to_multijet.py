@@ -5,7 +5,6 @@ from itertools import repeat
 
 import cloudpickle
 import fsspec
-from base_class.system.eos import EOS, PathLike
 from base_class.utils.argparser import DefaultFormatter
 from hist import Hist
 from rich.logging import RichHandler
@@ -13,47 +12,8 @@ from rich.logging import RichHandler
 from ..ikappa._bh import BHAxis, HistAxis
 
 
-def path_from_pattern(pattern: str, path: PathLike):
-    """
-    Notes
-    -----
-    The following keys are available in the pattern for the example path:
-
-    `"root://host.url//path/to/file.root"`
-
-    - `{host}`: `"root://host.url/"`
-    - `{name}`: `"file"`
-    - `{ext}`: `"root"`
-    - `{part1}`: `"to"`
-    - `{part2}`: `"path"`
-    - ...
-    - `{parent1}`: `"/path/to"`
-    - `{parent2}`: `"/path"`
-    - ...
-    """
-    path = EOS(path)
-    parent = path.path.parent
-    parents = {}
-    parts = {}
-    while parent.parent != parent:
-        parents[f"parent{len(parents) + 1}"] = str(parent)
-        parts[f"part{len(parts) + 1}"] = parent.name
-        parent = parent.parent
-
-    return EOS(
-        pattern.format(
-            name=path.stem,
-            ext=path.extension,
-            host=path.host,
-            **parts,
-            **parents,
-        )
-    )
-
-
 @dataclass(kw_only=True)
 class Data3bToMultijet4b:
-    output: str
     bins: list[tuple[str, str]]
     ax_process: str
     ax_tag: str
@@ -72,7 +32,7 @@ class Data3bToMultijet4b:
             elif ax.name == self.ax_tag:
                 i_tag = i
         if i_process is None or i_tag is None:
-            logging.warning(f"Missing axis in hist {name}, skipping")
+            logging.warning(f"Missing axis in hist {name}, skipped")
             return None
         # copy hist
         ax_process = axes[i_process]
@@ -111,9 +71,8 @@ class Data3bToMultijet4b:
             hist = self._extend(hist, name, data, multijet)
         return hist
 
-    def __call__(self, input: str):
-        output = path_from_pattern(self.output, input)
-        with fsspec.open(input, mode="rb", compression="lz4") as f:
+    def __call__(self, in_path: str, out_path: str):
+        with fsspec.open(in_path, mode="rb", compression="lz4") as f:
             data: dict[str, dict[str, Hist]] = cloudpickle.load(f)
         data = {
             "hists": {
@@ -123,7 +82,7 @@ class Data3bToMultijet4b:
             },
             "categories": data["categories"],
         }
-        with fsspec.open(output, mode="wb", compression="lz4") as f:
+        with fsspec.open(out_path, mode="wb", compression="lz4") as f:
             cloudpickle.dump(data, f)
 
 
@@ -135,25 +94,21 @@ if __name__ == "__main__":
     )
     parser = ArgumentParser(formatter_class=DefaultFormatter)
     parser.add_argument(
-        "-i",
-        "--input-files",
+        "-f",
+        "--hist-files",
         required=True,
-        help="path to input hist files",
-        nargs="+",
-        action="extend",
+        nargs=2,
+        metavar=("INPUT", "OUTPUT"),
+        action="append",
         default=[],
-    )
-    parser.add_argument(
-        "-o",
-        "--output-pattern",
-        help="output path pattern (see documentation for path_from_pattern)",
-        default="{host}{parent1}/{name}_mj.{ext}",
+        help="path to input and output hist files",
     )
     parser.add_argument(
         "-p",
         "--processes",
+        required=True,
         nargs=2,
-        metavar=("data", "multijet"),
+        metavar=("DATA", "MULTIJET"),
         action="append",
         default=[],
         help="name of data and multijet processes",
@@ -172,11 +127,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     d3tomj4 = Data3bToMultijet4b(
-        output=args.output_pattern,
         bins=args.processes,
         ax_process=args.process_axis,
         ax_tag=args.tag_axis,
     )
 
-    for input in args.input_files:
-        d3tomj4(input)
+    for i, o in args.hist_files:
+        d3tomj4(i, o)

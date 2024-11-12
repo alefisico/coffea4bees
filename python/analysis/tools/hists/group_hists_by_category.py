@@ -10,30 +10,9 @@ from rich.logging import RichHandler
 
 from ..ikappa._sanity import group_by_categories, group_to_str
 
-if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(message)s",
-        handlers=[RichHandler(show_time=False, show_path=False, markup=True)],
-    )
-    parser = ArgumentParser(formatter_class=DefaultFormatter)
-    parser.add_argument(
-        "-i",
-        "--input",
-        type=str,
-        required=True,
-        help="path to the input hist file",
-    )
-    parser.add_argument(
-        "-o",
-        "--output",
-        type=str,
-        required=True,
-        help="path to the output hist file",
-    )
-    args = parser.parse_args()
 
-    with fsspec.open(args.input, "rb", compression="lz4") as f:
+def group_hists(in_path: str, out_path: str):
+    with fsspec.open(in_path, "rb", compression="lz4") as f:
         data = cloudpickle.load(f)
 
     categories, groups = group_by_categories(data["hists"], data["categories"])
@@ -41,7 +20,7 @@ if __name__ == "__main__":
         logging.warning(f"The following histograms have missing categories: {failed}")
     axes = pd.DataFrame(groups.keys(), columns=categories)
     axes = axes.loc[:, axes.nunique(axis=0) > 1]
-    output = EOS(args.output)
+    output = EOS(out_path)
     for i, group in enumerate(groups.values()):
         g = i + 1
         file = output.parent / f"{output.stem}_{g}.coffea"
@@ -56,3 +35,26 @@ if __name__ == "__main__":
         }
         with fsspec.open(file, "wb", compression="lz4") as f:
             cloudpickle.dump(data, f)
+
+
+if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(message)s",
+        handlers=[RichHandler(show_time=False, show_path=False, markup=True)],
+    )
+    parser = ArgumentParser(formatter_class=DefaultFormatter)
+    parser.add_argument(
+        "-f",
+        "--hist-files",
+        required=True,
+        nargs=2,
+        metavar=("INPUT", "OUTPUT"),
+        action="append",
+        default=[],
+        help="path to input and output hist files",
+    )
+    args = parser.parse_args()
+
+    for i, o in args.hist_files:
+        group_hists(i, o)
