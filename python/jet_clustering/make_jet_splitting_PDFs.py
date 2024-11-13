@@ -390,7 +390,7 @@ def doPlots(year, debug=False):
 if __name__ == '__main__':
 
     parser = init_arg_parser()
-    parser.add_argument('--years', default=["UL18", "UL17", "UL16_preVFP", "UL16_postVFP"], nargs="+",help='years to process.')
+    parser.add_argument('--years', default=["RunII"], nargs="+",help='years to process.')
 
     args = parser.parse_args()
     print(f" Doing years {args.years}")
@@ -414,5 +414,14 @@ if __name__ == '__main__':
     if args.doTest:
         years = [sum]
 
-    for y in args.years:
+    years = args.years
+
+    if years == ["Run3"]:
+        years = ["2022_preEE", "2022_EE", "2023_preBPix", "2023_BPix"]
+
+
+    if years in [ ["Run2"], ["RunII"]]:
+        years = ["UL18", "UL17", "UL16_preVFP", "UL16_postVFP"]
+
+    for y in years:
         doPlots(year=y, debug=args.debug)
