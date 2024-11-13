@@ -63,7 +63,7 @@ run_limits() {
 
 for iclass in SvB_MA;
 do
-    datacard="datacard"
+    datacard="datacard" #_stat_only"
     # datacard="combine_"${iclass}
     cd ${datacard_folder}/
     
@@ -72,9 +72,9 @@ do
         combineCards.py datacard_*txt > ${datacard}.txt
         run_limits $datacard $signallabel $iclass
 
-        run_limits datacard_HHbb_2016 $signallabel $iclass
-        run_limits datacard_HHbb_2017 $signallabel $iclass
-        run_limits datacard_HHbb_2018 $signallabel $iclass
+        # run_limits datacard_HHbb_2016 $signallabel $iclass
+        # run_limits datacard_HHbb_2017 $signallabel $iclass
+        # run_limits datacard_HHbb_2018 $signallabel $iclass
 
     elif [ "$impacts" = true ]; then
 
