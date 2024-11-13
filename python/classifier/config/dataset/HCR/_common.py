@@ -124,8 +124,18 @@ class CommonTrain(Common):
         for gs in self.files:
             for p in self._preprocess_by_group:
                 pres[gs].extend(p(gs))
+        logging.debug(
+            "friends:",
+            pretty_repr(
+                _sort_map(
+                    {
+                        k: [(v.name, v.branches) for v in vs]
+                        for k, vs in self.friends.items()
+                    }
+                )
+            ),
+        )
         logging.debug("files:", pretty_repr(_sort_map(self.files)))
-        logging.debug("friends:", pretty_repr(_sort_map(self.friends)))
         logging.debug(
             "preprocessors:",
             pretty_repr(_sort_map(pres) | {"common": self.preprocessors}),
@@ -166,6 +176,16 @@ class CommonEval(Common):
 
         from rich.pretty import pretty_repr
 
+        logging.debug(
+            "friends:",
+            pretty_repr(
+                _sort_map(
+                    {
+                        k: [(v.name, v.branches) for v in vs]
+                        for k, vs in self.friends.items()
+                    }
+                )
+            ),
+        )
         logging.debug("files:", pretty_repr(_sort_map(self.files)))
-        logging.debug("friends:", pretty_repr(_sort_map(self.friends)))
         logging.debug("tensor:", pretty_repr(self.to_tensor._columns))
