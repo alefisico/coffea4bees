@@ -60,7 +60,7 @@ class IO(Cascade):
 
     @classmethod
     def _generate_path(cls, value: str):
-        return (cls.output / value).mkdir(recursive=True)
+        return cls.output / value
 
     @classmethod
     def set__output(cls, value: str):
@@ -78,7 +78,7 @@ class IO(Cascade):
     def get__output(cls, value: str):
         from base_class.system.eos import EOS
 
-        return EOS(value).mkdir(recursive=True)
+        return EOS(value)
 
     @classmethod
     def get__monitor(cls, value: str):
@@ -105,6 +105,7 @@ class Monitor(Cascade):
     enable: bool = True
     file: str = "meta.json"
     address: tuple[str, int] = ":10200"
+    connect: bool = False
 
     # performance
     retry_max: int = 1

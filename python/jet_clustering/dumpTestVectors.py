@@ -15,5 +15,5 @@ def dumpTestVectors_bbj(chunk, selev, jets_for_clustering):
     print(f'{chunk} self.input_jet_phi{post_fix}     = {[jets_for_clustering_bbj[iE].phi.tolist()              for iE in range(n_jets_clustering)]}')
     print(f'{chunk} self.input_jet_mass{post_fix}    = {[jets_for_clustering_bbj[iE].mass.tolist()             for iE in range(n_jets_clustering)]}')
     print(f'{chunk} self.input_jet_flavor{post_fix}  = {[jets_for_clustering_bbj[iE].jet_flavor.tolist()       for iE in range(n_jets_clustering)]}')
-    print(f'{chunk} self.input_btagDeepFlavB{post_fix}  = {[jets_for_clustering_bbj[iE].btagDeepFlavB.tolist() for iE in range(n_jets_clustering)]}')
+    print(f'{chunk} self.input_btagScore{post_fix}  = {[jets_for_clustering_bbj[iE].btagScore.tolist() for iE in range(n_jets_clustering)]}')
     print(f'{chunk}\n\n')

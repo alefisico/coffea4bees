@@ -3,12 +3,16 @@ from collections import defaultdict
 from functools import cache
 from io import StringIO
 from pathlib import Path
-from typing import overload
+from typing import Literal, overload
 
 import fsspec
 
-_SCHEME = ":##"
+from ...typetools import dict_proxy
+
+_SCHEMA = ":##"
 _KEY = "@@"
+
+SupportedSchema = Literal["yaml", "json", "csv", "file", "py"]
 
 
 class DeserializationError(Exception):
@@ -18,8 +22,8 @@ class DeserializationError(Exception):
         self.msg = msg
 
 
-def _mapping_scheme(arg: str):
-    arg = arg.split(_SCHEME, 1)
+def _mapping_schema(arg: str):
+    arg = arg.split(_SCHEMA, 1)
     if len(arg) == 1:
         return None, arg[0]
     else:
@@ -50,7 +54,7 @@ def _deserialize(data: str, protocol: str):
             mods = data.split(".")
             try:
                 mod = importlib.import_module(".".join(mods[:-1]))
-                return vars(getattr(mod, mods[-1]))
+                return getattr(mod, mods[-1])
             except Exception:
                 raise DeserializationError(f'Failed to import "{data}"')
         case "csv":
@@ -85,15 +89,32 @@ def _deserialize_file(path: str, formatter: str):
         raise DeserializationError(f'Failed to read file "{path}"')
 
 
+def _fetch_key(mapping, key):
+    proxy = dict_proxy(mapping)
+    try:
+        return proxy[key]
+    except Exception:
+        ...
+    try:
+        return proxy[int(key)]
+    except Exception:
+        ...
+    raise KeyError()
+
+
 def escape(obj) -> str:
     if not isinstance(obj, str):
         import json
 
-        obj = f"json{_SCHEME}{json.dumps(obj)}"
+        obj = f"json{_SCHEMA}{json.dumps(obj)}"
     return obj
 
 
-def mapping(arg: str, default: str = "yaml", formatter: str = None):
+def mapping(
+    arg: str,
+    default: SupportedSchema = "yaml",
+    formatter: str = None,
+):
     """
     - `{data}`: parse as yaml
     - `yaml:##{data}`: parse as yaml
@@ -112,7 +133,7 @@ def mapping(arg: str, default: str = "yaml", formatter: str = None):
     def warn(msg: str):
         logging.warning(f'{msg} when parsing "{arg}"')
 
-    protocol, data = _mapping_scheme(arg)
+    protocol, data = _mapping_schema(arg)
     if protocol is None:
         protocol = default
     keys = None
@@ -129,8 +150,8 @@ def mapping(arg: str, default: str = "yaml", formatter: str = None):
     if keys is not None:
         for i, k in enumerate(keys):
             try:
-                result = result[k]
-            except Exception:
+                result = _fetch_key(result, k)
+            except KeyError:
                 warn(f'Failed to select key "{".".join(keys[:i+1])}"')
                 return
     return result

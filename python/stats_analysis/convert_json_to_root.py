@@ -3,6 +3,7 @@ import ROOT
 import argparse
 import logging
 import json
+import array
 ROOT.gROOT.SetBatch(True)
 
 
@@ -31,11 +32,14 @@ def json_to_TH1( coffea_hist, iname, rebin ):
     rHist.SetBinContent( len(centers)+1, overflow_value)
     rHist.SetBinError( len(centers)+1, ROOT.TMath.Sqrt(overflow_variance))
 
-    rHist.Rebin( rebin )
+    if isinstance(rebin, list):
+        rHist = rHist.Rebin( len(rebin)-1, f"{iname}_rebinned", array.array('d', rebin))
+    else:
+        rHist.Rebin( rebin )
 
     return rHist
 
-def create_root_file(file_to_convert, _, output_dir):
+def create_root_file(file_to_convert, histos, output_dir):
     logging.info( "in create_root_file")
     coffea_hists = json.load(open(file_to_convert, 'r'))
     logging.info( "leaded coffea_hists")
@@ -48,9 +52,15 @@ def create_root_file(file_to_convert, _, output_dir):
     output = output_dir + "/" + (file_to_convert.split("/")
                                  [-1].replace(".json", "")) + ".root"
 
+    # Check if the output file exists and delete it if it does
+    if os.path.exists(output):
+        os.remove(output)
+        logging.info(f"Deleted existing file: {output}")
+
     root_file = ROOT.TFile(output, 'recreate')
 
     for ih in coffea_hists.keys():
+        # if len(histos) > 0 and ((ih in histos) or (ih.replace(".", "_") in histos)):
         for iprocess in coffea_hists[ih].keys():
             for iy in coffea_hists[ih][iprocess].keys():
                 for itag in coffea_hists[ih][iprocess][iy].keys():
@@ -76,7 +86,7 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--output_dir', dest="output_dir",
                         default="./datacards/", help='Output directory.')
     parser.add_argument('--histos', dest="histos", nargs="+",
-                        default=[ ], help='List of histograms to convert')
+                        default=[  ], help='List of histograms to convert')
     parser.add_argument('-f', '--file', dest='file_to_convert',
                         default="histos/histAll.json", help="File with coffea hists")
     args = parser.parse_args()

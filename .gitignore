@@ -176,9 +176,13 @@ proxy/
 python/analysis/hists/
 runCITests.sh
 .bashrc
+python/output/
+python/local_output/
+python/plots/
 
 .local/
 set_ROOT.sh
+python/stats_analysis/files/closure*/
 python/stats_analysis/closureFits/
 python/stats_analysis/testsCI/
 python/stats_analysis/testsFull/
@@ -197,6 +201,7 @@ python/.sites_map.json
 .ci-workflows/debug-mixed-data.sh
 
 .ci-workflows/debug-signal.sh
+.snakemake/
 .condor_config
 python/analysis/debugMixedData.py
 python/analysis/debugSkimming.py

@@ -1,17 +1,17 @@
 processes:
   signal:
     GluGluToHHTo4B_cHHH5:
-      label: ggHH_kl_5_kt_1
+      label: ggHH_kl_5_kt_1_hbbhbb
       process: -3
     GluGluToHHTo4B_cHHH2p45:
-      label: ggHH_kl_2p45_kt_1
+      label: ggHH_kl_2p45_kt_1_hbbhbb
       process: -2
     GluGluToHHTo4B_cHHH0:
-      label: ggHH_kl_0_kt_1
+      label: ggHH_kl_0_kt_1_hbbhbb
       process: -1
     GluGluToHHTo4B_cHHH1:
       # label: ggHH_hbbhbb
-      label: ggHH_kl_1_kt_1
+      label: ggHH_kl_1_kt_1_hbbhbb
       process: 0
   background:
     multijet:
@@ -68,7 +68,15 @@ uncertainty:
       *16: [0.942, 1.037]
       *17: [0.942, 1.037]
       *18: [0.942, 1.037]
+  
+  # mtop_gHH:
+  #   type: 'lnN'
+  #   years:
+  #     *16: [0.82, 1.04]
+  #     *17: [0.82, 1.04]
+  #     *18: [0.82, 1.04]
 
+# mtop https://twiki.cern.ch/twiki/bin/view/LHCPhysics/LHCHWGHH?redirectedfrom=LHCPhysics.LHCHXSWGHH#Current_recommendations_for_HH_c
 # https://gitlab.cern.ch/hh/naming-conventions https://twiki.cern.ch/twiki/bin/view/LHCPhysics/CERNYellowReportPageBR?rev=22#Higgs_2_fermions
 #uncert_pdf_HH = {'HH': '1.030'} #https://gitlab.cern.ch/hh/naming-conventions
 #uncert_pdf_ZH = {'ZH': '1.013'}

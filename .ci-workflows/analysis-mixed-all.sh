@@ -1,48 +1,57 @@
-echo "############### Including proxy"
-export X509_USER_PROXY=${PWD}/proxy/x509_proxy
-echo "############### Checking proxy"
-voms-proxy-info
-echo "############### Moving to python folder"
-cd python/
-echo "############### Modifying config"
-sed -e "s/condor_cores.*/condor_cores: 6/" -e "s/condor_memory.*/condor_memory: 8GB/" -i analysis/metadata/HH4b.yml
-cat analysis/metadata/HH4b.yml
-if [[ $(hostname) = *fnal* ]]; then
-    DATASETS=metadata/datasets_HH4b.yml
+#!/bin/bash
+return_to_base=false
+if [ "$(basename "$PWD")" == "python" ]; then
+    echo "You are in the python directory."
 else
-    DATASETS=metadata/datasets_HH4b_cernbox.yml
+    return_to_base=true
+    echo "############### Moving to python folder"
+    cd python/
 fi
-echo "############### Running datasets from " $DATASETS
+
+
+# Check if the second argument is provided
+if [[ $# -lt 1 ]]; then
+    # No second argument provided, set a default value
+    OUTPUT_DIR="hists/"
+else
+    # Second argument provided, use the provided value
+    OUTPUT_DIR=$1
+fi
+
+echo "The output directory is: $OUTPUT_DIR"
+
+DATASETS="metadata/datasets_HH4b.yml"
+
 echo "############### Running test processor"
-python runner.py  -o histMixedBkg_TT.coffea -d   TTTo2L2Nu_for_mixed TTToHadronic_for_mixed TTToSemiLeptonic_for_mixed   -p analysis/processors/processor_HH4b.py -y UL17 UL18 UL16_preVFP UL16_postVFP  -op hists/ -m $DATASETS
-python runner.py  -o histMixedBkg_data_3b_for_mixed_kfold.coffea -d   data_3b_for_mixed  -p analysis/processors/processor_HH4b.py -y 2016 2017 2018    -op hists/ -m $DATASETS
-sed -e "s/use_kfold: True/use_kfold: False/" -i $DATASETS
-python runner.py  -o histMixedBkg_data_3b_for_mixed.coffea -d   data_3b_for_mixed  -p analysis/processors/processor_HH4b.py -y 2016 2017 2018    -op hists/ -m $DATASETS
+python runner.py  -o histMixedBkg_TT.coffea -d   TTTo2L2Nu_for_mixed TTToHadronic_for_mixed TTToSemiLeptonic_for_mixed   -p analysis/processors/processor_HH4b.py -y UL17 UL18 UL16_preVFP UL16_postVFP  -op $OUTPUT_DIR -m $DATASETS
 
-sed -e "s/use_ZZinSB: False/use_ZZinSB: True/" -i $DATASETS
-python runner.py  -o histMixedBkg_data_3b_for_mixed_ZZinSB.coffea -d   data_3b_for_mixed  -p analysis/processors/processor_HH4b.py -y 2016 2017 2018    -op hists/ -m $DATASETS
+python runner.py  -o histMixedBkg_data_3b_for_mixed_kfold.coffea -d   data_3b_for_mixed  -p analysis/processors/processor_HH4b.py -y 2016 2017 2018    -op $OUTPUT_DIR -m $DATASETS -c analysis/metadata/HH4b_mixed_data.yml
 
-sed -e "s/use_ZZinSB: True/use_ZZinSB: False/" -i $DATASETS
-sed -e "s/use_ZZandZHinSB: False/use_ZZandZHinSB: True/" -i $DATASETS
-python runner.py  -o histMixedBkg_data_3b_for_mixed_ZZandZHinSB.coffea -d   data_3b_for_mixed  -p analysis/processors/processor_HH4b.py -y 2016 2017 2018    -op hists/ -m $DATASETS
+sed -e "s/use_kfold: True/use_kfold: False/" "analysis/metadata/HH4b_mixed_data.yml" > /tmp/${USER}/HH4b_mixed_data_nokfold.yml
+python runner.py  -o histMixedBkg_data_3b_for_mixed.coffea -d   data_3b_for_mixed  -p analysis/processors/processor_HH4b.py -y 2016 2017 2018    -op $OUTPUT_DIR -m $DATASETS -c /tmp/${USER}/HH4b_mixed_data_nokfold.yml
 
-sed -e "s/use_ZZandZHinSB: True/use_ZZandZHinSB: False/" -i $DATASETS
-sed -e "s/use_kfold: False/use_kfold: True/" -i $DATASETS
+sed -e "s/use_kfold: True/use_kfold: False/" -e "s/use_ZZinSB: False/use_ZZinSB: True/" "analysis/metadata/HH4b_mixed_data.yml" > /tmp/${USER}/HH4b_mixed_data_ZZinSB.yml
+python runner.py  -o histMixedBkg_data_3b_for_mixed_ZZinSB.coffea -d   data_3b_for_mixed  -p analysis/processors/processor_HH4b.py -y 2016 2017 2018    -op $OUTPUT_DIR -m $DATASETS -c /tmp/${USER}/HH4b_mixed_data_ZZinSB.yml
 
+sed -e "s/use_kfold: True/use_kfold: False/" -e "s/use_ZZandZHinSB: False/use_ZZandZHinSB: True/" "analysis/metadata/HH4b_mixed_data.yml" > /tmp/${USER}/HH4b_mixed_data_ZZandZHinSB.yml
+python runner.py  -o histMixedBkg_data_3b_for_mixed_ZZandZHinSB.coffea -d   data_3b_for_mixed  -p analysis/processors/processor_HH4b.py -y 2016 2017 2018    -op $OUTPUT_DIR -m $DATASETS -c /tmp/${USER}/HH4b_mixed_data_ZZandZHinSB.yml
 
-python runner.py  -o histMixedData.coffea -d    mixeddata  -p analysis/processors/processor_HH4b.py -y 2016 2017 2018    -op hists/ -m $DATASETS
-python runner.py  -o histSignal.coffea -d    GluGluToHHTo4B_cHHH1 ZH4b ZZ4b  -p analysis/processors/processor_HH4b.py -y UL17 UL18 UL16_preVFP UL16_postVFP    -op hists/ -m $DATASETS
+python runner.py  -o histMixedData.coffea -d    mixeddata  -p analysis/processors/processor_HH4b.py -y 2016 2017 2018    -op $OUTPUT_DIR -m $DATASETS
+
+python runner.py  -o histSignal.coffea -d    GluGluToHHTo4B_cHHH1 ZH4b ZZ4b  -p analysis/processors/processor_HH4b.py -y UL17 UL18 UL16_preVFP UL16_postVFP    -op $OUTPUT_DIR -m $DATASETS
 ls
 
 echo "############### Hist --> JSON"
 
-python stats_analysis/convert_hist_to_json_closure.py --input hists/histMixedData.coffea
-python stats_analysis/convert_hist_to_json_closure.py --input hists/histMixedBkg_TT.coffea
-python stats_analysis/convert_hist_to_json_closure.py --input hists/histMixedBkg_data_3b_for_mixed_kfold.coffea
-python stats_analysis/convert_hist_to_json_closure.py --input hists/histMixedBkg_data_3b_for_mixed.coffea
-python stats_analysis/convert_hist_to_json_closure.py --input hists/histMixedBkg_data_3b_for_mixed_ZZinSB.coffea
-python stats_analysis/convert_hist_to_json_closure.py --input hists/histMixedBkg_data_3b_for_mixed_ZZandZHinSB.coffea
-python stats_analysis/convert_hist_to_json_closure.py --input hists/histSignal.coffea
+python stats_analysis/convert_hist_to_json_closure.py --input $OUTPUT_DIR/histMixedData.coffea
+python stats_analysis/convert_hist_to_json_closure.py --input $OUTPUT_DIR/histMixedBkg_TT.coffea
+python stats_analysis/convert_hist_to_json_closure.py --input $OUTPUT_DIR/histMixedBkg_data_3b_for_mixed_kfold.coffea
+python stats_analysis/convert_hist_to_json_closure.py --input $OUTPUT_DIR/histMixedBkg_data_3b_for_mixed.coffea
+python stats_analysis/convert_hist_to_json_closure.py --input $OUTPUT_DIR/histMixedBkg_data_3b_for_mixed_ZZinSB.coffea
+python stats_analysis/convert_hist_to_json_closure.py --input $OUTPUT_DIR/histMixedBkg_data_3b_for_mixed_ZZandZHinSB.coffea
+python stats_analysis/convert_hist_to_json_closure.py --input $OUTPUT_DIR/histSignal.coffea
 
-
-cd ../
+if [ "$return_to_base" = true ]; then
+    echo "############### Returning to base directory"
+    cd ../
+fi

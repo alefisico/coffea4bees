@@ -9,10 +9,10 @@ if [ ! -d $OUTPUT_DIR ]; then
     mkdir -p $OUTPUT_DIR
 fi
 
-echo "############### Running cutflow test"
-python analysis/tests/cutflow_test.py   --inputFile $INPUT_DIR/test_skimmer.coffea --knownCounts analysis/tests/testCounts_skimmer.yml
 echo "############### Running dump cutflow test"
 python analysis/tests/dumpCutFlow.py --input $INPUT_DIR/test_skimmer.coffea -o $OUTPUT_DIR/test_dump_skimmer_cutflow.yml
+echo "############### Running cutflow test"
+python analysis/tests/cutflow_test.py   --inputFile $INPUT_DIR/test_skimmer.coffea --knownCounts analysis/tests/testCounts_skimmer.yml
 ls $OUTPUT_DIR/test_dump_skimmer_cutflow.yml
 cd ../
 

@@ -33,7 +33,7 @@ def _ttbar_3b_selection(df: pd.DataFrame):
 
 
 def _ttbar_4b_selection(df: pd.DataFrame):
-    return df["fourTag"]
+    return df[df["fourTag"]]
 
 
 class Train(_picoAOD.Background, CommonTrain):

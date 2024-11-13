@@ -194,25 +194,20 @@ class EntryPoint:
         from ..config import setting as cfg
 
         if cfg.Monitor.enable:
-            host, port = cfg.Monitor.address
-            if host is None:
+            if not cfg.Monitor.connect:
                 from ..monitor import setup_monitor
                 from ..process.monitor import Monitor
 
                 Monitor().start()
                 setup_monitor()
-                address = Monitor.current()._address
-                if isinstance(address, tuple):
-                    address = f"{address[0]}:{address[1]}"
-                logging.info(f"Monitor is running at {address}")
+                logging.info(f"Monitor is running at {cfg.Monitor.raw__address}")
             else:
                 from ..monitor import setup_reporter
                 from ..process.monitor import connect_to_monitor
 
                 connect_to_monitor()
                 setup_reporter()
-                address = host if port is None else f"{host}:{port}"
-                logging.info(f"Connected to Monitor {address}")
+                logging.info(f"Connected to Monitor {cfg.Monitor.raw__address}")
         else:
             from ..monitor import disable_monitor
 
