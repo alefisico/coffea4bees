@@ -47,6 +47,7 @@ def get_value_nested_dict(nested_dict, target_key):
         if k == target_key:
             return v
 
+
         if type(v) is dict:
             try:
                 return get_value_nested_dict(v, target_key)
@@ -887,9 +888,11 @@ def make2DPlot(cfg, process, var='selJets.pt',
         #
         # Find which file has the process we are looking for
         #
+        process_config = get_value_nested_dict(cfg.plotConfig, process)
+        process_name = process_config["process"]
         for _input_data in cfg.hists:
             _hist_to_plot = _input_data['hists'][var]
-            if process in _hist_to_plot.axes["process"]:
+            if process_name in _hist_to_plot.axes["process"]:
                 hist_to_plot = _hist_to_plot
 
     else:
