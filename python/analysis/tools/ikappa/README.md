@@ -204,4 +204,4 @@ A global [config file](config.py) is used to maintain constants, default values 
 ## TODO
 
 - add ratio plot
-- readme update: ratio, preset
+- readme update: ratio, preset, share

@@ -1,7 +1,6 @@
 class Plot:
     figure_height = 400  # px, height of the figure
     ratio_height = figure_height / 2  # px, height of the ratio plot
-    fill_alpha = 0.2  # transparency of the fill color, 0-1
     legend_width = 200  # px, width of the legend
     tooltip_float_precision = 4  # float precision for tooltips
     # constants
@@ -26,4 +25,5 @@ class UI:
         "model": "#385CB4",
         "stack": "#29855A",
         "ratio": "#E02D4B",
+        "hists": "#9200FE",
     }

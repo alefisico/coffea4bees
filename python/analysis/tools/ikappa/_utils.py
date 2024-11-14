@@ -672,3 +672,16 @@ class RGB:
         if alpha is not None:
             new.alpha = alpha
         return new
+
+    @staticmethod
+    def __tint(c: int, f: float):
+        return c + int((255 - c) * f)
+
+    def tint(self, factor: float):
+        r, g, b = self.__rgb
+        return RGB(
+            self.__tint(r, factor),
+            self.__tint(g, factor),
+            self.__tint(b, factor),
+            self.alpha,
+        )

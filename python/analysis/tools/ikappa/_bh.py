@@ -168,3 +168,9 @@ class BHAxis:
             case _:
                 raise TypeError(f"Cannot extend <{axis.__class__.__name__}> axis")
 
+    def equal(self, ax1: HistAxis, ax2: HistAxis):
+        if type(ax1) is not type(ax2):
+            return False
+        if (self.flow(ax1), *ax1) != (self.flow(ax2), *ax2):
+            return False
+        return True

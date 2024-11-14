@@ -113,6 +113,7 @@ class _PlotConfig(TypedDict):
     density: bool
     log_y: bool
     flow: bool
+    share: bool
 
 
 class Plotter(Component):
@@ -247,6 +248,7 @@ tr:hover {background-color: rgb(175, 225, 255);}
         )
         self._dom_log_y = Checkbox(label="log y-axis", active=False)
         self._dom_flow = Checkbox(label="under/overflow", active=False)
+        self._dom_share = Checkbox(label="share canvas", active=False)
         # hist tree
         ncats = len(categories)
         self._dom_hist_tree = TreeView(
@@ -317,6 +319,7 @@ tr:hover {background-color: rgb(175, 225, 255);}
                     self._dom_density,
                     self._dom_log_y,
                     self._dom_flow,
+                    self._dom_share,
                     sizing_mode="stretch_width",
                 ),
                 row(
@@ -406,6 +409,7 @@ tr:hover {background-color: rgb(175, 225, 255);}
             return self.log.error(*errs)
 
         projected = {}
+        shared_axis = None
         bhaxis = BHAxis(flow=cfg["flow"], floating_format=_FF)
         for name in hists:
             hist = self.data[name]
@@ -417,6 +421,14 @@ tr:hover {background-color: rgb(175, 225, 255);}
                         hist = self._1d_project(hist, cfg["flow"])
                         if "rebin" in profile:
                             hist = self._1d_rebin(hist, profile["rebin"], bhaxis)
+                        if shared_axis is None:
+                            shared_axis = hist[-1]
+                        else:
+                            if cfg["share"]:
+                                if not bhaxis.equal(shared_axis, hist[-1]):
+                                    raise RuntimeError(
+                                        "Cannot plot histograms with different axes when sharing canvas."
+                                    )
                         projected[name] = hist
                     case 2:  # TODO: plot 2D histogram
                         raise NotImplementedError("2D histogram is not supported yet.")
@@ -500,4 +512,5 @@ tr:hover {background-color: rgb(175, 225, 255);}
             "density": self._dom_density.active,
             "log_y": self._dom_log_y.active,
             "flow": self._dom_flow.active,
+            "share": self._dom_share.active,
         }

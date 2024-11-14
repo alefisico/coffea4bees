@@ -7,7 +7,7 @@ StackGroups:
 ModelPatterns:
   ggF:
     - ^GluGluToHHTo4B_cHHH(?P<kl>[p\d]+)$
-VisibleGlyphs:
+GlyphVisibility:
   - - data
     - errorbar
   - - QCD Multijet

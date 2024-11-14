@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from types import ModuleType
-    from typing import Literal
+    from typing import Literal, Optional
 
 # xrootd paths
 # used for autocompletion
@@ -31,16 +31,28 @@ ModelPatterns: dict[str, list[str]]
 # model: coupling sliders
 # used for coupling sliders initialization
 # format: {coupling: (min, max, step)}
-CouplingScan: dict[str, tuple[float, float, float]]
+# coupling: None for default
+CouplingScan: dict[Optional[str], tuple[float, float, float]]
 
-# plotting: palette
+# palette
 # format: hex color
 Palette: list[str]
 
-# plotting: visible glyphs
+# palette: tint range
+# format: (min, max)
+# range: [0, 1]
+PaletteTintRange: tuple[float, float]
+
+# glyph: color alpha of fill
+# range: [0, 1]
+GlyphFillAlpha: float
+
+# glyph: visibility
 # used for initialization
-# format: (dataset, glyph)
-VisibleGlyphs: list[tuple[str, Literal["fill", "step", "errorbar"]]]
+# format: (dataset/hist, glyph)
+# dataset/hist: regex or None for default
+# glyph: "fill" or "step", "errorbar"
+GlyphVisibility: list[tuple[Optional[str], Literal["fill", "step", "errorbar"]]]
 
 # plotting: selected hists
 # used for initialization

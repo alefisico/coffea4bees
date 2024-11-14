@@ -24,7 +24,9 @@ Palette = [
     "#66CDAA",
     "#EE82EE",
 ]
-VisibleGlyphs = []
+PaletteTintRange = (0.0, 0.6)
+GlyphFillAlpha = 0.2
+GlyphVisibility = []
 SelectedHists = []
 SelectedCategories = {}
 StackAllowDuplicate = False
