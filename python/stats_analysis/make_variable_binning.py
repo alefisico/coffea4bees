@@ -1,6 +1,7 @@
 import argparse
 import ROOT
 import array
+import numpy as np
 from convert_json_to_root import create_root_file
 
 def compute_variable_binning(multijet_hist, signal_hist, threshold):
@@ -18,6 +19,10 @@ def compute_variable_binning(multijet_hist, signal_hist, threshold):
     
     ## Check the binning of the signal asuming multijet binning threshold
     signal_binning = signal_hist.Integral(multijet_bin, total_nbins+1)
+    # print(f"Signal binning: {signal_binning}")
+    signal_binning = np.sqrt(signal_binning) + signal_binning
+    # print(f"Signal binning: {signal_binning}")
+    # sys.exit(0)
     variable_binning = [1]
     higher_bin = total_nbins+1
     for ibin in range(total_nbins, 0, -1):
@@ -35,10 +40,9 @@ def rebin_histogram(hist, variable_binning):
     """
        hist is a ROOT TH1 histogram
     """
-    rebinned_hist = hist.Rebin(len(variable_binning) - 1, hist.GetName()+'_rebin', array.array('d', variable_binning))
-    return rebinned_hist
+    return hist.Rebin(len(variable_binning) - 1, hist.GetName()+'_rebin', array.array('d', variable_binning))
 
-def main(input_file, hist_name, threshold, output_file):
+def make_variable_binning(input_file, hist_name, threshold, output_file):
     
     # Open the ROOT file
     file = ROOT.TFile.Open(input_file)
@@ -57,20 +61,23 @@ def main(input_file, hist_name, threshold, output_file):
     
     variable_binning = compute_variable_binning(multijet_hist, signal_hist, threshold)
 
-    # Create a new ROOT file to save the rebinned histograms
-    output = ROOT.TFile(output_file, "RECREATE")
+    if output_file:
+        # Create a new ROOT file to save the rebinned histograms
+        output = ROOT.TFile(output_file, "RECREATE")
 
-    # Rebin all histograms in the file using variable_binning
-    for key in file.GetListOfKeys():
-        hist = key.ReadObj()
-        if isinstance(hist, ROOT.TH1) and (hist_name in hist.GetName()):
-            rebinned_hist = rebin_histogram( hist, variable_binning)
-            rebinned_hist.Write()
-            print(f"Rebinned histogram '{hist.GetName()}'")
+        # Rebin all histograms in the file using variable_binning
+        for key in file.GetListOfKeys():
+            hist = key.ReadObj()
+            if isinstance(hist, ROOT.TH1) and (hist_name in hist.GetName()):
+                rebinned_hist = rebin_histogram( hist, variable_binning)
+                rebinned_hist.Write()
+                print(f"Rebinned histogram '{hist.GetName()}'")
 
-    # Close the ROOT file
-    file.Close()
-    output.Close()
+        # Close the ROOT file
+        file.Close()
+        output.Close()
+        
+    return variable_binning
 
 
 
@@ -84,4 +91,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    main(args.input_file, args.hist_name, args.threshold, args.output_file)
+    make_variable_binning(args.input_file, args.hist_name, args.threshold, args.output_file)
