@@ -147,7 +147,7 @@ def filling_nominal_histograms(selev, JCM,
     # fill.cache(selev)
     fill(selev, hist)
 
-    return hist.output
+    return hist.to_dict(nonempty=True)
 
 
 def filling_syst_histograms(selev, weights, analysis_selections,
@@ -198,4 +198,4 @@ def filling_syst_histograms(selev, weights, analysis_selections,
             for ih in hist_SvB.output["hists"].keys():
                 hist_SvB.output["hists"][ih] = ( hist_SvB.output["hists"][ih] + dict_hist_SvB[ivar].output["hists"][ih] )
 
-    return hist_SvB.output
+    return hist_SvB.to_dict(nonempty=True)
