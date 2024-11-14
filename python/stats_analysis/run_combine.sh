@@ -69,7 +69,9 @@ do
     
     if [ "$limits" = true ]; then
 
-        combineCards.py datacard_*txt > ${datacard}.txt
+        combineCards.py HHbb_2016=datacard_HHbb_2016.txt \
+            HHbb_2017=datacard_HHbb_2017.txt \
+            HHbb_2018=datacard_HHbb_2018.txt > ${datacard}.txt
         run_limits $datacard $signallabel $iclass
 
         # run_limits datacard_HHbb_2016 $signallabel $iclass
@@ -92,7 +94,9 @@ do
 
             combineTool.py -M Impacts -d ${datacard}.root -o impacts_combine_${iclass}_exp.json -m 125 -n ${iclass}
 
-            plotImpacts.py -i impacts_combine_${iclass}_exp.json -o impacts_combine_${iclass}_exp_HH --POI r${signallabel} --per-page 20 --left-margin 0.3 --height 400 --label-size 0.04 --translate ${currentDir}/nuisance_names.json
+            plotImpacts.py -i impacts_combine_${iclass}_exp.json -o impacts_combine_${iclass}_exp_HH --POI r${signallabel} --per-page 20 --left-margin 0.3 --height 400 --label-size 0.04 --translate ${currentDir}/stats_analysis/nuisance_names.json
+            mkdir -p impacts/
+            mv higgsCombine*Fit* impacts/
         else
             echo "File ${datacard}.root does not exist."
         fi
