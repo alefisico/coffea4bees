@@ -23,7 +23,7 @@ def main(json_file_path, output_file_path):
                     if not 'rgg' in name:
                         if 'prop_' in name:
                             tmp_name = name.split('_')
-                            out_string = f"{tmp_name[2]} {tmp_name[1][3:5]} bin {tmp_name[3][-2:]}"
+                            out_string = f"{tmp_name[2]} {tmp_name[1][3:5]} {tmp_name[3]}"
                         elif 'datadriven' in name:
                             tmp_name = name.split('datadriven_')[1].split('_')  
                             out_string = f"{tmp_name[-1]}: HH {tmp_name[0][:-1]} {tmp_name[0][-1]}"
