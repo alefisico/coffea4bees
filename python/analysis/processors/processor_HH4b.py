@@ -626,14 +626,17 @@ class analysis(processor.ProcessorABC):
             selev["nSelJets"] = ak.num(selev.selJet)
 
             from ..helpers.dump_friendtrees import dump_input_friend
-
+            
+            weight = "weight_noJCM_noFvT"
+            if weight not in selev:
+                weight = "weight"
             friends["friends"] = ( friends["friends"]
                 | dump_input_friend(
                     selev,
                     self.make_classifier_input,
                     "HCR_input",
                     analysis_selections,
-                    weight="weight" if self.config["isMC"] else "weight_noJCM_noFvT",
+                    weight=weight,
                     NotCanJet="notCanJet_coffea",
                 )
             )
