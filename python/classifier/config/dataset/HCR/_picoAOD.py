@@ -183,6 +183,8 @@ class Data(_PicoAOD):
 class Background(Data):
     pico_filelists = (_ttbar,)
 
+class Signal_ZZZH(_PicoAOD):
+    pico_filelists = (_ZZ_ZH,)
 
 class Signal_ggF(_PicoAOD):
-    pico_filelists = (_ZZ_ZH, _ggF)
+    pico_filelists = (_ggF,)

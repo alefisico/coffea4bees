@@ -125,7 +125,7 @@ class Background(_picoAOD.Background, _Train):
         return df
 
 
-class Signal(_picoAOD.Signal_ggF, _Train):
+class Signal(_picoAOD.Signal_ZZZH, _picoAOD.Signal_ggF, _Train):
     def __init__(self):
         super().__init__()
         self.postprocessors.append(self.normalize)
@@ -143,4 +143,9 @@ class Signal(_picoAOD.Signal_ggF, _Train):
         return df
 
 
-class Eval(_picoAOD.Background, _picoAOD.Signal_ggF, CommonEval): ...
+class Eval(
+    _picoAOD.Background,
+    _picoAOD.Signal_ZZZH,
+    _picoAOD.Signal_ggF,
+    CommonEval,
+): ...
