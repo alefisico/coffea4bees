@@ -11,11 +11,6 @@ if TYPE_CHECKING:
     import pandas as pd
 
 
-def _apply_JCM(df: pd.DataFrame):
-    df.loc[df["threeTag"], "weight"] *= df.loc[df["threeTag"], "pseudoTagWeight"]
-    return df
-
-
 def _common_selection(df: pd.DataFrame):
     return df["passHLT"] & (df["SB"] | df["SR"]) & (df["fourTag"] | df["threeTag"])
 
@@ -40,7 +35,7 @@ def _select_3b(df: pd.DataFrame):
     return df[df["threeTag"]]
 
 
-class _Train(CommonTrain):
+class Train(CommonTrain):
     argparser = ArgParser()
     argparser.add_argument(
         "--no-JCM",
@@ -125,11 +120,13 @@ class _Train(CommonTrain):
                 )
             )
         if not self.opts.no_JCM:
+            from classifier.compatibility.JCM.branch import apply_JCM
+
             ps.append(
                 _group.fullmatch(
                     (),
                     processors=[
-                        lambda: _apply_JCM,
+                        lambda: apply_JCM("pseudoTagWeight"),
                     ],
                     name="apply JCM",
                 )
@@ -137,10 +134,10 @@ class _Train(CommonTrain):
         return ps
 
 
-class Train(_picoAOD.Background, _Train): ...
+class TrainBaseline(_picoAOD.Background, Train): ...
 
 
-class TrainDataOnly(_picoAOD.Data, _Train): ...
+class TrainDataOnly(_picoAOD.Data, Train): ...
 
 
 class Eval(_picoAOD.Data, CommonEval): ...

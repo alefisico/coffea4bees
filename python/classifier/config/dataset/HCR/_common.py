@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from collections import defaultdict
-from functools import cache, cached_property
+from functools import cache, cached_property, partial
+from itertools import chain
 from typing import Iterable
 
+from classifier.task import ArgParser, parse
 from classifier.typetools import enum_dict
 
 from ...setting.df import Columns
@@ -25,6 +27,24 @@ def _sort_map(obj: dict[frozenset[str]]):
 
 
 class Common(LoadGroupedRoot):
+    argparser = ArgParser()
+    argparser.add_argument(
+        "--branch",
+        metavar="BRANCH",
+        nargs="+",
+        action="extend",
+        default=[],
+        help="additional branches",
+    )
+    argparser.add_argument(
+        "--preprocess",
+        metavar=("GROUP", "PROCESSOR"),
+        nargs="+",
+        action="append",
+        default=[],
+        help="additional preprocessors",
+    )
+
     @cache
     def from_root(self, groups: frozenset[str]):
         from classifier.df.io import FromRoot
@@ -35,7 +55,7 @@ class Common(LoadGroupedRoot):
                 friends.extend(v)
 
         pres = []
-        for g in self._preprocess_by_group:
+        for g in chain(self._preprocess_from_opts, self._preprocess_by_group):
             pres.extend(g(groups))
         pres.extend(self.preprocessors)
 
@@ -44,6 +64,16 @@ class Common(LoadGroupedRoot):
             branches=self._branches.intersection,
             preprocessors=pres,
         )
+
+    @cached_property
+    def _preprocess_from_opts(self):
+        return [
+            _group.fullmatch(
+                opts[0].split(","),
+                processors=[partial(parse.instance, opts[1:], "classifier")],
+            )
+            for opts in self.opts.preprocess
+        ]
 
     @cached_property
     def _preprocess_by_group(self):
@@ -58,6 +88,7 @@ class Common(LoadGroupedRoot):
             InputBranch.feature_ancillary,
             InputBranch.feature_CanJet,
             InputBranch.feature_NotCanJet,
+            self.opts.branch,
         )
 
     @abstractmethod
@@ -122,7 +153,7 @@ class CommonTrain(Common):
 
         pres = defaultdict(list)
         for gs in self.files:
-            for p in self._preprocess_by_group:
+            for p in chain(self._preprocess_from_opts, self._preprocess_by_group):
                 pres[gs].extend(p(gs))
         logging.debug(
             "friends:",
