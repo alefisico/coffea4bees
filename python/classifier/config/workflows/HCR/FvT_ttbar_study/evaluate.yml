@@ -9,13 +9,15 @@ main:
     - --max-evaluators 3
 
 dataset:
-  - module: HCR.FvT.Eval
+  - module: HCR.Eval
     option:
-      - --data-source detector
+      - --files "year:2016" root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//data2016_3b/picoAOD_3b_wJCM_newSBDef.root
+      - --files "year:2017" root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//data2017_3b/picoAOD_3b_wJCM_newSBDef.root
+      - --files "year:2018" root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//data2018_3b/picoAOD_3b_wJCM_newSBDef.root
       - --max-workers 8
       - --friends
       -
-      - root://cmseos.fnal.gov//store/user/{user}/HH4b/friend/friend.json@@HCR_input
+      - root://cmseos.fnal.gov//store/user/{user}/HH4b/friend/tmp/data3b/friend.json@@HCR_input
 
 model:
   - module: HCR.FvT.baseline.Eval
@@ -28,7 +30,8 @@ analysis:
   - module: kfold.Merge
     option:
       - --name FvT
-      - --workers 3
+      - --step 100000
+      - --workers 5
       - --clean
 
 setting:
@@ -37,4 +40,4 @@ setting:
       - output: root://cmseos.fnal.gov//store/user/{user}/HH4b/friend/FvT/nott/{tag}-{mixed}/
   - module: torch.DataLoader
     option:
-      - num_workers: 4
+      - num_workers: 8

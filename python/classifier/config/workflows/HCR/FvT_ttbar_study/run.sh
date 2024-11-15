@@ -9,14 +9,11 @@ export WEB="root://eosuser.cern.ch//eos/user/${CERNUSER}/www/HH4b/classifier/FvT
 # train mixed and make plots
 for i in {0..14}
 do
-    ./pyml.py template "{mixed: ${i}, offset: 0, user: ${LPCUSER}, source: 'mixed detector', option: no-detector-4b}" $WFS/train.yml
-    ./pyml.py analyze --results ${MODEL}/baseline-${i}/result.json -analysis HCR.LossROC -setting IO "output: ${WEB}" -setting IO "report: baseline-${i}"
-    ./pyml.py template "{mixed: ${i}, offset: 0, user: ${LPCUSER}, source: 'mixed detector', option: no-detector-4b}" $WFS/train_nott.yml
-    ./pyml.py analyze --results ${MODEL}/nott-${i}/result.json -analysis HCR.LossROC -setting IO "output: ${WEB}" -setting IO "report: nott-${i}"
+    ./pyml.py template "{mixed: ${i}, offset: 0, user: ${LPCUSER}, source: 'mixed detector', option: no-detector-4b, tag: mixed}" $WFS/train.yml
+    ./pyml.py analyze --results ${MODEL}/mixed-${i}/result.json -analysis HCR.LossROC -setting IO "output: ${WEB}" -setting IO "report: nott-${i}"
 done
 # evaluate
 for i in {0..14}
 do
-    ./pyml.py template "{mixed: ${i}, tag: baseline, user: ${LPCUSER}}" $WFS/evaluate.yml
-    ./pyml.py template "{mixed: ${i}, tag: nott, user: ${LPCUSER}}" $WFS/evaluate.yml
+    ./pyml.py template "{mixed: ${i}, tag: mixed, user: ${LPCUSER}}" $WFS/evaluate.yml
 done
