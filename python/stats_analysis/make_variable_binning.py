@@ -1,6 +1,7 @@
 import argparse
 import ROOT
 import array
+import numpy as np
 from convert_json_to_root import create_root_file
 
 def compute_variable_binning(multijet_hist, signal_hist, threshold):
@@ -18,6 +19,10 @@ def compute_variable_binning(multijet_hist, signal_hist, threshold):
     
     ## Check the binning of the signal asuming multijet binning threshold
     signal_binning = signal_hist.Integral(multijet_bin, total_nbins+1)
+    # print(f"Signal binning: {signal_binning}")
+    signal_binning = np.sqrt(signal_binning) + signal_binning
+    # print(f"Signal binning: {signal_binning}")
+    # sys.exit(0)
     variable_binning = [1]
     higher_bin = total_nbins+1
     for ibin in range(total_nbins, 0, -1):
