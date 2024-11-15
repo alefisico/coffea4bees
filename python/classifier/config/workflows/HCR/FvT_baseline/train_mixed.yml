@@ -37,7 +37,7 @@ dataset:
     option:
       - --no-detector-4b
       - --no-JCM
-      - --branches pseudoTagWeight_3bDvTMix4bDvT_v{mixed}
+      - --branch pseudoTagWeight_3bDvTMix4bDvT_v{mixed}
       - --preprocess source:detector
       - compatibility.JCM.branch.apply_JCM
       - name: pseudoTagWeight_3bDvTMix4bDvT_v{mixed}
