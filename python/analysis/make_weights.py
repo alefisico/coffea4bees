@@ -10,6 +10,7 @@ import base_class.plots.iPlot_config as cfg
 from base_class.JCMTools import getCombinatoricWeight, getPseudoTagProbs, loadROOTHists, loadCoffeaHists, data_from_Hist, prepHists, jetCombinatoricModel
 from base_class.plots.plots import load_config, load_hists, read_axes_and_cuts, get_cut_dict, makePlot
 from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel as JCMModel
+import matplotlib.pyplot as plt
 
 #
 #  To do:
@@ -31,6 +32,8 @@ if __name__ == "__main__":
     parser.add_argument('-w', '--weightSet', dest="weightSet", default="")
     parser.add_argument('-r', dest="weightRegion", default="SB")
     parser.add_argument('-c', dest="cut", default="passPreSel")
+    parser.add_argument('-fix_e', action="store_true")
+    parser.add_argument('-fix_d', action="store_true")
     parser.add_argument('-i', '--inputFile',  dest="inputFile", default='hists.pkl', help='Input File. Default: hists.pkl')
     parser.add_argument('-o', '--outputDir', dest='outputDir', default="")
     parser.add_argument('--ROOTInputs', action="store_true")
@@ -136,7 +139,15 @@ if __name__ == "__main__":
     # Define the model
     #
     JCM_model = jetCombinatoricModel(tt4b_nTagJets=tt4b_nTagJets_values, tt4b_nTagJets_errors=tt4b_nTagJets_errors, qcd3b=qcd3b_values, qcd3b_errors=qcd3b_errors, tt4b=tt4b_values)
-    JCM_model.fixParameter("threeTightTagFraction", threeTightTagFraction)
+    #JCM_model.fixParameter("threeTightTagFraction", threeTightTagFraction)
+
+    if args.fix_e:
+        JCM_model.fixParameter_e_d_norm(threeTightTagFraction)
+    elif args.fix_d:
+        JCM_model.fixParameter_d_norm(threeTightTagFraction)
+    else:
+        JCM_model.fixParameter_norm(threeTightTagFraction)
+
 
     #
     #  Give empty bins ~poisson uncertianties
@@ -203,8 +214,8 @@ if __name__ == "__main__":
         diff = JCM([jets])[0] - JCM.JCM_weights[i-1]
         if diff > 0.001:
             print("ERROR nPSeudoTagJets",i,JCM([jets]), "vs", JCM.JCM_weights[i-1])
-    
-    
+
+
     #
     #  Plots
     #
@@ -243,9 +254,30 @@ if __name__ == "__main__":
                         "rlim": [0, 2],
                         }
 
-        makePlot(cfg, var="selJets_noJCM.n",
-                 cut="passPreSel", region="SB",
-                 outputFolder=args.outputDir, **plot_options)
+        fig, ax = makePlot(cfg, var="selJets_noJCM.n",
+                           cut="passPreSel", region="SB",
+                           #outputFolder=args.outputDir,
+                           **plot_options)
+
+        fit_text = ""
+        plot_param_name = {"pseudoTagProb": "f",
+                           "pairEnhancement": "e",
+                           "pairEnhancementDecay": "d"}
+        for parameter in JCM_model.parameters:
+            if parameter.name == "threeTightTagFraction":
+                continue
+            fit_text += f"  {plot_param_name[parameter.name]} = {round(parameter.value,2)} +/- {round(parameter.error,3)}  ({round(parameter.percentError,1)}%)\n"
+        fit_text  += f"  $\chi^2$ / DoF = {round(JCM_model.fit_chi2,1)} / {JCM_model.fit_ndf} = {round(JCM_model.fit_chi2/JCM_model.fit_ndf,1)}\n"
+        fit_text += f"  p-value: {round(100*JCM_model.fit_prob)}%\n"
+
+
+        plt.text(10, 6, "Fit Result:", fontsize=20, color='black', fontweight='bold',
+                 horizontalalignment='left', verticalalignment='center')
+
+        plt.text(10, 5.15, fit_text, fontsize=15, color='black',
+                 horizontalalignment='left', verticalalignment='center')
+
+        fig.savefig(args.outputDir+"/selJets_noJCM_n.pdf")
 
         #
         #  Plot NTagged Jets
@@ -264,7 +296,16 @@ if __name__ == "__main__":
                         "rlim": [0.8, 1.2],
                         "ylim": [0.1, None]
                         }
-        makePlot(cfg, var="tagJets_noJCM.n",
-                 cut="passPreSel", region="SB",
-                 outputFolder=args.outputDir, **plot_options)
+        fig, ax = makePlot(cfg, var="tagJets_noJCM.n",
+                           cut="passPreSel", region="SB",
+                           #outputFolder=args.outputDir,
+                           **plot_options)
 
+
+        #plt.text(10, 6, "Fit Result:", fontsize=20, color='black', fontweight='bold',
+        #         horizontalalignment='left', verticalalignment='center')
+        #
+        #plt.text(10, 5, fit_text, fontsize=15, color='black',
+        #         horizontalalignment='left', verticalalignment='center')
+
+        fig.savefig(args.outputDir+"/tagJets_noJCM_n.pdf")
