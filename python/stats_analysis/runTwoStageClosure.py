@@ -481,8 +481,6 @@ class multijetEnsemble:
                 self.multijet_ensemble.SetBinError(ensemble_bin, 0.0)
                 self.data_minus_ttbar_ensemble.SetBinContent(ensemble_bin, self.data_minus_ttbar.GetBinContent(local_bin))
                 self.data_minus_ttbar_ensemble.SetBinError  (ensemble_bin, self.data_minus_ttbar.GetBinError  (local_bin))
-                print('hahaha'); print(self.average_rebin.GetBinContent(local_bin)) ;
-            exit()
         
         self.f.cd(self.channel)
         self.multijet_ensemble_average.Write()
@@ -1346,9 +1344,6 @@ class closure:
 
         # # @log_function_call
         def background_UserFunction(xArray, pars):
-            print('xArray')
-            print(xArray)
-            exit()
             this_bin = int(xArray[0])
 
             if this_bin > self.nBins_rebin:
