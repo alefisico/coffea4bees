@@ -131,7 +131,7 @@ class Train(CommonTrain):
                     name="apply JCM",
                 )
             )
-        return ps
+        return list(super().preprocess_by_group()) + ps
 
 
 class TrainBaseline(_picoAOD.Background, Train): ...

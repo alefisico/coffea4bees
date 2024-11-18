@@ -3,7 +3,6 @@ export CERNUSER="c/chuyuan"
 export WFS="classifier/config/workflows/HCR/FvT_ttbar_study"
 export BASE="root://cmseos.fnal.gov//store/user/${LPCUSER}/HH4b"
 export MODEL="${BASE}/classifier/FvT/nott"
-export FRIEND="${BASE}/friend/FvT/nott"
 export WEB="root://eosuser.cern.ch//eos/user/${CERNUSER}/www/HH4b/classifier/FvT_ttbar_study/"
 
 # train mixed and make plots

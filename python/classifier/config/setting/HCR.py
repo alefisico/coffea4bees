@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import IntEnum
 
 from classifier.task import Cascade
 
@@ -39,7 +39,7 @@ class Output(Cascade):
     quadjet_prob: str = "quadjet_prob"
 
 
-class MassRegion(Enum):
+class MassRegion(IntEnum):
     SB = 0b10
     ZZSR = 0b0101
     ZHSR = 0b1001
@@ -47,6 +47,6 @@ class MassRegion(Enum):
     SR = 0b01
 
 
-class NTag(Enum):
+class NTag(IntEnum):
     fourTag = 0b10
     threeTag = 0b01

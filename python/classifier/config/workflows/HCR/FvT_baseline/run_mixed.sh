@@ -3,7 +3,6 @@ export CERNUSER="c/chuyuan"
 export WFS="classifier/config/workflows/HCR/FvT_baseline"
 export BASE="root://cmseos.fnal.gov//store/user/${LPCUSER}/HH4b"
 export MODEL="${BASE}/classifier/FvT/baseline"
-export FRIEND="${BASE}/friend/FvT/baseline"
 export WEB="root://eosuser.cern.ch//eos/user/${CERNUSER}/www/HH4b/classifier/FvT_baseline/"
 
 # train mixed and make plots
@@ -15,5 +14,5 @@ done
 # evaluate
 for i in {0..14}
 do
-    ./pyml.py template "{mixed: ${i}, tag: mixed, user: ${LPCUSER}}" $WFS/evaluate.yml
+    ./pyml.py template "{mixed: ${i}, tag: mixed, user: ${LPCUSER}}" $WFS/evaluate_mixed.yml
 done

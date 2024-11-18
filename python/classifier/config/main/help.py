@@ -6,7 +6,7 @@ from pathlib import Path
 from textwrap import indent
 
 from classifier.task import ArgParser, EntryPoint, Task, main, parse
-from classifier.task.special import WorkInProgress
+from classifier.task.special import Deprecated, WorkInProgress
 from classifier.task.task import _INDENT
 
 from .. import setting as cfg
@@ -15,6 +15,9 @@ _NOTES = [
     f"A special task/flag [blue]{main._FROM}[/blue]/[blue]{main._DASH}{main._FROM}[/blue] [yellow]file \[file ...][/yellow] can be used to load and merge workflows from files. If an option is marked as {parse.EMBED}, it can directly read the jsonable object embedded in the workflow configuration file.",
     f"A special task/flag [blue ]{main._TEMPLATE}[/blue] [yellow]formatter file \[file ...][/yellow] can be used to load and merge workflows and replace the keys by the formatter.",
 ]
+
+_WORKINPROGRESS = "[red]\[Work In Progress][/red]"
+_DEPRECATED = "[orange1]\[Deprecated][/orange1]"
 
 
 def _print_mod(cat: str, imp: str, opts: list[str | dict], newline: str = "\n"):
@@ -75,7 +78,13 @@ class Main(main.Main):
         "--wip",
         "--work-in-progress",
         action="store_true",
-        help="list tasks that is still [red]Work In Progress[/red]",
+        help=f"list tasks that is still {_WORKINPROGRESS}",
+        default=False,
+    )
+    argparser.add_argument(
+        "--deprecated",
+        action="store_true",
+        help=f"list tasks that is {_DEPRECATED}",
         default=False,
     )
 
@@ -96,13 +105,22 @@ class Main(main.Main):
     def _print_help(self, task: type[Task], depth: int = 1):
         self._print(indent(task.help(), _INDENT * depth))
 
-    def _check_wip(self, cls: type, depth: int = 0):
-        if isinstance(cls, type) and issubclass(cls, WorkInProgress):
-            if self.opts.wip:
-                self._print(indent("[red]\[Work In Progress][/red]", _INDENT * depth))
-            else:
-                return False
-        return True
+    def _check_special(self, cls: type, depth: int = 0, force: bool = False):
+        to_print = True
+        labels = []
+        if isinstance(cls, type):
+            if issubclass(cls, WorkInProgress):
+                labels.append(indent(_WORKINPROGRESS, _INDENT * depth))
+                if not self.opts.wip:
+                    to_print = False
+            if issubclass(cls, Deprecated):
+                labels.append(indent(_DEPRECATED, _INDENT * depth))
+                if not self.opts.deprecated:
+                    to_print = False
+        if to_print or force:
+            for label in labels:
+                self._print(label)
+        return to_print
 
     def run(self, parser: EntryPoint):
         import rich.terminal_theme as themes
@@ -141,7 +159,7 @@ class Main(main.Main):
         for task in parser._mains:
             if task != "help":
                 _, cls = parser._fetch_module(f"{task}.Main", main._MAIN)
-                if self._check_wip(cls):
+                if self._check_special(cls):
                     self._print(f"[blue]{task}[/blue]")
                     self._print_help(cls)
         self._print("\n[orange3]\[Options][orange3]")
@@ -151,7 +169,7 @@ class Main(main.Main):
             for imp, opts in parser.args[cat]:
                 modname, clsname = parser._fetch_module_name(imp, cat)
                 mod, cls = parser._fetch_module(imp, cat)
-                self._check_wip(cls)
+                self._check_special(cls, force=True)
                 self._print(_print_mod(cat, imp, opts))
                 if mod is None:
                     self._print(
@@ -192,7 +210,7 @@ class Main(main.Main):
                                     classes[fullname] = obj
                     if classes:
                         for cls in classes:
-                            if self._check_wip(classes[cls], 1):
+                            if self._check_special(classes[cls], 1):
                                 self._print(indent(f"[green]{cls}[/green]", _INDENT))
                                 self._print_help(classes[cls], 2)
         if self.opts.html:

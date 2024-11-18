@@ -123,7 +123,7 @@ class HCRModel(Model):
             self._nn.setGhostBatches(0, False)
         else:
             self._gbn.reset()
-            self._nn.setGhostBatches(self._gbn.n_batches, True)  # TODO subset?
+            self._nn.setGhostBatches(self._gbn.n_batches, False)
 
     @property
     def hyperparameters(self) -> dict[str]:

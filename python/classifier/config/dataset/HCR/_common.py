@@ -79,8 +79,8 @@ class Common(LoadGroupedRoot):
     def _preprocess_by_group(self):
         return self.preprocess_by_group()
 
-    @abstractmethod
-    def preprocess_by_group(self) -> Iterable[_group.ProcessorGenerator]: ...
+    def preprocess_by_group(self) -> Iterable[_group.ProcessorGenerator]:
+        return ()
 
     @cached_property
     def _branches(self):
@@ -111,7 +111,7 @@ class CommonTrain(Common):
             .add(Input.weight, "float32").columns(Columns.weight)
             .add(Input.ancillary, "float32").columns(*InputBranch.feature_ancillary)
             .add(Input.CanJet, "float32").columns(*InputBranch.feature_CanJet, target=InputBranch.n_CanJet)
-            .add(Input.NotCanJet, "float32").columns(*InputBranch.feature_NotCanJet, target=InputBranch.n_NotCanJet)
+            .add(Input.NotCanJet, "float32").columns(*InputBranch.feature_NotCanJet, target=InputBranch.n_NotCanJet, pad_value=-1)
         )
         self.preprocessors.extend(
             [
@@ -188,7 +188,7 @@ class CommonEval(Common):
             .add(KFold.offset, KFold.offset_dtype).columns(Columns.event)
             .add(Input.ancillary, "float32").columns(*InputBranch.feature_ancillary)
             .add(Input.CanJet, "float32").columns(*InputBranch.feature_CanJet, target=InputBranch.n_CanJet)
-            .add(Input.NotCanJet, "float32").columns(*InputBranch.feature_NotCanJet, target=InputBranch.n_NotCanJet)
+            .add(Input.NotCanJet, "float32").columns(*InputBranch.feature_NotCanJet, target=InputBranch.n_NotCanJet, pad_value=-1)
         )
         # fmt: on
 

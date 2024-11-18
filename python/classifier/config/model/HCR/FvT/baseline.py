@@ -36,7 +36,7 @@ class Train(HCRTrain):
         # get tensors
         c_score = batch[Output.class_raw]
         weight = batch[Input.weight]
-        is_SR = (batch[Input.region] & MassRegion.SR.value) != 0
+        is_SR = (batch[Input.region] & MassRegion.SR) != 0
 
         # remove 4b data contribution from SR
         no_SR_d4 = torch.ones(
