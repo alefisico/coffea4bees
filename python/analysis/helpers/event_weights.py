@@ -165,6 +165,10 @@ def add_pseudotagweights( selev, weights,
         selev["nJet_pseudotagged"] = nJet_pseudotagged
         selev["pseudoTagWeight"] = pseudoTagWeight
 
+        nTagJets = np.array(ak.num(selev.tagJet).to_numpy(), dtype=int)
+        nTagJets[selev.threeTag] = ak.num(selev.tagJet_loose[selev.threeTag])
+        selev["nJet_ps_and_tag"] = nJet_pseudotagged + nTagJets
+
         weight_noFvT = np.array(selev.weight.to_numpy(), dtype=float)
         weight_noFvT[selev.threeTag] = ( selev.weight[selev.threeTag] * selev.pseudoTagWeight[selev.threeTag] )
         selev["weight_noFvT"] = weight_noFvT
