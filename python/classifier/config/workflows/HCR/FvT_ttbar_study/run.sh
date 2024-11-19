@@ -8,7 +8,7 @@ export WEB="root://eosuser.cern.ch//eos/user/${CERNUSER}/www/HH4b/classifier/FvT
 # train mixed and make plots
 for i in {0..14}
 do
-    ./pyml.py template "{mixed: ${i}, offset: 0, user: ${LPCUSER}, source: 'mixed detector', option: no-detector-4b, tag: mixed}" $WFS/train.yml
+    ./pyml.py template "{mixed: ${i}, offset: 0, user: ${LPCUSER}, tag: mixed}" $WFS/train.yml
     ./pyml.py analyze --results ${MODEL}/mixed-${i}/result.json -analysis HCR.LossROC -setting IO "output: ${WEB}" -setting IO "report: nott-${i}"
 done
 # evaluate

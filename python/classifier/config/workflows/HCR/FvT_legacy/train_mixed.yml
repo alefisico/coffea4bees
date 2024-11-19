@@ -17,27 +17,31 @@ model:
       - --kfold-seed FvT random
       - --kfold-seed-offsets {offset}
       - --training FixedStep
-      - epoch: 5
+      - epoch: 10
         bs_init: 1024
       - --finetuning FinetuneStep
       - epoch: 1
         bs_init: 16384
-# TODO fix ttbar weight in friend tree
+# training set: mixed 4b + detector 3b + ttbar 4b + ttbar 3b
+# SR(blinded) + SB; default JCM
 dataset:
-  - module: HCR.FvT.TrainBaseline
+  - module: HCR.FvT_legacy.TrainBaseline
     option:
+      - --no-JCM
       - --data-source mixed
       - --data-mixed-samples {mixed}
-      - --friends
-      -
-      - root://cmseos.fnal.gov//store/user/{user}/HH4b/friend/friend.json@@HCR_input
-      - root://cmseos.fnal.gov//store/user/{user}/HH4b/friend/friend.json@@JCM_weight
+      - --preprocess label:data
+      - df.tools.add_columns
+      - weight: 1.0
       - --max-workers 8
-  - module: HCR.FvT.Train
+  - module: HCR.FvT_legacy.Train
     option:
       - --no-detector-4b
       - --no-JCM
       - --branch pseudoTagWeight_3bDvTMix4bDvT_v{mixed}
+      - --preprocess source:detector
+      - df.tools.add_columns
+      - weight: 1.0
       - --preprocess source:detector
       - compatibility.JCM.branch.apply_JCM
       - name: pseudoTagWeight_3bDvTMix4bDvT_v{mixed}
@@ -48,14 +52,11 @@ dataset:
       - --files "label:data,source:detector,year:2017" root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//data2017_3b/picoAOD_3b_wJCM_newSBDef.root
       - --files "label:data,source:detector,year:2018" root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//data2018_3b/picoAOD_3b_wJCM_newSBDef.root
       - --max-workers 8
-      - --friends
-      -
-      - root://cmseos.fnal.gov//store/user/{user}/HH4b/friend/tmp/data3b/friend.json@@HCR_input
 
 setting:
   - module: IO
     option:
-      - output: root://cmseos.fnal.gov//store/user/{user}/HH4b/classifier/FvT/baseline/{tag}-{mixed}/
+      - output: root://cmseos.fnal.gov//store/user/{user}/HH4b/classifier/FvT/baseline_legacy/{tag}-{mixed}/
   - module: torch.DataLoader
     option:
       - num_workers: 4

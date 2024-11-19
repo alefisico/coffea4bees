@@ -1,0 +1,13 @@
+from . import FvT, legacy
+
+
+class Train(FvT.Train, legacy.CommonTrain): ...
+
+
+class TrainBaseline(FvT.TrainBaseline, legacy.CommonTrain): ...
+
+
+class TrainDataOnly(FvT.TrainDataOnly, legacy.CommonTrain): ...
+
+
+class Eval(FvT.Eval, legacy.Eval): ...

@@ -2,8 +2,6 @@
 # - mixed: mixed data index
 # - offset: offset for kfold
 # - user: lpc username
-# - source: data source
-# - option: data option
 # - tag: tag of the model
 
 main:
@@ -24,18 +22,19 @@ model:
       - --finetuning FinetuneStep
       - epoch: 1
         bs_init: 16384
-
+# training set: mixed 4b + detector 3b
+# SB only; no JCM;
 dataset:
   - module: HCR.FvT.TrainDataOnly
     option:
       - --no-JCM
-      - --data-source {source}
-      - --{option}
+      - --no-SR
+      - --no-detector-4b
+      - --data-source mixed detector
       - --data-mixed-samples {mixed}
       - --friends
       -
       - root://cmseos.fnal.gov//store/user/{user}/HH4b/friend/friend.json@@HCR_input
-      - root://cmseos.fnal.gov//store/user/{user}/HH4b/friend/friend.json@@JCM_weight
       - --max-workers 16
 
 setting:

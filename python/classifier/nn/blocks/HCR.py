@@ -1755,12 +1755,10 @@ class InputEmbed(nn.Module):
                 1,
             )  # flag with zeros to signify dijet quantities
 
-            mask_oo = (
-                mask.view(n, 1, self.osl) | mask.view(n, self.osl, 1)
-            ).int()  # mask of 2d matrix of otherjets (i,j) is True if mask[i] | mask[j]
-            mask_oo = mask_oo.masked_fill(
-                self.mask_oo_same.to(device), 1
-            ).bool()  # bug in onnx when bool
+            mask_oo = mask.view(n, 1, self.osl) | mask.view(
+                n, self.osl, 1
+            )  # mask of 2d matrix of otherjets (i,j) is True if mask[i] | mask[j]
+            mask_oo = mask_oo.masked_fill(self.mask_oo_same.to(device), 1)
             # mask_oo[self.mask_oo_same] = True # also bug in onnx when bool
             # ooMdPhi = ooMdPhi.masked_fill(mask_oo.view(n,1,self.osl,self.osl), 1e6)
 
@@ -1776,12 +1774,9 @@ class InputEmbed(nn.Module):
                 1,
             )  # flag with ones to signify trijet quantities
 
-            mask_do = (
-                mask.view(n, 1, self.osl).repeat(1, self.dsl, 1).int()
-            )  # repeat so we can change mask for each dijet
-            mask_do = mask_do.masked_fill(
-                self.mask_do_same.to(device), 1
-            ).bool()  # bug in onnx when bool
+            mask_do = mask.view(n, 1, self.osl).repeat(1, self.dsl, 1)
+            # repeat so we can change mask for each dijet
+            mask_do = mask_do.masked_fill(self.mask_do_same.to(device), 1)
             # mask_do[self.mask_do_same] = True # also bug in onnx when bool
             # doMdPhi = doMdPhi.masked_fill(mask_do.view(n,1,self.dsl,self.osl), 1e6)
 

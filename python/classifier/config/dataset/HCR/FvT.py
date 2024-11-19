@@ -35,12 +35,21 @@ def _select_3b(df: pd.DataFrame):
     return df[df["threeTag"]]
 
 
+def _remove_sr(df: pd.DataFrame):
+    return df[~df["SR"]]
+
+
 class Train(CommonTrain):
     argparser = ArgParser()
     argparser.add_argument(
         "--no-JCM",
         action="store_true",
         help="disable JCM weights",
+    )
+    argparser.add_argument(
+        "--no-SR",
+        action="store_true",
+        help="remove SR events",
     )
     argparser.add_argument(
         "--no-detector-4b",
@@ -79,6 +88,15 @@ class Train(CommonTrain):
             ),
             _group.add_year(),
         ]
+        if self.opts.no_SR:
+            ps.append(
+                _group.fullmatch(
+                    (),
+                    processors=[
+                        lambda: _remove_sr,
+                    ],
+                )
+            )
         if self.opts.no_detector_4b:
             ps.append(
                 _group.fullmatch(

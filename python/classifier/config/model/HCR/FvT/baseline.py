@@ -36,13 +36,15 @@ class Train(HCRTrain):
         # get tensors
         c_score = batch[Output.class_raw]
         weight = batch[Input.weight]
+        weight[weight < 0] = 0
         is_SR = (batch[Input.region] & MassRegion.SR) != 0
 
         # remove 4b data contribution from SR
-        no_SR_d4 = torch.ones(
-            len(MultiClass.labels), dtype=c_score.dtype, device=c_score.device
-        )
-        no_SR_d4[MultiClass.labels.index("d4")] = 0
+        d4 = MultiClass.labels.index("d4")
+        no_d4_idx = [*range(len(MultiClass.labels))]
+        no_d4_idx = no_d4_idx[:d4] + no_d4_idx[d4 + 1 :]
+        no_d4_y = batch[Input.label][is_SR]
+        no_d4_y = torch.where(no_d4_y > d4, no_d4_y - 1, no_d4_y)
 
         # calculate loss
         cross_entropy = torch.zeros_like(weight)
@@ -50,7 +52,7 @@ class Train(HCRTrain):
             c_score[~is_SR], batch[Input.label][~is_SR], reduction="none"
         )
         cross_entropy[is_SR] = F.cross_entropy(
-            c_score[is_SR], batch[Input.label][is_SR], weight=no_SR_d4, reduction="none"
+            c_score[is_SR][:, no_d4_idx], no_d4_y, reduction="none"
         )
         loss = (cross_entropy * weight).sum() / weight.sum()
         return loss

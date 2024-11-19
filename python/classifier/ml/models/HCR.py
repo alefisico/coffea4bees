@@ -162,7 +162,7 @@ class HCRModel(Model):
 
     def step(self, epoch: int = None):
         if self.ghost_batch is not None and self.ghost_batch.step(epoch):
-            self._nn.setGhostBatches(self.ghost_batch.get_bs(), True)
+            self._nn.setGhostBatches(self.ghost_batch.get_bs(), False)
 
 
 class HCRTraining(MultiStageTraining):
