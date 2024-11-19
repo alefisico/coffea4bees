@@ -58,6 +58,8 @@ class FixedStep(Schedule):
 
 @dataclass
 class AutoStep(FixedStep):
+    require_benchmark = True
+
     lr_threshold: float = 1e-4
     lr_patience: int = 1
     lr_cooldown: int = 1

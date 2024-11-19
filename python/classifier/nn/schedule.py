@@ -18,6 +18,8 @@ class BSScheduler(ABC):
 
 
 class Schedule(ABC):
+    require_benchmark = False
+
     epoch: int
     epoch_key: tuple[str, ...] = ("hyperparameters", "epoch")
 
