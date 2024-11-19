@@ -559,10 +559,24 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
     out_data["debug_fourTag"] = selev[selev_mask].fourTag
     out_data["debug_qj_lead_pt"  ]         = quadJet[selev_mask].lead.pt.to_list()
     out_data["debug_qj_lead_lead_pt"  ]    = quadJet[selev_mask].lead.lead.pt.to_list()
+    out_data["debug_qj_lead_lead_eta"  ]   = quadJet[selev_mask].lead.lead.eta.to_list()
+    out_data["debug_qj_lead_lead_phi"  ]   = quadJet[selev_mask].lead.lead.phi.to_list()
+    out_data["debug_qj_lead_lead_mass"  ]  = quadJet[selev_mask].lead.lead.mass.to_list()
     out_data["debug_qj_lead_subl_pt"  ]    = quadJet[selev_mask].lead.subl.pt.to_list()
+    out_data["debug_qj_lead_subl_eta"  ]   = quadJet[selev_mask].lead.subl.eta.to_list()
+    out_data["debug_qj_lead_subl_phi"  ]   = quadJet[selev_mask].lead.subl.phi.to_list()
+    out_data["debug_qj_lead_subl_mass"  ]  = quadJet[selev_mask].lead.subl.mass.to_list()
+
     out_data["debug_qj_subl_pt"  ]         = quadJet[selev_mask].subl.pt.to_list()
     out_data["debug_qj_subl_lead_pt"  ]    = quadJet[selev_mask].subl.lead.pt.to_list()
+    out_data["debug_qj_subl_lead_eta"  ]   = quadJet[selev_mask].subl.lead.eta.to_list()
+    out_data["debug_qj_subl_lead_phi"  ]   = quadJet[selev_mask].subl.lead.phi.to_list()
+    out_data["debug_qj_subl_lead_mass"  ]  = quadJet[selev_mask].subl.lead.mass.to_list()
+
     out_data["debug_qj_subl_subl_pt"  ]    = quadJet[selev_mask].subl.subl.pt.to_list()
+    out_data["debug_qj_subl_subl_eta"  ]   = quadJet[selev_mask].subl.subl.eta.to_list()
+    out_data["debug_qj_subl_subl_phi"  ]   = quadJet[selev_mask].subl.subl.phi.to_list()
+    out_data["debug_qj_subl_subl_mass"  ]  = quadJet[selev_mask].subl.subl.mass.to_list()
 
 
     for out_k, out_v in out_data.items():
