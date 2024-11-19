@@ -329,6 +329,7 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
                                    run_systematics:bool = False,
                                    classifier_SvB = None,
                                    classifier_SvB_MA = None,
+                                   processOutput = None,
                                    ):
     #
     # Build and select boson candidate jets with bRegCorr applied
@@ -457,6 +458,7 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
     quadJet["selected"] = quadJet.rank == np.max(quadJet.rank, axis=1)
 
 
+
     if apply_FvT:
         quadJet["FvT_q_score"] = np.concatenate( [
             selev.FvT.q_1234[:, np.newaxis],
@@ -525,6 +527,31 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
     #     "SR": selev["quadJet_selected"].SR,
     #     "SB": selev["quadJet_selected"].SB
     #     })
+
+
+    out_data = {}
+    out_data["debug_event"  ]    = selev.event
+    out_data["debug_qj_rank"  ]    = quadJet.rank.to_list()
+    out_data["debug_qj_selected"  ]    = quadJet.selected.to_list()
+    out_data["debug_qj_passDiJetMass"  ]    = quadJet.passDiJetMass.to_list()
+    out_data["debug_qj_lead_passMDR"  ]    = quadJet.lead.passMDR.to_list()
+    out_data["debug_qj_subl_passMDR"  ]    = quadJet.subl.passMDR.to_list()
+    out_data["debug_qj_lead_mass"  ]    = quadJet.lead.mass.to_list()
+    out_data["debug_qj_subl_mass"  ]    = quadJet.subl.mass.to_list()
+    out_data["debug_qj_random"  ]    = quadJet.random.to_list()
+    out_data["debug_qj_SR"  ]    = quadJet.SR.to_list()
+    out_data["debug_qj_SB"  ]    = quadJet.SB.to_list()
+    out_data["debug_counter"  ]    = counter.to_list()
+    out_data["debug_SR"] = selev["quadJet_selected"].SR
+    out_data["debug_SB"] = selev["quadJet_selected"].SB
+    out_data["debug_threeTag"] = selev.threeTag
+    out_data["debug_fourTag"] = selev.fourTag
+
+    for out_k, out_v in out_data.items():
+        processOutput[out_k] = {}
+        processOutput[out_k][selev.metadata['dataset']] = list(out_v)
+
+
 
     if run_SvB:
         selev["passSvB"] = selev["SvB_MA"].ps > 0.80
