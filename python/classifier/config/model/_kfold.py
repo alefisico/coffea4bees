@@ -128,18 +128,19 @@ class KFoldEval(ABC, Model):
                     )
                 for result in results:
                     metadata = result.get("metadata", {})
-                    if ("kfolds" not in metadata) or ("offset" not in metadata):
-                        continue
-                    kfolds = metadata["kfolds"]
-                    offset = metadata["offset"]
                     model = None
                     for stage in result.get("history", [])[::-1]:
                         if (stage.get("stage") == "Output") and (
                             stage.get("name") == name
                         ):
                             model = stage["path"]
+                            break
                     if model is None:
                         continue
+                    if ("kfolds" not in metadata) or ("offset" not in metadata):
+                        continue
+                    kfolds = metadata["kfolds"]
+                    offset = metadata["offset"]
                     if "seed" in metadata:
                         from classifier.ml.skimmer import RandomKFold
 
