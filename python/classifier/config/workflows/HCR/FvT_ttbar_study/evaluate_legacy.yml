@@ -21,7 +21,7 @@ model:
     option:
       - --models
       - Final
-      - root://cmseos.fnal.gov//store/user/{user}/HH4b/classifier/FvT/baseline_legacy/{tag}-{mixed}/result.json
+      - root://cmseos.fnal.gov//store/user/{user}/HH4b/classifier/FvT/nott/legacy/{tag}-{mixed}/result.json
 
 analysis:
   - module: kfold.Merge
@@ -34,7 +34,7 @@ analysis:
 setting:
   - module: IO
     option:
-      - output: root://cmseos.fnal.gov//store/user/{user}/HH4b/friend/FvT/baseline_legacy/{tag}-{mixed}/
+      - output: root://cmseos.fnal.gov//store/user/{user}/HH4b/friend/FvT/nott/legacy/{tag}-{mixed}/
   - module: torch.DataLoader
     option:
       - num_workers: 8
