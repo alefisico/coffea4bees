@@ -528,24 +528,42 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
     #     "SB": selev["quadJet_selected"].SB
     #     })
 
-
+    selev_mask = selev.event == 434011
     out_data = {}
-    out_data["debug_event"  ]    = selev.event
-    out_data["debug_qj_rank"  ]    = quadJet.rank.to_list()
-    out_data["debug_qj_selected"  ]    = quadJet.selected.to_list()
-    out_data["debug_qj_passDiJetMass"  ]    = quadJet.passDiJetMass.to_list()
-    out_data["debug_qj_lead_passMDR"  ]    = quadJet.lead.passMDR.to_list()
-    out_data["debug_qj_subl_passMDR"  ]    = quadJet.subl.passMDR.to_list()
-    out_data["debug_qj_lead_mass"  ]    = quadJet.lead.mass.to_list()
-    out_data["debug_qj_subl_mass"  ]    = quadJet.subl.mass.to_list()
-    out_data["debug_qj_random"  ]    = quadJet.random.to_list()
-    out_data["debug_qj_SR"  ]    = quadJet.SR.to_list()
-    out_data["debug_qj_SB"  ]    = quadJet.SB.to_list()
-    out_data["debug_counter"  ]    = counter.to_list()
-    out_data["debug_SR"] = selev["quadJet_selected"].SR
-    out_data["debug_SB"] = selev["quadJet_selected"].SB
-    out_data["debug_threeTag"] = selev.threeTag
-    out_data["debug_fourTag"] = selev.fourTag
+    out_data["debug_event"  ]            = selev.event[selev_mask]
+    out_data["debug_qj_rank"  ]    = quadJet[selev_mask].rank.to_list()
+    out_data["debug_qj_selected"  ]    = quadJet[selev_mask].selected.to_list()
+    out_data["debug_qj_passDiJetMass"  ]    = quadJet[selev_mask].passDiJetMass.to_list()
+    out_data["debug_qj_lead_passMDR"  ]    = quadJet[selev_mask].lead.passMDR.to_list()
+    out_data["debug_qj_subl_passMDR"  ]    = quadJet[selev_mask].subl.passMDR.to_list()
+    out_data["debug_qj_lead_mass"  ]    = quadJet[selev_mask].lead.mass.to_list()
+    out_data["debug_qj_subl_mass"  ]    = quadJet[selev_mask].subl.mass.to_list()
+    out_data["debug_qj_random"  ]    = quadJet[selev_mask].random.to_list()
+    out_data["debug_qj_SR"  ]    = quadJet[selev_mask].SR.to_list()
+    out_data["debug_qj_HHSR"  ]    = quadJet[selev_mask].HHSR.to_list()
+    out_data["debug_qj_ZZSR"  ]    = quadJet[selev_mask].ZZSR.to_list()
+    out_data["debug_qj_ZHSR"  ]    = quadJet[selev_mask].ZHSR.to_list()
+    out_data["debug_qj_xZZ"  ]    = quadJet[selev_mask].xZZ.to_list()
+    out_data["debug_qj_xZH"  ]    = quadJet[selev_mask].xZH.to_list()
+    out_data["debug_qj_xHH"  ]    = quadJet[selev_mask].xHH.to_list()
+    out_data["debug_qj_ZHSR"  ]    = quadJet[selev_mask].ZHSR.to_list()
+    out_data["debug_qj_lead_xZ"  ]    = quadJet[selev_mask].lead.xZ.to_list()
+    out_data["debug_qj_lead_xH"  ]    = quadJet[selev_mask].lead.xH.to_list()
+    out_data["debug_qj_subl_xZ"  ]    = quadJet[selev_mask].subl.xZ.to_list()
+    out_data["debug_qj_subl_xH"  ]    = quadJet[selev_mask].subl.xH.to_list()
+    out_data["debug_qj_SB"  ]    = quadJet[selev_mask].SB.to_list()
+    out_data["debug_counter"  ]    = counter[selev_mask].to_list()
+    out_data["debug_SR"] = selev["quadJet_selected"][selev_mask].SR
+    out_data["debug_SB"] = selev["quadJet_selected"][selev_mask].SB
+    out_data["debug_threeTag"] = selev[selev_mask].threeTag
+    out_data["debug_fourTag"] = selev[selev_mask].fourTag
+    out_data["debug_qj_lead_pt"  ]         = quadJet[selev_mask].lead.pt.to_list()
+    out_data["debug_qj_lead_lead_pt"  ]    = quadJet[selev_mask].lead.lead.pt.to_list()
+    out_data["debug_qj_lead_subl_pt"  ]    = quadJet[selev_mask].lead.subl.pt.to_list()
+    out_data["debug_qj_subl_pt"  ]         = quadJet[selev_mask].subl.pt.to_list()
+    out_data["debug_qj_subl_lead_pt"  ]    = quadJet[selev_mask].subl.lead.pt.to_list()
+    out_data["debug_qj_subl_subl_pt"  ]    = quadJet[selev_mask].subl.subl.pt.to_list()
+
 
     for out_k, out_v in out_data.items():
         processOutput[out_k] = {}
