@@ -409,24 +409,25 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
     #
     # Build quadJets
     #
-    rng = Squares("quadJetSelection", event_event)
-    counter = np.zeros((len(selev), 3, 2), dtype=np.uint64)
-    counter[:, :, 0] = np.round(np.asarray(diJet[:, :, 0].mass), 0).view(np.uint64)
-    counter[:, :, 1] = np.round(np.asarray(diJet[:, :, 1].mass), 0).view(np.uint64)
+    rng_0 = Squares("quadJetSelection")
+    rng_1 = rng_0.shift(1)
+    rng_2 = rng_0.shift(2)
+    counter = selev.event
 
     # print(f"{self.chunk} mass {diJet[:, :, 0].mass[0:5]}\n")
     # print(f"{self.chunk} mass view64 {np.asarray(diJet[:, :, 0].mass).view(np.uint64)[0:5]}\n")
     # print(f"{self.chunk} mass rounded view64 {np.round(np.asarray(diJet[:, :, 0].mass), 0).view(np.uint64)[0:5]}\n")
     # print(f"{self.chunk} mass rounded {np.round(np.asarray(diJet[:, :, 0].mass), 0)[0:5]}\n")
-    # print(f"{self.chunk} counter 0 {counter[:, :, 0][0:5]}\n")
-    # print(f"{self.chunk} counter 1 {counter[:, :, 1][0:5]}\n")
 
     quadJet = ak.zip( { "lead": diJet[:, :, 0],
                         "subl": diJet[:, :, 1],
                         "close": diJetDr[:, :, 0],
                         "other": diJetDr[:, :, 1],
                         "passDiJetMass": ak.all(diJet.passDiJetMass, axis=2),
-                        "random": rng.uniform(counter, low=0.1, high=0.9),
+                        "random": np.concatenate([rng_0.uniform(counter, low=0.1, high=0.9)[:, np.newaxis],
+                                                  rng_1.uniform(counter, low=0.1, high=0.9)[:, np.newaxis],
+                                                  rng_2.uniform(counter, low=0.1, high=0.9)[:, np.newaxis]], axis=1),
+
                        } )
 
     quadJet["dr"] = quadJet["lead"].delta_r(quadJet["subl"])
