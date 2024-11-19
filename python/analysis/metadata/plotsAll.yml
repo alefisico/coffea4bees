@@ -38,28 +38,28 @@ stack:
         TTTo2L2Nu:
                 process: TTTo2L2Nu
                 tag: fourTag
-                fillcolor: "#5790fc"
-                edgecolor: "#5790fc"
+                fillcolor: "#85D1FBff"
+                edgecolor: "#85D1FBff"
                 label: None
 
         TTToSemiLeptonic:
                 process: TTToSemiLeptonic
                 tag: fourTag
-                fillcolor: "#5790fc"
-                edgecolor: "#5790fc"
+                fillcolor: "#85D1FBff"
+                edgecolor: "#85D1FBff"
                 label: None
 
         TTToHadronic:
                 process: TTToHadronic
                 tag: fourTag
-                fillcolor: "#5790fc"
+                fillcolor: "#85D1FBff"
                 edgecolor: k
                 label: TTbar
 
         Multijet:
                 process: data
                 tag: threeTag
-                fillcolor: "#f89c20"
+                fillcolor: "#FFDF7Fff"
                 edgecolor: k
                 label: Multijet
 
