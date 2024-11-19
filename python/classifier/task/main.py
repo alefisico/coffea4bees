@@ -192,13 +192,22 @@ class EntryPoint:
             self._fetch_all(all_cats[0])
 
         from ..config import setting as cfg
-        from ..monitor import disable_monitor, setup_monitor, setup_reporter
+        from ..monitor import (
+            connect_to_monitor,
+            disable_monitor,
+            setup_monitor,
+            setup_reporter,
+        )
 
         if cfg.Monitor.enable:
             if not cfg.Monitor.connect:
                 setup_monitor()
+                logging.info(f"Monitor is running at {cfg.Monitor.raw__address}")
             else:
+                connect_to_monitor()
                 setup_reporter()
+                logging.info(f"Connected to Monitor {cfg.Monitor.raw__address}")
+
         else:
             disable_monitor()
 
