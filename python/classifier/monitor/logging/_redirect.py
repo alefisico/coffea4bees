@@ -3,10 +3,11 @@ from __future__ import annotations
 import logging
 from typing import Iterable
 
-from ...config.setting import monitor as cfg
-from ...config.state import RepoInfo
-from ...process.monitor import Recorder, post_to_monitor
+from classifier.config.setting import monitor as cfg
+from classifier.config.state import RepoInfo
+
 from ..backends import Platform
+from ..core import Recorder, post_to_monitor
 
 
 class MultiPlatformLogRecord(logging.LogRecord):

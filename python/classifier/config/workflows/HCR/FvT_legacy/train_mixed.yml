@@ -23,7 +23,7 @@ model:
       - epoch: 1
         bs_init: 16384
 # training set: mixed 4b + detector 3b + ttbar 4b + ttbar 3b
-# SR(blinded) + SB; default JCM
+# SR(blinded) + SB; tt+data JCM
 dataset:
   - module: HCR.FvT_legacy.TrainBaseline
     option:

@@ -23,7 +23,7 @@ model:
       - epoch: 1
         bs_init: 16384
 # training set: mixed 4b + detector 3b
-# SB only; no JCM;
+# SB only; tt+data JCM;
 dataset:
   - module: HCR.FvT_legacy.TrainDataOnly
     option:

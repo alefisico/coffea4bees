@@ -107,6 +107,9 @@ class Monitor(Cascade):
     address: tuple[str, int] = ":10200"
     connect: bool = False
 
+    # logging
+    log_show_connection: bool = False
+
     # performance
     retry_max: int = 1
     reconnect_delay: float = 0.1  # seconds

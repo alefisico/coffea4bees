@@ -1,5 +1,5 @@
+from classifier.monitor import Monitor
 from classifier.monitor.usage import Usage
-from classifier.process.monitor import Monitor
 from classifier.task import Main as _Main
 
 

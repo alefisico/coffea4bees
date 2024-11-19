@@ -5,10 +5,10 @@ from threading import Lock, Thread
 from typing import TypedDict
 
 import psutil
+from classifier.config.setting import monitor as cfg
+from classifier.config.state import RunInfo
 
-from ...config.setting import monitor as cfg
-from ...config.state import RunInfo
-from ...process.monitor import MonitorProxy, Node, Recorder, post_to_monitor
+from ..core import MonitorProxy, Node, Recorder, post_to_monitor
 
 _MIB = 2**20
 _CUDA = {"12.1": 254}  # MiB

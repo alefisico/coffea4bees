@@ -8,9 +8,9 @@ from rich.progress import BarColumn, ProgressColumn, SpinnerColumn, TimeElapsedC
 from rich.progress import Progress as _Bar
 
 from ..config.setting import monitor as cfg
-from ..process.monitor import MonitorProxy, Recorder, post_to_monitor
 from ..typetools import PicklableLock, WithUUID
 from ..utils import noop
+from .core import MonitorProxy, Recorder, post_to_monitor
 
 _FORMAT = "%H:%M:%S"
 _UNKNOWN = "+--:--:--"

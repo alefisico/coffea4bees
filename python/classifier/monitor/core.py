@@ -11,11 +11,11 @@ from threading import Lock
 from typing import Callable, NamedTuple, TypeVar
 
 import fsspec
+from classifier.config import setting as cfg
 
-from ..config import setting as cfg
-from . import pipe_address
-from .initializer import status
-from .server import Client, Packet, PostBase, Server, post
+from ..process import pipe_address
+from ..process.initializer import status
+from ..process.server import Client, Packet, PostBase, Server, post
 
 __all__ = [
     "Monitor",
@@ -222,7 +222,10 @@ class Recorder(MonitorProxy):
     def register(self, name: str):
         index = f"#{len(self._reporters)}"
         self._reporters[name] = index
-        logging.info(f'"{name}" is registered as [repr.number]\[{index}][/repr.number]')
+        if cfg.Monitor.log_show_connection:
+            logging.info(
+                f'"{name}" is registered as [repr.number]\[{index}][/repr.number]'
+            )
         return index
 
     @classmethod

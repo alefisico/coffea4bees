@@ -192,25 +192,14 @@ class EntryPoint:
             self._fetch_all(all_cats[0])
 
         from ..config import setting as cfg
+        from ..monitor import disable_monitor, setup_monitor, setup_reporter
 
         if cfg.Monitor.enable:
             if not cfg.Monitor.connect:
-                from ..monitor import setup_monitor
-                from ..process.monitor import Monitor
-
-                Monitor().start()
                 setup_monitor()
-                logging.info(f"Monitor is running at {cfg.Monitor.raw__address}")
             else:
-                from ..monitor import setup_reporter
-                from ..process.monitor import connect_to_monitor
-
-                connect_to_monitor()
                 setup_reporter()
-                logging.info(f"Connected to Monitor {cfg.Monitor.raw__address}")
         else:
-            from ..monitor import disable_monitor
-
             disable_monitor()
 
         if not cls._no_init:
@@ -224,7 +213,7 @@ class EntryPoint:
     def run(self, reproducible: Callable = None):
         from ..config import setting as cfg
         from ..config.main.analyze import run_analyzer
-        from ..process.monitor import Recorder, wait_for_monitor
+        from ..monitor import Recorder, wait_for_monitor
 
         # run main task
         result = self.main.run(self)
