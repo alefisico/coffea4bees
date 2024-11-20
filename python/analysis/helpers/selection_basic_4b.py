@@ -329,6 +329,7 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
                                    run_systematics:bool = False,
                                    classifier_SvB = None,
                                    classifier_SvB_MA = None,
+                                   processOutput = None,
                                    ):
     #
     # Build and select boson candidate jets with bRegCorr applied
@@ -409,24 +410,25 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
     #
     # Build quadJets
     #
-    rng = Squares("quadJetSelection", event_event)
-    counter = np.zeros((len(selev), 3, 2), dtype=np.uint64)
-    counter[:, :, 0] = np.round(np.asarray(diJet[:, :, 0].mass), 0).view(np.uint64)
-    counter[:, :, 1] = np.round(np.asarray(diJet[:, :, 1].mass), 0).view(np.uint64)
+    rng_0 = Squares("quadJetSelection")
+    rng_1 = rng_0.shift(1)
+    rng_2 = rng_0.shift(2)
+    counter = selev.event
 
     # print(f"{self.chunk} mass {diJet[:, :, 0].mass[0:5]}\n")
     # print(f"{self.chunk} mass view64 {np.asarray(diJet[:, :, 0].mass).view(np.uint64)[0:5]}\n")
     # print(f"{self.chunk} mass rounded view64 {np.round(np.asarray(diJet[:, :, 0].mass), 0).view(np.uint64)[0:5]}\n")
     # print(f"{self.chunk} mass rounded {np.round(np.asarray(diJet[:, :, 0].mass), 0)[0:5]}\n")
-    # print(f"{self.chunk} counter 0 {counter[:, :, 0][0:5]}\n")
-    # print(f"{self.chunk} counter 1 {counter[:, :, 1][0:5]}\n")
 
     quadJet = ak.zip( { "lead": diJet[:, :, 0],
                         "subl": diJet[:, :, 1],
                         "close": diJetDr[:, :, 0],
                         "other": diJetDr[:, :, 1],
                         "passDiJetMass": ak.all(diJet.passDiJetMass, axis=2),
-                        "random": rng.uniform(counter, low=0.1, high=0.9),
+                        "random": np.concatenate([rng_0.uniform(counter, low=0.1, high=0.9)[:, np.newaxis],
+                                                  rng_1.uniform(counter, low=0.1, high=0.9)[:, np.newaxis],
+                                                  rng_2.uniform(counter, low=0.1, high=0.9)[:, np.newaxis]], axis=1),
+
                        } )
 
     quadJet["dr"] = quadJet["lead"].delta_r(quadJet["subl"])
@@ -454,6 +456,7 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
     #
     quadJet["rank"] = ( 10 * quadJet.passDiJetMass + quadJet.lead.passMDR + quadJet.subl.passMDR + quadJet.random )
     quadJet["selected"] = quadJet.rank == np.max(quadJet.rank, axis=1)
+
 
 
     if apply_FvT:
@@ -524,6 +527,66 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
     #     "SR": selev["quadJet_selected"].SR,
     #     "SB": selev["quadJet_selected"].SB
     #     })
+
+    #
+    # Debugging the skimmer
+    #
+    ### selev_mask = selev.event == 434011
+    ### out_data = {}
+    ### out_data["debug_event"  ]            = selev.event[selev_mask]
+    ### out_data["debug_qj_rank"  ]    = quadJet[selev_mask].rank.to_list()
+    ### out_data["debug_qj_selected"  ]    = quadJet[selev_mask].selected.to_list()
+    ### out_data["debug_qj_passDiJetMass"  ]    = quadJet[selev_mask].passDiJetMass.to_list()
+    ### out_data["debug_qj_lead_passMDR"  ]    = quadJet[selev_mask].lead.passMDR.to_list()
+    ### out_data["debug_qj_subl_passMDR"  ]    = quadJet[selev_mask].subl.passMDR.to_list()
+    ### out_data["debug_qj_lead_mass"  ]    = quadJet[selev_mask].lead.mass.to_list()
+    ### out_data["debug_qj_subl_mass"  ]    = quadJet[selev_mask].subl.mass.to_list()
+    ### out_data["debug_qj_random"  ]    = quadJet[selev_mask].random.to_list()
+    ### out_data["debug_qj_SR"  ]    = quadJet[selev_mask].SR.to_list()
+    ### out_data["debug_qj_HHSR"  ]    = quadJet[selev_mask].HHSR.to_list()
+    ### out_data["debug_qj_ZZSR"  ]    = quadJet[selev_mask].ZZSR.to_list()
+    ### out_data["debug_qj_ZHSR"  ]    = quadJet[selev_mask].ZHSR.to_list()
+    ### out_data["debug_qj_xZZ"  ]    = quadJet[selev_mask].xZZ.to_list()
+    ### out_data["debug_qj_xZH"  ]    = quadJet[selev_mask].xZH.to_list()
+    ### out_data["debug_qj_xHH"  ]    = quadJet[selev_mask].xHH.to_list()
+    ### out_data["debug_qj_ZHSR"  ]    = quadJet[selev_mask].ZHSR.to_list()
+    ### out_data["debug_qj_lead_xZ"  ]    = quadJet[selev_mask].lead.xZ.to_list()
+    ### out_data["debug_qj_lead_xH"  ]    = quadJet[selev_mask].lead.xH.to_list()
+    ### out_data["debug_qj_subl_xZ"  ]    = quadJet[selev_mask].subl.xZ.to_list()
+    ### out_data["debug_qj_subl_xH"  ]    = quadJet[selev_mask].subl.xH.to_list()
+    ### out_data["debug_qj_SB"  ]    = quadJet[selev_mask].SB.to_list()
+    ### out_data["debug_counter"  ]    = counter[selev_mask].to_list()
+    ### out_data["debug_SR"] = selev["quadJet_selected"][selev_mask].SR
+    ### out_data["debug_SB"] = selev["quadJet_selected"][selev_mask].SB
+    ### out_data["debug_threeTag"] = selev[selev_mask].threeTag
+    ### out_data["debug_fourTag"] = selev[selev_mask].fourTag
+    ### out_data["debug_qj_lead_pt"  ]         = quadJet[selev_mask].lead.pt.to_list()
+    ### out_data["debug_qj_lead_lead_pt"  ]    = quadJet[selev_mask].lead.lead.pt.to_list()
+    ### out_data["debug_qj_lead_lead_eta"  ]   = quadJet[selev_mask].lead.lead.eta.to_list()
+    ### out_data["debug_qj_lead_lead_phi"  ]   = quadJet[selev_mask].lead.lead.phi.to_list()
+    ### out_data["debug_qj_lead_lead_mass"  ]  = quadJet[selev_mask].lead.lead.mass.to_list()
+    ### out_data["debug_qj_lead_subl_pt"  ]    = quadJet[selev_mask].lead.subl.pt.to_list()
+    ### out_data["debug_qj_lead_subl_eta"  ]   = quadJet[selev_mask].lead.subl.eta.to_list()
+    ### out_data["debug_qj_lead_subl_phi"  ]   = quadJet[selev_mask].lead.subl.phi.to_list()
+    ### out_data["debug_qj_lead_subl_mass"  ]  = quadJet[selev_mask].lead.subl.mass.to_list()
+    ###
+    ### out_data["debug_qj_subl_pt"  ]         = quadJet[selev_mask].subl.pt.to_list()
+    ### out_data["debug_qj_subl_lead_pt"  ]    = quadJet[selev_mask].subl.lead.pt.to_list()
+    ### out_data["debug_qj_subl_lead_eta"  ]   = quadJet[selev_mask].subl.lead.eta.to_list()
+    ### out_data["debug_qj_subl_lead_phi"  ]   = quadJet[selev_mask].subl.lead.phi.to_list()
+    ### out_data["debug_qj_subl_lead_mass"  ]  = quadJet[selev_mask].subl.lead.mass.to_list()
+    ###
+    ### out_data["debug_qj_subl_subl_pt"  ]    = quadJet[selev_mask].subl.subl.pt.to_list()
+    ### out_data["debug_qj_subl_subl_eta"  ]   = quadJet[selev_mask].subl.subl.eta.to_list()
+    ### out_data["debug_qj_subl_subl_phi"  ]   = quadJet[selev_mask].subl.subl.phi.to_list()
+    ### out_data["debug_qj_subl_subl_mass"  ]  = quadJet[selev_mask].subl.subl.mass.to_list()
+    ###
+    ###
+    ### for out_k, out_v in out_data.items():
+    ###     processOutput[out_k] = {}
+    ###     processOutput[out_k][selev.metadata['dataset']] = list(out_v)
+
+
 
     if run_SvB:
         selev["passSvB"] = selev["SvB_MA"].ps > 0.80

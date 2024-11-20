@@ -37,7 +37,9 @@ class CutFlowTestCase(unittest.TestCase):
         for datasetAndEra in expected.keys():
             for cut, count in expected[datasetAndEra].items():
                 exp = round(float(observed[datasetAndEra][cut]), 2)
-                if abs(count - exp) > 0.1:
+                diff = count - exp
+                percent_diff = diff / exp if exp else 0
+                if abs(percent_diff) > 0.001:
                     failures.append( (datasetAndEra, cut, count, exp) )
         return failures
 
@@ -47,10 +49,11 @@ class CutFlowTestCase(unittest.TestCase):
         print()
         for k, v in failures.items():
             if len(v):
+                print(f'{"":40} {"cut":^20} {"observed":^20} {"expected":^20} {"Percent Difference":^20}  {"Absolute Difference":^20} ')
                 print(f"Failed {k}:")
                 for datasetAndEra, cut, count, exp in v:
                     percentFail = count/exp if exp else count
-                    print(f"\t{datasetAndEra:40} {str(round(percentFail,4)):20} {cut:20} {count:10} {exp:10}")
+                    print(f"\t{datasetAndEra:^40} {cut:^20} {count:^10} {exp:^10} {str(round(percentFail,4)):^20} {str(round(count - exp,2)):^20} ")
         print()
         print()
 

@@ -473,6 +473,7 @@ class analysis(processor.ProcessorABC):
                                       run_systematics=self.run_systematics,
                                       classifier_SvB=self.classifier_SvB,
                                       classifier_SvB_MA=self.classifier_SvB_MA,
+                                       processOutput = processOutput,
                                       )
 
         #
