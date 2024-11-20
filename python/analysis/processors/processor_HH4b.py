@@ -476,11 +476,6 @@ class analysis(processor.ProcessorABC):
                                        processOutput = processOutput,
                                       )
 
-        #
-        # Example of how to write out event numbers
-        #
-        # from analysis.helpers.write_debug_info import add_debug_info_to_output
-        # add_debug_info_to_output(selev, processOutput)
 
         weights, list_weight_names = add_pseudotagweights( selev, weights,
                                                            analysis_selections,
@@ -492,6 +487,8 @@ class analysis(processor.ProcessorABC):
                                                            year_label=self.year_label,
                                                            len_event=len(event),
                                                           )
+
+
         #
         # Blind data in fourTag SR
         #
@@ -551,6 +548,15 @@ class analysis(processor.ProcessorABC):
                                wOverride=np.sum(selev['weight_woTrig'][selev.failSvB] ))
 
             self._cutFlow.addOutput(processOutput, event.metadata["dataset"])
+
+
+        #
+        # Example of how to write out event numbers
+        #
+        from analysis.helpers.write_debug_info import add_debug_info_to_output
+        if self.config['isDataForMixed']:
+            add_debug_info_to_output(selev, processOutput, weights, list_weight_names, analysis_selections)
+
 
         #
         # Hists
