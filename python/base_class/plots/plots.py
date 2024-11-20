@@ -12,6 +12,7 @@ import numpy as np
 import mplhep as hep  # HEP (CMS) extensions/styling on top of mpl
 plt.style.use([hep.style.CMS, {'font.size': 16}])
 import inspect
+import base_class.plots.iPlot_config as cfg
 
 _phi = (1 + np.sqrt(5)) / 2
 _epsilon = 0.001
@@ -46,6 +47,7 @@ def get_value_nested_dict(nested_dict, target_key):
         if k == target_key:
             return v
 
+
         if type(v) is dict:
             try:
                 return get_value_nested_dict(v, target_key)
@@ -64,7 +66,8 @@ def get_values_centers_from_dict(hist_config, hists, stack_dict):
             if h_config["name"] == hist_config["key"]:
                 return h_data.values(), h_data.axes[0].centers
 
-        print(f"ERROR: input to ratio of key {hist_config['key']} not found in hists")
+        raise ValueError(f"ERROR: input to ratio of key {hist_config['key']} not found in hists")
+
 
     if hist_config["type"] == "stack":
         stack_dict_for_hist = {k: v[0] for k, v in stack_dict.items() }
@@ -73,8 +76,24 @@ def get_values_centers_from_dict(hist_config, hists, stack_dict):
         return_values = np.sum(return_values, axis=0)
         return return_values, hStackHists[0].axes[0].centers
 
-    print("ERROR: ratio needs to be of type 'hists' or 'stack'")
+    raise ValueError("ERROR: ratio needs to be of type 'hists' or 'stack'")
 
+
+def init_config(args):
+    cfg.plotConfig = load_config(args.metadata)
+    cfg.outputFolder = args.outputFolder
+    cfg.combine_input_files = args.combine_input_files
+    cfg.plotModifiers = yaml.safe_load(open(args.modifiers, 'r'))
+
+    if cfg.outputFolder:
+        if not os.path.exists(cfg.outputFolder):
+            os.makedirs(cfg.outputFolder)
+
+    cfg.hists = load_hists(args.inputFile)
+    cfg.fileLabels = args.fileLabels
+    cfg.axisLabels, cfg.cutList = read_axes_and_cuts(cfg.hists, cfg.plotConfig)
+
+    return cfg
 
 def _savefig(fig, var, *args):
 
@@ -160,7 +179,7 @@ def get_hist(cfg, config, var, region, cut, rebin, year, file_index=None, debug=
                 hist_obj = _input_data['hists'][var]
 
     if hist_obj is None:
-        print(f"ERROR did not find var {var} with process {config['process']} in inputs")
+        raise ValueError(f"ERROR did not find var {var} with process {config['process']} in inputs")
 
     #
     #  Add rebin Options
@@ -869,9 +888,11 @@ def make2DPlot(cfg, process, var='selJets.pt',
         #
         # Find which file has the process we are looking for
         #
+        process_config = get_value_nested_dict(cfg.plotConfig, process)
+        process_name = process_config["process"]
         for _input_data in cfg.hists:
             _hist_to_plot = _input_data['hists'][var]
-            if process in _hist_to_plot.axes["process"]:
+            if process_name in _hist_to_plot.axes["process"]:
                 hist_to_plot = _hist_to_plot
 
     else:
@@ -939,7 +960,7 @@ def make2DPlot(cfg, process, var='selJets.pt',
     return fig, ax
 
 
-def parse_args():
+def init_arg_parser():
 
     parser = argparse.ArgumentParser(description='plots', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
@@ -970,6 +991,13 @@ def parse_args():
     parser.add_argument('--debug', action="store_true", help='')
     parser.add_argument('--signal', action="store_true", help='')
     parser.add_argument('--combine_input_files', action="store_true", help='')
+
+
+    return parser
+
+def parse_args():
+
+    parser = init_arg_parser()
 
     args = parser.parse_args()
     return args
@@ -1009,6 +1037,8 @@ def read_axes_and_cuts(hists, plotConfig):
         for iBin in range(a.extent):
 
             if axisName in plotConfig["codes"]:
+                if a.value(iBin) not in plotConfig["codes"][axisName]:
+                    continue
                 value = plotConfig["codes"][axisName][a.value(iBin)]
             else:
                 value = a.value(iBin)
