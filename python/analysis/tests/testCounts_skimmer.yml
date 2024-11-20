@@ -11,10 +11,10 @@ counts4:
 counts3:
     GluGluToHHTo4B_cHHH0_UL18:
         passJetMult: 157.32
-        passPreSel: 113.54
-        passDiJetMass: 78.16
-        SR: 53.9
-        SB: 24.26
+        passPreSel: 5.11
+        passDiJetMass: 3.49
+        SR: 2.41
+        SB: 1.08
 
 
 

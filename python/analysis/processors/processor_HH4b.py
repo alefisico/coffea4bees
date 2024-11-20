@@ -495,7 +495,7 @@ class analysis(processor.ProcessorABC):
         #
         # Blind data in fourTag SR
         #
-        if not (self.config["isMC"] or "mixed" in self.dataset) and self.blind:
+        if not (self.config["isMC"] or "mix_v" in self.dataset) and self.blind:
             blind_sel = np.full( len(event), True)
             blind_sel[ analysis_selections ] = ~(selev["quadJet_selected"].SR & selev.fourTag)
             selections.add( 'blind', blind_sel )
