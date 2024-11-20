@@ -49,10 +49,10 @@ class CutFlowTestCase(unittest.TestCase):
         print()
         for k, v in failures.items():
             if len(v):
-                print(f'{"":40} {"cut":^20} {"observed":^20} {"expected":^20} {"Percent Difference":^20}  {"Absolute Difference":^20} ')
+                print(f'{"":40} {"cut":^20} {"observed":^20} {"expected":^20} {"Fail fraction":^20}  {"Absolute Difference":^20} ')
                 print(f"Failed {k}:")
                 for datasetAndEra, cut, obs, exp in v:
-                    percentFail = obs/exp if exp else count
+                    percentFail = (obs - exp) / exp if exp else -1
                     print(f"\t{datasetAndEra:^40} {cut:^20} {obs:^10} {exp:^10} {str(round(percentFail,4)):^20} {str(round(obs - exp,2)):^20} ")
         print()
         print()
