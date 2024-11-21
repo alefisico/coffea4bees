@@ -804,10 +804,13 @@ def get_ratio_plots(ratio_config, hists, stack_dict, **kwargs):
         ratio_plots.append((numCenters, ratios, ratio_uncert, ratio_config))
 
         # Bkg error band
-        band_ratios = np.ones(len(numCenters))
-        band_uncert  = np.sqrt(denVars * np.power(denValues, -2.0))
-        band_config = ratio_config.get("bkg_err_band")
-        ratio_plots.append((numCenters, band_ratios, band_uncert, band_config))
+        default_band_config = {"color": "k",  "type": "band", "hatch": "\\\\\\"}
+        band_config = ratio_config.get("bkg_err_band", default_band_config)
+
+        if band_config:
+            band_ratios = np.ones(len(numCenters))
+            band_uncert  = np.sqrt(denVars * np.power(denValues, -2.0))
+            ratio_plots.append((numCenters, band_ratios, band_uncert, band_config))
 
 
 
