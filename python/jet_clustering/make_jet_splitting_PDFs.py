@@ -411,8 +411,6 @@ if __name__ == '__main__':
     #varList = [ h for h in cfg.hists[0]['hists'].keys() if not h in args.skip_hists ]
 
 
-    if args.doTest:
-        years = [sum]
 
     years = args.years
 
@@ -422,6 +420,9 @@ if __name__ == '__main__':
 
     if years in [ ["Run2"], ["RunII"]]:
         years = ["UL18", "UL17", "UL16_preVFP", "UL16_postVFP"]
+
+    if args.doTest:
+        years = [sum]
 
     for y in years:
         doPlots(year=y, debug=args.debug)

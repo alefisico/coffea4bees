@@ -165,6 +165,10 @@ def add_pseudotagweights( selev, weights,
         selev["nJet_pseudotagged"] = nJet_pseudotagged
         selev["pseudoTagWeight"] = pseudoTagWeight
 
+        nTagJets = np.array(ak.num(selev.tagJet).to_numpy(), dtype=int)
+        nTagJets[selev.threeTag] = ak.num(selev.tagJet_loose[selev.threeTag])
+        selev["nJet_ps_and_tag"] = nJet_pseudotagged + nTagJets
+
         weight_noFvT = np.array(selev.weight.to_numpy(), dtype=float)
         weight_noFvT[selev.threeTag] = ( selev.weight[selev.threeTag] * selev.pseudoTagWeight[selev.threeTag] )
         selev["weight_noFvT"] = weight_noFvT
@@ -178,7 +182,11 @@ def add_pseudotagweights( selev, weights,
                         selev.weight * getattr(selev, f"{_JCM_load}") * getattr(getattr(selev, _FvT_name), _FvT_name),
                         selev.weight,
                     )
-                selev["weight"] = selev[f'weight_{event_metadata["FvT_names"][0]}']
+                weight = np.full(len_event, 1.0)
+                weight[analysis_selections] = np.where(selev.threeTag, getattr(selev, f"{_JCM_load}") * getattr(getattr(selev, event_metadata["FvT_names"][0]), event_metadata["FvT_names"][0]), 1.0)
+                weights.add("FvT", weight)
+                list_weight_names.append("FvT")
+
             else:
                 weight = np.full(len_event, 1.0)
                 weight[analysis_selections] = np.where(selev.threeTag, selev["pseudoTagWeight"] * selev.FvT.FvT, 1.0)
@@ -186,8 +194,7 @@ def add_pseudotagweights( selev, weights,
                 list_weight_names.append("FvT")
         else:
             weight_noFvT = np.full(len_event, 1.0)
-            # JA do we really want this line v
-            #weight_noFvT[analysis_selections] = np.where(selev.threeTag, selev.weight * selev["pseudoTagWeight"], selev.weight)
+            weight_noFvT[analysis_selections] = np.where(selev.threeTag, selev["pseudoTagWeight"], 1.0)
             weights.add("no_FvT", weight_noFvT)
             list_weight_names.append("no_FvT")
             logging.debug( f"no_FvT {weights.partial_weight(include=['no_FvT'])[:10]}\n" )

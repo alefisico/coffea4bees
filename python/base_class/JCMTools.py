@@ -63,15 +63,33 @@ class jetCombinatoricModel:
         for parameter in self.parameters:
             parameter.dump()
 
-    def fixParameter(self, name, value):
+
+    def fixParameters(self, names, values):
+
         for ip, p in enumerate(self.parameters):
-            if name is p.name:
-                print(f"Fixing {name} to {value}")
-                p.fix = value
-                self.fit_parameters.pop(ip)
-                self.default_parameters.pop(ip)
-                self.parameters_lower_bounds.pop(ip)
-                self.parameters_upper_bounds.pop(ip)
+
+            for _iname, _name in enumerate(names):
+                if p.name is _name:
+                    print(f"Fixing {_name} to {values[_iname]}")
+                    p.fix = values[_iname]
+
+
+
+    def fixParameter_norm(self, value):
+
+        self.fixParameters(["threeTightTagFraction"], [value])
+
+        self.fit_parameters = []
+        self.default_parameters = []
+        self.parameters_lower_bounds = []
+        self.parameters_upper_bounds = []
+
+        for p in self.parameters:
+            if not p.fix is None: continue
+            self.fit_parameters.append(p)
+            self.default_parameters.append(p.default)
+            self.parameters_lower_bounds.append(p.lowerLimit)
+            self.parameters_upper_bounds.append(p.upperLimit)
 
 
         #
@@ -79,13 +97,66 @@ class jetCombinatoricModel:
         #
         self.bkgd_func_njet_constrained = lambda x, f, e, d, debug=False: self.bkgd_func_njet(x, f, e, d, value, debug)
 
+
+    def fixParameter_d_norm(self, value):
+
+        self.fixParameters(["threeTightTagFraction", "pairEnhancementDecay"], [value, 1.0])
+
+        self.fit_parameters = []
+        self.default_parameters = []
+        self.parameters_lower_bounds = []
+        self.parameters_upper_bounds = []
+
+        for p in self.parameters:
+            if not p.fix is None: continue
+            self.fit_parameters.append(p)
+            self.default_parameters.append(p.default)
+            self.parameters_lower_bounds.append(p.lowerLimit)
+            self.parameters_upper_bounds.append(p.upperLimit)
+
+
+        #
+        #  Fix the normalizaiton to the threeTightTagFraction
+        #
+        self.bkgd_func_njet_constrained = lambda x, f, e, debug=False: self.bkgd_func_njet(x, f, e, 1.0, value, debug)
+
+
+    def fixParameter_e_d_norm(self, value):
+
+        self.fixParameters(["threeTightTagFraction", "pairEnhancement", "pairEnhancementDecay"], [value, 0.0, 1.0])
+
+        self.fit_parameters = []
+        self.default_parameters = []
+        self.parameters_lower_bounds = []
+        self.parameters_upper_bounds = []
+
+        for p in self.parameters:
+            if not p.fix is None: continue
+            self.fit_parameters.append(p)
+            self.default_parameters.append(p.default)
+            self.parameters_lower_bounds.append(p.lowerLimit)
+            self.parameters_upper_bounds.append(p.upperLimit)
+
+
+        #
+        #  Fix the normalizaiton to the threeTightTagFraction
+        #
+        self.bkgd_func_njet_constrained = lambda x, f, debug=False: self.bkgd_func_njet(x, f, 0.0, 1.0, value, debug)
+
+
+
     def _nTagPred_values(self, par, n):
         output = np.zeros(len(n))
         output = copy(self.tt4b_nTagJets)
 
         for ibin, this_nTag in enumerate(n):
             for nj in range(this_nTag, 14):
-                nPseudoTagProb = getPseudoTagProbs(nj, par[0], par[1], par[2], par[3])
+                if len(par) == 3:
+                    nPseudoTagProb = getPseudoTagProbs(nj, par[0], par[1], 1.0, par[2])
+                elif len(par) == 2:
+                    nPseudoTagProb = getPseudoTagProbs(nj, par[0], 0.0, 1.0, par[1])
+                else:
+                    nPseudoTagProb = getPseudoTagProbs(nj, par[0], par[1], par[2], par[3])
                 output[ibin + 4] += nPseudoTagProb[this_nTag - 3] * self.qcd3b[nj]
 
         return np.array(output, float)
@@ -101,14 +172,20 @@ class jetCombinatoricModel:
         for nj in range(4, 16):
             output_weights.append(getCombinatoricWeight(nj, *(self.fit_parameters + [self.threeTightTagFraction.fix])))
         return output_weights
-    
+
     def _nTagPred_errors(self, par, n):
         output = np.zeros(len(n))
         output = self.tt4b_nTagJets_errors**2
 
         for ibin, this_nTag in enumerate(n):
             for nj in range(this_nTag, 14):
-                nPseudoTagProb = getPseudoTagProbs(nj, par[0], par[1], par[2], par[3])
+                if len(par) == 3:
+                    nPseudoTagProb = getPseudoTagProbs(nj, par[0], par[1], 1.0, par[2])
+                elif len(par) == 2:
+                    nPseudoTagProb = getPseudoTagProbs(nj, par[0], 0.0, 1.0, par[1])
+                else:
+                    nPseudoTagProb = getPseudoTagProbs(nj, par[0], par[1], par[2], par[3])
+
                 output[ibin + 4] += (nPseudoTagProb[this_nTag - 3] * self.qcd3b_errors[nj])**2
 
         output = output**0.5
@@ -150,7 +227,7 @@ class jetCombinatoricModel:
         sigma_p1 = [np.absolute(errs[i][i])**0.5 for i in range(len(popt))]
 
         for parameter in self.parameters:
-            if parameter.fix:
+            if not parameter.fix is None:
                 parameter.value = parameter.fix
                 parameter.error = 0
                 continue

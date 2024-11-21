@@ -473,13 +473,9 @@ class analysis(processor.ProcessorABC):
                                       run_systematics=self.run_systematics,
                                       classifier_SvB=self.classifier_SvB,
                                       classifier_SvB_MA=self.classifier_SvB_MA,
+                                       processOutput = processOutput,
                                       )
 
-        #
-        # Example of how to write out event numbers
-        #
-        # from analysis.helpers.write_debug_info import add_debug_info_to_output
-        # add_debug_info_to_output(selev, processOutput)
 
         weights, list_weight_names = add_pseudotagweights( selev, weights,
                                                            analysis_selections,
@@ -491,10 +487,12 @@ class analysis(processor.ProcessorABC):
                                                            year_label=self.year_label,
                                                            len_event=len(event),
                                                           )
+
+
         #
         # Blind data in fourTag SR
         #
-        if not (self.config["isMC"] or "mixed" in self.dataset) and self.blind:
+        if not (self.config["isMC"] or "mix_v" in self.dataset) and self.blind:
             blind_sel = np.full( len(event), True)
             blind_sel[ analysis_selections ] = ~(selev["quadJet_selected"].SR & selev.fourTag)
             selections.add( 'blind', blind_sel )
@@ -550,6 +548,15 @@ class analysis(processor.ProcessorABC):
                                wOverride=np.sum(selev['weight_woTrig'][selev.failSvB] ))
 
             self._cutFlow.addOutput(processOutput, event.metadata["dataset"])
+
+
+        #
+        # Example of how to write out event numbers
+        #
+        from analysis.helpers.write_debug_info import add_debug_info_to_output
+        if self.config['isDataForMixed']:
+            add_debug_info_to_output(selev, processOutput, weights, list_weight_names, analysis_selections)
+
 
         #
         # Hists
