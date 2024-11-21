@@ -904,7 +904,7 @@ def makePlot(cfg, var='selJets.pt',
     stack_dict = load_stack_config(stack_config, var, cut, region, **kwargs)
 
     if len(tagNames) == 0:
-        tagNames.append(stack_config["tag"])
+        tagNames.append( get_value_nested_dict(stack_config,"tag") )
 
     #
     #  Config Ratios
