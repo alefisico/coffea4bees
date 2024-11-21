@@ -20,10 +20,15 @@ if TYPE_CHECKING:
 class KFoldTrain(ABC, Model):
     argparser = ArgParser()
     argparser.add_argument(
+        "--no-kfold",
+        action="store_true",
+        help="disable kfold (equivalent to --kfolds 1)",
+    )
+    argparser.add_argument(
         "--kfolds",
-        type=converter.bounded(int, lower=2),
+        type=converter.bounded(int, lower=1),
         default=3,
-        help="total number of folds",
+        help="total number of folds (1 for no kfold)",
     )
     argparser.add_argument(
         "--kfold-offsets",
@@ -56,6 +61,8 @@ class KFoldTrain(ABC, Model):
 
     @cached_property
     def kfolds(self) -> int:
+        if self.opts.no_kfold:
+            return 1
         return self.opts.kfolds
 
     @cached_property
@@ -74,9 +81,11 @@ class KFoldTrain(ABC, Model):
     def initializer(self, splitter: Splitter, **kwargs) -> MultiStageTraining: ...
 
     def train(self):
-        if not self.seeds:
-            from classifier.ml.skimmer import KFold
+        from classifier.ml.skimmer import KFold, RandomKFold
 
+        if self.kfolds == 1:
+            return [self.initializer(KFold(1, 1)).train]
+        elif not self.seeds:
             return [
                 self.initializer(
                     KFold(self.kfolds, offset),
@@ -86,8 +95,6 @@ class KFoldTrain(ABC, Model):
                 for offset in self.offsets
             ]
         else:
-            from classifier.ml.skimmer import RandomKFold
-
             return [
                 self.initializer(
                     RandomKFold(seed, self.kfolds, offset),

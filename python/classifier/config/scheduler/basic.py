@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterable
 
 from classifier.nn.schedule import MultiStepBS, Schedule
 
@@ -64,7 +64,7 @@ class AutoStep(FixedStep):
     lr_patience: int = 1
     lr_cooldown: int = 1
     lr_min: float = 2e-4
-    lr_metric: tuple[str, ...] = ("benchmarks", "validation", "loss")
+    lr_metric: Iterable[str] = ("benchmarks", "validation", "loss")
 
     def lr_scheduler(self, optimizer, **kwargs):
         from torch.optim.lr_scheduler import ReduceLROnPlateau
@@ -81,11 +81,7 @@ class AutoStep(FixedStep):
         )
 
     def lr_step(self, lr: ReduceLROnPlateau, benchmark: dict = None):
-        try:
-            metric = float(self._get_key(self.lr_metric, benchmark))
-        except Exception:
-            raise ValueError(
-                f"ReduceLROnPlateau requires a float metric at {self.lr_metric}"
-            )
-        epoch = self._get_key(self.epoch_key, benchmark)
-        lr.step(metric, epoch)
+        lr.step(
+            self._get_key(self.lr_metric, benchmark, required=True, value_type=float),
+            self._get_key(self.epoch_key, benchmark),
+        )

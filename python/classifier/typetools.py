@@ -148,3 +148,11 @@ def filename(obj: Any) -> str:
         return "-".join(map(filename, obj))
     else:
         return repr(obj)
+
+
+def nameof(obj: Any) -> str:
+    try:
+        name = obj.__name__
+    except Exception:
+        name = type(obj).__name__
+    return f"<{name}>"

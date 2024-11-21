@@ -64,31 +64,34 @@ mamba env create -f env.yml
 `singularity` is now available on rogue01/rogue02.
 
 1. change the cache directory for singularity:
-    1. `mkdir -p /mnt/scratch/${USER}/.apptainer`
-    2. add the following to `~/.bashrc`
 
-        ```bash
-        export SINGULARITY_CACHEDIR="/mnt/scratch/${USER}/.apptainer/"
-        export SINGULARITY_TMPDIR="/mnt/scratch/${USER}/.apptainer/"
-        ```
+   1. `mkdir -p /mnt/scratch/${USER}/.apptainer`
+   2. add the following to `~/.bashrc`
+
+      ```bash
+      export SINGULARITY_CACHEDIR="/mnt/scratch/${USER}/.apptainer/"
+      export SINGULARITY_TMPDIR="/mnt/scratch/${USER}/.apptainer/"
+      ```
 
 2. install grid certificate:
-    1. `mkdir -p ~/.globus/`
-    2. upload the certificate file e.g. `mycert.p12` to `~/.globus/`
-    3. follow the instructions in this [twiki](https://twiki.cern.ch/twiki/bin/view/CMSPublic/WorkBookStartingGrid#ObtainingCert) page until `voms-proxy-init` step.
-  
-3. start a container:
-    1. `cd` into the the working directory (e.g. `/mnt/scratch/${USER}/coffea4bees/python/`)
-    2. create a container from the docker image and setup the proxy:
 
-        ```bash
-        singularity shell -B .:/srv --nv --pwd /srv docker://chuyuanliu/heptools:ml
-        # this may take a while for the first time
-        # inside the container (when you see Singularity>)
-        voms-proxy-init --rfc --voms cms -valid 192:00
-        # setup the autocomplete
-        source ./classifier/install.sh
-        ```
+   1. `mkdir -p ~/.globus/`
+   2. upload the certificate file e.g. `mycert.p12` to `~/.globus/`
+   3. follow the instructions in this [twiki](https://twiki.cern.ch/twiki/bin/view/CMSPublic/WorkBookStartingGrid#ObtainingCert) page until `voms-proxy-init` step.
+
+3. start a container:
+
+   1. `cd` into the the working directory (e.g. `/mnt/scratch/${USER}/coffea4bees/python/`)
+   2. create a container from the docker image and setup the proxy:
+
+      ```bash
+      singularity shell -B .:/srv --nv --pwd /srv docker://chuyuanliu/heptools:ml
+      # this may take a while for the first time
+      # inside the container (when you see Singularity>)
+      voms-proxy-init --rfc --voms cms -valid 192:00
+      # setup the autocomplete
+      source ./classifier/install.sh
+      ```
 
 Notes:
 
@@ -167,7 +170,7 @@ Start a monitor using port 10200 and save the logs to a local directory named by
 It will print the IP address and port number that the monitor is listening to. e.g.
 
 ```console
-[04/18/24 13:36:18] [ main] INFO     Started Monitor at 127.0.1.1:10200
+[04/18/24 13:36:18] [ main] INFO     Monitor is running at at 127.0.1.1:10200/localhost:10200
 ```
 
 Which port to use:
@@ -195,10 +198,10 @@ export WFS="classifier/config/workflows/HCR/SvB"
 Cache the `HCR.SvB.Background` and `HCR.SvB.Signal` datasets:
 
 ```bash
-./pyml.py template "{user: ${USER}, norm: 6, dataset: default}" ${WFS}/cache_dataset.yml 
+./pyml.py template "{user: ${USER}, norm: 6, dataset: default}" ${WFS}/cache_dataset.yml
 ```
 
-where the `norm` is the total signal normalization and `dataset` is the name of the dataset. 
+where the `norm` is the total signal normalization and `dataset` is the name of the dataset.
 
 > **_NOTE:_** By using `-template` with a mapping followed by files, it will replace the keys in the files with Python's [`str.format`](https://docs.python.org/3/library/string.html#format-string-syntax) (use double curlies `{{KEY}}` to escape). e.g. replace `{user}` by current `${USER}`. The definitions of the keys can be found (and should be included) in the comments at the beginning of the template files.
 
@@ -294,7 +297,7 @@ To merge k-folds from multiple results:
 - Training:
   - in main task `train`, consider parallel multiple models by increasing `--max-trainers` (CPU, GPU, memory bounded)
   - in `-setting torch.DataLoader`, consider increase `num_workers` to speed up batch generation (mainly CPU bounded, require extra memory)
-  - in `-setting torch.DataLoader`, consider increase `batch_eval`  to speed up evaluation (mainly GPU bounded)
+  - in `-setting torch.DataLoader`, consider increase `batch_eval` to speed up evaluation (mainly GPU bounded)
   - in `-setting torch.Training`, the `disable_benchmark` can be enabled to skip all benchmarking steps.
 - Evaluation:
   - in main task `evaluate`, consider parallel multiple models by increasing `--max-evaluators` (CPU, GPU, memory bounded)

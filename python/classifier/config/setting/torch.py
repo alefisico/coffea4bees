@@ -6,8 +6,9 @@ from classifier.task import Cascade
 class DataLoader(Cascade):
     batch_skim: int = 2**17
     batch_eval: int = 2**15
+    pin_memory: bool = True
     num_workers: int = 0
-    persistent_workers: bool = False
+    persistent_workers: bool = True
 
 
 class KFold(Cascade):

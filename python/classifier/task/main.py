@@ -195,6 +195,7 @@ class EntryPoint:
         from ..monitor import (
             connect_to_monitor,
             disable_monitor,
+            full_address,
             setup_monitor,
             setup_reporter,
         )
@@ -202,11 +203,11 @@ class EntryPoint:
         if cfg.Monitor.enable:
             if not cfg.Monitor.connect:
                 setup_monitor()
-                logging.info(f"Monitor is running at {cfg.Monitor.raw__address}")
+                logging.info(f"Monitor is running at {full_address()}")
             else:
                 connect_to_monitor()
                 setup_reporter()
-                logging.info(f"Connected to Monitor {cfg.Monitor.raw__address}")
+                logging.info(f"Connected to Monitor {full_address()}")
 
         else:
             disable_monitor()

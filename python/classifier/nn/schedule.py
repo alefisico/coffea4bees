@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import logging
 from abc import ABC, abstractmethod
 from bisect import bisect_right
-from typing import TYPE_CHECKING, Iterable, Optional
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional, TypeVar
+
+from ..typetools import nameof
 
 if TYPE_CHECKING:
     from torch import optim
@@ -17,11 +20,14 @@ class BSScheduler(ABC):
     def step(self, epoch: int = None): ...
 
 
+_ValueT = TypeVar("_ValueT")
+
+
 class Schedule(ABC):
     require_benchmark = False
 
     epoch: int
-    epoch_key: tuple[str, ...] = ("hyperparameters", "epoch")
+    epoch_key: Iterable[str] = ("hyperparameters", "epoch")
 
     @abstractmethod
     def optimizer(self, parameters, **kwargs) -> optim.Optimizer: ...
@@ -32,12 +38,28 @@ class Schedule(ABC):
     @abstractmethod
     def lr_scheduler(self, optimizer: optim.Optimizer, **kwargs) -> LRScheduler: ...
 
-    def _get_key(self, keys: tuple[str, ...], benchmark: dict):
+    def _get_key(
+        self,
+        keys: Iterable[str],
+        benchmark: dict,
+        required: bool = False,
+        value_type: Callable[[Any], _ValueT] = Any,
+    ) -> Optional[_ValueT]:
         try:
             value = benchmark
             for key in keys:
                 value = value[key]
-        except Exception:
+            if value_type is not Any:
+                value = value_type(value)
+        except Exception as e:
+            if required:
+                value_typename = nameof(value_type) if value_type is not Any else ""
+                logging.error(
+                    f'Scheduler {nameof(self)}: required key {value_typename}"{key}" missing when reading',
+                    "benchmark" + "".join(f"\[{k}]" for k in keys),
+                    exc_info=e,
+                )
+                raise
             value = None
         return value
 

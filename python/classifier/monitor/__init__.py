@@ -3,7 +3,13 @@ import importlib
 from ..config.state import MonitorInfo
 from ..process import status
 from .backends import Platform
-from .core import Monitor, Recorder, connect_to_monitor, wait_for_monitor
+from .core import (
+    Monitor,
+    Recorder,
+    connect_to_monitor,
+    full_address,
+    wait_for_monitor,
+)
 from .template import Index
 
 __all__ = [
@@ -16,6 +22,7 @@ __all__ = [
     "setup_monitor",
     "disable_monitor",
     "setup_reporter",
+    "full_address",
 ]
 
 _PKG = "classifier.monitor"

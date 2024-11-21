@@ -25,14 +25,16 @@ __all__ = [
     "connect_to_monitor",
 ]
 
-
-class Node(NamedTuple):
-    ip: str
-    pid: int
+_LOCALHOST = "localhost"
 
 
 def _get_host():
     return socket.gethostbyname(socket.gethostname())
+
+
+class Node(NamedTuple):
+    ip: str
+    pid: int
 
 
 class _start_reporter:
@@ -147,8 +149,8 @@ class Monitor(Server, _Singleton):
             address = pipe_address(host)
             cfg.Monitor.address = address
         else:
-            address = ("localhost", port)
-            cfg.Monitor.address = f"{_get_host()}:{port}"
+            address = (_LOCALHOST, port)
+            cfg.Monitor.address = f"{_LOCALHOST}:{port}"
         super().__init__(address=address)
 
     def _start(self):
@@ -271,3 +273,14 @@ def connect_to_monitor():
 def wait_for_monitor():
     if _Status.now() is _Status.Monitor:
         Monitor.current().stop()
+
+
+def full_address():
+    address, port = cfg.Monitor.address
+    if port is None:
+        return address
+    else:
+        local = _get_host()
+        if address == local or address == _LOCALHOST:
+            return f"{local}:{port}/{_LOCALHOST}:{port}"
+        return f"{address}:{port}"
