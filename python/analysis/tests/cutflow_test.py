@@ -5,8 +5,8 @@ import yaml
 from parser import wrapper
 import sys
 
-#_PERCENT_ERROR_THRESHOLD =  0.001
-_PERCENT_ERROR_THRESHOLD =  0.01
+_PERCENT_ERROR_THRESHOLD =  0.001
+#_PERCENT_ERROR_THRESHOLD =  0.01
 
 #
 # python3 analysis/tests/cutflow_test.py   --inputFile hists/test.coffea --knownCounts analysis/tests/testCounts.yml
