@@ -25,28 +25,33 @@ def doPlots(debug=False):
     #
     region = "SR"
     cut = "passPreSel"
-    rebin = 20
-    
+    rebin = 2
+
+
     var_to_plot = "SvB_MA_FvT_3bDvTMix4bDvT_vXXX_newSBDef.ps_hh"
+    kfold = True
+    if kfold:
+        var_to_plot = var_to_plot.replace("newSBDef","newSBDefSeedAve")
+
     process_config = get_value_nested_dict(cfg.plotConfig, "Multijet")
     hist_objs = []
     hist_sum = None
     for sub_sample in range(15):
         _var_to_plot = var_to_plot.replace("vXXX", f"v{sub_sample}")
-        _hist = get_hist(cfg, process_config, var=_var_to_plot, region=region, cut=cut, rebin=rebin)
-        hist_objs.append( copy.copy(_hist)) 
+        _hist = get_hist(cfg, process_config, var=_var_to_plot, region=region, cut=cut, rebin=rebin, year="RunII")
+        hist_objs.append( copy.copy(_hist))
 
         if hist_sum:
             hist_sum += _hist
         else:
             hist_sum = _hist
 
-        
+
 
     hist_ave = hist_sum * 1/15
 
     n_sub_samples = 8
-    
+
     hists = []
     for i in range(n_sub_samples):
         hist_config_vX = copy.copy(get_value_nested_dict(cfg.plotConfig, "Multijet"))
@@ -54,7 +59,7 @@ def doPlots(debug=False):
         hist_config_vX["fillcolor"] = _colors[i],
         hist_config_vX["histtype"] = "errorbar"
         hist_config_vX["label"] = f"bkg_v{i}"
-         
+
         hists.append( (hist_objs[i], hist_config_vX) )
 
 
@@ -64,15 +69,15 @@ def doPlots(debug=False):
     stack_dict = {}
     stack_dict["bkg_ave"] = ( (hist_ave, hist_config_ave) )
 
-    
+
     kwargs = {"year" : "RunII",
               "outputFolder" : args.outputFolder,
               #"histtype" : "errorbar",
-              "yscale" : "log",
+              "yscale" : "linear",
               "rlim": [0.8,1.2],
               }
 
-#    fig, ax = _plot(hists, stack_dict, cfg.plotConfig, **kwargs)
+
 
 
     ratio_plots = []
@@ -97,17 +102,19 @@ def doPlots(debug=False):
     _savefig(fig, var_to_plot, kwargs.get("outputFolder"), kwargs["year"], cut, "threeTag", region)
 
 
-    
+
     #
     #  SvB mixed v0 and v1 vs v2 bkg
     #
     var_list = ["SvB_MA.ps_hh", "SvB_MA.ps_zh", "SvB_MA.ps_zz", "SvB_MA.ps_hh_fine", "SvB_MA.ps_zh_fine", "SvB_MA.ps_zz_fine", ]
-    rebin_list = [20, 10, 8, 20, 10, 8] 
+    rebin_list = [20, 10, 8, 8, 10, 8]
 
     for var, rebin in zip(var_list, rebin_list):
         print(f"{var} (rebin {rebin})" )
         var_bkg = var.replace("SvB_MA","SvB_MA_FvT_3bDvTMix4bDvT_v1_newSBDef")
-        
+        if kfold:
+            var_bkg = var_bkg.replace("newSBDef","newSBDefSeedAve")
+
         plot_args = {"var":var,
                      "var_over_ride":{"Multijet": var_bkg},
                      }
@@ -115,14 +122,14 @@ def doPlots(debug=False):
         plot_args = plot_args | {"region":"SR", "cut":"passPreSel", "doRatio":1, "rebin":rebin}
 
         plot_args["outputFolder"] = args.outputFolder
-    
+
         fig = makePlot(cfg, **plot_args)
         plt.close()
 
 
 
 
-    
+
 
 if __name__ == '__main__':
 
@@ -131,7 +138,7 @@ if __name__ == '__main__':
     cfg.plotConfig = load_config(args.metadata)
     cfg.outputFolder = args.outputFolder
     cfg.combine_input_files = args.combine_input_files
-    
+
     cfg.plotModifiers = yaml.safe_load(open(args.modifiers, 'r'))
 
     if cfg.outputFolder:

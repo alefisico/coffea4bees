@@ -17,7 +17,7 @@ import base_class.plots.iPlot_config as cfg
 np.seterr(divide='ignore', invalid='ignore')
 
 def plot(var, **kwargs):
-    makePlot(cfg, var, outputFolder= args.outputFolder, **kwargs) 
+    makePlot(cfg, var, outputFolder= args.outputFolder, **kwargs)
     plt.close()
 
 
@@ -37,7 +37,7 @@ def doPlots(debug=False):
     plot( "v4j20.mass", region="SR", cut=["pass4GenBJetsb203b40_1j_e","pass4GenBJets40"], process="HH4b",    doRatio=1, rlim=[0,1],histtype="step", xlim=[100,1000],labels=["b20 3b40 1j40","4b40"])
 
     plot( "v4j20.mass", region="SR", cut=["pass4GenBJetsb203b40_1j_e","pass4GenBJets2b202b40_2j_e","pass4GenBJets40"], process="HH4b",    doRatio=1, rlim=[0,1],histtype="step", xlim=[100,1000],labels=["b20 3b40 1j40","2b20 2b40 2j40","4b40"])
-    
+
     plot( "v4j20.pt", region="SR", cut=["pass4GenBJetsb203b40_1j_e","pass4GenBJets40"], process="HH4b",    doRatio=1, rlim=[0,1],histtype="step", xlim=[0,400],labels=["b20 3b40 1j40","4b40"])
 
 
@@ -57,6 +57,6 @@ if __name__ == '__main__':
     cfg.hists = load_hists(args.inputFile)
     cfg.fileLabels = args.fileLabels
     cfg.axisLabels, cfg.cutList = read_axes_and_cuts(cfg.hists, cfg.plotConfig)
-    
+
     #varList = [ h for h in cfg.hists[0]['hists'].keys() if not h in args.skip_hists ]
     doPlots(debug=args.debug)

@@ -12,6 +12,7 @@ import numpy as np
 import mplhep as hep  # HEP (CMS) extensions/styling on top of mpl
 plt.style.use([hep.style.CMS, {'font.size': 16}])
 import inspect
+import base_class.plots.iPlot_config as cfg
 
 _phi = (1 + np.sqrt(5)) / 2
 _epsilon = 0.001
@@ -46,6 +47,7 @@ def get_value_nested_dict(nested_dict, target_key):
         if k == target_key:
             return v
 
+
         if type(v) is dict:
             try:
                 return get_value_nested_dict(v, target_key)
@@ -55,26 +57,45 @@ def get_value_nested_dict(nested_dict, target_key):
     raise ValueError(f"\t target_key {target_key} not in nested_dict")
 
 
-def get_values_centers_from_dict(hist_config, hists, stack_dict):
+def get_values_variances_centers_from_dict(hist_config, hists, stack_dict):
 
     if hist_config["type"] == "hists":
-
         for h_data, h_config in hists:
-
             if h_config["name"] == hist_config["key"]:
-                return h_data.values(), h_data.axes[0].centers
+                return h_data.values(), h_data.variances(), h_data.axes[0].centers
 
-        print(f"ERROR: input to ratio of key {hist_config['key']} not found in hists")
+        raise ValueError(f"ERROR: input to ratio of key {hist_config['key']} not found in hists")
+
 
     if hist_config["type"] == "stack":
         stack_dict_for_hist = {k: v[0] for k, v in stack_dict.items() }
         hStackHists = list(stack_dict_for_hist.values())
         return_values = [h.values() for h in hStackHists]
         return_values = np.sum(return_values, axis=0)
-        return return_values, hStackHists[0].axes[0].centers
 
-    print("ERROR: ratio needs to be of type 'hists' or 'stack'")
+        return_variances = [h.variances() for h in hStackHists]
+        return_variances = np.sum(return_variances, axis=0)
 
+        return return_values, return_variances, hStackHists[0].axes[0].centers
+
+    raise ValueError("ERROR: ratio needs to be of type 'hists' or 'stack'")
+
+
+def init_config(args):
+    cfg.plotConfig = load_config(args.metadata)
+    cfg.outputFolder = args.outputFolder
+    cfg.combine_input_files = args.combine_input_files
+    cfg.plotModifiers = yaml.safe_load(open(args.modifiers, 'r'))
+
+    if cfg.outputFolder:
+        if not os.path.exists(cfg.outputFolder):
+            os.makedirs(cfg.outputFolder)
+
+    cfg.hists = load_hists(args.inputFile)
+    cfg.fileLabels = args.fileLabels
+    cfg.axisLabels, cfg.cutList = read_axes_and_cuts(cfg.hists, cfg.plotConfig)
+
+    return cfg
 
 def _savefig(fig, var, *args):
 
@@ -160,7 +181,7 @@ def get_hist(cfg, config, var, region, cut, rebin, year, file_index=None, debug=
                 hist_obj = _input_data['hists'][var]
 
     if hist_obj is None:
-        print(f"ERROR did not find var {var} with process {config['process']} in inputs")
+        raise ValueError(f"ERROR did not find var {var} with process {config['process']} in inputs")
 
     #
     #  Add rebin Options
@@ -189,7 +210,7 @@ def get_hist(cfg, config, var, region, cut, rebin, year, file_index=None, debug=
     return selected_hist
 
 
-def makeRatio(numValues, denValues, **kwargs):
+def makeRatio(numValues, numVars, denValues, denVars, **kwargs):
 
     denValues[denValues == 0] = _epsilon
     ratios = numValues / denValues
@@ -203,12 +224,16 @@ def makeRatio(numValues, denValues, **kwargs):
     ratios[ratios == 0] = np.nan
     ratios[np.isinf(ratios)] = np.nan
 
-    # https://github.com/scikit-hep/hist/blob/main/src/hist/intervals.py
-    ratio_uncert = ratio_uncertainty(
-        num=numValues,
-        denom=denValues,
-        uncertainty_type=kwargs.get("uncertainty_type", "poisson"),
-    )
+    # Both num and denom. uncertianties
+    # ratio_uncert = np.abs(ratios) * np.sqrt(numVars * np.power(numValues, -2.0) + denVars * np.power(denValues, -2.0 ))
+    ratio_uncert = np.abs(ratios) * np.sqrt(numVars * np.power(numValues, -2.0))
+
+    ## https://github.com/scikit-hep/hist/blob/main/src/hist/intervals.py
+    #ratio_uncert = ratio_uncertainty(
+    #    num=numValues,
+    #    denom=denValues,
+    #    uncertainty_type=kwargs.get("uncertainty_type", "poisson"),
+    #)
 
     return ratios, ratio_uncert
 
@@ -279,6 +304,7 @@ def _draw_plot(hist_list, stack_dict, **kwargs):
                          "label":    hist_config.get("label", ""),
                          "color":    hist_config.get('fillcolor', 'k'),
                          "histtype": kwargs.get("histtype", hist_config.get("histtype", "errorbar")),
+                         "linewidth": kwargs.get("linewidth", hist_config.get("linewidth", 1)),
                          "yerr": False,
                          }
 
@@ -437,15 +463,33 @@ def _plot_ratio(hist_list, stack_dict, ratio_list, **kwargs):
 
     for ir, ratio in enumerate(ratio_list):
 
-        subplot_ax.errorbar(
-            ratio[0],       # x-values
-            ratio[1],       # y-values
-            yerr=ratio[2],
-            color=ratio[3].get("color", "black"),
-            marker=ratio[3].get("marker", "o"),
-            linestyle=ratio[3].get("linestyle", "none"),
-            markersize=ratio[3].get("markersize", 4),
-        )
+        error_bar_type = ratio[3].get("type", "bar")
+        if error_bar_type == "band":
+
+            # Only works for contant bin size !!!!
+            bin_width = (ratio[0][1] - ratio[0][0])
+
+            # add check for variable bin width!!! TODO
+
+            # Create hatched error regions using fill_between
+            for xi, yi, err in zip(ratio[0], ratio[1], ratio[2]):
+                plt.fill_between([xi - bin_width/2, xi + bin_width/2], yi - err, yi + err,
+                                 hatch=ratio[3].get("hatch", "/"),
+                                 edgecolor=ratio[3].get("color", "black"),
+                                 facecolor='none',
+                                 linewidth=0.0,
+                                 zorder=1)
+
+        else:
+            subplot_ax.errorbar(
+                ratio[0],       # x-values
+                ratio[1],       # y-values
+                yerr=ratio[2],
+                color=ratio[3].get("color", "black"),
+                marker=ratio[3].get("marker", "o"),
+                linestyle=ratio[3].get("linestyle", "none"),
+                markersize=ratio[3].get("markersize", 4),
+            )
 
     #
     #  labels / limits
@@ -630,19 +674,28 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
         ratio_plots = []
 
         denValues = hists[-1][0].values()
+        denVars   = hists[-1][0].variances()
 
         denValues[denValues == 0] = _epsilon
         denCenters = hists[-1][0].axes[0].centers
 
+        # Bkg error band
+        band_ratios = np.ones(len(denCenters))
+        band_uncert  = np.sqrt(denVars * np.power(denValues, -2.0))
+        band_config = {"color": "k",  "type": "band", "hatch": "\\\\"}
+        ratio_plots.append((denCenters, band_ratios, band_uncert, band_config))
+
         for iH in range(len(hists) - 1):
 
             numValues = hists[iH][0].values()
+            numVars   = hists[iH][0].variances()
 
             ratio_config = {"color": _colors[iH],
                             "marker": "o",
                             }
-            ratios, ratio_uncert = makeRatio(numValues, denValues, **kwargs)
+            ratios, ratio_uncert = makeRatio(numValues, numVars, denValues, denVars, **kwargs)
             ratio_plots.append((denCenters, ratios, ratio_uncert, ratio_config))
+
 
         fig, main_ax, ratio_ax = _plot_ratio(hists, {}, ratio_plots, **kwargs)
         main_ax.set_title(f"{region}")
@@ -664,6 +717,104 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
             _savefig(fig, var, kwargs.get("outputFolder"), kwargs.get("year","RunII"), cut, tagName, region, process)
 
     return fig, ax
+
+
+def load_stack_config(stack_config, var, cut, region, **kwargs):
+
+    stack_dict = {}
+    var_over_ride = kwargs.get("var_over_ride", {})
+    rebin   = kwargs.get("rebin", 1)
+    year    = kwargs.get("year", "RunII")
+    debug   = kwargs.get("debug", False)
+
+    #
+    #  Loop processes in the stack config
+    #
+    for _proc_name, _proc_config in stack_config.items():
+
+        var_to_plot = var_over_ride.get(_proc_name, var)
+
+        if kwargs.get("debug", False):
+            print(f"stack_process is {_proc_name} var is {var_to_plot}")
+
+        #
+        #  If this component is a process in the hist_obj
+        #
+        if _proc_config.get("process", None):
+
+
+            #
+            #  Get the hist object from the input data file(s)
+            #
+            _hist = get_hist(cfg, _proc_config,
+                             var=var_to_plot, region=region, cut=cut, rebin=rebin, year=year,
+                             debug=kwargs.get("debug", False))
+
+            stack_dict[_proc_name] = (_hist, _proc_config)
+
+        #
+        #  If this compoent is a sum of processes in the hist_obj
+        #
+        elif _proc_config.get("sum", None):
+
+            hist_sum = None
+            for sum_proc_name, sum_proc_config in _proc_config.get("sum").items():
+
+                sum_proc_config["year"] = _proc_config["year"]
+
+                var_to_plot = var_over_ride.get(sum_proc_name, var)
+
+                #
+                #  Get the hist object from the input data file(s)
+                #
+                _hist = get_hist(cfg, sum_proc_config,
+                                 var=var_to_plot, region=region, cut=cut, rebin=rebin, year=year,
+                                 debug=kwargs.get("debug", False))
+
+                if hist_sum:
+                    hist_sum += _hist
+                else:
+                    hist_sum = _hist
+
+            stack_dict[_proc_name] = (hist_sum, _proc_config)
+
+        else:
+            raise Exception("Error need to config either process or sum")
+
+    return stack_dict
+
+
+def get_ratio_plots(ratio_config, hists, stack_dict, **kwargs):
+    ratio_plots = []
+
+    for _, ratio_config in ratio_config.items():
+
+        num_config = ratio_config.get("numerator")
+        den_config = ratio_config.get("denominator")
+        numValues, numVars, numCenters = get_values_variances_centers_from_dict(num_config, hists, stack_dict)
+        denValues, denVars, _          = get_values_variances_centers_from_dict(den_config, hists, stack_dict)
+
+        if kwargs.get("norm", False):
+            ratio_config["norm"] = True
+
+        #
+        # Clean den
+        #
+        ratios, ratio_uncert = makeRatio(numValues, numVars, denValues, denVars, **ratio_config)
+        ratio_plots.append((numCenters, ratios, ratio_uncert, ratio_config))
+
+        # Bkg error band
+        default_band_config = {"color": "k",  "type": "band", "hatch": "\\\\\\"}
+        band_config = ratio_config.get("bkg_err_band", default_band_config)
+
+        if band_config:
+            band_ratios = np.ones(len(numCenters))
+            band_uncert  = np.sqrt(denVars * np.power(denValues, -2.0))
+            ratio_plots.append((numCenters, band_ratios, band_uncert, band_config))
+
+
+
+    return ratio_plots
 
 
 def makePlot(cfg, var='selJets.pt',
@@ -745,90 +896,22 @@ def makePlot(cfg, var='selJets.pt',
     #
     #  The stack
     #
-    stack_dict = {}
     stack_config = cfg.plotConfig.get("stack", {})
     if process is not None:
         stack_config = {key: stack_config[key] for key in process if key in stack_config}
 
-    #
-    #  Loop processes in the stack config
-    #
-    for _proc_name, _proc_config in stack_config.items():
 
-        var_to_plot = var_over_ride.get(_proc_name, var)
+    stack_dict = load_stack_config(stack_config, var, cut, region, **kwargs)
 
-        if kwargs.get("debug", False):
-            print(f"stack_process is {_proc_name} var is {var_to_plot}")
-
-        #
-        #  If this component is a process in the hist_obj
-        #
-        if _proc_config.get("process", None):
-
-            tagNames.append(_proc_config["tag"])
-
-            #
-            #  Get the hist object from the input data file(s)
-            #
-            _hist = get_hist(cfg, _proc_config,
-                             var=var_to_plot, region=region, cut=cut, rebin=rebin, year=year,
-                             debug=kwargs.get("debug", False))
-
-            stack_dict[_proc_name] = (_hist, _proc_config)
-
-        #
-        #  If this compoent is a sum of processes in the hist_obj
-        #
-        elif _proc_config.get("sum", None):
-
-            hist_sum = None
-            for sum_proc_name, sum_proc_config in _proc_config.get("sum").items():
-
-                sum_proc_config["year"] = _proc_config["year"]
-
-                var_to_plot = var_over_ride.get(sum_proc_name, var)
-
-                #
-                #  Get the hist object from the input data file(s)
-                #
-                _hist = get_hist(cfg, sum_proc_config,
-                                 var=var_to_plot, region=region, cut=cut, rebin=rebin, year=year,
-                                 debug=kwargs.get("debug", False))
-
-                if hist_sum:
-                    hist_sum += _hist
-                else:
-                    hist_sum = _hist
-
-            stack_dict[_proc_name] = (hist_sum, _proc_config)
-
-        else:
-            raise Exception("Error need to config either process or sum")
+    if len(tagNames) == 0:
+        tagNames.append( get_value_nested_dict(stack_config,"tag") )
 
     #
     #  Config Ratios
     #
     if kwargs.get("doRatio", kwargs.get("doratio", False)):
         ratio_config = cfg.plotConfig["ratios"]
-        ratio_plots = []
-
-        for _, ratio_config in ratio_config.items():
-
-            num_config = ratio_config.get("numerator")
-            den_config = ratio_config.get("denominator")
-
-            numValues, numCenters = get_values_centers_from_dict(num_config, hists, stack_dict)
-            denValues, _          = get_values_centers_from_dict(den_config, hists, stack_dict)
-
-            if kwargs.get("norm", False):
-                ratio_config["norm"] = True
-
-            #
-            # Clean den
-            #
-            ratios, ratio_uncert = makeRatio(numValues, denValues, **ratio_config)
-
-            ratio_plots.append((numCenters, ratios, ratio_uncert, ratio_config))
+        ratio_plots = get_ratio_plots(ratio_config, hists, stack_dict, **kwargs)
 
         fig, main_ax, ratio_ax = _plot_ratio(hists, stack_dict, ratio_plots,  **kwargs)
         main_ax.set_title(f"{region}")
@@ -869,9 +952,11 @@ def make2DPlot(cfg, process, var='selJets.pt',
         #
         # Find which file has the process we are looking for
         #
+        process_config = get_value_nested_dict(cfg.plotConfig, process)
+        process_name = process_config["process"]
         for _input_data in cfg.hists:
             _hist_to_plot = _input_data['hists'][var]
-            if process in _hist_to_plot.axes["process"]:
+            if process_name in _hist_to_plot.axes["process"]:
                 hist_to_plot = _hist_to_plot
 
     else:
@@ -939,7 +1024,7 @@ def make2DPlot(cfg, process, var='selJets.pt',
     return fig, ax
 
 
-def parse_args():
+def init_arg_parser():
 
     parser = argparse.ArgumentParser(description='plots', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
@@ -970,6 +1055,13 @@ def parse_args():
     parser.add_argument('--debug', action="store_true", help='')
     parser.add_argument('--signal', action="store_true", help='')
     parser.add_argument('--combine_input_files', action="store_true", help='')
+
+
+    return parser
+
+def parse_args():
+
+    parser = init_arg_parser()
 
     args = parser.parse_args()
     return args
@@ -1009,6 +1101,8 @@ def read_axes_and_cuts(hists, plotConfig):
         for iBin in range(a.extent):
 
             if axisName in plotConfig["codes"]:
+                if a.value(iBin) not in plotConfig["codes"][axisName]:
+                    continue
                 value = plotConfig["codes"][axisName][a.value(iBin)]
             else:
                 value = a.value(iBin)

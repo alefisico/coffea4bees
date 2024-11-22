@@ -72,22 +72,22 @@ stack:
                     data_3tag:
                             process: data
                             tag: threeTag
-                            scalefactor: +1            
+                            scalefactor: +0.05345687231634274
 
                     TTTo2L2Nu_3tag:
                             process: TTTo2L2Nu
                             tag: threeTag
-                            scalefactor: -1
+                            scalefactor: -0.05345687231634274
                             
                     TTToSemiLeptonic_3tag:
                             process: TTToSemiLeptonic
                             tag: threeTag
-                            scalefactor: -1
+                            scalefactor: -0.05345687231634274
                             
                     TTToHadronic_3tag:
                             process: TTToHadronic
                             tag: threeTag
-                            scalefactor: -1
+                            scalefactor: -0.05345687231634274
 
 ratios:
         dataToBkg:
