@@ -184,7 +184,7 @@ def add_pseudotagweights( selev, weights,
                     )
                 weight = np.full(len_event, 1.0)
                 print(f"Applying threetag weight JCM: {event_metadata['JCM_loads'][0]} FvT: {event_metadata['FvT_names'][0]}\n")
-                weight[analysis_selections] = np.where(selev.threeTag, getattr(selev, f"{event_metadata['JCM_loads'][0]}") * getattr(getattr(selev, event_metadata["FvT_names"][0]), event_metadata["FvT_names"][0]), 1.0)
+                weight[analysis_selections] = np.where(selev.threeTag, getattr(selev, f"{event_metadata['JCM_loads'][0]}") * selev.FvT.FvT, 1.0)
                 weights.add("FvT", weight)
                 list_weight_names.append("FvT")
 
