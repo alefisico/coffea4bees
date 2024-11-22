@@ -119,6 +119,46 @@ def mkpath(path, doExecute=True, debug=False):
         thisDir = thisDir + d + "/"
         mkdir(thisDir, doExecute)
 
+def rescale_x_axis(hist_old, xMin_old = 300, xMax_old = 1200, xMin_new = 0, xMax_new = 1):
+    n_bins = hist_old.GetNbinsX()
+    hist_name, hist_title = hist_old.GetName(), hist_old.GetTitle() 
+    underflow_old, overflow_old = hist_old.GetBinContent(0), hist_old.GetBinContent(n_bins + 1)
+
+    xBinCenter_old_list = [hist_old.GetXaxis().GetBinCenter(bin) for bin in range(1, n_bins + 1)]
+    content_old_list    = [hist_old.GetBinContent(bin) for bin in range(1, n_bins + 1)]
+    existing_hist = ROOT.gDirectory.Get(hist_name)
+    if existing_hist: # Delete existing histogram with same name to prevent memory leak
+        existing_hist.Delete()  
+
+    hist_new = ROOT.TH1F(hist_name, hist_title, n_bins, xMin_new, xMax_new)
+    for bin in range(1, n_bins + 1):
+        xBinCenter_old = xBinCenter_old_list[bin-1]
+        if xBinCenter_old < xMin_old or xBinCenter_old > xMax_old:
+            continue 
+
+        xBinCenter_new = xMin_new + ((xBinCenter_old - xMin_old) * (xMax_new - xMin_new)/ (xMax_old - xMin_old))
+        content_old = content_old_list[bin-1]
+        hist_new.Fill(xBinCenter_new, content_old)
+
+    hist_new.SetBinContent(         0, underflow_old)  
+    hist_new.SetBinContent(n_bins + 1,  overflow_old) 
+    return hist_new
+
+def make_temp_hist(hist, name=""):
+    n_bins = hist.GetNbinsX()
+    bin_edges = [hist.GetBinLowEdge(bin) for bin in range(1, n_bins + 2)]           
+    bin_values = [hist.GetBinContent(bin) for bin in range(1, n_bins + 1)]           
+    plt.figure(figsize=(8, 6))
+    plt.hist(
+        bin_edges[:-1], bins=bin_edges, weights=bin_values, 
+        histtype='step', linewidth=1.5, label="TH1F Histogram"
+    )
+
+    plt.xlabel(f"{hist.GetName()}")  
+    plt.ylabel("Bin contents")  
+    plt.legend()
+    plt.savefig(f"tempdir/{name}_{hist.GetName()}", dpi=300); plt.close()
+
 # @log_function_call
 def combine_hists(input_file, hist_template, procs, years, debug=False):
     hist = None
@@ -145,6 +185,10 @@ def combine_hists(input_file, hist_template, procs, years, debug=False):
                 else:
                     hist.Add( input_file.Get(hist_name).Clone() )
 
+    if 'v4j_mass' in hist_template:
+        hist = rescale_x_axis(hist, xMin_old = 400, xMax_old = 1200, xMin_new = 0, xMax_new = 1)
+
+    # # make_temp_hist(hist)
     return hist
 
 # @log_function_call
@@ -174,6 +218,7 @@ def writeYears(f, input_file_data3b, input_file_TT, input_file_mix, mix, channel
         f.cd(directory)
         hist_data_obs.SetName("data_obs")
         hist_data_obs.Write()
+        # make_temp_hist(hist_data_obs, name="BIGOBSAGAIN")
 
         #
         # multijet
@@ -200,6 +245,7 @@ def writeYears(f, input_file_data3b, input_file_TT, input_file_mix, mix, channel
         f.cd(directory)
         hist_multijet.SetName("multijet")
         hist_multijet.Write()
+        # make_temp_hist(hist_multijet, name="BIGMJJAGAIN")
 
 #    #
 #    # TTBar
@@ -240,6 +286,7 @@ def addYears(f, input_file_data3b, input_file_TT, input_file_mix, mix, channel):
     f.cd(directory)
     hist_data_obs.SetName("data_obs")
     hist_data_obs.Write()
+    # make_temp_hist(hist_data_obs, name="BIG_OBS")
 
     #
     # multijet
@@ -266,6 +313,7 @@ def addYears(f, input_file_data3b, input_file_TT, input_file_mix, mix, channel):
     f.cd(directory)
     hist_multijet.SetName("multijet")
     hist_multijet.Write()
+    # make_temp_hist(hist_multijet, name="BIGMJJ")
 
     #
     # TTBar
@@ -281,7 +329,7 @@ def addYears(f, input_file_data3b, input_file_TT, input_file_mix, mix, channel):
     f.cd(directory)
     hist_ttbar.SetName("ttbar")
     hist_ttbar.Write()
-
+    # make_temp_hist(hist_ttbar, name="BIGTTBAR")
     return
 
 # @log_function_call
@@ -314,6 +362,7 @@ def addMixes(f, directory, procs=['ttbar', 'multijet', 'data_obs']):
             f.cd(directory)
 
             hists[-1].Write()
+            # make_temp_hist(hists[-1], name=f"BIG_{process}__")
 
 # @log_function_call
 def prepInput():
@@ -355,7 +404,7 @@ def prepInput():
                                 years=["UL16_preVFP", "UL16_postVFP", "UL17", "UL18"],
                                 procs=["GluGluToHHTo4B_cHHH1", "ZZ4b", "ZH4b"], 
                                 debug=args.debug)
-
+    # make_temp_hist(hist_signal, name="BIGSIG")
 #    hist_signal_preUL = combine_hists(input_file_sig_preUL,
 #                                f"{var_name}_PROC_YEAR_fourTag_SR",
 #                                years=["2016", "2017", "2018"],
@@ -367,6 +416,7 @@ def prepInput():
     f.cd(channel)
     hist_signal.SetName("signal")
     hist_signal.Write()
+    
 
     for year in ['2016', '2017', '2018']:
         addMixes(f, channel+year, procs=['multijet', 'data_obs'])
