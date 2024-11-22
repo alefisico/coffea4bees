@@ -19,9 +19,9 @@ def compute_variable_binning(multijet_hist, signal_hist, threshold):
     
     ## Check the binning of the signal asuming multijet binning threshold
     signal_binning = signal_hist.Integral(multijet_bin, total_nbins+1)
-    # print(f"Signal binning: {signal_binning}")
+    print(f"Signal binning: {signal_binning}")
     signal_binning = np.sqrt(signal_binning) + signal_binning
-    # print(f"Signal binning: {signal_binning}")
+    print(f"Signal binning: {signal_binning}")
     # sys.exit(0)
     variable_binning = [1]
     higher_bin = total_nbins+1
@@ -71,7 +71,7 @@ def make_variable_binning(input_file, hist_name, threshold, output_file):
             if isinstance(hist, ROOT.TH1) and (hist_name in hist.GetName()):
                 rebinned_hist = rebin_histogram( hist, variable_binning)
                 rebinned_hist.Write()
-                print(f"Rebinned histogram '{hist.GetName()}'")
+                # print(f"Rebinned histogram '{hist.GetName()}'")
 
         # Close the ROOT file
         file.Close()

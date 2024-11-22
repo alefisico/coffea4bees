@@ -5,19 +5,25 @@ var="SvB_MA.ps_hh_fine"
 
 bkg_syst_folder=local_outputs/stat_analysis/optimize_bin/${var//./_}_${rebin_folder}/closureFits/
 limits_folder=local_outputs/stat_analysis/optimize_bin/${var//./_}_${rebin_folder}/
+# bkg_syst_folder=local_outputs/stat_analysis/ZZandZHinSB/ZZinSB/${var//./_}_${rebin_folder}/closureFits/
+# limits_folder=local_outputs/stat_analysis/ZZandZHinSB/ZZinSB/${var//./_}_${rebin_folder}/
 
 echo "Removing old folders ${bkg_syst_folder} and ${limits_folder}"
 rm -rf ${bkg_syst_folder}
 rm -rf ${limits_folder}
 
 tmp=local_outputs/analysis
+tmp_data3b=${tmp}/histMixedBkg_data_3b_for_mixed_kfold.root  ##--use_kfold
+# tmp_data3b=hists/tmp/histMixedBkg_data_3b_for_mixed_ZZinSB.root  ##--use_ZZinSB
+# tmp_data3b=hists/tmp/histMixedBkg_data_3b_for_mixed_ZZandZHinSB.root  ##--use_ZZandZHinSB
 echo "Running TwoStageClosure"
 python3 stats_analysis/runTwoStageClosure.py --var ${var//./_} \
-        --outputPath ${bkg_syst_folder} --use_kfold \
+        --outputPath ${bkg_syst_folder} \
+        --use_kfold \
         --input_file_TT ${tmp}/histMixedBkg_TT.root \
         --input_file_mix ${tmp}/histMixedData.root \
         --input_file_sig ${tmp}/histAll.root \
-        --input_file_data3b ${tmp}/histMixedBkg_data_3b_for_mixed_kfold.root \
+        --input_file_data3b ${tmp_data3b} \
         --rebin ${rebin} \
         --variable_binning 
 

@@ -123,7 +123,7 @@ def combine_hists(input_file, hist_template, procs, years, debug=False):
             hist_name = hist_name_proc.replace("YEAR", y)
 
             if hist is None:
-                # print(f"reading {hist_name}")
+                print(f"reading {hist_name}")
                 if type(input_file) is list:
                     hist =  input_file[iy].Get(hist_name).Clone()
                 else:
@@ -1885,6 +1885,7 @@ class closure:
                       'rTitle'    : 'Data / Bkgd.',
                       'xTitle'    : xTitle,
                       'yTitle'    : 'Events',
+                    #   'logY'      : True,
                     #   'yMax'      : 1.4 * (self.ymax[0]),  # *ymaxScale, # make room to show fit parameters
                       # 'xleg'      : [0.13, 0.13 + 0.5] if 'SR' in region else ,
                       #  'legendSubText' : ['#bf{Fit:}',
