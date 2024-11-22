@@ -197,7 +197,7 @@ class analysis(processor.ProcessorABC):
 
                 for _FvT_name, _FvT_file in zip( event.metadata["FvT_names"], event.metadata["FvT_files"] ):
 
-                    print(f"Loading FvT File: {_FvT_file}, with name {_FvT_name}\n")
+                    #print(f"Loading FvT File: {_FvT_file}, with name {_FvT_name}\n")
                     event[_FvT_name] = getattr( NanoEventsFactory.from_root( f"{_FvT_file}", entry_start=self.estart, entry_stop=self.estop, schemaclass=FriendTreeSchema, ).events(),
                                                 _FvT_name, )
 
@@ -247,10 +247,9 @@ class analysis(processor.ProcessorABC):
             JCM_array = TreeReader( lambda x: [ s for s in x if s.startswith("pseudoTagWeight_3bDvTMix4bDvT_v") ] ).arrays(Chunk.from_coffea_events(event))
 
             for _JCM_load in event.metadata["JCM_loads"]:
-                print(f"{self.chunk} Loading JCM name {_JCM_load}\n")
+                #print(f"{self.chunk} Loading JCM name {_JCM_load}\n")
                 event[_JCM_load] = JCM_array[_JCM_load]
-                print(f"{self.chunk}  ... {JCM_array[_JCM_load][0:10]}\n")
-                print(f"{self.chunk}   unique {np.unique(JCM_array[_JCM_load])}\n")
+                print(f"{self.chunk}   JCM loads {np.unique(JCM_array[_JCM_load])}\n")
         #
         # Event selection
         #
@@ -556,9 +555,9 @@ class analysis(processor.ProcessorABC):
         #
         # Example of how to write out event numbers
         #
-        from analysis.helpers.write_debug_info import add_debug_info_to_output
-        if self.config['isDataForMixed']:
-            add_debug_info_to_output(selev, processOutput, weights, list_weight_names, analysis_selections)
+        #from analysis.helpers.write_debug_info import add_debug_info_to_output
+        # #if self.config['isDataForMixed']:
+        #    add_debug_info_to_output(selev, processOutput, weights, list_weight_names, analysis_selections)
 
 
         #

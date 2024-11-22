@@ -5,7 +5,7 @@ import yaml
 from parser import wrapper
 import sys
 
-_PERCENT_ERROR_THRESHOLD =  0.001
+#_PERCENT_ERROR_THRESHOLD =  0.001
 #_PERCENT_ERROR_THRESHOLD =  0.01
 
 #
@@ -15,6 +15,8 @@ class CutFlowTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
+
+        self.error_threshold = float(wrapper.args["error_threshold"])
 
         inputFile = wrapper.args["inputFile"]
         with open(f'{inputFile}', 'rb') as hfile:
@@ -42,7 +44,7 @@ class CutFlowTestCase(unittest.TestCase):
                 obs = round(float(observed[datasetAndEra][cut]), 2)
                 diff = obs - exp
                 percent_diff = diff / exp if exp else 0
-                if abs(percent_diff) > _PERCENT_ERROR_THRESHOLD:
+                if abs(percent_diff) > self.error_threshold:
                     failures.append( (datasetAndEra, cut, obs, exp) )
         return failures
 
