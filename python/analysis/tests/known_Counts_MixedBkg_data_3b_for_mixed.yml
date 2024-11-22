@@ -31,30 +31,30 @@ counts4:
 counts3:
     data_3b_for_mixed_2018:
         passJetMult: 984.0
-        passPreSel: 43.93
-        passDiJetMass: 15.44
-        SR: 5.54
-        SB: 9.9
+        passPreSel: 43.76
+        passDiJetMass: 15.37
+        SR: 5.52
+        SB: 9.85
         passSvB: 0.42
-        failSvB: 29.2
+        failSvB: 29.09
 
     data_3b_for_mixed_2017:
         passJetMult: 987.0
-        passPreSel: 57.27
-        passDiJetMass: 22.19
-        SR: 7.1
-        SB: 15.1
+        passPreSel: 57.08
+        passDiJetMass: 22.09
+        SR: 7.07
+        SB: 15.02
         passSvB: 0.56
-        failSvB: 37.93
+        failSvB: 37.83
 
     data_3b_for_mixed_2016:
         passJetMult: 980.0
-        passPreSel: 30.6
-        passDiJetMass: 12.85
-        SR: 4.36
-        SB: 8.49
+        passPreSel: 30.56
+        passDiJetMass: 12.82
+        SR: 4.35
+        SB: 8.47
         passSvB: 0.1
-        failSvB: 20.41
+        failSvB: 20.39
 
 
 
