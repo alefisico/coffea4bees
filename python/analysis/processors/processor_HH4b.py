@@ -249,7 +249,8 @@ class analysis(processor.ProcessorABC):
             for _JCM_load in event.metadata["JCM_loads"]:
                 #print(f"{self.chunk} Loading JCM name {_JCM_load}\n")
                 event[_JCM_load] = JCM_array[_JCM_load]
-                print(f"{self.chunk}   JCM loads {np.unique(JCM_array[_JCM_load])}\n")
+                print(f"{self.chunk}   {_JCM_load} JCM loads {np.unique(JCM_array[_JCM_load])}\n")
+
         #
         # Event selection
         #

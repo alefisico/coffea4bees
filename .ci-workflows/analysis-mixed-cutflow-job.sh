@@ -11,7 +11,7 @@ fi
 
 echo "############### Running cutflow test for mixed "
 python analysis/tests/cutflow_test.py   --inputFile $INPUT_DIR/testMixedBkg_TT.coffea --knownCounts analysis/tests/known_Counts_MixedBkg_TT.yml
-python analysis/tests/cutflow_test.py   --inputFile $INPUT_DIR/testMixedBkg_data_3b_for_mixed.coffea --knownCounts analysis/tests/known_Counts_MixedBkg_data_3b_for_mixed.yml --err 0.02
+python analysis/tests/cutflow_test.py   --inputFile $INPUT_DIR/testMixedBkg_data_3b_for_mixed.coffea --knownCounts analysis/tests/known_Counts_MixedBkg_data_3b_for_mixed.yml
 python analysis/tests/cutflow_test.py   --inputFile $INPUT_DIR/testMixedData.coffea --knownCounts analysis/tests/known_Counts_MixedData.yml
 python analysis/tests/cutflow_test.py   --inputFile $INPUT_DIR/testSignal_UL.coffea --knownCounts analysis/tests/known_Counts_Signal.yml
 
