@@ -18,7 +18,7 @@ from .analysis import Analysis
 from .dataset import Dataset
 from .model import Model
 from .special import interface, new
-from .state import Cascade, _is_private
+from .state import GlobalSetting, _is_private
 from .task import _DASH, Task
 
 if TYPE_CHECKING:
@@ -54,7 +54,7 @@ class _Opts:
 class TaskOptions(_Opts):
     _T = _Opts.T
 
-    setting = _T(Cascade)
+    setting = _T(GlobalSetting)
     dataset = _T(Dataset)
     model = _T(Model)
     analysis = _T(Analysis)

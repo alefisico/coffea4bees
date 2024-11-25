@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from torch.utils.data import DataLoader, Dataset
 
-from ...config.setting.torch import DataLoader as cfg
+from ...config.setting.ml import DataLoader as cfg
 from ...monitor.progress import MessageType, Progress
 
 

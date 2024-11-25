@@ -5,6 +5,7 @@ import re
 from pathlib import Path
 from textwrap import indent
 
+import fsspec
 from classifier.task import ArgParser, EntryPoint, Task, main, parse
 from classifier.task.special import Deprecated, WorkInProgress
 from classifier.task.task import _INDENT
@@ -51,6 +52,7 @@ def _walk_packages(base):
 
 class Main(main.Main):
     _no_state = True
+    _no_init = True
 
     _keys = " ".join(f"{main._DASH}{k}" for k in EntryPoint._tasks)
     argparser = ArgParser(
@@ -162,30 +164,31 @@ class Main(main.Main):
                 if self._check_special(cls):
                     self._print(f"[blue]{task}[/blue]")
                     self._print_help(cls)
-        self._print("\n[orange3]\[Options][orange3]")
-        self._print(_print_mod(None, "task", tasks[1]))
-        for cat in parser._tasks:
-            target = EntryPoint._tasks[cat]
-            for imp, opts in parser.args[cat]:
-                modname, clsname = parser._fetch_module_name(imp, cat)
-                mod, cls = parser._fetch_module(imp, cat)
-                self._check_special(cls, force=True)
-                self._print(_print_mod(cat, imp, opts))
-                if mod is None:
-                    self._print(
-                        indent(f'[red]Module "{modname}" not found[/red]', _INDENT)
-                    )
-                elif cls is None:
-                    self._print(
-                        f'[red]Class "{clsname}" not found in module "{modname}"[/red]'
-                    )
-                else:
-                    if not issubclass(cls, target):
+        if not self.opts.all:
+            self._print("\n[orange3]\[Options][orange3]")
+            self._print(_print_mod(None, "task", tasks[1]))
+            for cat in parser._tasks:
+                target = EntryPoint._tasks[cat]
+                for imp, opts in parser.args[cat]:
+                    modname, clsname = parser._fetch_module_name(imp, cat)
+                    mod, cls = parser._fetch_module(imp, cat)
+                    self._check_special(cls, force=True)
+                    self._print(_print_mod(cat, imp, opts))
+                    if mod is None:
                         self._print(
-                            f'[red]Class "{clsname}" is not a subclass of {target.__name__}[/red]'
+                            indent(f'[red]Module "{modname}" not found[/red]', _INDENT)
+                        )
+                    elif cls is None:
+                        self._print(
+                            f'[red]Class "{clsname}" not found in module "{modname}"[/red]'
                         )
                     else:
-                        self._print_help(cls)
+                        if not issubclass(cls, target):
+                            self._print(
+                                f'[red]Class "{clsname}" is not a subclass of {target.__name__}[/red]'
+                            )
+                        else:
+                            self._print_help(cls)
         if self.opts.all:
             self._print("\n[orange3]\[Modules][/orange3]")
             for cat in parser._tasks:
@@ -214,4 +217,5 @@ class Main(main.Main):
                                 self._print(indent(f"[green]{cls}[/green]", _INDENT))
                                 self._print_help(classes[cls], 2)
         if self.opts.html:
-            self._console.save_html(cfg.IO.output / "help.html", theme=themes.MONOKAI)
+            with fsspec.open(cfg.IO.output / "help.html", "wt") as f:
+                f.write(self._console.export_html(theme=themes.MONOKAI))

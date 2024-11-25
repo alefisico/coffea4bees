@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Iterable
 
 import torch
 import torch.types as tt
-from classifier.config.setting import torch as cfg
+from classifier.config.setting import ml as cfg
 from rich.pretty import pretty_repr
 from torch import Tensor, nn
 from torch.utils.data import Dataset

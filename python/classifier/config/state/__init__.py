@@ -50,9 +50,11 @@ class RepoInfo:
 
 
 class MonitorInfo:
-    backends: tuple[str] = ("console",)
-    components: tuple[str] = (
+    backends: list[str] = [
+        "console",
+    ]
+    components: list[str] = [
         "logging",
         "usage",
         "progress",
-    )
+    ]

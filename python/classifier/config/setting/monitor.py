@@ -1,7 +1,7 @@
 from typing import Callable, Protocol, TypeVar
 
 from base_class.utils.wrapper import MethodDecorator
-from classifier.task.state import Cascade
+from classifier.task.state import GlobalSetting
 
 from . import Monitor
 
@@ -44,34 +44,58 @@ def check(
 
 
 # backends
-class Console(Cascade):
+class Console(GlobalSetting):
+    "Backend: console (rich)"
+
     enable: bool = True
+    "enable the console backend"
 
-    interval: float = 1.0  # seconds
+    interval: float = 1.0
+    "(seconds) interval to update the "
     fps: int = 10
+    "frames per second"
 
 
-class Web(Cascade):  # TODO placeholder
+class Web(GlobalSetting):  # TODO placeholder
+    "Backend: web page (flask)"
+
     enable: bool = False
+    "enable the web backend"
 
 
 # functions
-class Log(Cascade):
+class Log(GlobalSetting):
+    "Logging system"
+
     enable: bool = True
+    "enable logging"
     file: str = "logs.html"
+    "name of the log file"
 
     level: int = 20
+    "logging level"
     forward_exception: bool = True
+    "forward the uncaught exceptions to the monitor (set this to False or run a standalone monitor if some exceptions do not show up)"
 
 
-class Progress(Cascade):
+class Progress(GlobalSetting):
+    "Progress bars"
+
     enable: bool = True
+    "enable progress bars"
 
 
-class Usage(Cascade):
+class Usage(GlobalSetting):
+    "Usage statistics"
+
     enable: bool = False
+    "enable usage trackers (do not use this in production)"
     file: str = "usage.json"
+    "name of the file to dump the raw usage data"
 
-    interval: float = 1.0  # seconds
+    interval: float = 1.0
+    "(seconds) interval to update the usage"
     gpu: bool = True
+    "track GPU usage"
     gpu_force_torch: bool = False
+    "force to fetch GPU usage from pytorch instead of pynvml"

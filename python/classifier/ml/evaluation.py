@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Generator
 
 import torch
-from classifier.config.setting import torch as cfg
+from classifier.config.setting import ml as cfg
 
 from ..process.device import Device
 from ..typetools import filename

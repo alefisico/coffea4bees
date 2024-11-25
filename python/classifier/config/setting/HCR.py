@@ -1,9 +1,11 @@
 from enum import IntEnum
 
-from classifier.task import Cascade
+from classifier.task import GlobalSetting
 
 
-class InputBranch(Cascade):
+class InputBranch(GlobalSetting):
+    "Name of branches in the input root file"
+
     feature_CanJet: list[str] = ["pt", "eta", "phi", "mass"]
     feature_NotCanJet: list[str] = feature_CanJet + ["isSelJet"]
     feature_ancillary: list[str] = ["year", "nSelJets", "xW", "xbW"]
@@ -23,7 +25,9 @@ class InputBranch(Cascade):
         return var.copy()
 
 
-class Input(Cascade):
+class Input(GlobalSetting):
+    "Name of the keys in the input batch."
+
     label: str = "label"
     region: str = "region"
     weight: str = "weight"
@@ -32,7 +36,9 @@ class Input(Cascade):
     NotCanJet: str = "NotCanJet"
 
 
-class Output(Cascade):
+class Output(GlobalSetting):
+    "Name of the keys in the output batch."
+
     class_raw: str = "class_raw"
     class_prob: str = "class_prob"
     quadjet_raw: str = "quadjet_raw"

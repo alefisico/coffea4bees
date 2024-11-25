@@ -70,7 +70,7 @@ class _Legacy(Deprecated, _common.Common):
         return branches.union(_CANJETS, _NOTCANJETS)
 
 
-class CommonTrain(_Legacy, _common.CommonTrain): ...
+class _CommonTrain(_Legacy, _common.CommonTrain): ...
 
 
 class Eval(_Legacy, _common.CommonEval):

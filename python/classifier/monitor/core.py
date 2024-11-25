@@ -178,7 +178,6 @@ class Reporter(Client, _Singleton):
     __allowed_process__ = _Status.Fresh
 
     def __init__(self, address: tuple[str, int | None]):
-        self.reconnect_delay = cfg.Monitor.reconnect_delay
         if address[1] is None:
             address = address[0]
         super().__init__(address)
