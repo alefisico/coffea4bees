@@ -44,7 +44,7 @@ class Usage(MonitorProxy):
     _n_gpu: int = None
     _torch_calibration: int = None  # MiB
     _pynvml_handles: list = None
-    _pynvml_unavailable = RunInfo.singularity
+    _pynvml_unavailable = RunInfo.in_singularity
 
     # state
     _running = False

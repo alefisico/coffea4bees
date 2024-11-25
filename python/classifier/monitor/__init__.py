@@ -1,6 +1,7 @@
 import importlib
 
-from ..config.state import MonitorInfo
+from classifier.config.state.static import MonitorInfo
+
 from ..process import status
 from .backends import Platform
 from .core import (

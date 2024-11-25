@@ -4,7 +4,7 @@ import logging
 from typing import Iterable
 
 from classifier.config.setting import monitor as cfg
-from classifier.config.state import RepoInfo
+from classifier.config.state.static import RepoInfo
 
 from ..backends import Platform
 from ..core import Recorder, post_to_monitor
