@@ -141,8 +141,11 @@ def filling_nominal_histograms(selev, JCM,
         fill += hist.add( "quadJet_min_dr.SvB_MA_q_score",   ( 100, 0, 1, ( "quadJet_min_dr.SvB_MA_q_score", "Min dR Quad Jet Diboson SvB MA q score") ) )
         if isDataForMixed:
             for _FvT_name in event_metadata["FvT_names"]:
+                logging.info(_FvT_name)
                 fill += SvBHists( (f"SvB_{_FvT_name}",    "SvB Classifier"),    "SvB",    weight=f"weight_{_FvT_name}", )
                 fill += SvBHists( (f"SvB_MA_{_FvT_name}", "SvB MA Classifier"), "SvB_MA", weight=f"weight_{_FvT_name}", )
+            for _FvT_name in event_metadata["FvT_names"]:
+                fill += hist.add( f"m4j_{_FvT_name}", (120, 0, 1200, ("m4j", f"m4j_{_FvT_name}")) )
 
     #
     # fill histograms
