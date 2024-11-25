@@ -25,6 +25,9 @@ ROOT.gROOT.SetBatch(True)
 matplotlib.use('Agg')
 
 
+color_multijet = '(1.0, 0.8745, 0.4980)'
+color_TTbar    = '(0.5216, 0.8196, 0.9843)'
+
 regionName = {'SB': 'Sideband',
               'CR': 'Control Region',
               'SR': 'Signal Region',
@@ -171,7 +174,7 @@ def combine_hists(input_file, hist_template, procs, years, debug=False):
             hist_name = hist_name_proc.replace("YEAR", y)
 
             if hist is None:
-                # print(f"reading {hist_name}")
+                print(f"reading {hist_name}")
                 if type(input_file) is list:
                     hist =  input_file[iy].Get(hist_name).Clone()
                 else:
@@ -531,7 +534,7 @@ class multijetEnsemble:
                 self.multijet_ensemble.SetBinError(ensemble_bin, 0.0)
                 self.data_minus_ttbar_ensemble.SetBinContent(ensemble_bin, self.data_minus_ttbar.GetBinContent(local_bin))
                 self.data_minus_ttbar_ensemble.SetBinError  (ensemble_bin, self.data_minus_ttbar.GetBinError  (local_bin))
-        
+
         self.f.cd(self.channel)
         self.multijet_ensemble_average.Write()
         self.multijet_ensemble        .Write()
@@ -862,7 +865,7 @@ class multijetEnsemble:
         ax.legend(fontsize='small', loc='best')
 
         rebin_name = '' if rebin else '_no_rebin'
-        
+
         plt.tight_layout()
         fig.savefig( f"{output_dir}/{name}_basis{rebin_name}{basis}.pdf" )
         plt.close(fig)
@@ -1182,7 +1185,7 @@ class multijetEnsemble:
             'legend': 3,
             'stack' : 1,
             'ratio' : 'numer A',
-            'color' : 'ROOT.kYellow'}
+            'color' : color_multijet} #ffdf7f
         samples[closure_file_out]['%s/multijet_ensemble_TH1_basis%d' % (self.channel, basis)] = {
             'label' : 'Fit (%d parameter%s)' % (basis + 1, 's' if basis else ''),
             'legend': 4,
@@ -1932,20 +1935,22 @@ class closure:
                 'legend': 2,
                 'stack' : 3,
                 'ratio' : 'denom A',
-                'color' : 'ROOT.kYellow'}
+                'color' : color_multijet} #ffdf7f
+                #'color' : 'ROOT.kYellow'}
         else:
             samples[closure_file_out]['%s/multijet' % self.channel] = {
                 'label' : '#LTMultijet#GT',
                 'legend': 2,
                 'stack' : 3,
                 'ratio' : 'denom A',
-                'color' : 'ROOT.kYellow'}
+                'color' : color_multijet} #ffdf7f
+                #'color' : 'ROOT.kYellow'}
         samples[closure_file_out]['%s/ttbar' % self.channel] = {
             'label' : '#lower[0.10]{t#bar{t}}',
             'legend': 3,
             'stack' : 2,
             'ratio' : 'denom A',
-            'color' : 'ROOT.kAzure-9'}
+            'color' : color_TTbar}
         samples[closure_file_out]['%s/signal' % self.channel] = {
             'label' : 'ZZ+ZH+HH(#times100)',
             'legend': 4,
@@ -1966,6 +1971,7 @@ class closure:
                       'rTitle'    : 'Data / Bkgd.',
                       'xTitle'    : xTitle,
                       'yTitle'    : 'Events',
+                    #   'logY'      : True,
                     #   'yMax'      : 1.4 * (self.ymax[0]),  # *ymaxScale, # make room to show fit parameters
                       # 'xleg'      : [0.13, 0.13 + 0.5] if 'SR' in region else ,
                       #  'legendSubText' : ['#bf{Fit:}',
@@ -1995,13 +2001,14 @@ class closure:
             'legend': 2,
             'stack' : 3,
             'ratio' : 'denom A',
-            'color' : 'ROOT.kYellow'}
+            'color' : color_multijet} #ffdf7f
+            #'color' : 'ROOT.kYellow'}
         samples[closure_file_out]['%s/ttbar_closure' % self.channel] = {
             'label' : '#lower[0.10]{t#bar{t}}',
             'legend': 3,
             'stack' : 2,
             'ratio' : 'denom A',
-            'color' : 'ROOT.kAzure-9'}
+            'color' : color_TTbar}
         if not plotSpuriousSignal:
             samples[closure_file_out]['%s/closure_TH1_basis%d' % (self.channel, basis)] = {
                 'label' : 'Fit (%d unconstrained parameter%s)' % (basis + 1, 's' if basis else ''),

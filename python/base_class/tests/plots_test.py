@@ -4,7 +4,7 @@ import yaml
 import sys
 import os
 sys.path.insert(0, os.getcwd())
-from base_class.plots.plots import get_value_nested_dict, makePlot, load_config, load_hists, read_axes_and_cuts, get_cut_dict, get_value_nested_dict, get_values_centers_from_dict
+from base_class.plots.plots import get_value_nested_dict, makePlot, load_config, load_hists, read_axes_and_cuts, get_cut_dict, get_value_nested_dict, get_values_variances_centers_from_dict
 import sys
 import base_class.plots.iPlot_config as cfg
 import numpy as np
@@ -102,7 +102,7 @@ class PlotTestCase(unittest.TestCase):
                                        rtol=1e-10, atol=0)
             plt.close()
 
-    def test_get_values_centers_from_dict_hists_type(self):
+    def test_get_values_variances_centers_from_dict_hists_type(self):
         # Mocking histogram objects
         hist_mock = MagicMock()
         hist_mock.values.return_value = np.array([1, 2, 3])
@@ -122,7 +122,7 @@ class PlotTestCase(unittest.TestCase):
         expected_centers = np.array([0.5, 1.5, 2.5])
 
         # Test
-        values, centers = get_values_centers_from_dict(input_dict, hists, stack_dict)
+        values, variances, centers = get_values_variances_centers_from_dict(input_dict, hists, stack_dict)
         np.testing.assert_array_equal(values, expected_values)
         np.testing.assert_array_equal(centers, expected_centers)
 
@@ -144,7 +144,7 @@ class PlotTestCase(unittest.TestCase):
         expected_centers = np.array([0.5, 1.5, 2.5])
 
         # Test
-        values, centers = get_values_centers_from_dict(input_dict, hists, stack_dict)
+        values, variances, centers = get_values_variances_centers_from_dict(input_dict, hists, stack_dict)
         np.testing.assert_array_equal(values, expected_values)
         np.testing.assert_array_equal(centers, expected_centers)
 

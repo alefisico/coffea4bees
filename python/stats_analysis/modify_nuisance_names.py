@@ -23,6 +23,7 @@ def main(json_file_path, output_file_path):
                     if not 'rgg' in name:
                         if 'prop_' in name:
                             tmp_name = name.split('_')
+                            print(tmp_name)
                             out_string = f"{tmp_name[2]} {tmp_name[1][3:5]} {tmp_name[3]}"
                         elif 'datadriven' in name:
                             tmp_name = name.split('datadriven_')[1].split('_')  
