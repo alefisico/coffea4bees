@@ -123,44 +123,73 @@ def mkpath(path, doExecute=True, debug=False):
         mkdir(thisDir, doExecute)
 
 def rescale_x_axis(hist_old, xMin_old = 300, xMax_old = 1200, xMin_new = 0, xMax_new = 1):
-    n_bins = hist_old.GetNbinsX()
+    n_bins_old = hist_old.GetNbinsX()
     hist_name, hist_title = hist_old.GetName(), hist_old.GetTitle() 
-    underflow_old, overflow_old = hist_old.GetBinContent(0), hist_old.GetBinContent(n_bins + 1)
+    underflow_old, overflow_old = hist_old.GetBinContent(0),       hist_old.GetBinContent(n_bins_old + 1)
+    underflow_err_old, overflow_err_old = hist_old.GetBinError(0), hist_old.GetBinError(n_bins_old + 1)
 
-    xBinCenter_old_list = [hist_old.GetXaxis().GetBinCenter(bin) for bin in range(1, n_bins + 1)]
-    content_old_list    = [hist_old.GetBinContent(bin) for bin in range(1, n_bins + 1)]
+    xBinCenter_old_list   = [hist_old.GetXaxis().GetBinCenter(bin)  for bin in range(1, n_bins_old + 1)]
+    xBinLowEdge_old_list  = [hist_old.GetXaxis().GetBinLowEdge(bin) for bin in range(1, n_bins_old + 1)]
+    xBinHighEdge_old_list = [hist_old.GetXaxis().GetBinLowEdge(bin) + hist_old.GetXaxis().GetBinWidth(bin) for bin in range(1, n_bins_old + 1)]
+    content_old_list    = [hist_old.GetBinContent(bin)           for bin in range(1, n_bins_old + 1)]
+    error_old_list      = [hist_old.GetBinError(bin)             for bin in range(1, n_bins_old + 1)]
+
     existing_hist = ROOT.gDirectory.Get(hist_name)
     if existing_hist: # Delete existing histogram with same name to prevent memory leak
         existing_hist.Delete()  
 
-    hist_new = ROOT.TH1F(hist_name, hist_title, n_bins, xMin_new, xMax_new)
-    for bin in range(1, n_bins + 1):
-        xBinCenter_old = xBinCenter_old_list[bin-1]
-        if xBinCenter_old < xMin_old or xBinCenter_old > xMax_old:
-            continue 
+    for bin in range(n_bins_old, 0, -1):  ### bins below lower cut are new underflow
+        xBinLowEdge_old = xBinLowEdge_old_list[bin-1]
+        if xBinLowEdge_old < xMin_old:
+            underflow_bin_new = bin-1
+            break
+    
+    for bin in range(1, n_bins_old + 1):  ### bins above higher cut are new overflow
+        xBinHighEdge_old = xBinHighEdge_old_list[bin-1]
+        if xBinHighEdge_old >= xMax_old:
+            overflow_bin_new = bin-1
+            break
+    
+    ### get new underflow and overflow
+    underflow_new = underflow_old + np.sum([content_old_list[bin-1] for bin in range(1, underflow_bin_new+1)])
+    overflow_new  = overflow_old  + np.sum([content_old_list[bin-1] for bin in range(overflow_bin_new, n_bins_old+1)])
+    underflow_err_new = np.sqrt(underflow_err_old**2 + np.sum([error_old_list[bin-1]**2 for bin in range(1, underflow_bin_new+1)]))
+    overflow_err_new  = np.sqrt(overflow_err_old**2  + np.sum([error_old_list[bin-1]**2 for bin in range(overflow_bin_new, n_bins_old+1)]))
+    underflow_err_new, overflow_err_new = np.sqrt(underflow_bin_new), np.sqrt(overflow_bin_new)
 
-        xBinCenter_new = xMin_new + ((xBinCenter_old - xMin_old) * (xMax_new - xMin_new)/ (xMax_old - xMin_old))
-        content_old = content_old_list[bin-1]
-        hist_new.Fill(xBinCenter_new, content_old)
+    content_new_list = content_old_list[underflow_bin_new+1 : overflow_bin_new]
+    error_new_list   =   error_old_list[underflow_bin_new+1 : overflow_bin_new]
+    
+    n_bins_new = overflow_bin_new - underflow_bin_new - 1
+    hist_new = ROOT.TH1F(hist_name, hist_title, n_bins_new, xMin_new, xMax_new)
+    
+    for bin in range(1, n_bins_new + 1):
+        hist_new.SetBinContent(bin, content_new_list[bin-1])
+        hist_new.SetBinError(bin, error_new_list[bin-1])
+        # xBinCenter_new = xMin_new + ((xBinCenter_old - xMin_old) * (xMax_new - xMin_new)/ (xMax_old - xMin_old))
+        # bin_new = hist_new.FindBin(xBinCenter_new)
+        # hist_new.Fill(xBinCenter_new, content_old)
 
-    hist_new.SetBinContent(         0, underflow_old)  
-    hist_new.SetBinContent(n_bins + 1,  overflow_old) 
+    hist_new.SetBinContent(             0, underflow_new)  
+    hist_new.SetBinContent(n_bins_new + 1,  overflow_new) 
+    hist_new.SetBinError(             0, underflow_err_new)
+    hist_new.SetBinError(n_bins_new + 1,  overflow_err_new)
     return hist_new
 
-def make_temp_hist(hist, name=""):
-    n_bins = hist.GetNbinsX()
-    bin_edges = [hist.GetBinLowEdge(bin) for bin in range(1, n_bins + 2)]           
-    bin_values = [hist.GetBinContent(bin) for bin in range(1, n_bins + 1)]           
-    plt.figure(figsize=(8, 6))
-    plt.hist(
-        bin_edges[:-1], bins=bin_edges, weights=bin_values, 
-        histtype='step', linewidth=1.5, label="TH1F Histogram"
-    )
+# def make_temp_hist(hist, name=""):
+#     n_bins = hist.GetNbinsX()
+#     bin_edges = [hist.GetBinLowEdge(bin) for bin in range(1, n_bins + 2)]           
+#     bin_values = [hist.GetBinContent(bin) for bin in range(1, n_bins + 1)]           
+#     plt.figure(figsize=(8, 6))
+#     plt.hist(
+#         bin_edges[:-1], bins=bin_edges, weights=bin_values, 
+#         histtype='step', linewidth=1.5, label="TH1F Histogram"
+#     )
 
-    plt.xlabel(f"{hist.GetName()}")  
-    plt.ylabel("Bin contents")  
-    plt.legend()
-    plt.savefig(f"tempdir/{name}_{hist.GetName()}", dpi=300); plt.close()
+#     plt.xlabel(f"{hist.GetName()}")  
+#     plt.ylabel("Bin contents")  
+#     plt.legend()
+#     plt.savefig(f"tempdir/{name}_{hist.GetName()}", dpi=300); plt.close()
 
 # @log_function_call
 def combine_hists(input_file, hist_template, procs, years, debug=False):
@@ -189,9 +218,8 @@ def combine_hists(input_file, hist_template, procs, years, debug=False):
                     hist.Add( input_file.Get(hist_name).Clone() )
 
     if 'v4j_mass' in hist_template:
-        hist = rescale_x_axis(hist, xMin_old = 400, xMax_old = 1200, xMin_new = 0, xMax_new = 1)
+        hist = rescale_x_axis(hist, xMin_old = 390, xMax_old = 1200, xMin_new = 0, xMax_new = 1)
 
-    # # make_temp_hist(hist)
     return hist
 
 # @log_function_call
@@ -221,14 +249,16 @@ def writeYears(f, input_file_data3b, input_file_TT, input_file_mix, mix, channel
         f.cd(directory)
         hist_data_obs.SetName("data_obs")
         hist_data_obs.Write()
-        # make_temp_hist(hist_data_obs, name="BIGOBSAGAIN")
 
         #
         # multijet
         #
         var_name_multijet = var_name.replace("SvB_ps", f"SvB_FvT_{mix}_newSBDef_ps")
         if args.use_kfold:
-            var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDefSeedAve_ps")
+            if 'v4j_mass' in args.var:
+                var_name_multijet = args.var + f'_FvT_{mix}_newSBDefSeedAve'
+            else:
+                var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDefSeedAve_ps")
         elif args.use_ZZinSB:
             var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDefSeedAve_ps")
             var_name_multijet = var_name_multijet.replace("_v","ZZinSB_v")
@@ -248,7 +278,6 @@ def writeYears(f, input_file_data3b, input_file_TT, input_file_mix, mix, channel
         f.cd(directory)
         hist_multijet.SetName("multijet")
         hist_multijet.Write()
-        # make_temp_hist(hist_multijet, name="BIGMJJAGAIN")
 
 #    #
 #    # TTBar
@@ -289,14 +318,16 @@ def addYears(f, input_file_data3b, input_file_TT, input_file_mix, mix, channel):
     f.cd(directory)
     hist_data_obs.SetName("data_obs")
     hist_data_obs.Write()
-    # make_temp_hist(hist_data_obs, name="BIG_OBS")
 
     #
     # multijet
     #
     var_name_multijet = var_name.replace("SvB_ps", f"SvB_FvT_{mix}_newSBDef_ps")
     if args.use_kfold:
-        var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDefSeedAve_ps")
+        if 'v4j_mass' in args.var:
+                var_name_multijet = args.var + f'_FvT_{mix}_newSBDefSeedAve'
+        else:
+            var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDefSeedAve_ps")
     elif args.use_ZZinSB:
         var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDefSeedAve_ps")
         var_name_multijet = var_name_multijet.replace("_v","ZZinSB_v")
@@ -316,7 +347,6 @@ def addYears(f, input_file_data3b, input_file_TT, input_file_mix, mix, channel):
     f.cd(directory)
     hist_multijet.SetName("multijet")
     hist_multijet.Write()
-    # make_temp_hist(hist_multijet, name="BIGMJJ")
 
     #
     # TTBar
@@ -332,7 +362,6 @@ def addYears(f, input_file_data3b, input_file_TT, input_file_mix, mix, channel):
     f.cd(directory)
     hist_ttbar.SetName("ttbar")
     hist_ttbar.Write()
-    # make_temp_hist(hist_ttbar, name="BIGTTBAR")
     return
 
 # @log_function_call
@@ -365,7 +394,6 @@ def addMixes(f, directory, procs=['ttbar', 'multijet', 'data_obs']):
             f.cd(directory)
 
             hists[-1].Write()
-            # make_temp_hist(hists[-1], name=f"BIG_{process}__")
 
 # @log_function_call
 def prepInput():
@@ -407,7 +435,6 @@ def prepInput():
                                 years=["UL16_preVFP", "UL16_postVFP", "UL17", "UL18"],
                                 procs=["GluGluToHHTo4B_cHHH1", "ZZ4b", "ZH4b"], 
                                 debug=args.debug)
-    # make_temp_hist(hist_signal, name="BIGSIG")
 #    hist_signal_preUL = combine_hists(input_file_sig_preUL,
 #                                f"{var_name}_PROC_YEAR_fourTag_SR",
 #                                years=["2016", "2017", "2018"],
