@@ -419,7 +419,7 @@ def create_combine_root_file( file_to_convert,
                 ref_line = ROOT.TLine(0, 1, 1, 1)
                 CMS.cmsDrawLine(ref_line, lcolor=ROOT.kBlack, lstyle=ROOT.kDotted)
 
-                CMS.SaveCanvas( mc_syst_can, f"{output_dir}/plots/{iclass}_{isyst}_{ichannel}.pdf" )
+                CMS.SaveCanvas( mc_syst_can, f"{output_dir}/plots/{var}_{isyst}_{ichannel}.pdf" )
 
                 del HH_nominal, HH_var_up, HH_var_dn, ratio_up, ratio_dn
 

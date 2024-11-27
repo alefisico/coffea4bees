@@ -182,10 +182,18 @@ def add_pseudotagweights( selev, weights,
                         selev.weight * getattr(selev, f"{_JCM_load}") * getattr(getattr(selev, _FvT_name), _FvT_name),
                         selev.weight,
                     )
-                weight = np.full(len_event, 1.0)
-                weight[analysis_selections] = np.where(selev.threeTag, getattr(selev, f"{_JCM_load}") * getattr(getattr(selev, event_metadata["FvT_names"][0]), event_metadata["FvT_names"][0]), 1.0)
-                weights.add("FvT", weight)
+                weight_JCM = np.full(len_event, 1.0)
+
+                weight_JCM[analysis_selections] = np.where(selev.threeTag, getattr(selev, f"{event_metadata['JCM_loads'][0]}"), 1.0)
+                weights.add("JCM", weight_JCM)
+                list_weight_names.append("JCM")
+
+
+                weight_FvT = np.full(len_event, 1.0)
+                weight_FvT[analysis_selections] = np.where(selev.threeTag, selev.FvT.FvT, 1.0)
+                weights.add("FvT", weight_FvT)
                 list_weight_names.append("FvT")
+
 
             else:
                 weight = np.full(len_event, 1.0)

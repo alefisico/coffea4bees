@@ -74,9 +74,9 @@ do
             HHbb_2018=datacard_HHbb_2018.txt > ${datacard}.txt
         run_limits $datacard $signallabel $iclass
 
-        # run_limits datacard_HHbb_2016 $signallabel $iclass
-        # run_limits datacard_HHbb_2017 $signallabel $iclass
-        # run_limits datacard_HHbb_2018 $signallabel $iclass
+        run_limits datacard_HHbb_2016 $signallabel $iclass
+        run_limits datacard_HHbb_2017 $signallabel $iclass
+        run_limits datacard_HHbb_2018 $signallabel $iclass
 
     elif [ "$impacts" = true ]; then
 

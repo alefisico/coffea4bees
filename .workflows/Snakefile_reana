@@ -180,10 +180,10 @@ rule convert_hist_to_json:
         """
 python python/stats_analysis/convert_hist_to_json.py -o {output.outall} -i {input.inall}
 python python/stats_analysis/convert_hist_to_json.py -o {output.outsystcHHHX} -i {input.insystcHHHX} -s
-python python/stats_analysis/convert_hist_to_json.py -o {output.outmixdata3b} -i {input.inmixdata3b}
-python python/stats_analysis/convert_hist_to_json.py -o {output.outmixbkgtt} -i {input.inmixbkgtt}
-python python/stats_analysis/convert_hist_to_json.py -o {output.outmixdata} -i {input.inmixdata}
-python python/stats_analysis/convert_hist_to_json.py -o {output.outsignal} -i {input.insignal}
+python python/stats_analysis/convert_hist_to_json_closure.py -o {output.outsignal} -i {input.insignal}
+python python/stats_analysis/convert_hist_to_json_closure.py -o {output.outmixdata3b} -i {input.inmixdata3b}
+python python/stats_analysis/convert_hist_to_json_closure.py -o {output.outmixbkgtt} -i {input.inmixbkgtt}
+python python/stats_analysis/convert_hist_to_json_closure.py -o {output.outmixdata} -i {input.inmixdata}
         """
 
 rule convert_json_to_root:
@@ -223,7 +223,8 @@ rule run_two_stage_closure:
     output: "output/closureFits/ULHH_kfold/3bDvTMix4bDvT/SvB_MA/rebin2/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin2.pkl"
     params:
       outputPath = "output/closureFits/ULHH_kfold",
-      rebin = "2"
+      rebin = "2",
+      variable = "SvB_MA_ps_hh"
     resources:
         compute_backend="kubernetes",
         kubernetes_memory_limit="8Gi"
@@ -233,12 +234,14 @@ rule run_two_stage_closure:
         cd /home/cmsusr/CMSSW_11_3_4/
         cmsenv || true
         cd -
-        python3 python/stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin {params.rebin} \
-            --outputPath {params.outputPath} \
-            --input_file_TT {input.file_TT} \
-            --input_file_mix {input.file_mix} \
-            --input_file_sig {input.file_sig} \
-            --input_file_data3b {input.file_data3b}"
+        cd python/
+        python3 stats_analysis/runTwoStageClosure.py  \
+            --var {params.variable} --rebin {params.rebin} --use_kfold \
+            --outputPath ../{params.outputPath} \
+            --input_file_TT ../{input.file_TT} \
+            --input_file_mix ../{input.file_mix} \
+            --input_file_sig ../{input.file_sig} \
+            --input_file_data3b ../{input.file_data3b}
         """
 
 
@@ -249,8 +252,8 @@ rule make_combine_inputs:
         injsonsyst = "output/histAll_signals_cHHHX.json",
         bkgsyst = "output/closureFits/ULHH_kfold/3bDvTMix4bDvT/SvB_MA/rebin2/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin2.pkl"
     output:
-        "output/datacards/shapes.root",
-        "output/datacards/datacard.txt"
+        "output/datacards/HHbb_2018_shapes.root",
+        "output/datacards/datacard_HHbb_2018.txt"
     container: combine_container
     resources:
         voms_proxy=True,
@@ -263,15 +266,16 @@ source /cvmfs/cms.cern.ch/cmsset_default.sh
 cd /home/cmsusr/CMSSW_11_3_4/
 cmsenv || true
 cd -
-python3 python/stats_analysis/make_combine_inputs.py --classifier SvB_MA -f {input.injson} --syst_file {input.injsonsyst} --bkg_syst_file {input.bkgsyst} --output_dir output/datacards/stat_only/ --rebin 2 --metadata python/stats_analysis/metadata/HH4b.yml --stat_only
-python3 python/stats_analysis/make_combine_inputs.py --classifier SvB_MA -f {input.injson} --syst_file {input.injsonsyst} --bkg_syst_file {input.bkgsyst} --output_dir output/datacards/ --rebin 2 --metadata python/stats_analysis/metadata/HH4b.yml --make_syst_plots 
+python3 python/stats_analysis/make_combine_inputs.py --var SvB_MA.ps_hh -f {input.injson} --syst_file {input.injsonsyst} --bkg_syst_file {input.bkgsyst} --output_dir output/datacards/ --rebin 2 --metadata python/stats_analysis/metadata/HH4b.yml --make_syst_plots 
+python3 python/stats_analysis/make_combine_inputs.py --var SvB_MA.ps_hh -f {input.injson} --syst_file {input.injsonsyst} --bkg_syst_file {input.bkgsyst} --output_dir output/datacards/stat_only/ --rebin 2 --metadata python/stats_analysis/metadata/HH4b.yml --stat_only
         """
 
 rule run_combine:
     input:
-        "output/datacards/datacard.txt"
+        "output/datacards/datacard_HHbb_2018.txt"
     output:
-        "output/datacards/datacard.root"
+        "output/datacards/datacard.root",
+        "output/datacards/shapes.root"
     container: combine_container
     resources:
         voms_proxy=True,
@@ -285,8 +289,8 @@ cmsenv || true
 cd -
 cat {input}
 echo "RUNNING COMBINE"
-source python/stats_analysis/run_combine.sh output/datacards/stat_only --limits
 source python/stats_analysis/run_combine.sh output/datacards/ --limits
+source python/stats_analysis/run_combine.sh output/datacards/stat_only --limits
         """
 
 rule run_impacts:

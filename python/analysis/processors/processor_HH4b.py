@@ -42,6 +42,7 @@ from coffea.analysis_tools import PackedSelection
 from coffea.nanoevents import NanoAODSchema, NanoEventsFactory
 from coffea.util import load
 
+from analysis.helpers.truth_tools import find_genpart
 
 #
 # Setup
@@ -109,6 +110,7 @@ class analysis(processor.ProcessorABC):
 
         self.cutFlowCuts = [
             "all",
+            "pass4GenBJets",
             "passHLT",
             "passNoiseFilter",
             "passJetVetoMaps",
@@ -119,6 +121,7 @@ class analysis(processor.ProcessorABC):
             "SR",
             "SB",
         ]
+
 
         self.histCuts = ['passPreSel']
         if self.run_SvB:
@@ -147,6 +150,7 @@ class analysis(processor.ProcessorABC):
         #
         self.config = processor_config(self.processName, self.dataset, event)
         logging.debug(f'{self.chunk} config={self.config}, for file {fname}\n')
+
 
         #
         #  If doing RW
@@ -197,6 +201,7 @@ class analysis(processor.ProcessorABC):
 
                 for _FvT_name, _FvT_file in zip( event.metadata["FvT_names"], event.metadata["FvT_files"] ):
 
+                    #print(f"Loading FvT File: {_FvT_file}, with name {_FvT_name}\n")
                     event[_FvT_name] = getattr( NanoEventsFactory.from_root( f"{_FvT_file}", entry_start=self.estart, entry_stop=self.estop, schemaclass=FriendTreeSchema, ).events(),
                                                 _FvT_name, )
 
@@ -246,7 +251,9 @@ class analysis(processor.ProcessorABC):
             JCM_array = TreeReader( lambda x: [ s for s in x if s.startswith("pseudoTagWeight_3bDvTMix4bDvT_v") ] ).arrays(Chunk.from_coffea_events(event))
 
             for _JCM_load in event.metadata["JCM_loads"]:
+                #print(f"{self.chunk} Loading JCM name {_JCM_load}\n")
                 event[_JCM_load] = JCM_array[_JCM_load]
+                print(f"{self.chunk}   {_JCM_load} JCM loads {np.unique(JCM_array[_JCM_load])}\n")
 
         #
         # Event selection
@@ -377,15 +384,36 @@ class analysis(processor.ProcessorABC):
 
             }
 
+            #
+            # Get Truth m4j
+            #
+            if self.config["isMC"]:
+                event['bfromH']= find_genpart(event.GenPart, [5], [25])
+                event['bfromZ']= find_genpart(event.GenPart, [5], [23])
+                event['bfromHorZ'] = ak.concatenate([event.bfromH, event.bfromZ], axis=1)
+
+                event['GenJet', 'selectedBs'] = (np.abs(event.GenJet.partonFlavour)==5)
+                event['selGenBJet'] = event.GenJet[event.GenJet.selectedBs]
+                event['matchedGenBJet'] = event.bfromHorZ.nearest( event.selGenBJet, threshold=0.2 )
+                event['pass4GenBJets'] = ak.num(event.matchedGenBJet) >= 4
+                event["truth_v4b"] = ak.where(  event.pass4GenBJets,
+                                                event.matchedGenBJet.sum(axis=1),
+                                                1e-10 * event.matchedGenBJet.sum(axis=1),
+                                              )
+            else:
+                event['pass4GenBJets'] = True
+            selections.add( "pass4GenBJets", event.pass4GenBJets)
+
             sel_dict = OrderedDict({
-                'all': selections.require(lumimask=True),
+                'all':             selections.require(lumimask=True),
+                'pass4GenBJets':   selections.require(lumimask=True, pass4GenBJets=True),
                 'passNoiseFilter': selections.require(lumimask=True, passNoiseFilter=True),
-                'passHLT': selections.require(lumimask=True, passNoiseFilter=True, passHLT=True),
+                'passHLT':         selections.require(lumimask=True, passNoiseFilter=True, passHLT=True),
             })
             if '202' in self.dataset: sel_dict['passJetVetoMaps'] = selections.require(lumimask=True, passNoiseFilter=True, passHLT=True, passJetVetoMaps=True)
             sel_dict['passJetMult'] = selections.all(*allcuts)
 
-            self._cutFlow = cutFlow(self.cutFlowCuts)
+            self._cutFlow = cutFlow(self.cutFlowCuts, do_truth_hists=self.config["isMC"])
             for cut, sel in sel_dict.items():
                 if ('passJetVetoMaps' in cut) and ('202' not in self.dataset): continue
                 self._cutFlow.fill( cut, event[sel], allTag=True )
@@ -553,9 +581,9 @@ class analysis(processor.ProcessorABC):
         #
         # Example of how to write out event numbers
         #
-        from analysis.helpers.write_debug_info import add_debug_info_to_output
-        if self.config['isDataForMixed']:
-            add_debug_info_to_output(selev, processOutput, weights, list_weight_names, analysis_selections)
+        #from analysis.helpers.write_debug_info import add_debug_info_to_output
+        # #if self.config['isDataForMixed']:
+        #    add_debug_info_to_output(selev, processOutput, weights, list_weight_names, analysis_selections)
 
 
         #
