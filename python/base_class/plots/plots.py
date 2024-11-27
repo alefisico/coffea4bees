@@ -128,6 +128,30 @@ def _savefig(fig, var, *args):
     return
 
 
+def _save_yaml(plot_data, var, *args):
+
+    args_str = []
+    for _arg in args:
+        if type(_arg) is list:
+            args_str.append( "_vs_".join(_arg) )
+        else:
+            args_str.append(_arg)
+
+    outputPath = "/".join(args_str)
+
+    if not os.path.exists(outputPath):
+        os.makedirs(outputPath)
+
+    varStr = var if type(var) is str else "_vs_".join(var)
+
+    file_name = outputPath + "/" + varStr.replace(".", '_').replace("/","_") + ".yml"
+    # Write data to a YAML file
+    with open(file_name, "w") as yfile:  # Use "w" for writing in text mode
+        yaml.dump(plot_data, yfile, default_flow_style=False, sort_keys=False)
+
+    return
+
+
 def get_cut_dict(cut, cutList):
     cutDict = {}
     for c in cutList:
@@ -521,7 +545,7 @@ def _plot2d(hist, plotConfig, **kwargs):
 
 
 
-def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
+def get_plot_dict_from_list(cfg, var, cut, region, process, **kwargs):
 
     if kwargs.get("debug", False):
         print(f" in _makeHistFromList hist process={process}, "
@@ -757,12 +781,14 @@ def make_plot_from_dict(plot_data, **kwargs):
         else:
             _savefig(fig, plot_data["var"], kwargs.get("outputFolder"), kwargs.get("year","RunII"), plot_data["cut"], tagName, plot_data["region"], plot_data.get("process",""))
 
-    # Specify the file name
-    file_name = "data.yaml"
+        if kwargs.get("write_yml", False) or kwargs.get("write_yaml", False):
 
-    # Write data to a YAML file
-    with open(file_name, "w") as yfile:  # Use "w" for writing in text mode
-        yaml.dump(plot_data, yfile, default_flow_style=False, sort_keys=False)
+            if kwargs.get("yscale", None) == "log":
+                _save_yaml(plot_data, plot_data["var"]+"_logy", kwargs.get("outputFolder"), kwargs.get("year","RunII"), plot_data["cut"], tagName, plot_data["region"], plot_data.get("process",""))
+            else:
+                _save_yaml(plot_data, plot_data["var"], kwargs.get("outputFolder"), kwargs.get("year","RunII"), plot_data["cut"], tagName, plot_data["region"], plot_data.get("process",""))
+
+
 
     return fig, ax
 
@@ -854,7 +880,7 @@ def add_ratio_plots(ratio_config, plot_data, **kwargs):
             r_config["norm"] = True
 
         #
-        # Clean den
+        #  Ratios
         #
         ratios, ratio_uncert = makeRatio(numValues, numVars, denValues, denVars, **r_config)
         r_config["ratio"]  = ratios.tolist()
@@ -862,8 +888,9 @@ def add_ratio_plots(ratio_config, plot_data, **kwargs):
         r_config["centers"] = numCenters
         plot_data["ratio"][f"ratio_{r_name}"] = r_config
 
-
+        #
         # Bkg error band
+        #
         default_band_config = {"color": "k",  "type": "band", "hatch": "\\\\\\"}
         _band_config = r_config.get("bkg_err_band", default_band_config)
 
@@ -872,42 +899,18 @@ def add_ratio_plots(ratio_config, plot_data, **kwargs):
             band_config["ratio"] = np.ones(len(numCenters)).tolist()
             band_config["error"] = np.sqrt(denVars * np.power(denValues, -2.0)).tolist()
             band_config["centers"] = list(numCenters)
-            #ratio_plots.append((numCenters, band_ratios, band_uncert, band_config))
             plot_data["ratio"][f"band_{r_name}"] = band_config
-            #plot_data["ratio"][f"ratio_{r_name}"] = r_config
 
 
     return
 
-
-def makePlot(cfg, var='selJets.pt',
-             cut="passPreSel", region="SR", **kwargs):
-    r"""
-    Takes Options:
-
-       debug    : False,
-       var      : 'selJets.pt',
-       cut      : "passPreSel",
-       region   : "SR",
-
-       plotting opts
-        'doRatio'  : bool (False)
-        'rebin'    : int (1),
-    """
+def get_plot_dict_from_config(cfg, var='selJets.pt',
+                              cut="passPreSel", region="SR", **kwargs):
 
     process = kwargs.get("process", None)
-    rebin   = kwargs.get("rebin", 1)
     year    = kwargs.get("year", "RunII")
+    rebin   = kwargs.get("rebin", 1)
     debug   = kwargs.get("debug", False)
-    if debug: print(f"In makePlot kwargs={kwargs}")
-
-    if (type(cut) is list) or (type(region) is list) or (len(cfg.hists) > 1 and not cfg.combine_input_files) or (type(var) is list) or (type(process) is list) or (type(year) is list):
-        try:
-            plot_data =  _makeHistsFromList(cfg, var, cut, region, **kwargs)
-            return make_plot_from_dict(plot_data, **kwargs)
-
-        except ValueError as e:
-            raise ValueError(e)
 
     # Make process a list if it exits and isnt one already
     if process is not None and type(process) is not list:
@@ -920,8 +923,6 @@ def makePlot(cfg, var='selJets.pt',
 
     if cut not in cfg.cutList:
         raise AttributeError(f"{cut} not in cutList {cfg.cutList}")
-
-    tagNames = []
 
     #
     #  Unstacked hists
@@ -953,11 +954,6 @@ def makePlot(cfg, var='selJets.pt',
         #
         proc_config["name"] = _proc_name
 
-        #
-        #  Used for naming output pdf
-        #
-        tagNames.append(proc_config["tag"])
-
         var_to_plot = var_over_ride.get(_proc_name, var)
 
         #
@@ -979,8 +975,6 @@ def makePlot(cfg, var='selJets.pt',
 
     plot_data["stack"] = load_stack_config(stack_config, var, cut, region, **kwargs)
 
-    if len(tagNames) == 0:
-        tagNames.append( get_value_nested_dict(stack_config,"tag") )
 
     #
     #  Config Ratios
@@ -989,6 +983,38 @@ def makePlot(cfg, var='selJets.pt',
         ratio_config = cfg.plotConfig["ratios"]
         add_ratio_plots(ratio_config, plot_data, **kwargs)
 
+    return plot_data
+
+
+
+def makePlot(cfg, var='selJets.pt',
+             cut="passPreSel", region="SR", **kwargs):
+    r"""
+    Takes Options:
+
+       debug    : False,
+       var      : 'selJets.pt',
+       cut      : "passPreSel",
+       region   : "SR",
+
+       plotting opts
+        'doRatio'  : bool (False)
+        'rebin'    : int (1),
+    """
+
+    process = kwargs.get("process", None)
+    year    = kwargs.get("year", "RunII")
+    debug   = kwargs.get("debug", False)
+    if debug: print(f"In makePlot kwargs={kwargs}")
+
+    if (type(cut) is list) or (type(region) is list) or (len(cfg.hists) > 1 and not cfg.combine_input_files) or (type(var) is list) or (type(process) is list) or (type(year) is list):
+        try:
+            plot_data =  get_plot_dict_from_list(cfg, var, cut, region, **kwargs)
+            return make_plot_from_dict(plot_data, **kwargs)
+        except ValueError as e:
+            raise ValueError(e)
+
+    plot_data = get_plot_dict_from_config(cfg, var, cut, region, **kwargs)
     return make_plot_from_dict(plot_data, **kwargs)
 
 
