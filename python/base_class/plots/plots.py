@@ -256,131 +256,6 @@ def makeRatio(numValues, numVars, denValues, denVars, **kwargs):
     return ratios, ratio_uncert
 
 
-def _draw_plot(hist_list, stack_dict, **kwargs):
-    r"""
-    Takes options:
-          "norm"   : bool
-          "debug"  : bool
-          "xlabel" : string
-          "ylabel" : string
-          "yscale" : 'log' | None
-          "xscale" : 'log' | None
-          "legend" : bool
-          'ylim'   : [min, max]
-          'xlim'   : [min, max]
-    """
-
-    if kwargs.get("debug", False):
-        print(f'\t in _draw_plot ... kwargs = {kwargs}')
-    norm = kwargs.get("norm", False)
-
-    #
-    #  Draw the stack
-    #
-    stack_dict_for_hist = {k: v[0] for k, v in stack_dict.items() }
-    stack_colors_fill   = [ v[1].get("fillcolor") for _, v in stack_dict.items() ]
-    stack_colors_edge   = [ v[1].get("edgecolor") for _, v in stack_dict.items() ]
-
-    if len(stack_dict_for_hist):
-        s = hist.Stack.from_dict(stack_dict_for_hist)
-
-        s.plot(stack=True, histtype="fill",
-               color=stack_colors_fill,
-               label=None,
-               density=norm)
-
-        s.plot(stack=True, histtype="step",
-               color=stack_colors_edge,
-               label=None,
-               density=norm)
-
-    stack_patches = []
-
-    #
-    # Add the stack components to the legend
-    #
-    for proc_name, proc_data in stack_dict.items():
-        proc_config = proc_data[1]
-        _label = proc_config.get('label')
-
-        if _label in ["None"]:
-            continue
-
-        stack_patches.append(mpatches.Patch(facecolor=proc_config.get("fillcolor"),
-                                            edgecolor=proc_config.get("edgecolor"),
-                                            label=_label))
-
-    #
-    #  Draw the hists
-    #
-    hist_artists = []
-
-    for hist_data in hist_list:
-        hist_obj    = hist_data[0]
-        hist_config = hist_data[1]
-        _plot_options = {"density":  norm,
-                         "label":    hist_config.get("label", ""),
-                         "color":    hist_config.get('fillcolor', 'k'),
-                         "histtype": kwargs.get("histtype", hist_config.get("histtype", "errorbar")),
-                         "linewidth": kwargs.get("linewidth", hist_config.get("linewidth", 1)),
-                         "yerr": False,
-                         }
-
-        if kwargs.get("histtype", hist_config.get("histtype", "errorbar")) in ["errorbar"]:
-            _plot_options["markersize"] = 12
-            _plot_options["yerr"] = True
-
-        hist_artists.append(hist_obj.plot(**_plot_options)[0])
-
-    #
-    #  xlabel
-    #
-    if kwargs.get("xlabel", None):
-        plt.xlabel(kwargs.get("xlabel"))
-    plt.xlabel(plt.gca().get_xlabel(), loc='right')
-
-    #
-    #  ylabel
-    #
-    if kwargs.get("ylabel", None):
-        plt.ylabel(kwargs.get("ylabel"))
-    if norm:
-        plt.ylabel(plt.gca().get_ylabel() + " (normalized)")
-    plt.ylabel(plt.gca().get_ylabel(), loc='top')
-
-    if kwargs.get("yscale", None):
-        plt.yscale(kwargs.get('yscale'))
-    if kwargs.get("xscale", None):
-        plt.xscale(kwargs.get('xscale'))
-
-    if kwargs.get('legend', True):
-        handles, labels = plt.gca().get_legend_handles_labels()
-
-        for s in stack_patches:
-            handles.append(s)
-            labels.append(s.get_label())
-
-        plt.legend(
-            handles=handles,
-            labels=labels,
-            loc='best',      # Position of the legend
-            # fontsize='medium',      # Font size of the legend text
-            frameon=False,           # Display frame around legend
-            # framealpha=0.0,         # Opacity of frame (1.0 is opaque)
-            # edgecolor='black',      # Color of the legend frame
-            # title='Trigonometric Functions',  # Title for the legend
-            # title_fontsize='large',# Font size of the legend title
-            # bbox_to_anchor=(1, 1), # Specify position of legend
-            # borderaxespad=0.0 # Padding between axes and legend border
-            reverse=True,
-        )
-
-    if kwargs.get('ylim', False):
-        plt.ylim(*kwargs.get('ylim'))
-    if kwargs.get('xlim', False):
-        plt.xlim(*kwargs.get('xlim'))
-
-    return
 
 def _draw_plot_from_dict(plot_data, **kwargs):
     r"""
@@ -528,27 +403,6 @@ def get_year_str(year):
     return year_str
 
 
-def _plot(hist_list, stack_dict,  **kwargs):
-    if kwargs.get("debug", False):
-        print(f'\t in plot ... kwargs = {kwargs}')
-
-    size = 7
-    fig = plt.figure()   # figsize=(size,size/_phi))
-
-    fig.add_axes((0.1, 0.15, 0.85, 0.8))
-
-    _draw_plot(hist_list, stack_dict, **kwargs)
-
-    year_str = get_year_str(year = kwargs.get('year',"RunII"))
-
-    ax = fig.gca()
-    hep.cms.label("Internal", data=True,
-                  year=year_str, loc=0, ax=ax)
-
-
-    return fig, ax
-
-
 def _plot_from_dict(plot_data, **kwargs):
     if kwargs.get("debug", False):
         print(f'\t in plot ... kwargs = {kwargs}')
@@ -663,86 +517,6 @@ def _plot2d(hist, plotConfig, **kwargs):
                   year=kwargs.get('year',"RunII").replace("UL", "20"), loc=0, ax=ax)
 
     return fig, ax
-
-
-def _plot_ratio(hist_list, stack_dict, ratio_list, **kwargs):
-    r"""
-    Takes options:
-        "norm"              : bool (False),
-        "ratio_line_value"  : number (1.0),
-        "uncertainty_type"  : "poisson", "poisson-ratio",
-                              "efficiency" ("poisson")
-        "rlim"              : [rmin, rmax] ([0,2])
-    }
-    """
-
-    size = 7
-    fig = plt.figure()
-    grid = fig.add_gridspec(2, 1, hspace=0.06, height_ratios=[3, 1],
-                            left=0.1, right=0.95, top=0.95, bottom=0.1)
-
-    year_str = get_year_str(year = kwargs.get('year',"RunII"))
-
-    main_ax = fig.add_subplot(grid[0])
-    hep.cms.label("Internal", data=True,
-                  year=year_str, loc=0, ax=main_ax)
-
-    _draw_plot(hist_list, stack_dict, **kwargs)
-
-    top_xlabel = plt.gca().get_xlabel()
-    plt.xlabel("")
-
-    subplot_ax = fig.add_subplot(grid[1], sharex=main_ax)
-    plt.setp(main_ax.get_xticklabels(), visible=False)
-
-    central_value_artist = subplot_ax.axhline(
-        kwargs.get("ratio_line_value", 1.0),
-        color="black",
-        linestyle="dashed",
-        linewidth=1.0
-    )
-
-    for ir, ratio in enumerate(ratio_list):
-
-        error_bar_type = ratio[3].get("type", "bar")
-        if error_bar_type == "band":
-
-            # Only works for contant bin size !!!!
-            bin_width = (ratio[0][1] - ratio[0][0])
-
-            # add check for variable bin width!!! TODO
-
-            # Create hatched error regions using fill_between
-            for xi, yi, err in zip(ratio[0], ratio[1], ratio[2]):
-                plt.fill_between([xi - bin_width/2, xi + bin_width/2], yi - err, yi + err,
-                                 hatch=ratio[3].get("hatch", "/"),
-                                 edgecolor=ratio[3].get("color", "black"),
-                                 facecolor='none',
-                                 linewidth=0.0,
-                                 zorder=1)
-
-        else:
-            subplot_ax.errorbar(
-                ratio[0],       # x-values
-                ratio[1],       # y-values
-                yerr=ratio[2],
-                color=ratio[3].get("color", "black"),
-                marker=ratio[3].get("marker", "o"),
-                linestyle=ratio[3].get("linestyle", "none"),
-                markersize=ratio[3].get("markersize", 4),
-            )
-
-    #
-    #  labels / limits
-    #
-    plt.ylabel(kwargs.get("rlabel", "Ratio"))
-    plt.ylabel(plt.gca().get_ylabel(), loc='center')
-
-    plt.xlabel(kwargs.get("xlabel", top_xlabel), loc='right')
-
-    plt.ylim(*kwargs.get('rlim', [0, 2]))
-
-    return fig, main_ax, subplot_ax
 
 
 
@@ -988,7 +762,7 @@ def make_plot_from_dict(plot_data, **kwargs):
 
     # Write data to a YAML file
     with open(file_name, "w") as yfile:  # Use "w" for writing in text mode
-        yaml.dump(plot_data, yfile)
+        yaml.dump(plot_data, yfile, default_flow_style=False, sort_keys=False)
 
     return fig, ax
 
@@ -1047,12 +821,6 @@ def load_stack_config(stack_config, var, cut, region, **kwargs):
                               debug=kwargs.get("debug", False))
 
 
-                #proc_config["sum"][sum_proc_name] =
-
-                #if hist_sum:
-                #    hist_sum += _hist
-                #else:
-                #    hist_sum = _hist
 
             stack_values = [v["values"] for _, v in proc_config["sum"].items()]
             proc_config["values"] = np.sum(stack_values, axis=0).tolist()
@@ -1211,7 +979,6 @@ def makePlot(cfg, var='selJets.pt',
 
     plot_data["stack"] = load_stack_config(stack_config, var, cut, region, **kwargs)
 
-
     if len(tagNames) == 0:
         tagNames.append( get_value_nested_dict(stack_config,"tag") )
 
@@ -1222,28 +989,31 @@ def makePlot(cfg, var='selJets.pt',
         ratio_config = cfg.plotConfig["ratios"]
         add_ratio_plots(ratio_config, plot_data, **kwargs)
 
-    fig, main_ax, ratio_ax = _plot_from_dict(plot_data, **kwargs)
-    main_ax.set_title(f"{region}")
-
-    #
-    # Save Fig
-    #
-    if kwargs.get("outputFolder", None):
-        tagName = "fourTag" if "fourTag" in tagNames else "threeTag"
-        if kwargs.get("yscale", "linear") == "log":
-            _savefig(fig, var+"_logy", kwargs.get("outputFolder"), kwargs.get("year","RunII"), cut, tagName, region)
-        else:
-            _savefig(fig, var, kwargs.get("outputFolder"), kwargs.get("year","RunII"), cut, tagName, region)
-
-    # Specify the file name
-    file_name = "data_stack.yaml"
-
-    # Write data to a YAML file
-    with open(file_name, "w") as yfile:  # Use "w" for writing in text mode
-        yaml.dump(plot_data, yfile, default_flow_style=False, sort_keys=False)
+    return make_plot_from_dict(plot_data, **kwargs)
 
 
-    return fig, main_ax
+#    fig, main_ax, ratio_ax = _plot_from_dict(plot_data, **kwargs)
+#    main_ax.set_title(f"{region}")
+#
+#    #
+#    # Save Fig
+#    #
+#    if kwargs.get("outputFolder", None):
+#        tagName = "fourTag" if "fourTag" in tagNames else "threeTag"
+#        if kwargs.get("yscale", "linear") == "log":
+#            _savefig(fig, var+"_logy", kwargs.get("outputFolder"), kwargs.get("year","RunII"), cut, tagName, region)
+#        else:
+#            _savefig(fig, var, kwargs.get("outputFolder"), kwargs.get("year","RunII"), cut, tagName, region)
+#
+#    # Specify the file name
+#    file_name = "data_stack.yaml"
+#
+#    # Write data to a YAML file
+#    with open(file_name, "w") as yfile:  # Use "w" for writing in text mode
+#        yaml.dump(plot_data, yfile, default_flow_style=False, sort_keys=False)
+#
+#
+#    return fig, main_ax
 
 
 def make2DPlot(cfg, process, var='selJets.pt',
