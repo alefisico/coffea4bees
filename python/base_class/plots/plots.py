@@ -407,6 +407,7 @@ def _draw_plot_from_dict(plot_data, **kwargs):
 
     stack_dict_for_hist = {}
     for k, v in stack_dict.items():
+        print(f"making stack for {k}")
         stack_dict_for_hist[k] = make_hist(v["edges"], v["values"], v["variances"], v["x_label"])
 
     #stack_dict_for_hist = {k: v[0] for k, v in stack_dict.items() }
@@ -1032,8 +1033,7 @@ def load_stack_config(stack_config, var, cut, region, **kwargs):
         #
         elif proc_config.get("sum", None):
 
-            hist_sum = None
-            for sum_proc_name, sum_proc_config in _proc_config.get("sum").items():
+            for sum_proc_name, sum_proc_config in proc_config.get("sum").items():
 
                 sum_proc_config["year"] = _proc_config["year"]
 
@@ -1042,16 +1042,30 @@ def load_stack_config(stack_config, var, cut, region, **kwargs):
                 #
                 #  Get the hist object from the input data file(s)
                 #
-                _hist = get_hist(cfg, sum_proc_config,
-                                 var=var_to_plot, region=region, cut=cut, rebin=rebin, year=year,
-                                 debug=kwargs.get("debug", False))
+                add_hist_data(cfg, sum_proc_config,
+                              var=var_to_plot, region=region, cut=cut, rebin=rebin, year=year,
+                              debug=kwargs.get("debug", False))
 
-                if hist_sum:
-                    hist_sum += _hist
-                else:
-                    hist_sum = _hist
 
-            stack_dict[_proc_name] = (hist_sum, _proc_config)
+                #proc_config["sum"][sum_proc_name] =
+
+                #if hist_sum:
+                #    hist_sum += _hist
+                #else:
+                #    hist_sum = _hist
+
+            stack_values = [v["values"] for _, v in proc_config["sum"].items()]
+            proc_config["values"] = np.sum(stack_values, axis=0).tolist()
+
+            stack_variances = [v["variances"] for _, v in proc_config["sum"].items()]
+            proc_config["variances"] = np.sum(stack_variances, axis=0).tolist()
+
+            first_sum_entry = next(iter(proc_config["sum"].values()))
+            proc_config["centers"] = first_sum_entry["centers"]
+            proc_config["edges"]   = first_sum_entry["edges"]
+            proc_config["x_label"] = first_sum_entry["x_label"]
+
+            stack_dict[_proc_name] = proc_config
 
         else:
             raise Exception("Error need to config either process or sum")
@@ -1208,10 +1222,6 @@ def makePlot(cfg, var='selJets.pt',
         ratio_config = cfg.plotConfig["ratios"]
         add_ratio_plots(ratio_config, plot_data, **kwargs)
 
-        #fig, main_ax, ratio_ax = _plot_ratio(hists, stack_dict, ratio_plots,  **kwargs)
-        #main_ax.set_title(f"{region}")
-        #ax = (main_ax, ratio_ax)
-
     fig, main_ax, ratio_ax = _plot_from_dict(plot_data, **kwargs)
     main_ax.set_title(f"{region}")
 
@@ -1231,8 +1241,6 @@ def makePlot(cfg, var='selJets.pt',
     # Write data to a YAML file
     with open(file_name, "w") as yfile:  # Use "w" for writing in text mode
         yaml.dump(plot_data, yfile, default_flow_style=False, sort_keys=False)
-
-        #yaml.dump(plot_data, yfile)
 
 
     return fig, main_ax
