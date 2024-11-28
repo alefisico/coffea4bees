@@ -159,7 +159,7 @@ def _save_yaml(plot_data, var, *args):
     varStr = var if type(var) is str else "_vs_".join(var)
 
     file_name = outputPath + "/" + varStr.replace(".", '_').replace("/","_") + ".yaml"
-    print(f"wrote yml:  {file_name}")
+    print(f"wrote yaml:  {file_name}")
 
     # Write data to a YAML file
     with open(file_name, "w") as yfile:  # Use "w" for writing in text mode
@@ -799,7 +799,7 @@ def make_plot_from_dict(plot_data):
 
         _savefig(fig, file_name, *output_path)
 
-        if kwargs.get("write_yml", False) or kwargs.get("write_yaml", False):
+        if kwargs.get("write_yaml", False):
             _save_yaml(plot_data, file_name, *output_path)
 
     return fig, ax
@@ -820,7 +820,7 @@ def make_plot_2d_from_dict(plot_data):
 
         _savefig(fig, file_name, *output_path)
 
-        if kwargs.get("write_yml", False) or kwargs.get("write_yaml", False):
+        if kwargs.get("write_yaml", False):
             _save_yaml(plot_data, file_name, *output_path)
 
     return fig, ax
@@ -1141,6 +1141,7 @@ def make2DPlot(cfg, process, var='selJets.pt',
     plot_data["tagName"] = tagName
     plot_data["kwargs"] = kwargs
     plot_data["hist"] = process_config
+    plot_data["is_2d_hist"] = True
 
     #
     # Make the plot
