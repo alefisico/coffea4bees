@@ -8,7 +8,7 @@ from hist import Hist
 sys.path.insert(0, os.getcwd())
 import base_class.plots.iPlot_config as cfg
 from base_class.JCMTools import getCombinatoricWeight, getPseudoTagProbs, loadROOTHists, loadCoffeaHists, data_from_Hist, prepHists, jetCombinatoricModel
-from base_class.plots.plots import load_config, load_hists, read_axes_and_cuts, get_cut_dict, makePlot
+from base_class.plots.plots import load_config, load_hists, read_axes_and_cuts, makePlot
 from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel as JCMModel
 import matplotlib.pyplot as plt
 

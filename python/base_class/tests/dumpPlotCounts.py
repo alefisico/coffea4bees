@@ -4,7 +4,8 @@ import sys
 import os
 import numpy as np
 sys.path.insert(0, os.getcwd())
-from base_class.plots.plots import get_value_nested_dict, makePlot, load_config, load_hists, read_axes_and_cuts
+from base_class.plots.plots import makePlot, load_config, load_hists, read_axes_and_cuts
+import base_class.plots.helpers as plot_helpers
 import base_class.plots.iPlot_config as cfg
 import matplotlib.pyplot as plt
 
