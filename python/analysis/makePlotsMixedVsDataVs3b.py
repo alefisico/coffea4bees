@@ -82,7 +82,8 @@ def plotVar(var, region, year, rebin, yscale):
         hist_config_ave = copy.copy(get_value_nested_dict(cfg.plotConfig, "mix_v0"))
         hist_config_ave["name"] = "mix_vAve"
         hist_config_ave["fillcolor"] = "r"
-        hist_config_ave["histtype"] = "errorbar"
+        hist_config_ave["histtype"] = "step"
+        hist_config_ave["linewidth"] = 2
         hist_config_ave["label"] = "Average of mixes"
         hists.append( (hist_ave, hist_config_ave) )
 

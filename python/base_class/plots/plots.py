@@ -13,6 +13,7 @@ import mplhep as hep  # HEP (CMS) extensions/styling on top of mpl
 plt.style.use([hep.style.CMS, {'font.size': 16}])
 import inspect
 import base_class.plots.iPlot_config as cfg
+from collections import defaultdict
 
 _phi = (1 + np.sqrt(5)) / 2
 _epsilon = 0.001
@@ -57,28 +58,34 @@ def get_value_nested_dict(nested_dict, target_key):
     raise ValueError(f"\t target_key {target_key} not in nested_dict")
 
 
-def get_values_variances_centers_from_dict(hist_config, hists, stack_dict):
+def get_values_variances_centers_from_dict(hist_config, plot_data):
 
     if hist_config["type"] == "hists":
-        for h_data, h_config in hists:
-            if h_config["name"] == hist_config["key"]:
-                return h_data.values(), h_data.variances(), h_data.axes[0].centers
-
-        raise ValueError(f"ERROR: input to ratio of key {hist_config['key']} not found in hists")
+        num_data = plot_data["hists"][hist_config["key"]]
+        return np.array(num_data["values"]), np.array(num_data["variances"]), num_data["centers"]
 
 
     if hist_config["type"] == "stack":
-        stack_dict_for_hist = {k: v[0] for k, v in stack_dict.items() }
-        hStackHists = list(stack_dict_for_hist.values())
-        return_values = [h.values() for h in hStackHists]
+        return_values = [v["values"] for _, v in plot_data["stack"].items()]
         return_values = np.sum(return_values, axis=0)
 
-        return_variances = [h.variances() for h in hStackHists]
+        return_variances = [v["variances"] for _, v in plot_data["stack"].items()]
         return_variances = np.sum(return_variances, axis=0)
 
-        return return_values, return_variances, hStackHists[0].axes[0].centers
+        centers = next(iter(plot_data["stack"].values()))["centers"]
+
+        return return_values, return_variances, centers
 
     raise ValueError("ERROR: ratio needs to be of type 'hists' or 'stack'")
+
+
+def make_hist(edges, values, variances, x_label):
+    hist_obj = hist.Hist(
+        hist.axis.Variable(edges, name=x_label),  # Define variable-width bins
+        storage=hist.storage.Weight()           # Use Weight storage for counts and variances
+    )
+    hist_obj[...] = np.array(list(zip(values, variances)), dtype=[("value", "f8"), ("variance", "f8")])
+    return hist_obj
 
 
 def init_config(args):
@@ -116,6 +123,30 @@ def _savefig(fig, var, *args):
     return
 
 
+def _save_yaml(plot_data, var, *args):
+
+    args_str = []
+    for _arg in args:
+        if type(_arg) is list:
+            args_str.append( "_vs_".join(_arg) )
+        else:
+            args_str.append(_arg)
+
+    outputPath = "/".join(args_str)
+
+    if not os.path.exists(outputPath):
+        os.makedirs(outputPath)
+
+    varStr = var if type(var) is str else "_vs_".join(var)
+
+    file_name = outputPath + "/" + varStr.replace(".", '_').replace("/","_") + ".yml"
+    # Write data to a YAML file
+    with open(file_name, "w") as yfile:  # Use "w" for writing in text mode
+        yaml.dump(plot_data, yfile, default_flow_style=False, sort_keys=False)
+
+    return
+
+
 def get_cut_dict(cut, cutList):
     cutDict = {}
     for c in cutList:
@@ -138,7 +169,7 @@ def get_label(default_str, override_list, i):
 #
 #  Get hist from input file(s)
 #
-def get_hist(cfg, config, var, region, cut, rebin, year, file_index=None, debug=False):
+def add_hist_data(cfg, config, var, region, cut, rebin, year, file_index=None, debug=False):
 
     codes = cfg.plotConfig["codes"]
 
@@ -207,7 +238,13 @@ def get_hist(cfg, config, var, region, cut, rebin, year, file_index=None, debug=
     #
     selected_hist *= config.get("scalefactor", 1.0)
 
-    return selected_hist
+    config["values"]    = selected_hist.values().tolist()
+    config["variances"] = selected_hist.variances().tolist()
+    config["centers"]   = selected_hist.axes[0].centers.tolist()
+    config["edges"]     = selected_hist.axes[0].edges.tolist()
+    config["x_label"]   = selected_hist.axes[0].label
+
+    return
 
 
 def makeRatio(numValues, numVars, denValues, denVars, **kwargs):
@@ -238,7 +275,8 @@ def makeRatio(numValues, numVars, denValues, denVars, **kwargs):
     return ratios, ratio_uncert
 
 
-def _draw_plot(hist_list, stack_dict, **kwargs):
+
+def _draw_plot_from_dict(plot_data, **kwargs):
     r"""
     Takes options:
           "norm"   : bool
@@ -259,9 +297,15 @@ def _draw_plot(hist_list, stack_dict, **kwargs):
     #
     #  Draw the stack
     #
-    stack_dict_for_hist = {k: v[0] for k, v in stack_dict.items() }
-    stack_colors_fill   = [ v[1].get("fillcolor") for _, v in stack_dict.items() ]
-    stack_colors_edge   = [ v[1].get("edgecolor") for _, v in stack_dict.items() ]
+    stack_dict = plot_data["stack"]
+
+    stack_dict_for_hist = {}
+    for k, v in stack_dict.items():
+        stack_dict_for_hist[k] = make_hist(v["edges"], v["values"], v["variances"], v["x_label"])
+
+    #stack_dict_for_hist = {k: v[0] for k, v in stack_dict.items() }
+    stack_colors_fill   = [ v.get("fillcolor") for _, v in stack_dict.items() ]
+    stack_colors_edge   = [ v.get("edgecolor") for _, v in stack_dict.items() ]
 
     if len(stack_dict_for_hist):
         s = hist.Stack.from_dict(stack_dict_for_hist)
@@ -281,37 +325,37 @@ def _draw_plot(hist_list, stack_dict, **kwargs):
     #
     # Add the stack components to the legend
     #
-    for proc_name, proc_data in stack_dict.items():
-        proc_config = proc_data[1]
-        _label = proc_config.get('label')
+    for _, stack_proc_data in stack_dict.items():
+        #proc_config = proc_data[1]
+        _label = stack_proc_data.get('label')
 
         if _label in ["None"]:
             continue
 
-        stack_patches.append(mpatches.Patch(facecolor=proc_config.get("fillcolor"),
-                                            edgecolor=proc_config.get("edgecolor"),
-                                            label=_label))
+        stack_patches.append(mpatches.Patch(facecolor=stack_proc_data.get("fillcolor"),
+                                            edgecolor=stack_proc_data.get("edgecolor"),
+                                            label    =_label))
 
     #
     #  Draw the hists
     #
     hist_artists = []
+    hist_objs = []
+    for hist_proc_name, hist_data in plot_data["hists"].items():
 
-    for hist_data in hist_list:
-        hist_obj    = hist_data[0]
-        hist_config = hist_data[1]
+        hist_obj = make_hist(hist_data["edges"], hist_data["values"], hist_data["variances"], hist_data["x_label"])
+
         _plot_options = {"density":  norm,
-                         "label":    hist_config.get("label", ""),
-                         "color":    hist_config.get('fillcolor', 'k'),
-                         "histtype": kwargs.get("histtype", hist_config.get("histtype", "errorbar")),
-                         "linewidth": kwargs.get("linewidth", hist_config.get("linewidth", 1)),
+                         "label":    hist_data.get("label", ""),
+                         "color":    hist_data.get('fillcolor', 'k'),
+                         "histtype": kwargs.get("histtype", hist_data.get("histtype", "errorbar")),
+                         "linewidth": kwargs.get("linewidth", hist_data.get("linewidth", 1)),
                          "yerr": False,
                          }
 
-        if kwargs.get("histtype", hist_config.get("histtype", "errorbar")) in ["errorbar"]:
+        if kwargs.get("histtype", hist_data.get("histtype", "errorbar")) in ["errorbar"]:
             _plot_options["markersize"] = 12
             _plot_options["yerr"] = True
-
         hist_artists.append(hist_obj.plot(**_plot_options)[0])
 
     #
@@ -364,6 +408,7 @@ def _draw_plot(hist_list, stack_dict, **kwargs):
 
     return
 
+
 def get_year_str(year):
 
     if type(year) is list:
@@ -373,25 +418,90 @@ def get_year_str(year):
     return year_str
 
 
-def _plot(hist_list, stack_dict, plotConfig, **kwargs):
+def _plot_from_dict(plot_data, **kwargs):
     if kwargs.get("debug", False):
         print(f'\t in plot ... kwargs = {kwargs}')
 
     size = 7
     fig = plt.figure()   # figsize=(size,size/_phi))
 
-    fig.add_axes((0.1, 0.15, 0.85, 0.8))
-
-    _draw_plot(hist_list, stack_dict, **kwargs)
+    do_ratio = len(plot_data["ratio"])
+    if do_ratio:
+        grid = fig.add_gridspec(2, 1, hspace=0.06, height_ratios=[3, 1],
+                                left=0.1, right=0.95, top=0.95, bottom=0.1)
+        main_ax = fig.add_subplot(grid[0])
+    else:
+        fig.add_axes((0.1, 0.15, 0.85, 0.8))
+        main_ax = fig.gca()
+        ratio_ax = None
 
     year_str = get_year_str(year = kwargs.get('year',"RunII"))
 
-    ax = fig.gca()
     hep.cms.label("Internal", data=True,
-                  year=year_str, loc=0, ax=ax)
+                  year=year_str, loc=0, ax=main_ax)
 
 
-    return fig, ax
+    _draw_plot_from_dict(plot_data, **kwargs)
+
+    if do_ratio:
+
+        top_xlabel = plt.gca().get_xlabel()
+        plt.xlabel("")
+
+        ratio_ax = fig.add_subplot(grid[1], sharex=main_ax)
+        plt.setp(main_ax.get_xticklabels(), visible=False)
+
+        central_value_artist = ratio_ax.axhline(
+            kwargs.get("ratio_line_value", 1.0),
+            color="black",
+            linestyle="dashed",
+            linewidth=1.0
+        )
+
+        for ratio_name, ratio_data in plot_data["ratio"].items():
+
+            print("plotting ratio", ratio_name)
+
+            error_bar_type = ratio_data.get("type", "bar")
+            if error_bar_type == "band":
+
+                # Only works for contant bin size !!!!
+                bin_width = (ratio_data["centers"][1] - ratio_data["centers"][0])
+
+                # add check for variable bin width!!! TODO
+
+                # Create hatched error regions using fill_between
+                for xi, yi, err in zip(ratio_data["centers"], ratio_data["ratio"], ratio_data["error"]):
+                    plt.fill_between([xi - bin_width/2, xi + bin_width/2], yi - err, yi + err,
+                                     hatch=ratio_data.get("hatch", "/"),
+                                     edgecolor=ratio_data.get("color", "black"),
+                                     facecolor='none',
+                                     linewidth=0.0,
+                                     zorder=1)
+
+            else:
+                ratio_ax.errorbar(
+                    ratio_data["centers"],       # x-values
+                    ratio_data["ratio"],       # y-values
+                    yerr=ratio_data["error"],
+                    color=ratio_data.get("color", "black"),
+                    marker=ratio_data.get("marker", "o"),
+                    linestyle=ratio_data.get("linestyle", "none"),
+                    markersize=ratio_data.get("markersize", 4),
+                )
+
+        #
+        #  labels / limits
+        #
+        plt.ylabel(kwargs.get("rlabel", "Ratio"))
+        plt.ylabel(plt.gca().get_ylabel(), loc='center')
+
+        plt.xlabel(kwargs.get("xlabel", top_xlabel), loc='right')
+
+        plt.ylim(*kwargs.get('rlim', [0, 2]))
+
+    return fig, main_ax, ratio_ax
+
 
 
 def _plot2d(hist, plotConfig, **kwargs):
@@ -424,87 +534,9 @@ def _plot2d(hist, plotConfig, **kwargs):
     return fig, ax
 
 
-def _plot_ratio(hist_list, stack_dict, ratio_list, **kwargs):
-    r"""
-    Takes options:
-        "norm"              : bool (False),
-        "ratio_line_value"  : number (1.0),
-        "uncertainty_type"  : "poisson", "poisson-ratio",
-                              "efficiency" ("poisson")
-        "rlim"              : [rmin, rmax] ([0,2])
-    }
-    """
-
-    size = 7
-    fig = plt.figure()
-    grid = fig.add_gridspec(2, 1, hspace=0.06, height_ratios=[3, 1],
-                            left=0.1, right=0.95, top=0.95, bottom=0.1)
-
-    year_str = get_year_str(year = kwargs.get('year',"RunII"))
-
-    main_ax = fig.add_subplot(grid[0])
-    hep.cms.label("Internal", data=True,
-                  year=year_str, loc=0, ax=main_ax)
-
-    _draw_plot(hist_list, stack_dict, **kwargs)
-
-    top_xlabel = plt.gca().get_xlabel()
-    plt.xlabel("")
-
-    subplot_ax = fig.add_subplot(grid[1], sharex=main_ax)
-    plt.setp(main_ax.get_xticklabels(), visible=False)
-
-    central_value_artist = subplot_ax.axhline(
-        kwargs.get("ratio_line_value", 1.0),
-        color="black",
-        linestyle="dashed",
-        linewidth=1.0
-    )
-
-    for ir, ratio in enumerate(ratio_list):
-
-        error_bar_type = ratio[3].get("type", "bar")
-        if error_bar_type == "band":
-
-            # Only works for contant bin size !!!!
-            bin_width = (ratio[0][1] - ratio[0][0])
-
-            # add check for variable bin width!!! TODO
-
-            # Create hatched error regions using fill_between
-            for xi, yi, err in zip(ratio[0], ratio[1], ratio[2]):
-                plt.fill_between([xi - bin_width/2, xi + bin_width/2], yi - err, yi + err,
-                                 hatch=ratio[3].get("hatch", "/"),
-                                 edgecolor=ratio[3].get("color", "black"),
-                                 facecolor='none',
-                                 linewidth=0.0,
-                                 zorder=1)
-
-        else:
-            subplot_ax.errorbar(
-                ratio[0],       # x-values
-                ratio[1],       # y-values
-                yerr=ratio[2],
-                color=ratio[3].get("color", "black"),
-                marker=ratio[3].get("marker", "o"),
-                linestyle=ratio[3].get("linestyle", "none"),
-                markersize=ratio[3].get("markersize", 4),
-            )
-
-    #
-    #  labels / limits
-    #
-    plt.ylabel(kwargs.get("rlabel", "Ratio"))
-    plt.ylabel(plt.gca().get_ylabel(), loc='center')
-
-    plt.xlabel(kwargs.get("xlabel", top_xlabel), loc='right')
-
-    plt.ylim(*kwargs.get('rlim', [0, 2]))
-
-    return fig, main_ax, subplot_ax
 
 
-def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
+def get_plot_dict_from_list(cfg, var, cut, region, process, **kwargs):
 
     if kwargs.get("debug", False):
         print(f" in _makeHistFromList hist process={process}, "
@@ -518,7 +550,20 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
     #
     #  Unstacked hists
     #
-    hists = []
+
+
+    #
+    # Create Dict
+    #
+    plot_data = {} # defaultdict(dict)
+    plot_data["hists"] = {}
+    plot_data["stack"] = {}
+    plot_data["ratio"] = {}
+    plot_data["var"] = var
+    plot_data["cut"] = cut
+    plot_data["region"] = region
+    plot_data["process"] = process
+
 
     #
     #  Parse the Lists
@@ -542,16 +587,16 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
             if kwargs.get("debug", False):
                 print_list_debug_info(process, process_config.get("tag"), _cut, region)
 
-            _process_config = copy.copy(process_config)
+            _process_config = copy.deepcopy(process_config)
             _process_config["fillcolor"] = _colors[ic]
             _process_config["label"]     = get_label(f"{process_config['label']} { _cut}", label_override, ic)
             _process_config["histtype"]  = kwargs.get("histtype","errorbar")
 
-            _hist = get_hist(cfg, _process_config,
-                             var=var_to_plot, region=region, cut=_cut, rebin=rebin, year=year,
-                             debug=kwargs.get("debug", False))
+            add_hist_data(cfg, _process_config,
+                          var=var_to_plot, region=region, cut=_cut, rebin=rebin, year=year,
+                          debug=kwargs.get("debug", False))
 
-            hists.append( (_hist, _process_config) )
+            plot_data["hists"][_process_config["process"] + _cut + str(ic)] = _process_config
 
     #
     #  region list
@@ -562,16 +607,16 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
             if kwargs.get("debug", False):
                 print_list_debug_info(process, process_config.get("tag"), cut, _reg)
 
-            _process_config = copy.copy(process_config)
+            _process_config = copy.deepcopy(process_config)
             _process_config["fillcolor"] = _colors[ir]
             _process_config["label"]     = get_label(f"{process_config['label']} { _reg}", label_override, ir)
             _process_config["histtype"]  = kwargs.get("histtype","errorbar")
 
-            _hist = get_hist(cfg, _process_config,
-                             var=var_to_plot, region=_reg, cut=cut, rebin=rebin, year=year,
-                             debug=kwargs.get("debug", False))
+            add_hist_data(cfg, _process_config,
+                          var=var_to_plot, region=_reg, cut=cut, rebin=rebin, year=year,
+                          debug=kwargs.get("debug", False))
+            plot_data["hists"][_process_config["process"] + _reg + str(ir)] = _process_config
 
-            hists.append( (_hist, _process_config) )
 
     #
     #  input file list
@@ -584,7 +629,7 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
 
         for iF, _input_File in enumerate(cfg.hists):
 
-            _process_config = copy.copy(process_config)
+            _process_config = copy.deepcopy(process_config)
             _process_config["fillcolor"] = _colors[iF]
 
             if label_override:
@@ -596,33 +641,34 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
 
             _process_config["histtype"]  = kwargs.get("histtype","errorbar")
 
-            _hist = get_hist(cfg, _process_config,
-                             var=var_to_plot, region=region, cut=cut, rebin=rebin, year=year,
-                             file_index=iF,
-                             debug=kwargs.get("debug", False))
+            add_hist_data(cfg, _process_config,
+                          var=var_to_plot, region=region, cut=cut, rebin=rebin, year=year,
+                          file_index=iF,
+                          debug=kwargs.get("debug", False))
 
-            hists.append( (_hist, _process_config) )
+            plot_data["hists"][_process_config["process"] + "file" + str(iF)] = _process_config
 
     #
     #  process list
     #
     elif type(process) is list:
-        for _, _proc_conf in enumerate(process_config):
+        for iP, _proc_conf in enumerate(process_config):
 
             if kwargs.get("debug", False):
                 print_list_debug_info(_proc_conf["process"], _proc_conf.get("tag"), cut, region)
 
-            _process_config = copy.copy(_proc_conf)
+            _process_config = copy.deepcopy(_proc_conf)
             _process_config["fillcolor"] = _proc_conf.get("fillcolor", None)#.replace("yellow", "orange")
             _process_config["histtype"]  = kwargs.get("histtype","errorbar")
 
             var_to_plot = var_over_ride.get(_proc_conf["process"], var)
 
-            _hist = get_hist(cfg, _process_config,
-                             var=var_to_plot, region=region, cut=cut, rebin=rebin, year=year,
-                             debug=kwargs.get("debug", False))
+            add_hist_data(cfg, _process_config,
+                          var=var_to_plot, region=region, cut=cut, rebin=rebin, year=year,
+                          debug=kwargs.get("debug", False))
+            plot_data["hists"][_process_config["process"] + str(iP)] = _process_config
 
-            hists.append( (_hist, _process_config) )
+
 
     #
     #  var list
@@ -633,16 +679,16 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
             if kwargs.get("debug", False):
                 print_list_debug_info(process, process_config.get("tag"), cut, region)
 
-            _process_config = copy.copy(process_config)
+            _process_config = copy.deepcopy(process_config)
             _process_config["fillcolor"] = _colors[iv]
             _process_config["label"]     = get_label(f"{process_config['label']} { _var}", label_override, iv)
             _process_config["histtype"]  = kwargs.get("histtype","errorbar")
 
-            _hist = get_hist(cfg, _process_config,
-                             var=_var, region=region, cut=cut, rebin=rebin, year=year,
-                             debug=kwargs.get("debug", False))
+            add_hist_data(cfg, _process_config,
+                          var=_var, region=region, cut=cut, rebin=rebin, year=year,
+                          debug=kwargs.get("debug", False))
+            plot_data["hists"][_process_config["process"] + _var + str(iv)] = _process_config
 
-            hists.append( (_hist, _process_config) )
 
     #
     #  year list
@@ -658,63 +704,81 @@ def _makeHistsFromList(cfg, var, cut, region, process, **kwargs):
             _process_config["label"]     = get_label(f"{process_config['label']} { _year}", label_override, iy)
             _process_config["histtype"]  = kwargs.get("histtype","errorbar")
 
-            _hist = get_hist(cfg, _process_config,
-                             var=var, region=region, cut=cut, rebin=rebin, year=_year,
-                             debug=kwargs.get("debug", False))
-
-            hists.append( (_hist, _process_config) )
+            add_hist_data(cfg, _process_config,
+                          var=var, region=region, cut=cut, rebin=rebin, year=_year,
+                          debug=kwargs.get("debug", False))
+            plot_data["hists"][_process_config["process"] + _year + str(iy)] = _process_config
 
 
     else:
         raise Exception("Error something needs to be a list!")
 
 
+
     if kwargs.get("doRatio", kwargs.get("doratio", False)):
 
-        ratio_plots = []
+        hist_keys = list(plot_data["hists"].keys())
+        den_key = hist_keys.pop(0)
 
-        denValues = hists[-1][0].values()
-        denVars   = hists[-1][0].variances()
+        denValues  = np.array(plot_data["hists"][den_key]["values"])
+        denVars    = plot_data["hists"][den_key]["variances"]
+        denCenters = plot_data["hists"][den_key]["centers"]
 
         denValues[denValues == 0] = _epsilon
-        denCenters = hists[-1][0].axes[0].centers
 
         # Bkg error band
+
         band_ratios = np.ones(len(denCenters))
         band_uncert  = np.sqrt(denVars * np.power(denValues, -2.0))
-        band_config = {"color": "k",  "type": "band", "hatch": "\\\\"}
-        ratio_plots.append((denCenters, band_ratios, band_uncert, band_config))
+        band_config = {"color": "k",  "type": "band", "hatch": "\\\\",
+                       "ratio":band_ratios.tolist(),
+                       "error":band_uncert.tolist(),
+                       "centers": list(denCenters)}
+        plot_data["ratio"]["bkg_band"] = band_config
 
-        for iH in range(len(hists) - 1):
+        for iH, _num_key in enumerate(hist_keys):
 
-            numValues = hists[iH][0].values()
-            numVars   = hists[iH][0].variances()
-
+            numValues  = np.array(plot_data["hists"][_num_key]["values"])
+            numVars    = plot_data["hists"][_num_key]["variances"]
+            numValues[numValues == 0] = _epsilon
             ratio_config = {"color": _colors[iH],
                             "marker": "o",
                             }
             ratios, ratio_uncert = makeRatio(numValues, numVars, denValues, denVars, **kwargs)
-            ratio_plots.append((denCenters, ratios, ratio_uncert, ratio_config))
+            ratio_config["ratio"] = ratios.tolist()
+            ratio_config["error"] = ratio_uncert.tolist()
+            ratio_config["centers"] = denCenters
+            plot_data["ratio"][f"ratio_{_num_key}_to_{den_key}_{iH}"] = ratio_config
+
+    return plot_data
 
 
-        fig, main_ax, ratio_ax = _plot_ratio(hists, {}, ratio_plots, **kwargs)
-        main_ax.set_title(f"{region}")
-        ax = (main_ax, ratio_ax)
-    else:
-        fig, ax = _plot(hists, {}, cfg.plotConfig, **kwargs)
-        ax.set_title(f"{region}")
+def make_plot_from_dict(plot_data, **kwargs):
+
+    fig, main_ax, ratio_ax = _plot_from_dict(plot_data, **kwargs)
+    main_ax.set_title(f"{plot_data['region']}")
+    ax = (main_ax, ratio_ax)
 
     if kwargs.get("outputFolder", None):
 
-        if type(process) is list:
-            tagName = "_vs_".join(process)
+        if type(plot_data.get("process","")) is list:
+            tagName = "_vs_".join(plot_data["process"])
         else:
-            tagName = process_config.get("tag", "fourTag")
+            tagName = get_value_nested_dict(plot_data,"tag")
 
         if kwargs.get("yscale", None) == "log":
-            _savefig(fig, var+"_logy", kwargs.get("outputFolder"), kwargs.get("year","RunII"), cut, tagName, region, process)
+            _savefig(fig, plot_data["var"]+"_logy", kwargs.get("outputFolder"), kwargs.get("year","RunII"), plot_data["cut"], tagName, plot_data["region"], plot_data.get("process",""))
         else:
-            _savefig(fig, var, kwargs.get("outputFolder"), kwargs.get("year","RunII"), cut, tagName, region, process)
+            _savefig(fig, plot_data["var"], kwargs.get("outputFolder"), kwargs.get("year","RunII"), plot_data["cut"], tagName, plot_data["region"], plot_data.get("process",""))
+
+        if kwargs.get("write_yml", False) or kwargs.get("write_yaml", False):
+
+            if kwargs.get("yscale", None) == "log":
+                _save_yaml(plot_data, plot_data["var"]+"_logy", kwargs.get("outputFolder"), kwargs.get("year","RunII"), plot_data["cut"], tagName, plot_data["region"], plot_data.get("process",""))
+            else:
+                _save_yaml(plot_data, plot_data["var"], kwargs.get("outputFolder"), kwargs.get("year","RunII"), plot_data["cut"], tagName, plot_data["region"], plot_data.get("process",""))
+
+
 
     return fig, ax
 
@@ -732,6 +796,8 @@ def load_stack_config(stack_config, var, cut, region, **kwargs):
     #
     for _proc_name, _proc_config in stack_config.items():
 
+        proc_config = copy.deepcopy(_proc_config)
+
         var_to_plot = var_over_ride.get(_proc_name, var)
 
         if kwargs.get("debug", False):
@@ -740,25 +806,24 @@ def load_stack_config(stack_config, var, cut, region, **kwargs):
         #
         #  If this component is a process in the hist_obj
         #
-        if _proc_config.get("process", None):
+        if proc_config.get("process", None):
 
 
             #
             #  Get the hist object from the input data file(s)
             #
-            _hist = get_hist(cfg, _proc_config,
-                             var=var_to_plot, region=region, cut=cut, rebin=rebin, year=year,
-                             debug=kwargs.get("debug", False))
+            add_hist_data(cfg, proc_config,
+                          var=var_to_plot, region=region, cut=cut, rebin=rebin, year=year,
+                          debug=kwargs.get("debug", False))
 
-            stack_dict[_proc_name] = (_hist, _proc_config)
+            stack_dict[_proc_name] = proc_config
 
         #
         #  If this compoent is a sum of processes in the hist_obj
         #
-        elif _proc_config.get("sum", None):
+        elif proc_config.get("sum", None):
 
-            hist_sum = None
-            for sum_proc_name, sum_proc_config in _proc_config.get("sum").items():
+            for sum_proc_name, sum_proc_config in proc_config.get("sum").items():
 
                 sum_proc_config["year"] = _proc_config["year"]
 
@@ -767,16 +832,24 @@ def load_stack_config(stack_config, var, cut, region, **kwargs):
                 #
                 #  Get the hist object from the input data file(s)
                 #
-                _hist = get_hist(cfg, sum_proc_config,
-                                 var=var_to_plot, region=region, cut=cut, rebin=rebin, year=year,
-                                 debug=kwargs.get("debug", False))
+                add_hist_data(cfg, sum_proc_config,
+                              var=var_to_plot, region=region, cut=cut, rebin=rebin, year=year,
+                              debug=kwargs.get("debug", False))
 
-                if hist_sum:
-                    hist_sum += _hist
-                else:
-                    hist_sum = _hist
 
-            stack_dict[_proc_name] = (hist_sum, _proc_config)
+
+            stack_values = [v["values"] for _, v in proc_config["sum"].items()]
+            proc_config["values"] = np.sum(stack_values, axis=0).tolist()
+
+            stack_variances = [v["variances"] for _, v in proc_config["sum"].items()]
+            proc_config["variances"] = np.sum(stack_variances, axis=0).tolist()
+
+            first_sum_entry = next(iter(proc_config["sum"].values()))
+            proc_config["centers"] = first_sum_entry["centers"]
+            proc_config["edges"]   = first_sum_entry["edges"]
+            proc_config["x_label"] = first_sum_entry["x_label"]
+
+            stack_dict[_proc_name] = proc_config
 
         else:
             raise Exception("Error need to config either process or sum")
@@ -784,37 +857,124 @@ def load_stack_config(stack_config, var, cut, region, **kwargs):
     return stack_dict
 
 
-def get_ratio_plots(ratio_config, hists, stack_dict, **kwargs):
-    ratio_plots = []
+def add_ratio_plots(ratio_config, plot_data, **kwargs):
 
-    for _, ratio_config in ratio_config.items():
+    for r_name, _r_config in ratio_config.items():
 
-        num_config = ratio_config.get("numerator")
-        den_config = ratio_config.get("denominator")
-        numValues, numVars, numCenters = get_values_variances_centers_from_dict(num_config, hists, stack_dict)
-        denValues, denVars, _          = get_values_variances_centers_from_dict(den_config, hists, stack_dict)
+        r_config = copy.deepcopy(_r_config)
+
+        numValues, numVars, numCenters = get_values_variances_centers_from_dict(r_config.get("numerator"),   plot_data)
+        denValues, denVars, _          = get_values_variances_centers_from_dict(r_config.get("denominator"), plot_data)
 
         if kwargs.get("norm", False):
-            ratio_config["norm"] = True
+            r_config["norm"] = True
 
         #
-        # Clean den
+        #  Ratios
         #
-        ratios, ratio_uncert = makeRatio(numValues, numVars, denValues, denVars, **ratio_config)
-        ratio_plots.append((numCenters, ratios, ratio_uncert, ratio_config))
+        ratios, ratio_uncert = makeRatio(numValues, numVars, denValues, denVars, **r_config)
+        r_config["ratio"]  = ratios.tolist()
+        r_config["error"]  = ratio_uncert.tolist()
+        r_config["centers"] = numCenters
+        plot_data["ratio"][f"ratio_{r_name}"] = r_config
 
+        #
         # Bkg error band
+        #
         default_band_config = {"color": "k",  "type": "band", "hatch": "\\\\\\"}
-        band_config = ratio_config.get("bkg_err_band", default_band_config)
+        _band_config = r_config.get("bkg_err_band", default_band_config)
 
-        if band_config:
-            band_ratios = np.ones(len(numCenters))
-            band_uncert  = np.sqrt(denVars * np.power(denValues, -2.0))
-            ratio_plots.append((numCenters, band_ratios, band_uncert, band_config))
+        if _band_config:
+            band_config = copy.deepcopy(_band_config)
+            band_config["ratio"] = np.ones(len(numCenters)).tolist()
+            band_config["error"] = np.sqrt(denVars * np.power(denValues, -2.0)).tolist()
+            band_config["centers"] = list(numCenters)
+            plot_data["ratio"][f"band_{r_name}"] = band_config
+
+
+    return
+
+def get_plot_dict_from_config(cfg, var='selJets.pt',
+                              cut="passPreSel", region="SR", **kwargs):
+
+    process = kwargs.get("process", None)
+    year    = kwargs.get("year", "RunII")
+    rebin   = kwargs.get("rebin", 1)
+    debug   = kwargs.get("debug", False)
+
+    # Make process a list if it exits and isnt one already
+    if process is not None and type(process) is not list:
+        process = [process]
+
+    #
+    #  Lets you plot different variables for differnet processes
+    #
+    var_over_ride = kwargs.get("var_over_ride", {})
+
+    if cut not in cfg.cutList:
+        raise AttributeError(f"{cut} not in cutList {cfg.cutList}")
+
+    #
+    #  Unstacked hists
+    #
+    plot_data = {}
+    plot_data["hists"] = {}
+    plot_data["stack"] = {}
+    plot_data["ratio"] = {}
+    plot_data["var"] = var
+    plot_data["cut"] = cut
+    plot_data["region"] = region
+
+    #hists = []
+    hist_config = cfg.plotConfig["hists"]
+
+    # for a single process
+    if process is not None:
+        hist_config = {key: hist_config[key] for key in process if key in hist_config}
+
+    #
+    #  Loop of hists in config file
+    #
+    for _proc_name, _proc_config in hist_config.items():
+
+        proc_config = copy.deepcopy(_proc_config)
+
+        #
+        #  Add name to config
+        #
+        proc_config["name"] = _proc_name
+
+        var_to_plot = var_over_ride.get(_proc_name, var)
+
+        #
+        #  Get the hist object from the input data file(s)
+        #
+        add_hist_data(cfg, proc_config,
+                      var=var_to_plot, region=region, cut=cut, rebin=rebin, year=year,
+                      debug=kwargs.get("debug", False))
+        plot_data["hists"][_proc_name] = proc_config
 
 
 
-    return ratio_plots
+    #
+    #  The stack
+    #
+    stack_config = cfg.plotConfig.get("stack", {})
+    if process is not None:
+        stack_config = {key: stack_config[key] for key in process if key in stack_config}
+
+    plot_data["stack"] = load_stack_config(stack_config, var, cut, region, **kwargs)
+
+
+    #
+    #  Config Ratios
+    #
+    if kwargs.get("doRatio", kwargs.get("doratio", False)):
+        ratio_config = cfg.plotConfig["ratios"]
+        add_ratio_plots(ratio_config, plot_data, **kwargs)
+
+    return plot_data
+
 
 
 def makePlot(cfg, var='selJets.pt',
@@ -833,104 +993,43 @@ def makePlot(cfg, var='selJets.pt',
     """
 
     process = kwargs.get("process", None)
-    rebin   = kwargs.get("rebin", 1)
     year    = kwargs.get("year", "RunII")
     debug   = kwargs.get("debug", False)
     if debug: print(f"In makePlot kwargs={kwargs}")
 
     if (type(cut) is list) or (type(region) is list) or (len(cfg.hists) > 1 and not cfg.combine_input_files) or (type(var) is list) or (type(process) is list) or (type(year) is list):
         try:
-            return _makeHistsFromList(cfg, var, cut, region, **kwargs)
+            plot_data =  get_plot_dict_from_list(cfg, var, cut, region, **kwargs)
+            return make_plot_from_dict(plot_data, **kwargs)
         except ValueError as e:
             raise ValueError(e)
 
-    # Make process a list if it exits and isnt one already
-    if process is not None and type(process) is not list:
-        process = [process]
-
-    #
-    #  Lets you plot different variables for differnet processes
-    #
-    var_over_ride = kwargs.get("var_over_ride", {})
-
-    if cut not in cfg.cutList:
-        raise AttributeError(f"{cut} not in cutList {cfg.cutList}")
-
-    tagNames = []
-
-    #
-    #  Unstacked hists
-    #
-    hists = []
-    hist_config = cfg.plotConfig["hists"]
-    if process is not None:
-        hist_config = {key: hist_config[key] for key in process if key in hist_config}
-
-    #
-    #  Loop of hists in config file
-    #
-    for _proc_name, _proc_config in hist_config.items():
-
-        #
-        #  Add name to config
-        #
-        _proc_config["name"] = _proc_name
-
-        #
-        #  Used for naming output pdf
-        #
-        tagNames.append(_proc_config["tag"])
-
-        var_to_plot = var_over_ride.get(_proc_name, var)
-
-        #
-        #  Get the hist object from the input data file(s)
-        #
-        _hist = get_hist(cfg, _proc_config,
-                         var=var_to_plot, region=region, cut=cut, rebin=rebin, year=year,
-                         debug=kwargs.get("debug", False))
-
-        hists.append( (_hist, _proc_config) )
+    plot_data = get_plot_dict_from_config(cfg, var, cut, region, **kwargs)
+    return make_plot_from_dict(plot_data, **kwargs)
 
 
-    #
-    #  The stack
-    #
-    stack_config = cfg.plotConfig.get("stack", {})
-    if process is not None:
-        stack_config = {key: stack_config[key] for key in process if key in stack_config}
-
-
-    stack_dict = load_stack_config(stack_config, var, cut, region, **kwargs)
-
-    if len(tagNames) == 0:
-        tagNames.append( get_value_nested_dict(stack_config,"tag") )
-
-    #
-    #  Config Ratios
-    #
-    if kwargs.get("doRatio", kwargs.get("doratio", False)):
-        ratio_config = cfg.plotConfig["ratios"]
-        ratio_plots = get_ratio_plots(ratio_config, hists, stack_dict, **kwargs)
-
-        fig, main_ax, ratio_ax = _plot_ratio(hists, stack_dict, ratio_plots,  **kwargs)
-        main_ax.set_title(f"{region}")
-        ax = (main_ax, ratio_ax)
-    else:
-        fig, ax = _plot(hists, stack_dict, cfg.plotConfig, **kwargs)
-        ax.set_title(f"{region}")
-
-    #
-    # Save Fig
-    #
-    if kwargs.get("outputFolder", None):
-        tagName = "fourTag" if "fourTag" in tagNames else "threeTag"
-        if kwargs.get("yscale", "linear") == "log":
-            _savefig(fig, var+"_logy", kwargs.get("outputFolder"), kwargs.get("year","RunII"), cut, tagName, region)
-        else:
-            _savefig(fig, var, kwargs.get("outputFolder"), kwargs.get("year","RunII"), cut, tagName, region)
-
-    return fig, ax
+#    fig, main_ax, ratio_ax = _plot_from_dict(plot_data, **kwargs)
+#    main_ax.set_title(f"{region}")
+#
+#    #
+#    # Save Fig
+#    #
+#    if kwargs.get("outputFolder", None):
+#        tagName = "fourTag" if "fourTag" in tagNames else "threeTag"
+#        if kwargs.get("yscale", "linear") == "log":
+#            _savefig(fig, var+"_logy", kwargs.get("outputFolder"), kwargs.get("year","RunII"), cut, tagName, region)
+#        else:
+#            _savefig(fig, var, kwargs.get("outputFolder"), kwargs.get("year","RunII"), cut, tagName, region)
+#
+#    # Specify the file name
+#    file_name = "data_stack.yaml"
+#
+#    # Write data to a YAML file
+#    with open(file_name, "w") as yfile:  # Use "w" for writing in text mode
+#        yaml.dump(plot_data, yfile, default_flow_style=False, sort_keys=False)
+#
+#
+#    return fig, main_ax
 
 
 def make2DPlot(cfg, process, var='selJets.pt',

@@ -18,7 +18,7 @@ def print_counts_yaml(var, cut, region, counts):
     outputFile.write(f"    region:\n")
     outputFile.write(f"           {region}\n")
     outputFile.write(f"    counts:\n")
-    outputFile.write(f"           {counts.tolist()}\n")        
+    outputFile.write(f"           {counts.tolist()}\n")
     outputFile.write("\n\n")
 
 
@@ -36,7 +36,7 @@ if __name__ == '__main__':
     cfg.hists = load_hists([args.inputFile])
     cfg.axisLabels, cfg.cutList = read_axes_and_cuts(cfg.hists, cfg.plotConfig)
 
-    default_args = {"doRatio":0, "rebin":4, "norm":0, "process":"Multijet"}    
+    default_args = {"doRatio":0, "rebin":4, "norm":0, "process":"Multijet"}
 
     test_vectors = [("SvB_MA.ps", "passPreSel", "SR"),
                     ("SvB_MA.ps", "passPreSel", "SB"),
@@ -65,28 +65,25 @@ if __name__ == '__main__':
                     ("SvB_MA.ps_zz", "passSvB",    "SB"),
                     ("SvB_MA.ps_zz", "failSvB",    "SR"),
                     ("SvB_MA.ps_zz", "failSvB",    "SB"),
-                    
-                    
+
+
                     ]
-    
+
     for tv in test_vectors:
 
         var    = tv[0]
         cut    = tv[1]
         region = tv[2]
         print(f"testing {var}, {cut}, {region}")
-        fig, ax = makePlot(cfg, var=var, cut=cut, region=region,
-                           outputFolder=cfg.outputFolder, **default_args)
+        fig, axes = makePlot(cfg, var=var, cut=cut, region=region,
+                             outputFolder=cfg.outputFolder, **default_args)
 
+        ax = axes[0]
         for i in range(len(ax.lines)):
-            
+
             if hasattr(ax.lines[i], "get_label") and ax.lines[i].get_label() == '_nolegend_':
                 counts = ax.lines[i].get_ydata()
                 break
-            
+
         print_counts_yaml(var, cut, region, counts)
         plt.close()
-
-
-
-
