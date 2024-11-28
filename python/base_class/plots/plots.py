@@ -136,8 +136,9 @@ def _savefig(fig, file_name, *args):
         os.makedirs(outputPath)
 
     file_name = file_name if type(file_name) is str else "_vs_".join(file_name)
-    print("wrote pdf:", outputPath + "/" + file_name.replace(".", '_').replace("/","_") + ".pdf")
-    fig.savefig(outputPath + "/" + file_name.replace(".", '_').replace("/","_") + ".pdf")
+    file_path_and_name = outputPath + "/" + file_name.replace(".", '_').replace("/","_") + ".pdf"
+    print(f"wrote pdf:  {file_path_and_name}")
+    fig.savefig(file_path_and_name)
     return
 
 
@@ -157,8 +158,9 @@ def _save_yaml(plot_data, var, *args):
 
     varStr = var if type(var) is str else "_vs_".join(var)
 
-    file_name = outputPath + "/" + varStr.replace(".", '_').replace("/","_") + ".yml"
-    print("wrote yml:", outputPath + "/" + varStr.replace(".", '_').replace("/","_") + ".yml")
+    file_name = outputPath + "/" + varStr.replace(".", '_').replace("/","_") + ".yaml"
+    print(f"wrote yml:  {file_name}")
+
     # Write data to a YAML file
     with open(file_name, "w") as yfile:  # Use "w" for writing in text mode
         yaml.dump(plot_data, yfile, default_flow_style=False, sort_keys=False)
@@ -1178,7 +1180,6 @@ def init_arg_parser():
     parser.add_argument('--debug', action="store_true", help='')
     parser.add_argument('--signal', action="store_true", help='')
     parser.add_argument('--combine_input_files', action="store_true", help='')
-
 
     return parser
 
