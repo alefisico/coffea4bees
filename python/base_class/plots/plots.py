@@ -582,6 +582,7 @@ def get_plot_dict_from_list(cfg, var, cut, region, process, **kwargs):
     plot_data["var"] = var
     plot_data["cut"] = cut
     plot_data["region"] = region
+    plot_data["kwargs"] = kwargs
     plot_data["process"] = process
 
 
@@ -773,10 +774,12 @@ def get_plot_dict_from_list(cfg, var, cut, region, process, **kwargs):
     return plot_data
 
 
-def make_plot_from_dict(plot_data, **kwargs):
+def make_plot_from_dict(plot_data):
+    kwargs = plot_data["kwargs"]
 
     fig, main_ax, ratio_ax = _plot_from_dict(plot_data, **kwargs)
     ax = (main_ax, ratio_ax)
+
 
     if kwargs.get("outputFolder", None):
 
@@ -800,8 +803,8 @@ def make_plot_from_dict(plot_data, **kwargs):
     return fig, ax
 
 
-def make_plot_2d_from_dict(plot_data, **kwargs):
-
+def make_plot_2d_from_dict(plot_data):
+    kwargs = plot_data["kwargs"]
     fig, ax = _plot2d_from_dict(plot_data, **kwargs)
 
     #
@@ -963,6 +966,7 @@ def get_plot_dict_from_config(cfg, var='selJets.pt',
     plot_data["var"] = var
     plot_data["cut"] = cut
     plot_data["region"] = region
+    plot_data["kwargs"] = kwargs
 
     #hists = []
     hist_config = cfg.plotConfig["hists"]
@@ -1039,12 +1043,12 @@ def makePlot(cfg, var='selJets.pt',
     if (type(cut) is list) or (type(region) is list) or (len(cfg.hists) > 1 and not cfg.combine_input_files) or (type(var) is list) or (type(process) is list) or (type(year) is list):
         try:
             plot_data =  get_plot_dict_from_list(cfg, var, cut, region, **kwargs)
-            return make_plot_from_dict(plot_data, **kwargs)
+            return make_plot_from_dict(plot_data)
         except ValueError as e:
             raise ValueError(e)
 
     plot_data = get_plot_dict_from_config(cfg, var, cut, region, **kwargs)
-    return make_plot_from_dict(plot_data, **kwargs)
+    return make_plot_from_dict(plot_data)
 
 
 
@@ -1133,12 +1137,13 @@ def make2DPlot(cfg, process, var='selJets.pt',
     plot_data["region"] = region
     plot_data["process"] = process
     plot_data["tagName"] = tagName
+    plot_data["kwargs"] = kwargs
     plot_data["hist"] = process_config
 
     #
     # Make the plot
     #
-    return make_plot_2d_from_dict(plot_data, **kwargs)
+    return make_plot_2d_from_dict(plot_data)
 
 
 
