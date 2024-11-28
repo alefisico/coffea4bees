@@ -62,12 +62,7 @@ def get_values_variances_centers_from_dict(hist_config, plot_data):
 
     if hist_config["type"] == "hists":
         num_data = plot_data["hists"][hist_config["key"]]
-        return num_data["values"], num_data["variances"], num_data["centers"]
-        #for h_data, h_config in hists:
-        #    if h_config["name"] == hist_config["key"]:
-        #        return h_data.values(), h_data.variances(), h_data.axes[0].centers
-        #
-        #raise ValueError(f"ERROR: input to ratio of key {hist_config['key']} not found in hists")
+        return np.array(num_data["values"]), np.array(num_data["variances"]), num_data["centers"]
 
 
     if hist_config["type"] == "stack":
@@ -306,7 +301,6 @@ def _draw_plot_from_dict(plot_data, **kwargs):
 
     stack_dict_for_hist = {}
     for k, v in stack_dict.items():
-        print(f"making stack for {k}")
         stack_dict_for_hist[k] = make_hist(v["edges"], v["values"], v["variances"], v["x_label"])
 
     #stack_dict_for_hist = {k: v[0] for k, v in stack_dict.items() }
@@ -348,9 +342,6 @@ def _draw_plot_from_dict(plot_data, **kwargs):
     hist_artists = []
     hist_objs = []
     for hist_proc_name, hist_data in plot_data["hists"].items():
-        #hist_obj    = hist_data[0]
-
-        print("plotting", hist_proc_name)
 
         hist_obj = make_hist(hist_data["edges"], hist_data["values"], hist_data["variances"], hist_data["x_label"])
 
@@ -768,7 +759,6 @@ def make_plot_from_dict(plot_data, **kwargs):
     main_ax.set_title(f"{plot_data['region']}")
     ax = (main_ax, ratio_ax)
 
-
     if kwargs.get("outputFolder", None):
 
         if type(plot_data.get("process","")) is list:
@@ -805,7 +795,7 @@ def load_stack_config(stack_config, var, cut, region, **kwargs):
     #  Loop processes in the stack config
     #
     for _proc_name, _proc_config in stack_config.items():
-        print("Processing stack",_proc_name)
+
         proc_config = copy.deepcopy(_proc_config)
 
         var_to_plot = var_over_ride.get(_proc_name, var)

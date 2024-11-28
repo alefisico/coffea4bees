@@ -88,10 +88,10 @@ class PlotTestCase(unittest.TestCase):
             region = v["region"]
             counts = v["counts"]
 
-            fig, ax = makePlot(cfg, var=var, cut=cut, region=region,
+            fig, axes = makePlot(cfg, var=var, cut=cut, region=region,
                                outputFolder=cfg.outputFolder, **default_args)
 
-
+            ax = axes[0]
             for i in range(len(ax.lines)):
 
                 if hasattr(ax.lines[i], "get_label") and ax.lines[i].get_label() == '_nolegend_':
@@ -103,28 +103,32 @@ class PlotTestCase(unittest.TestCase):
             plt.close()
 
     def test_get_values_variances_centers_from_dict_hists_type(self):
-        # Mocking histogram objects
-        hist_mock = MagicMock()
-        hist_mock.values.return_value = np.array([1, 2, 3])
-        hist_mock.axes[0].centers = np.array([0.5, 1.5, 2.5])
 
         # Mocking histogram config
-        hist_config = {"name": "hist1"}
+        hist_config = {"name": "hist1",
+                       "values": [1, 2, 3],
+                       "variances": [4, 5, 6],
+                       "centers": [0.5, 1.5, 2.5],
+                       }
 
         # Setting up inputs
         input_dict = {"type": "hists", "key": "hist1"}
-        hist_index = {"hist1": 0}
-        hists = [(hist_mock, hist_config)]
         stack_dict = {}
 
         # Expected values
         expected_values = np.array([1, 2, 3])
         expected_centers = np.array([0.5, 1.5, 2.5])
+        expected_variances = np.array([4, 5, 6])
 
         # Test
-        values, variances, centers = get_values_variances_centers_from_dict(input_dict, hists, stack_dict)
-        np.testing.assert_array_equal(values, expected_values)
-        np.testing.assert_array_equal(centers, expected_centers)
+        plot_data = {}
+        plot_data["hists"] = {"hist1":hist_config}
+        plot_data["stack"] = stack_dict
+
+        values, variances, centers = get_values_variances_centers_from_dict(input_dict, plot_data)
+        np.testing.assert_array_equal(values,    expected_values)
+        np.testing.assert_array_equal(variances, expected_variances)
+        np.testing.assert_array_equal(centers,   expected_centers)
 
 
     def test_stack_type(self):
@@ -132,21 +136,31 @@ class PlotTestCase(unittest.TestCase):
         hist_mock = MagicMock()
         hist_mock.values.return_value = np.array([1, 2, 3])
         hist_mock.axes[0].centers = np.array([0.5, 1.5, 2.5])
-        stack_dict = {"stack1": (hist_mock, {}), "stack2": (hist_mock, {})}
+        stack_dummy = {"values": [1, 2, 3],
+                       "variances": [4, 5, 6],
+                       "centers": [0.5, 1.5, 2.5]}
+
+        stack_dict = {"stack1": stack_dummy, "stack2": stack_dummy}
 
         # Setting up inputs
         input_dict = {"type": "stack"}
-        hist_index = {}
-        hists = []
-
-        # Expected values (sum of two histograms)
-        expected_values = np.array([2, 4, 6])
-        expected_centers = np.array([0.5, 1.5, 2.5])
 
         # Test
-        values, variances, centers = get_values_variances_centers_from_dict(input_dict, hists, stack_dict)
-        np.testing.assert_array_equal(values, expected_values)
-        np.testing.assert_array_equal(centers, expected_centers)
+        plot_data = {}
+        plot_data["hists"] = {}
+        plot_data["stack"] = stack_dict
+
+
+        # Expected values (sum of two histograms)
+        expected_values    = np.array([2, 4, 6])
+        expected_variances = np.array([8, 10, 12])
+        expected_centers   = np.array([0.5, 1.5, 2.5])
+
+        # Test
+        values, variances, centers = get_values_variances_centers_from_dict(input_dict, plot_data)
+        np.testing.assert_array_equal(values,    expected_values)
+        np.testing.assert_array_equal(variances, expected_variances)
+        np.testing.assert_array_equal(centers,   expected_centers)
 
 
 
