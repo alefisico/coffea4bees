@@ -1,13 +1,20 @@
-from . import FvT, legacy
+from classifier.task import ArgParser
+
+from . import FvT, _picoAOD, legacy
 
 
-class Train(FvT.Train, legacy._CommonTrain): ...
+class Train(FvT.Train, legacy._CommonTrain):
+    argparser = ArgParser()
+    argparser.remove_argument("--no-JCM")
+    defaults = {
+        "no_JCM": True,  # JCM is already included in mcPseudoTagWeight
+    }
 
 
-class TrainBaseline(FvT.TrainBaseline, legacy._CommonTrain): ...
+class TrainBaseline(_picoAOD.Background, Train): ...
 
 
-class TrainDataOnly(FvT.TrainDataOnly, legacy._CommonTrain): ...
+class TrainDataOnly(_picoAOD.Data, Train): ...
 
 
 class Eval(FvT.Eval, legacy.Eval): ...

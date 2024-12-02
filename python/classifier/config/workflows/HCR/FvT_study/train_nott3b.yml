@@ -19,7 +19,6 @@ model:
 dataset:
   - module: HCR.FvT_legacy.TrainBaseline
     option:
-      - --no-JCM
       - --no-ttbar-3b # remove ttbar 3b
       - --data-source mixed
       - --data-mixed-samples {mixed}
@@ -30,7 +29,6 @@ dataset:
   - module: HCR.FvT_legacy.Train
     option:
       - --no-detector-4b
-      - --no-JCM
       - --branch pseudoTagWeight_3bDvTMix4bDvT_v{mixed}
       - --preprocess source:detector
       - df.tools.add_columns

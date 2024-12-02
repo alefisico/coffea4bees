@@ -20,7 +20,6 @@ dataset:
   - module: HCR.FvT_legacy.TrainBaseline
     option:
       - --no-SR # remove SR
-      - --no-JCM
       - --data-source mixed
       - --data-mixed-samples {mixed}
       - --preprocess label:data
@@ -31,7 +30,6 @@ dataset:
     option:
       - --no-SR # remove SR
       - --no-detector-4b
-      - --no-JCM
       - --branch pseudoTagWeight_3bDvTMix4bDvT_v{mixed}
       - --preprocess source:detector
       - df.tools.add_columns

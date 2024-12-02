@@ -19,7 +19,6 @@ model:
 dataset:
   - module: HCR.FvT_legacy.TrainDataOnly # remove ttbar
     option:
-      - --no-JCM
       - --data-source mixed
       - --data-mixed-samples {mixed}
       - --preprocess label:data
@@ -30,7 +29,6 @@ dataset:
     option:
       - --no-SR # remove SR
       - --no-detector-4b
-      - --no-JCM
       - --branch pseudoTagWeight_3bDvTMix4bDvT_v{mixed}
       - --preprocess source:detector
       - df.tools.add_columns
@@ -45,3 +43,5 @@ dataset:
       - --files "label:data,source:detector,year:2017" root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//data2017_3b/picoAOD_3b_wJCM_newSBDef.root
       - --files "label:data,source:detector,year:2018" root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//data2018_3b/picoAOD_3b_wJCM_newSBDef.root
       - --max-workers 8
+
+# conclusion: bias(+spurious signal)↑, variance↑

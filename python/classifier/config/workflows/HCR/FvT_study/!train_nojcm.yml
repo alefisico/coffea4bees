@@ -16,8 +16,9 @@ model:
         bs_init: 16384
 # training set: mixed 4b + detector 3b + ttbar 4b + ttbar 3b
 # SR(blinded) + SB; no JCM
+# TODO: fix ttbar weight
 dataset:
-  - module: HCR.FvT_legacy.TrainBaseline
+  - module: HCR.FvT.TrainBaseline
     option:
       - --no-JCM # remove JCM
       - --no-detector-4b
