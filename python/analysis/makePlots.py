@@ -39,6 +39,9 @@ def doPlots(varList, debug=False):
         vDict["doRatio"] = cfg.plotConfig.get("doRatio", True)
         vDict["legend"] = True
 
+        if args.doTest:
+            vDict["write_yaml"] = True
+
         for region in ["SR", "SB"]:
 
             if debug: print(f"plotting 1D ...{v}")
@@ -67,6 +70,9 @@ def doPlots(varList, debug=False):
         vDict["ylabel"] = "Entries"
         vDict["doRatio"] = cfg.plotConfig.get("doRatio", True)
         vDict["legend"] = True
+
+        if args.doTest:
+            vDict["write_yaml"] = True
 
         for process in ["data", "Multijet", "HH4b", "TTToHadronic"]:
             for region in ["SR", "SB"]:
@@ -100,6 +106,9 @@ def doPlots(varList, debug=False):
             vDict["ylabel"] = "Entries"
             vDict["doRatio"] = cfg.plotConfig.get("doRatio", True)
             vDict["legend"] = True
+
+            if args.doTest:
+                vDict["write_yaml"] = True
 
             for process in ["data", "Multijet", "HH4b", "TTToHadronic"]:
 

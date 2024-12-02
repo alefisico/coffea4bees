@@ -144,6 +144,13 @@ def filling_nominal_histograms(selev, JCM,
                 fill += SvBHists( (f"SvB_{_FvT_name}",    "SvB Classifier"),    "SvB",    weight=f"weight_{_FvT_name}", )
                 fill += SvBHists( (f"SvB_MA_{_FvT_name}", "SvB MA Classifier"), "SvB_MA", weight=f"weight_{_FvT_name}", )
 
+
+    #
+    #  MC Truth
+    #
+    if "truth_v4b" in selev.fields:
+        fill += LorentzVector.plot_pair( ("truth_v4b", R"$HH_{4b}$"), "truth_v4b", skip=["n", "dr", "dphi", "st"], bins={"mass": (120, 0, 1200)}, )
+
     #
     # fill histograms
     #
