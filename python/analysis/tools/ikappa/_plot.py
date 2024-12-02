@@ -161,6 +161,8 @@ class Plotter(Component):
     def update_data(self, hists: dict[str, Hist], categories: set[str]):
         self.reset()
         self.data = hists
+        if not hists:
+            return
 
         # blocks
         self.categories: dict[str, AxisProjector] = {}

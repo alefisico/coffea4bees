@@ -411,7 +411,7 @@ span.ti {
     def multichoice(self, z_index: Optional[int] = None, **kwargs):
         if z_index is None:
             z_index = self._multichoice_z_index
-            self._multichoice_z_index += 1
+            self._multichoice_z_index -= 1
         return MultiChoice(
             **self.__merge(
                 self._multichoice_style,

@@ -453,7 +453,7 @@ class _Stack(_Matched):
             sizing_mode="stretch_width",
             align="center",
         )
-        self._dom_bins.js_link("options", processes, "value")
+        processes.js_link("value", self._dom_bins, "options")
 
         self.dom_hint = [_label(text=f"Stack{self._index}:"), self._dom_name]
         self.dom_hide = [_label(text="Bins:"), self._dom_bins]

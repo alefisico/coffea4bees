@@ -32,5 +32,5 @@ SelectedCategories = {
     "passSvB": [True, False],
     "region": [0, 1],
     "tag": [4],
-    "year": ["UL16_preVFP", "UL16_postVFP", "UL17", "UL18"],
+    "year": ["UL16_preVFP", "UL16_postVFP", "UL17", "UL18", "2016", "2017", "2018"],
 }

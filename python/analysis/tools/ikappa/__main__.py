@@ -59,13 +59,11 @@ class Main(Component):
     def __init__(self):
         super().__init__()
         # data
-        self._hists: tuple[dict[str, Hist], set[str]] = {}, None
-        self._profiles: list[Profile] = []
-        self._status = {"Histograms": [], "Profiles": [], "Presets": []}
+        self._reset(init=True)
 
         # async
         self._load_queue: Queue[tuple[str, _Actions]] = Queue()
-        self._load_thread = Thread(target=self._load_hist, daemon=True)
+        self._load_thread = Thread(target=self._load_data, daemon=True)
         self._load_thread.start()
 
         self._upload_queue: Queue[tuple[str, str]] = Queue()
@@ -77,6 +75,17 @@ class Main(Component):
         if (comp := self._dom_hist_compression.value) == "None":
             return None
         return comp
+
+    def _reset(self, init=False):
+        self._hists: tuple[dict[str, Hist], set[str]] = {}, None
+        self._profiles: list[Profile] = []
+        self._status = {"Histograms": [], "Profiles": [], "Presets": []}
+
+        if not init:
+            preset.reset()
+            self.plotter.update_profile(self._profiles)
+            self.plotter.update_data(*self._hists)
+            self.log("Reset.")
 
     def _dom_show_status(self):
         content = []
@@ -123,14 +132,14 @@ class Main(Component):
         content.append("<div class='code box'>")
         content.append(
             "<br>".join(
-                f"{k}: {v}<br>{_INDENT*2}{getattr(preset, k)}"
+                f"{k}: <font color='green'>{v}</font><br>{_INDENT*2}{getattr(preset, k)}"
                 for k, v in preset.__annotations__.items()
             )
         )
         content.append("</div>")
         return "".join(content)
 
-    def _load_hist(self):
+    def _load_data(self):
         while task := self._load_queue.get():
             raw, action = task
             if not raw:
@@ -147,7 +156,7 @@ class Main(Component):
             except Exception as e:
                 self.log.error(exec_info=e)
 
-    def _dom_load_hist(self, action: _Actions):
+    def _dom_load_data(self, action: _Actions):
         self._load_queue.put((self._dom_hist_input.value, action))
 
     def _upload_plot(self):
@@ -171,10 +180,12 @@ class Main(Component):
         self.shared = SharedDOM(doc)
         self.plotter = Plotter(parent=self, **self.inherit_global_states)
         # file
+        self._dom_reset = Button(label="Reset", button_type="danger", **self._BUTTON)
+        self._dom_reset.on_click(self._reset)
         self._dom_new = Button(label="New", button_type="warning", **self._BUTTON)
-        self._dom_new.on_click(partial(self._dom_load_hist, "new"))
+        self._dom_new.on_click(partial(self._dom_load_data, "new"))
         self._dom_add = Button(label="Add", button_type="success", **self._BUTTON)
-        self._dom_add.on_click(partial(self._dom_load_hist, "add"))
+        self._dom_add.on_click(partial(self._dom_load_data, "add"))
         self._dom_status = ExternalLink(
             shared=self.shared, label="Status", button_type="primary", **self._BUTTON
         )
@@ -214,6 +225,7 @@ div.itemize {white-space: break-spaces;}
 
         # blocks
         self._file_dom = row(
+            self._dom_reset,
             self._dom_new,
             self._dom_add,
             self._dom_hist_input,

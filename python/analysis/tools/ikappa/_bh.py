@@ -91,8 +91,11 @@ class BHAxis:
         cats = [*axis]
         indices = []
         for b in bins:
-            if (idx := cats.index(b)) >= 0:
-                indices.append(idx + under)
+            try:
+                idx = cats.index(b)
+            except ValueError:
+                continue
+            indices.append(idx + under)
         return indices
 
     def rebin(
