@@ -199,6 +199,7 @@ class EntryPoint:
         self.cmd = " ".join(argv)
         self.args: dict[str, list[tuple[str, list[str]]]] = {k: [] for k in self._tasks}
 
+        # fetch args for main task
         args = deque(argv[1:])
         if len(args) == 0:
             raise ValueError("No task specified")
@@ -212,6 +213,14 @@ class EntryPoint:
                 fetch_main=True,
                 formatter=self.args[_MAIN][1][0],
             )
+        main: str = self.args[_MAIN][0]
+        if main not in self._mains:
+            raise ValueError(
+                f'The first argument must be one of {self._mains}, got "{main}"'
+            )
+        System.main_task = main
+
+        # fetch args for other tasks
         while len(args) > 0:
             cat = args.popleft().removeprefix(_DASH)
             mod = args.popleft()
@@ -225,13 +234,7 @@ class EntryPoint:
             else:
                 self.args[cat].append((mod, opts))
 
-        main: str = self.args[_MAIN][0]
-        if main not in self._mains:
-            raise ValueError(
-                f'The first argument must be one of {self._mains}, got "{main}"'
-            )
-        System.main_task = main
-
+        # fetch modules
         cls: type[Main] = self._fetch_module(
             f"{self.args[_MAIN][0]}.Main", _MAIN, True
         )[1]
