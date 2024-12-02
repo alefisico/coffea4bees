@@ -1,0 +1,18 @@
+# template:
+# - name: name of the workflow
+# - mixed: mixed data index
+# - user: lpc username
+
+main:
+  module: train
+  option:
+    - --max-loaders 2
+    - --max-trainers 3
+
+setting:
+  - module: IO
+    option:
+      - output: root://cmseos.fnal.gov//store/user/{user}/HH4b/classifier/FvT/{name}/mixed-{mixed}/
+  - module: torch.DataLoader
+    option:
+      - num_workers: 4

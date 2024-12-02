@@ -14,12 +14,13 @@ model:
       - --finetuning FinetuneStep
       - epoch: 1
         bs_init: 16384
-# training set: mixed 4b + detector 3b
-# SB only; tt+data JCM;
+# training set: mixed 4b + detector 3b + ttbar 4b
+# SR(blinded) + SB; tt+data JCM
 dataset:
-  - module: HCR.FvT_legacy.TrainDataOnly # remove ttbar
+  - module: HCR.FvT_legacy.TrainBaseline
     option:
       - --no-JCM
+      - --no-ttbar-3b # remove ttbar 3b
       - --data-source mixed
       - --data-mixed-samples {mixed}
       - --preprocess label:data
@@ -28,7 +29,6 @@ dataset:
       - --max-workers 8
   - module: HCR.FvT_legacy.Train
     option:
-      - --no-SR # remove SR
       - --no-detector-4b
       - --no-JCM
       - --branch pseudoTagWeight_3bDvTMix4bDvT_v{mixed}
