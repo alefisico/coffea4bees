@@ -9,7 +9,7 @@ from base_class.math.random import SeedLike, Squares
 from torch import BoolTensor
 from torch.utils.data import Dataset, Subset
 
-from ..config.setting import torch as cfg
+from ..config.setting import ml as cfg
 from ..utils import keep_fraction, noop
 from . import BatchType
 from .training import Model

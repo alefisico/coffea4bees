@@ -75,14 +75,14 @@ class IO(GlobalSetting):
 
     @classmethod
     def set__output(cls, value: str):
-        from ..state import RunInfo
+        from ..state import System
 
         if value is None:
             return os.devnull
         return value.format(
             user=getpass.getuser(),
-            main=RunInfo.main_task,
-            timestamp=RunInfo.startup_time.strftime(cls.timestamp),
+            main=System.main_task,
+            timestamp=System.startup_time.strftime(cls.timestamp),
         )
 
     @classmethod

@@ -4,7 +4,7 @@ import logging
 from typing import Iterable
 
 from classifier.config.setting import monitor as cfg
-from classifier.config.state.static import RepoInfo
+from classifier.config.state.static import GitRepo
 
 from ..backends import Platform
 from ..core import Recorder, post_to_monitor
@@ -34,7 +34,7 @@ class MultiPlatformHandler(logging.Handler):
     def emit(self, record: logging.LogRecord):
         record.__class__ = MultiPlatformLogRecord
         record.name = Recorder.name()
-        record.pathname = RepoInfo.get_url(record.pathname)
+        record.pathname = GitRepo.get_url(record.pathname)
         if isinstance(record.msg, str) and record.args:
             try:
                 record.msg = record.msg % record.args

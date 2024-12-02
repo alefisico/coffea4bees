@@ -6,7 +6,7 @@ from typing import TypedDict
 
 import psutil
 from classifier.config.setting import monitor as cfg
-from classifier.config.state import RunInfo
+from classifier.config.state import System
 
 from ..core import MonitorProxy, Node, Recorder, post_to_monitor
 
@@ -44,7 +44,7 @@ class Usage(MonitorProxy):
     _n_gpu: int = None
     _torch_calibration: int = None  # MiB
     _pynvml_handles: list = None
-    _pynvml_unavailable = RunInfo.in_singularity
+    _pynvml_unavailable = System.in_singularity
 
     # state
     _running = False

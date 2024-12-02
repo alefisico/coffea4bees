@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from base_class.system.eos import EOS, PathLike
 
 
-class RepoInfo:
+class GitRepo:
     user: str = "cms-cmu"
     repo: str = "coffea4bees"
     branch: str = "master"
@@ -35,6 +37,6 @@ class RepoInfo:
         return f"{url}{path}"
 
 
-class MonitorInfo:
+class MonitorExtensions:
     backends: tuple[str, ...] = ("console",)
     components: tuple[str, ...] = ("logging", "usage", "progress")

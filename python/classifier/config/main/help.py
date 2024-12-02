@@ -1,24 +1,25 @@
 import inspect
-import os
-import pkgutil
 import re
-from pathlib import Path
 from textwrap import indent
 
 import fsspec
 from classifier.task import ArgParser, EntryPoint, Task, main, parse
 from classifier.task.special import Deprecated, WorkInProgress
 from classifier.task.task import _INDENT
+from classifier.test.utils.import_check import walk_packages
 
 from .. import setting as cfg
+from ..state import Flags
 
 _NOTES = [
-    f"A special task/flag [blue]{main._FROM}[/blue]/[blue]{main._DASH}{main._FROM}[/blue] [yellow]file \[file ...][/yellow] can be used to load and merge workflows from files. If an option is marked as {parse.EMBED}, it can directly read the jsonable object embedded in the workflow configuration file.",
-    f"A special task/flag [blue ]{main._TEMPLATE}[/blue] [yellow]formatter file \[file ...][/yellow] can be used to load and merge workflows and replace the keys by the formatter.",
+    f"A special task/argument [blue]{main._FROM}[/blue]/[blue]{main._DASH}{main._FROM}[/blue] [yellow]file \[file ...][/yellow] can be used to load and merge workflows from files. If an option is marked as {parse.EMBED}, it can directly read the jsonable object embedded in the workflow configuration file.",
+    f"A special task/argument [blue]{main._TEMPLATE}[/blue]/[blue]{main._DASH}{main._TEMPLATE}[/blue] [yellow]formatter file \[file ...][/yellow] can be used to load and merge workflows and replace the keys by the formatter.",
+    f"A special argument [blue]{main._DASH}{main._FLAG}[/blue] \[flag ...] can be used to setup system level flags, which has the highest priority and will be available right after the argument parsing. The flags are mainly for internal use. For other purposes, use [blue]{main._DASH}{main.TaskOptions.setting.name}[/blue] instead.",
 ]
 
 _WORKINPROGRESS = "[red]\[Work In Progress][/red]"
 _DEPRECATED = "[orange1]\[Deprecated][/orange1]"
+_TEST = "[yellow]\[Test][/yellow]"
 
 
 def _print_mod(cat: str, imp: str, opts: list[str | dict], newline: str = "\n"):
@@ -36,23 +37,21 @@ def _print_mod(cat: str, imp: str, opts: list[str | dict], newline: str = "\n"):
     return newline.join(output)
 
 
-def _walk_packages(base):
-    base = Path(base)
-    yield ""
-    for root, _, _ in os.walk(base):
-        root = Path(root)
-        parts = root.relative_to(base).parts
-        if any(main._is_private(p) for p in parts):
-            continue
-        for mod in pkgutil.iter_modules([str(root)]):
-            if main._is_private(mod.name):
-                continue
-            yield ".".join(parts + (mod.name,))
+def __walk(cat: str, ctx: main._ModCtx):
+    for pkg in walk_packages(
+        "", "/".join(EntryPoint._fetch_config(cat, ctx)), skip_private=True
+    ):
+        yield pkg, ctx
+
+
+def _walk_configs(cat: str, test: bool = False):
+    yield from __walk(cat, main._ModCtx())
+    if test:
+        yield from __walk(cat, main._ModCtx(test=True))
 
 
 class Main(main.Main):
     _no_state = True
-    _no_init = True
 
     _keys = " ".join(f"{main._DASH}{k}" for k in EntryPoint._tasks)
     argparser = ArgParser(
@@ -77,23 +76,27 @@ class Main(main.Main):
         default=".*",
     )
     argparser.add_argument(
+        "--no-regular",
+        action="store_true",
+        help="skip regular tasks",
+    )
+    argparser.add_argument(
         "--wip",
         "--work-in-progress",
         action="store_true",
-        help=f"list tasks that is still {_WORKINPROGRESS}",
-        default=False,
+        help=f"list {_WORKINPROGRESS} tasks",
     )
     argparser.add_argument(
         "--deprecated",
         action="store_true",
-        help=f"list tasks that is {_DEPRECATED}",
-        default=False,
+        help=f"list {_DEPRECATED} tasks",
     )
 
     @classmethod
     def prelude(cls):
         cfg.Analysis.enable = False
         cfg.Monitor.enable = False
+        cfg.Multiprocessing.context_library = "builtins"
 
     def __init__(self):
         super().__init__()
@@ -107,7 +110,13 @@ class Main(main.Main):
     def _print_help(self, task: type[Task], depth: int = 1):
         self._print(indent(task.help(), _INDENT * depth))
 
-    def _check_special(self, cls: type, depth: int = 0, force: bool = False):
+    def _check_special(
+        self,
+        cls: type,
+        depth: int = 0,
+        force: bool = False,
+        ctx: main._ModCtx = None,
+    ):
         to_print = True
         labels = []
         if isinstance(cls, type):
@@ -119,6 +128,13 @@ class Main(main.Main):
                 labels.append(indent(_DEPRECATED, _INDENT * depth))
                 if not self.opts.deprecated:
                     to_print = False
+        if ctx is not None:
+            if ctx.test:
+                labels.append(indent(_TEST, _INDENT * depth))
+                if not Flags.test:
+                    to_print = False
+        if self.opts.no_regular and len(labels) == 0:
+            to_print = False
         if to_print or force:
             for label in labels:
                 self._print(label)
@@ -156,22 +172,22 @@ class Main(main.Main):
             self._print(f"#{i}")
             self._print(indent(note, _INDENT))
         self._print("\n[orange3]\[Tasks][orange3]")
-        self._print("[blue]help[/blue]")
-        self._print_help(self)
         for task in parser._mains:
-            if task != "help":
-                _, cls = parser._fetch_module(f"{task}.Main", main._MAIN)
+            if self.opts.filter.fullmatch(task) is not None:
+                _, cls, _ = parser._fetch_module(f"{task}.Main", main._MAIN)
                 if self._check_special(cls):
                     self._print(f"[blue]{task}[/blue]")
                     self._print_help(cls)
+        self._print(f"[blue]{main._DASH}{main._FLAG}[/blue]")
+        for k in Flags.__annotations__:
+            self._print(indent(f"[yellow]{k}[/yellow] = {getattr(Flags, k)}", _INDENT))
         if not self.opts.all:
             self._print("\n[orange3]\[Options][orange3]")
             self._print(_print_mod(None, "task", tasks[1]))
             for cat in parser._tasks:
                 target = EntryPoint._tasks[cat]
                 for imp, opts in parser.args[cat]:
-                    modname, clsname = parser._fetch_module_name(imp, cat)
-                    mod, cls = parser._fetch_module(imp, cat)
+                    mod, cls, (modname, clsname) = parser._fetch_module(imp, cat)
                     self._check_special(cls, force=True)
                     self._print(_print_mod(cat, imp, opts))
                     if mod is None:
@@ -194,12 +210,13 @@ class Main(main.Main):
             for cat in parser._tasks:
                 target = EntryPoint._tasks[cat]
                 self._print(f"[blue]{main._DASH}{cat}[/blue]")
-                for imp in _walk_packages(f"{main._CLASSIFIER}/{main._CONFIG}/{cat}/"):
+                for imp, ctx in _walk_configs(cat, Flags.test):
                     if imp:
                         imp = f"{imp}."
                     _imp = f"{imp}*"
-                    modname, _ = parser._fetch_module_name(_imp, cat)
-                    mod, _ = parser._fetch_module(_imp, cat)
+                    mod, _, (modname, _) = parser._fetch_module(
+                        _imp, cat, force_ctx=[ctx]
+                    )
                     classes = {}
                     if mod is not None:
                         for name, obj in inspect.getmembers(mod, inspect.isclass):
@@ -213,7 +230,7 @@ class Main(main.Main):
                                     classes[fullname] = obj
                     if classes:
                         for cls in classes:
-                            if self._check_special(classes[cls], 1):
+                            if self._check_special(classes[cls], 1, ctx=ctx):
                                 self._print(indent(f"[green]{cls}[/green]", _INDENT))
                                 self._print_help(classes[cls], 2)
         if self.opts.html:

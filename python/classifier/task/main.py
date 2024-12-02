@@ -24,15 +24,24 @@ from .task import _DASH, Task
 if TYPE_CHECKING:
     from types import ModuleType
 
+    from classifier.config.state import Flags
 
 _CLASSIFIER = "classifier"
+_TEST = "test"
 _CONFIG = "config"
 _MAIN = "main"
-_FROM = "from"
-_TEMPLATE = "template"
 
 _MODULE = "module"
 _OPTION = "option"
+
+_FROM = "from"
+_TEMPLATE = "template"
+_FLAG = "flag"
+
+
+@dataclass
+class _ModCtx:
+    test: bool = False
 
 
 class _Opts:
@@ -72,7 +81,7 @@ class EntryPoint:
     )
     _tasks = TaskOptions.opts
     _reserved = [
-        *(f"{_DASH}{k}" for k in chain(_tasks, (_FROM, _TEMPLATE))),
+        *(f"{_DASH}{k}" for k in chain(_tasks, (_FROM, _TEMPLATE, _FLAG))),
     ]
 
     @classmethod
@@ -83,30 +92,71 @@ class EntryPoint:
         return subargs
 
     @classmethod
-    def _fetch_module_name(cls, module: str, key: str):
-        mods = [_CLASSIFIER, _CONFIG, key, *module.split(".")]
+    def _fetch_config(cls, cat: str, ctx: _ModCtx):
+        parts = [_CLASSIFIER, _CONFIG, cat]
+        if ctx.test:
+            parts.insert(1, _TEST)
+        return parts
+
+    @classmethod
+    def __fetch_module_name(cls, module: str, cat: str, ctx: _ModCtx):
+        mods = cls._fetch_config(cat, ctx) + module.split(".")
         return ".".join(mods[:-1]), mods[-1]
 
     @classmethod
     def _fetch_module(
-        cls, module: str, key: str, raise_error: bool = False
-    ) -> tuple[ModuleType, type[Task]]:
-        return import_(*cls._fetch_module_name(module, key), raise_error)
+        cls,
+        module: str,
+        cat: str,
+        raise_error: bool = False,
+        mock_flags: Flags = None,
+        force_ctx: list[_ModCtx] = None,
+    ) -> tuple[ModuleType, type[Task], tuple[str, str]]:
+        from classifier.config.state import Flags
+
+        if mock_flags is None:
+            mock_flags = Flags
+
+        if force_ctx is not None:
+            ctxs = force_ctx
+        else:
+            ctxs = [_ModCtx()]
+            if mock_flags.test:
+                ctxs.insert(0, _ModCtx(test=True))
+
+        for i, ctx in enumerate(ctxs):
+            try:
+                modname, clsname = cls.__fetch_module_name(module, cat, ctx)
+                mods = import_(modname, clsname, True)
+            except Exception:
+                if raise_error and (i == len(ctxs) - 1):
+                    raise
+            else:
+                return *mods, (modname, clsname)
+        return None, None, (modname, clsname)
 
     def _fetch_all(self, *cats: str):
+        from classifier.config.state import Flags
+
         self.tasks: dict[str, list[Task]] = {}
         for cat in cats:
             target = self._tasks[cat]
             self.tasks[cat] = []
             for imp, opts in self.args[cat]:
-                _, clsname = self._fetch_module_name(imp, cat)
-                _, cls = self._fetch_module(imp, cat, True)
+                _, cls, (_, clsname) = self._fetch_module(imp, cat, True)
                 if not issubclass(cls, target):
                     raise TypeError(
                         f'Class "{clsname}" is not a subclass of "{target.__name__}"'
                     )
                 else:
-                    self.tasks[cat].append(new(cls, opts))
+                    obj = new(cls, opts)
+                    self.tasks[cat].append(obj)
+                    if Flags.debug and obj.debug is not NotImplemented:
+                        logging.debug(f"-{cat} {imp}", " ".join(opts))
+                        try:
+                            obj.debug()
+                        except Exception as e:
+                            logging.error(e, exc_info=e)
 
     @classmethod
     def _expand_module(cls, data: dict):
@@ -138,7 +188,7 @@ class EntryPoint:
                         self.args[cat].append(self._expand_module(arg))
 
     def __init__(self, argv: list[str] = None, initializer: Callable[[], None] = None):
-        from ..config.state import RunInfo
+        from classifier.config.state import Flags, System
 
         if initializer is not None:
             initializer()
@@ -170,6 +220,8 @@ class EntryPoint:
                 self._expand(mod, *opts)
             elif cat == _TEMPLATE:
                 self._expand(*opts, formatter=mod)
+            elif cat == _FLAG:
+                Flags.set(mod, *opts)
             else:
                 self.args[cat].append((mod, opts))
 
@@ -178,7 +230,7 @@ class EntryPoint:
             raise ValueError(
                 f'The first argument must be one of {self._mains}, got "{main}"'
             )
-        RunInfo.main_task = main
+        System.main_task = main
 
         cls: type[Main] = self._fetch_module(
             f"{self.args[_MAIN][0]}.Main", _MAIN, True
