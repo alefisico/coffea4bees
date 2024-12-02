@@ -1,4 +1,5 @@
 # template:
+# - name: name of the workflow
 # - mixed: mixed data index
 # - offset: offset for kfold
 # - user: lpc username
@@ -57,7 +58,7 @@ dataset:
 setting:
   - module: IO
     option:
-      - output: root://cmseos.fnal.gov//store/user/{user}/HH4b/classifier/FvT/nott/legacy/{tag}-{mixed}/
+      - output: root://cmseos.fnal.gov//store/user/{user}/HH4b/classifier/FvT/{name}/legacy/{tag}-{mixed}/
   - module: torch.DataLoader
     option:
       - num_workers: 4
