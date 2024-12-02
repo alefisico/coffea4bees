@@ -56,3 +56,12 @@ stages:
     - cd -
   tags:
     - k8s-cvmfs
+
+.base_classifier:
+  needs:
+    - voms_proxy
+  image: registry.hub.docker.com/chuyuanliu/heptools:ml # TODO change to central repo
+  tags:
+    - k8s-cvmfs
+  artifacts:
+    expire_in: 1 day
