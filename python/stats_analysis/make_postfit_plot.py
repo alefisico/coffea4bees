@@ -31,9 +31,9 @@ if __name__ == '__main__':
     metadata = yaml.safe_load(open(metadata_file, 'r'))
 
     hists = { }
-    # channels = metadata['bin'] #[ 'hh_UL16', 'hh_UL17', 'hh_UL18' ]
+    channels = metadata['bin'] #[ 'hh_UL16', 'hh_UL17', 'hh_UL18' ]
     # channels = [ 'hh6', 'hh7', 'hh8' ]
-    channels = [ 'ch1', 'ch2', 'ch3' ]
+    # channels = [ 'ch1', 'ch2', 'ch3' ]
     mj = metadata['processes']['background']['multijet']['label']
     tt = metadata['processes']['background']['tt']['label']
     signal = metadata['processes']['signal']['GluGluToHHTo4B_cHHH1']['label']
@@ -78,10 +78,11 @@ if __name__ == '__main__':
 
     stack = ROOT.THStack()
     CMS.cmsDrawStack(stack, leg, {'ttbar': hists[tt].Clone(), 'Multijet': hists[mj].Clone() }, data= hists['data'], palette=['#85D1FBff', '#FFDF7Fff'] )
-    #CMS.GetcmsCanvasHist(nominal_can).GetYaxis().SetTitleOffset(1.6)
+    CMS.GetcmsCanvasHist(nominal_can.cd(1)).GetYaxis().SetTitleOffset(1.5)
+    CMS.GetcmsCanvasHist(nominal_can.cd(1)).GetYaxis().SetTitleSize(0.05)
     CMS.fixOverlay()
     hists[signal].Scale( 1000 )
-    leg.AddEntry( hists[signal], 'HH4b (x100)', 'lp' )
+    leg.AddEntry( hists[signal], 'HH4b (x1000)', 'lp' )
     CMS.cmsDraw( hists[signal], 'hist', fstyle=0, marker=1, alpha=1, lcolor=ROOT.TColor.GetColor("#e42536" ), fcolor=ROOT.TColor.GetColor("#e42536"))
 
     nominal_can.cd(2)
@@ -97,5 +98,9 @@ if __name__ == '__main__':
 
     ref_line = ROOT.TLine(0, 1, 1, 1)
     CMS.cmsDrawLine(ref_line, lcolor=ROOT.kBlack, lstyle=ROOT.kDotted)
+    CMS.GetcmsCanvasHist(nominal_can.cd(2)).GetXaxis().SetTitleSize(0.095)
+    CMS.GetcmsCanvasHist(nominal_can.cd(2)).GetYaxis().SetTitleSize(0.09)
+    CMS.GetcmsCanvasHist(nominal_can.cd(2)).GetXaxis().SetTitleOffset(1.5)
+    CMS.GetcmsCanvasHist(nominal_can.cd(2)).GetYaxis().SetTitleOffset(0.8)
 
     CMS.SaveCanvas( nominal_can, f"{args.output}" )

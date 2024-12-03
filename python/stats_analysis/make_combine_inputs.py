@@ -234,7 +234,7 @@ def create_combine_root_file( file_to_convert,
             cb.cp().backgrounds().ExtractShapes( output, '$BIN/$PROCESS', '')
             cb.cp().signals().ExtractShapes( output, '$BIN/$PROCESS', '')
             cb.PrintAll()
-            cb.WriteDatacard(f"{output_dir}/datacard.txt", f"{output_dir}/{ibin}_{output_file}")
+            cb.WriteDatacard(f"{output_dir}/datacard_{ibin}.txt", f"{output_dir}/{ibin}_{output_file}")
 
         else:
             for nuisance in closureSysts:
@@ -282,147 +282,6 @@ def create_combine_root_file( file_to_convert,
             cb.PrintAll()
             cb.WriteDatacard(f"{output_dir}/datacard_{ibin}.txt", f"{output_dir}/{ibin}_{output_file}")
 
-    if make_syst_plots:
-
-        import cmsstyle as CMS
-
-        if not systematics_file:
-            logging.info(f'For make_syst_plots it is require to provide syst_file.')
-            sys.exit(0)
-        if not os.path.exists(f"{output_dir}/plots/"):
-            os.makedirs(f"{output_dir}/plots/")
-
-        # Styling
-        CMS.SetExtraText("Preliminary")
-        iPos = 0
-        CMS.SetLumi("")
-        CMS.SetEnergy("13")
-        CMS.ResetAdditionalInfo()
-        nominal_can = CMS.cmsDiCanvas('nominal_can',0,1,0,2500,0.8,1.2,
-                                    "SvB MA Classifier Regressed P(Signal) | P(HH) is largest",
-                                    "Events", 'Data/Pred.',
-                                        square=CMS.kSquare, extraSpace=0.05, iPos=iPos)
-        nominal_can.cd(1)
-        leg = CMS.cmsLeg(0.81, 0.89 - 0.05 * 7, 0.99, 0.89, textSize=0.04)
-
-        nom_data = root_hists[next(iter(root_hists))]['data_obs'].Clone('data_obs')
-        nom_data.Reset()
-        nom_tt = nom_data.Clone(metadata['processes']['all']['tt']['label'])
-        nom_mj = nom_data.Clone(metadata['processes']['all']['multijet']['label'])
-        nom_signal = nom_data.Clone(metadata['processes']['all']['GluGluToHHTo4B_cHHH1']['label'])
-        for ichannel in root_hists.keys():
-            nom_data.Add( root_hists[ichannel]['data_obs'] )
-            nom_tt.Add( root_hists[ichannel][metadata['processes']['all']['tt']['label']] )
-            nom_mj.Add( root_hists[ichannel][metadata['processes']['all']['multijet']['label']]['nominal'] )
-            nom_signal.Add( root_hists[ichannel][metadata['processes']['all']['GluGluToHHTo4B_cHHH1']['label']]['nominal'] )
-        nom_signal.Scale( 100 )
-
-        stack = ROOT.THStack()
-        CMS.cmsDrawStack(stack, leg, {'ttbar': nom_tt, 'Multijet': nom_mj }, data= nom_data )
-        #CMS.GetcmsCanvasHist(nominal_can).GetYaxis().SetTitleOffset(1.6)
-        CMS.fixOverlay()
-
-        nominal_can.cd(2)
-
-        bkg = nom_mj.Clone()
-        bkg.Add( nom_tt )
-        ratio = ROOT.TGraphAsymmErrors()
-        ratio.Divide( nom_data, bkg, 'pois' )
-        CMS.cmsDraw( ratio, 'P', mcolor=ROOT.kBlack )
-
-        ref_line = ROOT.TLine(0, 1, 1, 1)
-        CMS.cmsDrawLine(ref_line, lcolor=ROOT.kBlack, lstyle=ROOT.kDotted)
-
-        CMS.SaveCanvas( nominal_can, f"{output_dir}/plots/{var.replace('.', '_')}_nominal.pdf" )
-
-        for ichannel in root_hists.keys():
-
-            for isyst in closureSysts:
-                logging.info(f"Plotting {ichannel} {isyst}")
-
-                CMS.SetExtraText("Simulation Preliminary")
-                iPos = 0
-                CMS.SetLumi("")
-                CMS.SetEnergy("13")
-                CMS.ResetAdditionalInfo()
-                bkg_syst_can = CMS.cmsDiCanvas('bkg_syst_can',0,1,0,1000,0.8,1.2,
-                                            "SvB MA Classifier Regressed P(Signal) | P(HH) is largest",
-                                            "Events", 'Var/Nom',
-                                                square=CMS.kSquare, extraSpace=0.05, iPos=iPos)
-                bkg_syst_can.cd(1)
-                leg = CMS.cmsLeg(0.55, 0.89 - 0.05 * 3, 0.99, 0.89, textSize=0.04)
-
-                mj_nominal = root_hists[ichannel][metadata['processes']['all']['multijet']['label']]['nominal'].Clone()
-                mj_var_up = root_hists[ichannel][metadata['processes']['all']['multijet']['label']][f"{isyst}Up"]
-                mj_var_dn = root_hists[ichannel][metadata['processes']['all']['multijet']['label']][f"{isyst}Down"]
-
-                leg.AddEntry( mj_nominal, 'Nominal Multijet', 'lp' )
-                CMS.cmsDraw( mj_nominal, 'P', mcolor=ROOT.kBlack )
-                leg.AddEntry( mj_var_up, f'{isyst} Up', 'lp' )
-                CMS.cmsDraw( mj_var_up, 'hist', fstyle=0, marker=1, alpha=1, lcolor=ROOT.kBlue, fcolor=ROOT.kBlue )
-                leg.AddEntry( mj_var_dn, f'{isyst} Down', 'lp' )
-                CMS.cmsDraw( mj_var_dn, 'hist', fstyle=0,  marker=1, alpha=1, lcolor=ROOT.kRed, fcolor=ROOT.kRed )
-                CMS.fixOverlay()
-
-                bkg_syst_can.cd(2)
-
-                ratio_up = ROOT.TGraphAsymmErrors()
-                ratio_up.Divide( mj_nominal, mj_var_up, 'pois' )
-                CMS.cmsDraw( ratio_up, 'hist', fstyle=0, marker=1, alpha=1, lcolor=ROOT.kBlue, fcolor=ROOT.kBlue )
-                ratio_dn = ROOT.TGraphAsymmErrors()
-                ratio_dn.Divide( mj_nominal, mj_var_dn, 'pois' )
-                CMS.cmsDraw( ratio_dn, 'hist', fstyle=0,  marker=1, alpha=1, lcolor=ROOT.kRed, fcolor=ROOT.kRed )
-
-                ref_line = ROOT.TLine(0, 1, 1, 1)
-                CMS.cmsDrawLine(ref_line, lcolor=ROOT.kBlack, lstyle=ROOT.kDotted)
-
-                CMS.SaveCanvas( bkg_syst_can, f"{output_dir}/plots/{var.replace('.','_')}_{isyst}_{ichannel}.pdf" )
-
-            for isyst in root_hists[ichannel][metadata['processes']['all']['GluGluToHHTo4B_cHHH1']['label']].keys():
-                if ('nominal' in isyst) or ('Down' in isyst): continue
-                isyst = isyst.replace('Up', '')
-                logging.info(f"Plotting {ichannel} {isyst}")
-
-                CMS.SetExtraText("Simulation Preliminary")
-                iPos = 0
-                CMS.SetLumi("")
-                CMS.SetEnergy("13")
-                CMS.ResetAdditionalInfo()
-                mc_syst_can = CMS.cmsDiCanvas('bkg_syst_can',0,1,0,3.,0.9,1.1,
-                                            "SvB MA Classifier Regressed P(Signal) | P(HH) is largest",
-                                            "Events", 'Var/Nom',
-                                                square=CMS.kSquare, extraSpace=0.05, iPos=iPos)
-                mc_syst_can.cd(1)
-                leg = CMS.cmsLeg(0.2, 0.89 - 0.05 * 3, 0.4, 0.89, textSize=0.04)
-
-                HH_nominal = root_hists[ichannel][metadata['processes']['all']['GluGluToHHTo4B_cHHH1']['label']]['nominal'].Clone()
-                HH_var_up = root_hists[ichannel][metadata['processes']['all']['GluGluToHHTo4B_cHHH1']['label']][f"{isyst}Up"]
-                HH_var_dn = root_hists[ichannel][metadata['processes']['all']['GluGluToHHTo4B_cHHH1']['label']][f"{isyst}Down"]
-
-                leg.AddEntry( HH_nominal, 'Nominal HH', 'lp' )
-                CMS.cmsDraw( HH_nominal, 'P', mcolor=ROOT.kBlack )
-                leg.AddEntry( HH_var_up, f'{isyst} Up', 'lp' )
-                CMS.cmsDraw( HH_var_up, 'hist', fstyle=0, marker=1, alpha=1, lcolor=ROOT.kBlue, fcolor=ROOT.kBlue )
-                leg.AddEntry( HH_var_dn, f'{isyst} Down', 'lp' )
-                CMS.cmsDraw( HH_var_dn, 'hist', fstyle=0,  marker=1, alpha=1, lcolor=ROOT.kRed, fcolor=ROOT.kRed )
-                CMS.fixOverlay()
-
-                mc_syst_can.cd(2)
-
-                ratio_up = ROOT.TGraphAsymmErrors()
-                ratio_up.Divide( HH_nominal, HH_var_up, 'pois' )
-                CMS.cmsDraw( ratio_up, 'hist', fstyle=0, marker=1, alpha=1, lcolor=ROOT.kBlue )
-                ratio_dn = ROOT.TGraphAsymmErrors()
-                ratio_dn.Divide( HH_nominal, HH_var_dn, 'pois' )
-                CMS.cmsDraw( ratio_dn, 'hist', fstyle=0,  marker=1, alpha=1, lcolor=ROOT.kRed )
-
-                ref_line = ROOT.TLine(0, 1, 1, 1)
-                CMS.cmsDrawLine(ref_line, lcolor=ROOT.kBlack, lstyle=ROOT.kDotted)
-
-                CMS.SaveCanvas( mc_syst_can, f"{output_dir}/plots/{var}_{isyst}_{ichannel}.pdf" )
-
-                del HH_nominal, HH_var_up, HH_var_dn, ratio_up, ratio_dn
-
 
 
 if __name__ == '__main__':
@@ -438,8 +297,6 @@ if __name__ == '__main__':
                         default="SvB_MA.ps_hh_fine", help='Variable to make histograms.')
     parser.add_argument('-f', '--file', dest='file_to_convert',
                         default="histos/histAll.json", help="File with coffea hists")
-    parser.add_argument('--make_syst_plots', dest='make_syst_plots', action="store_true",
-                        default=False, help="Make a plots for systematics with root objects")
     parser.add_argument('-r', '--rebin', dest='rebin', type=int,
                         default=15, help="Rebin")
     parser.add_argument('--variable_binning', dest='variable_binning', action="store_true",
