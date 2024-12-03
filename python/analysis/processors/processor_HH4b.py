@@ -6,6 +6,7 @@ import numpy as np
 import yaml, json
 import copy
 from collections import OrderedDict
+from memory_profiler import profile
 
 from analysis.helpers.processor_config import processor_config
 from analysis.helpers.common import apply_jerc_corrections, update_events
@@ -387,11 +388,9 @@ class analysis(processor.ProcessorABC):
             #
             # Get Truth m4j
             #
-            if self.config["isMC"]:
-                event['bfromH']= find_genpart(event.GenPart, [5], [25])
-                event['bfromZ']= find_genpart(event.GenPart, [5], [23])
-                event['bfromHorZ'] = ak.concatenate([event.bfromH, event.bfromZ], axis=1)
+            if self.config["isSignal"]:
 
+                event['bfromHorZ']= find_genpart(event.GenPart, [5], [23, 25])
                 event['GenJet', 'selectedBs'] = (np.abs(event.GenJet.partonFlavour)==5)
                 event['selGenBJet'] = event.GenJet[event.GenJet.selectedBs]
                 event['matchedGenBJet'] = event.bfromHorZ.nearest( event.selGenBJet, threshold=0.2 )
@@ -413,7 +412,7 @@ class analysis(processor.ProcessorABC):
             if '202' in self.dataset: sel_dict['passJetVetoMaps'] = selections.require(lumimask=True, passNoiseFilter=True, passHLT=True, passJetVetoMaps=True)
             sel_dict['passJetMult'] = selections.all(*allcuts)
 
-            self._cutFlow = cutFlow(self.cutFlowCuts, do_truth_hists=self.config["isMC"])
+            self._cutFlow = cutFlow(self.cutFlowCuts, do_truth_hists=self.config["isSignal"])
             for cut, sel in sel_dict.items():
                 if ('passJetVetoMaps' in cut) and ('202' not in self.dataset): continue
                 self._cutFlow.fill( cut, event[sel], allTag=True )
