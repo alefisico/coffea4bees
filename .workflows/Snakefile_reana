@@ -164,7 +164,7 @@ rule make_plots:
         cd python/ 
         mprof run -C -o mprofile_makeplots.dat python analysis/makePlots.py ../output/histAll.coffea -o ../output/plots/ -m analysis/metadata/plotsAll.yml -s xW
         mprof plot -o ../output/performance/mprofile_makeplots.png ../output/mprofile_makeplots.dat
-        python .php-plots/bin/pb_deploy_plots.py ../output/plots/RunII/ /eos/user/a/algomez/work/HH4b/reana/{TIMESTAMP}/ -r -c -j 4
+        python base_class/php_plots/pb_deploy_plots.py ../output/plots/RunII/ /eos/user/a/algomez/work/HH4b/reana/{TIMESTAMP}/ -r -c -j 4
         """
         
 rule convert_hist_to_json:
@@ -262,7 +262,7 @@ rule make_combine_inputs:
         injsonsyst = "output/histAll_signals_cHHHX.json",
         bkgsyst = "output/closureFits/ULHH_kfold/3bDvTMix4bDvT/SvB_MA/rebin2/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin2.pkl"
     output:
-        "output/datacards/HHbb_2018_shapes.root",
+        "output/datacards/shapes.root",
         "output/datacards/datacard_HHbb_2018.txt"
     container: combine_container
     resources:
@@ -276,7 +276,7 @@ source /cvmfs/cms.cern.ch/cmsset_default.sh
 cd /home/cmsusr/CMSSW_11_3_4/
 cmsenv || true
 cd -
-python3 python/stats_analysis/make_combine_inputs.py --var SvB_MA.ps_hh -f {input.injson} --syst_file {input.injsonsyst} --bkg_syst_file {input.bkgsyst} --output_dir output/datacards/ --rebin 2 --metadata python/stats_analysis/metadata/HH4b.yml --make_syst_plots 
+python3 python/stats_analysis/make_combine_inputs.py --var SvB_MA.ps_hh -f {input.injson} --syst_file {input.injsonsyst} --bkg_syst_file {input.bkgsyst} --output_dir output/datacards/ --rebin 2 --metadata python/stats_analysis/metadata/HH4b.yml
 python3 python/stats_analysis/make_combine_inputs.py --var SvB_MA.ps_hh -f {input.injson} --syst_file {input.injsonsyst} --bkg_syst_file {input.bkgsyst} --output_dir output/datacards/stat_only/ --rebin 2 --metadata python/stats_analysis/metadata/HH4b.yml --stat_only
         """
 
@@ -284,8 +284,7 @@ rule run_combine:
     input:
         "output/datacards/datacard_HHbb_2018.txt"
     output:
-        "output/datacards/datacard.root",
-        "output/datacards/shapes.root"
+        "output/datacards/datacard.root"
     container: combine_container
     resources:
         voms_proxy=True,
@@ -348,19 +347,25 @@ source run_combine.sh ../../output/datacards/ --postfit
 python3 make_postfit_plot.py -i ../../output/datacards/postfit_s.root -o {output} --do_postfit False
         """
 
-rule move_syst_plots:
+rule make_syst_plots:
     input:
         "output/datacards/shapes.root",
     log:
         "output/tmp.log"
-    container: analysis_container
+    container: combine_container
     resources:
         kerberos=True,
         compute_backend="kubernetes",
         kubernetes_memory_limit="8Gi"
     shell:
         """
-python python/.php-plots/bin/pb_deploy_plots.py output/datacards/ /eos/user/a/algomez/work/HH4b/reana/{TIMESTAMP}/ -r -c -j 4 -e pdf > {log}
+source /cvmfs/cms.cern.ch/cmsset_default.sh
+cd /home/cmsusr/CMSSW_11_3_4/
+cmsenv || true
+cd -
+cd python/
+python3 stats_analysis/make_syst_plots.py -i ../output/datacards/shapes.root -o ../output/datacards/systs/ -d ../output/datacards/datacard.txt
+python3 base_class/php_plots/pb_deploy_plots.py ../output/datacards/syst/ /eos/user/a/algomez/work/HH4b/reana/{TIMESTAMP}/ -r -c -j 4 -e pdf > {log}
         """
 
 rule kappa_scan:
