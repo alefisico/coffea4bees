@@ -241,13 +241,22 @@ if __name__ == "__main__":
             'year': ['UL18'],  'tag': [4],  'region': [1],
             'passPreSel': [True], 'passSvB': [False],  'failSvB': [False],   'n': [0],
         }
-        cfg.hists[0]["hists"]["selJets_noJCM.n"].fill(**dummy_data)
+        try:
+            cfg.hists[0]["hists"]["selJets_noJCM.n"].fill(**dummy_data)
+            noSvB = False
+        except:
+            del dummy_data['passSvB'], dummy_data['failSvB']
+            cfg.hists[0]["hists"]["selJets_noJCM.n"].fill(**dummy_data)
+            noSvB = True
 
         #
         # OVerwrite with predicted values
         #
         for iBin in range(14):
-            cfg.hists[0]["hists"]["selJets_noJCM.n"]["JCM", "UL18", 1, 1, True, False, False, iBin] = (nJet_pred[iBin], 0)
+            if noSvB: 
+                cfg.hists[0]["hists"]["selJets_noJCM.n"]["JCM", "UL18", 1, 1, True, iBin] = (nJet_pred[iBin], 0)
+            else:
+                cfg.hists[0]["hists"]["selJets_noJCM.n"]["JCM", "UL18", 1, 1, True, False, False, iBin] = (nJet_pred[iBin], 0)
 
         plot_options = {"doRatio": True,
                         "xlim": [4, 15],
@@ -288,7 +297,8 @@ if __name__ == "__main__":
         # OVerwrite with predicted values
         #
         for iBin in range(15):
-            cfg.hists[0]["hists"]["tagJets_noJCM.n"]["JCM", "UL18", 1, 1, True, False, False, iBin] = (nTag_pred[iBin], 0)
+            if noSvB: cfg.hists[0]["hists"]["tagJets_noJCM.n"]["JCM", "UL18", 1, 1, True, iBin] = (nTag_pred[iBin], 0)
+            else: cfg.hists[0]["hists"]["tagJets_noJCM.n"]["JCM", "UL18", 1, 1, True, False, False, iBin] = (nTag_pred[iBin], 0)
 
         plot_options = {"doRatio": True,
                         "xlim": [4, 8],
