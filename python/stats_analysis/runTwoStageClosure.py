@@ -217,7 +217,7 @@ def combine_hists(input_file, hist_template, procs, years, debug=False):
                 else:
                     hist.Add( input_file.Get(hist_name).Clone() )
 
-    if 'v4j_mass' in hist_template:
+    if 'm4j' in hist_template:
         hist = rescale_x_axis(hist, xMin_old = 390, xMax_old = 1200, xMin_new = 0, xMax_new = 1)
 
     return hist
@@ -255,7 +255,7 @@ def writeYears(f, input_file_data3b, input_file_TT, input_file_mix, mix, channel
         #
         var_name_multijet = var_name.replace("SvB_ps", f"SvB_FvT_{mix}_newSBDef_ps")
         if args.use_kfold:
-            if 'v4j_mass' in args.var:
+            if 'm4j' in args.var:
                 var_name_multijet = args.var + f'_FvT_{mix}_newSBDefSeedAve'
             else:
                 var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDefSeedAve_ps")
@@ -324,7 +324,7 @@ def addYears(f, input_file_data3b, input_file_TT, input_file_mix, mix, channel):
     #
     var_name_multijet = var_name.replace("SvB_ps", f"SvB_FvT_{mix}_newSBDef_ps")
     if args.use_kfold:
-        if 'v4j_mass' in args.var:
+        if 'm4j' in args.var:
                 var_name_multijet = args.var + f'_FvT_{mix}_newSBDefSeedAve'
         else:
             var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDefSeedAve_ps")
@@ -2201,9 +2201,7 @@ if __name__ == "__main__":
         channel = "zz"
     else:
         print(f"ERROR cannot parse chanel from {args.var}")
-        print(f"Defaulting to zz")
-        channel = "zz"
-        # sys.exit(-1)
+        sys.exit(-1)
 
     #
     #  Parse classifier
