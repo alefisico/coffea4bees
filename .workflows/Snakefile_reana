@@ -79,7 +79,7 @@ rule merging_coffea_files:
 
 rule make_JCM:
     input: "output/histNoJCM.coffea"
-    output: "output/JCM/jetCombinatoricModel_SB_reana.yml"
+    # output: "output/JCM/jetCombinatoricModel_SB_reana.yml"
     container: analysis_container
     resources:
         voms_proxy=True,
@@ -97,8 +97,9 @@ rule make_JCM:
         """
 
 
+### In the next rules, the input is commented out to not run JCM again. 
 use rule analysis as analysis_databkgs with:
-    input: "output/JCM/jetCombinatoricModel_SB_reana.yml"
+    # input: "output/JCM/jetCombinatoricModel_SB_reana.yml"
     output: "output/singlefiles/hist__{sample}-{year}.coffea"
     params:
         hash=config['hash'],
@@ -111,7 +112,7 @@ use rule analysis as analysis_databkgs with:
         metadata="analysis/metadata/HH4b.yml"
 
 use rule analysis as analysis_signals with:
-    input: "output/JCM/jetCombinatoricModel_SB_reana.yml"
+    # input: "output/JCM/jetCombinatoricModel_SB_reana.yml"
     output: "output/singlefiles/histsignal__{sample_signal}-{year}.coffea"
     params:
         hash=config['hash'],
@@ -160,7 +161,7 @@ use rule analysis as analysis_mixeddata with:
         metadata="analysis/metadata/HH4b.yml"
 
 use rule analysis as analysis_systematics with:
-    input: "output/JCM/jetCombinatoricModel_SB_reana.yml"
+    # input: "output/JCM/jetCombinatoricModel_SB_reana.yml"
     output: "output/singlefiles/histsyst_{samplesyst}-{iysyst}.coffea"
     container: analysis_container
     params:
@@ -366,7 +367,7 @@ rule run_impacts:
         cd -
         cat {input}
         echo "RUNNING COMBINE"
-        /usr/bin/time -v source python/stats_analysis/run_combine.sh output/datacards/ --impacts
+        source python/stats_analysis/run_combine.sh output/datacards/ --impacts
         """
 
 rule run_postfit:

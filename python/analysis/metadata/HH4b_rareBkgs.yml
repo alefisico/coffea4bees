@@ -3,7 +3,6 @@ runner:
   condor_memory: 2GB
 
 config:
-  JCM: 'analysis/weights/JCM/2023/dataRunII/jetCombinatoricModel_SB_00-00-02.yml'
   blind: false
   apply_FvT: false
   apply_trigWeight: false

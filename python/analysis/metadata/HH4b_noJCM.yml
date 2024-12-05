@@ -3,7 +3,7 @@ runner:
   condor_memory: 4GB
 
 config:
-  JCM: null
+  apply_JCM: false
   blind: false
   apply_FvT: false
   apply_trigWeight: true

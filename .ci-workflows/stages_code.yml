@@ -36,4 +36,4 @@ memory-test:
     - source .ci-workflows/memory_test.sh
   artifacts:
     paths:
-      - python/output/memory-test/mprofile_ci_test.png
+      - python/output/memory_test/mprofile_ci_test.png
