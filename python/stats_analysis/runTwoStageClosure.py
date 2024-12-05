@@ -218,7 +218,7 @@ def combine_hists(input_file, hist_template, procs, years, debug=False):
                     hist.Add( input_file.Get(hist_name).Clone() )
 
     if 'm4j' in hist_template:
-        hist = rescale_x_axis(hist, xMin_old = 390, xMax_old = 1200, xMin_new = 0, xMax_new = 1)
+        hist = rescale_x_axis(hist, xMin_old = float(args.m4j_xmin), xMax_old = float(args.m4j_xmax), xMin_new = 0, xMax_new = 1)
 
     return hist
 
@@ -2178,6 +2178,8 @@ if __name__ == "__main__":
     #parser.add_argument('--input_file_sig_preUL',   default="analysis/hists/histSignal_preUL.root")
     parser.add_argument('--var', default="SvB_MA_ps_hh", help="SvB_MA_ps_XX or SvB_MA_ps_XX_fine")
     parser.add_argument('--rebin', default=1)
+    parser.add_argument('--m4j_xmin', default=390)
+    parser.add_argument('--m4j_xmax', default=1200)
     parser.add_argument('--variable_binning', action="store_true")
     parser.add_argument('--outputPath', default="stats_analysis/closureFitsNew")
     parser.add_argument('--reuse_inputs', action="store_true")
