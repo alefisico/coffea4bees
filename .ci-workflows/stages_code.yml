@@ -28,10 +28,12 @@ trig-emulator:
 
 memory-test:
   stage: code
+  needs:
+    - voms_proxy
   extends:
     - .base_analysis
   script:
-    - source .ci-workflows/memory-test.sh
+    - source .ci-workflows/memory_test.sh
   artifacts:
     paths:
       - python/output/memory-test/mprofile_ci_test.png
