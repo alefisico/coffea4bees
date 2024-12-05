@@ -97,7 +97,12 @@ do
 
             combineTool.py -M Impacts -d ${datacard}.root -o impacts_combine_${iclass}_exp.json -m 125 -n ${iclass}
 
-            plotImpacts.py -i impacts_combine_${iclass}_exp.json -o impacts_combine_${iclass}_exp_HH --POI r${signallabel} --per-page 20 --left-margin 0.3 --height 400 --label-size 0.04 --translate ${currentDir}/stats_analysis/nuisance_names.json
+            if [[ ! -d "${currentDir}/stats_analysis" ]]; then
+                tmpDir=${currentDir}/python/stats_analysis
+            else
+                tmpDir=${currentDir}/stats_analysis
+            fi
+            plotImpacts.py -i impacts_combine_${iclass}_exp.json -o impacts_combine_${iclass}_exp_HH --POI r${signallabel} --per-page 20 --left-margin 0.3 --height 400 --label-size 0.04 --translate ${tmpDir}/nuisance_names.json
             mkdir -p impacts/
             mv higgsCombine*Fit* impacts/
         else
