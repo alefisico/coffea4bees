@@ -311,7 +311,10 @@ class HCREvaluation(Evaluation):
 
     def stages(self):
         with fsspec.open(self._model, "rb") as f:
-            saved = torch.load(f)
+            load_kw = {}
+            if self.device.type == "cpu":
+                load_kw["map_location"] = torch.device("cpu")
+            saved = torch.load(f, **load_kw)
         self._HCR = HCRModelEval(
             device=self.device,
             saved=saved,

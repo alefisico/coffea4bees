@@ -8,7 +8,7 @@
 
 ```bash
 export SINGULARITY_IMAGE="/cvmfs/unpacked.cern.ch/registry.hub.docker.com/chuyuanliu/heptools:ml"
-singularity shell -B .:/srv -B /cvmfs -B $(readlink ${HOME}/nobackup) --nv --pwd /srv ${SINGULARITY_IMAGE}
+singularity exec -B .:/srv -B /cvmfs -B $(readlink ${HOME}/nobackup) --nv --pwd /srv ${SINGULARITY_IMAGE} bash --init-file /entrypoint.sh
 ```
 
 where:
@@ -85,7 +85,7 @@ mamba env create -f env.yml
    2. create a container from the docker image and setup the proxy:
 
       ```bash
-      singularity shell -B .:/srv --nv --pwd /srv docker://chuyuanliu/heptools:ml
+      singularity exec -B .:/srv --nv --pwd /srv docker://chuyuanliu/heptools:ml bash --init-file /entrypoint.sh
       # this may take a while for the first time
       # inside the container (when you see Singularity>)
       voms-proxy-init --rfc --voms cms -valid 192:00

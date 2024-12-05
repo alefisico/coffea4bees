@@ -1,6 +1,7 @@
 def recursive_interrupt():
-    import psutil
     import signal
+
+    import psutil
 
     p = psutil.Process()
     for child in p.children(recursive=True):

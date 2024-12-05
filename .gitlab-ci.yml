@@ -61,7 +61,9 @@ stages:
 .base_classifier:
   needs:
     - voms_proxy
-  image: registry.hub.docker.com/chuyuanliu/heptools:ml # TODO change to central repo
+  image: registry.hub.docker.com/chuyuanliu/heptools:ml-cpu # TODO change to central repo
+  before_script:
+    - source /entrypoint.sh
   tags:
     - k8s-cvmfs
   artifacts:

@@ -219,10 +219,16 @@ class Recorder(MonitorProxy):
         self._reporters = {self._name: "main"}
         self._data = [(cfg.Monitor.file, Recorder.serialize)]
 
+    @classmethod
+    def __register(cls, name: str):
+        with cls.lock():
+            index = f"#{len(cls._reporters)}"
+            cls._reporters[name] = index
+            return index
+
     @post_to_monitor
     def register(self, name: str):
-        index = f"#{len(self._reporters)}"
-        self._reporters[name] = index
+        index = self.__register(name)
         if cfg.Monitor.log_show_connection:
             logging.info(
                 f'"{name}" is registered as [repr.number]\[{index}][/repr.number]'
@@ -241,7 +247,7 @@ class Recorder(MonitorProxy):
     def registered(cls, name: str):
         index = cls._reporters.get(name)
         if index is None:
-            index = cls.register(name)
+            index = cls.__register(name)
         return index
 
     @classmethod

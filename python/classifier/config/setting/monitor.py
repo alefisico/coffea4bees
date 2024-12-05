@@ -89,7 +89,7 @@ class Usage(GlobalSetting):
     "Usage statistics"
 
     enable: bool = False
-    "enable usage trackers (do not use this in production)"
+    "enable usage trackers (this will significantly slow down the program)"
     file: str = "usage.json"
     "name of the file to dump the raw usage data"
 
@@ -99,3 +99,10 @@ class Usage(GlobalSetting):
     "track GPU usage"
     gpu_force_torch: bool = False
     "force to fetch GPU usage from pytorch instead of pynvml"
+
+
+class Input(GlobalSetting):
+    "Text input"
+
+    enable: bool = True
+    "enable text input"

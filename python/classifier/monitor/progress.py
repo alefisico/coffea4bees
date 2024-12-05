@@ -170,5 +170,5 @@ def setup_monitor():
     if cfg.Console.enable:
         from .backends.console import Dashboard as _CD
 
-        _CD.layout.add_row(Progress._console_bar)
+        _CD.layout.add(Progress._console_bar)
         _CD.add(Progress._console_callback)
