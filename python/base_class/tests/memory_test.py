@@ -11,6 +11,7 @@ parser.add_argument('--tolerance', type=float, default=10, help='Tolerance perce
 parser.add_argument('-o', '--output', type=str, default="mprofile_test", help='Name of the outputs')
 parser.add_argument('-s', '--script', nargs=argparse.REMAINDER, required=True, help='Script to run with mprof')
 args = parser.parse_args()
+print(args)
 
 THRESHOLD_MB = args.threshold
 TOLERANCE_PERCENT = args.tolerance
