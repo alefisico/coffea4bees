@@ -25,3 +25,13 @@ trig-emulator:
     - .base_analysis
   script:
     - source .ci-workflows/trig-emulator-tests.sh
+
+memory-test:
+  stage: code
+  extends:
+    - .base_analysis
+  script:
+    - source .ci-workflows/memory-test.sh
+  artifacts:
+    paths:
+      - python/output/memory-test/mprofile_ci_test.png
