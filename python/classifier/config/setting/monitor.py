@@ -106,3 +106,49 @@ class Input(GlobalSetting):
 
     enable: bool = True
     "enable text input"
+
+
+class Notification(GlobalSetting):
+    "Notification system"
+
+    enable: bool = True
+    "enable notification"
+
+
+class Gmail(GlobalSetting):
+    "Gmail notification via SMTP"
+
+    enable: bool = True
+    "enable Gmail notification"
+    address: str = None
+    "Gmail address"
+    password: str = None
+    """Google app password
+    - NEVER pass this through the command line
+    - option1: put the password in a local file with chmod 600
+    - option2: leave this empty and an user input will be requested when needed
+    - see https://support.google.com/accounts/answer/185833
+    """
+
+    smtp_server: str = "smtp.gmail.com"
+    "SMTP server"
+    smtp_port: int = 465
+    "SMTP port"
+
+    @classmethod
+    def get__address(cls, value: str) -> str:
+        if value is None:
+            from classifier.monitor.input import RemoteInput
+
+            value = RemoteInput.get("Gmail address")
+            cls.address = value
+        return value
+
+    @classmethod
+    def get__password(cls, value: str) -> str:
+        if value is None:
+            from classifier.monitor.input import RemoteInput
+
+            value = RemoteInput.get("Google app password", password=True)
+            cls.password = value
+        return value

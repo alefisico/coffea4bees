@@ -27,7 +27,7 @@ class Main(main.Main):
     argparser.add_argument(
         "results",
         metavar="RESULT",
-        nargs="+",
+        nargs="*",
         help="path to result json files.",
     )
 
