@@ -8,7 +8,7 @@ parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFo
                                     description='Check memory usage with mprof.')
 parser.add_argument('--threshold', type=float, default=0, help='Memory threshold in MB')
 parser.add_argument('--tolerance', type=float, default=10, help='Tolerance percentage')
-parser.add_argument('-o', '--output', type=str, default="test", help='Name of the outputs')
+parser.add_argument('-o', '--output', type=str, default="mprofile_test", help='Name of the outputs')
 parser.add_argument('-s', '--script', nargs=argparse.REMAINDER, required=True, help='Script to run with mprof')
 args = parser.parse_args()
 
