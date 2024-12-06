@@ -263,6 +263,7 @@ tr:hover {background-color: rgb(175, 225, 255);}
                 "hist2d": "ti ti-chart-scatter",
             },
             width=UI.sidebar_width,
+            show_only_matches=True,
             sizing_mode="stretch_height",
         )
         self._dom_hist_select.js_link("value", self._dom_hist_tree, "selected")
