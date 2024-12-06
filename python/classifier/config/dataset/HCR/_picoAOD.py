@@ -99,9 +99,9 @@ class _ggF:
         if "ggF" in self.signal_processes:
             datasets[("ggF", "GluGluToHHTo4B_cHHH{kl}")] = Coupling(kl=MC_HH_ggF.kl)
         for year in CollisionData.eras:
-            for (label, process), couplings in datasets.items():
+            for (label, pattern), couplings in datasets.items():
                 for c in couplings:
-                    process = process.format(
+                    process = pattern.format(
                         **{k: cls.__c2str(v) for k, v in c.items()}
                     )
                     filelists.append(

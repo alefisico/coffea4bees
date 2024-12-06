@@ -4,6 +4,7 @@ export WFS="classifier/config/workflows/HCR/SvB_ggF"
 export BASE="root://cmseos.fnal.gov//store/user/${LPCUSER}/HH4b"
 export MODEL="${BASE}/classifier/SvB/ggF/$1/result.json"
 export WEB="root://eosuser.cern.ch//eos/user/${CERNUSER}/www/HH4b/classifier/SvB_ggF/"
+export GMAIL=~/gmail.yml
 
 # check first argument
 if [ -z "$2" ]; then
@@ -32,10 +33,11 @@ norms["all_kl"]=6
     template "{user: ${LPCUSER}, model: $1}" $WFS/evaluate.yml \
     -setting Monitor "address: :${port}"
 
-if [ -e gmail.yml ]; then
+if [ -e "$GMAIL" ]; then
     ./pyml.py analyze \
         -analysis notify.Gmail \
         --title "SvB jobs done" \
         --body "${1} finished at $(date)" \
-        --labels Classifier HH4b
+        --labels Classifier HH4b \
+        -from $GMAIL
 fi
