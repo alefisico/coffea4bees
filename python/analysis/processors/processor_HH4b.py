@@ -55,10 +55,11 @@ class analysis(processor.ProcessorABC):
     def __init__(
         self,
         *,
-        JCM: callable = None,
         SvB: str = None,
         SvB_MA: str = None,
         blind: bool = False,
+        apply_JCM: bool = True,
+        JCM_file: str = "analysis/weights/JCM/2023/dataRunII/jetCombinatoricModel_SB_00-00-02.yml",
         apply_trigWeight: bool = True,
         apply_btagSF: bool = True,
         apply_FvT: bool = True,
@@ -80,7 +81,7 @@ class analysis(processor.ProcessorABC):
 
         logging.debug("\nInitialize Analysis Processor")
         self.blind = blind
-        self.JCM = jetCombinatoricModel(JCM) if JCM else None
+        self.apply_JCM = jetCombinatoricModel(JCM_file) if apply_JCM else None
         self.apply_trigWeight = apply_trigWeight
         self.apply_btagSF = apply_btagSF
         self.apply_FvT = apply_FvT
@@ -506,7 +507,7 @@ class analysis(processor.ProcessorABC):
 
         weights, list_weight_names = add_pseudotagweights( selev, weights,
                                                            analysis_selections,
-                                                           JCM=self.JCM,
+                                                           JCM=self.apply_JCM,
                                                            apply_FvT=self.apply_FvT,
                                                            isDataForMixed=self.config["isDataForMixed"],
                                                            list_weight_names=list_weight_names,
@@ -592,7 +593,7 @@ class analysis(processor.ProcessorABC):
         if self.fill_histograms:
             if not self.run_systematics:
                 ## this can be simplified
-                hist = filling_nominal_histograms(selev, self.JCM,
+                hist = filling_nominal_histograms(selev, self.apply_JCM,
                                                 processName=self.processName,
                                                 year=self.year,
                                                 isMC=self.config["isMC"],
