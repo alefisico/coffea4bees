@@ -64,12 +64,13 @@ def _ttbar(_, metadata: str):
     return filelists
 
 
-def _ZZ_ZH(_, metadata: str):
+def _ZZ_ZH(self: Signal, metadata: str):
     filelists = []
-    datasets = {
-        "ZZ": ["ZZ4b"],
-        "ZH": ["ZH4b", "ggZH4b"],
-    }
+    datasets = {}
+    if "ZZ" in self.signal_processes:
+        datasets["ZZ"] = ["ZZ4b"]
+    if "ZH" in self.signal_processes:
+        datasets["ZH"] = ["ZH4b", "ggZH4b"]
     for year in CollisionData.eras:
         for label, processes in datasets.items():
             filelists.append(
@@ -90,13 +91,13 @@ class _ggF:
     def __cs2label(cls, couplings: dict[str, float]):
         return ",".join(f"{k}:{v:.6g}" for k, v in couplings.items())
 
-    def __new__(cls, _, metadata: str):
+    def __new__(cls, self: Signal, metadata: str):
         from base_class.physics.kappa_framework import Coupling
 
         filelists = []
-        datasets = {
-            ("ggF", "GluGluToHHTo4B_cHHH{kl}"): Coupling(kl=MC_HH_ggF.kl),
-        }
+        datasets = {}
+        if "ggF" in self.signal_processes:
+            datasets[("ggF", "GluGluToHHTo4B_cHHH{kl}")] = Coupling(kl=MC_HH_ggF.kl)
         for year in CollisionData.eras:
             for (label, process), couplings in datasets.items():
                 for c in couplings:
@@ -181,10 +182,22 @@ class Data(_PicoAOD):
 
 
 class Background(Data):
-    pico_filelists = (_ttbar,)
+    pico_filelists = (_ttbar,)  # TODO add 4b only
 
-class Signal_ZZZH(_PicoAOD):
-    pico_filelists = (_ZZ_ZH,)
 
-class Signal_ggF(_PicoAOD):
-    pico_filelists = (_ggF,)
+class Signal(_PicoAOD):
+    pico_filelists = (_ZZ_ZH, _ggF)
+
+    argparser = ArgParser()
+    argparser.add_argument(
+        "--signal-processes",
+        metavar="PROCESS",
+        nargs="+",
+        default=["ZZ", "ZH", "ggF"],
+        choices=("ZZ", "ZH", "ggF"),
+        help="list of signal processes",
+    )
+
+    @cached_property
+    def signal_processes(self) -> set[str]:
+        return {*self.opts.signal_processes}

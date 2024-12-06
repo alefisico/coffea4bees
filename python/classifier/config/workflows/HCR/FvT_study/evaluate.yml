@@ -8,6 +8,13 @@ main:
   option:
     - --max-evaluators 3
 
+model:
+  - module: HCR.FvT.baseline.Eval
+    option:
+      - --models
+      - Final
+      - root://cmseos.fnal.gov//store/user/{user}/HH4b/classifier/FvT/{name}/mixed-{mixed}/result.json
+
 dataset:
   - module: HCR.Eval
     option:
@@ -18,13 +25,6 @@ dataset:
       - --friends
       -
       - root://cmseos.fnal.gov//store/user/{user}/HH4b/friend/tmp/data3b/friend.json@@HCR_input
-
-model:
-  - module: HCR.FvT.baseline.Eval
-    option:
-      - --models
-      - Final
-      - root://cmseos.fnal.gov//store/user/{user}/HH4b/classifier/FvT/{name}/mixed-{mixed}/result.json
 
 analysis:
   - module: kfold.Merge
