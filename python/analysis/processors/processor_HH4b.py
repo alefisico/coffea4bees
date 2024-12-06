@@ -59,7 +59,7 @@ class analysis(processor.ProcessorABC):
         SvB_MA: str = None,
         blind: bool = False,
         apply_JCM: bool = True,
-        JCM_file: str = "analysis/weights/JCM/2023/dataRunII/jetCombinatoricModel_SB_00-00-02.yml",
+        JCM_file: str = "analysis/weights/JCM/AN_24_089_v3/jetCombinatoricModel_SB_6771c35.yml",
         apply_trigWeight: bool = True,
         apply_btagSF: bool = True,
         apply_FvT: bool = True,
