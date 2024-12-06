@@ -409,61 +409,61 @@ counts4:
 counts3:
     mix_v9_2018:
         passJetMult: 988.0
-        passPreSel: 0.75
-        passDiJetMass: 0.28
+        passPreSel: 0.78
+        passDiJetMass: 0.29
         SR: 0.02
-        SB: 0.26
+        SB: 0.27
         passSvB: 0.0
-        failSvB: 0.41
+        failSvB: 0.42
 
     mix_v9_2017:
         passJetMult: 986.0
-        passPreSel: 1.45
-        passDiJetMass: 0.4
+        passPreSel: 1.49
+        passDiJetMass: 0.41
         SR: 0.03
-        SB: 0.36
+        SB: 0.37
         passSvB: 0.0
-        failSvB: 1.06
+        failSvB: 1.09
 
     mix_v9_2016:
         passJetMult: 969.0
-        passPreSel: 0.52
+        passPreSel: 0.54
         passDiJetMass: 0.2
         SR: 0.05
         SB: 0.15
         passSvB: 0.0
-        failSvB: 0.35
+        failSvB: 0.36
 
     mix_v8_2018:
         passJetMult: 989.0
-        passPreSel: 1.14
-        passDiJetMass: 0.46
-        SR: 0.26
+        passPreSel: 1.17
+        passDiJetMass: 0.48
+        SR: 0.27
         SB: 0.2
         passSvB: 0.0
-        failSvB: 0.47
+        failSvB: 0.48
 
     mix_v8_2017:
         passJetMult: 992.0
-        passPreSel: 1.44
-        passDiJetMass: 0.68
-        SR: 0.29
-        SB: 0.39
+        passPreSel: 1.48
+        passDiJetMass: 0.7
+        SR: 0.3
+        SB: 0.4
         passSvB: 0.04
-        failSvB: 0.79
+        failSvB: 0.81
 
     mix_v8_2016:
         passJetMult: 990.0
-        passPreSel: 0.49
-        passDiJetMass: 0.23
+        passPreSel: 0.51
+        passDiJetMass: 0.24
         SR: 0.11
-        SB: 0.12
+        SB: 0.13
         passSvB: 0.03
-        failSvB: 0.26
+        failSvB: 0.27
 
     mix_v7_2018:
         passJetMult: 995.0
-        passPreSel: 0.49
+        passPreSel: 0.51
         passDiJetMass: 0.14
         SR: 0.07
         SB: 0.07
@@ -472,232 +472,232 @@ counts3:
 
     mix_v7_2017:
         passJetMult: 992.0
-        passPreSel: 2.19
-        passDiJetMass: 0.5
+        passPreSel: 2.25
+        passDiJetMass: 0.51
         SR: 0.25
-        SB: 0.25
+        SB: 0.26
         passSvB: 0.0
-        failSvB: 1.37
+        failSvB: 1.41
 
     mix_v7_2016:
         passJetMult: 983.0
-        passPreSel: 0.59
+        passPreSel: 0.61
         passDiJetMass: 0.16
         SR: 0.04
         SB: 0.12
         passSvB: 0.0
-        failSvB: 0.38
+        failSvB: 0.39
 
     mix_v6_2018:
         passJetMult: 988.0
-        passPreSel: 0.73
+        passPreSel: 0.75
         passDiJetMass: 0.16
         SR: 0.0
         SB: 0.16
         passSvB: 0.0
-        failSvB: 0.49
+        failSvB: 0.51
 
     mix_v6_2017:
         passJetMult: 985.0
-        passPreSel: 1.32
-        passDiJetMass: 0.29
+        passPreSel: 1.36
+        passDiJetMass: 0.3
         SR: 0.15
-        SB: 0.14
+        SB: 0.15
         passSvB: 0.0
-        failSvB: 0.54
+        failSvB: 0.56
 
     mix_v6_2016:
         passJetMult: 988.0
-        passPreSel: 0.93
-        passDiJetMass: 0.21
+        passPreSel: 0.95
+        passDiJetMass: 0.22
         SR: 0.12
         SB: 0.1
         passSvB: 0.04
-        failSvB: 0.67
+        failSvB: 0.68
 
     mix_v5_2018:
         passJetMult: 994.0
-        passPreSel: 1.28
-        passDiJetMass: 0.43
+        passPreSel: 1.32
+        passDiJetMass: 0.44
         SR: 0.1
-        SB: 0.33
+        SB: 0.34
         passSvB: 0.0
-        failSvB: 0.79
+        failSvB: 0.81
 
     mix_v5_2017:
         passJetMult: 992.0
-        passPreSel: 2.01
-        passDiJetMass: 0.83
+        passPreSel: 2.06
+        passDiJetMass: 0.85
         SR: 0.22
-        SB: 0.61
+        SB: 0.63
         passSvB: 0.02
-        failSvB: 1.16
+        failSvB: 1.2
 
     mix_v5_2016:
         passJetMult: 986.0
-        passPreSel: 0.5
-        passDiJetMass: 0.22
+        passPreSel: 0.52
+        passDiJetMass: 0.23
         SR: 0.04
-        SB: 0.18
+        SB: 0.19
         passSvB: 0.0
-        failSvB: 0.39
+        failSvB: 0.4
 
     mix_v4_2018:
         passJetMult: 995.0
-        passPreSel: 0.96
+        passPreSel: 0.99
         passDiJetMass: 0.23
         SR: 0.06
-        SB: 0.17
+        SB: 0.18
         passSvB: 0.0
-        failSvB: 0.53
+        failSvB: 0.54
 
     mix_v4_2017:
         passJetMult: 990.0
-        passPreSel: 1.94
-        passDiJetMass: 0.71
-        SR: 0.19
-        SB: 0.52
+        passPreSel: 2.0
+        passDiJetMass: 0.73
+        SR: 0.2
+        SB: 0.53
         passSvB: 0.0
-        failSvB: 1.64
+        failSvB: 1.69
 
     mix_v4_2016:
         passJetMult: 989.0
-        passPreSel: 0.55
+        passPreSel: 0.57
         passDiJetMass: 0.18
         SR: 0.08
         SB: 0.1
         passSvB: 0.0
-        failSvB: 0.29
+        failSvB: 0.3
 
     mix_v3_2018:
         passJetMult: 993.0
-        passPreSel: 0.96
-        passDiJetMass: 0.48
+        passPreSel: 0.99
+        passDiJetMass: 0.49
         SR: 0.17
-        SB: 0.31
+        SB: 0.32
         passSvB: 0.03
-        failSvB: 0.58
+        failSvB: 0.6
 
     mix_v3_2017:
         passJetMult: 984.0
-        passPreSel: 1.68
-        passDiJetMass: 0.81
-        SR: 0.54
-        SB: 0.28
+        passPreSel: 1.73
+        passDiJetMass: 0.84
+        SR: 0.55
+        SB: 0.29
         passSvB: 0.0
-        failSvB: 0.9
+        failSvB: 0.93
 
     mix_v3_2016:
         passJetMult: 979.0
-        passPreSel: 0.61
-        passDiJetMass: 0.24
-        SR: 0.1
+        passPreSel: 0.62
+        passDiJetMass: 0.25
+        SR: 0.11
         SB: 0.14
         passSvB: 0.0
-        failSvB: 0.45
+        failSvB: 0.46
 
     mix_v2_2018:
         passJetMult: 992.0
-        passPreSel: 0.83
-        passDiJetMass: 0.21
+        passPreSel: 0.85
+        passDiJetMass: 0.22
         SR: 0.11
         SB: 0.11
         passSvB: 0.0
-        failSvB: 0.42
+        failSvB: 0.43
 
     mix_v2_2017:
         passJetMult: 985.0
-        passPreSel: 1.56
-        passDiJetMass: 0.72
-        SR: 0.47
-        SB: 0.24
+        passPreSel: 1.61
+        passDiJetMass: 0.74
+        SR: 0.49
+        SB: 0.25
         passSvB: 0.0
-        failSvB: 1.02
+        failSvB: 1.06
 
     mix_v2_2016:
         passJetMult: 993.0
-        passPreSel: 0.62
+        passPreSel: 0.64
         passDiJetMass: 0.14
         SR: 0.01
-        SB: 0.12
+        SB: 0.13
         passSvB: 0.0
-        failSvB: 0.31
+        failSvB: 0.32
 
     mix_v1_2018:
         passJetMult: 998.0
-        passPreSel: 1.31
-        passDiJetMass: 0.45
+        passPreSel: 1.35
+        passDiJetMass: 0.46
         SR: 0.2
-        SB: 0.25
+        SB: 0.26
         passSvB: 0.07
-        failSvB: 0.81
+        failSvB: 0.84
 
     mix_v1_2017:
         passJetMult: 993.0
-        passPreSel: 1.93
-        passDiJetMass: 0.73
-        SR: 0.43
-        SB: 0.3
+        passPreSel: 1.98
+        passDiJetMass: 0.75
+        SR: 0.44
+        SB: 0.31
         passSvB: 0.0
-        failSvB: 1.31
+        failSvB: 1.35
 
     mix_v1_2016:
         passJetMult: 990.0
-        passPreSel: 0.66
-        passDiJetMass: 0.21
+        passPreSel: 0.67
+        passDiJetMass: 0.22
         SR: 0.06
-        SB: 0.15
+        SB: 0.16
         passSvB: 0.0
-        failSvB: 0.4
+        failSvB: 0.41
 
     mix_v14_2018:
         passJetMult: 991.0
-        passPreSel: 1.15
-        passDiJetMass: 0.29
+        passPreSel: 1.19
+        passDiJetMass: 0.3
         SR: 0.1
-        SB: 0.19
+        SB: 0.2
         passSvB: 0.0
-        failSvB: 0.9
+        failSvB: 0.92
 
     mix_v14_2017:
         passJetMult: 996.0
-        passPreSel: 1.53
-        passDiJetMass: 0.4
+        passPreSel: 1.58
+        passDiJetMass: 0.41
         SR: 0.06
-        SB: 0.34
+        SB: 0.35
         passSvB: 0.0
-        failSvB: 1.25
+        failSvB: 1.29
 
     mix_v14_2016:
         passJetMult: 980.0
-        passPreSel: 0.61
+        passPreSel: 0.62
         passDiJetMass: 0.18
         SR: 0.06
-        SB: 0.12
+        SB: 0.13
         passSvB: 0.0
-        failSvB: 0.56
+        failSvB: 0.58
 
     mix_v13_2018:
         passJetMult: 989.0
-        passPreSel: 0.69
+        passPreSel: 0.71
         passDiJetMass: 0.13
         SR: 0.04
         SB: 0.09
         passSvB: 0.0
-        failSvB: 0.64
+        failSvB: 0.66
 
     mix_v13_2017:
         passJetMult: 996.0
-        passPreSel: 1.6
-        passDiJetMass: 0.41
+        passPreSel: 1.65
+        passDiJetMass: 0.42
         SR: 0.07
-        SB: 0.34
+        SB: 0.35
         passSvB: 0.0
-        failSvB: 1.26
+        failSvB: 1.3
 
     mix_v13_2016:
         passJetMult: 982.0
-        passPreSel: 0.28
+        passPreSel: 0.29
         passDiJetMass: 0.09
         SR: 0.0
         SB: 0.09
@@ -706,111 +706,111 @@ counts3:
 
     mix_v12_2018:
         passJetMult: 990.0
-        passPreSel: 1.44
-        passDiJetMass: 0.35
+        passPreSel: 1.48
+        passDiJetMass: 0.36
         SR: 0.07
         SB: 0.28
         passSvB: 0.0
-        failSvB: 0.99
+        failSvB: 1.02
 
     mix_v12_2017:
         passJetMult: 996.0
-        passPreSel: 1.66
-        passDiJetMass: 0.42
+        passPreSel: 1.71
+        passDiJetMass: 0.43
         SR: 0.08
         SB: 0.34
         passSvB: 0.0
-        failSvB: 1.28
+        failSvB: 1.31
 
     mix_v12_2016:
         passJetMult: 985.0
-        passPreSel: 0.69
-        passDiJetMass: 0.42
+        passPreSel: 0.71
+        passDiJetMass: 0.43
         SR: 0.12
-        SB: 0.3
+        SB: 0.31
         passSvB: 0.0
-        failSvB: 0.47
+        failSvB: 0.48
 
     mix_v11_2018:
         passJetMult: 986.0
-        passPreSel: 1.07
+        passPreSel: 1.11
         passDiJetMass: 0.26
         SR: 0.11
         SB: 0.15
         passSvB: 0.04
-        failSvB: 0.52
+        failSvB: 0.54
 
     mix_v11_2017:
         passJetMult: 978.0
-        passPreSel: 1.83
-        passDiJetMass: 0.73
-        SR: 0.31
-        SB: 0.43
+        passPreSel: 1.88
+        passDiJetMass: 0.76
+        SR: 0.32
+        SB: 0.44
         passSvB: 0.0
-        failSvB: 1.21
+        failSvB: 1.24
 
     mix_v11_2016:
         passJetMult: 983.0
-        passPreSel: 1.05
+        passPreSel: 1.08
         passDiJetMass: 0.18
         SR: 0.05
         SB: 0.13
         passSvB: 0.0
-        failSvB: 0.94
+        failSvB: 0.97
 
     mix_v10_2018:
         passJetMult: 991.0
-        passPreSel: 1.42
-        passDiJetMass: 0.52
-        SR: 0.39
-        SB: 0.13
+        passPreSel: 1.46
+        passDiJetMass: 0.53
+        SR: 0.4
+        SB: 0.14
         passSvB: 0.0
-        failSvB: 0.62
+        failSvB: 0.63
 
     mix_v10_2017:
         passJetMult: 988.0
-        passPreSel: 1.5
-        passDiJetMass: 0.24
+        passPreSel: 1.54
+        passDiJetMass: 0.25
         SR: 0.1
         SB: 0.15
         passSvB: 0.0
-        failSvB: 0.76
+        failSvB: 0.78
 
     mix_v10_2016:
         passJetMult: 980.0
-        passPreSel: 0.71
-        passDiJetMass: 0.37
+        passPreSel: 0.73
+        passDiJetMass: 0.39
         SR: 0.12
-        SB: 0.25
+        SB: 0.26
         passSvB: 0.0
-        failSvB: 0.53
+        failSvB: 0.54
 
     mix_v0_2018:
         passJetMult: 991.0
-        passPreSel: 1.11
-        passDiJetMass: 0.43
+        passPreSel: 1.14
+        passDiJetMass: 0.44
         SR: 0.1
-        SB: 0.33
+        SB: 0.34
         passSvB: 0.0
-        failSvB: 0.65
+        failSvB: 0.67
 
     mix_v0_2017:
         passJetMult: 986.0
-        passPreSel: 1.36
-        passDiJetMass: 0.54
+        passPreSel: 1.4
+        passDiJetMass: 0.55
         SR: 0.12
-        SB: 0.42
+        SB: 0.43
         passSvB: 0.04
-        failSvB: 0.53
+        failSvB: 0.54
 
     mix_v0_2016:
         passJetMult: 983.0
-        passPreSel: 0.66
-        passDiJetMass: 0.18
+        passPreSel: 0.68
+        passDiJetMass: 0.19
         SR: 0.11
         SB: 0.07
         passSvB: 0.0
-        failSvB: 0.33
+        failSvB: 0.34
 
 
 
