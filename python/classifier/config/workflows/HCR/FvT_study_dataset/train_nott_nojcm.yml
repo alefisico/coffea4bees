@@ -1,20 +1,7 @@
 # template:
 # - mixed: mixed data index
-# - offset: offset for kfold
 # - user: lpc username
 
-model:
-  - module: HCR.FvT.baseline.Train
-    option:
-      - --kfolds 3
-      - --kfold-seed FvT random
-      - --kfold-seed-offsets {offset}
-      - --training FixedStep
-      - epoch: 10
-        bs_init: 1024
-      - --finetuning FinetuneStep
-      - epoch: 1
-        bs_init: 16384
 # training set: mixed 4b + detector 3b
 # SB only; no JCM;
 dataset:

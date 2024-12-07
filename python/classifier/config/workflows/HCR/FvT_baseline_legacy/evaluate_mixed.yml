@@ -1,6 +1,5 @@
 # template:
 # - mixed: mixed data index
-# - tag: tag of the model
 # - user: lpc username
 
 main:
@@ -21,7 +20,7 @@ model:
     option:
       - --models
       - Final
-      - root://cmseos.fnal.gov//store/user/{user}/HH4b/classifier/FvT/baseline_legacy/{tag}-{mixed}/result.json
+      - root://cmseos.fnal.gov//store/user/{user}/HH4b/classifier/FvT/baseline_legacy/mixed-{mixed}/result.json
 
 analysis:
   - module: kfold.Merge
@@ -34,7 +33,7 @@ analysis:
 setting:
   - module: IO
     option:
-      - output: root://cmseos.fnal.gov//store/user/{user}/HH4b/friend/FvT/baseline_legacy/{tag}-{mixed}/
+      - output: root://cmseos.fnal.gov//store/user/{user}/HH4b/friend/FvT/baseline_legacy/mixed-{mixed}/
   - module: ml.DataLoader
     option:
       - num_workers: 8

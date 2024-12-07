@@ -1,6 +1,13 @@
 # template:
 # - mixed: mixed data index
 # - offset: offset for kfold
+# - user: lpc username
+
+main:
+  module: train
+  option:
+    - --max-loaders 2
+    - --max-trainers 3
 
 model:
   - module: HCR.FvT.baseline.Train
@@ -14,12 +21,11 @@ model:
       - --finetuning FinetuneStep
       - epoch: 1
         bs_init: 16384
-# training set: mixed 4b + detector 3b + ttbar 4b
+# training set: mixed 4b + detector 3b + ttbar 4b + ttbar 3b
 # SR(blinded) + SB; tt+data JCM
 dataset:
   - module: HCR.FvT_legacy.TrainBaseline
     option:
-      - --no-ttbar-3b # remove ttbar 3b
       - --data-source mixed
       - --data-mixed-samples {mixed}
       - --preprocess label:data
@@ -43,3 +49,11 @@ dataset:
       - --files "label:data,source:detector,year:2017" root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//data2017_3b/picoAOD_3b_wJCM_newSBDef.root
       - --files "label:data,source:detector,year:2018" root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//data2018_3b/picoAOD_3b_wJCM_newSBDef.root
       - --max-workers 8
+
+setting:
+  - module: IO
+    option:
+      - output: root://cmseos.fnal.gov//store/user/{user}/HH4b/classifier/FvT/baseline_legacy/mixed-{mixed}/
+  - module: ml.DataLoader
+    option:
+      - num_workers: 4

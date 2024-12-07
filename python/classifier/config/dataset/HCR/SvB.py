@@ -48,7 +48,7 @@ class _mc_selection(_common_selection):
 
 def _remove_outlier(df: pd.DataFrame):
     # TODO: This is a temporary solution triggered by events with huge weights:
-    return df.loc[df["weight"] < 10]
+    return df.loc[df["weight"] < 1]
 
 
 class _Train(CommonTrain):
