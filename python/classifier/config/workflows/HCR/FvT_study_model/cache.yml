@@ -1,0 +1,41 @@
+main:
+  module: cache
+  option:
+    - --max-loaders 2
+    - --nchunks 10
+    - --max-writers 5
+    - --states label.MultiClass.labels
+
+# training set: mixed 4b + detector 3b + ttbar 4b + ttbar 3b
+# SR(blinded) + SB; tt+data JCM
+dataset:
+  - module: HCR.FvT_legacy.TrainBaseline
+    option:
+      - --data-source mixed
+      - --data-mixed-samples {mixed}
+      - --preprocess label:data
+      - df.tools.add_columns
+      - weight: 1.0
+      - --max-workers 8
+  - module: HCR.FvT_legacy.Train
+    option:
+      - --no-detector-4b
+      - --branch pseudoTagWeight_3bDvTMix4bDvT_v{mixed}
+      - --preprocess source:detector
+      - df.tools.add_columns
+      - weight: 1.0
+      - --preprocess source:detector
+      - compatibility.JCM.branch.apply_JCM
+      - name: pseudoTagWeight_3bDvTMix4bDvT_v{mixed}
+      - --preprocess source:detector
+      - df.tools.drop_columns
+      - - pseudoTagWeight_3bDvTMix4bDvT_v{mixed}
+      - --files "label:data,source:detector,year:2016" root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//data2016_3b/picoAOD_3b_wJCM_newSBDef.root
+      - --files "label:data,source:detector,year:2017" root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//data2017_3b/picoAOD_3b_wJCM_newSBDef.root
+      - --files "label:data,source:detector,year:2018" root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//data2018_3b/picoAOD_3b_wJCM_newSBDef.root
+      - --max-workers 8
+
+setting:
+  - module: IO
+    option:
+      - output: /srv/HH4b/classifier/cache/FvT_baseline_legacy/mixed-{mixed}/

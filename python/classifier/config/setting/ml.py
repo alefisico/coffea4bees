@@ -14,6 +14,12 @@ class DataLoader(GlobalSetting):
     num_workers: int = 0
     persistent_workers: bool = True
 
+    @classmethod
+    def get__persistent_workers(cls, value: bool) -> bool:
+        if cls.num_workers == 0:
+            return False
+        return value
+
 
 class KFold(GlobalSetting):
     "KFolding dataset splitter"

@@ -6,7 +6,7 @@ export MODEL="${BASE}/classifier/SvB/ggF/$1/result.json"
 export WEB="root://eosuser.cern.ch//eos/user/${CERNUSER}/www/HH4b/classifier/SvB_ggF/"
 export GMAIL=~/gmail.yml
 
-# check first argument
+# check port
 if [ -z "$2" ]; then
     port=10200
 else

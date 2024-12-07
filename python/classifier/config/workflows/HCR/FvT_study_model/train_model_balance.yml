@@ -1,0 +1,18 @@
+model:
+  - module: HCR.FvT.baseline.Train
+    option:
+      - --kfolds 3
+      - --kfold-seed FvT random
+      - --kfold-seed-offsets {offset}
+      - --training FixedStep
+      - epoch: 5
+        bs_init: 1024
+        bs_scale: 2
+        bs_milestones: [1, 1, 2, 2, 3] # x4, x4, x2
+        lr_scale: 0.25
+        lr_milestones: [1, 4]
+      - --ghost-batch
+      - n_batches: 0
+      - --finetuning FinetuneStep
+      - epoch: 1
+        bs_init: 32768

@@ -8,7 +8,7 @@ model:
       - epoch: 5
         bs_init: 2048
         bs_scale: 16
-        bs_milestones: 
+        bs_milestones:
           - 1
         lr_scale: 0.5
         lr_milestones:

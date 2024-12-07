@@ -1,11 +1,12 @@
 export LPCUSER="chuyuanl"
 export CERNUSER="c/chuyuan"
-export WFS="classifier/config/workflows/HCR/FvT_dataset_study"
+export WFS="classifier/config/workflows/HCR/FvT_study_dataset"
 export BASE="root://cmseos.fnal.gov//store/user/${LPCUSER}/HH4b"
 export MODEL="${BASE}/classifier/FvT/$1"
 export WEB="root://eosuser.cern.ch//eos/user/${CERNUSER}/www/HH4b/classifier/FvT_study/$1"
+export GMAIL=~/gmail.yml
 
-# check first argument
+# check port
 if [ -z "$2" ]; then
     port=10200
 else
@@ -34,3 +35,12 @@ do
     template "{mixed: ${i}, user: ${LPCUSER}, name: $1}" $WFS/evaluate.yml \
     -setting Monitor "address: :${port}"
 done
+
+if [ -e "$GMAIL" ]; then
+    ./pyml.py analyze \
+        -analysis notify.Gmail \
+        --title "FvT dataset study done" \
+        --body "${1} finished at $(date)" \
+        --labels Classifier HH4b \
+        -from $GMAIL
+fi
