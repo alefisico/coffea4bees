@@ -1,7 +1,7 @@
 from scipy.special import comb
 import numpy as np
 from coffea.util import load
-from base_class.plots.plots import get_cut_dict
+from base_class.plots.helpers import get_cut_dict
 import base_class.plots.iPlot_config as cfg
 import hist
 from copy import copy

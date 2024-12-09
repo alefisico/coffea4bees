@@ -104,9 +104,9 @@ def filling_nominal_histograms(selev, JCM,
     fill += Jet.plot( ("selJets_noJCM", "Selected Jets"),        "selJet",       weight="weight_noJCM_noFvT", skip=skip_all_but_n, )
     fill += Jet.plot( ("tagJets_noJCM", "Tag Jets"),             "tagJet",       weight="weight_noJCM_noFvT", skip=skip_all_but_n, )
     fill += Jet.plot( ("tagJets_loose_noJCM", "Loose Tag Jets"), "tagJet_loose", weight="weight_noJCM_noFvT", skip=skip_all_but_n, )
-    fill += hist.add( "nPSJets",             (0, 20, ("nJet_pseudotagged", "nPseudoTag Jets")) )
-    fill += hist.add( "nPSplusTagJets",      (0, 20, ("nJet_ps_and_tag", "nPseudoTag + nTag Jets")) )
-
+    if JCM:
+        fill += hist.add( "nPSJets",             (20, -0.5, 19.5, ("nJet_pseudotagged", "nPseudoTag Jets")) )
+        fill += hist.add( "nPSplusTagJets",      (20, -0.5, 19.5, ("nJet_ps_and_tag", "nPseudoTag + nTag Jets")) )
 
     for iJ in range(4):
         fill += Jet.plot( (f"canJet{iJ}", f"Higgs Candidate Jets {iJ}"), f"canJet{iJ}", skip=["n", "deepjet_c"], bins={"mass": (50, 0, 100)} )
@@ -151,6 +151,13 @@ def filling_nominal_histograms(selev, JCM,
                 fill += hist.add( f"m4j_hh_{_FvT_name}", (120, 0, 1200, ("m4j_HHSR", "m4j HHSR [GeV]")), weight=f"weight_{_FvT_name}", )
                 fill += hist.add( f"m4j_zh_{_FvT_name}", (120, 0, 1200, ("m4j_ZHSR", "m4j ZHSR [GeV]")), weight=f"weight_{_FvT_name}", )
                 fill += hist.add( f"m4j_zz_{_FvT_name}", (120, 0, 1200, ("m4j_ZZSR", "m4j ZZSR [GeV]")), weight=f"weight_{_FvT_name}", )
+
+
+    #
+    #  MC Truth
+    #
+    if "truth_v4b" in selev.fields:
+        fill += LorentzVector.plot_pair( ("truth_v4b", R"$HH_{4b}$"), "truth_v4b", skip=["n", "dr", "dphi", "st"], bins={"mass": (120, 0, 1200)}, )
 
     #
     # fill histograms

@@ -13,9 +13,9 @@ def merge_coffea_files( files_to_merge, output_file ):
         iout = load(ifile)
         for ikey in output.keys():
             if 'hists' in ikey:
-                for ihist in output['hists'].keys():
+                for ihist in output[ikey].keys():
                     try:
-                        output['hists'][ihist] += iout['hists'][ihist]
+                        output[ikey][ihist] += iout[ikey][ihist]
                     except KeyError:
                         pass
             else:
