@@ -11,6 +11,7 @@ import torch.types as tt
 from classifier.config import setting as cfg
 from classifier.config.scheduler import SkimStep
 from classifier.config.setting.HCR import Input, InputBranch, Output
+from classifier.config.setting.ml import SplitterKeys
 from classifier.config.state.label import MultiClass
 from torch import Tensor
 
@@ -87,8 +88,10 @@ class _HCRSkim(Skimmer):
 
     @torch.no_grad()
     def train(self, batch: BatchType):
-        training, _ = self._splitter.step(batch)
-        self._nn.updateMeanStd(*_HCRInput(batch, self._device, training))
+        selections = self._splitter.step(batch)
+        self._nn.updateMeanStd(
+            *_HCRInput(batch, self._device, selections[SplitterKeys.training])
+        )
         return super().train(batch)
 
 
@@ -202,22 +205,19 @@ class HCRTraining(MultiStageTraining):
             training=self.dataset,
         )
         self._HCR.nn.initMeanStd()
-        training, validation = self._splitter.get()
-        validation = {
-            "training": training,
-            "validation": validation,
-        }
+        validation_sets = self._splitter.get()
+        training_set = validation_sets[SplitterKeys.training]
         yield BenchmarkStage(
             name="Baseline",
             model=self._HCR,
-            validation=validation,
+            validation=validation_sets,
         )
         yield TrainingStage(
             name="Training",
             model=self._HCR,
             schedule=self._training,
-            training=training,
-            validation=validation,
+            training=training_set,
+            validation=validation_sets,
         )
         self._HCR.ghost_batch = None
         if self._finetuning is not None:
@@ -229,8 +229,8 @@ class HCRTraining(MultiStageTraining):
                 name="Finetuning",
                 model=self._HCR,
                 schedule=self._finetuning,
-                training=training,
-                validation=validation,
+                training=training_set,
+                validation=validation_sets,
             )
             self._HCR.ghost_batch = self._ghost_batch
             layers.setLayerRequiresGrad(requires_grad=True)
@@ -281,7 +281,7 @@ class HCRModelEval(Model):
         return self._nn
 
     def evaluate(self, batch: BatchType) -> BatchType:
-        _, selection = self._splitter.split(batch)
+        selection = self._splitter.split(batch)[SplitterKeys.validation]
         selector = Selector(selection)
         c, q = self._nn(*_HCRInput(batch, self._device, selection))
         c_prob = F.softmax(c, dim=1).cpu()

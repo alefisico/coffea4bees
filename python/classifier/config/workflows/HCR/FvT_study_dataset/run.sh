@@ -42,5 +42,6 @@ if [ -e "$GMAIL" ]; then
         --title "FvT dataset study done" \
         --body "${1} finished at $(date)" \
         --labels Classifier HH4b \
-        -from $GMAIL
+        -from $GMAIL \
+        -setting Monitor "address: :${port}"
 fi

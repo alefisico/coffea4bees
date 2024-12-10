@@ -35,3 +35,10 @@ class Training(GlobalSetting):
 
     disable_benchmark: bool = False
     "disable unrequired benchmark steps"
+
+
+class SplitterKeys(GlobalSetting):
+    "keys in the splitter output"
+
+    training: str = "training"
+    validation: str = "validation"

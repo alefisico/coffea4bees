@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import json
+import logging
 from abc import ABC, abstractmethod
 from functools import cached_property
 from typing import TYPE_CHECKING
 
 import fsspec
 from classifier.task import ArgParser, Model, converter, parse
+from rich.pretty import pretty_repr
 
 from ..setting import ResultKey
 
@@ -125,6 +127,7 @@ class KFoldEval(ABC, Model):
 
     def evaluate(self):
         models = []
+        m_paths = []
         for args in self.opts.models:
             name = args[0]
             paths = args[1:]
@@ -135,14 +138,14 @@ class KFoldEval(ABC, Model):
                     )
                 for result in results:
                     metadata = result.get("metadata", {})
-                    model = None
+                    m_path = None
                     for stage in result.get("history", [])[::-1]:
                         if (stage.get("stage") == "Output") and (
                             stage.get("name") == name
                         ):
-                            model = stage["path"]
+                            m_path = stage["path"]
                             break
-                    if model is None:
+                    if m_path is None:
                         continue
                     if ("kfolds" not in metadata) or ("offset" not in metadata):
                         continue
@@ -154,7 +157,7 @@ class KFoldEval(ABC, Model):
                         seed = metadata["seed"]
                         models.append(
                             self.initializer(
-                                model=model,
+                                model=m_path,
                                 splitter=RandomKFold(seed, kfolds, offset),
                                 kfolds=kfolds,
                                 offset=offset,
@@ -166,11 +169,15 @@ class KFoldEval(ABC, Model):
 
                         models.append(
                             self.initializer(
-                                model=model,
+                                model=m_path,
                                 splitter=KFold(kfolds, offset),
                                 kfolds=kfolds,
                                 offset=offset,
                             ).eval
                         )
-
+                    m_paths.append(m_path)
+        if m_paths:
+            logging.info(
+                "The following models will be evaluated:", pretty_repr(m_paths)
+            )
         return models
