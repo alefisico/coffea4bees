@@ -24,6 +24,10 @@ if __name__ == '__main__':
                         default="datacard.txt", help="Datacard created with input file")
     parser.add_argument('-v', '--variable', dest='variable', type=str,
                         default="SvB_MA_ps_hh_fine", help="Variable to plot")
+    parser.add_argument('-s', '--signal', dest='signal',
+                        default='GluGluToHHTo4B_cHHH1', help="Signal to plot")
+    parser.add_argument('-m', '--metadata', dest='metadata',
+                        default='stats_analysis/metadata/HH4b.yml', help="Metadata file")
     # parser.add_argument('-r', '--rebin', dest='rebin', type=int,
     #                     default=15, help="Rebin")
     args = parser.parse_args()
@@ -32,12 +36,11 @@ if __name__ == '__main__':
     logging.info("\nRunning with these parameters: ")
     logging.info(args)
     
-    metadata_file = 'stats_analysis/metadata/HH4b.yml'
-    logging.info(f"Reading {metadata_file}")
-    metadata = yaml.safe_load(open(metadata_file, 'r'))
+    logging.info(f"Reading {args.metadata}")
+    metadata = yaml.safe_load(open(args.metadata, 'r'))
     label_mj = metadata['processes']['background']['multijet']['label']
     label_tt = metadata['processes']['background']['tt']['label']
-    label_signal = metadata['processes']['signal']['GluGluToHHTo4B_cHHH1']['label']
+    label_signal = metadata['processes']['signal'][args.signal]['label']
 
     with open('stats_analysis/nuisance_names.json', 'r') as f:
         nuisance_names = json.load(f)
@@ -68,7 +71,7 @@ if __name__ == '__main__':
     CMS.SetEnergy("13")
     CMS.ResetAdditionalInfo()
     nominal_can = CMS.cmsDiCanvas('nominal_can',0,xmax,0,ymax,0.8,1.2,
-                                "SvB MA Classifier Regressed P(Signal) | P(HH) is largest",
+                                "SvB MA Classifier Regressed P(Signal) | P(ZH) is largest",
                                 "Events", 'Data/Pred.',
                                     square=CMS.kSquare, extraSpace=0.05, iPos=iPos)
     nominal_can.cd(1)
@@ -77,6 +80,10 @@ if __name__ == '__main__':
 
     stack = ROOT.THStack()
     CMS.cmsDrawStack(stack, leg, {'ttbar': nom_tt, 'Multijet': nom_mj }, data= nom_data, palette=['#85D1FBff', '#FFDF7Fff'] )
+    tmp_signal = nom_signal.Clone("tmp_signal")
+    tmp_signal.Scale( 100 )
+    leg.AddEntry( tmp_signal, f'{args.signal} (x100)', 'l' )
+    CMS.cmsDraw( tmp_signal, 'hist', fstyle=0,  marker=1, alpha=1, lcolor=ROOT.kRed, fcolor=ROOT.kRed )
     CMS.GetcmsCanvasHist(nominal_can.cd(1)).GetYaxis().SetTitleOffset(1.5)
     CMS.GetcmsCanvasHist(nominal_can.cd(1)).GetYaxis().SetTitleSize(0.05)
     CMS.fixOverlay()

@@ -17,6 +17,10 @@ if __name__ == '__main__':
                         default="SvB_postfit.png", help='Output file and directory.')
     parser.add_argument('-i', '--input_file', dest='input_file',
                         default='post_fit.root', help="Root file after PostFitShapesFromWorkspace")
+    parser.add_argument('-s', '--signal', dest='signal',
+                        default='GluGluToHHTo4B_cHHH1', help="Signal to plot")
+    parser.add_argument('-m', '--metadata', dest='metadata',
+                        default='stats_analysis/metadata/HH4b.yml', help="Metadata file")
     parser.add_argument('--do_postfit', dest='do_postfit',
                         default=False, help="Do postfit plots. If False, does prefit")
     args = parser.parse_args()
@@ -25,10 +29,9 @@ if __name__ == '__main__':
     logging.info(f"\nRunning with these parameters: {args}")
 
     label = 'postfit' if args.do_postfit else 'prefit'
-
-    metadata_file = 'stats_analysis/metadata/HH4b.yml'
-    logging.info(f"Reading {metadata_file}")
-    metadata = yaml.safe_load(open(metadata_file, 'r'))
+    
+    logging.info(f"Reading {args.metadata}")
+    metadata = yaml.safe_load(open(args.metadata, 'r'))
 
     hists = { }
     channels = metadata['bin'] #[ 'hh_UL16', 'hh_UL17', 'hh_UL18' ]
@@ -36,7 +39,7 @@ if __name__ == '__main__':
     # channels = [ 'ch1', 'ch2', 'ch3' ]
     mj = metadata['processes']['background']['multijet']['label']
     tt = metadata['processes']['background']['tt']['label']
-    signal = metadata['processes']['signal']['GluGluToHHTo4B_cHHH1']['label']
+    signal = metadata['processes']['signal'][args.signal]['label']
     infile = ROOT.TFile.Open(args.input_file)
     for i, ichannel in enumerate(channels):
         if i==0:

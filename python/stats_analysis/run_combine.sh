@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Function to handle arument parsing
-parse_aruments() {
+parse_arguments() {
 
   # Check if folder arument is provided
   if [ -z "$1" ]; then
@@ -13,6 +13,8 @@ parse_aruments() {
   limits=false
   impacts=false
   postfit=false
+  likelihoodscan=false
+  unblind=false
 
   # Process aruments
   while [[ $# -gt 1 ]]; do
@@ -29,54 +31,89 @@ parse_aruments() {
         postfit=true
         shift
         ;;
+      --likelihoodscan)
+        likelihoodscan=true
+        shift
+        ;;
+      --unblind)
+        unblind=true
+        shift
+        ;;
       *)
         echo "Invalid arument: '$2'"
         ;;
     esac
   done
 }
-
 # Parse aruments
-parse_aruments "$@"
+parse_arguments "$@"
+
+echo "Running combine script with arguments: $@"
+
+if [ "$unblind" = true ]; then
+    echo "Running in unblind mode"
+    blind_label="_blinded"
+    limit_blind=""
+    significance_blind=""
+else
+    echo "Running in blind mode"
+    blind_label=""
+    limit_blind="--run blind"
+    significance_blind="-t -1"
+fi
 
 currentDir=$PWD
 signallabel="ggHH_kl_1_kt_1_hbbhbb"
-# signallabel="ggHH"
+# signallabel="ZZ4b"
+# signallabel="ZH4b"
 
 run_limits() {
   local datacard=$1
   local signallabel=$2
   local iclass=$3
 
-  text2workspace.py ${datacard}.txt -P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel --PO verbose --PO "map=.*/${signallabel}:r${signallabel}[1,-20,20]" \
-    --PO "map=.*/ggHH_kl_0_kt_1_hbbhbb:rggHH_kl_0_kt_1_hbbhbb[0,0,0]" \
-    --PO "map=.*/ggHH_kl_2p45_kt_1_hbbhbb:rggHH_kl_2p45_kt_1_hbbhbb[0,0,0]" \
-    --PO "map=.*/ggHH_kl_5_kt_1_hbbhbb:rggHH_kl_5_kt_1_hbbhbb[0,0,0]" 
-    # --PO 'map=.*/ZH:rZH[1,-10,10]' --PO 'map=.*/ZZ:rZZ[1,-10,10]'
-  combine -M AsymptoticLimits ${datacard}.root --redefineSignalPOIs r${signallabel} \
-    -n _${iclass} --run blind \
-    --setParameters rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0 \
-    > limits_${datacard}.txt
-  cat limits_${datacard}.txt
-  combineTool.py -M CollectLimits higgsCombine_${iclass}.AsymptoticLimits.mH120.root -o limits_${datacard}.json
+    text2workspace.py ${datacard}.txt \
+        -P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel --PO verbose \
+        --PO "map=.*/${signallabel}:r${signallabel}[1,-10,10]" \
+        --PO "map=.*/ggHH_kl_0_kt_1_hbbhbb:rggHH_kl_0_kt_1_hbbhbb[1,-10,10]" \
+        --PO "map=.*/ggHH_kl_2p45_kt_1_hbbhbb:rggHH_kl_2p45_kt_1_hbbhbb[1,-10,10]" \
+        --PO "map=.*/ggHH_kl_5_kt_1_hbbhbb:rggHH_kl_5_kt_1_hbbhbb[1,-10,10]" \
+        --PO 'map=.*/ZH4b:rZH4b[1,-10,10]' \
+        --PO 'map=.*/ZZ4b:rZZ4b[1,-10,10]'
+    combine -M AsymptoticLimits ${datacard}.root --redefineSignalPOIs r${signallabel} \
+        -n _${iclass}${blind_label} ${limit_blind} \
+        --setParameters rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0 \
+        --freezeParameters rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb \
+        > limits_${datacard}${blind_label}.txt
+    cat limits_${datacard}${blind_label}.txt
+    combineTool.py -M CollectLimits higgsCombine_${iclass}${blind_label}.AsymptoticLimits.mH120.root -o limits_${datacard}${blind_label}.json
+
+    combine -M Significance ${datacard}.root --redefineSignalPOIs r${signallabel} \
+        -n _${iclass}${blind_label} ${significance_blind} \
+        --setParameters rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0 \
+        --freezeParameters rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb \
+        > significance_${datacard}${blind_label}.txt
+    cat significance_${datacard}${blind_label}.txt
 }
 
 for iclass in SvB_MA;
 do
-    datacard="datacard" #_stat_only"
-    # datacard="combine_"${iclass}
+    datacard="datacard" 
     cd ${datacard_folder}/
     
     if [ "$limits" = true ]; then
 
-        combineCards.py HHbb_2016=datacard_HHbb_2016.txt \
-            HHbb_2017=datacard_HHbb_2017.txt \
-            HHbb_2018=datacard_HHbb_2018.txt > ${datacard}.txt
-        run_limits $datacard $signallabel $iclass
+        datacard_label="HHbb"
+        # datacard_label="ZZbb"
+        # datacard_label="ZHbb"
+        # combineCards.py ${datacard_label}_2016=datacard_${datacard_label}_2016.txt \
+        #     ${datacard_label}_2017=datacard_${datacard_label}_2017.txt \
+        #     ${datacard_label}_2018=datacard_${datacard_label}_2018.txt > ${datacard}.txt
+        # run_limits $datacard $signallabel $iclass
 
-        run_limits datacard_HHbb_2016 $signallabel $iclass
-        run_limits datacard_HHbb_2017 $signallabel $iclass
-        run_limits datacard_HHbb_2018 $signallabel $iclass
+        run_limits datacard_${datacard_label}_2016 $signallabel $iclass
+        # run_limits datacard_${datacard_label}_2017 $signallabel $iclass
+        # run_limits datacard_${datacard_label}_2018 $signallabel $iclass
 
     elif [ "$impacts" = true ]; then
 
@@ -112,11 +149,40 @@ do
     elif [ "$postfit" = true ]; then
 
         if [ -f "${datacard}.root" ]; then
+
+            echo "Running postfit s+b"
             combine -M MultiDimFit --robustFit 1 -n _${iclass}_fit_s \
             --saveWorkspace --saveFitResult -d ${datacard}.root \
             --setParameters r${signallabel}=1,rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0
 
-            PostFitShapesFromWorkspace -w higgsCombine_${iclass}_fit_s.MultiDimFit.mH120.root -f multidimfit_${iclass}_fit_s.root:fit_mdf --total-shapes --output postfit_s.root --freeze r${signallabel}=1,rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0 #--postfit
+            PostFitShapesFromWorkspace -w higgsCombine_${iclass}_fit_s.MultiDimFit.mH120.root -f multidimfit_${iclass}_fit_s.root:fit_mdf --total-shapes --output postfit_s.root --freeze r${signallabel}=1,rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0 --postfit
+
+            echo "Running postfit b-only"
+            combine -M MultiDimFit --robustFit 1 -n _${iclass}_fit_b \
+            --saveWorkspace --saveFitResult -d ${datacard}.root \
+            --setParameters r${signallabel}=0,rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0 #\
+            # --freezeParameters r${signallabel},rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb
+
+            PostFitShapesFromWorkspace -w higgsCombine_${iclass}_fit_b.MultiDimFit.mH120.root -f multidimfit_${iclass}_fit_b.root:fit_mdf --total-shapes --output postfit_b.root --freeze r${signallabel}=0,rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0 --postfit
+
+        else
+            echo "File ${datacard}.root does not exist."
+        fi
+
+    elif [ "$likelihoodscan" = true ]; then
+
+        if [ -f "${datacard}.root" ]; then
+            combine -M MultiDimFit -n _${iclass}_likelihoodscan_postfit \
+            --saveWorkspace -d ${datacard}.root --robustFit 1 \
+            --setParameters rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0
+
+            combine -M MultiDimFit -n _${iclass}_likelihoodscan_total \
+            -P r${signallabel} --rMin -10 --rMax 10 --algo grid --points 50 --alignEdges 1 \
+            --setParameters rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0 \
+            -d higgsCombine_${iclass}_likelihoodscan_postfit.MultiDimFit.mH120.root
+
+            plot1DScan.py higgsCombine_${iclass}_likelihoodscan_total.MultiDimFit.mH120.root \
+            --POI r${signallabel} -o likelihoodscan_${iclass}_total_postfit
 
         else
             echo "File ${datacard}.root does not exist."
