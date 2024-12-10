@@ -6,6 +6,7 @@ from inspect import getmro
 from typing import Callable, Iterable
 
 from classifier.config.setting.cms import CollisionData, MC_HH_ggF, MC_TTbar
+from classifier.config.state import Flags
 from classifier.task import ArgParser, Dataset, parse
 
 
@@ -35,14 +36,17 @@ class _PicoAOD(Dataset):
         for metadata in self.opts.metadata:
             self.opts.files.extend(self._files(f"metadata/{metadata}.yml@@datasets"))
 
-    def _load(self, name: str, metadata: str):
-        filelists = []
+    def _iter(self, name: str):
         for base in getmro(self.__class__):
             if issubclass(base, _PicoAOD) and (
                 (datasets := vars(base).get(name)) is not None
             ):
-                for dataset in datasets:
-                    filelists.extend(dataset(self, metadata))
+                yield from datasets
+
+    def _load(self, name: str, metadata: str):
+        filelists = []
+        for dataset in self._iter(name):
+            filelists.extend(dataset(self, metadata))
         return filelists
 
     def _files(self, metadata: str):
@@ -52,37 +56,53 @@ class _PicoAOD(Dataset):
         return self._load("pico_filelists", metadata)
 
 
-def _ttbar(_, metadata: str):
-    filelists = []
-    for year in CollisionData.eras:
-        filelists.append(
-            [
-                f"label:ttbar,year:{year}",
-                *(metadata + f".{tt}.{year}.picoAOD.files" for tt in MC_TTbar.datasets),
-            ]
-        )
-    return filelists
+class _MCDataset:
+    processes: tuple[str, ...]
 
 
-def _ZZ_ZH(self: Signal, metadata: str):
-    filelists = []
-    datasets = {}
-    if "ZZ" in self.signal_processes:
-        datasets["ZZ"] = ["ZZ4b"]
-    if "ZH" in self.signal_processes:
-        datasets["ZH"] = ["ZH4b", "ggZH4b"]
-    for year in CollisionData.eras:
-        for label, processes in datasets.items():
-            filelists.append(
-                [
-                    f"label:{label},year:{year}",
-                    *(metadata + f".{d}.{year}.picoAOD.files" for d in processes),
-                ]
-            )
-    return filelists
+class _ttbar(_MCDataset):
+    processes = ("ttbar",)
+
+    def __new__(cls, self: MC, metadata: str):
+        filelists = []
+        if "ttbar" in self.mc_processes:
+            for year in CollisionData.eras:
+                filelists.append(
+                    [
+                        f"label:ttbar,year:{year}",
+                        *(
+                            metadata + f".{tt}.{year}.picoAOD.files"
+                            for tt in MC_TTbar.datasets
+                        ),
+                    ]
+                )
+        return filelists
 
 
-class _ggF:
+class _ZZ_ZH(_MCDataset):
+    processes = ("ZZ", "ZH")
+
+    def __new__(cls, self: MC, metadata: str):
+        filelists = []
+        datasets = {}
+        if "ZZ" in self.mc_processes:
+            datasets["ZZ"] = ["ZZ4b"]
+        if "ZH" in self.mc_processes:
+            datasets["ZH"] = ["ZH4b", "ggZH4b"]
+        for year in CollisionData.eras:
+            for label, processes in datasets.items():
+                filelists.append(
+                    [
+                        f"label:{label},year:{year}",
+                        *(metadata + f".{d}.{year}.picoAOD.files" for d in processes),
+                    ]
+                )
+        return filelists
+
+
+class _ggF(_MCDataset):
+    processes = ("ggF",)
+
     @classmethod
     def __c2str(cls, coupling: float):
         return f"{coupling:.6g}".replace(".", "p")
@@ -91,12 +111,12 @@ class _ggF:
     def __cs2label(cls, couplings: dict[str, float]):
         return ",".join(f"{k}:{v:.6g}" for k, v in couplings.items())
 
-    def __new__(cls, self: Signal, metadata: str):
+    def __new__(cls, self: MC, metadata: str):
         from base_class.physics.kappa_framework import Coupling
 
         filelists = []
         datasets = {}
-        if "ggF" in self.signal_processes:
+        if "ggF" in self.mc_processes:
             datasets[("ggF", "GluGluToHHTo4B_cHHH{kl}")] = Coupling(kl=MC_HH_ggF.kl)
         for year in CollisionData.eras:
             for (label, pattern), couplings in datasets.items():
@@ -165,7 +185,7 @@ class Data(_PicoAOD):
         default=["detector"],
         choices=("detector", "mixed", "synthetic"),
         help="choose the source of the data",
-        nargs="+",
+        nargs="*",
     )
     argparser.add_argument(
         "--data-mixed-samples",
@@ -181,23 +201,40 @@ class Data(_PicoAOD):
         return {*self.opts.data_source}
 
 
-class Background(Data):
-    pico_filelists = (_ttbar,)  # TODO add 4b only
-
-
-class Signal(_PicoAOD):
-    pico_filelists = (_ZZ_ZH, _ggF)
-
+class MC(_PicoAOD):
     argparser = ArgParser()
     argparser.add_argument(
-        "--signal-processes",
+        "--mc-processes",
         metavar="PROCESS",
-        nargs="+",
-        default=["ZZ", "ZH", "ggF"],
-        choices=("ZZ", "ZH", "ggF"),
-        help="list of signal processes",
+        nargs="*",
+        default=None,
+        help="list of MC processes. If not specified, all processes are used",
     )
 
     @cached_property
-    def signal_processes(self) -> set[str]:
-        return {*self.opts.signal_processes}
+    def mc_processes(self) -> set[str]:
+        selected = self.mc_processes_all
+        if self.opts.mc_processes is not None:
+            selected = selected.intersection(self.opts.mc_processes)
+        if Flags.debug:
+            logging.debug(
+                "The following MC processes are selected:",
+                f"{sorted(selected)} of {sorted(self.mc_processes_all)}",
+            )
+        return selected
+
+    @cached_property
+    def mc_processes_all(self) -> set[str]:
+        processes = set()
+        for dataset in self._iter("pico_filelists"):
+            if isinstance(dataset, type) and issubclass(dataset, _MCDataset):
+                processes.update(dataset.processes)
+        return processes
+
+
+class Background(Data, MC):
+    pico_filelists = (_ttbar,)
+
+
+class Signal(MC):
+    pico_filelists = (_ZZ_ZH, _ggF)

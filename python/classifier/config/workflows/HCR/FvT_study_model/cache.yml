@@ -13,9 +13,6 @@ dataset:
     option:
       - --data-source mixed
       - --data-mixed-samples {mixed}
-      - --preprocess label:data
-      - df.tools.add_columns
-      - weight: 1.0
       - --max-workers 8
   - module: HCR.FvT_legacy.Train
     option:

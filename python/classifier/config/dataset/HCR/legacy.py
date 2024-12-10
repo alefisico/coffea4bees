@@ -54,12 +54,16 @@ class _Legacy(Deprecated, _common.Common):
         self.preprocessors.append(_add_isSelJet)
 
     def preprocess_by_group(self):
-        from classifier.df.tools import rename_columns
+        from classifier.df.tools import add_columns, rename_columns
 
         return [
             _group.fullmatch(
                 ("label:ttbar",),
                 processors=[lambda: rename_columns(**{_WEIGHT: Columns.weight})],
+            ),
+            _group.fullmatch(
+                ("label:data",),
+                processors=[lambda: add_columns(**{Columns.weight: 1.0})],
             ),
         ] + list(super().preprocess_by_group())
 

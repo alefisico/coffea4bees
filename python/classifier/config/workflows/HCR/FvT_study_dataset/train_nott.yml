@@ -4,13 +4,11 @@
 # training set: mixed 4b + detector 3b
 # SB only; tt+data JCM;
 dataset:
-  - module: HCR.FvT_legacy.TrainDataOnly # remove ttbar
+  - module: HCR.FvT_legacy.TrainBaseline
     option:
+      - --mc-processes # remove ttbar
       - --data-source mixed
       - --data-mixed-samples {mixed}
-      - --preprocess label:data
-      - df.tools.add_columns
-      - weight: 1.0
       - --max-workers 8
   - module: HCR.FvT_legacy.Train
     option:

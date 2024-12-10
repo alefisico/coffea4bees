@@ -5,8 +5,9 @@
 # training set: mixed 4b + detector 3b
 # SB only; no JCM;
 dataset:
-  - module: HCR.FvT.TrainDataOnly # remove ttbar
+  - module: HCR.FvT.TrainBaseline
     option:
+      - --mc-processes # remove ttbar
       - --no-JCM # remove JCM
       - --no-SR # remove SR
       - --no-detector-4b
