@@ -96,6 +96,8 @@ class add_year(add_column):
 
 @dataclass
 class add_single_label(_regex):
+    rename: dict[str, str] = None
+
     key: str = field(init=False, default="label")
     pattern: str = field(init=False, default=r"label:(?P<label>.*)")
 
@@ -104,4 +106,7 @@ class add_single_label(_regex):
     def any(self, matches: tuple[re.Match, ...]):
         from classifier.df.tools import add_label_index
 
-        yield add_label_index(matches[0].group(self.key))
+        label = matches[0].group(self.key)
+        if self.rename is not None:
+            label = self.rename.get(label, label)
+        yield add_label_index(label)

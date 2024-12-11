@@ -12,7 +12,7 @@ from ..._HCR import ROC_BIN, HCREval, HCRTrain, roc_nominal_selection
 if TYPE_CHECKING:
     from classifier.ml import BatchType
 
-_BKG = ("data", "ttbar")
+_BKG = ("multijet", "ttbar")
 
 
 class _roc_select_sig:
@@ -129,8 +129,8 @@ class Eval(HCREval):
             "p_ZZ": ...,
             "p_ZH": ...,
             "p_ggF": ...,
-            "p_data": ...,
+            "p_multijet": ...,
             "p_ttbar": ...,
             "p_sig": batch["p_ZZ"] + batch["p_ZH"] + batch["p_ggF"],
-            "p_bkg": batch["p_data"] + batch["p_ttbar"],
+            "p_bkg": batch["p_multijet"] + batch["p_ttbar"],
         }

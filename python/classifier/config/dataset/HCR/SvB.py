@@ -82,7 +82,7 @@ class _Train(CommonTrain):
             _group.add_column(
                 key="kl", pattern=r"kl:(?P<kl>.*)", default=np.nan, dtype=float
             ),
-            _group.add_single_label(),
+            _group.add_single_label({"data": "multijet"}),
             _group.regex(
                 r"label:.*",
                 [
