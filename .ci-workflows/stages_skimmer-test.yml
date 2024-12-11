@@ -7,7 +7,8 @@ skimmer-test-job:
   artifacts: 
     paths:
       - python/output/skimmer_test_job/picoaod_datasets_GluGluToHHTo4B_cHHH0_UL18.yml
-      - python/output/skimmer_test_job/GluGluToHHTo4B_cHHH0_UL18/picoAOD.root
+      - python/output/skimmer_test_job/GluGluToHHTo4B_cHHH0_UL18/picoAOD.chunk0.root
+      - python/output/skimmer_test_job/GluGluToHHTo4B_cHHH0_UL18/picoAOD.chunk1.root
       - python/output/skimmer_test_job/datasets_HH4b.yml
 
 skimmer-basic-test-job:   
