@@ -24,19 +24,19 @@ dataset:
     option:
       - --norm {norm}
       - --friends
-      - 
+      -
       - root://cmseos.fnal.gov//store/user/{user}/HH4b/friend/friend.json@@HCR_input
       - --friends
       - label:data
       - root://cmseos.fnal.gov//store/user/{user}/HH4b/friend/friend.json@@JCM_weight
       - root://cmseos.fnal.gov//store/user/{user}/HH4b/friend/friend.json@@FvT_weight
-  
+
   - module: HCR.SvB.Signal
     option:
       - --friends
-      - 
+      -
       - root://cmseos.fnal.gov//store/user/{user}/HH4b/friend/friend.json@@HCR_input
-  
+
 setting:
   - module: IO
     option:

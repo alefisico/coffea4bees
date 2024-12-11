@@ -278,7 +278,7 @@ class HCRModelEval(Model):
         for k in saved["input"].keys():
             if getattr(InputBranch, k) != saved["input"][k]:
                 raise ValueError(
-                    f'Input features "{k}" mismatch: training={saved['input'][k]}, evaluation={getattr(InputBranch, k)}'
+                    f'Input features "{k}" mismatch: training={saved["input"][k]}, evaluation={getattr(InputBranch, k)}'
                 )
         self._nn = HCR(
             dijetFeatures=saved["arch"]["n_features"],
