@@ -833,6 +833,7 @@ def add_ratio_plots(ratio_config, plot_data, **kwargs):
         if _band_config:
             band_config = copy.deepcopy(_band_config)
             band_config["ratio"] = np.ones(len(numCenters)).tolist()
+            denValues[denValues == 0] = _epsilon
             band_config["error"] = np.sqrt(denVars * np.power(denValues, -2.0)).tolist()
             band_config["centers"] = list(numCenters)
             plot_data["ratio"][f"band_{r_name}"] = band_config

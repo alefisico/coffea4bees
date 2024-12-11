@@ -109,8 +109,6 @@ def get_label(default_str, override_list, i):
 
 def makeRatio(numValues, numVars, denValues, denVars, epsilon=0.001, **kwargs):
 
-    denValues[denValues == 0] = epsilon
-    numValues[numValues == 0] = epsilon
     ratios = numValues / denValues
 
     if kwargs.get("norm", False):
@@ -122,8 +120,13 @@ def makeRatio(numValues, numVars, denValues, denVars, epsilon=0.001, **kwargs):
     ratios[ratios == 0] = np.nan
     ratios[np.isinf(ratios)] = np.nan
 
+    # if no den set to np.nan
+    ratios[denValues == 0] = np.nan
+
     # Both num and denom. uncertianties
     # ratio_uncert = np.abs(ratios) * np.sqrt(numVars * np.power(numValues, -2.0) + denVars * np.power(denValues, -2.0 ))
+    #denValues[denValues == 0] = epsilon
+    numValues[numValues == 0] = epsilon
     ratio_uncert = np.abs(ratios) * np.sqrt(numVars * np.power(numValues, -2.0))
 
     ## https://github.com/scikit-hep/hist/blob/main/src/hist/intervals.py
