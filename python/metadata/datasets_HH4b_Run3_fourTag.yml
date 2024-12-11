@@ -1447,9 +1447,11 @@ datasets:
           - root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v2/data_2023_preBPixC/picoAOD_seedXXX.root
           - root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v2/data_2023_preBPixD/picoAOD_seedXXX.root
           - root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v2/data_2023_preBPixE/picoAOD_seedXXX.root
-          - root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v2/data_2023_preBPixF/picoAOD_seedXXX.root
+          - root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v2/data_2023_preBPixF/picoAOD_seedXXX.chunk0.root
+          - root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v2/data_2023_preBPixF/picoAOD_seedXXX.chunk1.root         
     2023_BPix:
       picoAOD:
         files_template:
-          - root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v2/data_2023_BPixD/picoAOD_seedXXX.root
+          - root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v2/data_2023_BPixD/picoAOD_seedXXX.chunk0.root
+          - root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v2/data_2023_BPixD/picoAOD_seedXXX.chunk1.root    
           - root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v2/data_2023_BPixE/picoAOD_seedXXX.root
