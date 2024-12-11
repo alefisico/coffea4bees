@@ -139,7 +139,7 @@ def apply_object_selection_4b(event, corrections_metadata, *,
 
     event['fourTag']  = (event['nJet_tagged'] >= 4)
     event['threeTag'] = (event['nJet_tagged_loose'] == 3) & (event['nJet_selected'] >= 4)
-    event['twoTag']   = (event['nJet_tagged'] == 2) & (event['nJet_selected'] >= 4)
+    event['twoTag']   = (event['nJet_tagged_loose'] == 2) & (event['nJet_selected'] >= 4)
 
     if isRun3:
         event['passPreSel'] = event.twoTag | event.threeTag | event.fourTag
