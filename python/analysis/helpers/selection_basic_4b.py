@@ -472,8 +472,8 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
             else: tmp_mask = np.full(len(selev), True)
             compute_SvB(selev,
                         tmp_mask,
-                        classifier_SvB,
-                        classifier_SvB_MA,
+                        SvB=classifier_SvB,
+                        SvB_MA=classifier_SvB_MA,
                         doCheck=False)
 
         quadJet["SvB_q_score"] = np.concatenate( [

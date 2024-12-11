@@ -1705,7 +1705,9 @@ class InputEmbed(nn.Module):
         o = o.view(n, 5, -1)
         a = a.view(n, self.dA, 1)
 
-        a[:, 1, :] = torch.log(a[:, 1, :] - 3)
+        a[:, 1, :] = torch.log(
+            a[:, 1, :] - 3
+        )  # TODO: find index based on the feature name
 
         if self.store:
             self.storeData["canJets"] = j.detach().to("cpu").numpy()

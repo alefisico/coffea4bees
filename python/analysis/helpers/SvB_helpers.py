@@ -1,7 +1,12 @@
-import numpy as np
-import awkward as ak
-from base_class.math.random import Squares
 import logging
+from typing import TYPE_CHECKING
+
+import awkward as ak
+import numpy as np
+from base_class.math.random import Squares
+
+if TYPE_CHECKING:
+    from .classifier.HCR import HCREnsemble
 
 def setSvBVars(SvBName, event):
 
@@ -39,59 +44,31 @@ def setSvBVars(SvBName, event):
     event[SvBName, "ps_hh"] = this_ps_hh
 
 
-def compute_SvB(events, mask, classifier_SvB, classifier_SvB_MA, doCheck=True):
-
-    # import torch on demand
-    import torch
-    import torch.nn.functional as F
-
+def compute_SvB(events, mask, doCheck=True, **models: HCREnsemble):
     masked_events = events[mask]
-    n = len(masked_events)
 
-    j = torch.zeros(n, 4, 4)
-    j[:, 0, :] = torch.tensor(masked_events.canJet.pt)
-    j[:, 1, :] = torch.tensor(masked_events.canJet.eta)
-    j[:, 2, :] = torch.tensor(masked_events.canJet.phi)
-    j[:, 3, :] = torch.tensor(masked_events.canJet.mass)
+    for name, model in models.items():
+        if model is None:
+            continue
 
-    o = torch.zeros(n, 5, 8)
-    o[:, 0, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(masked_events.notCanJet_coffea.pt,       target=8, clip=True) ), -1, ) )
-    o[:, 1, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(masked_events.notCanJet_coffea.eta,      target=8, clip=True) ), -1, ) )
-    o[:, 2, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(masked_events.notCanJet_coffea.phi,      target=8, clip=True) ), -1, ) )
-    o[:, 3, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(masked_events.notCanJet_coffea.mass,     target=8, clip=True) ), -1, ) )
-    o[:, 4, :] = torch.tensor( ak.fill_none( ak.to_regular( ak.pad_none(masked_events.notCanJet_coffea.isSelJet, target=8, clip=True) ), -1, ) )
+        if name in events.fields: 
+            events[f"old_{name}"] = events[name]
 
-    a = torch.zeros(n, 4)
-    a[:, 0] = float(masked_events.metadata["year"][3])
-    a[:, 1] = torch.tensor(masked_events.nJet_selected)
-    a[:, 2] = torch.tensor(masked_events.xW)
-    a[:, 3] = torch.tensor(masked_events.xbW)
+        tmp_c_score, tmp_q_score = model(masked_events)
 
-    e = torch.tensor(masked_events.event) % 3
-
-    for classifier in ["SvB", "SvB_MA"]:
-
-        if classifier in events.fields: 
-            events[f"old_{classifier}"] = events[classifier]
-        
-        if classifier == "SvB":
-            c_logits, q_logits = classifier_SvB(j, o, a, e)
-
-        if classifier == "SvB_MA":
-            c_logits, q_logits = classifier_SvB_MA(j, o, a, e)
-
-        tmp_c_score, tmp_q_score = ( F.softmax(c_logits, dim=-1).numpy(), F.softmax(q_logits, dim=-1).numpy(), )
-        c_score = np.zeros((events.__len__(),5))
+        c_score = np.zeros((len(events),tmp_c_score.shape[1]))
         c_score[mask] = tmp_c_score
-        q_score = np.zeros((events.__len__(),3))
+        q_score = np.zeros((len(events),tmp_q_score.shape[1]))
         q_score[mask] = tmp_q_score
 
-        # classes = [mj,tt,zz,zh,hh]
-        pmj = c_score[:, 0]
-        ptt = c_score[:, 1]
-        pzz = c_score[:, 2]
-        pzh = c_score[:, 3]
-        phh = c_score[:, 4]
+        del tmp_c_score, tmp_q_score
+
+        classes = model.classes
+        pmj = c_score[:, classes.index("multijet")]
+        ptt = c_score[:, classes.index("ttbar")]
+        pzz = c_score[:, classes.index("ZZ")]
+        pzh = c_score[:, classes.index("ZH")]
+        phh = c_score[:, classes.index("ggF")]
         ps = pzz + pzh + phh
         passMinPs = (pzz > 0.01) | (pzh > 0.01) | (phh > 0.01)
 
@@ -114,7 +91,7 @@ def compute_SvB(events, mask, classifier_SvB, classifier_SvB_MA, doCheck=True):
         ps_hh = this_ps_hh
 
         largest_name = np.array(["None", "ZZ", "ZH", "HH"])
-        events[classifier] = ak.zip({
+        events[name] = ak.zip({
             "pmj": pmj,
             "ptt": ptt,
             "pzz": pzz,
@@ -135,25 +112,24 @@ def compute_SvB(events, mask, classifier_SvB, classifier_SvB_MA, doCheck=True):
             "tt_vs_mj": ( ptt / (ptt + pmj) )
         })
 
-        if doCheck and f"old_{classifier}" in events.fields:
-            error = ~np.isclose(events[f"old_{classifier}"].ps, events[classifier].ps, atol=1e-5, rtol=1e-3)
+        if doCheck and f"old_{name}" in events.fields:
+            error = ~np.isclose(events[f"old_{name}"].ps, events[name].ps, atol=1e-5, rtol=1e-3)
             if np.any(error):
-                delta = np.abs(events[f"old_{classifier}"].ps - events[classifier].ps)
+                delta = np.abs(events[f"old_{name}"].ps - events[name].ps)
                 worst = np.max(delta) == delta
                 worst_events = events[worst][0]
 
-                logging.warning( f"WARNING: Calculated {classifier} does not agree within tolerance for some events ({np.sum(error)}/{len(error)}) {delta[worst]}" )
+                logging.warning( f"WARNING: Calculated {name} does not agree within tolerance for some events ({np.sum(error)}/{len(error)}) {delta[worst]}" )
 
                 logging.warning("----------")
 
-                for field in events[classifier].fields:
-                    logging.warning(f"{field} {worst_events[classifier][field]}")
+                for field in events[name].fields:
+                    logging.warning(f"{field} {worst_events[name][field]}")
 
                 logging.warning("----------")
 
-                for field in events[classifier].fields:
-                    logging.warning(f"{field} {events[classifier][worst][field]}")
-
+                for field in events[name].fields:
+                    logging.warning(f"{field} {events[name][worst][field]}")
 
 
 def subtract_ttbar_with_SvB(selev, dataset, year):

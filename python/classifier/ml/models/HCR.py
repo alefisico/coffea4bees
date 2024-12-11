@@ -247,6 +247,7 @@ class HCRTraining(MultiStageTraining):
                         "arch": {
                             "n_features": self._arch.n_features,
                             "attention": self._arch.use_attention_block,
+                            "ancillary": InputBranch.feature_ancillary,
                         },
                     },
                     f,
@@ -266,6 +267,10 @@ class HCRModelEval(Model):
         self._splitter = splitter
         self._mapping = mapping
         self._classes = saved["label"]
+        if not InputBranch.feature_ancillary == saved["arch"]["ancillary"]:
+            raise ValueError(
+                "Ancillary features in input dataset do not match the saved model"
+            )
         self._nn = HCR(
             dijetFeatures=saved["arch"]["n_features"],
             quadjetFeatures=saved["arch"]["n_features"],
