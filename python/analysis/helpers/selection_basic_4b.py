@@ -198,16 +198,12 @@ def apply_object_selection_4b(event, corrections_metadata, *,
     if loosePtForSkim:
         event['Jet', 'selected_lowpt_forskim'] = (event.Jet.pt >= 15) & (np.abs(event.Jet.eta) <= 2.4) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
         event['nJet_selected_lowpt_forskim'] = ak.sum(event.Jet.selected_lowpt_forskim, axis=1)
-        event['Jet', 'tagged_lowpt_forskim']     = event.Jet.selected_lowpt_forskim & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['M'])
+        event['Jet', 'tagged_lowpt_forskim']     = event.Jet.selected_lowpt_forskim & (event.Jet.btagScore >= corrections_metadata['btagWP']['M'])
         event['passJetMult_lowpt_forskim'] = event.nJet_selected_lowpt_forskim >= 4
         event['nJet_tagged_lowpt_forskim']       = ak.num(event.Jet[event.Jet.tagged_lowpt_forskim])
         event["fourTag_lowpt_forskim"]  = (event['nJet_tagged_lowpt_forskim']     >= 4)
         event['passPreSel_lowpt_forskim'] = event.threeTag | event.fourTag_lowpt_forskim
 
-
-    ## for skims
-    event['passJetMult_lowpt_forskim'] = event.passJetMult
-    event['passPreSel_lowpt_forskim'] = event.passPreSel
 
     #  Calculate hT
     event["hT"] = ak.sum(event.Jet[event.Jet.selected_loose].pt, axis=1)
