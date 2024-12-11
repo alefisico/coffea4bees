@@ -82,6 +82,9 @@ do
 
         if [ -f "${datacard}.root" ]; then
 
+            # datacard="datacard_HHbb_2016"
+            # iclass="SvB_MA_2016"
+
             combineTool.py -M Impacts -d ${datacard}.root --doInitialFit \
             --setParameterRanges r${signallabel}=-10,10:rggHH_kl_0_kt_1_hbbhbb=0,0:rggHH_kl_2p45_kt_1_hbbhbb=0,0:rggHH_kl_5_kt_1_hbbhbb=0,0 \
             --setParameters r${signallabel}=1,rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0 \
@@ -94,7 +97,12 @@ do
 
             combineTool.py -M Impacts -d ${datacard}.root -o impacts_combine_${iclass}_exp.json -m 125 -n ${iclass}
 
-            plotImpacts.py -i impacts_combine_${iclass}_exp.json -o impacts_combine_${iclass}_exp_HH --POI r${signallabel} --per-page 20 --left-margin 0.3 --height 400 --label-size 0.04 --translate ${currentDir}/stats_analysis/nuisance_names.json
+            if [[ ! -d "${currentDir}/stats_analysis" ]]; then
+                tmpDir=${currentDir}/python/stats_analysis
+            else
+                tmpDir=${currentDir}/stats_analysis
+            fi
+            plotImpacts.py -i impacts_combine_${iclass}_exp.json -o impacts_combine_${iclass}_exp_HH --POI r${signallabel} --per-page 20 --left-margin 0.3 --height 400 --label-size 0.04 --translate ${tmpDir}/nuisance_names.json
             mkdir -p impacts/
             mv higgsCombine*Fit* impacts/
         else
@@ -108,7 +116,7 @@ do
             --saveWorkspace --saveFitResult -d ${datacard}.root \
             --setParameters r${signallabel}=1,rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0
 
-            PostFitShapesFromWorkspace -w higgsCombine_${iclass}_fit_s.MultiDimFit.mH120.root -f multidimfit_${iclass}_fit_s.root:fit_mdf --total-shapes --postfit --output postfit_s.root
+            PostFitShapesFromWorkspace -w higgsCombine_${iclass}_fit_s.MultiDimFit.mH120.root -f multidimfit_${iclass}_fit_s.root:fit_mdf --total-shapes --output postfit_s.root --freeze r${signallabel}=1,rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0 #--postfit
 
         else
             echo "File ${datacard}.root does not exist."

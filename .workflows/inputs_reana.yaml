@@ -10,6 +10,7 @@ dataset:
   - TTTo2L2Nu 
 dataset_signals:
   - ZZ4b 
+  - ggZH4b
   - ZH4b 
   - GluGluToHHTo4B_cHHH1
 dataset_systematics:

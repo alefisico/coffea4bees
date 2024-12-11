@@ -109,11 +109,11 @@ class analysis(processor.ProcessorABC):
         #
         #  genJet -> b-quark matching
         #
-        event['bfromH']= find_genpart(event.GenPart, [5], [25])
+        event['bfrom_Z_or_H']= find_genpart(event.GenPart, [5], [23,25])
 
         event['GenJet', 'selectedBs00'] = (event.GenJet.pt >= 0) & (np.abs(event.GenJet.eta) <= 2.4) & (np.abs(event.GenJet.partonFlavour)==5)
         event['selGenBJet00'] = event.GenJet[event.GenJet.selectedBs00]
-        event['matchedGenBJet00'] = event.bfromH.nearest( event.selGenBJet00, threshold=0.2 )
+        event['matchedGenBJet00'] = event.bfrom_Z_or_H.nearest( event.selGenBJet00, threshold=0.2 )
         event['matchedGenBJet00'] = event.matchedGenBJet00[ ak.argsort(event.matchedGenBJet00.pt, axis=1, ascending=False) ]
         event['matchedGenBJet00'] = event.matchedGenBJet00[~ak.is_none(event.matchedGenBJet00, axis=1)]
 
