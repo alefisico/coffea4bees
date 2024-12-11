@@ -9,6 +9,8 @@ from base_class.system.eos import EOS, PathLike
 from classifier.config.model._kfold import KFoldEval
 from classifier.ml.skimmer import Splitter
 from classifier.nn.blocks.HCR import HCR
+from classifier.ml import BatchType
+from classifier.config.setting.HCR import Input
 
 from .. import networks
 
@@ -52,11 +54,12 @@ class _HCRKFoldModel:
             states = torch.load(f, map_location=torch.device("cpu"))
         self._classes: list[str] = states["label"]
         self._reindex: list[int] = None
-        self._ancillary = states["arch"]["ancillary"]
+        self.ancillary = states["input"]["feature_ancillary"]
+        self.n_othjets = states["input"]["n_NotCanJet"]
         self._model = HCR(
             dijetFeatures=states["arch"]["n_features"],
             quadjetFeatures=states["arch"]["n_features"],
-            ancillaryFeatures=self._ancillary,
+            ancillaryFeatures=self.ancillary,
             useOthJets=("attention" if states["arch"]["attention"] else ""),
             nClasses=len(self._classes),
         )
@@ -103,12 +106,15 @@ class HCREnsemble:
     def __init__(self, path: PathLike, name: str = None):
         self.models: list[_HCRKFoldModel] = _HCRKFoldEval(path, name).evaluate()
         self.classes = self.models[0].classes
-        self.ancillary = self.models[0]._ancillary
+        self.ancillary = self.models[0].ancillary
+        self.n_othjets = self.models[0].n_othjets
         for model in self.models:
-            if model._ancillary != self.ancillary:
-                raise ValueError(
-                    f"HCR evaluation: ancillary features mismatch, expected {self.ancillary} got {model._ancillary}"
-                )
+            for k in ("ancillary", "n_othjets"):
+                if getattr(self, k) != getattr(model, k):
+                    raise ValueError(
+                        f"HCR evaluation: {k} mismatch, expected {getattr(self, k)} got {getattr(model, k)}"
+                    )
             model.classes = self.classes
 
-    def __call__(self, event: ak.Array) -> tuple[npt.NDArray, npt.NDArray]: ...  # TODO
+    def __call__(self, event: ak.Array) -> tuple[npt.NDArray, npt.NDArray]:
+        n = len(event)

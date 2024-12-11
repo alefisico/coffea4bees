@@ -247,7 +247,15 @@ class HCRTraining(MultiStageTraining):
                         "arch": {
                             "n_features": self._arch.n_features,
                             "attention": self._arch.use_attention_block,
-                            "ancillary": InputBranch.feature_ancillary,
+                        },
+                        "input": {
+                            k: getattr(InputBranch, k)
+                            for k in (
+                                "feature_ancillary",
+                                "feature_CanJet",
+                                "feature_NotCanJet",
+                                "n_NotCanJet",
+                            )
                         },
                     },
                     f,
@@ -267,10 +275,11 @@ class HCRModelEval(Model):
         self._splitter = splitter
         self._mapping = mapping
         self._classes = saved["label"]
-        if not InputBranch.feature_ancillary == saved["arch"]["ancillary"]:
-            raise ValueError(
-                "Ancillary features in input dataset do not match the saved model"
-            )
+        for k in saved["input"].keys():
+            if getattr(InputBranch, k) != saved["input"][k]:
+                raise ValueError(
+                    f'Input features "{k}" mismatch: training={saved['input'][k]}, evaluation={getattr(InputBranch, k)}'
+                )
         self._nn = HCR(
             dijetFeatures=saved["arch"]["n_features"],
             quadjetFeatures=saved["arch"]["n_features"],
