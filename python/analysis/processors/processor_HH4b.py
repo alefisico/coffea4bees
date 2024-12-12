@@ -116,14 +116,12 @@ class analysis(processor.ProcessorABC):
                 self.friends[name] = Friend.from_json(parse.mapping(path, "file"))
         if friend_templates:
             for template in friend_templates:
-                name = template["name"]
-                path = template["path"]
                 keys = template["keys"]
                 if isinstance(keys, str):
                     keys = eval(keys)
                 for key in keys:
-                    self.friends[name.format(**key)] = Friend.from_json(
-                        parse.mapping(path.format(**key), "file")
+                    self.friends[template["name"].format(**key)] = Friend.from_json(
+                        parse.mapping(template["path"].format(**key), "file")
                     )
 
         self.cutFlowCuts = [
@@ -248,7 +246,13 @@ class analysis(processor.ProcessorABC):
                     raise ValueError("ERROR: FvT events do not match events ttree")
 
         if self.run_SvB:
-            if (self.classifier_SvB is None) | (self.classifier_SvB_MA is None):
+            for k in self.friends:
+                if k.startswith("SvB"):
+                    from ..helpers.load_friend import rename_SvB_friend
+                    event[k] = rename_SvB_friend(target, self.friends[k])
+                    setSvBVars(k, event)
+
+            if "SvB" not in self.friends and self.classifier_SvB is None:
                 # SvB_file = f'{path}/SvB_newSBDef.root' if 'mix' in self.dataset else f'{fname.replace("picoAOD", "SvB_ULHH")}'
                 SvB_file = f'{path}/SvB_ULHH.root' if 'mix' in self.dataset else f'{fname.replace("picoAOD", "SvB_ULHH")}'
                 event["SvB"] = ( NanoEventsFactory.from_root( SvB_file,
@@ -256,7 +260,10 @@ class analysis(processor.ProcessorABC):
 
                 if not ak.all(event.SvB.event == event.event):
                     raise ValueError("ERROR: SvB events do not match events ttree")
+                # defining SvB for different SR
+                setSvBVars("SvB", event)
 
+            if "SvB_MA" not in self.friends and self.classifier_SvB_MA is None:
                 # SvB_MA_file = f'{path}/SvB_MA_newSBDef.root' if 'mix' in self.dataset else f'{fname.replace("picoAOD", "SvB_MA_ULHH")}'
                 SvB_MA_file = f'{path}/SvB_MA_ULHH.root' if 'mix' in self.dataset else f'{fname.replace("picoAOD", "SvB_MA_ULHH")}'
                 event["SvB_MA"] = ( NanoEventsFactory.from_root( SvB_MA_file,
@@ -264,9 +271,7 @@ class analysis(processor.ProcessorABC):
 
                 if not ak.all(event.SvB_MA.event == event.event):
                     raise ValueError("ERROR: SvB_MA events do not match events ttree")
-
                 # defining SvB for different SR
-                setSvBVars("SvB", event)
                 setSvBVars("SvB_MA", event)
 
         if self.config["isDataForMixed"]:
