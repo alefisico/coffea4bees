@@ -1,3 +1,4 @@
+# TODO: this should be removed after new skim 
 export LPCUSER="chuyuanl"
 export CERNUSER="c/chuyuan"
 export WFS="classifier/config/workflows/HCR/FvT_study_model"

@@ -70,3 +70,9 @@ class jetCombinatoricModel:
         c = np.array([nPseudoTagProb[:npt+1].sum(axis=0) for npt in range(maxPseudoTags+1)]) # cumulative prob
         npt = (r>c).sum(axis=0)
         return w, npt
+
+
+# TODO this should be removed when JCM is decoupled from FvT
+class UnitJCM:
+    def __call__(self, untagged_jets, event=None):
+        return np.ones(len(untagged_jets)), None
