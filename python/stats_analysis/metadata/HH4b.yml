@@ -69,6 +69,20 @@ uncertainty:
       *17: [0.942, 1.037]
       *18: [0.942, 1.037]
   
+  uncert_pdf_HH:
+    type: 'lnN'
+    years:
+      *16: 1.030
+      *17: 1.030
+      *18: 1.030
+
+  uncert_pdf_HH:
+    type: 'lnN'
+    years:
+      *16: [0.95, 1.022]
+      *17: [0.95, 1.022]
+      *18: [0.95, 1.022]
+
   # mtop_gHH:
   #   type: 'lnN'
   #   years:
@@ -78,12 +92,3 @@ uncertainty:
 
 # mtop https://twiki.cern.ch/twiki/bin/view/LHCPhysics/LHCHWGHH?redirectedfrom=LHCPhysics.LHCHXSWGHH#Current_recommendations_for_HH_c
 # https://gitlab.cern.ch/hh/naming-conventions https://twiki.cern.ch/twiki/bin/view/LHCPhysics/CERNYellowReportPageBR?rev=22#Higgs_2_fermions
-#uncert_pdf_HH = {'HH': '1.030'} #https://gitlab.cern.ch/hh/naming-conventions
-#uncert_pdf_ZH = {'ZH': '1.013'}
-#uncert_pdf_ZZ = {'ZZ': '1.001'} #https://twiki.cern.ch/twiki/bin/viewauth/CMS/StandardModelCrossSectionsat13TeV?rev=27
-#uncert_scale_ZZ = {'ZZ': '1.002'} #https://twiki.cern.ch/twiki/bin/viewauth/CMS/StandardModelCrossSectionsat13TeV?rev=27
-#uncert_scale_ZH = {'ZH': '0.97/1.038'} #https://gitlab.cern.ch/hh/naming-conventions
-#uncert_scale_HH = {'HH': '0.95/1.022'}
-#uncert_alpha_s  = {'ZH': '1.009'} #https://gitlab.cern.ch/hh/naming-conventions
-## all three signal processes have different production modes and so do not have shared pdf or scale nuisance parameters so they can be combined into a single parameter
-#uncert_xs = {'ZZ': '1.002', 'ZH': '0.966/1.041', 'HH': '0.942/1.037'}

@@ -62,7 +62,6 @@ def create_combine_root_file( file_to_convert,
         root_hists[iyear] = {}
 
         ### For multijets
-
         root_hists[iyear]['multijet'] = {}
         root_hists[iyear]['multijet']['nominal'] = json_to_TH1(
             coffea_hists[var]['data'][iyear]['threeTag']['SR'], 'multijet_'+iyear+var, rebin )
@@ -77,34 +76,37 @@ def create_combine_root_file( file_to_convert,
                 root_hists[iyear][iprocess]['nominal'] = json_to_TH1(
                     coffea_hists[var][iprocess][iyear]['fourTag']['SR'], iprocess+'_'+iyear, rebin )
 
-
         if systematics_file: # and not use_preUL:
             for iprocess in metadata['processes']['signal']:
-
                 root_hists[iyear][iprocess] = {}
-                for ivar in coffea_hists_syst[var][iprocess][iyear].keys():
-                    
-                    ## renaming syst
-                    if 'prefire' in ivar: namevar = ivar.replace("CMS_prefire", 'CMS_l1_ecal_prefiring')
-                    else: namevar = ivar
-                    namevar = namevar.replace('_Up', 'Up').replace('_Down', 'Down')
+                if stat_only:
+                    root_hists[iyear][iprocess]["nominal"] = json_to_TH1(
+                                                        coffea_hists_syst[var][iprocess][iyear]["nominal"]['fourTag']['SR'], 
+                                                        f'{iprocess}_nominal_{iyear}', rebin )
+                else:
+                    for ivar in coffea_hists_syst[var][iprocess][iyear].keys():
+                        
+                        ## renaming syst
+                        if 'prefire' in ivar: namevar = ivar.replace("CMS_prefire", 'CMS_l1_ecal_prefiring')
+                        else: namevar = ivar
+                        namevar = namevar.replace('_Up', 'Up').replace('_Down', 'Down')
 
-                    ### check for dedicated JESUnc per year, if not conitnue
-                    tmpvar = namevar.replace('Up','').replace('Down', '')
-                    if tmpvar not in mcSysts and not 'nominal' in tmpvar: mcSysts.append( tmpvar )
-                    tmpvar = ''.join(tmpvar[-2:])
-                    if tmpvar.isdigit() and int(tmpvar) != int(iyear[2:4]): continue
+                        ### check for dedicated JESUnc per year, if not conitnue
+                        tmpvar = namevar.replace('Up','').replace('Down', '')
+                        if tmpvar not in mcSysts and not 'nominal' in tmpvar: mcSysts.append( tmpvar )
+                        tmpvar = ''.join(tmpvar[-2:])
+                        if tmpvar.isdigit() and int(tmpvar) != int(iyear[2:4]): continue
 
-                    ### trigger efficiency
-                    if 'triggerEffSFUp' in namevar:
-                        make_trigger_syst(coffea_hists_syst[var][iprocess][iyear],
-                                            root_hists[iyear][iprocess],
-                                            f'{iprocess}_{ivar}_{iyear}', rebin)
-                    elif 'triggerEffSFDown' in namevar: continue
-                    else:
-                        root_hists[iyear][iprocess][namevar] = json_to_TH1(
-                                                        coffea_hists_syst[var][iprocess][iyear][ivar]['fourTag']['SR'], 
-                                                        f'{iprocess}_{ivar}_{iyear}', rebin )
+                        ### trigger efficiency
+                        if 'triggerEffSFUp' in namevar:
+                            make_trigger_syst(coffea_hists_syst[var][iprocess][iyear],
+                                                root_hists[iyear][iprocess],
+                                                f'{iprocess}_{ivar}_{iyear}', rebin)
+                        elif 'triggerEffSFDown' in namevar: continue
+                        else:
+                            root_hists[iyear][iprocess][namevar] = json_to_TH1(
+                                                            coffea_hists_syst[var][iprocess][iyear][ivar]['fourTag']['SR'], 
+                                                            f'{iprocess}_{ivar}_{iyear}', rebin )
     
     # if systematics_file and use_preUL:
     #     iprocess = 'HH4b'
@@ -198,7 +200,7 @@ def create_combine_root_file( file_to_convert,
                         if 'nominal' in ivar: 
                             root_hists[channel][label][ivar].SetName(label)
                             root_hists[channel][label][ivar].SetTitle(f'{label}_{channel}')
-                        else: 
+                        else:
                             root_hists[channel][label][ivar].SetName(f'{label}_{ivar}')
                             root_hists[channel][label][ivar].SetTitle(f'{label}_{ivar}_{channel}')
                 if not ip.startswith(label): del root_hists[channel][ip]
@@ -254,7 +256,9 @@ def create_combine_root_file( file_to_convert,
         else:
             for nuisance in closureSysts:
                 cb.cp().process(["multijet"]).AddSyst(cb, nuisance, 'shape', ch.SystMap()(1.0))
+            cb.SetGroup("multijet", closureSysts)
             
+            btagSysts = []
             for nuisance in mcSysts:
                 if ('2016' in nuisance):
                     if ('2016' in ibin):
@@ -267,6 +271,9 @@ def create_combine_root_file( file_to_convert,
                         cb.cp().signals().AddSyst(cb, nuisance, 'shape', ch.SystMap('bin')(['HHbb_2018'],1.0))
                 else:
                     cb.cp().signals().AddSyst(cb, nuisance, 'shape', ch.SystMap()(1.0))
+                if 'btag' in nuisance:
+                    btagSysts.append(nuisance)
+            cb.SetGroup("btag", btagSysts)
 
             for isyst in metadata['uncertainty']:
                 if ('2016' in isyst):
