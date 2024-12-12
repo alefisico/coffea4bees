@@ -2,8 +2,8 @@ export LPCUSER="chuyuanl"
 export CERNUSER="c/chuyuan"
 export WFS="classifier/config/workflows/HCR/FvT_baseline_legacy"
 export BASE="root://cmseos.fnal.gov//store/user/${LPCUSER}/HH4b"
-export MODEL="${BASE}/classifier/FvT/baseline_legacy/JCM/"
-export WEB="root://eosuser.cern.ch//eos/user/${CERNUSER}/www/HH4b/classifier/FvT_baseline_legacy/JCM/"
+export MODEL="${BASE}/classifier/FvT/baseline_legacy/noJCM/"
+export WEB="root://eosuser.cern.ch//eos/user/${CERNUSER}/www/HH4b/classifier/FvT_baseline_legacy/noJCM/"
 export GMAIL=~/gmail.yml
 
 # check port

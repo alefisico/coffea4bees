@@ -14,21 +14,15 @@ else
 fi
 
 # train mixed and make plots
-for i in {0..14}
-do
-    ./pyml.py template "{mixed: ${i}, offset: 0, user: ${LPCUSER}}" $WFS/train_mixed.yml -setting Monitor "address: :${port}"
-    ./pyml.py analyze --results ${MODEL}/mixed-${i}/result.json -analysis HCR.LossROC -setting IO "output: ${WEB}" -setting IO "report: mixed-${i}" -setting Monitor "address: :${port}"
-done
+./pyml.py template "{offset: 0, user: ${LPCUSER}}" $WFS/train.yml -setting Monitor "address: :${port}"
+./pyml.py analyze --results ${MODEL}/data/result.json -analysis HCR.LossROC -setting IO "output: ${WEB}" -setting IO "report: data" -setting Monitor "address: :${port}"
 # evaluate
-for i in {0..14}
-do
-    ./pyml.py template "{mixed: ${i}, user: ${LPCUSER}}" $WFS/evaluate_mixed.yml -setting Monitor "address: :${port}"
-done
+./pyml.py template "{user: ${LPCUSER}}" $WFS/evaluate.yml -setting Monitor "address: :${port}"
 
 if [ -e "$GMAIL" ]; then
     ./pyml.py analyze \
         -analysis notify.Gmail \
-        --title "FvT mixed baseline done" \
+        --title "FvT data baseline done" \
         --body "finished at $(date)" \
         --labels Classifier HH4b \
         -from $GMAIL \

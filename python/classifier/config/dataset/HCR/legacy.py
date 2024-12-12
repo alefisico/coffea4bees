@@ -64,7 +64,7 @@ class _Legacy(Deprecated, _common.Common):
             _group.fullmatch(
                 ("label:data",),
                 processors=[lambda: add_columns(**{Columns.weight: 1.0})],
-            ),
+            ),  # HACK: JCM weight for 3b data is not applied either. To apply, add --preprocess label:data
         ] + list(super().preprocess_by_group())
 
     def other_branches(self):
