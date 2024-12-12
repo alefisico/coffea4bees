@@ -107,8 +107,7 @@ def apply_object_selection_4b(event, corrections_metadata, *,
     event['selJet_no_bRegCorr']  = event.Jet[event.Jet.selected]
 
     if "PNetRegPtRawCorr" in event.Jet.fields:
-        #event['Jet', 'bRegCorr']       = event.Jet.PNetRegPtRawCorr * event.Jet.PNetRegPtRawCorrNeutrino
-        event['Jet', 'bRegCorr']       = event.Jet.PNetRegPtRawCorr # * event.Jet.PNetRegPtRawCorrNeutrino
+        event['Jet', 'bRegCorr']       = event.Jet.PNetRegPtRawCorr * event.Jet.PNetRegPtRawCorrNeutrino
 
     #
     # Apply the bRegCorr to the tagged jets

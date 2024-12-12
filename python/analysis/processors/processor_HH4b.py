@@ -161,6 +161,15 @@ class analysis(processor.ProcessorABC):
         #     with open(f"jet_clustering/jet-splitting-PDFs-00-08-00/hT-reweight-00-00-01/hT_weights_{self.year}.yml", "r") as f:
         #         self.hT_weights= yaml.safe_load(f)
 
+        #
+        #  If applying Gaussian Kernal to signal
+        #
+        self.gaussKernalMean = None
+        if self.config["isSignal"] and (self.gaussKernalMean is not None) :
+            bin_edges = np.linspace(0, 1200, 100)  # 100 bins from 0 to 1200
+            bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2  # Calculate bin centers
+            sigma = 0.05 * self.gaussKernalMean  # Standard deviation of the Gaussian
+            self.resonance_weights = np.exp(-0.5 * ((bin_centers - self.gaussKernalMean) / sigma) ** 2)  # Gaussian formula
 
         self.nEvent = len(event)
 
@@ -362,6 +371,7 @@ class analysis(processor.ProcessorABC):
         #     list_weight_names.append(f"hT_reweight")
 
 
+
         selections = PackedSelection()
         selections.add( "lumimask", event.lumimask)
         selections.add( "passNoiseFilter", event.passNoiseFilter)
@@ -400,6 +410,22 @@ class analysis(processor.ProcessorABC):
                                                 event.matchedGenBJet.sum(axis=1),
                                                 1e-10 * event.matchedGenBJet.sum(axis=1),
                                               )
+
+
+
+                if self.gaussKernalMean is not None:
+                    v4b_index = np.floor_divide(event.truth_v4b.mass, 12).to_numpy()
+                    v4b_index[v4b_index > 98] = 98
+
+                    vectorized_v4b = np.vectorize(lambda i: self.resonance_weights[int(i)])
+                    weights_resonance = vectorized_v4b(v4b_index)
+                    #print(" turht Mass is  \n")
+                    #print(event.truth_v4b.mass,"\n")
+                    #print(" resonance_weights are \n")
+                    #print(weights_resonance,"\n")
+                    weights.add( "resonance_reweight", weights_resonance )
+                    list_weight_names.append(f"resonance_reweight")
+
             else:
                 event['pass4GenBJets'] = True
             selections.add( "pass4GenBJets", event.pass4GenBJets)
