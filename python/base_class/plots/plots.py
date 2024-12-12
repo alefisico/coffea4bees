@@ -464,7 +464,8 @@ def _plot2d_from_dict(plot_data, **kwargs):
 
         fig = plt.figure()   # figsize=(size,size/_phi))
         fig.add_axes((0.1, 0.15, 0.85, 0.8))
-        hist_obj_2d.plot2d(cmap="jet")
+        hist_obj_2d.plot2d(cmap="turbo")
+
 
     ax = fig.gca()
 
