@@ -48,17 +48,24 @@ NanoAODSchema.warn_missing_crossrefs = False
 warnings.filterwarnings("ignore")
 
 class _FriendTemplate(TypedDict):
-    name: str
     path: str
-    keys: str | list[dict[str, str]]
+    keys: str | list[dict[str]]
+
+def _init_classfier(path: str | dict[str, str]):
+    if path is None:
+        return None
+    from ..helpers.classifier.HCR import HCREnsemble
+    if isinstance(path, str):
+        path = dict(path=path)
+    return HCREnsemble(**path)
 
 class analysis(processor.ProcessorABC):
     def __init__(
         self,
         *,
         JCM: callable = None,
-        SvB: str = None,
-        SvB_MA: str = None,
+        SvB: str|dict[str,str] = None,
+        SvB_MA: str|dict[str,str] = None,
         blind: bool = False,
         apply_trigWeight: bool = True,
         apply_btagSF: bool = True,
@@ -75,8 +82,7 @@ class analysis(processor.ProcessorABC):
         make_friend_JCM_weight: str = None,
         make_friend_FvT_weight: str = None,
         subtract_ttbar_with_weights: bool = False,
-        friends: dict[str, str] = None,
-        friend_templates: list[_FriendTemplate] = None,
+        friends: dict[str, str|_FriendTemplate] = None,
     ):
 
         logging.debug("\nInitialize Analysis Processor")
@@ -89,10 +95,8 @@ class analysis(processor.ProcessorABC):
         self.run_SvB = run_SvB
         self.fill_histograms = fill_histograms
         self.apply_boosted_veto = apply_boosted_veto
-        if SvB or SvB_MA: # import torch on demand
-            from analysis.helpers.classifier.HCR import HCREnsemble
-        self.classifier_SvB = HCREnsemble(SvB) if SvB else None
-        self.classifier_SvB_MA = HCREnsemble(SvB_MA) if SvB_MA else None
+        self.classifier_SvB = _init_classfier(SvB)
+        self.classifier_SvB_MA = _init_classfier(SvB_MA)
         with open(corrections_metadata, "r") as f:
             self.corrections_metadata = yaml.safe_load(f)
 
@@ -113,16 +117,16 @@ class analysis(processor.ProcessorABC):
             from classifier.task import parse
 
             for name, path in friends.items():
-                self.friends[name] = Friend.from_json(parse.mapping(path, "file"))
-        if friend_templates:
-            for template in friend_templates:
-                keys = template["keys"]
-                if isinstance(keys, str):
-                    keys = eval(keys)
-                for key in keys:
-                    self.friends[template["name"].format(**key)] = Friend.from_json(
-                        parse.mapping(template["path"].format(**key), "file")
-                    )
+                if isinstance(path, str):
+                    self.friends[name] = Friend.from_json(parse.mapping(path, "file"))
+                else:
+                    keys = path["keys"]
+                    if isinstance(keys, str):
+                        keys = eval(keys)
+                    for key in keys:
+                        self.friends[name.format(**key)] = Friend.from_json(
+                            parse.mapping(path["path"].format(**key), "file")
+                        )
 
         self.cutFlowCuts = [
             "all",

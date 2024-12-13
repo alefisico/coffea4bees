@@ -5,7 +5,7 @@ import fsspec
 import numpy.typing as npt
 import torch
 import torch.nn.functional as F
-from base_class.system.eos import EOS, PathLike
+from base_class.system.eos import PathLike
 from classifier.config.model._kfold import KFoldEval
 from classifier.ml.skimmer import Splitter
 from classifier.nn.blocks.HCR import HCR
@@ -103,11 +103,10 @@ class _HCRKFoldEval(KFoldEval):
 
 class HCREnsemble:
     def __new__(cls, path: PathLike, name: str = None):
-        match EOS(path).extension:
-            case "pkl":
-                return _Legacy_HCREnsemble(path)
-            case "json":
-                return cls(path, name)
+        if name is None:
+            return _Legacy_HCREnsemble(path)
+        else:
+            return cls(path, name)
 
     def __init__(self, path: PathLike, name: str = None):
         self.models: list[_HCRKFoldModel] = _HCRKFoldEval(path, name).evaluate()
