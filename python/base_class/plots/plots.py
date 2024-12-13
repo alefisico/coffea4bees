@@ -434,26 +434,38 @@ def _plot2d_from_dict(plot_data, **kwargs):
 
     hist_data = plot_data["hist"]
 
-    hist_obj_2d = plot_helpers.make_2d_hist(x_edges=hist_data["x_edges"], y_edges=hist_data["y_edges"],
-                                            values=hist_data["values"],   variances=hist_data["variances"],
-                                            x_label=hist_data["x_label"], y_label=hist_data["y_label"])
-
     if kwargs.get("full", False):
+        hist_obj_2d = plot_helpers.make_2d_hist(x_edges=hist_data["x_edges"], y_edges=hist_data["y_edges"],
+                                                values=hist_data["values"],   variances=hist_data["variances"],
+                                                x_label=hist_data["x_label"], y_label=hist_data["y_label"])
+
         fig = plt.figure()   # figsize=(size,size/_phi))
         #fig.add_axes((0.1, 0.15, 0.85, 0.8))
+
+        # https://github.com/scikit-hep/hist/blob/main/src/hist/plot.py
         val = hist_obj_2d.plot2d_full(
-            main_cmap="cividis",
-            top_ls="--",
-            top_color="orange",
+            main_cmap="jet",
+            #top_ls="--",
+            top_color="k",
             top_lw=2,
-            side_ls=":",
+            #side_ls=":",
             side_lw=2,
-            side_color="steelblue",
+            side_color="k",
         )
     else:
+        # Mask 0s
+        hd = np.array(hist_data["values"])
+        hd[hd < 0.001] = np.nan
+
+        hist_obj_2d = plot_helpers.make_2d_hist(x_edges=hist_data["x_edges"], y_edges=hist_data["y_edges"],
+                                                values=hd,   variances=hist_data["variances"],
+                                                x_label=hist_data["x_label"], y_label=hist_data["y_label"])
+
+
         fig = plt.figure()   # figsize=(size,size/_phi))
         fig.add_axes((0.1, 0.15, 0.85, 0.8))
-        hist_obj_2d.plot2d()
+        hist_obj_2d.plot2d(cmap="turbo")
+
 
     ax = fig.gca()
 
@@ -833,6 +845,7 @@ def add_ratio_plots(ratio_config, plot_data, **kwargs):
         if _band_config:
             band_config = copy.deepcopy(_band_config)
             band_config["ratio"] = np.ones(len(numCenters)).tolist()
+            denValues[denValues == 0] = _epsilon
             band_config["error"] = np.sqrt(denVars * np.power(denValues, -2.0)).tolist()
             band_config["centers"] = list(numCenters)
             plot_data["ratio"][f"band_{r_name}"] = band_config
