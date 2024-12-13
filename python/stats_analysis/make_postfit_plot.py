@@ -3,8 +3,23 @@ import yaml
 import argparse
 import logging
 import ROOT
+from array import array
 import cmsstyle as CMS
 ROOT.gROOT.SetBatch(True)
+
+def convert_tgraph_to_th1(tgraph, name="hist"):
+    # Create a histogram with the same binning as the TGraphAsymmErrors
+    n_points = tgraph.GetN()
+    x_values = [tgraph.GetX()[i] for i in range(n_points)]
+    x_values.append(x_values[-1] + (x_values[-1] - x_values[-2]))  # Add an extra bin edge
+    hist = ROOT.TH1F(f"hist{name}", f"hist{name}", n_points, array('d', x_values))
+
+    # Fill the histogram with the values from the TGraphAsymmErrors
+    for i in range(n_points):
+        hist.SetBinContent(i+1, tgraph.GetY()[i])
+        hist.SetBinError(i+1, tgraph.GetErrorY(i))
+
+    return hist
 
 if __name__ == '__main__':
 
@@ -16,44 +31,41 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--output', dest="output",
                         default="SvB_postfit.png", help='Output file and directory.')
     parser.add_argument('-i', '--input_file', dest='input_file',
-                        default='post_fit.root', help="Root file after PostFitShapesFromWorkspace")
+                        default='fitDiagnostics.root', help="Root file after fitDiagnostics")
     parser.add_argument('-s', '--signal', dest='signal',
                         default='GluGluToHHTo4B_cHHH1', help="Signal to plot")
     parser.add_argument('-m', '--metadata', dest='metadata',
                         default='stats_analysis/metadata/HH4b.yml', help="Metadata file")
-    parser.add_argument('--do_postfit', dest='do_postfit',
-                        default=False, help="Do postfit plots. If False, does prefit")
+    parser.add_argument('-t', '--type_of_fit', dest='type_of_fit', choices=['prefit', 'fit_b', 'fit_s'],
+                        default='prefit', help="Type of fit to plot, choices: prefit, fit_b, fit_s")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
     logging.info(f"\nRunning with these parameters: {args}")
-
-    label = 'postfit' if args.do_postfit else 'prefit'
     
     logging.info(f"Reading {args.metadata}")
     metadata = yaml.safe_load(open(args.metadata, 'r'))
 
     hists = { }
-    channels = metadata['bin'] #[ 'hh_UL16', 'hh_UL17', 'hh_UL18' ]
-    # channels = [ 'hh6', 'hh7', 'hh8' ]
-    # channels = [ 'ch1', 'ch2', 'ch3' ]
+    channels = metadata['bin'] 
     mj = metadata['processes']['background']['multijet']['label']
     tt = metadata['processes']['background']['tt']['label']
     signal = metadata['processes']['signal'][args.signal]['label']
     infile = ROOT.TFile.Open(args.input_file)
     for i, ichannel in enumerate(channels):
+        tmp_folder = f'shapes_{args.type_of_fit}/{ichannel}'
         if i==0:
-            hists['data'] = infile.Get(f'{ichannel}_{label}/data_obs')
-            hists[mj] = infile.Get(f'{ichannel}_{label}/{mj}')
-            hists[tt] = infile.Get(f'{ichannel}_{label}/{tt}')
-            hists['TotalBkg'] = infile.Get(f'{ichannel}_{label}/TotalBkg')
-            hists[signal] = infile.Get(f'{ichannel}_{label}/{signal}')
+            hists['data'] = convert_tgraph_to_th1(infile.Get(f'{tmp_folder}/data'), f'data{ichannel}')
+            hists[mj] = infile.Get(f'{tmp_folder}/{mj}')
+            hists[tt] = infile.Get(f'{tmp_folder}/{tt}')
+            hists['TotalBkg'] = infile.Get(f'{tmp_folder}/total_background')
+            hists[signal] = infile.Get(f'{tmp_folder}/{signal}')
         else: 
-            hists['data'].Add( infile.Get(f'{ichannel}_{label}/data_obs') )
-            hists[mj].Add( infile.Get(f'{ichannel}_{label}/{mj}') )
-            hists[tt].Add( infile.Get(f'{ichannel}_{label}/{tt}') )
-            hists['TotalBkg'].Add( infile.Get(f'{ichannel}_{label}/TotalBkg') )
-            hists[signal].Add( infile.Get(f'{ichannel}_{label}/{signal}') )
+            hists['data'].Add( convert_tgraph_to_th1(infile.Get(f'{tmp_folder}/data'), f'data{ichannel}') )
+            hists[mj].Add( infile.Get(f'{tmp_folder}/{mj}') )
+            hists[tt].Add( infile.Get(f'{tmp_folder}/{tt}') )
+            hists['TotalBkg'].Add( infile.Get(f'{tmp_folder}/total_background') )
+            hists[signal].Add( infile.Get(f'{tmp_folder}/{signal}') )
 
     ## Rescaling histogram
     for _, ih in hists.items():
@@ -61,8 +73,7 @@ if __name__ == '__main__':
         ax = ih.GetXaxis()
         ax.Set( ax.GetNbins(), 0, 1.0 )
         ih.ResetStats()
-    for i in range(hists['TotalBkg'].GetNbinsX()):
-        print(hists['TotalBkg'].GetBinContent(i))
+    print(f"NUmber of bkg events in last bin: {hists['TotalBkg'].GetBinContent(hists['TotalBkg'].GetNbinsX())}")
     
     xmax = hists['TotalBkg'].GetXaxis().GetXmax()
     ymax = hists['TotalBkg'].GetMaximum()*1.2
@@ -72,7 +83,7 @@ if __name__ == '__main__':
     CMS.SetLumi("")
     CMS.SetEnergy("13")
     CMS.ResetAdditionalInfo()
-    nominal_can = CMS.cmsDiCanvas('nominal_can',0,xmax,0,ymax,0.8,1.2,
+    nominal_can = CMS.cmsDiCanvas('nominal_can',0,xmax,0.1,ymax,0.8,1.2,
                                   "SvB MA Classifier Regressed P(Signal) | P(HH) is largest",
                                   "Events", 'Data/Pred.',
                                   square=CMS.kSquare, extraSpace=0.05, iPos=iPos)
@@ -84,20 +95,25 @@ if __name__ == '__main__':
     CMS.GetcmsCanvasHist(nominal_can.cd(1)).GetYaxis().SetTitleOffset(1.5)
     CMS.GetcmsCanvasHist(nominal_can.cd(1)).GetYaxis().SetTitleSize(0.05)
     CMS.fixOverlay()
-    hists[signal].Scale( 1000 )
-    leg.AddEntry( hists[signal], 'HH4b (x1000)', 'lp' )
+    hists[signal].Scale( 100 )
+    leg.AddEntry( hists[signal], 'HH4b (x100)', 'lp' )
     CMS.cmsDraw( hists[signal], 'hist', fstyle=0, marker=1, alpha=1, lcolor=ROOT.TColor.GetColor("#e42536" ), fcolor=ROOT.TColor.GetColor("#e42536"))
+    nominal_can.cd(1).SetLogy(True)
 
     nominal_can.cd(2)
-
-    bkg_syst= ROOT.TGraphAsymmErrors()
-    bkg_syst.Divide( hists['TotalBkg'].Clone(), hists['TotalBkg'].Clone(), 'pois' )
-    CMS.cmsDraw( bkg_syst, 'F3', fstyle=3004, lcolor=ROOT.kBlack, fcolor=ROOT.kBlack  )
-
-    bkg = hists['TotalBkg'].Clone()
-    ratio = ROOT.TGraphAsymmErrors()
-    ratio.Divide( hists['data'].Clone(), bkg, 'pois' )
+    
+    # ratio = ROOT.TGraphAsymmErrors()
+    # ratio.Divide( hists['data'].Clone(), hists['TotalBkg'].Clone(), 'pois' )
+    ratio = hists['data'].Clone()
+    ratio.Divide( hists['TotalBkg'].Clone() )
     CMS.cmsDraw( ratio, 'P', mcolor=ROOT.kBlack )
+    
+    bkg_syst = ROOT.TGraphAsymmErrors()
+    bkg_syst.Divide( hists['TotalBkg'].Clone(), hists['TotalBkg'].Clone(), 'pois' )
+    # bkg_syst = hists['TotalBkg'].Clone()
+    # bkg_syst.Divide( hists['TotalBkg'].Clone() )
+    CMS.cmsDraw( bkg_syst, 'F3', fstyle=3004, lcolor=ROOT.kBlack, fcolor=ROOT.kBlack  )
+    
 
     ref_line = ROOT.TLine(0, 1, 1, 1)
     CMS.cmsDrawLine(ref_line, lcolor=ROOT.kBlack, lstyle=ROOT.kDotted)

@@ -259,6 +259,7 @@ def create_combine_root_file( file_to_convert,
             cb.SetGroup("multijet", closureSysts)
             
             btagSysts = []
+            othersSysts = []
             for nuisance in mcSysts:
                 if ('2016' in nuisance):
                     if ('2016' in ibin):
@@ -273,9 +274,11 @@ def create_combine_root_file( file_to_convert,
                     cb.cp().signals().AddSyst(cb, nuisance, 'shape', ch.SystMap()(1.0))
                 if 'btag' in nuisance:
                     btagSysts.append(nuisance)
+                else: othersSysts.append(nuisance)
             cb.SetGroup("btag", btagSysts)
 
             for isyst in metadata['uncertainty']:
+                othersSysts.append(isyst)
                 if ('2016' in isyst):
                     if ('2016' in ibin):
                         cb.cp().signals().AddSyst(cb, isyst, metadata['uncertainty'][isyst]['type'], ch.SystMap('bin')(['HHbb_2016'],metadata['uncertainty'][isyst]['years']['HHbb_2016']))
@@ -293,6 +296,7 @@ def create_combine_root_file( file_to_convert,
                     cb.cp().signals().AddSyst(cb, isyst, metadata['uncertainty'][isyst]['type'], ch.SystMap('bin')
                                             ([ibin], metadata['uncertainty'][isyst]['years'][ibin])
                                             )
+            cb.SetGroup("others", othersSysts)
 
             cb.cp().backgrounds().ExtractShapes(
                 output, '$BIN/$PROCESS', '$BIN/$PROCESS_$SYSTEMATIC')

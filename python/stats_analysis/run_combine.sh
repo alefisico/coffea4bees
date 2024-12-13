@@ -54,12 +54,12 @@ if [ "$unblind" = true ]; then
     echo "Running in unblind mode"
     blind_label="_unblinded"
     limit_blind=""
-    significance_blind=""
+    asymov_data=""
 else
     echo "Running in blind mode"
     blind_label=""
     limit_blind="--run blind"
-    significance_blind="-t -1"
+    asymov_data="-t -1"
 fi
 
 currentDir=$PWD
@@ -78,38 +78,53 @@ run_limits() {
         --PO "map=.*/ggHH_kl_0_kt_1_hbbhbb:rggHH_kl_0_kt_1_hbbhbb[1,-10,10]" \
         --PO "map=.*/ggHH_kl_2p45_kt_1_hbbhbb:rggHH_kl_2p45_kt_1_hbbhbb[1,-10,10]" \
         --PO "map=.*/ggHH_kl_5_kt_1_hbbhbb:rggHH_kl_5_kt_1_hbbhbb[1,-10,10]" \
-        --PO 'map=.*/ZH4b:rZH4b[1,-10,10]' \
-        --PO 'map=.*/ZZ4b:rZZ4b[1,-10,10]'
+        # --PO 'map=.*/ZH4b:rZH4b[1,-10,10]' \
+        # --PO 'map=.*/ZZ4b:rZZ4b[1,-10,10]'
         
     combine -M AsymptoticLimits ${datacard}.root --redefineSignalPOIs r${signallabel} \
         -n _${iclass}${blind_label} ${limit_blind} \
-        --setParameters rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0 \
-        --freezeParameters rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb \
+        --setParameters rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0,rZZ4b=0,rZH4b=0 \
+        --freezeParameters rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb,rZZ4b,rZH4b \
         > limits_${datacard}_${iclass}${blind_label}.txt
     cat limits_${datacard}_${iclass}${blind_label}.txt
     combineTool.py -M CollectLimits higgsCombine_${iclass}${blind_label}.AsymptoticLimits.mH120.root -o limits_${datacard}_${iclass}${blind_label}.json
 
     combine -M Significance ${datacard}.root --redefineSignalPOIs r${signallabel} \
-        -n _${iclass}${blind_label} ${significance_blind} \
-        --setParameters rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0 \
-        --freezeParameters rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb \
+        -n _${iclass}${blind_label} ${asymov_data} \
+        --setParameters rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0,rZZ4b=0,rZH4b=0 \
+        --freezeParameters rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb,rZZ4b,rZH4b \
         > significance_${datacard}_${iclass}${blind_label}.txt
     cat significance_${datacard}_${iclass}${blind_label}.txt
 
     combine -M FitDiagnostics ${datacard}.root --redefineSignalPOIs r${signallabel} \
-        -n _${iclass}${blind_label}_prefit_bonly ${significance_blind} --saveShapes --plots \
-        --setParameters r${signallabel}=0,rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0 \
-        --freezeParameters rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb \
+        -n _${iclass}${blind_label}_prefit_bonly ${asymov_data} \
+        --setParameters r${signallabel}=0,rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0,rZZ4b=0,rZH4b=0 \
+        --freezeParameters rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb,rZZ4b,rZH4b \
         > fitDiagnostics_${datacard}_${iclass}${blind_label}_prefit_bonly.txt
     cat fitDiagnostics_${datacard}_${iclass}${blind_label}_prefit_bonly.txt
-    mkdir -p fitDiagnostics/
-    mv *th1x* fitDiagnostics/
-    mv covariance* fitDiagnostics/
+    mkdir -p fitDiagnostics_bonly/
+    mv *th1x* fitDiagnostics_bonly/
+    mv covariance* fitDiagnostics_bonly/
 
     python /home/cmsusr/CMSSW_11_3_4/src/HiggsAnalysis/CombinedLimit/test/diffNuisances.py \
         -p r${signallabel} \
          -a fitDiagnostics_${iclass}${blind_label}_prefit_bonly.root \
          -g diffNuisances_${datacard}_${iclass}${blind_label}_prefit_bonly.root
+
+    combine -M FitDiagnostics ${datacard}.root --redefineSignalPOIs r${signallabel} \
+        -n _${iclass}${blind_label}_prefit_sb ${asymov_data} --saveShapes --plots \
+        --setParameters r${signallabel}=1,rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0,rZZ4b=0,rZH4b=0 \
+        --freezeParameters rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb,rZZ4b,rZH4b \
+        > fitDiagnostics_${datacard}_${iclass}${blind_label}_prefit_sb.txt
+    cat fitDiagnostics_${datacard}_${iclass}${blind_label}_prefit_sb.txt
+    mkdir -p fitDiagnostics_sb/
+    mv *th1x* fitDiagnostics_sb/
+    mv covariance* fitDiagnostics_sb/
+
+    python /home/cmsusr/CMSSW_11_3_4/src/HiggsAnalysis/CombinedLimit/test/diffNuisances.py \
+        -p r${signallabel} \
+         -a fitDiagnostics_${iclass}${blind_label}_prefit_sb.root \
+         -g diffNuisances_${datacard}_${iclass}${blind_label}_prefit_sb.root
 
 }
 
@@ -136,29 +151,31 @@ do
 
         if [ -f "${datacard}.root" ]; then
 
-            # datacard="datacard_HHbb_2016"
-            # iclass="SvB_MA_2016"
+            # for year in _2016 _2017 _2018; do
+            #     datacard="datacard_HHbb"${year}
+            #     iclass="SvB_MA"${year}
 
-            combineTool.py -M Impacts -d ${datacard}.root --doInitialFit \
-            --setParameterRanges r${signallabel}=-10,10:rggHH_kl_0_kt_1_hbbhbb=0,0:rggHH_kl_2p45_kt_1_hbbhbb=0,0:rggHH_kl_5_kt_1_hbbhbb=0,0 \
-            --setParameters r${signallabel}=1,rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0 \
-            --robustFit 1 -m 125 -n ${iclass} -t -1 ## expected -t -1
+                combineTool.py -M Impacts -d ${datacard}.root --doInitialFit \
+                --robustFit 1 -n ${iclass} -m 125 ${asymov_data} \
+                --setParameterRanges r${signallabel}=-10,10:rggHH_kl_0_kt_1_hbbhbb=0,0:rggHH_kl_2p45_kt_1_hbbhbb=0,0:rggHH_kl_5_kt_1_hbbhbb=0,0 \
+                --setParameters r${signallabel}=1,rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0 \
 
-            combineTool.py -M Impacts -d ${datacard}.root --doFits \
-            --setParameterRanges r${signallabel}=-10,10:rggHH_kl_0_kt_1_hbbhbb=0,0:rggHH_kl_2p45_kt_1_hbbhbb=0,0:rggHH_kl_5_kt_1_hbbhbb=0,0 \
-            --setParameters r${signallabel}=1,rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0 \
-            --robustFit 1 -m 125 --parallel 4 -n ${iclass} -t -1
+                combineTool.py -M Impacts -d ${datacard}.root --doFits \
+                --robustFit 1 -m 125 --parallel 4 -n ${iclass} ${asymov_data} \
+                --setParameterRanges r${signallabel}=-10,10:rggHH_kl_0_kt_1_hbbhbb=0,0:rggHH_kl_2p45_kt_1_hbbhbb=0,0:rggHH_kl_5_kt_1_hbbhbb=0,0 \
+                --setParameters r${signallabel}=1,rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0 \
 
-            combineTool.py -M Impacts -d ${datacard}.root -o impacts_combine_${iclass}_exp.json -m 125 -n ${iclass}
+                combineTool.py -M Impacts -d ${datacard}.root -o impacts_combine_${iclass}_exp.json -m 125 -n ${iclass}
 
-            if [[ ! -d "${currentDir}/stats_analysis" ]]; then
-                tmpDir=${currentDir}/python/stats_analysis
-            else
-                tmpDir=${currentDir}/stats_analysis
-            fi
-            plotImpacts.py -i impacts_combine_${iclass}_exp.json -o impacts_combine_${iclass}_exp_HH --POI r${signallabel} --per-page 20 --left-margin 0.3 --height 400 --label-size 0.04 --translate ${tmpDir}/nuisance_names.json
-            mkdir -p impacts/
-            mv higgsCombine*Fit* impacts/
+                if [[ ! -d "${currentDir}/stats_analysis" ]]; then
+                    tmpDir=${currentDir}/python/stats_analysis
+                else
+                    tmpDir=${currentDir}/stats_analysis
+                fi
+                plotImpacts.py -i impacts_combine_${iclass}_exp.json -o impacts_combine_${iclass}_exp_HH --POI r${signallabel} --per-page 20 --left-margin 0.3 --height 400 --label-size 0.04 --translate ${tmpDir}/nuisance_names.json
+                mkdir -p impacts/
+                mv higgsCombine*Fit* impacts/
+            # done
         else
             echo "File ${datacard}.root does not exist."
         fi
@@ -168,7 +185,7 @@ do
         if [ -f "${datacard}.root" ]; then
     
             # combine -M MultiDimFit ${datacard}.root --algo cross --cl=0.68 \
-                # -n _${iclass}${blind_label} ${significance_blind} \
+                # -n _${iclass}${blind_label} ${asymov_data} \
                 # -P r${signallabel} \
             
                 # > signal_strength_${datacard}${blind_label}.txt
@@ -200,19 +217,37 @@ do
     elif [ "$likelihoodscan" = true ]; then
 
         if [ -f "${datacard}.root" ]; then
-            combine -M MultiDimFit -n _${iclass}_likelihoodscan_postfit \
-            --saveWorkspace -d ${datacard}.root --robustFit 1 ${significance_blind} \
-            --setParameters r${signallabel}=1,rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0,rZZ4b=0,rZH4b=0 \
-            --freezeParameters rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb,rZZ4b,rZH4b
 
-            combine -M MultiDimFit -n _${iclass}_likelihoodscan_total \
-            -P r${signallabel} ${significance_blind} --rMin -10 --rMax 10 --algo grid --points 50 --alignEdges 1 \
-            --setParameters rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0,rZZ4b=0,rZH4b=0 \
-            --freezeParameters rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb,rZZ4b,rZH4b \
-            -d higgsCombine_${iclass}_likelihoodscan_postfit.MultiDimFit.mH120.root
+            combine -M MultiDimFit -n _${iclass}_likelihoodscan_postfit \
+                --saveWorkspace -d ${datacard}.root --robustFit 1 ${asymov_data} \
+                --setParameters r${signallabel}=1,rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0,rZZ4b=0,rZH4b=0 \
+                --freezeParameters  r${signallabel},rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb,rZZ4b,rZH4b
+
+            combine -M MultiDimFit -n _${iclass}_likelihoodscan_freeze_all \
+                -P r${signallabel} ${asymov_data} --snapshotName MultiDimFit \
+                --rMin -10 --rMax 10 --algo grid --points 50 --alignEdges 1 \
+                --setParameters r${signallabel}=1,rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0,rZZ4b=0,rZH4b=0 \
+                --freezeParameters r${signallabel},rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb,rZZ4b,rZH4b,allConstrainedNuisances \
+                -d higgsCombine_${iclass}_likelihoodscan_postfit.MultiDimFit.mH120.root
+
+            scan_cmd="combine -M MultiDimFit \
+                -P r${signallabel} ${asymov_data} --snapshotName MultiDimFit \
+                --rMin -10 --rMax 10 --algo grid --points 50 --alignEdges 1 \
+                --setParameters r${signallabel}=1,rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0,rZZ4b=0,rZH4b=0 \
+                --freezeParameters r${signallabel},rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb,rZZ4b,rZH4b \
+                -d higgsCombine_${iclass}_likelihoodscan_postfit.MultiDimFit.mH120.root"
+
+            ${scan_cmd} -n _${iclass}_likelihoodscan_total
+            ${scan_cmd} -n _${iclass}_likelihoodscan_freeze_multijet --freezeNuisanceGroups multijet
+            ${scan_cmd} -n _${iclass}_likelihoodscan_freeze_btag --freezeNuisanceGroups multijet,btag
 
             plot1DScan.py higgsCombine_${iclass}_likelihoodscan_total.MultiDimFit.mH120.root \
-            --POI r${signallabel} -o likelihoodscan_${iclass}_total_postfit
+                --main-label "Total uncert." --others \
+                higgsCombine_${iclass}_likelihoodscan_freeze_multijet.MultiDimFit.mH120.root:"Multijet":2 \
+                higgsCombine_${iclass}_likelihoodscan_freeze_btag.MultiDimFit.mH120.root:"b-tagging":4 \
+                higgsCombine_${iclass}_likelihoodscan_freeze_all.MultiDimFit.mH120.root:"Stat. only":3 \
+                --breakdown "multijet,btag,others,stat" \
+                --POI r${signallabel} -o likelihoodscan_${iclass}_breakdown
 
         else
             echo "File ${datacard}.root does not exist."
