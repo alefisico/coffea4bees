@@ -15,6 +15,7 @@ parse_arguments() {
   postfit=false
   likelihoodscan=false
   unblind=false
+  gof=false
 
   # Process aruments
   while [[ $# -gt 1 ]]; do
@@ -39,8 +40,12 @@ parse_arguments() {
         unblind=true
         shift
         ;;
+      --gof)
+        gof=true
+        shift
+        ;;
       *)
-        echo "Invalid arument: '$2'"
+        echo "Invalid argument: '$2'"
         ;;
     esac
   done
@@ -96,36 +101,6 @@ run_limits() {
         > significance_${datacard}_${iclass}${blind_label}.txt
     cat significance_${datacard}_${iclass}${blind_label}.txt
 
-    combine -M FitDiagnostics ${datacard}.root --redefineSignalPOIs r${signallabel} \
-        -n _${iclass}${blind_label}_prefit_bonly ${asymov_data} \
-        --setParameters r${signallabel}=0,rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0,rZZ4b=0,rZH4b=0 \
-        --freezeParameters rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb,rZZ4b,rZH4b \
-        > fitDiagnostics_${datacard}_${iclass}${blind_label}_prefit_bonly.txt
-    cat fitDiagnostics_${datacard}_${iclass}${blind_label}_prefit_bonly.txt
-    mkdir -p fitDiagnostics_bonly/
-    mv *th1x* fitDiagnostics_bonly/
-    mv covariance* fitDiagnostics_bonly/
-
-    python /home/cmsusr/CMSSW_11_3_4/src/HiggsAnalysis/CombinedLimit/test/diffNuisances.py \
-        -p r${signallabel} \
-         -a fitDiagnostics_${iclass}${blind_label}_prefit_bonly.root \
-         -g diffNuisances_${datacard}_${iclass}${blind_label}_prefit_bonly.root
-
-    combine -M FitDiagnostics ${datacard}.root --redefineSignalPOIs r${signallabel} \
-        -n _${iclass}${blind_label}_prefit_sb ${asymov_data} --saveShapes --plots \
-        --setParameters r${signallabel}=1,rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0,rZZ4b=0,rZH4b=0 \
-        --freezeParameters rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb,rZZ4b,rZH4b \
-        > fitDiagnostics_${datacard}_${iclass}${blind_label}_prefit_sb.txt
-    cat fitDiagnostics_${datacard}_${iclass}${blind_label}_prefit_sb.txt
-    mkdir -p fitDiagnostics_sb/
-    mv *th1x* fitDiagnostics_sb/
-    mv covariance* fitDiagnostics_sb/
-
-    python /home/cmsusr/CMSSW_11_3_4/src/HiggsAnalysis/CombinedLimit/test/diffNuisances.py \
-        -p r${signallabel} \
-         -a fitDiagnostics_${iclass}${blind_label}_prefit_sb.root \
-         -g diffNuisances_${datacard}_${iclass}${blind_label}_prefit_sb.root
-
 }
 
 for iclass in SvB_MA;
@@ -180,35 +155,93 @@ do
             echo "File ${datacard}.root does not exist."
         fi
 
+    elif [ "$gof" = true ]; then
+
+        if [ -f "${datacard}.root" ]; then
+
+            echo "Running goodness of fit test on data"
+            combine -M GoodnessOfFit ${datacard}.root --algo saturated  \
+                -n _${iclass}${blind_label}_gof_data \
+                --setParameters r${signallabel}=1 \
+                > gof_data_${datacard}_${iclass}${blind_label}.txt
+            cat gof_data_${datacard}_${iclass}${blind_label}.txt
+                # --freezeParameters rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb \
+                # --setParameters rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0 \
+            
+            # echo "Running goodness of fit test on toys"
+            combine -M GoodnessOfFit ${datacard}.root --algo saturated  \
+                -n _${iclass}${blind_label}_gof_toys --toysFrequentist -t 1000 \
+                > gof_toys_${datacard}_${iclass}${blind_label}.txt
+            cat gof_toys_${datacard}_${iclass}${blind_label}.txt
+            #     --setParameters r${signallabel}=1,rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0 \
+            #     --freezeParameters r${signallabel},rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb \
+
+            combineTool.py -M CollectGoodnessOfFit \
+                --input higgsCombine_${iclass}${blind_label}_gof_data.GoodnessOfFit.mH120.root \
+                higgsCombine_${iclass}${blind_label}_gof_toys.GoodnessOfFit.mH120.123456.root \
+                -o gof_${datacard}_${iclass}${blind_label}.json
+            
+            plotGof.py gof_${datacard}_${iclass}${blind_label}.json \
+                --statistic staturated --mass 120.0 \
+                --output gof_${datacard}_${iclass}${blind_label}
+
+        else
+            echo "File ${datacard}.root does not exist."
+        fi
+
     elif [ "$postfit" = true ]; then
 
         if [ -f "${datacard}.root" ]; then
     
-            # combine -M MultiDimFit ${datacard}.root --algo cross --cl=0.68 \
-                # -n _${iclass}${blind_label} ${asymov_data} \
-                # -P r${signallabel} \
-            
-                # > signal_strength_${datacard}${blind_label}.txt
-                # --freezeParameters rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb \
-            # cat signal_strength_${datacard}${blind_label}.txt
-            echo "Running postfit s+b"
-            combine -M MultiDimFit --robustFit 1 -n _${iclass}_fit_s \
-                --saveWorkspace --saveFitResult -d ${datacard}.root \
-                --setParameters r${signallabel}=1,rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0 \
-                --freezeParameters rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb 
-
-            PostFitShapesFromWorkspace -w higgsCombine_${iclass}_fit_s.MultiDimFit.mH120.root \
-                -f multidimfit_${iclass}_fit_s.root:fit_mdf \
-                --total-shapes --output postfit_s.root \
-                --freeze r${signallabel}=1,rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0 --postfit
-
+            #### Need to revise this part
             echo "Running postfit b-only"
-            combine -M MultiDimFit --robustFit 1 -n _${iclass}_fit_b \
-            --saveWorkspace --saveFitResult -d ${datacard}.root \
-            --setParameters r${signallabel}=0,rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0 \
-            --freezeParameters r${signallabel},rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb
+            combine -M FitDiagnostics ${datacard}.root --redefineSignalPOIs r${signallabel} \
+                -n _${iclass}${blind_label}_prefit_bonly ${asymov_data} \
+                --setParameters r${signallabel}=0,rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0,rZZ4b=0,rZH4b=0 \
+                --freezeParameters rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb,rZZ4b,rZH4b \
+                > fitDiagnostics_${datacard}_${iclass}${blind_label}_prefit_bonly.txt
+            cat fitDiagnostics_${datacard}_${iclass}${blind_label}_prefit_bonly.txt
+            mkdir -p fitDiagnostics_bonly/
+            mv *th1x* fitDiagnostics_bonly/
+            mv covariance* fitDiagnostics_bonly/
 
-            PostFitShapesFromWorkspace -w higgsCombine_${iclass}_fit_b.MultiDimFit.mH120.root -f multidimfit_${iclass}_fit_b.root:fit_mdf --total-shapes --output postfit_b.root --freeze r${signallabel}=0,rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0 --postfit
+            python /home/cmsusr/CMSSW_11_3_4/src/HiggsAnalysis/CombinedLimit/test/diffNuisances.py \
+                -p r${signallabel} \
+                -a fitDiagnostics_${iclass}${blind_label}_prefit_bonly.root \
+                -g diffNuisances_${datacard}_${iclass}${blind_label}_prefit_bonly.root
+
+            # combine -M MultiDimFit --robustFit 1 -n _${iclass}_fit_b \
+            # --saveWorkspace --saveFitResult -d ${datacard}.root \
+            # --setParameters r${signallabel}=0,rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0 \
+            # --freezeParameters r${signallabel},rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb
+
+            # PostFitShapesFromWorkspace -w higgsCombine_${iclass}_fit_b.MultiDimFit.mH120.root -f multidimfit_${iclass}_fit_b.root:fit_mdf --total-shapes --output postfit_b.root --freeze r${signallabel}=0,rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0 --postfit
+            
+            echo "Running postfit s+b"
+            combine -M FitDiagnostics ${datacard}.root --redefineSignalPOIs r${signallabel} \
+                -n _${iclass}${blind_label}_prefit_sb ${asymov_data} --saveShapes --plots \
+                --setParameters r${signallabel}=1,rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0,rZZ4b=0,rZH4b=0 \
+                --freezeParameters rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb,rZZ4b,rZH4b \
+                > fitDiagnostics_${datacard}_${iclass}${blind_label}_prefit_sb.txt
+            cat fitDiagnostics_${datacard}_${iclass}${blind_label}_prefit_sb.txt
+            mkdir -p fitDiagnostics_sb/
+            mv *th1x* fitDiagnostics_sb/
+            mv covariance* fitDiagnostics_sb/
+
+            python /home/cmsusr/CMSSW_11_3_4/src/HiggsAnalysis/CombinedLimit/test/diffNuisances.py \
+                -p r${signallabel} \
+                -a fitDiagnostics_${iclass}${blind_label}_prefit_sb.root \
+                -g diffNuisances_${datacard}_${iclass}${blind_label}_prefit_sb.root
+
+            # combine -M MultiDimFit --robustFit 1 -n _${iclass}_fit_s \
+            #     --saveWorkspace --saveFitResult -d ${datacard}.root \
+            #     --setParameters r${signallabel}=1,rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0 \
+            #     --freezeParameters rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb 
+
+            # PostFitShapesFromWorkspace -w higgsCombine_${iclass}_fit_s.MultiDimFit.mH120.root \
+            #     -f multidimfit_${iclass}_fit_s.root:fit_mdf \
+            #     --total-shapes --output postfit_s.root \
+            #     --freeze r${signallabel}=1,rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0 --postfit
 
         else
             echo "File ${datacard}.root does not exist."
