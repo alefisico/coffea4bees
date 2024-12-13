@@ -11,12 +11,10 @@ config:
   apply_boosted_veto: false
   run_SvB: true
   run_systematics: false
-  #SvB   : 'analysis/weights/pytorch_models/2024_HHUL/SvB_HCR_8_np753_seed13_lr0.01_epochs20_offset*_epoch20.pkl'
-  #SvB_MA: 'analysis/weights/pytorch_models/2024_HHUL/SvB_MA_HCR+attention_8_np1061_seed13_lr0.01_epochs20_offset*_epoch20.pkl'
   top_reconstruction_override: false
   friends:
     trigWeight: "metadata/datasets_HH4b_2024_v1_trigweights.json@@trigWeight"
-    FvT: root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/friend/FvT/nott/baseline-0/result.json@@analysis.0.merged
+    FvT: root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/friend/FvT/baseline_legacy/JCM/mixed-0/result.json@@analysis.0.merged
     FvT_3bDvTMix4bDvT_v{mix}_newSBDef:
-      path: root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/friend/FvT/nott/baseline-{mix}/result.json@@analysis.0.merged
+      path: root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/friend/FvT/baseline_legacy/JCM/mixed-{mix}/result.json@@analysis.0.merged
       keys: "[{'mix': i } for i in range(15)]"

@@ -1,0 +1,19 @@
+runner:
+  workers: 4
+  condor_memory: 4GB
+
+config:
+  blind: false
+  apply_FvT: false
+  apply_trigWeight: true
+  apply_btagSF: true
+  apply_boosted_veto: false
+  run_SvB: true
+  run_systematics: false
+  SvB_MA:
+    path: root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/classifier/SvB/ggF/baseline/result.json
+    name: Final # name of the output stage (e.g. Final or some checkpoint)
+  top_reconstruction_override: false
+  friends:
+    trigWeight: "metadata/datasets_HH4b_2024_v1_trigweights.json@@trigWeight"
+    SvB_MA: root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/friend/SvB/ggF/baseline/result.json@@analysis.0.merged

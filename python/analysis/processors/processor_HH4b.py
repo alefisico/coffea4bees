@@ -2,7 +2,6 @@ import copy
 import logging
 import warnings
 from collections import OrderedDict
-from typing import TypedDict
 
 import awkward as ak
 import numpy as np
@@ -19,7 +18,7 @@ from analysis.helpers.filling_histograms import (
     filling_syst_histograms,
 )
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
-from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel, UnitJCM
+from analysis.helpers.jetCombinatoricModel import UnitJCM, jetCombinatoricModel
 from analysis.helpers.processor_config import processor_config
 from analysis.helpers.selection_basic_4b import (
     apply_event_selection_4b,
@@ -34,11 +33,18 @@ from analysis.helpers.topCandReconstruction import (
     find_tops_slow,
 )
 from base_class.hist import Fill
-from base_class.root import Chunk, Friend, TreeReader
+from base_class.root import Chunk, TreeReader
 from coffea import processor
 from coffea.analysis_tools import PackedSelection
 from coffea.nanoevents import NanoAODSchema, NanoEventsFactory
 from coffea.util import load
+
+from ..helpers.load_friend import (
+    FriendTemplate,
+    parse_friends,
+    rename_FvT_friend,
+    rename_SvB_friend,
+)
 
 #
 # Setup
@@ -46,10 +52,6 @@ from coffea.util import load
 Fill.allow_missing = True
 NanoAODSchema.warn_missing_crossrefs = False
 warnings.filterwarnings("ignore")
-
-class _FriendTemplate(TypedDict):
-    path: str
-    keys: str | list[dict[str]]
 
 def _init_classfier(path: str | dict[str, str]):
     if path is None:
@@ -82,7 +84,7 @@ class analysis(processor.ProcessorABC):
         make_friend_JCM_weight: str = None,
         make_friend_FvT_weight: str = None,
         subtract_ttbar_with_weights: bool = False,
-        friends: dict[str, str|_FriendTemplate] = None,
+        friends: dict[str, str|FriendTemplate] = None,
     ):
 
         logging.debug("\nInitialize Analysis Processor")
@@ -107,26 +109,7 @@ class analysis(processor.ProcessorABC):
         self.make_friend_FvT_weight = make_friend_FvT_weight
         self.top_reconstruction_override = top_reconstruction_override
         self.subtract_ttbar_with_weights = subtract_ttbar_with_weights
-
-        # the following friends may be used:
-        # - trigWeight
-        # - FvT
-        # - top_reconstruction?
-        self.friends: dict[str, Friend] = {}
-        if friends:
-            from classifier.task import parse
-
-            for name, path in friends.items():
-                if isinstance(path, str):
-                    self.friends[name] = Friend.from_json(parse.mapping(path, "file"))
-                else:
-                    keys = path["keys"]
-                    if isinstance(keys, str):
-                        keys = eval(keys)
-                    for key in keys:
-                        self.friends[name.format(**key)] = Friend.from_json(
-                            parse.mapping(path["path"].format(**key), "file")
-                        )
+        self.friends = parse_friends(friends)
 
         self.cutFlowCuts = [
             "all",
@@ -188,7 +171,6 @@ class analysis(processor.ProcessorABC):
         path = fname.replace(fname.split("/")[-1], "")
         if self.apply_FvT:
             if "FvT" in self.friends:
-                from ..helpers.load_friend import rename_FvT_friend
                 event["FvT"] = rename_FvT_friend(target, self.friends["FvT"])
                 if self.config["isDataForMixed"] or self.config["isTTForMixed"]:
                     for _FvT_name in event.metadata["FvT_names"]:
@@ -256,7 +238,6 @@ class analysis(processor.ProcessorABC):
         if self.run_SvB:
             for k in self.friends:
                 if k.startswith("SvB"):
-                    from ..helpers.load_friend import rename_SvB_friend
                     event[k] = rename_SvB_friend(target, self.friends[k])
                     setSvBVars(k, event)
 

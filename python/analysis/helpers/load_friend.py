@@ -1,7 +1,38 @@
-# The module contains temporary functions to load new friend trees in a backward compatible manner
-# TODO: remove in the future
+from typing import TypedDict
+
 import awkward as ak
 from base_class.root import Chunk, Friend
+
+
+class FriendTemplate(TypedDict):
+    path: str
+    keys: str | list[dict[str]]
+
+
+def parse_friends(args: dict[str, str | FriendTemplate]) -> dict[str, Friend]:
+    friends = {}
+    if args is None:
+        return friends
+
+    from classifier.task import parse
+
+    for name, path in args.items():
+        if isinstance(path, str):
+            friends[name] = Friend.from_json(parse.mapping(path, "file"))
+        else:
+            keys = path["keys"]
+            if isinstance(keys, str):
+                keys = eval(keys)
+            for key in keys:
+                friends[name.format(**key)] = Friend.from_json(
+                    parse.mapping(path["path"].format(**key), "file")
+                )
+
+    return friends
+
+
+# The following are temporary functions to load new friend trees in a backward compatible manner
+# TODO: remove in the future
 
 
 def _rename(arr: ak.Array, kept: list[str], rename: dict[str, str]):
@@ -43,6 +74,6 @@ def rename_SvB_friend(chunk: Chunk, friend: Friend):
     }
     SvB = friend.arrays(
         chunk,
-        reader_options={"branch_filter": set().union(kept,renames).intersection},
+        reader_options={"branch_filter": set().union(kept, renames).intersection},
     )
     return _rename(SvB, kept, renames)
