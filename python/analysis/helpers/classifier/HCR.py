@@ -1,24 +1,29 @@
-from argparse import Namespace
+from typing import TypedDict
 
 import awkward as ak
 import fsspec
 import numpy.typing as npt
 import torch
 import torch.nn.functional as F
-from base_class.system.eos import PathLike
-from classifier.config.model._kfold import KFoldEval
+from classifier.config.model._kfold import _find_models
+from classifier.config.setting.HCR import Input
+from classifier.config.setting.ml import KFold, SplitterKeys
+from classifier.ml import BatchType
 from classifier.ml.skimmer import Splitter
 from classifier.nn.blocks.HCR import HCR
-from classifier.ml import BatchType
-from classifier.config.setting.HCR import Input
-from classifier.config.setting.ml import SplitterKeys, KFold
 
 from .. import networks
 
 
-class _Legacy_HCREnsemble(networks.HCREnsemble):
+class HCRModelMetadata(TypedDict):
+    path: str
+    name: str
+
+
+class Legacy_HCREnsemble(networks.HCREnsemble):
     classes = ["multijet", "ttbar", "ZZ", "ZH", "ggF"]
 
+    @torch.no_grad()
     def __call__(self, event: ak.Array):
         n = len(event)
         # candidate jet features
@@ -50,7 +55,7 @@ class _Legacy_HCREnsemble(networks.HCREnsemble):
 
 
 class _HCRKFoldModel:
-    def __init__(self, model: str, splitter: Splitter):
+    def __init__(self, model: str, splitter: Splitter, **_):
         self.splitter = splitter
         with fsspec.open(model, "rb") as f:
             states = torch.load(f, map_location=torch.device("cpu"))
@@ -65,8 +70,11 @@ class _HCRKFoldModel:
             ancillaryFeatures=self.ancillary,
             useOthJets=("attention" if states["arch"]["attention"] else ""),
             nClasses=len(self._classes),
+            device="cpu",
         )
-        self._model.load_state_dict(states["model"], map_location=torch.device("cpu"))
+        self._model.to("cpu")
+        self._model.load_state_dict(states["model"])
+        self._model.eval()
 
     @property
     def classes(self):
@@ -93,23 +101,12 @@ class _HCRKFoldModel:
         return c_logits, q_logits
 
 
-class _HCRKFoldEval(KFoldEval):
-    def __init__(self, path: PathLike, name: str):
-        self.opts = Namespace(model=[(name, path)])
-
-    def initializer(self, model: str, splitter: Splitter, **_):
-        return _HCRKFoldModel(model, splitter)
-
-
 class HCREnsemble:
-    def __new__(cls, path: PathLike, name: str = None):
-        if name is None:
-            return _Legacy_HCREnsemble(path)
-        else:
-            return cls(path, name)
-
-    def __init__(self, path: PathLike, name: str = None):
-        self.models: list[_HCRKFoldModel] = _HCRKFoldEval(path, name).evaluate()
+    def __init__(self, paths: list[HCRModelMetadata]):
+        self.models = [
+            _HCRKFoldModel(**metadata)
+            for metadata in _find_models((path["name"], path["path"]) for path in paths)
+        ]
         self.classes = self.models[0].classes
         self.ancillary = self.models[0].ancillary
         self.n_othjets = self.models[0].n_othjets
@@ -121,6 +118,7 @@ class HCREnsemble:
                     )
             model.classes = self.classes
 
+    @torch.no_grad()
     def __call__(self, event: ak.Array) -> tuple[npt.NDArray, npt.NDArray]:
         n = len(event)
         batch: BatchType = {
@@ -158,7 +156,7 @@ class HCREnsemble:
                 case "xbW":
                     a[:, i] = torch.tensor(event.xbW)
         # event offset
-        batch[KFold.offset] = torch.tensor(event.event, dtype=KFold.offset_dtype)
+        batch[KFold.offset] = torch.from_numpy(event.event.to_numpy().view("int64"))
 
         c_logits = torch.zeros(n, len(self.classes), dtype=torch.float32)
         q_logits = torch.zeros(n, 3, dtype=torch.float32)

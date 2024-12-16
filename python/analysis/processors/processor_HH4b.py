@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import copy
 import logging
 import warnings
 from collections import OrderedDict
+from typing import TYPE_CHECKING
 
 import awkward as ak
 import numpy as np
@@ -46,6 +49,9 @@ from ..helpers.load_friend import (
     rename_SvB_friend,
 )
 
+if TYPE_CHECKING:
+    from ..helpers.classifier.HCR import HCRModelMetadata
+
 #
 # Setup
 #
@@ -53,21 +59,25 @@ Fill.allow_missing = True
 NanoAODSchema.warn_missing_crossrefs = False
 warnings.filterwarnings("ignore")
 
-def _init_classfier(path: str | dict[str, str]):
+
+def _init_classfier(path: str | list[HCRModelMetadata]):
     if path is None:
         return None
-    from ..helpers.classifier.HCR import HCREnsemble
     if isinstance(path, str):
-        path = dict(path=path)
-    return HCREnsemble(**path)
+        from ..helpers.classifier.HCR import Legacy_HCREnsemble
+        return Legacy_HCREnsemble(path)
+    else:
+        from ..helpers.classifier.HCR import HCREnsemble
+        return HCREnsemble(path)
+
 
 class analysis(processor.ProcessorABC):
     def __init__(
         self,
         *,
         JCM: callable = None,
-        SvB: str|dict[str,str] = None,
-        SvB_MA: str|dict[str,str] = None,
+        SvB: str|list[HCRModelMetadata] = None,
+        SvB_MA: str|list[HCRModelMetadata] = None,
         blind: bool = False,
         apply_trigWeight: bool = True,
         apply_btagSF: bool = True,

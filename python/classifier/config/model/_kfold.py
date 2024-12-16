@@ -127,57 +127,60 @@ class KFoldEval(ABC, Model):
 
     def evaluate(self):
         models = []
-        m_paths = []
-        for args in self.opts.models:
-            name = args[0]
-            paths = args[1:]
-            for path in paths:
-                with fsspec.open(path, "rt") as f:
-                    results: list[dict[str, dict]] = json.load(f).get(
-                        ResultKey.models, []
-                    )
-                for result in results:
-                    metadata = result.get("metadata", {})
-                    m_path = None
-                    for stage in result.get("history", [])[::-1]:
-                        if (stage.get("stage") == "Output") and (
-                            stage.get("name") == name
-                        ):
-                            m_path = stage["path"]
-                            break
-                    if m_path is None:
-                        continue
-                    if ("kfolds" not in metadata) or ("offset" not in metadata):
-                        continue
-                    kfolds = metadata["kfolds"]
-                    offset = metadata["offset"]
-                    if "seed" in metadata:
-                        from classifier.ml.skimmer import RandomKFold
-
-                        seed = metadata["seed"]
-                        models.append(
-                            self.initializer(
-                                model=m_path,
-                                splitter=RandomKFold(seed, kfolds, offset),
-                                kfolds=kfolds,
-                                offset=offset,
-                                seed=seed,
-                            ).eval
-                        )
-                    else:
-                        from classifier.ml.skimmer import KFold
-
-                        models.append(
-                            self.initializer(
-                                model=m_path,
-                                splitter=KFold(kfolds, offset),
-                                kfolds=kfolds,
-                                offset=offset,
-                            ).eval
-                        )
-                    m_paths.append(m_path)
-        if m_paths:
+        metadatas = _find_models(self.opts.models)
+        for metadata in metadatas:
+            models.append(self.initializer(**metadata).eval)
+        if metadatas:
             logging.info(
-                "The following models will be evaluated:", pretty_repr(m_paths)
+                "The following models will be evaluated:",
+                pretty_repr([m["model"] for m in metadatas]),
             )
         return models
+
+
+def _find_models(args: list[list[str]]) -> list[dict]:
+    models = []
+    for args in args:
+        name = args[0]
+        paths = args[1:]
+        for path in paths:
+            with fsspec.open(path, "rt") as f:
+                results: list[dict[str, dict]] = json.load(f).get(ResultKey.models, [])
+            for result in results:
+                metadata = result.get("metadata", {})
+                m_path = None
+                for stage in result.get("history", [])[::-1]:
+                    if (stage.get("stage") == "Output") and (stage.get("name") == name):
+                        m_path = stage["path"]
+                        break
+                if m_path is None:
+                    continue
+                if ("kfolds" not in metadata) or ("offset" not in metadata):
+                    continue
+                kfolds = metadata["kfolds"]
+                offset = metadata["offset"]
+                if "seed" in metadata:
+                    from classifier.ml.skimmer import RandomKFold
+
+                    seed = metadata["seed"]
+                    models.append(
+                        dict(
+                            model=m_path,
+                            splitter=RandomKFold(seed, kfolds, offset),
+                            kfolds=kfolds,
+                            offset=offset,
+                            seed=seed,
+                        )
+                    )
+                else:
+                    from classifier.ml.skimmer import KFold
+
+                    models.append(
+                        dict(
+                            model=m_path,
+                            splitter=KFold(kfolds, offset),
+                            kfolds=kfolds,
+                            offset=offset,
+                        )
+                    )
+    return models

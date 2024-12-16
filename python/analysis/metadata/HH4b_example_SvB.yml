@@ -11,8 +11,8 @@ config:
   run_SvB: true
   run_systematics: false
   SvB_MA:
-    path: root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/classifier/SvB/ggF/baseline/result.json
-    name: Final # name of the output stage (e.g. Final or some checkpoint)
+    - path: root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/classifier/SvB/ggF/baseline/result.json
+      name: Final # name of the output stage (e.g. Final or some other checkpoint)
   top_reconstruction_override: false
   friends:
     trigWeight: "metadata/datasets_HH4b_2024_v1_trigweights.json@@trigWeight"
