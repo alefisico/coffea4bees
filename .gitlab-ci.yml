@@ -1,6 +1,8 @@
 workflow:
   rules:
     # here the order matter!
+    # it runs with merge requests
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
     # does not run with changes in .md files
     - if: '$CI_COMMIT_BRANCH && $CI_COMMIT_BEFORE_SHA !~ /0{40}/'
       changes:
