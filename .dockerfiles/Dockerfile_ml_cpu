@@ -18,7 +18,7 @@ RUN mamba install -n hep -c conda-forge \
     # DB
     dbs3-client \
     rucio-clients
-RUN mamba env update -n hep -f https://raw.githubusercontent.com/chuyuanliu/heptools/master/docker/ml.yml \
+RUN mamba env update -n hep -f https://raw.githubusercontent.com/chuyuanliu/heptools/master/docker/ml-cpu.yml \
     && mamba clean --all --yes
 # environment
 RUN touch /root/.rnd
