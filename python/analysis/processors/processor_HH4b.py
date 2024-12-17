@@ -21,7 +21,7 @@ from analysis.helpers.filling_histograms import (
     filling_syst_histograms,
 )
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
-from analysis.helpers.jetCombinatoricModel import UnitJCM, jetCombinatoricModel
+from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
 from analysis.helpers.processor_config import processor_config
 from analysis.helpers.selection_basic_4b import (
     apply_event_selection_4b,
@@ -192,10 +192,6 @@ class analysis(processor.ProcessorABC):
                     for _FvT_name in event.metadata["FvT_names"]:
                         event[_FvT_name] = rename_FvT_friend(target, self.friends[_FvT_name])
                         event[_FvT_name, _FvT_name] = event[_FvT_name].FvT
-
-                # TODO: this should be removed when JCM is decoupled from FvT
-                if self.JCM is None:
-                    self.JCM = UnitJCM()
             else:
                 # TODO: remove backward compatibility in the future
                 if self.config["isMixedData"]:
@@ -284,17 +280,10 @@ class analysis(processor.ProcessorABC):
             #
             # Load the different JCMs
             #
-            # TODO: this should be removed when JCM is decoupled from FvT
-            if self.JCM is None or isinstance(self.JCM, UnitJCM):
-                for _JCM_load in event.metadata["JCM_loads"]:
-                    event[_JCM_load] = np.ones(len(event))
-                if self.JCM is None:
-                    self.JCM = UnitJCM()
-            else:
-                JCM_array = TreeReader( lambda x: [ s for s in x if s.startswith("pseudoTagWeight_3bDvTMix4bDvT_v") ] ).arrays(Chunk.from_coffea_events(event))
+            JCM_array = TreeReader( lambda x: [ s for s in x if s.startswith("pseudoTagWeight_3bDvTMix4bDvT_v") ] ).arrays(Chunk.from_coffea_events(event))
 
-                for _JCM_load in event.metadata["JCM_loads"]:
-                    event[_JCM_load] = JCM_array[_JCM_load]
+            for _JCM_load in event.metadata["JCM_loads"]:
+                event[_JCM_load] = JCM_array[_JCM_load]
 
         #
         # Event selection
