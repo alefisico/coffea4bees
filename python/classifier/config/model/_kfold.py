@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import json
+import logging
 from abc import ABC, abstractmethod
 from functools import cached_property
 from typing import TYPE_CHECKING
 
 import fsspec
 from classifier.task import ArgParser, Model, converter, parse
+from rich.pretty import pretty_repr
 
 from ..setting import ResultKey
 
@@ -20,10 +22,15 @@ if TYPE_CHECKING:
 class KFoldTrain(ABC, Model):
     argparser = ArgParser()
     argparser.add_argument(
+        "--no-kfold",
+        action="store_true",
+        help="disable kfold (equivalent to --kfolds 1)",
+    )
+    argparser.add_argument(
         "--kfolds",
-        type=converter.bounded(int, lower=2),
+        type=converter.bounded(int, lower=1),
         default=3,
-        help="total number of folds",
+        help="total number of folds (1 for no kfold)",
     )
     argparser.add_argument(
         "--kfold-offsets",
@@ -56,6 +63,8 @@ class KFoldTrain(ABC, Model):
 
     @cached_property
     def kfolds(self) -> int:
+        if self.opts.no_kfold:
+            return 1
         return self.opts.kfolds
 
     @cached_property
@@ -74,9 +83,11 @@ class KFoldTrain(ABC, Model):
     def initializer(self, splitter: Splitter, **kwargs) -> MultiStageTraining: ...
 
     def train(self):
-        if not self.seeds:
-            from classifier.ml.skimmer import KFold
+        from classifier.ml.skimmer import KFold, RandomKFold
 
+        if self.kfolds == 1:
+            return [self.initializer(KFold(1, 1)).train]
+        elif not self.seeds:
             return [
                 self.initializer(
                     KFold(self.kfolds, offset),
@@ -86,8 +97,6 @@ class KFoldTrain(ABC, Model):
                 for offset in self.offsets
             ]
         else:
-            from classifier.ml.skimmer import RandomKFold
-
             return [
                 self.initializer(
                     RandomKFold(seed, self.kfolds, offset),
@@ -118,51 +127,60 @@ class KFoldEval(ABC, Model):
 
     def evaluate(self):
         models = []
-        for args in self.opts.models:
-            name = args[0]
-            paths = args[1:]
-            for path in paths:
-                with fsspec.open(path, "rt") as f:
-                    results: list[dict[str, dict]] = json.load(f).get(
-                        ResultKey.models, []
-                    )
-                for result in results:
-                    metadata = result.get("metadata", {})
-                    if ("kfolds" not in metadata) or ("offset" not in metadata):
-                        continue
-                    kfolds = metadata["kfolds"]
-                    offset = metadata["offset"]
-                    model = None
-                    for stage in result.get("history", [])[::-1]:
-                        if (stage.get("stage") == "Output") and (
-                            stage.get("name") == name
-                        ):
-                            model = stage["path"]
-                    if model is None:
-                        continue
-                    if "seed" in metadata:
-                        from classifier.ml.skimmer import RandomKFold
-
-                        seed = metadata["seed"]
-                        models.append(
-                            self.initializer(
-                                model=model,
-                                splitter=RandomKFold(seed, kfolds, offset),
-                                kfolds=kfolds,
-                                offset=offset,
-                                seed=seed,
-                            ).eval
-                        )
-                    else:
-                        from classifier.ml.skimmer import KFold
-
-                        models.append(
-                            self.initializer(
-                                model=model,
-                                splitter=KFold(kfolds, offset),
-                                kfolds=kfolds,
-                                offset=offset,
-                            ).eval
-                        )
-
+        metadatas = _find_models(self.opts.models)
+        for metadata in metadatas:
+            models.append(self.initializer(**metadata).eval)
+        if metadatas:
+            logging.info(
+                "The following models will be evaluated:",
+                pretty_repr([m["model"] for m in metadatas]),
+            )
         return models
+
+
+def _find_models(args: list[list[str]]) -> list[dict]:
+    models = []
+    for args in args:
+        name = args[0]
+        paths = args[1:]
+        for path in paths:
+            with fsspec.open(path, "rt") as f:
+                results: list[dict[str, dict]] = json.load(f).get(ResultKey.models, [])
+            for result in results:
+                metadata = result.get("metadata", {})
+                m_path = None
+                for stage in result.get("history", [])[::-1]:
+                    if (stage.get("stage") == "Output") and (stage.get("name") == name):
+                        m_path = stage["path"]
+                        break
+                if m_path is None:
+                    continue
+                if ("kfolds" not in metadata) or ("offset" not in metadata):
+                    continue
+                kfolds = metadata["kfolds"]
+                offset = metadata["offset"]
+                if "seed" in metadata:
+                    from classifier.ml.skimmer import RandomKFold
+
+                    seed = metadata["seed"]
+                    models.append(
+                        dict(
+                            model=m_path,
+                            splitter=RandomKFold(seed, kfolds, offset),
+                            kfolds=kfolds,
+                            offset=offset,
+                            seed=seed,
+                        )
+                    )
+                else:
+                    from classifier.ml.skimmer import KFold
+
+                    models.append(
+                        dict(
+                            model=m_path,
+                            splitter=KFold(kfolds, offset),
+                            kfolds=kfolds,
+                            offset=offset,
+                        )
+                    )
+    return models

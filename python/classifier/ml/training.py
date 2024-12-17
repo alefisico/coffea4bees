@@ -8,7 +8,8 @@ from typing import TYPE_CHECKING, Iterable
 
 import torch
 import torch.types as tt
-from classifier.config.setting import torch as cfg
+from classifier.config.setting import ml as cfg
+from rich.pretty import pretty_repr
 from torch import Tensor, nn
 from torch.utils.data import Dataset
 
@@ -50,7 +51,6 @@ class BenchmarkStage(Stage):
             batch_size=cfg.DataLoader.batch_eval,
             shuffle=False,
             drop_last=False,
-            pin_memory=True,
         )
 
     def _init_benchmark(self):
@@ -66,11 +66,17 @@ class BenchmarkStage(Stage):
         self.model.nn.eval()
         with torch.no_grad():
             for k, v in loaders.items():
+                if len(v) == 0:
+                    continue
                 trainer.cleanup()
                 Usage.checkpoint(self.name, "benchmark", k, "start")
                 benchmark[k] = self.model.validate(v)
                 Usage.checkpoint(self.name, "benchmark", k, "finish")
         return benchmark
+
+    @property
+    def _skip_benchmark(self):
+        return cfg.Training.disable_benchmark
 
     def run(self, trainer: MultiStageTraining):
         return {
@@ -78,8 +84,8 @@ class BenchmarkStage(Stage):
             "name": self.name,
             "benchmarks": (
                 self._iter_benchmark(trainer, self._init_benchmark())
-                if not cfg.Training.disable_benchmark
-                else None
+                if not self._skip_benchmark
+                else {}
             ),
         }
 
@@ -89,6 +95,14 @@ class TrainingStage(BenchmarkStage):
     schedule: Schedule
     training: Dataset
     validation: dict[str, Dataset] = None
+
+    @property
+    def _skip_benchmark(self):
+        return (not self.schedule.require_benchmark) and (
+            super()._skip_benchmark
+            or (self.validation is None)
+            or (self.model.validate is NotImplemented)
+        )
 
     def run(self, trainer: MultiStageTraining):
         history = {
@@ -102,13 +116,8 @@ class TrainingStage(BenchmarkStage):
             self.training,
             shuffle=True,
             drop_last=True,
-            pin_memory=True,
         )
-        if (
-            (not cfg.Training.disable_benchmark)
-            and (self.validation is not None)
-            and (self.model.validate is not NotImplemented)
-        ):
+        if not self._skip_benchmark:
             benchmarks = []
             validation = self._init_benchmark()
         else:
@@ -138,12 +147,13 @@ class TrainingStage(BenchmarkStage):
                 }
                 | self.model.hyperparameters,
             }
-            if benchmarks is not None:
+            if not self._skip_benchmark:
                 benchmark["benchmarks"] = self._iter_benchmark(trainer, validation)
                 benchmarks.append(benchmark)
-            self.schedule.step(bs, lr, benchmark)
-            if self.model.step is not NotImplemented:
-                self.model.step()
+            if epoch != self.schedule.epoch:
+                self.schedule.step(bs, lr, benchmark)
+                if self.model.step is not NotImplemented:
+                    self.model.step()
             p_epoch.update(epoch)
             Usage.checkpoint(self.name, f"epoch{epoch}", "finish")
         logging.info(
@@ -225,6 +235,10 @@ class MultiStageTraining(WithUUID, ABC):
             "metadata": self.metadata,
             "history": [],
         }
+        logging.info(
+            f"Start training classifier {self.name}",
+            pretty_repr(self.metadata),
+        )
         history: list[dict] = result["history"]
         for stage in self.stages():
             Usage.checkpoint("stage", stage.name, "start")

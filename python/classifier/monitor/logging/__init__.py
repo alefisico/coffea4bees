@@ -4,9 +4,9 @@ import logging
 import sys
 
 import tblib.pickling_support
+from classifier.config.setting import monitor as cfg
 
-from ...config.setting import monitor as cfg
-from ...process.monitor import Recorder
+from ..core import Recorder
 from ._redirect import MultiPlatformHandler
 
 

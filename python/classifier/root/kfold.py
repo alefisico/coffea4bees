@@ -30,7 +30,9 @@ class _merge_worker:
         chain = self.chain.copy().add_chunk(self.chunk)
         data = chain.concat(library="pd", friend_only=True)
         data = {
-            k: np.nanmean(data.loc[:, k], axis=1)
+            k: np.nanmean(
+                data.loc[:, k], axis=1
+            )  # TODO: calculate std for selected branches using np.nanstd
             for k in data.columns.get_level_values(0)
         }
         with Friend(name=self.name).auto_dump(

@@ -21,10 +21,10 @@ fi
 echo "############### Modifying config"
 if [[ $(hostname) = *fnal* ]]; then
     DATASETS=metadata/datasets_HH4b.yml
-    sed -e "s|friend_.*|friend_trigWeight: \/srv\/python\/$INPUT_DIR\/trigger_weights_friends.json|" analysis/metadata/HH4b.yml > $OUTPUT_DIR/trigger_weights_HH4b.yml
+    sed -e "s|trigWeight: .*|trigWeight: \/srv\/python\/$INPUT_DIR\/trigger_weights_friends.json@@trigWeight|" analysis/metadata/HH4b.yml > $OUTPUT_DIR/trigger_weights_HH4b.yml
 else
     DATASETS=metadata/datasets_HH4b_cernbox.yml
-    sed -e "s|friend_.*|friend_trigWeight: \/builds\/${CI_PROJECT_PATH}\/python\/$INPUT_DIR\/trigger_weights_friends.json|" analysis/metadata/HH4b.yml > $OUTPUT_DIR/trigger_weights_HH4b.yml
+    sed -e "s|trigWeight: .*|trigWeight: \/builds\/${CI_PROJECT_PATH}\/python\/$INPUT_DIR\/trigger_weights_friends.json@@trigWeight|" analysis/metadata/HH4b.yml > $OUTPUT_DIR/trigger_weights_HH4b.yml
 fi
 cat $OUTPUT_DIR/trigger_weights_HH4b.yml
 echo "############### Running datasets from " $DATASETS

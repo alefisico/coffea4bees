@@ -14,7 +14,7 @@ class fullmatch:
     def __init__(
         self,
         *groups: Iterable[str],
-        processors: Iterable[DFProcessor],
+        processors: Iterable[Callable[[], DFProcessor]],
         name: str = None,
     ):
         self._gs = (*map(frozenset, groups),)
@@ -23,7 +23,8 @@ class fullmatch:
 
     def __call__(self, groups: frozenset[str]):
         if any(g <= groups for g in self._gs):
-            yield from self._ps
+            for p in self._ps:
+                yield p()
 
 
 @dataclass
@@ -53,14 +54,16 @@ class _regex:
 
 @dataclass
 class regex(_regex):
-    processors: Iterable[DFProcessor]
-    default: Iterable[DFProcessor] = ()
+    processors: Iterable[Callable[[], DFProcessor]]
+    default: Iterable[Callable[[], DFProcessor]] = ()
 
     def any(self, _):
-        yield from self.processors
+        for p in self.processors:
+            yield p()
 
     def none(self):
-        yield from self.default
+        for p in self.default:
+            yield p()
 
 
 @dataclass
@@ -93,6 +96,8 @@ class add_year(add_column):
 
 @dataclass
 class add_single_label(_regex):
+    rename: dict[str, str] = None
+
     key: str = field(init=False, default="label")
     pattern: str = field(init=False, default=r"label:(?P<label>.*)")
 
@@ -101,4 +106,7 @@ class add_single_label(_regex):
     def any(self, matches: tuple[re.Match, ...]):
         from classifier.df.tools import add_label_index
 
-        yield add_label_index(matches[0].group(self.key))
+        label = matches[0].group(self.key)
+        if self.rename is not None:
+            label = self.rename.get(label, label)
+        yield add_label_index(label)

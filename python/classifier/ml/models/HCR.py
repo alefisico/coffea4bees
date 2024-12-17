@@ -11,6 +11,7 @@ import torch.types as tt
 from classifier.config import setting as cfg
 from classifier.config.scheduler import SkimStep
 from classifier.config.setting.HCR import Input, InputBranch, Output
+from classifier.config.setting.ml import SplitterKeys
 from classifier.config.state.label import MultiClass
 from torch import Tensor
 
@@ -87,8 +88,10 @@ class _HCRSkim(Skimmer):
 
     @torch.no_grad()
     def train(self, batch: BatchType):
-        training, _ = self._splitter.step(batch)
-        self._nn.updateMeanStd(*_HCRInput(batch, self._device, training))
+        selections = self._splitter.step(batch)
+        self._nn.updateMeanStd(
+            *_HCRInput(batch, self._device, selections[SplitterKeys.training])
+        )
         return super().train(batch)
 
 
@@ -123,11 +126,15 @@ class HCRModel(Model):
             self._nn.setGhostBatches(0, False)
         else:
             self._gbn.reset()
-            self._nn.setGhostBatches(self._gbn.n_batches, True)  # TODO subset?
+            self._nn.setGhostBatches(self._gbn.n_batches, False)
 
     @property
     def hyperparameters(self) -> dict[str]:
-        return {"n ghost batch": self.ghost_batch.get_last_bs()}
+        return {
+            "n ghost batch": (
+                self.ghost_batch.get_last_bs() if self.ghost_batch is not None else 0
+            )
+        }
 
     @property
     def nn(self):
@@ -158,7 +165,7 @@ class HCRModel(Model):
 
     def step(self, epoch: int = None):
         if self.ghost_batch is not None and self.ghost_batch.step(epoch):
-            self._nn.setGhostBatches(self.ghost_batch.get_bs(), True)
+            self._nn.setGhostBatches(self.ghost_batch.get_bs(), False)
 
 
 class HCRTraining(MultiStageTraining):
@@ -198,22 +205,19 @@ class HCRTraining(MultiStageTraining):
             training=self.dataset,
         )
         self._HCR.nn.initMeanStd()
-        training, validation = self._splitter.get()
-        validation = {
-            "training": training,
-            "validation": validation,
-        }
+        validation_sets = self._splitter.get()
+        training_set = validation_sets[SplitterKeys.training]
         yield BenchmarkStage(
             name="Baseline",
             model=self._HCR,
-            validation=validation,
+            validation=validation_sets,
         )
         yield TrainingStage(
             name="Training",
             model=self._HCR,
             schedule=self._training,
-            training=training,
-            validation=validation,
+            training=training_set,
+            validation=validation_sets,
         )
         self._HCR.ghost_batch = None
         if self._finetuning is not None:
@@ -225,8 +229,8 @@ class HCRTraining(MultiStageTraining):
                 name="Finetuning",
                 model=self._HCR,
                 schedule=self._finetuning,
-                training=training,
-                validation=validation,
+                training=training_set,
+                validation=validation_sets,
             )
             self._HCR.ghost_batch = self._ghost_batch
             layers.setLayerRequiresGrad(requires_grad=True)
@@ -243,6 +247,15 @@ class HCRTraining(MultiStageTraining):
                         "arch": {
                             "n_features": self._arch.n_features,
                             "attention": self._arch.use_attention_block,
+                        },
+                        "input": {
+                            k: getattr(InputBranch, k)
+                            for k in (
+                                "feature_ancillary",
+                                "feature_CanJet",
+                                "feature_NotCanJet",
+                                "n_NotCanJet",
+                            )
                         },
                     },
                     f,
@@ -262,6 +275,11 @@ class HCRModelEval(Model):
         self._splitter = splitter
         self._mapping = mapping
         self._classes = saved["label"]
+        for k in saved["input"].keys():
+            if getattr(InputBranch, k) != saved["input"][k]:
+                raise ValueError(
+                    f'Input features "{k}" mismatch: training={saved["input"][k]}, evaluation={getattr(InputBranch, k)}'
+                )
         self._nn = HCR(
             dijetFeatures=saved["arch"]["n_features"],
             quadjetFeatures=saved["arch"]["n_features"],
@@ -277,7 +295,7 @@ class HCRModelEval(Model):
         return self._nn
 
     def evaluate(self, batch: BatchType) -> BatchType:
-        _, selection = self._splitter.split(batch)
+        selection = self._splitter.split(batch)[SplitterKeys.validation]
         selector = Selector(selection)
         c, q = self._nn(*_HCRInput(batch, self._device, selection))
         c_prob = F.softmax(c, dim=1).cpu()
@@ -307,7 +325,10 @@ class HCREvaluation(Evaluation):
 
     def stages(self):
         with fsspec.open(self._model, "rb") as f:
-            saved = torch.load(f)
+            load_kw = {}
+            if self.device.type == "cpu":
+                load_kw["map_location"] = torch.device("cpu")
+            saved = torch.load(f, **load_kw)
         self._HCR = HCRModelEval(
             device=self.device,
             saved=saved,
