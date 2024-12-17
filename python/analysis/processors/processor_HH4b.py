@@ -8,12 +8,7 @@ from typing import TYPE_CHECKING
 
 import awkward as ak
 import numpy as np
-import yaml, json
-import copy
-from collections import OrderedDict
-from memory_profiler import profile
-
-from analysis.helpers.processor_config import processor_config
+import yaml
 from analysis.helpers.common import apply_jerc_corrections, update_events
 from analysis.helpers.cutflow import cutFlow
 from analysis.helpers.event_weights import (
@@ -46,6 +41,7 @@ from coffea import processor
 from coffea.analysis_tools import PackedSelection
 from coffea.nanoevents import NanoAODSchema, NanoEventsFactory
 from coffea.util import load
+from memory_profiler import profile
 
 from ..helpers.load_friend import (
     FriendTemplate,
