@@ -10,7 +10,7 @@ from coffea.lumi_tools import LumiMask
 from base_class.math.random import Squares
 from copy import copy
 
-def apply_event_selection_4b( event, corrections_metadata, *, cut_on_lumimask=True, do_jet_veto_maps=True):
+def apply_event_selection_4b( event, corrections_metadata, *, cut_on_lumimask=True):
 
     lumimask = LumiMask(corrections_metadata['goldenJSON'])
     event['lumimask'] = np.array( lumimask(event.run, event.luminosityBlock) ) \
@@ -26,10 +26,6 @@ def apply_event_selection_4b( event, corrections_metadata, *, cut_on_lumimask=Tr
                     list_to_mask=corrections_metadata['NoiseFilter'],
                     list_to_skip=['BadPFMuonDzFilter', 'hfNoisyHitsFilter']  )
 
-    event['passJetVetoMaps'] = np.full(len(event), True) \
-            if not do_jet_veto_maps else \
-            apply_jet_veto_maps( corrections_metadata['jet_veto_maps'], event.Jet )
-
     return event
 
 def apply_object_selection_4b(event, corrections_metadata, *,
@@ -42,7 +38,6 @@ def apply_object_selection_4b(event, corrections_metadata, *,
 
 
     isRun3 = '202' in dataset  ### Run 3 is only with 202X years
-    #if '2022' in dataset:
 
     #
     # Combined RunII and 3 selection
@@ -78,21 +73,23 @@ def apply_object_selection_4b(event, corrections_metadata, *,
         event['Jet', 'lepton_cleaned'] = np.full(len(event), True)
 
     # For trigger emulation
-    event['Jet', 'muon_cleaned'] = drClean( event.Jet, event.selMuon )[1]  ### 0 is the collection of jets, 1 is the flag
+    event['Jet', 'muon_cleaned'] = drClean( event.Jet, event.selMuon )[1]  
     event['Jet', 'ht_selected'] = (event.Jet.pt >= 30) & (np.abs(event.Jet.eta) < 2.4) & event.Jet.muon_cleaned
+
+    event['Jet', 'jet_veto_maps'] = apply_jet_veto_maps( corrections_metadata['jet_veto_maps'], event.Jet )
 
     if isRun3:
         event['Jet', 'puId']       = 10
         event['Jet', 'pileup'] = ((event.Jet.puId < 7) & (event.Jet.pt < 50)) | ((np.abs(event.Jet.eta) > 2.4) & (event.Jet.pt < 40))
         event['Jet', 'btagScore']       = event.Jet.btagPNetB
         event['Jet', 'selected_loose']  = (event.Jet.pt >= 20) & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned & (np.abs(event.Jet.eta) <= 4.7)
-        event['Jet', 'selected']        = (event.Jet.pt >= 30) & (np.abs(event.Jet.eta) <= 2.4) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
+        event['Jet', 'selected']        = (event.Jet.pt >= 30) & (np.abs(event.Jet.eta) <= 2.4) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned & event.Jet.jet_veto_maps
     else:
         event['Jet', 'calibration'] = event.Jet.pt / ( event.Jet.pt_raw if 'pt_raw' in event.Jet.fields else ak.full_like(event.Jet.pt, 1) )
         event['Jet', 'btagScore']  = event.Jet.btagDeepFlavB
         event['Jet', 'pileup'] = ((event.Jet.puId < 7) & (event.Jet.pt < 50)) | ((np.abs(event.Jet.eta) > 2.4) & (event.Jet.pt < 40))
         event['Jet', 'selected_loose'] = (event.Jet.pt >= 20) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
-        event['Jet', 'selected']      = (event.Jet.pt >= 40) & (np.abs(event.Jet.eta) <= 2.4) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
+        event['Jet', 'selected']      = (event.Jet.pt >= 40) & (np.abs(event.Jet.eta) <= 2.4) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned & event.Jet.jet_veto_maps
 
 
     if override_selected_with_flavor_bit and "jet_flavor_bit" in event.Jet.fields:

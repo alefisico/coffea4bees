@@ -129,7 +129,6 @@ class analysis(processor.ProcessorABC):
             "pass4GenBJets",
             "passHLT",
             "passNoiseFilter",
-            "passJetVetoMaps",
             "passJetMult",
             "passJetMult_btagSF",
             "passPreSel",
@@ -290,8 +289,7 @@ class analysis(processor.ProcessorABC):
         #
         event = apply_event_selection_4b( event,
                                         self.corrections_metadata[self.year],
-                                        cut_on_lumimask=self.config["cut_on_lumimask"],
-                                        do_jet_veto_maps=self.config["do_jet_veto_maps"],
+                                        cut_on_lumimask=self.config["cut_on_lumimask"]
                                         )
 
 
@@ -393,11 +391,9 @@ class analysis(processor.ProcessorABC):
         selections.add( "passNoiseFilter", event.passNoiseFilter)
         #selections.add( "passHLT", ( np.full(len(event), True) if skip_HLT_cut else event.passHLT ) )
         selections.add( "passHLT", ( event.passHLT if self.config["cut_on_HLT_decision"] else np.full(len(event), True)  ) )
-        selections.add( "passJetVetoMaps", event.passJetVetoMaps )
         selections.add( 'passJetMult', event.passJetMult )
         allcuts = [ 'lumimask', 'passNoiseFilter', 'passHLT', ]
-        if '202' in self.dataset : allcuts += [ 'passJetMult' ] # allcuts += [ 'passJetVetoMaps', 'passJetMult' ]
-        else: allcuts += [ 'passJetMult' ]
+        allcuts += [ 'passJetMult' ]
         event['weight'] = weights.weight()   ### this is for _cutflow
 
         #
@@ -436,12 +432,10 @@ class analysis(processor.ProcessorABC):
                 'passNoiseFilter': selections.require(lumimask=True, passNoiseFilter=True),
                 'passHLT':         selections.require(lumimask=True, passNoiseFilter=True, passHLT=True),
             })
-            if '202' in self.dataset: sel_dict['passJetVetoMaps'] = selections.require(lumimask=True, passNoiseFilter=True, passHLT=True, passJetVetoMaps=True)
             sel_dict['passJetMult'] = selections.all(*allcuts)
 
             self._cutFlow = cutFlow(self.cutFlowCuts, do_truth_hists=self.config["isSignal"])
             for cut, sel in sel_dict.items():
-                if ('passJetVetoMaps' in cut) and ('202' not in self.dataset): continue
                 self._cutFlow.fill( cut, event[sel], allTag=True )
                 self._cutFlow.fill( f"{cut}_woTrig", event[sel], allTag=True,
                                     wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[sel]) )

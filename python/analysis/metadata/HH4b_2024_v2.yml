@@ -3,10 +3,9 @@ runner:
   condor_memory: 8GB
 
 config:
-  JCM_file: analysis/weights/JCM/AN_24_089_v3/jetCombinatoricModel_SB_6771c35.yml
   blind: false
   apply_FvT: false
-  apply_trigWeight: false
+  apply_trigWeight: true 
   apply_btagSF: false
   apply_boosted_veto: false
   run_SvB: false
@@ -15,5 +14,5 @@ config:
   #SvB_MA: 'analysis/weights/pytorch_models/2024_HHUL/SvB_MA_HCR+attention_8_np1061_seed13_lr0.01_epochs20_offset*_epoch20.pkl'
   top_reconstruction_override: false
   friends:
-    # trigWeight: 'metadata/datasets_HH4b_2024_v1_trigweights.json@@trigWeight'
+    trigWeight: 'metadata/datasets_HH4b_2024_v2_trigweights.json@@trigWeight'
     # top_reconstruction: 'hists/local/top_reconstruction_friendtree.json'
