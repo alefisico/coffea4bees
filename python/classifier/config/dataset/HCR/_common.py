@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import logging
 from abc import abstractmethod
 from collections import defaultdict
 from functools import cache, cached_property, partial
 from itertools import chain
-from typing import Iterable
+from typing import TYPE_CHECKING, Iterable
 
 from classifier.task import ArgParser, parse
 from classifier.typetools import enum_dict
@@ -12,8 +13,13 @@ from classifier.typetools import enum_dict
 from ...setting.df import Columns
 from ...setting.HCR import Input, InputBranch, MassRegion, NTag
 from ...setting.ml import KFold
+from ...state import Flags
+from ...state.label import MultiClass
 from .._root import LoadGroupedRoot
 from . import _group
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 
 class _Derived:
@@ -24,6 +30,19 @@ class _Derived:
 def _sort_map(obj: dict[frozenset[str]]):
     obj = {(*sorted(k),): v for k, v in obj.items()}
     return {k: obj[k] for k in sorted(obj)}
+
+
+def _debug_print_weight(df: pd.DataFrame):
+    from rich.table import Table
+
+    table = Table(["Class", "Count", "Weight"])
+    for k, v in df.groupby(Columns.label_index):
+        table.add_row(
+            str(MultiClass.labels[k]),
+            str(len(v)),
+            str(v[Columns.weight].sum()),
+        )
+    logging.debug("The following events are loaded:", table)
 
 
 class Common(LoadGroupedRoot):
@@ -138,6 +157,8 @@ class CommonTrain(Common):
                 ),
             ]
         )
+        if Flags.debug:
+            self.postprocessors.append(_debug_print_weight)
         # fmt: on
 
     def other_branches(self):

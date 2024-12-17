@@ -156,3 +156,12 @@ def nameof(obj: Any) -> str:
     except Exception:
         name = type(obj).__name__
     return f"<{name}>"
+
+
+def new_TypedDict(typed_dict: type, *args, **kwargs):
+    obj = typed_dict(*args, **kwargs)
+    defaults = vars(typed_dict)
+    for k in typed_dict.__annotations__:
+        if k not in obj and k in defaults:
+            obj[k] = defaults[k]
+    return obj
