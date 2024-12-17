@@ -35,14 +35,19 @@ def _sort_map(obj: dict[frozenset[str]]):
 def _debug_print_weight(df: pd.DataFrame):
     from rich.table import Table
 
-    table = Table(["Class", "Count", "Weight"])
-    for k, v in df.groupby(Columns.label_index):
-        table.add_row(
-            str(MultiClass.labels[k]),
-            str(len(v)),
-            str(v[Columns.weight].sum()),
-        )
-    logging.debug("The following events are loaded:", table)
+    tables = []
+    for region, byregion in df.groupby(_Derived.region_index):
+        tables.append(f"In region {MassRegion(region).name}:")
+        table = Table("Class", "Count", "Weight")
+        for label, bylabel in byregion.groupby(Columns.label_index):
+            table.add_row(
+                str(MultiClass.labels[label]),
+                str(len(bylabel)),
+                str(bylabel[Columns.weight].sum()),
+            )
+        tables.append(table)
+    logging.debug("The following events are loaded:", *tables)
+    return df
 
 
 class Common(LoadGroupedRoot):
