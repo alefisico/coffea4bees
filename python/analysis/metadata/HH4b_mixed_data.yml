@@ -6,7 +6,6 @@ runner:
   use_ZZandZHinSB: False
 
 config:
-  JCM: "analysis/weights/JCM/2023/dataRunII/jetCombinatoricModel_SB_00-00-02.yml"
   blind: false
   apply_FvT: true
   apply_trigWeight: true

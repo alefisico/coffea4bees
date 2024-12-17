@@ -40,263 +40,176 @@ def apply_object_selection_4b(event, corrections_metadata, *,
                               run_lowpt_selection: bool = False):
     """docstring for apply_basic_selection_4b. This fuction is not modifying the content of anything in events. it is just adding it"""
 
-    ## Very simplified selection for Run 3
-    if '202' in dataset:  ### Run 3 is only with 202X years
-        event['Muon', 'selected'] = (event.Muon.pt > 10) & (abs(event.Muon.eta) < 2.5) & (event.Muon.pfRelIso04_all < 0.15) & (event.Muon.looseId)
-        event['nMuon_selected'] = ak.sum(event.Muon.selected, axis=1)
-        event['selMuon'] = event.Muon[event.Muon.selected]
 
-        #
-        # Adding electrons (loose electron id)
-        # https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedElectronIdentificationRun2
-        #
-        if 'Electron' in event.fields:
+    isRun3 = '202' in dataset  ### Run 3 is only with 202X years
+    #if '2022' in dataset:
+
+    #
+    # Combined RunII and 3 selection
+    #
+
+    #
+    # Adding muons (loose muon id definition)
+    # https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonIdRun2
+    #
+    event['Muon', 'selected'] = (event.Muon.pt > 10) & (abs(event.Muon.eta) < 2.5) & (event.Muon.pfRelIso04_all < 0.15) & (event.Muon.looseId)
+    event['nMuon_selected'] = ak.sum(event.Muon.selected, axis=1)
+    event['selMuon'] = event.Muon[event.Muon.selected]
+
+    # Adding electrons (loose electron id)
+    # https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedElectronIdentificationRun2
+    #
+    if 'Electron' in event.fields:
+
+        if isRun3:
             event['Electron', 'selected'] = (event.Electron.pt > 15) & (abs(event.Electron.eta) < 2.5) & (event.Electron.pfRelIso03_all < 0.15) & getattr(event.Electron, 'mvaNoIso_WP90' )
-            event['nElectron_selected'] = ak.sum(event.Electron.selected, axis=1)
-            event['selElec'] = event.Electron[event.Electron.selected]
-            selLepton = ak.concatenate( [event.selElec, event.selMuon], axis=1 )
-        else: selLepton = event.selMuon
-
-        # Hack for plotting
-        event['Jet', 'puId']       = 10
-        event['Jet', 'btagScore']  = event.Jet.btagPNetB
-
-        if doLeptonRemoval:
-            event['Jet', 'lepton_cleaned'] = drClean( event.Jet, selLepton )[1]  ### 0 is the collection of jets, 1 is the flag
         else:
-            event['Jet', 'lepton_cleaned'] = np.full(len(event), True)
-
-
-        # For trigger emulation
-        event['Jet', 'muon_cleaned'] = drClean( event.Jet, event.selMuon )[1]  ### 0 is the collection of jets, 1 is the flag
-        event['Jet', 'ht_selected'] = (event.Jet.pt >= 30) & (np.abs(event.Jet.eta) < 2.4) & event.Jet.muon_cleaned
-
-        event['Jet', 'selected_loose'] = (event.Jet.pt >= 20) & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned & (np.abs(event.Jet.eta) <= 4.7)
-        event['Jet', 'selected'] = (event.Jet.pt >= 40) & (np.abs(event.Jet.eta) <= 2.4) & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
-
-        if override_selected_with_flavor_bit and "jet_flavor_bit" in event.Jet.fields:
-            event['Jet', 'selected'] = (event.Jet.selected) | (event.Jet.jet_flavor_bit == 1)
-            event['Jet', 'selected_loose'] = True
-
-
-        event['nJet_selected'] = ak.sum(event.Jet.selected, axis=1)
-
-        event['Jet', 'tagged']       = event.Jet.selected & (event.Jet.btagPNetB >= corrections_metadata['btagWP']['M'])
-        event['Jet', 'tagged_loose'] = event.Jet.selected & (event.Jet.btagPNetB >= corrections_metadata['btagWP']['L'])
-        event['selJet_no_bRegCorr']  = event.Jet[event.Jet.selected]
-
-        if "PNetRegPtRawCorr" in event.Jet.fields:
-            #event['Jet', 'bRegCorr']       = event.Jet.PNetRegPtRawCorr * event.Jet.PNetRegPtRawCorrNeutrino
-            event['Jet', 'bRegCorr']       = event.Jet.PNetRegPtRawCorr # * event.Jet.PNetRegPtRawCorrNeutrino
-
-        #
-        # Apply the bRegCorr to the tagged jets
-        #
-        bRegCorr_factor_flat = copy(ak.flatten(event.Jet.bRegCorr).to_numpy())
-        tagged_flag_flat    = ak.flatten(event.Jet.tagged)
-        bRegCorr_factor_flat[~tagged_flag_flat] = 1.0
-        bRegCorr_factor = ak.unflatten(bRegCorr_factor_flat, ak.num(event.Jet.bRegCorr) )
-        selJet_pvec = event.Jet[event.Jet.selected]  * bRegCorr_factor[event.Jet.selected]
-        selJet_pvec["tagged"] = event.Jet[event.Jet.selected].tagged
-        selJet_pvec["tagged_loose"] = event.Jet[event.Jet.selected].tagged_loose
-        selJet_pvec["btagScore"] = event.Jet[event.Jet.selected].btagScore
-        selJet_pvec["puId"] = event.Jet[event.Jet.selected].puId
-        selJet_pvec["jetId"] = event.Jet[event.Jet.selected].jetId
-
-        if "hadronFlavour" in event.Jet.fields:
-            selJet_pvec["hadronFlavour"] = event.Jet[event.Jet.selected].hadronFlavour
-
-        event['selJet']  = selJet_pvec
-
-
-        if '2022' in dataset:
-            event['passJetMult'] = ak.where( event.nJet_selected >= 4, True, False)
-            #event['selJet'] = ak.pad_none(event.selJet, 4, axis=1)
-            #event['passJetMult'] = ak.where(
-            #    (event.nJet_selected >= 4) &
-            #    (event.selJet[:, 0].pt > 70) &
-            #    (event.selJet[:, 1].pt > 50) &
-            #    (event.selJet[:, 2].pt > 40) &
-            #    (event.selJet[:, 3].pt > 35),
-            #    True,
-            #    False
-            #    )
-        else:
-            event['passJetMult'] = ak.where( event.nJet_selected >= 4, True, False)
-
-        event['nJet_tagged']         = ak.num(event.Jet[event.Jet.tagged])
-        event['nJet_tagged_loose']   = ak.num(event.Jet[event.Jet.tagged_loose])
-        event['tagJet']              = event.selJet[event.selJet.tagged]
-        event['tagJet_loose']        = event.Jet[event.Jet.tagged_loose]
-
-        event['fourTag']  = (event['nJet_tagged'] >= 4)
-        event['threeTag']   = (event['nJet_tagged_loose'] == 3) & (event['nJet_selected'] >= 4)
-        event['twoTag']   = (event['nJet_tagged'] == 2) & (event['nJet_selected'] >= 4)
-
-        event['passPreSel'] = event.twoTag | event.threeTag | event.fourTag
-
-        ## for skims
-        event['passJetMult_lowpt_forskim'] = event.passJetMult
-        event['passPreSel_lowpt_forskim'] = event.passPreSel
-
-        tagCode = np.zeros(len(event), dtype=int)
-        tagCode[event.fourTag]  = 4
-        tagCode[event.threeTag] = 3
-        tagCode[event.twoTag] = 2
-
-        event['tag'] = tagCode
-
-
-        #  Calculate hT
-        event["hT"] = ak.sum(event.Jet[event.Jet.selected_loose].pt, axis=1)
-        event["hT_selected"] = ak.sum(event.Jet[event.Jet.selected].pt, axis=1)
-        event["hT_trigger"] = ak.sum(event.Jet[event.Jet.ht_selected].pt, axis=1)
-
-
-    ## For Run 2
-    else:
-        #
-        # Adding muons (loose muon id definition)
-        # https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonIdRun2
-        #
-        event['Muon', 'selected'] = (event.Muon.pt > 10) & (abs(event.Muon.eta) < 2.5) & (event.Muon.pfRelIso04_all < 0.15) & (event.Muon.looseId)
-        event['nMuon_selected'] = ak.sum(event.Muon.selected, axis=1)
-        event['selMuon'] = event.Muon[event.Muon.selected]
-
-        #
-        # Adding electrons (loose electron id)
-        # https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedElectronIdentificationRun2
-        #
-        if 'Electron' in event.fields:
             event['Electron', 'selected'] = (event.Electron.pt > 15) & (abs(event.Electron.eta) < 2.5) & (event.Electron.pfRelIso03_all < 0.15) & getattr(event.Electron, 'mvaFall17V2Iso_WP90' )
-            event['nElectron_selected'] = ak.sum(event.Electron.selected, axis=1)
-            event['selElec'] = event.Electron[event.Electron.selected]
-            selLepton = ak.concatenate( [event.selElec, event.selMuon], axis=1 )
-        else: selLepton = event.selMuon
 
+        event['nElectron_selected'] = ak.sum(event.Electron.selected, axis=1)
+        event['selElec'] = event.Electron[event.Electron.selected]
+        selLepton = ak.concatenate( [event.selElec, event.selMuon], axis=1 )
+    else: selLepton = event.selMuon
+
+
+    if doLeptonRemoval:
+        event['Jet', 'lepton_cleaned'] = drClean( event.Jet, selLepton )[1]  ### 0 is the collection of jets, 1 is the flag
+    else:
+        event['Jet', 'lepton_cleaned'] = np.full(len(event), True)
+
+    # For trigger emulation
+    event['Jet', 'muon_cleaned'] = drClean( event.Jet, event.selMuon )[1]  ### 0 is the collection of jets, 1 is the flag
+    event['Jet', 'ht_selected'] = (event.Jet.pt >= 30) & (np.abs(event.Jet.eta) < 2.4) & event.Jet.muon_cleaned
+
+    if isRun3:
+        event['Jet', 'puId']       = 10
+        event['Jet', 'pileup'] = ((event.Jet.puId < 7) & (event.Jet.pt < 50)) | ((np.abs(event.Jet.eta) > 2.4) & (event.Jet.pt < 40))
+        event['Jet', 'btagScore']       = event.Jet.btagPNetB
+        event['Jet', 'selected_loose']  = (event.Jet.pt >= 20) & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned & (np.abs(event.Jet.eta) <= 4.7)
+        event['Jet', 'selected']        = (event.Jet.pt >= 30) & (np.abs(event.Jet.eta) <= 2.4) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
+    else:
         event['Jet', 'calibration'] = event.Jet.pt / ( event.Jet.pt_raw if 'pt_raw' in event.Jet.fields else ak.full_like(event.Jet.pt, 1) )
         event['Jet', 'btagScore']  = event.Jet.btagDeepFlavB
-
-
-        if doLeptonRemoval:
-            event['Jet', 'lepton_cleaned'] = drClean( event.Jet, selLepton )[1]  ### 0 is the collection of jets, 1 is the flag
-        else:
-            event['Jet', 'lepton_cleaned'] = np.full(len(event), True)
-
-        # For trigger emulation
-        event['Jet', 'muon_cleaned'] = drClean( event.Jet, event.selMuon )[1]  ### 0 is the collection of jets, 1 is the flag
-        event['Jet', 'ht_selected'] = (event.Jet.pt >= 30) & (np.abs(event.Jet.eta) < 2.4) & event.Jet.muon_cleaned
-
         event['Jet', 'pileup'] = ((event.Jet.puId < 7) & (event.Jet.pt < 50)) | ((np.abs(event.Jet.eta) > 2.4) & (event.Jet.pt < 40))
         event['Jet', 'selected_loose'] = (event.Jet.pt >= 20) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
-        event['Jet', 'selected'] = (event.Jet.pt >= 40) & (np.abs(event.Jet.eta) <= 2.4) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
-
-        if override_selected_with_flavor_bit and "jet_flavor_bit" in event.Jet.fields:
-            event['Jet', 'selected'] = (event.Jet.selected) | (event.Jet.jet_flavor_bit == 1)
-            event['Jet', 'selected_loose'] = True
+        event['Jet', 'selected']      = (event.Jet.pt >= 40) & (np.abs(event.Jet.eta) <= 2.4) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
 
 
-        event['nJet_selected'] = ak.sum(event.Jet.selected, axis=1)
+    if override_selected_with_flavor_bit and "jet_flavor_bit" in event.Jet.fields:
+        event['Jet', 'selected'] = (event.Jet.selected) | (event.Jet.jet_flavor_bit == 1)
+        event['Jet', 'selected_loose'] = True
 
-        event['Jet', 'tagged']       = event.Jet.selected & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['M'])
-        event['Jet', 'tagged_loose'] = event.Jet.selected & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['L'])
-        event['selJet_no_bRegCorr']  = event.Jet[event.Jet.selected]
+    event['nJet_selected'] = ak.sum(event.Jet.selected, axis=1)
 
-        #
-        # Apply the bRegCorr to the tagged jets
-        #
-        bRegCorr_factor_flat = copy(ak.flatten(event.Jet.bRegCorr).to_numpy())
-        tagged_flag_flat    = ak.flatten(event.Jet.tagged)
-        bRegCorr_factor_flat[~tagged_flag_flat] = 1.0
-        bRegCorr_factor = ak.unflatten(bRegCorr_factor_flat, ak.num(event.Jet.bRegCorr) )
-        selJet_pvec = event.Jet[event.Jet.selected]  * bRegCorr_factor[event.Jet.selected]
-        selJet_pvec["tagged"] = event.Jet[event.Jet.selected].tagged
-        selJet_pvec["tagged_loose"] = event.Jet[event.Jet.selected].tagged_loose
-        selJet_pvec["btagScore"] = event.Jet[event.Jet.selected].btagScore
-        selJet_pvec["puId"] = event.Jet[event.Jet.selected].puId
-        selJet_pvec["jetId"] = event.Jet[event.Jet.selected].jetId
+    event['Jet', 'tagged']       = event.Jet.selected & (event.Jet.btagScore >= corrections_metadata['btagWP']['M'])
+    event['Jet', 'tagged_loose'] = event.Jet.selected & (event.Jet.btagScore >= corrections_metadata['btagWP']['L'])
 
-        if "hadronFlavour" in event.Jet.fields:
-            selJet_pvec["hadronFlavour"] = event.Jet[event.Jet.selected].hadronFlavour
+    event['selJet_no_bRegCorr']  = event.Jet[event.Jet.selected]
 
-        event['selJet']  = selJet_pvec
+    if "PNetRegPtRawCorr" in event.Jet.fields:
+        #event['Jet', 'bRegCorr']       = event.Jet.PNetRegPtRawCorr * event.Jet.PNetRegPtRawCorrNeutrino
+        event['Jet', 'bRegCorr']       = event.Jet.PNetRegPtRawCorr # * event.Jet.PNetRegPtRawCorrNeutrino
 
-        event['passJetMult'] = event.nJet_selected >= 4
+    #
+    # Apply the bRegCorr to the tagged jets
+    #
+    bRegCorr_factor_flat = copy(ak.flatten(event.Jet.bRegCorr).to_numpy())
+    tagged_flag_flat    = ak.flatten(event.Jet.tagged)
+    bRegCorr_factor_flat[~tagged_flag_flat] = 1.0
+    bRegCorr_factor = ak.unflatten(bRegCorr_factor_flat, ak.num(event.Jet.bRegCorr) )
+    selJet_pvec = event.Jet[event.Jet.selected]  * bRegCorr_factor[event.Jet.selected]
+    selJet_pvec["tagged"] = event.Jet[event.Jet.selected].tagged
+    selJet_pvec["tagged_loose"] = event.Jet[event.Jet.selected].tagged_loose
+    selJet_pvec["btagScore"] = event.Jet[event.Jet.selected].btagScore
+    selJet_pvec["puId"] = event.Jet[event.Jet.selected].puId
+    selJet_pvec["jetId"] = event.Jet[event.Jet.selected].jetId
 
-        event['nJet_tagged']         = ak.num(event.Jet[event.Jet.tagged])
-        event['nJet_tagged_loose']   = ak.num(event.Jet[event.Jet.tagged_loose])
-        event['tagJet']              = event.selJet[event.selJet.tagged]
+    if "hadronFlavour" in event.Jet.fields:
+        selJet_pvec["hadronFlavour"] = event.Jet[event.Jet.selected].hadronFlavour
 
-        event['tagJet_loose']        = event.Jet[event.Jet.tagged_loose]
+    event['selJet']  = selJet_pvec
 
-        event['fourTag']    = (event['nJet_tagged']       >= 4)
-        event['threeTag']   = (event['nJet_tagged_loose'] == 3) & (event['nJet_selected'] >= 4)
+    event['passJetMult'] = event.nJet_selected >= 4
 
+    event['nJet_tagged']         = ak.num(event.Jet[event.Jet.tagged])
+    event['nJet_tagged_loose']   = ak.num(event.Jet[event.Jet.tagged_loose])
+
+    event['tagJet']              = event.selJet[event.selJet.tagged]
+    event['tagJet_loose']        = event.Jet[event.Jet.tagged_loose]
+
+    event['fourTag']  = (event['nJet_tagged'] >= 4)
+    event['threeTag'] = (event['nJet_tagged_loose'] == 3) & (event['nJet_selected'] >= 4)
+    event['twoTag']   = (event['nJet_tagged_loose'] == 2) & (event['nJet_selected'] >= 4)
+
+    if isRun3:
+        event['passPreSel'] = event.twoTag | event.threeTag | event.fourTag
+    else:
         event['passPreSel'] = event.threeTag | event.fourTag
 
-        tagCode = np.zeros(len(event), dtype=int)
-        tagCode[event.fourTag]  = 4
-        tagCode[event.threeTag] = 3
-        # event['tag'] = ak.zip({
-        #     'fourTag': event.fourTag,
-        #     'threeTag': event.threeTag,
-        # })
+    tagCode = np.zeros(len(event), dtype=int)
+    tagCode[event.fourTag]  = 4
+    tagCode[event.threeTag] = 3
+    tagCode[event.twoTag] = 2
 
-        #  Calculate hT
-        event["hT"] = ak.sum(event.Jet[event.Jet.selected_loose].pt, axis=1)
-        event["hT_selected"] = ak.sum(event.Jet[event.Jet.selected].pt, axis=1)
-        event["hT_trigger"] = ak.sum(event.Jet[event.Jet.ht_selected].pt, axis=1)
 
-        # # For low pt selection
-        if run_lowpt_selection:
-            event['Jet', 'selected_lowpt'] = (event.Jet.pt >= 15) & (np.abs(event.Jet.eta) <= 2.4) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned & ~event.Jet.selected
-            event['lowptJet'] = event.Jet[event.Jet.selected_lowpt]
-            event['Jet', 'tagged_lowpt'] = event.Jet.selected_lowpt & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['M'])
-            event['Jet', 'tagged_loose_lowpt'] = event.Jet.selected_lowpt & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['L'])
-            event['nJet_tagged_lowpt'] = ak.num(event.Jet[event.Jet.tagged_lowpt])
-            event['nJet_tagged_loose_lowpt'] = ak.num(event.Jet[event.Jet.tagged_loose_lowpt])
-            event['tagJet_lowpt'] = event.Jet[event.Jet.tagged_lowpt]
-            event['lowpt_fourTag']  = (event['nJet_tagged']==3) & (event['nJet_tagged_lowpt'] > 0) & ~event.fourTag
-            event['lowpt_threeTag_3b1j_0b'] = (event['nJet_tagged_loose'] == 3) & (event['nJet_selected'] >= 4) & (event['nJet_tagged_loose_lowpt']==0) & (ak.num(event['lowptJet'])>0)
-            event['lowpt_threeTag_2b2j_1b'] = (event['nJet_tagged_loose'] == 2) & (event['nJet_selected'] >= 4) & (event['nJet_tagged_loose_lowpt']==1)
-            event['lowpt_threeTag_1b3j_2b'] = (event['nJet_tagged_loose'] == 1) & (event['nJet_selected'] >= 4) & (event['nJet_tagged_loose_lowpt']==2)
-            event['lowpt_threeTag_0b4j_3b'] = (event['nJet_tagged_loose'] == 0) & (event['nJet_selected'] >= 4) & (event['nJet_tagged_loose_lowpt']==3)
-            event['lowpt_threeTag'] = event['lowpt_threeTag_3b1j_0b'] | event['lowpt_threeTag_2b2j_1b'] | event['lowpt_threeTag_1b3j_2b'] | event['lowpt_threeTag_0b4j_3b']
-            tagCode[event["lowpt_fourTag"]] = 14
-            tagCode[event["lowpt_threeTag"]] = 13
-            event['lowpt_categories'] = np.where(
-                event['fourTag'], 1,
+    # # For low pt selection
+    if run_lowpt_selection:
+        event['Jet', 'selected_lowpt'] = (event.Jet.pt >= 15) & (np.abs(event.Jet.eta) <= 2.4) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned & ~event.Jet.selected
+        event['lowptJet'] = event.Jet[event.Jet.selected_lowpt]
+        event['Jet', 'tagged_lowpt'] = event.Jet.selected_lowpt & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['M'])
+        event['Jet', 'tagged_loose_lowpt'] = event.Jet.selected_lowpt & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['L'])
+        event['nJet_tagged_lowpt'] = ak.num(event.Jet[event.Jet.tagged_lowpt])
+        event['nJet_tagged_loose_lowpt'] = ak.num(event.Jet[event.Jet.tagged_loose_lowpt])
+        event['tagJet_lowpt'] = event.Jet[event.Jet.tagged_lowpt]
+        event['lowpt_fourTag']  = (event['nJet_tagged']==3) & (event['nJet_tagged_lowpt'] > 0) & ~event.fourTag
+        event['lowpt_threeTag_3b1j_0b'] = (event['nJet_tagged_loose'] == 3) & (event['nJet_selected'] >= 4) & (event['nJet_tagged_loose_lowpt']==0) & (ak.num(event['lowptJet'])>0)
+        event['lowpt_threeTag_2b2j_1b'] = (event['nJet_tagged_loose'] == 2) & (event['nJet_selected'] >= 4) & (event['nJet_tagged_loose_lowpt']==1)
+        event['lowpt_threeTag_1b3j_2b'] = (event['nJet_tagged_loose'] == 1) & (event['nJet_selected'] >= 4) & (event['nJet_tagged_loose_lowpt']==2)
+        event['lowpt_threeTag_0b4j_3b'] = (event['nJet_tagged_loose'] == 0) & (event['nJet_selected'] >= 4) & (event['nJet_tagged_loose_lowpt']==3)
+        event['lowpt_threeTag'] = event['lowpt_threeTag_3b1j_0b'] | event['lowpt_threeTag_2b2j_1b'] | event['lowpt_threeTag_1b3j_2b'] | event['lowpt_threeTag_0b4j_3b']
+        tagCode[event["lowpt_fourTag"]] = 14
+        tagCode[event["lowpt_threeTag"]] = 13
+        event['lowpt_categories'] = np.where(
+            event['fourTag'], 1,
+            np.where(
+                event['lowpt_fourTag'], 3,
                 np.where(
-                    event['lowpt_fourTag'], 3,
+                    event["lowpt_threeTag_3b1j_0b"], 5,
                     np.where(
-                        event["lowpt_threeTag_3b1j_0b"], 5,
+                        event["lowpt_threeTag_2b2j_1b"], 7,
                         np.where(
-                            event["lowpt_threeTag_2b2j_1b"], 7,
+                            event["lowpt_threeTag_1b3j_2b"], 9,
                             np.where(
-                                event["lowpt_threeTag_1b3j_2b"], 9,
-                                np.where(
-                                    event["lowpt_threeTag_0b4j_3b"], 11,
-                                    np.where(event['threeTag'], 13, 15)
-                                )
+                                event["lowpt_threeTag_0b4j_3b"], 11,
+                                np.where(event['threeTag'], 13, 15)
                             )
                         )
                     )
                 )
-            )   ### these is the category for the low pt selection
+            )
+        )   ### these is the category for the low pt selection
 
-            event['passPreSel'] = event.lowpt_threeTag | event.lowpt_fourTag
-        event['tag'] = tagCode
+        event['passPreSel'] = event.lowpt_threeTag | event.lowpt_fourTag
 
 
-        # Only need 30 GeV jets for signal systematics
-        if loosePtForSkim:
-            event['Jet', 'selected_lowpt_forskim'] = (event.Jet.pt >= 15) & (np.abs(event.Jet.eta) <= 2.4) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
-            event['nJet_selected_lowpt_forskim'] = ak.sum(event.Jet.selected_lowpt_forskim, axis=1)
-            event['Jet', 'tagged_lowpt_forskim']     = event.Jet.selected_lowpt_forskim & (event.Jet.btagDeepFlavB >= corrections_metadata['btagWP']['M'])
-            event['passJetMult_lowpt_forskim'] = event.nJet_selected_lowpt_forskim >= 4
-            event['nJet_tagged_lowpt_forskim']       = ak.num(event.Jet[event.Jet.tagged_lowpt_forskim])
-            event["fourTag_lowpt_forskim"]  = (event['nJet_tagged_lowpt_forskim']     >= 4)
-            event['passPreSel_lowpt_forskim'] = event.threeTag | event.fourTag_lowpt_forskim
+    event['tag'] = tagCode
+
+    # Only need 30 GeV jets for signal systematics
+    if loosePtForSkim:
+        event['Jet', 'selected_lowpt_forskim'] = (event.Jet.pt >= 15) & (np.abs(event.Jet.eta) <= 2.4) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
+        event['nJet_selected_lowpt_forskim'] = ak.sum(event.Jet.selected_lowpt_forskim, axis=1)
+        event['Jet', 'tagged_lowpt_forskim']     = event.Jet.selected_lowpt_forskim & (event.Jet.btagScore >= corrections_metadata['btagWP']['M'])
+        event['passJetMult_lowpt_forskim'] = event.nJet_selected_lowpt_forskim >= 4
+        event['nJet_tagged_lowpt_forskim']       = ak.num(event.Jet[event.Jet.tagged_lowpt_forskim])
+        event["fourTag_lowpt_forskim"]  = (event['nJet_tagged_lowpt_forskim']     >= 4)
+        event['passPreSel_lowpt_forskim'] = event.threeTag | event.fourTag_lowpt_forskim
+
+
+    #  Calculate hT
+    event["hT"] = ak.sum(event.Jet[event.Jet.selected_loose].pt, axis=1)
+    event["hT_selected"] = ak.sum(event.Jet[event.Jet.selected].pt, axis=1)
+    event["hT_trigger"] = ak.sum(event.Jet[event.Jet.ht_selected].pt, axis=1)
+
 
     return event
 
@@ -329,6 +242,7 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
                                    run_systematics:bool = False,
                                    classifier_SvB = None,
                                    classifier_SvB_MA = None,
+                                   processOutput = None,
                                    ):
     #
     # Build and select boson candidate jets with bRegCorr applied
@@ -409,24 +323,25 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
     #
     # Build quadJets
     #
-    rng = Squares("quadJetSelection", event_event)
-    counter = np.zeros((len(selev), 3, 2), dtype=np.uint64)
-    counter[:, :, 0] = np.round(np.asarray(diJet[:, :, 0].mass), 0).view(np.uint64)
-    counter[:, :, 1] = np.round(np.asarray(diJet[:, :, 1].mass), 0).view(np.uint64)
+    rng_0 = Squares("quadJetSelection")
+    rng_1 = rng_0.shift(1)
+    rng_2 = rng_0.shift(2)
+    counter = selev.event
 
     # print(f"{self.chunk} mass {diJet[:, :, 0].mass[0:5]}\n")
     # print(f"{self.chunk} mass view64 {np.asarray(diJet[:, :, 0].mass).view(np.uint64)[0:5]}\n")
     # print(f"{self.chunk} mass rounded view64 {np.round(np.asarray(diJet[:, :, 0].mass), 0).view(np.uint64)[0:5]}\n")
     # print(f"{self.chunk} mass rounded {np.round(np.asarray(diJet[:, :, 0].mass), 0)[0:5]}\n")
-    # print(f"{self.chunk} counter 0 {counter[:, :, 0][0:5]}\n")
-    # print(f"{self.chunk} counter 1 {counter[:, :, 1][0:5]}\n")
 
     quadJet = ak.zip( { "lead": diJet[:, :, 0],
                         "subl": diJet[:, :, 1],
                         "close": diJetDr[:, :, 0],
                         "other": diJetDr[:, :, 1],
                         "passDiJetMass": ak.all(diJet.passDiJetMass, axis=2),
-                        "random": rng.uniform(counter, low=0.1, high=0.9),
+                        "random": np.concatenate([rng_0.uniform(counter, low=0.1, high=0.9)[:, np.newaxis],
+                                                  rng_1.uniform(counter, low=0.1, high=0.9)[:, np.newaxis],
+                                                  rng_2.uniform(counter, low=0.1, high=0.9)[:, np.newaxis]], axis=1),
+
                        } )
 
     quadJet["dr"] = quadJet["lead"].delta_r(quadJet["subl"])
@@ -454,6 +369,7 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
     #
     quadJet["rank"] = ( 10 * quadJet.passDiJetMass + quadJet.lead.passMDR + quadJet.subl.passMDR + quadJet.random )
     quadJet["selected"] = quadJet.rank == np.max(quadJet.rank, axis=1)
+
 
 
     if apply_FvT:
@@ -524,6 +440,66 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
     #     "SR": selev["quadJet_selected"].SR,
     #     "SB": selev["quadJet_selected"].SB
     #     })
+
+    #
+    # Debugging the skimmer
+    #
+    ### selev_mask = selev.event == 434011
+    ### out_data = {}
+    ### out_data["debug_event"  ]            = selev.event[selev_mask]
+    ### out_data["debug_qj_rank"  ]    = quadJet[selev_mask].rank.to_list()
+    ### out_data["debug_qj_selected"  ]    = quadJet[selev_mask].selected.to_list()
+    ### out_data["debug_qj_passDiJetMass"  ]    = quadJet[selev_mask].passDiJetMass.to_list()
+    ### out_data["debug_qj_lead_passMDR"  ]    = quadJet[selev_mask].lead.passMDR.to_list()
+    ### out_data["debug_qj_subl_passMDR"  ]    = quadJet[selev_mask].subl.passMDR.to_list()
+    ### out_data["debug_qj_lead_mass"  ]    = quadJet[selev_mask].lead.mass.to_list()
+    ### out_data["debug_qj_subl_mass"  ]    = quadJet[selev_mask].subl.mass.to_list()
+    ### out_data["debug_qj_random"  ]    = quadJet[selev_mask].random.to_list()
+    ### out_data["debug_qj_SR"  ]    = quadJet[selev_mask].SR.to_list()
+    ### out_data["debug_qj_HHSR"  ]    = quadJet[selev_mask].HHSR.to_list()
+    ### out_data["debug_qj_ZZSR"  ]    = quadJet[selev_mask].ZZSR.to_list()
+    ### out_data["debug_qj_ZHSR"  ]    = quadJet[selev_mask].ZHSR.to_list()
+    ### out_data["debug_qj_xZZ"  ]    = quadJet[selev_mask].xZZ.to_list()
+    ### out_data["debug_qj_xZH"  ]    = quadJet[selev_mask].xZH.to_list()
+    ### out_data["debug_qj_xHH"  ]    = quadJet[selev_mask].xHH.to_list()
+    ### out_data["debug_qj_ZHSR"  ]    = quadJet[selev_mask].ZHSR.to_list()
+    ### out_data["debug_qj_lead_xZ"  ]    = quadJet[selev_mask].lead.xZ.to_list()
+    ### out_data["debug_qj_lead_xH"  ]    = quadJet[selev_mask].lead.xH.to_list()
+    ### out_data["debug_qj_subl_xZ"  ]    = quadJet[selev_mask].subl.xZ.to_list()
+    ### out_data["debug_qj_subl_xH"  ]    = quadJet[selev_mask].subl.xH.to_list()
+    ### out_data["debug_qj_SB"  ]    = quadJet[selev_mask].SB.to_list()
+    ### out_data["debug_counter"  ]    = counter[selev_mask].to_list()
+    ### out_data["debug_SR"] = selev["quadJet_selected"][selev_mask].SR
+    ### out_data["debug_SB"] = selev["quadJet_selected"][selev_mask].SB
+    ### out_data["debug_threeTag"] = selev[selev_mask].threeTag
+    ### out_data["debug_fourTag"] = selev[selev_mask].fourTag
+    ### out_data["debug_qj_lead_pt"  ]         = quadJet[selev_mask].lead.pt.to_list()
+    ### out_data["debug_qj_lead_lead_pt"  ]    = quadJet[selev_mask].lead.lead.pt.to_list()
+    ### out_data["debug_qj_lead_lead_eta"  ]   = quadJet[selev_mask].lead.lead.eta.to_list()
+    ### out_data["debug_qj_lead_lead_phi"  ]   = quadJet[selev_mask].lead.lead.phi.to_list()
+    ### out_data["debug_qj_lead_lead_mass"  ]  = quadJet[selev_mask].lead.lead.mass.to_list()
+    ### out_data["debug_qj_lead_subl_pt"  ]    = quadJet[selev_mask].lead.subl.pt.to_list()
+    ### out_data["debug_qj_lead_subl_eta"  ]   = quadJet[selev_mask].lead.subl.eta.to_list()
+    ### out_data["debug_qj_lead_subl_phi"  ]   = quadJet[selev_mask].lead.subl.phi.to_list()
+    ### out_data["debug_qj_lead_subl_mass"  ]  = quadJet[selev_mask].lead.subl.mass.to_list()
+    ###
+    ### out_data["debug_qj_subl_pt"  ]         = quadJet[selev_mask].subl.pt.to_list()
+    ### out_data["debug_qj_subl_lead_pt"  ]    = quadJet[selev_mask].subl.lead.pt.to_list()
+    ### out_data["debug_qj_subl_lead_eta"  ]   = quadJet[selev_mask].subl.lead.eta.to_list()
+    ### out_data["debug_qj_subl_lead_phi"  ]   = quadJet[selev_mask].subl.lead.phi.to_list()
+    ### out_data["debug_qj_subl_lead_mass"  ]  = quadJet[selev_mask].subl.lead.mass.to_list()
+    ###
+    ### out_data["debug_qj_subl_subl_pt"  ]    = quadJet[selev_mask].subl.subl.pt.to_list()
+    ### out_data["debug_qj_subl_subl_eta"  ]   = quadJet[selev_mask].subl.subl.eta.to_list()
+    ### out_data["debug_qj_subl_subl_phi"  ]   = quadJet[selev_mask].subl.subl.phi.to_list()
+    ### out_data["debug_qj_subl_subl_mass"  ]  = quadJet[selev_mask].subl.subl.mass.to_list()
+    ###
+    ###
+    ### for out_k, out_v in out_data.items():
+    ###     processOutput[out_k] = {}
+    ###     processOutput[out_k][selev.metadata['dataset']] = list(out_v)
+
+
 
     if run_SvB:
         selev["passSvB"] = selev["SvB_MA"].ps > 0.80

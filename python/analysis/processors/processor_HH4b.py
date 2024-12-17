@@ -8,7 +8,12 @@ from typing import TYPE_CHECKING
 
 import awkward as ak
 import numpy as np
-import yaml
+import yaml, json
+import copy
+from collections import OrderedDict
+from memory_profiler import profile
+
+from analysis.helpers.processor_config import processor_config
 from analysis.helpers.common import apply_jerc_corrections, update_events
 from analysis.helpers.cutflow import cutFlow
 from analysis.helpers.event_weights import (
@@ -51,6 +56,7 @@ from ..helpers.load_friend import (
 
 if TYPE_CHECKING:
     from ..helpers.classifier.HCR import HCRModelMetadata
+from analysis.helpers.truth_tools import find_genpart
 
 #
 # Setup
@@ -75,10 +81,11 @@ class analysis(processor.ProcessorABC):
     def __init__(
         self,
         *,
-        JCM: callable = None,
         SvB: str|list[HCRModelMetadata] = None,
         SvB_MA: str|list[HCRModelMetadata] = None,
         blind: bool = False,
+        apply_JCM: bool = True,
+        JCM_file: str = "analysis/weights/JCM/AN_24_089_v3/jetCombinatoricModel_SB_6771c35.yml",
         apply_trigWeight: bool = True,
         apply_btagSF: bool = True,
         apply_FvT: bool = True,
@@ -99,7 +106,7 @@ class analysis(processor.ProcessorABC):
 
         logging.debug("\nInitialize Analysis Processor")
         self.blind = blind
-        self.JCM = jetCombinatoricModel(JCM) if JCM else None
+        self.apply_JCM = jetCombinatoricModel(JCM_file) if apply_JCM else None
         self.apply_trigWeight = apply_trigWeight
         self.apply_btagSF = apply_btagSF
         self.apply_FvT = apply_FvT
@@ -123,6 +130,7 @@ class analysis(processor.ProcessorABC):
 
         self.cutFlowCuts = [
             "all",
+            "pass4GenBJets",
             "passHLT",
             "passNoiseFilter",
             "passJetVetoMaps",
@@ -133,6 +141,7 @@ class analysis(processor.ProcessorABC):
             "SR",
             "SB",
         ]
+
 
         self.histCuts = ['passPreSel']
         if self.run_SvB:
@@ -164,6 +173,7 @@ class analysis(processor.ProcessorABC):
         #
         self.config = processor_config(self.processName, self.dataset, event)
         logging.debug(f'{self.chunk} config={self.config}, for file {fname}\n')
+
 
         #
         #  If doing RW
@@ -417,15 +427,34 @@ class analysis(processor.ProcessorABC):
 
             }
 
+            #
+            # Get Truth m4j
+            #
+            if self.config["isSignal"]:
+
+                event['bfromHorZ']= find_genpart(event.GenPart, [5], [23, 25])
+                event['GenJet', 'selectedBs'] = (np.abs(event.GenJet.partonFlavour)==5)
+                event['selGenBJet'] = event.GenJet[event.GenJet.selectedBs]
+                event['matchedGenBJet'] = event.bfromHorZ.nearest( event.selGenBJet, threshold=0.2 )
+                event['pass4GenBJets'] = ak.num(event.matchedGenBJet) >= 4
+                event["truth_v4b"] = ak.where(  event.pass4GenBJets,
+                                                event.matchedGenBJet.sum(axis=1),
+                                                1e-10 * event.matchedGenBJet.sum(axis=1),
+                                              )
+            else:
+                event['pass4GenBJets'] = True
+            selections.add( "pass4GenBJets", event.pass4GenBJets)
+
             sel_dict = OrderedDict({
-                'all': selections.require(lumimask=True),
+                'all':             selections.require(lumimask=True),
+                'pass4GenBJets':   selections.require(lumimask=True, pass4GenBJets=True),
                 'passNoiseFilter': selections.require(lumimask=True, passNoiseFilter=True),
-                'passHLT': selections.require(lumimask=True, passNoiseFilter=True, passHLT=True),
+                'passHLT':         selections.require(lumimask=True, passNoiseFilter=True, passHLT=True),
             })
             if '202' in self.dataset: sel_dict['passJetVetoMaps'] = selections.require(lumimask=True, passNoiseFilter=True, passHLT=True, passJetVetoMaps=True)
             sel_dict['passJetMult'] = selections.all(*allcuts)
 
-            self._cutFlow = cutFlow(self.cutFlowCuts)
+            self._cutFlow = cutFlow(self.cutFlowCuts, do_truth_hists=self.config["isSignal"])
             for cut, sel in sel_dict.items():
                 if ('passJetVetoMaps' in cut) and ('202' not in self.dataset): continue
                 self._cutFlow.fill( cut, event[sel], allTag=True )
@@ -511,17 +540,13 @@ class analysis(processor.ProcessorABC):
                                       run_systematics=self.run_systematics,
                                       classifier_SvB=self.classifier_SvB,
                                       classifier_SvB_MA=self.classifier_SvB_MA,
+                                       processOutput = processOutput,
                                       )
 
-        #
-        # Example of how to write out event numbers
-        #
-        # from analysis.helpers.write_debug_info import add_debug_info_to_output
-        # add_debug_info_to_output(selev, processOutput)
 
         weights, list_weight_names = add_pseudotagweights( selev, weights,
                                                            analysis_selections,
-                                                           JCM=self.JCM,
+                                                           JCM=self.apply_JCM,
                                                            apply_FvT=self.apply_FvT,
                                                            isDataForMixed=self.config["isDataForMixed"],
                                                            list_weight_names=list_weight_names,
@@ -529,10 +554,12 @@ class analysis(processor.ProcessorABC):
                                                            year_label=self.year_label,
                                                            len_event=len(event),
                                                           )
+
+
         #
         # Blind data in fourTag SR
         #
-        if not (self.config["isMC"] or "mixed" in self.dataset) and self.blind:
+        if not (self.config["isMC"] or "mix_v" in self.dataset) and self.blind:
             blind_sel = np.full( len(event), True)
             blind_sel[ analysis_selections ] = ~(selev["quadJet_selected"].SR & selev.fourTag)
             selections.add( 'blind', blind_sel )
@@ -589,6 +616,15 @@ class analysis(processor.ProcessorABC):
 
             self._cutFlow.addOutput(processOutput, event.metadata["dataset"])
 
+
+        #
+        # Example of how to write out event numbers
+        #
+        #from analysis.helpers.write_debug_info import add_debug_info_to_output
+        # #if self.config['isDataForMixed']:
+        #    add_debug_info_to_output(selev, processOutput, weights, list_weight_names, analysis_selections)
+
+
         #
         # Hists
         #
@@ -596,7 +632,7 @@ class analysis(processor.ProcessorABC):
         if self.fill_histograms:
             if not self.run_systematics:
                 ## this can be simplified
-                hist = filling_nominal_histograms(selev, self.JCM,
+                hist = filling_nominal_histograms(selev, self.apply_JCM,
                                                 processName=self.processName,
                                                 year=self.year,
                                                 isMC=self.config["isMC"],

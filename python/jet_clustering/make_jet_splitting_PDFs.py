@@ -13,7 +13,8 @@ import yaml
 import re
 
 sys.path.insert(0, os.getcwd())
-from base_class.plots.plots import makePlot, make2DPlot, load_config, load_hists, read_axes_and_cuts, parse_args, get_cut_dict
+from base_class.plots.plots import makePlot, make2DPlot, load_config, load_hists, read_axes_and_cuts, init_arg_parser
+import base_class.plots.helpers as plot_helpers
 import base_class.plots.iPlot_config as cfg
 from jet_clustering.declustering import get_splitting_summary, get_splitting_name
 
@@ -101,7 +102,7 @@ def make_PDFs_vs_Pt(config, output_file_name_vs_pT, year):
 
                 for _iPt in range(len(pt_bins) - 1):
 
-                    cut_dict = get_cut_dict("passPreSel", cfg.cutList)
+                    cut_dict = plot_helpers.get_cut_dict("passPreSel", cfg.cutList)
                     plot_dict = {"process":"data", "year":year, "tag":1,"region":sum, "pt":_iPt}
                     plot_dict = plot_dict | cut_dict
 
@@ -389,7 +390,11 @@ def doPlots(year, debug=False):
 
 if __name__ == '__main__':
 
-    args = parse_args()
+    parser = init_arg_parser()
+    parser.add_argument('--years', default=["RunII"], nargs="+",help='years to process.')
+
+    args = parser.parse_args()
+    print(f" Doing years {args.years}")
 
     cfg.plotConfig = load_config(args.metadata)
     cfg.outputFolder = args.outputFolder
@@ -405,7 +410,17 @@ if __name__ == '__main__':
     cfg.axisLabels, cfg.cutList = read_axes_and_cuts(cfg.hists, cfg.plotConfig)
 
     #varList = [ h for h in cfg.hists[0]['hists'].keys() if not h in args.skip_hists ]
-    years = ["UL18", "UL17", "UL16_preVFP", "UL16_postVFP"]
+
+
+
+    years = args.years
+
+    if years == ["Run3"]:
+        years = ["2022_preEE", "2022_EE", "2023_preBPix", "2023_BPix"]
+
+
+    if years in [ ["Run2"], ["RunII"]]:
+        years = ["UL18", "UL17", "UL16_preVFP", "UL16_postVFP"]
 
     if args.doTest:
         years = [sum]

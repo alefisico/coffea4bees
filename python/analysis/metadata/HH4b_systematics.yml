@@ -4,8 +4,7 @@ runner:
   chunksize: 10000
 
 config:
-  corrections_metadata: "analysis/metadata/corrections.yml"
-  JCM: "analysis/weights/JCM/2023/dataRunII/jetCombinatoricModel_SB_00-00-02.yml"
+  corrections_metadata: 'analysis/metadata/corrections.yml'
   apply_FvT: true
   apply_trigWeight: true
   apply_btagSF: true

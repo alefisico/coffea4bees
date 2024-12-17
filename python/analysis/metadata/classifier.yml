@@ -6,7 +6,6 @@ runner:
 
 config:
   make_classifier_input: root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/friend/
-  JCM: "analysis/weights/JCM/2023/dataRunII/jetCombinatoricModel_SB_00-00-02.yml"
   blind: false
   apply_FvT: true
   apply_trigWeight: true

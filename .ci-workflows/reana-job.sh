@@ -12,7 +12,7 @@ echo """
 ##########################################################
 """
 
-sed -e "#hash:.*#hash: "$(git rev-parse HEAD)"#" -i .reana_workflows/inputs.yaml
+sed -e "#hash:.*#hash: "$(git rev-parse HEAD)"#" -i .workflows/inputs_reana.yaml
 git diff HEAD > gitdiff.txt
-cat .reana_workflows/inputs.yaml
+cat .workflows/inputs_reana.yaml
 reana-client run -f reana.yaml -w ${workflow_name}

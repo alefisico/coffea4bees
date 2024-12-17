@@ -4,7 +4,7 @@ from typing import Iterable
 from cachetools import Cache
 from coffea.jetmet_tools.CorrectedJetsFactory import *
 from coffea.jetmet_tools.CorrectedJetsFactory import _JERSF_FORM
-
+import numpy as np
 from ..math.random import Squares
 
 
@@ -12,9 +12,9 @@ def _rand_gauss(event, count, phi, eta, rng: Squares):
     # construct bit-128 counter from [event[64], phi[32], eta[32]]
     counter = numpy.empty((len(phi), 2), dtype=numpy.uint64)
     counter[:, 0] = numpy.repeat(event, count)
-    counter[:, 1] = numpy.asarray(phi).view(numpy.uint32)
+    counter[:, 1] = np.round(numpy.asarray(phi), 3).view(numpy.uint32)
     counter[:, 1] <<= 32
-    counter[:, 1] |= numpy.asarray(eta).view(numpy.uint32)
+    counter[:, 1] |= np.round(numpy.asarray(eta), 3).view(numpy.uint32)
     rand = rng.normal(counter).astype(numpy.float32)
 
     def getfunction(layout, depth):

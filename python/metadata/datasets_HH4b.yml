@@ -476,33 +476,33 @@ datasets:
       picoAOD: 
         files:
         - root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/ggZH4b2016_postVFP/picoAOD.root
-        sumw: 
-        sumw2: 
-        total_events: 
+        sumw: 92902.471433
+        sumw2: 4012.8758023127193
+        total_events: 2150794 
     UL16_preVFP:
       nanoAOD: /ggZH_HToBB_ZToBB_M-125_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v2/NANOAODSIM
       picoAOD:
         files:
         - root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/ggZH4b2016_preVFP/picoAOD.root
-        sumw: 
-        sumw2: 
-        total_events: 
+        sumw: 104596.25925099997
+        sumw2: 4517.983120217322
+        total_events: 2421518 
     UL17:
       nanoAOD: /ggZH_HToBB_ZToBB_M-125_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v2/NANOAODSIM 
       picoAOD:
         files:
         - root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/ggZH4b2017/picoAOD.root
-        sumw: 
-        sumw2: 
-        total_events: 
+        sumw: 203164.98519400004
+        sumw2: 8775.609952962232
+        total_events: 3878385 
     UL18:
       nanoAOD: /ggZH_HToBB_ZToBB_M-125_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v2/NANOAODSIM 
       picoAOD:
         files:
         - root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/ggZH4b2018/picoAOD.root
-        sumw: 
-        sumw2: 
-        total_events: 
+        sumw: 200515.34817499993
+        sumw2: 8661.160206745039
+        total_events: 4642150
     xs: 0.1227*0.5824*0.1512
   ZZ4b:
     UL16_postVFP:
@@ -669,7 +669,7 @@ datasets:
         FvT_name_ZZandZHinSB_template: FvT_3bDvTMix4bDvTZZandZHinSB_vXXX_newSBDefSeedAve        
         FvT_file_template: root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//data2016_3b/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
         FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
-        JCM_load_template: 3bDvTMix4bDvT_vXXX
+        JCM_load_template: pseudoTagWeight_3bDvTMix4bDvT_vXXX
         files:
         - root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//data2016_3b/picoAOD_3b_wJCM_newSBDef.root
     '2017':
@@ -682,7 +682,7 @@ datasets:
         FvT_name_ZZandZHinSB_template: FvT_3bDvTMix4bDvTZZandZHinSB_vXXX_newSBDefSeedAve        
         FvT_file_template: root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//data2017_3b/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
         FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
-        JCM_load_template: 3bDvTMix4bDvT_vXXX
+        JCM_load_template: pseudoTagWeight_3bDvTMix4bDvT_vXXX
         files:
         - root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//data2017_3b/picoAOD_3b_wJCM_newSBDef.root
     '2018':
@@ -695,7 +695,7 @@ datasets:
         FvT_name_ZZandZHinSB_template: FvT_3bDvTMix4bDvTZZandZHinSB_vXXX_newSBDefSeedAve        
         FvT_file_template: root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//data2018_3b/FvT_3bDvTMix4bDvT_vXXX_newSBDef.root
         FvT_name_template: FvT_3bDvTMix4bDvT_vXXX_newSBDef
-        JCM_load_template: 3bDvTMix4bDvT_vXXX
+        JCM_load_template: pseudoTagWeight_3bDvTMix4bDvT_vXXX
         files:
         - root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//data2018_3b/picoAOD_3b_wJCM_newSBDef.root
     nSamples: 15 

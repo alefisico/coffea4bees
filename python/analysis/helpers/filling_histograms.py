@@ -102,6 +102,9 @@ def filling_nominal_histograms(selev, JCM,
     fill += Jet.plot( ("selJets_noJCM", "Selected Jets"),        "selJet",       weight="weight_noJCM_noFvT", skip=skip_all_but_n, )
     fill += Jet.plot( ("tagJets_noJCM", "Tag Jets"),             "tagJet",       weight="weight_noJCM_noFvT", skip=skip_all_but_n, )
     fill += Jet.plot( ("tagJets_loose_noJCM", "Loose Tag Jets"), "tagJet_loose", weight="weight_noJCM_noFvT", skip=skip_all_but_n, )
+    if JCM:
+        fill += hist.add( "nPSJets",             (20, -0.5, 19.5, ("nJet_pseudotagged", "nPseudoTag Jets")) )
+        fill += hist.add( "nPSplusTagJets",      (20, -0.5, 19.5, ("nJet_ps_and_tag", "nPseudoTag + nTag Jets")) )
 
     for iJ in range(4):
         fill += Jet.plot( (f"canJet{iJ}", f"Higgs Candidate Jets {iJ}"), f"canJet{iJ}", skip=["n", "deepjet_c"], bins={"mass": (50, 0, 100)} )
@@ -140,6 +143,13 @@ def filling_nominal_histograms(selev, JCM,
             for _FvT_name in event_metadata["FvT_names"]:
                 fill += SvBHists( (f"SvB_{_FvT_name}",    "SvB Classifier"),    "SvB",    weight=f"weight_{_FvT_name}", )
                 fill += SvBHists( (f"SvB_MA_{_FvT_name}", "SvB MA Classifier"), "SvB_MA", weight=f"weight_{_FvT_name}", )
+
+
+    #
+    #  MC Truth
+    #
+    if "truth_v4b" in selev.fields:
+        fill += LorentzVector.plot_pair( ("truth_v4b", R"$HH_{4b}$"), "truth_v4b", skip=["n", "dr", "dphi", "st"], bins={"mass": (120, 0, 1200)}, )
 
     #
     # fill histograms

@@ -31,30 +31,30 @@ counts4:
 counts3:
     data_3b_for_mixed_2018:
         passJetMult: 984.0
-        passPreSel: 961.0
-        passDiJetMass: 303.0
-        SR: 124.0
-        SB: 179.0
-        passSvB: 7.0
-        failSvB: 657.0
+        passPreSel: 43.76
+        passDiJetMass: 15.37
+        SR: 5.52
+        SB: 9.85
+        passSvB: 0.42
+        failSvB: 29.09
 
     data_3b_for_mixed_2017:
         passJetMult: 987.0
-        passPreSel: 965.0
-        passDiJetMass: 334.0
-        SR: 116.0
-        SB: 218.0
-        passSvB: 10.0
-        failSvB: 661.0
+        passPreSel: 57.08
+        passDiJetMass: 22.09
+        SR: 7.07
+        SB: 15.02
+        passSvB: 0.56
+        failSvB: 37.83
 
     data_3b_for_mixed_2016:
         passJetMult: 980.0
-        passPreSel: 962.0
-        passDiJetMass: 392.0
-        SR: 146.0
-        SB: 246.0
-        passSvB: 3.0
-        failSvB: 663.0
+        passPreSel: 30.56
+        passDiJetMass: 12.82
+        SR: 4.35
+        SB: 8.47
+        passSvB: 0.1
+        failSvB: 20.39
 
 
 
@@ -93,8 +93,8 @@ counts3_unit:
         passJetMult: 984.0
         passPreSel: 961.0
         passDiJetMass: 303.0
-        SR: 124.0
-        SB: 179.0
+        SR: 119.0
+        SB: 184.0
         passSvB: 7.0
         failSvB: 657.0
 
@@ -102,8 +102,8 @@ counts3_unit:
         passJetMult: 987.0
         passPreSel: 965.0
         passDiJetMass: 334.0
-        SR: 116.0
-        SB: 218.0
+        SR: 117.0
+        SB: 217.0
         passSvB: 10.0
         failSvB: 661.0
 
@@ -111,8 +111,8 @@ counts3_unit:
         passJetMult: 980.0
         passPreSel: 962.0
         passDiJetMass: 392.0
-        SR: 146.0
-        SB: 246.0
+        SR: 149.0
+        SB: 243.0
         passSvB: 3.0
         failSvB: 663.0
 

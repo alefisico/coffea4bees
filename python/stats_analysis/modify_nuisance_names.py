@@ -27,8 +27,13 @@ def main(json_file_path, output_file_path):
                         elif 'datadriven' in name:
                             tmp_name = name.split('datadriven_')[1].split('_')  
                             out_string = f"{tmp_name[-1]}: HH {tmp_name[0][:-1]} {tmp_name[0][-1]}"
+                        elif 'trigger' in name:
+                            out_string = 'Trigger Efficiency SF'
+                        elif name.startswith(('CMS_', 'lumi_')):
+                            tmp_name = name.split('_')
+                            out_string = " ".join(tmp_name[1:])
                         else:
-                            out_string = name
+                            out_string = " ".join(name.split('_'))
                         result_dict[name] = out_string
 
 
@@ -43,6 +48,6 @@ def main(json_file_path, output_file_path):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process a JSON file to extract names.')
     parser.add_argument('-i', '--json_file', dest='json_file', type=str, help='Path to the JSON file')
-    parser.add_argument('--output_file', dest='output_file', default="nuisance_names.json", type=str, help='Path to the output JSON file')
+    parser.add_argument('-o', '--output_file', dest='output_file', default="nuisance_names.json", type=str, help='Path to the output JSON file')
     args = parser.parse_args()
     main(args.json_file, args.output_file)

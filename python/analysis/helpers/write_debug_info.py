@@ -1,6 +1,6 @@
 
 
-def add_debug_info_to_output(event, processOutput):
+def add_debug_info_to_output(event, processOutput, weights, list_weight_names, analysis_selections):
     # passSR = (selev["quadJet_selected"].SR)
     # passSR = (selev["SR"])
 
@@ -22,25 +22,16 @@ def add_debug_info_to_output(event, processOutput):
     #              (event["event"] == 281111 ) )
 
 
-    print(f"\n {event.Jet.pt[event.passJetMult].to_list()[0:5]} \n")
+    #print(f"\n {event.Jet.pt[event.passJetMult].to_list()[0:5]} \n")
 
     out_data["passJetMult_event"  ]    = event["event"][event.passJetMult]
     out_data["passJetMult_run"    ]    = event["run"][event.passJetMult]
-    out_data["passJetMult_jet_pt"    ] = event.Jet.pt[event.passJetMult].to_list()
-    out_data["passJetMult_jet_eta"   ] = event.Jet.eta[event.passJetMult].to_list()
-    out_data["passJetMult_jet_phi"   ] = event.Jet.phi[event.passJetMult].to_list()
-    out_data["passJetMult_jet_pu"    ] = event.Jet.pileup[event.passJetMult].to_list()
-    out_data["passJetMult_jet_jetId" ] = event.Jet.jetId[event.passJetMult].to_list()
-    out_data["passJetMult_jet_lep"   ] = event.Jet.lepton_cleaned[event.passJetMult].to_list()
+    out_data["passJetMult_passDiJetMass"    ]    = event["passDiJetMass"][event.passJetMult]
+    out_data["passJetMult_weight" ]    = event["weight"]
 
-    out_data["passDiJetMass_event"  ]    = event["event"][event.passDiJetMass]
-    out_data["passDiJetMass_run"    ]    = event["run"][event.passDiJetMass]
-    out_data["passDiJetMass_jet_pt"    ] = event.Jet.pt[event.passDiJetMass].to_list()
-    out_data["passDiJetMass_jet_eta"   ] = event.Jet.eta[event.passDiJetMass].to_list()
-    out_data["passDiJetMass_jet_phi"   ] = event.Jet.phi[event.passDiJetMass].to_list()
-    out_data["passDiJetMass_jet_pu"    ] = event.Jet.pileup[event.passDiJetMass].to_list()
-    out_data["passDiJetMass_jet_jetId" ] = event.Jet.jetId[event.passDiJetMass].to_list()
-    out_data["passDiJetMass_jet_lep"   ] = event.Jet.lepton_cleaned[event.passDiJetMass].to_list()
+    for _w in list_weight_names:
+        print(f"adding {_w}\n")
+        out_data[f"passJetMult_weight_{_w}"] = weights.partial_weight(include=[_w])[analysis_selections]
 
 
     for out_k, out_v in out_data.items():

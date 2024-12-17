@@ -4,7 +4,7 @@
 export APPTAINER_BINDPATH=/uscmst1b_scratch,/cvmfs,/cvmfs/grid.cern.ch/etc/grid-security/vomses:/etc/vomses,/cvmfs/grid.cern.ch/etc/grid-security:/etc/grid-security,/tmp
 export APPTAINER_CACHEDIR="/tmp/$(whoami)/apptainer_cache"
 export APPTAINER_TMPDIR="/tmp/.apptainer/"
-
+export MPLCONFIGDIR="/tmp/$(whoami)/.config/matplotlib"
 
 APPTAINER_SHELL=$(which bash) apptainer exec -B ${PWD}:/home/cmsusr/coffea4bees --pwd /home/cmsusr/coffea4bees/  \
   /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0 \
