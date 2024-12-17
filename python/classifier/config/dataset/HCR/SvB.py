@@ -67,7 +67,7 @@ class _Train(CommonTrain):
     def preprocess_by_group(self):
         import numpy as np
 
-        return [
+        ps = [
             _group.regex(
                 "label:data",
                 [
@@ -90,6 +90,8 @@ class _Train(CommonTrain):
                 ],
             ),
         ]
+
+        return list(super().preprocess_by_group()) + ps
 
 
 class Background(_picoAOD.Background, _Train):

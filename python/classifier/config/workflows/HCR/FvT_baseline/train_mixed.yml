@@ -28,6 +28,7 @@ dataset:
     option:
       - --data-source mixed
       - --data-mixed-samples {mixed}
+      - --JCM-weight # TODO load JCM weight
       - --friends
       -
       - root://cmseos.fnal.gov//store/user/{user}/HH4b/friend/friend.json@@HCR_input
@@ -36,10 +37,10 @@ dataset:
   - module: HCR.FvT.Train
     option:
       - --no-detector-4b
-      - --no-JCM
+      - --JCM-weight # TODO load JCM weight
       - --branch pseudoTagWeight_3bDvTMix4bDvT_v{mixed}
       - --preprocess source:detector
-      - compatibility.JCM.branch.apply_JCM
+      - compatibility.JCM.column.apply_JCM
       - name: pseudoTagWeight_3bDvTMix4bDvT_v{mixed}
       - --preprocess source:detector
       - df.tools.drop_columns

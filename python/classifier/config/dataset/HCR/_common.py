@@ -69,7 +69,7 @@ class Common(LoadGroupedRoot):
     def _preprocess_from_opts(self):
         return [
             _group.fullmatch(
-                opts[0].split(","),
+                parse.split_nonempty(opts[0], ","),
                 processors=[partial(parse.instance, opts[1:], "classifier")],
             )
             for opts in self.opts.preprocess
@@ -97,6 +97,16 @@ class Common(LoadGroupedRoot):
 
 class CommonTrain(Common):
     trainable = True
+
+    argparser = ArgParser()
+    argparser.add_argument(
+        "--JCM-weight",
+        metavar=("GROUPS", "PATH"),
+        nargs=2,
+        action="append",
+        default=[],
+        help="comma-separated groups and the path to the JCM weight file",
+    )
 
     def __init__(self):
         super().__init__()
@@ -144,6 +154,20 @@ class CommonTrain(Common):
             Columns.event,
             Columns.weight,
         }
+
+    def preprocess_by_group(self):
+        ps = []
+        if self.opts.JCM_weight:
+            from classifier.compatibility.JCM.fit import apply_JCM_from_list
+
+            for opts in self.opts.JCM_weight:
+                ps.append(
+                    _group.fullmatch(
+                        parse.split_nonempty(opts[0], ","),
+                        processors=[partial(apply_JCM_from_list, path=opts[1])],
+                    )
+                )
+        return ps
 
     def debug(self):
         import logging

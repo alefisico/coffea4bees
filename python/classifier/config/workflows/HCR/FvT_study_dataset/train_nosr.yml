@@ -19,7 +19,7 @@ dataset:
       - df.tools.add_columns
       - weight: 1.0
       - --preprocess source:detector
-      - compatibility.JCM.branch.apply_JCM
+      - compatibility.JCM.column.apply_JCM
       - name: pseudoTagWeight_3bDvTMix4bDvT_v{mixed}
       - --preprocess source:detector
       - df.tools.drop_columns

@@ -157,7 +157,7 @@ def mapping(
     return result
 
 
-def _split_with_empty(text: str, sep: str):
+def split_nonempty(text: str, sep: str):
     if text == "":
         return []
     return text.split(sep)
@@ -179,6 +179,6 @@ def grouped_mappings(opts: list[list[str]], sep: str = None):
         else:
             arg = opt[0]
             if sep is not None:
-                arg = frozenset(_split_with_empty(arg, sep))
+                arg = frozenset(split_nonempty(arg, sep))
             result[arg].extend(opt[1:])
     return result

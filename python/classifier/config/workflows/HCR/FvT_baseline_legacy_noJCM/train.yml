@@ -36,7 +36,7 @@ dataset:
       - df.tools.rename_columns
       - mcPseudoTagWeight: weight
       - --preprocess label:ttbar
-      - compatibility.JCM.branch.undo_JCM
+      - compatibility.JCM.column.undo_JCM
       - name: pseudoTagWeight
       - --preprocess label:ttbar
       - df.tools.drop_columns

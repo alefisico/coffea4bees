@@ -42,11 +42,6 @@ def _remove_sr(df: pd.DataFrame):
 class Train(CommonTrain):
     argparser = ArgParser()
     argparser.add_argument(
-        "--no-JCM",
-        action="store_true",
-        help="disable JCM weights",
-    )
-    argparser.add_argument(
         "--no-SR",
         action="store_true",
         help="remove SR events",
@@ -135,18 +130,6 @@ class Train(CommonTrain):
                         lambda: add_label_index_from_column(fourTag="t4"),
                     ],
                     name="ttbar 4b selection",
-                )
-            )
-        if not self.opts.no_JCM:
-            from classifier.compatibility.JCM.branch import apply_JCM
-
-            ps.append(
-                _group.fullmatch(
-                    (),
-                    processors=[
-                        lambda: apply_JCM("pseudoTagWeight"),
-                    ],
-                    name="apply JCM",
                 )
             )
         return list(super().preprocess_by_group()) + ps
