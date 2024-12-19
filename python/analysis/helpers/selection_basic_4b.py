@@ -104,7 +104,7 @@ def apply_object_selection_4b(event, corrections_metadata, *,
                 isMC=isMC,
                 run_systematics=False,
                 dataset=dataset,
-                jet_type="AK4PFPuppi"
+                jet_type="AK4PFPuppi.txt"   ### AGE: .txt is temporary
                 )
         )
         logging.warning(f"For Run3 we are computing JECs after splitting the jets into btagged and non-btagged jets")

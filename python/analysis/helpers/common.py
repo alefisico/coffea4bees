@@ -79,7 +79,7 @@ def apply_jerc_corrections( event,
     logging.info(f"Applying JEC/JER corrections for {dataset}")
 
     jec_file = corrections_metadata['JEC_MC'] if isMC else corrections_metadata['JEC_DATA'][dataset[-1]]
-    extracted_files = extract_jetmet_tar_files(jec_file, jet_type=f"{jet_type}.txt")
+    extracted_files = extract_jetmet_tar_files(jec_file, jet_type=jet_type)
     if run_systematics: jec_levels.append("RegroupedV2")
     weight_sets = list(set([file for level in jec_levels for file in extracted_files if level in file]))  ## list(set()) to remove duplicates
 
