@@ -4,7 +4,8 @@ from collections import deque
 from multiprocessing.connection import Listener
 from typing import Iterable
 
-from classifier.config.main.help import _walk_packages
+from classifier.config.main.help import _walk_configs
+from classifier.config.state import Flags
 
 from .. import main as m
 from ..special import TaskBase
@@ -27,7 +28,7 @@ def _subcomplete(cls: type[TaskBase], args: list[str]):
         yield from cls.autocomplete(args)
 
 
-def _special(cat: str, args: list[str]):
+def _special(cat: str, args: list[str], is_main: bool = False):
     if not args:
         return
     last = args[-1]
@@ -40,9 +41,16 @@ def _special(cat: str, args: list[str]):
         case m._TEMPLATE:
             if len(args) > 1:
                 raise _filedir
+        case m._FLAG:
+            if not is_main:
+                for flag in Flags.__annotations__:
+                    if flag.startswith(last):
+                        yield flag
+                return
 
 
 def autocomplete(args: Iterable[str]):
+    flags = Flags()
     args = deque(args[1:])
     main = args.popleft() if args else ""
     if len(args) == 0:
@@ -54,10 +62,15 @@ def autocomplete(args: Iterable[str]):
     if len(args) == 0:
         if main in m.EntryPoint._mains:
             yield from _subcomplete(
-                m.EntryPoint._fetch_module(f"{main}.Main", m._MAIN)[1], subargs
+                m.EntryPoint._fetch_module(
+                    f"{main}.Main",
+                    m._MAIN,
+                    mock_flags=flags,
+                )[1],
+                subargs,
             )
         else:
-            yield from _special(main, subargs)
+            yield from _special(main, subargs, is_main=True)
         return
     while len(args) > 0:
         cat = args.popleft().removeprefix(m._DASH)
@@ -66,12 +79,13 @@ def autocomplete(args: Iterable[str]):
             if cat in m.EntryPoint._tasks:
                 mod = mod or ""
                 target = m.EntryPoint._tasks[cat]
-                for imp in _walk_packages(f"{m._CLASSIFIER}/{m._CONFIG}/{cat}/"):
+                for imp, ctx in _walk_configs(cat, flags.test):
                     if imp:
                         imp = f"{imp}."
                     _imp = f"{imp}*"
-                    modname, _ = m.EntryPoint._fetch_module_name(_imp, cat)
-                    _mod, _ = m.EntryPoint._fetch_module(_imp, cat)
+                    _mod, _, (modname, _) = m.EntryPoint._fetch_module(
+                        _imp, cat, force_ctx=[ctx]
+                    )
                     if _mod is not None:
                         for name, obj in inspect.getmembers(_mod, inspect.isclass):
                             if (
@@ -83,10 +97,13 @@ def autocomplete(args: Iterable[str]):
                                 yield clsname
                 return
         subargs = m.EntryPoint._fetch_subargs(args)
+        if cat == m._FLAG:
+            flags._set(mod, *subargs)
         if len(args) == 0:
             if cat in m.EntryPoint._tasks:
                 yield from _subcomplete(
-                    m.EntryPoint._fetch_module(mod or "", cat)[1], subargs
+                    m.EntryPoint._fetch_module(mod or "", cat, mock_flags=flags)[1],
+                    subargs,
                 )
             else:
                 if mod is not None:

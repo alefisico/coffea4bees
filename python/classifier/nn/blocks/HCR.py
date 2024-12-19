@@ -1705,7 +1705,9 @@ class InputEmbed(nn.Module):
         o = o.view(n, 5, -1)
         a = a.view(n, self.dA, 1)
 
-        a[:, 1, :] = torch.log(a[:, 1, :] - 3)
+        a[:, 1, :] = torch.log(
+            a[:, 1, :] - 3
+        )  # TODO: find index based on the feature name
 
         if self.store:
             self.storeData["canJets"] = j.detach().to("cpu").numpy()
@@ -1755,12 +1757,10 @@ class InputEmbed(nn.Module):
                 1,
             )  # flag with zeros to signify dijet quantities
 
-            mask_oo = (
-                mask.view(n, 1, self.osl) | mask.view(n, self.osl, 1)
-            ).int()  # mask of 2d matrix of otherjets (i,j) is True if mask[i] | mask[j]
-            mask_oo = mask_oo.masked_fill(
-                self.mask_oo_same.to(device), 1
-            ).bool()  # bug in onnx when bool
+            mask_oo = mask.view(n, 1, self.osl) | mask.view(
+                n, self.osl, 1
+            )  # mask of 2d matrix of otherjets (i,j) is True if mask[i] | mask[j]
+            mask_oo = mask_oo.masked_fill(self.mask_oo_same.to(device), 1)
             # mask_oo[self.mask_oo_same] = True # also bug in onnx when bool
             # ooMdPhi = ooMdPhi.masked_fill(mask_oo.view(n,1,self.osl,self.osl), 1e6)
 
@@ -1776,12 +1776,9 @@ class InputEmbed(nn.Module):
                 1,
             )  # flag with ones to signify trijet quantities
 
-            mask_do = (
-                mask.view(n, 1, self.osl).repeat(1, self.dsl, 1).int()
-            )  # repeat so we can change mask for each dijet
-            mask_do = mask_do.masked_fill(
-                self.mask_do_same.to(device), 1
-            ).bool()  # bug in onnx when bool
+            mask_do = mask.view(n, 1, self.osl).repeat(1, self.dsl, 1)
+            # repeat so we can change mask for each dijet
+            mask_do = mask_do.masked_fill(self.mask_do_same.to(device), 1)
             # mask_do[self.mask_do_same] = True # also bug in onnx when bool
             # doMdPhi = doMdPhi.masked_fill(mask_do.view(n,1,self.dsl,self.osl), 1e6)
 
@@ -2175,242 +2172,6 @@ class HCR(nn.Module):
         # print(self.storeData)
         print(self.store)
         np.save(self.store, self.storeData)
-
-
-class HCREnsemble(nn.Module):
-    def __init__(self, HCRs):
-        super(HCREnsemble, self).__init__()
-        self.net0 = HCRs[0]
-        self.net1 = HCRs[1]
-        self.net2 = HCRs[2]
-
-        self.training = False
-
-        self.net0.onnx = False
-        self.net1.onnx = False
-        self.net2.onnx = False
-
-    def forward(self, j, o, d, q):
-        c_score0, q_score0 = self.net0(j, o, d, q)
-        c_score1, q_score1 = self.net1(j, o, d, q)
-        c_score2, q_score2 = self.net2(j, o, d, q)
-
-        q_score = torch.stack([q_score0, q_score1, q_score2])
-        q_score = q_score.mean(dim=0)
-        q_score = F.softmax(q_score, dim=-1)
-
-        c_score = torch.stack([c_score0, c_score1, c_score2])
-        c_score = c_score.mean(dim=0)
-        c_score = F.softmax(c_score, dim=-1)
-
-        return c_score, q_score
-
-    @torch.no_grad()
-    def exportONNX(self, modelONNX):
-        # Create a random input for the network. The onnx export will use this to trace out all the operations done by the model.
-        # We can later check that the model output is the same with onnx and pytorch evaluation.
-        # test_input = (torch.ones(1, 4, 12, requires_grad=True).to('cuda'),
-        #               torch.ones(1, 5, 12, requires_grad=True).to('cuda'),
-        #               torch.ones(1, self.net.nAd, 6, requires_grad=True).to('cuda'),
-        #               torch.ones(1, self.net.nAq, 3, requires_grad=True).to('cuda'),
-        #               )
-        J = (
-            torch.tensor(
-                [
-                    182.747,
-                    141.376,
-                    109.942,
-                    50.8254,
-                    182.747,
-                    109.942,
-                    141.376,
-                    50.8254,
-                    182.747,
-                    50.8254,
-                    141.376,
-                    109.942,
-                    0.772827,
-                    1.2832,
-                    1.44385,
-                    2.06543,
-                    0.772827,
-                    1.44385,
-                    1.2832,
-                    2.06543,
-                    0.772827,
-                    2.06543,
-                    1.2832,
-                    1.44385,
-                    2.99951,
-                    -0.797241,
-                    0.561157,
-                    -2.83203,
-                    2.99951,
-                    0.561157,
-                    -0.797241,
-                    -2.83203,
-                    2.99951,
-                    -2.83203,
-                    -0.797241,
-                    0.561157,
-                    14.3246,
-                    10.5783,
-                    13.1129,
-                    7.70751,
-                    14.3246,
-                    13.1129,
-                    10.5783,
-                    7.70751,
-                    14.3246,
-                    7.70751,
-                    10.5783,
-                    13.1129,
-                ],
-                requires_grad=False,
-            )
-            .to("cuda")
-            .view(1, 48)
-        )
-        O = (
-            torch.tensor(
-                [
-                    22.5,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0.0322418,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    -0.00404358,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    4.01562,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    -1,
-                    -1,
-                    -1,
-                    -1,
-                    -1,
-                    -1,
-                    -1,
-                    -1,
-                    -1,
-                    -1,
-                    -1,
-                ],
-                requires_grad=False,
-            )
-            .to("cuda")
-            .view(1, 60)
-        )
-        D = (
-            torch.tensor(
-                [
-                    316.5,
-                    157.081,
-                    284.569,
-                    160.506,
-                    142.039,
-                    159.722,
-                    2.53827,
-                    2.95609,
-                    2.529,
-                    2.17997,
-                    1.36923,
-                    1.36786,
-                ],
-                requires_grad=False,
-            )
-            .to("cuda")
-            .view(1, 12)
-        )
-        Q = (
-            torch.tensor(
-                [
-                    3.18101,
-                    2.74553,
-                    2.99015,
-                    525.526,
-                    525.526,
-                    525.526,
-                    4.51741,
-                    4.51741,
-                    4.51741,
-                    0.554433,
-                    0.554433,
-                    0.554433,
-                    4,
-                    4,
-                    4,
-                    2016,
-                    2016,
-                    2016,
-                ],
-                requires_grad=False,
-            )
-            .to("cuda")
-            .view(1, 18)
-        )
-        # Export the model
-        self.eval()
-        torch_out = self(J, O, D, Q)
-        print("test output:", torch_out)
-        print("Export ONNX:", modelONNX)
-        torch.onnx.export(
-            self,  # model being run
-            (J, O, D, Q),  # model input (or a tuple for multiple inputs)
-            modelONNX,  # where to save the model (can be a file or file-like object)
-            export_params=True,  # store the trained parameter weights inside the model file
-            # opset_version= 7,                               # the ONNX version to export the model to
-            # do_constant_folding=True,                       # whether to execute constant folding for optimization
-            input_names=["J", "O", "D", "Q"],  # the model's input names
-            output_names=["c_score", "q_score"],  # the model's output names
-            # dynamic_axes={ 'input' : {0 : 'batch_size'},    # variable lenght axes
-            #              'output' : {0 : 'batch_size'}}
-            verbose=False,
-        )
-
-        # import onnx
-        # onnx_model = onnx.load(self.modelONNX)
-        # # Check that the IR is well formed
-        # onnx.checker.check_model(onnx_model)
 
 
 #

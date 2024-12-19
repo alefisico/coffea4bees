@@ -1,4 +1,4 @@
-FROM coffeateam/coffea-base-almalinux8:0.7.22-py3.10
+FROM coffeateam/coffea-base-almalinux8:0.7.23-py3.10
 
 RUN dnf update -y && dnf install -y poppler-utils 
 RUN mamba install -y conda-forge::nodejs

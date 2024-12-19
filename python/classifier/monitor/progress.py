@@ -8,9 +8,9 @@ from rich.progress import BarColumn, ProgressColumn, SpinnerColumn, TimeElapsedC
 from rich.progress import Progress as _Bar
 
 from ..config.setting import monitor as cfg
-from ..process.monitor import MonitorProxy, Recorder, post_to_monitor
 from ..typetools import PicklableLock, WithUUID
 from ..utils import noop
+from .core import MonitorProxy, Recorder, post_to_monitor
 
 _FORMAT = "%H:%M:%S"
 _UNKNOWN = "+--:--:--"
@@ -170,5 +170,5 @@ def setup_monitor():
     if cfg.Console.enable:
         from .backends.console import Dashboard as _CD
 
-        _CD.layout.add_row(Progress._console_bar)
+        _CD.layout.add(Progress._console_bar)
         _CD.add(Progress._console_callback)

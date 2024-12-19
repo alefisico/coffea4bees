@@ -241,9 +241,11 @@ class _fetch:
     def __init__(self, tree: str):
         self._tree = tree
 
-    def __call__(self, path: str):
+    def __call__(self, path: str | Chunk):
         from base_class.root import Chunk
 
+        if isinstance(path, Chunk):
+            return path
         chunk = Chunk(source=path, name=self._tree, fetch=True)
         return chunk
 

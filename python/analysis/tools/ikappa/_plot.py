@@ -23,6 +23,7 @@ from bokeh.models import (
 from bokeh.resources import Resources
 from hist import Hist
 
+from . import preset
 from ._bh import BHAxis, HistAxis
 from ._hist import _FF, HistGroup
 from ._utils import Component, Confirmation, DownloadLink, ExternalLink, PathInput
@@ -85,10 +86,15 @@ class AxisProjector(Component):
             zip(self._choices, range(len(self._choices)))
         )
 
+        if selected := preset.SelectedCategories.get(self._name, []):
+            selected = BHAxis(flow=True).indexof(axis, selected)
+        if not selected:
+            selected = [np.argmax(dist.values(flow=True))]
+
         self.dom = self.shared.nonempty(
             MultiChoice(
                 title=self._label,
-                value=[self._choices[np.argmax(dist.values(flow=True))]],
+                value=[self._choices[i] for i in selected],
                 options=self._choices,
                 sizing_mode="stretch_width",
             )
@@ -107,6 +113,7 @@ class _PlotConfig(TypedDict):
     density: bool
     log_y: bool
     flow: bool
+    share: bool
 
 
 class Plotter(Component):
@@ -141,6 +148,10 @@ class Plotter(Component):
         self.dom = column(sizing_mode="stretch_both")
         self._dom_reset()
 
+        self._plot_queue: Queue[tuple[_PlotConfig, list[str]]] = Queue()
+        self._plot_thread = Thread(target=self._plot, daemon=True)
+        self._plot_thread.start()
+
     def reset(self):
         self.doc.add_next_tick_callback(self._dom_reset)
 
@@ -150,6 +161,8 @@ class Plotter(Component):
     def update_data(self, hists: dict[str, Hist], categories: set[str]):
         self.reset()
         self.data = hists
+        if not hists:
+            return
 
         # blocks
         self.categories: dict[str, AxisProjector] = {}
@@ -221,10 +234,14 @@ tr:hover {background-color: rgb(175, 225, 255);}
 </style></head><body>` + table.outerHTML + "</body></html>";
 """,
         )
+        _SelectedHists = re.compile("|".join(map("({})".format, preset.SelectedHists)))
+        selected_hists = [h for h in self.data if _SelectedHists.fullmatch(h)]
         self._dom_hist_select = self.shared.nonempty(
             self.shared.multichoice(
-                options=[*self.data], search_option_limit=len(self.data)
-            )
+                value=selected_hists,
+                options=[*self.data],
+                search_option_limit=len(self.data),
+            ),
         )
         # hist options
         self._dom_normalized = Checkbox(label="normalized", active=False)
@@ -233,9 +250,11 @@ tr:hover {background-color: rgb(175, 225, 255);}
         )
         self._dom_log_y = Checkbox(label="log y-axis", active=False)
         self._dom_flow = Checkbox(label="under/overflow", active=False)
+        self._dom_share = Checkbox(label="share canvas", active=False)
         # hist tree
         ncats = len(categories)
         self._dom_hist_tree = TreeView(
+            selected=selected_hists,
             paths={k: f"hist{len(v.axes)-ncats}d" for k, v in self.data.items()},
             root="hists",
             separator=UI.path_separator,
@@ -244,6 +263,7 @@ tr:hover {background-color: rgb(175, 225, 255);}
                 "hist2d": "ti ti-chart-scatter",
             },
             width=UI.sidebar_width,
+            show_only_matches=True,
             sizing_mode="stretch_height",
         )
         self._dom_hist_select.js_link("value", self._dom_hist_tree, "selected")
@@ -302,6 +322,7 @@ tr:hover {background-color: rgb(175, 225, 255);}
                     self._dom_density,
                     self._dom_log_y,
                     self._dom_flow,
+                    self._dom_share,
                     sizing_mode="stretch_width",
                 ),
                 row(
@@ -313,11 +334,9 @@ tr:hover {background-color: rgb(175, 225, 255);}
             ),
             sizing_mode="stretch_both",
         )
-        self.doc.add_next_tick_callback(self._dom_update)
 
-        self._plot_queue: Queue[tuple[_PlotConfig, list[str]]] = Queue()
-        self._plot_thread = Thread(target=self._plot, daemon=True)
-        self._plot_thread.start()
+        # render
+        self.doc.add_next_tick_callback(self._dom_update)
 
     def status(self, msg: str):
         self.doc.add_next_tick_callback(partial(self._dom_update_status, msg))
@@ -378,7 +397,7 @@ tr:hover {background-color: rgb(175, 225, 255);}
         )
 
     def _plot(self):
-        while task := self._plot_queue.get():
+        while (task := self._plot_queue.get()) is not None:
             self._render(*task)
 
     def _render(self, cfg: _PlotConfig, hists: list[str]):
@@ -393,6 +412,7 @@ tr:hover {background-color: rgb(175, 225, 255);}
             return self.log.error(*errs)
 
         projected = {}
+        shared_axis = None
         bhaxis = BHAxis(flow=cfg["flow"], floating_format=_FF)
         for name in hists:
             hist = self.data[name]
@@ -404,6 +424,14 @@ tr:hover {background-color: rgb(175, 225, 255);}
                         hist = self._1d_project(hist, cfg["flow"])
                         if "rebin" in profile:
                             hist = self._1d_rebin(hist, profile["rebin"], bhaxis)
+                        if shared_axis is None:
+                            shared_axis = hist[-1]
+                        else:
+                            if cfg["share"]:
+                                if not bhaxis.equal(shared_axis, hist[-1]):
+                                    raise RuntimeError(
+                                        "Cannot plot histograms with different axes when sharing canvas."
+                                    )
                         projected[name] = hist
                     case 2:  # TODO: plot 2D histogram
                         raise NotImplementedError("2D histogram is not supported yet.")
@@ -487,4 +515,5 @@ tr:hover {background-color: rgb(175, 225, 255);}
             "density": self._dom_density.active,
             "log_y": self._dom_log_y.active,
             "flow": self._dom_flow.active,
+            "share": self._dom_share.active,
         }

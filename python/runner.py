@@ -16,8 +16,7 @@ import dask
 import fsspec
 import yaml
 from base_class.addhash import get_git_diff, get_git_revision_hash
-# can be modified when move to coffea2023
-from base_class.dataset_tools import rucio_utils
+from coffea.dataset_tools import rucio_utils
 from coffea import processor
 from coffea.nanoevents import NanoAODSchema
 from coffea.util import save
@@ -27,7 +26,7 @@ from rich.pretty import pretty_repr
 from skimmer.processor.picoaod import fetch_metadata, integrity_check, resize
 
 if TYPE_CHECKING:
-    from base_class.root.chain import Friend
+    from base_class.root import Friend
 
 dask.config.set({'logging.distributed': 'error'})
 

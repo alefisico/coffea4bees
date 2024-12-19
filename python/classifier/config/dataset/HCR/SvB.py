@@ -47,15 +47,7 @@ class _mc_selection(_common_selection):
 
 
 def _remove_outlier(df: pd.DataFrame):
-    # TODO: This is a temporary solution triggered by the following two events:
-    #
-    # GluGluToHHTo4B_cHHH2p45
-    # root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL16NanoAODv9/GluGluToHHTo4B_cHHH2p45_TuneCP5_PSWeights_13TeV-powheg-pythia8/NANOAODSIM/106X_mcRun2_asymptotic_v17-v1/2810000/13EBD534-FF20-C34B-BCC7-521EEB2FD396.root
-    # event:298138, weight: 726.4/0.0131
-    #
-    # GluGluToHHTo4B_cHHH5
-    # root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL17NanoAODv9/GluGluToHHTo4B_cHHH5_TuneCP5_PSWeights_13TeV-powheg-pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v1/30000/ABFD7D49-76A1-2A48-A523-6811C8C7FA01.root
-    # event:269373, weight: 5996/0.0802
+    # TODO: This is a temporary solution triggered by events with huge weights:
     return df.loc[df["weight"] < 1]
 
 
@@ -75,19 +67,31 @@ class _Train(CommonTrain):
     def preprocess_by_group(self):
         import numpy as np
 
-        return [
+        ps = [
             _group.regex(
                 "label:data",
-                (_data_selection(*self.opts.regions), _reweight_bkg),
-                (_mc_selection(*self.opts.regions),),
+                [
+                    lambda: _data_selection(*self.opts.regions),
+                    lambda: _reweight_bkg,
+                ],
+                [
+                    lambda: _mc_selection(*self.opts.regions),
+                ],
             ),
             _group.add_year(),
             _group.add_column(
                 key="kl", pattern=r"kl:(?P<kl>.*)", default=np.nan, dtype=float
             ),
-            _group.add_single_label(),
-            _group.regex(r"kl:(2.45|5)", (_remove_outlier,)),
+            _group.add_single_label({"data": "multijet"}),
+            _group.regex(
+                r"label:.*",
+                [
+                    lambda: _remove_outlier,
+                ],
+            ),
         ]
+
+        return list(super().preprocess_by_group()) + ps
 
 
 class Background(_picoAOD.Background, _Train):
@@ -115,7 +119,7 @@ class Background(_picoAOD.Background, _Train):
         return df
 
 
-class Signal(_picoAOD.Signal_ggF, _Train):
+class Signal(_picoAOD.Signal, _Train):
     def __init__(self):
         super().__init__()
         self.postprocessors.append(self.normalize)
@@ -133,4 +137,8 @@ class Signal(_picoAOD.Signal_ggF, _Train):
         return df
 
 
-class Eval(_picoAOD.Background, _picoAOD.Signal_ggF, CommonEval): ...
+class Eval(
+    _picoAOD.Background,
+    _picoAOD.Signal,
+    CommonEval,
+): ...

@@ -27,15 +27,16 @@ from bokeh.models import (
 )
 from bokeh.util.callback_manager import EventCallback
 
+from . import preset
 from ._widget import ClickableDiv
-from .config import UI, XRootD, Plot
+from .config import UI, Plot
 
 _STYLESHEETS = "stylesheets"
 
 
 def _change_input_glob(self: AutocompleteInput, attr, old, new: str):
     empty = not (paths := glob(f"{new}*"))
-    paths.extend(XRootD)
+    paths.extend(preset.XRootD)
     if empty:
         paths.append(new)
     self.completions = paths
@@ -410,7 +411,7 @@ span.ti {
     def multichoice(self, z_index: Optional[int] = None, **kwargs):
         if z_index is None:
             z_index = self._multichoice_z_index
-            self._multichoice_z_index += 1
+            self._multichoice_z_index -= 1
         return MultiChoice(
             **self.__merge(
                 self._multichoice_style,
@@ -671,3 +672,16 @@ class RGB:
         if alpha is not None:
             new.alpha = alpha
         return new
+
+    @staticmethod
+    def __tint(c: int, f: float):
+        return c + int((255 - c) * f)
+
+    def tint(self, factor: float):
+        r, g, b = self.__rgb
+        return RGB(
+            self.__tint(r, factor),
+            self.__tint(g, factor),
+            self.__tint(b, factor),
+            self.alpha,
+        )

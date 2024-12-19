@@ -5,10 +5,10 @@ from threading import Lock, Thread
 from typing import TypedDict
 
 import psutil
+from classifier.config.setting import monitor as cfg
+from classifier.config.state import System
 
-from ...config.setting import monitor as cfg
-from ...config.state import RunInfo
-from ...process.monitor import MonitorProxy, Node, Recorder, post_to_monitor
+from ..core import MonitorProxy, Node, Recorder, post_to_monitor
 
 _MIB = 2**20
 _CUDA = {"12.1": 254}  # MiB
@@ -44,7 +44,7 @@ class Usage(MonitorProxy):
     _n_gpu: int = None
     _torch_calibration: int = None  # MiB
     _pynvml_handles: list = None
-    _pynvml_unavailable = RunInfo.singularity
+    _pynvml_unavailable = System.in_singularity
 
     # state
     _running = False

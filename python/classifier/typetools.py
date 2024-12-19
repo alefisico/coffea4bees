@@ -51,9 +51,18 @@ class PicklableLock:
         self.lock = Lock() if self.lock else None
 
 
+@runtime_checkable
+class _MappingLike(Protocol):
+    def __iter__(self): ...
+    def __getitem__(self, __key): ...
+    def __setitem__(self, __key, __value): ...
+    def __delitem__(self, __key): ...
+    def __contains__(self, __key): ...
+
+
 class dict_proxy:
     def __new__(cls, obj):
-        if isinstance(obj, Mapping):
+        if isinstance(obj, _MappingLike):
             return super().__new__(_dictlike)
         return super().__new__(_classlike)
 
@@ -139,3 +148,20 @@ def filename(obj: Any) -> str:
         return "-".join(map(filename, obj))
     else:
         return repr(obj)
+
+
+def nameof(obj: Any) -> str:
+    try:
+        name = obj.__name__
+    except Exception:
+        name = type(obj).__name__
+    return f"<{name}>"
+
+
+def new_TypedDict(typed_dict: type, *args, **kwargs):
+    obj = typed_dict(*args, **kwargs)
+    defaults = vars(typed_dict)
+    for k in typed_dict.__annotations__:
+        if k not in obj and k in defaults:
+            obj[k] = defaults[k]
+    return obj

@@ -18,7 +18,10 @@ Suitable for:
 ## Getting started
 
 1. Install the dependencies from `env.yml`.
-2. Run `python -m analysis.tools.ikappa -p PORT`. (default port is 10200)
+2. Run `python -m analysis.tools.ikappa [-p PORT] [FILE ...]`.
+   - `-p PORT`: (optional) the port for the server (default: 10200).
+   - `FILE`: (optional) the files to preload. (see [Load data](#load-data))
+
 3. Open `http://localhost:PORT`.
 
 ## User guide
@@ -26,6 +29,7 @@ Suitable for:
 ### Load data
 
 ![load](readme/load.png)
+
 From left to right:
 
 - New: overwrite the loaded data. (hists and profiles are treated separately)
@@ -72,6 +76,7 @@ If multiple profiles match the same hist, the `[style]` appear in the later ones
 When a hist file is loaded, a default setup is generated based on the categories and [config](#config).
 
 ![setup](readme/setup.png)
+
 From left to right:
 
 - Setup(Unset): switch between frozen and unfrozen mode.
@@ -174,6 +179,7 @@ From left to right:
 The rendered plots can be saved as a standalone html file.
 
 ![upload](readme/upload.png)
+
 From left to right:
 
 - The path to upload the html file.
@@ -184,31 +190,6 @@ From left to right:
 - Upload: upload to the specified path.
 - Download: download directly from browser.
 - Preview: open in a new tab.
-
-## Tools
-
-### Group hists by category
-
-Group the hists based on category axes and save in separate files.
-
-```console
-python -m analysis.tools.ikappa.group_hists_by_category [-h] -i INPUT -o OUTPUT
-
-options:
-  -h, --help            show this help message and exit
-  -i INPUT, --input INPUT
-                        input file
-  -o OUTPUT, --output OUTPUT
-                        output file
-```
-
-### Copy data to multijet
-
-Since, the reweighted 3b data are treated as 4b multijet background model, to make it compatible with the plotting tool, the hists under `{process: data, ntag: 3}` need to be copied to `{process: multijet, ntag: 4}`.
-
-```bash
-python -m analysis.tools.ikappa.data_to_multijet -i INPUT -o OUTPUT
-```
 
 ## Tips
 
@@ -222,5 +203,5 @@ A global [config file](config.py) is used to maintain constants, default values 
 
 ## TODO
 
-- add ratio plot and update readme
-- copy data to multijet script
+- add ratio plot
+- readme update: ratio, preset, share
