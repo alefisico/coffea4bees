@@ -70,15 +70,16 @@ def apply_jerc_corrections( event,
                     run_systematics: bool = False,
                     isMC: bool = False,
                     dataset: str = None,
+                    jet_type: str = 'AK4PFchs',
                     jec_levels: list = ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"],
                     jer_levels: list = ["PtResolution", "SF"],
+                    jet_corr_factor: float = 1.0
                     ):
 
     logging.info(f"Applying JEC/JER corrections for {dataset}")
 
-    jet_type = 'AK4PFchs' if '202' not in dataset else 'AK4PFPuppiPNetRegressionPlusNeutrino'
     jec_file = corrections_metadata['JEC_MC'] if isMC else corrections_metadata['JEC_DATA'][dataset[-1]]
-    extracted_files = extract_jetmet_tar_files(jec_file, jet_type=jet_type)
+    extracted_files = extract_jetmet_tar_files(jec_file, jet_type=f"{jet_type}.txt")
     if run_systematics: jec_levels.append("RegroupedV2")
     weight_sets = list(set([file for level in jec_levels for file in extracted_files if level in file]))  ## list(set()) to remove duplicates
 
@@ -89,8 +90,8 @@ def apply_jerc_corrections( event,
 
     logging.debug(f"For {dataset}, applying these corrections: {weight_sets}")
 
-    event['Jet', 'pt_raw']    = (1 - event.Jet.rawFactor) * event.Jet.pt
-    event['Jet', 'mass_raw']  = (1 - event.Jet.rawFactor) * event.Jet.mass
+    event['Jet', 'pt_raw']    = (1 - event.Jet.rawFactor) * event.Jet.pt * jet_corr_factor
+    event['Jet', 'mass_raw']  = (1 - event.Jet.rawFactor) * event.Jet.mass * jet_corr_factor
     nominal_jet = event.Jet
     if isMC: nominal_jet['pt_gen'] = ak.values_astype(ak.fill_none(nominal_jet.matched_gen.pt, 0), np.float32)
 

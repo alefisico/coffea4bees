@@ -370,6 +370,8 @@ class analysis(processor.ProcessorABC):
                                            override_selected_with_flavor_bit=self.config["override_selected_with_flavor_bit"],
                                            run_lowpt_selection=self.run_lowpt_selection,
                                            do_jet_veto_maps=self.config["do_jet_veto_maps"],
+                                           isRun3=self.config["isRun3"],
+                                           isMC=self.config["isMC"], ### temporary
                                            )
 
 
