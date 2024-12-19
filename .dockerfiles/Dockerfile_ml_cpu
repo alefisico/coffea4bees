@@ -22,21 +22,16 @@ RUN mamba env update -n hep -f https://raw.githubusercontent.com/chuyuanliu/hept
     && mamba clean --all --yes
 # environment
 RUN touch /root/.rnd
-RUN ln -s /opt/conda/etc/grid-security /etc/grid-security
 RUN apt-get update && apt-get install -y --no-install-recommends \
     # voms
     voms-clients-java \
     # bash tools
     bash-completion \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
-# voms https://twiki.cern.ch/twiki/bin/view/LCG/VOMSLSCfileConfiguration
-## Deprecated:
-## voms2.cern.ch
-## lcg-voms2.cern.ch
-COPY <<EOF /etc/vomses
+RUN cat <<EOF > /etc/vomses
 "cms" "voms-cms-auth.app.cern.ch" "443" "/DC=ch/DC=cern/OU=computers/CN=cms-auth.web.cern.ch" "cms"
 EOF
-COPY <<EOF /etc/grid-security/vomsdir/cms/voms-cms-auth.app.cern.ch.lsc
+RUN mkdir -p /etc/grid-security/vomsdir/cms/ && cat <<EOF > /etc/grid-security/vomsdir/cms/voms-cms-auth.app.cern.ch.lsc
 /DC=ch/DC=cern/OU=computers/CN=cms-auth.web.cern.ch
 /DC=ch/DC=cern/CN=CERN Grid Certification Authority
 EOF
@@ -45,7 +40,7 @@ ENV VOMS_PROXY_INIT_DONT_VERIFY_AC=1
 RUN mkdir -p /opt/rucio/etc/
 RUN wget -O /opt/rucio/etc/rucio.cfg https://raw.githubusercontent.com/dmwm/CMSRucio/820e1ab3235e9ef0d97671b7da14c8c489d08fb5/docker/rucio_client/rucio-prod.cfg
 # entrypoint
-COPY <<EOF entrypoint.sh
+RUN cat <<EOF > entrypoint.sh
 eval "$(/opt/conda/bin/conda shell.bash hook)" 
 conda activate hep
 EOF
