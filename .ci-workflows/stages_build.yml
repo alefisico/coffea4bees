@@ -34,18 +34,18 @@ build_container_reana:
           - .dockerfiles/Dockerfile_analysis_reana
 
 
-build_container_classifier:
-  extends:
-    - .build_kaniko
-  variables:
-    CONTEXT_DIR: ""
-    DOCKER_FILE_NAME: ".dockerfiles/Dockerfile_ml_cpu"
-    GIT_SUBMODULE_STRATEGY: recursive
-    PUSH_IMAGE: "true"
-    REGISTRY_IMAGE_PATH: ${CI_REGISTRY_IMAGE}
-    EXTRA_TAGS: "classifier_latest classifier_$CI_COMMIT_SHORT_SHA"
-  rules:
-      - if: $CI_COMMIT_BRANCH =~ /^container.*/ 
-      - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-        changes:
-          - .dockerfiles/Dockerfile_analysis_reana
+# build_container_classifier:
+#   extends:
+#     - .build_kaniko
+#   variables:
+#     CONTEXT_DIR: ""
+#     DOCKER_FILE_NAME: ".dockerfiles/Dockerfile_ml_cpu"
+#     GIT_SUBMODULE_STRATEGY: recursive
+#     PUSH_IMAGE: "true"
+#     REGISTRY_IMAGE_PATH: ${CI_REGISTRY_IMAGE}
+#     EXTRA_TAGS: "classifier_latest classifier_$CI_COMMIT_SHORT_SHA"
+#   rules:
+#       - if: $CI_COMMIT_BRANCH =~ /^container.*/ 
+#       - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+#         changes:
+#           - .dockerfiles/Dockerfile_ml_cpu
