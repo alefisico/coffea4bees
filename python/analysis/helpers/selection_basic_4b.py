@@ -78,9 +78,9 @@ def apply_object_selection_4b(event, corrections_metadata, *,
     event['Jet', 'muon_cleaned'] = drClean( event.Jet, event.selMuon )[1]  
     event['Jet', 'ht_selected'] = (event.Jet.pt >= 30) & (np.abs(event.Jet.eta) < 2.4) & event.Jet.muon_cleaned
 
-    event['Jet', 'jet_veto_maps'] = apply_jet_veto_maps( corrections_metadata['jet_veto_maps'], event.Jet )
     # if do_jet_veto_maps:
-        # event['Jet'] = event['Jet'][event['Jet', 'jet_veto_maps']]
+    #     event['Jet', 'jet_veto_maps'] = apply_jet_veto_maps( corrections_metadata['jet_veto_maps'], event.Jet )
+    #     event['Jet'] = event['Jet'][event['Jet', 'jet_veto_maps']]
 
     if isRun3:
         event['Jet', 'puId']       = 10
