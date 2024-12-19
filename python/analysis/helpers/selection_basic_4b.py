@@ -33,7 +33,9 @@ def apply_object_selection_4b(event, corrections_metadata, *,
                               doLeptonRemoval: bool = True,
                               loosePtForSkim: bool = False,
                               override_selected_with_flavor_bit: bool = False,
-                              run_lowpt_selection: bool = False):
+                              run_lowpt_selection: bool = False,
+                              do_jet_veto_maps: bool = False,
+                              ):
     """docstring for apply_basic_selection_4b. This fuction is not modifying the content of anything in events. it is just adding it"""
 
 
@@ -76,7 +78,7 @@ def apply_object_selection_4b(event, corrections_metadata, *,
     event['Jet', 'muon_cleaned'] = drClean( event.Jet, event.selMuon )[1]  
     event['Jet', 'ht_selected'] = (event.Jet.pt >= 30) & (np.abs(event.Jet.eta) < 2.4) & event.Jet.muon_cleaned
 
-    event['Jet', 'jet_veto_maps'] = apply_jet_veto_maps( corrections_metadata['jet_veto_maps'], event.Jet )
+    event['Jet', 'jet_veto_maps'] = apply_jet_veto_maps( corrections_metadata['jet_veto_maps'], event.Jet ) if do_jet_veto_maps else np.full(len(event), True)
 
     if isRun3:
         event['Jet', 'puId']       = 10

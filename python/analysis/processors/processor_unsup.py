@@ -171,7 +171,7 @@ class analysis(processor.ProcessorABC):
         logging.debug(f"event['weight'] = {event.weight}")
 
         ### Event selection (function only adds flags, not remove events)
-        event = apply_event_selection_4b( event, self.corrections_metadata[year], cut_on_lumimask=config["cut_on_lumimask"], do_jet_veto_maps=False)
+        event = apply_event_selection_4b( event, self.corrections_metadata[year], cut_on_lumimask=config["cut_on_lumimask"])
 
         self._cutFlow.fill("all",  event[event.lumimask], allTag=True)
         self._cutFlow.fill("passNoiseFilter",  event[ event.lumimask & event.passNoiseFilter], allTag=True)

@@ -190,10 +190,11 @@ def apply_jet_veto_maps( corrections_metadata, jets ):
     mask_for_VetoMap = (
         ((jets.jetId & 2)==2) # Must fulfill tight jetId
         & (abs(jets.eta) < 5.19) # Must be within HCal acceptance
-        & ((jets["neEmEF"]+jets["chEmEF"])<0.9) # Energy fraction not dominated by ECal
+        & (jets.neEmEF < 0.9) # Energy fraction not dominated by ECal
     )
-    if 'muonSubtrFactor' in jets.fields:  ### AGE: this should be temporary
+    if 'muonSubtrFactor' in jets.fields:  ### AGE: this should be temporary for old picos. New skims should have this field
         mask_for_VetoMap = mask_for_VetoMap & (jets.muonSubtrFactor < 0.8) # May no be Muons misreconstructed as jets
+    else: logging.warning("muonSubtrFactor NOT in jets fields. This is correct only for mixeddata and old picos.")
 
     corr = correctionlib.CorrectionSet.from_file(corrections_metadata['file'])[corrections_metadata['tag']]
 

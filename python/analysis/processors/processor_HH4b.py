@@ -368,7 +368,8 @@ class analysis(processor.ProcessorABC):
                                            dataset=self.dataset,
                                            doLeptonRemoval=self.config["do_lepton_jet_cleaning"],
                                            override_selected_with_flavor_bit=self.config["override_selected_with_flavor_bit"],
-                                           run_lowpt_selection=self.run_lowpt_selection
+                                           run_lowpt_selection=self.run_lowpt_selection,
+                                           do_jet_veto_maps=self.config["do_jet_veto_maps"],
                                            )
 
 
