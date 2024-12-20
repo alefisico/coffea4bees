@@ -24,7 +24,7 @@ runner:
 
 config:
   # base_path: root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/
-  base_path: /srv/python/skimmer/test/   ### local
+  base_path: /srv/python/output/skimmer/test/   ### local
   step: 100000
   loosePtForSkim: True
   skip_collections:

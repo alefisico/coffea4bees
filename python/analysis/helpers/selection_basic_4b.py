@@ -3,14 +3,15 @@ import awkward as ak
 from analysis.helpers.common import (
     mask_event_decision,
     drClean,
-    apply_jet_veto_maps
+    apply_jet_veto_maps,
+    apply_jerc_corrections,
 )
 from analysis.helpers.SvB_helpers import compute_SvB
 from coffea.lumi_tools import LumiMask
 from base_class.math.random import Squares
 from copy import copy
 
-def apply_event_selection_4b( event, corrections_metadata, *, cut_on_lumimask=True, do_jet_veto_maps=True):
+def apply_event_selection_4b( event, corrections_metadata, *, cut_on_lumimask=True):
 
     lumimask = LumiMask(corrections_metadata['goldenJSON'])
     event['lumimask'] = np.array( lumimask(event.run, event.luminosityBlock) ) \
@@ -26,10 +27,6 @@ def apply_event_selection_4b( event, corrections_metadata, *, cut_on_lumimask=Tr
                     list_to_mask=corrections_metadata['NoiseFilter'],
                     list_to_skip=['BadPFMuonDzFilter', 'hfNoisyHitsFilter']  )
 
-    event['passJetVetoMaps'] = np.full(len(event), True) \
-            if not do_jet_veto_maps else \
-            apply_jet_veto_maps( corrections_metadata['jet_veto_maps'], event.Jet )
-
     return event
 
 def apply_object_selection_4b(event, corrections_metadata, *,
@@ -37,12 +34,12 @@ def apply_object_selection_4b(event, corrections_metadata, *,
                               doLeptonRemoval: bool = True,
                               loosePtForSkim: bool = False,
                               override_selected_with_flavor_bit: bool = False,
-                              run_lowpt_selection: bool = False):
+                              run_lowpt_selection: bool = False,
+                              do_jet_veto_maps: bool = False,
+                              isRun3: bool = False,
+                              isMC: bool = False,  ### temporary for Run3
+                              ):
     """docstring for apply_basic_selection_4b. This fuction is not modifying the content of anything in events. it is just adding it"""
-
-
-    isRun3 = '202' in dataset  ### Run 3 is only with 202X years
-    #if '2022' in dataset:
 
     #
     # Combined RunII and 3 selection
@@ -78,13 +75,42 @@ def apply_object_selection_4b(event, corrections_metadata, *,
         event['Jet', 'lepton_cleaned'] = np.full(len(event), True)
 
     # For trigger emulation
-    event['Jet', 'muon_cleaned'] = drClean( event.Jet, event.selMuon )[1]  ### 0 is the collection of jets, 1 is the flag
+    event['Jet', 'muon_cleaned'] = drClean( event.Jet, event.selMuon )[1]  
     event['Jet', 'ht_selected'] = (event.Jet.pt >= 30) & (np.abs(event.Jet.eta) < 2.4) & event.Jet.muon_cleaned
 
+    if do_jet_veto_maps:
+        event['Jet', 'jet_veto_maps'] = apply_jet_veto_maps( corrections_metadata['jet_veto_maps'], event.Jet )
+        event['Jet'] = event['Jet'][event['Jet', 'jet_veto_maps']]
+
     if isRun3:
+
+        if "PNetRegPtRawCorr" in event.Jet.fields:
+            event['Jet', 'bRegCorr']       = event.Jet.PNetRegPtRawCorr * event.Jet.PNetRegPtRawCorrNeutrino
+        event['Jet', 'btagScore']       = event.Jet.btagPNetB
+
+        ### AGE: Hopefully this is temporarily
+        event['Jet'] = ak.where(
+            event.Jet.btagScore >= corrections_metadata['btagWP']['L'],
+            apply_jerc_corrections(event,
+                corrections_metadata=corrections_metadata,
+                isMC=isMC,
+                run_systematics=False,
+                dataset=dataset,
+                jet_corr_factor=event.Jet.bRegCorr,
+                jet_type="AK4PFPuppiPNetRegressionPlusNeutrino"
+                ),
+            apply_jerc_corrections(event,
+                corrections_metadata=corrections_metadata,
+                isMC=isMC,
+                run_systematics=False,
+                dataset=dataset,
+                jet_type="AK4PFPuppi.txt"   ### AGE: .txt is temporary
+                )
+        )
+        logging.warning(f"For Run3 we are computing JECs after splitting the jets into btagged and non-btagged jets")
+
         event['Jet', 'puId']       = 10
         event['Jet', 'pileup'] = ((event.Jet.puId < 7) & (event.Jet.pt < 50)) | ((np.abs(event.Jet.eta) > 2.4) & (event.Jet.pt < 40))
-        event['Jet', 'btagScore']       = event.Jet.btagPNetB
         event['Jet', 'selected_loose']  = (event.Jet.pt >= 20) & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned & (np.abs(event.Jet.eta) <= 4.7)
         event['Jet', 'selected']        = (event.Jet.pt >= 30) & (np.abs(event.Jet.eta) <= 2.4) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
     else:
@@ -105,10 +131,6 @@ def apply_object_selection_4b(event, corrections_metadata, *,
     event['Jet', 'tagged_loose'] = event.Jet.selected & (event.Jet.btagScore >= corrections_metadata['btagWP']['L'])
 
     event['selJet_no_bRegCorr']  = event.Jet[event.Jet.selected]
-
-    if "PNetRegPtRawCorr" in event.Jet.fields:
-        #event['Jet', 'bRegCorr']       = event.Jet.PNetRegPtRawCorr * event.Jet.PNetRegPtRawCorrNeutrino
-        event['Jet', 'bRegCorr']       = event.Jet.PNetRegPtRawCorr # * event.Jet.PNetRegPtRawCorrNeutrino
 
     #
     # Apply the bRegCorr to the tagged jets
