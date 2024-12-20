@@ -1,7 +1,7 @@
 from datetime import datetime
 
 TIMESTAMP = datetime.now().strftime('%Y%m%d_%H%M%S')
-analysis_container = "gitlab-registry.cern.ch/cms-cmu/coffea4bees:7ea3016c"   ### actual tag for reproducibility
+analysis_container = "gitlab-registry.cern.ch/cms-cmu/coffea4bees:6c833959"   ### actual tag for reproducibility
 combine_container = "gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0"
 # analysis_container = "/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"   ### for when the container does not work 
 # combine_container = "/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0"
@@ -11,15 +11,22 @@ dataset_location = "metadata/datasets_HH4b.yml"
 #
 # rule all sets the entire workflow. This is were you define the last output of the workflow.
 # Snakemake will go backawrds and check what rules does the workflow need to get the output.
-#
-rule all:
+# #
+rule final_rule:
     input:
         "output/plots/RunII/passPreSel/fourTag/SB/nPVs.pdf",
         "output/datacards/systs/SvB_MA_ps_hh_fine_nominal.pdf",
         'output/datacards/impacts_combine_SvB_MA_exp_HH.pdf',
         # "output/datacards/plots/SvB_postfit.png"   ### Blinded analysis, no postfits.
         # "output/datacards/kappa_scan.pdf"
-        expand("output/singlefiles/histNoJCM__{sample}-{year}.coffea", sample=config['dataset'], year=config['year'])  ### trick to define wildcards
+        # expand("output/singlefiles/histNoJCM__{sample}-{year}.coffea", sample=config['dataset'], year=config['year'])  ### trick to define wildcards
+    shell: 
+        """
+        echo "Copying output to cernbox"
+        # python base_class/php_plots/pb_deploy_plots.py ../output/plots/RunII/ /eos/user/a/algomez/work/HH4b/reana/{TIMESTAMP}/ -r -c -j 4
+        # python base_class/php_plots/pb_deploy_plots.py ../output/datacards/systs/ /eos/user/a/algomez/work/HH4b/reana/{TIMESTAMP}/ -r -c -j 4
+        xrdcp -r output/ root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/
+        """
 
 rule analysis:
     output: "output/singlefiles/histNoJCM__{sample}-{year}.coffea"
@@ -50,36 +57,30 @@ rule analysis:
         cd ../
         mkdir -p output/performance/
         mprof plot -o output/performance/mprofile_{params.logname}.png python/mprofile_{params.logname}.dat
-        echo "Copying output to EOS or output file"
-        xrdcp {output} root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/{params.output}
-        cp gitdiff.txt output/   ### only one time
         """
 
 rule merging_coffea_files:
-   input: expand(['output/singlefiles/histNoJCM__{sample}-{year}.coffea'], sample=config['dataset'], year=config['year']) 
-   output: "output/histNoJCM.coffea"
-   container: analysis_container
-   params:
+    input: expand(['output/singlefiles/histNoJCM__{sample}-{year}.coffea'], sample=config['dataset'], year=config['year']) 
+    output: "output/histNoJCM.coffea"
+    container: analysis_container
+    params:
         output= "histNoJCM.coffea",
         logname= "histNoJCM"
-   resources:
-       kerberos=True,
-       compute_backend="kubernetes",
-       kubernetes_memory_limit="9.5Gi"
-   shell:
-       """
-       echo "Merging all the coffea files"
-       mprof run -C -o python/mprofile_merge_{params.logname}.dat python python/analysis/merge_coffea_files.py -f {input} -o {output}
-       echo "Making a plot of the performance"
-       mprof plot -o output/performance/mprofile_merge_{params.logname}.png python/mprofile_merge_{params.logname}.dat
-       echo "Copying output to EOS or output file"
-       xrdcp {output} root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/{params.output}
-       cp {output} /eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/{params.output}
-       """
+    resources:
+        kerberos=True,
+        compute_backend="kubernetes",
+        kubernetes_memory_limit="9.5Gi"
+    shell:
+        """
+        echo "Merging all the coffea files"
+        mprof run -C -o python/mprofile_merge_{params.logname}.dat python python/analysis/merge_coffea_files.py -f {input} -o {output}
+        echo "Making a plot of the performance"
+        mprof plot -o output/performance/mprofile_merge_{params.logname}.png python/mprofile_merge_{params.logname}.dat
+        """
 
 rule make_JCM:
     input: "output/histNoJCM.coffea"
-    # output: "output/JCM/jetCombinatoricModel_SB_reana.yml"
+    output: "output/JCM/jetCombinatoricModel_SB_reana.yml"
     container: analysis_container
     resources:
         voms_proxy=True,
@@ -175,9 +176,9 @@ use rule analysis as analysis_systematics with:
         metadata="analysis/metadata/HH4b_systematics.yml"
 
 use rule merging_coffea_files as merging_coffea_files_syst with:
-   input: expand(['output/singlefiles/histsyst_{idatsyst}-{iyear}.coffea'], idatsyst=config['dataset_systematics'], iyear=config['year']) 
-   output: "output/histAll_signals_cHHHX.coffea"
-   params:
+    input: expand(['output/singlefiles/histsyst_{idatsyst}-{iyear}.coffea'], idatsyst=config['dataset_systematics'], iyear=config['year']) 
+    output: "output/histAll_signals_cHHHX.coffea"
+    params:
         output= "histAll_signals_cHHHX.coffea",
         logname= "signals_cHHHX"
 
@@ -210,8 +211,6 @@ rule make_plots:
         mprof run -C -o mprofile_makeplots.dat python analysis/makePlots.py ../output/histAll.coffea -o ../output/plots/ -m analysis/metadata/plotsAll.yml -s xW
         echo "Making a plot of the performance"
         mprof plot -o ../output/performance/mprofile_makeplots.png ../output/mprofile_makeplots.dat
-        echo "Copying plots to cernbox"
-        python base_class/php_plots/pb_deploy_plots.py ../output/plots/RunII/ /eos/user/a/algomez/work/HH4b/reana/{TIMESTAMP}/ -r -c -j 4
         """
         
 rule convert_hist_to_json:
@@ -272,16 +271,16 @@ rule convert_json_to_root:
 
 rule run_two_stage_closure:
     input: 
-      file_TT = "output/histMixedBkg_TT.root",
-      file_mix = "output/histMixedData.root",
-      file_sig = "output/hist_signal.root",
-      file_data3b = "output/histMixedBkg_data_3b_for_mixed.root"
+        file_TT = "output/histMixedBkg_TT.root",
+        file_mix = "output/histMixedData.root",
+        file_sig = "output/hist_signal.root",
+        file_data3b = "output/histMixedBkg_data_3b_for_mixed.root"
     container: combine_container
-    output: "output/closureFits/ULHH_kfold/3bDvTMix4bDvT/SvB_MA/rebin2/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_fine_rebin2.pkl"
+    output: "output/closureFits/ULHH_kfold/3bDvTMix4bDvT/SvB_MA/varrebin2/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_fine_varrebin2.pkl"
     params:
-      outputPath = "output/closureFits/ULHH_kfold",
-      rebin = "2",
-      variable = "SvB_MA_ps_hh_fine"
+        outputPath = "output/closureFits/ULHH_kfold",
+        rebin = "2",
+        variable = "SvB_MA_ps_hh_fine"
     resources:
         compute_backend="kubernetes",
         kubernetes_memory_limit="8Gi"
@@ -294,6 +293,7 @@ rule run_two_stage_closure:
         cd python/
         python3 stats_analysis/runTwoStageClosure.py  \
             --var {params.variable} --rebin {params.rebin} --use_kfold \
+            --variable_binning \
             --outputPath ../{params.outputPath} \
             --input_file_TT ../{input.file_TT} \
             --input_file_mix ../{input.file_mix} \
@@ -305,7 +305,7 @@ rule make_combine_inputs:
     input:
         injson = "output/histAll.json",
         injsonsyst = "output/histAll_signals_cHHHX.json",
-        bkgsyst = "output/closureFits/ULHH_kfold/3bDvTMix4bDvT/SvB_MA/rebin2/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_fine_rebin2.pkl"
+        bkgsyst = "output/closureFits/ULHH_kfold/3bDvTMix4bDvT/SvB_MA/varrebin2/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_fine_varrebin2.pkl"
     output:
         "output/datacards/shapes.root",
         "output/datacards/datacard_HHbb_2018.txt"
@@ -324,9 +324,24 @@ rule make_combine_inputs:
         cmsenv || true
         cd -
         echo "Making combine inputs with full stats"
-        python3 python/stats_analysis/make_combine_inputs.py --var {params.variable} -f {input.injson} --syst_file {input.injsonsyst} --bkg_syst_file {input.bkgsyst} --output_dir output/datacards/ --rebin 2 --metadata python/stats_analysis/metadata/HH4b.yml
+        python3 python/stats_analysis/make_combine_inputs.py \
+            --var {params.variable} \
+            -f {input.injson} \
+            --syst_file {input.injsonsyst} \
+            --bkg_syst_file {input.bkgsyst} \
+            --output_dir output/datacards/ \
+            --rebin 2 --variable_binning \
+            --metadata python/stats_analysis/metadata/HH4b.yml
         echo "Making combine inputs stat only"
-        python3 python/stats_analysis/make_combine_inputs.py --var {params.variable} -f {input.injson} --syst_file {input.injsonsyst} --bkg_syst_file {input.bkgsyst} --output_dir output/datacards/stat_only/ --rebin 2 --metadata python/stats_analysis/metadata/HH4b.yml --stat_only
+        python3 python/stats_analysis/make_combine_inputs.py \
+            --var {params.variable} \
+            -f {input.injson} \
+            --syst_file {input.injsonsyst} \
+            --bkg_syst_file {input.bkgsyst} \
+            --output_dir output/datacards/stat_only/ \
+            --rebin 2 --variable_binning \
+            --metadata python/stats_analysis/metadata/HH4b.yml \
+            --stat_only
         """
 
 rule run_combine:
@@ -408,8 +423,6 @@ rule make_syst_plots:
         cd python/
         echo "Making syst plots"
         python3 stats_analysis/make_syst_plots.py -i ../output/datacards/shapes.root -o ../output/datacards/systs/ -d ../output/datacards/datacard.txt
-        echo "Copying plots to cernbox"
-        python3 base_class/php_plots/pb_deploy_plots.py ../output/datacards/syst/ /eos/user/a/algomez/work/HH4b/reana/{TIMESTAMP}/syst_plots/ -r -c -j 4 -e pdf
         """
 
 rule kappa_scan:
