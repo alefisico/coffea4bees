@@ -20,12 +20,18 @@ rule final_rule:
         # "output/datacards/plots/SvB_postfit.png"   ### Blinded analysis, no postfits.
         # "output/datacards/kappa_scan.pdf"
         # expand("output/singlefiles/histNoJCM__{sample}-{year}.coffea", sample=config['dataset'], year=config['year'])  ### trick to define wildcards
+    container: analysis_container
+    resources:
+        voms_proxy=True,
+        kerberos=True
     shell: 
         """
         echo "Copying output to cernbox"
         # python base_class/php_plots/pb_deploy_plots.py ../output/plots/RunII/ /eos/user/a/algomez/work/HH4b/reana/{TIMESTAMP}/ -r -c -j 4
         # python base_class/php_plots/pb_deploy_plots.py ../output/datacards/systs/ /eos/user/a/algomez/work/HH4b/reana/{TIMESTAMP}/ -r -c -j 4
-        xrdcp -r output/ root://eosuser.cern.ch//eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/
+        # xrdcp -r output/ root://eosuser.cern.ch/
+        eos mkdir /eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/
+        cp -r output/* /eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/
         """
 
 rule analysis:
@@ -182,13 +188,6 @@ use rule merging_coffea_files as merging_coffea_files_syst with:
         output= "histAll_signals_cHHHX.coffea",
         logname= "signals_cHHHX"
 
-use rule merging_coffea_files as merging_coffea_files_signal with:
-    input: expand(['output/singlefiles/histsignal__{sample_signal}-{year}.coffea'], sample_signal=config['dataset_signals'], year=config['year']) 
-    output: "output/hist_signal.coffea"
-    params:
-        output= "hist_signal.coffea",
-        logname= "hist_signal"
-
 use rule merging_coffea_files as merging_coffea_files_histAll with:
     input: expand(['output/singlefiles/histsignal__{sample_signal}-{year}.coffea'], sample_signal=config['dataset_signals'], year=config['year']) + expand(['output/singlefiles/hist__{idat}-{iyear}.coffea'], idat=config['dataset'], iyear=config['year'])
     output: "output/histAll.coffea"
@@ -210,7 +209,7 @@ rule make_plots:
         echo "Making plots"
         mprof run -C -o mprofile_makeplots.dat python analysis/makePlots.py ../output/histAll.coffea -o ../output/plots/ -m analysis/metadata/plotsAll.yml -s xW
         echo "Making a plot of the performance"
-        mprof plot -o ../output/performance/mprofile_makeplots.png ../output/mprofile_makeplots.dat
+        mprof plot -o ../output/performance/mprofile_makeplots.png mprofile_makeplots.dat
         """
         
 rule convert_hist_to_json:
@@ -220,14 +219,12 @@ rule convert_hist_to_json:
         inmixdata3b = "output/histMixedBkg_data_3b_for_mixed.coffea",
         inmixbkgtt = "output/histMixedBkg_TT.coffea",
         inmixdata = "output/histMixedData.coffea",
-        insignal = "output/hist_signal.coffea"
     output:
         outall = "output/histAll.json",
         outsystcHHHX = "output/histAll_signals_cHHHX.json",
         outmixdata3b = "output/histMixedBkg_data_3b_for_mixed.json",
         outmixbkgtt = "output/histMixedBkg_TT.json",
         outmixdata = "output/histMixedData.json",
-        outsignal = "output/hist_signal.json"
     container: analysis_container
     resources:
         compute_backend="kubernetes",
@@ -236,7 +233,6 @@ rule convert_hist_to_json:
         """
         python python/stats_analysis/convert_hist_to_json.py -o {output.outall} -i {input.inall}
         python python/stats_analysis/convert_hist_to_json.py -o {output.outsystcHHHX} -i {input.insystcHHHX} -s
-        python python/stats_analysis/convert_hist_to_json_closure.py -o {output.outsignal} -i {input.insignal}
         python python/stats_analysis/convert_hist_to_json_closure.py -o {output.outmixdata3b} -i {input.inmixdata3b}
         python python/stats_analysis/convert_hist_to_json_closure.py -o {output.outmixbkgtt} -i {input.inmixbkgtt}
         python python/stats_analysis/convert_hist_to_json_closure.py -o {output.outmixdata} -i {input.inmixdata}
@@ -246,13 +242,13 @@ rule convert_json_to_root:
     input: 
       file_TT = "output/histMixedBkg_TT.json",
       file_mix = "output/histMixedData.json",
-      file_sig = "output/hist_signal.json",
+      file_sig = "output/histAll.json",
       file_data3b = "output/histMixedBkg_data_3b_for_mixed.json"
     container: combine_container
     output: 
         "output/histMixedBkg_TT.root",
         "output/histMixedData.root",
-        "output/hist_signal.root",
+        "output/histAll.root",
         "output/histMixedBkg_data_3b_for_mixed.root"
     resources:
         compute_backend="kubernetes",
@@ -273,7 +269,7 @@ rule run_two_stage_closure:
     input: 
         file_TT = "output/histMixedBkg_TT.root",
         file_mix = "output/histMixedData.root",
-        file_sig = "output/hist_signal.root",
+        file_sig = "output/histAll.root",
         file_data3b = "output/histMixedBkg_data_3b_for_mixed.root"
     container: combine_container
     output: "output/closureFits/ULHH_kfold/3bDvTMix4bDvT/SvB_MA/varrebin2/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_fine_varrebin2.pkl"
@@ -346,7 +342,9 @@ rule make_combine_inputs:
 
 rule run_combine:
     input: "output/datacards/datacard_HHbb_2018.txt"
-    output: "output/datacards/datacard.root"
+    output: 
+        "output/datacards/datacard.root",
+        "output/datacards/datacard.txt"
     container: combine_container
     resources:
         voms_proxy=True,
@@ -407,7 +405,9 @@ rule run_postfit:
         """
 
 rule make_syst_plots:
-    input: "output/datacards/shapes.root",
+    input: 
+        root="output/datacards/shapes.root",
+        datacard="output/datacards/datacard.txt"
     output: "output/datacards/systs/SvB_MA_ps_hh_fine_nominal.pdf"
     container: combine_container
     resources:
@@ -422,7 +422,7 @@ rule make_syst_plots:
         cd -
         cd python/
         echo "Making syst plots"
-        python3 stats_analysis/make_syst_plots.py -i ../output/datacards/shapes.root -o ../output/datacards/systs/ -d ../output/datacards/datacard.txt
+        python3 stats_analysis/make_syst_plots.py -i ../{input.root} -o ../output/datacards/systs/ -d ../{input.datacard}
         """
 
 rule kappa_scan:
