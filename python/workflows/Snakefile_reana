@@ -27,11 +27,9 @@ rule final_rule:
     shell: 
         """
         echo "Copying output to cernbox"
-        # python base_class/php_plots/pb_deploy_plots.py ../output/plots/RunII/ /eos/user/a/algomez/work/HH4b/reana/{TIMESTAMP}/ -r -c -j 4
-        # python base_class/php_plots/pb_deploy_plots.py ../output/datacards/systs/ /eos/user/a/algomez/work/HH4b/reana/{TIMESTAMP}/ -r -c -j 4
-        # xrdcp -r output/ root://eosuser.cern.ch/
-        eos mkdir /eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/
-        cp -r output/* /eos/user/a/algomez/tmpFiles/XX4b/reana/{TIMESTAMP}/
+        python base_class/php_plots/pb_deploy_plots.py output/ /eos/user/a/algomez/work/HH4b/reana/{TIMESTAMP}/ -r -c -j 4
+        mkdir /eos/user/a/algomez/work/HH4b/reana/{TIMESTAMP}/
+        cp -r output/* /eos/user/a/algomez/work/HH4b/reana/{TIMESTAMP}/
         """
 
 rule analysis:
