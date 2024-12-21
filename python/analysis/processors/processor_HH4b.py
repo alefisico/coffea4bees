@@ -657,7 +657,7 @@ class analysis(processor.ProcessorABC):
             from ..helpers.dump_friendtrees import dump_input_friend
             
             weight = "weight_noJCM_noFvT"
-            if weight not in selev:
+            if weight not in selev.fields:
                 weight = "weight"
             friends["friends"] = ( friends["friends"]
                 | dump_input_friend(
