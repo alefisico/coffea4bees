@@ -43,15 +43,22 @@ class Skimmer(PicoAOD):
 
         event = apply_event_selection_4b( event, self.corrections_metadata[year], cut_on_lumimask=config["cut_on_lumimask"] )
 
-        jets = apply_jerc_corrections(event,
+        if config["do_jet_calibration"]:
+            jets = apply_jerc_corrections(event,
                                       corrections_metadata=self.corrections_metadata[year],
                                       isMC=config["isMC"],
                                       run_systematics=False,
                                       dataset=dataset
                                       )
-        event["Jet"] = jets
+            event["Jet"] = jets
 
-        event = apply_object_selection_4b( event, self.corrections_metadata[year], dataset=dataset, doLeptonRemoval=config["do_lepton_jet_cleaning"], loosePtForSkim=self.loosePtForSkim  )
+        event = apply_object_selection_4b( event, self.corrections_metadata[year], 
+            dataset=dataset, 
+            doLeptonRemoval=config["do_lepton_jet_cleaning"], 
+            loosePtForSkim=self.loosePtForSkim,
+            isRun3=config["isRun3"],
+            isMC=config["isMC"],
+            )
 
         weights = Weights(len(event), storeIndividual=True)
 
