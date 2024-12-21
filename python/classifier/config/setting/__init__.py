@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-import getpass
-import os
 import pickle
+import socket
+import warnings
 from typing import TYPE_CHECKING, Literal
 
 import fsspec
 from classifier.task.state import GlobalSetting, _share_global_state
+
+from ..state import System
 
 if TYPE_CHECKING:
     from base_class.system.eos import EOS
@@ -74,21 +76,15 @@ class IO(GlobalSetting):
         return cls.output / value
 
     @classmethod
-    def set__output(cls, value: str):
-        from ..state import System
-
-        if value is None:
-            return os.devnull
-        return value.format(
-            user=getpass.getuser(),
-            main=System.main_task,
-            timestamp=System.startup_time.strftime(cls.timestamp),
-        )
-
-    @classmethod
     def get__output(cls, value: str):
         from base_class.system.eos import EOS
 
+        if isinstance(value, str):
+            value = value.format(
+                user=System.user_name,
+                main=System.main_task,
+                timestamp=System.startup_time.strftime(cls.timestamp),
+            )
         return EOS(value)
 
     @classmethod
@@ -140,18 +136,16 @@ class Monitor(GlobalSetting):
 
     @classmethod
     def set__socket_timeout(cls, value: float):
-        import socket
-
         socket.setdefaulttimeout(value)
+        return NotImplemented
 
     @classmethod
     def set__warnings_ignore(cls, value: bool):
-        import warnings
-
         if value:
             warnings.filterwarnings("ignore")
         else:
             warnings.filterwarnings("default")
+        return NotImplemented
 
     @classmethod
     def get__address(cls, value: int | str):
