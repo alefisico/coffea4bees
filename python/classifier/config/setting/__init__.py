@@ -79,8 +79,10 @@ class IO(GlobalSetting):
 
         if value is None:
             return os.devnull
+        try: user=getpass.getuser()
+        except: user="default_user"
         return value.format(
-            user=getpass.getuser(),
+            user=user,
             main=System.main_task,
             timestamp=System.startup_time.strftime(cls.timestamp),
         )
