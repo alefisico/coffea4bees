@@ -151,7 +151,7 @@ if __name__ == '__main__':
     config_runner.setdefault('condor_cores', 2)
     config_runner.setdefault('condor_memory', '4GB')
     config_runner.setdefault('condor_transfer_input_files', [
-                             'analysis/', 'base_class/', 'data/', 'skimmer/'])
+                             'analysis/', 'base_class/', 'classifier/', 'data/', 'skimmer/'])
     config_runner.setdefault('min_workers', 1)
     config_runner.setdefault('max_workers', 100)
     config_runner.setdefault('workers', 2)
