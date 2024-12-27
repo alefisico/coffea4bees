@@ -27,7 +27,7 @@ rule final_rule:
     shell: 
         """
         echo "Copying output to cernbox"
-        python base_class/php_plots/pb_deploy_plots.py output/ /eos/user/a/algomez/work/HH4b/reana/{TIMESTAMP}/ -r -c -j 4
+        python python/base_class/php_plots/pb_deploy_plots.py output/ /eos/user/a/algomez/work/HH4b/reana/{TIMESTAMP}/ -r -c -j 4
         mkdir /eos/user/a/algomez/work/HH4b/reana/{TIMESTAMP}/
         cp -r output/* /eos/user/a/algomez/work/HH4b/reana/{TIMESTAMP}/
         """
@@ -305,7 +305,8 @@ rule make_combine_inputs:
         "output/datacards/datacard_HHbb_2018.txt"
     container: combine_container
     params:
-        variable= "SvB_MA.ps_hh_fine"
+        variable= "SvB_MA.ps_hh_fine",
+        rebin=2
     resources:
         voms_proxy=True,
         kerberos=True,
@@ -324,7 +325,7 @@ rule make_combine_inputs:
             --syst_file {input.injsonsyst} \
             --bkg_syst_file {input.bkgsyst} \
             --output_dir output/datacards/ \
-            --rebin 2 --variable_binning \
+            --rebin {params.rebin} --variable_binning \
             --metadata python/stats_analysis/metadata/HH4b.yml
         echo "Making combine inputs stat only"
         python3 python/stats_analysis/make_combine_inputs.py \
@@ -333,7 +334,7 @@ rule make_combine_inputs:
             --syst_file {input.injsonsyst} \
             --bkg_syst_file {input.bkgsyst} \
             --output_dir output/datacards/stat_only/ \
-            --rebin 2 --variable_binning \
+            --rebin {params.rebin} --variable_binning \
             --metadata python/stats_analysis/metadata/HH4b.yml \
             --stat_only
         """

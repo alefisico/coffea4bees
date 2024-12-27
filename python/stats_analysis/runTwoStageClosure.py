@@ -2079,6 +2079,7 @@ if __name__ == "__main__":
     parser.add_argument('--do_CI',   action="store_true")
 
     args = parser.parse_args()
+    print(f"\nRunning with these parameters: {args}")
 
     #
     #  Parse channel
@@ -2140,6 +2141,7 @@ if __name__ == "__main__":
         print(f"Computing variable binning, with threshold {args.rebin}")
         rebin = make_variable_binning(args.input_file_sig, args.var, int(args.rebin), f"{output_dir}/{os.path.basename(args.input_file_sig).replace('.root', '_rebinned.root')}" )
         print_log(f"New rebin value is {list(rebin)}")
+        np.savetxt(f"{output_dir}/variable_binning_array.txt", rebin)
 
     doPrepInputs = True
     if args.reuse_inputs:
