@@ -187,7 +187,7 @@ if __name__ == "__main__":
     parser.add_argument('-r',dest="weightRegion",default="")
     parser.add_argument('-o', '--outputDir',dest='outputDir',default="")
     parser.add_argument('-m', '--metadata', dest="metadata",
-                        default="analysis/metadata/plotsAll.yml",
+                        default="plots/metadata/plotsAll.yml",
                         help='Metadata file.')
 
     args = parser.parse_args()
