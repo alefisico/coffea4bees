@@ -178,7 +178,6 @@ runCITests.sh
 .bashrc
 python/output/
 python/local_output/
-python/plots/
 
 .local/
 set_ROOT.sh
