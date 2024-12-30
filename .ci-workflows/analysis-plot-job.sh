@@ -9,7 +9,7 @@ if [ ! -d $OUTPUT_DIR ]; then
 fi
 
 echo "############### Running test processor"
-python analysis/makePlots.py $INPUT_DIR/test.coffea --doTest -o $OUTPUT_DIR -m analysis/metadata/plotsAll.yml
+python plots/makePlots.py $INPUT_DIR/test.coffea --doTest -o $OUTPUT_DIR -m plots/metadata/plotsAll.yml
 
 echo "############### Checking if pdf files exist"
 ls $OUTPUT_DIR/RunII/passPreSel/fourTag/SR/SvB_MA_ps_zz.pdf
@@ -25,7 +25,7 @@ ls $OUTPUT_DIR/RunII/passPreSel/threeTag/SR/Multijet/quadJet_min_dr_close_vs_oth
 
 
 echo "############### check making the plots from yaml "
-python analysis/plot_from_yaml.py --input_yaml $OUTPUT_DIR/RunII/passPreSel/fourTag/SR/SvB_MA_ps_zz.yaml \
+python plots/plot_from_yaml.py --input_yaml $OUTPUT_DIR/RunII/passPreSel/fourTag/SR/SvB_MA_ps_zz.yaml \
    $OUTPUT_DIR/RunII/passPreSel/fourTag/SR/SvB_MA_ps_zh.yaml \
    $OUTPUT_DIR/RunII/passPreSel/fourTag/SR/SvB_MA_ps_hh.yaml \
    $OUTPUT_DIR/RunII/passPreSel/fourTag/SR_vs_SB/data/SvB_MA_ps.yaml \
