@@ -296,7 +296,7 @@ if __name__ == "__main__":
     cluster.adapt(minimum=1, maximum=args.workers)
     client = Client(cluster)
     logging.info("[blue]Running dask jobs.[/blue]")
-    results: dict[str, dict[str, dict]] = client.compute(results).result()
+    results: dict[str, dict[str, dict]] = client.compute(results, sync=True)
     # collect results
     for k, v in results.items():
         _outliers = []

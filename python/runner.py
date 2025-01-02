@@ -7,20 +7,23 @@ import logging
 import os
 import time
 import warnings
+from concurrent.futures import ProcessPoolExecutor
+from copy import copy
+from dataclasses import dataclass
 from datetime import datetime
 from typing import TYPE_CHECKING
-from copy import copy
-import psutil
 
 import dask
 import fsspec
+import psutil
 import yaml
 from base_class.addhash import get_git_diff, get_git_revision_hash
-from coffea.dataset_tools import rucio_utils
 from coffea import processor
+from coffea.dataset_tools import rucio_utils
 from coffea.nanoevents import NanoAODSchema
 from coffea.util import save
 from dask.distributed import performance_report
+from distributed.diagnostics.plugin import WorkerPlugin
 from rich.logging import RichHandler
 from rich.pretty import pretty_repr
 from skimmer.processor.picoaod import fetch_metadata, integrity_check, resize
@@ -32,6 +35,15 @@ dask.config.set({'logging.distributed': 'error'})
 
 NanoAODSchema.warn_missing_crossrefs = False
 warnings.filterwarnings("ignore")
+
+@dataclass
+class WorkerInitializer(WorkerPlugin):
+    uproot_xrootd_retry_delays: list[float] = None
+
+    def setup(self, worker=None):
+        if delays := self.uproot_xrootd_retry_delays:
+            from base_class.root.patch import uproot_XRootD_retry
+            uproot_XRootD_retry(len(delays) + 1, delays)
 
 def list_of_files(ifile,
                   allowlist_sites: list =['T3_US_FNALLPC'],
@@ -163,6 +175,8 @@ if __name__ == '__main__':
     config_runner.setdefault('friend_merge_step', 100_000)
     config_runner.setdefault('write_coffea_output', True)
     config_runner.setdefault('override_top_reconstruction', None)
+    config_runner.setdefault('uproot_xrootd_retry_delays', [5, 20, 60, 300, 300, 300])
+
     if args.systematics:
         logging.info("\nRunning with systematics")
         configs['config']['run_systematics'] = True
@@ -284,7 +298,6 @@ if __name__ == '__main__':
                     logging.info(
                         f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
 
-
             elif isDataForMix:
                 logging.info("\nConfig Data for Mixed ")
 
@@ -359,6 +372,7 @@ if __name__ == '__main__':
                             f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
 
     client = None
+    pool = None
     #
     # IF run in condor
     #
@@ -411,6 +425,10 @@ if __name__ == '__main__':
             cluster = LocalCluster(**cluster_args)
             client = Client(cluster)
 
+    worker_initializer = WorkerInitializer(uproot_xrootd_retry_delays=config_runner['uproot_xrootd_retry_delays'])
+    if client is not None:
+        client.register_plugin(worker_initializer)
+
     executor_args = {
         'schema': config_runner['schema'],
         'savemetrics': True,
@@ -429,7 +447,10 @@ if __name__ == '__main__':
     else:
         logging.info(f"\nRunning futures executor")
         # to run with processor futures_executor ()
-        executor_args['workers'] = config_runner['workers']
+        n_workers = config_runner['workers']
+        pool = ProcessPoolExecutor(max_workers=n_workers, initializer=worker_initializer.setup)
+        executor_args["pool"] = pool
+        executor_args["workers"] = n_workers
         executor = processor.futures_executor
     logging.info(f"\nExecutor arguments:")
     logging.info(pretty_repr(executor_args))
@@ -527,7 +548,6 @@ if __name__ == '__main__':
                     if config_runner["data_tier"] in ['picoAOD'] and "genEventSumw" in fileset[ikey]["metadata"]:
                         metadata[ikey]["sumw"] = fileset[ikey]["metadata"]["genEventSumw"]
 
-
             args.output_file = 'picoaod_datasets.yml' if args.output_file.endswith(
                 'coffea') else args.output_file
             dfile = f'{args.output_path}/{args.output_file}'
@@ -616,3 +636,6 @@ if __name__ == '__main__':
         logging.info(f'Dask performace report saved in {dask_report_file}')
     else:
         run_job()
+
+    if pool is not None:
+        pool.shutdown(wait=True)
