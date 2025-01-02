@@ -2,7 +2,6 @@ import logging
 import math
 from argparse import ArgumentParser
 from collections import defaultdict
-from concurrent.futures import ThreadPoolExecutor
 
 import fsspec
 import numpy as np
@@ -34,32 +33,35 @@ MismatchedSumw = "MismatchedSumw"
 Outliers = "Outliers"
 
 
-def fetch_metadata(
-    dataset: tuple[tuple[str, str], str]
-) -> tuple[tuple[str, str], dict]:
-    from dbs.apis.dbsClient import DbsApi
+class fetch_metadata:
+    def __init__(self):
+        from dbs.apis.dbsClient import DbsApi
 
-    key, path = dataset
-    dbs = DbsApi("https://cmsweb.cern.ch/dbs/prod/global/DBSReader")
-    metadata = dbs.listFileSummaries(dataset=path)
-    if len(metadata) > 1:
-        return key, {"path": path, "errors": [{"type": MultipleDatasets}]}
-    metadata = metadata[0]
-    nevents = metadata["num_event"]
-    nfiles = metadata["num_file"]
-    if nfiles == 0:
-        return key, {"path": path, "errors": [{"type": NoFile}]}
-    files = dbs.listFiles(dataset=path, detail=True)
-    files = [
-        dict(path=file["logical_file_name"], nevents=file["event_count"])
-        for file in files
-    ]
-    logging.info(f"Fetched metadata for {key}")
-    return key, {
-        "files": files,
-        "nevents": nevents,
-        "nfiles": nfiles,
-    }
+        self.dbs = DbsApi("https://cmsweb.cern.ch/dbs/prod/global/DBSReader")
+
+    def __call__(
+        self, dataset: tuple[tuple[str, str], str]
+    ) -> tuple[tuple[str, str], dict]:
+        key, path = dataset
+        metadata = self.dbs.listFileSummaries(dataset=path)
+        if len(metadata) > 1:
+            return key, {"path": path, "errors": [{"type": MultipleDatasets}]}
+        metadata = metadata[0]
+        nevents = metadata["num_event"]
+        nfiles = metadata["num_file"]
+        if nfiles == 0:
+            return key, {"path": path, "errors": [{"type": NoFile}]}
+        files = self.dbs.listFiles(dataset=path, detail=True)
+        files = [
+            dict(path=file["logical_file_name"], nevents=file["event_count"])
+            for file in files
+        ]
+        logging.info(f"Fetched metadata for {key}")
+        return key, {
+            "files": files,
+            "nevents": nevents,
+            "nfiles": nfiles,
+        }
 
 
 class fetch_replicas:
@@ -146,15 +148,13 @@ class sanity_check:
                 }
             )
         outlier_checker = OutlierByMedian(self.threshold)
-        outliers = events[outlier_checker(genWeight)]
+        outliers = events[~outlier_checker(genWeight)]
         if len(outliers):
-            result["outliers"] = {
-                "events": [
-                    {"event": e.event, "genWeight": e.genWeight} for e in outliers
-                ],
-                "median": outlier_checker.last_median,
-                "threshold": self.threshold,
-            }
+            result["outliers"] = [
+                {"event": int(e.event), "genWeight": float(e.genWeight)}
+                for e in outliers
+            ]
+            result["median"] = float(outlier_checker.last_median)
         if errors:
             result["errors"] = errors
         return result
@@ -245,9 +245,7 @@ if __name__ == "__main__":
             datasets[(dataset, year)] = nanoaod
     # fetch files
     logging.info("[blue]Fetching metadata from DAS.[/blue]")
-    with ThreadPoolExecutor() as executor:
-        files = executor.map(fetch_metadata, datasets.items())
-    files = dict(files)
+    files = dict(map(fetch_metadata(), datasets.items()))
     for k, v in [*files.items()]:
         if "errors" in v:
             errors.append(v)
@@ -306,7 +304,12 @@ if __name__ == "__main__":
                 _outlier = result["outliers"]
                 _outliers.extend(e["event"] for e in _outlier)
                 _error.append(
-                    {"type": "Outliers", "events": _outlier, "median": result["median"]}
+                    {
+                        "type": "Outliers",
+                        "events": _outlier,
+                        "median": result["median"],
+                        "threshold": args.threshold,
+                    }
                 )
             if _error:
                 errors.append(
