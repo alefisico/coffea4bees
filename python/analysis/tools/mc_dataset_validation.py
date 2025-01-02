@@ -13,6 +13,8 @@ from dask.delayed import delayed
 from dask.distributed import Client, LocalCluster
 from rich.logging import RichHandler
 
+from ..helpers.mc_weight_outliers import OutlierByMedian
+
 _NANOAOD = "nanoAOD"
 
 
@@ -122,7 +124,6 @@ class sanity_check:
             )
         events = file["Events"].arrays(["event", "genWeight"])
         genWeight = np.abs(events.genWeight)
-        median = float(np.median(genWeight))
         minimum = float(np.min(genWeight))
         _sumw = float(
             np.sum(events.genWeight.to_numpy().astype(np.float64))
@@ -144,13 +145,16 @@ class sanity_check:
                     "minimum": minimum,
                 }
             )
-        threshold = self.threshold * median
-        outliers = events[genWeight > threshold]
+        outlier_checker = OutlierByMedian(self.threshold)
+        outliers = events[outlier_checker(genWeight)]
         if len(outliers):
-            result["outliers"] = [
-                {"event": e.event, "genWeight": e.genWeight} for e in outliers
-            ]
-            result["median"] = median
+            result["outliers"] = {
+                "events": [
+                    {"event": e.event, "genWeight": e.genWeight} for e in outliers
+                ],
+                "median": outlier_checker.last_median,
+                "threshold": self.threshold,
+            }
         if errors:
             result["errors"] = errors
         return result
@@ -190,7 +194,7 @@ if __name__ == "__main__":
         "--threshold",
         type=float,
         help="threshold to determine outliers comparing to the median",
-        default=1000,
+        default=200,
     )
     argparser.add_argument(
         "--sites",
