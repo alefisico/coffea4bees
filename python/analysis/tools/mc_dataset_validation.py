@@ -7,7 +7,6 @@ import fsspec
 import numpy as np
 import uproot
 import yaml
-from base_class.utils.argparser import DefaultFormatter
 from dask.delayed import delayed
 from dask.distributed import Client, LocalCluster
 from rich.logging import RichHandler
@@ -161,6 +160,8 @@ class sanity_check:
 
 
 if __name__ == "__main__":
+    from base_class.utils.argparser import DefaultFormatter
+
     logging.basicConfig(
         level=logging.INFO,
         format="%(message)s",
@@ -279,6 +280,7 @@ if __name__ == "__main__":
         from lpcjobqueue import LPCCondorCluster
 
         cluster = LPCCondorCluster(
+            transfer_input_files=["analysis/"],
             shared_temp_directory="/tmp",
             cores=1,
             memory="2GB",
