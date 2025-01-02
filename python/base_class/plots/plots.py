@@ -39,11 +39,11 @@ def init_arg_parser():
                         help='Folder for output folder. Default: plots/')
 
     parser.add_argument('-m', '--metadata', dest="metadata",
-                        default="analysis/metadata/plotsAll.yml",
+                        default="plots/metadata/plotsAll.yml",
                         help='Metadata file.')
 
     parser.add_argument('--modifiers', dest="modifiers",
-                        default="analysis/metadata/plotModifiers.yml",
+                        default="plots/metadata/plotModifiers.yml",
                         help='Metadata file.')
 
     parser.add_argument('-s', '--skip', dest="skip_hists",

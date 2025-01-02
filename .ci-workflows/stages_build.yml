@@ -15,7 +15,10 @@ build_container:
     EXTRA_TAGS: "latest $CI_COMMIT_SHORT_SHA"
   rules:
       - if: $CI_COMMIT_BRANCH =~ /^container.*/ 
+      - if: $CI_PIPELINE_SOURCE == "schedule"
       - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+        changes:
+          - .dockerfiles/Dockerfile_analysis
 
 build_container_reana:
   extends:

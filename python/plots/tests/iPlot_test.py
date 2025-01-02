@@ -2,16 +2,16 @@ import unittest
 import argparse
 from coffea.util import load
 import yaml
-from parser import wrapper
 import sys
 
 
 import os
 sys.path.insert(0, os.getcwd())
 
-from analysis.iPlot import plot, plot2d
+from plots.iPlot import plot, plot2d
 import base_class.plots.iPlot_config as cfg
 from base_class.plots.plots import load_config, load_hists, read_axes_and_cuts
+from analysis.tests.parser import wrapper
 
 
 class iPlotTestCase(unittest.TestCase):
@@ -109,7 +109,7 @@ class iPlotTestCase(unittest.TestCase):
 
     def test_singleFile(self):
 
-        metadata = "analysis/metadata/plotsAll.yml"
+        metadata = "plots/metadata/plotsAll.yml"
         cfg.plotConfig = load_config(metadata)
 
         input_files = [self.inputFile]
@@ -124,7 +124,7 @@ class iPlotTestCase(unittest.TestCase):
 
     def test_multipleFiles(self):
 
-        metadata = "analysis/metadata/plotsAll.yml"
+        metadata = "plots/metadata/plotsAll.yml"
         cfg.plotConfig = load_config(metadata)
 
         input_files = [self.inputFile, self.inputFile]
@@ -168,7 +168,7 @@ class iPlotTestCase(unittest.TestCase):
 
     def test_NoFvT(self):
 
-        metadata = "analysis/metadata/plotsAllNoFvT.yml"
+        metadata = "plots/metadata/plotsAllNoFvT.yml"
         cfg.plotConfig = load_config(metadata)
 
         input_files = [self.inputFile]

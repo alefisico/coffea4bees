@@ -1,4 +1,4 @@
-version: 0.9.3
+version: 0.9.4
 inputs:
   directories:
     - python/analysis/
@@ -8,6 +8,7 @@ inputs:
     - python/.php-plots/
     - python/skimmer/processor/
     - python/stats_analysis/
+    - python/classifier/
   parameters:
     input: python/workflows/inputs_reana.yaml
   files:
