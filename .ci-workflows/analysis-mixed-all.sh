@@ -1,26 +1,5 @@
 #!/bin/bash
-return_to_base=false
-if [ "$(basename "$PWD")" == "python" ]; then
-    echo "You are in the python directory."
-else
-    return_to_base=true
-    echo "############### Moving to python folder"
-    cd python/
-fi
-
-
-# Check if the second argument is provided
-if [[ $# -lt 1 ]]; then
-    # No second argument provided, set a default value
-    OUTPUT_DIR="hists/"
-else
-    # Second argument provided, use the provided value
-    OUTPUT_DIR=$1
-fi
-
-echo "The output directory is: $OUTPUT_DIR"
-
-DATASETS="metadata/datasets_HH4b.yml"
+source .ci-workflows/set_initial_variables.sh do_proxy=true ${1:-"output/"}
 
 echo "############### Running test processor"
 python runner.py  -o histMixedBkg_TT.coffea -d   TTTo2L2Nu_for_mixed TTToHadronic_for_mixed TTToSemiLeptonic_for_mixed   -p analysis/processors/processor_HH4b.py -y UL17 UL18 UL16_preVFP UL16_postVFP  -op $OUTPUT_DIR -m $DATASETS

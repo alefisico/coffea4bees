@@ -1,17 +1,7 @@
-echo "############### Including proxy"
-if [ ! -f "${PWD}/proxy/x509_proxy" ]; then
-    echo "Error: x509_proxy file not found!"
-    exit 1
-fi
-export X509_USER_PROXY=${PWD}/proxy/x509_proxy
+#!/bin/bash
+source .ci-workflows/set_initial_variables.sh do_proxy=true ${1:-"output/"}
 
-echo "############### Checking proxy"
-voms-proxy-info
-
-echo "############### Moving to python folder"
-cd python/
-
-OUTPUT_DIR="output/skimmer_test_job"
+OUTPUT_DIR="${DEFAULT_DIR}skimmer_test_job"
 echo "############### Checking and creating output directory"
 if [ ! -d $OUTPUT_DIR ]; then
     mkdir -p $OUTPUT_DIR
@@ -34,4 +24,8 @@ sed -e "s#/GluGluToHHTo4B_cHHH0_TuneCP5_PSWeights_13TeV-powheg-pythia8/RunIISumm
 echo "############### Running test processor"
 python runner.py -s -p skimmer/processor/skimmer_4b.py -c $OUTPUT_DIR/HH4b.yml -y UL18 -d GluGluToHHTo4B_cHHH0 -op $OUTPUT_DIR -o picoaod_datasets_GluGluToHHTo4B_cHHH0_UL18.yml -m $OUTPUT_DIR/datasets_HH4b.yml  -t 
 ls -R $OUTPUT_DIR
-cd ../
+
+if [ "$return_to_base" = true ]; then
+    echo "############### Returning to base directory"
+    cd ../
+fi
