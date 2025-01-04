@@ -117,12 +117,12 @@ class PicoAOD(ProcessorABC):
                     weights["outliers"] = [int(e) for e in outliers.event]
                     weights["sumw_diff"] = float(np.sum(outliers.genWeight))
                     weights["sumw2_diff"] = float(np.sum(outliers.genWeight**2))
-            weights["sumw"] = float(np.sum(genWeight))
-            weights["sumw2"] = float(np.sum(genWeight**2))
+            weights["sumw_raw"] = float(np.sum(genWeight))
+            weights["sumw2_raw"] = float(np.sum(genWeight**2))
         else:
             nevents = len(events) if preselected is None else float(np.sum(preselected))
-            weights["sumw"] = nevents
-            weights["sumw2"] = nevents
+            weights["sumw_raw"] = nevents
+            weights["sumw2_raw"] = nevents
         result = {
             dataset: {
                 "total_events": len(events),
@@ -130,6 +130,7 @@ class PicoAOD(ProcessorABC):
                 "files": [],
                 "source": {str(chunk.path): [(chunk.entry_start, chunk.entry_stop)]},
             }
+            | weights
             | result
         }
         self._cutFlow.addOutputSkim(result, dataset)
