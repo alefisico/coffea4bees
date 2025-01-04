@@ -5,7 +5,7 @@ inputs:
     - python/base_class/
     - python/data/
     - python/metadata/
-    - python/.php-plots/
+    - python/plots/
     - python/skimmer/processor/
     - python/stats_analysis/
     - python/classifier/

@@ -15,10 +15,10 @@ if [[ "$JOB_NAME" == *-* ]]; then
 fi
 
 # Check if the folder named 'output' exists
-if [ -d "python/output" ]; then
-  echo "The folder 'python/output' exists. Remember that snakemake will not run a step if the output files already exist."
+if [ -d "python/CI_output" ]; then
+  echo "The folder 'python/CI_output' exists. Remember that snakemake will not run a step if the output files already exist."
 else
-  echo "Output files will be created in the 'python/output' folder."
+  echo "Output files will be created in the 'python/CI_output' folder."
 fi
 
 # Check if the file ~/x509up* exists
