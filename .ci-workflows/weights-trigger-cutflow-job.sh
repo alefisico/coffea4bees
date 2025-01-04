@@ -1,5 +1,5 @@
 #!/bin/bash
-source .ci-workflows/set_initial_variables.sh do_proxy=false ${1:-"output/"}
+source .ci-workflows/set_initial_variables.sh --output ${1:-"output/"}
 
 INPUT_DIR="${DEFAULT_DIR}weights_trigger_analysis_job"
 OUTPUT_DIR="${DEFAULT_DIR}weights_trigger_cutflow_job"

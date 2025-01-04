@@ -1,17 +1,30 @@
 #!/bin/bash
 
+# Default values
+do_proxy=false
+output="output/"
+
+# Parse arguments
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        --do_proxy) do_proxy=true ;;
+        --output) output="$2"; shift ;;
+        *) echo "Unknown parameter passed: $1"; exit 1 ;;
+    esac
+    shift
+done
+
 echo "############### Setting up environment"
-if [ "$1" == "do_proxy=true" ]; then
+if [ "$do_proxy" = true ]; then
     echo "############### Including proxy"
     if [ ! -f "${PWD}/proxy/x509_proxy" ]; then
         echo "Error: x509_proxy file not found!"
         exit 1
     fi
     export X509_USER_PROXY=${PWD}/proxy/x509_proxy
+    echo "############### Checking proxy"
+    voms-proxy-info
 fi
-
-echo "############### Checking proxy"
-voms-proxy-info
 
 return_to_base=false
 if [ "$(basename "$PWD")" == "python" ]; then
@@ -23,7 +36,7 @@ else
 fi
 
 echo "############### Checking and creating base output directory"
-DEFAULT_DIR=${2}
+DEFAULT_DIR=${output}
 echo "The base output directory is: $DEFAULT_DIR"
 
 echo "############### Checking datasets"

@@ -1,5 +1,5 @@
 #!/bin/bash
-source .ci-workflows/set_initial_variables.sh do_proxy=true ${1:-"output/"}
+source .ci-workflows/set_initial_variables.sh --output ${1:-"output/"} --do_proxy
 
 echo "############### Running test processor"
 python runner.py  -o histMixedBkg_TT.coffea -d   TTTo2L2Nu_for_mixed TTToHadronic_for_mixed TTToSemiLeptonic_for_mixed   -p analysis/processors/processor_HH4b.py -y UL17 UL18 UL16_preVFP UL16_postVFP  -op $OUTPUT_DIR -m $DATASETS

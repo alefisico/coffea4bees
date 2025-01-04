@@ -1,5 +1,5 @@
 #!/bin/bash
-source .ci-workflows/set_initial_variables.sh do_proxy=false ${1:-"output/"}
+source .ci-workflows/set_initial_variables.sh --output ${1:-"output/"}
 
 echo "############### Running makeweights test"
 python analysis/tests/topCand_test.py
