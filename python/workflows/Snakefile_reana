@@ -205,7 +205,7 @@ rule make_plots:
         """
         cd python/ 
         echo "Making plots"
-        mprof run -C -o mprofile_makeplots.dat python plots/makePlots.py ../output/histAll.coffea -o ../output/plots/ -m analysis/metadata/plotsAll.yml -s xW
+        mprof run -C -o mprofile_makeplots.dat python plots/makePlots.py ../output/histAll.coffea -o ../output/plots/ -m plots/metadata/plotsAll.yml -s xW
         echo "Making a plot of the performance"
         mprof plot -o ../output/performance/mprofile_makeplots.png mprofile_makeplots.dat
         """
@@ -396,11 +396,11 @@ rule run_postfit:
         cd /home/cmsusr/CMSSW_11_3_4/
         cmsenv || true
         cd -
+        cd python/
         cat {input}
         echo "RUNNING COMBINE"
-        cd python/stats_analysis/
-        source run_combine.sh ../../output/datacards/ --postfit
-        python3 make_postfit_plot.py -i ../../output/datacards/postfit_s.root -o {output} --do_postfit False
+        source stats_analysis/run_combine.sh ../output/datacards/ --postfit
+        python3 plots/make_postfit_plot.py -i ../output/datacards/postfit_s.root -o ../{output} --do_postfit False
         """
 
 rule make_syst_plots:
@@ -421,7 +421,7 @@ rule make_syst_plots:
         cd -
         cd python/
         echo "Making syst plots"
-        python3 stats_analysis/make_syst_plots.py -i ../{input.root} -o ../output/datacards/systs/ -d ../{input.datacard}
+        python3 plots/make_syst_plots.py -i ../{input.root} -o ../output/datacards/systs/ -d ../{input.datacard}
         """
 
 rule kappa_scan:
