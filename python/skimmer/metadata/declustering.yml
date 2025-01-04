@@ -16,6 +16,7 @@ runner:
     - analysis
     - skimmer
     - data
+    - classifier
   allowlist_sites:
     - T2_US_Nebraska
     - T2_US_Purdue
