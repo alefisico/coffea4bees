@@ -16,6 +16,7 @@ class OutlierByMedian:
 
     def __call__(self, weights: npt.ArrayLike):
         median = self.median
+        weights = np.abs(weights)
         if self.median is None:
             median = np.median(weights)
         self._last_median = median

@@ -124,8 +124,8 @@ class sanity_check:
                 }
             )
         events = file["Events"].arrays(["event", "genWeight"])
-        genWeight = np.abs(events.genWeight)
-        minimum = float(np.min(genWeight))
+        genWeight = events.genWeight
+        minimum = float(np.min(np.abs(genWeight)))
         _sumw = float(
             np.sum(events.genWeight.to_numpy().astype(np.float64))
         )  # avoid numerical error
