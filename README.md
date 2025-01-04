@@ -17,7 +17,7 @@ Information about the analysis steps can be found in the [README](python/analysi
 This repository assumes that you are running in a machine that has access to [cvmfs](https://cernvm.cern.ch/fs/). Then you can clone this repository as:
 
 ```
-git clone ssh://git@gitlab.cern.ch:7999/cms-cmu/coffea4bees.git
+git clone ssh://git@gitlab.cern.ch:7999/cms-cmu/coffea4bees.git --recursive
 ```
 
 #### To run at the CMSLPC
@@ -83,10 +83,10 @@ Once you are happy with your changes, you can make a merge request in the gitlab
 
 This package runs a workflow in [REANA](https://reana.cern.ch/) for every commit to the master. The output of the reana workflow can be found here:
 
- * Website with plots: [https://plotsalgomez.webtest.cern.ch/HH4b/reana/](https://plotsalgomez.webtest.cern.ch/HH4b/reana/)
- * Coffea files: [https://cernbox.cern.ch/s/M1hF3y9fOdaanJh](https://cernbox.cern.ch/s/M1hF3y9fOdaanJh)
+Website with plots and output files are in [https://plotsalgomez.webtest.cern.ch/HH4b/reana/](https://plotsalgomez.webtest.cern.ch/HH4b/reana/)
 
-In both cases one can find a directory with the date and the time the job run. 
+The folders there should contain the date the reana job was launched and the git hash of the commit. 
+Differnt than before, the folders are copied to this folder only if the reana job sucessfully finished. 
 
 ## Information for continuos integration (CI)
 

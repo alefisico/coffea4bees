@@ -176,36 +176,18 @@ def filling_syst_histograms(selev, weights, analysis_selections,
                             **dict((s, ...) for s in histCuts),
                             )
 
-    fill_SvB = Fill( process=processName, year=year, variation=shift_name, weight="weight" )
+    fill_SvB = Fill( process=processName, year=year)
     fill_SvB += SvBHists(("SvB",    "SvB Classifier"),    "SvB",    skip=["ps", "ptt"])
     fill_SvB += SvBHists(("SvB_MA", "SvB MA Classifier"), "SvB_MA", skip=["ps", "ptt"])
 
-    fill_SvB(selev, hist_SvB)
+    fill_SvB(selev, hist_SvB, variation=shift_name, weight="weight")
 
     if "nominal" in shift_name:
         logging.info(f"Weight variations {weights.variations}")
 
-        dict_hist_SvB = {}
         for ivar in list(weights.variations):
-
-            dict_hist_SvB[ivar] = Collection( process=[processName],
-                                                year=[year],
-                                                variation=[ivar],
-                                                tag=[4],  # 3 / 4/ Other
-                                                region=[2],  # SR / SB / Other
-                                                **dict((s, ...) for s in histCuts) )
-
             selev[f"weight_{ivar}"] = weights.weight(modifier=ivar)[ analysis_selections ]
-            fill_SvB_ivar = Fill( process=processName, year=year, variation=ivar, weight=f"weight_{ivar}", )
-
             logging.debug(f"{ivar} {selev['weight']}")
-
-            fill_SvB_ivar += SvBHists( ("SvB",    "SvB Classifier"),    "SvB",    skip=["ps", "ptt"] )
-            fill_SvB_ivar += SvBHists( ("SvB_MA", "SvB MA Classifier"), "SvB_MA", skip=["ps", "ptt"] )
-
-            fill_SvB_ivar(selev, dict_hist_SvB[ivar])
-
-            for ih in hist_SvB.output["hists"].keys():
-                hist_SvB.output["hists"][ih] = ( hist_SvB.output["hists"][ih] + dict_hist_SvB[ivar].output["hists"][ih] )
+            fill_SvB(selev, hist_SvB, variation=ivar, weight=f"weight_{ivar}")
 
     return hist_SvB.to_dict(nonempty=True)
