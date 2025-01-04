@@ -49,6 +49,7 @@ stages:
     expire_in: 1 day
     paths:
       - 'template'
+  retry: 2
 
 .base_combine:
   image: gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0
