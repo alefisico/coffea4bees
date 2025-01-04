@@ -175,7 +175,7 @@ if __name__ == '__main__':
     config_runner.setdefault('friend_merge_step', 100_000)
     config_runner.setdefault('write_coffea_output', True)
     config_runner.setdefault('override_top_reconstruction', None)
-    config_runner.setdefault('uproot_xrootd_retry_delays', [5, 20, 60, 300, 300, 300])
+    config_runner.setdefault('uproot_xrootd_retry_delays', [5, 15, 45])
 
     if args.systematics:
         logging.info("\nRunning with systematics")
