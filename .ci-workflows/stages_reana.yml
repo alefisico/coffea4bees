@@ -11,7 +11,7 @@ reana-job:
         NAME: "coffea4bees"
     - if: $CI_PIPELINE_SOURCE == "schedule"
       variables:
-        NAME: "coffea4bees_scheduled_${CI_COMMIT_TIMESTAMP:0:8}"
+        NAME: "coffea4bees_scheduled_${CI_COMMIT_SHORT_SHA}"
     - if: $CI_PIPELINE_SOURCE == "push"
       when: never
   allow_failure: true
