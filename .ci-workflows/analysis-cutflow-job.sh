@@ -1,9 +1,9 @@
-echo "############### Checking ls"
-ls
-echo "############### Moving to python folder"
-cd python/
-INPUT_DIR="output/analysis_test_job"
-OUTPUT_DIR="output/analysis_cutflow_job"
+#!/bin/bash
+source .ci-workflows/set_initial_variables.sh --output ${1:-"output/"}
+
+INPUT_DIR="${DEFAULT_DIR}analysis_test_job"
+OUTPUT_DIR="${DEFAULT_DIR}analysis_cutflow_job"
+
 echo "############### Checking and creating output directory"
 if [ ! -d $OUTPUT_DIR ]; then
     mkdir -p $OUTPUT_DIR
@@ -17,5 +17,8 @@ echo "############### Running cutflow test"
 python analysis/tests/cutflow_test.py   --inputFile $INPUT_DIR/test.coffea --knownCounts analysis/tests/testCounts.yml
 
 ls $OUTPUT_DIR/test_dump_cutflow.yml
-cd ../
 
+if [ "$return_to_base" = true ]; then
+    echo "############### Returning to base directory"
+    cd ../
+fi
