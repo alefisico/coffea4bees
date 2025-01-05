@@ -7,7 +7,15 @@ from functools import reduce
 from itertools import chain
 from typing import TYPE_CHECKING
 
-from classifier.task import ArgParser, Dataset, EntryPoint, TaskOptions, converter, main
+from classifier.task import (
+    ArgParser,
+    Dataset,
+    EntryPoint,
+    Model,
+    TaskOptions,
+    converter,
+    main,
+)
 from classifier.task.model import ModelRunner
 
 from ..setting import ResultKey
@@ -66,7 +74,7 @@ class Main(SelectDevice, main.Main):
             f"Initialized {len(datasets)} datasets in {datetime.now() - timer}"
         )
         # initialize models
-        models: list[Dataset] = parser.tasks[TaskOptions.model.name]
+        models: list[Model] = parser.tasks[TaskOptions.model.name]
         timer = datetime.now()
         evaluators = [*chain(*(m.evaluate() for m in models))]
         logging.info(
