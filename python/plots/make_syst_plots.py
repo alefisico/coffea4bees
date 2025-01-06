@@ -86,7 +86,6 @@ if __name__ == '__main__':
     CMS.cmsDraw( tmp_signal, 'hist', fstyle=0,  marker=1, alpha=1, lcolor=ROOT.kRed, fcolor=ROOT.kRed )
     CMS.GetcmsCanvasHist(nominal_can.cd(1)).GetYaxis().SetTitleOffset(1.5)
     CMS.GetcmsCanvasHist(nominal_can.cd(1)).GetYaxis().SetTitleSize(0.05)
-    CMS.fixOverlay()
 
     nominal_can.cd(2)
 
@@ -168,7 +167,6 @@ if __name__ == '__main__':
             CMS.cmsDraw( down_hist, 'hist', fstyle=0,  marker=1, alpha=1, lcolor=ROOT.kRed, fcolor=ROOT.kRed )
             CMS.GetcmsCanvasHist(syst_can.cd(1)).GetYaxis().SetTitleOffset(1.5)
             CMS.GetcmsCanvasHist(syst_can.cd(1)).GetYaxis().SetTitleSize(0.05)
-            CMS.fixOverlay()
 
             syst_can.cd(2)
 
