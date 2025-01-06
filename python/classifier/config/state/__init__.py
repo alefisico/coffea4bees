@@ -1,3 +1,4 @@
+import getpass
 import os
 from datetime import datetime
 
@@ -6,9 +7,20 @@ from classifier.task.state import _SET
 
 
 class System(GlobalState):
+    user_name: str = None
     main_task: str = None
-    startup_time: datetime = datetime.now()
-    in_singularity: bool = os.path.isdir("/.singularity.d")
+    startup_time: datetime = datetime.fromtimestamp(0)
+    in_singularity: bool = False
+
+    @classmethod
+    def _init(cls, main_task: str):
+        try:
+            cls.user_name = getpass.getuser()
+        except Exception:
+            cls.user_name = "unknown"
+        cls.main_task = main_task
+        cls.startup_time = datetime.now()
+        cls.in_singularity = os.path.exists("/.singularity")
 
 
 class Flags(GlobalState):
