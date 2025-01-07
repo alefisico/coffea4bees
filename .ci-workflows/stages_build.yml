@@ -31,7 +31,7 @@ build_container_reana:
     REGISTRY_IMAGE_PATH: ${CI_REGISTRY_IMAGE}
     EXTRA_TAGS: "reana_latest reana_$CI_COMMIT_SHORT_SHA"
   rules:
-    changes:
+    - changes:
       - .dockerfiles/Dockerfile_analysis_reana
 
 
@@ -46,5 +46,5 @@ build_container_classifier:
     REGISTRY_IMAGE_PATH: ${CI_REGISTRY_IMAGE}
     EXTRA_TAGS: "classifier_latest classifier_$CI_COMMIT_SHORT_SHA"
   rules:
-    changes:
+    - changes:
       - .dockerfiles/Dockerfile_ml_cpu
