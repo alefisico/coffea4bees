@@ -44,5 +44,6 @@ RUN cat <<EOF > entrypoint.sh
 eval "$(/opt/conda/bin/conda shell.bash hook)" 
 conda activate hep
 EOF
+
 ENTRYPOINT ["tini", "-g", "--"]
 CMD ["bash", "--init-file", "/entrypoint.sh"]
