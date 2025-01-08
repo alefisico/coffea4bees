@@ -12,7 +12,7 @@ build_container:
     GIT_SUBMODULE_STRATEGY: recursive
     PUSH_IMAGE: "true"
     REGISTRY_IMAGE_PATH: ${CI_REGISTRY_IMAGE}
-    EXTRA_TAGS: "latest  ${BUILD_DATE}_${CI_COMMIT_SHORT_SHA}"
+    EXTRA_TAGS: "latest $BUILD_DATE_$CI_COMMIT_SHORT_SHA"
     rules:
       - if: $CI_PIPELINE_SOURCE == "schedule"
       - changes:
