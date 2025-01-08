@@ -7,8 +7,15 @@ def add_debug_info_to_output(event, processOutput, weights, list_weight_names, a
 
     out_data = {}
     # out_data["SvB"    ] = selev["SvB_MA"].ps[passSR]
-    # out_data["event"  ] = selev["event"][passSR]
-    # out_data["run"    ] = selev["run"][passSR]
+    out_data["event"  ] = event["event"]#[passSR]
+    out_data["run"    ] = event["run"]  #[passSR]
+    out_data["fourTag"    ] = event["fourTag"]  #[passSR]
+
+    out_data["passPreSel"    ] = event["passJetMult"]
+    out_data["lumimask"    ] = event["lumimask"]
+    out_data["passNoiseFilter"    ] = event["passNoiseFilter"]
+    out_data["passHLT"    ] = event["passHLT"]
+    out_data["passJetMult"    ] = event["passJetMult"]
 
     #debug_mask = ((event["event"] == 66688  ) |
     #              (event["event"] == 249987 ) |
@@ -24,14 +31,14 @@ def add_debug_info_to_output(event, processOutput, weights, list_weight_names, a
 
     #print(f"\n {event.Jet.pt[event.passJetMult].to_list()[0:5]} \n")
 
-    out_data["passJetMult_event"  ]    = event["event"][event.passJetMult]
-    out_data["passJetMult_run"    ]    = event["run"][event.passJetMult]
-    out_data["passJetMult_passDiJetMass"    ]    = event["passDiJetMass"][event.passJetMult]
-    out_data["passJetMult_weight" ]    = event["weight"]
-
-    for _w in list_weight_names:
-        print(f"adding {_w}\n")
-        out_data[f"passJetMult_weight_{_w}"] = weights.partial_weight(include=[_w])[analysis_selections]
+    #out_data["passJetMult_event"  ]    = event["event"][event.passJetMult]
+    #out_data["passJetMult_run"    ]    = event["run"][event.passJetMult]
+    #out_data["passJetMult_passDiJetMass"    ]    = event["passDiJetMass"][event.passJetMult]
+    #out_data["passJetMult_weight" ]    = event["weight"]
+    #
+    #for _w in list_weight_names:
+    #    print(f"adding {_w}\n")
+    #    out_data[f"passJetMult_weight_{_w}"] = weights.partial_weight(include=[_w])[analysis_selections]
 
 
     for out_k, out_v in out_data.items():

@@ -75,7 +75,7 @@ def apply_object_selection_4b(event, corrections_metadata, *,
         event['Jet', 'lepton_cleaned'] = np.full(len(event), True)
 
     # For trigger emulation
-    event['Jet', 'muon_cleaned'] = drClean( event.Jet, event.selMuon )[1]  
+    event['Jet', 'muon_cleaned'] = drClean( event.Jet, event.selMuon )[1]
     event['Jet', 'ht_selected'] = (event.Jet.pt >= 30) & (np.abs(event.Jet.eta) < 2.4) & event.Jet.muon_cleaned
 
     if do_jet_veto_maps:
@@ -107,7 +107,7 @@ def apply_object_selection_4b(event, corrections_metadata, *,
                 jet_type="AK4PFPuppi.txt"   ### AGE: .txt is temporary
                 )
         )
-        logging.warning(f"For Run3 we are computing JECs after splitting the jets into btagged and non-btagged jets")
+        #logging.warning(f"For Run3 we are computing JECs after splitting the jets into btagged and non-btagged jets")
 
         event['Jet', 'puId']       = 10
         event['Jet', 'pileup'] = ((event.Jet.puId < 7) & (event.Jet.pt < 50)) | ((np.abs(event.Jet.eta) > 2.4) & (event.Jet.pt < 40))

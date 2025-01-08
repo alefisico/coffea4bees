@@ -30,7 +30,7 @@ def find_genpart(genpart, pdgid, ancestors):
             ancs.append(np.abs(genpart[mother_idx].pdgId) == mother_id)
             ancs_idx.append(mother_idx)
 
-        decaymatch =  reduce(np.logical_and, ancs)
+        decaymatch =  reduce(np.logical_or, ancs)
         return genpart[pid][decaymatch]
 
     return genpart[pid]

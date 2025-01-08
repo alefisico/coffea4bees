@@ -88,9 +88,9 @@ def processor_config(processName, dataset, event):
         config["do_lepton_jet_cleaning"]  = False
         config["do_jet_calibration"]  = False
         config["do_jet_veto_maps"]       = False
-    
+
     if config["isRun3"]:
-        config['do_jet_veto_maps'] = True
-        config['do_jet_calibration'] = False
+        config['do_jet_veto_maps'] = False
+        config['do_jet_calibration'] = False # Need a better name here (Jet calib is applied in Run3 by default !)
 
     return config
