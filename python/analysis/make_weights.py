@@ -41,7 +41,7 @@ if __name__ == "__main__":
     parser.add_argument('--debug',                 action="store_true")
     parser.add_argument('-l', '--lumi',                 dest="lumi",          default="1",    help="Luminosity for MC normalization: units [pb]")
     parser.add_argument('-m', '--metadata', dest="metadata",
-                        default="analysis/metadata/plotsJCM.yml",
+                        default="plots/metadata/plotsJCM.yml",
                         help='Metadata file.')
 
     args = parser.parse_args()

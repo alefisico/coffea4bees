@@ -513,8 +513,8 @@ def decluster_splitting_types(input_jets, splitting_types, input_pdfs, rand_seed
         B_is_b_mask_flat = declustered_jet_B_jet_flavor_flat == "b"
         B_is_b_mask = ak.unflatten(B_is_b_mask_flat, ak.num(declustered_jets_B.jet_flavor))
 
-        #fail_pt_b_mask  = (A_is_b_mask & (declustered_jets_A.pt < 40) )          | (B_is_b_mask & (declustered_jets_B.pt < 40))
-        fail_pt_b_mask  = (A_is_b_mask & (declustered_jets_A.pt < 30) )          | (B_is_b_mask & (declustered_jets_B.pt < 30))
+        fail_pt_b_mask  = (A_is_b_mask & (declustered_jets_A.pt < 40) )          | (B_is_b_mask & (declustered_jets_B.pt < 40))
+        #fail_pt_b_mask  = (A_is_b_mask & (declustered_jets_A.pt < 30) )          | (B_is_b_mask & (declustered_jets_B.pt < 30))
         fail_eta_b_mask = (A_is_b_mask & (np.abs(declustered_jets_A.eta) > 2.5)) | (B_is_b_mask & (np.abs(declustered_jets_B.eta) > 2.5))
 
         fail_dr_mask  = declustered_jets_A.delta_r(declustered_jets_B) < 0.4

@@ -218,7 +218,7 @@ class EntryPoint:
             raise ValueError(
                 f'The first argument must be one of {self._mains}, got "{main}"'
             )
-        System.main_task = main
+        System._init(main_task=main)
 
         # fetch args for other tasks
         while len(args) > 0:

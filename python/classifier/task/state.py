@@ -76,13 +76,13 @@ class _ClassPropertyMeta(type):
         return super().__getattribute__(__name)
 
     def __setattr__(cls, __name: str, __value: Any):
-        __new = None
+        __new = NotImplemented
         if not _is_private(__name):
             cls.__cached_states__.pop(__name, None)
             parser = vars(cls).get(f"{_SET}{__name}")
             if isinstance(parser, classmethod):
                 __new = parser.__func__(cls, __value)
-        if __new is not None:
+        if __new is not NotImplemented:
             __value = __new
         super().__setattr__(__name, __value)
 

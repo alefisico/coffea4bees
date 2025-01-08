@@ -348,9 +348,13 @@ if __name__ == '__main__':
     logging.info(args)
 
     if args.variable_binning:
-        logging.info(f"Creating variable binning and using {args.rebin} as threshold for data and signal.")
-        args.rebin = list(make_variable_binning(args.file_to_convert, args.variable, args.rebin, None ))
-    
+        try:
+            args.rebin= list(np.loadtxt(f"{os.path.dirname(args.bkg_systematics_file)}/variable_binning_array.txt"))
+            logging.info(f"Using variable binning {args.rebin}")
+        except:
+            logging.info(f"Creating variable binning and using {args.rebin} as threshold for data and signal.")
+            args.rebin = list(make_variable_binning(args.file_to_convert, args.variable, args.rebin, None ))
+
     logging.info("Creating root files for combine")
     create_combine_root_file(
         args.file_to_convert,

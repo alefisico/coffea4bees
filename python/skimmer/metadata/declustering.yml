@@ -17,6 +17,7 @@ runner:
     - skimmer
     - data
     - jet_clustering        
+    - classifier
   allowlist_sites:
     - T2_US_Nebraska
     - T2_US_Purdue
