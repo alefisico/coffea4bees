@@ -234,10 +234,11 @@ class HCRTraining(MultiStageTraining):
             )
             self._HCR.ghost_batch = self._ghost_batch
             layers.setLayerRequiresGrad(requires_grad=True)
-        output = cfg.IO.output / f"{self.name}__{self.uuid}.pkl"
-        if not output.is_null:
-            logging.info(f"Saving model to {output}")
-            with fsspec.open(output, "wb") as f:
+        output_stage = OutputStage(name="Final", path=f"{self.name}__{self.uuid}.pkl")
+        output_path = output_stage.absolute_path
+        if not output_path.is_null:
+            logging.info(f"Saving model to {output_path}")
+            with fsspec.open(output_path, "wb") as f:
                 torch.save(
                     {
                         "model": self._HCR.nn.state_dict(),
@@ -260,7 +261,7 @@ class HCRTraining(MultiStageTraining):
                     },
                     f,
                 )
-            yield OutputStage(name="Final", path=output)
+            yield output_stage
 
 
 class HCRModelEval(Model):
