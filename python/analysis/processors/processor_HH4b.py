@@ -495,6 +495,13 @@ class analysis(processor.ProcessorABC):
         selections.add("passPreSel", event.passPreSel)
         allcuts.append("passPreSel")
         analysis_selections = selections.all(*allcuts)
+
+        #
+        # Example of how to write out event numbers
+        #
+        #from analysis.helpers.write_debug_info import add_debug_info_to_output
+        #add_debug_info_to_output(event, processOutput, weights, list_weight_names, analysis_selections)
+
         selev = event[analysis_selections]
 
         if self.subtract_ttbar_with_weights:
@@ -625,13 +632,6 @@ class analysis(processor.ProcessorABC):
             self._cutFlow.addOutput(processOutput, event.metadata["dataset"])
 
 
-        #
-        # Example of how to write out event numbers
-        #
-        #from analysis.helpers.write_debug_info import add_debug_info_to_output
-        # #if self.config['isDataForMixed']:
-        #    add_debug_info_to_output(selev, processOutput, weights, list_weight_names, analysis_selections)
-
 
         #
         # Hists
@@ -681,7 +681,7 @@ class analysis(processor.ProcessorABC):
             selev["nSelJets"] = ak.num(selev.selJet)
 
             from ..helpers.dump_friendtrees import dump_input_friend
-            
+
             weight = "weight_noJCM_noFvT"
             if weight not in selev.fields:
                 weight = "weight"
