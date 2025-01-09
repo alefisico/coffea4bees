@@ -1,6 +1,3 @@
 [submodule "python/stats_analysis/inference"]
 	path = python/stats_analysis/inference
 	url = ssh://git@gitlab.cern.ch:7999/hh/tools/inference.git
-[submodule "python/.php-plots"]
-	path = python/.php-plots
-	url = ssh://git@gitlab.cern.ch:7999/cms-analysis/general/php-plots.git

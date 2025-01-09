@@ -14,10 +14,8 @@ build_container:
     REGISTRY_IMAGE_PATH: ${CI_REGISTRY_IMAGE}
     EXTRA_TAGS: "latest $CI_COMMIT_SHORT_SHA"
   rules:
-      - if: $CI_COMMIT_BRANCH =~ /^container.*/ 
       - if: $CI_PIPELINE_SOURCE == "schedule"
-      - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-        changes:
+      - changes:
           - .dockerfiles/Dockerfile_analysis
 
 build_container_reana:
@@ -31,10 +29,8 @@ build_container_reana:
     REGISTRY_IMAGE_PATH: ${CI_REGISTRY_IMAGE}
     EXTRA_TAGS: "reana_latest reana_$CI_COMMIT_SHORT_SHA"
   rules:
-      - if: $CI_COMMIT_BRANCH =~ /^container.*/ 
-      - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-        changes:
-          - .dockerfiles/Dockerfile_analysis_reana
+    - changes:
+      - .dockerfiles/Dockerfile_analysis_reana
 
 
 # build_container_classifier:
@@ -48,7 +44,5 @@ build_container_reana:
 #     REGISTRY_IMAGE_PATH: ${CI_REGISTRY_IMAGE}
 #     EXTRA_TAGS: "classifier_latest classifier_$CI_COMMIT_SHORT_SHA"
 #   rules:
-#       - if: $CI_COMMIT_BRANCH =~ /^container.*/ 
-#       - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-#         changes:
-#           - .dockerfiles/Dockerfile_ml_cpu
+#     - changes:
+#       - .dockerfiles/Dockerfile_ml_cpu
