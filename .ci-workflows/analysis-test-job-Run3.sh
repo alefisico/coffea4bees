@@ -6,7 +6,7 @@ echo "############### Overwritting datasets"
 if [[ $(hostname) = *fnal* ]]; then
     DATASETS=metadata/datasets_HH4b_Run3_fourTag_v3.yml
 else
-    DATASETS=metadata/datasets_HH4b_Run3_fourTag_v3_cernbox.yml
+    DATASETS=metadata/datasets_HH4b_Run3_cernbox.yml
 fi
 echo "The datasets file is: $DATASETS"
 
