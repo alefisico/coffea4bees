@@ -61,7 +61,7 @@ class DeClusterer(PicoAOD):
         print(f"clustering_pdfs_file is {clustering_pdfs_file}")
         if not clustering_pdfs_file == "None":
             clustering_pdfs = yaml.safe_load(open(clustering_pdfs_file, "r"))
-            logging.info(f"Loaded {len(clustering_pdfs.keys())} PDFs from {clustering_pdfs_file}")
+            logging.info(f"Loaded {len(clustering_pdfs.keys())} PDFs from {clustering_pdfs_file}\n")
         else:
             clustering_pdfs = None
 
@@ -112,7 +112,14 @@ class DeClusterer(PicoAOD):
 
         event = update_events(event, {"Jet": jets})
 
-        event = apply_object_selection_4b( event, self.corrections_metadata[year], dataset=dataset, doLeptonRemoval=config["do_lepton_jet_cleaning"]  )
+        event = apply_object_selection_4b( event, self.corrections_metadata[year],
+                                           dataset=dataset,
+                                           doLeptonRemoval=config["do_lepton_jet_cleaning"],
+                                           override_selected_with_flavor_bit=config["override_selected_with_flavor_bit"],
+                                           run_lowpt_selection=False,
+                                           do_jet_veto_maps = config["do_jet_veto_maps"],
+                                           isRun3=config["isRun3"],
+                                           isMC=config["isMC"],  )
 
 
         #
