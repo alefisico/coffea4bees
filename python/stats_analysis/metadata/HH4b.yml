@@ -83,12 +83,12 @@ uncertainty:
       *17: [0.95, 1.022]
       *18: [0.95, 1.022]
 
-  # mtop_gHH:
-  #   type: 'lnN'
-  #   years:
-  #     *16: [0.82, 1.04]
-  #     *17: [0.82, 1.04]
-  #     *18: [0.82, 1.04]
+  mtop_gHH:
+    type: 'lnN'
+    years:
+      *16: [0.82, 1.04]
+      *17: [0.82, 1.04]
+      *18: [0.82, 1.04]
 
 # mtop https://twiki.cern.ch/twiki/bin/view/LHCPhysics/LHCHWGHH?redirectedfrom=LHCPhysics.LHCHXSWGHH#Current_recommendations_for_HH_c
 # https://gitlab.cern.ch/hh/naming-conventions https://twiki.cern.ch/twiki/bin/view/LHCPhysics/CERNYellowReportPageBR?rev=22#Higgs_2_fermions

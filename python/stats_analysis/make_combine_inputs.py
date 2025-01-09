@@ -12,6 +12,7 @@ from make_variable_binning import make_variable_binning
 
 import CombineHarvester.CombineTools.ch as ch
 ROOT.gROOT.SetBatch(True)
+logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 
 def make_trigger_syst( json_input, root_output, name, rebin ):
 
@@ -36,8 +37,6 @@ def create_combine_root_file( file_to_convert,
                              bkg_systematics_file,
                              metadata_file='metadata/HH4b.yml',
                              mixeddata_file=None,
-                            #  use_preUL=False,
-                            #  add_old_bkg=False,
                              variable_binning=False,
                              stat_only=False ):
 
@@ -53,8 +52,10 @@ def create_combine_root_file( file_to_convert,
         logging.info(f"Reading {bkg_systematics_file}")
         with open(bkg_systematics_file, 'rb') as f: bkg_syst_file = pickle.load(f) 
     if mixeddata_file:
-        logging.info(f"Reading data from mixeddata file {mixeddata_file}")
+        logging.info(f"Reading data from mixeddata file {mixeddata_file} and loading tt and multijet from mixeddata")
         with open(mixeddata_file, 'r') as f: mixeddata = json.load(f)
+        with open(f"{os.path.dirname(mixeddata_file)}/histMixedBkg_TT.json", 'r') as f: mixedbkg_tt = json.load(f)
+        with open(f"{os.path.dirname(mixeddata_file)}/histMixedBkg_data_3b_for_mixed.json", 'r') as f: mixedBkg_data3b = json.load(f)
 
     root_hists = {}
     mcSysts, closureSysts = [], []
@@ -69,14 +70,20 @@ def create_combine_root_file( file_to_convert,
         ### signals
         for iprocess in coffea_hists[var].keys():
             if iprocess not in metadata['processes']['signal']:
-                root_hists[iyear][iprocess] = json_to_TH1( coffea_hists[var][iprocess][iyear]['fourTag']['SR'], 
+
+                if iprocess.startswith('TTTo') and mixeddata_file:
+                    coffea_hist = mixedbkg_tt[var][f"{iprocess}_for_mixed"][iyear]['fourTag']['SR']
+                else:
+                    coffea_hist = coffea_hists[var][iprocess][iyear]['fourTag']['SR']
+                root_hists[iyear][iprocess] = json_to_TH1( coffea_hist, 
                                                             f'{iprocess.split("4b")[0]}_{iyear}', rebin )
+
             else:
                 root_hists[iyear][iprocess] = {}
                 root_hists[iyear][iprocess]['nominal'] = json_to_TH1(
                     coffea_hists[var][iprocess][iyear]['fourTag']['SR'], iprocess+'_'+iyear, rebin )
 
-        if systematics_file: # and not use_preUL:
+        if systematics_file:
             for iprocess in metadata['processes']['signal']:
                 root_hists[iyear][iprocess] = {}
                 if stat_only:
@@ -107,18 +114,7 @@ def create_combine_root_file( file_to_convert,
                             root_hists[iyear][iprocess][namevar] = json_to_TH1(
                                                             coffea_hists_syst[var][iprocess][iyear][ivar]['fourTag']['SR'], 
                                                             f'{iprocess}_{ivar}_{iyear}', rebin )
-    
-    # if systematics_file and use_preUL:
-    #     iprocess = 'HH4b'
-    #     for iyear in coffea_hists_syst[var]['HH4b'].keys():
-    #         tmpname=iyear.replace('20', 'UL') + ('_preVFP' if '16' in iyear else '')
-    #         root_hists[tmpname][iprocess] = {}
-    #         for ivar in coffea_hists_syst[var][iprocess][iyear].keys():
-    #             root_hists[tmpname][iprocess][ivar] = json_to_TH1(
-    #                 coffea_hists_syst[var][iprocess][iyear][ivar]['fourTag']['SR'], iprocess+"_"+ivar+"_"+iyear, rebin )
 
-
-    # if "UL16_preVFP" not in metadata['bin']:
     logging.info("\n Merging UL16_preVFP and UL16_postVFP")
     for iy in list(root_hists.keys()):
         if 'UL16_preVFP' in iy:
@@ -138,16 +134,14 @@ def create_combine_root_file( file_to_convert,
             if ''.join(iy[-2:]) == ''.join(jy[-2:]):
                 root_hists[jy] = root_hists.pop(iy)
 
+    if mixeddata_file:
+        logging.info("\n Using multijet from mixeddata")
+        for iy in root_hists:
+            root_hists[iy]["multijet"]["nominal"] = json_to_TH1(
+                mixedBkg_data3b[var]['data_3b_for_mixed'][iy.split("_")[1]]['threeTag']['SR'], 
+                f'multijet_{iy}_{var}', rebin )
+
     if not stat_only:
-        # if add_old_bkg:
-        #     old_bkg_file = ROOT.TFile(f"HIG-22-011/hist_{var.replace('.', '_')}.root", 'read' )
-        #     for channel in metadata['bin']:
-        #         for iy in ['UL16', 'UL17', 'UL18']:
-        #             for i in ['0', '1', '2']:
-        #                 for ivar in ['Up', 'Down']:
-        #                     root_hists[f"{channel}_{iy}"]['multijet'][f'basis{i}_bias_hh{ivar}'] = old_bkg_file.Get(f"hh{iy[-1]}/mj_basis{i}_bias_hh{ivar}")
-        #                     root_hists[f"{channel}_{iy}"]['multijet'][f'basis{i}_vari_hh{ivar}'] = old_bkg_file.Get(f"hh{iy[-1]}/mj_basis{i}_vari_hh{ivar}")
-        # else:
         for channel in metadata['bin']:
             for ibin, ivalues in bkg_syst_file.items():
                 bkg_name_syst = f"CMS_bbbb_resolved_bkg_datadriven_{ibin.replace('_hh', '').replace('vari', 'variance')}"
@@ -260,6 +254,8 @@ def create_combine_root_file( file_to_convert,
             
             btagSysts = []
             othersSysts = []
+            psfsrSysts = []
+            mtopSysts = []
             for nuisance in mcSysts:
                 if ('2016' in nuisance):
                     if ('2016' in ibin):
@@ -274,11 +270,15 @@ def create_combine_root_file( file_to_convert,
                     cb.cp().signals().AddSyst(cb, nuisance, 'shape', ch.SystMap()(1.0))
                 if 'btag' in nuisance:
                     btagSysts.append(nuisance)
+                elif 'ps_fsr' in nuisance:
+                    psfsrSysts.append(nuisance)
                 else: othersSysts.append(nuisance)
+            cb.SetGroup("ps_fsr", psfsrSysts)
             cb.SetGroup("btag", btagSysts)
 
             for isyst in metadata['uncertainty']:
-                othersSysts.append(isyst)
+                if 'mtop' in isyst: mtopSysts.append(isyst)
+                else: othersSysts.append(isyst)
                 if ('2016' in isyst):
                     if ('2016' in ibin):
                         cb.cp().signals().AddSyst(cb, isyst, metadata['uncertainty'][isyst]['type'], ch.SystMap('bin')(['HHbb_2016'],metadata['uncertainty'][isyst]['years']['HHbb_2016']))
@@ -296,6 +296,7 @@ def create_combine_root_file( file_to_convert,
                     cb.cp().signals().AddSyst(cb, isyst, metadata['uncertainty'][isyst]['type'], ch.SystMap('bin')
                                             ([ibin], metadata['uncertainty'][isyst]['years'][ibin])
                                             )
+            cb.SetGroup("mtop", mtopSysts)
             cb.SetGroup("others", othersSysts)
 
             cb.cp().backgrounds().ExtractShapes(
@@ -335,10 +336,6 @@ if __name__ == '__main__':
                         default='', help="File contain mixeddata")                    
     parser.add_argument('-m', '--metadata', dest='metadata',
                         default='stats_analysis/metadata/HH4b.yml', help="File contain systematic variations")
-    parser.add_argument('--use_preUL', dest='use_preUL', action="store_true",
-                        default=False, help="(Temporary. Use preUL samples)")
-    # parser.add_argument('--add_old_bkg', dest='add_old_bkg', action="store_true",
-                        # default=False, help="(Temporary. Add Bkgs from HIG-22-011)")
     parser.add_argument('--stat_only', dest='stat_only', action="store_true",
                         default=False, help="Create stat only inputs")
     args = parser.parse_args()
@@ -365,7 +362,5 @@ if __name__ == '__main__':
         args.bkg_systematics_file,
         metadata_file=args.metadata,
         mixeddata_file=args.mixeddata_file,
-        # use_preUL=args.use_preUL,
-        # add_old_bkg=args.add_old_bkg,
         stat_only=args.stat_only,
     )
