@@ -120,6 +120,7 @@ def apply_jerc_corrections( event,
     logging.debug(jec_stack.__dict__)
     name_map = jec_stack.blank_name_map
     name_map["JetPt"]    = "pt"
+    name_map["JetPhi"]    = "phi"
     name_map["JetMass"]  = "mass"
     name_map["JetEta"]   = "eta"
     name_map["JetA"]     = "area"
@@ -137,6 +138,7 @@ def apply_jerc_corrections( event,
     else:
         logging.warning('WARNING: No uncertainties were loaded in the jet factory')
 
+    print(nominal_jet.pt[:10])
     jet_variations = jet_factory.build(nominal_jet, event.event)
 
     return jet_variations
