@@ -139,10 +139,12 @@ class KFoldEval(ABC, Model):
 
 
 def _find_models(args: list[list[str]]) -> list[dict]:
+    from base_class.system.eos import EOS
+
     models = []
-    for args in args:
-        name = args[0]
-        paths = args[1:]
+    for arg in args:
+        name = arg[0]
+        paths = arg[1:]
         for path in paths:
             with fsspec.open(path, "rt") as f:
                 results: list[dict[str, dict]] = json.load(f).get(ResultKey.models, [])
@@ -152,6 +154,8 @@ def _find_models(args: list[list[str]]) -> list[dict]:
                 for stage in result.get("history", [])[::-1]:
                     if (stage.get("stage") == "Output") and (stage.get("name") == name):
                         m_path = stage["path"]
+                        if stage.get("relative", False):
+                            m_path = EOS(path) / m_path
                         break
                 if m_path is None:
                     continue

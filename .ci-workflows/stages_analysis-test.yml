@@ -8,6 +8,17 @@ analysis-test-job:
     paths:
       - python/output/analysis_test_job/test.coffea
 
+analysis-test-job-Run3:   
+  stage: analysis-test   
+  extends:
+    - .base_analysis
+  script:
+    - source .ci-workflows/analysis-test-job-Run3.sh
+  artifacts: 
+    paths:
+      - python/output/analysis_test_job_Run3/test.coffea
+
+
 analysis-test-truthStudy:   
   stage: analysis-test   
   extends:
