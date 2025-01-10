@@ -46,7 +46,7 @@ build_container_classifier:
   extends:
     - .build_kaniko
   before_script:
-    - export EXTRA_TAGS="container_latest container_$(date +%Y%m%d)_$CI_COMMIT_SHORT_SHA"
+    - export EXTRA_TAGS="classifier_latest classifier_$(date +%Y%m%d)_$CI_COMMIT_SHORT_SHA"
     - echo $EXTRA_TAGS
   variables:
     CONTEXT_DIR: ""
