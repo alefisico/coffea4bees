@@ -19,6 +19,7 @@ workflow:
 
 variables:
   CONTAINER_HOST: cms-cmu
+  RECREATE_CONTAINERS: "false"
   GIT_SUBMODULE_STRATEGY: recursive
   GIT_SUBMODULE_DEPTH: 1
   GIT_SUBMODULE_FORCE_HTTPS: "true"

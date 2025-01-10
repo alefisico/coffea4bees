@@ -16,6 +16,7 @@ build_container:
     PUSH_IMAGE: "true"
     REGISTRY_IMAGE_PATH: ${CI_REGISTRY_IMAGE}
   rules:
+    - if: $RECREATE_CONTAINERS == "true"
     - if: $CI_PIPELINE_SOURCE == "schedule"
     - if: $CI_COMMIT_BRANCH =~ /^container.*/
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
@@ -35,6 +36,7 @@ build_container_reana:
     PUSH_IMAGE: "true"
     REGISTRY_IMAGE_PATH: ${CI_REGISTRY_IMAGE}
   rules:
+    - if: $RECREATE_CONTAINERS == "true"
     - if: $CI_COMMIT_BRANCH =~ /^container.*/ || $CI_PIPELINE_SOURCE == "merge_request_event"
       changes:
       - .dockerfiles/Dockerfile_analysis
@@ -53,6 +55,7 @@ build_container_classifier:
     PUSH_IMAGE: "true"
     REGISTRY_IMAGE_PATH: ${CI_REGISTRY_IMAGE}
   rules:
+    - if: $RECREATE_CONTAINERS == "true"
     - if: $CI_COMMIT_BRANCH =~ /^container.*/ || $CI_PIPELINE_SOURCE == "merge_request_event"
       changes:
       - .dockerfiles/Dockerfile_ml_cpu
