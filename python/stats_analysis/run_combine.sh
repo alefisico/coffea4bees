@@ -283,18 +283,17 @@ do
             ${scan_cmd} -n _${iclass}_likelihoodscan_freeze_multijet --freezeNuisanceGroups multijet
             ${scan_cmd} -n _${iclass}_likelihoodscan_freeze_btag --freezeNuisanceGroups multijet,btag
             ${scan_cmd} -n _${iclass}_likelihoodscan_freeze_ps_fsr --freezeNuisanceGroups multijet,btag,ps_fsr
-            ${scan_cmd} -n _${iclass}_likelihoodscan_freeze_mtop --freezeNuisanceGroups multijet,btag,ps_fsr,mtop
+            # ${scan_cmd} -n _${iclass}_likelihoodscan_freeze_mtop --freezeNuisanceGroups multijet,btag,ps_fsr,mtop
 
             plot1DScan.py higgsCombine_${iclass}_likelihoodscan_total.MultiDimFit.mH120.root \
                 --main-label "Total uncert." --others \
                 higgsCombine_${iclass}_likelihoodscan_freeze_multijet.MultiDimFit.mH120.root:"Multijet":2 \
                 higgsCombine_${iclass}_likelihoodscan_freeze_btag.MultiDimFit.mH120.root:"b-tagging":4 \
-                higgsCombine_${iclass}_likelihoodscan_freeze_mtop.MultiDimFit.mH120.root:"mTop":6 \
-                higgsCombine_${iclass}_likelihoodscan_freeze_all.MultiDimFit.mH120.root:"Stat. only":5 \
                 higgsCombine_${iclass}_likelihoodscan_freeze_ps_fsr.MultiDimFit.mH120.root:"PS FSR":3 \
-                --breakdown "multijet,btag,ps_fsr,mtop,others,stat" \
+                higgsCombine_${iclass}_likelihoodscan_freeze_all.MultiDimFit.mH120.root:"Stat. only":5 \
+                --breakdown "multijet,btag,ps_fsr,others,stat" \
                 --POI r${signallabel} -o likelihoodscan_${iclass}_breakdown
-
+                # higgsCombine_${iclass}_likelihoodscan_freeze_mtop.MultiDimFit.mH120.root:"mtop":6 \
         else
             echo "File ${datacard}.root does not exist."
         fi
