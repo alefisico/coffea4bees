@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from abc import ABC, abstractmethod
 from typing import Generator, Generic, TypeVar
 
@@ -7,6 +8,7 @@ import numpy as np
 import torch
 from base_class.math.random import SeedLike, _seed
 from torch.utils.data import Dataset
+from typing_extensions import Self
 
 _BatchT = TypeVar("_BatchT")
 
@@ -17,6 +19,17 @@ class SliceableDataset(Dataset, ABC, Generic[_BatchT]):
 
     @abstractmethod
     def __len__(self) -> int: ...
+
+    @classmethod
+    @abstractmethod
+    def concat(cls, *datasets: Self) -> Self: ...
+
+    @abstractmethod
+    def subset(self, indices: torch.Tensor) -> Self: ...
+
+    @property
+    @abstractmethod
+    def datasets(self): ...
 
 
 class NamedTensorDataset(SliceableDataset[dict[str, torch.Tensor]]):
@@ -33,13 +46,23 @@ class NamedTensorDataset(SliceableDataset[dict[str, torch.Tensor]]):
                 batch[k] = batch[k].clone()
         return batch
 
-    def concat(self, *datasets: NamedTensorDataset):
+    @classmethod
+    def concat(cls, *datasets: NamedTensorDataset):
+        if not all(isinstance(d, NamedTensorDataset) for d in datasets):
+            raise ValueError("Cannot concat datasets of different types")
         return NamedTensorDataset(
-            **{k: torch.cat([t._tensors[k] for t in datasets]) for k in self._tensors}
+            **{
+                k: torch.cat([t._tensors[k] for t in datasets])
+                for k in datasets[0]._tensors
+            }
         )
 
     def subset(self, indices: torch.Tensor):
         return NamedTensorDataset(**self[indices])
+
+    @property
+    def datasets(self):
+        return self._tensors
 
 
 class SliceLoaderLite(Generic[_BatchT]):
@@ -74,3 +97,8 @@ class SliceLoaderLite(Generic[_BatchT]):
                 yield data[indices[i : i + nbatch]]
             else:
                 yield data[i : i + nbatch]
+
+    def __len__(self):
+        return (math.floor if self.drop_last else math.ceil)(
+            len(self.dataset) / self.batch_size
+        )
