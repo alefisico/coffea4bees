@@ -38,6 +38,7 @@ def apply_object_selection_4b(event, corrections_metadata, *,
                               do_jet_veto_maps: bool = False,
                               isRun3: bool = False,
                               isMC: bool = False,  ### temporary for Run3
+                              isSyntheticData: bool = False,
                               ):
     """docstring for apply_basic_selection_4b. This fuction is not modifying the content of anything in events. it is just adding it"""
 
@@ -89,25 +90,26 @@ def apply_object_selection_4b(event, corrections_metadata, *,
         event['Jet', 'btagScore']       = event.Jet.btagPNetB
 
         ### AGE: Hopefully this is temporarily
-        event['Jet'] = ak.where(
-            event.Jet.btagScore >= corrections_metadata['btagWP']['L'],
-            apply_jerc_corrections(event,
-                corrections_metadata=corrections_metadata,
-                isMC=isMC,
-                run_systematics=False,
-                dataset=dataset,
-                jet_corr_factor=event.Jet.bRegCorr,
-                jet_type="AK4PFPuppiPNetRegressionPlusNeutrino"
-                ),
-            apply_jerc_corrections(event,
-                corrections_metadata=corrections_metadata,
-                isMC=isMC,
-                run_systematics=False,
-                dataset=dataset,
-                jet_type="AK4PFPuppi.txt"   ### AGE: .txt is temporary
-                )
-        )
-        #logging.warning(f"For Run3 we are computing JECs after splitting the jets into btagged and non-btagged jets")
+        if not isSyntheticData:
+            event['Jet'] = ak.where(
+                event.Jet.btagScore >= corrections_metadata['btagWP']['L'],
+                apply_jerc_corrections(event,
+                    corrections_metadata=corrections_metadata,
+                    isMC=isMC,
+                    run_systematics=False,
+                    dataset=dataset,
+                    jet_corr_factor=event.Jet.bRegCorr,
+                    jet_type="AK4PFPuppiPNetRegressionPlusNeutrino"
+                    ),
+                apply_jerc_corrections(event,
+                    corrections_metadata=corrections_metadata,
+                    isMC=isMC,
+                    run_systematics=False,
+                    dataset=dataset,
+                    jet_type="AK4PFPuppi.txt"   ### AGE: .txt is temporary
+                    )
+            )
+            #logging.warning(f"For Run3 we are computing JECs after splitting the jets into btagged and non-btagged jets")
 
         event['Jet', 'puId']       = 10
         event['Jet', 'pileup'] = ((event.Jet.puId < 7) & (event.Jet.pt < 50)) | ((np.abs(event.Jet.eta) > 2.4) & (event.Jet.pt < 40))

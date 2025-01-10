@@ -381,6 +381,7 @@ class analysis(processor.ProcessorABC):
                                            do_jet_veto_maps=self.config["do_jet_veto_maps"],
                                            isRun3=self.config["isRun3"],
                                            isMC=self.config["isMC"], ### temporary
+                                           isSyntheticData=self.config["isSyntheticData"],
                                            )
 
 
