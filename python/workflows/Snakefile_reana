@@ -403,7 +403,7 @@ rule run_postfit:
         cat {input}
         echo "RUNNING COMBINE"
         source stats_analysis/run_combine.sh ../output/datacards/ --postfit
-        python3 plots/make_postfit_plot.py -i ../output/datacards/postfit_s.root -o ../{output} --do_postfit False
+        python3 plots/make_postfit_plot.py -i ../output/datacards/fitDiagnostics_SvB_MA_prefit_sb.root -o ../{output} -t prefit
         """
 
 rule make_syst_plots:

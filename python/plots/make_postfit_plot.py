@@ -94,7 +94,7 @@ if __name__ == '__main__':
     CMS.cmsDrawStack(stack, leg, {'ttbar': hists[tt].Clone(), 'Multijet': hists[mj].Clone() }, data= hists['data'], palette=['#85D1FBff', '#FFDF7Fff'] )
     CMS.GetcmsCanvasHist(nominal_can.cd(1)).GetYaxis().SetTitleOffset(1.5)
     CMS.GetcmsCanvasHist(nominal_can.cd(1)).GetYaxis().SetTitleSize(0.05)
-    CMS.fixOverlay()
+
     hists[signal].Scale( 100 )
     leg.AddEntry( hists[signal], 'HH4b (x100)', 'lp' )
     CMS.cmsDraw( hists[signal], 'hist', fstyle=0, marker=1, alpha=1, lcolor=ROOT.TColor.GetColor("#e42536" ), fcolor=ROOT.TColor.GetColor("#e42536"))
