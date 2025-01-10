@@ -172,10 +172,10 @@ if __name__ == '__main__':
 
             ratio_up = ROOT.TGraphAsymmErrors()
             ratio_up.Divide( nominal_hist.Clone(), up_hist, 'pois' )
-            CMS.cmsDraw( ratio_up, 'hist', fstyle=0, marker=1, alpha=1, lcolor=ROOT.kBlue, fcolor=ROOT.kBlue )
+            CMS.cmsDraw( ratio_up, 'p', fstyle=0, marker=1, alpha=1, lcolor=ROOT.kBlue, fcolor=ROOT.kBlue )
             ratio_dn = ROOT.TGraphAsymmErrors()
             ratio_dn.Divide( nominal_hist.Clone(), down_hist, 'pois' )
-            CMS.cmsDraw( ratio_dn, 'hist', fstyle=0,  marker=1, alpha=1, lcolor=ROOT.kRed, fcolor=ROOT.kRed )
+            CMS.cmsDraw( ratio_dn, 'psame', fstyle=0,  marker=1, alpha=1, lcolor=ROOT.kRed, fcolor=ROOT.kRed )
 
             ref_line = ROOT.TLine(0, 1, 1, 1)
             CMS.cmsDrawLine(ref_line, lcolor=ROOT.kBlack, lstyle=ROOT.kDotted)
