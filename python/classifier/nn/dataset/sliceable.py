@@ -34,10 +34,14 @@ class SliceableDataset(Dataset, ABC, Generic[_BatchT]):
 
 class NamedTensorDataset(SliceableDataset[dict[str, torch.Tensor]]):
     def __init__(self, **tensors: torch.Tensor):
+        sizes = {v.shape[0] for v in tensors.values()}
+        if len(sizes) != 1:
+            raise ValueError("All tensors must have the same length")
+        self._size = sizes.pop()
         self._tensors = tensors
 
     def __len__(self):
-        return self._tensors["x"].shape[0]
+        return self._size
 
     def __getitem__(self, indices: torch.Tensor | slice):
         batch = {k: v[indices] for k, v in self._tensors.items()}

@@ -99,7 +99,7 @@ class LoadTrainingSets(Main):
             logging.warning(f"The following keys will be ignored: {sorted(ignored)}")
         if all(isinstance(d[k], torch.Tensor) for k in kept for d in datasets):
             datasets = NamedTensorDataset.concat(
-                *(NamedTensorDataset(**(d[k] for k in kept)) for d in datasets)
+                *(NamedTensorDataset(**{k: d[k] for k in kept}) for d in datasets)
             )
         else:
             datasets = StackDataset(
