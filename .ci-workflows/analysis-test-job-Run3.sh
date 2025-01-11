@@ -18,8 +18,8 @@ if [ ! -d $OUTPUT_DIR ]; then
 fi
 
 echo "############### Running test processor"
-# python runner.py -t -o test.coffea -d data  -p analysis/processors/processor_HH4b.py -y 2022_EE 2022_preEE 2023_BPix 2023_preBPix -op $OUTPUT_DIR -m $DATASETS -c analysis/metadata/HH4b_run_fastTopReco.yml
-python runner.py -t -o test.coffea -d data  -p analysis/processors/processor_HH4b.py -y 2022_EE 2022_preEE 2023_preBPix -op $OUTPUT_DIR -m $DATASETS -c analysis/metadata/HH4b_run_fastTopReco.yml
+python runner.py -t -o test.coffea -d data  -p analysis/processors/processor_HH4b.py -y 2022_EE 2022_preEE 2023_BPix 2023_preBPix -op $OUTPUT_DIR -m $DATASETS -c analysis/metadata/HH4b_run_fastTopReco.yml
+
 
 
 ls $OUTPUT_DIR

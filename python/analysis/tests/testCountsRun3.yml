@@ -53,6 +53,24 @@ counts4:
         passSvB: 1.0
         failSvB: 927.0
 
+    data_2023_BPixE:
+        passJetMult: 1002.0
+        passPreSel: 995.0
+        passDiJetMass: 341.0
+        SR: 141.0
+        SB: 200.0
+        passSvB: 0.0
+        failSvB: 928.0
+
+    data_2023_BPixD:
+        passJetMult: 997.0
+        passPreSel: 993.0
+        passDiJetMass: 349.0
+        SR: 120.0
+        SB: 229.0
+        passSvB: 2.0
+        failSvB: 951.0
+
     data_2022_preEED:
         passJetMult: 992.0
         passPreSel: 983.0
@@ -163,6 +181,24 @@ counts3:
         SB: 0.06
         passSvB: 0.0
         failSvB: 0.13
+
+    data_2023_BPixE:
+        passJetMult: 1002.0
+        passPreSel: 0.15
+        passDiJetMass: 0.06
+        SR: 0.0
+        SB: 0.06
+        passSvB: 0.0
+        failSvB: 0.15
+
+    data_2023_BPixD:
+        passJetMult: 997.0
+        passPreSel: 0.19
+        passDiJetMass: 0.06
+        SR: 0.06
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.19
 
     data_2022_preEED:
         passJetMult: 992.0
@@ -275,6 +311,24 @@ counts4_unit:
         passSvB: 1.0
         failSvB: 927.0
 
+    data_2023_BPixE:
+        passJetMult: 1002.0
+        passPreSel: 995.0
+        passDiJetMass: 341.0
+        SR: 141.0
+        SB: 200.0
+        passSvB: 0.0
+        failSvB: 928.0
+
+    data_2023_BPixD:
+        passJetMult: 997.0
+        passPreSel: 993.0
+        passDiJetMass: 349.0
+        SR: 120.0
+        SB: 229.0
+        passSvB: 2.0
+        failSvB: 951.0
+
     data_2022_preEED:
         passJetMult: 992.0
         passPreSel: 983.0
@@ -383,6 +437,24 @@ counts3_unit:
         passDiJetMass: 1.0
         SR: 0.0
         SB: 1.0
+        passSvB: 0.0
+        failSvB: 3.0
+
+    data_2023_BPixE:
+        passJetMult: 1002.0
+        passPreSel: 3.0
+        passDiJetMass: 1.0
+        SR: 0.0
+        SB: 1.0
+        passSvB: 0.0
+        failSvB: 3.0
+
+    data_2023_BPixD:
+        passJetMult: 997.0
+        passPreSel: 3.0
+        passDiJetMass: 1.0
+        SR: 1.0
+        SB: 0.0
         passSvB: 0.0
         failSvB: 3.0
 

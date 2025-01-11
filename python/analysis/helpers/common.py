@@ -138,7 +138,6 @@ def apply_jerc_corrections( event,
     else:
         logging.warning('WARNING: No uncertainties were loaded in the jet factory')
 
-    print(nominal_jet.pt[:10])
     jet_variations = jet_factory.build(nominal_jet, event.event)
 
     return jet_variations
