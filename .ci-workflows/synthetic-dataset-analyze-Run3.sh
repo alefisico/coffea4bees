@@ -16,6 +16,15 @@ else
     sed -e "s#\/srv#\/builds\/${CI_PROJECT_PATH}#" metadata/datasets_synthetic_test_Run3.yml > $OUTPUT_DIR/datasets_synthetic_test_Run3.yml
 fi
 cat $OUTPUT_DIR/datasets_synthetic_test_Run3.yml
+
+echo "pwd"
+pwd
+
+echo "ls"
+ls
+ls python
+ls python/output/
+ls python/output/synthetic_dataset_make_dataset_Run3
 # echo "############### Modifying dataset file with skimmer ci output"
 # cat metadata/datasets_ci.yml
 # python metadata/merge_yaml_datasets.py -m metadata/datasets_HH4b.yml -f skimmer/metadata/picoaod_datasets_declustered_data_test_UL18A.yml  -o metadata/datasets_synthetic_seed17_test.yml
