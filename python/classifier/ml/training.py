@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Iterable
 
 import torch
 import torch.types as tt
+from classifier.config.setting import IO as cfg_IO
 from classifier.config.setting import ml as cfg
 from rich.pretty import pretty_repr
 from torch import Tensor, nn
@@ -167,13 +168,21 @@ class TrainingStage(BenchmarkStage):
 @dataclass(kw_only=True)
 class OutputStage(Stage):
     path: PathLike
+    relative: bool = True
 
     def run(self, _):
         return {
             "stage": self.stage,
             "name": self.name,
             "path": str(self.path),
+            "relative": self.relative,
         }
+
+    @property
+    def absolute_path(self) -> PathLike:
+        if self.relative:
+            return cfg_IO.output / str(self.path)
+        return self.path
 
 
 class Model(ABC):

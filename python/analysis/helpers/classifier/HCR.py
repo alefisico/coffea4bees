@@ -1,3 +1,4 @@
+import re
 from typing import TypedDict
 
 import awkward as ak
@@ -102,6 +103,8 @@ class _HCRKFoldModel:
 
 
 class HCREnsemble:
+    _year_pattern = re.compile(r"\w*(?P<year>\d{2}).*")
+
     def __init__(self, paths: list[HCRModelMetadata]):
         self.models = [
             _HCRKFoldModel(**metadata)
@@ -117,6 +120,13 @@ class HCREnsemble:
                         f"HCR evaluation: {k} mismatch, expected {getattr(self, k)} got {getattr(model, k)}"
                     )
             model.classes = self.classes
+
+    @classmethod
+    def get_year(cls, year: str):
+        if match := cls._year_pattern.fullmatch(year):
+            return float(match.group("year"))
+        else:
+            raise ValueError(f"Invalid year: {year}")
 
     @torch.no_grad()
     def __call__(self, event: ak.Array) -> tuple[npt.NDArray, npt.NDArray]:
@@ -148,7 +158,7 @@ class HCREnsemble:
         for i, k in enumerate(self.ancillary):
             match k:
                 case "year":
-                    a[:, i] = float(event.metadata["year"][-2:])
+                    a[:, i] = self.get_year(event.metadata["year"])
                 case "nSelJets":
                     a[:, i] = torch.tensor(event.nJet_selected)
                 case "xW":
