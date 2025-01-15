@@ -109,6 +109,20 @@ synthetic-dataset-analyze:
     paths:
       - python/output/synthetic_dataset_analyze/test_synthetic_datasets.coffea
 
+synthetic-dataset-analyze-Run3:   
+  stage: analysis-test   
+  extends:
+    - .base_analysis
+  needs:
+    - voms_proxy
+    - synthetic-dataset-make-dataset-Run3
+  script:
+    - source .ci-workflows/synthetic-dataset-analyze-Run3.sh
+  artifacts:
+    paths:
+      - python/output/synthetic_dataset_analyze_Run3/test_synthetic_datasets.coffea
+
+
 weights-trigger-analysis-job:   
   stage: analysis-test   
   extends:

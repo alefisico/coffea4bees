@@ -1,0 +1,48 @@
+counts4:
+    syn_v0_2023_BPix:
+        passJetMult: 1988.0
+        passPreSel: 1988.0
+        passDiJetMass: 736.0
+        SR: 255.0
+        SB: 481.0
+        passSvB: 6.0
+        failSvB: 1848.0
+
+
+
+counts3:
+    syn_v0_2023_BPix:
+        passJetMult: 1988.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+
+
+counts4_unit:
+    syn_v0_2023_BPix:
+        passJetMult: 1988.0
+        passPreSel: 1988.0
+        passDiJetMass: 736.0
+        SR: 255.0
+        SB: 481.0
+        passSvB: 6.0
+        failSvB: 1848.0
+
+
+
+counts3_unit:
+    syn_v0_2023_BPix:
+        passJetMult: 1988.0
+        passPreSel: 0.0
+        passDiJetMass: 0.0
+        SR: 0.0
+        SB: 0.0
+        passSvB: 0.0
+        failSvB: 0.0
+
+
+
