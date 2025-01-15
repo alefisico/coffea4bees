@@ -708,6 +708,6 @@ datasets:
     2023_BPix:
       picoAOD:
         files_template:
-          - python/output/synthetic_dataset_make_dataset_Run3/data_2023_BPixD/picoAOD_seed5.root
-          - python/output/synthetic_dataset_make_dataset_Run3/data_2023_BPixE/picoAOD_seed5.root
+          - output/synthetic_dataset_make_dataset_Run3/data_2023_BPixD/picoAOD_seed5.root
+          - output/synthetic_dataset_make_dataset_Run3/data_2023_BPixE/picoAOD_seed5.root
 
