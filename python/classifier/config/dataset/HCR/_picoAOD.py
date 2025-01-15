@@ -19,7 +19,7 @@ class _PicoAOD(Dataset):
     argparser.add_argument(
         "--metadata",
         nargs="*",
-        default=["datasets_HH4b"],
+        default=["datasets_HH4b_2024_v2"],
         help="names of the metadata files.",
     )
 
