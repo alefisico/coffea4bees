@@ -2,11 +2,11 @@ counts4:
     syn_v0_2023_BPix:
         passJetMult: 1988.0
         passPreSel: 1988.0
-        passDiJetMass: 736.0
-        SR: 255.0
-        SB: 481.0
-        passSvB: 6.0
-        failSvB: 1848.0
+        passDiJetMass: 710.0
+        SR: 243.0
+        SB: 467.0
+        passSvB: 5.0
+        failSvB: 1846.0
 
 
 
@@ -26,11 +26,11 @@ counts4_unit:
     syn_v0_2023_BPix:
         passJetMult: 1988.0
         passPreSel: 1988.0
-        passDiJetMass: 736.0
-        SR: 255.0
-        SB: 481.0
-        passSvB: 6.0
-        failSvB: 1848.0
+        passDiJetMass: 710.0
+        SR: 243.0
+        SB: 467.0
+        passSvB: 5.0
+        failSvB: 1846.0
 
 
 
