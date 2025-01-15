@@ -22,9 +22,9 @@ pwd
 
 echo "ls"
 ls
-ls python
-ls python/output/
-ls python/output/synthetic_dataset_make_dataset_Run3
+ls 
+ls output/
+ls output/synthetic_dataset_make_dataset_Run3
 # echo "############### Modifying dataset file with skimmer ci output"
 # cat metadata/datasets_ci.yml
 # python metadata/merge_yaml_datasets.py -m metadata/datasets_HH4b.yml -f skimmer/metadata/picoaod_datasets_declustered_data_test_UL18A.yml  -o metadata/datasets_synthetic_seed17_test.yml
