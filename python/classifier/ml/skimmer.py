@@ -9,8 +9,9 @@ import torch
 from base_class.math.random import SeedLike, Squares
 from classifier.config.setting import ml as cfg
 from torch import BoolTensor
-from torch.utils.data import Dataset, Subset
+from torch.utils.data import Dataset
 
+from ..nn.dataset import subset
 from ..utils import keep_fraction, noop
 from . import BatchType
 from .training import Model
@@ -60,7 +61,7 @@ class Splitter(ABC):
         selected, dataset = self.__selected, self.__dataset
         self.reset()
         indices = torch.arange(len(dataset))
-        return {k: Subset(dataset, indices[v]) for k, v in selected.items()}
+        return {k: subset(dataset, indices[v]) for k, v in selected.items()}
 
     def __add__(self, other: Splitter):
         if not isinstance(other, Splitter):

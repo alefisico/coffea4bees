@@ -1,0 +1,22 @@
+# TODO
+# template:
+# - mixed: mixed data index
+# - user: lpc username
+
+dataset:
+  - module: HCR.FvT.TrainBaseline
+    option:
+      - --data-source detector
+      - --no-detector-4b
+      - --JCM-weight "" analysis/weights/2024_v2/JCM{mixed} # TODO load JCM weight for mixed
+      - --friends "" metadata/datasets_HH4b_2024_v2_classifier_input.json@@HCR_input
+  - module: HCR.FvT.TrainBaseline
+    option:
+      - --data-source mixed
+      - --data-mixed-samples {mixed}
+      - --friends "" metadata/datasets_HH4b_2024_v2_classifier_input.json@@HCR_input # TODO load friend for mixed
+
+setting:
+  - module: IO
+    option:
+      - output: root://cmseos.fnal.gov//store/user/{user}/HH4b/classifier/HH4b_v4/FvT/mixed-{mixed}/

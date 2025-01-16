@@ -1,28 +1,42 @@
 from __future__ import annotations
 
-from torch.utils.data import DataLoader, Dataset
+import torch
+from torch.utils.data import DataLoader, Dataset, Subset
 
 from ...config.setting.ml import DataLoader as cfg
 from ...monitor.progress import MessageType, Progress
+from .sliceable import SliceableDataset, SliceLoaderLite
+
+
+def subset(dataset: Dataset, indices: torch.Tensor):
+    if isinstance(dataset, SliceableDataset):
+        return dataset.subset(indices)
+    else:
+        return Subset(dataset, indices)
 
 
 def simple_loader(
     dataset: Dataset, report_progress: MessageType = None, **kwargs
-) -> DataLoader:
-    kwargs = (
-        dict(
-            num_workers=cfg.num_workers,
-            persistent_workers=cfg.persistent_workers,
-            pin_memory=cfg.pin_memory,
+) -> DataLoader | SliceLoaderLite:
+    if isinstance(dataset, SliceableDataset) and cfg.optimize_sliceable_dataset:
+        loader = SliceLoaderWithProgress(dataset, **kwargs)
+    else:
+        loader = DataLoaderWithProgress(
+            dataset,
+            **(
+                dict(
+                    num_workers=cfg.num_workers,
+                    persistent_workers=cfg.persistent_workers,
+                    pin_memory=cfg.pin_memory,
+                )
+                | kwargs
+            ),
         )
-        | kwargs
-    )
-    loader = DataLoaderWithProgress(dataset, **kwargs)
-    loader._progress_msg = report_progress
-    if loader.num_workers != 0:
-        from ...process import status
+        if loader.num_workers != 0:
+            from ...process import status
 
-        loader.multiprocessing_context = status.context
+            loader.multiprocessing_context = status.context
+    loader._progress_msg = report_progress
     return loader
 
 
@@ -32,7 +46,7 @@ def skim_loader(dataset: Dataset, report_progress: MessageType = None, **kwargs)
     return simple_loader(dataset, report_progress=report_progress, **kwargs)
 
 
-class DataLoaderWithProgress(DataLoader):
+class WithProgress:
     _progress_msg: MessageType
 
     def _progress_iter(self):
@@ -46,3 +60,9 @@ class DataLoaderWithProgress(DataLoader):
             return self._progress_iter()
         else:
             return super().__iter__()
+
+
+class DataLoaderWithProgress(WithProgress, DataLoader): ...
+
+
+class SliceLoaderWithProgress(WithProgress, SliceLoaderLite): ...

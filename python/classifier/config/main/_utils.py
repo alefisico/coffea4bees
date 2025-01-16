@@ -59,7 +59,9 @@ class LoadTrainingSets(Main):
     def load_training_sets(self, parser: EntryPoint):
         from concurrent.futures import ProcessPoolExecutor
 
+        import torch
         from classifier.monitor.progress import Progress
+        from classifier.nn.dataset.sliceable import NamedTensorDataset
         from classifier.process import pool, status
         from torch.utils.data import ConcatDataset, StackDataset
 
@@ -95,6 +97,13 @@ class LoadTrainingSets(Main):
         logging.info(f"The following keys will be kept: {kept}")
         if ignored:
             logging.warning(f"The following keys will be ignored: {sorted(ignored)}")
-        datasets = {k: ConcatDataset(d[k] for d in datasets) for k in kept}
-        logging.info(f"Loaded {len(next(iter(datasets.values())))} data entries")
-        return StackDataset(**datasets)
+        if all(isinstance(d[k], torch.Tensor) for k in kept for d in datasets):
+            datasets = NamedTensorDataset.concat(
+                *(NamedTensorDataset(**{k: d[k] for k in kept}) for d in datasets)
+            )
+        else:
+            datasets = StackDataset(
+                **{k: ConcatDataset(d[k] for d in datasets) for k in kept}
+            )
+        logging.info(f"Loaded {len(datasets)} data entries")
+        return datasets

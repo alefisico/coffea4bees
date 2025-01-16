@@ -276,8 +276,10 @@ class EntryPoint:
         self.main: Main = new(cls, self.args[_MAIN][1])
 
     def run(self, reproducible: Callable = None):
-        from ..config import setting as cfg
-        from ..config.main.analyze import run_analyzer
+        from classifier.config import setting as cfg
+        from classifier.config.main.analyze import run_analyzer
+        from classifier.config.state import System
+
         from ..monitor import Recorder, wait_for_monitor
 
         # run main task
@@ -287,6 +289,7 @@ class EntryPoint:
             analysis = run_analyzer(self, [result])
             if analysis:
                 result = (result or {}) | analysis
+        logging.info(f"Total run time: {System.run_time()}")
         # wait for monitor
         wait_for_monitor()
         # dump state
