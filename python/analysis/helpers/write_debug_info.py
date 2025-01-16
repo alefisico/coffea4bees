@@ -47,6 +47,26 @@ def add_debug_info_to_output(event, processOutput, weights, list_weight_names, a
 
 
 
+
+def add_debug_Run3_synthetic_data(event, processOutput):
+
+    out_data = {}
+
+    #debug_mask = event.region > 2
+    out_data["SR_event"  ]    = event["event"]
+    out_data["SR_run"    ]    = event["run"]
+    out_data["SR_region"    ] = event["region"]
+    out_data["SR_jet_pt"    ] = event.canJet.pt  .to_list()
+    out_data["SR_jet_eta"   ] = event.canJet.eta .to_list()
+    out_data["SR_jet_phi"   ] = event.canJet.phi .to_list()
+    out_data["SR_jet_mass"  ] = event.canJet.mass.to_list()
+
+
+    for out_k, out_v in out_data.items():
+        processOutput[out_k] = {}
+        processOutput[out_k][event.metadata['dataset']] = list(out_v)
+
+
 def add_debug_info_to_output_clustering_inputs(event, jets_for_clustering, processOutput):
 
     out_data = {}
