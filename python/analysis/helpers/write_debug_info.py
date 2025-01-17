@@ -61,6 +61,17 @@ def add_debug_Run3_synthetic_data(event, processOutput):
     out_data["SR_jet_phi"   ] = event.canJet.phi .to_list()
     out_data["SR_jet_mass"  ] = event.canJet.mass.to_list()
 
+    out_data["SR_selJet_pt"    ] = event.selJet.pt  .to_list()
+    out_data["SR_selJet_eta"   ] = event.selJet.eta .to_list()
+    out_data["SR_selJet_phi"   ] = event.selJet.phi .to_list()
+    out_data["SR_selJet_mass"  ] = event.selJet.mass.to_list()
+
+    out_data["SR_selJet_no_bRegCorr_pt"    ] = event.selJet_no_bRegCorr.pt  .to_list()
+    out_data["SR_selJet_no_bRegCorr_eta"   ] = event.selJet_no_bRegCorr.eta .to_list()
+    out_data["SR_selJet_no_bRegCorr_phi"   ] = event.selJet_no_bRegCorr.phi .to_list()
+    out_data["SR_selJet_no_bRegCorr_mass"  ] = event.selJet_no_bRegCorr.mass.to_list()
+
+
 
     for out_k, out_v in out_data.items():
         processOutput[out_k] = {}

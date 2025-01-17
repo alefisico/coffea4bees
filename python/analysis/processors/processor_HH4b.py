@@ -637,6 +637,8 @@ class analysis(processor.ProcessorABC):
             print(f"{self.chunk} pt  {selev.canJet.pt[selev.region == 2][0:10]}\n")
             print(f"{self.chunk} eta {selev.canJet.eta[selev.region == 2][:10]}\n")
             print(f"{self.chunk} phi {selev.canJet.phi[selev.region == 2][:10]}\n")
+            print(f"{selev.selJet.fields}\n")
+            print(f"{selev.selJet_no_bRegCorr.fields}\n")
             from analysis.helpers.write_debug_info import add_debug_Run3_synthetic_data
             add_debug_Run3_synthetic_data(selev, processOutput)
 
