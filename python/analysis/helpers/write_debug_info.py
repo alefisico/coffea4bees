@@ -86,6 +86,17 @@ def add_debug_Run3_declustering(event, jets_for_clustering, declustered_jets, pr
     out_data["event"  ]    = event["event"]
     out_data["run"    ]    = event["run"]
 
+    out_data["selJet_pt"    ] = event.selJet.pt  .to_list()
+    out_data["selJet_eta"   ] = event.selJet.eta .to_list()
+    out_data["selJet_phi"   ] = event.selJet.phi .to_list()
+    out_data["selJet_mass"  ] = event.selJet.mass.to_list()
+
+    out_data["selJet_no_bRegCorr_pt"    ] = event.selJet_no_bRegCorr.pt  .to_list()
+    out_data["selJet_no_bRegCorr_eta"   ] = event.selJet_no_bRegCorr.eta .to_list()
+    out_data["selJet_no_bRegCorr_phi"   ] = event.selJet_no_bRegCorr.phi .to_list()
+    out_data["selJet_no_bRegCorr_mass"  ] = event.selJet_no_bRegCorr.mass.to_list()
+
+
     out_data["input_jet_pt"    ] = jets_for_clustering.pt  .to_list()
     out_data["input_jet_eta"   ] = jets_for_clustering.eta .to_list()
     out_data["input_jet_phi"   ] = jets_for_clustering.phi .to_list()
