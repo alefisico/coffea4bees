@@ -49,8 +49,8 @@ class _roc_select_ggF(_roc_select_sig):
 
 
 class Train(HCRTrain):
-    argparser = ArgParser(description="Train SvB with SM and BSM ggF signals.")
     model = "SvB_ggF_all_kl"
+    argparser = ArgParser(description="Train SvB with SM and BSM ggF signals.")
 
     @staticmethod
     def loss(batch: BatchType):

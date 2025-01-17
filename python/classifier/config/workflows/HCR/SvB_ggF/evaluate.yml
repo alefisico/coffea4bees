@@ -18,6 +18,7 @@ model:
 dataset:
   - module: HCR.SvB.Eval
     option:
+      - --metadata datasets_HH4b
       - --max-workers 8
       - --friends
       -

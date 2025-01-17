@@ -18,8 +18,8 @@ def _remove_non_sm_ggF(batch: BatchType):
 
 
 class Train(all_kl.Train):
-    argparser = ArgParser(description="Train SvB with SM ggF signal.")
     model = "SvB_ggF_baseline"
+    argparser = ArgParser(description="Train SvB with SM ggF signal.")
 
     def initializer(self, splitter, **kwargs):
         from classifier.ml.skimmer import Filter

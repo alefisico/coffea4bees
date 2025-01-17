@@ -17,3 +17,7 @@ class MultiClass(GlobalState):
     @classmethod
     def indices(cls, *labels: str):
         return [cls.index(label) for label in labels]
+
+    @classmethod
+    def n_classes(cls):
+        return len(cls.labels)

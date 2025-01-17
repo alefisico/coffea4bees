@@ -22,6 +22,7 @@ model:
 dataset:
   - module: HCR.SvB.Background
     option:
+      - --metadata datasets_HH4b
       - --norm {norm}
       - --friends
       -
@@ -33,6 +34,7 @@ dataset:
 
   - module: HCR.SvB.Signal
     option:
+      - --metadata datasets_HH4b
       - --friends
       -
       - root://cmseos.fnal.gov//store/user/{user}/HH4b/friend/friend.json@@HCR_input
@@ -42,6 +44,3 @@ setting:
     option:
       - output: root://cmseos.fnal.gov//store/user/{user}/HH4b/classifier/SvB/ggF/{model}/
 
-  - module: ml.DataLoader
-    option:
-      - num_workers: 4

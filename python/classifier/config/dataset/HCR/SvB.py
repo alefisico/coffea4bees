@@ -111,7 +111,7 @@ class Background(_picoAOD.Background, _Train):
         self.preprocessors.append(drop_columns("FvT"))
 
     def other_branches(self):
-        return super().other_branches() | {"FvT"}
+        return super().other_branches() | {"FvT", "pseudoTagWeight"}
 
     @staticmethod
     def normalize(df: pd.DataFrame, norm: float):
@@ -125,7 +125,7 @@ class Signal(_picoAOD.Signal, _Train):
         self.postprocessors.append(self.normalize)
 
     def other_branches(self):
-        return super().other_branches() - {"pseudoTagWeight"}
+        return super().other_branches()
 
     @staticmethod
     def normalize(df: pd.DataFrame):
