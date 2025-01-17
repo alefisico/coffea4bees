@@ -89,6 +89,10 @@ def apply_object_selection_4b(event, corrections_metadata, *,
             event['Jet', 'bRegCorr']       = event.Jet.PNetRegPtRawCorr * event.Jet.PNetRegPtRawCorrNeutrino
         event['Jet', 'btagScore']       = event.Jet.btagPNetB
 
+        # FIX ME Debugging!!!!
+        event['Jet', 'pt_preCalib'  ]       = event.Jet.pt
+        event['Jet', 'mass_preCalib']       = event.Jet.mass
+
         ### AGE: Hopefully this is temporarily
         if not isSyntheticData:
             event['Jet'] = ak.where(
