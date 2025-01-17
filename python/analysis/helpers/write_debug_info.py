@@ -72,6 +72,30 @@ def add_debug_Run3_synthetic_data(event, processOutput):
     out_data["SR_selJet_no_bRegCorr_mass"  ] = event.selJet_no_bRegCorr.mass.to_list()
 
 
+    for out_k, out_v in out_data.items():
+        processOutput[out_k] = {}
+        processOutput[out_k][event.metadata['dataset']] = list(out_v)
+
+
+
+def add_debug_Run3_declustering(event, jets_for_clustering, declustered_jets, processOutput):
+
+    out_data = {}
+
+    #debug_mask = event.region > 2
+    out_data["event"  ]    = event["event"]
+    out_data["run"    ]    = event["run"]
+
+    out_data["input_jet_pt"    ] = jets_for_clustering.pt  .to_list()
+    out_data["input_jet_eta"   ] = jets_for_clustering.eta .to_list()
+    out_data["input_jet_phi"   ] = jets_for_clustering.phi .to_list()
+    out_data["input_jet_mass"  ] = jets_for_clustering.mass.to_list()
+
+    out_data["output_jet_pt"    ] = declustered_jets.pt  .to_list()
+    out_data["output_jet_eta"   ] = declustered_jets.eta .to_list()
+    out_data["output_jet_phi"   ] = declustered_jets.phi .to_list()
+    out_data["output_jet_mass"  ] = declustered_jets.mass.to_list()
+
 
     for out_k, out_v in out_data.items():
         processOutput[out_k] = {}

@@ -58,7 +58,7 @@ class DeClusterer(PicoAOD):
 
         clustering_pdfs_file = self.clustering_pdfs_file.replace("XXX", year)
 
-        print(f"clustering_pdfs_file is {clustering_pdfs_file}")
+        print(f"clustering_pdfs_file is {clustering_pdfs_file}\n")
         if not clustering_pdfs_file == "None":
             clustering_pdfs = yaml.safe_load(open(clustering_pdfs_file, "r"))
             logging.info(f"Loaded {len(clustering_pdfs.keys())} PDFs from {clustering_pdfs_file}\n")
@@ -254,6 +254,12 @@ class DeClusterer(PicoAOD):
 
         n_jet = ak.num(declustered_jets)
         total_jet = int(ak.sum(n_jet))
+
+        if config["isRun3"]:
+            print(f"{chunk} pt  {jets_for_clustering.pt[0:10]}\n")
+            from analysis.helpers.write_debug_info import add_debug_Run3_declustering
+            add_debug_Run3_declustering(selev, jets_for_clustering, declustered_jets, processOutput)
+
 
 
         out_branches = {
