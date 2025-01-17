@@ -95,6 +95,23 @@ def apply_object_selection_4b(event, corrections_metadata, *,
 
         ### AGE: Hopefully this is temporarily
         if not isSyntheticData:
+            event['Jet_bCalib'] = apply_jerc_corrections(event,
+                                                         corrections_metadata=corrections_metadata,
+                                                         isMC=isMC,
+                                                         run_systematics=False,
+                                                         dataset=dataset,
+                                                         jet_corr_factor=event.Jet.bRegCorr,
+                                                         jet_type="AK4PFPuppiPNetRegressionPlusNeutrino"
+                                                         )
+            event['Jet_nonbCalib'] = apply_jerc_corrections(event,
+                                                            corrections_metadata=corrections_metadata,
+                                                            isMC=isMC,
+                                                            run_systematics=False,
+                                                        dataset=dataset,
+                                                            jet_type="AK4PFPuppi.txt"   ### AGE: .txt is temporary
+                                                            )
+
+
             event['Jet'] = ak.where(
                 event.Jet.btagScore >= corrections_metadata['btagWP']['L'],
                 apply_jerc_corrections(event,
