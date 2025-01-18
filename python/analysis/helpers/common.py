@@ -102,6 +102,17 @@ def apply_jerc_corrections( event,
     event['Jet', 'rho_calib'] = ak.broadcast_arrays((event.Rho.fixedGridRhoFastjetAll if 'Rho' in event.fields else event.fixedGridRhoFastjetAll), event.Jet.pt)[0]
     print(f"rho value: {event.Rho.fixedGridRhoFastjetAll}\n")
 
+    print(f"nominal_jet pt       : {nominal_jet.pt      [event_mask].to_list()}")
+    print(f"nominal_jet pt_raw   : {nominal_jet.pt_raw  [event_mask].to_list()}")
+    print(f"nominal_jet mass_raw : {nominal_jet.mass_raw[event_mask].to_list()}")
+    print(f"nominal_jet mas      : {nominal_jet.mass    [event_mask].to_list()}")
+    print(f"nominal_jet rho      : {nominal_jet.rho     [event_mask].to_list()}")
+    print(f"nominal_jet are      : {nominal_jet.area    [event_mask].to_list()}")
+    print(f"nominal_jet eta      : {nominal_jet.eta     [event_mask].to_list()}")
+    print(f"nominal_jet phi      : {nominal_jet.phi     [event_mask].to_list()}")
+    print("\n")
+
+
 
     print(f"rho value masked: {event.Rho.fixedGridRhoFastjetAll[event_mask]}\n")
     print(f"jet rho masked: {nominal_jet['rho'][event_mask].to_list()}\n")
