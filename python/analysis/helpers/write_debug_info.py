@@ -92,9 +92,11 @@ def add_debug_Run3_declustering(event, jets_for_clustering, declustered_jets, pr
     out_data["selJet_mass"  ] = event.selJet.mass.to_list()
 
     out_data["Jet_bCalib_pt"    ] = event.Jet_bCalib.pt  .to_list()
+    out_data["Jet_bCalib_pt_raw" ] = event.Jet_bCalib.pt_raw  .to_list()
     out_data["Jet_bCalib_mass"  ] = event.Jet_bCalib.mass.to_list()
 
     out_data["Jet_nonbCalib_pt"    ] = event.Jet_nonbCalib.pt  .to_list()
+    out_data["Jet_nonbCalib_pt_raw"    ] = event.Jet_nonbCalib.pt_raw  .to_list()
     out_data["Jet_nonbCalib_mass"  ] = event.Jet_nonbCalib.mass.to_list()
 
 
@@ -107,6 +109,7 @@ def add_debug_Run3_declustering(event, jets_for_clustering, declustered_jets, pr
 
 
     out_data["input_jet_pt"    ] = jets_for_clustering.pt  .to_list()
+    out_data["input_jet_pt_raw"    ] = jets_for_clustering.pt_raw  .to_list()
     out_data["input_jet_eta"   ] = jets_for_clustering.eta .to_list()
     out_data["input_jet_phi"   ] = jets_for_clustering.phi .to_list()
     out_data["input_jet_mass"  ] = jets_for_clustering.mass.to_list()
