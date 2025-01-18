@@ -78,7 +78,7 @@ def add_debug_Run3_synthetic_data(event, processOutput):
 
 
 
-def add_debug_Run3_declustering(event, jets_for_clustering, declustered_jets, processOutput):
+def add_debug_Run3_declustering(event, jets_for_clustering, declustered_jets, clustered_jets, processOutput):
 
     out_data = {}
 
@@ -117,6 +117,12 @@ def add_debug_Run3_declustering(event, jets_for_clustering, declustered_jets, pr
     out_data["output_jet_eta"   ] = declustered_jets.eta .to_list()
     out_data["output_jet_phi"   ] = declustered_jets.phi .to_list()
     out_data["output_jet_mass"  ] = declustered_jets.mass.to_list()
+
+    out_data["clustered_jet_pt"    ] = clustered_jets.pt  .to_list()
+    out_data["clustered_jet_eta"   ] = clustered_jets.eta .to_list()
+    out_data["clustered_jet_phi"   ] = clustered_jets.phi .to_list()
+    out_data["clustered_jet_mass"  ] = clustered_jets.mass.to_list()
+
 
 
     for out_k, out_v in out_data.items():
