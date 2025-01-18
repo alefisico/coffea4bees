@@ -107,6 +107,7 @@ def apply_jerc_corrections( event,
     print(f"nominal_jet mass_raw : {nominal_jet.mass_raw[event_mask].to_list()}")
     print(f"nominal_jet mas      : {nominal_jet.mass    [event_mask].to_list()}")
     print(f"nominal_jet rho      : {nominal_jet.rho     [event_mask].to_list()}")
+    print(f"nominal_jet ['rho']  : {nominal_jet['rho']  [event_mask].to_list()}")
     print(f"nominal_jet are      : {nominal_jet.area    [event_mask].to_list()}")
     print(f"nominal_jet eta      : {nominal_jet.eta     [event_mask].to_list()}")
     print(f"nominal_jet phi      : {nominal_jet.phi     [event_mask].to_list()}")
@@ -160,6 +161,18 @@ def apply_jerc_corrections( event,
         logging.warning('WARNING: No uncertainties were loaded in the jet factory')
 
     jet_variations = jet_factory.build(nominal_jet, event.event)
+
+    print(f"jet_variations pt       : {jet_variations.pt      [event_mask].to_list()}")
+    print(f"jet_variations pt_raw   : {jet_variations.pt_raw  [event_mask].to_list()}")
+    print(f"jet_variations mass_raw : {jet_variations.mass_raw[event_mask].to_list()}")
+    print(f"jet_variations mas      : {jet_variations.mass    [event_mask].to_list()}")
+    print(f"jet_variations rho      : {jet_variations.rho     [event_mask].to_list()}")
+    print(f"jet_variations ['rho']  : {jet_variations['rho']  [event_mask].to_list()}")
+    print(f"jet_variations are      : {jet_variations.area    [event_mask].to_list()}")
+    print(f"jet_variations eta      : {jet_variations.eta     [event_mask].to_list()}")
+    print(f"jet_variations phi      : {jet_variations.phi     [event_mask].to_list()}")
+    print("\n")
+
 
     return jet_variations
 
