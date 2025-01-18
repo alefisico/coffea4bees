@@ -94,8 +94,18 @@ def apply_jerc_corrections( event,
     event['Jet', 'mass_raw']  = (1 - event.Jet.rawFactor) * event.Jet.mass * jet_corr_factor
     nominal_jet = event.Jet
     if isMC: nominal_jet['pt_gen'] = ak.values_astype(ak.fill_none(nominal_jet.matched_gen.pt, 0), np.float32)
+    event_mask = (event.event == 806245955)
+    print(f"jet rho masked before: {event.Jet.rho[event_mask]}\n")
 
-    nominal_jet['rho'] = ak.broadcast_arrays((event.Rho.fixedGridRhoFastjetAll if 'Rho' in event.fields else event.fixedGridRhoFastjetAll), nominal_jet.pt)[0]
+    print(f"is Rho in event.fields {'Rho' in event.fields }\n")
+    nominal_jet['rho']  = ak.broadcast_arrays((event.Rho.fixedGridRhoFastjetAll if 'Rho' in event.fields else event.fixedGridRhoFastjetAll), nominal_jet.pt)[0]
+    event['Jet', 'rho_calib'] = ak.broadcast_arrays((event.Rho.fixedGridRhoFastjetAll if 'Rho' in event.fields else event.fixedGridRhoFastjetAll), event.Jet.pt)[0]
+    print(f"rho value: {event.Rho.fixedGridRhoFastjetAll}\n")
+
+
+    print(f"rho value masked: {event.Rho.fixedGridRhoFastjetAll[event_mask]}\n")
+    print(f"jet rho masked: {nominal_jet['rho'][event_mask].to_list()}\n")
+    print(f"jet rho masked 2: {event.Jet.rho_calib[event_mask]}\n")
 
     from coffea.lookup_tools import extractor
     extract = extractor()

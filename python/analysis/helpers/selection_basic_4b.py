@@ -95,6 +95,11 @@ def apply_object_selection_4b(event, corrections_metadata, *,
 
         ### AGE: Hopefully this is temporarily
         if not isSyntheticData:
+
+            event_mask = (event.event == 806245955)
+
+
+
             event['Jet_bCalib'] = apply_jerc_corrections(event,
                                                          corrections_metadata=corrections_metadata,
                                                          isMC=isMC,
@@ -104,6 +109,8 @@ def apply_object_selection_4b(event, corrections_metadata, *,
                                                          jet_type="AK4PFPuppiPNetRegressionPlusNeutrino"
                                                          )
 
+            print(f"jet rho masked after bCalib: {event.Jet_bCalib.rho[event_mask]}\n")
+
             event['Jet_nonbCalib'] = apply_jerc_corrections(event,
                                                             corrections_metadata=corrections_metadata,
                                                             isMC=isMC,
@@ -112,6 +119,7 @@ def apply_object_selection_4b(event, corrections_metadata, *,
                                                             jet_type="AK4PFPuppi.txt"   ### AGE: .txt is temporary
                                                             )
 
+            print(f"jet rho masked after nonbCalib: {event.Jet_nonbCalib.rho[event_mask]}\n")
 
             event['Jet'] = ak.where(
                 event.Jet.btagScore >= corrections_metadata['btagWP']['L'],
@@ -131,6 +139,7 @@ def apply_object_selection_4b(event, corrections_metadata, *,
                     jet_type="AK4PFPuppi.txt"   ### AGE: .txt is temporary
                     )
             )
+            print(f"jet rho masked after calib: {event.Jet.rho[event_mask]}\n")
             #logging.warning(f"For Run3 we are computing JECs after splitting the jets into btagged and non-btagged jets")
 
         event['Jet', 'puId']       = 10
