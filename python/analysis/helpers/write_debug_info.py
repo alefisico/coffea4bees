@@ -109,7 +109,6 @@ def add_debug_Run3_declustering(event, jets_for_clustering, declustered_jets, pr
 
 
     out_data["input_jet_pt"    ] = jets_for_clustering.pt  .to_list()
-    out_data["input_jet_pt_raw"    ] = jets_for_clustering.pt_raw  .to_list()
     out_data["input_jet_eta"   ] = jets_for_clustering.eta .to_list()
     out_data["input_jet_phi"   ] = jets_for_clustering.phi .to_list()
     out_data["input_jet_mass"  ] = jets_for_clustering.mass.to_list()
