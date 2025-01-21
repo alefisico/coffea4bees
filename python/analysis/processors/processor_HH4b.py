@@ -503,7 +503,6 @@ class analysis(processor.ProcessorABC):
         #from analysis.helpers.write_debug_info import add_debug_info_to_output
         #add_debug_info_to_output(event, processOutput, weights, list_weight_names, analysis_selections)
 
-
         selev = event[analysis_selections]
 
         if self.subtract_ttbar_with_weights:
@@ -633,14 +632,6 @@ class analysis(processor.ProcessorABC):
 
             self._cutFlow.addOutput(processOutput, event.metadata["dataset"])
 
-        if self.config["isRun3"] and self.config["isSyntheticData"]:
-            print(f"{self.chunk} pt  {selev.canJet.pt[selev.region == 2][0:10]}\n")
-            print(f"{self.chunk} eta {selev.canJet.eta[selev.region == 2][:10]}\n")
-            print(f"{self.chunk} phi {selev.canJet.phi[selev.region == 2][:10]}\n")
-            print(f"{selev.selJet.fields}\n")
-            print(f"{selev.selJet_no_bRegCorr.fields}\n")
-            from analysis.helpers.write_debug_info import add_debug_Run3_synthetic_data
-            add_debug_Run3_synthetic_data(selev, processOutput)
 
 
         #

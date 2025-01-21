@@ -255,12 +255,6 @@ class DeClusterer(PicoAOD):
         n_jet = ak.num(declustered_jets)
         total_jet = int(ak.sum(n_jet))
 
-        if config["isRun3"]:
-            print(f"{chunk} pt  {jets_for_clustering.pt[0:10]}\n")
-            from analysis.helpers.write_debug_info import add_debug_Run3_declustering
-            add_debug_Run3_declustering(selev, jets_for_clustering, declustered_jets, clustered_jets, processOutput)
-
-
 
         out_branches = {
                 # Update jets with new kinematics

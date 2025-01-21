@@ -94,30 +94,8 @@ def apply_jerc_corrections( event,
     event['Jet', 'mass_raw']  = (1 - event.Jet.rawFactor) * event.Jet.mass * jet_corr_factor
     nominal_jet = event.Jet
     if isMC: nominal_jet['pt_gen'] = ak.values_astype(ak.fill_none(nominal_jet.matched_gen.pt, 0), np.float32)
-    event_mask = (event.event == 806245955)
-    print(f"jet rho masked before: {event.Jet.rho[event_mask]}\n")
 
-    print(f"is Rho in event.fields {'Rho' in event.fields }\n")
-    nominal_jet['rho']  = ak.broadcast_arrays((event.Rho.fixedGridRhoFastjetAll if 'Rho' in event.fields else event.fixedGridRhoFastjetAll), nominal_jet.pt)[0]
-    event['Jet', 'rho_calib'] = ak.broadcast_arrays((event.Rho.fixedGridRhoFastjetAll if 'Rho' in event.fields else event.fixedGridRhoFastjetAll), event.Jet.pt)[0]
-    print(f"rho value: {event.Rho.fixedGridRhoFastjetAll}\n")
-
-    print(f"nominal_jet pt       : {nominal_jet.pt      [event_mask].to_list()}")
-    print(f"nominal_jet pt_raw   : {nominal_jet.pt_raw  [event_mask].to_list()}")
-    print(f"nominal_jet mass_raw : {nominal_jet.mass_raw[event_mask].to_list()}")
-    print(f"nominal_jet mas      : {nominal_jet.mass    [event_mask].to_list()}")
-    print(f"nominal_jet rho      : {nominal_jet.rho     [event_mask].to_list()}")
-    print(f"nominal_jet ['rho']  : {nominal_jet['rho']  [event_mask].to_list()}")
-    print(f"nominal_jet are      : {nominal_jet.area    [event_mask].to_list()}")
-    print(f"nominal_jet eta      : {nominal_jet.eta     [event_mask].to_list()}")
-    print(f"nominal_jet phi      : {nominal_jet.phi     [event_mask].to_list()}")
-    print("\n")
-
-
-
-    print(f"rho value masked: {event.Rho.fixedGridRhoFastjetAll[event_mask]}\n")
-    print(f"jet rho masked: {nominal_jet['rho'][event_mask].to_list()}\n")
-    print(f"jet rho masked 2: {event.Jet.rho_calib[event_mask]}\n")
+    nominal_jet['rho'] = ak.broadcast_arrays((event.Rho.fixedGridRhoFastjetAll if 'Rho' in event.fields else event.fixedGridRhoFastjetAll), nominal_jet.pt)[0]
 
     from coffea.lookup_tools import extractor
     extract = extractor()
@@ -161,18 +139,6 @@ def apply_jerc_corrections( event,
         logging.warning('WARNING: No uncertainties were loaded in the jet factory')
 
     jet_variations = jet_factory.build(nominal_jet, event.event)
-
-    print(f"jet_variations pt       : {jet_variations.pt      [event_mask].to_list()}")
-    print(f"jet_variations pt_raw   : {jet_variations.pt_raw  [event_mask].to_list()}")
-    print(f"jet_variations mass_raw : {jet_variations.mass_raw[event_mask].to_list()}")
-    print(f"jet_variations mas      : {jet_variations.mass    [event_mask].to_list()}")
-    print(f"jet_variations rho      : {jet_variations.rho     [event_mask].to_list()}")
-    print(f"jet_variations ['rho']  : {jet_variations['rho']  [event_mask].to_list()}")
-    print(f"jet_variations are      : {jet_variations.area    [event_mask].to_list()}")
-    print(f"jet_variations eta      : {jet_variations.eta     [event_mask].to_list()}")
-    print(f"jet_variations phi      : {jet_variations.phi     [event_mask].to_list()}")
-    print("\n")
-
 
     return jet_variations
 
