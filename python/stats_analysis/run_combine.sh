@@ -198,7 +198,6 @@ do
 
         if [ -f "${datacard}.root" ]; then
     
-            #### Need to revise this part
             echo "Running postfit b-only"
             combine -M FitDiagnostics ${datacard}.root --redefineSignalPOIs r${signallabel} \
                 -n _${iclass}${blind_label}_prefit_bonly ${asymov_data} \
@@ -206,25 +205,15 @@ do
                 --freezeParameters rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb,rZZ4b,rZH4b \
                 > fitDiagnostics_${datacard}_${iclass}${blind_label}_prefit_bonly.txt
             cat fitDiagnostics_${datacard}_${iclass}${blind_label}_prefit_bonly.txt
-            mkdir -p fitDiagnostics_bonly/
-            mv *th1x* fitDiagnostics_bonly/
-            mv covariance* fitDiagnostics_bonly/
 
             python /home/cmsusr/CMSSW_11_3_4/src/HiggsAnalysis/CombinedLimit/test/diffNuisances.py \
                 -p r${signallabel} \
                 -a fitDiagnostics_${iclass}${blind_label}_prefit_bonly.root \
                 -g diffNuisances_${datacard}_${iclass}${blind_label}_prefit_bonly.root
-
-            # combine -M MultiDimFit --robustFit 1 -n _${iclass}_fit_b \
-            # --saveWorkspace --saveFitResult -d ${datacard}.root \
-            # --setParameters r${signallabel}=0,rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0 \
-            # --freezeParameters ${freeze_parameters}rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb
-
-            # PostFitShapesFromWorkspace -w higgsCombine_${iclass}_fit_b.MultiDimFit.mH120.root -f multidimfit_${iclass}_fit_b.root:fit_mdf --total-shapes --output postfit_b.root --freeze r${signallabel}=0,rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0 --postfit
             
             echo "Running postfit s+b"
             combine -M FitDiagnostics ${datacard}.root --redefineSignalPOIs r${signallabel} \
-                -n _${iclass}${blind_label}_prefit_sb ${asymov_data} --saveShapes --plots \
+                -n _${iclass}${blind_label}_prefit_sb ${asymov_data} --saveShapes --saveWithUncertainties --plots \
                 --setParameters ${signal_parameter}rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0,rZZ4b=0,rZH4b=0 \
                 --freezeParameters rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb,rZZ4b,rZH4b \
                 > fitDiagnostics_${datacard}_${iclass}${blind_label}_prefit_sb.txt
@@ -238,15 +227,6 @@ do
                 -a fitDiagnostics_${iclass}${blind_label}_prefit_sb.root \
                 -g diffNuisances_${datacard}_${iclass}${blind_label}_prefit_sb.root
 
-            # combine -M MultiDimFit --robustFit 1 -n _${iclass}_fit_s \
-            #     --saveWorkspace --saveFitResult -d ${datacard}.root \
-            #     --setParameters ${signal_parameter}rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0 \
-            #     --freezeParameters rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb 
-
-            # PostFitShapesFromWorkspace -w higgsCombine_${iclass}_fit_s.MultiDimFit.mH120.root \
-            #     -f multidimfit_${iclass}_fit_s.root:fit_mdf \
-            #     --total-shapes --output postfit_s.root \
-            #     --freeze ${signal_parameter}rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0 --postfit
 
         else
             echo "File ${datacard}.root does not exist."

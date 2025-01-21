@@ -5,6 +5,7 @@ import logging
 import ROOT
 from array import array
 import cmsstyle as CMS
+import numpy as np
 ROOT.gROOT.SetBatch(True)
 
 def convert_tgraph_to_th1(tgraph, name="hist"):
@@ -20,6 +21,8 @@ def convert_tgraph_to_th1(tgraph, name="hist"):
         hist.SetBinError(i+1, tgraph.GetErrorY(i))
 
     return hist
+
+
 
 if __name__ == '__main__':
 
@@ -60,12 +63,14 @@ if __name__ == '__main__':
             hists[tt] = infile.Get(f'{tmp_folder}/{tt}')
             hists['TotalBkg'] = infile.Get(f'{tmp_folder}/total_background')
             hists[signal] = infile.Get(f'{tmp_folder}/{signal}')
+            hists['cov_matrix'] = infile.Get(f'{tmp_folder}/total_covar')
         else: 
             hists['data'].Add( convert_tgraph_to_th1(infile.Get(f'{tmp_folder}/data'), f'data{ichannel}') )
             hists[mj].Add( infile.Get(f'{tmp_folder}/{mj}') )
             hists[tt].Add( infile.Get(f'{tmp_folder}/{tt}') )
             hists['TotalBkg'].Add( infile.Get(f'{tmp_folder}/total_background') )
             hists[signal].Add( infile.Get(f'{tmp_folder}/{signal}') )
+            hists['cov_matrix'].Add( infile.Get(f'{tmp_folder}/total_covar') )
 
     ## Rescaling histogram
     for _, ih in hists.items():
@@ -94,27 +99,28 @@ if __name__ == '__main__':
     CMS.cmsDrawStack(stack, leg, {'ttbar': hists[tt].Clone(), 'Multijet': hists[mj].Clone() }, data= hists['data'], palette=['#85D1FBff', '#FFDF7Fff'] )
     CMS.GetcmsCanvasHist(nominal_can.cd(1)).GetYaxis().SetTitleOffset(1.5)
     CMS.GetcmsCanvasHist(nominal_can.cd(1)).GetYaxis().SetTitleSize(0.05)
+    CMS.GetcmsCanvasHist(nominal_can.cd(1)).Draw('AXISSAME')
 
     hists[signal].Scale( 100 )
     leg.AddEntry( hists[signal], 'HH4b (x100)', 'lp' )
-    CMS.cmsDraw( hists[signal], 'hist', fstyle=0, marker=1, alpha=1, lcolor=ROOT.TColor.GetColor("#e42536" ), fcolor=ROOT.TColor.GetColor("#e42536"))
+    CMS.cmsDraw( hists[signal], 'histsame', fstyle=0, marker=1, alpha=1, lcolor=ROOT.TColor.GetColor("#e42536" ), fcolor=ROOT.TColor.GetColor("#e42536"))
     nominal_can.cd(1).SetLogy(True)
 
     nominal_can.cd(2)
     
-    # ratio = ROOT.TGraphAsymmErrors()
-    # ratio.Divide( hists['data'].Clone(), hists['TotalBkg'].Clone(), 'pois' )
     ratio = hists['data'].Clone()
     ratio.Divide( hists['TotalBkg'].Clone() )
     CMS.cmsDraw( ratio, 'P', mcolor=ROOT.kBlack )
     
-    bkg_syst = ROOT.TGraphAsymmErrors()
-    bkg_syst.Divide( hists['TotalBkg'].Clone(), hists['TotalBkg'].Clone(), 'pois' )
-    # bkg_syst = hists['TotalBkg'].Clone()
-    # bkg_syst.Divide( hists['TotalBkg'].Clone() )
-    CMS.cmsDraw( bkg_syst, 'F3', fstyle=3004, lcolor=ROOT.kBlack, fcolor=ROOT.kBlack  )
+    # bkg_syst = ROOT.TGraphAsymmErrors()
+    # bkg_syst.Divide( hists['TotalBkg'].Clone(), hists['TotalBkg'].Clone(), 'pois' )
+    bkg_syst = hists['TotalBkg'].Clone("bkg_syst")
+    bkg_syst.Reset()
+    for ibin in range(1, bkg_syst.GetXaxis().GetNbins()+1):
+        bkg_syst.SetBinContent( ibin, 1.0 )
+        bkg_syst.SetBinError( ibin, np.sqrt( hists['cov_matrix'].GetBinContent(ibin, ibin) )/hists['TotalBkg'].GetBinContent(ibin) )
+    CMS.cmsDraw( bkg_syst, 'E2', fstyle=3004, fcolor=ROOT.kBlack, marker=0 )
     
-
     ref_line = ROOT.TLine(0, 1, 1, 1)
     CMS.cmsDrawLine(ref_line, lcolor=ROOT.kBlack, lstyle=ROOT.kDotted)
     CMS.GetcmsCanvasHist(nominal_can.cd(2)).GetXaxis().SetTitleSize(0.095)
