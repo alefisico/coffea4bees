@@ -6,6 +6,8 @@ import ROOT
 from array import array
 import cmsstyle as CMS
 import numpy as np
+import sys
+import os
 ROOT.gROOT.SetBatch(True)
 
 def convert_tgraph_to_th1(tgraph, name="hist"):
@@ -22,7 +24,29 @@ def convert_tgraph_to_th1(tgraph, name="hist"):
 
     return hist
 
+def filter_th2_by_labels(th2, label):
+    # Find the bins that match the label
+    x_bins = [x_bin for x_bin in range(1, th2.GetNbinsX() + 1) if label in th2.GetXaxis().GetBinLabel(x_bin)]
+    y_bins = [y_bin for y_bin in range(1, th2.GetNbinsY() + 1) if label in th2.GetYaxis().GetBinLabel(y_bin)]
 
+    # Create a new TH2 histogram with the filtered binning
+    new_th2 = ROOT.TH2F(f"{th2.GetName()}_filtered", f"{th2.GetTitle()}_filtered",
+                        len(x_bins), 0, len(x_bins),
+                        len(y_bins), 0, len(y_bins))
+
+    # Set the bin labels for the new histogram
+    for i, x_bin in enumerate(x_bins):
+        new_th2.GetXaxis().SetBinLabel(i + 1, th2.GetXaxis().GetBinLabel(x_bin))
+    for j, y_bin in enumerate(y_bins):
+        new_th2.GetYaxis().SetBinLabel(j + 1, th2.GetYaxis().GetBinLabel(y_bin))
+
+    # Copy the content and errors of the matching bins
+    for i, x_bin in enumerate(x_bins):
+        for j, y_bin in enumerate(y_bins):
+            new_th2.SetBinContent(i + 1, j + 1, th2.GetBinContent(x_bin, y_bin))
+            new_th2.SetBinError(i + 1, j + 1, th2.GetBinError(x_bin, y_bin))
+
+    return new_th2, len(x_bins)
 
 if __name__ == '__main__':
 
@@ -32,7 +56,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser( description='Convert json hist to root TH1F',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-o', '--output', dest="output",
-                        default="SvB_postfit.png", help='Output file and directory.')
+                        default="output/stat_plots/", help='Output directory.')
     parser.add_argument('-i', '--input_file', dest='input_file',
                         default='fitDiagnostics.root', help="Root file after fitDiagnostics")
     parser.add_argument('-s', '--signal', dest='signal',
@@ -41,6 +65,8 @@ if __name__ == '__main__':
                         default='stats_analysis/metadata/HH4b.yml', help="Metadata file")
     parser.add_argument('-t', '--type_of_fit', dest='type_of_fit', choices=['prefit', 'fit_b', 'fit_s'],
                         default='prefit', help="Type of fit to plot, choices: prefit, fit_b, fit_s")
+    parser.add_argument('--make_bkg_covariance', dest='make_bkg_covariance', action='store_true', 
+                        default=False, help="Flag to make background covariance matrix")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
@@ -55,6 +81,43 @@ if __name__ == '__main__':
     tt = metadata['processes']['background']['tt']['label']
     signal = metadata['processes']['signal'][args.signal]['label']
     infile = ROOT.TFile.Open(args.input_file)
+
+    if args.make_bkg_covariance:
+        CMS.SetExtraText("Preliminary")
+        CMS.SetLumi("")
+        CMS.SetEnergy("13")
+        CMS.ResetAdditionalInfo()
+        new_cov, nbins = filter_th2_by_labels(infile.Get("covariance_fit_s"), "datadriven")
+        canv = CMS.cmsCanvas( "cov", 0,
+            nbins,
+            0,
+            nbins,
+            "",
+            "",
+            square=CMS.kSquare,
+            extraSpace=0.01,
+            iPos=0,
+            with_z_axis=True,
+        )
+        pad = canv.GetPad(0)
+        pad.SetLeftMargin(0.3)
+        pad.SetBottomMargin(0.3)
+        new_cov.Draw("colz")
+        for i in range(1, new_cov.GetNbinsX() + 1):
+            for j in range(1, new_cov.GetNbinsY() + 1):
+                value = new_cov.GetBinContent(i, j)
+                text = ROOT.TText()
+                text.SetTextSize(0.02)
+                text.SetTextAlign(22)  # Center alignment
+                text.DrawText(i - 0.5, j - 0.5, f"{value:.2f}")
+        new_cov.GetXaxis().LabelsOption("v")  # Set labels to be vertical
+        # Set a new palette
+        CMS.SetAlternative2DColor(new_cov, CMS.cmsStyle)
+        # Allow to adjust palette position
+        CMS.UpdatePalettePosition(new_cov, canv)
+        CMS.SaveCanvas(canv, f"{args.output}/bkg_covariance.pdf")
+
+
     for i, ichannel in enumerate(channels):
         tmp_folder = f'shapes_{args.type_of_fit}/{ichannel}'
         if i==0:
@@ -79,6 +142,12 @@ if __name__ == '__main__':
         ax.Set( ax.GetNbins(), 0, 1.0 )
         ih.ResetStats()
     print(f"NUmber of bkg events in last bin: {hists['TotalBkg'].GetBinContent(hists['TotalBkg'].GetNbinsX())}")
+    
+    # Remove data points in hists['data'] that are higher than 0.5 in X
+    for bin_idx in range(1, hists['data'].GetNbinsX() + 1):
+        if hists['data'].GetBinCenter(bin_idx) > 0.5:
+            hists['data'].SetBinContent(bin_idx, 0)
+            hists['data'].SetBinError(bin_idx, 0)
     
     xmax = hists['TotalBkg'].GetXaxis().GetXmax()
     ymax = hists['TotalBkg'].GetMaximum()*1.2
@@ -107,19 +176,24 @@ if __name__ == '__main__':
     nominal_can.cd(1).SetLogy(True)
 
     nominal_can.cd(2)
-    
-    ratio = hists['data'].Clone()
-    ratio.Divide( hists['TotalBkg'].Clone() )
-    CMS.cmsDraw( ratio, 'P', mcolor=ROOT.kBlack )
-    
-    # bkg_syst = ROOT.TGraphAsymmErrors()
-    # bkg_syst.Divide( hists['TotalBkg'].Clone(), hists['TotalBkg'].Clone(), 'pois' )
+
     bkg_syst = hists['TotalBkg'].Clone("bkg_syst")
     bkg_syst.Reset()
     for ibin in range(1, bkg_syst.GetXaxis().GetNbins()+1):
-        bkg_syst.SetBinContent( ibin, 1.0 )
-        bkg_syst.SetBinError( ibin, np.sqrt( hists['cov_matrix'].GetBinContent(ibin, ibin) )/hists['TotalBkg'].GetBinContent(ibin) )
+        bkg_syst.SetBinContent(ibin, 1.0)
+        bkg_syst.SetBinError(ibin, np.sqrt(hists['cov_matrix'].GetBinContent(ibin, ibin)) / hists['TotalBkg'].GetBinContent(ibin))
     CMS.cmsDraw( bkg_syst, 'E2', fstyle=3004, fcolor=ROOT.kBlack, marker=0 )
+
+    ratio = hists['data'].Clone()
+    ratio.Divide( hists['TotalBkg'].Clone() )
+    # CMS.cmsDraw( ratio, 'PE same', mcolor=ROOT.kBlack )
+    ratio.Draw("PE same")
+    oldSize = ratio.GetMarkerSize()
+    ratio.SetMarkerSize(0)
+    ratio.DrawCopy("same e0")
+    ratio.SetMarkerSize(oldSize)
+    ratio.Draw("PE same")
+
     
     ref_line = ROOT.TLine(0, 1, 1, 1)
     CMS.cmsDrawLine(ref_line, lcolor=ROOT.kBlack, lstyle=ROOT.kDotted)
@@ -128,4 +202,4 @@ if __name__ == '__main__':
     CMS.GetcmsCanvasHist(nominal_can.cd(2)).GetXaxis().SetTitleOffset(1.5)
     CMS.GetcmsCanvasHist(nominal_can.cd(2)).GetYaxis().SetTitleOffset(0.8)
 
-    CMS.SaveCanvas( nominal_can, f"{args.output}" )
+    CMS.SaveCanvas( nominal_can, f"{args.output}/SvB_MA_postfitplots_{args.type_of_fit}.pdf" )
