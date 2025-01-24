@@ -176,7 +176,6 @@ class CommonTrain(Common):
             "fourTag",
             "threeTag",
             "passHLT",
-            "pseudoTagWeight",
             Columns.event,
             Columns.weight,
         }

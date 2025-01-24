@@ -22,6 +22,14 @@ class System(GlobalState):
         cls.startup_time = datetime.now()
         cls.in_singularity = os.path.exists("/.singularity")
 
+    @classmethod
+    def run_time(cls):
+        start = cls.startup_time
+        if start.timestamp() > 0:
+            return datetime.now() - start
+        else:
+            return start - start
+
 
 class Flags(GlobalState):
     test: bool = False

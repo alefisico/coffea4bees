@@ -4,15 +4,21 @@ from classifier.task import GlobalSetting
 
 
 class DataLoader(GlobalSetting):
-    "Default torch.DataLoader arguments"
+    "DataLoader configuration"
 
+    optimize_sliceable_dataset: bool = True
+    "optimize for SliceableDataset. (best for small datasets that can be fully loaded into memory)"
     batch_skim: int = 2**17
     "batch size for skimming"
     batch_eval: int = 2**15
     "batch size for evaluation"
+
     pin_memory: bool = True
+    "only for torch.DataLoader"
     num_workers: int = 0
+    "only for torch.DataLoader"
     persistent_workers: bool = True
+    "only for torch.DataLoader"
 
     @classmethod
     def get__persistent_workers(cls, value: bool) -> bool:
