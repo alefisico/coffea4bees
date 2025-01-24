@@ -1,15 +1,6 @@
 from datetime import datetime
 
-TIMESTAMP = datetime.now().strftime('%Y%m%d')
-HASH = config['hash']
-EOS_OUTPUT = f"/eos/user/a/algomez/work/HH4b/reana/{TIMESTAMP}_{HASH}/"
-
-analysis_container = "gitlab-registry.cern.ch/cms-cmu/coffea4bees:6c833959"   ### actual tag for reproducibility
-combine_container = "gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0"
-# analysis_container = "/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"   ### for when the container does not work 
-# combine_container = "/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0"
-dataset_location = "metadata/datasets_HH4b.yml"
-
+EOS_OUTPUT = f"/eos/user/a/algomez/work/HH4b/reana/{datetime.now().strftime('%Y%m%d')}_{config['hash']}/"
 
 #
 # rule all sets the entire workflow. This is were you define the last output of the workflow.
@@ -23,10 +14,11 @@ rule final_rule:
         # "output/datacards/plots/SvB_postfit.png"   ### Blinded analysis, no postfits.
         # "output/datacards/kappa_scan.pdf"
         # expand("output/singlefiles/histNoJCM__{sample}-{year}.coffea", sample=config['dataset'], year=config['year'])  ### trick to define wildcards
-    container: analysis_container
+    container: config["analysis_container"]
     resources:
         voms_proxy=True,
-        kerberos=True
+        kerberos=True,
+        unpacked_img=True,
     shell: 
         """
         echo "Copying output to cernbox"
@@ -37,7 +29,7 @@ rule final_rule:
 
 rule analysis:
     output: "output/singlefiles/histNoJCM__{sample}-{year}.coffea"
-    container: analysis_container
+    container: config["analysis_container"]
     params:
         hash=config['hash'],
         diff=config['diff'],
@@ -46,21 +38,24 @@ rule analysis:
         output="histNoJCM__{sample}-{year}.coffea",
         output_path="output/singlefiles/",
         logname="histNoJCM__{sample}-{year}",
-        metadata="analysis/metadata/HH4b_noJCM.yml"
+        metadata="analysis/metadata/HH4b_noJCM.yml",
+        datasets=config['dataset_location']
     resources:
         voms_proxy=True,
         kerberos=True,
+        unpacked_img=True,
         compute_backend="kubernetes",
         kubernetes_memory_limit="9.5Gi"
+        # compute_backend="htcondorcern",
     shell:
         """
-        echo "Blinding SR region"
-        sed -i 's/blind.*/blind: true/' python/analysis/metadata/HH4b.yml
         cd python/ 
+        echo "Blinding SR region"
+        sed -i 's/blind.*/blind: true/' {params.metadata}
         echo "Running with this metadata file"
         cat {params.metadata}
         echo "Running {params.isam} {params.iy} - output {output}"
-        mprof run -C -o mprofile_{params.logname}.dat python runner.py -d {params.isam} -p analysis/processors/processor_HH4b.py -y {params.iy} -o {params.output} -op ../{params.output_path} -m {dataset_location} --githash {params.hash} --gitdiff {params.diff} -c {params.metadata} 
+        mprof run -C -o mprofile_{params.logname}.dat python runner.py -d {params.isam} -p analysis/processors/processor_HH4b.py -y {params.iy} -o {params.output} -op ../{params.output_path} -m {params.datasets} --githash {params.hash} --gitdiff {params.diff} -c {params.metadata} 
         cd ../
         mkdir -p output/performance/
         mprof plot -o output/performance/mprofile_{params.logname}.png python/mprofile_{params.logname}.dat
@@ -69,7 +64,7 @@ rule analysis:
 rule merging_coffea_files:
     input: expand(['output/singlefiles/histNoJCM__{sample}-{year}.coffea'], sample=config['dataset'], year=config['year']) 
     output: "output/histNoJCM.coffea"
-    container: analysis_container
+    container: config["analysis_container"]
     params:
         output= "histNoJCM.coffea",
         logname= "histNoJCM"
@@ -88,11 +83,12 @@ rule merging_coffea_files:
 rule make_JCM:
     input: "output/histNoJCM.coffea"
     output: "output/JCM/jetCombinatoricModel_SB_reana.yml"
-    container: analysis_container
+    container: config["analysis_container"]
     resources:
         voms_proxy=True,
         kerberos=True,
         compute_backend="kubernetes",
+        unpacked_img=True,
     shell:
         """
         cd python/
@@ -117,7 +113,9 @@ use rule analysis as analysis_databkgs with:
         output="hist__{sample}-{year}.coffea",
         output_path="output/singlefiles/",
         logname="hist__{sample}_{year}",
-        metadata="analysis/metadata/HH4b.yml"
+        metadata="analysis/metadata/HH4b_rerun_SvB.yml",
+        datasets=config['dataset_location']
+        # metadata="analysis/metadata/HH4b.yml",
 
 use rule analysis as analysis_signals with:
     # input: "output/JCM/jetCombinatoricModel_SB_reana.yml"
@@ -130,7 +128,10 @@ use rule analysis as analysis_signals with:
         output="histsignal__{sample_signal}-{year}.coffea",
         output_path="output/singlefiles/",
         logname="histsignal__{sample_signal}-{year}",
-        metadata="analysis/metadata/HH4b.yml"
+        datasets=config['dataset_location'],
+        metadata="analysis/metadata/HH4b_rerun_SvB.yml",
+        # metadata="analysis/metadata/HH4b.yml",
+
 
 use rule analysis as analysis_mixedbkg_data3b with:
     output: "output/histMixedBkg_data_3b_for_mixed.coffea"
@@ -142,7 +143,9 @@ use rule analysis as analysis_mixedbkg_data3b with:
         output="histMixedBkg_data_3b_for_mixed.coffea",
         output_path="output/",
         logname="mixedbkg_data3b",
-        metadata="analysis/metadata/HH4b_mixed_data.yml"
+        metadata="analysis/metadata/HH4b_mixed_data.yml",
+        datasets=config['dataset_location']
+
 
 use rule analysis as analysis_mixedbkg with:
     output: "output/histMixedBkg_TT.coffea"
@@ -154,7 +157,9 @@ use rule analysis as analysis_mixedbkg with:
         output="histMixedBkg_TT.coffea",
         output_path="output/",
         logname="mixedbkg_TT",
-        metadata="analysis/metadata/HH4b.yml"
+        metadata="analysis/metadata/HH4b.yml",
+        datasets=config['dataset_location']
+
 
 use rule analysis as analysis_mixeddata with:
     output: "output/histMixedData.coffea"
@@ -166,12 +171,14 @@ use rule analysis as analysis_mixeddata with:
         output="histMixedData.coffea",
         output_path="output/",
         logname="mixeddata",
-        metadata="analysis/metadata/HH4b.yml"
+        metadata="analysis/metadata/HH4b.yml",
+        datasets=config['dataset_location']
+
 
 use rule analysis as analysis_systematics with:
     # input: "output/JCM/jetCombinatoricModel_SB_reana.yml"
     output: "output/singlefiles/histsyst_{samplesyst}-{iysyst}.coffea"
-    container: analysis_container
+    container: config["analysis_container"]
     params:
         hash=config['hash'],
         diff=config['diff'],
@@ -180,7 +187,9 @@ use rule analysis as analysis_systematics with:
         output="histsyst_{samplesyst}-{iysyst}.coffea",
         output_path="output/singlefiles/",
         logname="syst_{samplesyst}-{iysyst}",
-        metadata="analysis/metadata/HH4b_systematics.yml"
+        metadata="analysis/metadata/HH4b_systematics.yml",
+        datasets=config['dataset_location']
+
 
 use rule merging_coffea_files as merging_coffea_files_syst with:
     input: expand(['output/singlefiles/histsyst_{idatsyst}-{iyear}.coffea'], idatsyst=config['dataset_systematics'], iyear=config['year']) 
@@ -199,9 +208,10 @@ use rule merging_coffea_files as merging_coffea_files_histAll with:
 rule make_plots:
     input: "output/histAll.coffea"
     output: "output/plots/RunII/passPreSel/fourTag/SB/nPVs.pdf"
-    container: analysis_container
+    container: config["analysis_container"]
     resources:
         kerberos=True,
+        unpacked_img=True,
         compute_backend="kubernetes",
         kubernetes_memory_limit="8Gi"
     shell:
@@ -226,8 +236,9 @@ rule convert_hist_to_json:
         outmixdata3b = "output/histMixedBkg_data_3b_for_mixed.json",
         outmixbkgtt = "output/histMixedBkg_TT.json",
         outmixdata = "output/histMixedData.json",
-    container: analysis_container
+    container: config["analysis_container"]
     resources:
+        unpacked_img=True,
         compute_backend="kubernetes",
         kubernetes_memory_limit="8Gi"
     shell:
@@ -241,17 +252,18 @@ rule convert_hist_to_json:
 
 rule convert_json_to_root:
     input: 
-      file_TT = "output/histMixedBkg_TT.json",
-      file_mix = "output/histMixedData.json",
-      file_sig = "output/histAll.json",
-      file_data3b = "output/histMixedBkg_data_3b_for_mixed.json"
-    container: combine_container
+        file_TT = "output/histMixedBkg_TT.json",
+        file_mix = "output/histMixedData.json",
+        file_sig = "output/histAll.json",
+        file_data3b = "output/histMixedBkg_data_3b_for_mixed.json"
+    container: config["combine_container"]
     output: 
         "output/histMixedBkg_TT.root",
         "output/histMixedData.root",
         "output/histAll.root",
         "output/histMixedBkg_data_3b_for_mixed.root"
     resources:
+        unpacked_img=True,
         compute_backend="kubernetes",
         kubernetes_memory_limit="8Gi"
     shell:
@@ -272,13 +284,14 @@ rule run_two_stage_closure:
         file_mix = "output/histMixedData.root",
         file_sig = "output/histAll.root",
         file_data3b = "output/histMixedBkg_data_3b_for_mixed.root"
-    container: combine_container
+    container: config["combine_container"]
     output: "output/closureFits/ULHH_kfold/3bDvTMix4bDvT/SvB_MA/varrebin2/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_fine_varrebin2.pkl"
     params:
         outputPath = "output/closureFits/ULHH_kfold",
         rebin = "2",
         variable = "SvB_MA_ps_hh_fine"
     resources:
+        unpacked_img=True,
         compute_backend="kubernetes",
         kubernetes_memory_limit="8Gi"
     shell:
@@ -306,7 +319,7 @@ rule make_combine_inputs:
     output:
         "output/datacards/shapes.root",
         "output/datacards/datacard_HHbb_2018.txt"
-    container: combine_container
+    container: config["combine_container"]
     params:
         variable= "SvB_MA.ps_hh_fine",
         rebin=2
@@ -347,7 +360,7 @@ rule run_combine:
     output: 
         "output/datacards/datacard.root",
         "output/datacards/datacard.txt"
-    container: combine_container
+    container: config["combine_container"]
     resources:
         voms_proxy=True,
         kerberos=True,
@@ -368,10 +381,11 @@ rule run_combine:
 rule run_impacts:
     input: "output/datacards/datacard.root"
     output: "output/datacards/impacts_combine_SvB_MA_exp_HH.pdf"
-    container: combine_container
+    container: config["combine_container"]
     resources:
         voms_proxy=True,
         kerberos=True,
+        unpacked_img=True,
         compute_backend="kubernetes",
         kubernetes_memory_limit="9.5Gi"
     shell:
@@ -388,10 +402,11 @@ rule run_impacts:
 rule run_postfit:
     input: "output/datacards/datacard.root"
     output: "output/datacards/plots/SvB_postfit.png"
-    container: combine_container
+    container: config["combine_container"]
     resources:
         voms_proxy=True,
         kerberos=True,
+        unpacked_img=True,
         compute_backend="kubernetes"
     shell:
         """
@@ -411,10 +426,11 @@ rule make_syst_plots:
         root="output/datacards/shapes.root",
         datacard="output/datacards/datacard.txt"
     output: "output/datacards/systs/SvB_MA_ps_hh_fine_nominal.pdf"
-    container: combine_container
+    container: config["combine_container"]
     resources:
         kerberos=True,
         compute_backend="kubernetes",
+        unpacked_img=True,
         kubernetes_memory_limit="8Gi"
     shell:
         """
@@ -434,6 +450,7 @@ rule kappa_scan:
     resources:
         voms_proxy=True,
         kerberos=True,
+        unpacked_img=True,
         compute_backend="kubernetes"
     shell:
         """
