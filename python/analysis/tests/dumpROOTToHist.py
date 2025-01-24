@@ -19,7 +19,7 @@ from scipy.optimize import curve_fit
 from hist import Hist
 
 sys.path.insert(0, os.getcwd())
-from base_class.plots.plots import load_config, load_hists, read_axes_and_cuts, get_cut_dict
+from base_class.plots.plots import load_config, load_hists, read_axes_and_cuts
 import base_class.plots.iPlot_config as cfg
 
 from base_class.JCMTools import getCombinatoricWeight, getPseudoTagProbs
@@ -40,9 +40,9 @@ def data_from_TH1F(inTH1F):
 # variables = []
 def get(rootFile, path):
     obj = rootFile.Get(path)
-    if str(obj) == "<ROOT.TObject object at 0x(nil)>": 
+    if str(obj) == "<ROOT.TObject object at 0x(nil)>":
         rootFile.ls()
-        print() 
+        print()
         print( "ERROR: Object not found -", rootFile, path)
         sys.exit()
 
@@ -58,7 +58,7 @@ def hist_from_TH1F(inTH1F):
         centers.append(inTH1F.GetBinCenter (ibin))
         values .append(inTH1F.GetBinContent(ibin))
         errors .append(inTH1F.GetBinError  (ibin))
-    
+
     nBins = inTH1F.GetNbinsX()
     lower = inTH1F.GetXaxis().GetXmin()
     upper = inTH1F.GetXaxis().GetXmax()
@@ -86,7 +86,7 @@ def hist_from_TH1F(inTH1F):
 
     return hist_weighted
 
-    
+
 
 
 def getHists(cut,region,var,inFile4b, inFile3b, ttFile4b, ttFile3b, plot=False):#allow for different cut for mu calculation
@@ -111,13 +111,13 @@ def getHists(cut,region,var,inFile4b, inFile3b, ttFile4b, ttFile3b, plot=False):
 #    data4b.Sumw2()
     data3b_ROOT = inFile3b.Get(cut+"/threeTag/mainView/"+region+"/"+var)
     data3b = hist_from_TH1F(data3b_ROOT)
-    
+
 #    data3b.SetName("data3b_"+baseName)
 #    data3b.SetDirectory(0)
 
     tt4b_ROOT = ttFile4b.Get(cut+"/fourTag/mainView/"+region+"/"+var)
     tt4b = hist_from_TH1F(tt4b_ROOT)
-    
+
 #    tt4b.SetName("tt4b_"+baseName)
 #    tt4b.SetDirectory(0)
 
@@ -161,14 +161,14 @@ def loadROOTHists():
 
     data3bHist = "root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//dataRunII/hists_3b_newSBDef.root"
     data4bHist = "root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//dataRunII/hists_4b_newSBDef.root"
-    tt3bHists  = "root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//TTRunII/hists_3b_newSBDef.root" 
+    tt3bHists  = "root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//TTRunII/hists_3b_newSBDef.root"
     tt4bHists  = "root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//TTRunII/hists_4b_newSBDef.root"
-    
+
     inFile3b = ROOT.TFile.Open(data3bHist)
     inFile4b = ROOT.TFile.Open(data4bHist)
     ttFile3b = ROOT.TFile.Open(tt3bHists)
     ttFile4b = ROOT.TFile.Open(tt4bHists)
-    
+
 
     (data4b, tt4b, qcd4b, data3b, tt3b, qcd3b)   = getHists(cut,args.weightRegion,"nSelJetsUnweighted", inFile4b, inFile3b, ttFile4b, ttFile3b)
     (data4b_nTagJets, tt4b_nTagJets, _, _, _, _) = getHists(cut,args.weightRegion,"nPSTJetsUnweighted", inFile4b, inFile3b, ttFile4b, ttFile3b)
@@ -179,21 +179,21 @@ def loadROOTHists():
 
 
 if __name__ == "__main__":
-    
-    
+
+
     #parser = optparse.OptionParser()
     parser = argparse.ArgumentParser(description='uproot_plots')
     parser.add_argument('-c',dest="cut",default="passXWt")
     parser.add_argument('-r',dest="weightRegion",default="")
     parser.add_argument('-o', '--outputDir',dest='outputDir',default="")
     parser.add_argument('-m', '--metadata', dest="metadata",
-                        default="analysis/metadata/plotsAll.yml",
+                        default="plots/metadata/plotsAll.yml",
                         help='Metadata file.')
-    
+
     args = parser.parse_args()
     #o, a = parser.parse_args()
-    
-    
+
+
     cut=args.cut
 
 
@@ -207,15 +207,14 @@ if __name__ == "__main__":
     output = {}
     output["Hists"] = {}
     output["Hists"]["data4b"] =            data4b
-    output["Hists"]["data3b"] =             data3b          
-    output["Hists"]["tt4b"] =               tt4b            
-    output["Hists"]["tt3b"] =               tt3b            
-    output["Hists"]["qcd4b"] =              qcd4b           
-    output["Hists"]["qcd3b"] =              qcd3b           
-    output["Hists"]["data4b_nTagJets"]  =   data4b_nTagJets 
-    output["Hists"]["tt4b_nTagJets"]    =   tt4b_nTagJets   
+    output["Hists"]["data3b"] =             data3b
+    output["Hists"]["tt4b"] =               tt4b
+    output["Hists"]["tt3b"] =               tt3b
+    output["Hists"]["qcd4b"] =              qcd4b
+    output["Hists"]["qcd3b"] =              qcd3b
+    output["Hists"]["data4b_nTagJets"]  =   data4b_nTagJets
+    output["Hists"]["tt4b_nTagJets"]    =   tt4b_nTagJets
     output["Hists"]["qcd3b_nTightTags"] =   qcd3b_nTightTags
-    
 
-    save(output, hfile)    
-    
+
+    save(output, hfile)

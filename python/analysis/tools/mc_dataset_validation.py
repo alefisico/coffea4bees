@@ -1,12 +1,17 @@
 import logging
 import math
+from argparse import ArgumentParser
 from collections import defaultdict
 
-import awkward as ak
+import fsspec
 import numpy as np
 import uproot
+import yaml
 from dask.delayed import delayed
 from dask.distributed import Client, LocalCluster
+from rich.logging import RichHandler
+
+from ..helpers.mc_weight_outliers import OutlierByMedian
 
 _NANOAOD = "nanoAOD"
 
@@ -27,32 +32,35 @@ MismatchedSumw = "MismatchedSumw"
 Outliers = "Outliers"
 
 
-def fetch_metadata(
-    dataset: tuple[tuple[str, str], str]
-) -> tuple[tuple[str, str], dict]:
-    from dbs.apis.dbsClient import DbsApi
+class fetch_metadata:
+    def __init__(self):
+        from dbs.apis.dbsClient import DbsApi
 
-    key, path = dataset
-    dbs = DbsApi("https://cmsweb.cern.ch/dbs/prod/global/DBSReader")
-    metadata = dbs.listFileSummaries(dataset=path)
-    if len(metadata) > 1:
-        return key, {"path": path, "errors": [{"type": MultipleDatasets}]}
-    metadata = metadata[0]
-    nevents = metadata["num_event"]
-    nfiles = metadata["num_file"]
-    if nfiles == 0:
-        return key, {"path": path, "errors": [{"type": NoFile}]}
-    files = dbs.listFiles(dataset=path, detail=True)
-    files = [
-        dict(path=file["logical_file_name"], nevents=file["event_count"])
-        for file in files
-    ]
-    logging.info(f"Fetched metadata for {key}")
-    return key, {
-        "files": files,
-        "nevents": nevents,
-        "nfiles": nfiles,
-    }
+        self.dbs = DbsApi("https://cmsweb.cern.ch/dbs/prod/global/DBSReader")
+
+    def __call__(
+        self, dataset: tuple[tuple[str, str], str]
+    ) -> tuple[tuple[str, str], dict]:
+        key, path = dataset
+        metadata = self.dbs.listFileSummaries(dataset=path)
+        if len(metadata) > 1:
+            return key, {"path": path, "errors": [{"type": MultipleDatasets}]}
+        metadata = metadata[0]
+        nevents = metadata["num_event"]
+        nfiles = metadata["num_file"]
+        if nfiles == 0:
+            return key, {"path": path, "errors": [{"type": NoFile}]}
+        files = self.dbs.listFiles(dataset=path, detail=True)
+        files = [
+            dict(path=file["logical_file_name"], nevents=file["event_count"])
+            for file in files
+        ]
+        logging.info(f"Fetched metadata for {key}")
+        return key, {
+            "files": files,
+            "nevents": nevents,
+            "nfiles": nfiles,
+        }
 
 
 class fetch_replicas:
@@ -116,9 +124,8 @@ class sanity_check:
                 }
             )
         events = file["Events"].arrays(["event", "genWeight"])
-        genWeight = np.abs(events.genWeight)
-        median = float(np.median(genWeight))
-        minimum = float(np.min(genWeight))
+        genWeight = events.genWeight
+        minimum = float(np.min(np.abs(genWeight)))
         _sumw = float(
             np.sum(events.genWeight.to_numpy().astype(np.float64))
         )  # avoid numerical error
@@ -139,32 +146,28 @@ class sanity_check:
                     "minimum": minimum,
                 }
             )
-        threshold = self.threshold * median
-        outliers = events[genWeight > threshold]
+        outlier_checker = OutlierByMedian(self.threshold)
+        outliers = events[~outlier_checker(genWeight)]
         if len(outliers):
             result["outliers"] = [
-                {"event": e.event, "genWeight": e.genWeight} for e in outliers
+                {"event": int(e.event), "genWeight": float(e.genWeight)}
+                for e in outliers
             ]
-            result["median"] = median
+            result["median"] = float(outlier_checker.last_median)
         if errors:
             result["errors"] = errors
         return result
 
 
 if __name__ == "__main__":
-    from argparse import ArgumentParser
-    from concurrent.futures import ThreadPoolExecutor
-
-    import fsspec
-    import yaml
-    from rich.logging import RichHandler
+    from base_class.utils.argparser import DefaultFormatter
 
     logging.basicConfig(
         level=logging.INFO,
         format="%(message)s",
         handlers=[RichHandler(show_time=False, show_path=False, markup=True)],
     )
-    argparser = ArgumentParser()
+    argparser = ArgumentParser(formatter_class=DefaultFormatter)
     argparser.add_argument(
         "-m",
         "--metadatas",
@@ -192,7 +195,7 @@ if __name__ == "__main__":
         "--threshold",
         type=float,
         help="threshold to determine outliers comparing to the median",
-        default=1000,
+        default=200,
     )
     argparser.add_argument(
         "--sites",
@@ -243,9 +246,7 @@ if __name__ == "__main__":
             datasets[(dataset, year)] = nanoaod
     # fetch files
     logging.info("[blue]Fetching metadata from DAS.[/blue]")
-    with ThreadPoolExecutor() as executor:
-        files = executor.map(fetch_metadata, datasets.items())
-    files = dict(files)
+    files = dict(map(fetch_metadata(), datasets.items()))
     for k, v in [*files.items()]:
         if "errors" in v:
             errors.append(v)
@@ -279,6 +280,7 @@ if __name__ == "__main__":
         from lpcjobqueue import LPCCondorCluster
 
         cluster = LPCCondorCluster(
+            transfer_input_files=["analysis/"],
             shared_temp_directory="/tmp",
             cores=1,
             memory="2GB",
@@ -294,7 +296,7 @@ if __name__ == "__main__":
     cluster.adapt(minimum=1, maximum=args.workers)
     client = Client(cluster)
     logging.info("[blue]Running dask jobs.[/blue]")
-    results: dict[str, dict[str, dict]] = client.compute(results).result()
+    results: dict[str, dict[str, dict]] = client.compute(results, sync=True)
     # collect results
     for k, v in results.items():
         _outliers = []
@@ -304,7 +306,12 @@ if __name__ == "__main__":
                 _outlier = result["outliers"]
                 _outliers.extend(e["event"] for e in _outlier)
                 _error.append(
-                    {"type": "Outliers", "events": _outlier, "median": result["median"]}
+                    {
+                        "type": "Outliers",
+                        "events": _outlier,
+                        "median": result["median"],
+                        "threshold": args.threshold,
+                    }
                 )
             if _error:
                 errors.append(

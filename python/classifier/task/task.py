@@ -6,15 +6,12 @@ from copy import deepcopy
 from textwrap import indent
 from typing import Iterable, Literal, overload
 
+from base_class.utils.argparser import DefaultFormatter
+
 from .special import TaskBase
 
 _INDENT = "  "
 _DASH = "-"
-
-
-class _Formatter(
-    argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter
-): ...
 
 
 class _ConditionalArg:
@@ -44,7 +41,7 @@ class ArgParser(argparse.ArgumentParser):
         kwargs["prog"] = kwargs.get("prog", None) or ""
         kwargs["add_help"] = False
         kwargs["conflict_handler"] = "resolve"
-        kwargs["formatter_class"] = _Formatter
+        kwargs["formatter_class"] = DefaultFormatter
         if workflow:
             wf = ["workflow:"]
             wf.extend(
@@ -88,6 +85,10 @@ class ArgParser(argparse.ArgumentParser):
     ): ...
     def add_argument(self, *name_or_flags, **kwargs):
         condition = kwargs.pop("condition", None)
+        if kwargs.get("choices") is not None and kwargs.get("help") is not None:
+            kwargs["help"] = (
+                f"{kwargs['help']} (choices: [green]{[*kwargs['choices']]}[/green])"
+            )
         if condition is not None:
             self._conditionals.append(_ConditionalArg(condition, name_or_flags, kwargs))
         else:

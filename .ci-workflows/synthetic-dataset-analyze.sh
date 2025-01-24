@@ -1,18 +1,8 @@
-echo "############### Including proxy"
-if [ ! -f "${PWD}/proxy/x509_proxy" ]; then
-    echo "Error: x509_proxy file not found!"
-    exit 1
-fi
-export X509_USER_PROXY=${PWD}/proxy/x509_proxy
+#!/bin/bash
+source .ci-workflows/set_initial_variables.sh --output ${1:-"output/"} --do_proxy
 
-echo "############### Checking proxy"
-voms-proxy-info
-
-echo "############### Moving to python folder"
-cd python/
-
-INPUT_DIR="output/synthetic_dataset_make_dataset"
-OUTPUT_DIR="output/synthetic_dataset_analyze"
+INPUT_DIR="${DEFAULT_DIR}synthetic_dataset_make_dataset"
+OUTPUT_DIR="${DEFAULT_DIR}synthetic_dataset_analyze"
 echo "############### Checking and creating output directory"
 if [ ! -d $OUTPUT_DIR ]; then
     mkdir -p $OUTPUT_DIR
@@ -51,6 +41,9 @@ echo "############### Running test processor "
 time python runner.py -o test_synthetic_datasets.coffea -d synthetic_data synthetic_mc_GluGluToHHTo4B_cHHH1 -p analysis/processors/processor_HH4b.py -y UL18  -op $OUTPUT_DIR/ -c analysis/metadata/HH4b_synthetic_data.yml -m $OUTPUT_DIR/datasets_synthetic_test.yml
 
 # time python runner.py -o test_synthetic_datasets.coffea -d data GluGluToHHTo4B_cHHH1 -p analysis/processors/processor_HH4b.py -y UL18  -op $OUTPUT_DIR/ -c analysis/metadata/HH4b_synthetic_data.yml -m $OUTPUT_DIR/datasets_synthetic_test.yml
-# time python runner.py -o test_synthetic_datasets_Run3.coffea -d data  -p analysis/processors/processor_HH4b.py -y 2022_EE  -op hists/ -c analysis/metadata/HH4b_synthetic_data.yml -m metadata/datasets_HH4b_Run3_fourTag.yml
+# time python runner.py -o test_synthetic_datasets_Run3.coffea -d data  -p analysis/processors/processor_HH4b.py -y 2022_EE  -op ${OUTPUT_DIR} -c analysis/metadata/HH4b_synthetic_data.yml -m metadata/datasets_HH4b_Run3_fourTag.yml
 
-cd ../
+if [ "$return_to_base" = true ]; then
+    echo "############### Returning to base directory"
+    cd ../
+fi

@@ -126,12 +126,15 @@ class _save_cache:
 
     def __call__(self, chunk: int, indices: npt.ArrayLike):
         import torch
-        from classifier.nn.dataset import skim_loader
-        from torch.utils.data import Subset
+        from classifier.nn.dataset import skim_loader, subset
+        from classifier.nn.dataset.sliceable import NamedTensorDataset
 
-        subset = Subset(self.dataset, indices)
-        chunks = [*skim_loader(subset)]
-        data = {k: torch.cat([c[k] for c in chunks]) for k in self.dataset.datasets}
+        dataset = subset(self.dataset, indices)
+        if isinstance(dataset, NamedTensorDataset):
+            data = dataset.datasets
+        else:
+            chunks = [*skim_loader(dataset)]
+            data = {k: torch.cat([c[k] for c in chunks]) for k in self.dataset.datasets}
         with fsspec.open(
             self.path / f"chunk{chunk}.pt", "wb", compression=self.compression
         ) as f:

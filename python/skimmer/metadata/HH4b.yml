@@ -15,16 +15,22 @@ runner:
     - analysis
     - skimmer
     - data
-  rucio_regex_sites: 'T[23]_(US|CH|DE|UK)'
-  allowlist_sites: ''
-    # - T2_US_Nebraska
-    # - T2_US_Purdue
-    # - T3_US_FNALLPC
-    # - T3_US_NotreDame
+  rucio_regex_sites: 'T[123]_(US|CH|DE|UK)'
+  allowlist_sites:
+    - T3_US_FNALLPC
+    - T2_US_Nebraska
+    - T3_US_NotreDame
+    - T2_US_Caltech
+    - T1_US_FNAL_Disk
+  blocklist_sites:
+    - T2_US_MIT
+    - T2_US_Purdue
+
 
 config:
   # base_path: root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/
-  base_path: /srv/python/skimmer/test/   ### local
+  base_path: root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v3/
+  #base_path: /srv/python/skimmer/test/   ### local
   step: 100000
   loosePtForSkim: True
   skip_collections:

@@ -32,3 +32,17 @@ synthetic-dataset-make-dataset:
       - python/output/synthetic_dataset_make_dataset/data_UL18C/picoAOD_seed5.root
       - python/output/synthetic_dataset_make_dataset/data_UL18D/picoAOD_seed5.root
       - python/output/synthetic_dataset_make_dataset/GluGluToHHTo4B_cHHH1_UL18/picoAOD_seed5.root
+
+
+synthetic-dataset-make-dataset-Run3:
+  stage: skimmer-test
+  extends:
+    - .base_analysis
+  script:
+    - source .ci-workflows/synthetic-dataset-make-dataset-Run3.sh
+  artifacts:
+    paths:
+      - python/output/synthetic_dataset_make_dataset_Run3/picoaod_datasets_declustered_test_2023_BPix.yml
+      - python/output/synthetic_dataset_make_dataset_Run3/data_2023_BPixD/picoAOD_seed5.root
+      - python/output/synthetic_dataset_make_dataset_Run3/data_2023_BPixE/picoAOD_seed5.root
+

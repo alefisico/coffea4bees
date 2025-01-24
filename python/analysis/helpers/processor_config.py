@@ -10,6 +10,9 @@ def processor_config(processName, dataset, event):
     config["isMC"]     = False if "data"    in processName else True
     config["isPSData"] = True  if "ps_data" in processName else False
     config["isMixedData"]    = not (dataset.find("mix_v") == -1)
+    config["isSignal"] = False if processName.startswith(("data", 'syn', 'TT', 'mix')) else True
+    config["isRun3"] = True if "202" in dataset else False
+
     if config["isMixedData"]:
         config["isMC"] = False
 
@@ -35,7 +38,7 @@ def processor_config(processName, dataset, event):
     config["do_lepton_jet_cleaning"]  = True
     config["override_selected_with_flavor_bit"]  = False
     config["use_prestored_btag_SF"]  = False
-    config["do_jet_veto_maps"]       = True
+    config["do_jet_veto_maps"]       = False   ## false for run2 until check effect
 
     if config["isMC"]:
         config["cut_on_lumimask"]     = False
@@ -85,5 +88,9 @@ def processor_config(processName, dataset, event):
         config["do_lepton_jet_cleaning"]  = False
         config["do_jet_calibration"]  = False
         config["do_jet_veto_maps"]       = False
+
+    if config["isRun3"]:
+        config['do_jet_veto_maps'] = False
+        config['do_jet_calibration'] = False # Need a better name here (Jet calib is applied in Run3 by default !)
 
     return config

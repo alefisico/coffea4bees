@@ -6,29 +6,56 @@ include:
 build_container:
   extends:
     - .build_kaniko
+  before_script:
+    - export EXTRA_TAGS="$(date +%Y%m%d)_$CI_COMMIT_SHORT_SHA"
+    - echo $EXTRA_TAGS
   variables:
     CONTEXT_DIR: ""
     DOCKER_FILE_NAME: ".dockerfiles/Dockerfile_analysis"
     GIT_SUBMODULE_STRATEGY: recursive
     PUSH_IMAGE: "true"
-    REGISTRY_IMAGE_PATH: ${CI_REGISTRY_IMAGE}
-    EXTRA_TAGS: "latest $CI_COMMIT_SHORT_SHA"
+    REGISTRY_IMAGE_PATH: ${CI_REGISTRY_IMAGE}:latest
   rules:
-      - if: $CI_COMMIT_BRANCH =~ /^container.*/ 
-      - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"
-      - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $RECREATE_CONTAINERS == "true"
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_COMMIT_BRANCH =~ /^container.*/
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - .dockerfiles/Dockerfile_analysis
 
 build_container_reana:
   extends:
     - .build_kaniko
+  before_script:
+    - export EXTRA_TAGS="reana_$(date +%Y%m%d)_$CI_COMMIT_SHORT_SHA"
+    - echo $EXTRA_TAGS
   variables:
     CONTEXT_DIR: ""
     DOCKER_FILE_NAME: ".dockerfiles/Dockerfile_analysis_reana"
     GIT_SUBMODULE_STRATEGY: recursive
     PUSH_IMAGE: "true"
-    REGISTRY_IMAGE_PATH: ${CI_REGISTRY_IMAGE}
-    EXTRA_TAGS: "reana_latest reana_$CI_COMMIT_SHORT_SHA"
+    REGISTRY_IMAGE_PATH: ${CI_REGISTRY_IMAGE}:reana_latest
   rules:
-      - if: $CI_COMMIT_BRANCH =~ /^container.*/ 
-      - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"
-      - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $RECREATE_CONTAINERS == "true"
+    - if: $CI_COMMIT_BRANCH =~ /^container.*/ || $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+      - .dockerfiles/Dockerfile_analysis
+
+
+build_container_classifier:
+  extends:
+    - .build_kaniko
+  before_script:
+    - export EXTRA_TAGS="classifier_$(date +%Y%m%d)_$CI_COMMIT_SHORT_SHA"
+    - echo $EXTRA_TAGS
+  variables:
+    CONTEXT_DIR: ""
+    DOCKER_FILE_NAME: ".dockerfiles/Dockerfile_ml_cpu"
+    GIT_SUBMODULE_STRATEGY: recursive
+    PUSH_IMAGE: "true"
+    REGISTRY_IMAGE_PATH: ${CI_REGISTRY_IMAGE}:classifier_latest
+  rules:
+    - if: $RECREATE_CONTAINERS == "true"
+    - if: $CI_COMMIT_BRANCH =~ /^container.*/ || $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+      - .dockerfiles/Dockerfile_ml_cpu

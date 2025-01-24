@@ -1,0 +1,18 @@
+runner:
+  workers: 4
+  condor_memory: 4GB
+
+config:
+  apply_JCM: false
+  blind: false
+  apply_FvT: false
+  apply_trigWeight: true
+  apply_btagSF: true
+  apply_boosted_veto: false
+  run_SvB: false
+  run_systematics: false
+  top_reconstruction_override: false
+  friend_trigWeight: 'metadata/datasets_HH4b_2024_v1_trigweights.json'
+  # friend_top_reconstruction: 'hists/local/top_reconstruction_friendtree.json'
+
+  

@@ -1,6 +1,8 @@
 workflow:
   rules:
     # here the order matter!
+    # it runs with merge requests
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
     # does not run with changes in .md files
     - if: '$CI_COMMIT_BRANCH && $CI_COMMIT_BEFORE_SHA !~ /0{40}/'
       changes:
@@ -17,6 +19,7 @@ workflow:
 
 variables:
   CONTAINER_HOST: cms-cmu
+  RECREATE_CONTAINERS: "false"
   GIT_SUBMODULE_STRATEGY: recursive
   GIT_SUBMODULE_DEPTH: 1
   GIT_SUBMODULE_FORCE_HTTPS: "true"
@@ -34,6 +37,7 @@ stages:
   - fits
   - plot
   - cutflow
+  - classifier
   - reana
 
 .base_analysis:
@@ -46,6 +50,7 @@ stages:
     expire_in: 1 day
     paths:
       - 'template'
+  retry: 2
 
 .base_combine:
   image: gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0
@@ -56,3 +61,14 @@ stages:
     - cd -
   tags:
     - k8s-cvmfs
+
+.base_classifier:
+  needs:
+    - voms_proxy
+  image: registry.hub.docker.com/chuyuanliu/heptools:ml-cpu # TODO change to central repo
+  before_script:
+    - source /entrypoint.sh
+  tags:
+    - k8s-cvmfs
+  artifacts:
+    expire_in: 1 day

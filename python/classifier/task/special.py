@@ -93,3 +93,6 @@ class Static(TaskBase):
 
 
 class WorkInProgress: ...
+
+
+class Deprecated: ...

@@ -5,6 +5,9 @@ import yaml
 from parser import wrapper
 import sys
 
+#_PERCENT_ERROR_THRESHOLD =  0.001
+#_PERCENT_ERROR_THRESHOLD =  0.01
+
 #
 # python3 analysis/tests/cutflow_test.py   --inputFile hists/test.coffea --knownCounts analysis/tests/testCounts.yml
 #
@@ -12,6 +15,8 @@ class CutFlowTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
+
+        self.error_threshold = float(wrapper.args["error_threshold"])
 
         inputFile = wrapper.args["inputFile"]
         with open(f'{inputFile}', 'rb') as hfile:
@@ -35,10 +40,12 @@ class CutFlowTestCase(unittest.TestCase):
     def get_failures(self, expected, observed):
         failures = []
         for datasetAndEra in expected.keys():
-            for cut, count in expected[datasetAndEra].items():
-                exp = round(float(observed[datasetAndEra][cut]), 2)
-                if abs(count - exp) > 0.1:
-                    failures.append( (datasetAndEra, cut, count, exp) )
+            for cut, exp in expected[datasetAndEra].items():
+                obs = round(float(observed[datasetAndEra][cut]), 2)
+                diff = obs - exp
+                percent_diff = diff / exp if exp else 0
+                if abs(percent_diff) > self.error_threshold:
+                    failures.append( (datasetAndEra, cut, obs, exp) )
         return failures
 
 
@@ -47,10 +54,11 @@ class CutFlowTestCase(unittest.TestCase):
         print()
         for k, v in failures.items():
             if len(v):
+                print(f'{"":40} {"cut":^20} {"observed":^20} {"expected":^20} {"Fail fraction":^20}  {"Absolute Difference":^20} ')
                 print(f"Failed {k}:")
-                for datasetAndEra, cut, count, exp in v:
-                    percentFail = count/exp if exp else count
-                    print(f"\t{datasetAndEra:40} {str(round(percentFail,4)):20} {cut:20} {count:10} {exp:10}")
+                for datasetAndEra, cut, obs, exp in v:
+                    percentFail = (obs - exp) / exp if exp else -1
+                    print(f"\t{datasetAndEra:^40} {cut:^20} {obs:^10} {exp:^10} {str(round(percentFail,4)):^20} {str(round(obs - exp,2)):^20} ")
         print()
         print()
 

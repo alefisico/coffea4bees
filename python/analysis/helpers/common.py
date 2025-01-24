@@ -70,13 +70,14 @@ def apply_jerc_corrections( event,
                     run_systematics: bool = False,
                     isMC: bool = False,
                     dataset: str = None,
+                    jet_type: str = 'AK4PFchs',
                     jec_levels: list = ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"],
                     jer_levels: list = ["PtResolution", "SF"],
+                    jet_corr_factor: float = 1.0
                     ):
 
     logging.info(f"Applying JEC/JER corrections for {dataset}")
 
-    jet_type = 'AK4PFchs' if '202' not in dataset else 'AK4PFPuppiPNetRegressionPlusNeutrino'
     jec_file = corrections_metadata['JEC_MC'] if isMC else corrections_metadata['JEC_DATA'][dataset[-1]]
     extracted_files = extract_jetmet_tar_files(jec_file, jet_type=jet_type)
     if run_systematics: jec_levels.append("RegroupedV2")
@@ -89,8 +90,8 @@ def apply_jerc_corrections( event,
 
     logging.debug(f"For {dataset}, applying these corrections: {weight_sets}")
 
-    event['Jet', 'pt_raw']    = (1 - event.Jet.rawFactor) * event.Jet.pt
-    event['Jet', 'mass_raw']  = (1 - event.Jet.rawFactor) * event.Jet.mass
+    event['Jet', 'pt_raw']    = (1 - event.Jet.rawFactor) * event.Jet.pt * jet_corr_factor
+    event['Jet', 'mass_raw']  = (1 - event.Jet.rawFactor) * event.Jet.mass * jet_corr_factor
     nominal_jet = event.Jet
     if isMC: nominal_jet['pt_gen'] = ak.values_astype(ak.fill_none(nominal_jet.matched_gen.pt, 0), np.float32)
 
@@ -119,6 +120,7 @@ def apply_jerc_corrections( event,
     logging.debug(jec_stack.__dict__)
     name_map = jec_stack.blank_name_map
     name_map["JetPt"]    = "pt"
+    name_map["JetPhi"]    = "phi"
     name_map["JetMass"]  = "mass"
     name_map["JetEta"]   = "eta"
     name_map["JetA"]     = "area"
@@ -184,27 +186,29 @@ def jet_corrections( uncorr_jets,
 def apply_jet_veto_maps( corrections_metadata, jets ):
     '''
     taken from https://github.com/PocketCoffea/PocketCoffea/blob/main/pocket_coffea/lib/cut_functions.py#L65
+    modified to veto jets not events
     '''
 
     mask_for_VetoMap = (
         ((jets.jetId & 2)==2) # Must fulfill tight jetId
         & (abs(jets.eta) < 5.19) # Must be within HCal acceptance
-        & ((jets["neEmEF"]+jets["chEmEF"])<0.9) # Energy fraction not dominated by ECal
+        & (jets.neEmEF < 0.9) # Energy fraction not dominated by ECal
     )
-    if 'muonSubtrFactor' in jets.fields:  ### AGE: this should be temporary
+    if 'muonSubtrFactor' in jets.fields:  ### AGE: this should be temporary for old picos. New skims should have this field
         mask_for_VetoMap = mask_for_VetoMap & (jets.muonSubtrFactor < 0.8) # May no be Muons misreconstructed as jets
-    masked_jets = jets[mask_for_VetoMap]
+    else: logging.warning("muonSubtrFactor NOT in jets fields. This is correct only for mixeddata and old picos.")
 
     corr = correctionlib.CorrectionSet.from_file(corrections_metadata['file'])[corrections_metadata['tag']]
 
-    etaFlat, phiFlat, etaCounts = ak.flatten(masked_jets.eta), ak.flatten(masked_jets.phi), ak.num(masked_jets.eta)
+    etaFlat, phiFlat, etaCounts = ak.flatten(jets.eta), ak.flatten(jets.phi), ak.num(jets.eta)
     phiFlat = np.clip(phiFlat, -3.14159, 3.14159) # Needed since no overflow included in phi binning
     weight = ak.unflatten(
         corr.evaluate("jetvetomap", etaFlat, phiFlat),
         counts=etaCounts,
     )
-    eventMask = ak.sum(weight, axis=-1)==0 # if at least one jet is vetoed, reject it event
-    return ak.where(ak.is_none(eventMask), False, eventMask)
+    jetMask = ak.where( weight == 0, True, False, axis=1 )  # if 0 is not vetoed, then True
+
+    return jetMask & mask_for_VetoMap
 
 
 def mask_event_decision(event, decision='OR', branch='HLT', list_to_mask=[''], list_to_skip=['']):

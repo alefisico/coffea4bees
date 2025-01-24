@@ -38,7 +38,6 @@ def plotCut(args):
     plot("canJets.pt",  **args)
     plot("canJets.eta", **args, xlim=[-3,3])
     plot("canJets.phi", **args)
-    plot("canJets.energy", **args)
     plot("canJets.mass", **args)#),xlim=[0,50])
     plot("canJets.pz", **args)#,yscale="log")
 
@@ -46,23 +45,21 @@ def plotCut(args):
         plot(f"canJet{i}.pt",  **args)
         plot(f"canJet{i}.eta", **args, xlim=[-3,3])
         plot(f"canJet{i}.phi", **args)
-        plot(f"canJet{i}.energy", **args)
         plot(f"canJet{i}.mass", **args)#,xlim=[0,50])
         plot(f"canJet{i}.pz", **args)#,yscale="log")
 
 
     for jetName in ["selJets", "othJets"]:
-        for v in ["pt", "eta", "phi", "energy", "mass", "pz"]:
+        for v in ["pt", "eta", "phi", "mass", "pz"]:
             plot(f"{jetName}.{v}",  **args)
 
 
     #
     #  Di-Jet Level
     #
-    quad_jets = ["quadJet_min_dr","quadJet_selected"]
-    di_jets = ["lead","subl","close","other"]
+    quad_jets = {"quadJet_min_dr": ["close","other"],"quadJet_selected": ["lead","subl"]}
 
-    for q in quad_jets:
+    for q, di_jets in quad_jets.items():
         plot(f"{q}.xHH", **args)
         plot(f"{q}.dr", **args)
         for d in di_jets:
@@ -109,19 +106,19 @@ def plotCut(args):
     plot("SvB.ptt", **args, yscale="log")
 
 
-    args["rebin"] = 4
+    args["rebin"] = 8
     plot("SvB_MA.ps_zh", **args, yscale="log")
     plot("SvB_MA.ps_zz", **args, yscale="log")
     plot("SvB_MA.ps_hh", **args, yscale="log")
     plot("SvB_MA.ps_hh", **args, yscale="linear")
-    plot("SvB.ps_zh", **args, yscale="log")
-    plot("SvB.ps_zz", **args, yscale="log")
-    plot("SvB.ps_hh", **args, yscale="log")
-    plot("SvB.ps_hh", **args, yscale="linear")
+    plot("SvB.ps_zh",    **args, yscale="log")
+    plot("SvB.ps_zz",    **args, yscale="log")
+    plot("SvB.ps_hh",    **args, yscale="log")
+    plot("SvB.ps_hh",    **args, yscale="linear")
 
 
 
-def doPlots(doSignal=False, debug=False):
+def doPlots(year, doSignal=False, debug=False):
 
     norm = True
 
@@ -134,6 +131,7 @@ def doPlots(doSignal=False, debug=False):
             "cut":"passPreSel",
             "doRatio":1,
             "rebin":1,
+            "year":year,
             #"process":["data","syn_v0"],
             #"histtype":"step",
             }
@@ -169,4 +167,8 @@ if __name__ == '__main__':
     cfg.axisLabels, cfg.cutList = read_axes_and_cuts(cfg.hists, cfg.plotConfig)
 
     #varList = [ h for h in cfg.hists[0]['hists'].keys() if not h in args.skip_hists ]
-    doPlots(doSignal=args.signal, debug=args.debug)
+    #years = ["RunII", "UL18", "UL17", "UL16_preVFP", "UL16_postVFP"]
+    years = ["RunII", "2022_preEE", "2022_EE", "2023_preBPix", "2023_BPix"]
+
+    for y in years:
+        doPlots(year=y, doSignal=args.signal, debug=args.debug)

@@ -13,6 +13,7 @@ from typing import (
     Collection,
     Generator,
     Iterable,
+    Literal,
     NamedTuple,
     Optional,
 )
@@ -33,6 +34,7 @@ from bokeh.models import (
     Dropdown,
     HoverTool,
     MultiChoice,
+    Renderer,
     Row,
     ScrollBox,
     Select,
@@ -48,9 +50,10 @@ from hist.axis import (
     Variable,
 )
 
+from . import preset
 from ._bh import BHAxis, HistAxis
 from ._utils import RGB, Component
-from .config import UI, CouplingScan, Datasets, Palette, Plot, Stacks
+from .config import UI, Plot
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -125,7 +128,7 @@ _FF = f"{{:.{Plot.tooltip_float_precision}g}}".format
 
 
 def _find_process(categories: Collection[str]):
-    return difflib.get_close_matches("process", categories, n=len(categories), cutoff=0)
+    return difflib.get_close_matches("process", categories, n=1, cutoff=0)[0]
 
 
 # html & js
@@ -168,6 +171,15 @@ function logySetBottom(val, bottom, log_y) {
     return log_y ? val.map(v => v < bottom ? bottom : v) : val;
 }
 """,
+    "visible_logical_and": """
+let visible = true;
+for (const checkbox of checkboxes) {
+    visible = visible && checkbox.active;
+}
+for (const curve of curves) {
+    curve.visible = visible;
+}
+""",
 }
 
 
@@ -179,6 +191,8 @@ class _DataField:
 
     raw = "raw_{}".format
     var = "var_{}".format
+
+    hist = "h_{:d}".format
 
 
 class _PlotField:
@@ -217,16 +231,63 @@ def _btn(label: str, *onclick):
     return btn
 
 
-def _checkbox():
+def _checkbox(active: bool = True):
     return Checkbox(
-        active=True,
+        active=active,
         width=Plot.legend_checkbox_width - 10,  # 5px margin
     )
 
 
 def _palette(n: int):
-    selected = cycle(Palette)
+    selected = cycle(preset.Palette)
     return [next(selected) for _ in range(n)]
+
+
+def _tints(n: int) -> list[float]:
+    return np.linspace(*preset.PaletteTintRange, n).tolist()
+
+
+def _link_checkbox(checkbox: Checkbox, plot: Renderer):
+    checkbox.js_link("active", plot, "visible")
+    plot.visible = checkbox.active
+
+
+def _link_multi_checkbox(checkboxes: list[Checkbox], plot: Renderer):
+    js = CustomJS(
+        args=dict(checkboxes=checkboxes, curves=[plot]),
+        code=_CODES["visible_logical_and"],
+    )
+    visible = True
+    for checkbox in checkboxes:
+        checkbox.js_on_change("active", js)
+        visible = visible and checkbox.active
+    plot.visible = visible
+
+
+class _GlyphVisibility:
+    def __init__(self):
+        self._default: dict[str, bool] = {}
+        self._patterns: list[tuple[re.Pattern, str]] = []
+
+        for pattern, glyph in preset.GlyphVisibility:
+            if pattern is None:
+                self._default[glyph] = True
+            else:
+                self._patterns.append((re.compile(pattern), glyph))
+        if not self._default:
+            for glyph in _GLYPH_ICONS:
+                self._default[glyph] = True
+
+    def __call__(self, name: str):
+        matched = {}
+        for pattern, glyph in self._patterns:
+            if pattern.match(name):
+                matched[glyph] = True
+                if len(matched) == len(_GLYPH_ICONS):
+                    break
+        if not matched:
+            matched |= self._default
+        return matched
 
 
 class _KappaMatch:
@@ -237,8 +298,9 @@ class _KappaMatch:
     ):
         self._match: dict[str, dict[str, float]] = {}
         try:
+            compiled = re.compile(pattern)
             for process in processes:
-                match = re.match(pattern, process)
+                match = compiled.match(process)
                 if match is not None:
                     self._match[process] = dict(map(self._f, match.groupdict().items()))
             self._couplings = Coupling(*self._match.values())
@@ -286,8 +348,8 @@ class _Matched(ABC):
         return self.index + 1
 
 
-class _KappaModel(_Matched):
-    badge = BADGE(color="#385CB4", text="model")
+class _Model(_Matched):
+    badge = BADGE(color=UI.badge_color["model"], text="model")
     matched: _KappaMatch
 
     def __init__(
@@ -312,7 +374,7 @@ class _KappaModel(_Matched):
             "value",
             CustomJS(
                 args=dict(
-                    patterns={k: list(v) for k, v in Datasets.items()},
+                    patterns={k: list(v) for k, v in preset.ModelPatterns.items()},
                     select=self._dom_model,
                     input=self._dom_patterns,
                 ),
@@ -370,8 +432,8 @@ class _KappaModel(_Matched):
             yield _DataField.basis(field, i), p
 
 
-class _StackGroup(_Matched):
-    badge = BADGE(color="#29855A", text="stack")
+class _Stack(_Matched):
+    badge = BADGE(color=UI.badge_color["stack"], text="stack")
     matched: list[str]
 
     def __init__(
@@ -391,7 +453,7 @@ class _StackGroup(_Matched):
             sizing_mode="stretch_width",
             align="center",
         )
-        self._dom_bins.js_link("options", processes, "value")
+        processes.js_link("value", self._dom_bins, "options")
 
         self.dom_hint = [_label(text=f"Stack{self._index}:"), self._dom_name]
         self.dom_hide = [_label(text="Bins:"), self._dom_bins]
@@ -435,7 +497,7 @@ class _StackGroup(_Matched):
 
 
 class _Ratio(_Matched):  # TODO add ratio plot
-    badge = BADGE(color="#E02D4B", text="ratio")
+    badge = BADGE(color=UI.badge_color["ratio"], text="ratio")
     matched: tuple[str, str]
 
 
@@ -458,14 +520,6 @@ class HistGroup(Component):
         )
         # controls
         self._dom_freeze = _btn("", self._dom_freeze_click)
-        self._dom_add_model = self.shared.icon_button("plus", self._dom_add_model_click)
-        self._dom_remove_model = self.shared.icon_button(
-            "minus", self._dom_remove_model_click
-        )
-        self._dom_add_stack = self.shared.icon_button("plus", self._dom_add_stack_click)
-        self._dom_remove_stack = self.shared.icon_button(
-            "minus", self._dom_remove_stack_click
-        )
         self._dom_cats = Select(options=[*self._categories], align="center")
         self._dom_cats_selected = self.shared.multichoice()
         self._dom_cats_all = _btn(
@@ -494,22 +548,18 @@ class HistGroup(Component):
             ),
         )
         self._controls = [
-            self._dom_add_model,
-            self._dom_remove_model,
-            self._dom_add_stack,
-            self._dom_remove_stack,
             self._dom_cats,
             self._dom_cats_all,
             self._dom_cats_clear,
             self._dom_cats_selected,
         ]
         # models
-        self._models: list[_KappaModel] = []
+        self._models: list[_Model] = []
         self._dom_models = column(
             sizing_mode="stretch_width", background=UI.background_color
         )
         # stacks
-        self._stacks: list[_StackGroup] = []
+        self._stacks: list[_Stack] = []
         self._dom_stacks = column(
             sizing_mode="stretch_width", background=UI.background_color
         )
@@ -519,17 +569,17 @@ class HistGroup(Component):
         self.dom = column(
             row(
                 self._dom_freeze,
-                _label(text="Model:"),
-                self._dom_add_model,
-                self._dom_remove_model,
-                _label(text="Stack:"),
-                self._dom_add_stack,
-                self._dom_remove_stack,
                 _label(text="Axis:"),
                 self._dom_cats,
                 self._dom_cats_all,
                 self._dom_cats_clear,
                 self._dom_cats_selected,
+                sizing_mode="stretch_width",
+            ),
+            row(
+                *self._dom_transform("model"),
+                *self._dom_transform("stack"),
+                *self._dom_transform("ratio"),
                 sizing_mode="stretch_width",
             ),
             self._dom_models,
@@ -544,7 +594,7 @@ class HistGroup(Component):
         self, model: str = "", pattern: str = "", matched: _KappaMatch = None
     ):
         self._models.append(
-            _KappaModel(
+            _Model(
                 index=len(self._models),
                 model=model,
                 pattern=pattern,
@@ -560,7 +610,7 @@ class HistGroup(Component):
 
     def add_stack(self, name: Optional[str] = None, stacks: Iterable[str] = None):
         self._stacks.append(
-            _StackGroup(
+            _Stack(
                 index=len(self._stacks),
                 name=name,
                 processes=self._dom_cats_selected,
@@ -581,40 +631,53 @@ class HistGroup(Component):
         _select.value = _select.options
 
     def _setup_default(self):
-        categories = _find_process(self._categories)
-        for cat in categories:
-            processes = set(self._categories[cat]._choices)
-            for k, vs in Datasets.items():
-                for v in vs:
-                    matched = _KappaMatch(v, processes, k)
-                    if matched:
-                        self.add_model(k, v, matched)
-                        processes -= set(self._models[-1])
-            if self._models:
-                self._setup_categories(cat)
-                break
-        if not self._models:
-            self._setup_categories(categories[0])
-            processes = set(self._categories[self.process]._choices)
-        for k, vs in Stacks:
+        cat = _find_process(self._categories)
+        self._setup_categories(cat)
+        processes = set(self._categories[cat]._choices)
+        # update models
+        for k, vs in preset.ModelPatterns.items():
+            for v in vs:
+                matched = _KappaMatch(v, processes, k)
+                if matched:
+                    self.add_model(k, v, matched)
+                    processes -= set(self._models[-1])
+        # update stacks
+        stack_processes = set()
+        for k, vs in preset.StackGroups:
             if set(vs) <= processes:
                 self.add_stack(k, vs)
-                processes -= set(self._stacks[-1])
+                if preset.StackAllowDuplicate:
+                    stack_processes.update(self._stacks[-1])
+                else:
+                    processes -= set(self._stacks[-1])
+        processes -= stack_processes
 
     def _dom_freeze_click(self):
         self.frozen = not self.frozen
 
-    def _dom_add_model_click(self):
-        self.add_model()
+    def _dom_transform_click(
+        self,
+        transform: str,
+        action: Literal["add", "remove"],
+    ):
+        getattr(self, f"{action}_{transform}")()
 
-    def _dom_remove_model_click(self):
-        self.remove_model()
-
-    def _dom_add_stack_click(self):
-        self.add_stack()
-
-    def _dom_remove_stack_click(self):
-        self.remove_stack()
+    def _dom_transform(self, transform: str):
+        doms = (
+            _label(text=f"{transform.capitalize()}:"),
+            self.shared.icon_button(
+                "plus",
+                partial(self._dom_transform_click, transform=transform, action="add"),
+            ),
+            self.shared.icon_button(
+                "minus",
+                partial(
+                    self._dom_transform_click, transform=transform, action="remove"
+                ),
+            ),
+        )
+        self._controls.extend(doms)
+        return doms
 
     @property
     def process(self):
@@ -633,12 +696,19 @@ class HistGroup(Component):
         self._frozen = value
         if self._frozen:
             processes = set(self._dom_cats_selected.value)
+            # update models
             for model in self._models:
                 model.update(processes)
                 processes -= set(model)
+            # update stacks
+            stack_processes = set()
             for stacks in self._stacks:
                 stacks.update(processes)
-                processes -= set(stacks)
+                if preset.StackAllowDuplicate:
+                    stack_processes.update(stacks)
+                else:
+                    processes -= set(stacks)
+            processes -= stack_processes
             self._processes = sorted(processes)
 
         for control in chain(self._controls, self._models, self._stacks):
@@ -656,6 +726,7 @@ class HistGroup(Component):
         density: bool,
         log_y: bool,
         flow: bool,
+        share: bool,
         **_,
     ):
         bhaxis = BHAxis(flow=flow, floating_format=_FF)
@@ -671,17 +742,18 @@ class HistGroup(Component):
             tags = f" ({tags})"
 
         # preprocessing
-        models: dict[str, list[_KappaModel]] = defaultdict(list)
+        models: dict[str, list[_Model]] = defaultdict(list)
         for m in self._models:
             if m.matched:
                 models[m.model].append(m)
-        stacks: list[_StackGroup] = []
+        stacks: list[_Stack] = []
         for s in self._stacks:
             if s.matched:
                 stacks.append(s)
 
         # palette
         colors: dict[str, RGB] = {}
+        tints: dict[str, float] = {}
         palette = iter(
             _palette(
                 (
@@ -737,13 +809,17 @@ class HistGroup(Component):
         if not coupling_doms:
             legend_title_style.pop("margin-top")
 
-        def legend_add(field: str, label: str, stack: bool = False):
-            colors[field] = color = RGB(next(palette))
+        glyph_visibility_checker = _GlyphVisibility()
+
+        def legend_add(field: str, label: str, stack: bool = False, color: RGB = None):
+            if color is None:
+                colors[field] = color = RGB(next(palette))
             legends[field] = legend = _checkbox()
             legend_all.js_link("active", legends[field], "active")
-            glyphs[field] = glyph = {}
+            glyphs[field] = glyph = dict[str, Checkbox]()
+            visibility = glyph_visibility_checker(label)
             for k in _GLYPH_ICONS:
-                glyph[k] = _checkbox()
+                glyph[k] = _checkbox(visibility.get(k, False))
                 legend.js_link("active", glyph[k], "active")
                 glyph_all[k].js_link("active", glyph[k], "active")
             glyph_doms.append(row(*glyph.values(), visible=False))
@@ -751,7 +827,7 @@ class HistGroup(Component):
                 text=escape(label),
                 sizing_mode="stretch_width",
                 styles={
-                    "background-color": color.rgb,
+                    "background-color": color.rgba,
                     "color": color.contrast_best(_WHITE, _BLACK).rgb,
                     "border-radius": "4px",
                     "padding": "2px 5px 2px 5px",
@@ -775,18 +851,29 @@ class HistGroup(Component):
         def legend_hr():
             legend_doms.append(self.shared.hr())
 
+        # regular
         for i, p in enumerate(self._processes):
             legend_add(_DataField.regular(i), p)
         legend_hr()
+        # models
         for k, ms in models.items():
             legend_title(k, m.badge)
             for m in ms:
                 legend_add(m.field, m.name)
             legend_hr()
+        # stacks
         for s in stacks:
             legend_title(s.name, s.badge)
             for field, p in s.fields:
                 legend_toggles[field] = legend_add(field, p, stack=True)
+            legend_hr()
+        # hists
+        if share:
+            legend_title("", BADGE(color=UI.badge_color["hists"], text="hists"))
+            for i, (name, tint) in enumerate(zip(data, _tints(len(data)))):
+                field = _DataField.hist(i)
+                tints[field] = tint
+                legend_add(field, name, color=_BLACK.tint(tint))
             legend_hr()
 
         legend_dom = ScrollBox(
@@ -850,56 +937,80 @@ legend.width = (legend.width + {Plot.legend_glyph_width} * modifier);
             bottom: float | str,
             fig: figure,
             renderers: list,
+            field_hist: str = None,
         ):
             color = colors[field]
+            if field_hist is not None:
+                color = color.tint(tints[field_hist])
+            curves: list[tuple[str, Renderer]] = []
             # fill glyph
             fill = fig.quad(
                 top=field,
                 bottom=bottom,
                 source=source,
-                fill_color=color.copy(Plot.fill_alpha).rgba,
+                fill_color=color.copy(preset.GlyphFillAlpha).rgba,
                 **_HIST_FILL,
                 name=_PlotField.label_count(name),
             )
-            glyphs[field]["fill"].js_link("active", fill, "visible")
             renderers.append(fill)
+            curves.append(("fill", fill))
             # step glyph
-            step_left = fig.step(
-                y=field,
-                source=source,
-                line_color=color.rgba,
-                **_HIST_STEP_LEFT,
+            curves.append(
+                (
+                    "step",
+                    fig.step(
+                        y=field,
+                        source=source,
+                        line_color=color.rgba,
+                        **_HIST_STEP_LEFT,
+                    ),
+                )
             )
-            glyphs[field]["step"].js_link("active", step_left, "visible")
-            step_right = fig.step(
-                y=field,
-                source=source,
-                line_color=color.rgba,
-                **_HIST_STEP_RIGHT,
+            curves.append(
+                (
+                    "step",
+                    fig.step(
+                        y=field,
+                        source=source,
+                        line_color=color.rgba,
+                        **_HIST_STEP_RIGHT,
+                    ),
+                )
             )
-            glyphs[field]["step"].js_link("active", step_right, "visible")
             # errorbar glyph
-            errorbar_bar = Whisker(
+            errorbar = Whisker(
                 upper=_PlotField.upper(field),
                 lower=_PlotField.lower(field),
                 source=source,
                 line_color=color.rgba,
                 **_HIST_ERRORBAR_BAR,
             )
-            fig.add_layout(errorbar_bar)
-            glyphs[field]["errorbar"].js_link("active", errorbar_bar, "visible")
-            errorbar_dot = fig.scatter(
-                y=field,
-                source=source,
-                fill_color=color.rgba,
-                **_HIST_ERRORBAR_DOT,
+            fig.add_layout(errorbar)
+            curves.append(("errorbar", errorbar))
+            curves.append(
+                (
+                    "errorbar",
+                    fig.scatter(
+                        y=field,
+                        source=source,
+                        fill_color=color.rgba,
+                        **_HIST_ERRORBAR_DOT,
+                    ),
+                )
             )
-            glyphs[field]["errorbar"].js_link("active", errorbar_dot, "visible")
 
-            return fill, step_left, step_right, errorbar_bar, errorbar_dot
+            for glyph, curve in curves:
+                if field_hist is None:
+                    _link_checkbox(glyphs[field][glyph], curve)
+                else:
+                    _link_multi_checkbox(
+                        [glyphs[field][glyph], glyphs[field_hist][glyph]], curve
+                    )
+
+            return [c for _, c in curves]
 
         def js_model(
-            model: _KappaModel,
+            model: _Model,
             field: str,
             name: str,
             source: ColumnDataSource,
@@ -1049,9 +1160,36 @@ source.change.emit();
 
         # render plots
         plots = []
-        for title, (val, var, axis) in data.items():
+        render_figure = None
+        render_bottom = 0
+        if share and log_y:
+            render_bottom = min(
+                self.__logy_find_bottom(hist[0]) for hist in data.values()
+            )
+        for i, (title, (val, var, axis)) in enumerate(data.items()):
             logger(f'Rendering histogram "{title}"')
-            # construct figure
+            if share:
+                field_hist = _DataField.hist(i)
+            else:
+                field_hist = None
+            # initialize
+            if (not share) or (render_figure is None):
+                render_figure = self.__ticks(
+                    figure(
+                        height=Plot.figure_height,
+                        sizing_mode="stretch_width",
+                        tools="pan,wheel_zoom,box_zoom,reset",
+                        y_axis_type=y_axis_type,
+                    ),
+                    axis,
+                    bhaxis,
+                )
+                plots.extend(
+                    (Div(text=(title if not share else "") + tags), render_figure)
+                )
+            if log_y and not share:
+                render_bottom = self.__logy_find_bottom(val)
+            # construct tooltip
             tooltip_source = {"total": ColumnDataSource(data={})}
             tooltip = HoverTool(
                 tooltips=[
@@ -1062,7 +1200,7 @@ source.change.emit();
                 ],
                 formatters={
                     "$name": CustomJSHover(
-                        code=f"return special_vars.name.slice({len(_PlotField.label_count(''))});"
+                        code=f"return special_vars.name.slice({len(_PlotField.label_count(''))}) + ' ({title})';"
                     ),
                     "$total": CustomJSHover(
                         args=dict(source=tooltip_source["total"]),
@@ -1072,18 +1210,7 @@ source.change.emit();
                 point_policy="follow_mouse",
             )
             tooltip.renderers = []
-            fig = self.__ticks(
-                figure(
-                    height=Plot.figure_height,
-                    sizing_mode="stretch_width",
-                    tools="pan,wheel_zoom,box_zoom,reset",
-                    y_axis_type=y_axis_type,
-                ),
-                axis,
-                bhaxis,
-            )
-            fig.add_tools(tooltip)
-            plots.extend((Div(text=title + tags), fig))
+            render_figure.add_tools(tooltip)
 
             # initialize data
             _left, _right = self.__edges(axis, bhaxis)
@@ -1094,30 +1221,42 @@ source.change.emit();
                 "center": (_left + _right) / 2,
                 "edge": bhaxis.labels(axis),
             }
-            _bottom = self.__logy_find_bottom(val) if log_y else 0
 
             # utils
             _np = _ColumnLike(val)
             _plot = partial(
-                render_glyphs, bottom=_bottom, fig=fig, renderers=tooltip.renderers
+                render_glyphs,
+                bottom=render_bottom,
+                fig=render_figure,
+                renderers=tooltip.renderers,
+                field_hist=field_hist,
             )
-            _plot_stack = partial(render_glyphs, fig=fig, renderers=tooltip.renderers)
+            _plot_stack = partial(
+                render_glyphs,
+                fig=render_figure,
+                renderers=tooltip.renderers,
+                field_hist=field_hist,
+            )
             _setup_source = partial(
                 setup_source,
-                bottom=_bottom,
+                bottom=render_bottom,
                 width=_width,
                 tooltip=tooltip_source,
             )
-            _setup_bottom = partial(self.__logy_set_bottom, bottom=_bottom, log_y=log_y)
+            _setup_bottom = partial(
+                self.__logy_set_bottom,
+                bottom=render_bottom,
+                log_y=log_y,
+            )
             _js_model = partial(
                 js_model,
                 tooltip=tooltip_source,
-                bottom=_bottom,
+                bottom=render_bottom,
                 width=_width,
             )
             _js_stack = partial(
                 js_stack,
-                bottom=_bottom,
+                bottom=render_bottom,
                 width=_width,
             )
 
@@ -1238,7 +1377,9 @@ source.change.emit();
         )
 
     def _render_slider(self, coupling: str):
-        start, end, step = CouplingScan[coupling if coupling in CouplingScan else None]
+        start, end, step = preset.CouplingScan[
+            coupling if coupling in preset.CouplingScan else None
+        ]
         slider = Slider(
             start=start,
             end=end,

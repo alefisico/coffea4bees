@@ -11,11 +11,6 @@ if TYPE_CHECKING:
     import pandas as pd
 
 
-def _apply_JCM(df: pd.DataFrame):
-    df.loc[df["threeTag"], "weight"] *= df.loc[df["threeTag"], "pseudoTagWeight"]
-    return df
-
-
 def _common_selection(df: pd.DataFrame):
     return df["passHLT"] & (df["SB"] | df["SR"]) & (df["fourTag"] | df["threeTag"])
 
@@ -32,16 +27,29 @@ def _ttbar_3b_selection(df: pd.DataFrame):
     return df["threeTag"]
 
 
-def _ttbar_4b_selection(df: pd.DataFrame):
+def _select_4b(df: pd.DataFrame):
     return df[df["fourTag"]]
 
 
-class Train(_picoAOD.Background, CommonTrain):
+def _select_3b(df: pd.DataFrame):
+    return df[df["threeTag"]]
+
+
+def _remove_sr(df: pd.DataFrame):
+    return df[~df["SR"]]
+
+
+class Train(CommonTrain):
     argparser = ArgParser()
     argparser.add_argument(
-        "--no-JCM",
+        "--no-SR",
         action="store_true",
-        help="disable JCM weights",
+        help="remove SR events",
+    )
+    argparser.add_argument(
+        "--no-detector-4b",
+        action="store_true",
+        help="remove 4b detector data events",
     )
     argparser.add_argument(
         "--no-ttbar-3b",
@@ -57,53 +65,77 @@ class Train(_picoAOD.Background, CommonTrain):
     def preprocess_by_group(self):
         from classifier.df.tools import add_label_index_from_column, prescale
 
-        return [
+        ps = [
             _group.fullmatch(
                 ("label:data",),
                 processors=[
-                    _data_selection,
-                    add_label_index_from_column(threeTag="d3", fourTag="d4"),
+                    lambda: _data_selection,
+                    lambda: add_label_index_from_column(threeTag="d3", fourTag="d4"),
                 ],
                 name="data selection",
             ),
-            (
+            _group.fullmatch(
+                ("source:mixed",),
+                processors=[
+                    lambda: _select_4b,
+                ],
+                name="remove 3b mixed data",
+            ),
+            _group.add_year(),
+        ]
+        if self.opts.no_SR:
+            ps.append(
+                _group.fullmatch(
+                    (),
+                    processors=[
+                        lambda: _remove_sr,
+                    ],
+                )
+            )
+        if self.opts.no_detector_4b:
+            ps.append(
+                _group.fullmatch(
+                    ("source:detector",),
+                    processors=[
+                        lambda: _select_3b,
+                    ],
+                    name="remove 4b detector data",
+                )
+            )
+        if not self.opts.no_ttbar_3b:
+            ps.append(
                 _group.fullmatch(
                     ("label:ttbar",),
                     processors=[
-                        prescale(
+                        lambda: prescale(
                             scale=self.opts.ttbar_3b_prescale,
                             selection=_ttbar_3b_selection,
                             seed=("ttbar", 0),
                         ),
-                        _ttbar_selection,
-                        add_label_index_from_column(threeTag="t3", fourTag="t4"),
+                        lambda: _ttbar_selection,
+                        lambda: add_label_index_from_column(
+                            threeTag="t3", fourTag="t4"
+                        ),
                     ],
                     name="ttbar selection",
                 )
-                if not self.opts.no_ttbar_3b
-                else _group.fullmatch(
+            )
+        else:
+            ps.append(
+                _group.fullmatch(
                     ("label:ttbar",),
                     processors=[
-                        _ttbar_4b_selection,
-                        _ttbar_selection,
-                        add_label_index_from_column(fourTag="t4"),
+                        lambda: _select_4b,
+                        lambda: _ttbar_selection,
+                        lambda: add_label_index_from_column(fourTag="t4"),
                     ],
                     name="ttbar 4b selection",
                 )
-            ),
-            *(
-                (
-                    _group.fullmatch(
-                        (),
-                        processors=[_apply_JCM],
-                        name="apply JCM",
-                    ),
-                )
-                if not self.opts.no_JCM
-                else ()
-            ),
-            _group.add_year(),
-        ]
+            )
+        return list(super().preprocess_by_group()) + ps
 
 
-class Eval(_picoAOD.Background, CommonEval): ...
+class TrainBaseline(_picoAOD.Background, Train): ...
+
+
+class Eval(_picoAOD.Data, CommonEval): ...

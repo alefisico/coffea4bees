@@ -1,5 +1,6 @@
 import logging
 from collections import defaultdict
+from copy import deepcopy
 from functools import cache
 from io import StringIO
 from pathlib import Path
@@ -11,6 +12,7 @@ from ...typetools import dict_proxy
 
 _SCHEMA = ":##"
 _KEY = "@@"
+_CACHED = ("file", "py")
 
 SupportedSchema = Literal["yaml", "json", "csv", "file", "py"]
 
@@ -78,13 +80,13 @@ def _deserialize_file(path: str, formatter: str):
     try:
         with fsspec.open(path, "rt") as f:
             data = f.read()
-            if formatter is not None:
-                try:
-                    data = data.format(**mapping(formatter))
-                except Exception as e:
-                    logging.error(exc_info=e)
-                    raise
-            return _deserialize(data, protocol)
+        if formatter is not None:
+            try:
+                data = data.format(**mapping(formatter))
+            except Exception as e:
+                logging.error(exc_info=e)
+                raise
+        return _deserialize(data, protocol)
     except Exception:
         raise DeserializationError(f'Failed to read file "{path}"')
 
@@ -137,7 +139,7 @@ def mapping(
     if protocol is None:
         protocol = default
     keys = None
-    if protocol in ("file", "py"):
+    if protocol in _CACHED:
         data, keys = _mapping_nested_keys(data)
     try:
         if protocol == "file":
@@ -154,10 +156,12 @@ def mapping(
             except KeyError:
                 warn(f'Failed to select key "{".".join(keys[:i+1])}"')
                 return
+    if protocol in _CACHED:
+        result = deepcopy(result)
     return result
 
 
-def _split_with_empty(text: str, sep: str):
+def split_nonempty(text: str, sep: str):
     if text == "":
         return []
     return text.split(sep)
@@ -179,6 +183,6 @@ def grouped_mappings(opts: list[list[str]], sep: str = None):
         else:
             arg = opt[0]
             if sep is not None:
-                arg = frozenset(_split_with_empty(arg, sep))
+                arg = frozenset(split_nonempty(arg, sep))
             result[arg].extend(opt[1:])
     return result

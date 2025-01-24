@@ -186,14 +186,21 @@ export class TreeViewElementView extends WidgetView {
       conditionalselect: function (node: any) {
         return this.is_leaf(node);
       },
+      search: {
+        show_only_matches: this.model.show_only_matches,
+        show_only_matches_children: true,
+      }
     })
-      .on('loaded.jstree after_open.jstree', () => {
+      .on('loaded.jstree after_open.jstree search.jstree clear_search.jstree', () => {
         $(this.tree_el).find('.jstree-node>.jstree-icon.jstree-ocl').addClass('ti ti-caret-right');
       })
       .on('changed.jstree', (_: any, data: any) => {
         this._change_select(() => {
           this.model.selected = data.selected.slice();
         });
+      })
+      .on('ready.jstree', () => {
+        this._select();
       });
     $(this.search_el).on('keyup', () => {
       $(this.tree_el).jstree(true).search($(this.search_el).val());
@@ -272,6 +279,7 @@ export namespace TreeView {
     expand: p.Property<boolean>
     icons: p.Property<Dict<string>>
     selected: p.Property<string[]>
+    show_only_matches: p.Property<boolean>
   }
 }
 
@@ -292,6 +300,7 @@ export class TreeView extends Widget {
       expand: [Bool, false],
       icons: [Dict(Str), {}],
       selected: [List(Str), []],
+      show_only_matches: [Bool, false],
     }))
   }
 }

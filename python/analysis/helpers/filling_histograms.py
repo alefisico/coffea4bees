@@ -102,6 +102,9 @@ def filling_nominal_histograms(selev, JCM,
     fill += Jet.plot( ("selJets_noJCM", "Selected Jets"),        "selJet",       weight="weight_noJCM_noFvT", skip=skip_all_but_n, )
     fill += Jet.plot( ("tagJets_noJCM", "Tag Jets"),             "tagJet",       weight="weight_noJCM_noFvT", skip=skip_all_but_n, )
     fill += Jet.plot( ("tagJets_loose_noJCM", "Loose Tag Jets"), "tagJet_loose", weight="weight_noJCM_noFvT", skip=skip_all_but_n, )
+    if JCM:
+        fill += hist.add( "nPSJets",             (20, -0.5, 19.5, ("nJet_pseudotagged", "nPseudoTag Jets")) )
+        fill += hist.add( "nPSplusTagJets",      (20, -0.5, 19.5, ("nJet_ps_and_tag", "nPseudoTag + nTag Jets")) )
 
     for iJ in range(4):
         fill += Jet.plot( (f"canJet{iJ}", f"Higgs Candidate Jets {iJ}"), f"canJet{iJ}", skip=["n", "deepjet_c"], bins={"mass": (50, 0, 100)} )
@@ -141,13 +144,20 @@ def filling_nominal_histograms(selev, JCM,
                 fill += SvBHists( (f"SvB_{_FvT_name}",    "SvB Classifier"),    "SvB",    weight=f"weight_{_FvT_name}", )
                 fill += SvBHists( (f"SvB_MA_{_FvT_name}", "SvB MA Classifier"), "SvB_MA", weight=f"weight_{_FvT_name}", )
 
+
+    #
+    #  MC Truth
+    #
+    if "truth_v4b" in selev.fields:
+        fill += LorentzVector.plot_pair( ("truth_v4b", R"$HH_{4b}$"), "truth_v4b", skip=["n", "dr", "dphi", "st"], bins={"mass": (120, 0, 1200)}, )
+
     #
     # fill histograms
     #
     # fill.cache(selev)
     fill(selev, hist)
 
-    return hist.output
+    return hist.to_dict(nonempty=True)
 
 
 def filling_syst_histograms(selev, weights, analysis_selections,
@@ -166,36 +176,18 @@ def filling_syst_histograms(selev, weights, analysis_selections,
                             **dict((s, ...) for s in histCuts),
                             )
 
-    fill_SvB = Fill( process=processName, year=year, variation=shift_name, weight="weight" )
+    fill_SvB = Fill( process=processName, year=year)
     fill_SvB += SvBHists(("SvB",    "SvB Classifier"),    "SvB",    skip=["ps", "ptt"])
     fill_SvB += SvBHists(("SvB_MA", "SvB MA Classifier"), "SvB_MA", skip=["ps", "ptt"])
 
-    fill_SvB(selev, hist_SvB)
+    fill_SvB(selev, hist_SvB, variation=shift_name, weight="weight")
 
     if "nominal" in shift_name:
         logging.info(f"Weight variations {weights.variations}")
 
-        dict_hist_SvB = {}
         for ivar in list(weights.variations):
-
-            dict_hist_SvB[ivar] = Collection( process=[processName],
-                                                year=[year],
-                                                variation=[ivar],
-                                                tag=[4],  # 3 / 4/ Other
-                                                region=[2],  # SR / SB / Other
-                                                **dict((s, ...) for s in histCuts) )
-
             selev[f"weight_{ivar}"] = weights.weight(modifier=ivar)[ analysis_selections ]
-            fill_SvB_ivar = Fill( process=processName, year=year, variation=ivar, weight=f"weight_{ivar}", )
-
             logging.debug(f"{ivar} {selev['weight']}")
+            fill_SvB(selev, hist_SvB, variation=ivar, weight=f"weight_{ivar}")
 
-            fill_SvB_ivar += SvBHists( ("SvB",    "SvB Classifier"),    "SvB",    skip=["ps", "ptt"] )
-            fill_SvB_ivar += SvBHists( ("SvB_MA", "SvB MA Classifier"), "SvB_MA", skip=["ps", "ptt"] )
-
-            fill_SvB_ivar(selev, dict_hist_SvB[ivar])
-
-            for ih in hist_SvB.output["hists"].keys():
-                hist_SvB.output["hists"][ih] = ( hist_SvB.output["hists"][ih] + dict_hist_SvB[ivar].output["hists"][ih] )
-
-    return hist_SvB.output
+    return hist_SvB.to_dict(nonempty=True)

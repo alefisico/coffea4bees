@@ -48,7 +48,7 @@ class LoadRoot(ABC, Dataset):
     argparser.add_argument(
         "--max-workers",
         type=converter.int_pos,
-        default=1,
+        default=10,
         help="the maximum number of workers to fetch metadata and load training set",
     )
     argparser.add_argument(
@@ -241,9 +241,11 @@ class _fetch:
     def __init__(self, tree: str):
         self._tree = tree
 
-    def __call__(self, path: str):
+    def __call__(self, path: str | Chunk):
         from base_class.root import Chunk
 
+        if isinstance(path, Chunk):
+            return path
         chunk = Chunk(source=path, name=self._tree, fetch=True)
         return chunk
 

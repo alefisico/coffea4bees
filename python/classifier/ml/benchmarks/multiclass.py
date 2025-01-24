@@ -1,10 +1,9 @@
-from typing import Callable, Iterable, Literal, Optional, TypedDict
+from typing import Callable, Iterable, Literal, TypedDict
 
-import torch
 from classifier.config.state.label import MultiClass
 from torch import Tensor
 
-from ...algorithm.hist import FloatWeighted, RegularAxis
+from ...algorithm.hist import RegularAxis
 from ...algorithm.metrics.roc import FixedThresholdROC, linear_differ
 from .. import BatchType
 
@@ -45,10 +44,3 @@ class ROC(FixedThresholdROC):
 
     def to_json(self):
         return {"name": self._name} | super().to_json()
-
-        return {
-            "name": self._name,
-            "FPR": npext.to.base64(fpr),
-            "TPR": npext.to.base64(tpr),
-            "AUC": auc,
-        }
