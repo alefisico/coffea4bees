@@ -134,9 +134,10 @@ class PicoAOD(ProcessorABC):
             | result
         }
         self._cutFlow.addOutputSkim(result, dataset)
-        self._cutFlow.addOutputLumisProcessed(
-            result, dataset, events.run, events.luminosityBlock
-        )
+        if "genWeight" not in events.fields:
+            self._cutFlow.addOutputLumisProcessed(
+                result, dataset, events.run, events.luminosityBlock
+            )
 
         # sanity check
         if (
