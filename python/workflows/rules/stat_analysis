@@ -1,0 +1,181 @@
+rule convert_hist_to_json:
+    input: "output/histAll.coffea",
+    output: "output/histAll.json",
+    container: config["analysis_container"]
+    params:
+        syst_flag = " "
+    shell:
+        """
+        python stats_analysis/convert_hist_to_json.py -o {output} -i {input} {params.flag}
+        """
+
+rule convert_hist_to_json_closure:
+    input: "output/histAll.coffea",
+    output: "output/histAll.json",
+    container: config["analysis_container"]
+    shell:
+        """
+        python stats_analysis/convert_hist_to_json_closure.py -o {output} -i {input}
+        """
+
+rule convert_json_to_root:
+    input: "output/histMixedBkg_TT.json"
+    output: "output/histMixedBkg_TT.root"
+    params:
+        container = config["combine_container"],
+        output_dir = config["output_path"]
+    shell:
+        """
+        source workflows/helpers/shell_combine.sh {params.container} python3 stats_analysis/convert_json_to_root.py -f {input} --output {params.output_dir} 
+        ls {output}
+        """
+
+rule run_two_stage_closure:
+    input: 
+        file_TT = "output/histMixedBkg_TT.root",
+        file_mix = "output/histMixedData.root",
+        file_sig = "output/histAll.root",
+        file_data3b = "output/histMixedBkg_data_3b_for_mixed.root"
+    output: "output/closureFits/ULHH_kfold/3bDvTMix4bDvT/SvB_MA/varrebin2/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_fine_varrebin2.pkl"
+    params:
+        outputPath = "output/closureFits/ULHH_kfold",
+        rebin = "2",
+        variable = "SvB_MA_ps_hh_fine",
+        variable_binning = "--variable_binning",
+        container = config['combine_container']
+    shell:
+        """
+        source workflows/helpers/shell_combine.sh {params.container} \
+            python3 stats_analysis/runTwoStageClosure.py  \
+            --var {params.variable} --rebin {params.rebin} --use_kfold \
+            {params.variable_binning} \
+            --outputPath {params.outputPath} \
+            --input_file_TT {input.file_TT} \
+            --input_file_mix {input.file_mix} \
+            --input_file_sig {input.file_sig} \
+            --input_file_data3b {input.file_data3b}
+        """
+
+
+rule make_combine_inputs:
+    input:
+        injson = "output/histAll.json",
+        injsonsyst = "output/histAll_signals_cHHHX.json",
+        bkgsyst = "output/closureFits/ULHH_kfold/3bDvTMix4bDvT/SvB_MA/varrebin2/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_fine_varrebin2.pkl"
+    output:
+        "output/datacards/shapes.root",
+        "output/datacards/datacard_HHbb_2018.txt"
+    params:
+        container = config['combine_container'],
+        variable = "SvB_MA.ps_hh_fine",
+        rebin = 2,
+        output_dir = "output/datacards/",
+        variable_binning =  "--variable_binning"
+    shell:
+        """
+        echo "Making combine inputs with full stats"
+        source workflows/helpers/shell_combine.sh {params.container} \
+            python3 stats_analysis/make_combine_inputs.py \
+            --var {params.variable} \
+            -f {input.injson} \
+            --syst_file {input.injsonsyst} \
+            --bkg_syst_file {input.bkgsyst} \
+            --output_dir {params.output_dir} \
+            --rebin {params.rebin} \
+            {params.variable_binning} \
+            --metadata stats_analysis/metadata/HH4b.yml
+        echo "Making combine inputs stat only"
+        source workflows/helpers/shell_combine.sh {params.container} \
+            python3 stats_analysis/make_combine_inputs.py \
+            --var {params.variable} \
+            -f {input.injson} \
+            --syst_file {input.injsonsyst} \
+            --bkg_syst_file {input.bkgsyst} \
+            --output_dir {params.output_dir}/stat_only/ \
+            --rebin {params.rebin} \
+            {params.variable_binning} \
+            --metadata stats_analysis/metadata/HH4b.yml \
+            --stat_only
+        """
+
+rule run_combine:
+    input: "output/datacards/datacard_HHbb_2018.txt"
+    output: 
+        "output/datacards/datacard.root",
+        "output/datacards/datacard.txt"
+    params:
+        container=config['combine_container'],
+        output_dir="output/datacards/"
+    shell:
+        """
+        echo "RUNNING COMBINE"
+        source workflows/helpers/shell_combine.sh {params.container} \
+            source stats_analysis/run_combine.sh {params.output_dir} --limits
+        echo "RUNNING COMBINE STAT ONLY"
+        source workflows/helpers/shell_combine.sh {params.container} \
+            source stats_analysis/run_combine.sh {params.output_dir}/stat_only --limits
+        """
+
+rule run_impacts:
+    input: "output/datacards/datacard.root"
+    output: "output/datacards/impacts_combine_SvB_MA_exp_HH.pdf"
+    params:
+        container = config["combine_container"]
+    shell:
+        """
+        echo "RUNNING COMBINE"
+        source workflows/helpers/shell_combine.sh {params.container} \
+            source stats_analysis/run_combine.sh output/datacards/ --impacts
+        """
+
+rule run_postfit:
+    input: "output/datacards/datacard.root"
+    output: "output/datacards/SvB_MA_postfitplots_prefit.pdf"
+    params:
+        container = config["combine_container"],
+        output_dir = "output/datacards/"
+    shell:
+        """
+        echo "RUNNING COMBINE"
+        source workflows/helpers/shell_combine.sh {params.container} \
+            source stats_analysis/run_combine.sh {params.output_dir} --postfit
+        source workflows/helpers/shell_combine.sh {params.container} \
+            python3 plots/make_postfit_plot.py -i {params.output_dir}/fitDiagnostics_SvB_MA_prefit_sb.root -o {params.output_dir} -t prefit
+        """
+
+rule make_syst_plots:
+    input: 
+        root="output/datacards/shapes.root",
+        datacard="output/datacards/datacard.txt"
+    output: "output/datacards/systs/SvB_MA_ps_hh_fine_nominal.pdf"
+    container: config["combine_container"]
+    resources:
+        kerberos=True,
+        compute_backend="kubernetes",
+        kubernetes_memory_limit="8Gi"
+    shell:
+        """
+        source /cvmfs/cms.cern.ch/cmsset_default.sh
+        cd /home/cmsusr/CMSSW_11_3_4/
+        cmsenv || true
+        cd -
+        cd python/
+        echo "Making syst plots"
+        python3 plots/make_syst_plots.py -i ../{input.root} -o ../output/datacards/systs/ -d ../{input.datacard}
+        """
+
+rule kappa_scan:
+    input: "output/datacards/datacard.root"
+    output: "output/datacards/kappa_scan.pdf"
+    container: "docker://docker.io/cmssw/el7:aarch64"
+    resources:
+        voms_proxy=True,
+        kerberos=True,
+        compute_backend="kubernetes"
+    shell:
+        """
+        cd python/stats_analysis/inference/
+        bash setup.sh
+        law run PlotUpperLimits --version dev --datacards output/datacards/datacard.txt --xsec fb --y-log --scan-parameters kl,20,20,5
+        cp data/store/PlotUpperLimits/hh_model__model_default/datacards_716fa319cb/m125.0/poi_r/dev/limits__poi_r__scan_kl_20.0_20.0_n5__params_r_gghh1.0_r_qqhh1.0_kt1.0_CV1.0_C2V1.0__fb_log.pdf ../../../output/datacards/kappa_scan.pdf
+        """
