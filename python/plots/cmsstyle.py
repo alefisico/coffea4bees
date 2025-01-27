@@ -45,7 +45,7 @@ kSquare = True
 kRectangular = False
 
 # Petroff color schemes for 6, 8 and 10 colors, respectively. See classes below. Avoid using this... better use the names.
-petroff_6 = ["#5790fc", "#f89c20", "#e42536", "#964a8b", "#9c9ca1", "#7a21dd"]
+petroff_6 = ['#85D1FBff', '#FFDF7Fff', "#5790fc", "#f89c20", "#e42536", "#964a8b", "#9c9ca1", "#7a21dd"]
 petroff_8 = ["#1845fb", "#ff5e02", "#c91f16", "#c849a9", "#adad7d", "#86c8dd", "#578dff", "#656364"]
 petroff_10 = ["#3f90da", "#ffa90e", "#bd1f01", "#94a4a2", "#832db6", "#a96b59", "#e76300", "#b9ac70", "#717581", "#92dadd"]
 

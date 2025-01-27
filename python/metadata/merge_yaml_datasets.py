@@ -11,6 +11,7 @@ if __name__ == '__main__':
     parser.add_argument('-m', '--main_file', dest="main_file", default="datasets_HH4b.yml", help='Main datasets file.')
     parser.add_argument('-o', '--output_file', dest="output_file", default="datasets_HH4b_merged.yml", help='Output file.')
     parser.add_argument('-f', '--files_to_add', nargs='+', dest="files_to_add", default=["datasets_HH4b.yml"], help='Files to add.')
+    parser.add_argument('-a', '--add_to_dataset', dest="add_to_dataset", default="", help='String to add to dataset.')
     args = parser.parse_args()
 
     main_file = yaml.safe_load(open(args.main_file, 'r'))
@@ -31,6 +32,13 @@ if __name__ == '__main__':
                               'reproducible', 'lumis_processed',
                               ]:
                     if iname in tmp_file[ikey].keys(): tmp_file[ikey].pop(iname)
+
+                if args.add_to_dataset:
+                    dataset = f"{dataset}_{args.add_to_dataset}"
+                    if dataset not in main_file['datasets']:
+                        main_file['datasets'][dataset] = { year: {} }
+                    else:
+                        main_file['datasets'][dataset][year] = {}
 
                 if 'data' in dataset:
                     era = year[-1]
