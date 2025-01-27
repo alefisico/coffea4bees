@@ -88,8 +88,8 @@ run_limits() {
         --PO "map=.*/ggHH_kl_0_kt_1_hbbhbb:rggHH_kl_0_kt_1_hbbhbb[1,-10,10]" \
         --PO "map=.*/ggHH_kl_2p45_kt_1_hbbhbb:rggHH_kl_2p45_kt_1_hbbhbb[1,-10,10]" \
         --PO "map=.*/ggHH_kl_5_kt_1_hbbhbb:rggHH_kl_5_kt_1_hbbhbb[1,-10,10]" \
-        # --PO 'map=.*/ZH4b:rZH4b[1,-10,10]' \
-        # --PO 'map=.*/ZZ4b:rZZ4b[1,-10,10]'
+        --PO 'map=.*/ZZ4b:rZZ4b[1,-10,10]'
+        --PO 'map=.*/ZH4b:rZH4b[1,-10,10]' \
         
     combine -M AsymptoticLimits ${datacard}.root --redefineSignalPOIs r${signallabel} \
         -n _${iclass}${blind_label} ${limit_blind} \
