@@ -193,7 +193,14 @@ class analysis(processor.ProcessorABC):
         # Apply object selection (function does not remove events, adds content to objects)
         event = apply_object_selection_4b( event, self.corrections_metadata[year],
                                            dataset=dataset,
-                                           doLeptonRemoval=config["do_lepton_jet_cleaning"], override_selected_with_flavor_bit=config["override_selected_with_flavor_bit"] )
+                                           doLeptonRemoval=config["do_lepton_jet_cleaning"],
+                                           override_selected_with_flavor_bit=config["override_selected_with_flavor_bit"],
+                                           run_lowpt_selection=False,
+                                           do_jet_veto_maps=config["do_jet_veto_maps"],
+                                           isRun3=config["isRun3"],
+                                           isMC=config["isMC"], ### temporary
+                                           isSyntheticData=config["isSyntheticData"],
+                                          )
 
         selections = PackedSelection()
         selections.add( "lumimask", event.lumimask)

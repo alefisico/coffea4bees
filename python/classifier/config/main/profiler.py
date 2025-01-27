@@ -86,6 +86,6 @@ class Main(WorkInProgress, SelectDevice, LoadTrainingSets):
                 loss.backward()
                 opt.step()
         logging.info("Exporting timeline for model...")
-        p.export_memory_timeline(os.fspath(cfg.IO.profiler / "profiler.html"))
+        p.export_memory_timeline(os.fspath(cfg.IO.report / "profiler.html"))
         logging.info("Exporting trace for model...")
-        p.export_chrome_trace(os.fspath(cfg.IO.profiler / "profiler.json"))
+        p.export_chrome_trace(os.fspath(cfg.IO.report / "profiler.json"))

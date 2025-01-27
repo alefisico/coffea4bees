@@ -1,62 +1,84 @@
+from __future__ import annotations
+
+import copy
 import logging
 import warnings
+from collections import OrderedDict
+from typing import TYPE_CHECKING
 
 import awkward as ak
 import numpy as np
-import yaml, json
-import copy
-from collections import OrderedDict
-from memory_profiler import profile
-
-from analysis.helpers.processor_config import processor_config
+import yaml
 from analysis.helpers.common import apply_jerc_corrections, update_events
-
+from analysis.helpers.cutflow import cutFlow
+from analysis.helpers.event_weights import (
+    add_btagweights,
+    add_pseudotagweights,
+    add_weights,
+)
 from analysis.helpers.filling_histograms import (
     filling_nominal_histograms,
-    filling_syst_histograms
+    filling_syst_histograms,
 )
-from analysis.helpers.event_weights import (
-    add_weights,
-    add_pseudotagweights,
-    add_btagweights,
-)
-from analysis.helpers.cutflow import cutFlow
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
-from analysis.helpers.SvB_helpers import setSvBVars, subtract_ttbar_with_SvB
 from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
+from analysis.helpers.processor_config import processor_config
 from analysis.helpers.selection_basic_4b import (
     apply_event_selection_4b,
     apply_object_selection_4b,
     create_cand_jet_dijet_quadjet,
 )
+from analysis.helpers.SvB_helpers import setSvBVars, subtract_ttbar_with_SvB
 from analysis.helpers.topCandReconstruction import (
+    adding_top_reco_to_event,
     buildTop,
-    dumpTopCandidateTestVectors,
     find_tops,
     find_tops_slow,
-    adding_top_reco_to_event,
 )
-from base_class.root import Chunk, TreeReader, Friend
-from base_class.utils.json import DefaultEncoder
+from base_class.hist import Fill
+from base_class.root import Chunk, TreeReader
 from coffea import processor
 from coffea.analysis_tools import PackedSelection
 from coffea.nanoevents import NanoAODSchema, NanoEventsFactory
 from coffea.util import load
+from memory_profiler import profile
 
+from ..helpers.load_friend import (
+    FriendTemplate,
+    parse_friends,
+    rename_FvT_friend,
+    rename_SvB_friend,
+)
+
+if TYPE_CHECKING:
+    from ..helpers.classifier.HCR import HCRModelMetadata
 from analysis.helpers.truth_tools import find_genpart
 
 #
 # Setup
 #
+Fill.allow_missing = True
 NanoAODSchema.warn_missing_crossrefs = False
 warnings.filterwarnings("ignore")
+
+
+def _init_classfier(path: str | list[HCRModelMetadata]):
+    if path is None:
+        return None
+    if isinstance(path, str):
+        from ..helpers.classifier.HCR import Legacy_HCREnsemble
+        return Legacy_HCREnsemble(path)
+    else:
+        from ..helpers.classifier.HCR import HCREnsemble
+        return HCREnsemble(path)
+
 
 class analysis(processor.ProcessorABC):
     def __init__(
         self,
         *,
-        SvB: str = None,
-        SvB_MA: str = None,
+        SvB: str|list[HCRModelMetadata] = None,
+        SvB_MA: str|list[HCRModelMetadata] = None,
         blind: bool = False,
         apply_JCM: bool = True,
         JCM_file: str = "analysis/weights/JCM/AN_24_089_v3/jetCombinatoricModel_SB_6771c35.yml",
@@ -75,8 +97,7 @@ class analysis(processor.ProcessorABC):
         make_friend_JCM_weight: str = None,
         make_friend_FvT_weight: str = None,
         subtract_ttbar_with_weights: bool = False,
-        friend_trigWeight: str = None,
-        friend_top_reconstruction: str = None,
+        friends: dict[str, str|FriendTemplate] = None,
     ):
 
         logging.debug("\nInitialize Analysis Processor")
@@ -89,10 +110,8 @@ class analysis(processor.ProcessorABC):
         self.run_SvB = run_SvB
         self.fill_histograms = fill_histograms
         self.apply_boosted_veto = apply_boosted_veto
-        if SvB or SvB_MA: # import torch on demand
-            from analysis.helpers.networks import HCREnsemble
-        self.classifier_SvB = HCREnsemble(SvB) if SvB else None
-        self.classifier_SvB_MA = HCREnsemble(SvB_MA) if SvB_MA else None
+        self.classifier_SvB = _init_classfier(SvB)
+        self.classifier_SvB_MA = _init_classfier(SvB_MA)
         with open(corrections_metadata, "r") as f:
             self.corrections_metadata = yaml.safe_load(f)
 
@@ -103,19 +122,13 @@ class analysis(processor.ProcessorABC):
         self.make_friend_FvT_weight = make_friend_FvT_weight
         self.top_reconstruction_override = top_reconstruction_override
         self.subtract_ttbar_with_weights = subtract_ttbar_with_weights
-        self.friend_trigWeight = friend_trigWeight
-        self.friend_top_reconstruction = friend_top_reconstruction
-
-        if self.friend_trigWeight:
-            with open(friend_trigWeight, 'r') as f:
-                self.friend_trigWeight = Friend.from_json(json.load(f)['trigWeight'])
+        self.friends = parse_friends(friends)
 
         self.cutFlowCuts = [
             "all",
             "pass4GenBJets",
             "passHLT",
             "passNoiseFilter",
-            "passJetVetoMaps",
             "passJetMult",
             "passJetMult_btagSF",
             "passPreSel",
@@ -141,6 +154,9 @@ class analysis(processor.ProcessorABC):
         self.year_label = self.corrections_metadata[self.year]['year_label']
         self.processName = event.metadata['processName']
 
+        ### target is for new friend trees
+        target = Chunk.from_coffea_events(event)
+
         if self.top_reconstruction_override:
             self.top_reconstruction = self.top_reconstruction_override
             logging.info(f"top_reconstruction overridden to {self.top_reconstruction}\n")
@@ -161,6 +177,15 @@ class analysis(processor.ProcessorABC):
         #     with open(f"jet_clustering/jet-splitting-PDFs-00-08-00/hT-reweight-00-00-01/hT_weights_{self.year}.yml", "r") as f:
         #         self.hT_weights= yaml.safe_load(f)
 
+        #
+        #  If applying Gaussian Kernal to signal
+        #
+        self.gaussKernalMean = None
+        if self.config["isSignal"] and (self.gaussKernalMean is not None) :
+            bin_edges = np.linspace(0, 1200, 100)  # 100 bins from 0 to 1200
+            bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2  # Calculate bin centers
+            sigma = 0.05 * self.gaussKernalMean  # Standard deviation of the Gaussian
+            self.resonance_weights = np.exp(-0.5 * ((bin_centers - self.gaussKernalMean) / sigma) ** 2)  # Gaussian formula
 
         self.nEvent = len(event)
 
@@ -169,80 +194,93 @@ class analysis(processor.ProcessorABC):
         #
         path = fname.replace(fname.split("/")[-1], "")
         if self.apply_FvT:
-            if self.config["isMixedData"]:
-
-                FvT_name = event.metadata["FvT_name"]
-                event["FvT"] = getattr( NanoEventsFactory.from_root( f'{event.metadata["FvT_file"]}', entry_start=self.estart, entry_stop=self.estop, schemaclass=FriendTreeSchema, ).events(),
-                                        FvT_name )
-
-                event["FvT", "FvT"] = getattr(event["FvT"], FvT_name)
-
-                #
-                # Dummies
-                #
-                event["FvT", "q_1234"] = np.full(len(event), -1, dtype=int)
-                event["FvT", "q_1324"] = np.full(len(event), -1, dtype=int)
-                event["FvT", "q_1423"] = np.full(len(event), -1, dtype=int)
-
-            elif self.config["isDataForMixed"] or self.config["isTTForMixed"]:
-
-                #
-                # Use the first to define the FvT weights
-                #
-                event["FvT"] = getattr( NanoEventsFactory.from_root( f'{event.metadata["FvT_files"][0]}', entry_start=self.estart, entry_stop=self.estop, schemaclass=FriendTreeSchema, ).events(),
-                                        event.metadata["FvT_names"][0], )
-
-                event["FvT", "FvT"] = getattr( event["FvT"], event.metadata["FvT_names"][0] )
-
-                #
-                # Dummies
-                #
-                event["FvT", "q_1234"] = np.full(len(event), -1, dtype=int)
-                event["FvT", "q_1324"] = np.full(len(event), -1, dtype=int)
-                event["FvT", "q_1423"] = np.full(len(event), -1, dtype=int)
-
-                for _FvT_name, _FvT_file in zip( event.metadata["FvT_names"], event.metadata["FvT_files"] ):
-
-                    #print(f"Loading FvT File: {_FvT_file}, with name {_FvT_name}\n")
-                    event[_FvT_name] = getattr( NanoEventsFactory.from_root( f"{_FvT_file}", entry_start=self.estart, entry_stop=self.estop, schemaclass=FriendTreeSchema, ).events(),
-                                                _FvT_name, )
-
-                    event[_FvT_name, _FvT_name] = getattr(event[_FvT_name], _FvT_name)
-
+            if "FvT" in self.friends:
+                event["FvT"] = rename_FvT_friend(target, self.friends["FvT"])
+                if self.config["isDataForMixed"] or self.config["isTTForMixed"]:
+                    for _FvT_name in event.metadata["FvT_names"]:
+                        event[_FvT_name] = rename_FvT_friend(target, self.friends[_FvT_name])
+                        event[_FvT_name, _FvT_name] = event[_FvT_name].FvT
             else:
-                event["FvT"] = ( NanoEventsFactory.from_root( f'{fname.replace("picoAOD", "FvT")}', entry_start=self.estart, entry_stop=self.estop, schemaclass=FriendTreeSchema).events().FvT )
+                # TODO: remove backward compatibility in the future
+                if self.config["isMixedData"]:
 
-            if "std" not in event.FvT.fields:
-                event["FvT", "std"] = np.ones(len(event))
-                event["FvT", "pt4"] = np.ones(len(event))
-                event["FvT", "pt3"] = np.ones(len(event))
-                event["FvT", "pd4"] = np.ones(len(event))
-                event["FvT", "pd3"] = np.ones(len(event))
+                    FvT_name = event.metadata["FvT_name"]
+                    event["FvT"] = getattr( NanoEventsFactory.from_root( f'{event.metadata["FvT_file"]}', entry_start=self.estart, entry_stop=self.estop, schemaclass=FriendTreeSchema, ).events(),
+                                            FvT_name )
 
-            event["FvT", "frac_err"] = event["FvT"].std / event["FvT"].FvT
-            if not ak.all(event.FvT.event == event.event):
-                raise ValueError("ERROR: FvT events do not match events ttree")
+                    event["FvT", "FvT"] = getattr(event["FvT"], FvT_name)
+
+                    #
+                    # Dummies
+                    #
+                    event["FvT", "q_1234"] = np.full(len(event), -1, dtype=int)
+                    event["FvT", "q_1324"] = np.full(len(event), -1, dtype=int)
+                    event["FvT", "q_1423"] = np.full(len(event), -1, dtype=int)
+
+                elif self.config["isDataForMixed"] or self.config["isTTForMixed"]:
+
+                    #
+                    # Use the first to define the FvT weights
+                    #
+                    event["FvT"] = getattr( NanoEventsFactory.from_root( f'{event.metadata["FvT_files"][0]}', entry_start=self.estart, entry_stop=self.estop, schemaclass=FriendTreeSchema, ).events(),
+                                            event.metadata["FvT_names"][0], )
+
+                    event["FvT", "FvT"] = getattr( event["FvT"], event.metadata["FvT_names"][0] )
+
+                    #
+                    # Dummies
+                    #
+                    event["FvT", "q_1234"] = np.full(len(event), -1, dtype=int)
+                    event["FvT", "q_1324"] = np.full(len(event), -1, dtype=int)
+                    event["FvT", "q_1423"] = np.full(len(event), -1, dtype=int)
+
+                    for _FvT_name, _FvT_file in zip( event.metadata["FvT_names"], event.metadata["FvT_files"] ):
+
+                        event[_FvT_name] = getattr( NanoEventsFactory.from_root( f"{_FvT_file}", entry_start=self.estart, entry_stop=self.estop, schemaclass=FriendTreeSchema, ).events(),
+                                                    _FvT_name, )
+
+                        event[_FvT_name, _FvT_name] = getattr(event[_FvT_name], _FvT_name)
+
+                else:
+                    event["FvT"] = ( NanoEventsFactory.from_root( f'{fname.replace("picoAOD", "FvT")}', entry_start=self.estart, entry_stop=self.estop, schemaclass=FriendTreeSchema).events().FvT )
+
+                if "std" not in event.FvT.fields:
+                    event["FvT", "std"] = np.ones(len(event))
+                    event["FvT", "pt4"] = np.ones(len(event))
+                    event["FvT", "pt3"] = np.ones(len(event))
+                    event["FvT", "pd4"] = np.ones(len(event))
+                    event["FvT", "pd3"] = np.ones(len(event))
+
+                event["FvT", "frac_err"] = event["FvT"].std / event["FvT"].FvT
+                if not ak.all(event.FvT.event == event.event):
+                    raise ValueError("ERROR: FvT events do not match events ttree")
 
         if self.run_SvB:
-            if (self.classifier_SvB is None) | (self.classifier_SvB_MA is None):
-                # SvB_file = f'{path}/SvB_newSBDef.root' if 'mix' in self.dataset else f'{fname.replace("picoAOD", "SvB_ULHH")}'
+            for k in self.friends:
+                if k.startswith("SvB"):
+                    event[k] = rename_SvB_friend(target, self.friends[k])
+                    setSvBVars(k, event)
+
+            if "SvB" not in self.friends and self.classifier_SvB is None:
+                # SvB_file = f'{path}/SvB_newSBDef.root' if 'mix' in self.dataset else f'{fname.replace("picoAOD", "SvB")}'
                 SvB_file = f'{path}/SvB_ULHH.root' if 'mix' in self.dataset else f'{fname.replace("picoAOD", "SvB_ULHH")}'
                 event["SvB"] = ( NanoEventsFactory.from_root( SvB_file,
                                                               entry_start=self.estart, entry_stop=self.estop, schemaclass=FriendTreeSchema).events().SvB )
 
                 if not ak.all(event.SvB.event == event.event):
                     raise ValueError("ERROR: SvB events do not match events ttree")
+                # defining SvB for different SR
+                setSvBVars("SvB", event)
 
-                # SvB_MA_file = f'{path}/SvB_MA_newSBDef.root' if 'mix' in self.dataset else f'{fname.replace("picoAOD", "SvB_MA_ULHH")}'
+            if "SvB_MA" not in self.friends and self.classifier_SvB_MA is None:
+                # SvB_MA_file = f'{path}/SvB_MA_newSBDef.root' if 'mix' in self.dataset else f'{fname.replace("picoAOD", "SvB_MA")}'
                 SvB_MA_file = f'{path}/SvB_MA_ULHH.root' if 'mix' in self.dataset else f'{fname.replace("picoAOD", "SvB_MA_ULHH")}'
                 event["SvB_MA"] = ( NanoEventsFactory.from_root( SvB_MA_file,
                                                                  entry_start=self.estart, entry_stop=self.estop, schemaclass=FriendTreeSchema ).events().SvB_MA )
 
                 if not ak.all(event.SvB_MA.event == event.event):
                     raise ValueError("ERROR: SvB_MA events do not match events ttree")
-
                 # defining SvB for different SR
-                setSvBVars("SvB", event)
                 setSvBVars("SvB_MA", event)
 
         if self.config["isDataForMixed"]:
@@ -253,35 +291,30 @@ class analysis(processor.ProcessorABC):
             JCM_array = TreeReader( lambda x: [ s for s in x if s.startswith("pseudoTagWeight_3bDvTMix4bDvT_v") ] ).arrays(Chunk.from_coffea_events(event))
 
             for _JCM_load in event.metadata["JCM_loads"]:
-                #print(f"{self.chunk} Loading JCM name {_JCM_load}\n")
                 event[_JCM_load] = JCM_array[_JCM_load]
-                #print(f"{self.chunk}   {_JCM_load} JCM loads {np.unique(JCM_array[_JCM_load])}\n")
 
         #
         # Event selection
         #
         event = apply_event_selection_4b( event,
                                         self.corrections_metadata[self.year],
-                                        cut_on_lumimask=self.config["cut_on_lumimask"],
-                                        do_jet_veto_maps=self.config["do_jet_veto_maps"],
+                                        cut_on_lumimask=self.config["cut_on_lumimask"]
                                         )
 
 
-        ### target is for new friend trees
-        target = Chunk.from_coffea_events(event)
-
         ### adds all the event mc weights and 1 for data
-        weights, list_weight_names = add_weights( event, target=target,
-                                                  do_MC_weights=self.config["do_MC_weights"],
-                                                  dataset=self.dataset,
-                                                  year_label=self.year_label,
-                                                  estart=self.estart,
-                                                  estop=self.estop,
-                                                  friend_trigWeight=self.friend_trigWeight,
-                                                  corrections_metadata=self.corrections_metadata[self.year],
-                                                  apply_trigWeight=self.apply_trigWeight,
-                                                  isTTForMixed=self.config["isTTForMixed"]
-                                                 )
+        weights, list_weight_names = add_weights(
+            event, target=target,
+            do_MC_weights=self.config["do_MC_weights"],
+            dataset=self.dataset,
+            year_label=self.year_label,
+            estart=self.estart,
+            estop=self.estop,
+            friend_trigWeight=self.friends.get("trigWeight"),
+            corrections_metadata=self.corrections_metadata[self.year],
+            apply_trigWeight=self.apply_trigWeight,
+            isTTForMixed=self.config["isTTForMixed"]
+        )
 
 
         #
@@ -344,7 +377,11 @@ class analysis(processor.ProcessorABC):
                                            dataset=self.dataset,
                                            doLeptonRemoval=self.config["do_lepton_jet_cleaning"],
                                            override_selected_with_flavor_bit=self.config["override_selected_with_flavor_bit"],
-                                           run_lowpt_selection=self.run_lowpt_selection
+                                           run_lowpt_selection=self.run_lowpt_selection,
+                                           do_jet_veto_maps=self.config["do_jet_veto_maps"],
+                                           isRun3=self.config["isRun3"],
+                                           isMC=self.config["isMC"], ### temporary
+                                           isSyntheticData=self.config["isSyntheticData"],
                                            )
 
 
@@ -362,16 +399,15 @@ class analysis(processor.ProcessorABC):
         #     list_weight_names.append(f"hT_reweight")
 
 
+
         selections = PackedSelection()
         selections.add( "lumimask", event.lumimask)
         selections.add( "passNoiseFilter", event.passNoiseFilter)
         #selections.add( "passHLT", ( np.full(len(event), True) if skip_HLT_cut else event.passHLT ) )
         selections.add( "passHLT", ( event.passHLT if self.config["cut_on_HLT_decision"] else np.full(len(event), True)  ) )
-        selections.add( "passJetVetoMaps", event.passJetVetoMaps )
         selections.add( 'passJetMult', event.passJetMult )
         allcuts = [ 'lumimask', 'passNoiseFilter', 'passHLT', ]
-        if '202' in self.dataset : allcuts += [ 'passJetMult' ] # allcuts += [ 'passJetVetoMaps', 'passJetMult' ]
-        else: allcuts += [ 'passJetMult' ]
+        allcuts += [ 'passJetMult' ]
         event['weight'] = weights.weight()   ### this is for _cutflow
 
         #
@@ -400,6 +436,22 @@ class analysis(processor.ProcessorABC):
                                                 event.matchedGenBJet.sum(axis=1),
                                                 1e-10 * event.matchedGenBJet.sum(axis=1),
                                               )
+
+
+
+                if self.gaussKernalMean is not None:
+                    v4b_index = np.floor_divide(event.truth_v4b.mass, 12).to_numpy()
+                    v4b_index[v4b_index > 98] = 98
+
+                    vectorized_v4b = np.vectorize(lambda i: self.resonance_weights[int(i)])
+                    weights_resonance = vectorized_v4b(v4b_index)
+                    #print(" turht Mass is  \n")
+                    #print(event.truth_v4b.mass,"\n")
+                    #print(" resonance_weights are \n")
+                    #print(weights_resonance,"\n")
+                    weights.add( "resonance_reweight", weights_resonance )
+                    list_weight_names.append(f"resonance_reweight")
+
             else:
                 event['pass4GenBJets'] = True
             selections.add( "pass4GenBJets", event.pass4GenBJets)
@@ -410,12 +462,10 @@ class analysis(processor.ProcessorABC):
                 'passNoiseFilter': selections.require(lumimask=True, passNoiseFilter=True),
                 'passHLT':         selections.require(lumimask=True, passNoiseFilter=True, passHLT=True),
             })
-            if '202' in self.dataset: sel_dict['passJetVetoMaps'] = selections.require(lumimask=True, passNoiseFilter=True, passHLT=True, passJetVetoMaps=True)
             sel_dict['passJetMult'] = selections.all(*allcuts)
 
             self._cutFlow = cutFlow(self.cutFlowCuts, do_truth_hists=self.config["isSignal"])
             for cut, sel in sel_dict.items():
-                if ('passJetVetoMaps' in cut) and ('202' not in self.dataset): continue
                 self._cutFlow.fill( cut, event[sel], allTag=True )
                 self._cutFlow.fill( f"{cut}_woTrig", event[sel], allTag=True,
                                     wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[sel]) )
@@ -446,6 +496,13 @@ class analysis(processor.ProcessorABC):
         selections.add("passPreSel", event.passPreSel)
         allcuts.append("passPreSel")
         analysis_selections = selections.all(*allcuts)
+
+        #
+        # Example of how to write out event numbers
+        #
+        #from analysis.helpers.write_debug_info import add_debug_info_to_output
+        #add_debug_info_to_output(event, processOutput, weights, list_weight_names, analysis_selections)
+
         selev = event[analysis_selections]
 
         if self.subtract_ttbar_with_weights:
@@ -464,10 +521,8 @@ class analysis(processor.ProcessorABC):
         #
         #  Build the top Candiates
         #
-        if self.friend_top_reconstruction:  ## temporary until we create friend trees
-            with open(self.friend_top_reconstruction, 'r') as f:
-                self.friend_top_reconstruction = Friend.from_json(json.load(f)[f'top_reco{"_"+shift_name if shift_name else ""}'])
-            top_cand = self.friend_top_reconstruction.arrays(target)[analysis_selections]
+        if friend := self.friends.get("top_reconstruction"):
+            top_cand = friend.arrays(target)[analysis_selections]
             adding_top_reco_to_event( selev, top_cand )
 
         else:
@@ -578,13 +633,6 @@ class analysis(processor.ProcessorABC):
             self._cutFlow.addOutput(processOutput, event.metadata["dataset"])
 
 
-        #
-        # Example of how to write out event numbers
-        #
-        #from analysis.helpers.write_debug_info import add_debug_info_to_output
-        # #if self.config['isDataForMixed']:
-        #    add_debug_info_to_output(selev, processOutput, weights, list_weight_names, analysis_selections)
-
 
         #
         # Hists
@@ -635,13 +683,16 @@ class analysis(processor.ProcessorABC):
 
             from ..helpers.dump_friendtrees import dump_input_friend
 
+            weight = "weight_noJCM_noFvT"
+            if weight not in selev.fields:
+                weight = "weight"
             friends["friends"] = ( friends["friends"]
                 | dump_input_friend(
                     selev,
                     self.make_classifier_input,
                     "HCR_input",
                     analysis_selections,
-                    weight="weight" if self.config["isMC"] else "weight_noJCM_noFvT",
+                    weight=weight,
                     NotCanJet="notCanJet_coffea",
                 )
             )
@@ -649,14 +700,14 @@ class analysis(processor.ProcessorABC):
             from ..helpers.dump_friendtrees import dump_JCM_weight
 
             friends["friends"] = ( friends["friends"]
-                | dump_JCM_weight(selev, self.make_classifier_input, "JCM_weight", analysis_selections)
+                | dump_JCM_weight(selev, self.make_friend_JCM_weight, "JCM_weight", analysis_selections)
             )
 
         if self.make_friend_FvT_weight is not None:
             from ..helpers.dump_friendtrees import dump_FvT_weight
 
             friends["friends"] = ( friends["friends"]
-                | dump_FvT_weight(selev, self.make_classifier_input, "FvT_weight", analysis_selections)
+                | dump_FvT_weight(selev, self.make_friend_FvT_weight, "FvT_weight", analysis_selections)
             )
 
         return hist | processOutput | friends

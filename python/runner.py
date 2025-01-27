@@ -7,36 +7,47 @@ import logging
 import os
 import time
 import warnings
+from concurrent.futures import ProcessPoolExecutor
+from copy import copy
+from dataclasses import dataclass
 from datetime import datetime
 from typing import TYPE_CHECKING
-from copy import copy
-import psutil
 
 import dask
 import fsspec
+import psutil
 import yaml
 from base_class.addhash import get_git_diff, get_git_revision_hash
-# can be modified when move to coffea2023
-from base_class.dataset_tools import rucio_utils
 from coffea import processor
+from coffea.dataset_tools import rucio_utils
 from coffea.nanoevents import NanoAODSchema
 from coffea.util import save
 from dask.distributed import performance_report
+from distributed.diagnostics.plugin import WorkerPlugin
 from rich.logging import RichHandler
 from rich.pretty import pretty_repr
 from skimmer.processor.picoaod import fetch_metadata, integrity_check, resize
 
 if TYPE_CHECKING:
-    from base_class.root.chain import Friend
+    from base_class.root import Friend
 
 dask.config.set({'logging.distributed': 'error'})
 
 NanoAODSchema.warn_missing_crossrefs = False
 warnings.filterwarnings("ignore")
 
+@dataclass
+class WorkerInitializer(WorkerPlugin):
+    uproot_xrootd_retry_delays: list[float] = None
+
+    def setup(self, worker=None):
+        if delays := self.uproot_xrootd_retry_delays:
+            from base_class.root.patch import uproot_XRootD_retry
+            uproot_XRootD_retry(len(delays) + 1, delays)
+
 def list_of_files(ifile,
                   allowlist_sites: list =['T3_US_FNALLPC'],
-                  blocklist_sites: list =[],
+                  blocklist_sites: list =[''],
                   rucio_regex_sites: str ='T[23]',
                   test: bool = False,
                   test_files: int = 5
@@ -126,12 +137,13 @@ if __name__ == '__main__':
     logging.basicConfig(
         level=logging_level,
         handlers=[RichHandler(level=logging_level, markup=True)],
+        format="%(message)s",
     )
     # disable numba debug warnings
     logging.getLogger('numba').setLevel(logging.WARNING)
     logging.getLogger("lpcjobqueue").setLevel(logging.WARNING)
 
-    logging.info(f"\nRunning with these parameters: {args}")
+    logging.info(f"Running with these parameters: {args}")
 
     #
     # Metadata
@@ -152,7 +164,7 @@ if __name__ == '__main__':
     config_runner.setdefault('condor_cores', 2)
     config_runner.setdefault('condor_memory', '4GB')
     config_runner.setdefault('condor_transfer_input_files', [
-                             'analysis/', 'base_class/', 'data/', 'skimmer/'])
+                             'analysis/', 'base_class/', 'classifier/', 'data/', 'skimmer/'])
     config_runner.setdefault('min_workers', 1)
     config_runner.setdefault('max_workers', 100)
     config_runner.setdefault('workers', 2)
@@ -164,8 +176,10 @@ if __name__ == '__main__':
     config_runner.setdefault('friend_merge_step', 100_000)
     config_runner.setdefault('write_coffea_output', True)
     config_runner.setdefault('override_top_reconstruction', None)
+    config_runner.setdefault('uproot_xrootd_retry_delays', [5, 15, 45])
+
     if args.systematics:
-        logging.info("\nRunning with systematics")
+        logging.info("Running with systematics")
         configs['config']['run_systematics'] = True
 
     if 'all' in args.datasets:
@@ -177,9 +191,9 @@ if __name__ == '__main__':
     metadata_dataset = {}
     fileset = {}
     for year in args.years:
-        logging.info(f"\nconfig year: {year}")
+        logging.info(f"config year: {year}")
         for dataset in args.datasets:
-            logging.info(f"\nconfig dataset: {dataset}")
+            logging.info(f"config dataset: {dataset}")
             if dataset not in metadata['datasets'].keys():
                 logging.error(f"{dataset} name not in metadatafile")
                 continue
@@ -200,7 +214,7 @@ if __name__ == '__main__':
                 metadata['datasets'][dataset]['top_reconstruction']
                 if "top_reconstruction" in metadata['datasets'][dataset]
                 else None)
-            logging.info(f"\n top construction configured as {top_reconstruction} ")
+            logging.info(f"top construction configured as {top_reconstruction} ")
 
             metadata_dataset[dataset] = {'year': year,
                                          'processName': dataset,
@@ -216,7 +230,7 @@ if __name__ == '__main__':
             isTTForMixed = (dataset in ['TTToHadronic_for_mixed', 'TTToSemiLeptonic_for_mixed', 'TTTo2L2Nu_for_mixed'])
 
             if not ( isData or isSyntheticData or isMixedData or isDataForMix or isTTForMixed):
-                logging.info("\nConfig MC")
+                logging.info("Config MC")
                 if config_runner['data_tier'].startswith('pico'):
                     if 'data' not in dataset:
                         metadata_dataset[dataset]['genEventSumw'] = metadata['datasets'][dataset][year][config_runner['data_tier']]['sumw']
@@ -229,18 +243,23 @@ if __name__ == '__main__':
                     metadata_dataset[dataset]['genEventSumw'] = 1
                     meta_files = metadata['datasets'][dataset][year][config_runner['data_tier']]
 
-                fileset[dataset + "_" + year] = {'files': list_of_files(meta_files, test=args.test, test_files=config_runner['test_files'], allowlist_sites=config_runner['allowlist_sites'], rucio_regex_sites=config_runner['rucio_regex_sites']),
+                fileset[dataset + "_" + year] = {'files': list_of_files(meta_files, 
+                                                                        test=args.test, 
+                                                                        test_files=config_runner['test_files'],
+                                                                        allowlist_sites=config_runner['allowlist_sites'],
+                                                                        blocklist_sites=config_runner['blocklist_sites'],
+                                                                        rucio_regex_sites=config_runner['rucio_regex_sites']),
                                                  'metadata': metadata_dataset[dataset]}
 
-                logging.info(f'\nDataset {dataset+"_"+year} with '
+                logging.info(f'Dataset {dataset+"_"+year} with '
                              f'{len(fileset[dataset+"_"+year]["files"])} files')
 
             elif isMixedData:
-                logging.info("\nConfig Mixed Data ")
+                logging.info("Config Mixed Data ")
 
                 nMixedSamples = metadata['datasets'][dataset]["nSamples"]
                 mixed_config = metadata['datasets'][dataset][year][config_runner['data_tier']]
-                logging.info(f"\nNumber of mixed samples is {nMixedSamples}")
+                logging.info(f"Number of mixed samples is {nMixedSamples}")
                 for v in range(nMixedSamples):
 
                     mixed_name = f"mix_v{v}"
@@ -254,18 +273,19 @@ if __name__ == '__main__':
                     fileset[idataset] = {'files': list_of_files(mixed_files,
                                                                 test=args.test, test_files=config_runner['test_files'],
                                                                 allowlist_sites=config_runner['allowlist_sites'],
+                                                                blocklist_sites=config_runner['blocklist_sites'],
                                                                 rucio_regex_sites=config_runner['rucio_regex_sites']),
                                          'metadata': metadata_dataset[idataset]}
 
                     logging.info(
-                        f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
+                        f'Dataset {idataset} with {len(fileset[idataset]["files"])} files')
 
             elif isSyntheticData:
-                logging.info("\nConfig Synthetic Data ")
+                logging.info("Config Synthetic Data ")
 
                 nSyntheticSamples = metadata['datasets'][dataset]["nSamples"]
                 synthetic_config = metadata['datasets'][dataset][year][config_runner['data_tier']]
-                logging.info(f"\nNumber of synthetic samples is {nSyntheticSamples}")
+                logging.info(f"Number of synthetic samples is {nSyntheticSamples}")
                 for v in range(nSyntheticSamples):
 
                     synthetic_name = f"syn_v{v}"
@@ -279,25 +299,25 @@ if __name__ == '__main__':
                     fileset[idataset] = {'files': list_of_files(synthetic_files,
                                                                 test=args.test, test_files=config_runner['test_files'],
                                                                 allowlist_sites=config_runner['allowlist_sites'],
+                                                                blocklist_sites=config_runner['blocklist_sites'],
                                                                 rucio_regex_sites=config_runner['rucio_regex_sites']),
                                          'metadata': metadata_dataset[idataset]}
 
                     logging.info(
-                        f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
-
+                        f'Dataset {idataset} with {len(fileset[idataset]["files"])} files')
 
             elif isDataForMix:
-                logging.info("\nConfig Data for Mixed ")
+                logging.info("Config Data for Mixed ")
 
                 nMixedSamples = metadata['datasets'][dataset]["nSamples"]
                 use_kfold = config_runner.get("use_kfold", False)
                 use_ZZinSB = config_runner.get("use_ZZinSB", False)
                 use_ZZandZHinSB = config_runner.get("use_ZZandZHinSB", False)
                 data_3b_mix_config = metadata['datasets'][dataset][year][config_runner['data_tier']]
-                logging.info(f"\nNumber of mixed samples is {nMixedSamples}")
-                logging.info(f"\nUsing kfolding? {use_kfold}")
-                logging.info(f"\nUsing ZZinSB? {use_ZZinSB}")
-                logging.info(f"\nUsing ZZandZHinSB? {use_ZZandZHinSB}")
+                logging.info(f"Number of mixed samples is {nMixedSamples}")
+                logging.info(f"Using kfolding? {use_kfold}")
+                logging.info(f"Using ZZinSB? {use_ZZinSB}")
+                logging.info(f"Using ZZandZHinSB? {use_ZZandZHinSB}")
 
                 idataset = f'{dataset}_{year}'
 
@@ -318,17 +338,18 @@ if __name__ == '__main__':
 
                 fileset[idataset] = {'files': list_of_files(data_3b_mix_config['files'],
                                                             test=args.test, test_files=config_runner['test_files'],
+                                                            blocklist_sites=config_runner['blocklist_sites'],
                                                             allowlist_sites=config_runner['allowlist_sites'], rucio_regex_sites=config_runner['rucio_regex_sites']),
                                      'metadata': metadata_dataset[idataset]}
 
-                logging.info(f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
+                logging.info(f'Dataset {idataset} with {len(fileset[idataset]["files"])} files')
 
             elif isTTForMixed:
-                logging.info("\nConfig TT for Mixed ")
+                logging.info("Config TT for Mixed ")
 
                 nMixedSamples = metadata['datasets'][dataset]["nSamples"]
                 TT_3b_mix_config = metadata['datasets'][dataset][year][config_runner['data_tier']]
-                logging.info(f"\nNumber of mixed samples is {nMixedSamples}")
+                logging.info(f"Number of mixed samples is {nMixedSamples}")
 
                 idataset = f'{dataset}_{year}'
 
@@ -340,10 +361,11 @@ if __name__ == '__main__':
                 fileset[idataset] = {'files': list_of_files(TT_3b_mix_config['files'],
                                                             test=args.test, test_files=config_runner['test_files'],
                                                             allowlist_sites=config_runner['allowlist_sites'],
+                                                            blocklist_sites=config_runner['blocklist_sites'],
                                                             rucio_regex_sites=config_runner['rucio_regex_sites']),
                                      'metadata': metadata_dataset[idataset]}
 
-                logging.info(f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
+                logging.info(f'Dataset {idataset} with {len(fileset[idataset]["files"])} files')
 
             # isData
             else:
@@ -353,13 +375,19 @@ if __name__ == '__main__':
                         idataset = f'{dataset}_{year}{iera}'
                         metadata_dataset[idataset] = metadata_dataset[dataset]
                         metadata_dataset[idataset]['era'] = iera
-                        fileset[idataset] = {'files': list_of_files((ifile['files'] if config_runner['data_tier'].startswith('pico') else ifile), test=args.test, test_files=config_runner['test_files'], allowlist_sites=config_runner['allowlist_sites'], rucio_regex_sites=config_runner['rucio_regex_sites']),
-                                             'metadata': metadata_dataset[idataset]}
+                        fileset[idataset] = {'files': list_of_files((ifile['files'] if config_runner['data_tier'].startswith('pico') else ifile), 
+                                                                    test=args.test, 
+                                                                    test_files=config_runner['test_files'], 
+                                                                    allowlist_sites=config_runner['allowlist_sites'],
+                                                                    blocklist_sites=config_runner['blocklist_sites'],
+                                                                    rucio_regex_sites=config_runner['rucio_regex_sites']),
+                                            'metadata': metadata_dataset[idataset]}
 
                         logging.info(
                             f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')
 
     client = None
+    pool = None
     #
     # IF run in condor
     #
@@ -381,7 +409,7 @@ if __name__ == '__main__':
                             f"--worker-port 10000:10100",
                             f"--nanny-port 10100:10200",
                         ]}
-        logging.info("\nCluster arguments: ")
+        logging.info("Cluster arguments: ")
         logging.info(pretty_repr(cluster_args))
 
         cluster = LPCCondorCluster(**cluster_args)
@@ -389,7 +417,7 @@ if __name__ == '__main__':
             minimum=config_runner['min_workers'], maximum=config_runner['max_workers'])
         client = Client(cluster)
 
-        logging.info('\nWaiting for at least one worker...')
+        logging.info('Waiting for at least one worker...')
         client.wait_for_workers(1)
 
     else:
@@ -412,6 +440,10 @@ if __name__ == '__main__':
             cluster = LocalCluster(**cluster_args)
             client = Client(cluster)
 
+    worker_initializer = WorkerInitializer(uproot_xrootd_retry_delays=config_runner['uproot_xrootd_retry_delays'])
+    if client is not None:
+        client.register_plugin(worker_initializer)
+
     executor_args = {
         'schema': config_runner['schema'],
         'savemetrics': True,
@@ -419,7 +451,7 @@ if __name__ == '__main__':
         'xrootdtimeout': 600
     }
     if args.debug:
-        logging.info(f"\nRunning iterative executor in debug mode")
+        logging.info(f"Running iterative executor in debug mode")
         executor = processor.iterative_executor
     elif args.condor or args.run_dask:
         executor_args["client"] = client
@@ -428,11 +460,14 @@ if __name__ == '__main__':
         executor_args["status"] = False
         executor = processor.dask_executor
     else:
-        logging.info(f"\nRunning futures executor")
+        logging.info(f"Running futures executor")
         # to run with processor futures_executor ()
-        executor_args['workers'] = config_runner['workers']
+        n_workers = config_runner['workers']
+        pool = ProcessPoolExecutor(max_workers=n_workers, initializer=worker_initializer.setup)
+        executor_args["pool"] = pool
+        executor_args["workers"] = n_workers
         executor = processor.futures_executor
-    logging.info(f"\nExecutor arguments:")
+    logging.info(f"Executor arguments:")
     logging.info(pretty_repr(executor_args))
     #
     # Run processor
@@ -440,7 +475,7 @@ if __name__ == '__main__':
     processorName = args.processor.split('.')[0].replace("/", '.')
     analysis = getattr(importlib.import_module(
         processorName), config_runner['class_name'])
-    logging.info(f"\nRunning processsor: {processorName}")
+    logging.info(f"Running processsor: {processorName}")
 
     tstart = time.time()
     logging.info(f"fileset keys are:")
@@ -467,7 +502,7 @@ if __name__ == '__main__':
         processtime = metrics['processtime']
         logging.info(f'Metrics:')
         logging.info(pretty_repr(metrics))
-        logging.info(f'\n{nEvent/elapsed:,.0f} events/s total '
+        logging.info(f'{nEvent/elapsed:,.0f} events/s total '
                      f'({nEvent}/{elapsed})')
 
         #
@@ -506,7 +541,7 @@ if __name__ == '__main__':
             elapsed = time.time() - tstart
             nEvent = metrics['entries']
             processtime = metrics['processtime']
-            logging.info(f'\n{nEvent/elapsed:,.0f} events/s total '
+            logging.info(f'{nEvent/elapsed:,.0f} events/s total '
                          f'({nEvent}/{elapsed})')
 
             if client is not None:
@@ -528,12 +563,11 @@ if __name__ == '__main__':
                     if config_runner["data_tier"] in ['picoAOD'] and "genEventSumw" in fileset[ikey]["metadata"]:
                         metadata[ikey]["sumw"] = fileset[ikey]["metadata"]["genEventSumw"]
 
-
             args.output_file = 'picoaod_datasets.yml' if args.output_file.endswith(
                 'coffea') else args.output_file
             dfile = f'{args.output_path}/{args.output_file}'
             yaml.dump(metadata, open(dfile, 'w'), default_flow_style=False)
-            logging.info(f'\nSaving metadata file {dfile}')
+            logging.info(f'Saving metadata file {dfile}')
 
         else:
             #
@@ -596,7 +630,7 @@ if __name__ == '__main__':
             #
             if config_runner['write_coffea_output']:
                 hfile = f'{args.output_path}/{args.output_file}'
-                logging.info(f'\nSaving file {hfile}')
+                logging.info(f'Saving file {hfile}')
                 save(output, hfile)
 
     #
@@ -617,3 +651,6 @@ if __name__ == '__main__':
         logging.info(f'Dask performace report saved in {dask_report_file}')
     else:
         run_job()
+
+    if pool is not None:
+        pool.shutdown(wait=True)

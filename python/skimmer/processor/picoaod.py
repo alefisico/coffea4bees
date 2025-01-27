@@ -84,12 +84,15 @@ class PicoAOD(ProcessorABC):
     ):
         pass
 
+    def preselect(self, events: ak.Array) -> npt.NDArray[np.bool_] | None:
+        pass
+
     # no retry, return empty dict if any exception
     @retry(1, handler=_log_exception, skip=(SkimmingError,))
     def process(self, events: ak.Array):
         EOS.set_retry(3, 10)  # 3 retries with 10 seconds interval
         self._cutFlow = cutFlow(self.cutFlowCuts)
-        # TODO remove events with huge weight
+        preselected = self.preselect(events)
         selected = self.select(events)
         added, result = None, {}
         if isinstance(selected, tuple):
@@ -98,11 +101,28 @@ class PicoAOD(ProcessorABC):
             if len(selected) >= 3:
                 result = selected[2] or result
             selected = selected[0]
+            if preselected is not None:
+                selected = preselected & selected
         chunk = Chunk.from_coffea_events(events)
         dataset = events.metadata["dataset"]
 
         # construct output
-        # TODO calculate sumw and sumw2
+        weights = {}
+        if "genWeight" in events.fields:
+            genWeight = events.genWeight
+            if preselected is not None:
+                genWeight = genWeight[preselected]
+                outliers = events[~preselected]
+                if len(outliers) > 0:
+                    weights["outliers"] = [int(e) for e in outliers.event]
+                    weights["sumw_diff"] = float(np.sum(outliers.genWeight))
+                    weights["sumw2_diff"] = float(np.sum(outliers.genWeight**2))
+            weights["sumw_raw"] = float(np.sum(genWeight))
+            weights["sumw2_raw"] = float(np.sum(genWeight**2))
+        else:
+            nevents = len(events) if preselected is None else float(np.sum(preselected))
+            weights["sumw_raw"] = nevents
+            weights["sumw2_raw"] = nevents
         result = {
             dataset: {
                 "total_events": len(events),
@@ -110,10 +130,14 @@ class PicoAOD(ProcessorABC):
                 "files": [],
                 "source": {str(chunk.path): [(chunk.entry_start, chunk.entry_stop)]},
             }
+            | weights
             | result
         }
         self._cutFlow.addOutputSkim(result, dataset)
-        self._cutFlow.addOutputLumisProcessed(result, dataset, events.run, events.luminosityBlock)
+        if "genWeight" not in events.fields:
+            self._cutFlow.addOutputLumisProcessed(
+                result, dataset, events.run, events.luminosityBlock
+            )
 
         # sanity check
         if (

@@ -117,8 +117,8 @@ class FixedThresholdROC:
 
     @torch.no_grad()
     def roc(self):
-        if self.__t is None:
-            return np.array([]), np.array([]), 0.0
+        if self.__t is None or self.__P == 0 or self.__N == 0:
+            return torch.tensor([np.nan]), torch.tensor([np.nan]), torch.tensor(np.nan)
         __TP, _ = self.__TP.hist()
         __FP, _ = self.__FP.hist()
         fpr = torch.cumsum(__FP, dim=0) / self.__N

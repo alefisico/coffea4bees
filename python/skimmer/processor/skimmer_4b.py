@@ -1,16 +1,20 @@
-import yaml
-from skimmer.processor.picoaod import PicoAOD, fetch_metadata, resize
-from analysis.helpers.selection_basic_4b import apply_event_selection_4b, apply_object_selection_4b
-from coffea.analysis_tools import Weights, PackedSelection
-import numpy as np
-from analysis.helpers.processor_config import processor_config
-from analysis.helpers.common import apply_jerc_corrections
-from copy import copy
 import logging
-import awkward as ak
+
+import numpy as np
+import yaml
+from analysis.helpers.common import apply_jerc_corrections
+from analysis.helpers.mc_weight_outliers import OutlierByMedian
+from analysis.helpers.processor_config import processor_config
+from analysis.helpers.selection_basic_4b import (
+    apply_event_selection_4b,
+    apply_object_selection_4b,
+)
+from coffea.analysis_tools import PackedSelection, Weights
+from skimmer.processor.picoaod import PicoAOD
+
 
 class Skimmer(PicoAOD):
-    def __init__(self, loosePtForSkim=False, skim4b=False, *args, **kwargs):
+    def __init__(self, loosePtForSkim=False, skim4b=False, mc_outlier_threshold:int|None=200, *args, **kwargs):
         if skim4b:
             kwargs["pico_base_name"] = f'picoAOD_fourTag'
         super().__init__(*args, **kwargs)
@@ -26,6 +30,7 @@ class Skimmer(PicoAOD):
             "passPreSel_lowpt_forskim",
             "passPreSel",
         ]
+        self.mc_outlier_threshold = mc_outlier_threshold
 
 
 
@@ -43,15 +48,22 @@ class Skimmer(PicoAOD):
 
         event = apply_event_selection_4b( event, self.corrections_metadata[year], cut_on_lumimask=config["cut_on_lumimask"] )
 
-        jets = apply_jerc_corrections(event,
+        if config["do_jet_calibration"]:
+            jets = apply_jerc_corrections(event,
                                       corrections_metadata=self.corrections_metadata[year],
                                       isMC=config["isMC"],
                                       run_systematics=False,
                                       dataset=dataset
                                       )
-        event["Jet"] = jets
+            event["Jet"] = jets
 
-        event = apply_object_selection_4b( event, self.corrections_metadata[year], dataset=dataset, doLeptonRemoval=config["do_lepton_jet_cleaning"], loosePtForSkim=self.loosePtForSkim  )
+        event = apply_object_selection_4b( event, self.corrections_metadata[year], 
+            dataset=dataset, 
+            doLeptonRemoval=config["do_lepton_jet_cleaning"], 
+            loosePtForSkim=self.loosePtForSkim,
+            isRun3=config["isRun3"],
+            isMC=config["isMC"],
+            )
 
         weights = Weights(len(event), storeIndividual=True)
 
@@ -103,3 +115,10 @@ class Skimmer(PicoAOD):
 
 
         return selection
+
+    def preselect(self, event):
+        dataset = event.metadata['dataset']
+        processName = event.metadata['processName']
+        config = processor_config(processName, dataset, event)
+        if config["isMC"] and self.mc_outlier_threshold is not None and "genWeight" in event.fields:
+            return OutlierByMedian(self.mc_outlier_threshold)(event.genWeight)

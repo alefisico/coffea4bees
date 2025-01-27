@@ -2,17 +2,19 @@ from collections import defaultdict
 
 from hist import Hist
 
+from ._bh import BHAxis
+
 
 def group_by_categories(
     hists: dict[str, Hist], categories: set[str]
 ) -> tuple[list[str], dict[str, list[Hist]]]:
     cats = sorted(categories)
     groups: dict[tuple, list[str]] = defaultdict(list)
+    bhaxis = BHAxis(flow=True)
     for k, v in hists.items():
         bins = {
             axis.name: (
-                axis._ax.traits_underflow,  # Note: private attribute in boost-histogram
-                axis._ax.traits_overflow,  # Note: private attribute in boost-histogram
+                bhaxis.flow(axis),
                 *axis,
             )
             for axis in v.axes

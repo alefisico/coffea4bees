@@ -4,7 +4,7 @@ import fsspec
 from base_class.system.eos import EOS, PathLike
 from classifier.config.setting import IO
 
-from ...process.monitor import MonitorProxy, post_to_monitor
+from ..core import MonitorProxy, post_to_monitor
 
 
 class Index(MonitorProxy):

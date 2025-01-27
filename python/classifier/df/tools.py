@@ -127,16 +127,19 @@ class map_selection_to_flag:
 
 
 class add_columns:
-    def __init__(self, **values):
+    def __init__(self, override: bool = False, /, **values):
         self._values = values
+        self._override = override
 
     def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
         for k, v in self._values.items():
+            if k in df and not self._override:
+                continue
             df.loc[:, k] = v
         return df
 
     def __repr__(self):
-        return f"{_type_str(self)} {_map_str(self._values)}"
+        return f"{_type_str(self)}(override={self._override}) {_map_str(self._values)}"
 
 
 class drop_columns:

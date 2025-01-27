@@ -7,4 +7,9 @@ if __name__ == "__main__":
     patch_awkward_pandas()
     # run main
     main = EntryPoint()
-    main.run()
+    try:
+        main.run()
+    except KeyboardInterrupt:
+        from classifier.sysutils import recursive_interrupt
+
+        recursive_interrupt()

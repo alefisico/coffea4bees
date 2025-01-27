@@ -1,0 +1,23 @@
+# template:
+# - name: name of the workflow
+# - mixed: mixed data index
+# - user: lpc username
+
+main:
+  module: train
+  option:
+    - --max-loaders 10
+    - --max-trainers 3
+
+dataset:
+  - module: cache
+    option:
+      - --input /srv/HH4b/classifier/cache/FvT_baseline_legacy/mixed-{mixed}/result.json
+
+setting:
+  - module: IO
+    option:
+      - output: root://cmseos.fnal.gov//store/user/{user}/HH4b/classifier/FvT/{name}/mixed-{mixed}/
+  - module: ml.DataLoader
+    option:
+      - num_workers: 4

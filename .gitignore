@@ -178,7 +178,6 @@ runCITests.sh
 .bashrc
 python/output/
 python/local_output/
-python/plots/
 
 .local/
 set_ROOT.sh
@@ -293,3 +292,23 @@ python/nominal_UL18_fromMake.config
 python/nominal_check_reclustered_splittings.config
 python/plots_check_reclustered_splittings.config
 python/jet_clustering/testTexSlides.tex
+
+
+.ci-workflows/test-signal.sh
+
+coffea4bees-dask-report-*.html
+python/analysis/debugMixedDataCutFlow.py
+python/analysis/debugRun3CutFlow.py
+python/debug_HHRun3.py
+
+python/skim2022_EE.sh
+python/skim2022_preEE.sh
+python/skim2023_BPix.sh
+python/skim2023_preBPix.sh
+python/skimmer/metadata/tmp_fourTag.yml
+python/splitting_data_bb.pkl
+
+python/selected_events.pkl
+.fontconfig/
+.cmslpc-local-conf
+python/analysis/copy_from_PSC.py

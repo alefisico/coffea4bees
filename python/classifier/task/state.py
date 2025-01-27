@@ -6,6 +6,7 @@ from typing import Any
 from ..process import status
 from ..typetools import dict_proxy
 from .special import Static
+from .task import _INDENT
 
 _MAX_WIDTH = 30
 
@@ -75,18 +76,18 @@ class _ClassPropertyMeta(type):
         return super().__getattribute__(__name)
 
     def __setattr__(cls, __name: str, __value: Any):
-        __new = None
+        __new = NotImplemented
         if not _is_private(__name):
             cls.__cached_states__.pop(__name, None)
             parser = vars(cls).get(f"{_SET}{__name}")
             if isinstance(parser, classmethod):
                 __new = parser.__func__(cls, __value)
-        if __new is not None:
+        if __new is not NotImplemented:
             __value = __new
         super().__setattr__(__name, __value)
 
 
-class Cascade(GlobalState, Static, metaclass=_ClassPropertyMeta):
+class GlobalSetting(GlobalState, Static, metaclass=_ClassPropertyMeta):
     def __init_subclass__(cls):
         cls.__cached_states__ = {}
         super().__init_subclass__()
@@ -124,12 +125,20 @@ class Cascade(GlobalState, Static, metaclass=_ClassPropertyMeta):
                 yield opt
 
     @classmethod
+    def _help_doc(cls):
+        import inspect
+
+        if doc := inspect.getdoc(cls):
+            return indent(f"[yellow]{doc}[/yellow]", _INDENT)
+        return ""
+
+    @classmethod
     def help(cls):
         from base_class.typetools import get_partial_type_hints, type_name
         from rich.markup import escape
 
+        from ..docstring import class_attribute_docstring
         from . import parse
-        from .task import _INDENT
 
         try:
             annotations = get_partial_type_hints(cls, include_extras=True)
@@ -137,9 +146,9 @@ class Cascade(GlobalState, Static, metaclass=_ClassPropertyMeta):
             annotations = cls.__annotations__
         keys = dict(filter(_is_state, vars(cls).items()))
         infos = [f"usage: {cls.__mod_name__()} OPTIONS [OPTIONS ...]", ""]
-        if cls.__doc__:
-            doc = filter(None, (line.strip() for line in cls.__doc__.split("\n")))
-            infos.extend([*doc, ""])
+        if doc := cls._help_doc():
+            infos.extend([doc, ""])
+        docs = class_attribute_docstring(cls)
         infos.append(f"options: {parse.EMBED}")
         for k, v in keys.items():
             info = k
@@ -155,5 +164,7 @@ class Cascade(GlobalState, Static, metaclass=_ClassPropertyMeta):
                 truncate = True
             info += f' = {value}{"..." if truncate else ""}'
             infos.append(indent(info, _INDENT))
+            if docs.get(k):
+                infos.append(indent(f"[yellow]{docs[k]}[/yellow]", _INDENT * 2))
         infos.append("")
         return "\n".join(infos)

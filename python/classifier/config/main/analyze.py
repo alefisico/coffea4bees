@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import logging
+from datetime import datetime
 from itertools import chain
 
 import fsspec
@@ -25,7 +27,7 @@ class Main(main.Main):
     argparser.add_argument(
         "results",
         metavar="RESULT",
-        nargs="+",
+        nargs="*",
         help="path to result json files.",
     )
 
@@ -58,6 +60,7 @@ def run_analyzer(parser: EntryPoint, results: list[dict]):
     if not analyzers:
         return None
 
+    timer = datetime.now()
     with (
         ProcessPoolExecutor(
             max_workers=cfg.Analysis.max_workers,
@@ -75,6 +78,8 @@ def run_analyzer(parser: EntryPoint, results: list[dict]):
             )
         ]
     Index.render()
+    logging.info(f"Completed {len(outputs)} analysis in {datetime.now() - timer}")
+
     outputs = [*filter(lambda x: x is not None, outputs)]
     if outputs:
         return {cfg.ResultKey.analysis: outputs}

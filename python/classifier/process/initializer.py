@@ -75,4 +75,5 @@ def setup_context():
         library=cfg.context_library,
         preload=unique(cfg.preload),
     )
-    status.initializer.add(torch_set_sharing_strategy("file_system"))
+    if cfg.context_library == "torch":
+        status.initializer.add(torch_set_sharing_strategy(cfg.torch_sharing_strategy))

@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from itertools import repeat
-from typing import overload
+from typing import Iterable, overload
 
 import numpy as np
 import numpy.typing as npt
+from hist import Hist
 from hist.axis import (
     Boolean,
     IntCategory,
@@ -83,6 +84,20 @@ class BHAxis:
                     + ([f"[{self._ff(cats[-1][-1])}, \u221E)"] if over else [])
                 )
 
+    def indexof(self, axis: HistAxis, bins: Iterable[str | int | bool]) -> list[int]:
+        if isinstance(axis, (Regular, Variable)):
+            return []
+        under, _ = self.flow(axis)
+        cats = [*axis]
+        indices = []
+        for b in bins:
+            try:
+                idx = cats.index(b)
+            except ValueError:
+                continue
+            indices.append(idx + under)
+        return indices
+
     def rebin(
         self, axis: HistAxis, rebin: int | list[int]
     ) -> tuple[HistAxis, npt.NDArray]:
@@ -137,3 +152,28 @@ class BHAxis:
         if over:
             _rebin.append(1)
         return _axis, np.cumsum(_rebin)[:-1]
+
+    @overload
+    def extend(self, axis: StrCategory, *values: str) -> StrCategory: ...
+    @overload
+    def extend(self, axis: IntCategory, *values: int) -> IntCategory: ...
+    def extend(self, axis: HistAxis, *values):
+        ax = axis.traits
+        match axis:
+            case IntCategory() | StrCategory():
+                return type(axis)(
+                    (*axis, *values),
+                    name=axis.name,
+                    label=axis.label,
+                    growth=ax.growth,
+                    overflow=ax.overflow,
+                )
+            case _:
+                raise TypeError(f"Cannot extend <{axis.__class__.__name__}> axis")
+
+    def equal(self, ax1: HistAxis, ax2: HistAxis):
+        if type(ax1) is not type(ax2):
+            return False
+        if (self.flow(ax1), *ax1) != (self.flow(ax2), *ax2):
+            return False
+        return True

@@ -2,7 +2,7 @@ from .analysis import Analysis
 from .dataset import Dataset
 from .main import EntryPoint, Main, TaskOptions
 from .model import Model
-from .state import Cascade, GlobalState
+from .state import GlobalSetting, GlobalState
 from .task import ArgParser, Task
 
 __all__ = [
@@ -14,6 +14,6 @@ __all__ = [
     "Main",
     "Model",
     "Task",
-    "Cascade",
+    "GlobalSetting",
     "GlobalState",
 ]

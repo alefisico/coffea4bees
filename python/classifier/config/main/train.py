@@ -56,6 +56,7 @@ class Main(SelectDevice, LoadTrainingSets):
         trainers = [*chain(*(m.train() for m in models))]
         logging.info(f"Initialized {len(trainers)} models in {datetime.now() - timer}")
         # train models in parallel
+        timer = datetime.now()
         with (
             ProcessPoolExecutor(
                 max_workers=self.opts.max_trainers,
@@ -72,5 +73,5 @@ class Main(SelectDevice, LoadTrainingSets):
                     callbacks=[lambda _: progress_advance(progress)],
                 )
             ]
-
+        logging.info(f"Trained {len(results)} models in {datetime.now() - timer}")
         return {ResultKey.models: results}

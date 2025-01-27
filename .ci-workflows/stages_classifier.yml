@@ -1,0 +1,7 @@
+check-configs:
+  stage: classifier
+  extends:
+    - .base_classifier
+  script:
+    - cd python
+    - python -m classifier.test.check_configs

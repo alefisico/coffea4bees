@@ -10,6 +10,19 @@ analysis-cutflow-job:
     paths:
       - python/output/analysis_cutflow_job/test_dump_cutflow.yml
 
+analysis-cutflow-job-Run3:    
+  stage: cutflow
+  extends:
+    - .base_analysis
+  needs: 
+    - analysis-test-job-Run3
+  script:
+    - source .ci-workflows/analysis-cutflow-job-Run3.sh
+  artifacts:
+    paths:
+      - python/output/analysis_cutflow_job_Run3/test_dump_cutflow.yml
+
+
 analysis-mixed-cutflow-job:    
   stage: cutflow
   extends:
@@ -71,6 +84,19 @@ synthetic-dataset-analyze-cutflow:
  artifacts:
    paths:
      - python/output/synthetic_dataset_analyze_cutflow/test_dump_cutflow_synthetic_datasets.yml
+
+synthetic-dataset-analyze-cutflow-Run3:
+ stage: cutflow
+ extends:
+   - .base_analysis
+ needs: 
+   - synthetic-dataset-analyze-Run3
+ script:
+   - source .ci-workflows/synthetic-dataset-analyze-cutflow-Run3.sh
+ artifacts:
+   paths:
+     - python/output/synthetic_dataset_analyze_cutflow_Run3/test_dump_cutflow_synthetic_datasets.yml
+
 
 weights-trigger-cutflow:
  stage: cutflow

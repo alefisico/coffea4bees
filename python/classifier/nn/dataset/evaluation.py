@@ -16,7 +16,7 @@ from typing import (
     overload,
 )
 
-from classifier.config.setting.torch import DataLoader as cfg
+from classifier.config.setting.ml import DataLoader as cfg
 from classifier.monitor.progress import MessageType, Progress
 from classifier.process import status
 
