@@ -129,22 +129,24 @@ def print_list_debug_info(process, tag, cut, region):
 
 
 #
-#  Get hist from input file(s)
+#  Get hist values
 #
-def add_hist_data(cfg, config, var, region, cut, rebin, year, file_index=None, debug=False):
+def get_hist_data(this_process, cfg, config, var, region, cut, rebin, year, file_index=None, debug=False):
 
     codes = cfg.plotConfig["codes"]
 
-    if year == "RunII":
-        year     = sum
-
     tag_code = codes["tag"][config["tag"]]
 
+    if year in  ["RunII", "Run2", "Run3", "RunIII"]:
+        year     = sum
+
+
     if debug:
-        print(f" hist process={config['process']}, "
+        print(f" hist process={this_process}, "
               f"tag={tag_code}, year={year}, var={var}")
 
-    hist_opts = {"process": config['process'],
+
+    hist_opts = {"process": this_process,
                  "year":  year,
                  "tag":   hist.loc(tag_code),
                  }
@@ -158,6 +160,7 @@ def add_hist_data(cfg, config, var, region, cut, rebin, year, file_index=None, d
         else:
             region_dict = {"region":  hist.loc(codes["region"][region])}
 
+
     cut_dict = plot_helpers.get_cut_dict(cut, cfg.cutList)
 
     hist_opts = hist_opts | region_dict | cut_dict
@@ -170,11 +173,11 @@ def add_hist_data(cfg, config, var, region, cut, rebin, year, file_index=None, d
 
     else:
         for _input_data in cfg.hists:
-            if var in _input_data['hists'] and config['process'] in _input_data['hists'][var].axes["process"]:
+            if var in _input_data['hists'] and this_process in _input_data['hists'][var].axes["process"]:
                 hist_obj = _input_data['hists'][var]
 
     if hist_obj is None:
-        raise ValueError(f"ERROR did not find var {var} with process {config['process']} in inputs")
+        raise ValueError(f"ERROR did not find var {var} with process {this_process} in inputs")
 
     #
     #  Add rebin Options
@@ -199,6 +202,28 @@ def add_hist_data(cfg, config, var, region, cut, rebin, year, file_index=None, d
     # Apply Scale factor
     #
     selected_hist *= config.get("scalefactor", 1.0)
+
+    return selected_hist
+
+
+#
+#  Get hist from input file(s)
+#
+def add_hist_data(cfg, config, var, region, cut, rebin, year, file_index=None, debug=False):
+
+    if debug:
+        print(f"In add_hist_data {config['process']} \n")
+
+    proc_list = config['process'] if type(config['process']) is list else [config['process']]
+    selected_hist = None
+
+    for _proc in proc_list:
+        _selected_hist = get_hist_data(_proc, cfg, config, var, region, cut, rebin, year, file_index, debug)
+        if selected_hist is None:
+            selected_hist = _selected_hist
+        else:
+            selected_hist += _selected_hist
+
 
     config["values"]    = selected_hist.values().tolist()
     config["variances"] = selected_hist.variances().tolist()

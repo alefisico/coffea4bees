@@ -16,14 +16,14 @@ hists:
                 scalefactor: 100
                 
         ZH4b:
-                process: ZH4b
+                process: [ZH4b, ggZH4b]
                 tag: fourTag
                 label: ZH4b (x100)
                 edgecolor: "#964a8b"
                 fillcolor: "#964a8b"            
                 histtype: step
                 scalefactor: 100
-                
+
         ZZ4b:
                 process: ZZ4b
                 tag: fourTag

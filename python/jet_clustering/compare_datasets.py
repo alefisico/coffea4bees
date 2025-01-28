@@ -126,7 +126,7 @@ def doPlots(year, doSignal=False, debug=False):
     args = {"norm": True,
             "doRatio": 1,
             "labels":["De-clustered","Nominal"],
-            "norm": False,
+            "norm": True,
             "region":"sum",
             "cut":"passPreSel",
             "doRatio":1,
@@ -168,7 +168,7 @@ if __name__ == '__main__':
 
     #varList = [ h for h in cfg.hists[0]['hists'].keys() if not h in args.skip_hists ]
     #years = ["RunII", "UL18", "UL17", "UL16_preVFP", "UL16_postVFP"]
-    years = ["RunII", "2022_preEE", "2022_EE", "2023_preBPix", "2023_BPix"]
+    years = ["Run3", "2022_preEE", "2022_EE", "2023_preBPix", "2023_BPix"]
 
     for y in years:
         doPlots(year=y, doSignal=args.signal, debug=args.debug)
