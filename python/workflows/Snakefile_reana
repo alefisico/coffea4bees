@@ -113,9 +113,9 @@ use rule analysis as analysis_databkgs with:
         output="hist__{sample}-{year}.coffea",
         output_path="output/singlefiles/",
         logname="hist__{sample}_{year}",
-        metadata="analysis/metadata/HH4b_rerun_SvB.yml",
+        metadata="analysis/metadata/HH4b.yml",
         datasets=config['dataset_location']
-        # metadata="analysis/metadata/HH4b.yml",
+        # metadata="analysis/metadata/HH4b_rerun_SvB.yml",
 
 use rule analysis as analysis_signals with:
     # input: "output/JCM/jetCombinatoricModel_SB_reana.yml"
@@ -129,8 +129,8 @@ use rule analysis as analysis_signals with:
         output_path="output/singlefiles/",
         logname="histsignal__{sample_signal}-{year}",
         datasets=config['dataset_location'],
-        metadata="analysis/metadata/HH4b_rerun_SvB.yml",
-        # metadata="analysis/metadata/HH4b.yml",
+        metadata="analysis/metadata/HH4b.yml",
+        # metadata="analysis/metadata/HH4b_rerun_SvB.yml",
 
 
 use rule analysis as analysis_mixedbkg_data3b with:

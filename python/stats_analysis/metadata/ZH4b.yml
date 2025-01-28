@@ -1,7 +1,7 @@
 processes:
   signal:
     GluGluToHHTo4B_cHHH1:
-      label: ggHH_kl_1_kt_1_hbbhbb
+      label: HH4b
       process: 2
     ZZ4b:
       label: ZZ4b
