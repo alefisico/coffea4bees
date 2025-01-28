@@ -213,3 +213,33 @@ def debug_three_tag_events(event, processOutput):
     #out_data["passJetMult_jet_pu"    ] = event.Jet.pileup[event.passJetMult].to_list()
     #out_data["passJetMult_jet_jetId" ] = event.Jet.jetId[event.passJetMult].to_list()
     #out_data["passJetMult_jet_lep"   ] = event.Jet.lepton_cleaned[event.passJetMult].to_list()
+
+
+
+def add_debug_info_for_Hbb_reclustering(event, processOutput):
+    # passSR = (selev["quadJet_selected"].SR)
+    # passSR = (selev["SR"])
+
+    event_filter = event["fourTag"]
+
+    out_data = {}
+    # out_data["SvB"    ] = selev["SvB_MA"].ps[passSR]
+    out_data["event"  ] = event["event"]#[passSR]
+    out_data["run"    ] = event["run"]  #[passSR]
+
+
+    out_data[f"leadDiJet_mass"    ] = event.quadJet_selected.lead.mass
+    out_data[f"sublDiJet_mass"    ] = event.quadJet_selected.subl.mass
+
+    for v in ["pt","eta","phi","mass"]:
+        out_data[f"leadDiJet_leadJet_{v}"    ] = event.quadJet_selected.lead.lead[v]
+        out_data[f"leadDiJet_sublJet_{v}"    ] = event.quadJet_selected.lead.subl[v]
+
+        out_data[f"sublDiJet_leadJet_{v}"    ] = event.quadJet_selected.subl.lead[v]
+        out_data[f"sublDiJet_sublJet_{v}"    ] = event.quadJet_selected.subl.subl[v]
+
+        out_data[f"otherJet_{v}" ] = event.notCanJet_coffea[v].to_list()
+
+    for out_k, out_v in out_data.items():
+        processOutput[out_k] = {}
+        processOutput[out_k][event.metadata['dataset']] = list(out_v)
