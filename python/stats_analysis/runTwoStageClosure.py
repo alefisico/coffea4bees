@@ -66,21 +66,12 @@ BE = []
 for i, s in enumerate(BEs):
     BE.append( ROOT.TF1('BE%d' % i, s, 0, 1) )
 
-from functools import wraps
-def log_function_call(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        print(f"Calling {func.__name__} with args: {args} and kwargs: {kwargs}")
-        result = func(*args, **kwargs)
-        return result
-    return wrapper
 
-# @log_function_call
 def print_log(string):
     print(string)
     log_file.write(string+"\n")
 
-# @log_function_call
+
 def exists(path):
     if "root://" in path:
         url, path = parseXRD(path)
@@ -89,7 +80,7 @@ def exists(path):
     else:
         return os.path.exists(path)
 
-# @log_function_call
+
 def mkdir(directory, doExecute=True, xrd=False, url="root://cmseos.fnal.gov/", debug=False):
     if exists(directory) and debug:
         print("#", directory, "already exists")
@@ -105,7 +96,7 @@ def mkdir(directory, doExecute=True, xrd=False, url="root://cmseos.fnal.gov/", d
             if doExecute:
                 os.mkdir(directory)
 
-# @log_function_call
+
 def mkpath(path, doExecute=True, debug=False):
     if exists(path) and debug:
         print("#", path, "already exists")
@@ -176,22 +167,6 @@ def rescale_x_axis(hist_old, xMin_old = 300, xMax_old = 1200, xMin_new = 0, xMax
     hist_new.SetBinError(n_bins_new + 1,  overflow_err_new)
     return hist_new
 
-# def make_temp_hist(hist, name=""):
-#     n_bins = hist.GetNbinsX()
-#     bin_edges = [hist.GetBinLowEdge(bin) for bin in range(1, n_bins + 2)]           
-#     bin_values = [hist.GetBinContent(bin) for bin in range(1, n_bins + 1)]           
-#     plt.figure(figsize=(8, 6))
-#     plt.hist(
-#         bin_edges[:-1], bins=bin_edges, weights=bin_values, 
-#         histtype='step', linewidth=1.5, label="TH1F Histogram"
-#     )
-
-#     plt.xlabel(f"{hist.GetName()}")  
-#     plt.ylabel("Bin contents")  
-#     plt.legend()
-#     plt.savefig(f"tempdir/{name}_{hist.GetName()}", dpi=300); plt.close()
-
-# @log_function_call
 def combine_hists(input_file, hist_template, procs, years, debug=False):
     hist = None
 
@@ -222,7 +197,7 @@ def combine_hists(input_file, hist_template, procs, years, debug=False):
 
     return hist
 
-# @log_function_call
+
 def writeYears(f, input_file_data3b, input_file_TT, input_file_mix, mix, channel):
 
 
@@ -296,7 +271,7 @@ def writeYears(f, input_file_data3b, input_file_TT, input_file_mix, mix, channel
     return
 
 
-# @log_function_call
+
 def addYears(f, input_file_data3b, input_file_TT, input_file_mix, mix, channel):
 
     directory = f"{mix}/{channel}"
@@ -364,7 +339,7 @@ def addYears(f, input_file_data3b, input_file_TT, input_file_mix, mix, channel):
     hist_ttbar.Write()
     return
 
-# @log_function_call
+
 def addMixes(f, directory, procs=['ttbar', 'multijet', 'data_obs']):
     hists = []
     for process in procs:
@@ -395,7 +370,7 @@ def addMixes(f, directory, procs=['ttbar', 'multijet', 'data_obs']):
 
             hists[-1].Write()
 
-# @log_function_call
+
 def prepInput():
 
     #
@@ -454,7 +429,7 @@ def prepInput():
 
     f.Close()
 
-# @log_function_call
+
 def pearsonr(x, y, n=None):
     r, p_raw = scipy.stats.pearsonr(x, y)
     if n is None:
@@ -467,7 +442,7 @@ def pearsonr(x, y, n=None):
 
     return (r, p_cor)
 
-# @log_function_call
+
 def fTest(chi2_1, chi2_2, ndf_1, ndf_2):
     print(f'chi2_1, chi2_2, ndf_1, ndf_2 = {chi2_1}, {chi2_2}, {ndf_1}, {ndf_2}')
     d1 = (ndf_1 - ndf_2)
@@ -486,7 +461,7 @@ def fTest(chi2_1, chi2_2, ndf_1, ndf_2):
 
 
 class multijetEnsemble:
-    # @log_function_call
+    
     def __init__(self, f, channel):
 
         self.channel = channel
@@ -671,15 +646,15 @@ class multijetEnsemble:
 
         self.plotPearson()
 
-    # @log_function_call
+    
     def print_exit_message(self):
         self.output_yml.close()
         for line in self.exit_message:
             print_log(line)
 
-    # @log_function_call
+    
     def makeFitFunction(self, basis):
-        # # @log_function_call
+        # 
         def background_UserFunction(xArray, pars):
             ensemble_bin = int(xArray[0])
             m = (ensemble_bin - 1) // self.nBins_rebin
@@ -705,7 +680,7 @@ class multijetEnsemble:
                 self.multijet_TF1[basis].SetParName  (m * (basis + 1) + o, 'v%d c_%d' % (m, o))
                 self.multijet_TF1[basis].SetParameter(m * (basis + 1) + o, 0.0)
 
-    # @log_function_call
+    
     def getEigenvariations(self, basis=None, debug=False):
         if basis is None:
             basis = self.basis
@@ -760,7 +735,7 @@ class multijetEnsemble:
                 for j in range(n):
                     print(j, self.eigenVars[basis][m][:, j])
 
-    # @log_function_call
+    
     def getParameterDistribution(self, basis):
         n = basis + 1
         parMean    = np.array([0 for i in range(n)], dtype=float)
@@ -787,7 +762,7 @@ class multijetEnsemble:
                 self.cUp  [basis] = [cUp  ]
                 self.cDown[basis] = [cDown]
 
-    # @log_function_call
+    
     def fit(self, basis):
         # print(self.multijet_TF1[basis])
         # print(type(self.multijet_TF1[basis]))
@@ -849,7 +824,7 @@ class multijetEnsemble:
         self.f.cd(self.channel)
         self.multijet_TH1[basis].Write()
 
-    # @log_function_call
+    
     def write_to_yml(self, basis):
         self.output_yml.write(str(basis) + ":\n")
 
@@ -861,7 +836,7 @@ class multijetEnsemble:
             self.output_yml.write(" " * 4 + f"{wp[0]}:\n")
             self.output_yml.write(" " * 8 + f"{str(wp[1])}\n")
 
-    # @log_function_call
+    
     def plotBasis(self, name, basis, rebin=True):
         fig, (ax) = plt.subplots(nrows=1)
         if rebin:
@@ -925,7 +900,7 @@ class multijetEnsemble:
         fig.savefig( f"{output_dir}/{name}_additive_basis{rebin_name}{basis}.pdf" )
         plt.close(fig)
 
-    # @log_function_call
+    
     def plotPearson(self):
         fig, (ax) = plt.subplots(nrows=1)
         # ax.set_ylim(0.001,1)
@@ -965,7 +940,7 @@ class multijetEnsemble:
         fig.savefig( f"{output_dir}/0_variance_pearsonr_multijet_variance.pdf" )
         plt.close(fig)
 
-    # @log_function_call
+    
     def plotFitResults(self, basis, projection=(0, 1)):
         n = basis + 1
         if n > 1:
@@ -1130,7 +1105,7 @@ class multijetEnsemble:
         except IndexError:
             print('Weird index error...')
 
-    # @log_function_call
+    
     def plotPulls(self, basis):
         n = basis + 1
 
@@ -1190,7 +1165,7 @@ class multijetEnsemble:
         fig.savefig( f'{output_dir}/0_variance_pull_correlation_basis{basis}.pdf' )
         plt.close(fig)
 
-    # @log_function_call
+    
     def plotFit(self, basis):
         samples = collections.OrderedDict()
         samples[closure_file_out] = collections.OrderedDict()
@@ -1256,7 +1231,7 @@ class multijetEnsemble:
 
 
 class closure:
-    # @log_function_call
+    
     def __init__(self, f, channel, multijet):
         self.channel = channel
         self.rebin = rebin
@@ -1398,7 +1373,7 @@ class closure:
 
         self.writeClosureResults(self.basis)
 
-    # @log_function_call
+    
     def write_to_yml(self, basis):
         self.output_yml.write(str(basis) + ":\n")
 
@@ -1417,12 +1392,12 @@ class closure:
             else:
                 self.output_yml.write(" " * 8 + f"{str(wp[1])}\n")
 
-    # @log_function_call
+    
     def makeFitFunction(self, basis):
 
         max_basis = max(basis, self.multijet.basis)
 
-        # # @log_function_call
+        # 
         def background_UserFunction(xArray, pars):
             this_bin = int(xArray[0])
 
@@ -1481,7 +1456,7 @@ class closure:
         self.closure_TF1[basis].SetParName  (n, 'spurious signal')
         self.closure_TF1[basis].FixParameter(n, 0)
 
-    # @log_function_call
+    
     def getEigenvariations(self, basis, doSpuriousSignal=False, debug=False):
         n = max(self.multijet.basis, basis) + 1
 
@@ -1536,7 +1511,7 @@ class closure:
             for j in range(n):
                 print(j, self.eigenVars[basis][:, j])
 
-    # @log_function_call
+    
     def getParameterDistribution(self, basis):
 
         n = max(self.multijet.basis, basis) + 1
@@ -1550,7 +1525,7 @@ class closure:
             self.cUp  [basis][i] = cUp
             self.cDown[basis][i] = cDown
     
-    # @log_function_call
+    
     def fit(self, basis):
         n = max(self.multijet.basis, basis) + 1
         nConstrained = max(self.multijet.basis - basis, 0)
@@ -1583,7 +1558,7 @@ class closure:
         self.f.cd(self.channel)
         self.closure_TH1[basis].Write()
 
-    # @log_function_call
+    
     def fitSpuriousSignal(self, basis):
         self.doSpuriousSignal = True
         max_basis = max(self.multijet.basis, basis)
@@ -1628,7 +1603,7 @@ class closure:
         self.doSpuriousSignal = False
         print('spurious signal = %2.2f +/- %f' % (self.spuriousSignal[basis], self.spuriousSignalError[basis]))
 
-    # @log_function_call
+    
     def writeClosureResults(self, basis=None):
         systematics = {}
 
@@ -1696,7 +1671,7 @@ class closure:
         with open(closure_file_out_pkl, 'wb') as sfile:
             pickle.dump(systematics, sfile, protocol=1)
 
-    # @log_function_call
+    
     def plotFitResults(self, basis, projection=(0, 1), doSpuriousSignal=False):
         max_basis = max(self.multijet.basis, basis)
         n = max_basis + 1
@@ -1895,7 +1870,7 @@ class closure:
         fig.savefig( name )
         plt.close(fig)
 
-    # @log_function_call
+    
     def plotPValues(self):
         fig, (ax) = plt.subplots(nrows=1)
         x = np.array(sorted(self.pvalue.keys())) + 1
@@ -1932,7 +1907,7 @@ class closure:
         fig.savefig( f'{output_dir}/1_bias_pvalues.pdf' )
         plt.close(fig)
 
-    # @log_function_call
+    
     def plotMix(self, mix):
         samples = collections.OrderedDict()
         samples[closure_file_out] = collections.OrderedDict()
@@ -2012,7 +1987,7 @@ class closure:
         # print('make ',parameters['outputDir'] + parameters['outputName']+'.pdf')
         ROOTPlotTools.plot(samples, parameters, debug=False)
 
-    # @log_function_call
+    
     def plotFit(self, basis, plotSpuriousSignal=False):
         samples = collections.OrderedDict()
         samples[closure_file_out] = collections.OrderedDict()
@@ -2121,13 +2096,13 @@ class closure:
         # print(f'make {parameters["outputDir"]}{parameters["outputName"]}.pdf')
         ROOTPlotTools.plot(samples, parameters, debug=False)
 
-    # @log_function_call
+    
     def print_exit_message(self):
         self.output_yml.close()
         for line in self.exit_message:
             print_log(line)
 
-# @log_function_call
+
 def run():
 
     f = ROOT.TFile(closure_file_out, 'UPDATE')
