@@ -551,11 +551,11 @@ class analysis(processor.ProcessorABC):
         #  Build di-jets and Quad-jets
         #
         create_cand_jet_dijet_quadjet( selev, event.event,
-                                      apply_FvT=self.apply_FvT,
-                                      run_SvB=self.run_SvB,
-                                      run_systematics=self.run_systematics,
-                                      classifier_SvB=self.classifier_SvB,
-                                      classifier_SvB_MA=self.classifier_SvB_MA,
+                                       apply_FvT=self.apply_FvT,
+                                       run_SvB=self.run_SvB,
+                                       run_systematics=self.run_systematics,
+                                       classifier_SvB=self.classifier_SvB,
+                                       classifier_SvB_MA=self.classifier_SvB_MA,
                                        processOutput = processOutput,
                                       )
 
@@ -644,26 +644,27 @@ class analysis(processor.ProcessorABC):
             if not self.run_systematics:
                 ## this can be simplified
                 hist = filling_nominal_histograms(selev, self.apply_JCM,
-                                                processName=self.processName,
-                                                year=self.year,
-                                                isMC=self.config["isMC"],
-                                                histCuts=self.histCuts,
-                                                apply_FvT=self.apply_FvT,
-                                                run_SvB=self.run_SvB,
-                                                top_reconstruction=self.top_reconstruction,
-                                                isDataForMixed=self.config['isDataForMixed'],
-                                                run_lowpt_selection=self.run_lowpt_selection,
-                                                event_metadata=event.metadata)
+                                                  processName=self.processName,
+                                                  year=self.year,
+                                                  isMC=self.config["isMC"],
+                                                  histCuts=self.histCuts,
+                                                  apply_FvT=self.apply_FvT,
+                                                  run_SvB=self.run_SvB,
+                                                  top_reconstruction=self.top_reconstruction,
+                                                  isDataForMixed=self.config['isDataForMixed'],
+                                                  run_lowpt_selection=self.run_lowpt_selection,
+                                                  event_metadata=event.metadata)
+
             #
             # Run systematics
             #
             else:
                 hist = filling_syst_histograms(selev, weights,
-                                                analysis_selections,
-                                                shift_name=shift_name,
-                                                processName=self.processName,
-                                                year=self.year,
-                                                histCuts=self.histCuts)
+                                               analysis_selections,
+                                               shift_name=shift_name,
+                                               processName=self.processName,
+                                               year=self.year,
+                                               histCuts=self.histCuts)
 
         friends = { 'friends': {} }
         if self.make_top_reconstruction is not None:
