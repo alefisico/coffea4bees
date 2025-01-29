@@ -9,7 +9,7 @@ main:
     - --max-evaluators 3
 
 model:
-  - module: HCR.SvB.ggF.{model}.Eval
+  - module: HCR.SvB.ggF.all_kl.Eval
     option:
       - --models
       - Final

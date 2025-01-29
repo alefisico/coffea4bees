@@ -222,7 +222,8 @@ class CommonTrain(Common):
         )
         logging.debug("postprocessors:", pretty_repr(self.postprocessors))
         logging.debug("tensor:", pretty_repr(self.to_tensor._columns))
-        logging.debug("labels:", pretty_repr(MultiClass.labels))
+        logging.debug("all labels:", pretty_repr(MultiClass.labels))
+        logging.debug("trainable labels:", pretty_repr(MultiClass.trainable_labels))
 
 
 class CommonEval(Common):

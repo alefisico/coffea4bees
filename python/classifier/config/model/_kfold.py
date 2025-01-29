@@ -155,7 +155,7 @@ def _find_models(args: list[list[str]]) -> list[dict]:
                     if (stage.get("stage") == "Output") and (stage.get("name") == name):
                         m_path = stage["path"]
                         if stage.get("relative", False):
-                            m_path = EOS(path) / m_path
+                            m_path = EOS(path).parent / m_path
                         break
                 if m_path is None:
                     continue

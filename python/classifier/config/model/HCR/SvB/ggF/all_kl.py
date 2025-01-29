@@ -49,7 +49,7 @@ class _roc_select_ggF(_roc_select_sig):
 
 
 class Train(HCRTrain):
-    model = "SvB_ggF_all_kl"
+    model = "SvB_ggF-all"
     argparser = ArgParser(description="Train SvB with SM and BSM ggF signals.")
 
     @staticmethod
@@ -69,68 +69,81 @@ class Train(HCRTrain):
     def rocs(self):
         from classifier.ml.benchmarks.multiclass import ROC
 
-        return [
+        rocs = [
             ROC(
                 name="background vs signal",
                 selection=roc_nominal_selection,
                 bins=ROC_BIN,
                 pos=_BKG,
-            ),
-            *(
-                ROC(
-                    name=f"background vs {sig}",
-                    selection=_roc_select_sig(sig),
-                    bins=ROC_BIN,
-                    pos=_BKG,
+            )
+        ]
+        for sig in ("ZZ", "ZH", "ggF"):
+            if sig in MultiClass.labels:
+                rocs.append(
+                    ROC(
+                        name=f"background vs {sig}",
+                        selection=_roc_select_sig(sig),
+                        bins=ROC_BIN,
+                        pos=_BKG,
+                    )
                 )
-                for sig in ("ZZ", "ZH", "ggF")
-            ),
-            *(
-                ROC(
-                    name=f"background vs ggF (kl={kl:.6g})",
-                    selection=_roc_select_ggF(*_BKG, kl=kl),
-                    bins=ROC_BIN,
-                    pos=_BKG,
+        if "ggF" in MultiClass.labels:
+            for kl in MC_HH_ggF.kl:
+                rocs.append(
+                    ROC(
+                        name=f"background vs ggF (kl={kl:.6g})",
+                        selection=_roc_select_ggF(*_BKG, kl=kl),
+                        bins=ROC_BIN,
+                        pos=_BKG,
+                    )
                 )
-                for kl in MC_HH_ggF.kl
-            ),
-            *(
+        if "ggF" in MultiClass.trainable_labels:
+            for sig in ("ZZ", "ZH"):
+                if sig in MultiClass.trainable_labels:
+                    for kl in MC_HH_ggF.kl:
+                        rocs.append(
+                            ROC(
+                                name=f"{sig} vs ggF (kl={kl:.6g})",
+                                selection=_roc_select_ggF(sig, kl=kl),
+                                bins=ROC_BIN,
+                                pos=(sig,),
+                                neg=("ggF",),
+                                score="differ",
+                            )
+                        )
+        if all(sig in MultiClass.trainable_labels for sig in ("ZZ", "ZH")):
+            rocs.append(
                 ROC(
-                    name=f"{sig} vs ggF (kl={kl:.6g})",
-                    selection=_roc_select_ggF(sig, kl=kl),
+                    name="ZZ vs ZH",
+                    selection=roc_nominal_selection,
                     bins=ROC_BIN,
-                    pos=(sig,),
-                    neg=("ggF",),
+                    pos=("ZZ",),
+                    neg=("ZH",),
                     score="differ",
                 )
-                for sig in ("ZZ", "ZH")
-                for kl in MC_HH_ggF.kl
-            ),
-            ROC(
-                name="ZZ vs ZH",
-                selection=roc_nominal_selection,
-                bins=ROC_BIN,
-                pos=("ZZ",),
-                neg=("ZH",),
-                score="differ",
-            ),
-        ]
+            )
+        return rocs
 
 
 class Eval(HCREval):
-    model = "SvB_ggF_all_kl"
+    model = "SvB_ggF-all"
 
     @staticmethod
     def output_definition(batch: BatchType):
-        return {
+        output = {
             "q_1234": ...,
             "q_1324": ...,
             "q_1423": ...,
-            "p_ZZ": ...,
-            "p_ZH": ...,
-            "p_ggF": ...,
             "p_multijet": ...,
             "p_ttbar": ...,
-            "p_sig": batch["p_ZZ"] + batch["p_ZH"] + batch["p_ggF"],
             "p_bkg": batch["p_multijet"] + batch["p_ttbar"],
         }
+        for sig in ("ZZ", "ZH", "ggF"):
+            sig = f"p_{sig}"
+            if sig in batch:
+                output[sig] = ...
+                if "p_sig" in output:
+                    output["p_sig"] = output["p_sig"] + batch[sig]
+                else:
+                    output["p_sig"] = batch[sig]
+        return output

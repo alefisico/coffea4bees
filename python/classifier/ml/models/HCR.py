@@ -45,7 +45,7 @@ class HCRArch:
     @classmethod
     def load(cls, saved: dict[str]):
         obj = cls()
-        for k, v in saved["arch"].items():
+        for k, v in saved.items():
             if k in cls.__annotations__:
                 setattr(obj, k, v)
         return obj
@@ -107,9 +107,10 @@ class _HCRSkim(Skimmer):
     @torch.no_grad()
     def train(self, batch: BatchType):
         selections = self._splitter.step(batch)
-        self._nn.updateMeanStd(
-            *_HCRInput(batch, self._device, selections[SplitterKeys.training])
-        )
+        if selections[SplitterKeys.training].sum() > 0:
+            self._nn.updateMeanStd(
+                *_HCRInput(batch, self._device, selections[SplitterKeys.training])
+            )
         return super().train(batch)
 
 
@@ -130,7 +131,7 @@ class HCRModel(Model):
             ancillaryFeatures=InputBranch.feature_ancillary,
             useOthJets=("attention" if arch.attention else ""),
             device=device,
-            nClasses=MultiClass.n_classes(),
+            nClasses=MultiClass.n_trainable(),
         )
         self._benchmarks = benchmarks
 
@@ -179,7 +180,8 @@ class HCRModel(Model):
             }
             sumw = to_num(batch[Input.weight].sum())
             if scalar_funcs is None:
-                scalars["loss"] += to_num(self._loss(batch)) * sumw
+                if MultiClass.n_nontrainable() == 0:
+                    scalars["loss"] += to_num(self._loss(batch)) * sumw
             else:
                 for func in scalar_funcs:
                     measured = func(batch)
@@ -273,7 +275,7 @@ class HCRTraining(MultiStageTraining):
                         "model": self._HCR.nn.state_dict(),
                         "metadata": self.metadata,
                         "uuid": self.uuid,
-                        "label": MultiClass.labels,
+                        "label": MultiClass.trainable_labels,
                         "arch": self._arch.save(),
                         "input": {
                             k: getattr(InputBranch, k)

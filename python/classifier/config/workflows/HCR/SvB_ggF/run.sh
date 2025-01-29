@@ -15,13 +15,26 @@ fi
 
 # background normalization
 declare -A norms
-norms["baseline"]=3
+norms[${1}]=3
+norms["all_no_ZX"]=4
+norms["sm_no_ZX"]=1
 norms["all_kl"]=6
+norms["ZX_only"]=2
+
+# additional setting
+declare -a other_setting=()
+if [[ $1 == *"no_ZX"* ]]; then
+    other_setting+=('-setting' 'ml.MultiClass' 'nontrainable_labels: [ZZ, ZH]')
+fi
+
+if [[ $1 == "ZX_only" ]]; then
+    other_setting+=('-setting' 'ml.MultiClass' 'nontrainable_labels: [ggF]')
+fi
 
 # train and make plots
 ./pyml.py \
     template "{norm: ${norms[$1]}, user: ${LPCUSER}, model: $1}" $WFS/train.yml \
-    -setting Monitor "address: :${port}"
+    -setting Monitor "address: :${port}" -flag debug "${other_setting[@]}"
 
 ./pyml.py analyze --results ${MODEL} \
     -analysis HCR.LossROC \
