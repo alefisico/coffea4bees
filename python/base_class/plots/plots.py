@@ -205,6 +205,24 @@ def get_hist_data(this_process, cfg, config, var, region, cut, rebin, year, file
 
     return selected_hist
 
+#
+def get_hist_data_list(proc_list, cfg, config, var, region, cut, rebin, year, file_index, debug):
+
+    selected_hist = None
+    for _proc in proc_list:
+
+        if type(_proc) is list:
+            _selected_hist =  get_hist_data_list(_proc, cfg, config, var, region, cut, rebin, year, file_index, debug)
+        else:
+            _selected_hist = get_hist_data(_proc, cfg, config, var, region, cut, rebin, year, file_index, debug)
+
+        if selected_hist is None:
+            selected_hist = _selected_hist
+        else:
+            selected_hist += _selected_hist
+
+    return selected_hist
+
 
 #
 #  Get hist from input file(s)
@@ -215,15 +233,8 @@ def add_hist_data(cfg, config, var, region, cut, rebin, year, file_index=None, d
         print(f"In add_hist_data {config['process']} \n")
 
     proc_list = config['process'] if type(config['process']) is list else [config['process']]
-    selected_hist = None
 
-    for _proc in proc_list:
-        _selected_hist = get_hist_data(_proc, cfg, config, var, region, cut, rebin, year, file_index, debug)
-        if selected_hist is None:
-            selected_hist = _selected_hist
-        else:
-            selected_hist += _selected_hist
-
+    selected_hist = get_hist_data_list(proc_list, cfg, config, var, region, cut, rebin, year, file_index, debug)
 
     config["values"]    = selected_hist.values().tolist()
     config["variances"] = selected_hist.variances().tolist()
@@ -536,6 +547,9 @@ def get_plot_dict_from_list(cfg, var, cut, region, process, **kwargs):
     else:
         try:
             process_config = plot_helpers.get_value_nested_dict(cfg.plotConfig, process)
+
+            proc_id = process_config["label"] if type(process_config["process"]) is list else process_config["process"]
+
         except ValueError:
             raise ValueError(f"\t ERROR process = {process} not in plotConfig! \n")
 
@@ -559,7 +573,7 @@ def get_plot_dict_from_list(cfg, var, cut, region, process, **kwargs):
                           var=var_to_plot, region=region, cut=_cut, rebin=rebin, year=year,
                           debug=kwargs.get("debug", False))
 
-            plot_data["hists"][_process_config["process"] + _cut + str(ic)] = _process_config
+            plot_data["hists"][proc_id + _cut + str(ic)] = _process_config
 
     #
     #  region list
@@ -578,7 +592,7 @@ def get_plot_dict_from_list(cfg, var, cut, region, process, **kwargs):
             add_hist_data(cfg, _process_config,
                           var=var_to_plot, region=_reg, cut=cut, rebin=rebin, year=year,
                           debug=kwargs.get("debug", False))
-            plot_data["hists"][_process_config["process"] + _reg + str(ir)] = _process_config
+            plot_data["hists"][proc_id + _reg + str(ir)] = _process_config
 
 
     #
@@ -609,7 +623,7 @@ def get_plot_dict_from_list(cfg, var, cut, region, process, **kwargs):
                           file_index=iF,
                           debug=kwargs.get("debug", False))
 
-            plot_data["hists"][_process_config["process"] + "file" + str(iF)] = _process_config
+            plot_data["hists"][proc_id + "file" + str(iF)] = _process_config
 
     #
     #  process list
@@ -624,12 +638,14 @@ def get_plot_dict_from_list(cfg, var, cut, region, process, **kwargs):
             _process_config["fillcolor"] = _proc_conf.get("fillcolor", None)#.replace("yellow", "orange")
             _process_config["histtype"]  = kwargs.get("histtype","errorbar")
 
-            var_to_plot = var_over_ride.get(_proc_conf["process"], var)
+            _proc_id = _proc_conf["label"] if type(_proc_conf["process"]) is list else _proc_conf["process"]
+
+            var_to_plot = var_over_ride.get(_proc_id, var)
 
             add_hist_data(cfg, _process_config,
                           var=var_to_plot, region=region, cut=cut, rebin=rebin, year=year,
                           debug=kwargs.get("debug", False))
-            plot_data["hists"][_process_config["process"] + str(iP)] = _process_config
+            plot_data["hists"][_proc_id + str(iP)] = _process_config
 
 
 
@@ -650,7 +666,7 @@ def get_plot_dict_from_list(cfg, var, cut, region, process, **kwargs):
             add_hist_data(cfg, _process_config,
                           var=_var, region=region, cut=cut, rebin=rebin, year=year,
                           debug=kwargs.get("debug", False))
-            plot_data["hists"][_process_config["process"] + _var + str(iv)] = _process_config
+            plot_data["hists"][proc_id + _var + str(iv)] = _process_config
 
 
     #
@@ -670,7 +686,7 @@ def get_plot_dict_from_list(cfg, var, cut, region, process, **kwargs):
             add_hist_data(cfg, _process_config,
                           var=var, region=region, cut=cut, rebin=rebin, year=_year,
                           debug=kwargs.get("debug", False))
-            plot_data["hists"][_process_config["process"] + _year + str(iy)] = _process_config
+            plot_data["hists"][proc_id + _year + str(iy)] = _process_config
 
 
     else:
