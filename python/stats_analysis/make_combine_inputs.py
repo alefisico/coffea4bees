@@ -97,12 +97,18 @@ def create_combine_root_file( file_to_convert,
                         else: namevar = ivar
                         namevar = namevar.replace('_Up', 'Up').replace('_Down', 'Down')
 
+                        # ### making btagging decorrelated
+                        for stat in ['hfstats1', 'hfstats2', 'lfstats1', 'lfstats2']:
+                            if stat in namevar:
+                                namevar = namevar.replace(stat, f'{stat}_{iyear.replace('UL', '20')}')
+                                break
+
                         ### check for dedicated JESUnc per year, if not conitnue
-                        tmpvar = namevar.replace('Up','').replace('Down', '')
+                        tmpvar = namevar.replace('Up','').replace('Down', '').replace('_postVFP', '').replace('_preVFP', '')
                         if tmpvar not in mcSysts and not 'nominal' in tmpvar: mcSysts.append( tmpvar )
                         tmpvar = ''.join(tmpvar[-2:])
                         if tmpvar.isdigit() and int(tmpvar) != int(iyear[2:4]): continue
-
+                        
                         ### trigger efficiency
                         if 'triggerEffSFUp' in namevar:
                             make_trigger_syst(coffea_hists_syst[var][iprocess][iyear],
@@ -113,35 +119,26 @@ def create_combine_root_file( file_to_convert,
                             root_hists[iyear][iprocess][namevar] = json_to_TH1(
                                                             coffea_hists_syst[var][iprocess][iyear][ivar]['fourTag']['SR'], 
                                                             f'{iprocess}_{ivar}_{iyear}', rebin )
-
         if 'ggZH4b' in root_hists[iyear].keys():
-            print(root_hists[iyear]['ZH4b'])
-            print(root_hists[iyear]['ggZH4b'])
             for ih in root_hists[iyear]['ggZH4b'].keys():
                 root_hists[iyear]['ZH4b'][ih].Add( root_hists[iyear]['ggZH4b'][ih] )
                 logging.info(f"Adding ggZH4b to ZH4b in {iyear} {ih}")
             del root_hists[iyear]['ggZH4b']
     
-    # can = ROOT.TCanvas("can", "can", 800, 800)
-    # tmp = root_hists['UL16_preVFP']['ZH4b']['nominal'].Clone()
-    # tmp.Add( root_hists['UL16_postVFP']['ZH4b']['nominal'] )
-    # tmp.Add( root_hists['UL17']['ZH4b']['nominal'] )
-    # tmp.Add( root_hists['UL18']['ZH4b']['nominal'] )
-    # tmp.Draw()
-    # can.SaveAs("test.png")
-    # sys.exit(0)
     logging.info("\n Merging UL16_preVFP and UL16_postVFP")
     for iy in list(root_hists.keys()):
         if 'UL16_preVFP' in iy:
             for ip, _ in list(root_hists[iy].items()):
                 if isinstance(root_hists[iy][ip], dict):
                     for iv, _ in list(root_hists[iy][ip].items()):
-                        root_hists[iy][ip][iv].Add( root_hists[iy.replace('pre', 'post')][ip][iv] )
+                        root_hists[iy][ip][iv].Add( root_hists[iy.replace('pre', 'post')][ip][iv.replace('preV', 'postV')] )
                 else:
                     root_hists[iy][ip].Add( root_hists[iy.replace('pre', 'post')][ip] )
             del root_hists[iy.replace('pre', 'post')]
             root_hists['_'.join(iy.split('_')[:-1])] = root_hists.pop(iy)
 
+
+    ### renaming histos for final combine inputs
     for iy in list(root_hists.keys()):
         for jy in metadata['bin']:
             if ''.join(iy[-2:]) == ''.join(jy[-2:]):
@@ -200,15 +197,13 @@ def create_combine_root_file( file_to_convert,
                             root_hists[channel][label][ivar].SetName(label)
                             root_hists[channel][label][ivar].SetTitle(f'{label}_{channel}')
                         else:
-                            root_hists[channel][label][ivar].SetName(f'{label}_{ivar}')
-                            root_hists[channel][label][ivar].SetTitle(f'{label}_{ivar}_{channel}')
+                            tmpivar = ivar.replace("_preVFP", "")
+                            root_hists[channel][label][ivar] = root_hists[channel][label][ivar].Clone(f'{label}_{tmpivar}')
+                            root_hists[channel][label][ivar].SetTitle(f'{label}_{tmpivar}_{channel}')
                 if not ip.startswith(label): del root_hists[channel][ip]
             else: 
                 logging.info(f"{ip} not in metadata processes, removing from root file.")
                 del root_hists[channel][ip]
-
-    # print(root_hists)
-    # sys.exit(0)
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -265,7 +260,8 @@ def create_combine_root_file( file_to_convert,
             psfsrSysts = []
             mtopSysts = []
             for nuisance in mcSysts:
-                if ('2016' in nuisance):
+                if ('2016' in nuisance) or ('UL16' in nuisance):
+                    nuisance = nuisance.replace('UL16_postVFP', '2016')
                     if ('2016' in ibin):
                         cb.cp().signals().AddSyst(cb, nuisance, 'shape', ch.SystMap('bin')(['HHbb_2016'],1.0))
                 elif ('2017' in nuisance):
