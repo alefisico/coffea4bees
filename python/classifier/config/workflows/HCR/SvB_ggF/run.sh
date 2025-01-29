@@ -18,6 +18,7 @@ declare -A norms
 norms[${1}]=3
 norms["all_no_ZX"]=4
 norms["sm_no_ZX"]=1
+norms["kl5_no_ZX"]=1
 norms["all_kl"]=6
 norms["ZX_only"]=2
 
