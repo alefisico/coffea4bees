@@ -78,7 +78,7 @@ class iPlotTestCase(unittest.TestCase):
         plot2d(**(args2d | full))
 
         manyProcs = {"cut": "passPreSel",
-                     "process": ["data","HH4b","TTToHadronic"]}
+                     "process": ["data","HH4b","TTbar"]}
         print(f"plot with {args | doRatio | norm | rlim | manyProcs}")
         plot(**(args | doRatio | norm | rlim | manyProcs))
 

@@ -35,22 +35,8 @@ hists:
 
 
 stack:
-        TTTo2L2Nu:
-                process: TTTo2L2Nu
-                tag: fourTag
-                fillcolor: "#85D1FBff"
-                edgecolor: "#85D1FBff"
-                label: None
-
-        TTToSemiLeptonic:
-                process: TTToSemiLeptonic
-                tag: fourTag
-                fillcolor: "#85D1FBff"
-                edgecolor: "#85D1FBff"
-                label: None
-
-        TTToHadronic:
-                process: TTToHadronic
+        TTbar:
+                process: [TTToHadronic, TTToSemiLeptonic, TTTo2L2Nu]
                 tag: fourTag
                 fillcolor: "#85D1FBff"
                 edgecolor: k
