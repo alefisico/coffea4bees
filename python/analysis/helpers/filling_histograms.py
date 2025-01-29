@@ -73,9 +73,11 @@ def filling_nominal_histograms(selev, JCM,
     fill += LorentzVector.plot_pair( ("v4j", R"$HH_{4b}$"), "v4j", skip=["n", "dr", "dphi", "st"], bins={"mass": (120, 0, 1200)}, )
     fill += QuadJetHistsSelected( ("quadJet_selected", "Selected Quad Jet"), "quadJet_selected" )
     fill += QuadJetHistsMinDr( ("quadJet_min_dr", "Min dR Quad Jet"), "quadJet_min_dr" )
-    fill += hist.add( "m4j_HHSR", (120, 0, 1200, ("m4j_HHSR", "m4j HHSR")) )
-    fill += hist.add( "m4j_ZHSR", (120, 0, 1200, ("m4j_ZHSR", "m4j ZHSR")) )
-    fill += hist.add( "m4j_ZZSR", (120, 0, 1200, ("m4j_ZZSR", "m4j ZZSR")) )
+    
+    fill += hist.add( "m4j",    (120, 0, 1200, ("m4j"     , "m4j [GeV]"     )) )
+    fill += hist.add( "m4j_hh", (120, 0, 1200, ("m4j_HHSR", "m4j HHSR [GeV]")) )
+    fill += hist.add( "m4j_zh", (120, 0, 1200, ("m4j_ZHSR", "m4j ZHSR [GeV]")) )
+    fill += hist.add( "m4j_zz", (120, 0, 1200, ("m4j_ZZSR", "m4j ZZSR [GeV]")) )
 
     fill += QuadJetHistsSRSingle( ("dijet_HHSR", "DiJet Mass HHSR") ,"dijet_HHSR"  )
     fill += QuadJetHistsSRSingle( ("dijet_ZHSR", "DiJet Mass ZHSR") ,"dijet_ZHSR"  )
@@ -141,8 +143,14 @@ def filling_nominal_histograms(selev, JCM,
         fill += hist.add( "quadJet_min_dr.SvB_MA_q_score",   ( 100, 0, 1, ( "quadJet_min_dr.SvB_MA_q_score", "Min dR Quad Jet Diboson SvB MA q score") ) )
         if isDataForMixed:
             for _FvT_name in event_metadata["FvT_names"]:
+                # logging.info(_FvT_name)
                 fill += SvBHists( (f"SvB_{_FvT_name}",    "SvB Classifier"),    "SvB",    weight=f"weight_{_FvT_name}", )
                 fill += SvBHists( (f"SvB_MA_{_FvT_name}", "SvB MA Classifier"), "SvB_MA", weight=f"weight_{_FvT_name}", )
+            for _FvT_name in event_metadata["FvT_names"]:
+                fill += hist.add( f"m4j_{_FvT_name}"   , (120, 0, 1200, ("m4j"     , "m4j [GeV]")),      weight=f"weight_{_FvT_name}", )
+                fill += hist.add( f"m4j_hh_{_FvT_name}", (120, 0, 1200, ("m4j_HHSR", "m4j HHSR [GeV]")), weight=f"weight_{_FvT_name}", )
+                fill += hist.add( f"m4j_zh_{_FvT_name}", (120, 0, 1200, ("m4j_ZHSR", "m4j ZHSR [GeV]")), weight=f"weight_{_FvT_name}", )
+                fill += hist.add( f"m4j_zz_{_FvT_name}", (120, 0, 1200, ("m4j_ZZSR", "m4j ZZSR [GeV]")), weight=f"weight_{_FvT_name}", )
 
 
     #

@@ -58,7 +58,7 @@ class DeClusterer(PicoAOD):
 
         clustering_pdfs_file = self.clustering_pdfs_file.replace("XXX", year)
 
-        print(f"clustering_pdfs_file is {clustering_pdfs_file}")
+        print(f"clustering_pdfs_file is {clustering_pdfs_file}\n")
         if not clustering_pdfs_file == "None":
             clustering_pdfs = yaml.safe_load(open(clustering_pdfs_file, "r"))
             logging.info(f"Loaded {len(clustering_pdfs.keys())} PDFs from {clustering_pdfs_file}\n")
