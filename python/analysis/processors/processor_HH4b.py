@@ -144,7 +144,7 @@ class analysis(processor.ProcessorABC):
             self.histCuts += ["passSvB", "failSvB"]
 
     def process(self, event):
-
+        logging.info(event.metadata)
         fname   = event.metadata['filename']
         self.dataset = event.metadata['dataset']
         self.estart  = event.metadata['entrystart']
