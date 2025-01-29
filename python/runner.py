@@ -47,7 +47,7 @@ class WorkerInitializer(WorkerPlugin):
 
 def list_of_files(ifile,
                   allowlist_sites: list =['T3_US_FNALLPC'],
-                  blocklist_sites: list =[],
+                  blocklist_sites: list =[''],
                   rucio_regex_sites: str ='T[23]',
                   test: bool = False,
                   test_files: int = 5
@@ -243,7 +243,12 @@ if __name__ == '__main__':
                     metadata_dataset[dataset]['genEventSumw'] = 1
                     meta_files = metadata['datasets'][dataset][year][config_runner['data_tier']]
 
-                fileset[dataset + "_" + year] = {'files': list_of_files(meta_files, test=args.test, test_files=config_runner['test_files'], allowlist_sites=config_runner['allowlist_sites'], rucio_regex_sites=config_runner['rucio_regex_sites']),
+                fileset[dataset + "_" + year] = {'files': list_of_files(meta_files, 
+                                                                        test=args.test, 
+                                                                        test_files=config_runner['test_files'],
+                                                                        allowlist_sites=config_runner['allowlist_sites'],
+                                                                        blocklist_sites=config_runner['blocklist_sites'],
+                                                                        rucio_regex_sites=config_runner['rucio_regex_sites']),
                                                  'metadata': metadata_dataset[dataset]}
 
                 logging.info(f'Dataset {dataset+"_"+year} with '
@@ -268,6 +273,7 @@ if __name__ == '__main__':
                     fileset[idataset] = {'files': list_of_files(mixed_files,
                                                                 test=args.test, test_files=config_runner['test_files'],
                                                                 allowlist_sites=config_runner['allowlist_sites'],
+                                                                blocklist_sites=config_runner['blocklist_sites'],
                                                                 rucio_regex_sites=config_runner['rucio_regex_sites']),
                                          'metadata': metadata_dataset[idataset]}
 
@@ -293,6 +299,7 @@ if __name__ == '__main__':
                     fileset[idataset] = {'files': list_of_files(synthetic_files,
                                                                 test=args.test, test_files=config_runner['test_files'],
                                                                 allowlist_sites=config_runner['allowlist_sites'],
+                                                                blocklist_sites=config_runner['blocklist_sites'],
                                                                 rucio_regex_sites=config_runner['rucio_regex_sites']),
                                          'metadata': metadata_dataset[idataset]}
 
@@ -331,6 +338,7 @@ if __name__ == '__main__':
 
                 fileset[idataset] = {'files': list_of_files(data_3b_mix_config['files'],
                                                             test=args.test, test_files=config_runner['test_files'],
+                                                            blocklist_sites=config_runner['blocklist_sites'],
                                                             allowlist_sites=config_runner['allowlist_sites'], rucio_regex_sites=config_runner['rucio_regex_sites']),
                                      'metadata': metadata_dataset[idataset]}
 
@@ -353,6 +361,7 @@ if __name__ == '__main__':
                 fileset[idataset] = {'files': list_of_files(TT_3b_mix_config['files'],
                                                             test=args.test, test_files=config_runner['test_files'],
                                                             allowlist_sites=config_runner['allowlist_sites'],
+                                                            blocklist_sites=config_runner['blocklist_sites'],
                                                             rucio_regex_sites=config_runner['rucio_regex_sites']),
                                      'metadata': metadata_dataset[idataset]}
 
@@ -366,8 +375,13 @@ if __name__ == '__main__':
                         idataset = f'{dataset}_{year}{iera}'
                         metadata_dataset[idataset] = metadata_dataset[dataset]
                         metadata_dataset[idataset]['era'] = iera
-                        fileset[idataset] = {'files': list_of_files((ifile['files'] if config_runner['data_tier'].startswith('pico') else ifile), test=args.test, test_files=config_runner['test_files'], allowlist_sites=config_runner['allowlist_sites'], rucio_regex_sites=config_runner['rucio_regex_sites']),
-                                             'metadata': metadata_dataset[idataset]}
+                        fileset[idataset] = {'files': list_of_files((ifile['files'] if config_runner['data_tier'].startswith('pico') else ifile), 
+                                                                    test=args.test, 
+                                                                    test_files=config_runner['test_files'], 
+                                                                    allowlist_sites=config_runner['allowlist_sites'],
+                                                                    blocklist_sites=config_runner['blocklist_sites'],
+                                                                    rucio_regex_sites=config_runner['rucio_regex_sites']),
+                                            'metadata': metadata_dataset[idataset]}
 
                         logging.info(
                             f'\nDataset {idataset} with {len(fileset[idataset]["files"])} files')

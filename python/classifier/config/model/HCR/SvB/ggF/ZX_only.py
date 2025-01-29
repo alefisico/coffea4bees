@@ -17,7 +17,10 @@ class _keep_ZX:
         import torch
 
         label = batch[Input.label]
-        return torch.isin(label, label.new_tensor(MultiClass.indices("ZZ", "ZH")))
+        return torch.isin(
+            label,
+            label.new_tensor(MultiClass.indices("ZZ", "ZH", "multijet", "ttbar")),
+        )
 
 
 class Train(_remove_sig.Train):

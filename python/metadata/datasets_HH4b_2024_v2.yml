@@ -1116,27 +1116,12 @@ datasets:
           - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL16_postVFPG/picoAOD.chunk5.root
           - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL16_postVFPG/picoAOD.chunk6.root
           - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL16_postVFPG/picoAOD.chunk7.root
-          missing:
-            chunk_missing:
-            - '[908874, 1110846) in "root://dcache-cms-xrootd.desy.de:1094//store/data/Run2016G/BTagCSV/NANOAOD/UL2016_MiniAODv2_NanoAODv9-v1/260000/9CD95B62-8169-9448-9206-11A5D740671A.root"'
-            - '[1161339, 1262325) in "root://dcache-cms-xrootd.desy.de:1094//store/data/Run2016G/BTagCSV/NANOAOD/UL2016_MiniAODv2_NanoAODv9-v1/260000/9CD95B62-8169-9448-9206-11A5D740671A.root"'
-            - '[1413804, 1514790) in "root://dcache-cms-xrootd.desy.de:1094//store/data/Run2016G/BTagCSV/NANOAOD/UL2016_MiniAODv2_NanoAODv9-v1/260000/9CD95B62-8169-9448-9206-11A5D740671A.root"'
-            - '[49927, 99854) in "root://dcache-cms-xrootd.desy.de:1094//store/data/Run2016G/BTagCSV/NANOAOD/UL2016_MiniAODv2_NanoAODv9-v1/260000/E24EB924-CD9C-7347-989D-9774DBEA325D.root"'
-            - '[149781, 249635) in "root://dcache-cms-xrootd.desy.de:1094//store/data/Run2016G/BTagCSV/NANOAOD/UL2016_MiniAODv2_NanoAODv9-v1/260000/E24EB924-CD9C-7347-989D-9774DBEA325D.root"'
-            - '[499270, 599124) in "root://dcache-cms-xrootd.desy.de:1094//store/data/Run2016G/BTagCSV/NANOAOD/UL2016_MiniAODv2_NanoAODv9-v1/260000/E24EB924-CD9C-7347-989D-9774DBEA325D.root"'
-            - '[698978, 1248175) in "root://dcache-cms-xrootd.desy.de:1094//store/data/Run2016G/BTagCSV/NANOAOD/UL2016_MiniAODv2_NanoAODv9-v1/260000/E24EB924-CD9C-7347-989D-9774DBEA325D.root"'
-            - '[248930, 348502) in "root://dcache-cms-xrootd.desy.de:1094//store/data/Run2016G/BTagCSV/NANOAOD/UL2016_MiniAODv2_NanoAODv9-v1/70000/CEE74424-E052-0F4C-99B9-2A275F62EFBF.root"'
-            - '[547646, 597432) in "root://dcache-cms-xrootd.desy.de:1094//store/data/Run2016G/BTagCSV/NANOAOD/UL2016_MiniAODv2_NanoAODv9-v1/70000/CEE74424-E052-0F4C-99B9-2A275F62EFBF.root"'
-            - '[846362, 896148) in "root://dcache-cms-xrootd.desy.de:1094//store/data/Run2016G/BTagCSV/NANOAOD/UL2016_MiniAODv2_NanoAODv9-v1/70000/CEE74424-E052-0F4C-99B9-2A275F62EFBF.root"'
-            - '[945934, 995720) in "root://dcache-cms-xrootd.desy.de:1094//store/data/Run2016G/BTagCSV/NANOAOD/UL2016_MiniAODv2_NanoAODv9-v1/70000/CEE74424-E052-0F4C-99B9-2A275F62EFBF.root"'
-            - '[1045506, 1095292) in "root://dcache-cms-xrootd.desy.de:1094//store/data/Run2016G/BTagCSV/NANOAOD/UL2016_MiniAODv2_NanoAODv9-v1/70000/CEE74424-E052-0F4C-99B9-2A275F62EFBF.root"'
-            - '[1145078, 1344222) in "root://dcache-cms-xrootd.desy.de:1094//store/data/Run2016G/BTagCSV/NANOAOD/UL2016_MiniAODv2_NanoAODv9-v1/70000/CEE74424-E052-0F4C-99B9-2A275F62EFBF.root"'
-            - '[1394008, 1742510) in "root://dcache-cms-xrootd.desy.de:1094//store/data/Run2016G/BTagCSV/NANOAOD/UL2016_MiniAODv2_NanoAODv9-v1/70000/CEE74424-E052-0F4C-99B9-2A275F62EFBF.root"'
-            - '[1792296, 1891868) in "root://dcache-cms-xrootd.desy.de:1094//store/data/Run2016G/BTagCSV/NANOAOD/UL2016_MiniAODv2_NanoAODv9-v1/70000/CEE74424-E052-0F4C-99B9-2A275F62EFBF.root"'
-            file_missing:
-            - root://dcache-cms-xrootd.desy.de:1094//store/data/Run2016G/BTagCSV/NANOAOD/UL2016_MiniAODv2_NanoAODv9-v1/260000/0BAFA2A0-7170-A346-A301-1F20FF08BC36.root
-          saved_events: 784682
-          total_events: 96693697
+          - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL16_postVFPG/picoAOD.chunk8.root
+          missing: {}
+          saved_events: 818505
+          sumw2_raw: 100826567
+          sumw_raw: 100826567
+          total_events: 100826567
         H:
           count: 64989678.0
           files:
@@ -1182,21 +1167,13 @@ datasets:
           - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL16_preVFPC/picoAOD.chunk0.root
           - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL16_preVFPC/picoAOD.chunk1.root
           - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL16_preVFPC/picoAOD.chunk2.root
-          missing:
-            chunk_missing:
-            - '[98842, 197684) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016C/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/100E92B6-47E0-9E4D-AEA4-A3ED972C9F03.root"'
-            - '[444789, 543631) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016C/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/100E92B6-47E0-9E4D-AEA4-A3ED972C9F03.root"'
-            - '[642473, 741315) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016C/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/100E92B6-47E0-9E4D-AEA4-A3ED972C9F03.root"'
-            - '[840157, 889578) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016C/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/100E92B6-47E0-9E4D-AEA4-A3ED972C9F03.root"'
-            - '[988420, 1037841) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016C/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/100E92B6-47E0-9E4D-AEA4-A3ED972C9F03.root"'
-            - '[1087262, 1136683) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016C/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/100E92B6-47E0-9E4D-AEA4-A3ED972C9F03.root"'
-          saved_events: 233346
-          total_events: 29864366
+          missing: {}
+          saved_events: 237569
+          sumw2_raw: 30358567
+          sumw_raw: 30358567
+          total_events: 30358567
         D:
-          bad_files:
-          - root://redirector.t2.ucsd.edu:1095//store/data/Run2016D/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/2E921343-BA6A-C547-84FE-7F1BFC3B8947.root
-          - root://redirector.t2.ucsd.edu:1095//store/data/Run2016D/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/4ED51676-B6C4-A749-AE90-F0294A704B40.root
-          count: 52522603.0
+          count: 56527008.0
           files:
           - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL16_preVFPD/picoAOD.chunk0.root
           - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL16_preVFPD/picoAOD.chunk1.root
@@ -1204,82 +1181,72 @@ datasets:
           - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL16_preVFPD/picoAOD.chunk3.root
           missing: {}
           saved_events: 392634
+          sumw2_raw: 56527008
+          sumw_raw: 56527008
           total_events: 56527008
         E:
-          count: 60415444.0
+          bad_files:
+          - root://redirector.t2.ucsd.edu:1095//store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/03D92B17-97C3-9D44-A9A7-1B357C6A22FC.root
+          - root://redirector.t2.ucsd.edu:1095//store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/07F930E5-26B7-C944-B030-16CEABBDC08C.root
+          - root://redirector.t2.ucsd.edu:1095//store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/146BEB9C-1329-2141-B3F1-E0807CB0D5EE.root
+          - root://redirector.t2.ucsd.edu:1095//store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/1797761D-7453-B748-AD9E-DC5F2F1E3AC2.root
+          - root://redirector.t2.ucsd.edu:1095//store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/23FC47BC-2795-7643-B826-31ABBAC27C76.root
+          - root://redirector.t2.ucsd.edu:1095//store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/2F3E5EFC-9141-2645-8E31-87AE50265F81.root
+          - root://redirector.t2.ucsd.edu:1095//store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/32B1491D-A8D7-994E-8F10-A2A7A418D503.root
+          - root://redirector.t2.ucsd.edu:1095//store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/40474A03-5870-4349-84C4-6CF4D881B65E.root
+          - root://redirector.t2.ucsd.edu:1095//store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/489A2FDF-80A4-674C-B294-7D123A4BF9C5.root
+          - root://redirector.t2.ucsd.edu:1095//store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/54B8F4E5-DC2E-4740-9CB3-8E409A807922.root
+          - root://redirector.t2.ucsd.edu:1095//store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/595DF04E-B7FF-064F-A48A-F2FA03A5ACD9.root
+          - root://redirector.t2.ucsd.edu:1095//store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/6FF621BC-FD8D-0D4B-88A8-958E680D3313.root
+          - root://redirector.t2.ucsd.edu:1095//store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/72638AD1-B876-FA4E-A8AD-6F6547CE0938.root
+          - root://redirector.t2.ucsd.edu:1095//store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/7613030C-A49E-E349-BAC0-A53956766F4D.root
+          - root://redirector.t2.ucsd.edu:1095//store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/7D35E486-A88E-1742-AE72-7B3E7467A68F.root
+          - root://redirector.t2.ucsd.edu:1095//store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/7DBB5885-AD87-6F42-AFE1-6AD9DAD97755.root
+          - root://redirector.t2.ucsd.edu:1095//store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/8094B8D1-527B-0E4D-9B13-27F21A80CCE1.root
+          - root://redirector.t2.ucsd.edu:1095//store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/875E1522-82C7-9243-BEBA-C3AB949BAB1E.root
+          - root://redirector.t2.ucsd.edu:1095//store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/92032D48-52E4-1146-B064-6086FF4A49B2.root
+          - root://redirector.t2.ucsd.edu:1095//store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/93A70235-B534-3345-837E-161FB8B0AF58.root
+          - root://redirector.t2.ucsd.edu:1095//store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/9E376216-E54D-6240-B2A7-51BB6FA11F02.root
+          - root://redirector.t2.ucsd.edu:1095//store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/9FFFF66D-A1FE-FB40-AAA9-CEFEB070B77A.root
+          - root://redirector.t2.ucsd.edu:1095//store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/A1C21686-06FB-B845-9196-BDE99EC2D8C1.root
+          - root://redirector.t2.ucsd.edu:1095//store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/A2F6FA73-2190-7E4B-BF33-D8C66FE065AC.root
+          - root://redirector.t2.ucsd.edu:1095//store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/A7D0347C-247D-734D-B870-D815070230CF.root
+          - root://redirector.t2.ucsd.edu:1095//store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/BF4450A2-C77A-114F-AEDC-31BF4861FB4F.root
+          - root://redirector.t2.ucsd.edu:1095//store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/C211C283-979A-904E-8C12-384778E8CA93.root
+          - root://redirector.t2.ucsd.edu:1095//store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/C8B95658-2D6B-C042-8865-22B50E900603.root
+          - root://redirector.t2.ucsd.edu:1095//store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/D09CDB0C-35E6-7A40-AEFC-D57BDEAA6DF0.root
+          - root://redirector.t2.ucsd.edu:1095//store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/D8A97670-18EB-CF4E-914F-494CCB8997B7.root
+          - root://redirector.t2.ucsd.edu:1095//store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/D8B6FDFC-CBB6-8849-90AF-02A843AAEAB8.root
+          - root://redirector.t2.ucsd.edu:1095//store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/E49A4BD8-5123-BC49-A8B7-ADB8BC20DF57.root
+          - root://redirector.t2.ucsd.edu:1095//store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/E4B79444-1A8C-8649-BA4B-33CEF9C66C2C.root
+          - root://redirector.t2.ucsd.edu:1095//store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/F670F30A-3B78-1C42-99F4-2899BF71F52D.root
+          - root://redirector.t2.ucsd.edu:1095//store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/F9CC87A2-E34E-A04E-B468-71CA92E9D4EA.root
+          count: 294202.0
           files:
           - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL16_preVFPE/picoAOD.chunk0.root
           - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL16_preVFPE/picoAOD.chunk1.root
           - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL16_preVFPE/picoAOD.chunk2.root
           - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL16_preVFPE/picoAOD.chunk3.root
-          missing:
-            chunk_missing:
-            - '[1059219, 1109658) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/03D92B17-97C3-9D44-A9A7-1B357C6A22FC.root"'
-            - '[1361853, 1412292) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/03D92B17-97C3-9D44-A9A7-1B357C6A22FC.root"'
-            - '[1462731, 1513170) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/03D92B17-97C3-9D44-A9A7-1B357C6A22FC.root"'
-            - '[0, 50440) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/07F930E5-26B7-C944-B030-16CEABBDC08C.root"'
-            - '[151320, 302640) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/07F930E5-26B7-C944-B030-16CEABBDC08C.root"'
-            - '[353080, 554840) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/07F930E5-26B7-C944-B030-16CEABBDC08C.root"'
-            - '[655720, 756600) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/07F930E5-26B7-C944-B030-16CEABBDC08C.root"'
-            - '[958360, 1160120) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/07F930E5-26B7-C944-B030-16CEABBDC08C.root"'
-            - '[1210560, 1261000) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/07F930E5-26B7-C944-B030-16CEABBDC08C.root"'
-            - '[1311440, 1361880) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/07F930E5-26B7-C944-B030-16CEABBDC08C.root"'
-            - '[0, 49883) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/2F3E5EFC-9141-2645-8E31-87AE50265F81.root"'
-            - '[199532, 249415) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/2F3E5EFC-9141-2645-8E31-87AE50265F81.root"'
-            - '[648479, 748245) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/2F3E5EFC-9141-2645-8E31-87AE50265F81.root"'
-            - '[897894, 947777) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/2F3E5EFC-9141-2645-8E31-87AE50265F81.root"'
-            - '[997660, 1147309) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/2F3E5EFC-9141-2645-8E31-87AE50265F81.root"'
-            - '[1197192, 1446607) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/2F3E5EFC-9141-2645-8E31-87AE50265F81.root"'
-            - '[1596256, 1696022) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/2F3E5EFC-9141-2645-8E31-87AE50265F81.root"'
-            - '[1745905, 1795788) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/2F3E5EFC-9141-2645-8E31-87AE50265F81.root"'
-            - '[1845671, 1895554) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/2F3E5EFC-9141-2645-8E31-87AE50265F81.root"'
-            - '[1945437, 1995320) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/2F3E5EFC-9141-2645-8E31-87AE50265F81.root"'
-            - '[2045203, 2095086) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/2F3E5EFC-9141-2645-8E31-87AE50265F81.root"'
-            - '[2144969, 2194852) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/2F3E5EFC-9141-2645-8E31-87AE50265F81.root"'
-            - '[397112, 446751) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/32B1491D-A8D7-994E-8F10-A2A7A418D503.root"'
-            - '[352135, 402440) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/489A2FDF-80A4-674C-B294-7D123A4BF9C5.root"'
-            - '[653965, 704270) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/489A2FDF-80A4-674C-B294-7D123A4BF9C5.root"'
-            - '[1157015, 1257625) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/489A2FDF-80A4-674C-B294-7D123A4BF9C5.root"'
-            - '[1609760, 1660065) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/489A2FDF-80A4-674C-B294-7D123A4BF9C5.root"'
-            - '[544005, 642915) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/8094B8D1-527B-0E4D-9B13-27F21A80CCE1.root"'
-            - '[49462, 98924) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/875E1522-82C7-9243-BEBA-C3AB949BAB1E.root"'
-            - '[346234, 395696) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/875E1522-82C7-9243-BEBA-C3AB949BAB1E.root"'
-            - '[989240, 1038702) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/875E1522-82C7-9243-BEBA-C3AB949BAB1E.root"'
-            - '[1434398, 1483860) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/875E1522-82C7-9243-BEBA-C3AB949BAB1E.root"'
-            - '[2027942, 2077404) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/875E1522-82C7-9243-BEBA-C3AB949BAB1E.root"'
-            - '[799616, 849592) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/9E376216-E54D-6240-B2A7-51BB6FA11F02.root"'
-            - '[899568, 949544) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/9E376216-E54D-6240-B2A7-51BB6FA11F02.root"'
-            - '[1299376, 1349352) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/9E376216-E54D-6240-B2A7-51BB6FA11F02.root"'
-            - '[49846, 99692) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/9FFFF66D-A1FE-FB40-AAA9-CEFEB070B77A.root"'
-            - '[299076, 348922) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/9FFFF66D-A1FE-FB40-AAA9-CEFEB070B77A.root"'
-            - '[747690, 797536) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/9FFFF66D-A1FE-FB40-AAA9-CEFEB070B77A.root"'
-            - '[847382, 897228) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/9FFFF66D-A1FE-FB40-AAA9-CEFEB070B77A.root"'
-            - '[947074, 996920) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/9FFFF66D-A1FE-FB40-AAA9-CEFEB070B77A.root"'
-            - '[1295996, 1345842) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/9FFFF66D-A1FE-FB40-AAA9-CEFEB070B77A.root"'
-            - '[1445534, 1495380) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/9FFFF66D-A1FE-FB40-AAA9-CEFEB070B77A.root"'
-            - '[1595072, 1794456) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/9FFFF66D-A1FE-FB40-AAA9-CEFEB070B77A.root"'
-            - '[1844302, 1894148) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/9FFFF66D-A1FE-FB40-AAA9-CEFEB070B77A.root"'
-            - '[1943994, 1993840) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/9FFFF66D-A1FE-FB40-AAA9-CEFEB070B77A.root"'
-            - '[2043686, 2093532) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/9FFFF66D-A1FE-FB40-AAA9-CEFEB070B77A.root"'
-            - '[2193224, 2243070) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/9FFFF66D-A1FE-FB40-AAA9-CEFEB070B77A.root"'
-            - '[202020, 252525) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/D09CDB0C-35E6-7A40-AEFC-D57BDEAA6DF0.root"'
-            - '[595500, 645125) in "root://eoscms.cern.ch//eos/cms/store/data/Run2016E/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2430000/E49A4BD8-5123-BC49-A8B7-ADB8BC20DF57.root"'
-          saved_events: 330885
-          total_events: 56714134
+          missing: {}
+          saved_events: 353154
+          sumw2_raw: 60415444
+          sumw_raw: 60415444
+          total_events: 60415444
         F:
           bad_files:
           - root://redirector.t2.ucsd.edu:1095//store/data/Run2016F/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/24310000/6CADEDAF-10EB-8A42-A042-B64FEB2218B7.root
           - root://redirector.t2.ucsd.edu:1095//store/data/Run2016F/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/24310000/775A5D46-3D17-744A-A6F1-80B4FD37C2A4.root
-          count: 28575640.0
+          - root://redirector.t2.ucsd.edu:1095//store/data/Run2016F/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2520000/8F874C55-D68F-C94F-A166-81373DCDDBA9.root
+          count: 27068905.0
           files:
           - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL16_preVFPF/picoAOD.chunk0.root
           - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL16_preVFPF/picoAOD.chunk1.root
           - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL16_preVFPF/picoAOD.chunk2.root
-          missing:
-            chunk_missing:
-            - '[50763, 152289) in "root://xrootd.cmsaf.mit.edu:1094//store/data/Run2016F/BTagCSV/NANOAOD/HIPM_UL2016_MiniAODv2_NanoAODv9-v2/2520000/204723F5-402A-9341-B1D9-DCB9C4D8E449.root"'
-          saved_events: 233435
-          total_events: 32654876
+          missing: {}
+          saved_events: 234087
+          sumw2_raw: 32756402
+          sumw_raw: 32756402
+          total_events: 32756402
       trigger:
       - QuadJet45_TripleBTagCSV_p087
       - DoubleJet90_Double30_TripleBTagCSV_p087
@@ -1306,29 +1273,22 @@ datasets:
           - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL17C/picoAOD.chunk2.root
           - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL17C/picoAOD.chunk3.root
           - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL17C/picoAOD.chunk4.root
-          missing:
-            chunk_missing:
-            - '[252230, 302676) in "root://dcache-cms-xrootd.desy.de:1094//store/data/Run2017C/BTagCSV/NANOAOD/UL2017_MiniAODv2_NanoAODv9-v1/270000/BD032BAA-943D-8B45-9F5F-3FE865B3F583.root"'
-          saved_events: 443658
-          total_events: 34441094
+          missing: {}
+          saved_events: 444104
+          sumw2_raw: 34491540
+          sumw_raw: 34491540
+          total_events: 34491540
         D:
           count: 7967055.0
           files:
           - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL17D/picoAOD.chunk0.root
           - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL17D/picoAOD.chunk1.root
-          missing:
-            chunk_missing:
-            - '[101612, 254030) in "root://dcache-cms-xrootd.desy.de:1094//store/data/Run2017D/BTagCSV/NANOAOD/UL2017_MiniAODv2_NanoAODv9-v1/120000/76FD6AE5-C5EB-B448-B638-0189BFCDECC8.root"'
-            - '[304836, 457254) in "root://dcache-cms-xrootd.desy.de:1094//store/data/Run2017D/BTagCSV/NANOAOD/UL2017_MiniAODv2_NanoAODv9-v1/120000/76FD6AE5-C5EB-B448-B638-0189BFCDECC8.root"'
-            - '[508060, 558866) in "root://dcache-cms-xrootd.desy.de:1094//store/data/Run2017D/BTagCSV/NANOAOD/UL2017_MiniAODv2_NanoAODv9-v1/120000/76FD6AE5-C5EB-B448-B638-0189BFCDECC8.root"'
-            - '[609672, 660478) in "root://dcache-cms-xrootd.desy.de:1094//store/data/Run2017D/BTagCSV/NANOAOD/UL2017_MiniAODv2_NanoAODv9-v1/120000/76FD6AE5-C5EB-B448-B638-0189BFCDECC8.root"'
-            - '[711284, 1371762) in "root://dcache-cms-xrootd.desy.de:1094//store/data/Run2017D/BTagCSV/NANOAOD/UL2017_MiniAODv2_NanoAODv9-v1/120000/76FD6AE5-C5EB-B448-B638-0189BFCDECC8.root"'
-            - '[0, 49411) in "root://dcache-cms-xrootd.desy.de:1094//store/data/Run2017D/BTagCSV/NANOAOD/UL2017_MiniAODv2_NanoAODv9-v1/120000/FFD92DC2-98A7-584A-A397-323CBE102BBD.root"'
-            - '[247055, 296466) in "root://dcache-cms-xrootd.desy.de:1094//store/data/Run2017D/BTagCSV/NANOAOD/UL2017_MiniAODv2_NanoAODv9-v1/120000/FFD92DC2-98A7-584A-A397-323CBE102BBD.root"'
-            - '[345877, 494110) in "root://dcache-cms-xrootd.desy.de:1094//store/data/Run2017D/BTagCSV/NANOAOD/UL2017_MiniAODv2_NanoAODv9-v1/120000/FFD92DC2-98A7-584A-A397-323CBE102BBD.root"'
-            - '[839987, 1284686) in "root://dcache-cms-xrootd.desy.de:1094//store/data/Run2017D/BTagCSV/NANOAOD/UL2017_MiniAODv2_NanoAODv9-v1/120000/FFD92DC2-98A7-584A-A397-323CBE102BBD.root"'
-          saved_events: 150034
-          total_events: 5811731
+          - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL17D/picoAOD.chunk2.root
+          missing: {}
+          saved_events: 210095
+          sumw2_raw: 7967055
+          sumw_raw: 7967055
+          total_events: 7967055
         E:
           count: 17175226.0
           files:
@@ -1450,35 +1410,17 @@ datasets:
           saved_events: 388479
           total_events: 78255208
         C:
-          bad_files:
-          - root://xrootd.cmsaf.mit.edu:1094//store/data/Run2018C/JetHT/NANOAOD/UL2018_MiniAODv2_NanoAODv9-v1/280000/C1741CA7-B79F-C345-99D3-54AE5E12F5C3.root
-          count: 69741249.0
+          count: 70027804.0
           files:
           - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL18C/picoAOD.chunk0.root
           - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL18C/picoAOD.chunk1.root
           - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL18C/picoAOD.chunk2.root
           - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL18C/picoAOD.chunk3.root
-          missing:
-            chunk_missing:
-            - '[204156, 357273) in "root://xrootd.cmsaf.mit.edu:1094//store/data/Run2018C/JetHT/NANOAOD/UL2018_MiniAODv2_NanoAODv9-v1/280000/5D15D530-CFBF-0D47-A073-53CD9800204A.root"'
-            - '[459351, 510390) in "root://xrootd.cmsaf.mit.edu:1094//store/data/Run2018C/JetHT/NANOAOD/UL2018_MiniAODv2_NanoAODv9-v1/280000/5D15D530-CFBF-0D47-A073-53CD9800204A.root"'
-            - '[663507, 765585) in "root://xrootd.cmsaf.mit.edu:1094//store/data/Run2018C/JetHT/NANOAOD/UL2018_MiniAODv2_NanoAODv9-v1/280000/5D15D530-CFBF-0D47-A073-53CD9800204A.root"'
-            - '[148896, 198528) in "root://xrootd.cmsaf.mit.edu:1094//store/data/Run2018C/JetHT/NANOAOD/UL2018_MiniAODv2_NanoAODv9-v1/280000/91667DB6-1D54-4B4F-B5F8-37BA4407F4E2.root"'
-            - '[397056, 545952) in "root://xrootd.cmsaf.mit.edu:1094//store/data/Run2018C/JetHT/NANOAOD/UL2018_MiniAODv2_NanoAODv9-v1/280000/91667DB6-1D54-4B4F-B5F8-37BA4407F4E2.root"'
-            - '[744480, 794112) in "root://xrootd.cmsaf.mit.edu:1094//store/data/Run2018C/JetHT/NANOAOD/UL2018_MiniAODv2_NanoAODv9-v1/280000/91667DB6-1D54-4B4F-B5F8-37BA4407F4E2.root"'
-            - '[843744, 943008) in "root://xrootd.cmsaf.mit.edu:1094//store/data/Run2018C/JetHT/NANOAOD/UL2018_MiniAODv2_NanoAODv9-v1/280000/91667DB6-1D54-4B4F-B5F8-37BA4407F4E2.root"'
-            - '[0, 150270) in "root://xrootd.cmsaf.mit.edu:1094//store/data/Run2018C/JetHT/NANOAOD/UL2018_MiniAODv2_NanoAODv9-v1/280000/98B8B7DB-AB49-F84C-B449-42B8D3A3D23E.root"'
-            - '[200360, 350630) in "root://xrootd.cmsaf.mit.edu:1094//store/data/Run2018C/JetHT/NANOAOD/UL2018_MiniAODv2_NanoAODv9-v1/280000/98B8B7DB-AB49-F84C-B449-42B8D3A3D23E.root"'
-            - '[400720, 450810) in "root://xrootd.cmsaf.mit.edu:1094//store/data/Run2018C/JetHT/NANOAOD/UL2018_MiniAODv2_NanoAODv9-v1/280000/98B8B7DB-AB49-F84C-B449-42B8D3A3D23E.root"'
-            - '[550990, 651170) in "root://xrootd.cmsaf.mit.edu:1094//store/data/Run2018C/JetHT/NANOAOD/UL2018_MiniAODv2_NanoAODv9-v1/280000/98B8B7DB-AB49-F84C-B449-42B8D3A3D23E.root"'
-            - '[701260, 801440) in "root://xrootd.cmsaf.mit.edu:1094//store/data/Run2018C/JetHT/NANOAOD/UL2018_MiniAODv2_NanoAODv9-v1/280000/98B8B7DB-AB49-F84C-B449-42B8D3A3D23E.root"'
-            - '[851530, 951710) in "root://xrootd.cmsaf.mit.edu:1094//store/data/Run2018C/JetHT/NANOAOD/UL2018_MiniAODv2_NanoAODv9-v1/280000/98B8B7DB-AB49-F84C-B449-42B8D3A3D23E.root"'
-            - '[1001800, 1101980) in "root://xrootd.cmsaf.mit.edu:1094//store/data/Run2018C/JetHT/NANOAOD/UL2018_MiniAODv2_NanoAODv9-v1/280000/98B8B7DB-AB49-F84C-B449-42B8D3A3D23E.root"'
-            - '[100628, 201256) in "root://xrootd.cmsaf.mit.edu:1094//store/data/Run2018C/JetHT/NANOAOD/UL2018_MiniAODv2_NanoAODv9-v1/280000/B4FB441C-7F99-EF40-9A1E-9B09C228F94D.root"'
-            - '[352198, 503140) in "root://xrootd.cmsaf.mit.edu:1094//store/data/Run2018C/JetHT/NANOAOD/UL2018_MiniAODv2_NanoAODv9-v1/280000/B4FB441C-7F99-EF40-9A1E-9B09C228F94D.root"'
-            - '[143280, 191040) in "root://xrootd.cmsaf.mit.edu:1094//store/data/Run2018C/JetHT/NANOAOD/UL2018_MiniAODv2_NanoAODv9-v1/280000/C1741CA7-B79F-C345-99D3-54AE5E12F5C3.root"'
-          saved_events: 352985
-          total_events: 68273839
+          missing: {}
+          saved_events: 362082
+          sumw2_raw: 70027804
+          sumw_raw: 70027804
+          total_events: 70027804
         D:
           count: 356976276.0
           files:

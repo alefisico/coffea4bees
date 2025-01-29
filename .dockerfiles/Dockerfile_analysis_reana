@@ -1,20 +1,13 @@
-FROM docker.io/library/ubuntu:20.04
+FROM docker.io/snakemake/snakemake:v8.27.1
 
-# Use default answers in installation commands
-ENV DEBIAN_FRONTEND=noninteractive
-
-# Use distutils provided by the standard Python library instead of the vendored one in
-# setuptools, so that editable installations are stored in the right directory.
-# See https://github.com/pypa/setuptools/issues/3301
-ENV SETUPTOOLS_USE_DISTUTILS=stdlib
+# # Create missing directory and file
+RUN mkdir -p /var/lib/dpkg && touch /var/lib/dpkg/lock-frontend
 
 RUN apt-get update -y && \
     apt-get install --no-install-recommends -y \
-      gcc \
-      libpython3.8 \
-      python3.8 \
-      python3.8-dev \
-      python3-pip \
-      git \ 
-      snakemake
-RUN pip3 install reana-client 
+    git \ 
+    graphviz
+
+## install reana-client pre release with snakemake 8.20 support. Once reana-client 0.95.0 is released, this can be removed
+RUN pip3 install reana-client==0.95.0a2 
+RUN pip3 install panoptes-ui
