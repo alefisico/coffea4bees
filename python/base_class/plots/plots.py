@@ -205,6 +205,24 @@ def get_hist_data(this_process, cfg, config, var, region, cut, rebin, year, file
 
     return selected_hist
 
+#
+def get_hist_data_list(proc_list, cfg, config, var, region, cut, rebin, year, file_index, debug):
+
+    selected_hist = None
+    for _proc in proc_list:
+
+        if type(_proc) is list:
+            _selected_hist =  get_hist_data_list(_proc, cfg, config, var, region, cut, rebin, year, file_index, debug)
+        else:
+            _selected_hist = get_hist_data(_proc, cfg, config, var, region, cut, rebin, year, file_index, debug)
+
+        if selected_hist is None:
+            selected_hist = _selected_hist
+        else:
+            selected_hist += _selected_hist
+
+    return selected_hist
+
 
 #
 #  Get hist from input file(s)
@@ -215,15 +233,8 @@ def add_hist_data(cfg, config, var, region, cut, rebin, year, file_index=None, d
         print(f"In add_hist_data {config['process']} \n")
 
     proc_list = config['process'] if type(config['process']) is list else [config['process']]
-    selected_hist = None
 
-    for _proc in proc_list:
-        _selected_hist = get_hist_data(_proc, cfg, config, var, region, cut, rebin, year, file_index, debug)
-        if selected_hist is None:
-            selected_hist = _selected_hist
-        else:
-            selected_hist += _selected_hist
-
+    selected_hist = get_hist_data_list(proc_list, cfg, config, var, region, cut, rebin, year, file_index, debug)
 
     config["values"]    = selected_hist.values().tolist()
     config["variances"] = selected_hist.variances().tolist()
@@ -624,12 +635,18 @@ def get_plot_dict_from_list(cfg, var, cut, region, process, **kwargs):
             _process_config["fillcolor"] = _proc_conf.get("fillcolor", None)#.replace("yellow", "orange")
             _process_config["histtype"]  = kwargs.get("histtype","errorbar")
 
-            var_to_plot = var_over_ride.get(_proc_conf["process"], var)
+            if type(_proc_conf["process"]) is list:
+                _proc_id = _proc_conf["label"]
+            else:
+                _proc_id = _proc_conf["process"]
+
+            print(f"proc_id is{_proc_id}")
+            var_to_plot = var_over_ride.get(_proc_id, var)
 
             add_hist_data(cfg, _process_config,
                           var=var_to_plot, region=region, cut=cut, rebin=rebin, year=year,
                           debug=kwargs.get("debug", False))
-            plot_data["hists"][_process_config["process"] + str(iP)] = _process_config
+            plot_data["hists"][_proc_id + str(iP)] = _process_config
 
 
 
