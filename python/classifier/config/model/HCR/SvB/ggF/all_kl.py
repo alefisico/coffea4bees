@@ -100,6 +100,11 @@ class _roc_cat_by_largest:
 class Train(HCRTrain):
     model = "SvB_ggF-all"
     argparser = ArgParser(description="Train SvB with SM and BSM ggF signals.")
+    argparser.add_argument(
+        "--roc-signal-by-category",
+        action="store_true",
+        help="categorize events by the largest signal probability and create ROC curves for each category",
+    )
 
     @staticmethod
     def loss(batch: BatchType):
@@ -136,7 +141,7 @@ class Train(HCRTrain):
                         pos=_BKG,
                     )
                 )
-            if sig in MultiClass.trainable_labels:
+            if self.opts.roc_signal_by_category and sig in MultiClass.trainable_labels:
                 if "ggF" in MultiClass.labels:
                     for kl in MC_HH_ggF.kl:
                         rocs.append(
@@ -151,7 +156,7 @@ class Train(HCRTrain):
                     if sig2 in MultiClass.labels:
                         rocs.append(
                             ROC(
-                                name=f"(P({sig}) largest) background vs {sig2})",
+                                name=f"(P({sig}) largest) background vs {sig2}",
                                 selection=_roc_cat_by_largest(sig, sig2),
                                 bins=ROC_BIN,
                                 pos=_BKG,
