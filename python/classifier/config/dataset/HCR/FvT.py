@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 
 def _common_selection(df: pd.DataFrame):
-    return df["passHLT"] & (df["SB"] | df["SR"]) & (df["fourTag"] | df["threeTag"])
+    return (df["SB"] | df["SR"]) & (df["fourTag"] | df["threeTag"])
 
 
 def _data_selection(df: pd.DataFrame):

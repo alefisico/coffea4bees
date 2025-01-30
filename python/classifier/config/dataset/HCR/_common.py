@@ -158,7 +158,6 @@ class CommonTrain(Common):
                 drop_columns(
                     "ZZSR", "ZHSR", "HHSR", "SR", "SB",
                     "fourTag", "threeTag", "pseudoTagWeight",
-                    "passHLT",
                 ),
             ]
         )
@@ -175,7 +174,6 @@ class CommonTrain(Common):
             "SB",
             "fourTag",
             "threeTag",
-            "passHLT",
             Columns.event,
             Columns.weight,
         }

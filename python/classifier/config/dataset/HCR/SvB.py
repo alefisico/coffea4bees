@@ -27,16 +27,12 @@ class _common_selection:
         self.regions = regions
 
     def __call__(self, df: pd.DataFrame):
-        return df[
-            df["passHLT"]
-            & df[self.ntags]
-            & reduce(op.or_, (df[r] for r in self.regions))
-        ]
+        return df[df[self.ntags] & reduce(op.or_, (df[r] for r in self.regions))]
 
     def __repr__(self):
         from classifier.df.tools import _iter_str, _type_str
 
-        return f'{_type_str(self)} {_iter_str(("passHLT", self.ntags, *self.regions))}'
+        return f"{_type_str(self)} {_iter_str((self.ntags, *self.regions))}"
 
 
 class _data_selection(_common_selection):
