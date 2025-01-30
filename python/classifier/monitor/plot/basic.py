@@ -135,8 +135,10 @@ def plot_multiphase_scalar(
         separators["width"].append(len(r) * _VSPAN_WIDTH)
     del _phase, _nulls, _shifted, _changed, _labels, _selection
     # plot data
-    dfs = {k: pd.concat([v, phase], axis=1) for k, v in data.items()}
-    columns = unique(chain.from_iterable(map(lambda x: x.columns, dfs.values())))
+    dfs = {k: pd.concat([data[k], phase], axis=1) for k in sorted(data)}
+    columns = sorted(
+        unique(chain.from_iterable(map(lambda x: x.columns, dfs.values())))
+    )
     scatter_hover = HoverTool(
         tooltips=[(k, "@{" + k + "}") for k in columns],
     )
@@ -192,7 +194,13 @@ def plot_multiphase_scalar(
         )
         phase_hover.renderers.append(vs)
         layout.append(fig)
-
+    for k, df in dfs.items():
+        table = "".join(
+            f"<tr><td>{col}</td><td>{df[col].iloc[-1]}</td></tr>"
+            for col in columns
+            if col in df.columns
+        )
+        layout.append(Div(text=f"<h3>{k}</h3><table>{table}</table>"))
     return generate_layout(toggle_row, layout)
 
 

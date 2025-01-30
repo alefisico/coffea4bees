@@ -107,7 +107,7 @@ class _HCRSkim(Skimmer):
     @torch.no_grad()
     def train(self, batch: BatchType):
         selections = self._splitter.step(batch)
-        if selections[SplitterKeys.training].sum() > 0:
+        if self._nn is not None and selections[SplitterKeys.training].sum() > 0:
             self._nn.updateMeanStd(
                 *_HCRInput(batch, self._device, selections[SplitterKeys.training])
             )
@@ -254,7 +254,7 @@ class HCRTraining(MultiStageTraining):
         if self._finetuning is not None:
             layers = self._HCR._nn.layers
             layers.setLayerRequiresGrad(
-                requires_grad=False, index=sorted(layers.layers.keys())[:-1]
+                requires_grad=False, index=self._HCR._nn.embedding_layers()
             )
             yield TrainingStage(
                 name="Finetuning",

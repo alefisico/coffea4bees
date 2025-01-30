@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from classifier.ml import BatchType
 
 _BKG = ("multijet", "ttbar")
+_SIG = ("ZZ", "ZH", "ggF")
 
 
 class _roc_select_sig:
@@ -46,6 +47,54 @@ class _roc_select_ggF(_roc_select_sig):
         return torch.isin(label, label.new_tensor(MultiClass.indices(*self.bkg))) | (
             (batch["kl"] == self.kl) & (label == MultiClass.index("ggF"))
         )
+
+
+class _roc_cat_by_largest:
+    def __init__(self, cat: str, sig: str, kl: float = None):
+        self.cat = cat
+        self.sig = sig
+        self.kl = kl
+
+    def __call__(self, batch):
+        import torch
+
+        y_pred = batch[Output.class_prob]
+        y_true = batch[Input.label]
+        weight = batch[Input.weight]
+
+        # remove other signals
+        sig = y_true == MultiClass.index(self.sig)
+        if self.kl is not None:
+            sig &= batch["kl"] == self.kl
+        bkg = torch.isin(y_true, y_true.new_tensor(MultiClass.indices(*_BKG)))
+        select = sig | bkg
+        y_pred = y_pred[select]
+        y_true = y_true[select]
+        weight = weight[select]
+
+        n_train = MultiClass.n_trainable()
+        isig = MultiClass.index(self.cat)
+        # find signal samples
+        isigs = [i for i in MultiClass.indices(*_SIG) if i is not None]
+        # find signal outputs
+        isigs_train = sorted([i for i in isigs if i < n_train])
+        if isig not in isigs_train:
+            return {}
+        if len(isigs_train) > 1:
+            sig_pred = y_pred[:, isigs_train]
+            # select if self.sig is largest
+            selected = torch.argmax(sig_pred, dim=1) == isigs_train.index(isig)
+            # set all signal label to self.sig
+            y_true = y_true[selected]
+            is_sig = torch.isin(y_true, y_true.new_tensor(isigs))
+            y_true[is_sig] = isig
+            y_pred = y_pred[selected]
+            weight = weight[selected]
+        return {
+            "y_pred": y_pred,
+            "y_true": y_true,
+            "weight": weight,
+        }
 
 
 class Train(HCRTrain):
@@ -87,6 +136,27 @@ class Train(HCRTrain):
                         pos=_BKG,
                     )
                 )
+            if sig in MultiClass.trainable_labels:
+                if "ggF" in MultiClass.labels:
+                    for kl in MC_HH_ggF.kl:
+                        rocs.append(
+                            ROC(
+                                name=f"(P({sig}) largest) background vs ggF (kl={kl:.6g})",
+                                selection=_roc_cat_by_largest(sig, "ggF", kl=kl),
+                                bins=ROC_BIN,
+                                pos=_BKG,
+                            )
+                        )
+                for sig2 in ("ZZ", "ZH"):
+                    if sig2 in MultiClass.labels:
+                        rocs.append(
+                            ROC(
+                                name=f"(P({sig}) largest) background vs {sig2})",
+                                selection=_roc_cat_by_largest(sig, sig2),
+                                bins=ROC_BIN,
+                                pos=_BKG,
+                            )
+                        )
         if "ggF" in MultiClass.labels:
             for kl in MC_HH_ggF.kl:
                 rocs.append(
