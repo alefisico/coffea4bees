@@ -160,6 +160,7 @@ class _collect_loss_roc:
                     **kwargs,
                 )
             )
+            jobs.append(_list_loss_auc(plot_data=g_data[group], **kwargs))
             jobs.append(
                 _plot_roc(
                     data=g_rocs[group],
@@ -207,6 +208,17 @@ class _plot_loss_auc:
         with fsspec.open(path, "wt") as f:
             f.write(page)
         Index.add("HCR Benchmark", title, path)
+
+
+class _list_loss_auc(_plot_loss_auc):
+    filename = "loss-auc-table-{group}.html"
+    title = "Loss and AUC Table (last epoch)- {group}"
+
+    @property
+    def plot(self):
+        from classifier.monitor.plot.basic import list_last_scalar
+
+        return list_last_scalar
 
 
 class _plot_roc(_plot_loss_auc):

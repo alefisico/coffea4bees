@@ -105,11 +105,10 @@ def plot_multiphase_scalar(
     category: dict[str, list[str]],
 ):
     layout = []
-    data = plot_data
     milestone = phase_milestone
     # generate toggles
     cat_toggles, toggle_row = generate_toggles(
-        set(chain.from_iterable(data.keys())), category
+        set(chain.from_iterable(plot_data.keys())), category
     )
     # generate phase separator
     separators = {"x": [], "label": []}
@@ -135,7 +134,7 @@ def plot_multiphase_scalar(
         separators["width"].append(len(r) * _VSPAN_WIDTH)
     del _phase, _nulls, _shifted, _changed, _labels, _selection
     # plot data
-    dfs = {k: pd.concat([data[k], phase], axis=1) for k in sorted(data)}
+    dfs = {k: pd.concat([plot_data[k], phase], axis=1) for k in sorted(plot_data)}
     columns = sorted(
         unique(chain.from_iterable(map(lambda x: x.columns, dfs.values())))
     )
@@ -194,6 +193,21 @@ def plot_multiphase_scalar(
         )
         phase_hover.renderers.append(vs)
         layout.append(fig)
+    return generate_layout(toggle_row, layout)
+
+
+def list_last_scalar(
+    *,
+    plot_data: dict[tuple[str, ...], pd.DataFrame],
+    phase: pd.DataFrame,
+    **_,
+):
+
+    dfs = {k: pd.concat([plot_data[k], phase], axis=1) for k in sorted(plot_data)}
+    columns = sorted(
+        unique(chain.from_iterable(map(lambda x: x.columns, dfs.values())))
+    )
+    layout = []
     for k, df in dfs.items():
         table = "".join(
             f"<tr><td>{col}</td><td>{df[col].iloc[-1]}</td></tr>"
@@ -201,7 +215,13 @@ def plot_multiphase_scalar(
             if col in df.columns
         )
         layout.append(Div(text=f"<h3>{k}</h3><table>{table}</table>"))
-    return generate_layout(toggle_row, layout)
+    return column(
+        ScrollBox(
+            child=column(layout, sizing_mode="stretch_width"),
+            sizing_mode="stretch_both",
+        ),
+        sizing_mode="stretch_both",
+    )
 
 
 def plot_multiphase_curve(

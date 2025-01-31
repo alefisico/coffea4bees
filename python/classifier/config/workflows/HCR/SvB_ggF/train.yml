@@ -12,6 +12,7 @@ main:
 model:
   - module: HCR.SvB.ggF.{model}.Train
     option:
+      - --roc-signal-by-category
       - --training FixedStep
       - epoch: 20
         bs_init: 1024
