@@ -16,7 +16,7 @@ def _common_selection(df: pd.DataFrame):
 
 
 def _data_selection(df: pd.DataFrame):
-    return df[_common_selection(df) & (~(df["SR"] & df["fourTag"]))]
+    return df[_common_selection(df) & (~(df["SR"] & df["fourTag"])) & df["passHLT"]]
 
 
 def _ttbar_selection(df: pd.DataFrame):

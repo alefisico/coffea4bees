@@ -174,6 +174,7 @@ class CommonTrain(Common):
             "SB",
             "fourTag",
             "threeTag",
+            "passHLT",
             Columns.event,
             Columns.weight,
         }

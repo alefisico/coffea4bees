@@ -22,21 +22,29 @@ def _reweight_bkg(df: pd.DataFrame):
 
 class _common_selection:
     ntags: str
+    passHLT: bool = False
 
     def __init__(self, *regions: str):
         self.regions = regions
 
     def __call__(self, df: pd.DataFrame):
-        return df[df[self.ntags] & reduce(op.or_, (df[r] for r in self.regions))]
+        selection = df[self.ntags] & reduce(op.or_, (df[r] for r in self.regions))
+        if self.passHLT:
+            selection &= df["passHLT"]
+        return df[selection]
 
     def __repr__(self):
         from classifier.df.tools import _iter_str, _type_str
 
-        return f"{_type_str(self)} {_iter_str((self.ntags, *self.regions))}"
+        selections = [self.ntags, *self.regions]
+        if self.passHLT:
+            selections.append("passHLT")
+        return f"{_type_str(self)} {_iter_str(selections)}"
 
 
 class _data_selection(_common_selection):
     ntags = "threeTag"
+    passHLT = True
 
 
 class _mc_selection(_common_selection):
