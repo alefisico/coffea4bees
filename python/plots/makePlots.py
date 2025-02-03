@@ -74,7 +74,7 @@ def doPlots(varList, debug=False):
         if args.doTest:
             vDict["write_yaml"] = True
 
-        for process in ["data", "Multijet", "HH4b", "TTToHadronic"]:
+        for process in ["data", "Multijet", "HH4b", "TTbar"]:
             for region in ["SR", "SB"]:
 
                 plot_args  = {}
@@ -110,7 +110,7 @@ def doPlots(varList, debug=False):
             if args.doTest:
                 vDict["write_yaml"] = True
 
-            for process in ["data", "Multijet", "HH4b", "TTToHadronic"]:
+            for process in ["data", "Multijet", "HH4b", "TTbar"]:
 
                 #
                 # Comp Cuts
