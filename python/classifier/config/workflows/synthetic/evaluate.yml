@@ -21,7 +21,7 @@ model:
     option:
       - --models
       - Final
-      - root://cmseos.fnal.gov//store/user/{user}/XX4b/FvT/seed-{synthetic}/model/ # TODO may need to match the output path in train.yml
+      - root://cmseos.fnal.gov//store/user/{user}/XX4b/FvT/seed-{synthetic}/model/result.json # TODO may need to match the output path in train.yml
 
 analysis:
   - module: kfold.Merge
