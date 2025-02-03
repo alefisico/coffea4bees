@@ -17,9 +17,6 @@ model:
       - epoch: 1
         bs_init: 16384
 
-analysis:
-  - module: HCR.LossROC
-
 setting:
   - module: ml.Training
     option:

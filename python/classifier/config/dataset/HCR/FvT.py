@@ -76,10 +76,11 @@ class Train(CommonTrain):
             ),
             _group.fullmatch(
                 ("source:mixed",),
+                ("source:synthetic",),
                 processors=[
                     lambda: _select_4b,
                 ],
-                name="remove 3b mixed data",
+                name="remove 3b mixed/synthetic data",
             ),
             _group.add_year(),
         ]
