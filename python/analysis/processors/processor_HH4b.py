@@ -427,17 +427,23 @@ class analysis(processor.ProcessorABC):
             #
             if self.config["isSignal"]:
 
-                event['bfromHorZ']= find_genpart(event.GenPart, [5], [23, 25])
+                event['bfromHorZ_all']= find_genpart(event.GenPart, [5], [23, 25])
+
+                if "status" in event.bfromHorZ_all.fields:
+                    event['bfromHorZ'] = event.bfromHorZ_all[event.bfromHorZ_all.status == 23]
+                else:
+                    logging.warning(f"\nStatus Missing for GenParticles in dataset {self.dataset}\n")
+                    event['bfromHorZ'] = event.bfromHorZ_all
+
                 event['GenJet', 'selectedBs'] = (np.abs(event.GenJet.partonFlavour)==5)
                 event['selGenBJet'] = event.GenJet[event.GenJet.selectedBs]
                 event['matchedGenBJet'] = event.bfromHorZ.nearest( event.selGenBJet, threshold=0.2 )
+
                 event['pass4GenBJets'] = ak.num(event.matchedGenBJet) >= 4
                 event["truth_v4b"] = ak.where(  event.pass4GenBJets,
                                                 event.matchedGenBJet.sum(axis=1),
                                                 1e-10 * event.matchedGenBJet.sum(axis=1),
                                               )
-
-
 
                 if self.gaussKernalMean is not None:
                     v4b_index = np.floor_divide(event.truth_v4b.mass, 12).to_numpy()
