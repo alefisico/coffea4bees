@@ -139,12 +139,12 @@ class PicoAOD(ProcessorABC):
                     weights["outliers"] = [int(e) for e in outliers.event]
                     weights["sumw_diff"] = float(np.sum(outliers.genWeight))
                     weights["sumw2_diff"] = float(np.sum(outliers.genWeight**2))
-            weights["sumw_raw"] = float(np.sum(genWeight))
-            weights["sumw2_raw"] = float(np.sum(genWeight**2))
+            weights["sumw"] = float(np.sum(genWeight))
+            weights["sumw2"] = float(np.sum(genWeight**2))
         else:
             nevents = len(events) if preselected is None else float(np.sum(preselected))
-            weights["sumw_raw"] = nevents
-            weights["sumw2_raw"] = nevents
+            weights["sumw"] = nevents
+            weights["sumw2"] = nevents
         metadata = (
             {
                 "total_events": len(events),
@@ -220,10 +220,10 @@ def _fetch_metadata(dataset: str, path: PathLike, dask: bool = False):
                 return {
                     dataset: {
                         "count": int(np.sum(data["genEventCount"])),
-                        "sumw": float(
+                        "sumw_raw": float(
                             np.sum(data["genEventSumw"].to_numpy().astype(np.float64))
                         ),
-                        "sumw2": float(
+                        "sumw2_raw": float(
                             np.sum(data["genEventSumw2"].to_numpy().astype(np.float64))
                         ),
                     }
