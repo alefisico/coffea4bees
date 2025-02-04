@@ -56,15 +56,18 @@ class PicoAOD(ProcessorABC):
         skip_collections: Iterable[str] = None,
         skip_branches: Iterable[str] = None,
         pico_base_name: str = _PICOAOD,
+        campaign: str = None,
     ):
         self._base = EOS(base_path)
         self._step = step
+        self._pico_base_name = pico_base_name
+        self._campaign = campaign
+
         self._branch_filter = re.compile(
             _branch_filter(skip_collections, skip_branches)
         )
         self._transform = NanoAOD(regular=False, jagged=True)
         self.cutFlowCuts = []
-        self._pico_base_name = pico_base_name
 
     def _filter(self, branches: set[str]):
         return {*filter(self._branch_filter.match, branches)}
@@ -91,6 +94,27 @@ class PicoAOD(ProcessorABC):
     @retry(1, handler=_log_exception, skip=(SkimmingError,))
     def process(self, events: ak.Array):
         EOS.set_retry(3, 10)  # 3 retries with 10 seconds interval
+
+        # prepare
+        dataset = events.metadata["dataset"]
+        chunk = Chunk.from_coffea_events(events)
+        source_chunk = {str(chunk.path): [(chunk.entry_start, chunk.entry_stop)]}
+        path = (
+            self._base
+            / f"{dataset}/{self._pico_base_name}_{chunk.uuid}_{chunk.entry_start}_{chunk.entry_stop}{_ROOT}"
+        )
+
+        # check if chunks is already finished
+        if self._campaign is not None:
+            reader = TreeReader()
+            try:
+                cached = Chunk(path, fetch=True)
+                metadata = reader.load_metadata(self._campaign, cached)
+                return {dataset: metadata | {"files": [cached], "source": source_chunk}}
+            except Exception:
+                ...
+
+        # select events
         self._cutFlow = cutFlow(self.cutFlowCuts)
         preselected = self.preselect(events)
         selected = self.select(events)
@@ -103,8 +127,6 @@ class PicoAOD(ProcessorABC):
             selected = selected[0]
             if preselected is not None:
                 selected = preselected & selected
-        chunk = Chunk.from_coffea_events(events)
-        dataset = events.metadata["dataset"]
 
         # construct output
         weights = {}
@@ -123,15 +145,20 @@ class PicoAOD(ProcessorABC):
             nevents = len(events) if preselected is None else float(np.sum(preselected))
             weights["sumw_raw"] = nevents
             weights["sumw2_raw"] = nevents
-        result = {
-            dataset: {
+        metadata = (
+            {
                 "total_events": len(events),
                 "saved_events": int(ak.sum(selected)),
-                "files": [],
-                "source": {str(chunk.path): [(chunk.entry_start, chunk.entry_stop)]},
             }
             | weights
             | result
+        )
+        result = {
+            dataset: metadata
+            | {
+                "files": [],
+                "source": source_chunk,
+            }
         }
         self._cutFlow.addOutputSkim(result, dataset)
         if "genWeight" not in events.fields:
@@ -151,8 +178,6 @@ class PicoAOD(ProcessorABC):
         _clear_cache(events)
         # save selected events
         if result[dataset]["saved_events"] > 0:
-            filename = f"{dataset}/{self._pico_base_name}_{chunk.uuid}_{chunk.entry_start}_{chunk.entry_stop}{_ROOT}"
-            path = self._base / filename
             reader = TreeReader(self._filter)
             saved = 0
             with TreeWriter()(path) as writer:
@@ -175,6 +200,8 @@ class PicoAOD(ProcessorABC):
                         saved = _saved
                     data = self._transform(data)
                     writer.extend(data)
+                if self._campaign is not None:
+                    writer.save_metadata(self._campaign, metadata)
             if writer.tree is not None:
                 result[dataset]["files"].append(writer.tree)
         return result
