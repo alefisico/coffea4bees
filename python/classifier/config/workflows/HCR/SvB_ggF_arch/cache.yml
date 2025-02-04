@@ -1,30 +1,16 @@
-# template:
-# - user: lpc username
-# - model: name of the model
-# - norm: normalization
-
 main:
-  module: train
+  module: cache
   option:
     - --max-loaders 2
-    - --max-trainers 3
-
-model:
-  - module: HCR.SvB.ggF.{model}.Train
-    option:
-      - --roc-signal-by-category
-      - --training FixedStep
-      - epoch: 20
-        bs_init: 1024
-      - --finetuning FinetuneStep
-      - epoch: 1
-        bs_init: 16384
+    - --nchunks 10
+    - --max-writers 5
+    - --states label.MultiClass.labels label.MultiClass.trainable_labels
 
 dataset:
   - module: HCR.SvB.Background
     option:
       - --metadata datasets_HH4b
-      - --norm {norm}
+      - --norm 6
       - --friends
       -
       - root://cmseos.fnal.gov//store/user/{user}/HH4b/friend/friend.json@@HCR_input
@@ -43,5 +29,4 @@ dataset:
 setting:
   - module: IO
     option:
-      - output: root://cmseos.fnal.gov//store/user/{user}/HH4b/classifier/SvB/ggF/{model}/
-
+      - output: /srv/HH4b/classifier/cache/SvB_ggF_arch/

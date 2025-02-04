@@ -1,5 +1,5 @@
 export LPCUSER="chuyuanl"
-export WFS="classifier/config/workflows/HH4b_AN_v4/FvT"
+export WFS="classifier/config/workflows/HH4b_AN_v3/FvT"
 export GMAIL=~/gmail.yml
 
 # check port
@@ -12,7 +12,7 @@ fi
 # train
 ./pyml.py from $WFS/train.yml \
     -template "user: ${LPCUSER}" $WFS/train_data.yml \
-    -setting Monitor "address: :${port}"
+    -setting Monitor "address: :${port}" -flag debug
 
 # TODO
 # evaluate

@@ -48,3 +48,13 @@ class SplitterKeys(GlobalSetting):
 
     training: str = "training"
     validation: str = "validation"
+
+
+class MultiClass(GlobalSetting):
+    "Multiclass classification label manager"
+
+    nontrainable_labels: set[str] = []
+
+    @classmethod
+    def set__nontrainable_labels(cls, value: list[str]):
+        return set(value)
