@@ -43,6 +43,7 @@ echo "############### Checking datasets"
 if [[ $(hostname) = *fnal* ]]; then
     DATASETS=metadata/datasets_HH4b.yml
 else
-    DATASETS=metadata/datasets_HH4b_cernbox.yml
+    # DATASETS=metadata/datasets_HH4b_cernbox.yml
+    DATASETS=metadata/datasets_HH4b.yml
 fi
 echo "The datasets file is: $DATASETS"

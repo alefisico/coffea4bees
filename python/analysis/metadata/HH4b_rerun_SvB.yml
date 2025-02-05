@@ -11,10 +11,10 @@ config:
   run_SvB: true
   run_systematics: false
   SvB   : 'analysis/weights/pytorch_models/2024_HHUL/SvB_HCR_8_np753_seed13_lr0.01_epochs20_offset*_epoch20.pkl'
-  # SvB_MA: 'analysis/weights/pytorch_models/2024_HHUL/SvB_MA_HCR+attention_8_np1061_seed13_lr0.01_epochs20_offset*_epoch20.pkl'
-  SvB_MA:
-    - path: 'analysis/weights/pytorch_models/2024_HHUL_all_kl/result.json'
-      name: Final # name of the output stage (e.g. Final or some other checkpoint)
+  SvB_MA: 'analysis/weights/pytorch_models/2024_HHUL/SvB_MA_HCR+attention_8_np1061_seed13_lr0.01_epochs20_offset*_epoch20.pkl'
+  # SvB_MA:
+    # - path: 'analysis/weights/pytorch_models/2024_HHUL_all_kl/result.json'
+      # name: Final # name of the output stage (e.g. Final or some other checkpoint)
   top_reconstruction_override: false
   friends:
-    trigWeight: "metadata/datasets_HH4b_2024_v1_trigweights.json@@trigWeight"
+    trigWeight: "metadata/datasets_HH4b_2024_v1p1_trigweights.json@@trigWeight"
