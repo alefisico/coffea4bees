@@ -510,30 +510,33 @@ if __name__ == '__main__':
         #
         if args.skimming:
             # check integrity of the output
-            output = integrity_check(fileset, output)
-            # merge output into new chunks each have `chunksize` events
-            kwargs = dict(
-                base_path=configs["config"]["base_path"],
-                output=output,
-                step=config_runner.get("basketsize", configs["config"]["step"]),
-                chunk_size=config_runner.get(
-                    "picosize", config_runner["chunksize"]
-                ),
-            )
-
-            if "declustering_rand_seed" in configs["config"]:
-                kwargs["pico_base_name"] = f'picoAOD_seed{configs["config"]["declustering_rand_seed"]}'
-
-            if configs['runner'].get("class_name", None) == "SubSampler":
-                kwargs["pico_base_name"] = f'picoAOD_PSData'
-
-            if configs['runner'].get("class_name", None) == "Skimmer" and configs["config"].get("skim4b", False):
-                kwargs["pico_base_name"] = f'picoAOD_fourTag'
-
-            if client is not None:
-                output = client.compute(resize(**kwargs), sync=True)
+            output, complete = integrity_check(fileset, output)
+            if not complete:
+                logging.error("The jobs above failed. Merging is skipped.")
             else:
-                output = resize(**kwargs, dask=False)
+                # merge output into new chunks each have `chunksize` events
+                kwargs = dict(
+                    base_path=configs["config"]["base_path"],
+                    output=output,
+                    step=config_runner.get("basketsize", configs["config"]["step"]),
+                    chunk_size=config_runner.get(
+                        "picosize", config_runner["chunksize"]
+                    ),
+                )
+
+                if "declustering_rand_seed" in configs["config"]:
+                    kwargs["pico_base_name"] = f'picoAOD_seed{configs["config"]["declustering_rand_seed"]}'
+
+                if configs['runner'].get("class_name", None) == "SubSampler":
+                    kwargs["pico_base_name"] = f'picoAOD_PSData'
+
+                if configs['runner'].get("class_name", None) == "Skimmer" and configs["config"].get("skim4b", False):
+                    kwargs["pico_base_name"] = f'picoAOD_fourTag'
+
+                if client is not None:
+                    output = client.compute(resize(**kwargs), sync=True)
+                else:
+                    output = resize(**kwargs, dask=False)
             # only keep file name for each chunk
             for dataset, chunks in output.items():
                 chunks['files'] = [str(f.path) for f in chunks['files']]

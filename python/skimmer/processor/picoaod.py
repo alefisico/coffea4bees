@@ -109,7 +109,9 @@ class PicoAOD(ProcessorABC):
             reader = TreeReader()
             try:
                 cached = Chunk(path, fetch=True)
-                metadata = reader.load_metadata(self._campaign, cached)
+                metadata = reader.load_metadata(
+                    self._campaign, cached, builtin_types=True
+                )
                 return {dataset: metadata | {"files": [cached], "source": source_chunk}}
             except Exception:
                 ...
@@ -263,13 +265,15 @@ def integrity_check(
     output: dict[str, dict[str, dict[str, list[tuple[int, int]]]]],
     num_entries: dict[str, dict[str, int]] = None,
 ):
+    complete = True
     logging.info("Checking integrity of the picoAOD...")
     diff = set(fileset) - set(output)
     miss_dict = {}
     if diff:
         logging.error(f"The whole dataset is missing: {diff}")
-        miss_dict["dataset_missing"] = "Run again :P"
-    for dataset in fileset:
+        complete = False
+        miss_dict["dataset_missing"] = list(diff)
+    for dataset in output:
         if len(output[dataset]["files"]) == 0:
             logging.warning(f'No file is saved for "{dataset}"')
         inputs = map(EOS, fileset[dataset]["files"])
@@ -284,6 +288,7 @@ def integrity_check(
         for file in inputs:
             if file not in outputs:
                 logging.error(f'The whole file is missing in outputs: "{file}"')
+                complete = False
                 file_missing.append(str(file))
             else:
                 chunks = sorted(outputs[file], key=lambda x: x[0])
@@ -297,6 +302,7 @@ def integrity_check(
                             merged.append([str(start), str(stop)])
                         start = _start
                         logging.error(f'Missing chunk: [{stop}, {_start}) in "{file}"')
+                        complete = False
                         chunk_missing.append(f'[{stop}, {_start}) in "{file}"')
                     stop = _stop
                 if start != stop:
@@ -307,7 +313,7 @@ def integrity_check(
             miss_dict["chunk_missing"] = chunk_missing
     output[dataset].pop("source")
     output[dataset]["missing"] = miss_dict
-    return output
+    return output, complete
 
 
 def resize(
