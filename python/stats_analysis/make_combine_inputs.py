@@ -100,7 +100,7 @@ def create_combine_root_file( file_to_convert,
                         # ### making btagging decorrelated
                         for stat in ['hfstats1', 'hfstats2', 'lfstats1', 'lfstats2']:
                             if stat in namevar:
-                                namevar = namevar.replace(stat, f'{stat}_{iyear.replace('UL', '20')}')
+                                namevar = namevar.replace(stat, f'{stat}_{iyear.replace("UL", "20")}')
                                 break
 
                         ### check for dedicated JESUnc per year, if not conitnue

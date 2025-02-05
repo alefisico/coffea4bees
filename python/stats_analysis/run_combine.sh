@@ -88,13 +88,13 @@ run_limits() {
         --PO "map=.*/ggHH_kl_0_kt_1_hbbhbb:rggHH_kl_0_kt_1_hbbhbb[1,-10,10]" \
         --PO "map=.*/ggHH_kl_2p45_kt_1_hbbhbb:rggHH_kl_2p45_kt_1_hbbhbb[1,-10,10]" \
         --PO "map=.*/ggHH_kl_5_kt_1_hbbhbb:rggHH_kl_5_kt_1_hbbhbb[1,-10,10]" \
-        --PO 'map=.*/ZZ4b:rZZ4b[1,-10,10]' \
-        --PO 'map=.*/ZH4b:rZH4b[1,-10,10]' 
+        # --PO 'map=.*/ZZ4b:rZZ4b[1,-10,10]' \
+        # --PO 'map=.*/ZH4b:rZH4b[1,-10,10]' 
         
     combine -M AsymptoticLimits ${datacard}.root --redefineSignalPOIs r${signallabel} \
         -n _${iclass}${blind_label} ${limit_blind} \
-        --setParameters rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0,rZZ4b=0,rZH4b=0 \
-        --freezeParameters rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb,rZZ4b,rZH4b \
+        --setParameters rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0 \
+        --freezeParameters rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb \
         > limits_${datacard}_${iclass}${blind_label}.txt
     cat limits_${datacard}_${iclass}${blind_label}.txt
     combineTool.py -M CollectLimits higgsCombine_${iclass}${blind_label}.AsymptoticLimits.mH120.root -o limits_${datacard}_${iclass}${blind_label}.json

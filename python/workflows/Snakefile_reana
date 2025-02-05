@@ -113,8 +113,8 @@ use rule analysis as analysis_databkgs with:
         output="hist__{sample}-{year}.coffea",
         output_path="output/singlefiles/",
         logname="hist__{sample}_{year}",
+        datasets=config['dataset_location'],
         metadata="analysis/metadata/HH4b.yml",
-        datasets=config['dataset_location']
         # metadata="analysis/metadata/HH4b_rerun_SvB.yml",
 
 use rule analysis as analysis_signals with:
