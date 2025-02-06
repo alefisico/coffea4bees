@@ -9,7 +9,7 @@ import sys
 #_PERCENT_ERROR_THRESHOLD =  0.01
 
 #
-# python3 analysis/tests/cutflow_test.py   --inputFile hists/test.coffea --knownCounts analysis/tests/testCounts.yml
+# python3 analysis/tests/cutflow_test.py   --inputFile hists/test.coffea --knownCounts analysis/tests/known_Counts.yml
 #
 class CutFlowTestCase(unittest.TestCase):
 

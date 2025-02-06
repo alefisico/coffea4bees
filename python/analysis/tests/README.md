@@ -3,7 +3,7 @@
 To run the cutflow_test
 
 ```
-python analysis/tests/cutflow_test.py   --inputFile analysis/hists/test.coffea --knownCounts analysis/tests/testCounts.yml
+python analysis/tests/cutflow_test.py   --inputFile analysis/hists/test.coffea --knownCounts analysis/tests/known_Counts.yml
 ```
 
 For all Run2
