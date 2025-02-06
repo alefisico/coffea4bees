@@ -222,8 +222,17 @@ def add_btagweights( event, weights,
         weights.add( "CMS_btag", event.CMSbtag )
     else:
 
+        sys_value = "central"
+        if shift_name and ( 'CMS_scale_j_' in shift_name ):
+            if 'Down' in shift_name:
+                sys_value = f"down_jes{shift_name.replace('CMS_scale_j_', '').replace('Down', '')}"
+            elif 'Up' in shift_name:
+                sys_value = f"up_jes{shift_name.replace('CMS_scale_j_', '').replace('Up', '')}"
+        print(f"shift_name: {shift_name}, sys_value: {sys_value}\n\n")
+
         btag_SF_weights = apply_btag_sf(
             event.selJet_no_bRegCorr,
+            sys_value="central",
             correction_file=corrections_metadata["btagSF"],
             btag_uncertainties=corrections_metadata["btag_uncertainties"] if (not shift_name) & run_systematics else None
         )
