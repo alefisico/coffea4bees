@@ -9,7 +9,8 @@ output_code = [
   f"{output_dir}/analysis_helpers_job.log",
   f"{output_dir}/kappa_framework.log",
   f"{output_dir}/jet_clustering.log",
-  f"{output_dir}/trig_emulator.log"
+  f"{output_dir}/trig_emulator.log",
+  f"{output_dir}/memory_test.log"
 ]
 # outputs.extend(output_code)
 
@@ -113,6 +114,11 @@ rule trig_emulator:
     container: analysis_container
     log: f"{output_dir}/trig_emulator.log"
     shell: "source .ci-workflows/trig-emulator-tests.sh {ci_output_dir} 2>&1 | tee -a {log}"
+
+rule memory_test:
+    container: analysis_container
+    log: f"{output_dir}/memory_test.log"
+    shell: "source .ci-workflows/memory_test.sh {ci_output_dir} 2>&1 | tee -a {log}"
 
 rule skimmer_test_job:
     container: analysis_container

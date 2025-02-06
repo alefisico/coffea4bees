@@ -9,9 +9,9 @@ fi
 
 echo "############### Changing metadata"
 if [[ $(hostname) = *fnal* ]]; then
-    sed -e "s#base_path.*#base_path: \/srv\/python\/output\/synthetic_dataset_make_dataset\/#" -e "s/\#max.*/maxchunks: 1/" -e "s/\#test.*/test_files: 1/" -e "s/\workers:.*/workers: 1/" -e "s/chunksize:.*/chunksize: 1000/"  skimmer/metadata/declustering.yml > $OUTPUT_DIR/declustering_for_test.yml
+    sed -e "s#base_path.*#base_path: \/srv\/python\/output\/synthetic_dataset_make_dataset\/#" -e "s/\#max.*/maxchunks: 1/" -e "s/\#test.*/test_files: 1/" -e "s/\workers:.*/workers: 1/" -e "s/chunksize:.*/chunksize: 1000/" -e "s#subtract_ttbar.*#subtract_ttbar_with_weights: False#"  skimmer/metadata/declustering.yml > $OUTPUT_DIR/declustering_for_test.yml
 else
-    sed -e "s#base_.*#base_path: \/builds\/${CI_PROJECT_PATH}\/python\/output\/synthetic_dataset_make_dataset\/#" -e "s/\#max.*/maxchunks: 1/" -e "s/\#test.*/test_files: 1/" -e "s/\workers:.*/workers: 1/" -e "s/chunksize:.*/chunksize: 1000/" -e "s/T3_US_FNALLPC/T3_CH_PSI/" skimmer/metadata/declustering.yml > $OUTPUT_DIR/declustering_for_test.yml
+    sed -e "s#base_.*#base_path: \/builds\/${CI_PROJECT_PATH}\/python\/output\/synthetic_dataset_make_dataset\/#" -e "s/\#max.*/maxchunks: 1/" -e "s/\#test.*/test_files: 1/" -e "s/\workers:.*/workers: 1/" -e "s/chunksize:.*/chunksize: 1000/" -e "s/T3_US_FNALLPC/T3_CH_PSI/"  -e "s#subtract_ttbar.*#subtract_ttbar_with_weights: False#" skimmer/metadata/declustering.yml > $OUTPUT_DIR/declustering_for_test.yml
 fi
 cat $OUTPUT_DIR/declustering_for_test.yml
 
