@@ -144,7 +144,7 @@ class analysis(processor.ProcessorABC):
             self.histCuts += ["passSvB", "failSvB"]
 
     def process(self, event):
-
+        logging.info(event.metadata)
         fname   = event.metadata['filename']
         self.dataset = event.metadata['dataset']
         self.estart  = event.metadata['entrystart']
@@ -381,6 +381,7 @@ class analysis(processor.ProcessorABC):
                                            do_jet_veto_maps=self.config["do_jet_veto_maps"],
                                            isRun3=self.config["isRun3"],
                                            isMC=self.config["isMC"], ### temporary
+                                           isSyntheticData=self.config["isSyntheticData"],
                                            )
 
 
@@ -426,17 +427,23 @@ class analysis(processor.ProcessorABC):
             #
             if self.config["isSignal"]:
 
-                event['bfromHorZ']= find_genpart(event.GenPart, [5], [23, 25])
+                event['bfromHorZ_all']= find_genpart(event.GenPart, [5], [23, 25])
+
+                if "status" in event.bfromHorZ_all.fields:
+                    event['bfromHorZ'] = event.bfromHorZ_all[event.bfromHorZ_all.status == 23]
+                else:
+                    logging.warning(f"\nStatus Missing for GenParticles in dataset {self.dataset}\n")
+                    event['bfromHorZ'] = event.bfromHorZ_all
+
                 event['GenJet', 'selectedBs'] = (np.abs(event.GenJet.partonFlavour)==5)
                 event['selGenBJet'] = event.GenJet[event.GenJet.selectedBs]
                 event['matchedGenBJet'] = event.bfromHorZ.nearest( event.selGenBJet, threshold=0.2 )
+
                 event['pass4GenBJets'] = ak.num(event.matchedGenBJet) >= 4
                 event["truth_v4b"] = ak.where(  event.pass4GenBJets,
                                                 event.matchedGenBJet.sum(axis=1),
                                                 1e-10 * event.matchedGenBJet.sum(axis=1),
                                               )
-
-
 
                 if self.gaussKernalMean is not None:
                     v4b_index = np.floor_divide(event.truth_v4b.mass, 12).to_numpy()
@@ -550,11 +557,11 @@ class analysis(processor.ProcessorABC):
         #  Build di-jets and Quad-jets
         #
         create_cand_jet_dijet_quadjet( selev, event.event,
-                                      apply_FvT=self.apply_FvT,
-                                      run_SvB=self.run_SvB,
-                                      run_systematics=self.run_systematics,
-                                      classifier_SvB=self.classifier_SvB,
-                                      classifier_SvB_MA=self.classifier_SvB_MA,
+                                       apply_FvT=self.apply_FvT,
+                                       run_SvB=self.run_SvB,
+                                       run_systematics=self.run_systematics,
+                                       classifier_SvB=self.classifier_SvB,
+                                       classifier_SvB_MA=self.classifier_SvB_MA,
                                        processOutput = processOutput,
                                       )
 
@@ -643,26 +650,27 @@ class analysis(processor.ProcessorABC):
             if not self.run_systematics:
                 ## this can be simplified
                 hist = filling_nominal_histograms(selev, self.apply_JCM,
-                                                processName=self.processName,
-                                                year=self.year,
-                                                isMC=self.config["isMC"],
-                                                histCuts=self.histCuts,
-                                                apply_FvT=self.apply_FvT,
-                                                run_SvB=self.run_SvB,
-                                                top_reconstruction=self.top_reconstruction,
-                                                isDataForMixed=self.config['isDataForMixed'],
-                                                run_lowpt_selection=self.run_lowpt_selection,
-                                                event_metadata=event.metadata)
+                                                  processName=self.processName,
+                                                  year=self.year,
+                                                  isMC=self.config["isMC"],
+                                                  histCuts=self.histCuts,
+                                                  apply_FvT=self.apply_FvT,
+                                                  run_SvB=self.run_SvB,
+                                                  top_reconstruction=self.top_reconstruction,
+                                                  isDataForMixed=self.config['isDataForMixed'],
+                                                  run_lowpt_selection=self.run_lowpt_selection,
+                                                  event_metadata=event.metadata)
+
             #
             # Run systematics
             #
             else:
                 hist = filling_syst_histograms(selev, weights,
-                                                analysis_selections,
-                                                shift_name=shift_name,
-                                                processName=self.processName,
-                                                year=self.year,
-                                                histCuts=self.histCuts)
+                                               analysis_selections,
+                                               shift_name=shift_name,
+                                               processName=self.processName,
+                                               year=self.year,
+                                               histCuts=self.histCuts)
 
         friends = { 'friends': {} }
         if self.make_top_reconstruction is not None:

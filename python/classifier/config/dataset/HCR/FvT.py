@@ -12,11 +12,11 @@ if TYPE_CHECKING:
 
 
 def _common_selection(df: pd.DataFrame):
-    return df["passHLT"] & (df["SB"] | df["SR"]) & (df["fourTag"] | df["threeTag"])
+    return (df["SB"] | df["SR"]) & (df["fourTag"] | df["threeTag"])
 
 
 def _data_selection(df: pd.DataFrame):
-    return df[_common_selection(df) & (~(df["SR"] & df["fourTag"]))]
+    return df[_common_selection(df) & (~(df["SR"] & df["fourTag"])) & df["passHLT"]]
 
 
 def _ttbar_selection(df: pd.DataFrame):
@@ -76,10 +76,11 @@ class Train(CommonTrain):
             ),
             _group.fullmatch(
                 ("source:mixed",),
+                ("source:synthetic",),
                 processors=[
                     lambda: _select_4b,
                 ],
-                name="remove 3b mixed data",
+                name="remove 3b mixed/synthetic data",
             ),
             _group.add_year(),
         ]

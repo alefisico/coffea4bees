@@ -9,7 +9,7 @@ main:
     - --max-evaluators 3
 
 model:
-  - module: HCR.SvB.ggF.{model}.Eval
+  - module: HCR.SvB.ggF.all_kl.Eval
     option:
       - --models
       - Final
@@ -18,6 +18,7 @@ model:
 dataset:
   - module: HCR.SvB.Eval
     option:
+      - --metadata datasets_HH4b
       - --max-workers 8
       - --friends
       -

@@ -69,8 +69,8 @@ mamba env create -f env.yml
    2. add the following to `~/.bashrc`
 
       ```bash
-      export SINGULARITY_CACHEDIR="/mnt/scratch/${USER}/.apptainer/"
-      export SINGULARITY_TMPDIR="/mnt/scratch/${USER}/.apptainer/"
+      export APPTAINER_TMPDIR=/mnt/scratch/chuyuanl/.apptainer/
+      export APPTAINER_CACHEDIR=/mnt/scratch/chuyuanl/.apptainer/
       ```
 
 2. install grid certificate:
@@ -85,11 +85,11 @@ mamba env create -f env.yml
    2. create a container from the docker image and setup the proxy:
 
       ```bash
-      singularity exec -B .:/srv --nv --pwd /srv docker://chuyuanliu/heptools:ml bash --init-file /entrypoint.sh
-      # this may take a while for the first time
-      # inside the container (when you see Singularity>)
+      apptainer exec -B .:/srv --nv --pwd /srv docker://chuyuanliu/heptools:ml bash --init-file /entrypoint.sh
+      # this may take a while when the image is not cached
+      # inside the container (when you see Apptainer>)
       voms-proxy-init --rfc --voms cms -valid 192:00
-      # setup the autocomplete
+      # setup the autocomplete (in coffea4bees/python/)
       source ./classifier/install.sh
       ```
 
