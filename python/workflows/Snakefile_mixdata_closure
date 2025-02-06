@@ -1,0 +1,208 @@
+analysis_container="/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
+combine_container="/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0"
+
+OUTPUT_DIR="hists/local"
+DATASETS="metadata/datasets_HH4b.yml"
+
+rule all:
+    input: 
+        # f"{OUTPUT_DIR}/closureFits/ULHH/3bDvTMix4bDvT/SvB_MA/rebin1/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin1.log",
+        f"{OUTPUT_DIR}/closureFits/ULHH_kfold/3bDvTMix4bDvT/SvB_MA/rebin1/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin1.log"
+        #f"{OUTPUT_DIR}/closureFits/ULHH_ZZinSB/3bDvTMix4bDvT/SvB_MA/rebin1/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin1.log"
+        #f"{OUTPUT_DIR}/closureFits/ULHH_ZZandZHinSB/3bDvTMix4bDvT/SvB_MA/rebin1/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin1.log"
+
+
+rule mixed_bkg_tt:
+    output: "{OUTPUT_DIR}/histMixedBkg_TT.coffea"
+    container: analysis_container
+    params:
+        datasets="TTTo2L2Nu_for_mixed TTToHadronic_for_mixed TTToSemiLeptonic_for_mixed",
+        output="histMixedBkg_TT.coffea",
+        years="UL17 UL18 UL16_preVFP UL16_postVFP"
+    shell:
+        """
+        python runner.py -p analysis/processors/processor_HH4b.py -o {params.output} -d {params.datasets} -y {params.years} -op {OUTPUT_DIR} -m {DATASETS}
+        """
+
+use rule mixed_bkg_tt as mixed_bkg_data_3b_for_mixed_kfold with:
+    output: "{OUTPUT_DIR}/histMixedBkg_data_3b_for_mixed_kfold.coffea"
+    params:
+        datasets="data_3b_for_mixed",
+        output="histMixedBkg_data_3b_for_mixed_kfold.coffea",
+        years="2016 2017 2018"
+
+use rule mixed_bkg_tt as mixed_data with:
+    output: f"{OUTPUT_DIR}/histMixedData.coffea"
+    params:
+        datasets="mixeddata",
+        output="histMixedData.coffea",
+        years="2016 2017 2018"
+
+use rule mixed_bkg_tt as signal with:
+    output: f"{OUTPUT_DIR}/histSignal.coffea"
+    params:
+        datasets="GluGluToHHH1 ZH4b ZZ4b",
+        output="histSignal.coffea",
+        years="UL17 UL18 UL16_preVFP UL16_postVFP"
+
+rule mixed_bkg_data_3b_for_mixed:
+    output: f"{OUTPUT_DIR}/histMixedBkg_data_3b_for_mixed.coffea"
+    container: analysis_container
+    shell:
+        """
+        sed -e "s/use_kfold: True/use_kfold: False/" "analysis/metadata/HH4b_mixed_data.yml" > /tmp/HH4b_mixed_data_nokfold.yml
+        python runner.py  -o histMixedBkg_data_3b_for_mixed.coffea -d   data_3b_for_mixed  -p analysis/processors/processor_HH4b.py -y 2016 2017 2018    -op {OUTPUT_DIR} -m {DATASETS} -c /tmp/HH4b_mixed_data_nokfold.yml
+        """
+
+rule mixed_bkg_data_3b_for_mixed_ZZinSB:
+    output: f"{OUTPUT_DIR}/histMixedBkg_data_3b_for_mixed_ZZinSB.coffea"
+    container: analysis_container
+    shell:
+        """
+        sed -e "s/use_kfold: True/use_kfold: False/" -e "s/use_ZZinSB: False/use_ZZinSB: True/" "analysis/metadata/HH4b_mixed_data.yml" > /tmp/HH4b_mixed_data_ZZinSB.yml
+        python runner.py  -o histMixedBkg_data_3b_for_mixed_ZZinSB.coffea -d   data_3b_for_mixed  -p analysis/processors/processor_HH4b.py -y 2016 2017 2018    -op {OUTPUT_DIR} -m {DATASETS} -c /tmp/HH4b_mixed_data_ZZinSB.yml
+        """
+rule mixed_bkg_data_3b_for_mixed_ZZandZHinSB:
+    output: f"{OUTPUT_DIR}/histMixedBkg_data_3b_for_mixed_ZZandZHinSB.coffea"
+    container: analysis_container
+    shell:
+        """
+        sed -e "s/use_kfold: True/use_kfold: False/" -e "s/use_ZZandZHinSB: False/use_ZZandZHinSB: True/" "analysis/metadata/HH4b_mixed_data.yml" > /tmp/HH4b_mixed_data_ZZandZHinSB.yml
+        python runner.py  -o histMixedBkg_data_3b_for_mixed_ZZandZHinSB.coffea -d   data_3b_for_mixed  -p analysis/processors/processor_HH4b.py -y 2016 2017 2018    -op {OUTPUT_DIR} -m {DATASETS} -c /tmp/HH4b_mixed_data_ZZandZHinSB.yml
+        """
+
+
+rule hist_to_json:
+    output: f"{OUTPUT_DIR}/histMixedData.json"
+    input: f"{OUTPUT_DIR}/histMixedData.coffea"
+    container: analysis_container
+    shell: "python3 stats_analysis/convert_hist_to_json_closure.py --input {input}"
+
+use rule hist_to_json as hist_to_json_mixed_bkg_tt with:
+    output: f"{OUTPUT_DIR}/histMixedBkg_TT.json"
+    input: f"{OUTPUT_DIR}/histMixedBkg_TT.coffea"
+
+use rule hist_to_json as hist_to_json_mixed_bkg_data_3b_for_mixed_kfold with:
+    output: f"{OUTPUT_DIR}/histMixedBkg_data_3b_for_mixed_kfold.json"
+    input: f"{OUTPUT_DIR}/histMixedBkg_data_3b_for_mixed_kfold.coffea"
+
+use rule hist_to_json as hist_to_json_mixed_bkg_data_3b_for_mixed with:
+    output: f"{OUTPUT_DIR}/histMixedBkg_data_3b_for_mixed.json"
+    input: f"{OUTPUT_DIR}/histMixedBkg_data_3b_for_mixed.coffea"
+
+use rule hist_to_json as hist_to_json_mixed_bkg_data_3b_for_mixed_ZZinSB with:
+    output: f"{OUTPUT_DIR}/histMixedBkg_data_3b_for_mixed_ZZinSB.json"
+    input: f"{OUTPUT_DIR}/histMixedBkg_data_3b_for_mixed_ZZinSB.coffea"
+
+use rule hist_to_json as hist_to_json_mixed_bkg_data_3b_for_mixed_ZZandZHinSB with:
+    output: f"{OUTPUT_DIR}/histMixedBkg_data_3b_for_mixed_ZZandZHinSB.json"
+    input: f"{OUTPUT_DIR}/histMixedBkg_data_3b_for_mixed_ZZandZHinSB.coffea"
+
+use rule hist_to_json as hist_to_json_signal with:
+    output: f"{OUTPUT_DIR}/histSignal.json"
+    input: f"{OUTPUT_DIR}/histSignal.coffea"
+
+rule json_to_root:
+    input: f"{OUTPUT_DIR}/histMixedData.json"
+    output: f"{OUTPUT_DIR}/histMixedData.root"
+    shell:
+        """
+      export APPTAINER_CACHEDIR="/tmp/$(whoami)/apptainer_cache"
+      export APPTAINER_TMPDIR="/tmp/.apptainer/"
+
+      APPTAINER_SHELL=$(which bash) apptainer exec -B .:/home/cmsusr/coffea4bees \
+      --pwd /home/cmsusr/coffea4bees/  \
+      {combine_container} \
+      /bin/bash -c "export LANG=C && export LC_ALL=C && \
+       source /cvmfs/cms.cern.ch/cmsset_default.sh && \
+       cd /home/cmsusr/CMSSW_11_3_4/ && \
+       cmsenv && \
+       cd - && \
+      python3 stats_analysis/convert_json_to_root.py -f {input} --output {OUTPUT_DIR}"
+        """
+
+use rule json_to_root as json_to_root_mixed_bkg_tt with:
+    input: f"{OUTPUT_DIR}/histMixedBkg_TT.json"
+    output: f"{OUTPUT_DIR}/histMixedBkg_TT.root"
+
+use rule json_to_root as json_to_root_mixed_bkg_data_3b_for_mixed_kfold with:
+    input: f"{OUTPUT_DIR}/histMixedBkg_data_3b_for_mixed_kfold.json"
+    output: f"{OUTPUT_DIR}/histMixedBkg_data_3b_for_mixed_kfold.root"
+
+use rule json_to_root as json_to_root_mixed_bkg_data_3b_for_mixed with:
+    input: f"{OUTPUT_DIR}/histMixedBkg_data_3b_for_mixed.json"
+    output: f"{OUTPUT_DIR}/histMixedBkg_data_3b_for_mixed.root"
+
+use rule json_to_root as json_to_root_mixed_bkg_data_3b_for_mixed_ZZinSB with:
+    input: f"{OUTPUT_DIR}/histMixedBkg_data_3b_for_mixed_ZZinSB.json"
+    output: f"{OUTPUT_DIR}/histMixedBkg_data_3b_for_mixed_ZZinSB.root"
+
+use rule json_to_root as json_to_root_mixed_bkg_data_3b_for_mixed_ZZandZHinSB with:
+    input: f"{OUTPUT_DIR}/histMixedBkg_data_3b_for_mixed_ZZandZHinSB.json"
+    output: f"{OUTPUT_DIR}/histMixedBkg_data_3b_for_mixed_ZZandZHinSB.root"
+
+use rule json_to_root as json_to_root_signal with:
+    input: f"{OUTPUT_DIR}/histSignal.json"
+    output: f"{OUTPUT_DIR}/histSignal.root"
+
+rule two_stage_closure:
+    input: 
+      file_TT="{OUTPUT_DIR}/histMixedBkg_TT.root",
+      file_mix="{OUTPUT_DIR}/histMixedData.root",
+      file_sig="{OUTPUT_DIR}/histSignal.root",
+      file_data3b="{OUTPUT_DIR}/histMixedBkg_data_3b_for_mixed.root",
+      rebin=1
+    output: "{OUTPUT_DIR}/closureFits/ULHH/3bDvTMix4bDvT/SvB_MA/rebin1/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin1.log"
+    params:
+      outputPath="{OUTPUT_DIR}/closureFits/ULHH"
+    shell:
+      """
+      export APPTAINER_CACHEDIR="/tmp/$(whoami)/apptainer_cache"
+      export APPTAINER_TMPDIR="/tmp/.apptainer/"
+
+      APPTAINER_SHELL=$(which bash) apptainer exec -B .:/home/cmsusr/coffea4bees \
+      --pwd /home/cmsusr/coffea4bees/  \
+      {combine_container} \
+      /bin/bash -c "export LANG=C && export LC_ALL=C && \
+       source /cvmfs/cms.cern.ch/cmsset_default.sh && \
+       cd /home/cmsusr/CMSSW_11_3_4/ && \
+       cmsenv && \
+       cd - && \
+       python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 1 \
+            --outputPath {params.outputPath} \
+            --input_file_TT {input.file_TT} \
+            --input_file_mix {input.file_mix} \
+            --input_file_sig {input.file_sig} \
+            --input_file_data3b {input.file_data3b}
+        """
+
+use rule two_stage_closure as two_stage_closure_kfold with:
+    input: 
+      file_TT= f"{OUTPUT_DIR}/histMixedBkg_TT.root",
+      file_mix= f"{OUTPUT_DIR}/histMixedData.root",
+      file_sig= f"{OUTPUT_DIR}/histSignal.root",
+      file_data3b= f"{OUTPUT_DIR}/histMixedBkg_data_3b_for_mixed_kfold.root",
+      rebin=1
+    params:
+      outputPath= f"{OUTPUT_DIR}/closureFits/ULHH_kfold"
+    output: f"{OUTPUT_DIR}/closureFits/ULHH_kfold/3bDvTMix4bDvT/SvB_MA/rebin1/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin1.log"
+
+use rule two_stage_closure as two_stage_closure_ZZinSB with:
+    input: 
+      file_TT= f"{OUTPUT_DIR}/histMixedBkg_TT.root",
+      file_mix= f"{OUTPUT_DIR}/histMixedData.root",
+      file_sig= f"{OUTPUT_DIR}/histSignal.root",
+      file_data3b= f"{OUTPUT_DIR}/histMixedBkg_data_3b_for_mixed_ZZinSB.root"
+    params:
+      outputPath= f"{OUTPUT_DIR}/closureFits/ULHH_ZZinSB"
+    output: f"{OUTPUT_DIR}/closureFits/ULHH_ZZinSB/3bDvTMix4bDvT/SvB_MA/rebin1/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin1.log"
+
+use rule two_stage_closure as two_stage_closure_ZZandZHinSB with:
+    input: 
+      file_TT= f"{OUTPUT_DIR}/histMixedBkg_TT.root",
+      file_mix= f"{OUTPUT_DIR}/histMixedData.root",
+      file_sig= f"{OUTPUT_DIR}/histSignal.root",
+      file_data3b= f"{OUTPUT_DIR}/histMixedBkg_data_3b_for_mixed_ZZandZHinSB.root"
+    params:
+      outputPath= f"{OUTPUT_DIR}/closureFits/ULHH_ZZandZHinSB"
+    output: f"{OUTPUT_DIR}/closureFits/ULHH_ZZandZHinSB/3bDvTMix4bDvT/SvB_MA/rebin1/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin1.log"

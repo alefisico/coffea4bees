@@ -14,8 +14,9 @@ python runner.py -t -o testMixedBkg_data_3b_for_mixed_kfold.coffea -d   data_3b_
 python runner.py -t -o testMixedBkg_data_3b_for_mixed.coffea -d   data_3b_for_mixed  -p analysis/processors/processor_HH4b.py -y 2017 2018 2016  -op $OUTPUT_DIR -m $DATASETS
 
 python runner.py -t -o testMixedData.coffea -d    mixeddata  -p analysis/processors/processor_HH4b.py -y 2016 2017 2018 -op $OUTPUT_DIR -m $DATASETS
-python runner.py -t -o testSignal_UL.coffea -d GluGluToHHTo4B_cHHH1 ZH4b ZZ4b  -p analysis/processors/processor_HH4b.py -y UL17 UL18 UL16_preVFP UL16_postVFP    -op $OUTPUT_DIR -m $DATASETS
-#python runner.py -t -o testSignal_preUL.coffea -d HH4b -p analysis/processors/processor_HH4b.py -y 2016 2017 2018 -op $OUTPUT_DIR -m $DATASETS
+python runner.py -t -o testSignals.coffea -d ZH4b ZZ4b  -p analysis/processors/processor_HH4b.py -y UL17 UL18 UL16_preVFP UL16_postVFP    -op $OUTPUT_DIR -m $DATASETS
+python runner.py -t -o testSignals_HH4b.coffea -d GluGluToHHTo4B_cHHH1  -p analysis/processors/processor_HH4b.py -y UL17 UL18 UL16_preVFP UL16_postVFP    -op $OUTPUT_DIR -m $DATASETS -c analysis/metadata/HH4b_signals.yml
+python analysis/tools/merge_coffea_files.py -f $OUTPUT_DIR/testSignals_HH4b.coffea $OUTPUT_DIR/testSignals.coffea -o $OUTPUT_DIR/testSignal_UL.coffea
 ls $OUTPUT_DIR
 
 echo "############### Hist --> JSON"

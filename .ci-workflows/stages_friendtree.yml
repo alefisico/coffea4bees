@@ -9,7 +9,7 @@ weights-trigger-friendtree-job:
   artifacts: 
     paths:
       - python/output/weights_trigger_friendtree_job/trigger_weights_friends.json
-      - python/output/weights_trigger_friendtree_job/GluGluToHHTo4B_cHHH1_UL18/trigWeight.chunk2.root
+      - python/output/weights_trigger_friendtree_job/GluGluToHHTo4B_cHHH1_UL18/trigWeight.chunk1.root
 
 classifier-friendtree-job:   
   stage: friendtree-test   

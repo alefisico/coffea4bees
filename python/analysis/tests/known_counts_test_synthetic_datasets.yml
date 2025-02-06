@@ -1,27 +1,27 @@
 counts4:
     synthetic_mc_GluGluToHHTo4B_cHHH1_UL18:
-        passJetMult: 12.15
-        passPreSel: 12.15
-        passDiJetMass: 6.52
-        SR: 2.62
-        SB: 3.9
-        passSvB: 1.03
-        failSvB: 4.68
+        passJetMult: 14.99
+        passPreSel: 14.99
+        passDiJetMass: 8.23
+        SR: 3.03
+        SB: 5.2
+        passSvB: 0.44
+        failSvB: 5.94
 
     syn_v0_UL18:
-        passJetMult: 128.0
-        passPreSel: 128.0
-        passDiJetMass: 47.0
-        SR: 15.0
-        SB: 32.0
+        passJetMult: 140.0
+        passPreSel: 140.0
+        passDiJetMass: 50.0
+        SR: 16.0
+        SB: 34.0
         passSvB: 1.0
-        failSvB: 85.0
+        failSvB: 93.0
 
 
 
 counts3:
     synthetic_mc_GluGluToHHTo4B_cHHH1_UL18:
-        passJetMult: 12.15
+        passJetMult: 14.99
         passPreSel: 0.0
         passDiJetMass: 0.0
         SR: 0.0
@@ -30,7 +30,7 @@ counts3:
         failSvB: 0.0
 
     syn_v0_UL18:
-        passJetMult: 128.0
+        passJetMult: 140.0
         passPreSel: 0.0
         passDiJetMass: 0.0
         SR: 0.0
@@ -42,28 +42,28 @@ counts3:
 
 counts4_unit:
     synthetic_mc_GluGluToHHTo4B_cHHH1_UL18:
-        passJetMult: 216.0
-        passPreSel: 216.0
-        passDiJetMass: 128.0
-        SR: 43.0
-        SB: 85.0
-        passSvB: 11.0
-        failSvB: 94.0
+        passJetMult: 244.0
+        passPreSel: 244.0
+        passDiJetMass: 148.0
+        SR: 58.0
+        SB: 90.0
+        passSvB: 6.0
+        failSvB: 110.0
 
     syn_v0_UL18:
-        passJetMult: 128.0
-        passPreSel: 128.0
-        passDiJetMass: 47.0
-        SR: 15.0
-        SB: 32.0
+        passJetMult: 140.0
+        passPreSel: 140.0
+        passDiJetMass: 50.0
+        SR: 16.0
+        SB: 34.0
         passSvB: 1.0
-        failSvB: 85.0
+        failSvB: 93.0
 
 
 
 counts3_unit:
     synthetic_mc_GluGluToHHTo4B_cHHH1_UL18:
-        passJetMult: 216.0
+        passJetMult: 244.0
         passPreSel: 0.0
         passDiJetMass: 0.0
         SR: 0.0
@@ -72,7 +72,7 @@ counts3_unit:
         failSvB: 0.0
 
     syn_v0_UL18:
-        passJetMult: 128.0
+        passJetMult: 140.0
         passPreSel: 0.0
         passDiJetMass: 0.0
         SR: 0.0

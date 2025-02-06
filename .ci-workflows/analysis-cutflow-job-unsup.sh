@@ -10,7 +10,7 @@ if [ ! -d $OUTPUT_DIR ]; then
 fi
 
 echo "############### Running cutflow test"
-python analysis/tests/cutflow_test.py   --inputFile $INPUT_DIR/test_unsup.coffea --knownCounts analysis/tests/testCounts_unsup.yml
+python analysis/tests/cutflow_test.py   --inputFile $INPUT_DIR/test_unsup.coffea --knownCounts analysis/tests/known_Counts_unsup.yml
 
 echo "############### Running dump cutflow test"
 python analysis/tests/dumpCutFlow.py --input $INPUT_DIR/test_unsup.coffea -o $OUTPUT_DIR/test_dump_cutflow_unsup.yml
