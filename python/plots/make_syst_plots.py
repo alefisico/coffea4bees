@@ -157,7 +157,8 @@ if __name__ == '__main__':
                                             square=CMS.kSquare, extraSpace=0.05, iPos=iPos)
             syst_can.cd(1)
             leg = CMS.cmsLeg(0.35, 0.89 - 0.04 * 4, 0.69, 0.89, textSize=0.04)
-            leg.SetHeader(nuisance_names[syst] , 'L')
+            try: leg.SetHeader(nuisance_names[syst] , 'L')
+            except: leg.SetHeader(syst , 'L')
 
             leg.AddEntry( nominal_hist, plot_label, 'lp' )
             CMS.cmsDraw( nominal_hist, 'P', mcolor=ROOT.kBlack )

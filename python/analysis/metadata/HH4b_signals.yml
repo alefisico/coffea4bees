@@ -1,10 +1,10 @@
 runner:
   workers: 4
-  condor_memory: 8GB
+  condor_memory: 4GB
 
 config:
   blind: false
-  apply_FvT: true 
+  apply_FvT: false
   apply_trigWeight: true
   apply_btagSF: true
   apply_boosted_veto: false
@@ -13,8 +13,9 @@ config:
   SvB   : 'analysis/weights/pytorch_models/2024_HHUL/SvB_HCR_8_np753_seed13_lr0.01_epochs20_offset*_epoch20.pkl'
   SvB_MA: 'analysis/weights/pytorch_models/2024_HHUL/SvB_MA_HCR+attention_8_np1061_seed13_lr0.01_epochs20_offset*_epoch20.pkl'
   # SvB_MA:
-    # - path: 'analysis/weights/pytorch_models/2024_HHUL_all_kl/result.json'
-      # name: Final # name of the output stage (e.g. Final or some other checkpoint)
+  #   - path: 'analysis/weights/pytorch_models/2024_HHUL_all_kl/result.json'
+  #     name: Final
   top_reconstruction_override: false
   friends:
     trigWeight: "metadata/datasets_HH4b_2024_v1p1_trigweights.json@@trigWeight"
+    # top_reconstruction: "hists/local/top_reconstruction_friendtree.json"

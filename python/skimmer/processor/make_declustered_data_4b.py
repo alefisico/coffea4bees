@@ -11,6 +11,12 @@ from base_class.math.random import Squares
 from analysis.helpers.event_weights import add_weights, add_btagweights
 from analysis.helpers.processor_config import processor_config
 
+from base_class.root import Chunk, TreeReader
+from analysis.helpers.load_friend import (
+    FriendTemplate,
+    parse_friends
+)
+
 from coffea.analysis_tools import Weights, PackedSelection
 import numpy as np
 from analysis.helpers.common import apply_jerc_corrections, update_events
@@ -20,7 +26,11 @@ import awkward as ak
 import uproot
 
 class DeClusterer(PicoAOD):
-    def __init__(self, clustering_pdfs_file = "None", subtract_ttbar_with_weights = False, declustering_rand_seed=5, *args, **kwargs):
+    def __init__(self, clustering_pdfs_file = "None", 
+                subtract_ttbar_with_weights = False, 
+                declustering_rand_seed=5, 
+                friends: dict[str, str|FriendTemplate] = None,
+                *args, **kwargs):
         kwargs["pico_base_name"] = f'picoAOD_seed{declustering_rand_seed}'
         super().__init__(*args, **kwargs)
 
@@ -28,6 +38,7 @@ class DeClusterer(PicoAOD):
         self.clustering_pdfs_file = clustering_pdfs_file
 
         self.subtract_ttbar_with_weights = subtract_ttbar_with_weights
+        self.friends = parse_friends(friends)
         self.declustering_rand_seed = declustering_rand_seed
         self.corrections_metadata = yaml.safe_load(open('analysis/metadata/corrections.yml', 'r'))
         self.cutFlowCuts = [
@@ -55,6 +66,9 @@ class DeClusterer(PicoAOD):
         year_label = self.corrections_metadata[year]['year_label']
         chunk   = f'{dataset}::{estart:6d}:{estop:6d} >>> '
         processName = event.metadata['processName']
+
+        ### target is for new friend trees
+        target = Chunk.from_coffea_events(event)
 
         clustering_pdfs_file = self.clustering_pdfs_file.replace("XXX", year)
 
@@ -93,6 +107,8 @@ class DeClusterer(PicoAOD):
                                                   estart, estop,
                                                   self.corrections_metadata[year],
                                                   isTTForMixed=False,
+                                                  target=target,
+                                                  friend_trigWeight=self.friends.get("trigWeight"),
                                                  )
 
 
@@ -128,13 +144,14 @@ class DeClusterer(PicoAOD):
         if config["isMC"]:
             if "GluGlu" in dataset:
                 ### this is temporary until trigWeight is computed in new code
-                trigWeight_file = uproot.open(f'{event.metadata["filename"].replace("picoAOD", "trigWeights")}')['Events']
-                trigWeight = trigWeight_file.arrays(['event', 'trigWeight_Data', 'trigWeight_MC'], entry_start=estart,entry_stop=estop)
-                if not ak.all(trigWeight.event == event.event):
-                    raise ValueError('trigWeight events do not match events ttree')
+                # trigWeight_file = uproot.open(f'{event.metadata["filename"].replace("picoAOD", "trigWeight")}')['Events']
+                # trigWeight = trigWeight_file.arrays(['event', 'trigWeight_Data', 'trigWeight_MC'], entry_start=estart,entry_stop=estop)
+                # if not ak.all(trigWeight.event == event.event):
+                #     raise ValueError('trigWeight events do not match events ttree')
+                trigWeight = self.friends.get("trigWeight").arrays(target)
 
-                event["trigWeight_Data"] = trigWeight["trigWeight_Data"]
-                event["trigWeight_MC"]   = trigWeight["trigWeight_MC"]
+                event["trigWeight_Data"] = trigWeight.Data
+                event["trigWeight_MC"]   = trigWeight.MC
 
 
         selections = PackedSelection()
