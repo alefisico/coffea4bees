@@ -8,10 +8,10 @@ if [ ! -d $OUTPUT_DIR ]; then
     mkdir -p $OUTPUT_DIR
 fi
 
-echo "############### Running cutflow test"
-python analysis/tests/cutflow_test.py   --inputFile $INPUT_DIR/test_trigWeight.coffea --knownCounts analysis/tests/known_Counts_trigWeight.yml
 echo "############### Running dump cutflow test"
 python analysis/tests/dumpCutFlow.py --input $INPUT_DIR/test_trigWeight.coffea -o $OUTPUT_DIR/test_dump_cutflow_trigWeight.yml
+echo "############### Running cutflow test"
+python analysis/tests/cutflow_test.py   --inputFile $INPUT_DIR/test_trigWeight.coffea --knownCounts analysis/tests/known_Counts_trigWeight.yml
 ls $OUTPUT_DIR/test_dump_cutflow_trigWeight.yml
 
 if [ "$return_to_base" = true ]; then
