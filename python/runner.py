@@ -511,7 +511,8 @@ if __name__ == '__main__':
         if args.skimming:
             # check integrity of the output
             output, complete = integrity_check(fileset, output)
-            if not complete:
+            if not complete and (config_runner["maxchunks"] is None) and not args.test:
+                # not merge for incomplete jobs except for testing
                 logging.error("The jobs above failed. Merging is skipped.")
             else:
                 # merge output into new chunks each have `chunksize` events
