@@ -10,7 +10,7 @@ fi
 
 echo "############### Modifying config"
 if [[ $(hostname) = *fnal* ]]; then
-    sed -e "s|trigWeight: .*|trigWeight: \/srv\/python\/$INPUT_DIR\/trigger_weights_friends.json@@trigWeight|" analysis/metadata/HH4b.yml > $OUTPUT_DIR/trigger_weights_HH4b.yml
+    sed -e "s|trigWeight: .*|trigWeight: \/srv\/python\/$INPUT_DIR\/trigger_weights_friends.json@@trigWeight|" analysis/metadata/HH4b_signals.yml > $OUTPUT_DIR/trigger_weights_HH4b.yml
 else
     sed -e "s|trigWeight: .*|trigWeight: \/builds\/${CI_PROJECT_PATH}\/python\/$INPUT_DIR\/trigger_weights_friends.json@@trigWeight|" analysis/metadata/HH4b_signals.yml > $OUTPUT_DIR/trigger_weights_HH4b.yml
 fi
