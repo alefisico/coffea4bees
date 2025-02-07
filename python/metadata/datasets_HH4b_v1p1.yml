@@ -72,7 +72,7 @@ datasets:
         sumw: 58913.00732421875
         total_events: 978000
     top_reconstruction: fast
-    xs: 0.068.56*0.5824**2
+    xs: 0.06856*0.5824**2
   GluGluToHHTo4B_cHHH1:
     UL16_preVFP:
       nanoAOD: /GluGluToHHTo4B_cHHH1_TuneCP5_PSWeights_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v1/NANOAODSIM
