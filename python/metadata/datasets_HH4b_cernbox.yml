@@ -1,6 +1,6 @@
 datasets:
   GluGluToHHTo4B_cHHH0:
-    UL16_postVFP:
+    UL16_preVFP:
       nanoAOD: /GluGluToHHTo4B_cHHH0_TuneCP5_PSWeights_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v1/NANOAODSIM
       picoAOD:
         count: 540000
@@ -17,7 +17,7 @@ datasets:
         sumw_diff: 162325.11310005188
         sumw: 32532.203125
         total_events: 540000
-    UL16_preVFP:
+    UL16_postVFP:
       nanoAOD: /GluGluToHHTo4B_cHHH0_TuneCP5_PSWeights_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM
       picoAOD:
         count: 449692
@@ -73,7 +73,7 @@ datasets:
     top_reconstruction: fast
     xs: 0.06856*0.5824**2
   GluGluToHHTo4B_cHHH1:
-    UL16_postVFP:
+    UL16_preVFP:
       nanoAOD: /GluGluToHHTo4B_cHHH1_TuneCP5_PSWeights_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v1/NANOAODSIM
       picoAOD:
         count: 540000
@@ -90,7 +90,7 @@ datasets:
         sumw_diff: -8.582500457763672
         sumw: 14451.494018554688
         total_events: 540000
-    UL16_preVFP:
+    UL16_postVFP:
       nanoAOD: /GluGluToHHTo4B_cHHH1_TuneCP5_PSWeights_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM
       picoAOD:
         count: 460000
@@ -148,7 +148,7 @@ datasets:
     top_reconstruction: slow
     xs: 0.03077*0.5824**2
   GluGluToHHTo4B_cHHH2p45:
-    UL16_postVFP:
+    UL16_preVFP:
       nanoAOD: /GluGluToHHTo4B_cHHH2p45_TuneCP5_PSWeights_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v1/NANOAODSIM
       picoAOD:
         count: 540000
@@ -160,7 +160,7 @@ datasets:
         sumw2: 93.19666862487793
         sumw: 6106.33740234375
         total_events: 540000
-    UL16_preVFP:
+    UL16_postVFP:
       nanoAOD: /GluGluToHHTo4B_cHHH2p45_TuneCP5_PSWeights_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM
       picoAOD:
         count: 455302
@@ -215,7 +215,7 @@ datasets:
     top_reconstruction: fast
     xs: 0.01333*0.5824**2
   GluGluToHHTo4B_cHHH5:
-    UL16_postVFP:
+    UL16_preVFP:
       nanoAOD: /GluGluToHHTo4B_cHHH5_TuneCP5_PSWeights_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v1/NANOAODSIM
       picoAOD:
         count: 539182
@@ -231,7 +231,7 @@ datasets:
         sumw_diff: 1881.719970703125
         sumw: 42581.560546875
         total_events: 539182
-    UL16_preVFP:
+    UL16_postVFP:
       nanoAOD: /GluGluToHHTo4B_cHHH5_TuneCP5_PSWeights_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM
       picoAOD:
         count: 460000
@@ -303,7 +303,7 @@ datasets:
         total_events: 400000.0
     xs: 0.03105*0.5824**2
   TTTo2L2Nu:
-    UL16_postVFP:
+    UL16_preVFP:
       nanoAOD: /TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v1/NANOAODSIM
       picoAOD:
         files:
@@ -311,7 +311,7 @@ datasets:
         sumw: 3478035558.1184
         sumw2: 254908185433.63046
         total_events: 48232000.0
-    UL16_preVFP:
+    UL16_postVFP:
       nanoAOD: /TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM
       picoAOD:
         files:
@@ -449,7 +449,7 @@ datasets:
     nSamples: 15
     xs: 377.9607353256
   TTToSemiLeptonic:
-    UL16_postVFP:
+    UL16_preVFP:
       nanoAOD: /TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v1/NANOAODSIM
       picoAOD:
         files:
@@ -457,7 +457,7 @@ datasets:
         sumw: 47722670335.73602
         sumw2: 14594783523153.422
         total_events: 158594000.0
-    UL16_preVFP:
+    UL16_postVFP:
       nanoAOD: /TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM
       picoAOD:
         files:
