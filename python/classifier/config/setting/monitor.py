@@ -74,7 +74,7 @@ class Log(GlobalSetting):
 
     level: int = 20
     "logging level"
-    forward_exception: bool = True
+    forward_exception: bool = False
     "forward the uncaught exceptions to the monitor (set this to False or run a standalone monitor if some exceptions do not show up)"
 
 

@@ -310,8 +310,9 @@ class EntryPoint:
             result[ResultKey.command] = self.cmd
             if reproducible is not None:
                 result[ResultKey.reproducible] = reproducible()
+            serialized = json.dumps(result, cls=DefaultEncoder)
             with fsspec.open(cfg.IO.result, "wt") as f:
-                json.dump(result, f, cls=DefaultEncoder)
+                f.write(serialized)
 
 
 # main
