@@ -72,7 +72,7 @@ datasets:
         sumw: 58913.00732421875
         total_events: 978000
     top_reconstruction: fast
-    xs: 0.07038*0.5824**2
+    xs: 0.068.56*0.5824**2
   GluGluToHHTo4B_cHHH1:
     UL16_preVFP:
       nanoAOD: /GluGluToHHTo4B_cHHH1_TuneCP5_PSWeights_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v1/NANOAODSIM
@@ -147,7 +147,7 @@ datasets:
         sumw: 26757.179077148438
         total_events: 1000000
     top_reconstruction: slow
-    xs: 0.03105*0.5824**2
+    xs: 0.03077*0.5824**2
   GluGluToHHTo4B_cHHH2p45:
     UL16_preVFP:
       nanoAOD: /GluGluToHHTo4B_cHHH2p45_TuneCP5_PSWeights_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v1/NANOAODSIM
@@ -214,7 +214,7 @@ datasets:
         sumw: 10738.940551757812
         total_events: 950000
     top_reconstruction: fast
-    xs: 0.01310*0.5824**2
+    xs: 0.01333*0.5824**2
   GluGluToHHTo4B_cHHH5:
     UL16_preVFP:
       nanoAOD: /GluGluToHHTo4B_cHHH5_TuneCP5_PSWeights_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v1/NANOAODSIM
@@ -276,7 +276,7 @@ datasets:
         sumw: 78489.3359375
         total_events: 994000
     top_reconstruction: fast
-    xs: 0.09482*0.5824**2
+    xs: 0.09082*0.5824**2
   HH4b:
     '2016':
       nanoAOD: /GluGluToHHTo4B_node_SM_13TeV-madgraph/RunIISummer16NanoAODv7-PUMoriond17_Nano02Apr2020_102X_mcRun2_asymptotic_v8-v1/NANOAODSIM
@@ -555,7 +555,7 @@ datasets:
         sumw: 2686413.403813
         sumw2: 1706115.4560804758
         total_events: 4776217.0
-    xs: 0.7612*0.5824*0.1512
+    xs: 0.87*0.5824*0.1512
   ZZ4b:
     UL16_postVFP:
       nanoAOD: /ZZTo4B01j_5f_TuneCP5_13TeV-amcatnloFXFX-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v2/NANOAODSIM
@@ -589,7 +589,7 @@ datasets:
         sumw: 22702525.975181084
         sumw2: 31992474.261828292
         total_events: 39650048.0
-    xs: 15.5   *0.1512*0.1512
+    xs: 17.4 *0.1512*0.1512
   data:
     '2016':
       lumi: 36.3e3
