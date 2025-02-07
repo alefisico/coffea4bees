@@ -134,15 +134,15 @@ use rule analysis as analysis_signals with:
 
 use rule analysis as analysis_signals_HH4b with:
     # input: "output/JCM/jetCombinatoricModel_SB_reana.yml"
-    output: "output/singlefiles/histsignalHH4b__{sample_signal}-{year}.coffea"
+    output: "output/singlefiles/histsignalHH4b__GluGluToHHTo4B_cHHH1-{year}.coffea"
     params:
         hash=config['hash'],
         diff=config['diff'],
         isam="GluGluToHHTo4B_cHHH1",
         iy="{year}",
-        output="histsignalHH4b__{sample_signal}-{year}.coffea",
+        output="histsignalHH4b__GluGluToHHTo4B_cHHH1-{year}.coffea",
         output_path="output/singlefiles/",
-        logname="histsignalHH4b__{sample_signal}-{year}",
+        logname="histsignalHH4b__GluGluToHHTo4B_cHHH1-{year}",
         datasets=config['dataset_location'],
         metadata="analysis/metadata/HH4b_signals.yml",
 
@@ -213,7 +213,7 @@ use rule merging_coffea_files as merging_coffea_files_syst with:
         logname= "signals_cHHHX"
 
 use rule merging_coffea_files as merging_coffea_files_histAll with:
-    input: expand(['output/singlefiles/histsignal__{sample_signal}-{year}.coffea'], sample_signal=config['dataset_signals'], year=config['year']) + expand(['output/singlefiles/hist__{idat}-{iyear}.coffea'], idat=config['dataset'], iyear=config['year']) + expand(['output/singlefiles/histsignalHH4b__{idat}-{iyear}.coffea'], idat=config['dataset'], iyear=config['year'])
+    input: expand(['output/singlefiles/histsignal__{sample_signal}-{year}.coffea'], sample_signal=config['dataset_signals'], year=config['year']) + expand(['output/singlefiles/hist__{idat}-{iyear}.coffea'], idat=config['dataset'], iyear=config['year']) + expand(['output/singlefiles/histsignalHH4b__GluGluToHHTo4B_cHHH1-{iyear}.coffea'], iyear=config['year'])
     output: "output/histAll.coffea"
     params:
         output= "histAll.coffea",

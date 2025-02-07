@@ -228,7 +228,7 @@ def add_btagweights( event, weights,
                 sys_value = f"down_jes{shift_name.replace('CMS_scale_j_', '').replace('Down', '')}"
             elif 'Up' in shift_name:
                 sys_value = f"up_jes{shift_name.replace('CMS_scale_j_', '').replace('Up', '')}"
-        print(f"shift_name: {shift_name}, sys_value: {sys_value}\n\n")
+        logging.debug(f"shift_name: {shift_name}, sys_value: {sys_value}\n\n")
 
         btag_SF_weights = apply_btag_sf(
             event.selJet_no_bRegCorr,
