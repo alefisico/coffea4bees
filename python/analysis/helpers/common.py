@@ -232,12 +232,13 @@ def mask_event_decision(event, decision='OR', branch='HLT', list_to_mask=[''], l
     return decision_array
 
 def apply_btag_sf( jets,
-                  correction_file='data/JEC/BTagSF2016/btagging_legacy16_deepJet_itFit.json.gz',
-                  correction_type="deepJet_shape",
-                  btag_uncertainties = None,
-                  dataset = '',
-                  btagSF_norm_file='ZZ4b/nTupleAnalysis/weights/btagSF_norm.pkl',
-                  ):
+                    correction_file='data/JEC/BTagSF2016/btagging_legacy16_deepJet_itFit.json.gz',
+                    correction_type="deepJet_shape",
+                    sys_value = 'central',
+                    btag_uncertainties = None,
+                    dataset = '',
+                    btagSF_norm_file='ZZ4b/nTupleAnalysis/weights/btagSF_norm.pkl',
+                    ):
     '''
     Can be replace with coffea.btag_tools when btag_tools accept jsonpog files
     '''
@@ -252,7 +253,7 @@ def apply_btag_sf( jets,
     nj_bl = ak.num(cj_bl)
     cj_bl = ak.flatten(cj_bl)
     hf_bl, eta_bl, pt_bl, tag_bl = ak.to_numpy(cj_bl.hadronFlavour), ak.to_numpy(abs(cj_bl.eta)), ak.to_numpy(cj_bl.pt), ak.to_numpy(cj_bl.btagScore)
-    SF_bl= btagSF.evaluate('central', hf_bl, eta_bl, pt_bl, tag_bl)
+    SF_bl= btagSF.evaluate(sys_value, hf_bl, eta_bl, pt_bl, tag_bl)
     SF_bl = ak.unflatten(SF_bl, nj_bl)
     SF_bl = np.prod(SF_bl, axis=1)
 
@@ -260,7 +261,7 @@ def apply_btag_sf( jets,
     nj_c = ak.num(cj_c)
     cj_c = ak.flatten(cj_c)
     hf_c, eta_c, pt_c, tag_c = ak.to_numpy(cj_c.hadronFlavour), ak.to_numpy(abs(cj_c.eta)), ak.to_numpy(cj_c.pt), ak.to_numpy(cj_c.btagScore)
-    SF_c= btagSF.evaluate('central', hf_c, eta_c, pt_c, tag_c)
+    SF_c= btagSF.evaluate(sys_value, hf_c, eta_c, pt_c, tag_c)
     SF_c = ak.unflatten(SF_c, nj_c)
     SF_c = np.prod(SF_c, axis=1)
 
@@ -272,7 +273,7 @@ def apply_btag_sf( jets,
     except FileNotFoundError:
         btagSF_norm = 1.0
 
-    btag_var = [ 'central' ]
+    btag_var = [ sys_value ]
     if btag_uncertainties:
         btag_var += [ f'{updown}_{btagvar}' for updown in ['up', 'down',] for btagvar in btag_uncertainties ]
     for sf in btag_var:
