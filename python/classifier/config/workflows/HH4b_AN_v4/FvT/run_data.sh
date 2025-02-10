@@ -3,10 +3,10 @@ export WFS="classifier/config/workflows/HH4b_AN_v4/FvT"
 export GMAIL=~/gmail.yml
 
 # check port
-if [ -z "$2" ]; then
+if [ -z "$1" ]; then
     port=10200
 else
-    port=$2
+    port=$1
 fi
 
 # train

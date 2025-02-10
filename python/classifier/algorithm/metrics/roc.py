@@ -24,7 +24,8 @@ class FixedThresholdROC:
     ):
         self._hist = FloatWeighted(thresholds, err=False)
         self._pos = sorted(set(positive_classes))
-        if negative_classes is not None:
+        self._has_neg = negative_classes is not None
+        if self._has_neg:
             self._neg = sorted(set(negative_classes))
             self._map = score_interpretation
         self.reset()
@@ -49,10 +50,6 @@ class FixedThresholdROC:
             self.__TP = self._hist.copy(**self.__t)
             self.__P = torch.tensor(0, **self.__t)
             self.__N = torch.tensor(0, **self.__t)
-
-    @property
-    def _has_neg(self):
-        return hasattr(self, "neg")
 
     def _score(self, y_pred: Tensor):
         pos = y_pred[:, self._pos].sum(dim=-1)
@@ -93,7 +90,14 @@ class FixedThresholdROC:
             raise ValueError(f"{msg} must have the same length")
 
     @torch.no_grad()
-    def update(self, y_pred: Tensor, y_true: Tensor, weight: Optional[Tensor] = None):
+    def update(
+        self,
+        y_pred: Tensor = None,
+        y_true: Tensor = None,
+        weight: Optional[Tensor] = None,
+    ):
+        if y_pred is None or len(y_pred) == 0:
+            return
         self._init(
             weight.dtype if weight is not None else y_pred.dtype,
             y_true.dtype,

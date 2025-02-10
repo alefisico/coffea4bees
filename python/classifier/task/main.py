@@ -176,6 +176,8 @@ class EntryPoint:
         return mod, opts
 
     def _expand(self, *files: str, fetch_main: bool = False, formatter: str = None):
+        from classifier.config.state import Flags
+
         from . import parse
 
         for file in files:
@@ -186,6 +188,8 @@ class EntryPoint:
                 if cat in args:
                     for arg in args[cat]:
                         self.args[cat].append(self._expand_module(arg))
+            if _FLAG in args:
+                Flags.set(*args[_FLAG])
 
     def __init__(self, argv: list[str] = None, initializer: Callable[[], None] = None):
         from classifier.config.state import Flags, System

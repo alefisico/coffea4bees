@@ -11,7 +11,7 @@ fi
 echo "############### Running cutflow test"
 python analysis/tests/dumpCutFlow.py --input $INPUT_DIR/test_systematics.coffea -o $OUTPUT_DIR/test_dump_systematics_cutflow.yml
 
-python analysis/tests/cutflow_test.py   --inputFile $INPUT_DIR/test_systematics.coffea --knownCounts analysis/tests/testCounts_systematics.yml
+python analysis/tests/cutflow_test.py   --inputFile $INPUT_DIR/test_systematics.coffea --knownCounts analysis/tests/known_Counts_systematics.yml
 echo "############### Running dump cutflow test"
 ls $OUTPUT_DIR/test_dump_systematics_cutflow.yml
 

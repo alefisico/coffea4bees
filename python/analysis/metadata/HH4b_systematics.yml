@@ -5,7 +5,7 @@ runner:
 
 config:
   corrections_metadata: 'analysis/metadata/corrections.yml'
-  apply_FvT: true
+  apply_FvT: false  ############ change to true
   apply_trigWeight: true
   apply_btagSF: true
   apply_boosted_veto: false
@@ -14,5 +14,8 @@ config:
   top_reconstruction_override: slow
   SvB: "analysis/weights/pytorch_models/2024_HHUL/SvB_HCR_8_np753_seed13_lr0.01_epochs20_offset*_epoch20.pkl"
   SvB_MA: "analysis/weights/pytorch_models/2024_HHUL/SvB_MA_HCR+attention_8_np1061_seed13_lr0.01_epochs20_offset*_epoch20.pkl"
+  # SvB_MA:
+  #   - path: 'analysis/weights/pytorch_models/2024_HHUL_all_kl/result.json'
+  #     name: Final
   friends:
-    trigWeight: "metadata/datasets_HH4b_2024_v1_trigweights.json@@trigWeight"
+    trigWeight: "metadata/datasets_HH4b_2024_v1p1_trigweights.json@@trigWeight"

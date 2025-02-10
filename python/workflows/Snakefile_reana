@@ -75,7 +75,7 @@ rule merging_coffea_files:
     shell:
         """
         echo "Merging all the coffea files"
-        mprof run -C -o python/mprofile_merge_{params.logname}.dat python python/analysis/merge_coffea_files.py -f {input} -o {output}
+        mprof run -C -o python/mprofile_merge_{params.logname}.dat python python/analysis/tools/merge_coffea_files.py -f {input} -o {output}
         echo "Making a plot of the performance"
         mprof plot -o output/performance/mprofile_merge_{params.logname}.png python/mprofile_merge_{params.logname}.dat
         """
@@ -113,8 +113,8 @@ use rule analysis as analysis_databkgs with:
         output="hist__{sample}-{year}.coffea",
         output_path="output/singlefiles/",
         logname="hist__{sample}_{year}",
+        datasets=config['dataset_location'],
         metadata="analysis/metadata/HH4b.yml",
-        datasets=config['dataset_location']
         # metadata="analysis/metadata/HH4b_rerun_SvB.yml",
 
 use rule analysis as analysis_signals with:
@@ -131,6 +131,20 @@ use rule analysis as analysis_signals with:
         datasets=config['dataset_location'],
         metadata="analysis/metadata/HH4b.yml",
         # metadata="analysis/metadata/HH4b_rerun_SvB.yml",
+
+use rule analysis as analysis_signals_HH4b with:
+    # input: "output/JCM/jetCombinatoricModel_SB_reana.yml"
+    output: "output/singlefiles/histsignalHH4b__GluGluToHHTo4B_cHHH1-{year}.coffea"
+    params:
+        hash=config['hash'],
+        diff=config['diff'],
+        isam="GluGluToHHTo4B_cHHH1",
+        iy="{year}",
+        output="histsignalHH4b__GluGluToHHTo4B_cHHH1-{year}.coffea",
+        output_path="output/singlefiles/",
+        logname="histsignalHH4b__GluGluToHHTo4B_cHHH1-{year}",
+        datasets=config['dataset_location'],
+        metadata="analysis/metadata/HH4b_signals.yml",
 
 
 use rule analysis as analysis_mixedbkg_data3b with:
@@ -199,7 +213,7 @@ use rule merging_coffea_files as merging_coffea_files_syst with:
         logname= "signals_cHHHX"
 
 use rule merging_coffea_files as merging_coffea_files_histAll with:
-    input: expand(['output/singlefiles/histsignal__{sample_signal}-{year}.coffea'], sample_signal=config['dataset_signals'], year=config['year']) + expand(['output/singlefiles/hist__{idat}-{iyear}.coffea'], idat=config['dataset'], iyear=config['year'])
+    input: expand(['output/singlefiles/histsignal__{sample_signal}-{year}.coffea'], sample_signal=config['dataset_signals'], year=config['year']) + expand(['output/singlefiles/hist__{idat}-{iyear}.coffea'], idat=config['dataset'], iyear=config['year']) + expand(['output/singlefiles/histsignalHH4b__GluGluToHHTo4B_cHHH1-{iyear}.coffea'], iyear=config['year'])
     output: "output/histAll.coffea"
     params:
         output= "histAll.coffea",

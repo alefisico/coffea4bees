@@ -9,7 +9,8 @@ output_code = [
   f"{output_dir}/analysis_helpers_job.log",
   f"{output_dir}/kappa_framework.log",
   f"{output_dir}/jet_clustering.log",
-  f"{output_dir}/trig_emulator.log"
+  f"{output_dir}/trig_emulator.log",
+  f"{output_dir}/memory_test.log"
 ]
 # outputs.extend(output_code)
 
@@ -39,7 +40,7 @@ output_synthetic_dataset_analyze = [
 
 output_weights_trigger = [
   f"{output_dir}/weights_trigger_friendtree_job/trigger_weights_friends.json",
-  f"{output_dir}/weights_trigger_friendtree_job/GluGluToHHTo4B_cHHH1_UL18/trigWeight.chunk2.root",
+  f"{output_dir}/weights_trigger_friendtree_job/GluGluToHHTo4B_cHHH1_UL18/trigWeight.chunk1.root",
   f"{output_dir}/weights_trigger_analysis_job/test_trigWeight.coffea",
   f"{output_dir}/weights_trigger_cutflow_job/test_dump_cutflow_trigWeight.yml"
 ]
@@ -114,6 +115,11 @@ rule trig_emulator:
     log: f"{output_dir}/trig_emulator.log"
     shell: "source .ci-workflows/trig-emulator-tests.sh {ci_output_dir} 2>&1 | tee -a {log}"
 
+rule memory_test:
+    container: analysis_container
+    log: f"{output_dir}/memory_test.log"
+    shell: "source .ci-workflows/memory_test.sh {ci_output_dir} 2>&1 | tee -a {log}"
+
 rule skimmer_test_job:
     container: analysis_container
     log: f"{output_dir}/skimmer_test_job.log"
@@ -137,7 +143,7 @@ rule weights_trigger_friendtree_job:
     log: f"{output_dir}/weights_trigger_friendtree_job.log"
     output: 
       f"{output_dir}/weights_trigger_friendtree_job/trigger_weights_friends.json",
-      f"{output_dir}/weights_trigger_friendtree_job/GluGluToHHTo4B_cHHH1_UL18/trigWeight.chunk2.root"
+      f"{output_dir}/weights_trigger_friendtree_job/GluGluToHHTo4B_cHHH1_UL18/trigWeight.chunk1.root"
     shell: "source .ci-workflows/weights-trigger-friendtree-job.sh {ci_output_dir} 2>&1 | tee -a {log}"
 
 rule classifier_friendtree_job:

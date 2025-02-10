@@ -11,9 +11,9 @@ config:
   run_SvB: true
   run_systematics: false
   SvB_MA:
-    - path: root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/classifier/SvB/ggF/baseline/result.json
+    - path: 'analysis/weights/pytorch_models/2024_HHUL_all_kl/results.json'
       name: Final # name of the output stage (e.g. Final or some other checkpoint)
   top_reconstruction_override: false
   friends:
     trigWeight: "metadata/datasets_HH4b_2024_v1_trigweights.json@@trigWeight"
-    SvB_MA: root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/friend/SvB/ggF/baseline/result.json@@analysis.0.merged
+    # SvB_MA: root://cmseos.fnal.gov//store/user/chuyuanl/HH4b/friend/SvB/ggF/baseline/result.json@@analysis.0.merged

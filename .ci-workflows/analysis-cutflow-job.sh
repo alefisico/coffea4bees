@@ -14,7 +14,7 @@ python analysis/tests/dumpCutFlow.py --input $INPUT_DIR/test.coffea -o $OUTPUT_D
 
 
 echo "############### Running cutflow test"
-python analysis/tests/cutflow_test.py   --inputFile $INPUT_DIR/test.coffea --knownCounts analysis/tests/testCounts.yml
+python analysis/tests/cutflow_test.py   --inputFile $INPUT_DIR/test.coffea --knownCounts analysis/tests/known_Counts.yml
 
 ls $OUTPUT_DIR/test_dump_cutflow.yml
 

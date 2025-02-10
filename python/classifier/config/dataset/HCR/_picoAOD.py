@@ -169,9 +169,30 @@ def _mixeddata(self: Data, metadata: str):
 
 
 def _synthetic(self: Data, metadata: str):
+    files = []
     if "synthetic" in self.data_sources:
-        logging.warning("Synthetic datasets are not available.")
-    return []
+        from base_class.system.eos import EOS
+
+        samples = parse.intervals(self.opts.data_synthetic_samples)
+        for year, eras in CollisionData.eras.items():
+            templates: list[str] = parse.mapping(
+                metadata + f".synthetic_data.{year}.picoAOD.files_template",
+                default="file",
+            )
+            urls = []
+            for template in templates:
+                if "data" not in EOS(template).parent.name:
+                    continue  # HACK: remove TTbar files, may need to change in the future
+                template = template.replace("XXX", "{sample}").format
+                for i in samples:
+                    urls.append(template(sample=i))
+            files.append(
+                [
+                    f"label:data,year:{year},source:synthetic",
+                    *urls,
+                ]
+            )
+    return files
 
 
 class Data(_PicoAOD):
@@ -194,6 +215,14 @@ class Data(_PicoAOD):
         nargs="+",
         default=[],
         help="index of mixed samples",
+    )
+    argparser.add_argument(
+        "--data-synthetic-samples",
+        metavar="SAMPLE",
+        action="extend",
+        nargs="+",
+        default=[],
+        help="index of synthetic samples",
     )
 
     @cached_property

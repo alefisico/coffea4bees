@@ -1707,7 +1707,7 @@ class InputEmbed(nn.Module):
 
         a[:, 1, :] = torch.log(
             a[:, 1, :] - 3
-        )  # TODO: find index based on the feature name
+        )  # TODO: find index based on the feature name, check if relevant
 
         if self.store:
             self.storeData["canJets"] = j.detach().to("cpu").numpy()
@@ -2045,6 +2045,12 @@ class HCR(nn.Module):
             self.out, [self.select_q]
         )  # [self.quadjetResNetBlock.reinforce[-1], self.select_q])
         self.forwardCalls = 0
+
+    def embedding_layers(self):
+        return sorted(set(self.layers.layers).difference(self.output_layers()))
+
+    def output_layers(self):
+        return [self.out.index]
 
     def updateMeanStd(self, j, o, a):
         self.inputEmbed.updateMeanStd(j, o, a)

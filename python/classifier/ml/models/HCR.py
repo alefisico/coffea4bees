@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from collections import defaultdict
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Callable, Iterable
 
@@ -8,7 +9,6 @@ import fsspec
 import torch
 import torch.nn.functional as F
 import torch.types as tt
-from classifier.config import setting as cfg
 from classifier.config.scheduler import SkimStep
 from classifier.config.setting.HCR import Input, InputBranch, Output
 from classifier.config.setting.ml import SplitterKeys
@@ -36,9 +36,26 @@ if TYPE_CHECKING:
 
 @dataclass
 class HCRArch:
-    loss: Callable[[BatchType], Tensor]
+    __skip_save = frozenset(("loss",))
+
+    loss: Callable[[BatchType], Tensor] = None
     n_features: int = 8
-    use_attention_block: bool = True
+    attention: bool = True
+
+    @classmethod
+    def load(cls, saved: dict[str]):
+        obj = cls()
+        for k, v in saved.items():
+            if k in cls.__annotations__:
+                setattr(obj, k, v)
+        return obj
+
+    def save(self):
+        return {
+            k: getattr(self, k)
+            for k in self.__annotations__
+            if k not in self.__skip_save
+        }
 
 
 @dataclass
@@ -63,6 +80,7 @@ class GBNSchedule(MilestoneStep):
 @dataclass
 class HCRBenchmarks:
     rocs: Iterable[ROC]
+    scalars: Iterable[Callable[[BatchType], dict[str, Tensor]]] = None
 
 
 def _HCRInput(batch: BatchType, device: tt.Device, selection: Tensor = None):
@@ -89,9 +107,10 @@ class _HCRSkim(Skimmer):
     @torch.no_grad()
     def train(self, batch: BatchType):
         selections = self._splitter.step(batch)
-        self._nn.updateMeanStd(
-            *_HCRInput(batch, self._device, selections[SplitterKeys.training])
-        )
+        if self._nn is not None and selections[SplitterKeys.training].sum() > 0:
+            self._nn.updateMeanStd(
+                *_HCRInput(batch, self._device, selections[SplitterKeys.training])
+            )
         return super().train(batch)
 
 
@@ -105,13 +124,14 @@ class HCRModel(Model):
         self._loss = arch.loss
         self._device = device
         self._gbn = None
+        self._arch = arch
         self._nn = HCR(
             dijetFeatures=arch.n_features,
             quadjetFeatures=arch.n_features,
             ancillaryFeatures=InputBranch.feature_ancillary,
-            useOthJets=("attention" if arch.use_attention_block else ""),
+            useOthJets=("attention" if arch.attention else ""),
             device=device,
-            nClasses=len(MultiClass.labels),
+            nClasses=MultiClass.n_trainable(),
         )
         self._benchmarks = benchmarks
 
@@ -147,7 +167,9 @@ class HCRModel(Model):
         return self._loss(batch)
 
     def validate(self, batches: Iterable[BatchType]) -> dict[str]:
-        loss, weight = 0.0, 0.0
+        weight = 0.0
+        scalars = defaultdict(float)
+        scalar_funcs = self._benchmarks.scalars
         rocs = [r.copy() for r in self._benchmarks.rocs]
         for batch in batches:
             c, q = self._nn(*_HCRInput(batch, self._device))
@@ -157,11 +179,20 @@ class HCRModel(Model):
                 Output.class_prob: F.softmax(c, dim=1),
             }
             sumw = to_num(batch[Input.weight].sum())
-            loss += to_num(self._loss(batch)) * sumw
+            if scalar_funcs is None:
+                if MultiClass.n_nontrainable() == 0:
+                    scalars["loss"] += to_num(self._loss(batch)) * sumw
+            else:
+                for func in scalar_funcs:
+                    measured = func(batch)
+                    for name, value in measured.items():
+                        scalars[name] += to_num(value) * sumw
             weight += sumw
             for roc in rocs:
                 roc.update(batch)
-        return {"loss": loss / weight, "roc": [r.to_json() for r in rocs]}
+        for k in scalars:
+            scalars[k] /= weight
+        return {"scalars": scalars, "roc": [r.to_json() for r in rocs]}
 
     def step(self, epoch: int = None):
         if self.ghost_batch is not None and self.ghost_batch.step(epoch):
@@ -223,7 +254,7 @@ class HCRTraining(MultiStageTraining):
         if self._finetuning is not None:
             layers = self._HCR._nn.layers
             layers.setLayerRequiresGrad(
-                requires_grad=False, index=sorted(layers.layers.keys())[:-1]
+                requires_grad=False, index=self._HCR._nn.embedding_layers()
             )
             yield TrainingStage(
                 name="Finetuning",
@@ -244,11 +275,8 @@ class HCRTraining(MultiStageTraining):
                         "model": self._HCR.nn.state_dict(),
                         "metadata": self.metadata,
                         "uuid": self.uuid,
-                        "label": MultiClass.labels,
-                        "arch": {
-                            "n_features": self._arch.n_features,
-                            "attention": self._arch.use_attention_block,
-                        },
+                        "label": MultiClass.trainable_labels,
+                        "arch": self._arch.save(),
                         "input": {
                             k: getattr(InputBranch, k)
                             for k in (
@@ -281,11 +309,12 @@ class HCRModelEval(Model):
                 raise ValueError(
                     f'Input features "{k}" mismatch: training={saved["input"][k]}, evaluation={getattr(InputBranch, k)}'
                 )
+        self._arch = HCRArch.load(saved["arch"])
         self._nn = HCR(
-            dijetFeatures=saved["arch"]["n_features"],
-            quadjetFeatures=saved["arch"]["n_features"],
+            dijetFeatures=self._arch.n_features,
+            quadjetFeatures=self._arch.n_features,
             ancillaryFeatures=InputBranch.feature_ancillary,
-            useOthJets=("attention" if saved["arch"]["attention"] else ""),
+            useOthJets=("attention" if self._arch.attention else ""),
             device=device,
             nClasses=len(self._classes),
         )

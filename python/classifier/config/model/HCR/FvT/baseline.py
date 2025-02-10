@@ -40,8 +40,8 @@ class Train(HCRTrain):
         is_SR = (batch[Input.region] & MassRegion.SR) != 0
 
         # remove 4b data contribution from SR
-        d4 = MultiClass.labels.index("d4")
-        no_d4_idx = [*range(len(MultiClass.labels))]
+        d4 = MultiClass.index("d4")
+        no_d4_idx = [*range(len(MultiClass.trainable_labels))]
         no_d4_idx = no_d4_idx[:d4] + no_d4_idx[d4 + 1 :]
         no_d4_y = batch[Input.label][is_SR]
         no_d4_y = torch.where(no_d4_y > d4, no_d4_y - 1, no_d4_y)
