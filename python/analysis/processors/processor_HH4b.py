@@ -439,7 +439,7 @@ class analysis(processor.ProcessorABC):
                 event['selGenBJet'] = event.GenJet[event.GenJet.selectedBs]
                 event['matchedGenBJet'] = event.bfromHorZ.nearest( event.selGenBJet, threshold=0.2 )
 
-                event['pass4GenBJets'] = ak.num(event.matchedGenBJet) >= 4
+                event['pass4GenBJets'] = ak.num(event.matchedGenBJet) == 4
                 event["truth_v4b"] = ak.where(  event.pass4GenBJets,
                                                 event.matchedGenBJet.sum(axis=1),
                                                 1e-10 * event.matchedGenBJet.sum(axis=1),

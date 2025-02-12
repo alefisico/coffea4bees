@@ -42,7 +42,7 @@ rule merging_coffea_files:
     shell:
         """
         echo "Merging all the coffea files"
-        cmd="mprof run -C -o /tmp/mprofile_merge_{params.logname}.dat python analysis/merge_coffea_files.py -f {input} -o {output}"
+        cmd="mprof run -C -o /tmp/mprofile_merge_{params.logname}.dat python analysis/tools/merge_coffea_files.py -f {input} -o {output}"
         echo $cmd
         $cmd 
         if [ "{params.run_performance}" = "True" ]; then

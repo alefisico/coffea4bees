@@ -31,15 +31,17 @@ if __name__ == "__main__":
     parser.add_argument('--noFitWeight', dest='noFitWeight', default="")
     parser.add_argument('-w', '--weightSet', dest="weightSet", default="")
     parser.add_argument('-r', dest="weightRegion", default="SB")
+    parser.add_argument('--data4bName', default="data")
     parser.add_argument('-c', dest="cut", default="passPreSel")
     parser.add_argument('-fix_e', action="store_true")
     parser.add_argument('-fix_d', action="store_true")
-    parser.add_argument('-i', '--inputFile',  dest="inputFile", default='hists.pkl', help='Input File. Default: hists.pkl')
+    parser.add_argument('-i', '--inputFile',  nargs="+", dest="inputFile", default='hists.pkl', help='Input File. Default: hists.pkl')
     parser.add_argument('-o', '--outputDir', dest='outputDir', default="")
     parser.add_argument('--ROOTInputs', action="store_true")
     parser.add_argument('-y', '--year',                 dest="year",          default="RunII",  help="Year specifies trigger (and lumiMask for data)")
     parser.add_argument('--debug',                 action="store_true")
     parser.add_argument('-l', '--lumi',                 dest="lumi",          default="1",    help="Luminosity for MC normalization: units [pb]")
+    parser.add_argument('--combine_input_files', action="store_true", help='')
     parser.add_argument('-m', '--metadata', dest="metadata",
                         default="plots/metadata/plotsJCM.yml",
                         help='Metadata file.')
@@ -66,14 +68,17 @@ if __name__ == "__main__":
     # Get Hists
     #
     if args.ROOTInputs:
-        data4b, data3b, tt4b, tt3b, qcd4b, qcd3b, data4b_nTagJets, tt4b_nTagJets, qcd3b_nTightTags = loadROOTHists(args.inputFile)
+        inputFile = args.inputFile[0]
+        data4b, data3b, tt4b, tt3b, qcd4b, qcd3b, data4b_nTagJets, tt4b_nTagJets, qcd3b_nTightTags = loadROOTHists(inputFile)
     else:
         cfg.plotConfig = load_config(args.metadata)
-        cfg.hists = load_hists([args.inputFile])
+        cfg.hists = load_hists(args.inputFile)
+        cfg.combine_input_files = args.combine_input_files
         cfg.axisLabels, cfg.cutList = read_axes_and_cuts(cfg.hists, cfg.plotConfig)
 
         data4b, data3b, tt4b, tt3b, qcd4b, qcd3b, data4b_nTagJets, tt4b_nTagJets, qcd3b_nTightTags = loadCoffeaHists(cfg,
-                                                                                                                     cut=cut, year=args.year, weightRegion=args.weightRegion)
+                                                                                                                     cut=cut, year=args.year, weightRegion=args.weightRegion,
+                                                                                                                     data4bName=args.data4bName)
 
     #
     # Prep Hists
@@ -253,7 +258,7 @@ if __name__ == "__main__":
         # OVerwrite with predicted values
         #
         for iBin in range(14):
-            if noSvB: 
+            if noSvB:
                 cfg.hists[0]["hists"]["selJets_noJCM.n"]["JCM", "UL18", 1, 1, True, iBin] = (nJet_pred[iBin], 0)
             else:
                 cfg.hists[0]["hists"]["selJets_noJCM.n"]["JCM", "UL18", 1, 1, True, False, False, iBin] = (nJet_pred[iBin], 0)
@@ -261,6 +266,7 @@ if __name__ == "__main__":
         plot_options = {"doRatio": True,
                         "xlim": [4, 15],
                         "rlim": [0, 2],
+                        "debug" : False
                         }
 
         fig, ax = makePlot(cfg, var="selJets_noJCM.n",
