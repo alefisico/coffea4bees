@@ -124,7 +124,6 @@ def apply_object_selection_4b(event, corrections_metadata, *,
         if ('UL' in dataset) and ("16" in f"UL{dataset.split('UL')[1]}"): 
             event['Jet', 'corrPuId'] = ak.where( event.Jet.puId != 4, True, False )
         else: event['Jet', 'corrPuId'] = ak.where( event.Jet.puId < 7, True, False )
-        # event['Jet', 'pileup'] = ((event.Jet.puId < 7) & (event.Jet.pt < 50)) | ((np.abs(event.Jet.eta) > 2.4) & (event.Jet.pt < 40))
         event['Jet', 'pileup'] = ((event.Jet.corrPuId) & (event.Jet.pt < 50)) | ((np.abs(event.Jet.eta) > 2.4) & (event.Jet.pt < 40))
         event['Jet', 'selected_loose'] = (event.Jet.pt >= 20) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
         event['Jet', 'selected']      = (event.Jet.pt >= 40) & (np.abs(event.Jet.eta) <= 2.4) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned

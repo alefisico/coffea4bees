@@ -35,26 +35,25 @@ def add_weights(event, do_MC_weights: bool = True,
 
         # trigger Weight (to be updated)
         if apply_trigWeight:
+            hlt = ak.where(event.passHLT, 1., 0.)
             if ("trigWeight" not in event.fields):
                 if friend_trigWeight:
                     logging.info(f"Using friend tree for trigWeight in {dataset}")
                     trigWeight = friend_trigWeight.arrays(target)
-                    hlt = ak.where(event.passHLT, 1., 0.)
+                    nominal = trigWeight.Data * ak.where(trigWeight.MC != 0, hlt / trigWeight.MC, 1)
                     weights.add( 'CMS_bbbb_resolved_ggf_triggerEffSF',
-                                trigWeight.Data * np.divide( hlt, trigWeight.MC, out=np.ones(len(hlt)), where=trigWeights.MC!=0),
+                                nominal,
                                 trigWeight.MC,
                                 hlt )
-                                # trigWeight.Data,
-                                # trigWeight.MC,
-                                # ak.where(event.passHLT, 1., 0.) )
                 else:
                     logging.error(f"No friend tree for trigWeight found.")
 
             else:
+                nominal = event.trigWeight.Data * ak.where(event.trigWeight.MC != 0, hlt / event.trigWeight.MC, 1)
                 weights.add( "CMS_bbbb_resolved_ggf_triggerEffSF",
-                            event.trigWeight.Data,
+                            nominal,
                             event.trigWeight.MC,
-                            ak.where(event.passHLT, 1.0, 0.0), )
+                            hlt )
             list_weight_names.append('CMS_bbbb_resolved_ggf_triggerEffSF')
             logging.debug( f"trigWeight {weights.partial_weight(include=['CMS_bbbb_resolved_ggf_triggerEffSF'])[:10]}\n" )
 
