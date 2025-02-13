@@ -48,10 +48,17 @@ class Merge(Analysis):
         action="store_true",
         help="remove the original friend trees after merging",
     )
+    argparser.add_argument(
+        "--std",
+        action="extend",
+        nargs="+",
+        help="calculate the std of the specified branches",
+        default=[],
+    )
 
     def analyze(self, results: list[dict]):
         from base_class.root import Friend
-        from classifier.root.kfold import merge_kfolds
+        from classifier.root.kfold import MergeMean, MergeStd, merge_kfolds
 
         kfolds = []
         for result in results:
@@ -86,9 +93,13 @@ class Merge(Analysis):
                     kfolds.extend(reduce(op.add, v) for v in datasets.values())
 
         if len(kfolds) > 1:
+            methods = [MergeMean]
+            if self.opts.std:
+                methods.append(MergeStd(self.opts.std))
             return [
                 merge_kfolds(
                     *kfolds,
+                    methods=methods,
                     step=self.opts.step,
                     workers=self.opts.workers,
                     friend_name=self.opts.name,

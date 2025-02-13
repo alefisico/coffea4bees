@@ -66,7 +66,7 @@ class Main(SelectDevice, LoadTrainingSets):
             Progress.new(total=len(trainers), msg=("models", "Training")) as progress,
         ):
             results = [
-                *pool.submit(
+                *pool.map_async(
                     executor,
                     _train_model(self.device, datasets),
                     trainers,
