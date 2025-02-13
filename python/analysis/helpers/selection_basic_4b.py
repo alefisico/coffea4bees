@@ -5,11 +5,13 @@ from analysis.helpers.common import (
     drClean,
     apply_jet_veto_maps,
     apply_jerc_corrections,
+    compute_puid
 )
 from analysis.helpers.SvB_helpers import compute_SvB
 from coffea.lumi_tools import LumiMask
 from base_class.math.random import Squares
 from copy import copy
+import logging
 
 def apply_event_selection_4b( event, corrections_metadata, *, cut_on_lumimask=True):
 
@@ -118,7 +120,12 @@ def apply_object_selection_4b(event, corrections_metadata, *,
     else:
         event['Jet', 'calibration'] = event.Jet.pt / ( event.Jet.pt_raw if 'pt_raw' in event.Jet.fields else ak.full_like(event.Jet.pt, 1) )
         event['Jet', 'btagScore']  = event.Jet.btagDeepFlavB
-        event['Jet', 'pileup'] = ((event.Jet.puId < 7) & (event.Jet.pt < 50)) | ((np.abs(event.Jet.eta) > 2.4) & (event.Jet.pt < 40))
+        # event['Jet', 'pileup'] = compute_puid( event.Jet, dataset )  #### To be used in 2024_v2 and above
+        if ('UL' in dataset) and ("16" in f"UL{dataset.split('UL')[1]}"): 
+            event['Jet', 'corrPuId'] = ak.where( event.Jet.puId != 4, True, False )
+        else: event['Jet', 'corrPuId'] = ak.where( event.Jet.puId < 7, True, False )
+        # event['Jet', 'pileup'] = ((event.Jet.puId < 7) & (event.Jet.pt < 50)) | ((np.abs(event.Jet.eta) > 2.4) & (event.Jet.pt < 40))
+        event['Jet', 'pileup'] = ((event.Jet.corrPuId) & (event.Jet.pt < 50)) | ((np.abs(event.Jet.eta) > 2.4) & (event.Jet.pt < 40))
         event['Jet', 'selected_loose'] = (event.Jet.pt >= 20) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
         event['Jet', 'selected']      = (event.Jet.pt >= 40) & (np.abs(event.Jet.eta) <= 2.4) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
 

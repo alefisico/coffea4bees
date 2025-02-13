@@ -1,8 +1,8 @@
-config['output_path'] = "output/SvB_all_kl"
+config['output_path'] = "hists/test_coffea4bees_SvB_all_kl_12"
 
 rule all:
     input:
-        f"{config['output_path']}/plots/RunII/passPreSel/fourTag/SB/nPVs.pdf",
+        # f"{config['output_path']}/plots/RunII/passPreSel/fourTag/SB/nPVs.pdf",
         f"{config['output_path']}/datacards/SvB_MA_postfitplots_prefit.pdf"
 
 ### Including modules
@@ -22,7 +22,7 @@ use rule make_plots from analysis as make_plots_local with:
         output_dir = f"{config['output_path']}/plots/"
 
 use rule merging_coffea_files from analysis as merge_databkgs with:
-    input: expand([f"{config['output_path']}/singlefiles/histsignal__{{sample_signal}}-{{year}}.coffea"], sample_signal=config['dataset_signals'], year=config['year']) + expand([f"{config['output_path']}/singlefiles/hist__{{idat}}-{{iyear}}.coffea"], idat=config['dataset'], iyear=config['year'])
+    input: expand([f"{config['output_path']}/singlefiles/histsignal__{{sample_signal}}-{{year}}.coffea"], sample_signal=config['dataset_signals'], year=config['year']) + expand([f"{config['output_path']}/singlefiles/hist__{{idat}}-{{iyear}}.coffea"], idat=config['dataset'], iyear=config['year']) + expand([f"{config['output_path']}/singlefiles/histsignalHH4b__GluGluToHHTo4B_cHHH1-{{iyear}}.coffea"], iyear=config['year'])
     output: f"{config['output_path']}/histAll.coffea"
     params:
         output= "histAll.coffea",

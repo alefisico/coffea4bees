@@ -39,10 +39,14 @@ def add_weights(event, do_MC_weights: bool = True,
                 if friend_trigWeight:
                     logging.info(f"Using friend tree for trigWeight in {dataset}")
                     trigWeight = friend_trigWeight.arrays(target)
+                    hlt = ak.where(event.passHLT, 1., 0.)
                     weights.add( 'CMS_bbbb_resolved_ggf_triggerEffSF',
-                                trigWeight.Data,
+                                trigWeight.Data * np.divide( hlt, trigWeight.MC, out=np.ones(len(hlt)), where=trigWeights.MC!=0),
                                 trigWeight.MC,
-                                ak.where(event.passHLT, 1., 0.) )
+                                hlt )
+                                # trigWeight.Data,
+                                # trigWeight.MC,
+                                # ak.where(event.passHLT, 1., 0.) )
                 else:
                     logging.error(f"No friend tree for trigWeight found.")
 
