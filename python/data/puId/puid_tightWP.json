@@ -1,0 +1,519 @@
+{
+    "schema_version": 2,
+    "description": "puId tight working point",
+    "corrections": [
+        {
+            "name": "PUID",
+            "description": null,
+            "version": 0,
+            "inputs": [
+                {
+                    "name": "pt",
+                    "type": "real",
+                    "description": "pT [GeV]"
+                },
+                {
+                    "name": "eta",
+                    "type": "real",
+                    "description": "eta"
+                },
+                {
+                    "name": "category",
+                    "type": "string",
+                    "description": "Category"
+                }
+            ],
+            "output": {
+                "name": "out",
+                "type": "real",
+                "description": null
+            },
+            "generic_formulas": null,
+            "data": {
+                "nodetype": "multibinning",
+                "inputs": [
+                    "pt",
+                    "eta"
+                ],
+                "edges": [
+                    [
+                        0.0,
+                        10.0,
+                        20.0,
+                        30.0,
+                        40.0,
+                        50.0,
+                        2000.0
+                    ],
+                    [
+                        0.0,
+                        2.5,
+                        2.75,
+                        3.0,
+                        6.0
+                    ]
+                ],
+                "content": [
+                    {
+                        "nodetype": "category",
+                        "input": "category",
+                        "content": [
+                            {
+                                "key": "UL16",
+                                "value": 0.2
+                            },
+                            {
+                                "key": "UL17",
+                                "value": 0.26
+                            },
+                            {
+                                "key": "UL18",
+                                "value": 0.26
+                            }
+                        ],
+                        "default": null
+                    },
+                    {
+                        "nodetype": "category",
+                        "input": "category",
+                        "content": [
+                            {
+                                "key": "UL16",
+                                "value": -0.56
+                            },
+                            {
+                                "key": "UL17",
+                                "value": -0.33
+                            },
+                            {
+                                "key": "UL18",
+                                "value": -0.33
+                            }
+                        ],
+                        "default": null
+                    },
+                    {
+                        "nodetype": "category",
+                        "input": "category",
+                        "content": [
+                            {
+                                "key": "UL16",
+                                "value": -0.43
+                            },
+                            {
+                                "key": "UL17",
+                                "value": -0.54
+                            },
+                            {
+                                "key": "UL18",
+                                "value": -0.54
+                            }
+                        ],
+                        "default": null
+                    },
+                    {
+                        "nodetype": "category",
+                        "input": "category",
+                        "content": [
+                            {
+                                "key": "UL16",
+                                "value": -0.38
+                            },
+                            {
+                                "key": "UL17",
+                                "value": -0.37
+                            },
+                            {
+                                "key": "UL18",
+                                "value": -0.37
+                            }
+                        ],
+                        "default": null
+                    },
+                    {
+                        "nodetype": "category",
+                        "input": "category",
+                        "content": [
+                            {
+                                "key": "UL16",
+                                "value": 0.2
+                            },
+                            {
+                                "key": "UL17",
+                                "value": 0.26
+                            },
+                            {
+                                "key": "UL18",
+                                "value": 0.26
+                            }
+                        ],
+                        "default": null
+                    },
+                    {
+                        "nodetype": "category",
+                        "input": "category",
+                        "content": [
+                            {
+                                "key": "UL16",
+                                "value": -0.56
+                            },
+                            {
+                                "key": "UL17",
+                                "value": -0.33
+                            },
+                            {
+                                "key": "UL18",
+                                "value": -0.33
+                            }
+                        ],
+                        "default": null
+                    },
+                    {
+                        "nodetype": "category",
+                        "input": "category",
+                        "content": [
+                            {
+                                "key": "UL16",
+                                "value": -0.43
+                            },
+                            {
+                                "key": "UL17",
+                                "value": -0.54
+                            },
+                            {
+                                "key": "UL18",
+                                "value": -0.54
+                            }
+                        ],
+                        "default": null
+                    },
+                    {
+                        "nodetype": "category",
+                        "input": "category",
+                        "content": [
+                            {
+                                "key": "UL16",
+                                "value": -0.38
+                            },
+                            {
+                                "key": "UL17",
+                                "value": -0.37
+                            },
+                            {
+                                "key": "UL18",
+                                "value": -0.37
+                            }
+                        ],
+                        "default": null
+                    },
+                    {
+                        "nodetype": "category",
+                        "input": "category",
+                        "content": [
+                            {
+                                "key": "UL16",
+                                "value": 0.62
+                            },
+                            {
+                                "key": "UL17",
+                                "value": 0.68
+                            },
+                            {
+                                "key": "UL18",
+                                "value": 0.68
+                            }
+                        ],
+                        "default": null
+                    },
+                    {
+                        "nodetype": "category",
+                        "input": "category",
+                        "content": [
+                            {
+                                "key": "UL16",
+                                "value": -0.39
+                            },
+                            {
+                                "key": "UL17",
+                                "value": -0.04
+                            },
+                            {
+                                "key": "UL18",
+                                "value": -0.04
+                            }
+                        ],
+                        "default": null
+                    },
+                    {
+                        "nodetype": "category",
+                        "input": "category",
+                        "content": [
+                            {
+                                "key": "UL16",
+                                "value": -0.32
+                            },
+                            {
+                                "key": "UL17",
+                                "value": -0.43
+                            },
+                            {
+                                "key": "UL18",
+                                "value": -0.43
+                            }
+                        ],
+                        "default": null
+                    },
+                    {
+                        "nodetype": "category",
+                        "input": "category",
+                        "content": [
+                            {
+                                "key": "UL16",
+                                "value": -0.29
+                            },
+                            {
+                                "key": "UL17",
+                                "value": -0.3
+                            },
+                            {
+                                "key": "UL18",
+                                "value": -0.3
+                            }
+                        ],
+                        "default": null
+                    },
+                    {
+                        "nodetype": "category",
+                        "input": "category",
+                        "content": [
+                            {
+                                "key": "UL16",
+                                "value": 0.86
+                            },
+                            {
+                                "key": "UL17",
+                                "value": 0.9
+                            },
+                            {
+                                "key": "UL18",
+                                "value": 0.9
+                            }
+                        ],
+                        "default": null
+                    },
+                    {
+                        "nodetype": "category",
+                        "input": "category",
+                        "content": [
+                            {
+                                "key": "UL16",
+                                "value": -0.1
+                            },
+                            {
+                                "key": "UL17",
+                                "value": 0.36
+                            },
+                            {
+                                "key": "UL18",
+                                "value": 0.36
+                            }
+                        ],
+                        "default": null
+                    },
+                    {
+                        "nodetype": "category",
+                        "input": "category",
+                        "content": [
+                            {
+                                "key": "UL16",
+                                "value": -0.15
+                            },
+                            {
+                                "key": "UL17",
+                                "value": -0.16
+                            },
+                            {
+                                "key": "UL18",
+                                "value": -0.16
+                            }
+                        ],
+                        "default": null
+                    },
+                    {
+                        "nodetype": "category",
+                        "input": "category",
+                        "content": [
+                            {
+                                "key": "UL16",
+                                "value": -0.08
+                            },
+                            {
+                                "key": "UL17",
+                                "value": -0.09
+                            },
+                            {
+                                "key": "UL18",
+                                "value": -0.09
+                            }
+                        ],
+                        "default": null
+                    },
+                    {
+                        "nodetype": "category",
+                        "input": "category",
+                        "content": [
+                            {
+                                "key": "UL16",
+                                "value": 0.93
+                            },
+                            {
+                                "key": "UL17",
+                                "value": 0.96
+                            },
+                            {
+                                "key": "UL18",
+                                "value": 0.96
+                            }
+                        ],
+                        "default": null
+                    },
+                    {
+                        "nodetype": "category",
+                        "input": "category",
+                        "content": [
+                            {
+                                "key": "UL16",
+                                "value": 0.19
+                            },
+                            {
+                                "key": "UL17",
+                                "value": 0.61
+                            },
+                            {
+                                "key": "UL18",
+                                "value": 0.61
+                            }
+                        ],
+                        "default": null
+                    },
+                    {
+                        "nodetype": "category",
+                        "input": "category",
+                        "content": [
+                            {
+                                "key": "UL16",
+                                "value": 0.04
+                            },
+                            {
+                                "key": "UL17",
+                                "value": 0.14
+                            },
+                            {
+                                "key": "UL18",
+                                "value": 0.14
+                            }
+                        ],
+                        "default": null
+                    },
+                    {
+                        "nodetype": "category",
+                        "input": "category",
+                        "content": [
+                            {
+                                "key": "UL16",
+                                "value": 0.12
+                            },
+                            {
+                                "key": "UL17",
+                                "value": 0.12
+                            },
+                            {
+                                "key": "UL18",
+                                "value": 0.12
+                            }
+                        ],
+                        "default": null
+                    },
+                    {
+                        "nodetype": "category",
+                        "input": "category",
+                        "content": [
+                            {
+                                "key": "UL16",
+                                "value": -1.0
+                            },
+                            {
+                                "key": "UL17",
+                                "value": -1.0
+                            },
+                            {
+                                "key": "UL18",
+                                "value": -1.0
+                            }
+                        ],
+                        "default": null
+                    },
+                    {
+                        "nodetype": "category",
+                        "input": "category",
+                        "content": [
+                            {
+                                "key": "UL16",
+                                "value": -1.0
+                            },
+                            {
+                                "key": "UL17",
+                                "value": -1.0
+                            },
+                            {
+                                "key": "UL18",
+                                "value": -1.0
+                            }
+                        ],
+                        "default": null
+                    },
+                    {
+                        "nodetype": "category",
+                        "input": "category",
+                        "content": [
+                            {
+                                "key": "UL16",
+                                "value": -1.0
+                            },
+                            {
+                                "key": "UL17",
+                                "value": -1.0
+                            },
+                            {
+                                "key": "UL18",
+                                "value": -1.0
+                            }
+                        ],
+                        "default": null
+                    },
+                    {
+                        "nodetype": "category",
+                        "input": "category",
+                        "content": [
+                            {
+                                "key": "UL16",
+                                "value": -1.0
+                            },
+                            {
+                                "key": "UL17",
+                                "value": -1.0
+                            },
+                            {
+                                "key": "UL18",
+                                "value": -1.0
+                            }
+                        ],
+                        "default": null
+                    }
+                ],
+                "flow": "error"
+            }
+        }
+    ],
+    "compound_corrections": null
+}
