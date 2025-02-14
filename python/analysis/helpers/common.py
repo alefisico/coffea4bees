@@ -338,9 +338,9 @@ def create_puId_correctionlib():
 
     # Define the table values
     # https://twiki.cern.ch/twiki/bin/viewauth/CMS/PileupJetIDUL
-    puid_WP = {
+    puid_WP_tight = {
         "UL16" : [
-                    [-1.00, -1.00, -1.00, -1.00],
+                    [0.71, -0.32, -0.30, -0.22],
                     [0.71, -0.32, -0.30, -0.22],
                     [0.87, -0.08, -0.16, -0.12],
                     [0.94, 0.24, 0.05, 0.10],
@@ -348,7 +348,7 @@ def create_puId_correctionlib():
                     [1.00, 1.00, 1.00, 1.00],
                 ],
         "UL17" : [
-                    [-1.00, -1.00, -1.00, -1.00],
+                    [0.77, 0.38, -0.31, -0.21 ],
                     [0.77, 0.38, -0.31, -0.21 ],
                     [0.90, 0.60, -0.12, -0.13],
                     [0.96, 0.82, 0.20, 0.09],
@@ -356,13 +356,39 @@ def create_puId_correctionlib():
                     [1.00, 1.00, 1.00, 1.00],
                 ],
         "UL18" : [
-                    [-1.00, -1.00, -1.00, -1.00],
+                    [0.77, 0.38, -0.31, -0.21 ],
                     [0.77, 0.38, -0.31, -0.21 ],
                     [0.90, 0.60, -0.12, -0.13],
                     [0.96, 0.82, 0.20, 0.09],
                     [0.98, 0.92, 0.47, 0.29],
                     [1.00, 1.00, 1.00, 1.00],
                 ]
+    }
+    puid_WP = {
+        "UL16" : [
+                    [0.20, -0.56, -0.43, -0.38],
+                    [0.20, -0.56, -0.43, -0.38],
+                    [0.62, -0.39, -0.32, -0.29],
+                    [0.86, -0.10, -0.15, -0.08],
+                    [0.93, 0.19, 0.04, 0.12],
+                    [-1, -1, -1, -1],
+                ],
+        "UL17" : [
+                    [0.26, -0.33, -0.54, -0.37],
+                    [0.26, -0.33, -0.54, -0.37],
+                    [0.68, -0.04, -0.43, -0.30],
+                    [0.90, 0.36, -0.16, -0.09],
+                    [0.96, 0.61, 0.14, 0.12],
+                    [-1, -1, -1, -1],
+                ],
+        "UL18" : [
+                    [0.26, -0.33, -0.54, -0.37],
+                    [0.26, -0.33, -0.54, -0.37],
+                    [0.68, -0.04, -0.43, -0.30],
+                    [0.90, 0.36, -0.16, -0.09],
+                    [0.96, 0.61, 0.14, 0.12],
+                    [-1, -1, -1, -1],
+                ],
     }
 
     # Create the histogram
@@ -378,7 +404,7 @@ def create_puId_correctionlib():
         table = puid_WP[cat]
         for i, pt_bin in enumerate(pt_bins[:-1]):
             for j, eta_bin in enumerate(eta_bins[:-1]):
-                print(f"pt_bin: {pt_bin}, eta_bin: {eta_bin}, cat: {cat}, value: {table[i][j]}")
+                logging.debug(f"pt_bin: {pt_bin}, eta_bin: {eta_bin}, cat: {cat}, value: {table[i][j]}")
                 h.fill(pt=pt_bins[i], eta=eta_bins[j], category=cat, weight=table[i][j])
 
     h.name = 'PUID'
@@ -399,14 +425,20 @@ def create_puId_correctionlib():
 def compute_puid( jet, dataset ):
     """Compute the PUId for the given jet collection based on correctionlib. To be used in UL"""
 
-    newpuid = correctionlib.CorrectionSet.from_file('data/puId/puid_tightWP.json')['PUID']
+    puid_WP_table = correctionlib.CorrectionSet.from_file('data/puId/puid_tightWP.json')['PUID']
 
     n, j = ak.num(jet), ak.flatten(jet)
 
-    recal_puid = newpuid.evaluate( j.pt, abs(j.eta), f"UL{dataset.split('UL')[1][:2]}" )
+    puid_WP = puid_WP_table.evaluate( j.pt, abs(j.eta), f"UL{dataset.split('UL')[1][:2]}" )
 
-    j['recal_puid'] = ak.where( j.puIdDisc > recal_puid, True, False )
+    logging.debug(f"puid_WP: {puid_WP[:10]}")
+    logging.debug(f"puIdDisc: {j.puIdDisc[:10]}")
+    logging.debug(f"eta: {j.eta[:10]}")
+    logging.debug(f"pt: {j.pt[:10]}")
+    logging.debug(f"puId: {j.puId[:10]}")
+    j['is_pujet'] = ak.where( j.puIdDisc < puid_WP, True, False )
+    logging.debug(f"is_pujet: {j['is_pujet'][:10]}\n\n")
     jet = ak.unflatten(j, n)
 
-    return jet["recal_puid"]
+    return jet["is_pujet"]
     

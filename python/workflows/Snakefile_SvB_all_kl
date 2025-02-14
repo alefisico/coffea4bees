@@ -1,4 +1,6 @@
-config['output_path'] = "hists/test_coffea4bees_SvB_all_kl_12"
+config['output_path'] = "hists/test_coffea4bees_puId"
+config['analysis_container'] = "/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest" 
+config['combine_container'] = "/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0"
 
 rule all:
     input:

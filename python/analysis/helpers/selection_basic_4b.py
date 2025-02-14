@@ -120,9 +120,8 @@ def apply_object_selection_4b(event, corrections_metadata, *,
     else:
         event['Jet', 'calibration'] = event.Jet.pt / ( event.Jet.pt_raw if 'pt_raw' in event.Jet.fields else ak.full_like(event.Jet.pt, 1) )
         event['Jet', 'btagScore']  = event.Jet.btagDeepFlavB
-        # event['Jet', 'pileup'] = compute_puid( event.Jet, dataset )  #### To be used in 2024_v2 and above
-        if ('UL' in dataset) and ("16" in f"UL{dataset.split('UL')[1]}"): 
-            event['Jet', 'corrPuId'] = ak.where( event.Jet.puId != 4, True, False )
+        if ('GluGlu' in dataset): 
+            event['Jet', 'corrPuId'] = compute_puid( event.Jet, dataset ) #### To be used in 2024_v2 and above for ALL samples
         else: event['Jet', 'corrPuId'] = ak.where( event.Jet.puId < 7, True, False )
         event['Jet', 'pileup'] = ((event.Jet.corrPuId) & (event.Jet.pt < 50)) | ((np.abs(event.Jet.eta) > 2.4) & (event.Jet.pt < 40))
         event['Jet', 'selected_loose'] = (event.Jet.pt >= 20) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
