@@ -40,7 +40,7 @@ def add_weights(event, do_MC_weights: bool = True,
                 if friend_trigWeight:
                     logging.info(f"Using friend tree for trigWeight in {dataset}")
                     trigWeight = friend_trigWeight.arrays(target)
-                    nominal = trigWeight.Data * ak.where(trigWeight.MC != 0, hlt / trigWeight.MC, 1)
+                    nominal = trigWeight.Data ##* ak.where(trigWeight.MC != 0, hlt / trigWeight.MC, 1) ## AGE: uncomment for later use
                     weights.add( 'CMS_bbbb_resolved_ggf_triggerEffSF',
                                 nominal,
                                 trigWeight.MC,
@@ -49,7 +49,7 @@ def add_weights(event, do_MC_weights: bool = True,
                     logging.error(f"No friend tree for trigWeight found.")
 
             else:
-                nominal = event.trigWeight.Data * ak.where(event.trigWeight.MC != 0, hlt / event.trigWeight.MC, 1)
+                nominal = event.trigWeight.Data ##* ak.where(event.trigWeight.MC != 0, hlt / event.trigWeight.MC, 1)
                 weights.add( "CMS_bbbb_resolved_ggf_triggerEffSF",
                             nominal,
                             event.trigWeight.MC,
