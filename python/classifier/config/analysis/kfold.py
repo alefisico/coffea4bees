@@ -30,7 +30,7 @@ class Merge(Analysis):
         "--step",
         type=converter.int_pos,
         default=sys.maxsize,
-        help="the number of entries for each chunk",
+        help="the number entries to load for each step",
     )
     argparser.add_argument(
         "--workers",
@@ -49,6 +49,12 @@ class Merge(Analysis):
         help="remove the original friend trees after merging",
     )
     argparser.add_argument(
+        "--optimize-step",
+        type=converter.int_pos,
+        default=None,
+        help="the number of entries to load for each step when optimizing the merged friend tree. If not specified, the optimization will be skipped.",
+    )
+    argparser.add_argument(
         "--std",
         action="extend",
         nargs="+",
@@ -57,41 +63,9 @@ class Merge(Analysis):
     )
 
     def analyze(self, results: list[dict]):
-        from base_class.root import Friend
         from classifier.root.kfold import MergeMean, MergeStd, merge_kfolds
 
-        kfolds = []
-        for result in results:
-            predictions: list[dict] = result.get(ResultKey.predictions)
-            if predictions is None:
-                continue
-            for prediction in predictions:
-                outputs: list[dict] = prediction.get("outputs")
-                if not isinstance(outputs, Iterable):
-                    continue
-                for output in outputs:
-                    if (output.get("stage") != "Evaluation") or (
-                        (self.opts.stage is not ...)
-                        and (output.get("name") != self.opts.stage)
-                    ):
-                        continue
-                    friends: dict = output.get("output")
-                    if not isinstance(friends, Iterable):
-                        continue
-                    datasets: dict[str, list[Friend]] = defaultdict(list)
-                    for friend in friends:
-                        dataset = None
-                        if isinstance(friend, Friend):
-                            dataset = friend
-                        else:
-                            try:
-                                dataset = Friend.from_json(friend)
-                            except Exception:
-                                ...
-                        if dataset is not None:
-                            datasets[dataset.name].append(dataset)
-                    kfolds.extend(reduce(op.add, v) for v in datasets.values())
-
+        kfolds = _load_friends(self.opts.stage, results)
         if len(kfolds) > 1:
             methods = [MergeMean]
             if self.opts.std:
@@ -106,6 +80,43 @@ class Merge(Analysis):
                     dump_base_path=IO.output / self.opts.base,
                     dump_naming=self.opts.naming,
                     clean=self.opts.clean,
+                    optimize=self.opts.optimize_step,
                 )
             ]
         return []
+
+
+def _load_friends(stage: str, results: list[dict]):
+    from base_class.root import Friend
+
+    kfolds: list[Friend] = []
+    for result in results:
+        predictions: list[dict] = result.get(ResultKey.predictions)
+        if predictions is None:
+            continue
+        for prediction in predictions:
+            outputs: list[dict] = prediction.get("outputs")
+            if not isinstance(outputs, Iterable):
+                continue
+            for output in outputs:
+                if (output.get("stage") != "Evaluation") or (
+                    (stage is not ...) and (output.get("name") != stage)
+                ):
+                    continue
+                friends: dict = output.get("output")
+                if not isinstance(friends, Iterable):
+                    continue
+                datasets: dict[str, list[Friend]] = defaultdict(list)
+                for friend in friends:
+                    dataset = None
+                    if isinstance(friend, Friend):
+                        dataset = friend
+                    else:
+                        try:
+                            dataset = Friend.from_json(friend)
+                        except Exception:
+                            ...
+                    if dataset is not None:
+                        datasets[dataset.name].append(dataset)
+                kfolds.extend(reduce(op.add, v) for v in datasets.values())
+    return kfolds

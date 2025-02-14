@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Generator, Iterable, Literal, overload
 
 from ._backend import NameMapping, apply_naming, merge_record, rename_record
 from .chunk import Chunk
+from .friend import Friend
 from .io import BRANCH_FILTER, ReaderOptions, TreeReader
 
 if TYPE_CHECKING:
@@ -14,7 +15,6 @@ if TYPE_CHECKING:
     import numpy as np
     import pandas as pd
 
-    from .friend import Friend
     from .io import DelayedRecordLike, RecordLike
 
 

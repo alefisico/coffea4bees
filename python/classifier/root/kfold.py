@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from concurrent.futures import Future, ProcessPoolExecutor, wait
 from dataclasses import dataclass, replace
-from typing import TYPE_CHECKING, Iterable, Optional, Protocol
+from typing import TYPE_CHECKING, Iterable, Protocol
 
 import numpy as np
 from base_class.root import Chain, Chunk, Friend
@@ -85,6 +85,14 @@ class _update_progress:
         self.progress.advance(self.step)
 
 
+@dataclass
+class _optimize_progress:
+    progress: ProgressTracker
+
+    def __call__(self, result: Future[list[Chunk]]):
+        self.progress.advance(sum(len(chunk) for chunk in result.result()))
+
+
 class merge_kfolds:
     @staticmethod
     def _rename_column(friend: str, branch: str):
@@ -100,7 +108,7 @@ class merge_kfolds:
         dump_base_path: PathLike,
         dump_naming: str | NameMapping = ...,
         clean: bool = False,
-        optimize: bool = False,
+        optimize: int = None,
     ):
         self._friends = friends
         self._job = _merge_worker(
@@ -118,6 +126,7 @@ class merge_kfolds:
     def __call__(self):
         # assume all friend trees have the same structure
         targets = [*self._friends[0].targets]
+        n_entries = self._friends[0].n_entries
         result = _update_friend()
         with (
             ProcessPoolExecutor(
@@ -127,7 +136,7 @@ class merge_kfolds:
             ) as pool,
         ):
             with Progress.new(
-                total=sum(map(len, targets)),  # TODO update to new api
+                total=n_entries,
                 msg=("entries", "Merging", f"{len(self._friends)}-folds"),
             ) as progress:
                 jobs = []
@@ -149,10 +158,18 @@ class merge_kfolds:
                                 pool, lambda *_: _update_progress(progress, 1)
                             ),
                         )
-            if self._optimize:
-                # TODO
-                ...
-
+            if self._optimize is not None:
+                with Progress.new(
+                    total=n_entries,
+                    msg=("entries", "Optimizing friend trees"),
+                ) as progress:
+                    result.friend = result.friend.merge(
+                        step=self._optimize,
+                        base_path=self._job.base_path,
+                        executor=CallbackExecutor(
+                            pool, lambda *_: _optimize_progress(progress)
+                        ),
+                    ).result()
         output = {"merged": result.friend}
         if not self._clean:
             output["original"] = [*self._friends]
