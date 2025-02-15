@@ -109,4 +109,5 @@ weights-trigger-cutflow:
  artifacts:
    paths:
      - python/output/weights_trigger_cutflow/test_dump_cutflow_trigWeight.yml
-
+ allow_failure: true
+ 

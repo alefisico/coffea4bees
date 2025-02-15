@@ -236,11 +236,15 @@ def add_hist_data(cfg, config, var, region, cut, rebin, year, file_index=None, d
 
     selected_hist = get_hist_data_list(proc_list, cfg, config, var, region, cut, rebin, year, file_index, debug)
 
-    config["values"]    = selected_hist.values().tolist()
-    config["variances"] = selected_hist.variances().tolist()
-    config["centers"]   = selected_hist.axes[0].centers.tolist()
-    config["edges"]     = selected_hist.axes[0].edges.tolist()
-    config["x_label"]   = selected_hist.axes[0].label
+
+
+    config["values"]     = selected_hist.values().tolist()
+    config["variances"]  = selected_hist.variances().tolist()
+    config["centers"]    = selected_hist.axes[0].centers.tolist()
+    config["edges"]      = selected_hist.axes[0].edges.tolist()
+    config["x_label"]    = selected_hist.axes[0].label
+    config["under_flow"] = float(selected_hist.view(flow=True)["value"][0])
+    config["over_flow"]  = float(selected_hist.view(flow=True)["value"][-1])
 
     return
 
@@ -270,7 +274,15 @@ def _draw_plot_from_dict(plot_data, **kwargs):
 
     stack_dict_for_hist = {}
     for k, v in stack_dict.items():
-        stack_dict_for_hist[k] = plot_helpers.make_hist(edges=v["edges"], values=v["values"], variances=v["variances"], x_label=v["x_label"])
+        print(k,v.keys())
+        stack_dict_for_hist[k] = plot_helpers.make_hist(edges=v["edges"],
+                                                        values=v["values"],
+                                                        variances=v["variances"],
+                                                        x_label=v["x_label"],
+                                                        under_flow=v["under_flow"],
+                                                        over_flow=v["over_flow"],
+                                                        add_flow=kwargs.get("add_flow", False)
+                                                        )
 
     #stack_dict_for_hist = {k: v[0] for k, v in stack_dict.items() }
     stack_colors_fill   = [ v.get("fillcolor") for _, v in stack_dict.items() ]
@@ -312,7 +324,13 @@ def _draw_plot_from_dict(plot_data, **kwargs):
     hist_objs = []
     for hist_proc_name, hist_data in plot_data["hists"].items():
 
-        hist_obj = plot_helpers.make_hist(edges=hist_data["edges"], values=hist_data["values"], variances=hist_data["variances"], x_label=hist_data["x_label"])
+        hist_obj = plot_helpers.make_hist(edges=hist_data["edges"],
+                                          values=hist_data["values"],
+                                          variances=hist_data["variances"],
+                                          x_label=hist_data["x_label"],
+                                          under_flow=hist_data["under_flow"],
+                                          over_flow=hist_data["over_flow"],
+                                          add_flow=kwargs.get("add_flow", False))
 
         _plot_options = {"density":  norm,
                          "label":    hist_data.get("label", ""),
@@ -848,6 +866,12 @@ def load_stack_config(stack_config, var, cut, region, **kwargs):
             proc_config["edges"]   = first_sum_entry["edges"]
             proc_config["x_label"] = first_sum_entry["x_label"]
 
+            stack_under_flow = [v["under_flow"] for _, v in proc_config["sum"].items()]
+            proc_config["under_flow"] = float(np.sum(stack_under_flow, axis=0).tolist())
+
+            stack_over_flow = [v["over_flow"] for _, v in proc_config["sum"].items()]
+            proc_config["over_flow"] = float(np.sum(stack_over_flow, axis=0))
+
             stack_dict[_proc_name] = proc_config
 
         else:
@@ -1089,6 +1113,7 @@ def make2DPlot(cfg, process, var='selJets.pt',
     process_config["y_edges"]   = _hist.axes[1].edges.tolist()  # Y-axis edges
     process_config["x_label"]   = _hist.axes[0].label  # X-axis label
     process_config["y_label"]   = _hist.axes[1].label  # Y-axis label
+
 
     plot_data = {}
     plot_data["var"] = var
