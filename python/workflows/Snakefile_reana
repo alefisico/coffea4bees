@@ -299,10 +299,10 @@ rule run_two_stage_closure:
         file_sig = "output/histAll.root",
         file_data3b = "output/histMixedBkg_data_3b_for_mixed.root"
     container: config["combine_container"]
-    output: "output/closureFits/ULHH_kfold/3bDvTMix4bDvT/SvB_MA/varrebin2/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_fine_varrebin2.pkl"
+    output: "output/closureFits/ULHH_kfold/3bDvTMix4bDvT/SvB_MA/varrebin5/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_fine_varrebin5.pkl"
     params:
         outputPath = "output/closureFits/ULHH_kfold",
-        rebin = "2",
+        rebin = "5",
         variable = "SvB_MA_ps_hh_fine"
     resources:
         unpacked_img=True,
@@ -329,14 +329,14 @@ rule make_combine_inputs:
     input:
         injson = "output/histAll.json",
         injsonsyst = "output/histAll_signals_cHHHX.json",
-        bkgsyst = "output/closureFits/ULHH_kfold/3bDvTMix4bDvT/SvB_MA/varrebin2/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_fine_varrebin2.pkl"
+        bkgsyst = "output/closureFits/ULHH_kfold/3bDvTMix4bDvT/SvB_MA/varrebin5/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_fine_varrebin5.pkl"
     output:
         "output/datacards/shapes.root",
         "output/datacards/datacard_HHbb_2018.txt"
     container: config["combine_container"]
     params:
         variable= "SvB_MA.ps_hh_fine",
-        rebin=2
+        rebin=5
     resources:
         voms_proxy=True,
         kerberos=True,
