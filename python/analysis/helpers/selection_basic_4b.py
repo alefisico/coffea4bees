@@ -32,16 +32,17 @@ def apply_event_selection_4b( event, corrections_metadata, *, cut_on_lumimask=Tr
     return event
 
 def apply_object_selection_4b(event, corrections_metadata, *,
-                              dataset: str = '',
-                              doLeptonRemoval: bool = True,
-                              loosePtForSkim: bool = False,
-                              override_selected_with_flavor_bit: bool = False,
-                              run_lowpt_selection: bool = False,
-                              do_jet_veto_maps: bool = False,
-                              isRun3: bool = False,
-                              isMC: bool = False,  ### temporary for Run3
-                              isSyntheticData: bool = False,
-                              ):
+                                dataset: str = '',
+                                doLeptonRemoval: bool = True,
+                                loosePtForSkim: bool = False,
+                                override_selected_with_flavor_bit: bool = False,
+                                run_lowpt_selection: bool = False,
+                                do_jet_veto_maps: bool = False,
+                                isRun3: bool = False,
+                                isMC: bool = False,  ### temporary for Run3
+                                isSyntheticData: bool = False,
+                                isSyntheticMC: bool = False,
+                            ):
     """docstring for apply_basic_selection_4b. This fuction is not modifying the content of anything in events. it is just adding it"""
 
     #
@@ -120,7 +121,7 @@ def apply_object_selection_4b(event, corrections_metadata, *,
     else:
         event['Jet', 'calibration'] = event.Jet.pt / ( event.Jet.pt_raw if 'pt_raw' in event.Jet.fields else ak.full_like(event.Jet.pt, 1) )
         event['Jet', 'btagScore']  = event.Jet.btagDeepFlavB
-        if ('GluGlu' in dataset): 
+        if ('GluGlu' in dataset) and not isSyntheticMC: 
             event['Jet', 'corrPuId'] = compute_puid( event.Jet, dataset ) #### To be used in 2024_v2 and above for ALL samples
         else: event['Jet', 'corrPuId'] = ak.where( event.Jet.puId < 7, True, False )
         event['Jet', 'pileup'] = ((event.Jet.corrPuId) & (event.Jet.pt < 50)) | ((np.abs(event.Jet.eta) > 2.4) & (event.Jet.pt < 40))

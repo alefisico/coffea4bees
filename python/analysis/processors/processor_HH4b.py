@@ -382,6 +382,7 @@ class analysis(processor.ProcessorABC):
                                            isRun3=self.config["isRun3"],
                                            isMC=self.config["isMC"], ### temporary
                                            isSyntheticData=self.config["isSyntheticData"],
+                                           isSyntheticMC=self.config["isSyntheticMC"],
                                            )
 
 

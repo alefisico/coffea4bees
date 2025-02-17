@@ -35,25 +35,14 @@ def add_weights(event, do_MC_weights: bool = True,
 
         # trigger Weight (to be updated)
         if apply_trigWeight:
-            hlt = ak.where(event.passHLT, 1., 0.)
-            if ("trigWeight" not in event.fields):
-                if friend_trigWeight:
-                    logging.info(f"Using friend tree for trigWeight in {dataset}")
-                    trigWeight = friend_trigWeight.arrays(target)
-                    nominal = trigWeight.Data ##* ak.where(trigWeight.MC != 0, hlt / trigWeight.MC, 1) ## AGE: uncomment for later use
-                    weights.add( 'CMS_bbbb_resolved_ggf_triggerEffSF',
-                                nominal,
-                                trigWeight.MC,
-                                hlt )
-                else:
-                    logging.error(f"No friend tree for trigWeight found.")
+            trigWeight = event.trigWeight if "trigWeight" in event.fields else friend_trigWeight.arrays(target) if friend_trigWeight else logging.error(f"No friend tree for trigWeight found.")
 
-            else:
-                nominal = event.trigWeight.Data ##* ak.where(event.trigWeight.MC != 0, hlt / event.trigWeight.MC, 1)
-                weights.add( "CMS_bbbb_resolved_ggf_triggerEffSF",
-                            nominal,
-                            event.trigWeight.MC,
-                            hlt )
+            hlt = ak.where(event.passHLT, 1., 0.)
+            nominal = trigWeight.Data ##* ak.where(trigWeight.MC != 0, hlt / trigWeight.MC, 1) ### uncomment for new data.
+            weights.add( "CMS_bbbb_resolved_ggf_triggerEffSF",
+                        nominal,
+                        trigWeight.MC,
+                        hlt )
             list_weight_names.append('CMS_bbbb_resolved_ggf_triggerEffSF')
             logging.debug( f"trigWeight {weights.partial_weight(include=['CMS_bbbb_resolved_ggf_triggerEffSF'])[:10]}\n" )
 
