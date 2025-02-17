@@ -20,12 +20,18 @@ def get_value_nested_dict(nested_dict, target_key):
     raise ValueError(f"\t target_key {target_key} not in nested_dict")
 
 
-def make_hist(*, edges, values, variances, x_label):
+def make_hist(*, edges, values, variances, x_label, under_flow, over_flow, add_flow):
     hist_obj = hist.Hist(
         hist.axis.Variable(edges, name=x_label),  # Define variable-width bins
         storage=hist.storage.Weight()           # Use Weight storage for counts and variances
     )
+
+    if add_flow:
+        values[0]  += under_flow
+        values[-1] += over_flow
+
     hist_obj[...] = np.array(list(zip(values, variances)), dtype=[("value", "f8"), ("variance", "f8")])
+
     return hist_obj
 
 

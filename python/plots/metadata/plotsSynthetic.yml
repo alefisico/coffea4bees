@@ -17,35 +17,20 @@ hists:
 
 
 stack:
-        TTTo2L2Nu:
-                process: TTTo2L2Nu
+        TTbar:
+                process: [TTToHadronic, TTToSemiLeptonic, TTTo2L2Nu]
                 tag: fourTag
                 year: RunII
-                fillcolor: xkcd:light blue
-                edgecolor: xkcd:light blue
-                label: None
-
-        TTToSemiLeptonic:
-                process: TTToSemiLeptonic
-                tag: fourTag
-                year: RunII
-                fillcolor: xkcd:light blue
-                edgecolor: xkcd:light blue
-                label: None
-
-        TTToHadronic:
-                process: TTToHadronic
-                tag: fourTag
-                year: RunII
-                fillcolor: xkcd:light blue
-                edgecolor: xkcd:blue
+                fillcolor: "#85D1FBff"
+                edgecolor: k
                 label: TTbar
+
 
         Multijet:
                 process: data
                 tag: threeTag
                 year: RunII
-                fillcolor: xkcd:bright yellow
+                fillcolor: "#FFDF7Fff"
                 edgecolor: k
                 label: Multijet
 
