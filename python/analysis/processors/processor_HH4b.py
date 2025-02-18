@@ -142,6 +142,7 @@ class analysis(processor.ProcessorABC):
         if self.run_SvB:
             self.cutFlowCuts += ["passSvB", "failSvB"]
             self.histCuts += ["passSvB", "failSvB"]
+            # self.histCuts += ["passFvT5", "passFvT50"]
 
     def process(self, event):
         logging.info(event.metadata)
@@ -510,6 +511,8 @@ class analysis(processor.ProcessorABC):
         #add_debug_info_to_output(event, processOutput, weights, list_weight_names, analysis_selections)
 
         selev = event[analysis_selections]
+        # selev["passFvT5" ] = selev["FvT"].FvT > 5
+        # selev["passFvT50"] = selev["FvT"].FvT > 50
 
         if self.subtract_ttbar_with_weights:
 
