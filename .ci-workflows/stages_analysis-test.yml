@@ -147,4 +147,4 @@ SvB-friendtree-analysis-job:
     - source .ci-workflows/SvB-friendtree-analysis-job.sh
   artifacts:
     paths:
-      - python/output/SvB_analysis_job/test_SvB_friend.coffea
+      - python/output/SvB_friendtree_analysis_job/test_SvB_friend.coffea
