@@ -274,7 +274,6 @@ def _draw_plot_from_dict(plot_data, **kwargs):
 
     stack_dict_for_hist = {}
     for k, v in stack_dict.items():
-        print(k,v.keys())
         stack_dict_for_hist[k] = plot_helpers.make_hist(edges=v["edges"],
                                                         values=v["values"],
                                                         variances=v["variances"],
