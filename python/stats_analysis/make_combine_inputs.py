@@ -20,14 +20,25 @@ def make_trigger_syst( json_input, root_output, name, rebin ):
     hMC = json_input['CMS_bbbb_resolved_ggf_triggerEffSFUp']['fourTag']['SR']
     nominal = json_input['CMS_bbbb_resolved_ggf_triggerEffSFDown']['fourTag']['SR']
 
-    for num, denom, ivar in [ (nominal, hData, 'Up'), (nominal, hMC, 'Down')]:
-        n_sumw, n_sumw2 = np.array(num['values']), np.array(num['variances'])
-        d_sumw, d_sumw2 = np.array(denom['values']), np.array(denom['variances'])
-        ratio = np.divide(n_sumw, d_sumw, out=np.ones(len(n_sumw)), where=d_sumw!=0)
+    # Previous way
+    # for num, denom, ivar in [ (nominal, hData, 'Up'), (nominal, hMC, 'Down')]:
+    #     n_sumw, n_sumw2 = np.array(num['values']), np.array(num['variances'])
+    #     d_sumw, d_sumw2 = np.array(denom['values']), np.array(denom['variances'])
+    #     variation = np.divide(n_sumw, d_sumw, out=np.ones(len(n_sumw)), where=d_sumw!=0)
+    #     htrig = copy(hData)
+    #     htrig['values'] *= ratio
+    #     htrig['variances'] *= ratio*ratio
+    #     root_output[f'CMS_bbbb_resolved_ggf_triggerEffSF{ivar}'] = json_to_TH1( htrig, name+ivar, rebin )
+    
+    n_MC, n_HLT = np.array(hMC['values']), np.array(nominal['values'])
+    variation = 0.5 * (n_MC - n_HLT)
+
+    for direction in ['Up', 'Down']:
         htrig = copy(hData)
-        htrig['values'] *= ratio
-        htrig['variances'] *= ratio*ratio
-        root_output[f'CMS_bbbb_resolved_ggf_triggerEffSF{ivar}'] = json_to_TH1( htrig, name+ivar, rebin )
+        htrig['values'] += variation if (direction == 'Up') else -variation
+        htrig['variances'] += 0.25 * (np.array(hMC['variances']) + np.array(nominal['variances']))
+        root_output[f'CMS_bbbb_resolved_ggf_triggerEffSF{direction}'] = json_to_TH1(htrig, f"{name}{direction}", rebin)
+
 
 def create_combine_root_file( file_to_convert,
                              rebin,

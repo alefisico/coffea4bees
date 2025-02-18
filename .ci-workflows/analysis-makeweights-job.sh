@@ -11,7 +11,7 @@ fi
 echo "############### Running makeweights test"
 python analysis/make_weights.py -o $OUTPUT_DIR/testJCM_ROOT   -c passPreSel -r SB --ROOTInputs --i analysis/tests/HistsFromROOTFile.coffea
 python analysis/make_weights.py -o $OUTPUT_DIR/testJCM_Coffea -c passPreSel -r SB -i $INPUT_DIR/test.coffea
-python analysis/tests/make_weights_test.py
+python analysis/tests/make_weights_test.py --path $OUTPUT_DIR
 
 if [ "$return_to_base" = true ]; then
     echo "############### Returning to base directory"
