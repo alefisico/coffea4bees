@@ -217,11 +217,11 @@ def compute_decluster_variables(clustered_splittings):
     #
     clustered_splittings["zA"]        = clustered_splittings_pz0.dot(clustered_splittings_part_A_pz0) / (clustered_splittings_pz0.pt**2)
     clustered_splittings["mA"]        = clustered_splittings.part_A.mass
-    clustered_splittings["rhoA"]      = clustered_splittings.part_A.mass / (clustered_splittings.pt * clustered_splittings.zA)
+    clustered_splittings["rhoA"]      = clustered_splittings.part_A.mass / clustered_splittings.part_A.pt
     clustered_splittings["abs_eta"]   = np.abs(clustered_splittings.eta)
 
     clustered_splittings["mB"]        = clustered_splittings.part_B.mass
-    clustered_splittings["rhoB"]      = clustered_splittings.part_B.mass / (clustered_splittings.pt * (1 - clustered_splittings.zA))
+    clustered_splittings["rhoB"]      = clustered_splittings.part_B.mass / clustered_splittings.part_B.pt
 
     clustered_splittings["thetaA"]    = np.arccos(clustered_splittings_pz0.unit.dot(clustered_splittings_part_A_pz0.unit))
     clustered_splittings["tan_thetaA"]    = np.tan(np.arccos(clustered_splittings_pz0.unit.dot(clustered_splittings_part_A_pz0.unit)))
@@ -291,6 +291,7 @@ def decluster_combined_jets(input_jet, debug=False):
     _simple_flav_child_B = [str(s)[1] for s in jet_flav_flat[simple_comb_mask]]
     jet_flav_child_A[simple_comb_mask] = _simple_flav_child_A
     jet_flav_child_B[simple_comb_mask] = _simple_flav_child_B
+
 
     #
     #  The nested combinations
@@ -398,12 +399,25 @@ def decluster_combined_jets(input_jet, debug=False):
     pA = rotateZ(pA_phi0, input_jet.phi)
     pB = rotateZ(pB_phi0, input_jet.phi)
 
+    #
+    #  Logic to update mass of a single jet "b" or "j" with pt x rho
+    #
+    jet_flavor_A_flat = ak.flatten(jet_flavor_A)
+    single_jet_mask_A = (np.char.str_len(jet_flavor_A_flat) == 1)
+    pt_A_flat = ak.flatten(pA.pt)
+    mass_A_flat = ak.flatten(pA.mass)
+    rho_A_flat = ak.flatten(input_jet.rhoA)
+    single_jet_mass_new = pt_A_flat[single_jet_mask_A] * rho_A_flat[single_jet_mask_A]
+    mass_A_flat_np  = mass_A_flat.to_numpy()
+    mass_A_flat_np[single_jet_mask_A] = single_jet_mass_new
+    pA_mass = ak.unflatten(mass_A_flat_np, ak.num(input_jet))
+
     pA = ak.zip(
         {
             "pt":         pA.pt,
             "eta":        pA.eta,
             "phi":        pA.phi,
-            "mass":       pA.mass,
+            "mass":       pA_mass,
             "jet_flavor": jet_flavor_A,
             "btag_string": jet_btag_string_A,
         },
@@ -411,12 +425,26 @@ def decluster_combined_jets(input_jet, debug=False):
         behavior=vector.behavior,
     )
 
+    #
+    #  Logic to update mass of a single jet "b" or "j" with pt x rho
+    #
+    jet_flavor_B_flat = ak.flatten(jet_flavor_B)
+    single_jet_mask_B = (np.char.str_len(jet_flavor_B_flat) == 1)
+    pt_B_flat = ak.flatten(pB.pt)
+    mass_B_flat = ak.flatten(pB.mass)
+    rho_B_flat = ak.flatten(input_jet.rhoB)
+    single_jet_mass_new = pt_B_flat[single_jet_mask_B] * rho_B_flat[single_jet_mask_B]
+    mass_B_flat_np  = mass_B_flat.to_numpy()
+    mass_B_flat_np[single_jet_mask_B] = single_jet_mass_new
+    pB_mass = ak.unflatten(mass_B_flat_np, ak.num(input_jet))
+
+
     pB = ak.zip(
         {
             "pt":         pB.pt,
             "eta":        pB.eta,
             "phi":        pB.phi,
-            "mass":       pB.mass,
+            "mass":       pB_mass,
             "jet_flavor": jet_flavor_B,
             "btag_string": jet_btag_string_B,
         },
@@ -500,7 +528,7 @@ def decluster_splitting_types(input_jets, splitting_types, input_pdfs, rand_seed
         declustered_jets_A, declustered_jets_B  = decluster_combined_jets(input_jets_to_decluster, debug=debug)
 
         #
-        #  Check for declustered jets vailing kinematic requirements
+        #  Check for declustered jets failing kinematic requirements
         #
         # Update to only be bjets
         fail_pt_mask    = (declustered_jets_A.pt < 20) | (declustered_jets_B.pt < 20)
