@@ -88,6 +88,11 @@ output_systematics = [
 ]
 # outputs.extend(output_systematics)
 
+output_run3 = [
+  f"{output_dir}/analysis_test_job_Run3/test.coffea",
+  f"{output_dir}/analysis_cutflow_job_Run3/test_dump_cutflow.yml"
+]
+# outputs.extend(output_run3)
 
 rule all:
     input: outputs
@@ -330,3 +335,16 @@ rule weights_trigger_analysis_cutflow_job:
     log: f"{output_dir}/weights_trigger_cutflow_job.log"
     container: analysis_container
     shell: "source .ci-workflows/weights-trigger-cutflow-job.sh {ci_output_dir} 2>&1 | tee -a {log}"
+
+rule analysis_test_job_Run3:
+    output: f"{output_dir}/analysis_test_job_Run3/test.coffea"
+    log: f"{output_dir}/analysis_test_job_Run3.log"
+    container: analysis_container
+    shell: "source .ci-workflows/analysis-test-job-Run3.sh {ci_output_dir} 2>&1 | tee -a {log}"
+
+rule analysis_cutflow_job_Run3:
+    input: f"{output_dir}/analysis_test_job_Run3/test.coffea"
+    output: f"{output_dir}/analysis_cutflow_job_Run3/test_dump_cutflow.yml"
+    log: f"{output_dir}/analysis_cutflow_job_Run3.log"
+    container: analysis_container
+    shell: "source .ci-workflows/analysis-cutflow-job-Run3.sh {ci_output_dir} 2>&1 | tee -a {log}"
