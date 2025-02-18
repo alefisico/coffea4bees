@@ -120,4 +120,4 @@ SvB-friendtree-cutflow-job:
     - source .ci-workflows/SvB-friendtree-cutflow-job.sh
   artifacts:
     paths:
-      - python/output/SvB_friendtree_cutflow_job/test_dump_cutflow_SvB_friendtree.yml
+      - python/output/SvB_friendtree_cutflow_job/test_dump_cutflow_SvB_friend.yml

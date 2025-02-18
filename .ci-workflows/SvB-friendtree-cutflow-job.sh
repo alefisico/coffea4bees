@@ -12,7 +12,7 @@ echo "############### Running dump cutflow test"
 python analysis/tests/dumpCutFlow.py --input $INPUT_DIR/test_SvB_friend.coffea -o $OUTPUT_DIR/test_dump_cutflow_SvB_friend.yml
 echo "############### Running cutflow test"
 python analysis/tests/cutflow_test.py   --inputFile $INPUT_DIR/test_SvB_friend.coffea --knownCounts analysis/tests/known_Counts_SvB_friendtree.yml
-ls $OUTPUT_DIR/test_dump_cutflow_SvB_friendtree.yml
+ls $OUTPUT_DIR/test_dump_cutflow_SvB_friend.yml
 
 if [ "$return_to_base" = true ]; then
     echo "############### Returning to base directory"
