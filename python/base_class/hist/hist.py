@@ -246,7 +246,7 @@ class _Fill(Generic[HistType]):
                     fill_values[k] = v
                 elif check_type(v, FieldLike):
                     fill_values[k] = self._get_fill_arg(lambda: get_field(masked, v))
-                elif isinstance(v, self.__backend__.anyarray):
+                elif check_type(v, self.__backend__.anyarray):
                     fill_values[k] = v if mask is None else v[mask]
                 elif isinstance(v, Callable):
                     fill_values[k] = self._get_fill_arg(lambda: v(masked))
@@ -276,7 +276,7 @@ class _Fill(Generic[HistType]):
                         ...
                     elif self._is_jagged(fill):
                         fill = ak.flatten(fill)
-                    elif isinstance(fill, self.__backend__.anyarray):
+                    elif check_type(fill, self.__backend__.anyarray):
                         fill = self.__backend__.repeat(fill, shape)
                     hist_args[k] = fill
                 # https://github.com/scikit-hep/boost-histogram/issues/452 #
