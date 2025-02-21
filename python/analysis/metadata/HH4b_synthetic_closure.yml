@@ -14,4 +14,4 @@ config:
   SvB   : 'analysis/weights/pytorch_models/2024_HHUL/SvB_HCR_8_np753_seed13_lr0.01_epochs20_offset*_epoch20.pkl'
   SvB_MA: 'analysis/weights/pytorch_models/2024_HHUL/SvB_MA_HCR+attention_8_np1061_seed13_lr0.01_epochs20_offset*_epoch20.pkl'
   friends:
-    FvT: root://cmseos.fnal.gov//store/user/jda102/XX4b/FvT/Run2-seed-0/friend/result.json@@analysis.0.merged
+    FvT: root://cmseos.fnal.gov//store/user/jda102/XX4b/FvT/Run2-seed-0-v3/friend/result.json@@analysis.0.merged

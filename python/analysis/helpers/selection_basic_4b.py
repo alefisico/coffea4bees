@@ -121,7 +121,7 @@ def apply_object_selection_4b(event, corrections_metadata, *,
     else:
         event['Jet', 'calibration'] = event.Jet.pt / ( event.Jet.pt_raw if 'pt_raw' in event.Jet.fields else ak.full_like(event.Jet.pt, 1) )
         event['Jet', 'btagScore']  = event.Jet.btagDeepFlavB
-        if ('GluGlu' in dataset) and not isSyntheticMC: 
+        if ('GluGlu' in dataset) and not isSyntheticMC:
             event['Jet', 'corrPuId'] = compute_puid( event.Jet, dataset ) #### To be used in 2024_v2 and above for ALL samples
         else: event['Jet', 'corrPuId'] = ak.where( event.Jet.puId < 7, True, False )
         event['Jet', 'pileup'] = ((event.Jet.corrPuId) & (event.Jet.pt < 50)) | ((np.abs(event.Jet.eta) > 2.4) & (event.Jet.pt < 40))
@@ -170,6 +170,11 @@ def apply_object_selection_4b(event, corrections_metadata, *,
     event['fourTag']  = (event['nJet_tagged'] >= 4)
     event['threeTag'] = (event['nJet_tagged_loose'] == 3) & (event['nJet_selected'] >= 4)
     event['twoTag']   = (event['nJet_tagged_loose'] == 2) & (event['nJet_selected'] >= 4)
+
+    if isSyntheticData or isSyntheticMC:
+        event['threeTag'] = False
+        event['twoTag']   = False
+
 
     if isRun3:
         event['passPreSel'] = event.twoTag | event.threeTag | event.fourTag
