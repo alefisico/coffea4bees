@@ -1,5 +1,6 @@
 from base_class.physics.object import LorentzVector, Jet
 from base_class.hist import H, Template
+import numpy as np
 
 class SvBHists(Template):
     ps      = H((50, 0, 1, ('ps', "Regressed P(Signal)")))
@@ -9,7 +10,12 @@ class SvBHists(Template):
 
     ps_zz   = H((200, 0, 1, ('ps_zz', "Regressed P(Signal) $|$ P(ZZ) is largest ")))
     ps_zh   = H((200, 0, 1, ('ps_zh', "Regressed P(Signal) $|$ P(ZH) is largest ")))
-    ps_hh   = H((200, 0, 1, ('ps_hh', "Regressed P(Signal) $|$ P(HH) is largest ")))
+
+    var_binning = np.array([0.        , 0.02411943, 0.03523357, 0.04948798, 0.06909748,
+                        0.09862704, 0.14476372, 0.2167751 , 0.31415779, 0.42526456,
+                        0.53607001, 0.63727497, 0.72278291, 0.79439517, 0.85223062,
+                        0.89842439, 0.93516206, 0.96466914, 1.        ])
+    ps_hh   = H((var_binning, ('ps_hh', "Regressed P(Signal) $|$ P(HH) is largest ")))
 
     ps_zz_fine   = H((240, 0, 1, ('ps_zz', "Regressed P(Signal) $|$ P(ZZ) is largest ")))
     ps_zh_fine   = H((240, 0, 1, ('ps_zh', "Regressed P(Signal) $|$ P(ZH) is largest ")))

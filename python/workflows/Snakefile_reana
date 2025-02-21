@@ -21,6 +21,7 @@ rule final_rule:
         unpacked_img=True,
     shell: 
         """
+        cp gitdiff.txt output/
         echo "Copying output to cernbox"
         python python/base_class/php_plots/pb_deploy_plots.py output/ {EOS_OUTPUT} -r -c -j 4
         mkdir -p {EOS_OUTPUT}

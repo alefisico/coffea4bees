@@ -589,7 +589,7 @@ class analysis(processor.ProcessorABC):
         #
         if not (self.config["isMC"] or "mix_v" in self.dataset) and self.blind:
             # blind_flag = ~(selev["quadJet_selected"].SR & selev.fourTag)
-            blind_flag = ~( (selev["SvB_MA"].ps_hh > 0.5) & selev.fourTag )
+            blind_flag = ~( selev["quadJet_selected"].SR & (selev["SvB_MA"].ps_hh > 0.5) & selev.fourTag )
             blind_sel = np.full( len(event), True)
             blind_sel[ analysis_selections ] = blind_flag
             selections.add( 'blind', blind_sel )
