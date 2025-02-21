@@ -23,12 +23,13 @@ class iPlotTestCase(unittest.TestCase):
 
     def do_plots(self):
 
-        args    = {"var": "v4j.*", "region": "SR", "cut": "passPreSel"}
-        doRatio = {"doRatio": 1}
-        norm    = {"norm": 1}
-        logy    = {"yscale": "log"}
-        rlim    = {"rlim": [0, 2]}
-        rebin   = {"rebin": 4}
+        args     = {"var": "v4j.*", "region": "SR", "cut": "passPreSel"}
+        doRatio  = {"doRatio": 1}
+        norm     = {"norm": 1}
+        logy     = {"yscale": "log"}
+        rlim     = {"rlim": [0, 2]}
+        rebin    = {"rebin": 4}
+        add_flow = {"add_flow": True}
 
         print(f"plot with {args}")
         plot(**args)
@@ -39,6 +40,10 @@ class iPlotTestCase(unittest.TestCase):
 
         print(f"plot with {args | doRatio}")
         plot(**(args | doRatio))
+
+        print(f"plot with {args | doRatio| add_flow}")
+        plot(**(args | doRatio| add_flow))
+
 
         print(f"plot with {args | norm}")
         plot(**(args | norm))

@@ -108,5 +108,16 @@ weights-trigger-cutflow:
    - source .ci-workflows/weights-trigger-cutflow-job.sh
  artifacts:
    paths:
-     - python/output/weights_trigger_cutflow/test_dump_cutflow_trigWeight.yml
-
+     - python/output/weights_trigger_cutflow_job/test_dump_cutflow_trigWeight.yml
+ 
+SvB-friendtree-cutflow-job:
+  stage: cutflow
+  extends:
+    - .base_analysis
+  needs:
+    - SvB-friendtree-analysis-job
+  script:
+    - source .ci-workflows/SvB-friendtree-cutflow-job.sh
+  artifacts:
+    paths:
+      - python/output/SvB_friendtree_cutflow_job/test_dump_cutflow_SvB_friend.yml

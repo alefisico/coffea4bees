@@ -14,6 +14,7 @@ import pickle
 import correctionlib
 import tarfile
 import os
+import hist
 
 def extract_jetmet_tar_files(tar_file_name: str=None,
                             jet_type: str='AK4PFchs'
@@ -327,3 +328,117 @@ def update_events(events, collections):
     for name, value in collections.items():
         out = ak.with_field(out, value, name)
     return out
+
+def create_puId_correctionlib():
+    """create a correctionlib object with the PUId tight WP values for Run2 UL"""
+
+    # Define the eta and pt ranges
+    eta_bins = [0, 2.5, 2.75, 3.0, 6.0]
+    pt_bins = [0., 10., 20., 30., 40., 50., 2000.]
+
+    # Define the table values
+    # https://twiki.cern.ch/twiki/bin/viewauth/CMS/PileupJetIDUL
+    puid_WP_tight = {
+        "UL16" : [
+                    [0.71, -0.32, -0.30, -0.22],
+                    [0.71, -0.32, -0.30, -0.22],
+                    [0.87, -0.08, -0.16, -0.12],
+                    [0.94, 0.24, 0.05, 0.10],
+                    [0.97, 0.48, 0.26, 0.29],
+                    [1.00, 1.00, 1.00, 1.00],
+                ],
+        "UL17" : [
+                    [0.77, 0.38, -0.31, -0.21 ],
+                    [0.77, 0.38, -0.31, -0.21 ],
+                    [0.90, 0.60, -0.12, -0.13],
+                    [0.96, 0.82, 0.20, 0.09],
+                    [0.98, 0.92, 0.47, 0.29],
+                    [1.00, 1.00, 1.00, 1.00],
+                ],
+        "UL18" : [
+                    [0.77, 0.38, -0.31, -0.21 ],
+                    [0.77, 0.38, -0.31, -0.21 ],
+                    [0.90, 0.60, -0.12, -0.13],
+                    [0.96, 0.82, 0.20, 0.09],
+                    [0.98, 0.92, 0.47, 0.29],
+                    [1.00, 1.00, 1.00, 1.00],
+                ]
+    }
+    puid_WP = {
+        "UL16" : [
+                    [0.20, -0.56, -0.43, -0.38],
+                    [0.20, -0.56, -0.43, -0.38],
+                    [0.62, -0.39, -0.32, -0.29],
+                    [0.86, -0.10, -0.15, -0.08],
+                    [0.93, 0.19, 0.04, 0.12],
+                    [-1, -1, -1, -1],
+                ],
+        "UL17" : [
+                    [0.26, -0.33, -0.54, -0.37],
+                    [0.26, -0.33, -0.54, -0.37],
+                    [0.68, -0.04, -0.43, -0.30],
+                    [0.90, 0.36, -0.16, -0.09],
+                    [0.96, 0.61, 0.14, 0.12],
+                    [-1, -1, -1, -1],
+                ],
+        "UL18" : [
+                    [0.26, -0.33, -0.54, -0.37],
+                    [0.26, -0.33, -0.54, -0.37],
+                    [0.68, -0.04, -0.43, -0.30],
+                    [0.90, 0.36, -0.16, -0.09],
+                    [0.96, 0.61, 0.14, 0.12],
+                    [-1, -1, -1, -1],
+                ],
+    }
+
+    # Create the histogram
+    h = hist.Hist(
+        hist.axis.Variable(pt_bins, name="pt", label="pT [GeV]"),
+        hist.axis.Variable(eta_bins, name="eta", label="eta"),
+        hist.axis.StrCategory(puid_WP.keys(), name="category", label="Category")
+    )
+
+
+    # Fill the histogram with the table values
+    for cat in puid_WP.keys():
+        table = puid_WP[cat]
+        for i, pt_bin in enumerate(pt_bins[:-1]):
+            for j, eta_bin in enumerate(eta_bins[:-1]):
+                logging.debug(f"pt_bin: {pt_bin}, eta_bin: {eta_bin}, cat: {cat}, value: {table[i][j]}")
+                h.fill(pt=pt_bins[i], eta=eta_bins[j], category=cat, weight=table[i][j])
+
+    h.name = 'PUID'
+    h.label = 'out'
+
+    import correctionlib.convert
+    new_puid = correctionlib.convert.from_histogram(h)
+
+    cset = correctionlib.schemav2.CorrectionSet(
+        schema_version=2,
+        description="puId tight working point",
+        corrections=[ new_puid ],
+    )
+
+    with open(f'data/puId/puid_tightWP.json', 'w') as f:
+        f.write(cset.model_dump_json(indent=4))
+
+def compute_puid( jet, dataset ):
+    """Compute the PUId for the given jet collection based on correctionlib. To be used in UL"""
+
+    puid_WP_table = correctionlib.CorrectionSet.from_file('data/puId/puid_tightWP.json')['PUID']
+
+    n, j = ak.num(jet), ak.flatten(jet)
+
+    puid_WP = puid_WP_table.evaluate( j.pt, abs(j.eta), f"UL{dataset.split('UL')[1][:2]}" )
+
+    logging.debug(f"puid_WP: {puid_WP[:10]}")
+    logging.debug(f"puIdDisc: {j.puIdDisc[:10]}")
+    logging.debug(f"eta: {j.eta[:10]}")
+    logging.debug(f"pt: {j.pt[:10]}")
+    logging.debug(f"puId: {j.puId[:10]}")
+    j['is_pujet'] = ak.where( j.puIdDisc < puid_WP, True, False )
+    logging.debug(f"is_pujet: {j['is_pujet'][:10]}\n\n")
+    jet = ak.unflatten(j, n)
+
+    return jet["is_pujet"]
+    

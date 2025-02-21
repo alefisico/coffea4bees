@@ -8,6 +8,21 @@ import json
 
 ROOT.gROOT.SetBatch(True)
 
+
+def variable_to_regular_binning( hist ):
+    nbins = hist.GetNbinsX()
+    xbins = hist.GetXaxis().GetXbins()
+    if xbins.GetSize() == 0:
+        return hist.Clone()
+    
+    new_hist = ROOT.TH1F(hist.GetName() + "_regular", hist.GetTitle(), nbins, 0., 1.)
+    for i in range(1, nbins + 1):
+        new_hist.SetBinContent(i, hist.GetBinContent(i))
+        new_hist.SetBinError(i, hist.GetBinError(i))
+    
+    return new_hist
+
+
 if __name__ == '__main__':
 
     #
@@ -57,6 +72,10 @@ if __name__ == '__main__':
         nom_tt.Add( root_hists.Get(f"{ichannel}/{label_tt}" ))
         nom_mj.Add( root_hists.Get(f"{ichannel}/{label_mj}") )
         nom_signal.Add( root_hists.Get(f"{ichannel}/{label_signal}") )
+    nom_data = variable_to_regular_binning(nom_data)
+    nom_tt = variable_to_regular_binning(nom_tt)
+    nom_mj = variable_to_regular_binning(nom_mj)
+    nom_signal = variable_to_regular_binning(nom_signal)
 
     if not os.path.exists(f"{args.output_dir}"):
         os.makedirs(f"{args.output_dir}")
@@ -82,7 +101,7 @@ if __name__ == '__main__':
     CMS.cmsDrawStack(stack, leg, {'ttbar': nom_tt, 'Multijet': nom_mj }, data= nom_data, palette=['#85D1FBff', '#FFDF7Fff'] )
     tmp_signal = nom_signal.Clone("tmp_signal")
     tmp_signal.Scale( 100 )
-    leg.AddEntry( tmp_signal, f'{label_signal} (x100)', 'l' )
+    leg.AddEntry( tmp_signal, f'HH4b (x100)', 'l' )
     CMS.cmsDraw( tmp_signal, 'hist', fstyle=0,  marker=1, alpha=1, lcolor=ROOT.kRed, fcolor=ROOT.kRed )
     CMS.GetcmsCanvasHist(nominal_can.cd(1)).GetYaxis().SetTitleOffset(1.5)
     CMS.GetcmsCanvasHist(nominal_can.cd(1)).GetYaxis().SetTitleSize(0.05)
@@ -142,6 +161,10 @@ if __name__ == '__main__':
                 for ichannel in metadata['bin']:
                     up_hist.Add( root_hists.Get(f"{ichannel}/{label}_{syst}Up") )
                     down_hist.Add( root_hists.Get(f"{ichannel}/{label}_{syst}Down") )
+
+            nominal_hist = variable_to_regular_binning(nominal_hist)
+            up_hist = variable_to_regular_binning(up_hist)
+            down_hist = variable_to_regular_binning(down_hist)
 
             xmax = nominal_hist.GetXaxis().GetXmax()
             ymax = nominal_hist.GetMaximum()*1.2
