@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from copy import deepcopy
 from typing import (
     Callable,
@@ -288,9 +289,17 @@ class _Fill(Generic[HistType]):
                 hists._filled.add(name)
 
 
-class CollectionOutput(Generic[HistType], TypedDict):
-    hists: dict[str, HistType]
-    categories: set[str]
+if sys.version_info >= (3, 11):
+
+    class CollectionOutput(Generic[HistType], TypedDict):
+        hists: dict[str, HistType]
+        categories: set[str]
+
+else:
+
+    class CollectionOutput(TypedDict):
+        hists: dict[str, Hist]
+        categories: set[str]
 
 
 class _Collection(Generic[HistType, FillType]):
