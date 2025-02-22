@@ -3,7 +3,7 @@ hists:
                 process: syn_v0
                 tag: fourTag
                 year: RunII
-                label: Mixed Data (v0)
+                label: Synthetic Data (v0)
                 edgecolor: r
                 fillcolor: r            
 
@@ -38,25 +38,27 @@ ratios:
         v0ToBkg:
                 numerator:
                         type: hists
-                        key: data
+                        key: syn_v0
                 denominator:
                         type: stack
                 uncertianty:
                         nominal
-                color: k
-                marker: "o"
-
-        dataToBkg:
-                numerator:
-                        type: hists
-                        key: data
-                denominator:
-                        type: hists
-                        key: syn_v0
-                uncertianty:
-                        nominal
                 color: r
                 marker: "o"
+
+
+#        v0ToData:
+#                numerator:
+#                        type: hists
+#                        key: syn_v0
+#                denominator:
+#                        type: hists
+#                        key: data                
+#                uncertianty:
+#                        nominal
+#                color: k
+#                marker: "o"
+
 
 
 codes:

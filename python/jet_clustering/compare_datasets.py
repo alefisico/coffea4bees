@@ -45,7 +45,7 @@ def plotCut(args):
         plot(f"canJet{i}.pt",  **args)
         plot(f"canJet{i}.eta", **args, xlim=[-3,3])
         plot(f"canJet{i}.phi", **args)
-        plot(f"canJet{i}.mass", **args)#,xlim=[0,50])
+        plot(f"canJet{i}.mass", **args, yscale="log")#,xlim=[0,50])
         plot(f"canJet{i}.pz", **args)#,yscale="log")
 
 
@@ -167,8 +167,8 @@ if __name__ == '__main__':
     cfg.axisLabels, cfg.cutList = read_axes_and_cuts(cfg.hists, cfg.plotConfig)
 
     #varList = [ h for h in cfg.hists[0]['hists'].keys() if not h in args.skip_hists ]
-    #years = ["RunII", "UL18", "UL17", "UL16_preVFP", "UL16_postVFP"]
-    years = ["Run3", "2022_preEE", "2022_EE", "2023_preBPix", "2023_BPix"]
+    years = ["RunII", "UL18", "UL17", "UL16_preVFP", "UL16_postVFP"]
+    #years = ["Run3", "2022_preEE", "2022_EE", "2023_preBPix", "2023_BPix"]
 
     for y in years:
         doPlots(year=y, doSignal=args.signal, debug=args.debug)
