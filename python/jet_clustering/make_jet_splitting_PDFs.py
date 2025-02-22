@@ -280,13 +280,13 @@ def doPlots(year, debug=False):
     #
     splitting_config = {}
 
-    zA_mA_mB         = { "mA":("mA",    1),  "mB":("mB",    1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_vs_thetaA",   1) }
-    zA_l_mA_mB       = { "mA":("mA",    1),  "mB":("mB",    1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_l_vs_thetaA", 1) }
-    zA_l_mA_l_mB     = { "mA":("mA_l",  1),  "mB":("mB",    1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_l_vs_thetaA", 1) }
-    zA_mA_l_mB_l     = { "mA":("mA_l",  1),  "mB":("mB_l",  1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_vs_thetaA",   1) }
-    zA_l_mA_l_mB_l   = { "mA":("mA_l",  1),  "mB":("mB_l",  1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_l_vs_thetaA", 1) }
-    zA_l_mA_vl_mB    = { "mA":("mA_vl", 1),  "mB":("mB",    1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_l_vs_thetaA", 1) }
-    zA_l_mA_vl_mB_vl = { "mA":("mA_vl", 1),  "mB":("mB_vl", 1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_l_vs_thetaA", 1) }
+    zA_mA_mB         = { "mA":("mA",    1),  "mB":("mB",    1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_vs_thetaA",   1), "rhoA": ("rhoA", 1), "rhoB": ("rhoB", 1)}
+    zA_l_mA_mB       = { "mA":("mA",    1),  "mB":("mB",    1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_l_vs_thetaA", 1), "rhoA": ("rhoA", 1), "rhoB": ("rhoB", 1)}
+    zA_l_mA_l_mB     = { "mA":("mA_l",  1),  "mB":("mB",    1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_l_vs_thetaA", 1), "rhoA": ("rhoA", 1), "rhoB": ("rhoB", 1)}
+    zA_mA_l_mB_l     = { "mA":("mA_l",  1),  "mB":("mB_l",  1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_vs_thetaA",   1), "rhoA": ("rhoA", 1), "rhoB": ("rhoB", 1)}
+    zA_l_mA_l_mB_l   = { "mA":("mA_l",  1),  "mB":("mB_l",  1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_l_vs_thetaA", 1), "rhoA": ("rhoA", 1), "rhoB": ("rhoB", 1)}
+    zA_l_mA_vl_mB    = { "mA":("mA_vl", 1),  "mB":("mB",    1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_l_vs_thetaA", 1), "rhoA": ("rhoA", 1), "rhoB": ("rhoB", 1)}
+    zA_l_mA_vl_mB_vl = { "mA":("mA_vl", 1),  "mB":("mB_vl", 1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_l_vs_thetaA", 1), "rhoA": ("rhoA", 1), "rhoB": ("rhoB", 1)}
 
 
     #
@@ -332,10 +332,6 @@ def doPlots(year, debug=False):
     all_splittings = [i.replace("splitting_","").replace(".pt_l","").replace("_","/") for i in cfg.hists[0]["hists"].keys() if not i.find("pt_l") == -1 and i.find("detailed") == -1]
 
     unconfig_splitting = []
-
-    # HACK
-    #all_splittings = all_splittings[0:20]
-
 
 
     for _s in all_splittings:
