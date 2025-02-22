@@ -29,12 +29,24 @@ output_synthetic_dataset_make = [
   f"{output_dir}/synthetic_dataset_analyze/test_synthetic_datasets.coffea",
   f"{output_dir}/synthetic_dataset_analyze_cutflow/test_dump_cutflow_synthetic_datasets.yml"
 ]
+
+output_synthetic_dataset_make_Run3 = [
+  f"{output_dir}/synthetic_dataset_make_dataset_Run3/picoaod_datasets_declustered_test_2023_BPix.yml",
+  f"{output_dir}/synthetic_dataset_analyze_Run3/test_synthetic_datasets.coffea",
+  f"{output_dir}/synthetic_dataset_analyze_cutflow_Run3/test_dump_cutflow_synthetic_datasets.yml"
+]
+
 # outputs.extend(output_synthetic_dataset_make_dataset)
 
 output_synthetic_dataset_analyze = [
   f"{output_dir}/synthetic_dataset_cluster/test_synthetic_datasets.coffea",
   f"{output_dir}/synthetic_dataset_plot_job/jet-splitting-PDFs-test/clustering_pdfs_vs_pT_RunII.yml"
 ]
+
+output_synthetic_dataset_analyze_Run3 = [
+  f"{output_dir}/synthetic_dataset_cluster_Run3/test_synthetic_datasets.coffea",
+]
+
 # outputs.extend(output_synthetic_dataset_analyze)
 
 
@@ -137,6 +149,12 @@ rule synthetic_dataset_make_dataset:
     output: f"{output_dir}/synthetic_dataset_make_dataset/picoaod_datasets_declustered_test_UL18.yml",
     shell: "source .ci-workflows/synthetic-dataset-make-dataset.sh {ci_output_dir} 2>&1 | tee -a {log}"
 
+rule synthetic_dataset_make_dataset_Run3:
+    container: analysis_container
+    log: f"{output_dir}/synthetic_dataset_make_dataset_Run3.log"
+    output: f"{output_dir}/synthetic_dataset_make_dataset_Run3/picoaod_datasets_declustered_test_2023_BPix.yml",
+    shell: "source .ci-workflows/synthetic-dataset-make-dataset-Run3.sh {ci_output_dir} 2>&1 | tee -a {log}"
+
 
 rule weights_trigger_friendtree_job:
     container: analysis_container
@@ -212,6 +230,14 @@ rule synthetic_dataset_analyze:
     log: f"{output_dir}/synthetic_dataset_analyze.log"
     container: analysis_container
     shell: "source .ci-workflows/synthetic-dataset-analyze.sh {ci_output_dir} 2>&1 | tee -a {log}"
+
+rule synthetic_dataset_analyze_Run3:
+    input: f"{output_dir}/synthetic_dataset_make_dataset_Run3/picoaod_datasets_declustered_test_2023_BPix.yml"
+    output: f"{output_dir}/synthetic_dataset_analyze_Run3/test_synthetic_datasets.coffea" 
+    log: f"{output_dir}/synthetic_dataset_analyze_Run3.log"
+    container: analysis_container
+    shell: "source .ci-workflows/synthetic-dataset-analyze-Run3.sh {ci_output_dir} 2>&1 | tee -a {log}"
+
 
 rule weights_trigger_analysis_job:
     input: f"{output_dir}/weights_trigger_friendtree_job/trigger_weights_friends.json"
@@ -323,6 +349,14 @@ rule synthetic_dataset_analyze_cutflow:
     log: f"{output_dir}/synthetic_dataset_analyze_cutflow.log"
     container: analysis_container
     shell: "source .ci-workflows/synthetic-dataset-analyze-cutflow.sh {ci_output_dir} 2>&1 | tee -a {log}"
+
+rule synthetic_dataset_analyze_cutflow_Run3:
+    input: f"{output_dir}/synthetic_dataset_analyze_Run3/test_synthetic_datasets.coffea"
+    output: f"{output_dir}/synthetic_dataset_analyze_cutflow_Run3/test_dump_cutflow_synthetic_datasets.yml"
+    log: f"{output_dir}/synthetic_dataset_analyze_cutflow_Run3.log"
+    container: analysis_container
+    shell: "source .ci-workflows/synthetic-dataset-analyze-cutflow-Run3.sh {ci_output_dir} 2>&1 | tee -a {log}"
+
 
 rule weights_trigger_analysis_cutflow_job:
     input: f"{output_dir}/weights_trigger_analysis_job/test_trigWeight.coffea"
