@@ -87,6 +87,8 @@ def doPlots(varList, debug=False):
     plot("SvB.ps_hh",   region="SR",yscale="linear",norm=0,rebin=8,doratio=1,rlim=[0.5,1.5])
 
 
+
+
     #
     # L2 REview
     #
@@ -96,6 +98,8 @@ def doPlots(varList, debug=False):
     plot("quadJet_selected.subl.mass",region=["SB","SR"],yscale="linear",rebin=1,doratio=0,process="TTbar",histtype="step")
     plot("quadJet_selected.lead.mass",region=["SB","SR"],yscale="linear",rebin=1,doratio=0,process="TTbar",histtype="step")
 
+    plot("SvB_MA.ps_zz",region="SR",yscale="linear",rebin=8,doratio=1)
+    plot("SvB_MA.ps_zh",region="SR",yscale="linear",rebin=8,doratio=1)
 
 
 
