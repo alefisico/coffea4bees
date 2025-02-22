@@ -236,8 +236,6 @@ def add_hist_data(cfg, config, var, region, cut, rebin, year, file_index=None, d
 
     selected_hist = get_hist_data_list(proc_list, cfg, config, var, region, cut, rebin, year, file_index, debug)
 
-
-
     config["values"]     = selected_hist.values().tolist()
     config["variances"]  = selected_hist.variances().tolist()
     config["centers"]    = selected_hist.axes[0].centers.tolist()
@@ -417,7 +415,8 @@ def _plot_from_dict(plot_data, **kwargs):
 
     hep.cms.label("Internal", data=True,
                   year=year_str, loc=0, ax=main_ax)
-    main_ax.set_title(f"{plot_data['region']}")
+
+    main_ax.set_title(f"{plot_helpers.get_region_str(plot_data['region'])}")
 
     _draw_plot_from_dict(plot_data, **kwargs)
 
@@ -764,7 +763,7 @@ def make_plot_from_dict(plot_data):
 
         # these get combined with "/"
         output_path = [kwargs.get("outputFolder"), kwargs.get("year","RunII"), plot_data["cut"], tagName, plot_data["region"], plot_data.get("process","")]
-        file_name = plot_data["var"]
+        file_name = plot_data.get("file_name",plot_data["var"])
 
         if kwargs.get("yscale", None) == "log":
             file_name += "_logy"

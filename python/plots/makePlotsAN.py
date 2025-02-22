@@ -31,9 +31,6 @@ def doPlots(varList, debug=False):
     # Fig 34
     plot("selJets.n",region="SB",yscale="linear",norm=0,rebin=1,doratio=1,rlim=[0,2],xlim=[4,15])
 
-    # Fig 42
-    plot("FvT_noFvT",region="SB",yscale="linear",norm=0,rebin=2,doratio=1,rlim=[0.5,1.5])
-    plot("FvT.FvT",  region="SB",yscale="linear",norm=0,rebin=2,doratio=1,rlim=[0.5,1.5])
 
     # Fig 43
     plot("quadJet_min_dr.close.dr",region="SB",yscale="linear",norm=0,rebin=1,doratio=1,rlim=[0.5,1.5])
@@ -88,6 +85,17 @@ def doPlots(varList, debug=False):
     plot("SvB.ps_zh",   region="SR",yscale="linear",norm=0,rebin=8,doratio=1,rlim=[0.5,1.5])
     plot("SvB_MA.ps_hh",region="SR",yscale="linear",norm=0,rebin=8,doratio=1,rlim=[0.5,1.5])
     plot("SvB.ps_hh",   region="SR",yscale="linear",norm=0,rebin=8,doratio=1,rlim=[0.5,1.5])
+
+
+    #
+    # L2 REview
+    #
+    plot("quadJet_selected.subl.mass",region=["SB","SR"],yscale="linear",rebin=1,doratio=0,process="Multijet",histtype="step")
+    plot("quadJet_selected.lead.mass",region=["SB","SR"],yscale="linear",rebin=1,doratio=0,process="Multijet",histtype="step")
+
+    plot("quadJet_selected.subl.mass",region=["SB","SR"],yscale="linear",rebin=1,doratio=0,process="TTbar",histtype="step")
+    plot("quadJet_selected.lead.mass",region=["SB","SR"],yscale="linear",rebin=1,doratio=0,process="TTbar",histtype="step")
+
 
 
 
