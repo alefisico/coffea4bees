@@ -25,7 +25,13 @@ import os
 
 
 import yaml
+import argparse
 
+def create_parser():
+    parser = argparse.ArgumentParser(description='Process some paths.')
+    parser.add_argument('--path', type=str, default="output/analysis-make-weights-job",  help='Path to the files')
+    return parser
+        
 class TestJCM(unittest.TestCase):
 
     @classmethod
@@ -40,17 +46,18 @@ class TestJCM(unittest.TestCase):
         #
         #  > From python analysis/tests/dumpROOTToHist.py -o analysis/tests/HistsFromROOTFile.coffea -c passPreSel -r SB
         #
-        pass
+        parser = create_parser()
+        self.args = parser.parse_args()
 
     def test_yaml_content(self):
 
+        base_path = self.args.path
+
         for test_pair in [#('analysis/testJCM_ROOT_tests/jetCombinatoricModel_SB_.yml', 'analysis/tests/jetCombinatoricModel_SB_ROOT.yml'),
-                          #('analysis/testJCM_Coffea_tests/jetCombinatoricModel_SB_.yml', 'analysis/tests/jetCombinatoricModel_SB_Coffea.yml'),
-
-                          ('output/analysis_makeweights_job/testJCM_ROOT/jetCombinatoricModel_SB_.yml',   'analysis/tests/jetCombinatoricModel_SB_ROOT_new.yml'),
-                          ('output/analysis_makeweights_job/testJCM_Coffea/jetCombinatoricModel_SB_.yml', 'analysis/tests/jetCombinatoricModel_SB_Coffea_new.yml'),
-
-                          ]:
+                            #('analysis/testJCM_Coffea_tests/jetCombinatoricModel_SB_.yml', 'analysis/tests/jetCombinatoricModel_SB_Coffea.yml'),
+                            (f'{base_path}/testJCM_ROOT/jetCombinatoricModel_SB_.yml',   'analysis/tests/jetCombinatoricModel_SB_ROOT_new.yml'),
+                            (f'{base_path}/testJCM_Coffea/jetCombinatoricModel_SB_.yml', 'analysis/tests/jetCombinatoricModel_SB_Coffea_new.yml'),
+                        ]:
 
             test_file      = test_pair[0]
             reference_file = test_pair[1]
@@ -73,5 +80,7 @@ class TestJCM(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    parser = create_parser()
+    args, unknown = parser.parse_known_args()
+    unittest.main(argv=[sys.argv[0]] + unknown)
 

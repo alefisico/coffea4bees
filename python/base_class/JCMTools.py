@@ -291,7 +291,7 @@ def loadROOTHists(inputFile):
     return data4b, data3b, tt4b, tt3b, qcd4b, qcd3b, data4b_nTagJets, tt4b_nTagJets, qcd3b_nTightTags
 
 
-def loadCoffeaHists(cfg, *, cut="passPreSel", year="RunII", weightRegion="SB"):
+def loadCoffeaHists(cfg, *, cut="passPreSel", year="RunII", weightRegion="SB", data4bName='data'):
 
     cutDict = get_cut_dict(cut, cfg.cutList)
 
@@ -307,17 +307,20 @@ def loadCoffeaHists(cfg, *, cut="passPreSel", year="RunII", weightRegion="SB"):
     fourTag_dict  = {"tag": hist.loc(codes["tag"]["fourTag"])}
     threeTag_dict = {"tag": hist.loc(codes["tag"]["threeTag"])}
 
-    fourTag_data_dict  = {"process": 'data'} | fourTag_dict | region_year_dict | cutDict
-    threeTag_data_dict = {"process": 'data'} | threeTag_dict | region_year_dict | cutDict
+    fourTag_data_dict  = {"process": data4bName} | fourTag_dict | region_year_dict | cutDict
+    threeTag_data_dict = {"process": 'data'}     | threeTag_dict | region_year_dict | cutDict
 
     ttbar_list = ['TTTo2L2Nu', 'TTToSemiLeptonic', 'TTToHadronic']
     fourTag_ttbar_dict   = {"process": ttbar_list} | fourTag_dict  | region_year_dict | cutDict
     threeTag_ttbar_dict  = {"process": ttbar_list} | threeTag_dict | region_year_dict | cutDict
 
     hists = cfg.hists[0]['hists']
+    for _input_data in cfg.hists:
+        if 'selJets_noJCM.n' in _input_data['hists'] and data4bName in _input_data['hists']['selJets_noJCM.n'].axes["process"]:
+            hists_data_4b = _input_data['hists']
 
-    data4b                = hists['selJets_noJCM.n']      [fourTag_data_dict]
-    data4b_nTagJets       = hists['tagJets_noJCM.n']      [fourTag_data_dict]
+    data4b                = hists_data_4b['selJets_noJCM.n']      [fourTag_data_dict]
+    data4b_nTagJets       = hists_data_4b['tagJets_noJCM.n']      [fourTag_data_dict]
 
     data3b                = hists['selJets_noJCM.n']      [threeTag_data_dict]
     data3b_nTagJets       = hists['tagJets_loose_noJCM.n'][threeTag_data_dict]

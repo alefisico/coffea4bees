@@ -5,11 +5,13 @@ from analysis.helpers.common import (
     drClean,
     apply_jet_veto_maps,
     apply_jerc_corrections,
+    compute_puid
 )
 from analysis.helpers.SvB_helpers import compute_SvB
 from coffea.lumi_tools import LumiMask
 from base_class.math.random import Squares
 from copy import copy
+import logging
 
 def apply_event_selection_4b( event, corrections_metadata, *, cut_on_lumimask=True):
 
@@ -30,16 +32,17 @@ def apply_event_selection_4b( event, corrections_metadata, *, cut_on_lumimask=Tr
     return event
 
 def apply_object_selection_4b(event, corrections_metadata, *,
-                              dataset: str = '',
-                              doLeptonRemoval: bool = True,
-                              loosePtForSkim: bool = False,
-                              override_selected_with_flavor_bit: bool = False,
-                              run_lowpt_selection: bool = False,
-                              do_jet_veto_maps: bool = False,
-                              isRun3: bool = False,
-                              isMC: bool = False,  ### temporary for Run3
-                              isSyntheticData: bool = False,
-                              ):
+                                dataset: str = '',
+                                doLeptonRemoval: bool = True,
+                                loosePtForSkim: bool = False,
+                                override_selected_with_flavor_bit: bool = False,
+                                run_lowpt_selection: bool = False,
+                                do_jet_veto_maps: bool = False,
+                                isRun3: bool = False,
+                                isMC: bool = False,  ### temporary for Run3
+                                isSyntheticData: bool = False,
+                                isSyntheticMC: bool = False,
+                            ):
     """docstring for apply_basic_selection_4b. This fuction is not modifying the content of anything in events. it is just adding it"""
 
     #
@@ -118,7 +121,10 @@ def apply_object_selection_4b(event, corrections_metadata, *,
     else:
         event['Jet', 'calibration'] = event.Jet.pt / ( event.Jet.pt_raw if 'pt_raw' in event.Jet.fields else ak.full_like(event.Jet.pt, 1) )
         event['Jet', 'btagScore']  = event.Jet.btagDeepFlavB
-        event['Jet', 'pileup'] = ((event.Jet.puId < 7) & (event.Jet.pt < 50)) | ((np.abs(event.Jet.eta) > 2.4) & (event.Jet.pt < 40))
+        if ('GluGlu' in dataset) and not isSyntheticMC:
+            event['Jet', 'corrPuId'] = compute_puid( event.Jet, dataset ) #### To be used in 2024_v2 and above for ALL samples
+        else: event['Jet', 'corrPuId'] = ak.where( event.Jet.puId < 7, True, False )
+        event['Jet', 'pileup'] = ((event.Jet.corrPuId) & (event.Jet.pt < 50)) | ((np.abs(event.Jet.eta) > 2.4) & (event.Jet.pt < 40))
         event['Jet', 'selected_loose'] = (event.Jet.pt >= 20) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
         event['Jet', 'selected']      = (event.Jet.pt >= 40) & (np.abs(event.Jet.eta) <= 2.4) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
 
@@ -164,6 +170,11 @@ def apply_object_selection_4b(event, corrections_metadata, *,
     event['fourTag']  = (event['nJet_tagged'] >= 4)
     event['threeTag'] = (event['nJet_tagged_loose'] == 3) & (event['nJet_selected'] >= 4)
     event['twoTag']   = (event['nJet_tagged_loose'] == 2) & (event['nJet_selected'] >= 4)
+
+    if isSyntheticData or isSyntheticMC:
+        event['threeTag'] = False
+        event['twoTag']   = False
+
 
     if isRun3:
         event['passPreSel'] = event.twoTag | event.threeTag | event.fourTag

@@ -18,6 +18,7 @@ class SvBHists(Template):
 
 class FvTHists(Template):
     FvT  = H((50, 0, 5, ('FvT', 'FvT reweight')))
+    FvT_l = H((50, 0, 50, ('FvT', 'FvT reweight')))
     pd4  = H((50, 0, 1, ("pd4",   'FvT Regressed P(Four-tag Data)')))
     pd3  = H((50, 0, 1, ("pd3",   'FvT Regressed P(Three-tag Data)')))
     pt4  = H((50, 0, 1, ("pt4",   'FvT Regressed P(Four-tag t#bar{t})')))

@@ -96,6 +96,7 @@ class analysis(processor.ProcessorABC):
         make_top_reconstruction: str = None,
         make_friend_JCM_weight: str = None,
         make_friend_FvT_weight: str = None,
+        make_friend_SvB: str = None,
         subtract_ttbar_with_weights: bool = False,
         friends: dict[str, str|FriendTemplate] = None,
     ):
@@ -120,6 +121,7 @@ class analysis(processor.ProcessorABC):
         self.make_classifier_input = make_classifier_input
         self.make_friend_JCM_weight = make_friend_JCM_weight
         self.make_friend_FvT_weight = make_friend_FvT_weight
+        self.make_friend_SvB = make_friend_SvB
         self.top_reconstruction_override = top_reconstruction_override
         self.subtract_ttbar_with_weights = subtract_ttbar_with_weights
         self.friends = parse_friends(friends)
@@ -142,6 +144,7 @@ class analysis(processor.ProcessorABC):
         if self.run_SvB:
             self.cutFlowCuts += ["passSvB", "failSvB"]
             self.histCuts += ["passSvB", "failSvB"]
+            # self.histCuts += ["passFvT5", "passFvT50"]
 
     def process(self, event):
         logging.info(event.metadata)
@@ -258,8 +261,11 @@ class analysis(processor.ProcessorABC):
         if self.run_SvB:
             for k in self.friends:
                 if k.startswith("SvB"):
-                    event[k] = rename_SvB_friend(target, self.friends[k])
-                    setSvBVars(k, event)
+                    try:
+                        event[k] = rename_SvB_friend(target, self.friends[k])
+                        setSvBVars(k, event)
+                    except Exception as e:
+                        event[k] = self.friends[k].arrays(target)
 
             if "SvB" not in self.friends and self.classifier_SvB is None:
                 # SvB_file = f'{path}/SvB_newSBDef.root' if 'mix' in self.dataset else f'{fname.replace("picoAOD", "SvB")}'
@@ -382,6 +388,7 @@ class analysis(processor.ProcessorABC):
                                            isRun3=self.config["isRun3"],
                                            isMC=self.config["isMC"], ### temporary
                                            isSyntheticData=self.config["isSyntheticData"],
+                                           isSyntheticMC=self.config["isSyntheticMC"],
                                            )
 
 
@@ -439,7 +446,7 @@ class analysis(processor.ProcessorABC):
                 event['selGenBJet'] = event.GenJet[event.GenJet.selectedBs]
                 event['matchedGenBJet'] = event.bfromHorZ.nearest( event.selGenBJet, threshold=0.2 )
 
-                event['pass4GenBJets'] = ak.num(event.matchedGenBJet) >= 4
+                event['pass4GenBJets'] = ak.num(event.matchedGenBJet) == 4
                 event["truth_v4b"] = ak.where(  event.pass4GenBJets,
                                                 event.matchedGenBJet.sum(axis=1),
                                                 1e-10 * event.matchedGenBJet.sum(axis=1),
@@ -510,6 +517,8 @@ class analysis(processor.ProcessorABC):
         #add_debug_info_to_output(event, processOutput, weights, list_weight_names, analysis_selections)
 
         selev = event[analysis_selections]
+        # selev["passFvT5" ] = selev["FvT"].FvT > 5
+        # selev["passFvT50"] = selev["FvT"].FvT > 50
 
         if self.subtract_ttbar_with_weights:
 
@@ -717,6 +726,14 @@ class analysis(processor.ProcessorABC):
 
             friends["friends"] = ( friends["friends"]
                 | dump_FvT_weight(selev, self.make_friend_FvT_weight, "FvT_weight", analysis_selections)
+            )
+
+        if self.make_friend_SvB is not None:
+            from ..helpers.dump_friendtrees import dump_SvB
+
+            friends["friends"] = ( friends["friends"]
+                | dump_SvB(selev, self.make_friend_SvB, "SvB", analysis_selections)
+                | dump_SvB(selev, self.make_friend_SvB, "SvB_MA", analysis_selections)
             )
 
         return hist | processOutput | friends
