@@ -156,3 +156,12 @@ def get_year_str(year):
     else:
         year_str = year.replace("UL", "20")
     return year_str
+
+def get_region_str(region):
+
+    if type(region) is list:
+        region_str = " vs ".join(region)
+    else:
+        region_str = region
+
+    return region_str

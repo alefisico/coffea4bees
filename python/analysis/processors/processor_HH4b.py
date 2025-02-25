@@ -261,8 +261,11 @@ class analysis(processor.ProcessorABC):
         if self.run_SvB:
             for k in self.friends:
                 if k.startswith("SvB"):
-                    event[k] = rename_SvB_friend(target, self.friends[k])
-                    setSvBVars(k, event)
+                    try:
+                        event[k] = rename_SvB_friend(target, self.friends[k])
+                        setSvBVars(k, event)
+                    except Exception as e:
+                        event[k] = self.friends[k].arrays(target)
 
             if "SvB" not in self.friends and self.classifier_SvB is None:
                 # SvB_file = f'{path}/SvB_newSBDef.root' if 'mix' in self.dataset else f'{fname.replace("picoAOD", "SvB")}'
@@ -725,12 +728,13 @@ class analysis(processor.ProcessorABC):
                 | dump_FvT_weight(selev, self.make_friend_FvT_weight, "FvT_weight", analysis_selections)
             )
 
-        # if self.make_friend_SvB is not None:
-        #     from ..helpers.dump_friendtrees import dump_FvT_weight
+        if self.make_friend_SvB is not None:
+            from ..helpers.dump_friendtrees import dump_SvB
 
-        #     friends["friends"] = ( friends["friends"]
-        #         | dump_FvT_weight(selev, self.make_friend_FvT_weight, "FvT_weight", analysis_selections)
-            # )
+            friends["friends"] = ( friends["friends"]
+                | dump_SvB(selev, self.make_friend_SvB, "SvB", analysis_selections)
+                | dump_SvB(selev, self.make_friend_SvB, "SvB_MA", analysis_selections)
+            )
 
         return hist | processOutput | friends
 

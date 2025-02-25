@@ -135,3 +135,16 @@ weights-trigger-analysis-job:
   artifacts:
     paths:
       - python/output/weights_trigger_analysis_job/test_trigWeight.coffea
+
+SvB-friendtree-analysis-job:   
+  stage: analysis-test   
+  extends:
+    - .base_analysis
+  needs:
+    - voms_proxy
+    - SvB-friendtree-job
+  script:
+    - source .ci-workflows/SvB-friendtree-analysis-job.sh
+  artifacts:
+    paths:
+      - python/output/SvB_friendtree_analysis_job/test_SvB_friend.coffea

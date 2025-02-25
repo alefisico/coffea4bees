@@ -44,3 +44,16 @@ topreco-friendtree-job:
       - python/output/topreco_friendtree_job/data2018B/
       - python/output/topreco_friendtree_job/data2018C/
       - python/output/topreco_friendtree_job/data2018D/
+
+SvB-friendtree-job:
+  stage: friendtree-test
+  extends:
+    - .base_analysis
+  needs:
+    - voms_proxy
+  script:
+    - source .ci-workflows/SvB-friendtree-job.sh
+  artifacts:
+    paths:
+      - python/output/SvB_friendtree_job/make_friend_SvB.json
+      - python/output/SvB_friendtree_job/GluGluToHHTo4B_cHHH1_UL18/

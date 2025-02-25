@@ -100,6 +100,25 @@ output_systematics = [
 ]
 # outputs.extend(output_systematics)
 
+output_run3 = [
+  f"{output_dir}/analysis_test_job_Run3/test.coffea",
+  f"{output_dir}/analysis_cutflow_job_Run3/test_dump_cutflow.yml"
+]
+# outputs.extend(output_run3)
+
+output_synthetic_run3 = [
+  f"{output_dir}/synthetic_dataset_make_dataset_Run3/picoaod_datasets_declustered_test_2023_BPix.yml",
+  f"{output_dir}/synthetic_dataset_analyze_Run3/test_synthetic_datasets.coffea",
+  f"{output_dir}/synthetic_dataset_analyze_cutflow_Run3/test_dump_cutflow_synthetic_datasets.yml"
+]
+# outputs.extend(output_synthetic_run3)
+
+output_SvB_friendtree = [
+  f"{output_dir}/SvB_friendtree_job/make_friend_SvB.json",
+  f"{output_dir}/SvB_friendtree_analysis_job/test_SvB_friend.coffea",
+  f"{output_dir}/SvB_friendtree_cutflow_job/test_dump_cutflow_SvB_friend.yml"
+]
+
 
 rule all:
     input: outputs
@@ -364,3 +383,56 @@ rule weights_trigger_analysis_cutflow_job:
     log: f"{output_dir}/weights_trigger_cutflow_job.log"
     container: analysis_container
     shell: "source .ci-workflows/weights-trigger-cutflow-job.sh {ci_output_dir} 2>&1 | tee -a {log}"
+
+rule analysis_test_job_Run3:
+    output: f"{output_dir}/analysis_test_job_Run3/test.coffea"
+    log: f"{output_dir}/analysis_test_job_Run3.log"
+    container: analysis_container
+    shell: "source .ci-workflows/analysis-test-job-Run3.sh {ci_output_dir} 2>&1 | tee -a {log}"
+
+rule analysis_cutflow_job_Run3:
+    input: f"{output_dir}/analysis_test_job_Run3/test.coffea"
+    output: f"{output_dir}/analysis_cutflow_job_Run3/test_dump_cutflow.yml"
+    log: f"{output_dir}/analysis_cutflow_job_Run3.log"
+    container: analysis_container
+    shell: "source .ci-workflows/analysis-cutflow-job-Run3.sh {ci_output_dir} 2>&1 | tee -a {log}"
+
+rule synthetic_dataset_make_dataset_Run3:
+    output: f"{output_dir}/synthetic_dataset_make_dataset_Run3/picoaod_datasets_declustered_test_2023_BPix.yml"
+    log: f"{output_dir}/synthetic_dataset_make_dataset_Run3.log"
+    container: analysis_container
+    shell: "source .ci-workflows/synthetic-dataset-make-dataset-Run3.sh {ci_output_dir} 2>&1 | tee -a {log}"
+
+rule synthetic_dataset_analyze_Run3:
+    input: f"{output_dir}/synthetic_dataset_make_dataset_Run3/picoaod_datasets_declustered_test_2023_BPix.yml"
+    output: f"{output_dir}/synthetic_dataset_analyze_Run3/test_synthetic_datasets.coffea"
+    log: f"{output_dir}/synthetic_dataset_analyze_Run3.log"
+    container: analysis_container
+    shell: "source .ci-workflows/synthetic-dataset-analyze-Run3.sh {ci_output_dir} 2>&1 | tee -a {log}"
+
+rule synthetic_dataset_analyze_cutflow_Run3:
+    input: f"{output_dir}/synthetic_dataset_analyze_Run3/test_synthetic_datasets.coffea"
+    output: f"{output_dir}/synthetic_dataset_analyze_cutflow_Run3/test_dump_cutflow_synthetic_datasets.yml"
+    log: f"{output_dir}/synthetic_dataset_analyze_cutflow_Run3.log"
+    container: analysis_container
+    shell: "source .ci-workflows/synthetic-dataset-analyze-cutflow-Run3.sh {ci_output_dir} 2>&1 | tee -a {log}"
+
+rule SvB_friendtree_job:
+    container: analysis_container
+    log: f"{output_dir}/SvB_friendtree_job.log"
+    output: f"{output_dir}/SvB_friendtree_job/make_friend_SvB.json"
+    shell: "source .ci-workflows/SvB-friendtree-job.sh {ci_output_dir} 2>&1 | tee -a {log}"
+
+rule SvB_friendtree_analysis_job:
+    input: f"{output_dir}/SvB_friendtree_job/make_friend_SvB.json"
+    output: f"{output_dir}/SvB_friendtree_analysis_job/test_SvB.coffea"
+    log: f"{output_dir}/SvB_friendtree_analysis_job.log"
+    container: analysis_container
+    shell: "source .ci-workflows/SvB-friendtree-analysis-job.sh {ci_output_dir} 2>&1 | tee -a {log}"
+
+rule SvB_friendtree_cutflow_job:
+    input: f"{output_dir}/SvB_friendtree_analysis_job/test_SvB.coffea"
+    output: f"{output_dir}/SvB_friendtree_cutflow_job/test_dump_cutflow_SvB_friend.yml"
+    log: f"{output_dir}/SvB_friendtree_cutflow_job.log"
+    container: analysis_container
+    shell: "source .ci-workflows/SvB-friendtree-cutflow-job.sh {ci_output_dir} 2>&1 | tee -a {log}"
