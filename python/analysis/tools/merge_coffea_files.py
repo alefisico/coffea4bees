@@ -12,7 +12,7 @@ def merge_coffea_files( files_to_merge, output_file ):
         logging.info(f'Merging {ifile}')
         iout = load(ifile)
         for ikey in output.keys():
-            if 'hists' in ikey:
+            if ikey == "hists":
                 for ihist in output[ikey].keys():
                     try:
                         output[ikey][ihist] += iout[ikey][ihist]

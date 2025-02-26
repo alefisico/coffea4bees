@@ -83,6 +83,46 @@ if __name__ == '__main__':
     xmax = nom_mj.GetXaxis().GetXmax()
     ymax = nom_mj.GetMaximum()*1.2
 
+    # Create a new TH1 histogram with the nominal + high error bar of the nom_mj
+    nom_mj_high_error = nom_mj.Clone("nom_mj_high_error")
+    nom_mj_high_error.Reset()
+    nom_mj_low_error = nom_mj.Clone("nom_mj_low_error")
+    nom_mj_low_error.Reset()
+    for i in range(1, nom_mj.GetNbinsX() + 1):
+        nom_mj_high_error.SetBinContent(i, (nom_mj.GetBinErrorUp(i)+nom_mj.GetBinContent(i))/nom_mj.GetBinContent(i))
+        nom_mj_low_error.SetBinContent(i, (nom_mj.GetBinContent(i)-nom_mj.GetBinErrorUp(i))/nom_mj.GetBinContent(i))
+
+    # Styling
+    CMS.SetExtraText("Preliminary")
+    iPos = 0
+    CMS.SetLumi("")
+    CMS.SetEnergy("13")
+    CMS.ResetAdditionalInfo()
+    bkg_can = CMS.cmsDiCanvas('bkg_can',0,xmax,0,ymax,0.8,1.2,
+                                "SvB MA Classifier Regressed P(Signal) | P(HH) is largest",
+                                "Events", "Var/Nom",
+                                    square=CMS.kSquare, extraSpace=0.05, iPos=iPos)
+    bkg_can.cd(1)
+    leg = CMS.cmsLeg(0.70, 0.89 - 0.05 * 4, 0.99, 0.89, textSize=0.04)
+    tmp_bkg = nom_mj.Clone("tmp_bkg")
+    leg.AddEntry( tmp_bkg, f'Multijet', 'l' )
+    CMS.cmsDraw( tmp_bkg, 'histe', fstyle=0,  marker=1, alpha=1, lcolor=ROOT.kBlack, fcolor=ROOT.kBlack )
+    CMS.GetcmsCanvasHist(bkg_can.cd(1)).GetXaxis().SetTitleSize(0.05)
+    CMS.GetcmsCanvasHist(bkg_can.cd(1)).GetYaxis().SetTitleOffset(1.5)
+    CMS.GetcmsCanvasHist(bkg_can.cd(1)).GetYaxis().SetTitleSize(0.05)
+    
+    bkg_can.cd(2)
+    CMS.cmsDraw( nom_mj_high_error, 'p', fstyle=0, marker=22, alpha=1, mcolor=ROOT.kRed )
+    CMS.cmsDraw( nom_mj_low_error, 'psame', fstyle=0, marker=23, alpha=1, mcolor=ROOT.kBlue )
+    ref_line = ROOT.TLine(0, 1, 1, 1)
+    CMS.cmsDrawLine(ref_line, lcolor=ROOT.kBlack, lstyle=ROOT.kDotted)
+    CMS.GetcmsCanvasHist(bkg_can.cd(2)).GetXaxis().SetTitleOffset(1.5)
+    CMS.GetcmsCanvasHist(bkg_can.cd(2)).GetYaxis().SetTitleOffset(0.8)
+    CMS.GetcmsCanvasHist(bkg_can.cd(2)).GetYaxis().SetTitleSize(0.09)
+    CMS.GetcmsCanvasHist(bkg_can.cd(2)).GetXaxis().SetTitleSize(0.095)
+
+    CMS.SaveCanvas( bkg_can, f"{args.output_dir}/{args.variable}_multijet_only.pdf" )
+
     # Styling
     CMS.SetExtraText("Preliminary")
     iPos = 0
@@ -195,11 +235,11 @@ if __name__ == '__main__':
             syst_can.cd(2)
 
             ratio_up = ROOT.TGraphAsymmErrors()
-            ratio_up.Divide( nominal_hist.Clone(), up_hist, 'pois' )
-            CMS.cmsDraw( ratio_up, 'p', fstyle=0, marker=1, alpha=1, lcolor=ROOT.kBlue )
+            ratio_up.Divide( nominal_hist.Clone(f"nominalup_{syst}"), up_hist, 'pois' )
+            CMS.cmsDraw( ratio_up, 'p', fstyle=0, marker=23, mcolor=ROOT.kBlue, lcolor=0 )
             ratio_dn = ROOT.TGraphAsymmErrors()
-            ratio_dn.Divide( nominal_hist.Clone(), down_hist, 'pois' )
-            CMS.cmsDraw( ratio_dn, 'psame', fstyle=0,  marker=1, alpha=1, lcolor=ROOT.kRed )
+            ratio_dn.Divide( nominal_hist.Clone(f"nominaldown_{syst}"), down_hist, 'pois' )
+            CMS.cmsDraw( ratio_dn, 'psame', fstyle=0, marker=22, mcolor=ROOT.kRed, lcolor=0 )
 
             ref_line = ROOT.TLine(0, 1, 1, 1)
             CMS.cmsDrawLine(ref_line, lcolor=ROOT.kBlack, lstyle=ROOT.kDotted)

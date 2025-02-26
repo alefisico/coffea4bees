@@ -11,15 +11,13 @@ class SvBHists(Template):
     ps_zz   = H((200, 0, 1, ('ps_zz', "Regressed P(Signal) $|$ P(ZZ) is largest ")))
     ps_zh   = H((200, 0, 1, ('ps_zh', "Regressed P(Signal) $|$ P(ZH) is largest ")))
 
-    var_binning = np.array([0.        , 0.02411943, 0.03523357, 0.04948798, 0.06909748,
-                        0.09862704, 0.14476372, 0.2167751 , 0.31415779, 0.42526456,
-                        0.53607001, 0.63727497, 0.72278291, 0.79439517, 0.85223062,
-                        0.89842439, 0.93516206, 0.96466914, 1.        ])
+    ### var_binning makes the Run2 SvB_MA signal distribution flat
+    var_binning = np.array([0, 0.255651, 0.416343, 0.53248, 0.62054, 0.689076, 0.744818, 0.790085, 0.828211, 0.859114, 0.884897, 0.90724, 0.925977, 0.941758, 0.955696, 0.968185, 0.98, 1])
     ps_hh   = H((var_binning, ('ps_hh', "Regressed P(Signal) $|$ P(HH) is largest ")))
 
     ps_zz_fine   = H((240, 0, 1, ('ps_zz', "Regressed P(Signal) $|$ P(ZZ) is largest ")))
     ps_zh_fine   = H((240, 0, 1, ('ps_zh', "Regressed P(Signal) $|$ P(ZH) is largest ")))
-    ps_hh_fine   = H((240, 0, 1, ('ps_hh', "Regressed P(Signal) $|$ P(HH) is largest ")))
+    ps_hh_fine   = H((1000, 0, 1, ('ps_hh', "Regressed P(Signal) $|$ P(HH) is largest ")))
 
 
 class FvTHists(Template):
