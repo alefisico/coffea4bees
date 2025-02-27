@@ -12,7 +12,8 @@ from coffea.util import load
 import numpy as np
 
 sys.path.insert(0, os.getcwd())
-from base_class.plots.plots import makePlot, make2DPlot, load_config, load_hists, read_axes_and_cuts, parse_args, get_value_nested_dict, get_hist, _plot, _savefig, _colors, makeRatio, _plot_ratio, load_stack_config, get_ratio_plots
+import base_class.plots.helpers as plot_helpers
+from base_class.plots.plots import parse_args, load_config, load_hists, read_axes_and_cuts, makePlot, get_hist_data, load_stack_config, add_hist_data, make_plot_from_dict, add_ratio_plots
 import base_class.plots.iPlot_config as cfg
 
 np.seterr(divide='ignore', invalid='ignore')
@@ -28,13 +29,13 @@ def get_average_over_mixed_data(plotConfig, **kwargs):
     var    = kwargs.get("var", None)
 
 
-    process_config = get_value_nested_dict(cfg.plotConfig, "mix_v0")
+    process_config = plot_helpers.get_value_nested_dict(cfg.plotConfig, "mix_v0")
     hist_objs = []
     hist_sum = None
     for sub_sample in range(15):
         _proc_config_sub = copy.copy(process_config)
         _proc_config_sub["process"] = f"mix_v{sub_sample}"
-        _hist = get_hist(cfg, _proc_config_sub, var=var, region=region, rebin=rebin, year=year, cut="passPreSel")
+        _hist = get_hist_data(_proc_config_sub["process"], cfg, _proc_config_sub, var=var, region=region, rebin=rebin, year=year, cut="passPreSel")
         hist_objs.append( copy.copy(_hist))
 
         if hist_sum:
@@ -48,72 +49,80 @@ def get_average_over_mixed_data(plotConfig, **kwargs):
     return hist_ave
 
 
-def plotVar(var, region, year, rebin, yscale):
+def plotVar(var, region, year, rebin, yscale, **kwargs):
 
-        #
-        # Single plots
-        #
-        plot_args = {"var":var, "yscale":yscale}
-        plot_args = plot_args | {"region":region, "doRatio":1, "rebin":rebin, "year":year}
-        plot_args["outputFolder"] = args.outputFolder
+    #
+    # Single plots
+    #
+    plot_args = {"var":var, "yscale":yscale}
+    plot_args = plot_args | {"region":region, "doRatio":1, "rebin":rebin, "year":year}
+    plot_args["outputFolder"] = args.outputFolder
 
-        fig = makePlot(cfg, **plot_args)
-        plt.close()
+#    fig = makePlot(cfg, **plot_args)
+#    plt.close()
 
-        #
-        #  Plot same but using the Average over the mixed datasets
-        #
-        hist_ave = get_average_over_mixed_data(cfg.plotConfig, var=var, region=region, rebin=rebin, year=year)
+    cut = "passPreSel"
 
-        hists = []
-
-        #
-        # Add data to hists
-        #
-        hist_config_data = copy.copy(get_value_nested_dict(cfg.plotConfig, "data"))
-        hist_config_data["name"] = "data"
-        hist_data =  get_hist(cfg, hist_config_data, var=var, region=region, rebin=rebin, year=year, cut="passPreSel")
-        hists.append( (hist_data, hist_config_data) )
-
-
-        #
-        # Add Average over mixed to hists
-        #
-        hist_config_ave = copy.copy(get_value_nested_dict(cfg.plotConfig, "mix_v0"))
-        hist_config_ave["name"] = "mix_vAve"
-        hist_config_ave["fillcolor"] = "r"
-        hist_config_ave["histtype"] = "step"
-        hist_config_ave["linewidth"] = 2
-        hist_config_ave["label"] = "Average of mixes"
-        hists.append( (hist_ave, hist_config_ave) )
-
-        #
-        # Get all the stacks and add to stack_dict
-        #
-        stack_config = copy.copy(get_value_nested_dict(cfg.plotConfig, "stack"))
-        stack_dict = load_stack_config(stack_config, var, cut="passPreSel", region=region, rebin=rebin)
-
-        kwargs = {"year" : "RunII",
-                  "outputFolder" : args.outputFolder,
-                  #"histtype" : "errorbar",
-                  "yscale" : yscale,
-                  "rlim": [0.0,2.0],
-                  }
+    #
+    #  Plot same but using the Average over the mixed datasets
+    #
+    plot_data_ave = {}
+    plot_data_ave["hists"] = {}
+    plot_data_ave["stack"] = {}
+    plot_data_ave["ratio"] = {}
+    plot_data_ave["var"] = var
+    plot_data_ave["cut"] = cut
+    plot_data_ave["region"] = region
+    plot_data_ave["kwargs"] = kwargs | {"outputFolder" : args.outputFolder}
 
 
-        #
-        # Make Ratios
-        #
-        ratio_config = copy.deepcopy(cfg.plotConfig["ratios"])
-        ratio_config["mixToBkg"]["denominator"]["key"] = "mix_vAve"
-        ratio_plots = get_ratio_plots(ratio_config, hists, stack_dict, **kwargs)
+    #
+    # Add data
+    #
+    hist_config_data = copy.copy(plot_helpers.get_value_nested_dict(cfg.plotConfig, "data"))
+    add_hist_data(cfg, hist_config_data,
+                  var=var, region=region, cut=cut, rebin=rebin, year=year,
+                  debug=False)
 
-        fig, main_ax, ratio_ax = _plot_ratio(hists, stack_dict, ratio_plots, **kwargs)
-        ax = (main_ax, ratio_ax)
+    plot_data_ave["hists"]["data"] = hist_config_data
 
-        _savefig(fig, var, kwargs.get("outputFolder"), kwargs["year"], "passPreSel", "fourTag", region, "mix_ave")
 
-        plt.close()
+    #
+    # Add Average over mixed to hists
+    #
+    hist_ave = get_average_over_mixed_data(cfg.plotConfig, var=var, region=region, rebin=rebin, year=year)
+
+    hist_config_ave = copy.copy(plot_helpers.get_value_nested_dict(cfg.plotConfig, "mix_v0"))
+    hist_config_ave["name"] = "mix_vAve"
+    hist_config_ave["fillcolor"] = "r"
+    hist_config_ave["histtype"] = "step"
+    hist_config_ave["linewidth"] = 2
+    hist_config_ave["label"] = "Average of mixes"
+    hist_config_ave["values"]     = hist_ave.values().tolist()
+    hist_config_ave["variances"]  = hist_ave.variances().tolist()
+    hist_config_ave["centers"]    = hist_ave.axes[0].centers.tolist()
+    hist_config_ave["edges"]      = hist_ave.axes[0].edges.tolist()
+    hist_config_ave["x_label"]    = hist_ave.axes[0].label
+    hist_config_ave["under_flow"] = float(hist_ave.view(flow=True)["value"][0])
+    hist_config_ave["over_flow"]  = float(hist_ave.view(flow=True)["value"][-1])
+    plot_data_ave["hists"]["mix_vAve"] = hist_config_ave
+    plot_data_ave["file_name"]  = var+"_ave"
+
+    #
+    # Get all the stacks and add to stack_dict
+    #
+    stack_config = cfg.plotConfig.get("stack", {})
+    plot_data_ave["stack"] = load_stack_config(stack_config, var, cut, region, rebin=rebin, **kwargs)
+
+    #
+    #  Config Ratios
+    #
+    ratio_config = copy.deepcopy(cfg.plotConfig["ratios"])
+    ratio_config["mixToBkg"]["denominator"]["key"] = "mix_vAve"
+    add_ratio_plots(ratio_config, plot_data_ave, **kwargs)
+
+    make_plot_from_dict(plot_data_ave)
+    plt.close()
 
 
 
@@ -126,7 +135,6 @@ def doPlots(debug=False):
 
     var_list += ["SvB.ps_hh", "SvB.ps_zh", "SvB.ps_zz", "SvB.ps_hh_fine", "SvB.ps_zh_fine", "SvB.ps_zz_fine", ]
     rebin_list += [8, 8, 8, 8, 8, 8]
-
 
     region = "SR"
     year   = "RunII"

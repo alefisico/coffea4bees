@@ -48,7 +48,7 @@ def processor_config(processName, dataset, event):
 
     if config["isSyntheticData"]:
         config["do_lepton_jet_cleaning"]  = False
-        config["override_selected_with_flavor_bit"]  = True
+        config["override_selected_with_flavor_bit"]  = False
         config["isPSData"] = True if event.run[0] == 1 else False
         config["do_jet_calibration"]      = False
         config["do_jet_veto_maps"]       = False
@@ -59,7 +59,7 @@ def processor_config(processName, dataset, event):
         config["do_MC_weights"]           = True
         config["do_jet_calibration"]     = False
         config["do_lepton_jet_cleaning"]  = False
-        config["override_selected_with_flavor_bit"]  = True
+        config["override_selected_with_flavor_bit"]  = False
         config["do_jet_veto_maps"]       = False
         config["use_prestored_btag_SF"]  = True
 

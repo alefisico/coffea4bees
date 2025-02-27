@@ -558,14 +558,9 @@ class analysis(processor.ProcessorABC):
         for _s_type in cleaned_splitting_name:
             fill += ClusterHists( (f"splitting_{_s_type}", f"{_s_type} Splitting"), f"splitting_{_s_type}" )
 
-        if 'bb' in cleaned_splitting_name:
-            fill += ClusterHistsDetailed( (f"detailed_splitting_bb",    f"bb Splitting"),    f"splitting_bb"    )
-        if 'bj' in cleaned_splitting_name:
-            fill += ClusterHistsDetailed( (f"detailed_splitting_bj",    f"bj Splitting"),    f"splitting_bj"    )
-        if 'jj' in cleaned_splitting_name:
-            fill += ClusterHistsDetailed( (f"detailed_splitting_jj",    f"jj Splitting"),    f"splitting_jj"    )
-        if '(bj)b' in cleaned_splitting_name:
-            fill += ClusterHistsDetailed( (f"detailed_splitting_(bj)b", f"(bj)b Splitting"), f"splitting_(bj)b" )
+            # if _s_type in ["1b0j/1b0j", "1b0j/0b1j", "0b1j/0b1j", "1b1j/1b0j"]:
+            #     fill += ClusterHistsDetailed( (f"detailed_splitting_{_s_type}",    f"{_s_type} Splitting"),    f"splitting_{_s_type}"    )
+
 
         if self.do_declustering:
             for _s_type in cleaned_splitting_name:
