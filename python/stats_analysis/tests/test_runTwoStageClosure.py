@@ -77,8 +77,8 @@ class TestRunTwoStageClosure(unittest.TestCase):
     def test_yaml_content(self):
         
         for test_pair in [
-                ('stats_analysis/tests/known_0_variance_results_SvB_MA_ps_hh_rebin20.yml', f'{self.output_path}/3bDvTMix4bDvT/SvB_MA/rebin20/SR/hh/0_variance_results.yml'),
-                ('stats_analysis/tests/known_1_bias_results_SvB_MA_ps_hh_rebin20.yml',     f'{self.output_path}/3bDvTMix4bDvT/SvB_MA/rebin20/SR/hh/1_bias_results.yml')
+                ('stats_analysis/tests/known_0_variance_results_SvB_MA_ps_hh.yml', f'{self.output_path}/3bDvTMix4bDvT/SvB_MA/rebin1/SR/hh/0_variance_results.yml'),
+                ('stats_analysis/tests/known_1_bias_results_SvB_MA_ps_hh.yml',     f'{self.output_path}/3bDvTMix4bDvT/SvB_MA/rebin1/SR/hh/1_bias_results.yml')
         ]:
             
             reference_file = test_pair[0]

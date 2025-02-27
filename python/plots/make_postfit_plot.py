@@ -144,10 +144,10 @@ if __name__ == '__main__':
     print(f"NUmber of bkg events in last bin: {hists['TotalBkg'].GetBinContent(hists['TotalBkg'].GetNbinsX())}")
     
     # Remove data points in hists['data'] that are higher than 0.5 in X
-    for bin_idx in range(1, hists['data'].GetNbinsX() + 1):
-        if hists['data'].GetBinCenter(bin_idx) > 0.5:
-            hists['data'].SetBinContent(bin_idx, 0)
-            hists['data'].SetBinError(bin_idx, 0)
+    # for bin_idx in range(1, hists['data'].GetNbinsX() + 1):
+    #     if hists['data'].GetBinCenter(bin_idx) > 0.5:
+    #         hists['data'].SetBinContent(bin_idx, 0)
+    #         hists['data'].SetBinError(bin_idx, 0)
     
     xmax = hists['TotalBkg'].GetXaxis().GetXmax()
     ymax = hists['TotalBkg'].GetMaximum()*1.2

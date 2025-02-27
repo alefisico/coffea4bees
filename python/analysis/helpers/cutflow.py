@@ -1,5 +1,6 @@
 from hist import Hist
 import numpy as np
+import awkward as ak
 
 class cutFlow:
 
@@ -22,8 +23,8 @@ class cutFlow:
             if self._hists is not None:
                 m4b = event.truth_v4b.mass
 
-            if wOverride:
-                sumw = wOverride
+            if isinstance(wOverride, ak.Array):
+                sumw = float(np.sum(wOverride))
                 m4b_weights = wOverride
             else:
                 sumw = float(np.sum(event.weight))
@@ -34,7 +35,12 @@ class cutFlow:
 
 
         else:
+            
             e3, e4 = event[event.threeTag], event[event.fourTag]
+
+            if isinstance(wOverride, ak.Array):
+                e3.weight = wOverride[event.threeTag]
+                e4.weight = wOverride[event.fourTag]
 
             if self._hists is not None:
                 m4b = e4.truth_v4b.mass
@@ -46,7 +52,6 @@ class cutFlow:
 
             sumw_4 = np.sum(e4.weight)
             sumn_4 = len(e4.weight)
-
 
         self._cutFlowThreeTag[cut] = (sumw_3, sumn_3)     # weighted, raw
         self._cutFlowFourTag [cut] = (sumw_4, sumn_4)     # weighted, raw

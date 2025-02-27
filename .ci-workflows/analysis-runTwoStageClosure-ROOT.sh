@@ -16,15 +16,13 @@ python3 stats_analysis/convert_json_to_root.py -f $INPUT_DIR/testMixedBkg_TT.jso
 python3 stats_analysis/convert_json_to_root.py -f $INPUT_DIR/testMixedBkg_data_3b_for_mixed_kfold.json --output $OUTPUT_DIR --histos SvB_MA_ps_hh
 python3 stats_analysis/convert_json_to_root.py -f $INPUT_DIR/testMixedBkg_data_3b_for_mixed.json --output $OUTPUT_DIR --histos SvB_MA_ps_hh
 python3 stats_analysis/convert_json_to_root.py -f $INPUT_DIR/testSignal_UL.json                  --output $OUTPUT_DIR --histos SvB_MA_ps_hh
-#python3 stats_analysis/convert_json_to_root.py -f $INPUT_DIR/testSignal_preUL.json               --output $OUTPUT_DIR --histos SvB_MA_ps_hh
-
 
 
 #
 # Test it with the
 #
 echo "############### Run test runTwoStageClosure"
-python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 20 --outputPath $OUTPUT_DIR/testsLocal  --do_CI \
+python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 1 --outputPath $OUTPUT_DIR/testsLocal  --do_CI \
     --input_file_data3b $OUTPUT_DIR/testMixedBkg_data_3b_for_mixed.root \
     --input_file_TT     $OUTPUT_DIR/testMixedBkg_TT.root \
     --input_file_mix    $OUTPUT_DIR/testMixedData.root \
@@ -32,15 +30,15 @@ python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 20 --o
     
 echo "############### Run test runTwoStageClosure kfold"
 ls -lrt $OUTPUT_DIR/
-python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 20 --outputPath $OUTPUT_DIR/testsLocal_kfold/  --do_CI --use_kfold  \
+python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 1 --outputPath $OUTPUT_DIR/testsLocal_kfold/  --do_CI --use_kfold  \
     --input_file_data3b $OUTPUT_DIR/testMixedBkg_data_3b_for_mixed_kfold.root \
     --input_file_TT     $OUTPUT_DIR/testMixedBkg_TT.root \
     --input_file_mix    $OUTPUT_DIR/testMixedData.root \
     --input_file_sig    $OUTPUT_DIR/testSignal_UL.root \
 
 
-#python old_make_combine_hists.py -i ./files_HIG-20-011/hists_closure_3bDvTMix4bDvT_SR_weights_newSBDef.root -o HIG-20-011/hist_closure_SvB_MA.root --TDirectory 3bDvTMix4bDvT_v0/hh2018 --var multijet --channel hh2018 -n mj --rebin 10 --systematics ./files_HIG-20-011/closureResults_SvB_MA_hh.pkl
-#python old_make_combine_hists.py -i ./files_HIG-20-011/data2018/hists_j_r.root -o HIG-20-011/hist_SvB_MA.root  -r SR --var SvB_MA_ps_hh --channel hh2018 -n mj --tag three --cut passPreSel --rebin 10 --systematics ./files_HIG-20-011/closureResults_SvB_MA_hh.pkl
+# #python old_make_combine_hists.py -i ./files_HIG-20-011/hists_closure_3bDvTMix4bDvT_SR_weights_newSBDef.root -o HIG-20-011/hist_closure_SvB_MA.root --TDirectory 3bDvTMix4bDvT_v0/hh2018 --var multijet --channel hh2018 -n mj --rebin 10 --systematics ./files_HIG-20-011/closureResults_SvB_MA_hh.pkl
+# #python old_make_combine_hists.py -i ./files_HIG-20-011/data2018/hists_j_r.root -o HIG-20-011/hist_SvB_MA.root  -r SR --var SvB_MA_ps_hh --channel hh2018 -n mj --tag three --cut passPreSel --rebin 10 --systematics ./files_HIG-20-011/closureResults_SvB_MA_hh.pkl
 
 #
 # Test it with full inputs
@@ -52,12 +50,13 @@ python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 20 --o
 #
 #  python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 20 --outputPath stats_analysis/tests --skip_closure
 
-cp -r stats_analysis/tests/3bDvTMix4bDvT/ $OUTPUT_DIR/
+mkdir -p $OUTPUT_DIR/3bDvTMix4bDvT/SvB_MA/rebin1/SR/hh/
+cp -r stats_analysis/tests/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin1.root $OUTPUT_DIR/3bDvTMix4bDvT/SvB_MA/rebin1/SR/hh/
 
-python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 20 --outputPath $OUTPUT_DIR --reuse_inputs --do_CI
-python3 stats_analysis/tests/test_runTwoStageClosure.py --knownCounts stats_analysis/tests/known_twoStageClosure_counts_SvB_MA_ps_hh_rebin20.yml --output_path $OUTPUT_DIR --inputFile $OUTPUT_DIR/3bDvTMix4bDvT/SvB_MA/rebin20/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin20.root
+python3 stats_analysis/runTwoStageClosure.py  --var SvB_MA_ps_hh  --rebin 1 --outputPath $OUTPUT_DIR --reuse_inputs --do_CI
+python3 stats_analysis/tests/test_runTwoStageClosure.py --knownCounts stats_analysis/tests/known_twoStageClosure_counts_SvB_MA_ps_hh.yml --output_path $OUTPUT_DIR --inputFile $OUTPUT_DIR/3bDvTMix4bDvT/SvB_MA/rebin1/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin1.root
 
-python3 stats_analysis/tests/dumpTwoStageInputs.py --input $OUTPUT_DIR/3bDvTMix4bDvT/SvB_MA/rebin20/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin20.root   --output $OUTPUT_DIR/test_dump_twoStageClosureInputsCounts.yml
+python3 stats_analysis/tests/dumpTwoStageInputs.py --input $OUTPUT_DIR/3bDvTMix4bDvT/SvB_MA/rebin1/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin1.root   --output $OUTPUT_DIR/test_dump_twoStageClosureInputsCounts.yml
 
 if [ "$return_to_base" = true ]; then
     echo "############### Returning to base directory"
