@@ -480,7 +480,7 @@ class analysis(processor.ProcessorABC):
             for cut, sel in sel_dict.items():
                 self._cutFlow.fill( cut, event[sel], allTag=True )
                 self._cutFlow.fill( f"{cut}_woTrig", event[sel], allTag=True,
-                                    wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[sel]) )
+                                    wOverride=weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[sel]) 
 
 
         #
@@ -500,7 +500,7 @@ class analysis(processor.ProcessorABC):
             if not shift_name:
                 self._cutFlow.fill( "passJetMult_btagSF", event[selections.all(*allcuts)], allTag=True )
                 self._cutFlow.fill( "passJetMult_btagSF_woTrig", event[selections.all(*allcuts)], allTag=True,
-                               wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[selections.all(*allcuts)] ))
+                               wOverride=weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[selections.all(*allcuts)] )
 
         #
         # Preselection: keep only three or four tag events
@@ -622,27 +622,27 @@ class analysis(processor.ProcessorABC):
         if not shift_name:
             self._cutFlow.fill("passPreSel", selev)
             self._cutFlow.fill("passPreSel_woTrig", selev,
-                               wOverride=np.sum(selev['weight_woTrig']))
+                               wOverride=selev['weight_woTrig'])
             self._cutFlow.fill("passDiJetMass", selev[selev.passDiJetMass])
             self._cutFlow.fill("passDiJetMass_woTrig", selev[selev.passDiJetMass],
-                               wOverride=np.sum(selev['weight_woTrig'][selev.passDiJetMass] ))
+                               wOverride=selev['weight_woTrig'][selev.passDiJetMass] )
             self._cutFlow.fill("boosted_veto_passPreSel", selev[selev.notInBoostedSel])
             self._cutFlow.fill("boosted_veto_SR", selev[selev.notInBoostedSel & selev["quadJet_selected"].SR])
             selev['passSR'] = selev.passDiJetMass & selev["quadJet_selected"].SR
             self._cutFlow.fill( "SR", selev[selev.passSR] )
             self._cutFlow.fill( "SR_woTrig", selev[selev.passSR],
-                            wOverride=np.sum(selev['weight_woTrig'][selev.passSR] ))
+                            wOverride=selev['weight_woTrig'][selev.passSR])
             selev['passSB'] = selev.passDiJetMass & selev["quadJet_selected"].SB
             self._cutFlow.fill( "SB", selev[(selev.passDiJetMass & selev["quadJet_selected"].SB)] )
             self._cutFlow.fill( "SB_woTrig", selev[(selev.passDiJetMass & selev["quadJet_selected"].SB)],
-                            wOverride=np.sum(selev['weight_woTrig'][selev.passSB] ))
+                            wOverride=selev['weight_woTrig'][selev.passSB] )
             if self.run_SvB:
                 self._cutFlow.fill("passSvB", selev[selev.passSvB])
                 self._cutFlow.fill("passSvB_woTrig", selev[selev.passSvB],
-                               wOverride=np.sum(selev['weight_woTrig'][selev.passSvB] ))
+                               wOverride=selev['weight_woTrig'][selev.passSvB] )
                 self._cutFlow.fill("failSvB", selev[selev.failSvB])
                 self._cutFlow.fill("failSvB_woTrig", selev[selev.failSvB],
-                               wOverride=np.sum(selev['weight_woTrig'][selev.failSvB] ))
+                               wOverride=selev['weight_woTrig'][selev.failSvB] )
 
             self._cutFlow.addOutput(processOutput, event.metadata["dataset"])
 

@@ -1,3 +1,6 @@
+###
+### This script requires a root file with the SvB_MA and weight branches
+###
 import uproot
 import numpy as np
 from hist import Hist
