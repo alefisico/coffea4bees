@@ -574,10 +574,12 @@ if __name__ == '__main__':
             # Adding reproducible info
             #
             output['reproducible'] = {
-                'date': datetime.today().strftime('%Y-%m-%d %H:%M:%S'),
-                'hash': args.githash if args.githash else get_git_revision_hash(),
-                'args': args,
-                'diff': args.gitdiff if args.gitdiff else get_git_diff(),
+                args.output_file: {
+                    'date': datetime.today().strftime('%Y-%m-%d %H:%M:%S'),
+                    'hash': args.githash if args.githash else get_git_revision_hash(),
+                    'args': args,
+                    'diff': args.gitdiff if args.gitdiff else get_git_diff(),
+                }
             }
 
             if not os.path.exists(args.output_path):

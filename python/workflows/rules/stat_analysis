@@ -148,20 +148,14 @@ rule make_syst_plots:
         root="output/datacards/shapes.root",
         datacard="output/datacards/datacard.txt"
     output: "output/datacards/systs/SvB_MA_ps_hh_fine_nominal.pdf"
-    container: config["combine_container"]
-    resources:
-        kerberos=True,
-        compute_backend="kubernetes",
-        kubernetes_memory_limit="8Gi"
+    params:
+        container = config["combine_container"],
+        output_dir = "output/datacards/systs/"
     shell:
         """
-        source /cvmfs/cms.cern.ch/cmsset_default.sh
-        cd /home/cmsusr/CMSSW_11_3_4/
-        cmsenv || true
-        cd -
-        cd python/
         echo "Making syst plots"
-        python3 plots/make_syst_plots.py -i ../{input.root} -o ../output/datacards/systs/ -d ../{input.datacard}
+        source workflows/helpers/shell_combine.sh {params.container} \
+            python3 plots/make_syst_plots.py -i {input.root} -o {params.output_dir} -d {input.datacard}
         """
 
 rule kappa_scan:

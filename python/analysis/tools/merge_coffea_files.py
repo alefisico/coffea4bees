@@ -11,16 +11,17 @@ def merge_coffea_files( files_to_merge, output_file ):
     for ifile in files_to_merge[1:]:
         logging.info(f'Merging {ifile}')
         iout = load(ifile)
-        for ikey in output.keys():
-            if 'hists' in ikey:
-                for ihist in output[ikey].keys():
+        for ikey in iout.keys():
+            if ikey not in output.keys():
+                output[ikey] = iout[ikey]
+            elif ikey == "hists":
+                for ihist in iout[ikey].keys():
                     try:
                         output[ikey][ihist] += iout[ikey][ihist]
                     except KeyError:
-                        pass
+                        output[ikey][ihist] = iout[ikey][ihist]
             else:
                 output[ikey] = output[ikey] | iout[ikey]
-
 
     hfile = f'{output_file}'
     logging.info(f'\nSaving file {hfile}')

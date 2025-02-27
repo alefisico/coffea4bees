@@ -41,15 +41,15 @@ def make_trigger_syst( json_input, root_output, name, rebin ):
 
 
 def create_combine_root_file( file_to_convert,
-                             rebin,
-                             var,
-                             output_dir,
-                             systematics_file,
-                             bkg_systematics_file,
-                             metadata_file='metadata/HH4b.yml',
-                             mixeddata_file=None,
-                             variable_binning=False,
-                             stat_only=False ):
+                                rebin,
+                                var,
+                                output_dir,
+                                systematics_file,
+                                bkg_systematics_file,
+                                metadata_file='metadata/HH4b.yml',
+                                mixeddata_file=None,
+                                variable_binning=False,
+                                stat_only=False ):
 
     logging.info(f"Reading {metadata_file}")
     metadata = yaml.safe_load(open(metadata_file, 'r'))
@@ -155,6 +155,27 @@ def create_combine_root_file( file_to_convert,
             if ''.join(iy[-2:]) == ''.join(jy[-2:]):
                 root_hists[jy] = root_hists.pop(iy)
 
+    ### checking one-sided signal systematics
+    for iy in root_hists.keys():
+        for ip in root_hists[iy].keys():
+            if ip in metadata['processes']['signal']:
+                for iv in root_hists[iy][ip].keys():
+                    if ('Up' in iv) or ('nominal' in iv): continue
+                    nominal = root_hists[iy][ip]['nominal'] 
+                    Up_var = root_hists[iy][ip][iv.replace('Down', 'Up')]
+                    Down_var = root_hists[iy][ip][iv]
+                    
+                    for ibin in range(Up_var.GetNbinsX()):
+                        up_bin = Up_var.GetBinContent(ibin+1)
+                        down_bin = Down_var.GetBinContent(ibin+1)
+                        nom_bin = nominal.GetBinContent(ibin+1)
+
+                        if ((up_bin < nom_bin) and ( down_bin < nom_bin)) or ((up_bin > nom_bin) and ( down_bin > nom_bin)):
+                            max_diff = max(abs(up_bin - nom_bin), abs(down_bin - nom_bin))
+                            Up_var.SetBinContent(ibin+1, nom_bin + max_diff)
+                            Down_var.SetBinContent(ibin+1, nom_bin - max_diff)
+                            # print( iv, ibin, up_bin, down_bin, nom_bin, max_diff)
+        
     if mixeddata_file:
         logging.info("\n Using multijet from mixeddata")
         for iy in root_hists:

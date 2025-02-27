@@ -89,7 +89,7 @@ output_unsup = [
 output_mixeddata = [
   f"{output_dir}/analysis_test_mixed_job/testMixedData.json",
   f"{output_dir}/analysis_test_mixed_job/testMixedData.coffea",
-  f"{output_dir}/analysis_runTwoStageClosure_ROOT/test_dump_twoStageClosureInputsCounts.yml",
+  f"{output_dir}/twoStageClosure_test_job/test_dump_twoStageClosureInputsCounts.yml",
   f"{output_dir}/analysis_mixed_cutflow_job/test_dump_MixedData.yml"
 ]
 # outputs.extend(output_mixeddata)
@@ -272,10 +272,10 @@ rule analysis_makeweights_job:
     container: analysis_container
     shell: "source .ci-workflows/analysis-makeweights-job.sh {ci_output_dir} 2>&1 | tee -a {log}"
 
-rule analysis_runTwoStageClosure_ROOT:
+rule twoStageClosure_test_job:
     input: f"{output_dir}/analysis_test_mixed_job/testMixedData.json"
-    output: f"{output_dir}/analysis_runTwoStageClosure_ROOT/test_dump_twoStageClosureInputsCounts.yml"
-    log: f"{output_dir}/analysis_runTwoStageClosure_ROOT.log"
+    output: f"{output_dir}/twoStageClosure_test_job/test_dump_twoStageClosureInputsCounts.yml"
+    log: f"{output_dir}/twoStageClosure_test_job.log"
     shell:
       """
       export APPTAINER_CACHEDIR="/tmp/$(whoami)/apptainer_cache"

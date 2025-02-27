@@ -7,7 +7,55 @@ from convert_json_to_root import create_root_file
 ROOT.gROOT.SetBatch(True)
 ROOT.gStyle.SetOptStat(0)
 
-def compute_variable_binning(multijet_hist, signal_hist, threshold):
+def compute_variable_binning(signal_hist):
+    """
+    Create equal-frequency binning (quantile binning) for the given signal_hist histogram.
+    
+    Parameters:
+    signal_hist (ROOT.TH1): The signal histogram.
+    
+    Returns:
+    array.array: The bin edges for the equal-frequency binning.
+    """
+    # Get the bin contents
+    bin_contents = [signal_hist.GetBinContent(ibin) for ibin in range(1, signal_hist.GetNbinsX() + 1)]
+    
+    # Calculate the cumulative distribution
+    cumulative_contents = np.cumsum(bin_contents)
+    total_entries = cumulative_contents[-1]
+    
+    # Determine the number of bins based on the last quantile (10%)
+    last_quantile = 0.05
+    entries_per_bin = total_entries * last_quantile
+    num_bins = int(np.ceil(total_entries / entries_per_bin))
+    print(f"Total entries: {total_entries}, entries per bin: {entries_per_bin}, num_bins: {num_bins}")
+
+    cumulative_entries = 0
+    bin_edges = [signal_hist.GetBinLowEdge(signal_hist.GetNbinsX() + 1)]
+    
+    for ibin in range(signal_hist.GetNbinsX(), 0, -1):
+        cumulative_entries += signal_hist.GetBinContent(ibin)
+        if cumulative_entries >= entries_per_bin:
+            bin_edges.append(signal_hist.GetBinLowEdge(ibin))
+            cumulative_entries = 0
+            print(f"Bin {ibin}: {signal_hist.GetBinLowEdge(ibin)}")
+
+    # Ensure the first bin edge is included
+    if bin_edges[-1] != signal_hist.GetBinLowEdge(1):
+        bin_edges.append(signal_hist.GetBinLowEdge(1))
+
+    bin_edges.reverse()  # Reverse to get the correct order
+    variable_binning = array.array('d', bin_edges)
+    print(f"Variable binning: {variable_binning}")
+
+    can = ROOT.TCanvas("can", "can", 800, 800)
+    tmp_signal_hist = rebin_histogram(signal_hist.Clone("new"), variable_binning)
+    tmp_signal_hist.Draw()
+    can.SaveAs("signal_rebin.pdf")
+
+    return variable_binning
+
+def compute_variable_binning_manual(multijet_hist, signal_hist, threshold):
     """
        multijet_hist and signal_hist are ROOT TH1 histograms
     """
@@ -79,7 +127,8 @@ def make_variable_binning(input_file, hist_name, threshold, output_file):
     signal_hist.Draw()
     can.SaveAs("signal.pdf")
 
-    variable_binning = compute_variable_binning(multijet_hist, signal_hist, threshold)
+    # variable_binning = compute_variable_binning(multijet_hist, signal_hist, threshold)
+    variable_binning = compute_variable_binning(signal_hist)
 
     if output_file:
         # Create a new ROOT file to save the rebinned histograms

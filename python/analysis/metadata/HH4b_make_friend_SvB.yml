@@ -1,6 +1,6 @@
 runner:
   workers: 4
-  condor_memory: 8GB
+  condor_memory: 2GB
   friend_metafile: make_friend_SvB
   # friend_base: &friend_base root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v1p1/
   friend_base: &friend_base /srv/python/output/tmp/ 
@@ -19,7 +19,7 @@ config:
       name: Final # name of the output stage (e.g. Final or some other checkpoint)
   run_systematics: false
   top_reconstruction_override: false
-  fill_histograms: false 
+  fill_histograms: false
   make_friend_SvB: *friend_base
   friends:
     trigWeight: "metadata/datasets_HH4b_2024_v1p1_trigweights.json@@trigWeight"
