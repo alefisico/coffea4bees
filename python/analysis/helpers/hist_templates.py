@@ -8,8 +8,8 @@ class SvBHists(Template):
 
     tt_vs_mj     = H((50, 0, 1, ('tt_vs_mj', "P(tT) | Background")))
 
-    ps_zz   = H((200, 0, 1, ('ps_zz', "Regressed P(Signal) $|$ P(ZZ) is largest ")))
-    ps_zh   = H((200, 0, 1, ('ps_zh', "Regressed P(Signal) $|$ P(ZH) is largest ")))
+    ps_zz   = H((25, 0, 1, ('ps_zz', "Regressed P(Signal) $|$ P(ZZ) is largest ")))
+    ps_zh   = H((25, 0, 1, ('ps_zh', "Regressed P(Signal) $|$ P(ZH) is largest ")))
 
     ### var_binning makes the Run2 SvB_MA signal distribution flat
     var_binning = np.array([0, 0.255651, 0.416343, 0.53248, 0.62054, 0.689076, 0.744818, 0.790085, 0.828211, 0.859114, 0.884897, 0.90724, 0.925977, 0.941758, 0.955696, 0.968185, 0.98, 1])
