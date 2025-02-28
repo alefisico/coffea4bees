@@ -51,15 +51,6 @@ class analysis(processor.ProcessorABC):
         logging.debug("\nInitialize Analysis Processor")
         self.corrections_metadata = yaml.safe_load(open(corrections_metadata, "r"))
 
-        self.cutFlowCuts = [
-            "all",
-            "pass4GenBJets00",    "pass4GenBJets20",    "pass4GenBJets40",
-            "pass4GenBJets00_1j", "pass4GenBJets20_1j", "pass4GenBJets40_1j",
-            "pass4GenBJetsb203b40_1j_i",  "pass4GenBJetsb203b40_1j_e",
-            "pass4GenBJets2b202b40_2j_i", "pass4GenBJets2b202b40_2j_e",
-            "passHLT",
-        ]
-
         self.histCuts = ["pass4GenBJets00",    "pass4GenBJets20",    "pass4GenBJets40",
                          "pass4GenBJets00_1j", "pass4GenBJets20_1j", "pass4GenBJets40_1j",
                          "pass4GenBJetsb203b40_1j_i", "pass4GenBJetsb203b40_1j_e",
@@ -223,7 +214,7 @@ class analysis(processor.ProcessorABC):
         selections.add( "pass1OtherJet40",    event.pass1OtherJet40)
         selections.add( "pass2OtherJet40",    event.pass2OtherJet40)
 
-        self._cutFlow = cutFlow(self.cutFlowCuts)
+        self._cutFlow = cutFlow()
         self._cutFlow.fill( "all", event, allTag=True)
         self._cutFlow.fill( "pass4GenBJets00",    event[selections.require(pass4GenBJets00=True)], allTag=True)
         self._cutFlow.fill( "pass4GenBJets20",    event[selections.require(pass4GenBJets20=True)], allTag=True)

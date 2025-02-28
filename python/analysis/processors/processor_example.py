@@ -32,7 +32,6 @@ warnings.filterwarnings("ignore")
 
 class analysis(processor.ProcessorABC):
     def __init__(self, JCM='', corrections_metadata='analysis/metadata/corrections.yml'):
-        self.cutFlowCuts = ["all", "passHLT", "passNoiseFilter", "passJetMult", "passJetMult_btagSF", "passPreSel"]
         self.histCuts = ['passPreSel']
         self.tags = ['threeTag', 'fourTag']
         self.JCM = jetCombinatoricModel(JCM)
@@ -58,7 +57,7 @@ class analysis(processor.ProcessorABC):
         processOutput = {}
         processOutput['nEvent'] = {}
         processOutput['nEvent'][event.metadata['dataset']] = nEvent
-        self._cutFlow = cutFlow(self.cutFlowCuts)
+        self._cutFlow = cutFlow()
 
         #
         # Reading SvB friend trees

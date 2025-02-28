@@ -26,9 +26,9 @@ import awkward as ak
 import uproot
 
 class DeClusterer(PicoAOD):
-    def __init__(self, clustering_pdfs_file = "None", 
-                subtract_ttbar_with_weights = False, 
-                declustering_rand_seed=5, 
+    def __init__(self, clustering_pdfs_file = "None",
+                subtract_ttbar_with_weights = False,
+                declustering_rand_seed=5,
                 friends: dict[str, str|FriendTemplate] = None,
                 *args, **kwargs):
         kwargs["pico_base_name"] = f'picoAOD_seed{declustering_rand_seed}'
@@ -135,7 +135,7 @@ class DeClusterer(PicoAOD):
                                            run_lowpt_selection=False,
                                            do_jet_veto_maps = config["do_jet_veto_maps"],
                                            isRun3=config["isRun3"],
-                                           isMC=config["isMC"],  
+                                           isMC=config["isMC"],
                                            isSyntheticData=config["isSyntheticData"],
                                            isSyntheticMC=config["isSyntheticMC"],
                                            )
@@ -264,7 +264,8 @@ class DeClusterer(PicoAOD):
         # from analysis.helpers.write_debug_info import add_debug_info_to_output_clustering_outputs
         # add_debug_info_to_output_clustering_outputs(selev, clustered_jets, processOutput)
 
-        declustered_jets = make_synthetic_event(clustered_jets, clustering_pdfs, declustering_rand_seed=self.declustering_rand_seed, chunk=chunk)
+        b_pt_threshold = 30 if config["isRun3"] else 40
+        declustered_jets = make_synthetic_event(clustered_jets, clustering_pdfs, declustering_rand_seed=self.declustering_rand_seed, b_pt_threshold=b_pt_threshold, chunk=chunk)
 
         declustered_jets = declustered_jets[ak.argsort(declustered_jets.pt, axis=1, ascending=False)]
 

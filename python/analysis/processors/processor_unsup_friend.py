@@ -65,7 +65,6 @@ ak.behavior.update(vector.behavior)
 class analysis(processor.ProcessorABC):
     def __init__(self, JCM='', threeTag = True, corrections_metadata='analysis/metadata/corrections.yml', run_systematics=[], SRno = '4', make_classifier_input: str = ''):
         logging.debug('\nInitialize Analysis Processor')
-        self.cutFlowCuts = ["all", "passHLT", "passNoiseFilter", "passJetMult", "passJetMult_btagSF", "passPreSel"]
         self.histCuts = ['passPreSel']
         self.tags = ['threeTag', 'fourTag'] if threeTag else ['fourTag']
         # self.JCM = jetCombinatoricModel(JCM)
@@ -105,7 +104,7 @@ class analysis(processor.ProcessorABC):
         processOutput = {}
         processOutput['nEvent'] = {}
         processOutput['nEvent'][event.metadata['dataset']] = nEvent
-        self._cutFlow = cutFlow(self.cutFlowCuts)
+        self._cutFlow = cutFlow()
 
         ###############################################
         ###### Reading 3to4, DtoM friend trees ########

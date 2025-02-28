@@ -73,17 +73,6 @@ class analysis(processor.ProcessorABC):
         self.do_declustering = do_declustering
         self.subtract_ttbar_with_weights = subtract_ttbar_with_weights
 
-        self.cutFlowCuts = [
-            "all",
-            "passHLT",
-            "passNoiseFilter",
-            "passJetMult",
-            "passJetMult_btagSF",
-            "passFourTag",
-            #"pass0OthJets",
-            #"pass1OthJets",
-            #"pass2OthJets",
-        ]
 
         self.histCuts = ["passPreSel"] #, "pass0OthJets", "pass1OthJets", "pass2OthJets"]
 
@@ -222,7 +211,7 @@ class analysis(processor.ProcessorABC):
 
         }
 
-        self._cutFlow = cutFlow(self.cutFlowCuts)
+        self._cutFlow = cutFlow()
         self._cutFlow.fill( "all", event[selections.require(lumimask=True)], allTag=True)
         self._cutFlow.fill( "passNoiseFilter", event[selections.require(lumimask=True, passNoiseFilter=True)], allTag=True)
         self._cutFlow.fill( "passHLT", event[ selections.require( lumimask=True, passNoiseFilter=True, passHLT=True ) ], allTag=True, )
