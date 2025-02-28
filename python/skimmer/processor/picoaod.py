@@ -63,7 +63,6 @@ class PicoAOD(ProcessorABC):
             _branch_filter(skip_collections, skip_branches)
         )
         self._transform = NanoAOD(regular=False, jagged=True)
-        self.cutFlowCuts = []
         self._pico_base_name = pico_base_name
 
     def _filter(self, branches: set[str]):
@@ -91,7 +90,7 @@ class PicoAOD(ProcessorABC):
     @retry(1, handler=_log_exception, skip=(SkimmingError,))
     def process(self, events: ak.Array):
         EOS.set_retry(3, 10)  # 3 retries with 10 seconds interval
-        self._cutFlow = cutFlow(self.cutFlowCuts)
+        self._cutFlow = cutFlow()
         preselected = self.preselect(events)
         selected = self.select(events)
         added, result = None, {}
