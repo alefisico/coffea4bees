@@ -471,17 +471,16 @@ class analysis(processor.ProcessorABC):
 
 
             selections.add( "pass4GenBJets", event.pass4GenBJets)
-            allcuts += ["pass4GenBJets"]
 
             #
             # Do the cutflow
             #
             sel_dict = OrderedDict({
-                'all':                selections.require(lumimask=True),
+                'all'               : selections.require(lumimask=True),
                 'passCleanGenWeight': selections.require(lumimask=True, passCleanGenWeight=True),
-                'pass4GenBJets':   selections.require(lumimask=True, passCleanGenWeight=True, pass4GenBJets=True),
-                'passNoiseFilter': selections.require(lumimask=True, passCleanGenWeight=True, pass4GenBJets=True, passNoiseFilter=True),
-                'passHLT':         selections.require(lumimask=True, passCleanGenWeight=True, pass4GenBJets=True, passNoiseFilter=True, passHLT=True),
+                'pass4GenBJets'     : selections.require(lumimask=True, passCleanGenWeight=True, pass4GenBJets=True),
+                'passNoiseFilter'   : selections.require(lumimask=True, passCleanGenWeight=True, passNoiseFilter=True),
+                'passHLT'           : selections.require(lumimask=True, passCleanGenWeight=True, passNoiseFilter=True, passHLT=True),
             })
             sel_dict['passJetMult'] = selections.all(*allcuts)
 
