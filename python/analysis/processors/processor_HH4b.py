@@ -126,23 +126,9 @@ class analysis(processor.ProcessorABC):
         self.subtract_ttbar_with_weights = subtract_ttbar_with_weights
         self.friends = parse_friends(friends)
 
-        self.cutFlowCuts = [
-            "all",
-            "pass4GenBJets",
-            "passHLT",
-            "passNoiseFilter",
-            "passJetMult",
-            "passJetMult_btagSF",
-            "passPreSel",
-            "passDiJetMass",
-            "SR",
-            "SB",
-        ]
-
-
         self.histCuts = ['passPreSel']
         if self.run_SvB:
-            self.cutFlowCuts += ["passSvB", "failSvB"]
+            #self.cutFlowCuts += ["passSvB", "failSvB"]
             self.histCuts += ["passSvB", "failSvB"]
             #self.histCuts += ["passFvT50", "passFvT100"]
 
@@ -430,6 +416,25 @@ class analysis(processor.ProcessorABC):
             }
 
             #
+            # Check outliers
+            #
+            # Checking for outliners in weights
+            if self.config["isMC"]:
+                tmp_weights = weights.weight()
+                mean_weights = np.mean(tmp_weights)
+                std_weights = np.std(tmp_weights)
+                z_scores = np.abs((tmp_weights - mean_weights) / std_weights)
+                pass_outliers = z_scores < 30
+                event["passCleanGenWeight"] = pass_outliers
+                if np.any(~pass_outliers) and std_weights > 0:
+                    logging.warning(f"Outliers in weights:{tmp_weights[~pass_outliers]}, while mean is {mean_weights} and std is {std_weights} for event {event[~pass_outliers].event} in {self.dataset}\n")
+                selections.add( "passCleanGenWeight", event.passCleanGenWeight)
+                allcuts += ["passCleanGenWeight"]
+            else:
+                event['passCleanGenWeight'] = True
+                selections.add( "passCleanGenWeight", event.passCleanGenWeight)
+
+            #
             # Get Truth m4j
             #
             if self.config["isSignal"]:
@@ -458,26 +463,29 @@ class analysis(processor.ProcessorABC):
 
                     vectorized_v4b = np.vectorize(lambda i: self.resonance_weights[int(i)])
                     weights_resonance = vectorized_v4b(v4b_index)
-                    #print(" turht Mass is  \n")
-                    #print(event.truth_v4b.mass,"\n")
-                    #print(" resonance_weights are \n")
-                    #print(weights_resonance,"\n")
                     weights.add( "resonance_reweight", weights_resonance )
                     list_weight_names.append(f"resonance_reweight")
 
             else:
                 event['pass4GenBJets'] = True
-            selections.add( "pass4GenBJets", event.pass4GenBJets)
 
+
+            selections.add( "pass4GenBJets", event.pass4GenBJets)
+            allcuts += ["pass4GenBJets"]
+
+            #
+            # Do the cutflow
+            #
             sel_dict = OrderedDict({
-                'all':             selections.require(lumimask=True),
-                'pass4GenBJets':   selections.require(lumimask=True, pass4GenBJets=True),
-                'passNoiseFilter': selections.require(lumimask=True, passNoiseFilter=True),
-                'passHLT':         selections.require(lumimask=True, passNoiseFilter=True, passHLT=True),
+                'all':                selections.require(lumimask=True),
+                'passCleanGenWeight': selections.require(lumimask=True, passCleanGenWeight=True),
+                'pass4GenBJets':   selections.require(lumimask=True, passCleanGenWeight=True, pass4GenBJets=True),
+                'passNoiseFilter': selections.require(lumimask=True, passCleanGenWeight=True, pass4GenBJets=True, passNoiseFilter=True),
+                'passHLT':         selections.require(lumimask=True, passCleanGenWeight=True, pass4GenBJets=True, passNoiseFilter=True, passHLT=True),
             })
             sel_dict['passJetMult'] = selections.all(*allcuts)
 
-            self._cutFlow = cutFlow(self.cutFlowCuts, do_truth_hists=self.config["isSignal"])
+            self._cutFlow = cutFlow(do_truth_hists=self.config["isSignal"])
             for cut, sel in sel_dict.items():
                 self._cutFlow.fill( cut, event[sel], allTag=True )
                 self._cutFlow.fill( f"{cut}_woTrig", event[sel], allTag=True,
@@ -510,6 +518,12 @@ class analysis(processor.ProcessorABC):
         allcuts.append("passPreSel")
         analysis_selections = selections.all(*allcuts)
 
+        if not shift_name:
+            self._cutFlow.fill( "passPreSel_allTag", event[selections.all(*allcuts)], allTag=True )
+            self._cutFlow.fill( "passPreSel_allTag_woTrig", event[selections.all(*allcuts)], allTag=True,
+                                wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[selections.all(*allcuts)] ))
+
+
         #
         # Example of how to write out event numbers
         #
@@ -528,7 +542,11 @@ class analysis(processor.ProcessorABC):
             pass_ttbar_filter[ selections.all(*allcuts) ] = pass_ttbar_filter_selev
             selections.add( 'pass_ttbar_filter', pass_ttbar_filter )
             allcuts.append("pass_ttbar_filter")
-            self._cutFlow.fill( "pass_ttbar_filter", event[selections.all(*allcuts)], allTag=True )
+            if not shift_name:
+                self._cutFlow.fill( "pass_ttbar_filter", event[selections.all(*allcuts)], allTag=True )
+                self._cutFlow.fill( "pass_ttbar_filter_woTrig", event[selections.all(*allcuts)], allTag=True,
+                                    wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[selections.all(*allcuts)] ))
+
 
             analysis_selections = selections.all(*allcuts)
             selev = selev[pass_ttbar_filter_selev]
@@ -597,22 +615,16 @@ class analysis(processor.ProcessorABC):
             blind_sel[ analysis_selections ] = blind_flag
             selections.add( 'blind', blind_sel )
             allcuts.append( 'blind' )
+
+            if not shift_name:
+                self._cutFlow.fill( "blind", event[selections.all(*allcuts)], allTag=True )
+                self._cutFlow.fill( "blind_woTrig", event[selections.all(*allcuts)], allTag=True,
+                                    wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[selections.all(*allcuts)] ))
+
+
+
             analysis_selections = selections.all(*allcuts)
             selev = selev[blind_flag]
-
-        # Checking for outliners in weights
-        if 'GluGlu' in self.dataset:
-            tmp_weights = weights.weight()
-            mean_weights = np.mean(tmp_weights)
-            std_weights = np.std(tmp_weights)
-            z_scores = np.abs((tmp_weights - mean_weights) / std_weights)
-            not_outliers = z_scores < 30
-            if np.any(~not_outliers) and std_weights > 0:
-                logging.warning(f"Outliers in weights:{tmp_weights[~not_outliers]}, while mean is {mean_weights} and std is {std_weights} for {self.dataset}\n")
-                selections.add( 'outliers', not_outliers )
-                allcuts.append( 'outliers' )
-                selev = selev[not_outliers[analysis_selections]]
-                analysis_selections = selections.all(*allcuts)
 
         #
         # CutFlow
