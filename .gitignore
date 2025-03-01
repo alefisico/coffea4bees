@@ -270,6 +270,9 @@ python/jet_clustering/jet-splitting-PDFs-00-06-00/
 python/jet_clustering/jet-splitting-PDFs-00-06-01/
 python/jet_clustering/jet-splitting-PDFs-00-06-02/
 python/jet_clustering/jet-splitting-PDFs-00-06-03/
+python/jet_clustering/jet-splitting-PDFs-*/*pdf
+python/jet_clustering/jet-splitting-PDFs-*/all_splittings*yml
+python/jet_clustering/jet-splitting-PDFs-*/all_splittings*yaml
 
 python/makeslides.awk
 python/makeslides_reclustering.awk

@@ -5,7 +5,6 @@ import yaml
 import copy
 import argparse
 from coffea.util import load
-# from hist.intervals import ratio_uncertainty
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import numpy as np
@@ -53,6 +52,7 @@ def init_arg_parser():
     parser.add_argument('--doTest', action="store_true", help='Metadata file.')
     parser.add_argument('--debug', action="store_true", help='')
     parser.add_argument('--signal', action="store_true", help='')
+    parser.add_argument('--year',   help='')
     parser.add_argument('--combine_input_files', action="store_true", help='')
 
     return parser

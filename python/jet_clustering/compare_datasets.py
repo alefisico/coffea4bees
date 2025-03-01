@@ -167,8 +167,10 @@ if __name__ == '__main__':
     cfg.axisLabels, cfg.cutList = read_axes_and_cuts(cfg.hists, cfg.plotConfig)
 
     #varList = [ h for h in cfg.hists[0]['hists'].keys() if not h in args.skip_hists ]
-    years = ["RunII", "UL18", "UL17", "UL16_preVFP", "UL16_postVFP"]
-    #years = ["Run3", "2022_preEE", "2022_EE", "2023_preBPix", "2023_BPix"]
+    if   args.year in  ["RunII","Run2"]:
+        years = ["RunII", "UL18", "UL17", "UL16_preVFP", "UL16_postVFP"]
+    elif args.year == "Run3":
+        years = ["Run3", "2022_preEE", "2022_EE", "2023_preBPix", "2023_BPix"]
 
     for y in years:
         doPlots(year=y, doSignal=args.signal, debug=args.debug)

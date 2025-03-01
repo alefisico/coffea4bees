@@ -2,6 +2,7 @@ import hist
 import numpy as np
 import os
 import yaml
+from hist.intervals import ratio_uncertainty
 
 def get_value_nested_dict(nested_dict, target_key):
     """ Return the first value from mathching key from nested dict
@@ -142,7 +143,7 @@ def makeRatio(numValues, numVars, denValues, denVars, epsilon=0.001, **kwargs):
     #ratio_uncert = ratio_uncertainty(
     #    num=numValues,
     #    denom=denValues,
-    #    uncertainty_type=kwargs.get("uncertainty_type", "poisson"),
+    #    uncertainty_type=kwargs.get("uncertainty_type", "efficiency"),
     #)
 
     return ratios, ratio_uncert
