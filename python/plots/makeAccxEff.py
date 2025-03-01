@@ -21,7 +21,7 @@ sys.path.insert(0, os.getcwd())
 from base_class.plots.plots import makePlot, make2DPlot, load_config, load_hists, read_axes_and_cuts, parse_args
 import base_class.plots.iPlot_config as cfg
 import base_class.plots.helpers as plot_helpers
-
+import copy
 np.seterr(divide='ignore', invalid='ignore')
 
 
@@ -58,8 +58,15 @@ def _get_hist_data(input_hist):
 
 
 def get_hist_data(in_file, hist_name, hist_key, rebin):
-    input_hist = in_file['cutflow_hists'][hist_key][hist_name]
+    input_hist = None
+    for hk in hist_key:
+        if input_hist is None:
+            input_hist = copy.deepcopy(in_file['cutflow_hists'][hk][hist_name])
+        else:
+            input_hist += in_file['cutflow_hists'][hk][hist_name]
+
     input_hist = input_hist[::hist.rebin(rebin)]
+
     return _get_hist_data(input_hist)
 
 
@@ -78,20 +85,28 @@ def makeEffPlot(name, data_to_plot, cuts_flow, **kwargs):
 
     for ic in range(1,len(cuts_flow)):
         cut_name = cuts_flow[ic][0]
-        plt.plot(data_to_plot[cut_name]["centers"], data_to_plot[cut_name]["ratio"], marker='o', linestyle='-', color=colors[ic], label=cuts_flow[ic][2])
 
+        plot_mask = (np.array(data_to_plot[cut_name]["centers"]) > 200)
+        plt.plot(np.array(data_to_plot[cut_name]["centers"])[plot_mask],
+                 np.array(data_to_plot[cut_name]["ratio"])[plot_mask]
+                 , marker='o', markersize=8, linestyle='-', color=colors[ic], label=cuts_flow[ic][2])
+
+
+        #print("errors",0.5* np.sum(data_to_plot[cut_name]["error"], axis=0)[plot_mask])
         #plt.errorbar(
-        #    data_to_plot[cut_name]["centers"],
-        #    data_to_plot[cut_name]["ratio"],
-        #    yerr = np.sqrt(data_to_plot[cut_name]["error"]),
+        #    np.array(data_to_plot[cut_name]["centers"])[plot_mask],
+        #    np.array(data_to_plot[cut_name]["ratio"])[plot_mask],
+        #    yerr = 0.5* np.sum(data_to_plot[cut_name]["error"], axis=0)[plot_mask],
         #    fmt='o',             # marker style (same as marker='o')
         #    color=colors[ic],
         #    linestyle='-',       # connect points with a line
-        #    ecolor='gray',  # color for error bars
+        #    ecolor=colors[ic],  # color for error bars
         #    capsize=2            # length of the caps on the error bars
         #)
 
-    plt.xlim(300,1200)
+    xlim = kwargs.get("xlim",[200, 1200])
+    plt.plot(xlim, [1,1], color="k", linestyle=":")
+    plt.xlim(xlim)
     plt.ylim(kwargs.get("ylim",[0,1.3]))
     plt.yscale(kwargs.get("yscale","linear"))
     plt.xlabel("$m_{4b}^{gen}$ [GeV]")
@@ -112,7 +127,11 @@ def makePlot(cfg, year, debug=False):
 
 
     process = "GluGluToHHTo4B_cHHH1"
-    hist_key = f"{process}_{year}"
+
+    if year in ["Run2","RunII"]:
+        hist_key = [f"{process}_{y}" for y in ["UL18", "UL17", "UL16_preVFP", "UL16_postVFP"]]
+    else:
+        hist_key = [f"{process}_{year}"]
 
     rebin = 10
 
@@ -133,23 +152,23 @@ def makePlot(cfg, year, debug=False):
 
     for ic in range(1,len(cuts_flow)):
 
-        print(ic, cuts_flow[ic])
-
+        #print(ic, cuts_flow[ic])
+        #print(year)
         den_cut_name = cuts_flow[ic - 1][0]
         den_file_idx = cuts_flow[ic - 1][1]
-        den_hist = cfg.hists[den_file_idx]['cutflow_hists'][hist_key][den_cut_name]
-        #den_hist = den_hist.rebin(rebin)
-        den_hist = den_hist[::hist.rebin(rebin)]
-        den_data = _get_hist_data(den_hist)
+        den_data = get_hist_data(cfg.hists[den_file_idx], den_cut_name, hist_key, rebin)
 
         num_cut_name = cuts_flow[ic][0]
         num_file_idx = cuts_flow[ic][1]
-        num_hist = cfg.hists[num_file_idx]['cutflow_hists'][hist_key][num_cut_name]
-        #num_hist = num_hist.rebin(rebin)
-        num_hist = num_hist[::hist.rebin(rebin)]
-        num_data = _get_hist_data(num_hist)
+        num_data = get_hist_data(cfg.hists[num_file_idx], num_cut_name, hist_key, rebin)
 
+        #if ic == 5:
+        #    print("\tnum:", num_data["values"])
+        #    print("\tden:", den_data["values"])
 
+        #
+        # Relative Efficiencies
+        #
         thisSF = 1.0
         if not den_file_idx == num_file_idx:
             thisSF = scalefactor
@@ -160,6 +179,9 @@ def makePlot(cfg, year, debug=False):
                                                       np.array(den_data["variances"]))
         rel_eff[cuts_flow[ic][0]] = {"ratio":ratios, "error":ratio_uncert, "centers":num_data["centers"]}
 
+        #
+        # Total Efficiencies
+        #
         if not num_file_idx == 0:
             thisSF = scalefactor
 
@@ -168,8 +190,6 @@ def makePlot(cfg, year, debug=False):
                                                               np.array(den_tot_data["values"]),
                                                               np.array(den_tot_data["variances"]))
         tot_eff[cuts_flow[ic][0]] = {"ratio":ratios_tot, "error":ratio_tot_uncert, "centers":num_data["centers"]}
-
-
 
 
 
@@ -203,5 +223,6 @@ if __name__ == '__main__':
     cfg.axisLabels, cfg.cutList = read_axes_and_cuts(cfg.hists, cfg.plotConfig)
 
 
-    for y in ["UL18", "UL17","UL16_preVFP", "UL16_postVFP"]: #,"RunII"]:
+    for y in ["UL18", "UL17","UL16_preVFP", "UL16_postVFP", "RunII"]:
+    #for y in ["RunII"]:
         makePlot(cfg, year=y, debug=args.debug)

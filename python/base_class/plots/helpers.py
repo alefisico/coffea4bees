@@ -139,7 +139,7 @@ def makeRatio(numValues, numVars, denValues, denVars, epsilon=0.001, **kwargs):
     ratio_uncert = np.abs(ratios) * np.sqrt(numVars * np.power(numValues, -2.0))
     ratio_uncert = np.nan_to_num(ratio_uncert,nan=1)
 
-    ## https://github.com/scikit-hep/hist/blob/main/src/hist/intervals.py
+    ### https://github.com/scikit-hep/hist/blob/main/src/hist/intervals.py
     #ratio_uncert = ratio_uncertainty(
     #    num=numValues,
     #    denom=denValues,
