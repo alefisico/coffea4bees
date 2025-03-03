@@ -233,7 +233,7 @@ rule make_plots:
         """
         cd python/ 
         echo "Making plots"
-        mprof run -C -o mprofile_makeplots.dat python plots/makePlots.py ../output/histAll.coffea -o ../output/plots/ -m plots/metadata/plotsAll.yml -s xW
+        mprof run -C -o mprofile_makeplots.dat python plots/makePlots.py ../output/histAll.coffea -o ../output/plots/ -m plots/metadata/plotsAll.yml -s xW FvT
         echo "Making a plot of the performance"
         mprof plot -o ../output/performance/mprofile_makeplots.png mprofile_makeplots.dat
         """
@@ -415,8 +415,10 @@ rule run_impacts:
 
 rule run_postfit:
     input: "output/datacards/datacard.root"
-    output: "output/datacards/plots/SvB_postfit.png"
+    output: "output/datacards/plots/SvB_MA_postfitplots_prefit.pdf"
     container: config["combine_container"]
+    params:
+        output_dir="output/datacards/plots/"
     resources:
         voms_proxy=True,
         kerberos=True,
@@ -432,7 +434,9 @@ rule run_postfit:
         cat {input}
         echo "RUNNING COMBINE"
         source stats_analysis/run_combine.sh ../output/datacards/ --postfit
-        python3 plots/make_postfit_plot.py -i ../output/datacards/fitDiagnostics_SvB_MA_prefit_sb.root -o ../{output} -t prefit
+        python3 plots/make_postfit_plot.py -i ../output/datacards/fitDiagnostics_SvB_MA_prefit_sb.root -o ../{params.output_dir} -t prefit
+        python3 plots/make_postfit_plot.py -i ../output/datacards/fitDiagnostics_SvB_MA_prefit_sb.root -o ../{params.output_dir} -t fit_b
+        python3 plots/make_postfit_plot.py -i ../output/datacards/fitDiagnostics_SvB_MA_prefit_sb.root -o ../{params.output_dir} -t fit_s
         """
 
 rule make_syst_plots:
@@ -454,7 +458,7 @@ rule make_syst_plots:
         cd -
         cd python/
         echo "Making syst plots"
-        python3 plots/make_syst_plots.py -i ../{input.root} -o ../output/datacards/systs/ -d ../{input.datacard}
+        python3 plots/make_syst_plots.py -i ../{input.root} -o ../output/datacards/systs/ -d ../{input.datacard} --variable SvB_MA_ps_hh
         """
 
 rule kappa_scan:
