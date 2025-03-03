@@ -88,8 +88,9 @@ def apply_object_selection_4b(event, corrections_metadata, *,
 
     if isRun3:
 
-        if "PNetRegPtRawCorr" in event.Jet.fields:
-            event['Jet', 'bRegCorr']       = event.Jet.PNetRegPtRawCorr * event.Jet.PNetRegPtRawCorrNeutrino
+        #if "PNetRegPtRawCorr" in event.Jet.fields:
+        #    event['Jet', 'bRegCorr']       = event.Jet.PNetRegPtRawCorr * event.Jet.PNetRegPtRawCorrNeutrino
+        event['Jet', 'bRegCorr']       = 1.0
         event['Jet', 'btagScore']       = event.Jet.btagPNetB
 
         ### AGE: Hopefully this is temporarily
@@ -97,20 +98,20 @@ def apply_object_selection_4b(event, corrections_metadata, *,
             event['Jet'] = ak.where(
                 event.Jet.btagScore >= corrections_metadata['btagWP']['L'],
                 apply_jerc_corrections(event,
-                    corrections_metadata=corrections_metadata,
-                    isMC=isMC,
-                    run_systematics=False,
-                    dataset=dataset,
-                    jet_corr_factor=event.Jet.bRegCorr,
-                    jet_type="AK4PFPuppiPNetRegressionPlusNeutrino"
-                    ),
+                                       corrections_metadata=corrections_metadata,
+                                       isMC=isMC,
+                                       run_systematics=False,
+                                       dataset=dataset,
+                                       jet_corr_factor= event.Jet.PNetRegPtRawCorr * event.Jet.PNetRegPtRawCorrNeutrino,
+                                       jet_type="AK4PFPuppiPNetRegressionPlusNeutrino"
+                                       ),
                 apply_jerc_corrections(event,
-                    corrections_metadata=corrections_metadata,
-                    isMC=isMC,
-                    run_systematics=False,
-                    dataset=dataset,
-                    jet_type="AK4PFPuppi.txt"   ### AGE: .txt is temporary
-                    )
+                                       corrections_metadata=corrections_metadata,
+                                       isMC=isMC,
+                                       run_systematics=False,
+                                       dataset=dataset,
+                                       jet_type="AK4PFPuppi.txt"   ### AGE: .txt is temporary
+                                       )
             )
             #logging.warning(f"For Run3 we are computing JECs after splitting the jets into btagged and non-btagged jets")
 
@@ -147,6 +148,7 @@ def apply_object_selection_4b(event, corrections_metadata, *,
     tagged_flag_flat    = ak.flatten(event.Jet.tagged)
     bRegCorr_factor_flat[~tagged_flag_flat] = 1.0
     bRegCorr_factor = ak.unflatten(bRegCorr_factor_flat, ak.num(event.Jet.bRegCorr) )
+    selJet_pvec = event.Jet[event.Jet.selected]
     selJet_pvec = event.Jet[event.Jet.selected]  * bRegCorr_factor[event.Jet.selected]
     selJet_pvec["tagged"] = event.Jet[event.Jet.selected].tagged
     selJet_pvec["tagged_loose"] = event.Jet[event.Jet.selected].tagged_loose
