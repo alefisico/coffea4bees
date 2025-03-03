@@ -69,6 +69,9 @@ if __name__ == '__main__':
                         default=False, help="Flag to make background covariance matrix")
     args = parser.parse_args()
 
+    if not os.path.exists(args.output):
+        os.makedirs(args.output)
+
     logging.basicConfig(level=logging.INFO)
     logging.info(f"\nRunning with these parameters: {args}")
     
