@@ -228,6 +228,41 @@ def compute_decluster_variables(clustered_splittings):
     clustered_splittings["decay_phi"] = np.arccos(decay_plane_hat.dot(comb_z_plane_hat))
     clustered_splittings["dr_AB"]     = clustered_splittings.part_A.delta_r(clustered_splittings.part_B)
     clustered_splittings["dpt_AB"]    = clustered_splittings.part_A.pt - (clustered_splittings.pt * clustered_splittings.zA)
+
+    #
+    #  Testing
+    #
+
+    clustered_splittings_part_A_pz0_phi0  = rotateZ(clustered_splittings_part_A_pz0, -clustered_splittings.phi)
+    clustered_splittings_part_B_pz0_phi0  = rotateZ(clustered_splittings_part_B_pz0, -clustered_splittings.phi)
+
+    # y_axis      = ak.zip({"x": 0, "y": 1, "z": 0}, with_name="ThreeVector", behavior=vector.behavior,)
+    clustered_splittings_part_A_pz0_phi0_dphi0  = rotateX(clustered_splittings_part_A_pz0_phi0, -clustered_splittings.decay_phi)
+    clustered_splittings_part_B_pz0_phi0_dphi0  = rotateX(clustered_splittings_part_B_pz0_phi0, -clustered_splittings.decay_phi)
+    decay_plane_dphi0 = clustered_splittings_part_A_pz0_phi0_dphi0.cross(clustered_splittings_part_B_pz0_phi0_dphi0).unit
+
+
+    clustered_splittings_part_A_pz0_phi0_pdphi0  = rotateX(clustered_splittings_part_A_pz0_phi0, +clustered_splittings.decay_phi)
+    clustered_splittings_part_B_pz0_phi0_pdphi0  = rotateX(clustered_splittings_part_B_pz0_phi0, +clustered_splittings.decay_phi)
+    decay_plane_pdphi0 = clustered_splittings_part_A_pz0_phi0_pdphi0.cross(clustered_splittings_part_B_pz0_phi0_pdphi0).unit
+
+    pos_decay_phi_mask = np.abs(decay_plane_pdphi0.y - 1) < 0.001
+    pos_decay_phi_mask_flat = ak.flatten(pos_decay_phi_mask)
+
+    rotated_pt_A_flat = ak.flatten(clustered_splittings_part_A_pz0_phi0_dphi0.pt).to_numpy()
+    rotated_pt_A_pos_dphi = ak.flatten(clustered_splittings_part_A_pz0_phi0_pdphi0.pt)
+    rotated_pt_A_flat[pos_decay_phi_mask_flat] = rotated_pt_A_pos_dphi[pos_decay_phi_mask_flat]
+
+    rotated_pt_B_flat = ak.flatten(clustered_splittings_part_B_pz0_phi0_dphi0.pt).to_numpy()
+    rotated_pt_B_pos_dphi = ak.flatten(clustered_splittings_part_B_pz0_phi0_pdphi0.pt)
+    rotated_pt_B_flat[pos_decay_phi_mask_flat] = rotated_pt_B_pos_dphi[pos_decay_phi_mask_flat]
+
+    rotated_pt_A = ak.unflatten(rotated_pt_A_flat, ak.num(clustered_splittings))
+    clustered_splittings["mA_rotated"]        = clustered_splittings.rhoA * rotated_pt_A
+
+    rotated_pt_B = ak.unflatten(rotated_pt_B_flat, ak.num(clustered_splittings))
+    clustered_splittings["mB_rotated"]        = clustered_splittings.rhoB * rotated_pt_B
+
     return
 
 
