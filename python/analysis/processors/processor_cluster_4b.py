@@ -73,17 +73,6 @@ class analysis(processor.ProcessorABC):
         self.do_declustering = do_declustering
         self.subtract_ttbar_with_weights = subtract_ttbar_with_weights
 
-        self.cutFlowCuts = [
-            "all",
-            "passHLT",
-            "passNoiseFilter",
-            "passJetMult",
-            "passJetMult_btagSF",
-            "passFourTag",
-            #"pass0OthJets",
-            #"pass1OthJets",
-            #"pass2OthJets",
-        ]
 
         self.histCuts = ["passPreSel"] #, "pass0OthJets", "pass1OthJets", "pass2OthJets"]
 
@@ -222,7 +211,7 @@ class analysis(processor.ProcessorABC):
 
         }
 
-        self._cutFlow = cutFlow(self.cutFlowCuts)
+        self._cutFlow = cutFlow()
         self._cutFlow.fill( "all", event[selections.require(lumimask=True)], allTag=True)
         self._cutFlow.fill( "passNoiseFilter", event[selections.require(lumimask=True, passNoiseFilter=True)], allTag=True)
         self._cutFlow.fill( "passHLT", event[ selections.require( lumimask=True, passNoiseFilter=True, passHLT=True ) ], allTag=True, )
@@ -558,14 +547,9 @@ class analysis(processor.ProcessorABC):
         for _s_type in cleaned_splitting_name:
             fill += ClusterHists( (f"splitting_{_s_type}", f"{_s_type} Splitting"), f"splitting_{_s_type}" )
 
-        if 'bb' in cleaned_splitting_name:
-            fill += ClusterHistsDetailed( (f"detailed_splitting_bb",    f"bb Splitting"),    f"splitting_bb"    )
-        if 'bj' in cleaned_splitting_name:
-            fill += ClusterHistsDetailed( (f"detailed_splitting_bj",    f"bj Splitting"),    f"splitting_bj"    )
-        if 'jj' in cleaned_splitting_name:
-            fill += ClusterHistsDetailed( (f"detailed_splitting_jj",    f"jj Splitting"),    f"splitting_jj"    )
-        if '(bj)b' in cleaned_splitting_name:
-            fill += ClusterHistsDetailed( (f"detailed_splitting_(bj)b", f"(bj)b Splitting"), f"splitting_(bj)b" )
+            # if _s_type in ["1b0j/1b0j", "1b0j/0b1j", "0b1j/0b1j", "1b1j/1b0j"]:
+            #     fill += ClusterHistsDetailed( (f"detailed_splitting_{_s_type}",    f"{_s_type} Splitting"),    f"splitting_{_s_type}"    )
+
 
         if self.do_declustering:
             for _s_type in cleaned_splitting_name:

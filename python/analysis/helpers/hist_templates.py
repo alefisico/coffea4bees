@@ -1,5 +1,6 @@
 from base_class.physics.object import LorentzVector, Jet
 from base_class.hist import H, Template
+import numpy as np
 
 class SvBHists(Template):
     ps      = H((50, 0, 1, ('ps', "Regressed P(Signal)")))
@@ -7,9 +8,12 @@ class SvBHists(Template):
 
     tt_vs_mj     = H((50, 0, 1, ('tt_vs_mj', "P(tT) | Background")))
 
-    ps_zz   = H((200, 0, 1, ('ps_zz', "Regressed P(Signal) $|$ P(ZZ) is largest ")))
-    ps_zh   = H((200, 0, 1, ('ps_zh', "Regressed P(Signal) $|$ P(ZH) is largest ")))
-    ps_hh   = H((200, 0, 1, ('ps_hh', "Regressed P(Signal) $|$ P(HH) is largest ")))
+    ps_zz   = H((25, 0, 1, ('ps_zz', "Regressed P(Signal) $|$ P(ZZ) is largest ")))
+    ps_zh   = H((25, 0, 1, ('ps_zh', "Regressed P(Signal) $|$ P(ZH) is largest ")))
+
+    ### var_binning makes the Run2 SvB_MA signal distribution flat
+    var_binning = np.array([0, 0.255651, 0.416343, 0.53248, 0.62054, 0.689076, 0.744818, 0.790085, 0.828211, 0.859114, 0.884897, 0.90724, 0.925977, 0.941758, 0.955696, 0.968185, 0.98, 1])
+    ps_hh   = H((var_binning, ('ps_hh', "Regressed P(Signal) $|$ P(HH) is largest ")))
 
     ps_zz_fine   = H((240, 0, 1, ('ps_zz', "Regressed P(Signal) $|$ P(ZZ) is largest ")))
     ps_zh_fine   = H((240, 0, 1, ('ps_zh', "Regressed P(Signal) $|$ P(ZH) is largest ")))
@@ -18,6 +22,7 @@ class SvBHists(Template):
 
 class FvTHists(Template):
     FvT  = H((50, 0, 5, ('FvT', 'FvT reweight')))
+    FvT_l = H((50, 0, 50, ('FvT', 'FvT reweight')))
     pd4  = H((50, 0, 1, ("pd4",   'FvT Regressed P(Four-tag Data)')))
     pd3  = H((50, 0, 1, ("pd3",   'FvT Regressed P(Three-tag Data)')))
     pt4  = H((50, 0, 1, ("pt4",   'FvT Regressed P(Four-tag t#bar{t})')))

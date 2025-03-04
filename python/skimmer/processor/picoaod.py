@@ -67,7 +67,6 @@ class PicoAOD(ProcessorABC):
             _branch_filter(skip_collections, skip_branches)
         )
         self._transform = NanoAOD(regular=False, jagged=True)
-        self.cutFlowCuts = []
 
     def _filter(self, branches: set[str]):
         return {*filter(self._branch_filter.match, branches)}
@@ -117,7 +116,7 @@ class PicoAOD(ProcessorABC):
                 ...
 
         # select events
-        self._cutFlow = cutFlow(self.cutFlowCuts)
+        self._cutFlow = cutFlow()
         preselected = self.preselect(events)
         selected = self.select(events)
         added, result = None, {}

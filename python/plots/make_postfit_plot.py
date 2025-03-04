@@ -69,6 +69,9 @@ if __name__ == '__main__':
                         default=False, help="Flag to make background covariance matrix")
     args = parser.parse_args()
 
+    if not os.path.exists(args.output):
+        os.makedirs(args.output)
+
     logging.basicConfig(level=logging.INFO)
     logging.info(f"\nRunning with these parameters: {args}")
     
@@ -144,10 +147,10 @@ if __name__ == '__main__':
     print(f"NUmber of bkg events in last bin: {hists['TotalBkg'].GetBinContent(hists['TotalBkg'].GetNbinsX())}")
     
     # Remove data points in hists['data'] that are higher than 0.5 in X
-    for bin_idx in range(1, hists['data'].GetNbinsX() + 1):
-        if hists['data'].GetBinCenter(bin_idx) > 0.5:
-            hists['data'].SetBinContent(bin_idx, 0)
-            hists['data'].SetBinError(bin_idx, 0)
+    # for bin_idx in range(1, hists['data'].GetNbinsX() + 1):
+    #     if hists['data'].GetBinCenter(bin_idx) > 0.5:
+    #         hists['data'].SetBinContent(bin_idx, 0)
+    #         hists['data'].SetBinError(bin_idx, 0)
     
     xmax = hists['TotalBkg'].GetXaxis().GetXmax()
     ymax = hists['TotalBkg'].GetMaximum()*1.2

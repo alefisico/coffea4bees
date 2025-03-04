@@ -11,7 +11,7 @@ fi
 echo "############### Changing metadata"
 if [[ $(hostname) = *fnal* ]]; then
     echo "No change in metadata."
-    cp metadata/datasets_synthetic_test_Run3.yml $OUTPUT_DIR/datasets_synthetic_test_Run3.yml
+    sed -e "s#output#${DEFAULT_DIR}#" metadata/datasets_synthetic_test_Run3.yml > $OUTPUT_DIR/datasets_synthetic_test_Run3.yml
 else
     sed -e "s#\/srv#\/builds\/${CI_PROJECT_PATH}#" metadata/datasets_synthetic_test_Run3.yml > $OUTPUT_DIR/datasets_synthetic_test_Run3.yml
 fi

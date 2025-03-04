@@ -34,16 +34,6 @@ class analysis(processor.ProcessorABC):
         logging.debug("\nInitialize Analysis Processor")
         self.corrections_metadata = yaml.safe_load(open(corrections_metadata, "r"))
 
-        self.cutFlowCuts = [
-            "all",
-            "passHLT",
-            "passNoiseFilter",
-            "passJetMult",
-            "passJetMult_btagSF",
-            "passPreSel",
-            "passDiJetMass",
-            "SR",
-        ]
 
 
 
@@ -105,7 +95,7 @@ class analysis(processor.ProcessorABC):
         }
 
         event['weight'] = np.ones(len(event))
-        self._cutFlow = cutFlow(self.cutFlowCuts)
+        self._cutFlow = cutFlow()
         self._cutFlow.fill( "all", event[selections.require(lumimask=True)], allTag=True )
         self._cutFlow.fill( "passNoiseFilter", event[selections.require(lumimask=True, passNoiseFilter=True)], allTag=True, )
         self._cutFlow.fill( "passHLT", event[ selections.require( lumimask=True, passNoiseFilter=True, passHLT=True ) ], allTag=True, )

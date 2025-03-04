@@ -59,6 +59,13 @@ class ClusterHists(Template):
                           (50,  0, 1.5, ('thetaA',    "theta angle")))
 
 
+    rhoA_pT = H((5, 50, 500, ("pt", "pT")),
+              (50, 0, 0.5,  ('rhoA', 'rhoA (mass/pt)')))
+
+    rhoB_pT = H((5, 50, 500, ("pt", "pT")),
+                (50, 0, 0.5,  ('rhoB', 'rhoB (mass/pt)')))
+
+
 
 
 
@@ -94,7 +101,7 @@ class ClusterHistsDetailed(ClusterHists):
                     (50, 0, 250, ('part_B.pt', '$p_T$ B [GeV]')))
 
     rhoB_vs_pTB   = H((50, 0, 1,  ('rhoB', 'rho B')),
-                      (50, 0, 250, ('part_B.pt', '$p_T$ A [GeV]')))
+                      (50, 0, 250, ('part_B.pt', '$p_T$ B [GeV]')))
 
     drAB      = H((100, 0, 5,   ('dr_AB', "$\Delta$ R AB")))
     tan_thetaA    = H((100,  0, 10, ('tan_thetaA',    "tan (theta angle)")))
