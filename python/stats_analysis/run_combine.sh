@@ -13,7 +13,7 @@ parse_arguments() {
   limits=false
   impacts=false
   postfit=false
-  likelihoodscan=false
+  systbreakdown=false
   unblind=false
   gof=false
 
@@ -32,8 +32,8 @@ parse_arguments() {
         postfit=true
         shift
         ;;
-      --likelihoodscan)
-        likelihoodscan=true
+      --systbreakdown)
+        systbreakdown=true
         shift
         ;;
       --unblind)
@@ -232,7 +232,7 @@ do
             echo "File ${datacard}.root does not exist."
         fi
 
-    elif [ "$likelihoodscan" = true ]; then
+    elif [ "$systbreakdown" = true ]; then
 
         if [ -f "${datacard}.root" ]; then
 
@@ -240,40 +240,44 @@ do
             rMax=10
             points=50
 
-            combine -M MultiDimFit -n _${iclass}_likelihoodscan_postfit \
+            combine -M MultiDimFit -n _${iclass}_systbreakdown_postfit \
                 --saveWorkspace -d ${datacard}.root --robustFit 1 ${asymov_data} \
                 --setParameters ${signal_parameter}rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0,rZZ4b=0,rZH4b=0 \
                 --freezeParameters  ${freeze_parameters}rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb,rZZ4b,rZH4b
 
-            combine -M MultiDimFit -n _${iclass}_likelihoodscan_freeze_all \
+            combine -M MultiDimFit -n _${iclass}_systbreakdown_freeze_all \
                 -P r${signallabel} ${asymov_data} --snapshotName MultiDimFit \
                 --rMin ${rMin} --rMax ${rMax} --algo grid --points ${points} --alignEdges 1 \
                 --setParameters ${signal_parameter}rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0,rZZ4b=0,rZH4b=0 \
                 --freezeParameters ${freeze_parameters}rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb,rZZ4b,rZH4b,allConstrainedNuisances \
-                -d higgsCombine_${iclass}_likelihoodscan_postfit.MultiDimFit.mH120.root
+                -d higgsCombine_${iclass}_systbreakdown_postfit.MultiDimFit.mH120.root
 
             scan_cmd="combine -M MultiDimFit \
                 -P r${signallabel} ${asymov_data} --snapshotName MultiDimFit \
                 --rMin ${rMin} --rMax ${rMax} --algo grid --points ${points} --alignEdges 1 \
                 --setParameters ${signal_parameter}rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0,rZZ4b=0,rZH4b=0 \
                 --freezeParameters ${freeze_parameters}rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb,rZZ4b,rZH4b \
-                -d higgsCombine_${iclass}_likelihoodscan_postfit.MultiDimFit.mH120.root"
+                -d higgsCombine_${iclass}_systbreakdown_postfit.MultiDimFit.mH120.root"
 
-            ${scan_cmd} -n _${iclass}_likelihoodscan_total
-            ${scan_cmd} -n _${iclass}_likelihoodscan_freeze_multijet --freezeNuisanceGroups multijet
-            ${scan_cmd} -n _${iclass}_likelihoodscan_freeze_btag --freezeNuisanceGroups multijet,btag
-            ${scan_cmd} -n _${iclass}_likelihoodscan_freeze_ps_fsr --freezeNuisanceGroups multijet,btag,ps_fsr
-            # ${scan_cmd} -n _${iclass}_likelihoodscan_freeze_mtop --freezeNuisanceGroups multijet,btag,ps_fsr,mtop
+            ${scan_cmd} -n _${iclass}_systbreakdown_total
+            ${scan_cmd} -n _${iclass}_systbreakdown_freeze_multijet --freezeNuisanceGroups multijet
+            ${scan_cmd} -n _${iclass}_systbreakdown_freeze_btag --freezeNuisanceGroups multijet,btag
+            ${scan_cmd} -n _${iclass}_systbreakdown_freeze_ps_fsr --freezeNuisanceGroups multijet,btag,ps_fsr
+            # ${scan_cmd} -n _${iclass}_systbreakdown_freeze_mtop --freezeNuisanceGroups multijet,btag,ps_fsr,mtop
 
-            plot1DScan.py higgsCombine_${iclass}_likelihoodscan_total.MultiDimFit.mH120.root \
+            plot1DScan.py higgsCombine_${iclass}_systbreakdown_total.MultiDimFit.mH120.root \
                 --main-label "Total uncert." --others \
-                higgsCombine_${iclass}_likelihoodscan_freeze_multijet.MultiDimFit.mH120.root:"Multijet":2 \
-                higgsCombine_${iclass}_likelihoodscan_freeze_btag.MultiDimFit.mH120.root:"b-tagging":4 \
-                higgsCombine_${iclass}_likelihoodscan_freeze_ps_fsr.MultiDimFit.mH120.root:"PS FSR":3 \
-                higgsCombine_${iclass}_likelihoodscan_freeze_all.MultiDimFit.mH120.root:"Stat. only":5 \
+                higgsCombine_${iclass}_systbreakdown_freeze_multijet.MultiDimFit.mH120.root:"Multijet":2 \
+                higgsCombine_${iclass}_systbreakdown_freeze_btag.MultiDimFit.mH120.root:"b-tagging":4 \
+                higgsCombine_${iclass}_systbreakdown_freeze_ps_fsr.MultiDimFit.mH120.root:"PS FSR":3 \
+                higgsCombine_${iclass}_systbreakdown_freeze_all.MultiDimFit.mH120.root:"Stat. only":5 \
                 --breakdown "multijet,btag,ps_fsr,others,stat" \
-                --POI r${signallabel} -o likelihoodscan_${iclass}_breakdown
-                # higgsCombine_${iclass}_likelihoodscan_freeze_mtop.MultiDimFit.mH120.root:"mtop":6 \
+                --POI r${signallabel} -o systbreakdown_${iclass}_breakdown
+                # higgsCombine_${iclass}_systbreakdown_freeze_mtop.MultiDimFit.mH120.root:"mtop":6 \
+
+            mkdir -p syst_breakdown/
+            mv *_systbreakdown* syst_breakdown/
+
         else
             echo "File ${datacard}.root does not exist."
         fi
