@@ -292,6 +292,7 @@ def dump_SvB(
         "ps_zh": events[name].ps_zh,
         "ps_hh": events[name].ps_hh,
         # "largest": events[name].largest,
+        # "weight": events.weight,
         "tt_vs_mj": events[name].tt_vs_mj
         })
     selection = _build_cutflow(*selections)

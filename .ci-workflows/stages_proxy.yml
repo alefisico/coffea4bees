@@ -1,6 +1,6 @@
 voms_proxy:
   stage: proxy
-  image: gitlab-registry.cern.ch/cms-cloud/cmssw-docker/al8-cms:latest
+  image: gitlab-registry.cern.ch/cms-cloud/cmssw-docker/al9-cms:latest
   tags:
     - k8s-cvmfs
   artifacts:

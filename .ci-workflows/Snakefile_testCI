@@ -405,13 +405,13 @@ rule SvB_friendtree_job:
 
 rule SvB_friendtree_analysis_job:
     input: f"{output_dir}/SvB_friendtree_job/make_friend_SvB.json"
-    output: f"{output_dir}/SvB_friendtree_analysis_job/test_SvB.coffea"
+    output: f"{output_dir}/SvB_friendtree_analysis_job/test_SvB_friend.coffea"
     log: f"{output_dir}/SvB_friendtree_analysis_job.log"
     container: analysis_container
     shell: "source .ci-workflows/SvB-friendtree-analysis-job.sh {ci_output_dir} 2>&1 | tee -a {log}"
 
 rule SvB_friendtree_cutflow_job:
-    input: f"{output_dir}/SvB_friendtree_analysis_job/test_SvB.coffea"
+    input: f"{output_dir}/SvB_friendtree_analysis_job/test_SvB_friend.coffea"
     output: f"{output_dir}/SvB_friendtree_cutflow_job/test_dump_cutflow_SvB_friend.yml"
     log: f"{output_dir}/SvB_friendtree_cutflow_job.log"
     container: analysis_container
