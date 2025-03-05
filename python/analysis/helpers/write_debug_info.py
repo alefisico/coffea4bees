@@ -48,28 +48,24 @@ def add_debug_info_to_output(event, processOutput, weights, list_weight_names, a
 
 
 
-def add_debug_Run3_synthetic_data(event, processOutput):
+def add_debug_Run3_data(event, processOutput):
 
     out_data = {}
 
     #debug_mask = event.region > 2
-    out_data["SR_event"  ]    = event["event"]
-    out_data["SR_run"    ]    = event["run"]
-    out_data["SR_region"    ] = event["region"]
-    out_data["SR_jet_pt"    ] = event.canJet.pt  .to_list()
-    out_data["SR_jet_eta"   ] = event.canJet.eta .to_list()
-    out_data["SR_jet_phi"   ] = event.canJet.phi .to_list()
-    out_data["SR_jet_mass"  ] = event.canJet.mass.to_list()
+    out_data["event"  ]    = event["event"]
+    out_data["run"    ]    = event["run"]
+    out_data["canJet_pt"    ] = event.canJet.pt  .to_list()
+    out_data["canJet_eta"   ] = event.canJet.eta .to_list()
+    out_data["canJet_phi"   ] = event.canJet.phi .to_list()
+    out_data["canJet_mass"  ] = event.canJet.mass.to_list()
+    out_data["canJet_bTagScore"] = event.canJet.btagScore.to_list()
 
-    out_data["SR_selJet_pt"    ] = event.selJet.pt  .to_list()
-    out_data["SR_selJet_eta"   ] = event.selJet.eta .to_list()
-    out_data["SR_selJet_phi"   ] = event.selJet.phi .to_list()
-    out_data["SR_selJet_mass"  ] = event.selJet.mass.to_list()
-
-    out_data["SR_selJet_no_bRegCorr_pt"    ] = event.selJet_no_bRegCorr.pt  .to_list()
-    out_data["SR_selJet_no_bRegCorr_eta"   ] = event.selJet_no_bRegCorr.eta .to_list()
-    out_data["SR_selJet_no_bRegCorr_phi"   ] = event.selJet_no_bRegCorr.phi .to_list()
-    out_data["SR_selJet_no_bRegCorr_mass"  ] = event.selJet_no_bRegCorr.mass.to_list()
+    out_data["notCanJet_pt"    ]    = event.notCanJet_coffea.pt  .to_list()
+    out_data["notCanJet_eta"   ]    = event.notCanJet_coffea.eta .to_list()
+    out_data["notCanJet_phi"   ]    = event.notCanJet_coffea.phi .to_list()
+    out_data["notCanJet_mass"  ]    = event.notCanJet_coffea.mass.to_list()
+    out_data["notCanJet_bTagScore"] = event.notCanJet_coffea.btagScore.to_list()
 
 
     for out_k, out_v in out_data.items():

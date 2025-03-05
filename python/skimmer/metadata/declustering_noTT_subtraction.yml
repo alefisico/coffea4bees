@@ -24,9 +24,9 @@ runner:
     - T3_US_NotreDame
 
 config:
-  base_path: root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v6
+  base_path: root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v9
   # base_path: /srv/python/skimmer/test/
-  clustering_pdfs_file: "jet_clustering/jet-splitting-PDFs-00-09-00/clustering_pdfs_vs_pT_XXX.yml"
+  clustering_pdfs_file: "jet_clustering/jet-splitting-PDFs-00-09-02/clustering_pdfs_vs_pT_XXX.yml"
   #clustering_pdfs_file: "jet_clustering/jet-splitting-PDFs-00-08-02/clustering_pdfs_vs_pT_XXX.yml"
   subtract_ttbar_with_weights: False
   declustering_rand_seed: 5
