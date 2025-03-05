@@ -23,6 +23,10 @@ class ClusterHists(Template):
 
     n         = H((0, 3,             ('n', 'Number')), n=ak.num)
 
+    mA_rot    = H((100, 0, 100,  ('mA_rotated', "mA [GeV]")))
+    mB_rot    = H((100, 0, 60,   ('mB_rotated', "mB [GeV]")))
+
+
     #
     #  For the PDFS
     #
@@ -32,6 +36,13 @@ class ClusterHists(Template):
 
     mB_pT = H((5, 50, 500, ("pt", "pT")),
               (100, 0, 60,  ('mB', 'mB [GeV]')))
+
+    mA_r_pT = H((5, 50, 500, ("pt", "pT")),
+                (100, 0, 100,  ('mA_rotated', 'mA [GeV]')))
+
+    mB_r_pT = H((5, 50, 500, ("pt", "pT")),
+                (100, 0, 60,  ('mB_rotated', 'mB [GeV]')))
+
 
     mA_l_pT = H((5, 50, 500, ("pt", "pT")),
                 (100, 0, 400,  ('mA', 'mA [GeV]')))

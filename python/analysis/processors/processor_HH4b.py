@@ -488,7 +488,7 @@ class analysis(processor.ProcessorABC):
             for cut, sel in sel_dict.items():
                 self._cutFlow.fill( cut, event[sel], allTag=True )
                 self._cutFlow.fill( f"{cut}_woTrig", event[sel], allTag=True,
-                                    wOverride=weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[sel]) 
+                                    wOverride=weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[sel])
 
 
         #
@@ -526,8 +526,8 @@ class analysis(processor.ProcessorABC):
         #
         # Example of how to write out event numbers
         #
-        #from analysis.helpers.write_debug_info import add_debug_info_to_output
-        #add_debug_info_to_output(event, processOutput, weights, list_weight_names, analysis_selections)
+        #from analysis.helpers.write_debug_info import add_debug_Run3_data
+        #add_debug_Run3_data(event, processOutput)
 
         selev = event[analysis_selections]
         #selev["passFvT50" ] = selev["FvT"].FvT > 50
@@ -602,6 +602,13 @@ class analysis(processor.ProcessorABC):
                                                            year_label=self.year_label,
                                                            len_event=len(event),
                                                           )
+
+
+        #
+        # Example of how to write out event numbers
+        #
+        #from analysis.helpers.write_debug_info import add_debug_Run3_data
+        #add_debug_Run3_data(selev, processOutput)
 
 
         #
