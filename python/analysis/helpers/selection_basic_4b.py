@@ -271,7 +271,7 @@ def apply_object_selection_boosted_4b( event ):
 
     return event
 
-def create_cand_jet_dijet_quadjet( selev, event_event,
+def create_cand_jet_dijet_quadjet( selev, 
                                    apply_FvT:bool = False,
                                    run_SvB:bool = False,
                                    run_systematics:bool = False,
@@ -320,6 +320,7 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
     diJet["lead"] = canJet[:, pairing[0]]
     diJet["subl"] = canJet[:, pairing[1]]
     diJet["st"] = diJet["lead"].pt + diJet["subl"].pt
+    # diJet["mass"] = (diJet["lead"] + diJet["subl"]).mass
     diJet["dr"] = diJet["lead"].delta_r(diJet["subl"])
     diJet["dphi"] = diJet["lead"].delta_phi(diJet["subl"])
 
@@ -382,6 +383,7 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
     quadJet["dr"] = quadJet["lead"].delta_r(quadJet["subl"])
     quadJet["dphi"] = quadJet["lead"].delta_phi(quadJet["subl"])
     quadJet["deta"] = quadJet["lead"].eta - quadJet["subl"].eta
+    quadJet["v4jmass"] = selev["v4j"].mass
 
     #
     # Compute Signal Regions
@@ -418,7 +420,6 @@ def create_cand_jet_dijet_quadjet( selev, event_event,
 
         if (classifier_SvB is not None) | (classifier_SvB_MA is not None):
 
-            ##### AGE: I dont understand why synthetic does not run without this
             if run_systematics: tmp_mask = (selev.fourTag & quadJet[quadJet.selected][:, 0].SR)
             else: tmp_mask = np.full(len(selev), True)
             compute_SvB(selev,
