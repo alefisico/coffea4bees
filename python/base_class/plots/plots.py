@@ -1149,7 +1149,7 @@ def make2DPlot(cfg, process, var='selJets.pt',
     #  Unstacked hists
     #
 
-    if cfg.plotConfig["hist_dict"]:
+    if cfg.plotConfig.get('hist_dict', None):
 
         hist_dict = cfg.plotConfig["hist_dict"]
 
