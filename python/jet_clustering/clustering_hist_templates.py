@@ -24,7 +24,7 @@ class ClusterHists(Template):
     n         = H((0, 3,             ('n', 'Number')), n=ak.num)
 
     mA_rot    = H((100, 0, 100,  ('mA_rotated', "mA [GeV]")))
-    mB_rot    = H((100, 0, 100,  ('mB_rotated', "mB [GeV]")))
+    mB_rot    = H((100, 0, 60,   ('mB_rotated', "mB [GeV]")))
 
 
     #
