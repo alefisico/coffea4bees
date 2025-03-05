@@ -1193,8 +1193,6 @@ def make2DPlot(cfg, process, var='selJets.pt',
     except IndexError:
         process_config["values"]    = _hist.values()  # Bin counts (array)
         process_config["variances"] = _hist.variances()  # Bin variances (array)
-    if not process_config["variances"]:
-        process_config["variances"] = np.zeros(process_config["values"].shape)
     process_config["x_edges"]   = _hist.axes[0].edges.tolist()  # X-axis edges
     process_config["y_edges"]   = _hist.axes[1].edges.tolist()  # Y-axis edges
     process_config["x_label"]   = _hist.axes[0].label  # X-axis label
@@ -1207,7 +1205,7 @@ def make2DPlot(cfg, process, var='selJets.pt',
     plot_data["hist"] = process_config
     plot_data["kwargs"] = kwargs
 
-    if cfg.plotConfig["hist_dict"]:
+    if cfg.plotConfig.get('hist_dict', None):
         plot_data["cut"] = cfg.plotConfig["hist_dict"]["selection"]
         plot_data["region"] = ''
         plot_data["process"] = ''
