@@ -148,7 +148,6 @@ def apply_object_selection_4b(event, corrections_metadata, *,
     tagged_flag_flat    = ak.flatten(event.Jet.tagged)
     bRegCorr_factor_flat[~tagged_flag_flat] = 1.0
     bRegCorr_factor = ak.unflatten(bRegCorr_factor_flat, ak.num(event.Jet.bRegCorr) )
-    selJet_pvec = event.Jet[event.Jet.selected]
     selJet_pvec = event.Jet[event.Jet.selected]  * bRegCorr_factor[event.Jet.selected]
     selJet_pvec["tagged"] = event.Jet[event.Jet.selected].tagged
     selJet_pvec["tagged_loose"] = event.Jet[event.Jet.selected].tagged_loose
