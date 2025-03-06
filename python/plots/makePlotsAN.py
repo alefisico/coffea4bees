@@ -122,5 +122,8 @@ if __name__ == '__main__':
     cfg.fileLabels = args.fileLabels
     cfg.axisLabels, cfg.cutList = read_axes_and_cuts(cfg.hists, cfg.plotConfig)
 
-    varList = [ h for h in cfg.hists[0]['hists'].keys() if not h in args.skip_hists ]
+    if args.list_of_hists:
+        varList = args.list_of_hists
+    else:
+        varList = [h for h in cfg.hists[0]['hists'].keys() if not any(skip in h for skip in args.skip_hists)]
     doPlots(varList, debug=args.debug)

@@ -77,7 +77,7 @@ class analysis(processor.ProcessorABC):
         event = apply_object_selection_4b( event, self.corrections_metadata[self.year], dataset=self.dataset,
                                            doLeptonRemoval=self.config["do_lepton_jet_cleaning"] )
 
-        create_cand_jet_dijet_quadjet( event, event.event,
+        create_cand_jet_dijet_quadjet( event,
                                       apply_FvT=False,
                                       run_SvB=False,
                                       run_systematics=False,

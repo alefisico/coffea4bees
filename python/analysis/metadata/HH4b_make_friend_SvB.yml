@@ -24,5 +24,7 @@ config:
   make_friend_SvB: *friend_base
   friends:
     trigWeight: "metadata/datasets_HH4b_2024_v1p1_trigweights.json@@trigWeight"
+    # SvB: "metadata/datasets_HH4b_2024_v1p1_friend_SvB.json@@SvB"
+    # SvB_MA: "metadata/datasets_HH4b_2024_v1p1_friend_SvB.json@@SvB_MA"
 
   

@@ -52,7 +52,11 @@ def doPlots(varList, debug=False):
             plot_args["outputFolder"] = args.outputFolder
             plot_args = plot_args | vDict
             if debug: print(plot_args)
-            fig = makePlot(cfg, **plot_args)
+            try:
+                fig = makePlot(cfg, **plot_args)
+            except ValueError:
+                print(f"ValueError: {v} {region}")
+                pass
 
             plt.close()
 
@@ -166,5 +170,8 @@ if __name__ == '__main__':
     cfg.fileLabels = args.fileLabels
     cfg.axisLabels, cfg.cutList = read_axes_and_cuts(cfg.hists, cfg.plotConfig)
 
-    varList = [ h for h in cfg.hists[0]['hists'].keys() if not h in args.skip_hists ]
+    if args.list_of_hists:
+        varList = args.list_of_hists
+    else:
+        varList = [h for h in cfg.hists[0]['hists'].keys() if not any(skip in h for skip in args.skip_hists)]
     doPlots(varList, debug=args.debug)

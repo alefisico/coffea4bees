@@ -582,7 +582,7 @@ class analysis(processor.ProcessorABC):
         #
         #  Build di-jets and Quad-jets
         #
-        create_cand_jet_dijet_quadjet( selev, event.event,
+        create_cand_jet_dijet_quadjet( selev,
                                        apply_FvT=self.apply_FvT,
                                        run_SvB=self.run_SvB,
                                        run_systematics=self.run_systematics,
