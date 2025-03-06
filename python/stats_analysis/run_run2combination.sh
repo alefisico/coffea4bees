@@ -1,4 +1,7 @@
 ##### Run 2
+### run it as:
+### ../shell_combine source stats_analysis/run_run2combination.sh output/stat_analysis/boosted_combination/SRBin1/
+
 if [ -z "$1" ]; then
     echo "No folder provided. Please provide the folder containing the datacards."
 else

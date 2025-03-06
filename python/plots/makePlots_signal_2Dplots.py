@@ -56,6 +56,7 @@ if __name__ == '__main__':
 
     cfg.plotConfig = load_config(args.metadata)
     cfg.plotConfig['hist_dict'] = { 'process': sum, 'selection': 'none', 'year': 'UL18' }
+    # cfg.plotConfig['hist_dict'] = { 'process': 'GluGluToHHTo4B_cHHH0', 'selection': 'none', 'year': 'UL18' }
     cfg.outputFolder = args.outputFolder
 
     cfg.plotModifiers = yaml.safe_load(open(args.modifiers, 'r'))
@@ -73,6 +74,9 @@ if __name__ == '__main__':
     else:
         varList = [h for h in cfg.hists[0]['hists'].keys() if not any(skip in h for skip in args.skip_hists)]
 
-    for isel in ['none', 'none_SBSR', 'none_SR', 'passDiJetMass', 'passDiJetMass_SBSR', 'passDiJetMass_SR', 'passDiJetMassOneMDR', 'passDiJetMassOneMDR_SBSR', 'passDiJetMassOneMDR_SR', 'passDiJetMassMDR', 'passDiJetMassMDR_SBSR', 'passDiJetMassMDR_SR', 'selected', 'selected_SBSR', 'selected_SR']:
+    cutList = ['none', 'none_SBSR', 'none_SR', 'passDiJetMass', 'passDiJetMass_SBSR', 'passDiJetMass_SR', 'passDiJetMassOneMDR', 'passDiJetMassOneMDR_SBSR', 'passDiJetMassOneMDR_SR', 'passDiJetMassMDR', 'passDiJetMassMDR_SBSR', 'passDiJetMassMDR_SR', 'selected', 'selected_SBSR', 'selected_SR']
+    # cutList = ['selected_SR']
+
+    for isel in cutList:
         cfg.plotConfig['hist_dict']['selection'] = isel
         doPlots(varList, debug=args.debug)

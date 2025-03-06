@@ -507,10 +507,10 @@ def plot_border_SR():
     Z3 = func3(X, Y)
 
     # Create the plot
-    plt.contour(X, Y, Z0, levels=[2], colors='red', linestyles='dashed', linewidths=2) 
-    plt.contour(X, Y, Z1, levels=[2], colors='red', linestyles='dashed', linewidths=2)
-    plt.contour(X, Y, Z2, levels=[2], colors='red', linestyles='dashed', linewidths=2)
-    plt.contour(X, Y, Z3, levels=[2], colors='red', linestyles='dashed', linewidths=2)
+    plt.contour(X, Y, Z0, levels=[1.90*1.90], colors='orangered', linestyles='dashed', linewidths=5) 
+    plt.contour(X, Y, Z1, levels=[1.90*1.90], colors='orangered', linestyles='dashed', linewidths=5)
+    plt.contour(X, Y, Z2, levels=[1.90*1.90], colors='orangered', linestyles='dashed', linewidths=5)
+    plt.contour(X, Y, Z3, levels=[2.60*2.60], colors='orangered', linestyles='dashed', linewidths=5)
 
 
 def plot_leadst_lines():
@@ -1193,6 +1193,8 @@ def make2DPlot(cfg, process, var='selJets.pt',
     except IndexError:
         process_config["values"]    = _hist.values()  # Bin counts (array)
         process_config["variances"] = _hist.variances()  # Bin variances (array)
+    if process_config["variances"] is None:
+        process_config["variances"] = np.zeros_like(process_config["values"])
     process_config["x_edges"]   = _hist.axes[0].edges.tolist()  # X-axis edges
     process_config["y_edges"]   = _hist.axes[1].edges.tolist()  # Y-axis edges
     process_config["x_label"]   = _hist.axes[0].label  # X-axis label
