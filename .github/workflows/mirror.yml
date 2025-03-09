@@ -1,7 +1,10 @@
 name: Mirror from GitLab
-# on:
-#   schedule:
-#     - cron: '0 * * * *'  # Runs every hour
+on:
+  push:
+    branches:
+      - master
+  # schedule:
+    # - cron: '0 * * * *'  # Runs every hour
 
 jobs:
   mirror:
