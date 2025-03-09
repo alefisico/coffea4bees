@@ -21,7 +21,9 @@ jobs:
         #   ssh-known-hosts: gitlab.cern.ch
 
       - name: Push to GitHub
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cd coffea4bees.git
-          git remote add github  https://github.com/alefisico/coffea4bees.git
+          git remote add github https://alefisico:${{ secrets.GITHUB_TOKEN }}@github.com/alefisico/coffea4bees.git
           git push --mirror github
