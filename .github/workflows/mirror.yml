@@ -10,10 +10,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
         with:
-          repository: gitlab.cern.ch/cms-cmu/coffea4bees
+          repository: cms-cmu/coffea4bees
           token: ${{ secrets.GITLAB_TOKEN }}
+          ssh-known-hosts: gitlab.cern.ch
 
       - name: Push to GitHub
         run: |
-          git remote add github https://gitlab.cern.ch/cms-cmu/coffea4bees.git
+          git remote add github  https://github.com/alefisico/coffea4bees.git
           git push --mirror github
