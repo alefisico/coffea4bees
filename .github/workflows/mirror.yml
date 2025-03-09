@@ -22,5 +22,6 @@ jobs:
 
       - name: Push to GitHub
         run: |
+          cd coffea4bees.git
           git remote add github  https://github.com/alefisico/coffea4bees.git
           git push --mirror github
