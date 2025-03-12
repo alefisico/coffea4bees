@@ -7,10 +7,16 @@ if [ ! -d $OUTPUT_DIR ]; then
     mkdir -p $OUTPUT_DIR
 fi
 
-echo "############### Running test processor"
-python runner.py -t -o test_databkgs.coffea -d data TTToHadronic TTToSemiLeptonic TTTo2L2Nu ggZH4b ZH4b ZZ4b -p analysis/processors/processor_HH4b.py -y UL17 UL18 UL16_preVFP UL16_postVFP -op $OUTPUT_DIR -m $DATASETS
+echo "############### Modifying config"
+sed -e "s|hist_cuts: .*|hist_cuts: [ passPreSel, passSvB, failSvB ]|" analysis/metadata/HH4b.yml > $OUTPUT_DIR/HH4b.yml
+cat $OUTPUT_DIR/HH4b.yml
+sed -e "s|hist_cuts: .*|hist_cuts: [ passPreSel, passSvB, failSvB ]|" analysis/metadata/HH4b_signals.yml > $OUTPUT_DIR/HH4b_signals.yml
+cat $OUTPUT_DIR/HH4b_signals.yml
 
-python runner.py -t -o test_signal.coffea -d GluGluToHHTo4B_cHHH1 -p analysis/processors/processor_HH4b.py -y UL17 UL18 UL16_preVFP UL16_postVFP -op $OUTPUT_DIR -m metadata/datasets_HH4b_v1p1.yml -c analysis/metadata/HH4b_signals.yml
+echo "############### Running test processor"
+python runner.py -t -o test_databkgs.coffea -d data TTToHadronic TTToSemiLeptonic TTTo2L2Nu ggZH4b ZH4b ZZ4b -p analysis/processors/processor_HH4b.py -y UL17 UL18 UL16_preVFP UL16_postVFP -op $OUTPUT_DIR -m $DATASETS -c $OUTPUT_DIR/HH4b.yml
+
+python runner.py -t -o test_signal.coffea -d GluGluToHHTo4B_cHHH1 -p analysis/processors/processor_HH4b.py -y UL17 UL18 UL16_preVFP UL16_postVFP -op $OUTPUT_DIR -m metadata/datasets_HH4b_v1p1.yml -c $OUTPUT_DIR/HH4b_signals.yml
 
 python analysis/tools/merge_coffea_files.py -f $OUTPUT_DIR/test_databkgs.coffea $OUTPUT_DIR/test_signal.coffea  -o $OUTPUT_DIR/test.coffea
 

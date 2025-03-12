@@ -87,8 +87,8 @@ if __name__ == '__main__':
                                 'tag' : itag,
                                 'region' : iregion,
                                 'passPreSel' : True,
-                                'passSvB' : sum,
-                                'failSvB' : sum
+                                # 'passSvB' : sum,
+                                # 'failSvB' : sum
                             }
                             logging.info(f"Converting hist {ih} {this_hist}")
                             json_dict[ih][iprocess][iy][codes['tag'][itag]][codes['region'][iregion]] = hist_to_json( coffea_hists[ih][this_hist] )
@@ -122,8 +122,8 @@ if __name__ == '__main__':
                                     'tag' : itag,
                                     'region' : iregion,
                                     'passPreSel' : True,
-                                    'passSvB' : sum,
-                                    'failSvB' : sum
+                                    # 'passSvB' : sum,
+                                    # 'failSvB' : sum
                                 }
                                 logging.info(f"Converting hist {ih} {this_hist}")
                                 json_dict[ih][iprocess][iy][ivar][codes['tag'][itag]][codes['region'][iregion]] = hist_to_json( coffea_hists[ih][this_hist] )

@@ -680,7 +680,7 @@ datasets:
     UL18:
       nanoAOD: /TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v1/NANOAODSIM
       picoAOD:
-        count: 476408000
+        count: 474164000
         files:
         - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/TTToSemiLeptonic_UL18/picoAOD.chunk0.root
         - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/TTToSemiLeptonic_UL18/picoAOD.chunk1.root
@@ -741,48 +741,14 @@ datasets:
         - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/TTToSemiLeptonic_UL18/picoAOD.chunk56.root
         - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/TTToSemiLeptonic_UL18/picoAOD.chunk57.root
         - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/TTToSemiLeptonic_UL18/picoAOD.chunk58.root
-        missing:
-          chunk_missing:
-          - '[304620, 507700) in "root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL18NanoAODv9/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/270000/10B77071-4DF3-1543-A8F5-15062610BA2C.root"'
-          - '[660010, 761550) in "root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL18NanoAODv9/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/270000/10B77071-4DF3-1543-A8F5-15062610BA2C.root"'
-          - '[812320, 913860) in "root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL18NanoAODv9/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/270000/10B77071-4DF3-1543-A8F5-15062610BA2C.root"'
-          - '[964630, 1015400) in "root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL18NanoAODv9/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/270000/10B77071-4DF3-1543-A8F5-15062610BA2C.root"'
-          - '[1066170, 1116940) in "root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL18NanoAODv9/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/270000/10B77071-4DF3-1543-A8F5-15062610BA2C.root"'
-          - '[0, 51143) in "root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL18NanoAODv9/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/270000/133DD13C-C40C-024B-A69B-45B8EF34CF14.root"'
-          - '[102286, 153429) in "root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL18NanoAODv9/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/270000/133DD13C-C40C-024B-A69B-45B8EF34CF14.root"'
-          - '[460287, 511430) in "root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL18NanoAODv9/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/270000/133DD13C-C40C-024B-A69B-45B8EF34CF14.root"'
-          - '[0, 152310) in "root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL18NanoAODv9/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/270000/B69A942B-2467-ED46-A08B-E15D8EC1595D.root"'
-          - '[304620, 507700) in "root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL18NanoAODv9/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/270000/B69A942B-2467-ED46-A08B-E15D8EC1595D.root"'
-          - '[558470, 710780) in "root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL18NanoAODv9/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/270000/B69A942B-2467-ED46-A08B-E15D8EC1595D.root"'
-          - '[913860, 964630) in "root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL18NanoAODv9/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/270000/B69A942B-2467-ED46-A08B-E15D8EC1595D.root"'
-          - '[0, 761550) in "root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL18NanoAODv9/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/280000/A11F01E7-323B-C047-9DFA-89B138D4F264.root"'
-          - '[812320, 1015400) in "root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL18NanoAODv9/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/280000/A11F01E7-323B-C047-9DFA-89B138D4F264.root"'
-          - '[0, 304620) in "root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL18NanoAODv9/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/280000/AE4F3B24-1253-0B42-9118-287FBBA329EB.root"'
-          - '[355390, 761550) in "root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL18NanoAODv9/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/280000/AE4F3B24-1253-0B42-9118-287FBBA329EB.root"'
-          - '[0, 203080) in "root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL18NanoAODv9/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/280000/E0098968-209F-6442-A815-5740E4C368E3.root"'
-          - '[355390, 406160) in "root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL18NanoAODv9/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/280000/E0098968-209F-6442-A815-5740E4C368E3.root"'
-          - '[507700, 609240) in "root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL18NanoAODv9/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/280000/E0098968-209F-6442-A815-5740E4C368E3.root"'
-          - '[710780, 1066170) in "root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL18NanoAODv9/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/280000/E0098968-209F-6442-A815-5740E4C368E3.root"'
-          - '[0, 50770) in "root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL18NanoAODv9/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/70000/2D5A98A8-810F-CE4E-AF84-CF4E766612EF.root"'
-          - '[101540, 203080) in "root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL18NanoAODv9/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/70000/2D5A98A8-810F-CE4E-AF84-CF4E766612EF.root"'
-          - '[304620, 507700) in "root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL18NanoAODv9/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/70000/2D5A98A8-810F-CE4E-AF84-CF4E766612EF.root"'
-          - '[558470, 609240) in "root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL18NanoAODv9/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/70000/2D5A98A8-810F-CE4E-AF84-CF4E766612EF.root"'
-          - '[660010, 761550) in "root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL18NanoAODv9/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/70000/2D5A98A8-810F-CE4E-AF84-CF4E766612EF.root"'
-          - '[812320, 964630) in "root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL18NanoAODv9/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/70000/2D5A98A8-810F-CE4E-AF84-CF4E766612EF.root"'
-          - '[101232, 151848) in "root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL18NanoAODv9/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/70000/D6DE94B4-735D-D94D-9A4F-BDB942B12AF7.root"'
-          - '[202464, 303696) in "root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL18NanoAODv9/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/70000/D6DE94B4-735D-D94D-9A4F-BDB942B12AF7.root"'
-          - '[404928, 455544) in "root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL18NanoAODv9/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/70000/D6DE94B4-735D-D94D-9A4F-BDB942B12AF7.root"'
-          - '[506160, 556776) in "root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL18NanoAODv9/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/70000/D6DE94B4-735D-D94D-9A4F-BDB942B12AF7.root"'
-          - '[607392, 809856) in "root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL18NanoAODv9/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/70000/D6DE94B4-735D-D94D-9A4F-BDB942B12AF7.root"'
-          - '[860472, 911088) in "root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL18NanoAODv9/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/70000/D6DE94B4-735D-D94D-9A4F-BDB942B12AF7.root"'
-          file_missing:
-          - root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL18NanoAODv9/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/270000/0B5AB59F-91EC-364C-BB00-3BE951CCC3B8.root
-          - root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL18NanoAODv9/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/270000/971E0B97-20D2-964C-ACCD-AFA4E9FB493E.root
-          - root://dcache-cms-xrootd.desy.de:1094//store/mc/RunIISummer20UL18NanoAODv9/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/280000/ACA9E01D-462A-CC45-AC38-3204699C7445.root
-        saved_events: 5854582
-        sumw: 143354137521.5401
-        sumw2: 43841958893138.805
-        total_events: 465754543
+        - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/TTToSemiLeptonic_UL18/picoAOD.chunk59.root
+        missing: {}
+        saved_events: 5960647
+        sumw: 142678965755.2601
+        sumw2: 43635452378226.8
+        sumw2_raw: 43635451179008.0
+        sumw_raw: 142678950398.0
+        total_events: 474164000
     xs: 365.7826460496
   TTToSemiLeptonic_for_mixed:
     UL16_postVFP:

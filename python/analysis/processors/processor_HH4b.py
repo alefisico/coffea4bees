@@ -88,6 +88,7 @@ class analysis(processor.ProcessorABC):
         apply_boosted_veto: bool = False,
         run_lowpt_selection: bool = False,
         fill_histograms: bool = True,
+        hist_cuts = ['passPreSel'],
         run_SvB: bool = True,
         corrections_metadata: str = "analysis/metadata/corrections.yml",
         top_reconstruction_override: bool = False,
@@ -125,12 +126,7 @@ class analysis(processor.ProcessorABC):
         self.top_reconstruction_override = top_reconstruction_override
         self.subtract_ttbar_with_weights = subtract_ttbar_with_weights
         self.friends = parse_friends(friends)
-
-        self.histCuts = ['passPreSel']
-        # if self.run_SvB:
-            #self.cutFlowCuts += ["passSvB", "failSvB"]
-            # self.histCuts += ["passSvB", "failSvB"]
-            #self.histCuts += ["passFvT50", "passFvT100"]
+        self.histCuts = hist_cuts
 
     def process(self, event):
         logging.info(event.metadata)
