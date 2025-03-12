@@ -1,4 +1,4 @@
-
+import awkward as ak
 
 def add_debug_info_to_output(event, processOutput, weights, list_weight_names, analysis_selections):
     # passSR = (selev["quadJet_selected"].SR)
@@ -239,3 +239,27 @@ def add_debug_info_for_Hbb_reclustering(event, processOutput):
     for out_k, out_v in out_data.items():
         processOutput[out_k] = {}
         processOutput[out_k][event.metadata['dataset']] = list(out_v)
+
+
+def add_debug_info_for_Boosted_Synthetic(events, processOutput):
+
+
+    FatJet_fields = ['area', 'eta', 'mass', 'msoftdrop', 'n2b1', 'n3b1', 'particleNetMD_Xbb', 'particleNet_mass', 'phi', 'pt', 'tau1', 'tau2', 'tau3', 'tau4', 'lsf3', 'nConstituents']
+    SubJet_fields = ['btagDeepB', 'eta', 'mass', 'n2b1', 'n3b1', 'phi', 'pt', 'rawFactor', 'tau1', 'tau2', 'tau3', 'tau4']
+
+    out_data = {}
+    out_data["event"  ] = events["event"]
+    out_data["run"    ] = events["run"]
+
+    for _f in FatJet_fields:
+        #print(_f, "is", getattr(events.FatJet, _f),"\n")
+        #print(_f, "is", type(getattr(events.FatJet, _f)),"\n")
+        out_data[f"FatJet_{_f}"    ] = getattr(events.FatJet, _f).to_list()
+
+    for _s in SubJet_fields:
+        #print(_s, "subjets:", getattr(events.FatJet.subjets, _s),"\n")
+        out_data[f"SubJet_{_s}"    ] = getattr(events.FatJet.subjets, _s).to_list()
+
+    for out_k, out_v in out_data.items():
+        processOutput[out_k] = {}
+        processOutput[out_k][events.metadata['dataset']] = list(out_v)
