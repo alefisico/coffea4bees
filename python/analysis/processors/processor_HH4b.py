@@ -127,9 +127,9 @@ class analysis(processor.ProcessorABC):
         self.friends = parse_friends(friends)
 
         self.histCuts = ['passPreSel']
-        if self.run_SvB:
+        # if self.run_SvB:
             #self.cutFlowCuts += ["passSvB", "failSvB"]
-            self.histCuts += ["passSvB", "failSvB"]
+            # self.histCuts += ["passSvB", "failSvB"]
             #self.histCuts += ["passFvT50", "passFvT100"]
 
     def process(self, event):
