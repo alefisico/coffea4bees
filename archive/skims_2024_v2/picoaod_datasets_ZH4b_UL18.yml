@@ -1,408 +1,71 @@
 ZH4b_UL18:
   count: 4776217
   cutFlowFourTag:
-    all: 2612775.434358418
-    passHLT: 2612044.4827592373
-    passJetMult: 351870.4175758362
-    passJetMult_lowpt_forskim: 1272636.938535273
-    passNoiseFilter: 2612044.4827592373
-    passPreSel: 168934.68868881464
-    passPreSel_lowpt_forskim: 172291.20886951685
+    all: 2686413.279519379
+    passHLT: 2685661.4094361663
+    passJetMult: 361807.2951620817
+    passJetMult_lowpt_forskim: 1308305.9421649575
+    passNoiseFilter: 2685661.4094361663
+    passPreSel: 173725.02153217793
+    passPreSel_lowpt_forskim: 177171.19235873222
   cutFlowFourTagUnitWeight:
-    all: 4645275
-    passHLT: 4643992
-    passJetMult: 598976
-    passJetMult_lowpt_forskim: 2190719
-    passNoiseFilter: 4643992
-    passPreSel: 288871
-    passPreSel_lowpt_forskim: 294501
+    all: 4776217
+    passHLT: 4774895
+    passJetMult: 615910
+    passJetMult_lowpt_forskim: 2252115
+    passNoiseFilter: 4774895
+    passPreSel: 297096
+    passPreSel_lowpt_forskim: 302876
   cutFlowThreeTag:
-    all: 2612775.434358418
-    passHLT: 2612044.4827592373
-    passJetMult: 351870.4175758362
-    passJetMult_lowpt_forskim: 1272636.938535273
-    passNoiseFilter: 2612044.4827592373
-    passPreSel: 168934.68868881464
-    passPreSel_lowpt_forskim: 172291.20886951685
+    all: 2686413.279519379
+    passHLT: 2685661.4094361663
+    passJetMult: 361807.2951620817
+    passJetMult_lowpt_forskim: 1308305.9421649575
+    passNoiseFilter: 2685661.4094361663
+    passPreSel: 173725.02153217793
+    passPreSel_lowpt_forskim: 177171.19235873222
   cutFlowThreeTagUnitWeight:
-    all: 4645275
-    passHLT: 4643992
-    passJetMult: 598976
-    passJetMult_lowpt_forskim: 2190719
-    passNoiseFilter: 4643992
-    passPreSel: 288871
-    passPreSel_lowpt_forskim: 294501
+    all: 4776217
+    passHLT: 4774895
+    passJetMult: 615910
+    passJetMult_lowpt_forskim: 2252115
+    passNoiseFilter: 4774895
+    passPreSel: 297096
+    passPreSel_lowpt_forskim: 302876
   files:
   - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/ZH4b_UL18/picoAOD.chunk0.root
   - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/ZH4b_UL18/picoAOD.chunk1.root
   - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/ZH4b_UL18/picoAOD.chunk2.root
   - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/ZH4b_UL18/picoAOD.chunk3.root
   - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/ZH4b_UL18/picoAOD.chunk4.root
-  kFactor:
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  - 1.0
-  lumi:
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  - 59800.0
-  missing:
-    chunk_missing:
-    - '[45140, 90280) in "root://xrootd.cmsaf.mit.edu:1094//store/mc/RunIISummer20UL18NanoAODv9/ZH_HToBB_ZToBB_M-125_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v2/2430000/2AB273F0-2C4A-F14D-B023-BBCBC5934846.root"'
-    file_missing:
-    - root://xrootd.cmsaf.mit.edu:1094//store/mc/RunIISummer20UL18NanoAODv9/ZH_HToBB_ZToBB_M-125_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v2/40000/26C2051C-8226-7445-BB6D-0769E7602B80.root
-    - root://xrootd.cmsaf.mit.edu:1094//store/mc/RunIISummer20UL18NanoAODv9/ZH_HToBB_ZToBB_M-125_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v2/40000/752D17A1-782A-0A47-B5D8-399A1A830A5E.root
+  missing: {}
   reproducible:
     args: Namespace(test=False, output_file='picoaod_datasets_ZH4b_UL18.yml', processor='skimmer/processor/skimmer_4b.py',
-      configs='skimmer/metadata/HH4b.yml', metadata='metadata/datasets_HH4b.yml',
-      output_path='tmp/', years=['UL18'], datasets=['ZH4b'], era=['A', 'B', 'C', 'D',
-      'E', 'F', 'G', 'H'], systematics=False, skimming=True, run_dask=True, condor=True,
+      configs='skimmer/metadata/HH4b.yml', metadata='metadata/datasets_HH4b_v1p1.yml',
+      output_path='output/', years=['UL18'], datasets=['ZH4b'], era=['A', 'B', 'C',
+      'D', 'E', 'F', 'G', 'H'], systematics=False, skimming=True, run_dask=True, condor=True,
       debug=False, githash='', gitdiff='')
-    date: '2024-10-09 14:18:52'
+    date: '2025-03-11 10:32:44'
     diff: "diff --git a/python/skimmer/metadata/HH4b.yml b/python/skimmer/metadata/HH4b.yml\n\
-      index c160366..faf6725 100644\n--- a/python/skimmer/metadata/HH4b.yml\n+++ b/python/skimmer/metadata/HH4b.yml\n\
-      @@ -2,12 +2,13 @@ runner:\n   #maxchunks: 2\n   #test_files: 1\n   min_workers:\
-      \ 1\n-  max_workers: 200\n-  chunksize: 100000\n+  max_workers: 400\n+  chunksize:\
-      \ 50000\n   picosize: 100000\n   basketsize: 10000\n   class_name: Skimmer\n\
-      \   data_tier: nanoAOD\n+  skipbadfiles: True\n   condor_cores: 1\n   condor_memory:\
-      \ 4GB\n   condor_transfer_input_files:\n@@ -23,8 +24,8 @@ runner:\n     # -\
-      \ T3_US_NotreDame\n \n config:\n-  # base_path: root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/\n\
-      -  base_path: /srv/python/skimmer/test/   ### local\n+  base_path: root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/\n\
-      +  # base_path: /srv/python/skimmer/test/   ### local\n   step: 100000\n   loosePtForSkim:\
-      \ True\n   skip_collections:\ndiff --git a/python/stats_analysis/inference b/python/stats_analysis/inference\n\
-      index 15e1a3d..ba6bba7 160000\n--- a/python/stats_analysis/inference\n+++ b/python/stats_analysis/inference\n\
-      @@ -1 +1 @@\n-Subproject commit 15e1a3d9fc5901234306f163e8dc114b03cad5b6\n+Subproject\
-      \ commit ba6bba7397f9f46196691a5f80dfc39fb70d6661\n"
-    hash: 4f02ace2f000ba74b2a2c6eb4c2097f2971416f1
-  saved_events: 419677
+      index a3c64a5a..1c6351da 100644\n--- a/python/skimmer/metadata/HH4b.yml\n+++\
+      \ b/python/skimmer/metadata/HH4b.yml\n@@ -10,26 +10,27 @@ runner:\n   data_tier:\
+      \ nanoAOD\n   condor_cores: 1\n   condor_memory: 4GB\n+  skipbadfiles: True\n\
+      \   condor_transfer_input_files:\n     - base_class\n     - analysis\n     -\
+      \ skimmer\n     - data\n-  rucio_regex_sites: 'T[123]_(US|CH|DE|UK)'\n+  # rucio_regex_sites:\
+      \ 'T[123]_(US|CH|DE|UK)'\n   allowlist_sites:\n     - T3_US_FNALLPC\n-    -\
+      \ T2_US_Nebraska\n-    - T3_US_NotreDame\n-    - T2_US_Caltech\n-    - T1_US_FNAL_Disk\n\
+      -  blocklist_sites:\n-    - T2_US_MIT\n-    - T2_US_Purdue\n+  #   - T2_US_Nebraska\n\
+      +  #   - T3_US_NotreDame\n+  #   - T2_US_Caltech\n+  #   - T1_US_FNAL_Disk\n\
+      +  # blocklist_sites:\n+  #   - T2_US_MIT\n+  #   - T2_US_Purdue\n \n \n config:\n\
+      -  # base_path: root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/\n-\
+      \  base_path: root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v3/\n+  base_path:\
+      \ root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/\n+  # base_path:\
+      \ root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v3/\n   #base_path: /srv/python/skimmer/test/\
+      \   ### local\n   step: 100000\n   loosePtForSkim: True\n"
+    hash: 38a308a7101b1910969036848205a9fce4b57ea6
+  saved_events: 431527
   sumw: 2686413.4038129994
   sumw2: 1706115.4560804763
-  total_events: 4645275
-  xs:
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
-  - 0.06703041945600001
+  sumw2_raw: 1706115.3683013916
+  sumw_raw: 2686413.082397461
+  total_events: 4776217
