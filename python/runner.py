@@ -14,6 +14,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 import dask
+import uproot
 import fsspec
 import psutil
 import yaml
@@ -45,26 +46,45 @@ class WorkerInitializer(WorkerPlugin):
             from base_class.root.patch import uproot_XRootD_retry
             uproot_XRootD_retry(len(delays) + 1, delays)
 
+def checking_input_files(outfiles):
+    '''Check if the input files are corrupted'''
+
+    good_files = []
+    for outfile in outfiles:
+            try:
+                # Attempt to open the file with uproot to check for corruption
+                uproot.open(outfile + ":Events")
+                good_files.append(outfile)
+            except Exception as e:
+                logging.error(f"Error opening file {outfile}: {e}")
+                logging.error(f"Skipping corrupted file {outfile}")
+    return good_files
+
+
 def list_of_files(ifile,
                   allowlist_sites: list =['T3_US_FNALLPC'],
                   blocklist_sites: list =[''],
                   rucio_regex_sites: str ='T[23]',
                   test: bool = False,
-                  test_files: int = 5
+                  test_files: int = 5,
+                  check_input_files: bool = False
                   ):
     '''Check if ifile is root file or dataset to check in rucio'''
 
     if isinstance(ifile, list):
+        ifile = checking_input_files(ifile) if check_input_files else ifile
         return ifile[:(test_files if test else None)]
     elif ifile.endswith('.txt'):
         file_list = [
             jfile.rstrip() if jfile.startswith(('root','file')) else f'root://cmseos.fnal.gov/{jfile.rstrip()}' for jfile in open(ifile).readlines()]
+        file_list = checking_input_files(file_list) if check_input_files else file_list
         return file_list[:(test_files if test else None)]
     else:
         rucio_client = rucio_utils.get_rucio_client()
         outfiles, outsite, sites_counts = rucio_utils.get_dataset_files_replicas(
             ifile, client=rucio_client, regex_sites=fr"{rucio_regex_sites}", mode="first", allowlist_sites=allowlist_sites, blocklist_sites=blocklist_sites)
-        return outfiles[:(test_files if test else None)]
+        good_files = checking_input_files(outfiles) if check_input_files else outfiles    
+        return good_files[:(test_files if test else None)]
 
 
 def _friend_merge_name(path1: str, path0: str, name: str, **_):
@@ -131,6 +151,8 @@ if __name__ == '__main__':
                         default="", help='Overwrite git hash for reproducible')
     parser.add_argument('--gitdiff', dest="gitdiff",
                         default="", help='Overwrite git diff for reproducible')
+    parser.add_argument('--check_input_files', dest="check_input_files",
+                        action="store_true", default=False, help='Check input files for corruption')
     args = parser.parse_args()
     # configure default logger
     logging_level = logging.DEBUG if args.debug else logging.INFO
