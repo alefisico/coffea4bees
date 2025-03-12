@@ -10,9 +10,10 @@ rule final_rule:
     input:
         "output/plots/RunII/passPreSel/fourTag/SB/nPVs.pdf",
         "output/datacards/systs/SvB_MA_ps_hh_nominal.pdf",
+        "output/datacards/plots/SvB_MA_postfitplots_prefit.pdf",
         'output/datacards/impacts_combine_SvB_MA_exp_HH.pdf',
-        # "output/datacards/plots/SvB_postfit.png"   ### Blinded analysis, no postfits.
-        # "output/datacards/kappa_scan.pdf"
+        "output/datacards/systbreakdown_SvB_MA_breakdown.pdf",
+        # "output/datacards/kappa_scan.pdf"   ### this does not work yet
         # expand("output/singlefiles/histNoJCM__{sample}-{year}.coffea", sample=config['dataset'], year=config['year'])  ### trick to define wildcards
     container: config["analysis_container"]
     resources:
@@ -459,6 +460,29 @@ rule make_syst_plots:
         cd python/
         echo "Making syst plots"
         python3 plots/make_syst_plots.py -i ../{input.root} -o ../output/datacards/systs/ -d ../{input.datacard} --variable SvB_MA_ps_hh
+        """
+
+rule make_syst_breakdown:
+    input: "output/datacards/datacard.root"
+    output: "output/datacards/systbreakdown_SvB_MA_breakdown.pdf"
+    container: config["combine_container"]
+    params:
+        output_dir="output/datacards/plots/"
+    resources:
+        voms_proxy=True,
+        kerberos=True,
+        unpacked_img=True,
+        compute_backend="kubernetes"
+    shell:
+        """
+        source /cvmfs/cms.cern.ch/cmsset_default.sh
+        cd /home/cmsusr/CMSSW_11_3_4/
+        cmsenv || true
+        cd -
+        cd python/
+        cat {input}
+        echo "RUNNING COMBINE"
+        source stats_analysis/run_combine.sh ../output/datacards/ --systbreakdown
         """
 
 rule kappa_scan:
