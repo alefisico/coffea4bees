@@ -3,7 +3,7 @@ skimmer-test-job:
   extends:
     - .base_analysis
   script:
-    - source .ci-workflows/skimmer-test-job.sh
+    - source python/scripts/skimmer-test-job.sh
   artifacts: 
     paths:
       - python/output/skimmer_test_job/picoaod_datasets_GluGluToHHTo4B_cHHH0_UL18.yml
@@ -16,14 +16,14 @@ skimmer-basic-test-job:
   extends:
     - .base_analysis
   script:
-    - source .ci-workflows/skimmer-basic-test-job.sh
+    - source python/scripts/skimmer-basic-test-job.sh
 
 synthetic-dataset-make-dataset:
   stage: skimmer-test
   extends:
     - .base_analysis
   script:
-    - source .ci-workflows/synthetic-dataset-make-dataset.sh
+    - source python/scripts/synthetic-dataset-make-dataset.sh
   artifacts:
     paths:
       - python/output/synthetic_dataset_make_dataset/picoaod_datasets_declustered_test_UL18.yml
@@ -39,7 +39,7 @@ synthetic-dataset-make-dataset-Run3:
   extends:
     - .base_analysis
   script:
-    - source .ci-workflows/synthetic-dataset-make-dataset-Run3.sh
+    - source python/scripts/synthetic-dataset-make-dataset-Run3.sh
   artifacts:
     paths:
       - python/output/synthetic_dataset_make_dataset_Run3/picoaod_datasets_declustered_test_2023_BPix.yml

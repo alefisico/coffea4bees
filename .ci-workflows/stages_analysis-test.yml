@@ -3,7 +3,7 @@ analysis-test-job:
   extends:
     - .base_analysis
   script:
-    - source .ci-workflows/analysis-test-job.sh
+    - source python/scripts/analysis-test-job.sh
   artifacts: 
     paths:
       - python/output/analysis_test_job/test.coffea
@@ -13,7 +13,7 @@ analysis-test-job-Run3:
   extends:
     - .base_analysis
   script:
-    - source .ci-workflows/analysis-test-job-Run3.sh
+    - source python/scripts/analysis-test-job-Run3.sh
   artifacts: 
     paths:
       - python/output/analysis_test_job_Run3/test.coffea
@@ -24,7 +24,7 @@ analysis-test-truthStudy:
   extends:
     - .base_analysis
   script:
-    - source .ci-workflows/analysis-test-job-truthStudy.sh
+    - source python/scripts/analysis-test-job-truthStudy.sh
   artifacts: 
     paths:
       - python/output/analysis_test_truthStudy/testTruth.coffea
@@ -35,7 +35,7 @@ synthetic-dataset-cluster:
   extends:
     - .base_analysis
   script:
-    - source .ci-workflows/synthetic-dataset-cluster.sh
+    - source python/scripts/synthetic-dataset-cluster.sh
   artifacts: 
     paths:
       - python/output/synthetic_dataset_cluster/test_synthetic_datasets.coffea
@@ -46,7 +46,7 @@ analysis-test-job-unsup:
   extends:
     - .base_analysis
   script:
-    - source .ci-workflows/analysis-test-job-unsup.sh
+    - source python/scripts/analysis-test-job-unsup.sh
   artifacts: 
     paths:
       - python/output/analysis_test_job_unsup/test_unsup.coffea
@@ -56,7 +56,7 @@ analysis-test-mixed-job:
   extends:
     - .base_analysis
   script:
-    - source .ci-workflows/analysis-test-mixed-job.sh
+    - source python/scripts/analysis-test-mixed-job.sh
   artifacts: 
     paths:
       - python/output/analysis_test_mixed_job/testMixedBkg_TT.coffea
@@ -78,7 +78,7 @@ analysis-systematics-test-job:
   extends:
     - .base_analysis
   script:
-    - source .ci-workflows/analysis-systematics-test-job.sh
+    - source python/scripts/analysis-systematics-test-job.sh
   artifacts: 
     paths:
       - python/output/analysis_systematics_test_job/test_systematics.coffea
@@ -91,7 +91,7 @@ skimmer-analysis-test-job:
     - voms_proxy
     - skimmer-test-job
   script:
-    - source .ci-workflows/skimmer-analysis-test-job.sh
+    - source python/scripts/skimmer-analysis-test-job.sh
   artifacts: 
     paths:
       - python/output/skimmer_analysis_test_job/test_skimmer.coffea
@@ -104,7 +104,7 @@ synthetic-dataset-analyze:
     - voms_proxy
     - synthetic-dataset-make-dataset
   script:
-    - source .ci-workflows/synthetic-dataset-analyze.sh
+    - source python/scripts/synthetic-dataset-analyze.sh
   artifacts:
     paths:
       - python/output/synthetic_dataset_analyze/test_synthetic_datasets.coffea
@@ -117,7 +117,7 @@ synthetic-dataset-analyze-Run3:
     - voms_proxy
     - synthetic-dataset-make-dataset-Run3
   script:
-    - source .ci-workflows/synthetic-dataset-analyze-Run3.sh
+    - source python/scripts/synthetic-dataset-analyze-Run3.sh
   artifacts:
     paths:
       - python/output/synthetic_dataset_analyze_Run3/test_synthetic_datasets.coffea
@@ -131,7 +131,7 @@ weights-trigger-analysis-job:
     - voms_proxy
     - weights-trigger-friendtree-job
   script:
-    - source .ci-workflows/weights-trigger-analysis-job.sh
+    - source python/scripts/weights-trigger-analysis-job.sh
   artifacts:
     paths:
       - python/output/weights_trigger_analysis_job/test_trigWeight.coffea
@@ -144,7 +144,7 @@ SvB-friendtree-analysis-job:
     - voms_proxy
     - SvB-friendtree-job
   script:
-    - source .ci-workflows/SvB-friendtree-analysis-job.sh
+    - source python/scripts/SvB-friendtree-analysis-job.sh
   artifacts:
     paths:
       - python/output/SvB_friendtree_analysis_job/test_SvB_friend.coffea

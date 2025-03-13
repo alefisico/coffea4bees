@@ -3,28 +3,28 @@ analysis-helpers-job:
   extends:
     - .base_analysis
   script:
-    - source .ci-workflows/analysis-helpers-job.sh
+    - source python/scripts/analysis-helpers-job.sh
 
 kappa-framework:
   stage: code
   extends:
     - .base_analysis
   script:
-    - source .ci-workflows/baseclass-kappa-framework.sh
+    - source python/scripts/baseclass-kappa-framework.sh
 
 jet-clustering:
   stage: code
   extends:
     - .base_analysis
   script:
-    - source .ci-workflows/jet-clustering-tests.sh
+    - source python/scripts/jet-clustering-tests.sh
 
 trig-emulator:
   stage: code
   extends:
     - .base_analysis
   script:
-    - source .ci-workflows/trig-emulator-tests.sh
+    - source python/scripts/trig-emulator-tests.sh
 
 memory-test:
   stage: code
@@ -33,7 +33,7 @@ memory-test:
   extends:
     - .base_analysis
   script:
-    - source .ci-workflows/memory_test.sh
+    - source python/scripts/memory_test.sh
   artifacts:
     paths:
       - python/output/memory_test/mprofile_ci_test.png
