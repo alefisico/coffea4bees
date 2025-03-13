@@ -57,7 +57,6 @@ from analysis.helpers.truth_tools import find_genpart
 #
 # Setup
 #
-Fill.allow_missing = True
 NanoAODSchema.warn_missing_crossrefs = False
 warnings.filterwarnings("ignore")
 
