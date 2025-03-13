@@ -5,7 +5,7 @@ analysis-cutflow-job:
   needs: 
     - analysis-test-job
   script:
-    - source python/scripts/analysis-cutflow-job.sh
+    - source scripts/analysis-cutflow-job.sh
   artifacts:
     paths:
       - python/output/analysis_cutflow_job/test_dump_cutflow.yml
@@ -17,7 +17,7 @@ analysis-cutflow-job-Run3:
   needs: 
     - analysis-test-job-Run3
   script:
-    - source python/scripts/analysis-cutflow-job-Run3.sh
+    - source scripts/analysis-cutflow-job-Run3.sh
   artifacts:
     paths:
       - python/output/analysis_cutflow_job_Run3/test_dump_cutflow.yml
@@ -30,7 +30,7 @@ analysis-mixed-cutflow-job:
   needs: 
     - analysis-test-mixed-job
   script:
-    - source python/scripts/analysis-mixed-cutflow-job.sh
+    - source scripts/analysis-mixed-cutflow-job.sh
   artifacts:
     paths:
       - python/output/analysis_mixed_cutflow_job/test_dump_cutflow_mixed_data.yml
@@ -43,7 +43,7 @@ skimmer-analysis-cutflow-job:
   needs: 
     - skimmer-analysis-test-job
   script:
-    - source python/scripts/skimmer-analysis-cutflow-job.sh
+    - source scripts/skimmer-analysis-cutflow-job.sh
   artifacts:
     paths:
       - python/output/skimmer_analysis_cutflow_job/test_dump_skimmer_cutflow.yml
@@ -56,7 +56,7 @@ analysis-systematics-cutflow-job:
   needs: 
     - analysis-systematics-test-job
   script:
-    - source python/scripts/analysis-systematics-cutflow-job.sh
+    - source scripts/analysis-systematics-cutflow-job.sh
   artifacts:
     paths:
       - python/output/analysis_systematics_cutflow_job/test_dump_systematics_cutflow.yml
@@ -68,7 +68,7 @@ analysis-cutflow-job-unsup:
  needs: 
    - analysis-test-job-unsup
  script:
-   - source python/scripts/analysis-cutflow-job-unsup.sh
+   - source scripts/analysis-cutflow-job-unsup.sh
  artifacts:
    paths:
      - python/output/analysis_cutflow_job_unsup/test_dump_cutflow_job_unsup.yml
@@ -80,7 +80,7 @@ synthetic-dataset-analyze-cutflow:
  needs: 
    - synthetic-dataset-analyze
  script:
-   - source python/scripts/synthetic-dataset-analyze-cutflow.sh
+   - source scripts/synthetic-dataset-analyze-cutflow.sh
  artifacts:
    paths:
      - python/output/synthetic_dataset_analyze_cutflow/test_dump_cutflow_synthetic_datasets.yml
@@ -92,7 +92,7 @@ synthetic-dataset-analyze-cutflow-Run3:
  needs: 
    - synthetic-dataset-analyze-Run3
  script:
-   - source python/scripts/synthetic-dataset-analyze-cutflow-Run3.sh
+   - source scripts/synthetic-dataset-analyze-cutflow-Run3.sh
  artifacts:
    paths:
      - python/output/synthetic_dataset_analyze_cutflow_Run3/test_dump_cutflow_synthetic_datasets.yml
@@ -105,7 +105,7 @@ weights-trigger-cutflow:
  needs: 
    - weights-trigger-analysis-job
  script:
-   - source python/scripts/weights-trigger-cutflow-job.sh
+   - source scripts/weights-trigger-cutflow-job.sh
  artifacts:
    paths:
      - python/output/weights_trigger_cutflow_job/test_dump_cutflow_trigWeight.yml
@@ -117,7 +117,7 @@ SvB-friendtree-cutflow-job:
   needs:
     - SvB-friendtree-analysis-job
   script:
-    - source python/scripts/SvB-friendtree-cutflow-job.sh
+    - source scripts/SvB-friendtree-cutflow-job.sh
   artifacts:
     paths:
       - python/output/SvB_friendtree_cutflow_job/test_dump_cutflow_SvB_friend.yml
