@@ -22,7 +22,6 @@ if [ "$do_proxy" = true ]; then
         echo "Run:"
         echo "mkdir -p proxy && voms-proxy-init -voms cms -valid 192:00 -out ./proxy/x509_proxy"
         echo "and try again."
-        exit 1
     fi
     export X509_USER_PROXY=${PWD}/proxy/x509_proxy
     echo "############### Checking proxy"
