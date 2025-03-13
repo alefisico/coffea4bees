@@ -1,5 +1,5 @@
 #!/bin/bash
-source .ci-workflows/set_initial_variables.sh --output ${1:-"output/"}
+source scripts/set_initial_variables.sh --output ${1:-"output/"}
 
 INPUT_DIR="${DEFAULT_DIR}analysis_test_job_Run3"
 OUTPUT_DIR="${DEFAULT_DIR}analysis_cutflow_job_Run3"

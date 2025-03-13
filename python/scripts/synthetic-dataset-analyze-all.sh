@@ -1,5 +1,5 @@
 #!/bin/bash
-source .ci-workflows/set_initial_variables.sh --output ${1:-"output/"} --do_proxy
+source scripts/set_initial_variables.sh --output ${1:-"output/"} --do_proxy
 
 OUTPUT_DIR="${DEFAULT_DIR}/synthetic_dataset_analyze_all"
 echo "############### Checking and creating output directory"

@@ -1,5 +1,5 @@
 #!/bin/bash
-source .ci-workflows/set_initial_variables.sh --output ${1:-"output/"}
+source scripts/set_initial_variables.sh --output ${1:-"output/"}
 
 INPUT_DIR="${DEFAULT_DIR}synthetic_dataset_analyze"
 OUTPUT_DIR="${DEFAULT_DIR}synthetic_dataset_analyze_cutflow"

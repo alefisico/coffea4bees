@@ -50,6 +50,8 @@ stages:
     expire_in: 1 day
     paths:
       - 'template'
+  before_script:
+    - cd python/
   retry: 2
 
 .base_combine:
@@ -61,6 +63,8 @@ stages:
     - cd -
   tags:
     - k8s-cvmfs
+  before_script:
+    - cd python/
 
 .base_classifier:
   needs:
