@@ -6,6 +6,7 @@ voms_proxy:
   artifacts:
     paths:
       - proxy
+      - python/proxy
   script:
     - mkdir -p ${HOME}/.globus
     - printf "${GRID_USERCERT}" | base64 -d > ${HOME}/.globus/usercert.pem
