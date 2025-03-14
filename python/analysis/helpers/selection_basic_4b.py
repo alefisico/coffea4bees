@@ -37,6 +37,7 @@ def apply_object_selection_4b(event, corrections_metadata, *,
                                 loosePtForSkim: bool = False,
                                 override_selected_with_flavor_bit: bool = False,
                                 run_lowpt_selection: bool = False,
+                                dilep_ttbar_crosscheck: bool = False,
                                 do_jet_veto_maps: bool = False,
                                 isRun3: bool = False,
                                 isMC: bool = False,  ### temporary for Run3
@@ -200,6 +201,13 @@ def apply_object_selection_4b(event, corrections_metadata, *,
     tagCode[event.threeTag] = 3
     tagCode[event.twoTag] = 2
 
+    if dilep_ttbar_crosscheck:
+        event['Muon', 'dimuon_selected'] = (event.Muon.pt > 10) & (abs(event.Muon.eta) < 2.4) & (event.Muon.tightId) & (event.Muon.pfRelIso04_all < 0.05)
+        event['nMuon_dimuon_selected'] = ak.sum(event.Muon.dimuon_selected, axis=1)
+        event['selDimuon'] = event.Muon[event.Muon.dimuon_selected]
+        event['passDimuon'] = event.nMuon_dimuon_selected >= 2
+
+        event['passDilepTtbar'] = (event['nJet_tagged'] == 2) & event.passDimuon & (event.MET.pt > 30)
 
     # # For low pt selection
     if run_lowpt_selection:

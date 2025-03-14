@@ -5,7 +5,7 @@ analysis-plot-job:
   needs: 
     - analysis-test-job
   script:
-    - source .ci-workflows/analysis-plot-job.sh
+    - source scripts/analysis-plot-job.sh
   artifacts:
     paths:
       - python/output/analysis_plot_job/RunII/
@@ -17,7 +17,7 @@ analysis-plot-job-unsup:
   needs: 
     - analysis-test-job-unsup
   script:
-    - source .ci-workflows/analysis-plot-job-unsup.sh
+    - source scripts/analysis-plot-job-unsup.sh
   artifacts:
     paths:
       - python/output/analysis_plot_job_unsup/RunII/
@@ -29,7 +29,7 @@ analysis-iplot-job:
   needs:
     - analysis-test-job
   script:
-    - source .ci-workflows/analysis-iplot-job.sh
+    - source scripts/analysis-iplot-job.sh
 
 baseclass-test-job:   
   stage: plot
@@ -38,7 +38,7 @@ baseclass-test-job:
   needs: 
     - analysis-test-job
   script:
-    - source .ci-workflows/baseclass-test-job.sh
+    - source scripts/baseclass-test-job.sh
 
 # Needs review
 # histtojson-test-job:   
@@ -61,7 +61,7 @@ synthetic-dataset-plot-job:
   needs: 
     - synthetic-dataset-cluster
   script:
-    - source .ci-workflows/synthetic-dataset-plot-job.sh
+    - source scripts/synthetic-dataset-plot-job.sh
   artifacts:
     paths:
       - python/output/synthetic_dataset_plot_job/jet-splitting-PDFs-test/

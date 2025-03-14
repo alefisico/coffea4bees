@@ -5,7 +5,7 @@ analysis-makeweights-job:
   needs: 
     - analysis-test-job
   script:
-    - source .ci-workflows/analysis-makeweights-job.sh
+    - source scripts/analysis-makeweights-job.sh
   artifacts:
     paths:
       - python/output/analysis_makeweights_job/testJCM_ROOT/jetCombinatoricModel_SB_.yml
@@ -17,5 +17,5 @@ twoStageClosure-test-job:
   needs: 
     - analysis-test-mixed-job
   script:
-    - source .ci-workflows/analysis-runTwoStageClosure-ROOT.sh
+    - source scripts/analysis-runTwoStageClosure-ROOT.sh
 

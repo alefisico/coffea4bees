@@ -11,11 +11,6 @@ rule analysis:
         logname="histNoJCM__{sample}-{year}",
         metadata="analysis/metadata/HH4b_noJCM.yml",
         datasets=config['dataset_location']
-    resources:
-        voms_proxy=True,
-        kerberos=True,
-        compute_backend="kubernetes",
-        kubernetes_memory_limit="9.5Gi"
     shell:
         """
         cd python/ 

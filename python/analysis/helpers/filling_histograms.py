@@ -23,6 +23,7 @@ def filling_nominal_histograms(selev, JCM,
                                top_reconstruction: bool = False,
                                isDataForMixed: bool = False,
                                run_lowpt_selection: bool = False,
+                               run_dilep_ttbar_crosscheck: bool = False,
                                event_metadata: dict = {},
                                ):
 
@@ -36,14 +37,6 @@ def filling_nominal_histograms(selev, JCM,
                         region=[2, 1],  # SR / SB / Other
                         **dict((s, ...) for s in histCuts)
                         )
-
-    #
-    # To Add
-    #
-
-    #    m4j_vs_leadSt_dR = dir.make<TH2F>("m4j_vs_leadSt_dR", (name+"/m4j_vs_leadSt_dR; m_{4j} [GeV]; S_{T} leading boson candidate #DeltaR(j,j); Entries").c_str(), 40,100,1100, 25,0,5);
-    #    m4j_vs_sublSt_dR = dir.make<TH2F>("m4j_vs_sublSt_dR", (name+"/m4j_vs_sublSt_dR; m_{4j} [GeV]; S_{T} subleading boson candidate #DeltaR(j,j); Entries").c_str(), 40,100,1100, 25,0,5);
-
 
     fill += hist.add( "trigWeight", (40, 0, 2, ("trigWeight", 'Trigger weight')), weight='no_weight' )
 
@@ -152,7 +145,6 @@ def filling_nominal_histograms(selev, JCM,
                 fill += hist.add( f"m4j_zh_{_FvT_name}", (120, 0, 1200, ("m4j_ZHSR", "m4j ZHSR [GeV]")), weight=f"weight_{_FvT_name}", )
                 fill += hist.add( f"m4j_zz_{_FvT_name}", (120, 0, 1200, ("m4j_ZZSR", "m4j ZZSR [GeV]")), weight=f"weight_{_FvT_name}", )
 
-
     #
     #  MC Truth
     #
@@ -165,7 +157,21 @@ def filling_nominal_histograms(selev, JCM,
     # fill.cache(selev)
     fill(selev, hist)
 
-    return hist.to_dict(nonempty=True)
+    if run_dilep_ttbar_crosscheck:
+
+        fill_ttbar = Fill(process=processName, year=year, weight="weight")
+        hist_ttbar = Collection( process=[processName],
+                            year=[year],
+                            **dict((s, ...) for s in ['passDilepTtbar'])
+                            )
+
+        fill_ttbar += Jet.plot(("tagJets_dilepttbar", "Tag Jets dilep ttbar"), "tagJet", skip=skip_jet_list)
+        fill_ttbar(selev, hist_ttbar)
+    
+        return hist.to_dict(nonempty=True)|{"hists_ttbar":hist_ttbar.to_dict(nonempty=True)["hists"]}
+    
+    else:
+        return hist.to_dict(nonempty=True)
 
 
 def filling_syst_histograms(selev, weights, analysis_selections,

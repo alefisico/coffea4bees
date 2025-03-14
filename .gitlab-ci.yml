@@ -23,11 +23,15 @@ variables:
   GIT_SUBMODULE_STRATEGY: recursive
   GIT_SUBMODULE_DEPTH: 1
   GIT_SUBMODULE_FORCE_HTTPS: "true"
+  MKDOCS_VERSION: '1.5.3'
+  MATERIAL_VERSION: '9.5.3'
 
 include:
   - local: '.ci-workflows/stages_*.yml'
+  - project: 'authoring/documentation/mkdocs-ci'
+    file: 'mkdocs-gitlab-pages.gitlab-ci.yml'
 
-stages:          
+stages:  
   - build
   - proxy
   - code 
@@ -39,6 +43,9 @@ stages:
   - cutflow
   - classifier
   - reana
+  - validation
+  - pages
+
 
 .base_analysis:
   needs:
@@ -50,6 +57,8 @@ stages:
     expire_in: 1 day
     paths:
       - 'template'
+  before_script:
+    - cd python/
   retry: 2
 
 .base_combine:
@@ -59,6 +68,7 @@ stages:
     - cd /home/cmsusr/CMSSW_11_3_4/
     - cmsenv || true
     - cd -
+    - cd python/
   tags:
     - k8s-cvmfs
 
@@ -72,3 +82,6 @@ stages:
     - k8s-cvmfs
   artifacts:
     expire_in: 1 day
+
+
+
