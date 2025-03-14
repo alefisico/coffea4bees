@@ -54,7 +54,16 @@ def apply_object_selection_4b(event, corrections_metadata, *,
     # Adding muons (loose muon id definition)
     # https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonIdRun2
     #
-    event['Muon', 'selected'] = (event.Muon.pt > 10) & (abs(event.Muon.eta) < 2.5) & (event.Muon.pfRelIso04_all < 0.15) & (event.Muon.looseId)
+    if isRun3:
+        muon_kin        = (event.Muon.pt > 10) & (abs(event.Muon.eta) < 2.4)
+        muon_iso_ID     = (event.Muon.pfRelIso04_all < 0.15) & (event.Muon.looseId)
+        muon_IP_lowEta  = (abs(event.Muon.eta) < 1.479) & (abs(event.Muon.dz) < 0.1) & (abs(event.Muon.dxy) < 0.05)
+        muon_IP_highEta = (abs(event.Muon.eta) > 1.479) & (abs(event.Muon.dz) < 0.2) & (abs(event.Muon.dxy) < 0.1)
+        event['Muon', 'selected'] = muon_kin & muon_iso_ID & (muon_IP_lowEta | muon_IP_highEta)
+
+    else:
+        event['Muon', 'selected'] = (event.Muon.pt > 10) & (abs(event.Muon.eta) < 2.5) & (event.Muon.pfRelIso04_all < 0.15) & (event.Muon.looseId)
+
     event['nMuon_selected'] = ak.sum(event.Muon.selected, axis=1)
     event['selMuon'] = event.Muon[event.Muon.selected]
 
@@ -64,7 +73,11 @@ def apply_object_selection_4b(event, corrections_metadata, *,
     if 'Electron' in event.fields:
 
         if isRun3:
-            event['Electron', 'selected'] = (event.Electron.pt > 15) & (abs(event.Electron.eta) < 2.5) & (event.Electron.pfRelIso03_all < 0.15) & getattr(event.Electron, 'mvaNoIso_WP90' )
+            electron_kin        = (event.Electron.pt > 15) & (abs(event.Electron.eta) < 2.5)
+            electron_iso_ID     = (event.Electron.pfRelIso03_all < 0.15) & getattr(event.Electron, 'mvaNoIso_WP90' )
+            electron_IP_lowEta  = (abs(event.Electron.eta) < 1.479) & (abs(event.Electron.dz) < 0.1) & (abs(event.Electron.dxy) < 0.05)
+            electron_IP_highEta = (abs(event.Electron.eta) > 1.479) & (abs(event.Electron.dz) < 0.2) & (abs(event.Electron.dxy) < 0.1)
+            event['Electron', 'selected'] = electron_kin & electron_iso_ID & (electron_IP_lowEta | electron_IP_highEta)
         else:
             event['Electron', 'selected'] = (event.Electron.pt > 15) & (abs(event.Electron.eta) < 2.5) & (event.Electron.pfRelIso03_all < 0.15) & getattr(event.Electron, 'mvaFall17V2Iso_WP90' )
 
@@ -280,14 +293,21 @@ def apply_object_selection_boosted_4b( event ):
 
     return event
 
-def create_cand_jet_dijet_quadjet( selev, 
+def create_cand_jet_dijet_quadjet( selev,
                                    apply_FvT:bool = False,
                                    run_SvB:bool = False,
                                    run_systematics:bool = False,
                                    classifier_SvB = None,
                                    classifier_SvB_MA = None,
                                    processOutput = None,
+                                   isRun3 = False
                                    ):
+    #
+    # To get test vectors
+    #
+    #jet_subset_dict = {key: getattr(selev.Jet,key)[0:10].tolist() for key in ["pt", "eta","phi", "mass","btagScore","bRegCorr","puId","jetId","selected", "selected_loose"]}
+    #print(jet_subset_dict)
+
     #
     # Build and select boson candidate jets with bRegCorr applied
     #
@@ -334,7 +354,10 @@ def create_cand_jet_dijet_quadjet( selev,
     diJet["dphi"] = diJet["lead"].delta_phi(diJet["subl"])
 
     # Sort diJets within views to be lead st, subl st
-    diJet = diJet[ak.argsort(diJet.st, axis=2, ascending=False)]
+    if isRun3:
+        diJet = diJet[ak.argsort(diJet.pt, axis=2, ascending=False)]
+    else:
+        diJet = diJet[ak.argsort(diJet.st, axis=2, ascending=False)]
     diJetDr = diJet[ak.argsort(diJet.dr, axis=2, ascending=True)]
     # Now indexed by diJet[event,pairing,lead/subl st]
 
@@ -407,14 +430,42 @@ def create_cand_jet_dijet_quadjet( selev,
     quadJet["ZZSR"] = quadJet.xZZ < max_xZZ
     quadJet["ZHSR"] = quadJet.xZH < max_xZH
     quadJet["HHSR"] = ((quadJet.xHH < max_xHH) & selev.notInBoostedSel ) if 'notInBoostedSel' in selev.fields else (quadJet.xHH < max_xHH)  ## notInBoostedSel is true by default
-    quadJet["SR"] = quadJet.ZZSR | quadJet.ZHSR | quadJet.HHSR
-    quadJet["SB"] = quadJet.passDiJetMass & ~quadJet.SR
 
-    #
-    # pick quadJet at random giving preference to ones which passDiJetMass and MDRs
-    #
-    quadJet["rank"] = ( 10 * quadJet.passDiJetMass + quadJet.lead.passMDR + quadJet.subl.passMDR + quadJet.random )
-    quadJet["selected"] = quadJet.rank == np.max(quadJet.rank, axis=1)
+
+    if isRun3:
+
+        # Compute distances to diagonal
+        #   https://gitlab.cern.ch/mkolosov/hh4b_run3/-/blob/run2/python/producers/hh4bTreeProducer.py#L3386
+        diagonalXoYo = 1.04
+        quadJet["dhh"] = (1.0/np.sqrt(1+pow(diagonalXoYo, 2)))*abs(quadJet["lead"].mass - ((diagonalXoYo)*quadJet["subl"].mass))
+        quadJet["selected"] = quadJet.dhh == np.min(quadJet.dhh, axis=1)
+
+
+        #
+        #   For CR selection
+        #
+        cLead = 125
+        cSubl = 120
+        SR_radius = 30
+        CR_radius = 55
+        quadJet["selected"] = quadJet.dhh == np.min(quadJet.dhh, axis=1)
+
+        quadJet["rhh"] = np.sqrt( (quadJet["lead"].mass - cLead)**2 + (quadJet["subl"].mass - cSubl)**2 )
+        quadJet["SR"] = (quadJet.rhh < SR_radius)
+        quadJet["SB"] =  (~quadJet.SR) & (quadJet.rhh < CR_radius)
+        quadJet["passDiJetMass"] =  quadJet.SR | quadJet.SB
+
+    else:
+
+        quadJet["SR"] = quadJet.ZZSR | quadJet.ZHSR | quadJet.HHSR
+        quadJet["SB"] = quadJet.passDiJetMass & ~quadJet.SR
+
+        #
+        # pick quadJet at random giving preference to ones which passDiJetMass and MDRs
+        #
+        quadJet["rank"] = ( 10 * quadJet.passDiJetMass + quadJet.lead.passMDR + quadJet.subl.passMDR + quadJet.random )
+        quadJet["selected"] = quadJet.rank == np.max(quadJet.rank, axis=1)
+
 
 
 

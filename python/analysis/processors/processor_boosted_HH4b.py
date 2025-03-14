@@ -26,9 +26,10 @@ warnings.filterwarnings("ignore")
 
 class analysis(processor.ProcessorABC):
     def __init__(
-        self,
-        *,
-        corrections_metadata="analysis/metadata/corrections.yml",
+            self,
+            *,
+            corrections_metadata="analysis/metadata/corrections.yml",
+            **kwargs
     ):
 
         logging.debug("\nInitialize Analysis Processor")
@@ -102,6 +103,13 @@ class analysis(processor.ProcessorABC):
         self._cutFlow.fill( "passJetMult", event[ selections.all(*allcuts)], allTag=True )
         allcuts.append("passPreSel")
         self._cutFlow.fill( "passPreSel", event[ selections.all(*allcuts)], allTag=True )
+
+
+        #
+        #  Adding infor for preliminary Boosted Synthetic data study
+        #
+        # from analysis.helpers.write_debug_info import add_debug_info_for_Boosted_Synthetic
+        # add_debug_info_for_Boosted_Synthetic(boosted_events, processOutput)
 
         #
         # Preselection: keep only three or four tag events

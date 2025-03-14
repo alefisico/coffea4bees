@@ -588,6 +588,7 @@ class analysis(processor.ProcessorABC):
                                        classifier_SvB=self.classifier_SvB,
                                        classifier_SvB_MA=self.classifier_SvB_MA,
                                        processOutput = processOutput,
+                                       isRun3=self.config["isRun3"],
                                       )
 
 
