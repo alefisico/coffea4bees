@@ -6,7 +6,7 @@ if [ -z "$1" ]; then
 fi
 
 JOB_NAME=$1
-SNAKEFILE="scripts/workflows/Snakefile_testCI"
+SNAKEFILE="workflows/Snakefile_testCI"
 
 # Check if JOB_NAME contains '-'
 if [[ "$JOB_NAME" == *-* ]]; then
@@ -15,10 +15,10 @@ if [[ "$JOB_NAME" == *-* ]]; then
 fi
 
 # Check if the folder named 'output' exists
-if [ -d "python/CI_output" ]; then
-  echo "The folder 'python/CI_output' exists. Remember that snakemake will not run a step if the output files already exist."
+if [ -d "CI_output" ]; then
+  echo "The folder 'CI_output' exists. Remember that snakemake will not run a step if the output files already exist."
 else
-  echo "Output files will be created in the 'python/CI_output' folder."
+  echo "Output files will be created in the 'CI_output' folder."
 fi
 
 # Check if the file ~/x509up* exists
@@ -46,7 +46,7 @@ else
 
   sed -e "s/input: outputs/input: $OUTPUT_LIST/" "$SNAKEFILE" > /tmp/Snakefile_testCI
 
-  export APPTAINER_BINDPATH=/uscms_data/,/uscmst1b_scratch,/cvmfs,/cvmfs/grid.cern.ch/etc/grid-security:/etc/grid-security,/tmp 
-  apptainer exec -B ${PWD}:/srv --pwd /srv docker://snakemake/snakemake snakemake --snakefile /tmp/Snakefile_testCI --use-apptainer --printshellcmds --keep-incomplete
+  ./run_container snakemake --snakefile /tmp/Snakefile_testCI --use-apptainer --printshellcmds --keep-incomplete
+
 fi
 

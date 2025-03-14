@@ -30,13 +30,13 @@ if [ "$do_proxy" = true ]; then
 fi
 
 return_to_base=false
-if [ "$(basename "$PWD")" == "python" ]; then
-    echo "You are in the python directory."
-else
-    return_to_base=true
-    echo "############### Moving to python folder"
-    cd python/
-fi
+# if [ "$(basename "$PWD")" == "python" ]; then
+#     echo "You are in the python directory."
+# else
+#     return_to_base=true
+#     echo "############### Moving to python folder"
+#     cd python/
+# fi
 
 echo "############### Checking and creating base output directory"
 DEFAULT_DIR=${output}
