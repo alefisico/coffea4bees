@@ -30,8 +30,6 @@ include:
     file: 'mkdocs-gitlab-pages.gitlab-ci.yml'
 
 stages:  
-  - validation
-  - pages
   - build
   - proxy
   - code 
@@ -43,6 +41,8 @@ stages:
   - cutflow
   - classifier
   - reana
+  - validation
+  - pages
 
 variables:
   MKDOCS_VERSION: '1.5.3'
