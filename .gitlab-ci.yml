@@ -61,10 +61,9 @@ stages:
     - cd /home/cmsusr/CMSSW_11_3_4/
     - cmsenv || true
     - cd -
+    - cd python/
   tags:
     - k8s-cvmfs
-  before_script:
-    - cd python/
 
 .base_classifier:
   needs:
