@@ -52,20 +52,20 @@ def add_debug_Run3_data(event, processOutput):
 
     out_data = {}
 
-    #debug_mask = event.region > 2
-    out_data["event"  ]    = event["event"]
-    out_data["run"    ]    = event["run"]
-    out_data["canJet_pt"    ] = event.canJet.pt  .to_list()
-    out_data["canJet_eta"   ] = event.canJet.eta .to_list()
-    out_data["canJet_phi"   ] = event.canJet.phi .to_list()
-    out_data["canJet_mass"  ] = event.canJet.mass.to_list()
-    out_data["canJet_bTagScore"] = event.canJet.btagScore.to_list()
+    debug_mask = (event.region == 1)
+    out_data["event"  ]    = event["event"][debug_mask]
+    out_data["run"    ]    = event["run"][debug_mask]
+    out_data["canJet_pt"    ] = event.canJet.pt  [debug_mask].to_list()
+    out_data["canJet_eta"   ] = event.canJet.eta [debug_mask].to_list()
+    out_data["canJet_phi"   ] = event.canJet.phi [debug_mask].to_list()
+    out_data["canJet_mass"  ] = event.canJet.mass[debug_mask].to_list()
+    out_data["canJet_bTagScore"] = event.canJet.btagScore[debug_mask].to_list()
 
-    out_data["notCanJet_pt"    ]    = event.notCanJet_coffea.pt  .to_list()
-    out_data["notCanJet_eta"   ]    = event.notCanJet_coffea.eta .to_list()
-    out_data["notCanJet_phi"   ]    = event.notCanJet_coffea.phi .to_list()
-    out_data["notCanJet_mass"  ]    = event.notCanJet_coffea.mass.to_list()
-    out_data["notCanJet_bTagScore"] = event.notCanJet_coffea.btagScore.to_list()
+    out_data["notCanJet_pt"    ]    = event.notCanJet_coffea.pt  [debug_mask].to_list()
+    out_data["notCanJet_eta"   ]    = event.notCanJet_coffea.eta [debug_mask].to_list()
+    out_data["notCanJet_phi"   ]    = event.notCanJet_coffea.phi [debug_mask].to_list()
+    out_data["notCanJet_mass"  ]    = event.notCanJet_coffea.mass[debug_mask].to_list()
+    out_data["notCanJet_bTagScore"] = event.notCanJet_coffea.btagScore[debug_mask].to_list()
 
 
     for out_k, out_v in out_data.items():

@@ -183,7 +183,7 @@ if __name__ == '__main__':
         configs['config']['run_systematics'] = True
 
     if 'all' in args.datasets:
-        metadata['datasets'].pop("mixeddata")  
+        metadata['datasets'].pop("mixeddata")
         metadata['datasets'].pop("synthetic_data")
         metadata['datasets'].pop("data_3b_for_mixed")
         args.datasets = metadata['datasets'].keys()
@@ -243,8 +243,8 @@ if __name__ == '__main__':
                     metadata_dataset[dataset]['genEventSumw'] = 1
                     meta_files = metadata['datasets'][dataset][year][config_runner['data_tier']]
 
-                fileset[dataset + "_" + year] = {'files': list_of_files(meta_files, 
-                                                                        test=args.test, 
+                fileset[dataset + "_" + year] = {'files': list_of_files(meta_files,
+                                                                        test=args.test,
                                                                         test_files=config_runner['test_files'],
                                                                         allowlist_sites=config_runner['allowlist_sites'],
                                                                         blocklist_sites=config_runner['blocklist_sites'],
@@ -375,9 +375,9 @@ if __name__ == '__main__':
                         idataset = f'{dataset}_{year}{iera}'
                         metadata_dataset[idataset] = metadata_dataset[dataset]
                         metadata_dataset[idataset]['era'] = iera
-                        fileset[idataset] = {'files': list_of_files((ifile['files'] if config_runner['data_tier'].startswith('pico') else ifile), 
-                                                                    test=args.test, 
-                                                                    test_files=config_runner['test_files'], 
+                        fileset[idataset] = {'files': list_of_files((ifile['files'] if config_runner['data_tier'].startswith('pico') else ifile),
+                                                                    test=args.test,
+                                                                    test_files=config_runner['test_files'],
                                                                     allowlist_sites=config_runner['allowlist_sites'],
                                                                     blocklist_sites=config_runner['blocklist_sites'],
                                                                     rucio_regex_sites=config_runner['rucio_regex_sites']),
@@ -467,6 +467,7 @@ if __name__ == '__main__':
         executor_args["pool"] = pool
         executor_args["workers"] = n_workers
         executor = processor.futures_executor
+
     logging.info(f"Executor arguments:")
     logging.info(pretty_repr(executor_args))
     #
