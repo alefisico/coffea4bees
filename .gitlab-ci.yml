@@ -27,7 +27,9 @@ variables:
 include:
   - local: '.ci-workflows/stages_*.yml'
 
-stages:          
+stages:  
+  - validation
+  - pages
   - build
   - proxy
   - code 
@@ -39,8 +41,6 @@ stages:
   - cutflow
   - classifier
   - reana
-  - validation
-  - pages
 
 .base_analysis:
   needs:
