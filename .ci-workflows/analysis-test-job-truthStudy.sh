@@ -1,1 +1,0 @@
-../python/scripts/analysis-test-job-truthStudy.sh

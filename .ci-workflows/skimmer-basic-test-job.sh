@@ -1,1 +1,0 @@
-../python/scripts/skimmer-basic-test-job.sh

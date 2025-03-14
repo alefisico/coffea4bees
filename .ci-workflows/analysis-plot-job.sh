@@ -1,1 +1,0 @@
-../python/scripts/analysis-plot-job.sh

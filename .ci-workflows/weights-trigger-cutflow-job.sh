@@ -1,1 +1,0 @@
-../python/scripts/weights-trigger-cutflow-job.sh

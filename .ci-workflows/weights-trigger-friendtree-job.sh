@@ -1,1 +1,0 @@
-../python/scripts/weights-trigger-friendtree-job.sh

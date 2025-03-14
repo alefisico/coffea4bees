@@ -2,15 +2,6 @@
 
 # Script to run either a coffea, combine, or snakemake container
 
-# Define default paths
-COMBINE_IMAGE="/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0"
-SNAKEMAKE_IMAGE="/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-cmu/coffea4bees:reana_latest"
-COFFEA_IMAGE="/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
-
-## Define paths for LPC CONDOR
-LPC_CONDOR_CONFIG=/etc/condor/config.d/01_cmslpc_interactive
-LPC_CONDOR_LOCAL=/usr/local/bin/cmslpc-local-conf.py
-
 # Function to display help message
 show_help() {
   echo "Usage: $0 [command] [options]"
@@ -31,6 +22,22 @@ show_help() {
   echo "  $0 combine combine -M AsymptoticLimits  Run combine in the combine container."
   echo "  $0 snakemake --snakefile Snakefile  Run snakemake with the specified Snakefile."
 }
+
+# Define default paths
+COFFEA_IMAGE="gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
+COMBINE_IMAGE="gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0"
+SNAKEMAKE_IMAGE="gitlab-registry.cern.ch/cms-cmu/coffea4bees:reana_latest"
+
+if [ -d '/cvmfs' ]; then
+    COFFEA_IMAGE="/cvmfs/unpacked.cern.ch/${COFFEA_IMAGE}"
+    COMBINE_IMAGE="/cvmfs/unpacked.cern.ch/${COMBINE_IMAGE}"
+    SNAKEMAKE_IMAGE="/cvmfs/unpacked.cern.ch/${SNAKEMAKE_IMAGE}"
+fi
+
+## Define paths for LPC CONDOR
+LPC_CONDOR_CONFIG=/etc/condor/config.d/01_cmslpc_interactive
+LPC_CONDOR_LOCAL=/usr/local/bin/cmslpc-local-conf.py
+
 
 # Set APPTAINER_BINDPATH dynamically
 if [ -z "$APPTAINER_BINDPATH" ]; then

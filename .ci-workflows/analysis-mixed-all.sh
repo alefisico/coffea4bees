@@ -1,1 +1,0 @@
-../python/scripts/analysis-mixed-all.sh

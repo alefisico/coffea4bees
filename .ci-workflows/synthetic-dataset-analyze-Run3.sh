@@ -1,1 +1,0 @@
-../python/scripts/synthetic-dataset-analyze-Run3.sh

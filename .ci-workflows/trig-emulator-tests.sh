@@ -1,1 +1,0 @@
-../python/scripts/trig-emulator-tests.sh

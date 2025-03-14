@@ -1,1 +1,0 @@
-../python/scripts/skimmer-fourTag-test-job.sh

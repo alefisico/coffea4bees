@@ -1,1 +1,0 @@
-../python/scripts/memory_test.sh

@@ -1,1 +1,0 @@
-../python/scripts/topreco-friendtree-job.sh

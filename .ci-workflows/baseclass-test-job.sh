@@ -1,1 +1,0 @@
-../python/scripts/baseclass-test-job.sh

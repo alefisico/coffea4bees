@@ -1,1 +1,0 @@
-../python/scripts/run_local_ci.sh

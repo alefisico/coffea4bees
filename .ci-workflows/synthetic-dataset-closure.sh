@@ -1,1 +1,0 @@
-../python/scripts/synthetic-dataset-closure.sh

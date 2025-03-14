@@ -1,1 +1,0 @@
-../python/scripts/set_initial_variables.sh

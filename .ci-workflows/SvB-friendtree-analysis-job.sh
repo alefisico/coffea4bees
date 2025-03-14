@@ -1,1 +1,0 @@
-../python/scripts/SvB-friendtree-analysis-job.sh

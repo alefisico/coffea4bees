@@ -1,1 +1,0 @@
-../python/scripts/classifier-friendtree-job.sh

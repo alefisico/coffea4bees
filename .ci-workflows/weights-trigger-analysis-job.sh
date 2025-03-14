@@ -1,1 +1,0 @@
-../python/scripts/weights-trigger-analysis-job.sh
