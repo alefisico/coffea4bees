@@ -26,24 +26,15 @@ warnings.filterwarnings("ignore")
 
 class analysis(processor.ProcessorABC):
     def __init__(
-        self,
-        *,
-        corrections_metadata="analysis/metadata/corrections.yml",
+            self,
+            *,
+            corrections_metadata="analysis/metadata/corrections.yml",
+            **kwargs
     ):
 
         logging.debug("\nInitialize Analysis Processor")
         self.corrections_metadata = yaml.safe_load(open(corrections_metadata, "r"))
 
-        self.cutFlowCuts = [
-            "all",
-            "passHLT",
-            "passNoiseFilter",
-            "passJetMult",
-            "passJetMult_btagSF",
-            "passPreSel",
-            "passDiJetMass",
-            "SR",
-        ]
 
 
 
@@ -105,13 +96,20 @@ class analysis(processor.ProcessorABC):
         }
 
         event['weight'] = np.ones(len(event))
-        self._cutFlow = cutFlow(self.cutFlowCuts)
+        self._cutFlow = cutFlow()
         self._cutFlow.fill( "all", event[selections.require(lumimask=True)], allTag=True )
         self._cutFlow.fill( "passNoiseFilter", event[selections.require(lumimask=True, passNoiseFilter=True)], allTag=True, )
         self._cutFlow.fill( "passHLT", event[ selections.require( lumimask=True, passNoiseFilter=True, passHLT=True ) ], allTag=True, )
         self._cutFlow.fill( "passJetMult", event[ selections.all(*allcuts)], allTag=True )
         allcuts.append("passPreSel")
         self._cutFlow.fill( "passPreSel", event[ selections.all(*allcuts)], allTag=True )
+
+
+        #
+        #  Adding infor for preliminary Boosted Synthetic data study
+        #
+        # from analysis.helpers.write_debug_info import add_debug_info_for_Boosted_Synthetic
+        # add_debug_info_for_Boosted_Synthetic(boosted_events, processOutput)
 
         #
         # Preselection: keep only three or four tag events

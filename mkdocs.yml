@@ -1,0 +1,95 @@
+site_name: Coffea4bees Documentation
+site_description: CMU - coffea4bees Documentation
+site_author: CMU  Group
+site_url: https://coffea4bees.docs.cern.ch/
+
+repo_name: GitLab
+repo_url: https://gitlab.cern.ch/cms-cmu/coffea4bees
+edit_uri: 'blob/master/docs'
+
+theme:
+  name: material
+  font: false
+  logo: assets/CMU-logo.png
+  palette:
+    # Palette toggle for light mode
+    - media: '(prefers-color-scheme: light)'
+      scheme: default
+      primary: red
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Palette toggle for dark mode
+    - media: '(prefers-color-scheme: dark)'
+      scheme: slate
+      primary: red
+      accent: amber
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+extra_css:
+  - stylesheets/fonts.css
+  - stylesheets/extra.css
+
+markdown_extensions:
+  - attr_list
+  - abbr
+  - pymdownx.snippets
+  - admonition
+  - def_list
+  - footnotes
+  - tables
+  - meta
+  - toc:
+      permalink: true
+  # Python Markdown Extensions
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+  - pymdownx.blocks.admonition
+  - pymdownx.blocks.details
+  - pymdownx.blocks.tab
+  - pymdownx.snippets:
+      check_paths : true
+      restrict_base_path: false
+
+plugins:
+  - search
+  - git-revision-date-localized:
+      fallback_to_build_date: true
+  - mkdocs-video
+  - privacy
+  - termynal
+
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
+  - javascripts/feedback.js
+
+
+nav:
+    - Home: index.md
+

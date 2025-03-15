@@ -9,10 +9,11 @@ EOS_OUTPUT = f"/eos/user/a/algomez/work/HH4b/reana/{datetime.now().strftime('%Y%
 rule final_rule:
     input:
         "output/plots/RunII/passPreSel/fourTag/SB/nPVs.pdf",
-        "output/datacards/systs/SvB_MA_ps_hh_fine_nominal.pdf",
+        "output/datacards/systs/SvB_MA_ps_hh_nominal.pdf",
+        "output/datacards/plots/SvB_MA_postfitplots_prefit.pdf",
         'output/datacards/impacts_combine_SvB_MA_exp_HH.pdf',
-        # "output/datacards/plots/SvB_postfit.png"   ### Blinded analysis, no postfits.
-        # "output/datacards/kappa_scan.pdf"
+        "output/datacards/systbreakdown_SvB_MA_breakdown.pdf",
+        # "output/datacards/kappa_scan.pdf"   ### this does not work yet
         # expand("output/singlefiles/histNoJCM__{sample}-{year}.coffea", sample=config['dataset'], year=config['year'])  ### trick to define wildcards
     container: config["analysis_container"]
     resources:
@@ -21,6 +22,7 @@ rule final_rule:
         unpacked_img=True,
     shell: 
         """
+        cp gitdiff.txt output/
         echo "Copying output to cernbox"
         python python/base_class/php_plots/pb_deploy_plots.py output/ {EOS_OUTPUT} -r -c -j 4
         mkdir -p {EOS_OUTPUT}
@@ -232,7 +234,7 @@ rule make_plots:
         """
         cd python/ 
         echo "Making plots"
-        mprof run -C -o mprofile_makeplots.dat python plots/makePlots.py ../output/histAll.coffea -o ../output/plots/ -m plots/metadata/plotsAll.yml -s xW
+        mprof run -C -o mprofile_makeplots.dat python plots/makePlots.py ../output/histAll.coffea -o ../output/plots/ -m plots/metadata/plotsAll.yml -s xW FvT
         echo "Making a plot of the performance"
         mprof plot -o ../output/performance/mprofile_makeplots.png mprofile_makeplots.dat
         """
@@ -299,11 +301,11 @@ rule run_two_stage_closure:
         file_sig = "output/histAll.root",
         file_data3b = "output/histMixedBkg_data_3b_for_mixed.root"
     container: config["combine_container"]
-    output: "output/closureFits/ULHH_kfold/3bDvTMix4bDvT/SvB_MA/varrebin5/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_fine_varrebin5.pkl"
+    output: "output/closureFits/ULHH_kfold/3bDvTMix4bDvT/SvB_MA/rebin1/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin1.pkl"
     params:
         outputPath = "output/closureFits/ULHH_kfold",
-        rebin = "5",
-        variable = "SvB_MA_ps_hh_fine"
+        rebin = "1",
+        variable = "SvB_MA_ps_hh"
     resources:
         unpacked_img=True,
         compute_backend="kubernetes",
@@ -317,7 +319,6 @@ rule run_two_stage_closure:
         cd python/
         python3 stats_analysis/runTwoStageClosure.py  \
             --var {params.variable} --rebin {params.rebin} --use_kfold \
-            --variable_binning \
             --outputPath ../{params.outputPath} \
             --input_file_TT ../{input.file_TT} \
             --input_file_mix ../{input.file_mix} \
@@ -329,14 +330,14 @@ rule make_combine_inputs:
     input:
         injson = "output/histAll.json",
         injsonsyst = "output/histAll_signals_cHHHX.json",
-        bkgsyst = "output/closureFits/ULHH_kfold/3bDvTMix4bDvT/SvB_MA/varrebin5/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_fine_varrebin5.pkl"
+        bkgsyst = "output/closureFits/ULHH_kfold/3bDvTMix4bDvT/SvB_MA/rebin1/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin1.pkl"
     output:
         "output/datacards/shapes.root",
         "output/datacards/datacard_HHbb_2018.txt"
     container: config["combine_container"]
     params:
-        variable= "SvB_MA.ps_hh_fine",
-        rebin=5
+        variable= "SvB_MA.ps_hh",
+        rebin=1
     resources:
         voms_proxy=True,
         kerberos=True,
@@ -415,8 +416,10 @@ rule run_impacts:
 
 rule run_postfit:
     input: "output/datacards/datacard.root"
-    output: "output/datacards/plots/SvB_postfit.png"
+    output: "output/datacards/plots/SvB_MA_postfitplots_prefit.pdf"
     container: config["combine_container"]
+    params:
+        output_dir="output/datacards/plots/"
     resources:
         voms_proxy=True,
         kerberos=True,
@@ -432,14 +435,16 @@ rule run_postfit:
         cat {input}
         echo "RUNNING COMBINE"
         source stats_analysis/run_combine.sh ../output/datacards/ --postfit
-        python3 plots/make_postfit_plot.py -i ../output/datacards/fitDiagnostics_SvB_MA_prefit_sb.root -o ../{output} -t prefit
+        python3 plots/make_postfit_plot.py -i ../output/datacards/fitDiagnostics_SvB_MA_prefit_sb.root -o ../{params.output_dir} -t prefit
+        python3 plots/make_postfit_plot.py -i ../output/datacards/fitDiagnostics_SvB_MA_prefit_sb.root -o ../{params.output_dir} -t fit_b
+        python3 plots/make_postfit_plot.py -i ../output/datacards/fitDiagnostics_SvB_MA_prefit_sb.root -o ../{params.output_dir} -t fit_s
         """
 
 rule make_syst_plots:
     input: 
         root="output/datacards/shapes.root",
         datacard="output/datacards/datacard.txt"
-    output: "output/datacards/systs/SvB_MA_ps_hh_fine_nominal.pdf"
+    output: "output/datacards/systs/SvB_MA_ps_hh_nominal.pdf"
     container: config["combine_container"]
     resources:
         kerberos=True,
@@ -454,7 +459,30 @@ rule make_syst_plots:
         cd -
         cd python/
         echo "Making syst plots"
-        python3 plots/make_syst_plots.py -i ../{input.root} -o ../output/datacards/systs/ -d ../{input.datacard}
+        python3 plots/make_syst_plots.py -i ../{input.root} -o ../output/datacards/systs/ -d ../{input.datacard} --variable SvB_MA_ps_hh
+        """
+
+rule make_syst_breakdown:
+    input: "output/datacards/datacard.root"
+    output: "output/datacards/systbreakdown_SvB_MA_breakdown.pdf"
+    container: config["combine_container"]
+    params:
+        output_dir="output/datacards/plots/"
+    resources:
+        voms_proxy=True,
+        kerberos=True,
+        unpacked_img=True,
+        compute_backend="kubernetes"
+    shell:
+        """
+        source /cvmfs/cms.cern.ch/cmsset_default.sh
+        cd /home/cmsusr/CMSSW_11_3_4/
+        cmsenv || true
+        cd -
+        cd python/
+        cat {input}
+        echo "RUNNING COMBINE"
+        source stats_analysis/run_combine.sh ../output/datacards/ --systbreakdown
         """
 
 rule kappa_scan:

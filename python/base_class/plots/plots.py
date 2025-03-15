@@ -45,6 +45,10 @@ def init_arg_parser():
                         default="plots/metadata/plotModifiers.yml",
                         help='Metadata file.')
 
+    parser.add_argument('--only', dest="list_of_hists",
+                        default=[], nargs='+',
+                        help='If given only plot these hists')
+
     parser.add_argument('-s', '--skip', dest="skip_hists",
                         default=[], nargs='+',
                         help='Name of hists to skip')
@@ -477,6 +481,73 @@ def _plot_from_dict(plot_data, **kwargs):
 
     return fig, main_ax, ratio_ax
 
+def plot_border_SR():
+    # Define the function
+    def func0(x, y):
+        return (((x - 127.5) / (0.1 * x)) ** 2 + ((y - 122.5) / (0.1 * y)) ** 2)
+
+    def func1(x, y):
+        return (((x - 127.5) / (0.1 * x)) ** 2 + ((y - 89.18) / (0.1 * y)) ** 2)
+
+    def func2(x, y):
+        return (((x - 92.82) / (0.1 * x)) ** 2 + ((y - 122.5) / (0.1 * y)) ** 2)
+
+    def func3(x, y):
+        return (((x - 92.82) / (0.1 * x)) ** 2 + ((y - 89.18) / (0.1 * y)) ** 2)
+
+    # Create a grid of x and y values
+    x = np.linspace(0, 250, 500)
+    y = np.linspace(0, 250, 500)
+    X, Y = np.meshgrid(x, y)
+
+    # Compute the function values on the grid
+    Z0 = func0(X, Y)
+    Z1 = func1(X, Y)
+    Z2 = func2(X, Y)
+    Z3 = func3(X, Y)
+
+    # Create the plot
+    plt.contour(X, Y, Z0, levels=[1.90*1.90], colors='orangered', linestyles='dashed', linewidths=5) 
+    plt.contour(X, Y, Z1, levels=[1.90*1.90], colors='orangered', linestyles='dashed', linewidths=5)
+    plt.contour(X, Y, Z2, levels=[1.90*1.90], colors='orangered', linestyles='dashed', linewidths=5)
+    plt.contour(X, Y, Z3, levels=[2.60*2.60], colors='orangered', linestyles='dashed', linewidths=5)
+
+
+def plot_leadst_lines():
+
+    def func4(x):
+        return (360/x) - 0.5
+    
+    def func6(x):
+        return max(1.5, (650/x) + 0.5)
+
+    # Plot func4 as a line plot
+    x_func4 = np.linspace(100, 1100, 50)
+    y_func4 = func4(x_func4)
+    plt.plot(x_func4, y_func4, color='red', linestyle='-', linewidth=2)
+
+    # Plot func6 as a line plot
+    x_func6 = np.linspace(100, 1100, 50)
+    y_func6 = [func6(x) for x in x_func6] 
+    plt.plot(x_func6, y_func6, color='red', linestyle='-', linewidth=2)
+
+def plot_sublst_lines():
+
+    def func4(x):
+        return (235/x)
+    
+    def func6(x):
+        return max(1.5, (650/x) + 0.7)
+
+    # Plot func4 as a line plot
+    x_func4 = np.linspace(100, 1100, 50)
+    y_func4 = func4(x_func4)
+    plt.plot(x_func4, y_func4, color='red', linestyle='-', linewidth=2)
+
+    # Plot func6 as a line plot
+    x_func6 = np.linspace(100, 1100, 50)
+    y_func6 = [func6(x) for x in x_func6] 
+    plt.plot(x_func6, y_func6, color='red', linestyle='-', linewidth=2)
 
 
 def _plot2d_from_dict(plot_data, **kwargs):
@@ -518,6 +589,9 @@ def _plot2d_from_dict(plot_data, **kwargs):
         fig.add_axes((0.1, 0.15, 0.85, 0.8))
         hist_obj_2d.plot2d(cmap="turbo")
 
+    if kwargs.get("plot_contour", False): plot_border_SR()
+    if kwargs.get("plot_leadst_lines", False): plot_leadst_lines()
+    if kwargs.get("plot_sublst_lines", False): plot_sublst_lines()
 
     ax = fig.gca()
 
@@ -1060,11 +1134,10 @@ def make2DPlot(cfg, process, var='selJets.pt',
                 hist_to_plot = _hist_to_plot
 
     else:
+        process_config = { 'process': "all"}
         input_data = cfg.hists[0]
         hist_to_plot = input_data['hists'][var]
-
-    cut_dict = plot_helpers.get_cut_dict(cut, cfg.cutList)
-
+    
     #
     #  Get the year
     #    (Got to be a better way to do this....)
@@ -1075,38 +1148,53 @@ def make2DPlot(cfg, process, var='selJets.pt',
     #
     #  Unstacked hists
     #
-    process_config = copy.deepcopy(plot_helpers.get_value_nested_dict(cfg.plotConfig, process))
-    tagName = process_config.get("tag", "fourTag")
-    tag = cfg.plotConfig["codes"]["tag"][tagName]
 
-    if region in ["sum", sum]:
-        region_selection = sum
-    elif type(cfg.plotConfig["codes"]["region"][region]) is list:
-        region_selection = [hist.loc(_r) for _r in cfg.plotConfig["codes"]["region"][region]]
+    if cfg.plotConfig.get('hist_dict', None):
+
+        hist_dict = cfg.plotConfig["hist_dict"]
+
     else:
-        region_selection = hist.loc(cfg.plotConfig["codes"]["region"][region])
 
-    if kwargs.get("debug", False):
-        print(f" hist process={process}, "
-              f"tag={tag}, year={year}")
+        cut_dict = plot_helpers.get_cut_dict(cut, cfg.cutList)
 
-    varName = hist_to_plot.axes[-1].name
-    hist_dict = {"process": process_config["process"],
-                 "year":    year,
-                 "tag":     hist.loc(tag),
-                 "region":  region_selection,
-                 varName:   hist.rebin(kwargs.get("rebin", 1))}
+        process_config = copy.deepcopy(plot_helpers.get_value_nested_dict(cfg.plotConfig, process))
+        tagName = process_config.get("tag", "fourTag")
+        tag = cfg.plotConfig["codes"]["tag"][tagName]
 
-    hist_dict = hist_dict | cut_dict
+        if region in ["sum", sum]:
+            region_selection = sum
+        elif type(cfg.plotConfig["codes"]["region"][region]) is list:
+            region_selection = [hist.loc(_r) for _r in cfg.plotConfig["codes"]["region"][region]]
+        else:
+            region_selection = hist.loc(cfg.plotConfig["codes"]["region"][region])
+
+        if kwargs.get("debug", False):
+            print(f" hist process={process}, "
+                f"tag={tag}, year={year}")
+
+        varName = hist_to_plot.axes[-1].name
+        hist_dict = {"process": process_config["process"],
+                    "year":    year,
+                    "tag":     hist.loc(tag),
+                    "region":  region_selection,
+                    varName:   hist.rebin(kwargs.get("rebin", 1))}
+
+        hist_dict = hist_dict | cut_dict
+
     _hist = hist_to_plot[hist_dict]
 
     if len(_hist.shape) == 3:  # for 2D plots
         _hist = _hist[sum, :, :]
 
-
     # Extract counts and variances
-    process_config["values"]    = _hist.view(flow=False)["value"].tolist()  # Bin counts (array)
-    process_config["variances"] = _hist.view(flow=False)["variance"].tolist()  # Bin variances (array)
+    try:
+        process_config["values"]    = _hist.view(flow=False)["value"].tolist()  # Bin counts (array)
+        process_config["variances"] = _hist.view(flow=False)["variance"].tolist()  # Bin variances (array)
+    except IndexError:
+        process_config["values"]    = _hist.values()  # Bin counts (array)
+        process_config["variances"] = _hist.variances()  # Bin variances (array)
+    if process_config["variances"] is None:
+        process_config["variances"] = np.zeros_like(process_config["values"])
     process_config["x_edges"]   = _hist.axes[0].edges.tolist()  # X-axis edges
     process_config["y_edges"]   = _hist.axes[1].edges.tolist()  # Y-axis edges
     process_config["x_label"]   = _hist.axes[0].label  # X-axis label
@@ -1115,13 +1203,20 @@ def make2DPlot(cfg, process, var='selJets.pt',
 
     plot_data = {}
     plot_data["var"] = var
-    plot_data["cut"] = cut
-    plot_data["region"] = region
-    plot_data["process"] = process
-    plot_data["tagName"] = tagName
-    plot_data["kwargs"] = kwargs
-    plot_data["hist"] = process_config
     plot_data["is_2d_hist"] = True
+    plot_data["hist"] = process_config
+    plot_data["kwargs"] = kwargs
+
+    if cfg.plotConfig.get('hist_dict', None):
+        plot_data["cut"] = cfg.plotConfig["hist_dict"]["selection"]
+        plot_data["region"] = ''
+        plot_data["process"] = ''
+        plot_data["tagName"] = ''
+    else:
+        plot_data["cut"] = cut
+        plot_data["region"] = region
+        plot_data["process"] = process
+        plot_data["tagName"] = tagName
 
     #
     # Make the plot

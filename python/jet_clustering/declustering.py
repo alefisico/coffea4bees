@@ -228,6 +228,50 @@ def compute_decluster_variables(clustered_splittings):
     clustered_splittings["decay_phi"] = np.arccos(decay_plane_hat.dot(comb_z_plane_hat))
     clustered_splittings["dr_AB"]     = clustered_splittings.part_A.delta_r(clustered_splittings.part_B)
     clustered_splittings["dpt_AB"]    = clustered_splittings.part_A.pt - (clustered_splittings.pt * clustered_splittings.zA)
+
+    #
+    #  The rest of the code Updates the mass in the rotated rest frame
+    #
+
+    #
+    #  Go to the frame hwere the combined jet is pointing along X (needed to rotate the decay plane with rotateX)
+    #
+    clustered_splittings_part_A_pz0_phi0  = rotateZ(clustered_splittings_part_A_pz0, -clustered_splittings.phi)
+    clustered_splittings_part_B_pz0_phi0  = rotateZ(clustered_splittings_part_B_pz0, -clustered_splittings.phi)
+
+    #
+    #    we either need to rotate back by + or - decay phi, figure out which one
+    #
+    clustered_splittings_part_A_pz0_phi0_dphi0  = rotateX(clustered_splittings_part_A_pz0_phi0, -clustered_splittings.decay_phi)
+    clustered_splittings_part_B_pz0_phi0_dphi0  = rotateX(clustered_splittings_part_B_pz0_phi0, -clustered_splittings.decay_phi)
+    decay_plane_dphi0 = clustered_splittings_part_A_pz0_phi0_dphi0.cross(clustered_splittings_part_B_pz0_phi0_dphi0).unit
+
+    clustered_splittings_part_A_pz0_phi0_pdphi0  = rotateX(clustered_splittings_part_A_pz0_phi0, +clustered_splittings.decay_phi)
+    clustered_splittings_part_B_pz0_phi0_pdphi0  = rotateX(clustered_splittings_part_B_pz0_phi0, +clustered_splittings.decay_phi)
+    decay_plane_pdphi0 = clustered_splittings_part_A_pz0_phi0_pdphi0.cross(clustered_splittings_part_B_pz0_phi0_pdphi0).unit
+
+    pos_decay_phi_mask = np.abs(decay_plane_pdphi0.y - 1) < 0.001
+    pos_decay_phi_mask_flat = ak.flatten(pos_decay_phi_mask)
+
+    #
+    # Get the pts in the frame we will do de-clustering
+    #
+    rotated_pt_A_flat = ak.flatten(clustered_splittings_part_A_pz0_phi0_dphi0.pt).to_numpy()
+    rotated_pt_A_pos_dphi = ak.flatten(clustered_splittings_part_A_pz0_phi0_pdphi0.pt)
+    rotated_pt_A_flat[pos_decay_phi_mask_flat] = rotated_pt_A_pos_dphi[pos_decay_phi_mask_flat]
+    rotated_pt_A = ak.unflatten(rotated_pt_A_flat, ak.num(clustered_splittings))
+
+    rotated_pt_B_flat = ak.flatten(clustered_splittings_part_B_pz0_phi0_dphi0.pt).to_numpy()
+    rotated_pt_B_pos_dphi = ak.flatten(clustered_splittings_part_B_pz0_phi0_pdphi0.pt)
+    rotated_pt_B_flat[pos_decay_phi_mask_flat] = rotated_pt_B_pos_dphi[pos_decay_phi_mask_flat]
+    rotated_pt_B = ak.unflatten(rotated_pt_B_flat, ak.num(clustered_splittings))
+
+    #
+    #  Update the mass with rho and pt from the rotated frame
+    #
+    clustered_splittings["mA_rotated"]        = clustered_splittings.rhoA * rotated_pt_A
+    clustered_splittings["mB_rotated"]        = clustered_splittings.rhoB * rotated_pt_B
+
     return
 
 
@@ -455,7 +499,7 @@ def decluster_combined_jets(input_jet, debug=False):
     return pA, pB
 
 
-def decluster_splitting_types(input_jets, splitting_types, input_pdfs, rand_seed, chunk=None, debug=False):
+def decluster_splitting_types(input_jets, splitting_types, input_pdfs, rand_seed, b_pt_threshold=40, chunk=None, debug=False):
 
     if debug:
         print(f"{chunk} decluster_splitting_types input rand_seed {rand_seed}\n")
@@ -541,8 +585,8 @@ def decluster_splitting_types(input_jets, splitting_types, input_pdfs, rand_seed
         B_is_b_mask_flat = declustered_jet_B_jet_flavor_flat == "b"
         B_is_b_mask = ak.unflatten(B_is_b_mask_flat, ak.num(declustered_jets_B.jet_flavor))
 
-        fail_pt_b_mask  = (A_is_b_mask & (declustered_jets_A.pt < 40) )          | (B_is_b_mask & (declustered_jets_B.pt < 40))
-        #fail_pt_b_mask  = (A_is_b_mask & (declustered_jets_A.pt < 30) )          | (B_is_b_mask & (declustered_jets_B.pt < 30))
+        #fail_pt_b_mask  = (A_is_b_mask & (declustered_jets_A.pt < 40) )          | (B_is_b_mask & (declustered_jets_B.pt < 40))
+        fail_pt_b_mask  = (A_is_b_mask & (declustered_jets_A.pt < b_pt_threshold) )          | (B_is_b_mask & (declustered_jets_B.pt < b_pt_threshold))
         fail_eta_b_mask = (A_is_b_mask & (np.abs(declustered_jets_A.eta) > 2.5)) | (B_is_b_mask & (np.abs(declustered_jets_B.eta) > 2.5))
 
         fail_dr_mask  = declustered_jets_A.delta_r(declustered_jets_B) < 0.4
@@ -568,7 +612,7 @@ def decluster_splitting_types(input_jets, splitting_types, input_pdfs, rand_seed
     return unclustered_jets
 
 
-def make_synthetic_event_core(input_jets, input_pdfs, rand_seed, chunk=None, debug=False):
+def make_synthetic_event_core(input_jets, input_pdfs, rand_seed, b_pt_threshold, chunk=None, debug=False):
 
     if debug:
         print(f"{chunk} make_synthetic_event_core rand_seed {rand_seed}\n")
@@ -586,7 +630,7 @@ def make_synthetic_event_core(input_jets, input_pdfs, rand_seed, chunk=None, deb
         if debug:
             print(f"(make_synthetic_event_core) splitting_types was {splitting_types}")
 
-        input_jets = decluster_splitting_types(input_jets, splitting_types, input_pdfs, rand_seed, chunk=chunk, debug=debug)
+        input_jets = decluster_splitting_types(input_jets, splitting_types, input_pdfs, rand_seed, b_pt_threshold=b_pt_threshold, chunk=chunk, debug=debug)
 
         splitting_types = get_list_of_combined_jet_types(input_jets)
 
@@ -603,7 +647,7 @@ def make_synthetic_event_core(input_jets, input_pdfs, rand_seed, chunk=None, deb
 #   return make_synthetic_event_core(input_jets, input_pdfs, debug=debug)
 
 
-def make_synthetic_event(input_jets, input_pdfs, declustering_rand_seed=66, chunk=None, debug=False):
+def make_synthetic_event(input_jets, input_pdfs, declustering_rand_seed=66, b_pt_threshold=40, chunk=None, debug=False):
 
     if debug:
         print(f"{chunk} make_synthetic_event rand_seed {declustering_rand_seed}\n")
@@ -635,7 +679,7 @@ def make_synthetic_event(input_jets, input_pdfs, declustering_rand_seed=66, chun
 
         to_decluster_indicies = np.where(events_to_decluster_mask)[0]
 
-        declustered_events = make_synthetic_event_core(input_jets[to_decluster_indicies], input_pdfs, 7 * num_trys + declustering_rand_seed, chunk=chunk)
+        declustered_events = make_synthetic_event_core(input_jets[to_decluster_indicies], input_pdfs, 7 * num_trys + declustering_rand_seed, b_pt_threshold=b_pt_threshold, chunk=chunk)
 
         #
         #  Check the min dr

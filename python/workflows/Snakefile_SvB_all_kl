@@ -1,6 +1,9 @@
-config['output_path'] = "hists/test_coffea4bees_puId"
+config['output_path'] = "output/boostedVeto"
 config['analysis_container'] = "/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest" 
 config['combine_container'] = "/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0"
+config['SvB_rebin'] = "1"
+# config["variable_binning"] = "--variable_binning"
+config["variable_binning"] = ""
 
 rule all:
     input:
@@ -87,12 +90,12 @@ use rule run_two_stage_closure from stat_analysis as run_two_stage_closure_local
         file_mix = f"{config['output_path']}/histMixedData.root",
         file_sig = f"{config['output_path']}/histAll.root",
         file_data3b = f"{config['output_path']}/histMixedBkg_data_3b_for_mixed.root"
-    output: f"{config['output_path']}/closureFits/ULHH_kfold/3bDvTMix4bDvT/SvB_MA/varrebin2/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_fine_varrebin2.pkl"
+    output: f"{config['output_path']}/closureFits/ULHH_kfold/3bDvTMix4bDvT/SvB_MA/rebin{config['SvB_rebin']}/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin{config['SvB_rebin']}.pkl"
     params:
         outputPath = f"{config['output_path']}/closureFits/ULHH_kfold",
-        rebin = "2",
-        variable = "SvB_MA_ps_hh_fine",
-        variable_binning="--variable_binning",
+        rebin = {config['SvB_rebin']},
+        variable = "SvB_MA_ps_hh",
+        variable_binning=f"{config["variable_binning"]}",
         container = config['combine_container']
 
 
@@ -100,16 +103,16 @@ use rule make_combine_inputs from stat_analysis as make_combine_inputs_local wit
     input:
         injson = f"{config['output_path']}/histAll.json",
         injsonsyst = f"{config['output_path']}/histAll_signals_cHHHX.json",
-        bkgsyst = f"{config['output_path']}/closureFits/ULHH_kfold/3bDvTMix4bDvT/SvB_MA/varrebin2/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_fine_varrebin2.pkl"
+        bkgsyst = f"{config['output_path']}/closureFits/ULHH_kfold/3bDvTMix4bDvT/SvB_MA/rebin{config['SvB_rebin']}/SR/hh/hists_closure_3bDvTMix4bDvT_SvB_MA_ps_hh_rebin{config['SvB_rebin']}.pkl"
     output:
         f"{config['output_path']}/datacards/shapes.root",
         f"{config['output_path']}/datacards/datacard_HHbb_2018.txt"
     params:
         container = config['combine_container'],
         variable= "SvB_MA.ps_hh_fine",
-        rebin=2,
+        rebin={config['SvB_rebin']},
         output_dir=f"{config['output_path']}/datacards/",
-        variable_binning="--variable_binning"
+        variable_binning=f"{config["variable_binning"]}"
 
 use rule run_combine from stat_analysis as run_combine_local with:
     input: f"{config['output_path']}/datacards/datacard_HHbb_2018.txt"
@@ -126,3 +129,12 @@ use rule run_postfit from stat_analysis as run_postfit_local with:
         container = config["combine_container"],
         output_dir = f"{config['output_path']}/datacards/"
     output: f"{config['output_path']}/datacards/SvB_MA_postfitplots_prefit.pdf"
+
+use rule make_syst_plots from stat_analysis as make_syst_plots_local with:
+    input: 
+        root = f"{config['output_path']}/datacards/shapes.root",
+        datacard = f"{config['output_path']}/datacards/datacard.txt"
+    params:
+        container = config["combine_container"],
+        output_dir = f"{config['output_path']}/systs/"
+    output: f"{config['output_path']}/datacards/systs/SvB_MA_ps_hh_nominal.pdf"

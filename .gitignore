@@ -178,6 +178,7 @@ runCITests.sh
 .bashrc
 python/output/
 python/local_output/
+python/CI_output
 
 .local/
 set_ROOT.sh
@@ -228,9 +229,6 @@ python/jet_clustering/*/*pdf
 python/stats_analysis/coffea4bees*
 python/stats_analysis/archive/
 python/stats_analysis/tmp*
-python/stats_analysis/hists/
-python/stats_analysis/workflow*
-python/stats_analysis/inference/data/
 python/hists/
 
 python/analysis/testJCM_Coffea/
@@ -315,7 +313,6 @@ python/selected_events.pkl
 .fontconfig/
 .cmslpc-local-conf
 python/analysis/copy_from_PSC.py
-
 python/plots/ANv*/
 python/StatToy
 python/jet_clustering/jet-splitting-PDFs-00-07-02/reclustering

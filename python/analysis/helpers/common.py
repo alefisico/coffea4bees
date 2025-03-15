@@ -333,8 +333,8 @@ def create_puId_correctionlib():
     """create a correctionlib object with the PUId tight WP values for Run2 UL"""
 
     # Define the eta and pt ranges
-    eta_bins = [0, 2.5, 2.75, 3.0, 6.0]
-    pt_bins = [0., 10., 20., 30., 40., 50., 2000.]
+    eta_bins = [0, 2.5, 2.75, 3.0, 10.0]
+    pt_bins = [0., 10., 20., 30., 40., 50., 100000.]
 
     # Define the table values
     # https://twiki.cern.ch/twiki/bin/viewauth/CMS/PileupJetIDUL
@@ -428,7 +428,6 @@ def compute_puid( jet, dataset ):
     puid_WP_table = correctionlib.CorrectionSet.from_file('data/puId/puid_tightWP.json')['PUID']
 
     n, j = ak.num(jet), ak.flatten(jet)
-
     puid_WP = puid_WP_table.evaluate( j.pt, abs(j.eta), f"UL{dataset.split('UL')[1][:2]}" )
 
     logging.debug(f"puid_WP: {puid_WP[:10]}")
@@ -441,4 +440,3 @@ def compute_puid( jet, dataset ):
     jet = ak.unflatten(j, n)
 
     return jet["is_pujet"]
-    
