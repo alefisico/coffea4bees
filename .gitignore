@@ -315,3 +315,8 @@ python/selected_events.pkl
 .fontconfig/
 .cmslpc-local-conf
 python/analysis/copy_from_PSC.py
+
+python/plots/ANv*/
+python/StatToy
+python/jet_clustering/jet-splitting-PDFs-00-07-02/reclustering
+python/analysis/plots_synthetic_*

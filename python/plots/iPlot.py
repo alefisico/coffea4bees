@@ -168,8 +168,9 @@ def plot2d(var='quadJet_selected.lead_vs_subl_m', process="HH4b",
         print(f'kwargs = {kwargs}')
 
     if var.find("*") != -1:
-        ls(match=var.replace("*", ""))
+        ls(var_match=var.replace("*", ""))
         return
+
 
     fig, ax = make2DPlot(cfg, process, var=var, cut=cut,
                          region=region, outputFolder=cfg.outputFolder, **kwargs)

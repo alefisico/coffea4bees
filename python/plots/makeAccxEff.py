@@ -26,7 +26,7 @@ np.seterr(divide='ignore', invalid='ignore')
 
 
 colors = ["DFDAFDSADS",
-          "xkcd:light purple",
+          "xkcd:pinkish purple",
           "blue",
           "green",
           "red",
@@ -70,6 +70,95 @@ def get_hist_data(in_file, hist_name, hist_key, rebin):
     return _get_hist_data(input_hist)
 
 
+def _makeMhhPlot(name, data_to_plot, **kwargs):
+    size = 7
+    fig = plt.figure()   # figsize=(size,size/_phi))
+    fig.add_axes((0.1, 0.15, 0.85, 0.8))
+    main_ax = fig.gca()
+    ratio_ax = None
+
+    year_str = plot_helpers.get_year_str(kwargs.get("year","Run2"))
+
+    hep.cms.label("Internal", data=False,
+                  year=year_str, loc=0, ax=main_ax)
+
+    bin_centers = np.array(data_to_plot["centers"])
+    bin_width = bin_centers[1] - bin_centers[0]
+    bin_centers = np.array(data_to_plot["centers"])
+
+    bin_edges = [bin_centers[0] - bin_width / 2] + [center + bin_width / 2 for center in bin_centers]
+
+    signal_shape = np.array(data_to_plot["values"])
+    signal_shape_norm = np.sum(signal_shape)
+    signal_shape /= signal_shape_norm
+
+    #plt.bar(bin_centers, signal_shape, width=bin_width, align='center', color="gray", edgecolor=None, alpha=0.3)
+
+    plt.hist(
+        bin_centers,
+        bins=bin_edges,
+        weights=signal_shape,
+        histtype='stepfilled',
+        edgecolor='gray',
+        color="gray",
+        alpha=0.3,
+        linewidth=2,
+        label="Inclusive HH signal shape",
+    )
+
+    plt.hist(
+        bin_centers,
+        bins=bin_edges,
+        weights=signal_shape,
+        histtype='step',
+        edgecolor='gray',
+        linewidth=2,
+        #label="Inclusive HH signal shape",
+    )
+
+    #plt.text(350, 1.25e-3, 'Inclusive HH signal shape (Normalization Arbitrary)', fontsize=20, color='k', ha='left', va='bottom')
+
+
+
+    xlim = kwargs.get("xlim",[200, 1200])
+    plt.plot(xlim, [1,1], color="k", linestyle=":")
+    plt.xlim(xlim)
+    plt.ylim(kwargs.get("ylim",[0,1.3]))
+    plt.yscale(kwargs.get("yscale","linear"))
+    plt.xlabel("$m_{4b}^{gen}$ [GeV]")
+    plt.ylabel("Normalized")
+    plt.legend(loc="upper left", ncol=2,
+               bbox_to_anchor=(0.025, .975), # Moves the legend outside and centers it
+               fontsize = "large"
+               )
+
+
+    plt.savefig(f"{name}_{year_str}.pdf")
+
+
+
+def makeMhhPlots(cfg, year):
+
+    process = "GluGluToHHTo4B_cHHH1"
+
+    if year in ["Run2","RunII"]:
+        hist_key = [f"{process}_{y}" for y in ["UL18", "UL17", "UL16_preVFP", "UL16_postVFP"]]
+    else:
+        hist_key = [f"{process}_{year}"]
+
+    rebin = 1
+
+    tot_eff = {}
+    rel_eff = {}
+
+    data_all   = get_hist_data(cfg.hists[0], "all", hist_key, rebin)
+    data_clean = get_hist_data(cfg.hists[0], "passCleanGenWeight", hist_key, rebin)
+
+    _makeMhhPlot("mHH_all",   data_all,   year=year, ylim=[1e-3, 1e-1], xlim=[50, 800])
+    _makeMhhPlot("mHH_clean", data_clean, year=year, ylim=[1e-3, 1e-1], xlim=[50, 800])
+
+
+
 def makeEffPlot(name, data_to_plot, cuts_flow, **kwargs):
     size = 7
     fig = plt.figure()   # figsize=(size,size/_phi))
@@ -89,7 +178,7 @@ def makeEffPlot(name, data_to_plot, cuts_flow, **kwargs):
         plot_mask = (np.array(data_to_plot[cut_name]["centers"]) > 200)
         plt.plot(np.array(data_to_plot[cut_name]["centers"])[plot_mask],
                  np.array(data_to_plot[cut_name]["ratio"])[plot_mask]
-                 , marker='o', markersize=8, linestyle='-', color=colors[ic], label=cuts_flow[ic][2])
+                 , marker='o', markersize=8, linestyle='-', linewidth=2, color=colors[ic], label=cuts_flow[ic][2])
 
 
         #print("errors",0.5* np.sum(data_to_plot[cut_name]["error"], axis=0)[plot_mask])
@@ -103,6 +192,43 @@ def makeEffPlot(name, data_to_plot, cuts_flow, **kwargs):
         #    ecolor=colors[ic],  # color for error bars
         #    capsize=2            # length of the caps on the error bars
         #)
+
+    if kwargs.get("signal_shape", None):
+        bin_centers = np.array(data_to_plot[cut_name]["centers"])[plot_mask]
+        bin_width = bin_centers[1] - bin_centers[0]
+        bin_centers = np.array(data_to_plot[cut_name]["centers"])[plot_mask]
+
+        bin_edges = [bin_centers[0] - bin_width / 2] + [center + bin_width / 2 for center in bin_centers]
+
+        signal_shape = np.array(kwargs.get("signal_shape", None))[plot_mask]
+        signal_shape_norm = np.sum(signal_shape)
+        signal_shape /= signal_shape_norm
+
+        #plt.bar(bin_centers, signal_shape, width=bin_width, align='center', color="gray", edgecolor=None, alpha=0.3)
+
+        plt.hist(
+            bin_centers,
+            bins=bin_edges,
+            weights=signal_shape,
+            histtype='stepfilled',
+            edgecolor='gray',
+            color="gray",
+            alpha=0.3,
+            linewidth=2
+        )
+
+        plt.hist(
+            bin_centers,
+            bins=bin_edges,
+            weights=signal_shape,
+            histtype='step',
+            edgecolor='gray',
+            linewidth=2
+        )
+
+        plt.text(350, 1.25e-3, 'Inclusive HH signal shape (Normalization Arbitrary)', fontsize=20, color='k', ha='left', va='bottom')
+
+
 
     xlim = kwargs.get("xlim",[200, 1200])
     plt.plot(xlim, [1,1], color="k", linestyle=":")
@@ -196,7 +322,7 @@ def makePlot(cfg, year, debug=False):
     #
     #
     #
-    makeEffPlot("total_eff",    tot_eff, cuts_flow, yscale="log", year=year, ylim=[1e-3, 10])
+    makeEffPlot("total_eff",    tot_eff, cuts_flow, yscale="log", year=year, ylim=[1e-3, 10], signal_shape=den_tot_data["values"])
     makeEffPlot("relative_eff", rel_eff, cuts_flow, year=year)
 
 
@@ -226,3 +352,5 @@ if __name__ == '__main__':
     for y in ["UL18", "UL17","UL16_preVFP", "UL16_postVFP", "RunII"]:
     #for y in ["RunII"]:
         makePlot(cfg, year=y, debug=args.debug)
+
+        makeMhhPlots(cfg, year=y)

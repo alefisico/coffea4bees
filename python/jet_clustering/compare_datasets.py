@@ -106,7 +106,7 @@ def plotCut(args):
     plot("SvB.ptt", **args, yscale="log")
 
 
-    args["rebin"] = 8
+    args["rebin"] = 1
     plot("SvB_MA.ps_zh", **args, yscale="log")
     plot("SvB_MA.ps_zz", **args, yscale="log")
     plot("SvB_MA.ps_hh", **args, yscale="log")
