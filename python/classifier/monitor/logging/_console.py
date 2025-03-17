@@ -14,9 +14,8 @@ from rich.text import Text, TextType
 
 from ...utils import noop
 from ..backends import Platform
+from ..core import CLIENT_NAME_WIDTH
 from ._redirect import MultiPlatformLogRecord
-
-_LOG_NAME_WIDTH = 7
 
 
 class ConsoleLogRender(LogRender):
@@ -52,7 +51,7 @@ class ConsoleLogRender(LogRender):
         if self.show_time:
             output.add_column(style="log.time")
         if name is not None:
-            output.add_column(style="repr.number", width=_LOG_NAME_WIDTH)
+            output.add_column(style="repr.number", width=CLIENT_NAME_WIDTH + 2)
         if self.show_level:
             output.add_column(style="log.level", width=self.level_width)
         output.add_column(ratio=1, style="log.message", overflow="fold")
@@ -72,7 +71,7 @@ class ConsoleLogRender(LogRender):
                 row.append(log_time_display)
                 self._last_time = log_time_display
         if name is not None:
-            row.append(Text(f"[{name:>{_LOG_NAME_WIDTH-2}}]"))
+            row.append(Text(f"[{name:>{CLIENT_NAME_WIDTH}}]"))
         if self.show_level:
             row.append(level)
         row.append(message)

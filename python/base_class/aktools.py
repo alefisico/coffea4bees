@@ -15,7 +15,6 @@ from .utils import astuple
 
 __all__ = [
     "FieldLike",
-    "AnyArray",
     "RealNumber",
     "AnyInt",
     "AnyFloat",
@@ -42,7 +41,6 @@ __all__ = [
 AnyInt = int | np.integer
 AnyFloat = float | np.floating
 RealNumber = AnyInt | AnyFloat
-AnyArray = Array | np.ndarray
 
 # field
 
@@ -55,7 +53,7 @@ def has_record(data: Array, field: FieldLike) -> tuple[str, ...]:
         try:
             data = data[level]
             parents.append(level)
-        except:
+        except Exception:
             break
     return (*parents,)
 
@@ -64,7 +62,7 @@ def get_field(data: Array, field: FieldLike):
     if field is ...:
         try:
             return ak.num(data, axis=len(get_shape(data)) - 1)
-        except:
+        except Exception:
             return ak.Array(np.ones(len(data), dtype=np.int64))
     for level in astuple(field):
         if level in data.fields:
@@ -100,7 +98,7 @@ def update_fields(data: Array, new: Array, *fields: FieldLike):
 # shape
 
 
-def get_shape(data: AnyArray) -> list[str]:
+def get_shape(data) -> list[str]:
     if isinstance(data, np.ndarray):
         return [str(i) for i in data.shape] + [str(data.dtype)]
     elif isinstance(data, Array):

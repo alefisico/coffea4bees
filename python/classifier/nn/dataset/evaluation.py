@@ -147,7 +147,7 @@ class EvalLoader(ABC, Generic[_ResultT]):
 class EvalDataset(ABC, Generic[_ResultT]):
     __eval_loader__ = EvalLoader
 
-    __progress_msg: MessageType = ("Entries", "Evaluated")
+    __progress_msg: MessageType = ("entries", "Evaluated")
 
     @abstractmethod
     def batches(
