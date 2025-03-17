@@ -42,7 +42,7 @@ class LoadGroupedRootForTest(_root.LoadGroupedRoot):
                 msg=("files", "Fetching metadata"),
             ) as progress:
                 files = {
-                    k: pool.submit(
+                    k: pool.map_async(
                         executor,
                         _root._fetch(tree=self.opts.tree),
                         v,

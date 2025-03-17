@@ -70,7 +70,7 @@ def run_analyzer(parser: EntryPoint, results: list[dict]):
         Progress.new(total=len(analyzers), msg=("analysis", "Running")) as progress,
     ):
         outputs = [
-            *pool.submit(
+            *pool.map_async(
                 executor,
                 _analyze,
                 analyzers,

@@ -13,7 +13,7 @@ _NAMING = "{path1}/{name}_{uuid}_{start}_{stop}_{path0}"
 def _build_cutflow(*selections):
     if len(selections) == 1:
         return selections[0]
-    selection = akext.to.numpy(selections[0], copy=True).astype(bool)
+    selection = akext.to_numpy(selections[0], copy=True).astype(bool)
     for s in selections[1:]:
         selection[selection] = s
     return ak.Array(selection)
@@ -71,7 +71,7 @@ def dump_input_friend(
                 selection,
             ),
         }
-        | akext.to.numpy(
+        | akext.to_numpy(
             padded(
                 events[
                     [
@@ -147,6 +147,7 @@ def dump_FvT_weight(  ### TODO: replace with proper evaluation code
         dump_naming=dump_naming,
     )
 
+
 def dump_unsup_friend(
     events: ak.Array,
     output: PathLike,
@@ -156,19 +157,19 @@ def dump_unsup_friend(
 ):
     data = ak.zip(
         {
-            'run':events['run'],
-            'event': events['event'],
-            "m4j":  events["m4j"],
-            "leadStM":  events["leadStM"],
-            "sublStM":  events["sublStM"],
+            "run": events["run"],
+            "event": events["event"],
+            "m4j": events["m4j"],
+            "leadStM": events["leadStM"],
+            "sublStM": events["sublStM"],
             "nSelJets": events["nSelJets"],
             "weight": events["weight"],
             "passHLT": events["passHLT"],
             "lumimask": events["lumimask"],
             "passNoiseFilter": events["passNoiseFilter"],
-            "passJetMult" :events["passJetMult"],
-            "fourTag" :events["fourTag"],
-            "threeTag" :events["threeTag"],
+            "passJetMult": events["passJetMult"],
+            "fourTag": events["fourTag"],
+            "threeTag": events["threeTag"],
         }
     )
     selection = _build_cutflow(*selections)
@@ -182,6 +183,7 @@ def dump_unsup_friend(
         dump_naming=dump_naming,
     )
 
+
 def dump_trigger_weight(
     events: ak.Array,
     output: PathLike,
@@ -189,10 +191,12 @@ def dump_trigger_weight(
     *selections: ak.Array,
     dump_naming: str = _NAMING,
 ):
-    data = ak.zip({
-        "MC": events["trigWeight"].MC,
-        "Data": events["trigWeight"].Data,
-        })
+    data = ak.zip(
+        {
+            "MC": events["trigWeight"].MC,
+            "Data": events["trigWeight"].Data,
+        }
+    )
     selection = _build_cutflow(*selections)
     padded = akext.pad.selected()
     data = padded(data, selection)
@@ -204,6 +208,7 @@ def dump_trigger_weight(
         dump_naming=dump_naming,
     )
 
+
 def dump_top_reconstruction(
     events: ak.Array,
     output: PathLike,
@@ -211,50 +216,50 @@ def dump_top_reconstruction(
     *selections: ak.Array,
     dump_naming: str = _NAMING,
 ):
-    data = ak.zip({
-        "b_pt": events["top_cand"].b.pt,
-        "b_eta": events["top_cand"].b.eta,
-        "b_phi": events["top_cand"].b.phi,
-        "b_mass": events["top_cand"].b.mass,
-        "b_puId": events["top_cand"].b.puId,
-        "b_jetId": events["top_cand"].b.jetId,
-        "b_btagScore": events["top_cand"].b.btagScore,
-        "p_pt": events["top_cand"].p.pt,
-        "p_eta": events["top_cand"].p.eta,
-        "p_phi": events["top_cand"].p.phi,
-        "p_mass": events["top_cand"].p.mass,
-        "W_p_pt": events["top_cand"].W.p.pt,
-        "W_p_eta": events["top_cand"].W.p.eta,
-        "W_p_phi": events["top_cand"].W.p.phi,
-        "W_p_mass": events["top_cand"].W.p.mass,
-        "W_pW_pt": events["top_cand"].W.pW.pt,
-        "W_pW_eta": events["top_cand"].W.pW.eta,
-        "W_pW_phi": events["top_cand"].W.pW.phi,
-        "W_pW_mass": events["top_cand"].W.pW.mass,
-        "W_l_pt": events["top_cand"].W.l.pt,
-        "W_l_eta": events["top_cand"].W.l.eta,
-        "W_l_phi": events["top_cand"].W.l.phi,
-        "W_l_mass": events["top_cand"].W.l.mass,
-        "W_l_puId": events["top_cand"].W.l.puId,
-        "W_l_puId": events["top_cand"].W.l.puId,
-        "W_l_jetId": events["top_cand"].W.l.jetId,
-        "W_l_btagScore": events["top_cand"].W.l.btagScore,
-        "W_j_pt": events["top_cand"].W.j.pt,
-        "W_j_eta": events["top_cand"].W.j.eta,
-        "W_j_phi": events["top_cand"].W.j.phi,
-        "W_j_mass": events["top_cand"].W.j.mass,
-        "W_j_puId": events["top_cand"].W.j.puId,
-        "W_j_puId": events["top_cand"].W.j.puId,
-        "W_j_jetId": events["top_cand"].W.j.jetId,
-        "W_j_btagScore": events["top_cand"].W.j.btagScore,
-        "mbW": events["top_cand"].mbW,
-        "xW": events["top_cand"].xW,
-        "xt": events["top_cand"].xt,
-        "xbW": events["top_cand"].xbW,
-        "xWt": events["top_cand"].xWt,
-        "xWbW": events["top_cand"].xWbW,
-        "rWbW": events["top_cand"].rWbW,
-        })
+    data = ak.zip(
+        {
+            "b_pt": events["top_cand"].b.pt,
+            "b_eta": events["top_cand"].b.eta,
+            "b_phi": events["top_cand"].b.phi,
+            "b_mass": events["top_cand"].b.mass,
+            "b_puId": events["top_cand"].b.puId,
+            "b_jetId": events["top_cand"].b.jetId,
+            "b_btagScore": events["top_cand"].b.btagScore,
+            "p_pt": events["top_cand"].p.pt,
+            "p_eta": events["top_cand"].p.eta,
+            "p_phi": events["top_cand"].p.phi,
+            "p_mass": events["top_cand"].p.mass,
+            "W_p_pt": events["top_cand"].W.p.pt,
+            "W_p_eta": events["top_cand"].W.p.eta,
+            "W_p_phi": events["top_cand"].W.p.phi,
+            "W_p_mass": events["top_cand"].W.p.mass,
+            "W_pW_pt": events["top_cand"].W.pW.pt,
+            "W_pW_eta": events["top_cand"].W.pW.eta,
+            "W_pW_phi": events["top_cand"].W.pW.phi,
+            "W_pW_mass": events["top_cand"].W.pW.mass,
+            "W_l_pt": events["top_cand"].W.l.pt,
+            "W_l_eta": events["top_cand"].W.l.eta,
+            "W_l_phi": events["top_cand"].W.l.phi,
+            "W_l_mass": events["top_cand"].W.l.mass,
+            "W_l_puId": events["top_cand"].W.l.puId,
+            "W_l_jetId": events["top_cand"].W.l.jetId,
+            "W_l_btagScore": events["top_cand"].W.l.btagScore,
+            "W_j_pt": events["top_cand"].W.j.pt,
+            "W_j_eta": events["top_cand"].W.j.eta,
+            "W_j_phi": events["top_cand"].W.j.phi,
+            "W_j_mass": events["top_cand"].W.j.mass,
+            "W_j_puId": events["top_cand"].W.j.puId,
+            "W_j_jetId": events["top_cand"].W.j.jetId,
+            "W_j_btagScore": events["top_cand"].W.j.btagScore,
+            "mbW": events["top_cand"].mbW,
+            "xW": events["top_cand"].xW,
+            "xt": events["top_cand"].xt,
+            "xbW": events["top_cand"].xbW,
+            "xWt": events["top_cand"].xWt,
+            "xWbW": events["top_cand"].xWbW,
+            "rWbW": events["top_cand"].rWbW,
+        }
+    )
     selection = _build_cutflow(*selections)
     padded = akext.pad.selected()
     data = padded(data, selection)

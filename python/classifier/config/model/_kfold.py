@@ -86,7 +86,7 @@ class KFoldTrain(ABC, Model):
         from classifier.ml.skimmer import KFold, RandomKFold
 
         if self.kfolds == 1:
-            return [self.initializer(KFold(1, 1)).train]
+            return [self.initializer(KFold(kfolds=1, offset=1)).train]
         elif not self.seeds:
             return [
                 self.initializer(
@@ -99,7 +99,7 @@ class KFoldTrain(ABC, Model):
         else:
             return [
                 self.initializer(
-                    RandomKFold(seed, self.kfolds, offset),
+                    RandomKFold(seed=seed, kfolds=self.kfolds, offset=offset),
                     kfolds=self.kfolds,
                     offset=offset,
                     seed=seed,
@@ -119,6 +119,11 @@ class KFoldEval(ABC, Model):
         default=[],
         help="name of the output stage and path to model json files",
     )
+    argparser.add_argument(
+        "--no-kfold",
+        action="store_true",
+        help="ignore the kfold used in training and evaluate all models",
+    )
 
     @abstractmethod
     def initializer(
@@ -127,7 +132,7 @@ class KFoldEval(ABC, Model):
 
     def evaluate(self):
         models = []
-        metadatas = _find_models(self.opts.models)
+        metadatas = _find_models(self.opts.models, self.opts.no_kfold)
         for metadata in metadatas:
             models.append(self.initializer(**metadata).eval)
         if metadatas:
@@ -138,8 +143,9 @@ class KFoldEval(ABC, Model):
         return models
 
 
-def _find_models(args: list[list[str]]) -> list[dict]:
+def _find_models(args: list[list[str]], no_kfold: bool = False) -> list[dict]:
     from base_class.system.eos import EOS
+    from classifier.ml.skimmer import KFold, RandomKFold
 
     models = []
     for arg in args:
@@ -161,30 +167,18 @@ def _find_models(args: list[list[str]]) -> list[dict]:
                     continue
                 if ("kfolds" not in metadata) or ("offset" not in metadata):
                     continue
-                kfolds = metadata["kfolds"]
-                offset = metadata["offset"]
+                kwargs = {
+                    "kfolds": metadata["kfolds"],
+                    "offset": metadata["offset"],
+                }
                 if "seed" in metadata:
-                    from classifier.ml.skimmer import RandomKFold
-
-                    seed = metadata["seed"]
-                    models.append(
-                        dict(
-                            model=m_path,
-                            splitter=RandomKFold(seed, kfolds, offset),
-                            kfolds=kfolds,
-                            offset=offset,
-                            seed=seed,
-                        )
-                    )
+                    kwargs["seed"] = metadata["seed"]
+                    KFoldT = RandomKFold
                 else:
-                    from classifier.ml.skimmer import KFold
-
-                    models.append(
-                        dict(
-                            model=m_path,
-                            splitter=KFold(kfolds, offset),
-                            kfolds=kfolds,
-                            offset=offset,
-                        )
-                    )
+                    KFoldT = KFold
+                if no_kfold:
+                    splitter = KFold(kfolds=1, offset=0)
+                else:
+                    splitter = KFoldT(**kwargs)
+                models.append(dict(model=m_path, splitter=splitter, **kwargs))
     return models

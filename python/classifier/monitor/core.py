@@ -25,7 +25,8 @@ __all__ = [
     "connect_to_monitor",
 ]
 
-_LOCALHOST = "localhost"
+LOCALHOST = "localhost"
+CLIENT_NAME_WIDTH = 7
 
 
 def _get_host():
@@ -149,8 +150,8 @@ class Monitor(Server, _Singleton):
             address = pipe_address(host)
             cfg.Monitor.address = address
         else:
-            address = (_LOCALHOST, port)
-            cfg.Monitor.address = f"{_LOCALHOST}:{port}"
+            address = (LOCALHOST, port)
+            cfg.Monitor.address = f"{LOCALHOST}:{port}"
         super().__init__(address=address)
 
     def _start(self):
@@ -286,6 +287,6 @@ def full_address():
         return address
     else:
         local = _get_host()
-        if address == local or address == _LOCALHOST:
-            return f"{local}:{port}/{_LOCALHOST}:{port}"
+        if address == local or address == LOCALHOST:
+            return f"{local}:{port}/{LOCALHOST}:{port}"
         return f"{address}:{port}"

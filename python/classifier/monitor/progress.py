@@ -10,7 +10,7 @@ from rich.progress import Progress as _Bar
 from ..config.setting import monitor as cfg
 from ..typetools import PicklableLock, WithUUID
 from ..utils import noop
-from .core import MonitorProxy, Recorder, post_to_monitor
+from .core import CLIENT_NAME_WIDTH, MonitorProxy, Recorder, post_to_monitor
 
 _FORMAT = "%H:%M:%S"
 _UNKNOWN = "+--:--:--"
@@ -150,7 +150,7 @@ class Progress(MonitorProxy):
                 "description": cls._format_msg(job.msg),
                 "completed": job._completed,
                 "estimate": job.estimate,
-                "source": Recorder.registered(job.source),
+                "source": f"{Recorder.registered(job.source):>{CLIENT_NAME_WIDTH}}",
             }
             if uuid not in cls._console_ids:
                 cls._console_ids[uuid] = cls._console_bar.add_task(

@@ -41,7 +41,7 @@ class _OrderedFuturePool(Generic[_SubmitT]):
         self._tasks = None
 
 
-def submit(
+def map_async(
     e: Executor,
     fn: Callable[_SubmitP, _SubmitT],
     *args: Iterable,
@@ -63,3 +63,22 @@ def submit(
         if preserve_order:
             results._tasks.append(task)
     return results
+
+
+class CallbackExecutor(Generic[_SubmitT, _SubmitP]):
+    def __init__(
+        self,
+        executor: Executor,
+        *callbacks: Callable[_SubmitP, Callable[[Future[_SubmitT]], None]],
+    ):
+        self._executor = executor
+        self._callbacks = callbacks
+
+    def map(self, fn: Callable[_SubmitP, _SubmitT], *args):
+        return map_async(self._executor, fn, *args, callbacks=self._callbacks)
+
+    def submit(self, fn: Callable[_SubmitP, _SubmitT], *args):
+        future = self._executor.submit(fn, *args)
+        for callback in self._callbacks:
+            future.add_done_callback(callback(*args))
+        return future

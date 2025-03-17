@@ -81,7 +81,7 @@ class LoadTrainingSets(Main):
             Progress.new(total=len(loaders), msg=("datasets", "Loading")) as progress,
         ):
             datasets = [
-                *pool.submit(
+                *pool.map_async(
                     executor,
                     _load_dataset,
                     loaders,
