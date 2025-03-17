@@ -448,7 +448,8 @@ class analysis(processor.ProcessorABC):
 
                 event['GenJet', 'selectedBs'] = (np.abs(event.GenJet.partonFlavour)==5)
                 event['selGenBJet'] = event.GenJet[event.GenJet.selectedBs]
-                event['matchedGenBJet'] = event.bfromHorZ.nearest( event.selGenBJet, threshold=0.2 )
+                event['matchedGenBJet'] = event.bfromHorZ.nearest( event.selGenBJet, threshold=10 )
+                event["matchedGenBJet"] = event.matchedGenBJet[~ak.is_none(event.matchedGenBJet, axis=1)]
 
                 event['pass4GenBJets'] = ak.num(event.matchedGenBJet) == 4
                 event["truth_v4b"] = ak.where(  event.pass4GenBJets,

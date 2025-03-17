@@ -60,6 +60,10 @@ def add_debug_Run3_data(event, processOutput):
     out_data["canJet_phi"   ] = event.canJet.phi [debug_mask].to_list()
     out_data["canJet_mass"  ] = event.canJet.mass[debug_mask].to_list()
     out_data["canJet_bTagScore"] = event.canJet.btagScore[debug_mask].to_list()
+    if "PNetRegPtRawCorr" in event.canJet.fields:
+        out_data["canJet_PNetRegPtRawCorr"] = event.canJet.PNetRegPtRawCorr[debug_mask].to_list()
+        out_data["canJet_PNetRegPtRawCorrNeutrino"] = event.canJet.PNetRegPtRawCorrNeutrino[debug_mask].to_list()
+        out_data["canJet_pt_raw"] = event.canJet.pt_raw[debug_mask].to_list()
 
     out_data["notCanJet_pt"    ]    = event.notCanJet_coffea.pt  [debug_mask].to_list()
     out_data["notCanJet_eta"   ]    = event.notCanJet_coffea.eta [debug_mask].to_list()
