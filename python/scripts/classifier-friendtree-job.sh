@@ -11,7 +11,7 @@ echo "############### Modifying config"
 if [[ $(hostname) = *fnal* ]]; then
     sed -e "s#make_.*#make_classifier_input: \/srv\/$OUTPUT_DIR\/#" analysis/metadata/HH4b_classifier_inputs.yml > $OUTPUT_DIR/HH4b_classifier_inputs.yml
 else
-    sed -e "s#make_.*#make_classifier_input: \/builds\/${CI_PROJECT_PATH}\/python\/$OUTPUT_DIR\/#" analysis/metadata/HH4b_classifier_inputs.yml > $OUTPUT_DIR/HH4b_classifier_inputs.yml
+    sed -e "s#make_.*#make_classifier_input: \/builds\/${CI_PROJECT_PATH}\/$OUTPUT_DIR\/#" analysis/metadata/HH4b_classifier_inputs.yml > $OUTPUT_DIR/HH4b_classifier_inputs.yml
 fi
 cat $OUTPUT_DIR/HH4b_classifier_inputs.yml
 

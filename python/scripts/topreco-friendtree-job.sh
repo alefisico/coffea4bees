@@ -11,7 +11,7 @@ echo "############### Modifying config"
 if [[ $(hostname) = *fnal* ]]; then
     sed -e "s#make_top_reconstruction:.*#make_top_reconstruction: \/srv\/$OUTPUT_DIR\/#" analysis/metadata/HH4b_top_reconstruction.yml > $OUTPUT_DIR/HH4b_top_reconstruction.yml
 else
-    sed -e "s#make_top_reconstruction:.*#make_top_reconstruction: \/builds\/${CI_PROJECT_PATH}\/python\/$OUTPUT_DIR\/#" analysis/metadata/HH4b_top_reconstruction.yml > $OUTPUT_DIR/HH4b_top_reconstruction.yml
+    sed -e "s#make_top_reconstruction:.*#make_top_reconstruction: \/builds\/${CI_PROJECT_PATH}\/$OUTPUT_DIR\/#" analysis/metadata/HH4b_top_reconstruction.yml > $OUTPUT_DIR/HH4b_top_reconstruction.yml
 fi
 cat $OUTPUT_DIR/HH4b_top_reconstruction.yml
 
