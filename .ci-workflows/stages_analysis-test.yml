@@ -6,7 +6,7 @@ analysis-test-job:
     - source scripts/analysis-test-job.sh
   artifacts: 
     paths:
-      - output/analysis_test_job/test.coffea
+      - python/output/analysis_test_job/test.coffea
 
 analysis-test-job-Run3:   
   stage: analysis-test   
@@ -16,7 +16,7 @@ analysis-test-job-Run3:
     - source scripts/analysis-test-job-Run3.sh
   artifacts: 
     paths:
-      - output/analysis_test_job_Run3/test.coffea
+      - python/output/analysis_test_job_Run3/test.coffea
 
 
 analysis-test-truthStudy:   
@@ -27,7 +27,7 @@ analysis-test-truthStudy:
     - source scripts/analysis-test-job-truthStudy.sh
   artifacts: 
     paths:
-      - output/analysis_test_truthStudy/testTruth.coffea
+      - python/output/analysis_test_truthStudy/testTruth.coffea
 
 
 synthetic-dataset-cluster:   
@@ -38,7 +38,7 @@ synthetic-dataset-cluster:
     - source scripts/synthetic-dataset-cluster.sh
   artifacts: 
     paths:
-      - output/synthetic_dataset_cluster/test_synthetic_datasets.coffea
+      - python/output/synthetic_dataset_cluster/test_synthetic_datasets.coffea
 
 
 analysis-test-job-unsup:   
@@ -49,7 +49,7 @@ analysis-test-job-unsup:
     - source scripts/analysis-test-job-unsup.sh
   artifacts: 
     paths:
-      - output/analysis_test_job_unsup/test_unsup.coffea
+      - python/output/analysis_test_job_unsup/test_unsup.coffea
 
 analysis-test-mixed-job:   
   stage: analysis-test   
@@ -59,18 +59,18 @@ analysis-test-mixed-job:
     - source scripts/analysis-test-mixed-job.sh
   artifacts: 
     paths:
-      - output/analysis_test_mixed_job/testMixedBkg_TT.coffea
-      - output/analysis_test_mixed_job/testMixedBkg_data_3b_for_mixed.coffea
-      - output/analysis_test_mixed_job/testMixedBkg_data_3b_for_mixed_kfold.coffea
-      - output/analysis_test_mixed_job/testMixedData.coffea
-      - output/analysis_test_mixed_job/testMixedBkg_TT.json
-      - output/analysis_test_mixed_job/testMixedBkg_data_3b_for_mixed.json
-      - output/analysis_test_mixed_job/testMixedBkg_data_3b_for_mixed_kfold.json      
-      - output/analysis_test_mixed_job/testMixedData.json
-      - output/analysis_test_mixed_job/testSignal_preUL.coffea
-      - output/analysis_test_mixed_job/testSignal_preUL.json
-      - output/analysis_test_mixed_job/testSignal_UL.coffea
-      - output/analysis_test_mixed_job/testSignal_UL.json
+      - python/output/analysis_test_mixed_job/testMixedBkg_TT.coffea
+      - python/output/analysis_test_mixed_job/testMixedBkg_data_3b_for_mixed.coffea
+      - python/output/analysis_test_mixed_job/testMixedBkg_data_3b_for_mixed_kfold.coffea
+      - python/output/analysis_test_mixed_job/testMixedData.coffea
+      - python/output/analysis_test_mixed_job/testMixedBkg_TT.json
+      - python/output/analysis_test_mixed_job/testMixedBkg_data_3b_for_mixed.json
+      - python/output/analysis_test_mixed_job/testMixedBkg_data_3b_for_mixed_kfold.json      
+      - python/output/analysis_test_mixed_job/testMixedData.json
+      - python/output/analysis_test_mixed_job/testSignal_preUL.coffea
+      - python/output/analysis_test_mixed_job/testSignal_preUL.json
+      - python/output/analysis_test_mixed_job/testSignal_UL.coffea
+      - python/output/analysis_test_mixed_job/testSignal_UL.json
 
 
 analysis-systematics-test-job:   
@@ -81,7 +81,7 @@ analysis-systematics-test-job:
     - source scripts/analysis-systematics-test-job.sh
   artifacts: 
     paths:
-      - output/analysis_systematics_test_job/test_systematics.coffea
+      - python/output/analysis_systematics_test_job/test_systematics.coffea
 
 skimmer-analysis-test-job:   
   stage: analysis-test   
@@ -94,7 +94,7 @@ skimmer-analysis-test-job:
     - source scripts/skimmer-analysis-test-job.sh
   artifacts: 
     paths:
-      - output/skimmer_analysis_test_job/test_skimmer.coffea
+      - python/output/skimmer_analysis_test_job/test_skimmer.coffea
 
 synthetic-dataset-analyze:   
   stage: analysis-test   
@@ -107,7 +107,7 @@ synthetic-dataset-analyze:
     - source scripts/synthetic-dataset-analyze.sh
   artifacts:
     paths:
-      - output/synthetic_dataset_analyze/test_synthetic_datasets.coffea
+      - python/output/synthetic_dataset_analyze/test_synthetic_datasets.coffea
 
 synthetic-dataset-analyze-Run3:   
   stage: analysis-test   
@@ -120,7 +120,7 @@ synthetic-dataset-analyze-Run3:
     - source scripts/synthetic-dataset-analyze-Run3.sh
   artifacts:
     paths:
-      - output/synthetic_dataset_analyze_Run3/test_synthetic_datasets.coffea
+      - python/output/synthetic_dataset_analyze_Run3/test_synthetic_datasets.coffea
 
 
 weights-trigger-analysis-job:   
@@ -134,7 +134,7 @@ weights-trigger-analysis-job:
     - source scripts/weights-trigger-analysis-job.sh
   artifacts:
     paths:
-      - output/weights_trigger_analysis_job/test_trigWeight.coffea
+      - python/output/weights_trigger_analysis_job/test_trigWeight.coffea
 
 SvB-friendtree-analysis-job:   
   stage: analysis-test   
@@ -147,4 +147,4 @@ SvB-friendtree-analysis-job:
     - source scripts/SvB-friendtree-analysis-job.sh
   artifacts:
     paths:
-      - output/SvB_friendtree_analysis_job/test_SvB_friend.coffea
+      - python/output/SvB_friendtree_analysis_job/test_SvB_friend.coffea

@@ -36,4 +36,4 @@ memory-test:
     - source scripts/memory_test.sh
   artifacts:
     paths:
-      - output/memory_test/mprofile_ci_test.png
+      - python/output/memory_test/mprofile_ci_test.png

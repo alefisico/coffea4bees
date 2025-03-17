@@ -6,10 +6,10 @@ skimmer-test-job:
     - source scripts/skimmer-test-job.sh
   artifacts: 
     paths:
-      - output/skimmer_test_job/picoaod_datasets_GluGluToHHTo4B_cHHH0_UL18.yml
-      - output/skimmer_test_job/GluGluToHHTo4B_cHHH0_UL18/picoAOD.chunk0.root
-      - output/skimmer_test_job/GluGluToHHTo4B_cHHH0_UL18/picoAOD.chunk1.root
-      - output/skimmer_test_job/datasets_HH4b.yml
+      - python/output/skimmer_test_job/picoaod_datasets_GluGluToHHTo4B_cHHH0_UL18.yml
+      - python/output/skimmer_test_job/GluGluToHHTo4B_cHHH0_UL18/picoAOD.chunk0.root
+      - python/output/skimmer_test_job/GluGluToHHTo4B_cHHH0_UL18/picoAOD.chunk1.root
+      - python/output/skimmer_test_job/datasets_HH4b.yml
 
 skimmer-basic-test-job:   
   stage: skimmer-test   
@@ -26,12 +26,12 @@ synthetic-dataset-make-dataset:
     - source scripts/synthetic-dataset-make-dataset.sh
   artifacts:
     paths:
-      - output/synthetic_dataset_make_dataset/picoaod_datasets_declustered_test_UL18.yml
-      - output/synthetic_dataset_make_dataset/data_UL18A/picoAOD_seed5.root
-      - output/synthetic_dataset_make_dataset/data_UL18B/picoAOD_seed5.root
-      - output/synthetic_dataset_make_dataset/data_UL18C/picoAOD_seed5.root
-      - output/synthetic_dataset_make_dataset/data_UL18D/picoAOD_seed5.root
-      - output/synthetic_dataset_make_dataset/GluGluToHHTo4B_cHHH1_UL18/picoAOD_seed5.root
+      - python/output/synthetic_dataset_make_dataset/picoaod_datasets_declustered_test_UL18.yml
+      - python/output/synthetic_dataset_make_dataset/data_UL18A/picoAOD_seed5.root
+      - python/output/synthetic_dataset_make_dataset/data_UL18B/picoAOD_seed5.root
+      - python/output/synthetic_dataset_make_dataset/data_UL18C/picoAOD_seed5.root
+      - python/output/synthetic_dataset_make_dataset/data_UL18D/picoAOD_seed5.root
+      - python/output/synthetic_dataset_make_dataset/GluGluToHHTo4B_cHHH1_UL18/picoAOD_seed5.root
 
 
 synthetic-dataset-make-dataset-Run3:
@@ -42,7 +42,7 @@ synthetic-dataset-make-dataset-Run3:
     - source scripts/synthetic-dataset-make-dataset-Run3.sh
   artifacts:
     paths:
-      - output/synthetic_dataset_make_dataset_Run3/picoaod_datasets_declustered_test_2023_BPix.yml
-      - output/synthetic_dataset_make_dataset_Run3/data_2023_BPixD/picoAOD_seed5.root
-      - output/synthetic_dataset_make_dataset_Run3/data_2023_BPixE/picoAOD_seed5.root
+      - python/output/synthetic_dataset_make_dataset_Run3/picoaod_datasets_declustered_test_2023_BPix.yml
+      - python/output/synthetic_dataset_make_dataset_Run3/data_2023_BPixD/picoAOD_seed5.root
+      - python/output/synthetic_dataset_make_dataset_Run3/data_2023_BPixE/picoAOD_seed5.root
 

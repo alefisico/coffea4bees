@@ -8,7 +8,7 @@ analysis-plot-job:
     - source scripts/analysis-plot-job.sh
   artifacts:
     paths:
-      - output/analysis_plot_job/RunII/
+      - python/output/analysis_plot_job/RunII/
 
 analysis-plot-job-unsup:    
   stage: plot 
@@ -20,7 +20,7 @@ analysis-plot-job-unsup:
     - source scripts/analysis-plot-job-unsup.sh
   artifacts:
     paths:
-      - output/analysis_plot_job_unsup/RunII/
+      - python/output/analysis_plot_job_unsup/RunII/
 
 analysis-iplot-job:    
   stage: plot 
@@ -64,4 +64,4 @@ synthetic-dataset-plot-job:
     - source scripts/synthetic-dataset-plot-job.sh
   artifacts:
     paths:
-      - output/synthetic_dataset_plot_job/jet-splitting-PDFs-test/
+      - python/output/synthetic_dataset_plot_job/jet-splitting-PDFs-test/
