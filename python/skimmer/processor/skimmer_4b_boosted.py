@@ -14,12 +14,9 @@ from skimmer.processor.picoaod import PicoAOD
 
 
 class Skimmer(PicoAOD):
-    def __init__(self, loosePtForSkim=False, skim4b=False, mc_outlier_threshold:int|None=200, *args, **kwargs):
+    def __init__(self, mc_outlier_threshold:int|None=200, *args, **kwargs):
         
-        kwargs["pico_base_name"] = f'picoAOD_boosted'
         super().__init__(*args, **kwargs)
-        # self.loosePtForSkim = loosePtForSkim
-        self.skim4b = skim4b
         self.corrections_metadata = yaml.safe_load(open('analysis/metadata/corrections.yml', 'r'))
         self.cutFlowCuts = [
             "all",

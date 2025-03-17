@@ -24,7 +24,7 @@ runner:
 
 config:
   base_path: root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v3
-  # base_path: skimmer/test/   ### local
+  # base_path: /srv/python/skimmer/test/   ### local
   step: 100000
   loosePtForSkim: False
   skim4b: True
