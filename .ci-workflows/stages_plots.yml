@@ -8,7 +8,7 @@ analysis-plot-job:
     - source scripts/analysis-plot-job.sh
   artifacts:
     paths:
-      - python/output/analysis_plot_job/RunII/
+      - output/analysis_plot_job/RunII/
 
 analysis-plot-job-unsup:    
   stage: plot 
@@ -20,7 +20,7 @@ analysis-plot-job-unsup:
     - source scripts/analysis-plot-job-unsup.sh
   artifacts:
     paths:
-      - python/output/analysis_plot_job_unsup/RunII/
+      - output/analysis_plot_job_unsup/RunII/
 
 analysis-iplot-job:    
   stage: plot 
@@ -48,11 +48,11 @@ baseclass-test-job:
 #   needs: 
 #     - analysis-test-job
 #   script:
-#     - cd python/stats_analysis/
+#     - cd stats_analysis/
 #     - python convert_hist_to_json.py -o hists/histAll.json -i ../analysis/hists/test.coffea
 #   artifacts: 
 #     paths:
-#       - python/stats_analysis/hists/histAll.json
+#       - stats_analysis/hists/histAll.json
 
 synthetic-dataset-plot-job:    
   stage: plot 
@@ -64,4 +64,4 @@ synthetic-dataset-plot-job:
     - source scripts/synthetic-dataset-plot-job.sh
   artifacts:
     paths:
-      - python/output/synthetic_dataset_plot_job/jet-splitting-PDFs-test/
+      - output/synthetic_dataset_plot_job/jet-splitting-PDFs-test/

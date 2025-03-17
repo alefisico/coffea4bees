@@ -15,8 +15,8 @@ from skimmer.processor.picoaod import PicoAOD
 
 class Skimmer(PicoAOD):
     def __init__(self, loosePtForSkim=False, skim4b=False, mc_outlier_threshold:int|None=200, *args, **kwargs):
-        if skim4b:
-            kwargs["pico_base_name"] = f'picoAOD_fourTag'
+        
+        kwargs["pico_base_name"] = f'picoAOD_boosted'
         super().__init__(*args, **kwargs)
         # self.loosePtForSkim = loosePtForSkim
         self.skim4b = skim4b

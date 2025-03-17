@@ -9,7 +9,7 @@ fi
 
 echo "############### Modifying config"
 if [[ $(hostname) = *fnal* ]]; then
-    sed -e "s#make_.*#make_classifier_input: \/srv\/python\/$OUTPUT_DIR\/#" analysis/metadata/trigger_weights.yml > $OUTPUT_DIR/trigger_weights.yml
+    sed -e "s#make_.*#make_classifier_input: \/srv\/$OUTPUT_DIR\/#" analysis/metadata/trigger_weights.yml > $OUTPUT_DIR/trigger_weights.yml
 else
     sed -e "s#make_.*#make_classifier_input: \/builds\/${CI_PROJECT_PATH}\/python\/$OUTPUT_DIR\/#" analysis/metadata/trigger_weights.yml > $OUTPUT_DIR/trigger_weights.yml
 fi
