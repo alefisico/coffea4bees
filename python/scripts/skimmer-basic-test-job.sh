@@ -11,7 +11,7 @@ echo "############### Changing metadata"
 if [[ $(hostname) = *fnal* ]]; then
     sed -e "s#base_.*#base_path: \/srv\/output\/skimmer_basic_test_job\/#" skimmer/tests/modify_branches_skimmer.yml > ${OUTPUT_DIR}/modify_branches_skimmer.yml
 else
-    sed -e "s#base_.*#base_path: \/builds\/${CI_PROJECT_PATH}\/output\/skimmer_basic_test_job\/#" skimmer/tests/modify_branches_skimmer.yml > ${OUTPUT_DIR}/modify_branches_skimmer.yml
+    sed -e "s#base_.*#base_path: /builds/${CI_PROJECT_PATH}/python/output\/skimmer_basic_test_job\/#" skimmer/tests/modify_branches_skimmer.yml > ${OUTPUT_DIR}/modify_branches_skimmer.yml
 fi
 cat ${OUTPUT_DIR}/modify_branches_skimmer.yml
 

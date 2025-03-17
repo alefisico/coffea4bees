@@ -11,7 +11,7 @@ echo "############### Changing metadata"
 if [[ $(hostname) = *fnal* ]]; then
     sed -e "s#base_path.*#base_path: \/srv\/output\/skimmer_test_job\/#" -e "s/\#max.*/maxchunks: 5/" -e "s/\#test.*/test_files: 1/" -e "s/2024_.*/tmp\//" skimmer/metadata/HH4b.yml > $OUTPUT_DIR/HH4b.yml
 else
-    sed -e "s#base_.*#base_path: \/builds\/${CI_PROJECT_PATH}\/output\/skimmer_test_job\/#" -e "s/\#max.*/maxchunks: 5/" -e "s/\#test.*/test_files: 1/" -e "s/2024_.*/tmp\//" -e "s/T3_US_FNALLPC/T3_CH_PSI/" skimmer/metadata/HH4b.yml > $OUTPUT_DIR/HH4b.yml
+    sed -e "s#base_path.*#base_path: /builds/${CI_PROJECT_PATH}/python/output\/skimmer_test_job\/#" -e "s/\#max.*/maxchunks: 5/" -e "s/\#test.*/test_files: 1/" -e "s/2024_.*/tmp\//" -e "s/T3_US_FNALLPC/T3_CH_PSI/" skimmer/metadata/HH4b.yml > $OUTPUT_DIR/HH4b.yml
 fi
 cat $OUTPUT_DIR/HH4b.yml
 
