@@ -57,7 +57,6 @@ from analysis.helpers.truth_tools import find_genpart
 #
 # Setup
 #
-Fill.allow_missing = True
 NanoAODSchema.warn_missing_crossrefs = False
 warnings.filterwarnings("ignore")
 
@@ -588,6 +587,7 @@ class analysis(processor.ProcessorABC):
                                        classifier_SvB=self.classifier_SvB,
                                        classifier_SvB_MA=self.classifier_SvB_MA,
                                        processOutput = processOutput,
+                                       isRun3=self.config["isRun3"],
                                       )
 
 

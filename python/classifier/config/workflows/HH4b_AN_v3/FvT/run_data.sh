@@ -14,9 +14,11 @@ fi
     -template "user: ${LPCUSER}" $WFS/train_data.yml \
     -setting Monitor "address: :${port}" -flag debug
 
-# TODO
 # evaluate
-# ./pyml.py template "{mixed: ${i}, tag: mixed, user: ${LPCUSER}}" $WFS/evaluate_data.yml
+./pyml.py template "user: ${LPCUSER}" $WFS/evaluate_data.yml
+
+# merge
+./pyml.py template "user: ${LPCUSER}" $WFS/merge_data.yml
 
 if [ -e "$GMAIL" ]; then
     ./pyml.py analyze \

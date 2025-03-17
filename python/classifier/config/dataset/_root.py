@@ -152,7 +152,7 @@ class LoadRoot(ABC, Dataset):
                 groups = [
                     (
                         from_root,
-                        pool.submit(
+                        pool.map_async(
                             executor,
                             _fetch(tree=self.opts.tree),
                             files,
@@ -291,7 +291,7 @@ class _load_root:
             ) as progress:
                 chunks = [
                     list(
-                        pool.submit(
+                        pool.map_async(
                             executor,
                             _fetch(tree=self._tree),
                             files,
@@ -307,7 +307,7 @@ class _load_root:
                 dfs = [
                     *chain(
                         *(
-                            pool.submit(
+                            pool.map_async(
                                 executor,
                                 self._from_root[i][0],
                                 Chunk.balance(
