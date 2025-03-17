@@ -55,9 +55,9 @@ TTTo2L2Nu_UL16_postVFP:
     diff: 'b''diff --git a/python/skimmer/metadata/sub_sampling_MC.yml b/python/skimmer/metadata/sub_sampling_MC.yml\nindex
       ce27165..083e905 100644\n--- a/python/skimmer/metadata/sub_sampling_MC.yml\n+++
       b/python/skimmer/metadata/sub_sampling_MC.yml\n@@ -23,9 +23,9 @@ runner:\n     -
-      T3_US_NotreDame\n \n config:\n-  base_path: /srv/python/skimmer/test/\n-  sub_sampling_rand_seed:
+      T3_US_NotreDame\n \n config:\n-  base_path: skimmer/test/\n-  sub_sampling_rand_seed:
       5\n+  base_path: root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v1\n   #
-      base_path: /srv/python/skimmer/test/\n+  sub_sampling_rand_seed: 5\n   step:
+      base_path: skimmer/test/\n+  sub_sampling_rand_seed: 5\n   step:
       100000\n   skip_collections:\n     - notCanJet\ndiff --git a/python/skimmer/processor/sub_sample_MC.py
       b/python/skimmer/processor/sub_sample_MC.py\nindex 78957fa..4de67c1 100644\n---
       a/python/skimmer/processor/sub_sample_MC.py\n+++ b/python/skimmer/processor/sub_sample_MC.py\n@@
@@ -130,9 +130,9 @@ TTTo2L2Nu_UL16_preVFP:
     diff: 'b''diff --git a/python/skimmer/metadata/sub_sampling_MC.yml b/python/skimmer/metadata/sub_sampling_MC.yml\nindex
       ce27165..083e905 100644\n--- a/python/skimmer/metadata/sub_sampling_MC.yml\n+++
       b/python/skimmer/metadata/sub_sampling_MC.yml\n@@ -23,9 +23,9 @@ runner:\n     -
-      T3_US_NotreDame\n \n config:\n-  base_path: /srv/python/skimmer/test/\n-  sub_sampling_rand_seed:
+      T3_US_NotreDame\n \n config:\n-  base_path: skimmer/test/\n-  sub_sampling_rand_seed:
       5\n+  base_path: root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v1\n   #
-      base_path: /srv/python/skimmer/test/\n+  sub_sampling_rand_seed: 5\n   step:
+      base_path: skimmer/test/\n+  sub_sampling_rand_seed: 5\n   step:
       100000\n   skip_collections:\n     - notCanJet\ndiff --git a/python/skimmer/processor/sub_sample_MC.py
       b/python/skimmer/processor/sub_sample_MC.py\nindex 78957fa..4de67c1 100644\n---
       a/python/skimmer/processor/sub_sample_MC.py\n+++ b/python/skimmer/processor/sub_sample_MC.py\n@@
@@ -224,9 +224,9 @@ TTTo2L2Nu_UL17:
     diff: 'b''diff --git a/python/skimmer/metadata/sub_sampling_MC.yml b/python/skimmer/metadata/sub_sampling_MC.yml\nindex
       ce27165..083e905 100644\n--- a/python/skimmer/metadata/sub_sampling_MC.yml\n+++
       b/python/skimmer/metadata/sub_sampling_MC.yml\n@@ -23,9 +23,9 @@ runner:\n     -
-      T3_US_NotreDame\n \n config:\n-  base_path: /srv/python/skimmer/test/\n-  sub_sampling_rand_seed:
+      T3_US_NotreDame\n \n config:\n-  base_path: skimmer/test/\n-  sub_sampling_rand_seed:
       5\n+  base_path: root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v1\n   #
-      base_path: /srv/python/skimmer/test/\n+  sub_sampling_rand_seed: 5\n   step:
+      base_path: skimmer/test/\n+  sub_sampling_rand_seed: 5\n   step:
       100000\n   skip_collections:\n     - notCanJet\ndiff --git a/python/skimmer/processor/sub_sample_MC.py
       b/python/skimmer/processor/sub_sample_MC.py\nindex 78957fa..4de67c1 100644\n---
       a/python/skimmer/processor/sub_sample_MC.py\n+++ b/python/skimmer/processor/sub_sample_MC.py\n@@
@@ -346,9 +346,9 @@ TTTo2L2Nu_UL18:
     diff: 'b''diff --git a/python/skimmer/metadata/sub_sampling_MC.yml b/python/skimmer/metadata/sub_sampling_MC.yml\nindex
       ce27165..083e905 100644\n--- a/python/skimmer/metadata/sub_sampling_MC.yml\n+++
       b/python/skimmer/metadata/sub_sampling_MC.yml\n@@ -23,9 +23,9 @@ runner:\n     -
-      T3_US_NotreDame\n \n config:\n-  base_path: /srv/python/skimmer/test/\n-  sub_sampling_rand_seed:
+      T3_US_NotreDame\n \n config:\n-  base_path: skimmer/test/\n-  sub_sampling_rand_seed:
       5\n+  base_path: root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v1\n   #
-      base_path: /srv/python/skimmer/test/\n+  sub_sampling_rand_seed: 5\n   step:
+      base_path: skimmer/test/\n+  sub_sampling_rand_seed: 5\n   step:
       100000\n   skip_collections:\n     - notCanJet\ndiff --git a/python/skimmer/processor/sub_sample_MC.py
       b/python/skimmer/processor/sub_sample_MC.py\nindex 78957fa..4de67c1 100644\n---
       a/python/skimmer/processor/sub_sample_MC.py\n+++ b/python/skimmer/processor/sub_sample_MC.py\n@@
@@ -504,9 +504,9 @@ TTToHadronic_UL16_postVFP:
     diff: 'b''diff --git a/python/skimmer/metadata/sub_sampling_MC.yml b/python/skimmer/metadata/sub_sampling_MC.yml\nindex
       ce27165..083e905 100644\n--- a/python/skimmer/metadata/sub_sampling_MC.yml\n+++
       b/python/skimmer/metadata/sub_sampling_MC.yml\n@@ -23,9 +23,9 @@ runner:\n     -
-      T3_US_NotreDame\n \n config:\n-  base_path: /srv/python/skimmer/test/\n-  sub_sampling_rand_seed:
+      T3_US_NotreDame\n \n config:\n-  base_path: skimmer/test/\n-  sub_sampling_rand_seed:
       5\n+  base_path: root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v1\n   #
-      base_path: /srv/python/skimmer/test/\n+  sub_sampling_rand_seed: 5\n   step:
+      base_path: skimmer/test/\n+  sub_sampling_rand_seed: 5\n   step:
       100000\n   skip_collections:\n     - notCanJet\ndiff --git a/python/skimmer/processor/sub_sample_MC.py
       b/python/skimmer/processor/sub_sample_MC.py\nindex 78957fa..4de67c1 100644\n---
       a/python/skimmer/processor/sub_sample_MC.py\n+++ b/python/skimmer/processor/sub_sample_MC.py\n@@
@@ -708,9 +708,9 @@ TTToHadronic_UL16_preVFP:
     diff: 'b''diff --git a/python/skimmer/metadata/sub_sampling_MC.yml b/python/skimmer/metadata/sub_sampling_MC.yml\nindex
       ce27165..083e905 100644\n--- a/python/skimmer/metadata/sub_sampling_MC.yml\n+++
       b/python/skimmer/metadata/sub_sampling_MC.yml\n@@ -23,9 +23,9 @@ runner:\n     -
-      T3_US_NotreDame\n \n config:\n-  base_path: /srv/python/skimmer/test/\n-  sub_sampling_rand_seed:
+      T3_US_NotreDame\n \n config:\n-  base_path: skimmer/test/\n-  sub_sampling_rand_seed:
       5\n+  base_path: root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v1\n   #
-      base_path: /srv/python/skimmer/test/\n+  sub_sampling_rand_seed: 5\n   step:
+      base_path: skimmer/test/\n+  sub_sampling_rand_seed: 5\n   step:
       100000\n   skip_collections:\n     - notCanJet\ndiff --git a/python/skimmer/processor/sub_sample_MC.py
       b/python/skimmer/processor/sub_sample_MC.py\nindex 78957fa..4de67c1 100644\n---
       a/python/skimmer/processor/sub_sample_MC.py\n+++ b/python/skimmer/processor/sub_sample_MC.py\n@@
@@ -996,9 +996,9 @@ TTToHadronic_UL17:
     diff: 'b''diff --git a/python/skimmer/metadata/sub_sampling_MC.yml b/python/skimmer/metadata/sub_sampling_MC.yml\nindex
       ce27165..083e905 100644\n--- a/python/skimmer/metadata/sub_sampling_MC.yml\n+++
       b/python/skimmer/metadata/sub_sampling_MC.yml\n@@ -23,9 +23,9 @@ runner:\n     -
-      T3_US_NotreDame\n \n config:\n-  base_path: /srv/python/skimmer/test/\n-  sub_sampling_rand_seed:
+      T3_US_NotreDame\n \n config:\n-  base_path: skimmer/test/\n-  sub_sampling_rand_seed:
       5\n+  base_path: root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v1\n   #
-      base_path: /srv/python/skimmer/test/\n+  sub_sampling_rand_seed: 5\n   step:
+      base_path: skimmer/test/\n+  sub_sampling_rand_seed: 5\n   step:
       100000\n   skip_collections:\n     - notCanJet\ndiff --git a/python/skimmer/processor/sub_sample_MC.py
       b/python/skimmer/processor/sub_sample_MC.py\nindex 78957fa..4de67c1 100644\n---
       a/python/skimmer/processor/sub_sample_MC.py\n+++ b/python/skimmer/processor/sub_sample_MC.py\n@@
@@ -1538,9 +1538,9 @@ TTToHadronic_UL18:
     diff: 'b''diff --git a/python/skimmer/metadata/sub_sampling_MC.yml b/python/skimmer/metadata/sub_sampling_MC.yml\nindex
       ce27165..083e905 100644\n--- a/python/skimmer/metadata/sub_sampling_MC.yml\n+++
       b/python/skimmer/metadata/sub_sampling_MC.yml\n@@ -23,9 +23,9 @@ runner:\n     -
-      T3_US_NotreDame\n \n config:\n-  base_path: /srv/python/skimmer/test/\n-  sub_sampling_rand_seed:
+      T3_US_NotreDame\n \n config:\n-  base_path: skimmer/test/\n-  sub_sampling_rand_seed:
       5\n+  base_path: root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v1\n   #
-      base_path: /srv/python/skimmer/test/\n+  sub_sampling_rand_seed: 5\n   step:
+      base_path: skimmer/test/\n+  sub_sampling_rand_seed: 5\n   step:
       100000\n   skip_collections:\n     - notCanJet\ndiff --git a/python/skimmer/processor/sub_sample_MC.py
       b/python/skimmer/processor/sub_sample_MC.py\nindex 78957fa..4de67c1 100644\n---
       a/python/skimmer/processor/sub_sample_MC.py\n+++ b/python/skimmer/processor/sub_sample_MC.py\n@@
@@ -2022,9 +2022,9 @@ TTToSemiLeptonic_UL16_postVFP:
     diff: 'b''diff --git a/python/skimmer/metadata/sub_sampling_MC.yml b/python/skimmer/metadata/sub_sampling_MC.yml\nindex
       ce27165..083e905 100644\n--- a/python/skimmer/metadata/sub_sampling_MC.yml\n+++
       b/python/skimmer/metadata/sub_sampling_MC.yml\n@@ -23,9 +23,9 @@ runner:\n     -
-      T3_US_NotreDame\n \n config:\n-  base_path: /srv/python/skimmer/test/\n-  sub_sampling_rand_seed:
+      T3_US_NotreDame\n \n config:\n-  base_path: skimmer/test/\n-  sub_sampling_rand_seed:
       5\n+  base_path: root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v1\n   #
-      base_path: /srv/python/skimmer/test/\n+  sub_sampling_rand_seed: 5\n   step:
+      base_path: skimmer/test/\n+  sub_sampling_rand_seed: 5\n   step:
       100000\n   skip_collections:\n     - notCanJet\ndiff --git a/python/skimmer/processor/sub_sample_MC.py
       b/python/skimmer/processor/sub_sample_MC.py\nindex 78957fa..4de67c1 100644\n---
       a/python/skimmer/processor/sub_sample_MC.py\n+++ b/python/skimmer/processor/sub_sample_MC.py\n@@
@@ -2198,9 +2198,9 @@ TTToSemiLeptonic_UL16_preVFP:
     diff: 'b''diff --git a/python/skimmer/metadata/sub_sampling_MC.yml b/python/skimmer/metadata/sub_sampling_MC.yml\nindex
       ce27165..083e905 100644\n--- a/python/skimmer/metadata/sub_sampling_MC.yml\n+++
       b/python/skimmer/metadata/sub_sampling_MC.yml\n@@ -23,9 +23,9 @@ runner:\n     -
-      T3_US_NotreDame\n \n config:\n-  base_path: /srv/python/skimmer/test/\n-  sub_sampling_rand_seed:
+      T3_US_NotreDame\n \n config:\n-  base_path: skimmer/test/\n-  sub_sampling_rand_seed:
       5\n+  base_path: root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v1\n   #
-      base_path: /srv/python/skimmer/test/\n+  sub_sampling_rand_seed: 5\n   step:
+      base_path: skimmer/test/\n+  sub_sampling_rand_seed: 5\n   step:
       100000\n   skip_collections:\n     - notCanJet\ndiff --git a/python/skimmer/processor/sub_sample_MC.py
       b/python/skimmer/processor/sub_sample_MC.py\nindex 78957fa..4de67c1 100644\n---
       a/python/skimmer/processor/sub_sample_MC.py\n+++ b/python/skimmer/processor/sub_sample_MC.py\n@@
@@ -2446,9 +2446,9 @@ TTToSemiLeptonic_UL17:
     diff: 'b''diff --git a/python/skimmer/metadata/sub_sampling_MC.yml b/python/skimmer/metadata/sub_sampling_MC.yml\nindex
       ce27165..083e905 100644\n--- a/python/skimmer/metadata/sub_sampling_MC.yml\n+++
       b/python/skimmer/metadata/sub_sampling_MC.yml\n@@ -23,9 +23,9 @@ runner:\n     -
-      T3_US_NotreDame\n \n config:\n-  base_path: /srv/python/skimmer/test/\n-  sub_sampling_rand_seed:
+      T3_US_NotreDame\n \n config:\n-  base_path: skimmer/test/\n-  sub_sampling_rand_seed:
       5\n+  base_path: root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v1\n   #
-      base_path: /srv/python/skimmer/test/\n+  sub_sampling_rand_seed: 5\n   step:
+      base_path: skimmer/test/\n+  sub_sampling_rand_seed: 5\n   step:
       100000\n   skip_collections:\n     - notCanJet\ndiff --git a/python/skimmer/processor/sub_sample_MC.py
       b/python/skimmer/processor/sub_sample_MC.py\nindex 78957fa..4de67c1 100644\n---
       a/python/skimmer/processor/sub_sample_MC.py\n+++ b/python/skimmer/processor/sub_sample_MC.py\n@@
@@ -2904,9 +2904,9 @@ TTToSemiLeptonic_UL18:
     diff: 'b''diff --git a/python/skimmer/metadata/sub_sampling_MC.yml b/python/skimmer/metadata/sub_sampling_MC.yml\nindex
       ce27165..083e905 100644\n--- a/python/skimmer/metadata/sub_sampling_MC.yml\n+++
       b/python/skimmer/metadata/sub_sampling_MC.yml\n@@ -23,9 +23,9 @@ runner:\n     -
-      T3_US_NotreDame\n \n config:\n-  base_path: /srv/python/skimmer/test/\n-  sub_sampling_rand_seed:
+      T3_US_NotreDame\n \n config:\n-  base_path: skimmer/test/\n-  sub_sampling_rand_seed:
       5\n+  base_path: root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v1\n   #
-      base_path: /srv/python/skimmer/test/\n+  sub_sampling_rand_seed: 5\n   step:
+      base_path: skimmer/test/\n+  sub_sampling_rand_seed: 5\n   step:
       100000\n   skip_collections:\n     - notCanJet\ndiff --git a/python/skimmer/processor/sub_sample_MC.py
       b/python/skimmer/processor/sub_sample_MC.py\nindex 78957fa..4de67c1 100644\n---
       a/python/skimmer/processor/sub_sample_MC.py\n+++ b/python/skimmer/processor/sub_sample_MC.py\n@@

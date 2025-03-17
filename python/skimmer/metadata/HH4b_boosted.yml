@@ -9,7 +9,7 @@ runner:
   class_name: Skimmer
   data_tier: nanoAOD
   condor_cores: 1
-  condor_memory: 4GB
+  condor_memory: 2GB
   condor_transfer_input_files:
     - base_class
     - analysis
@@ -29,10 +29,9 @@ runner:
 
 config:
   # base_path: root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/
-  # base_path: root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v3/
   base_path: /srv/output/skimmer/test/   ### local
   step: 100000
-  loosePtForSkim: True
+  pico_base_name: picoAOD_boosted
   skip_collections:
     - Photon
     - LHEPart

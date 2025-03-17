@@ -46,3 +46,15 @@ synthetic-dataset-make-dataset-Run3:
       - python/output/synthetic_dataset_make_dataset_Run3/data_2023_BPixD/picoAOD_seed5.root
       - python/output/synthetic_dataset_make_dataset_Run3/data_2023_BPixE/picoAOD_seed5.root
 
+skimmer-boosted-job:   
+  stage: skimmer-test   
+  extends:
+    - .base_analysis
+  script:
+    - source scripts/skimmer-boosted-job.sh
+  artifacts: 
+    paths:
+      - python/output/skimmer_boosted_job/picoaod_datasets_GluGluToHHTo4B_cHHH0_UL18.yml
+      - python/output/skimmer_boosted_job/GluGluToHHTo4B_cHHH0_UL18/picoAOD.chunk0.root
+      - python/output/skimmer_boosted_job/GluGluToHHTo4B_cHHH0_UL18/picoAOD.chunk1.root
+      - python/output/skimmer_boosted_job/datasets_HH4b.yml
