@@ -548,6 +548,9 @@ if __name__ == '__main__':
                     ),
                 )
 
+                if (pico_base_name := configs["config"].get("pico_base_name", None)) is not None:
+                    kwargs["pico_base_name"] = pico_base_name
+
                 if "declustering_rand_seed" in configs["config"]:
                     kwargs["pico_base_name"] = f'picoAOD_seed{configs["config"]["declustering_rand_seed"]}'
 
