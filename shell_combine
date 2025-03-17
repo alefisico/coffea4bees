@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 
+echo "************************************************************************************************"
+echo "************************************************************************************************"
+echo "This script will be deprecated soon."
+echo "Please use the run_coffea function in coffea4bees/python/run_container instead."
+echo "To learn about the script do to python and run: ./run_container --help"
+echo "To run run_container as this script does, do: ./run_container combine <command>"
+echo "************************************************************************************************"
+echo "************************************************************************************************"
 
 export APPTAINER_BINDPATH=/uscmst1b_scratch,/cvmfs,/cvmfs/grid.cern.ch/etc/grid-security/vomses:/etc/vomses,/cvmfs/grid.cern.ch/etc/grid-security:/etc/grid-security,/tmp
 export APPTAINER_CACHEDIR="/tmp/$(whoami)/apptainer_cache"

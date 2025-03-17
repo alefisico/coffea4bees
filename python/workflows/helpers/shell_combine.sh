@@ -1,5 +1,16 @@
 #!/usr/bin/env bash
 
+echo """
+************************************************************************************************
+************************************************************************************************
+This script will be deprecated soon.
+Please use the run_coffea function in coffea4bees/python/run_container instead.
+To learn about the script do to python and run: ./run_container --help
+To run run_container as this script does, do: ./run_container combine <command>
+************************************************************************************************
+************************************************************************************************
+"""
+
 if [ "$#" -lt 1 ]; then
   echo "Usage: $0 <container> [command...]"
   exit 1

@@ -86,6 +86,7 @@ class analysis(processor.ProcessorABC):
         apply_FvT: bool = True,
         apply_boosted_veto: bool = False,
         run_lowpt_selection: bool = False,
+        run_dilep_ttbar_crosscheck: bool = False,
         fill_histograms: bool = True,
         hist_cuts = ['passPreSel'],
         run_SvB: bool = True,
@@ -110,6 +111,7 @@ class analysis(processor.ProcessorABC):
         self.run_lowpt_selection = run_lowpt_selection
         self.run_SvB = run_SvB
         self.fill_histograms = fill_histograms
+        self.run_dilep_ttbar_crosscheck = run_dilep_ttbar_crosscheck
         self.apply_boosted_veto = apply_boosted_veto
         self.classifier_SvB = _init_classfier(SvB)
         self.classifier_SvB_MA = _init_classfier(SvB_MA)
@@ -361,16 +363,17 @@ class analysis(processor.ProcessorABC):
 
         # Apply object selection (function does not remove events, adds content to objects)
         event = apply_object_selection_4b( event, self.corrections_metadata[self.year],
-                                           dataset=self.dataset,
-                                           doLeptonRemoval=self.config["do_lepton_jet_cleaning"],
-                                           override_selected_with_flavor_bit=self.config["override_selected_with_flavor_bit"],
-                                           run_lowpt_selection=self.run_lowpt_selection,
-                                           do_jet_veto_maps=self.config["do_jet_veto_maps"],
-                                           isRun3=self.config["isRun3"],
-                                           isMC=self.config["isMC"], ### temporary
-                                           isSyntheticData=self.config["isSyntheticData"],
-                                           isSyntheticMC=self.config["isSyntheticMC"],
-                                           )
+                                            dataset=self.dataset,
+                                            doLeptonRemoval=self.config["do_lepton_jet_cleaning"],
+                                            override_selected_with_flavor_bit=self.config["override_selected_with_flavor_bit"],
+                                            run_lowpt_selection=self.run_lowpt_selection,
+                                            dilep_ttbar_crosscheck=self.run_dilep_ttbar_crosscheck,
+                                            do_jet_veto_maps=self.config["do_jet_veto_maps"],
+                                            isRun3=self.config["isRun3"],
+                                            isMC=self.config["isMC"], ### temporary
+                                            isSyntheticData=self.config["isSyntheticData"],
+                                            isSyntheticMC=self.config["isSyntheticMC"],
+                                            )
 
 
         #
@@ -584,6 +587,7 @@ class analysis(processor.ProcessorABC):
                                        classifier_SvB=self.classifier_SvB,
                                        classifier_SvB_MA=self.classifier_SvB_MA,
                                        processOutput = processOutput,
+                                       isRun3=self.config["isRun3"],
                                       )
 
 
@@ -678,6 +682,7 @@ class analysis(processor.ProcessorABC):
                                                   histCuts=self.histCuts,
                                                   apply_FvT=self.apply_FvT,
                                                   run_SvB=self.run_SvB,
+                                                  run_dilep_ttbar_crosscheck=self.run_dilep_ttbar_crosscheck,
                                                   top_reconstruction=self.top_reconstruction,
                                                   isDataForMixed=self.config['isDataForMixed'],
                                                   run_lowpt_selection=self.run_lowpt_selection,

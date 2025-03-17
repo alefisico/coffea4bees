@@ -2,126 +2,126 @@ counts4:
     data_2023_preBPixF:
         passJetMult: 1004.0
         passPreSel: 993.0
-        passDiJetMass: 471.0
-        SR: 169.0
-        SB: 302.0
+        passDiJetMass: 311.0
+        SR: 98.0
+        SB: 144.0
         passSvB: 1.0
         failSvB: 964.0
 
     data_2023_preBPixE:
         passJetMult: 997.0
         passPreSel: 991.0
-        passDiJetMass: 464.0
-        SR: 195.0
-        SB: 269.0
+        passDiJetMass: 321.0
+        SR: 121.0
+        SB: 145.0
         passSvB: 0.0
         failSvB: 956.0
 
     data_2023_preBPixD:
         passJetMult: 990.0
         passPreSel: 981.0
-        passDiJetMass: 494.0
-        SR: 202.0
-        SB: 292.0
+        passDiJetMass: 330.0
+        SR: 115.0
+        SB: 148.0
         passSvB: 2.0
         failSvB: 948.0
 
     data_2023_preBPixC:
         passJetMult: 999.0
         passPreSel: 987.0
-        passDiJetMass: 513.0
-        SR: 165.0
-        SB: 348.0
+        passDiJetMass: 342.0
+        SR: 87.0
+        SB: 185.0
         passSvB: 0.0
         failSvB: 944.0
 
     data_2023_preBPixB:
         passJetMult: 1006.0
         passPreSel: 996.0
-        passDiJetMass: 482.0
-        SR: 195.0
-        SB: 287.0
+        passDiJetMass: 327.0
+        SR: 109.0
+        SB: 138.0
         passSvB: 0.0
         failSvB: 954.0
 
     data_2023_preBPixA:
         passJetMult: 995.0
         passPreSel: 990.0
-        passDiJetMass: 479.0
-        SR: 168.0
-        SB: 311.0
+        passDiJetMass: 300.0
+        SR: 93.0
+        SB: 146.0
         passSvB: 0.0
         failSvB: 956.0
 
     data_2023_BPixE:
         passJetMult: 1002.0
         passPreSel: 995.0
-        passDiJetMass: 444.0
-        SR: 166.0
-        SB: 278.0
+        passDiJetMass: 301.0
+        SR: 89.0
+        SB: 151.0
         passSvB: 0.0
         failSvB: 955.0
 
     data_2023_BPixD:
         passJetMult: 997.0
         passPreSel: 993.0
-        passDiJetMass: 464.0
-        SR: 151.0
-        SB: 313.0
+        passDiJetMass: 268.0
+        SR: 69.0
+        SB: 145.0
         passSvB: 0.0
         failSvB: 965.0
 
     data_2022_preEED:
         passJetMult: 992.0
         passPreSel: 983.0
-        passDiJetMass: 486.0
-        SR: 160.0
-        SB: 326.0
+        passDiJetMass: 312.0
+        SR: 88.0
+        SB: 150.0
         passSvB: 1.0
         failSvB: 958.0
 
     data_2022_preEEC:
         passJetMult: 996.0
         passPreSel: 990.0
-        passDiJetMass: 453.0
-        SR: 164.0
-        SB: 289.0
+        passDiJetMass: 275.0
+        SR: 94.0
+        SB: 124.0
         passSvB: 1.0
         failSvB: 967.0
 
     data_2022_preEEB:
         passJetMult: 990.0
         passPreSel: 984.0
-        passDiJetMass: 495.0
-        SR: 187.0
-        SB: 308.0
+        passDiJetMass: 339.0
+        SR: 90.0
+        SB: 179.0
         passSvB: 2.0
         failSvB: 963.0
 
     data_2022_EEG:
         passJetMult: 994.0
         passPreSel: 984.0
-        passDiJetMass: 505.0
-        SR: 183.0
-        SB: 322.0
+        passDiJetMass: 323.0
+        SR: 102.0
+        SB: 166.0
         passSvB: 1.0
         failSvB: 962.0
 
     data_2022_EEF:
         passJetMult: 998.0
         passPreSel: 990.0
-        passDiJetMass: 477.0
-        SR: 174.0
-        SB: 303.0
+        passDiJetMass: 322.0
+        SR: 101.0
+        SB: 143.0
         passSvB: 0.0
         failSvB: 965.0
 
     data_2022_EEE:
         passJetMult: 1006.0
         passPreSel: 999.0
-        passDiJetMass: 485.0
-        SR: 155.0
-        SB: 330.0
+        passDiJetMass: 293.0
+        SR: 84.0
+        SB: 141.0
         passSvB: 1.0
         failSvB: 976.0
 
@@ -150,7 +150,7 @@ counts3:
         passJetMult: 990.0
         passPreSel: 0.28
         passDiJetMass: 0.09
-        SR: 0.04
+        SR: 0.0
         SB: 0.06
         passSvB: 0.0
         failSvB: 0.28
@@ -158,27 +158,27 @@ counts3:
     data_2023_preBPixC:
         passJetMult: 999.0
         passPreSel: 0.36
-        passDiJetMass: 0.23
+        passDiJetMass: 0.13
         SR: 0.07
-        SB: 0.15
+        SB: 0.0
         passSvB: 0.0
         failSvB: 0.36
 
     data_2023_preBPixB:
         passJetMult: 1006.0
         passPreSel: 0.23
-        passDiJetMass: 0.12
+        passDiJetMass: 0.06
         SR: 0.0
-        SB: 0.12
+        SB: 0.06
         passSvB: 0.0
         failSvB: 0.17
 
     data_2023_preBPixA:
         passJetMult: 995.0
         passPreSel: 0.13
-        passDiJetMass: 0.09
+        passDiJetMass: 0.06
         SR: 0.0
-        SB: 0.09
+        SB: 0.0
         passSvB: 0.0
         failSvB: 0.09
 
@@ -186,8 +186,8 @@ counts3:
         passJetMult: 1002.0
         passPreSel: 0.15
         passDiJetMass: 0.06
-        SR: 0.06
-        SB: 0.0
+        SR: 0.0
+        SB: 0.06
         passSvB: 0.0
         failSvB: 0.15
 
@@ -195,17 +195,17 @@ counts3:
         passJetMult: 997.0
         passPreSel: 0.19
         passDiJetMass: 0.06
-        SR: 0.06
-        SB: 0.0
+        SR: 0.0
+        SB: 0.06
         passSvB: 0.0
         failSvB: 0.19
 
     data_2022_preEED:
         passJetMult: 992.0
         passPreSel: 0.4
-        passDiJetMass: 0.19
+        passDiJetMass: 0.09
         SR: 0.0
-        SB: 0.19
+        SB: 0.0
         passSvB: 0.0
         failSvB: 0.4
 
@@ -230,27 +230,27 @@ counts3:
     data_2022_EEG:
         passJetMult: 994.0
         passPreSel: 0.28
-        passDiJetMass: 0.25
-        SR: 0.17
-        SB: 0.07
+        passDiJetMass: 0.17
+        SR: 0.12
+        SB: 0.0
         passSvB: 0.0
         failSvB: 0.28
 
     data_2022_EEF:
         passJetMult: 998.0
         passPreSel: 0.35
-        passDiJetMass: 0.12
+        passDiJetMass: 0.06
         SR: 0.0
-        SB: 0.12
+        SB: 0.06
         passSvB: 0.0
         failSvB: 0.35
 
     data_2022_EEE:
         passJetMult: 1006.0
         passPreSel: 0.28
-        passDiJetMass: 0.06
+        passDiJetMass: 0.0
         SR: 0.0
-        SB: 0.06
+        SB: 0.0
         passSvB: 0.0
         failSvB: 0.28
 
@@ -260,126 +260,126 @@ counts4_unit:
     data_2023_preBPixF:
         passJetMult: 1004.0
         passPreSel: 993.0
-        passDiJetMass: 471.0
-        SR: 169.0
-        SB: 302.0
+        passDiJetMass: 311.0
+        SR: 98.0
+        SB: 144.0
         passSvB: 1.0
         failSvB: 964.0
 
     data_2023_preBPixE:
         passJetMult: 997.0
         passPreSel: 991.0
-        passDiJetMass: 464.0
-        SR: 195.0
-        SB: 269.0
+        passDiJetMass: 321.0
+        SR: 121.0
+        SB: 145.0
         passSvB: 0.0
         failSvB: 956.0
 
     data_2023_preBPixD:
         passJetMult: 990.0
         passPreSel: 981.0
-        passDiJetMass: 494.0
-        SR: 202.0
-        SB: 292.0
+        passDiJetMass: 330.0
+        SR: 115.0
+        SB: 148.0
         passSvB: 2.0
         failSvB: 948.0
 
     data_2023_preBPixC:
         passJetMult: 999.0
         passPreSel: 987.0
-        passDiJetMass: 513.0
-        SR: 165.0
-        SB: 348.0
+        passDiJetMass: 342.0
+        SR: 87.0
+        SB: 185.0
         passSvB: 0.0
         failSvB: 944.0
 
     data_2023_preBPixB:
         passJetMult: 1006.0
         passPreSel: 996.0
-        passDiJetMass: 482.0
-        SR: 195.0
-        SB: 287.0
+        passDiJetMass: 327.0
+        SR: 109.0
+        SB: 138.0
         passSvB: 0.0
         failSvB: 954.0
 
     data_2023_preBPixA:
         passJetMult: 995.0
         passPreSel: 990.0
-        passDiJetMass: 479.0
-        SR: 168.0
-        SB: 311.0
+        passDiJetMass: 300.0
+        SR: 93.0
+        SB: 146.0
         passSvB: 0.0
         failSvB: 956.0
 
     data_2023_BPixE:
         passJetMult: 1002.0
         passPreSel: 995.0
-        passDiJetMass: 444.0
-        SR: 166.0
-        SB: 278.0
+        passDiJetMass: 301.0
+        SR: 89.0
+        SB: 151.0
         passSvB: 0.0
         failSvB: 955.0
 
     data_2023_BPixD:
         passJetMult: 997.0
         passPreSel: 993.0
-        passDiJetMass: 464.0
-        SR: 151.0
-        SB: 313.0
+        passDiJetMass: 268.0
+        SR: 69.0
+        SB: 145.0
         passSvB: 0.0
         failSvB: 965.0
 
     data_2022_preEED:
         passJetMult: 992.0
         passPreSel: 983.0
-        passDiJetMass: 486.0
-        SR: 160.0
-        SB: 326.0
+        passDiJetMass: 312.0
+        SR: 88.0
+        SB: 150.0
         passSvB: 1.0
         failSvB: 958.0
 
     data_2022_preEEC:
         passJetMult: 996.0
         passPreSel: 990.0
-        passDiJetMass: 453.0
-        SR: 164.0
-        SB: 289.0
+        passDiJetMass: 275.0
+        SR: 94.0
+        SB: 124.0
         passSvB: 1.0
         failSvB: 967.0
 
     data_2022_preEEB:
         passJetMult: 990.0
         passPreSel: 984.0
-        passDiJetMass: 495.0
-        SR: 187.0
-        SB: 308.0
+        passDiJetMass: 339.0
+        SR: 90.0
+        SB: 179.0
         passSvB: 2.0
         failSvB: 963.0
 
     data_2022_EEG:
         passJetMult: 994.0
         passPreSel: 984.0
-        passDiJetMass: 505.0
-        SR: 183.0
-        SB: 322.0
+        passDiJetMass: 323.0
+        SR: 102.0
+        SB: 166.0
         passSvB: 1.0
         failSvB: 962.0
 
     data_2022_EEF:
         passJetMult: 998.0
         passPreSel: 990.0
-        passDiJetMass: 477.0
-        SR: 174.0
-        SB: 303.0
+        passDiJetMass: 322.0
+        SR: 101.0
+        SB: 143.0
         passSvB: 0.0
         failSvB: 965.0
 
     data_2022_EEE:
         passJetMult: 1006.0
         passPreSel: 999.0
-        passDiJetMass: 485.0
-        SR: 155.0
-        SB: 330.0
+        passDiJetMass: 293.0
+        SR: 84.0
+        SB: 141.0
         passSvB: 1.0
         failSvB: 976.0
 
@@ -408,7 +408,7 @@ counts3_unit:
         passJetMult: 990.0
         passPreSel: 6.0
         passDiJetMass: 2.0
-        SR: 1.0
+        SR: 0.0
         SB: 1.0
         passSvB: 0.0
         failSvB: 6.0
@@ -416,27 +416,27 @@ counts3_unit:
     data_2023_preBPixC:
         passJetMult: 999.0
         passPreSel: 8.0
-        passDiJetMass: 5.0
+        passDiJetMass: 3.0
         SR: 2.0
-        SB: 3.0
+        SB: 0.0
         passSvB: 0.0
         failSvB: 8.0
 
     data_2023_preBPixB:
         passJetMult: 1006.0
         passPreSel: 5.0
-        passDiJetMass: 2.0
+        passDiJetMass: 1.0
         SR: 0.0
-        SB: 2.0
+        SB: 1.0
         passSvB: 0.0
         failSvB: 4.0
 
     data_2023_preBPixA:
         passJetMult: 995.0
         passPreSel: 3.0
-        passDiJetMass: 2.0
+        passDiJetMass: 1.0
         SR: 0.0
-        SB: 2.0
+        SB: 0.0
         passSvB: 0.0
         failSvB: 2.0
 
@@ -444,8 +444,8 @@ counts3_unit:
         passJetMult: 1002.0
         passPreSel: 3.0
         passDiJetMass: 1.0
-        SR: 1.0
-        SB: 0.0
+        SR: 0.0
+        SB: 1.0
         passSvB: 0.0
         failSvB: 3.0
 
@@ -453,17 +453,17 @@ counts3_unit:
         passJetMult: 997.0
         passPreSel: 3.0
         passDiJetMass: 1.0
-        SR: 1.0
-        SB: 0.0
+        SR: 0.0
+        SB: 1.0
         passSvB: 0.0
         failSvB: 3.0
 
     data_2022_preEED:
         passJetMult: 992.0
         passPreSel: 8.0
-        passDiJetMass: 4.0
+        passDiJetMass: 2.0
         SR: 0.0
-        SB: 4.0
+        SB: 0.0
         passSvB: 0.0
         failSvB: 8.0
 
@@ -488,27 +488,27 @@ counts3_unit:
     data_2022_EEG:
         passJetMult: 994.0
         passPreSel: 6.0
-        passDiJetMass: 5.0
-        SR: 3.0
-        SB: 2.0
+        passDiJetMass: 3.0
+        SR: 2.0
+        SB: 0.0
         passSvB: 0.0
         failSvB: 6.0
 
     data_2022_EEF:
         passJetMult: 998.0
         passPreSel: 6.0
-        passDiJetMass: 2.0
+        passDiJetMass: 1.0
         SR: 0.0
-        SB: 2.0
+        SB: 1.0
         passSvB: 0.0
         failSvB: 6.0
 
     data_2022_EEE:
         passJetMult: 1006.0
         passPreSel: 6.0
-        passDiJetMass: 1.0
+        passDiJetMass: 0.0
         SR: 0.0
-        SB: 1.0
+        SB: 0.0
         passSvB: 0.0
         failSvB: 6.0
 

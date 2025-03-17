@@ -2,9 +2,9 @@ counts4:
     syn_v0_2023_BPix:
         passJetMult: 1973.0
         passPreSel: 1908.0
-        passDiJetMass: 852.0
-        SR: 295.0
-        SB: 557.0
+        passDiJetMass: 542.0
+        SR: 170.0
+        SB: 261.0
         passSvB: 3.0
         failSvB: 1832.0
 
@@ -26,9 +26,9 @@ counts4_unit:
     syn_v0_2023_BPix:
         passJetMult: 1973.0
         passPreSel: 1908.0
-        passDiJetMass: 852.0
-        SR: 295.0
-        SB: 557.0
+        passDiJetMass: 542.0
+        SR: 170.0
+        SB: 261.0
         passSvB: 3.0
         failSvB: 1832.0
 

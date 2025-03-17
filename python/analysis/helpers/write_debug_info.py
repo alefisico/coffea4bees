@@ -1,4 +1,4 @@
-
+import awkward as ak
 
 def add_debug_info_to_output(event, processOutput, weights, list_weight_names, analysis_selections):
     # passSR = (selev["quadJet_selected"].SR)
@@ -52,20 +52,20 @@ def add_debug_Run3_data(event, processOutput):
 
     out_data = {}
 
-    #debug_mask = event.region > 2
-    out_data["event"  ]    = event["event"]
-    out_data["run"    ]    = event["run"]
-    out_data["canJet_pt"    ] = event.canJet.pt  .to_list()
-    out_data["canJet_eta"   ] = event.canJet.eta .to_list()
-    out_data["canJet_phi"   ] = event.canJet.phi .to_list()
-    out_data["canJet_mass"  ] = event.canJet.mass.to_list()
-    out_data["canJet_bTagScore"] = event.canJet.btagScore.to_list()
+    debug_mask = (event.region == 1)
+    out_data["event"  ]    = event["event"][debug_mask]
+    out_data["run"    ]    = event["run"][debug_mask]
+    out_data["canJet_pt"    ] = event.canJet.pt  [debug_mask].to_list()
+    out_data["canJet_eta"   ] = event.canJet.eta [debug_mask].to_list()
+    out_data["canJet_phi"   ] = event.canJet.phi [debug_mask].to_list()
+    out_data["canJet_mass"  ] = event.canJet.mass[debug_mask].to_list()
+    out_data["canJet_bTagScore"] = event.canJet.btagScore[debug_mask].to_list()
 
-    out_data["notCanJet_pt"    ]    = event.notCanJet_coffea.pt  .to_list()
-    out_data["notCanJet_eta"   ]    = event.notCanJet_coffea.eta .to_list()
-    out_data["notCanJet_phi"   ]    = event.notCanJet_coffea.phi .to_list()
-    out_data["notCanJet_mass"  ]    = event.notCanJet_coffea.mass.to_list()
-    out_data["notCanJet_bTagScore"] = event.notCanJet_coffea.btagScore.to_list()
+    out_data["notCanJet_pt"    ]    = event.notCanJet_coffea.pt  [debug_mask].to_list()
+    out_data["notCanJet_eta"   ]    = event.notCanJet_coffea.eta [debug_mask].to_list()
+    out_data["notCanJet_phi"   ]    = event.notCanJet_coffea.phi [debug_mask].to_list()
+    out_data["notCanJet_mass"  ]    = event.notCanJet_coffea.mass[debug_mask].to_list()
+    out_data["notCanJet_bTagScore"] = event.notCanJet_coffea.btagScore[debug_mask].to_list()
 
 
     for out_k, out_v in out_data.items():
@@ -239,3 +239,27 @@ def add_debug_info_for_Hbb_reclustering(event, processOutput):
     for out_k, out_v in out_data.items():
         processOutput[out_k] = {}
         processOutput[out_k][event.metadata['dataset']] = list(out_v)
+
+
+def add_debug_info_for_Boosted_Synthetic(events, processOutput):
+
+
+    FatJet_fields = ['area', 'eta', 'mass', 'msoftdrop', 'n2b1', 'n3b1', 'particleNetMD_Xbb', 'particleNet_mass', 'phi', 'pt', 'tau1', 'tau2', 'tau3', 'tau4', 'lsf3', 'nConstituents']
+    SubJet_fields = ['btagDeepB', 'eta', 'mass', 'n2b1', 'n3b1', 'phi', 'pt', 'rawFactor', 'tau1', 'tau2', 'tau3', 'tau4']
+
+    out_data = {}
+    out_data["event"  ] = events["event"]
+    out_data["run"    ] = events["run"]
+
+    for _f in FatJet_fields:
+        #print(_f, "is", getattr(events.FatJet, _f),"\n")
+        #print(_f, "is", type(getattr(events.FatJet, _f)),"\n")
+        out_data[f"FatJet_{_f}"    ] = getattr(events.FatJet, _f).to_list()
+
+    for _s in SubJet_fields:
+        #print(_s, "subjets:", getattr(events.FatJet.subjets, _s),"\n")
+        out_data[f"SubJet_{_s}"    ] = getattr(events.FatJet.subjets, _s).to_list()
+
+    for out_k, out_v in out_data.items():
+        processOutput[out_k] = {}
+        processOutput[out_k][events.metadata['dataset']] = list(out_v)
