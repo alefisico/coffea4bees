@@ -9,7 +9,7 @@ fi
 
 echo "############### Changing metadata"
 if [[ $(hostname) = *fnal* ]]; then
-    sed -e "s#base_path.*#base_path: \/srv\/python\/${OUTPUT_DIR}\/#" -e "s/\#max.*/maxchunks: 5/" -e "s/\#test.*/test_files: 1/" -e "s/\workers:.*/workers: 1/" -e "s/chunksize:.*/chunksize: 100000/"  skimmer/metadata/sub_sampling_MC.yml > ${OUTPUT_DIR}/sub_sampling_MC_for_test.yml
+    sed -e "s#base_path.*#base_path: \/srv\/${OUTPUT_DIR}\/#" -e "s/\#max.*/maxchunks: 5/" -e "s/\#test.*/test_files: 1/" -e "s/\workers:.*/workers: 1/" -e "s/chunksize:.*/chunksize: 100000/"  skimmer/metadata/sub_sampling_MC.yml > ${OUTPUT_DIR}/sub_sampling_MC_for_test.yml
 else
     sed -e "s#base_.*#base_path: \/builds\/${CI_PROJECT_PATH}\/python\/${OUTPUT_DIR}\/#" -e "s/\#max.*/maxchunks: 1/" -e "s/\#test.*/test_files: 1/" -e "s/\workers:.*/workers: 1/" -e "s/chunksize:.*/chunksize: 1000/" -e "s/T3_US_FNALLPC/T3_CH_PSI/" skimmer/metadata/sub_sampling_MC.yml > ${OUTPUT_DIR}/sub_sampling_MC_for_test.yml
 fi

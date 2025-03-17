@@ -9,9 +9,9 @@ fi
 
 echo "############### Modifying config"
 if [[ $(hostname) = *fnal* ]]; then
-    sed -e "s#/srv/python/output/tmp/#\/srv\/python\/$OUTPUT_DIR\/#" analysis/metadata/HH4b_make_friend_SvB.yml > $OUTPUT_DIR/HH4b_make_friend_SvB.yml
+    sed -e "s#/srv/output/tmp/#\/srv\/$OUTPUT_DIR\/#" analysis/metadata/HH4b_make_friend_SvB.yml > $OUTPUT_DIR/HH4b_make_friend_SvB.yml
 else
-    sed -e "s#/srv/python/output/tmp/#\/builds\/${CI_PROJECT_PATH}\/python\/$OUTPUT_DIR\/#" analysis/metadata/HH4b_make_friend_SvB.yml > $OUTPUT_DIR/HH4b_make_friend_SvB.yml
+    sed -e "s#/srv/output/tmp/#/builds/${CI_PROJECT_PATH}/python/$OUTPUT_DIR/#" analysis/metadata/HH4b_make_friend_SvB.yml > $OUTPUT_DIR/HH4b_make_friend_SvB.yml
 fi
 cat $OUTPUT_DIR/HH4b_make_friend_SvB.yml
 

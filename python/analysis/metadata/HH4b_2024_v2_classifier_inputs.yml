@@ -17,7 +17,7 @@ config:
   top_reconstruction_override: slow
   fill_histograms: false 
   # make_classifier_input: root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/
-  make_classifier_input: /srv/python/local_outputs/analysis/   ### local
+  make_classifier_input: outputs/analysis/   ### local
   friends:
     trigWeight: 'metadata/datasets_HH4b_2024_v2_trigweights.json@@trigWeight'
 

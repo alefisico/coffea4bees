@@ -24,7 +24,7 @@ runner:
 
 config:
   base_path: root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v1
-  # base_path: /srv/python/skimmer/test/
+  # base_path: skimmer/test/
   sub_sampling_rand_seed: 5
   step: 100000
   skip_collections:

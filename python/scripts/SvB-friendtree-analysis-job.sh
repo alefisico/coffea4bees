@@ -10,9 +10,9 @@ fi
 
 echo "############### Modifying config"
 if [[ $(hostname) = *fnal* ]]; then
-    sed -e "s|SvB: .*|SvB: \/srv\/python\/$INPUT_DIR\/make_friend_SvB.json@@SvB|" -e "s|SvB_MA: .*|SvB_MA: \/srv\/python\/$INPUT_DIR\/make_friend_SvB.json@@SvB_MA|" analysis/metadata/HH4b_signals.yml > $OUTPUT_DIR/HH4b_signals.yml
+    sed -e "s|SvB: .*|SvB: \/srv\/$INPUT_DIR\/make_friend_SvB.json@@SvB|" -e "s|SvB_MA: .*|SvB_MA: \/srv\/$INPUT_DIR\/make_friend_SvB.json@@SvB_MA|" analysis/metadata/HH4b_signals.yml > $OUTPUT_DIR/HH4b_signals.yml
 else
-    sed -e "s|SvB: .*|SvB: \/builds\/${CI_PROJECT_PATH}\/python\/$INPUT_DIR\/make_friend_SvB.json@@SvB|" -e "s|SvB_MA: .*|SvB_MA: \/builds\/${CI_PROJECT_PATH}\/python\/$INPUT_DIR\/make_friend_SvB.json@@SvB_MA|" analysis/metadata/HH4b_signals.yml > $OUTPUT_DIR/HH4b_signals.yml
+    sed -e "s|SvB: .*|SvB: /builds/${CI_PROJECT_PATH}/python/$INPUT_DIR/make_friend_SvB.json@@SvB|" -e "s|SvB_MA: .*|SvB_MA: /builds/${CI_PROJECT_PATH}/python/$INPUT_DIR/make_friend_SvB.json@@SvB_MA|" analysis/metadata/HH4b_signals.yml > $OUTPUT_DIR/HH4b_signals.yml
 fi
 cat $OUTPUT_DIR/HH4b_signals.yml
 

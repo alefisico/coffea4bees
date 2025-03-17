@@ -48,11 +48,11 @@ baseclass-test-job:
 #   needs: 
 #     - analysis-test-job
 #   script:
-#     - cd python/stats_analysis/
+#     - cd stats_analysis/
 #     - python convert_hist_to_json.py -o hists/histAll.json -i ../analysis/hists/test.coffea
 #   artifacts: 
 #     paths:
-#       - python/stats_analysis/hists/histAll.json
+#       - stats_analysis/hists/histAll.json
 
 synthetic-dataset-plot-job:    
   stage: plot 
