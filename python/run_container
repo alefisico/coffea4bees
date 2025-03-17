@@ -9,6 +9,7 @@ show_help() {
   echo "Commands:"
   echo "  coffea [command...]   Run commands inside the coffea container."
   echo "                        Opens an interactive shell if no commands are given."
+  echo "                        (Interactive shell is the only option to run on LPC HTCondor)."
   echo "  combine [command...]  Run commands inside the combine container."
   echo "                        Opens an interactive shell if no commands are given."
   echo "  snakemake [options]   Run snakemake with the specified options."
