@@ -89,6 +89,10 @@ class PicoAOD(ProcessorABC):
     def preselect(self, events: ak.Array) -> npt.NDArray[np.bool_] | None:
         pass
 
+    @property
+    def preselected(self):
+        return self._preselected
+
     # no retry, return empty dict if any exception
     @retry(1, handler=_log_exception, skip=(SkimmingError,))
     def process(self, events: ak.Array):
@@ -117,7 +121,14 @@ class PicoAOD(ProcessorABC):
 
         # select events
         self._cutFlow = cutFlow()
+        # preselect
         preselected = self.preselect(events)
+        if preselected is None:
+            self._preselected = np.ones(len(events), dtype=bool)
+        else:
+            self._preselected = np.asarray(preselected)
+        self._preselected.setflags(write=False)
+        # select
         selected = self.select(events)
         added, result = None, {}
         if isinstance(selected, tuple):
