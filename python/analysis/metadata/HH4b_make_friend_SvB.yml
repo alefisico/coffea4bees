@@ -3,7 +3,7 @@ runner:
   condor_memory: 2GB
   friend_metafile: make_friend_SvB
   # friend_base: &friend_base root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v1p1/
-  friend_base: &friend_base /srv/python/output/tmp/ 
+  friend_base: &friend_base output/tmp/ 
   chunksize: 10000
 
 config:
