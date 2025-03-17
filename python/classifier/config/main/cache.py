@@ -96,7 +96,7 @@ class Main(LoadTrainingSets):
             ) as executor,
             Progress.new(total=size, msg=("entries", "Caching")) as progress,
         ):
-            tasks = pool.submit(
+            tasks = pool.map_async(
                 executor,
                 _save_cache(datasets, IOSetting.output, self.opts.compression),
                 range(len(chunks)),

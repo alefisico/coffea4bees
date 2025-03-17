@@ -1178,7 +1178,7 @@ source.change.emit();
                     figure(
                         height=Plot.figure_height,
                         sizing_mode="stretch_width",
-                        tools="pan,wheel_zoom,box_zoom,reset",
+                        tools="xpan,ypan,xwheel_zoom,ywheel_zoom,reset,save",
                         y_axis_type=y_axis_type,
                     ),
                     axis,

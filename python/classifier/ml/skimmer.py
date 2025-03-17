@@ -91,8 +91,8 @@ class ChainedSplitter(Splitter):
 
 
 class KFold(Splitter):
-    def __init__(self, k: int, offset: int):
-        self._k = k
+    def __init__(self, kfolds: int, offset: int):
+        self._k = kfolds
         self._i = offset
 
     def split(self, batch: BatchType):
@@ -126,9 +126,9 @@ class RandomSubSample(KFold):
 
 
 class RandomKFold(RandomSubSample):
-    def __init__(self, seed: SeedLike, k: int, offset: int):
+    def __init__(self, seed: SeedLike, kfolds: int, offset: int):
         self._rng = Squares(seed)
-        self._k = k
+        self._k = kfolds
         self._i = offset
 
     def split(self, batch: BatchType):
