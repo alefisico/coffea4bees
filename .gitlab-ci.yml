@@ -43,6 +43,7 @@ stages:
   - cutflow
   - classifier
   - reana
+  - validation
   - pages
 
 .base_analysis:
