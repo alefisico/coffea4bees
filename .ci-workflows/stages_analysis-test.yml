@@ -18,7 +18,7 @@ analysis-signals-test-job:
     paths:
       - python/output/analysis_signals_test_job/test_signals.coffea
 
-analysis_merged_test_job:   
+analysis-merge-test-job:   
   stage: analysis-test   
   extends:
     - .base_analysis
