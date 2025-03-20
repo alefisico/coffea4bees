@@ -15,7 +15,7 @@ analysis-plot-job-unsup:
   extends:
     - .base_analysis
   needs: 
-    - analysis-merge-test-job-unsup
+    - analysis-test-job-unsup
   script:
     - source scripts/analysis-plot-job-unsup.sh
   artifacts:
