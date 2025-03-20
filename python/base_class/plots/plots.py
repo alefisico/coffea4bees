@@ -177,8 +177,8 @@ def get_hist_data(this_process, cfg, config, var, region, cut, rebin, year, file
 
     else:
         for _input_data in cfg.hists:
-            if var in _input_data['hists'] and this_process in _input_data['hists'][var].axes["process"]:
-                hist_obj = _input_data['hists'][var]
+            if var in _input_data and this_process in _input_data[var].axes["process"]:
+                hist_obj = _input_data[var]
 
     if hist_obj is None:
         raise ValueError(f"ERROR did not find var {var} with process {this_process} in inputs")
@@ -1008,7 +1008,7 @@ def get_plot_dict_from_config(cfg, var='selJets.pt',
     #
     var_over_ride = kwargs.get("var_over_ride", {})
 
-    if cut not in cfg.cutList:
+    if cut and cut not in cfg.cutList:
         raise AttributeError(f"{cut} not in cutList {cfg.cutList}")
 
     #
@@ -1102,6 +1102,10 @@ def makePlot(cfg, var='selJets.pt',
         except ValueError as e:
             raise ValueError(e)
 
+    elif not cut:
+        plot_data = get_plot_dict_from_config(cfg, var, None, None, **kwargs)
+        return make_plot_from_dict(plot_data)
+
     plot_data = get_plot_dict_from_config(cfg, var, cut, region, **kwargs)
     return make_plot_from_dict(plot_data)
 
@@ -1129,7 +1133,7 @@ def make2DPlot(cfg, process, var='selJets.pt',
         process_config = plot_helpers.get_value_nested_dict(cfg.plotConfig, process)
         process_name = process_config["process"]
         for _input_data in cfg.hists:
-            _hist_to_plot = _input_data['hists'][var]
+            _hist_to_plot = _input_data[var]
             if process_name in _hist_to_plot.axes["process"]:
                 hist_to_plot = _hist_to_plot
 
@@ -1224,11 +1228,11 @@ def make2DPlot(cfg, process, var='selJets.pt',
     return make_plot_2d_from_dict(plot_data)
 
 
-def load_hists(input_hists):
+def load_hists(input_hists, label="hists"):
     hists = []
     for _inFile in input_hists:
         with open(_inFile, 'rb') as hfile:
-            hists.append(load(hfile))
+            hists.append(load(hfile)[label])
 
     return hists
 
@@ -1238,10 +1242,10 @@ def read_axes_and_cuts(hists, plotConfig):
     axisLabels = {}
     cutList = []
 
-    axisLabels["var"] = hists[0]['hists'].keys()
-    var1 = list(hists[0]['hists'].keys())[0]
+    axisLabels["var"] = hists[0].keys()
+    var1 = list(hists[0].keys())[0]
 
-    for a in hists[0]["hists"][var1].axes:
+    for a in hists[0][var1].axes:
         axisName = a.name
         if axisName == var1:
             continue

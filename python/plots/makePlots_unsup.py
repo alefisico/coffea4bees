@@ -157,5 +157,5 @@ if __name__ == '__main__':
     cfg.fileLabels = args.fileLabels
     cfg.axisLabels, cfg.cutList = read_axes_and_cuts(cfg.hists, cfg.plotConfig)
 
-    varList = list(cfg.hists[0]['hists'].keys())
+    varList = list(cfg.hists[0].keys())
     doPlots(varList, debug=args.debug)
