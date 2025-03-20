@@ -6,7 +6,7 @@ analysis-test-job:
     - source scripts/analysis-test-job.sh
   artifacts: 
     paths:
-      - python/output/analysis_test_job/test.coffea
+      - python/output/analysis_test_job/test_databkgs.coffea
 
 analysis-signals-test-job:   
   stage: analysis-test   
