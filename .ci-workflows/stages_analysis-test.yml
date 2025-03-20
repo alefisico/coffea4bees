@@ -8,6 +8,29 @@ analysis-test-job:
     paths:
       - python/output/analysis_test_job/test.coffea
 
+analysis-signals-test-job:   
+  stage: analysis-test   
+  extends:
+    - .base_analysis
+  script:
+    - source scripts/analysis-signals-test-job.sh
+  artifacts: 
+    paths:
+      - python/output/analysis_signals_test_job/test_signals.coffea
+
+analysis_merged_test_job:   
+  stage: analysis-test   
+  extends:
+    - .base_analysis
+  needs:
+    - analysis-test-job
+    - analysis-signals-test-job
+  script:
+    - source scripts/analysis-merged-test-job.sh
+  artifacts: 
+    paths:
+      - python/output/analysis_merged_test_job/test.coffea
+
 analysis-test-job-Run3:   
   stage: analysis-test   
   extends:
