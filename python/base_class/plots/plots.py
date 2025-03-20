@@ -173,7 +173,7 @@ def get_hist_data(this_process, cfg, config, var, region, cut, rebin, year, file
     if len(cfg.hists) > 1 and not cfg.combine_input_files:
         if file_index is None:
             print("ERROR must give file_index if running with more than one input file without using the  --combine_input_files option")
-        hist_obj = cfg.hists[file_index]['hists'][var]
+        hist_obj = cfg.hists[file_index][var]
 
     else:
         for _input_data in cfg.hists:
@@ -1140,7 +1140,7 @@ def make2DPlot(cfg, process, var='selJets.pt',
     else:
         process_config = { 'process': "all"}
         input_data = cfg.hists[0]
-        hist_to_plot = input_data['hists'][var]
+        hist_to_plot = input_data[var]
     
     #
     #  Get the year
