@@ -25,11 +25,14 @@ def plot(var, **kwargs):
 
 def plotCut(args):
 
+    #plot2d("quadJet_selected.lead_vs_subl_m",region="sum",rebin=1,doratio=0, norm=0,process="data")
+
     # Fixes Needed !!!
     args["rebin"] = 1
     plot("canJet3.pt", **args)
     plot("canJets.eta", **args)
     plot("quadJet_min_dr.close.dr", **args,xlim=[0,2])
+
 
 
     #
@@ -126,7 +129,7 @@ def doPlots(year, doSignal=False, debug=False):
     args = {"norm": True,
             "doRatio": 1,
             "labels":["De-clustered","Nominal"],
-            "norm": True,
+            "norm": False,
             "region":"sum",
             "cut":"passPreSel",
             "doRatio":1,
@@ -141,9 +144,11 @@ def doPlots(year, doSignal=False, debug=False):
 
     #for _cut in ["passPreSel", "pass0OthJets", "pass1OthJets"]:
     for _cut in ["passPreSel"]: #, "pass0OthJets", "pass1OthJets"]:
-        args["cut"] = _cut
-        print(f"plotting {_cut}")
-        plotCut(args)
+        for _reg in ["SB","notSR","sum"]:
+            args["cut"] = _cut
+            args["region"] = _reg
+            print(f"plotting {_cut} in {_reg}")
+            plotCut(args)
 
 
 
@@ -169,8 +174,10 @@ if __name__ == '__main__':
     #varList = [ h for h in cfg.hists[0]['hists'].keys() if not h in args.skip_hists ]
     if   args.year in  ["RunII","Run2"]:
         years = ["RunII", "UL18", "UL17", "UL16_preVFP", "UL16_postVFP"]
-    elif args.year == "Run3":
+    elif args.year == "Run3All":
         years = ["Run3", "2022_preEE", "2022_EE", "2023_preBPix", "2023_BPix"]
+    elif args.year == "Run3":
+        years = ["Run3"]
 
     for y in years:
         doPlots(year=y, doSignal=args.signal, debug=args.debug)

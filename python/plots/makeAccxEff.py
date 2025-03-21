@@ -70,7 +70,7 @@ def get_hist_data(in_file, hist_name, hist_key, rebin):
     return _get_hist_data(input_hist)
 
 
-def _makeMhhPlot(name, data_to_plot, **kwargs):
+def _makeMhhPlot(name, data_to_plot, output_dir, **kwargs):
     size = 7
     fig = plt.figure()   # figsize=(size,size/_phi))
     fig.add_axes((0.1, 0.15, 0.85, 0.8))
@@ -133,11 +133,11 @@ def _makeMhhPlot(name, data_to_plot, **kwargs):
                )
 
 
-    plt.savefig(f"{name}_{year_str}.pdf")
+    plt.savefig(f"{output_dir}/{name}_{year_str}.pdf")
 
 
 
-def makeMhhPlots(cfg, year):
+def makeMhhPlots(cfg, year, output_dir):
 
     process = "GluGluToHHTo4B_cHHH1"
 
@@ -154,12 +154,13 @@ def makeMhhPlots(cfg, year):
     data_all   = get_hist_data(cfg.hists[0], "all", hist_key, rebin)
     data_clean = get_hist_data(cfg.hists[0], "passCleanGenWeight", hist_key, rebin)
 
-    _makeMhhPlot("mHH_all",   data_all,   year=year, ylim=[1e-3, 1e-1], xlim=[50, 800])
-    _makeMhhPlot("mHH_clean", data_clean, year=year, ylim=[1e-3, 1e-1], xlim=[50, 800])
+    _makeMhhPlot("mHH_all",   data_all,   year=year, output_dir=output_dir, ylim=[1e-3, 1e-1], xlim=[200, 800])
+    _makeMhhPlot("mHH_clean", data_clean, year=year, output_dir=output_dir, ylim=[1e-3, 1e-1], xlim=[200, 800])
+    #_makeMhhPlot("mHH_clean", data_clean, year=year, output_dir=output_dir, ylim=[1e-3, 1e-1], xlim=[200, 800])
 
 
 
-def makeEffPlot(name, data_to_plot, cuts_flow, **kwargs):
+def makeEffPlot(name, data_to_plot, cuts_flow, output_dir, **kwargs):
     size = 7
     fig = plt.figure()   # figsize=(size,size/_phi))
     fig.add_axes((0.1, 0.15, 0.85, 0.8))
@@ -242,14 +243,13 @@ def makeEffPlot(name, data_to_plot, cuts_flow, **kwargs):
                fontsize = "large"
                )
 
-
-    plt.savefig(f"{name}_{year_str}.pdf")
-
+    plt.savefig(f"{output_dir}/{name}_{year_str}.pdf")
 
 
 
 
-def makePlot(cfg, year, debug=False):
+
+def makePlot(cfg, year, output_dir, debug=False):
 
 
     process = "GluGluToHHTo4B_cHHH1"
@@ -322,8 +322,8 @@ def makePlot(cfg, year, debug=False):
     #
     #
     #
-    makeEffPlot("total_eff",    tot_eff, cuts_flow, yscale="log", year=year, ylim=[1e-3, 10], signal_shape=den_tot_data["values"])
-    makeEffPlot("relative_eff", rel_eff, cuts_flow, year=year)
+    makeEffPlot("total_eff",    tot_eff, cuts_flow, output_dir=output_dir, yscale="log", year=year, ylim=[1e-3, 10], signal_shape=den_tot_data["values"])
+    makeEffPlot("relative_eff", rel_eff, cuts_flow, output_dir=output_dir, year=year)
 
 
     return
@@ -350,7 +350,7 @@ if __name__ == '__main__':
 
 
     for y in ["UL18", "UL17","UL16_preVFP", "UL16_postVFP", "RunII"]:
-    #for y in ["RunII"]:
-        makePlot(cfg, year=y, debug=args.debug)
+    #for y in ["UL18"]:
+        makePlot(cfg, year=y, debug=args.debug, output_dir=cfg.outputFolder)
 
-        makeMhhPlots(cfg, year=y)
+        makeMhhPlots(cfg, year=y, output_dir=cfg.outputFolder)
