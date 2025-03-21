@@ -1,7 +1,7 @@
 #!/bin/bash
 source scripts/set_initial_variables.sh --output ${1:-"output/"} --do_proxy
 
-OUTPUT_DIR="${DEFAULT_DIR}/analysis__signals_test_job"
+OUTPUT_DIR="${DEFAULT_DIR}/analysis_signals_test_job"
 echo "############### Checking and creating output directory"
 if [ ! -d $OUTPUT_DIR ]; then
     mkdir -p $OUTPUT_DIR
