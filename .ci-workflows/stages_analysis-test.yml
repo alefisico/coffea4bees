@@ -16,7 +16,7 @@ analysis-signals-test-job:
     - source scripts/analysis-signals-test-job.sh
   artifacts: 
     paths:
-      - python/output/analysis_signals_test_job/test_signals.coffea
+      - python/output/analysis_signals_test_job/test_signal.coffea
 
 analysis-merge-test-job:   
   stage: analysis-test   
