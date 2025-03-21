@@ -56,14 +56,17 @@ class PicoAOD(ProcessorABC):
         skip_collections: Iterable[str] = None,
         skip_branches: Iterable[str] = None,
         pico_base_name: str = _PICOAOD,
+        campaign: str = None,
     ):
         self._base = EOS(base_path)
         self._step = step
+        self._pico_base_name = pico_base_name
+        self._campaign = campaign
+
         self._branch_filter = re.compile(
             _branch_filter(skip_collections, skip_branches)
         )
         self._transform = NanoAOD(regular=False, jagged=True)
-        self._pico_base_name = pico_base_name
 
     def _filter(self, branches: set[str]):
         return {*filter(self._branch_filter.match, branches)}
@@ -86,12 +89,46 @@ class PicoAOD(ProcessorABC):
     def preselect(self, events: ak.Array) -> npt.NDArray[np.bool_] | None:
         pass
 
+    @property
+    def preselected(self):
+        return self._preselected
+
     # no retry, return empty dict if any exception
     @retry(1, handler=_log_exception, skip=(SkimmingError,))
     def process(self, events: ak.Array):
         EOS.set_retry(3, 10)  # 3 retries with 10 seconds interval
+
+        # prepare
+        dataset = events.metadata["dataset"]
+        chunk = Chunk.from_coffea_events(events)
+        source_chunk = {str(chunk.path): [(chunk.entry_start, chunk.entry_stop)]}
+        path = (
+            self._base
+            / f"{dataset}/{self._pico_base_name}_{chunk.uuid}_{chunk.entry_start}_{chunk.entry_stop}{_ROOT}"
+        )
+
+        # check if chunks is already finished
+        if self._campaign is not None:
+            reader = TreeReader()
+            try:
+                cached = Chunk(path, fetch=True)
+                metadata = reader.load_metadata(
+                    self._campaign, cached, builtin_types=True
+                )
+                return {dataset: metadata | {"files": [cached], "source": source_chunk}}
+            except Exception:
+                ...
+
+        # select events
         self._cutFlow = cutFlow()
+        # preselect
         preselected = self.preselect(events)
+        if preselected is None:
+            self._preselected = np.ones(len(events), dtype=bool)
+        else:
+            self._preselected = np.asarray(preselected)
+        self._preselected.setflags(write=False)
+        # select
         selected = self.select(events)
         added, result = None, {}
         if isinstance(selected, tuple):
@@ -102,8 +139,6 @@ class PicoAOD(ProcessorABC):
             selected = selected[0]
             if preselected is not None:
                 selected = preselected & selected
-        chunk = Chunk.from_coffea_events(events)
-        dataset = events.metadata["dataset"]
 
         # construct output
         weights = {}
@@ -116,21 +151,26 @@ class PicoAOD(ProcessorABC):
                     weights["outliers"] = [int(e) for e in outliers.event]
                     weights["sumw_diff"] = float(np.sum(outliers.genWeight))
                     weights["sumw2_diff"] = float(np.sum(outliers.genWeight**2))
-            weights["sumw_raw"] = float(np.sum(genWeight))
-            weights["sumw2_raw"] = float(np.sum(genWeight**2))
+            weights["sumw"] = float(np.sum(genWeight))
+            weights["sumw2"] = float(np.sum(genWeight**2))
         else:
             nevents = len(events) if preselected is None else float(np.sum(preselected))
-            weights["sumw_raw"] = nevents
-            weights["sumw2_raw"] = nevents
-        result = {
-            dataset: {
+            weights["sumw"] = nevents
+            weights["sumw2"] = nevents
+        metadata = (
+            {
                 "total_events": len(events),
                 "saved_events": int(ak.sum(selected)),
-                "files": [],
-                "source": {str(chunk.path): [(chunk.entry_start, chunk.entry_stop)]},
             }
             | weights
             | result
+        )
+        result = {
+            dataset: metadata
+            | {
+                "files": [],
+                "source": source_chunk,
+            }
         }
         self._cutFlow.addOutputSkim(result, dataset)
         if "genWeight" not in events.fields:
@@ -150,8 +190,6 @@ class PicoAOD(ProcessorABC):
         _clear_cache(events)
         # save selected events
         if result[dataset]["saved_events"] > 0:
-            filename = f"{dataset}/{self._pico_base_name}_{chunk.uuid}_{chunk.entry_start}_{chunk.entry_stop}{_ROOT}"
-            path = self._base / filename
             reader = TreeReader(self._filter)
             saved = 0
             with TreeWriter()(path) as writer:
@@ -174,6 +212,8 @@ class PicoAOD(ProcessorABC):
                         saved = _saved
                     data = self._transform(data)
                     writer.extend(data)
+                if self._campaign is not None:
+                    writer.save_metadata(self._campaign, metadata)
             if writer.tree is not None:
                 result[dataset]["files"].append(writer.tree)
         return result
@@ -192,10 +232,10 @@ def _fetch_metadata(dataset: str, path: PathLike, dask: bool = False):
                 return {
                     dataset: {
                         "count": int(np.sum(data["genEventCount"])),
-                        "sumw": float(
+                        "sumw_raw": float(
                             np.sum(data["genEventSumw"].to_numpy().astype(np.float64))
                         ),
-                        "sumw2": float(
+                        "sumw2_raw": float(
                             np.sum(data["genEventSumw2"].to_numpy().astype(np.float64))
                         ),
                     }
@@ -235,13 +275,15 @@ def integrity_check(
     output: dict[str, dict[str, dict[str, list[tuple[int, int]]]]],
     num_entries: dict[str, dict[str, int]] = None,
 ):
+    complete = True
     logging.info("Checking integrity of the picoAOD...")
     diff = set(fileset) - set(output)
     miss_dict = {}
     if diff:
         logging.error(f"The whole dataset is missing: {diff}")
-        miss_dict["dataset_missing"] = "Run again :P"
-    for dataset in fileset:
+        complete = False
+        miss_dict["dataset_missing"] = list(diff)
+    for dataset in output:
         if len(output[dataset]["files"]) == 0:
             logging.warning(f'No file is saved for "{dataset}"')
         inputs = map(EOS, fileset[dataset]["files"])
@@ -256,6 +298,7 @@ def integrity_check(
         for file in inputs:
             if file not in outputs:
                 logging.error(f'The whole file is missing in outputs: "{file}"')
+                complete = False
                 file_missing.append(str(file))
             else:
                 chunks = sorted(outputs[file], key=lambda x: x[0])
@@ -269,6 +312,7 @@ def integrity_check(
                             merged.append([str(start), str(stop)])
                         start = _start
                         logging.error(f'Missing chunk: [{stop}, {_start}) in "{file}"')
+                        complete = False
                         chunk_missing.append(f'[{stop}, {_start}) in "{file}"')
                     stop = _stop
                 if start != stop:
@@ -279,7 +323,7 @@ def integrity_check(
             miss_dict["chunk_missing"] = chunk_missing
     output[dataset].pop("source")
     output[dataset]["missing"] = miss_dict
-    return output
+    return output, complete
 
 
 def resize(

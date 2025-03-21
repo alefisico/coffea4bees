@@ -41,7 +41,7 @@ from ..helpers.load_friend import (
 #
 # Setup
 #
-Fill.allow_missing = True
+
 NanoAODSchema.warn_missing_crossrefs = False
 warnings.filterwarnings("ignore")
 

@@ -93,7 +93,7 @@ class Main(SelectDevice, main.Main):
             ) as progress,
         ):
             results = [
-                *pool.submit(
+                *pool.map_async(
                     executor,
                     _eval_model(self.device, dataset),
                     evaluators,
