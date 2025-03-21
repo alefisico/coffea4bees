@@ -46,6 +46,9 @@ stages:
   - validation
   - pages
 
+pages:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
 .base_analysis:
   needs:
