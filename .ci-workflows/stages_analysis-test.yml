@@ -26,10 +26,10 @@ analysis-merge-test-job:
     - analysis-test-job
     - analysis-signals-test-job
   script:
-    - source scripts/analysis-merged-test-job.sh
+    - source scripts/analysis-merge-test-job.sh
   artifacts: 
     paths:
-      - python/output/analysis_merged_test_job/test.coffea
+      - python/output/analysis_merge_test_job/test.coffea
 
 analysis-test-job-Run3:   
   stage: analysis-test   
