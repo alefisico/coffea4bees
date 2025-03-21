@@ -295,17 +295,16 @@ def loadCoffeaHists(cfg, *, cut="passPreSel", year="RunII", weightRegion="SB", d
 
     cutDict = get_cut_dict(cut, cfg.cutList)
 
-    codes = cfg.plotConfig["codes"]
     year = sum if year == "RunII" else year
-    region_selection = sum if weightRegion in ["sum", sum] else hist.loc(codes["region"][weightRegion])
+    region_selection = sum if weightRegion in ["sum", sum] else weightRegion
 
     region_year_dict = {
         "year": year,
         "region": region_selection,
     }
 
-    fourTag_dict  = {"tag": hist.loc(codes["tag"]["fourTag"])}
-    threeTag_dict = {"tag": hist.loc(codes["tag"]["threeTag"])}
+    fourTag_dict  = {"tag": "fourTag"}
+    threeTag_dict = {"tag": "threeTag"}
 
     fourTag_data_dict  = {"process": data4bName} | fourTag_dict | region_year_dict | cutDict
     threeTag_data_dict = {"process": 'data'}     | threeTag_dict | region_year_dict | cutDict
@@ -316,8 +315,8 @@ def loadCoffeaHists(cfg, *, cut="passPreSel", year="RunII", weightRegion="SB", d
 
     hists = cfg.hists[0]
     for _input_data in cfg.hists:
-        if 'selJets_noJCM.n' in _input_data['hists'] and data4bName in _input_data['hists']['selJets_noJCM.n'].axes["process"]:
-            hists_data_4b = _input_data['hists']
+        if 'selJets_noJCM.n' in _input_data and data4bName in _input_data['selJets_noJCM.n'].axes["process"]:
+            hists_data_4b = _input_data
 
     data4b                = hists_data_4b['selJets_noJCM.n']      [fourTag_data_dict]
     data4b_nTagJets       = hists_data_4b['tagJets_noJCM.n']      [fourTag_data_dict]
