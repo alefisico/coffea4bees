@@ -175,9 +175,16 @@ def get_hist_data(this_process, cfg, config, var, region, cut, rebin, year, file
             print("ERROR must give file_index if running with more than one input file without using the  --combine_input_files option")
         hist_obj = cfg.hists[file_index]['hists'][var]
 
+        if "variation" in cfg.hists[file_index]["categories"]:
+            hist_opts = hist_opts | {"variation" : "nominal"}
+
     else:
         for _input_data in cfg.hists:
             if var in _input_data['hists'] and this_process in _input_data['hists'][var].axes["process"]:
+
+                if "variation" in _input_data["categories"]:
+                    hist_opts = hist_opts | {"variation" : "nominal"}
+
                 hist_obj = _input_data['hists'][var]
 
     if hist_obj is None:

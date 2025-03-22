@@ -70,8 +70,6 @@ def _makeRocPlot(roc_data, **kwargs):
     plt.plot([0, 1], [0, 1], color='gray', lw=2, linestyle='--')
     plt.xlabel('Background Efficiency')
     plt.ylabel('Signal Efficiency')
-#    plt.xscale('log')
-#    plt.yscale('log')
     #plt.title('ROC Curve')
     plt.legend(loc='lower right')
     plt.grid()
@@ -80,10 +78,20 @@ def _makeRocPlot(roc_data, **kwargs):
     if outputFolder:
         plot_name = kwargs.get('plot_name','test')
         plt.savefig(f"{outputFolder}/{plot_name}.pdf")
-    #plt.show()
+
+        plt.xscale('log')
+        plt.yscale('log')
+        plt.savefig(f"{outputFolder}/{plot_name}_log.pdf")
+        #plt.show()
 
 
+def get_signal_plot(plot_data, s):
 
+    try:
+        return plot_helpers.get_value_nested_dict(plot_data, s)
+    except:
+        print(f"Cant find {s}. Assuming its an alternative kl... Will try to construct on the fly")
+        return plot_helpers.make_klambda_hist(s, plot_data)
 
 def makeRocPlot(cfg, vars_to_plot, **kwargs):
 
@@ -99,9 +107,9 @@ def makeRocPlot(cfg, vars_to_plot, **kwargs):
         sig_data = None
         for _s in _v["sig"]:
             if sig_data is None:
-                sig_data = plot_helpers.get_value_nested_dict(plot_data, _s)
+                sig_data = get_signal_plot(plot_data, _s)
             else:
-                _s_data = plot_helpers.get_value_nested_dict(plot_data, _s)
+                _s_data = get_signal_plot(plot_data, _s)
                 for _k in ["values", "variances", "under_flow", "over_flow"]:
                     sig_data[_k] += np.array(_s_data[_k])
 
@@ -185,27 +193,46 @@ if __name__ == '__main__':
                               ],
                 outputFolder=cfg.outputFolder)
 
+    makeRocPlot(cfg, plot_name="SvB_MA_hh_vs_phh_hh",
+                vars_to_plot=[{"var":"SvB_MA.ps_hh_fine",  "name":"ps hh",  "color": "blue",   "sig":["HH4b"], "bkg":["TTbar","Multijet"],"year":"RunII"},
+                              {"var":"SvB_MA.phh_hh_fine", "name":"phh hh", "color": "orange", "sig":["HH4b"], "bkg":["TTbar","Multijet"],"year":"RunII"},
+                              ],
+                outputFolder=cfg.outputFolder)
+
+
+    makeRocPlot(cfg, plot_name="SvB_MA_ps_vs_phh",
+                vars_to_plot=[{"var":"SvB_MA.ps",       "name":"ps",  "color": "blue",   "sig":["HH4b"], "bkg":["TTbar","Multijet"],"year":"RunII"},
+                              {"var":"SvB_MA.phh_fine", "name":"phh", "color": "orange", "sig":["HH4b"], "bkg":["TTbar","Multijet"],"year":"RunII"},
+                              ],
+                outputFolder=cfg.outputFolder)
+
+
+
+
 
     #
     #  K-lambda
     #
     cfg.plotConfig = load_config("plots/metadata/plotsAll_klambda.yml")
 
-    makeRocPlot(cfg, plot_name="SvB_MA_kl",
-                vars_to_plot=[{"var":"SvB_MA.ps_hh_fine","name":"k-lambda 1",  "color": "blue",    "sig":["HH4b_kl1"], "bkg":["TTbar","Multijet"],"year":"RunII"},
-                              {"var":"SvB_MA.ps_hh_fine","name":"k-lambda 0",  "color": "orange",  "sig":["HH4b_kl0"], "bkg":["TTbar","Multijet"],"year":"RunII"},
-                              {"var":"SvB_MA.ps_hh_fine","name":"k-lambda 2.45",  "color": "green",  "sig":["HH4b_kl2p45"], "bkg":["TTbar","Multijet"],"year":"RunII"},
-                              {"var":"SvB_MA.ps_hh_fine","name":"k-lambda 5",  "color": "red",     "sig":["HH4b_kl5"], "bkg":["TTbar","Multijet"],"year":"RunII"},
+    makeRocPlot(cfg, plot_name="SvB_MA_ps_hh_kl",
+                vars_to_plot=[{"var":"SvB_MA.ps_hh_fine","name":"k-lambda -5",  "color": "blue",     "sig":["HH4b_kl-5"], "bkg":["TTbar","Multijet"],"year":"RunII"},
+                              {"var":"SvB_MA.ps_hh_fine","name":"k-lambda 0",   "color": "orange",   "sig":["HH4b_kl0"],  "bkg":["TTbar","Multijet"],"year":"RunII"},
+                              {"var":"SvB_MA.ps_hh_fine","name":"k-lambda 1",   "color": "green",    "sig":["HH4b_kl1"],  "bkg":["TTbar","Multijet"],"year":"RunII"},
+                              {"var":"SvB_MA.ps_hh_fine","name":"k-lambda 3",   "color": "red",      "sig":["HH4b_kl3"],  "bkg":["TTbar","Multijet"],"year":"RunII"},
+                              {"var":"SvB_MA.ps_hh_fine","name":"k-lambda 10",  "color": "pink",     "sig":["HH4b_kl10"], "bkg":["TTbar","Multijet"],"year":"RunII"},
                               ],
                 outputFolder=cfg.outputFolder)
 
     makeRocPlot(cfg, plot_name="SvB_MA_ps_kl",
-                vars_to_plot=[{"var":"SvB_MA.ps_hh_fine","name":"k-lambda 1",  "color": "blue",    "sig":["HH4b_kl1"], "bkg":["TTbar","Multijet"],"year":"RunII"},
-                              {"var":"SvB_MA.ps_hh_fine","name":"k-lambda 0",  "color": "orange",  "sig":["HH4b_kl0"], "bkg":["TTbar","Multijet"],"year":"RunII"},
-                              {"var":"SvB_MA.ps_hh_fine","name":"k-lambda 2.45",  "color": "green",  "sig":["HH4b_kl2p45"], "bkg":["TTbar","Multijet"],"year":"RunII"},
-                              {"var":"SvB_MA.ps_hh_fine","name":"k-lambda 5",  "color": "red",     "sig":["HH4b_kl5"], "bkg":["TTbar","Multijet"],"year":"RunII"},
+                vars_to_plot=[{"var":"SvB_MA.ps","name":"k-lambda -5",  "color": "blue",     "sig":["HH4b_kl-5"], "bkg":["TTbar","Multijet"],"year":"RunII"},
+                              {"var":"SvB_MA.ps","name":"k-lambda 0",   "color": "orange",   "sig":["HH4b_kl0"],  "bkg":["TTbar","Multijet"],"year":"RunII"},
+                              {"var":"SvB_MA.ps","name":"k-lambda 1",   "color": "green",    "sig":["HH4b_kl1"],  "bkg":["TTbar","Multijet"],"year":"RunII"},
+                              {"var":"SvB_MA.ps","name":"k-lambda 3",   "color": "red",      "sig":["HH4b_kl3"],  "bkg":["TTbar","Multijet"],"year":"RunII"},
+                              {"var":"SvB_MA.ps","name":"k-lambda 10",  "color": "pink",     "sig":["HH4b_kl10"], "bkg":["TTbar","Multijet"],"year":"RunII"},
                               ],
                 outputFolder=cfg.outputFolder)
+
 
     makeRocPlot(cfg, plot_name="SvB_kl",
                 vars_to_plot=[{"var":"SvB.ps_hh_fine","name":"k-lambda 1",   "color": "blue",    "sig":["HH4b_kl1"],    "bkg":["TTbar","Multijet"],"year":"RunII"},
@@ -214,15 +241,3 @@ if __name__ == '__main__':
                               {"var":"SvB.ps_hh_fine","name":"k-lambda 5",   "color": "red",     "sig":["HH4b_kl5"],    "bkg":["TTbar","Multijet"],"year":"RunII"},
                               ],
                 outputFolder=cfg.outputFolder)
-
-
-
-
-    from base_class.physics.di_higgs import Coupling, ggF
-    #dict(kl=2.45),
-    basis = ggF(Coupling(dict(kl=0.0), dict(kl=1.0),  dict(kl=5.0)))
-
-    # Then calculate the weight and apply it to hist objects
-    kl_scan = np.arange(-10, 20, 0.5)  # scan from -10 to 20 in 0.5 steps
-    for kl, (w_0, w_1, w_2_45, w_5) in zip(kl_scan, basis.weight(Coupling(kl=kl_scan))):
-        hist_scan[kl] = w_0 * h_0 + w_1 * h_1 + w_2_45 * h_2_45 + w_5 * h_5
