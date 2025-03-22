@@ -21,15 +21,6 @@ class Skimmer(PicoAOD):
         self.loosePtForSkim = loosePtForSkim
         self.skim4b = skim4b
         self.corrections_metadata = yaml.safe_load(open('analysis/metadata/corrections.yml', 'r'))
-        self.cutFlowCuts = [
-            "all",
-            "passHLT",
-            "passNoiseFilter",
-            "passJetMult_lowpt_forskim",
-            "passJetMult",
-            "passPreSel_lowpt_forskim",
-            "passPreSel",
-        ]
         self.mc_outlier_threshold = mc_outlier_threshold
 
 
@@ -57,9 +48,9 @@ class Skimmer(PicoAOD):
                                       )
             event["Jet"] = jets
 
-        event = apply_object_selection_4b( event, self.corrections_metadata[year], 
-            dataset=dataset, 
-            doLeptonRemoval=config["do_lepton_jet_cleaning"], 
+        event = apply_object_selection_4b( event, self.corrections_metadata[year],
+            dataset=dataset,
+            doLeptonRemoval=config["do_lepton_jet_cleaning"],
             loosePtForSkim=self.loosePtForSkim,
             isRun3=config["isRun3"],
             isMC=config["isMC"],
