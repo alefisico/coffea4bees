@@ -22,9 +22,10 @@ runner:
     - T3_US_NotreDame
     - T2_US_Caltech
     - T1_US_FNAL_Disk
+    - T2_US_Wisconsin
   blocklist_sites:
-    - T2_US_MIT
-    - T2_US_Purdue
+#    - T2_US_MIT
+#    - T2_US_Purdue
 
 
 config:

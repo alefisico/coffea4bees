@@ -28,6 +28,9 @@ class SvBHists(Template):
     ps_zh_fine   = H((240, 0, 1, ('ps_zh', "Regressed P(Signal) $|$ P(ZH) is largest ")))
     ps_hh_fine   = H((240, 0, 1, ('ps_hh', "Regressed P(Signal) $|$ P(HH) is largest ")))
 
+    phh_hh_fine   = H((240, 0, 1, ('phh_hh', "Regressed P(HH) $|$ P(HH) is largest ")))
+    phh_fine      = H((240, 0, 1, ('phh', "Regressed P(HH)  ")))
+
 
 class FvTHists(Template):
     FvT  = H((50, 0, 5, ('FvT', 'FvT reweight')))

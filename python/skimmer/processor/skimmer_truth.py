@@ -41,7 +41,7 @@ class Skimmer(PicoAOD):
 
         event['GenJet', 'selectedBs'] = (np.abs(event.GenJet.partonFlavour)==5) & (np.abs(event.GenJet.eta) < 2.5) & (event.GenJet.pt >= 40)
         event['selGenBJet'] = event.GenJet[event.GenJet.selectedBs]
-        event['matchedGenBJet'] = event.bfromHorZ.nearest( event.selGenBJet, threshold=0.2 )
+        event['matchedGenBJet'] = event.bfromHorZ.nearest( event.selGenBJet, threshold=10 )
         event["matchedGenBJet"] = event.matchedGenBJet[~ak.is_none(event.matchedGenBJet, axis=1)]
 
         print("nselGenBJet",ak.num(event.selGenBJet),"\n")
@@ -77,7 +77,7 @@ class Skimmer(PicoAOD):
         ###     cumulative_cuts.append(cut)
         ###     self._cutFlow.fill( cut, event[selections.all(*cumulative_cuts)], allTag=True )
 
-        selection = event.pass4GenBJets # & event.passPreSel
+        selection = event.pass4GenBJets & self.preselect(event) # & event.passPreSel
         event = event[selection]
 
         n_genJets = ak.num(event.GenJet)
@@ -100,7 +100,6 @@ class Skimmer(PicoAOD):
         for f in event.GenJet.fields:
             bname = f"GenJet_{f}"
             if bname not in out_branches:
-                print("Skipping",bname,"\n")
                 self.skip_branches.append(bname)
 
         self.update_branch_filter(self.skip_collections, self.skip_branches)
@@ -114,10 +113,9 @@ class Skimmer(PicoAOD):
                 branches,
                 processOutput)
 
-#    def preselect(self, event):
-#        dataset = event.metadata['dataset']
-#        processName = event.metadata['processName']
-#        config = processor_config(processName, dataset, event)
-#        if config["isMC"] and self.mc_outlier_threshold is not None and "genWeight" in event.fields:
-#            return OutlierByMedian(self.mc_outlier_threshold)(event.genWeight)
-#
+    def preselect(self, event):
+        dataset = event.metadata['dataset']
+        processName = event.metadata['processName']
+        config = processor_config(processName, dataset, event)
+        if config["isMC"] and self.mc_outlier_threshold is not None and "genWeight" in event.fields:
+            return OutlierByMedian(self.mc_outlier_threshold)(event.genWeight)
