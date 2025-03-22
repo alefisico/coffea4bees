@@ -25,16 +25,6 @@ class SubSampler(PicoAOD):
 
         self.sub_sampling_rand_seed = sub_sampling_rand_seed
         self.corrections_metadata = yaml.safe_load(open('analysis/metadata/corrections.yml', 'r'))
-        self.cutFlowCuts = [
-            "all",
-            "passHLT",
-            "passNoiseFilter",
-            "passJetMult",
-            "passFourTag",
-            "passSubSample",
-        ]
-
-
 
     def select(self, event):
 

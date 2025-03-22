@@ -322,6 +322,12 @@ def create_cand_jet_dijet_quadjet( selev,
     canJet["puId"] = selev.Jet.puId[canJet_idx]
     canJet["jetId"] = selev.Jet.jetId[canJet_idx]
 
+    # CutFlow Debugging
+    #if "pt_jec" in selev.Jet.fields:
+    #    canJet["PNetRegPtRawCorr"] = selev.Jet.PNetRegPtRawCorr[canJet_idx]
+    #    canJet["PNetRegPtRawCorrNeutrino"] = selev.Jet.PNetRegPtRawCorrNeutrino[canJet_idx]
+    #    canJet["pt_raw"] = selev.Jet.pt_raw[canJet_idx]
+
     if "hadronFlavour" in selev.Jet.fields:
         canJet["hadronFlavour"] = selev.Jet.hadronFlavour[canJet_idx]
 

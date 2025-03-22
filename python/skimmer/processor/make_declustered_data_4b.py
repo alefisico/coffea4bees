@@ -41,15 +41,6 @@ class DeClusterer(PicoAOD):
         self.friends = parse_friends(friends)
         self.declustering_rand_seed = declustering_rand_seed
         self.corrections_metadata = yaml.safe_load(open('analysis/metadata/corrections.yml', 'r'))
-        self.cutFlowCuts = [
-            "all",
-            "passHLT",
-            "passNoiseFilter",
-            "passJetMult",
-            "passFourTag",
-            "passFourTag_btagSF",
-            "pass_ttbar_filter",
-        ]
 
         self.skip_collections = kwargs["skip_collections"]
         self.skip_branches    = kwargs["skip_branches"]
