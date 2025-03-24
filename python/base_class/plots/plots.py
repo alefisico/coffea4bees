@@ -5,7 +5,6 @@ import yaml
 import copy
 import argparse
 from coffea.util import load
-# from hist.intervals import ratio_uncertainty
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import numpy as np
@@ -57,6 +56,7 @@ def init_arg_parser():
     parser.add_argument('--doTest', action="store_true", help='Metadata file.')
     parser.add_argument('--debug', action="store_true", help='')
     parser.add_argument('--signal', action="store_true", help='')
+    parser.add_argument('--year',   help='')
     parser.add_argument('--combine_input_files', action="store_true", help='')
 
     return parser
@@ -175,9 +175,16 @@ def get_hist_data(this_process, cfg, config, var, region, cut, rebin, year, file
             print("ERROR must give file_index if running with more than one input file without using the  --combine_input_files option")
         hist_obj = cfg.hists[file_index]['hists'][var]
 
+        if "variation" in cfg.hists[file_index]["categories"]:
+            hist_opts = hist_opts | {"variation" : "nominal"}
+
     else:
         for _input_data in cfg.hists:
             if var in _input_data['hists'] and this_process in _input_data['hists'][var].axes["process"]:
+
+                if "variation" in _input_data["categories"]:
+                    hist_opts = hist_opts | {"variation" : "nominal"}
+
                 hist_obj = _input_data['hists'][var]
 
     if hist_obj is None:
@@ -337,7 +344,7 @@ def _draw_plot_from_dict(plot_data, **kwargs):
                          "label":    hist_data.get("label", ""),
                          "color":    hist_data.get('fillcolor', 'k'),
                          "histtype": kwargs.get("histtype", hist_data.get("histtype", "errorbar")),
-                         "linewidth": kwargs.get("linewidth", hist_data.get("linewidth", 1)),
+                         "linewidth": kwargs.get("linewidth", hist_data.get("linewidth", 2)),
                          "yerr": False,
                          }
 
@@ -436,7 +443,7 @@ def _plot_from_dict(plot_data, **kwargs):
             kwargs.get("ratio_line_value", 1.0),
             color="black",
             linestyle="dashed",
-            linewidth=1.0
+            linewidth=2.0
         )
 
         for ratio_name, ratio_data in plot_data["ratio"].items():
@@ -507,7 +514,7 @@ def plot_border_SR():
     Z3 = func3(X, Y)
 
     # Create the plot
-    plt.contour(X, Y, Z0, levels=[1.90*1.90], colors='orangered', linestyles='dashed', linewidths=5) 
+    plt.contour(X, Y, Z0, levels=[1.90*1.90], colors='orangered', linestyles='dashed', linewidths=5)
     plt.contour(X, Y, Z1, levels=[1.90*1.90], colors='orangered', linestyles='dashed', linewidths=5)
     plt.contour(X, Y, Z2, levels=[1.90*1.90], colors='orangered', linestyles='dashed', linewidths=5)
     plt.contour(X, Y, Z3, levels=[2.60*2.60], colors='orangered', linestyles='dashed', linewidths=5)
@@ -517,7 +524,7 @@ def plot_leadst_lines():
 
     def func4(x):
         return (360/x) - 0.5
-    
+
     def func6(x):
         return max(1.5, (650/x) + 0.5)
 
@@ -528,14 +535,14 @@ def plot_leadst_lines():
 
     # Plot func6 as a line plot
     x_func6 = np.linspace(100, 1100, 50)
-    y_func6 = [func6(x) for x in x_func6] 
+    y_func6 = [func6(x) for x in x_func6]
     plt.plot(x_func6, y_func6, color='red', linestyle='-', linewidth=2)
 
 def plot_sublst_lines():
 
     def func4(x):
         return (235/x)
-    
+
     def func6(x):
         return max(1.5, (650/x) + 0.7)
 
@@ -546,7 +553,7 @@ def plot_sublst_lines():
 
     # Plot func6 as a line plot
     x_func6 = np.linspace(100, 1100, 50)
-    y_func6 = [func6(x) for x in x_func6] 
+    y_func6 = [func6(x) for x in x_func6]
     plt.plot(x_func6, y_func6, color='red', linestyle='-', linewidth=2)
 
 
@@ -1137,7 +1144,7 @@ def make2DPlot(cfg, process, var='selJets.pt',
         process_config = { 'process': "all"}
         input_data = cfg.hists[0]
         hist_to_plot = input_data['hists'][var]
-    
+
     #
     #  Get the year
     #    (Got to be a better way to do this....)
