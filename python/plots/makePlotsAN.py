@@ -100,7 +100,7 @@ def doPlots(varList, debug=False):
 
     plot("SvB_MA.ps_zz",region="SR",yscale="linear",rebin=8,doratio=1)
     plot("SvB_MA.ps_zh",region="SR",yscale="linear",rebin=8,doratio=1)
-
+    plot("SvB_MA.ps_hh",region="SR",yscale="linear",rebin=5,doratio=1)
 
 
 

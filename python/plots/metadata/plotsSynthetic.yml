@@ -7,13 +7,13 @@ hists:
                 edgecolor: r
                 fillcolor: r            
 
-        data:
-                process: data
-                tag: fourTag
-                year: RunII
-                label: Data
-                edgecolor: k
-                fillcolor: k            
+#        data:
+#                process: data
+#                tag: fourTag
+#                year: RunII
+#                label: Data
+#                edgecolor: k
+#                fillcolor: k            
 
 
 stack:
