@@ -24,26 +24,30 @@ def setSvBVars(SvBName, event):
 
     event[SvBName, "tt_vs_mj"] = ( getattr(event, SvBName).ptt / (getattr(event, SvBName).ptt + getattr(event, SvBName).pmj) )
 
+
     #
     #  Set ps_{bb}
     #
     this_ps_zz = np.full(len(event), -1, dtype=float)
     this_ps_zz[getattr(event, SvBName).zz] = getattr(event, SvBName).ps[ getattr(event, SvBName).zz ]
-
     this_ps_zz[getattr(event, SvBName).passMinPs == False] = -2
     event[SvBName, "ps_zz"] = this_ps_zz
 
     this_ps_zh = np.full(len(event), -1, dtype=float)
     this_ps_zh[getattr(event, SvBName).zh] = getattr(event, SvBName).ps[ getattr(event, SvBName).zh ]
-
     this_ps_zh[getattr(event, SvBName).passMinPs == False] = -2
     event[SvBName, "ps_zh"] = this_ps_zh
 
     this_ps_hh = np.full(len(event), -1, dtype=float)
     this_ps_hh[getattr(event, SvBName).hh] = getattr(event, SvBName).ps[ getattr(event, SvBName).hh ]
-
     this_ps_hh[getattr(event, SvBName).passMinPs == False] = -2
     event[SvBName, "ps_hh"] = this_ps_hh
+
+    this_phh_hh = np.full(len(event), -1, dtype=float)
+    this_phh_hh[getattr(event, SvBName).hh] = getattr(event, SvBName).phh[ getattr(event, SvBName).hh ]
+    this_phh_hh[getattr(event, SvBName).passMinPs == False] = -2
+    event[SvBName, "phh_hh"] = this_phh_hh
+
 
 
 def compute_SvB(events, mask, doCheck=True, **models: HCREnsemble):
@@ -53,7 +57,7 @@ def compute_SvB(events, mask, doCheck=True, **models: HCREnsemble):
         if model is None:
             continue
 
-        if name in events.fields: 
+        if name in events.fields:
             events[f"old_{name}"] = events[name]
 
         tmp_c_score, tmp_q_score = model(masked_events)
@@ -80,17 +84,23 @@ def compute_SvB(events, mask, doCheck=True, **models: HCREnsemble):
         this_ps_zz[ passMinPs == False ] = -2
         ps_zz = this_ps_zz
 
-        zh = (pzh > pzz) & (pzh > phh)  
+        zh = (pzh > pzz) & (pzh > phh)
         this_ps_zh = np.full(len(events), -1, dtype=float)
         this_ps_zh[ zh ] = ps[zh]
         this_ps_zh[ passMinPs == False ] = -2
         ps_zh = this_ps_zh
 
-        hh = (phh > pzz) & (phh > pzh)  
+        hh = (phh > pzz) & (phh > pzh)
         this_ps_hh = np.full(len(events), -1, dtype=float)
         this_ps_hh[ hh ] = ps[hh]
         this_ps_hh[ passMinPs == False ] = -2
         ps_hh = this_ps_hh
+
+        this_phh_hh = np.full(len(events), -1, dtype=float)
+        this_phh_hh[ hh ] = ps[hh]
+        this_phh_hh[ passMinPs == False ] = -2
+        phh_hh = this_phh_hh
+
 
         largest_name = np.array(["None", "ZZ", "ZH", "HH"])
         events[name] = ak.zip({
@@ -110,6 +120,7 @@ def compute_SvB(events, mask, doCheck=True, **models: HCREnsemble):
             "ps_zz": ps_zz,
             "ps_zh": ps_zh,
             "ps_hh": ps_hh,
+            "phh_hh": phh_hh,
             "largest": largest_name[ (passMinPs * ( 1 * zz + 2* zh + 3*hh ) ) ],
             "tt_vs_mj": ( ptt / (ptt + pmj) )
         })
