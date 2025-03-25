@@ -182,11 +182,12 @@ def filling_syst_histograms(selev, weights, analysis_selections,
                             ):
 
     shift_name = "nominal" if not shift_name else shift_name
+    tag_list = [13, 14] if run_lowpt_selection else ["threeTag", "fourTag"] 
     hist_SvB = Collection( process=[processName],
                             year=[year],
                             variation=[shift_name],
-                            tag=[4],  # 3 / 4/ Other
-                            region=[2],  # SR / SB / Other
+                            tag=tag_list,
+                            region=['SR', "SB"],
                             **dict((s, ...) for s in histCuts),
                             )
 
