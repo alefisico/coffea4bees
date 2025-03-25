@@ -228,20 +228,21 @@ def writeYears(f, input_file_data3b, input_file_TT, input_file_mix, mix, channel
         #
         # multijet
         #
-        var_name_multijet = var_name.replace("SvB_ps", f"SvB_FvT_{mix}_newSBDef_ps")
+        SvB = 'SvB' if not 'SvB' in var_name else 'SvB_MA'
+        var_name_multijet = var_name.replace(f"{SvB}_ps", f"{SvB}_FvT_{mix}_newSBDef_ps")
         if args.use_kfold:
             if 'm4j' in args.var:
                 var_name_multijet = args.var + f'_FvT_{mix}_newSBDefSeedAve'
             else:
-                var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDefSeedAve_ps")
+                var_name_multijet = var_name_multijet.replace(f"{SvB}_ps", f"{SvB}_FvT_{mix}_newSBDefSeedAve_ps")
         elif args.use_ZZinSB:
-            var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDefSeedAve_ps")
+            var_name_multijet = var_name_multijet.replace(f"{SvB}_ps", f"{SvB}_FvT_{mix}_newSBDefSeedAve_ps")
             var_name_multijet = var_name_multijet.replace("_v","ZZinSB_v")
         elif args.use_ZZandZHinSB:
-            var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDefSeedAve_ps")
+            var_name_multijet = var_name_multijet.replace(f"{SvB}_ps", f"{SvB}_FvT_{mix}_newSBDefSeedAve_ps")
             var_name_multijet = var_name_multijet.replace("_v","ZZandZHinSB_v")
         else:
-            var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDef_ps")
+            var_name_multijet = var_name_multijet.replace(f"{SvB}_ps", f"{SvB}_FvT_{mix}_newSBDef_ps")
 
 
         hist_multijet = combine_hists(input_file_data3b,
@@ -297,20 +298,21 @@ def addYears(f, input_file_data3b, input_file_TT, input_file_mix, mix, channel):
     #
     # multijet
     #
-    var_name_multijet = var_name.replace("SvB_ps", f"SvB_FvT_{mix}_newSBDef_ps")
+    SvB = 'SvB' if not 'SvB' in var_name else 'SvB_MA'
+    var_name_multijet = var_name.replace(f"{SvB}_ps", f"{SvB}_FvT_{mix}_newSBDef_ps")
     if args.use_kfold:
         if 'm4j' in args.var:
                 var_name_multijet = args.var + f'_FvT_{mix}_newSBDefSeedAve'
         else:
-            var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDefSeedAve_ps")
+            var_name_multijet = var_name_multijet.replace(f"{SvB}_ps", f"{SvB}_FvT_{mix}_newSBDefSeedAve_ps")
     elif args.use_ZZinSB:
-        var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDefSeedAve_ps")
+        var_name_multijet = var_name_multijet.replace(f"{SvB}_ps", f"{SvB}_FvT_{mix}_newSBDefSeedAve_ps")
         var_name_multijet = var_name_multijet.replace("_v","ZZinSB_v")
     elif args.use_ZZandZHinSB:
-        var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDefSeedAve_ps")
+        var_name_multijet = var_name_multijet.replace(f"{SvB}_ps", f"{SvB}_FvT_{mix}_newSBDefSeedAve_ps")
         var_name_multijet = var_name_multijet.replace("_v","ZZandZHinSB_v")
     else:
-        var_name_multijet = var_name_multijet.replace("SvB_MA_ps", f"SvB_MA_FvT_{mix}_newSBDef_ps")
+        var_name_multijet = var_name_multijet.replace(f"{SvB}_ps", f"{SvB}_FvT_{mix}_newSBDef_ps")
 
 
     hist_multijet = combine_hists(input_file_data3b,
