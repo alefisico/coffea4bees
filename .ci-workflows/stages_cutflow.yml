@@ -3,7 +3,7 @@ analysis-cutflow-job:
   extends:
     - .base_analysis
   needs: 
-    - analysis-test-job
+    - analysis-merge-test-job
   script:
     - source scripts/analysis-cutflow-job.sh
   artifacts:

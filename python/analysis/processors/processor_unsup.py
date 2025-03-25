@@ -314,7 +314,8 @@ class analysis(processor.ProcessorABC):
         #### lowSB = 5: 5+4 = 9 (since lowSB is a subset of SB)
         #### highSB = 6: 6+4 = 10 (since highSB is a subset of SB)
 
-        selev['region'] = selev.SR*0b01  +selev.notSRSB*0b100 + selev.SB_low*0b10 + selev.SB_high*0b11 # + selev.SB*0b01
+        # selev['region'] = selev.SR*0b01  +selev.notSRSB*0b100 + selev.SB_low*0b10 + selev.SB_high*0b11 # + selev.SB*0b01
+        selev['region'] = ak.zip({'SR': selev.SR, 'notSRSB': selev.notSRSB, 'SB_low': selev.SB_low, 'SB_high': selev.SB_high, 'SB': selev.SB})
 
         # logging.info(f'{selev.SR}')
         # logging.info(f'{selev.SB}')
@@ -353,8 +354,8 @@ class analysis(processor.ProcessorABC):
 
         hist = Collection(process = [processName],
                           year    = [year],
-                          tag     = [3, 4, 0],    # 3 / 4/ Other
-                          region  = [4, 3, 2, 1, 0],    # SR / SB / Other
+                          tag     = ['threeTag', 'fourTag'], 
+                          region  = ['SR', 'SB', 'notSRSB', 'SB_low', 'SB_high'],
                           **dict((s, ...) for s in self.histCuts))
 
         fill += hist.add('nPVs',     (101, -0.5, 100.5, ('PV.npvs',     'Number of Primary Vertices')))

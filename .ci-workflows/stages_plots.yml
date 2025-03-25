@@ -3,7 +3,7 @@ analysis-plot-job:
   extends:
     - .base_analysis
   needs: 
-    - analysis-test-job
+    - analysis-merge-test-job
   script:
     - source scripts/analysis-plot-job.sh
   artifacts:
@@ -27,7 +27,7 @@ analysis-iplot-job:
   extends:
     - .base_analysis
   needs:
-    - analysis-test-job
+    - analysis-merge-test-job
   script:
     - source scripts/analysis-iplot-job.sh
 
@@ -36,7 +36,7 @@ baseclass-test-job:
   extends:
     - .base_analysis
   needs: 
-    - analysis-test-job
+    - analysis-merge-test-job
   script:
     - source scripts/baseclass-test-job.sh
 
@@ -46,7 +46,7 @@ baseclass-test-job:
 #   extends:
 #     - .base_analysis
 #   needs: 
-#     - analysis-test-job
+#     - analysis-merge-test-job
 #   script:
 #     - cd stats_analysis/
 #     - python convert_hist_to_json.py -o hists/histAll.json -i ../analysis/hists/test.coffea

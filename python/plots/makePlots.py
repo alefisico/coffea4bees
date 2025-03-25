@@ -174,4 +174,5 @@ if __name__ == '__main__':
         varList = args.list_of_hists
     else:
         varList = [h for h in cfg.hists[0]['hists'].keys() if not any(skip in h for skip in args.skip_hists)]
+    # print(len(cfg.hists))
     doPlots(varList, debug=args.debug)
