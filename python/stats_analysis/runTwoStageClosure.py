@@ -228,7 +228,7 @@ def writeYears(f, input_file_data3b, input_file_TT, input_file_mix, mix, channel
         #
         # multijet
         #
-        SvB = 'SvB' if not 'SvB' in var_name else 'SvB_MA'
+        SvB = 'SvB_MA' if 'SvB_MA' in var_name else 'SvB'
         var_name_multijet = var_name.replace(f"{SvB}_ps", f"{SvB}_FvT_{mix}_newSBDef_ps")
         if args.use_kfold:
             if 'm4j' in args.var:
@@ -298,7 +298,7 @@ def addYears(f, input_file_data3b, input_file_TT, input_file_mix, mix, channel):
     #
     # multijet
     #
-    SvB = 'SvB' if not 'SvB' in var_name else 'SvB_MA'
+    SvB = 'SvB_MA' if 'SvB_MA' in var_name else 'SvB'
     var_name_multijet = var_name.replace(f"{SvB}_ps", f"{SvB}_FvT_{mix}_newSBDef_ps")
     if args.use_kfold:
         if 'm4j' in args.var:

@@ -313,10 +313,10 @@ def loadCoffeaHists(cfg, *, cut="passPreSel", year="RunII", weightRegion="SB", d
     fourTag_ttbar_dict   = {"process": ttbar_list} | fourTag_dict  | region_year_dict | cutDict
     threeTag_ttbar_dict  = {"process": ttbar_list} | threeTag_dict | region_year_dict | cutDict
 
-    hists = cfg.hists[0]
+    hists = cfg.hists[0]['hists']
     for _input_data in cfg.hists:
-        if 'selJets_noJCM.n' in _input_data and data4bName in _input_data['selJets_noJCM.n'].axes["process"]:
-            hists_data_4b = _input_data
+        if 'selJets_noJCM.n' in _input_data['hists'] and data4bName in _input_data['hists']['selJets_noJCM.n'].axes["process"]:
+            hists_data_4b = _input_data['hists']
 
     data4b                = hists_data_4b['selJets_noJCM.n']      [fourTag_data_dict]
     data4b_nTagJets       = hists_data_4b['tagJets_noJCM.n']      [fourTag_data_dict]
