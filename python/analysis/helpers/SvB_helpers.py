@@ -97,7 +97,7 @@ def compute_SvB(events, mask, doCheck=True, **models: HCREnsemble):
         ps_hh = this_ps_hh
 
         this_phh_hh = np.full(len(events), -1, dtype=float)
-        this_phh_hh[ hh ] = ps[hh]
+        this_phh_hh[ hh ] = phh[hh]
         this_phh_hh[ passMinPs == False ] = -2
         phh_hh = this_phh_hh
 
