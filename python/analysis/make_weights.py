@@ -247,11 +247,11 @@ if __name__ == "__main__":
             'passPreSel': [True], 'passSvB': [False],  'failSvB': [False],   'n': [0],
         }
         try:
-            cfg.hists[0]["selJets_noJCM.n"].fill(**dummy_data)
+            cfg.hists[0]['hists']["selJets_noJCM.n"].fill(**dummy_data)
             noSvB = False
         except:
             del dummy_data['passSvB'], dummy_data['failSvB']
-            cfg.hists[0]["selJets_noJCM.n"].fill(**dummy_data)
+            cfg.hists[0]['hists']["selJets_noJCM.n"].fill(**dummy_data)
             noSvB = True
 
         #
@@ -259,9 +259,9 @@ if __name__ == "__main__":
         #
         for iBin in range(14):
             if noSvB:
-                cfg.hists[0]["selJets_noJCM.n"]["JCM", "UL18", 1, 1, True, iBin] = (nJet_pred[iBin], 0)
+                cfg.hists[0]['hists']["selJets_noJCM.n"]["JCM", "UL18", 1, 1, True, iBin] = (nJet_pred[iBin], 0)
             else:
-                cfg.hists[0]["selJets_noJCM.n"]["JCM", "UL18", 1, 1, True, False, False, iBin] = (nJet_pred[iBin], 0)
+                cfg.hists[0]['hists']["selJets_noJCM.n"]["JCM", "UL18", 1, 1, True, False, False, iBin] = (nJet_pred[iBin], 0)
 
         plot_options = {"doRatio": True,
                         "xlim": [4, 15],
@@ -297,14 +297,14 @@ if __name__ == "__main__":
         #
         #  Plot NTagged Jets
         #
-        cfg.hists[0]["tagJets_noJCM.n"].fill(**dummy_data)
+        cfg.hists[0]['hists']["tagJets_noJCM.n"].fill(**dummy_data)
 
         #
         # OVerwrite with predicted values
         #
         for iBin in range(15):
-            if noSvB: cfg.hists[0]["tagJets_noJCM.n"]["JCM", "UL18", 1, 1, True, iBin] = (nTag_pred[iBin], 0)
-            else: cfg.hists[0]["tagJets_noJCM.n"]["JCM", "UL18", 1, 1, True, False, False, iBin] = (nTag_pred[iBin], 0)
+            if noSvB: cfg.hists[0]['hists']["tagJets_noJCM.n"]["JCM", "UL18", 1, 1, True, iBin] = (nTag_pred[iBin], 0)
+            else: cfg.hists[0]['hists']["tagJets_noJCM.n"]["JCM", "UL18", 1, 1, True, False, False, iBin] = (nTag_pred[iBin], 0)
 
         plot_options = {"doRatio": True,
                         "xlim": [4, 8],

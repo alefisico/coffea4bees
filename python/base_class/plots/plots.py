@@ -149,7 +149,7 @@ def get_hist_data(this_process, cfg, config, var, region, cut, rebin, year, file
     if len(cfg.hists) > 1 and not cfg.combine_input_files:
         if file_index is None:
             print("ERROR must give file_index if running with more than one input file without using the  --combine_input_files option")
-        hist_obj = cfg.hists[file_index][var]
+        hist_obj = cfg.hists[file_index]['hists'][var]
 
         if "variation" in cfg.hists[file_index]["categories"]:
             hist_opts = hist_opts | {"variation" : "nominal"}
@@ -1116,7 +1116,7 @@ def make2DPlot(cfg, process, var='selJets.pt',
         process_config = plot_helpers.get_value_nested_dict(cfg.plotConfig, process)
         process_name = process_config["process"]
         for _input_data in cfg.hists:
-            _hist_to_plot = _input_data[var]
+            _hist_to_plot = _input_data['hists'][var]
             if process_name in _hist_to_plot.axes["process"]:
                 hist_to_plot = _hist_to_plot
 
@@ -1203,11 +1203,11 @@ def make2DPlot(cfg, process, var='selJets.pt',
     return make_plot_2d_from_dict(plot_data)
 
 
-def load_hists(input_hists, label="hists"):
+def load_hists(input_hists):
     hists = []
     for _inFile in input_hists:
         with open(_inFile, 'rb') as hfile:
-            hists.append(load(hfile)[label])
+            hists.append(load(hfile))
 
     return hists
 
@@ -1217,10 +1217,10 @@ def read_axes_and_cuts(hists, plotConfig):
     axisLabels = {}
     cutList = []
 
-    axisLabels["var"] = hists[0].keys()
-    var1 = list(hists[0].keys())[0]
+    axisLabels["var"] = hists[0]['hists'].keys()
+    var1 = list(hists[0]['hists'].keys())[0]
 
-    for a in hists[0][var1].axes:
+    for a in hists[0]['hists'][var1].axes:
         axisName = a.name
         if axisName == var1:
             continue
