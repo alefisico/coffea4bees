@@ -28,10 +28,11 @@ def filling_nominal_histograms(selev, JCM,
                                ):
 
     fill = Fill(process=processName, year=year, weight="weight")
-
+    
+    tag_list = [13, 14] if run_lowpt_selection else ["threeTag", "fourTag"]
     hist = Collection( process=[processName],
                         year=[year],
-                        tag=["threeTag", "fourTag"] ,
+                        tag=tag_list,
                         region=['SR', "SB"],
                         **dict((s, ...) for s in histCuts)
                         )
@@ -179,12 +180,11 @@ def filling_syst_histograms(selev, weights, analysis_selections,
                             histCuts: list = []
                             ):
 
-    shift_name = "nominal" if not shift_name else shift_name
-    tag_list = [13, 14] if run_lowpt_selection else ["threeTag", "fourTag"] 
+    shift_name = "nominal" if not shift_name else shift_name 
     hist_SvB = Collection( process=[processName],
                             year=[year],
                             variation=[shift_name],
-                            tag=tag_list,
+                            tag=["threeTag", "fourTag"],
                             region=['SR', "SB"],
                             **dict((s, ...) for s in histCuts),
                             )
