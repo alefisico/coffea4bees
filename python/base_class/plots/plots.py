@@ -74,17 +74,6 @@ def load_config(metadata):
     """
     plotConfig = yaml.safe_load(open(metadata, 'r'))
 
-    #
-    #  Make two way code mapping:
-    #    ie: 3 mapts to  "threeTag" and "threeTag" maps to 3
-    for k, v in plotConfig["codes"]["tag"].copy().items():
-        plotConfig["codes"]["tag"][v] = k
-
-    for k, v in plotConfig["codes"]["region"].copy().items():
-        if type(v) is list:
-            continue
-        plotConfig["codes"]["region"][v] = k
-
     return plotConfig
 
 
@@ -137,37 +126,24 @@ def print_list_debug_info(process, tag, cut, region):
 #
 def get_hist_data(this_process, cfg, config, var, region, cut, rebin, year, file_index=None, debug=False):
 
-    codes = cfg.plotConfig["codes"]
-
-    tag_code = codes["tag"][config["tag"]]
-
     if year in  ["RunII", "Run2", "Run3", "RunIII"]:
         year     = sum
 
 
     if debug:
         print(f" hist process={this_process}, "
-              f"tag={tag_code}, year={year}, var={var}")
+              f"tag={config['tag']}, year={year}, var={var}")
 
 
     hist_opts = {"process": this_process,
                  "year":  year,
-                 "tag":   hist.loc(tag_code),
+                 "tag":   config["tag"],
+                 "region": region
                  }
-
-
-    if (not region  == "sum") and (type(codes["region"][region]) is list):
-        region_dict = {"region":  [hist.loc(r) for r in codes["region"][region]]}
-    else:
-        if region == "sum":
-            region_dict = {"region":  sum}
-        else:
-            region_dict = {"region":  hist.loc(codes["region"][region])}
-
 
     cut_dict = plot_helpers.get_cut_dict(cut, cfg.cutList)
 
-    hist_opts = hist_opts | region_dict | cut_dict
+    hist_opts = hist_opts | cut_dict
 
     hist_obj = None
     if len(cfg.hists) > 1 and not cfg.combine_input_files:
@@ -1015,7 +991,7 @@ def get_plot_dict_from_config(cfg, var='selJets.pt',
     #
     var_over_ride = kwargs.get("var_over_ride", {})
 
-    if cut not in cfg.cutList:
+    if cut and cut not in cfg.cutList:
         raise AttributeError(f"{cut} not in cutList {cfg.cutList}")
 
     #
@@ -1109,6 +1085,10 @@ def makePlot(cfg, var='selJets.pt',
         except ValueError as e:
             raise ValueError(e)
 
+    elif not cut:
+        plot_data = get_plot_dict_from_config(cfg, var, None, None, **kwargs)
+        return make_plot_from_dict(plot_data)
+
     plot_data = get_plot_dict_from_config(cfg, var, cut, region, **kwargs)
     return make_plot_from_dict(plot_data)
 
@@ -1166,14 +1146,6 @@ def make2DPlot(cfg, process, var='selJets.pt',
 
         process_config = copy.deepcopy(plot_helpers.get_value_nested_dict(cfg.plotConfig, process))
         tagName = process_config.get("tag", "fourTag")
-        tag = cfg.plotConfig["codes"]["tag"][tagName]
-
-        if region in ["sum", sum]:
-            region_selection = sum
-        elif type(cfg.plotConfig["codes"]["region"][region]) is list:
-            region_selection = [hist.loc(_r) for _r in cfg.plotConfig["codes"]["region"][region]]
-        else:
-            region_selection = hist.loc(cfg.plotConfig["codes"]["region"][region])
 
         if kwargs.get("debug", False):
             print(f" hist process={process}, "
@@ -1182,8 +1154,8 @@ def make2DPlot(cfg, process, var='selJets.pt',
         varName = hist_to_plot.axes[-1].name
         hist_dict = {"process": process_config["process"],
                     "year":    year,
-                    "tag":     hist.loc(tag),
-                    "region":  region_selection,
+                    "tag":     tagName,
+                    "region":  region,
                     varName:   hist.rebin(kwargs.get("rebin", 1))}
 
         hist_dict = hist_dict | cut_dict
@@ -1248,7 +1220,7 @@ def read_axes_and_cuts(hists, plotConfig):
     axisLabels["var"] = hists[0]['hists'].keys()
     var1 = list(hists[0]['hists'].keys())[0]
 
-    for a in hists[0]["hists"][var1].axes:
+    for a in hists[0]['hists'][var1].axes:
         axisName = a.name
         if axisName == var1:
             continue
@@ -1264,12 +1236,7 @@ def read_axes_and_cuts(hists, plotConfig):
 
         for iBin in range(a.extent):
 
-            if axisName in plotConfig["codes"]:
-                if a.value(iBin) not in plotConfig["codes"][axisName]:
-                    continue
-                value = plotConfig["codes"][axisName][a.value(iBin)]
-            else:
-                value = a.value(iBin)
+            value = a.value(iBin)
 
             axisLabels[axisName].append(value)
 

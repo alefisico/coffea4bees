@@ -295,17 +295,16 @@ def loadCoffeaHists(cfg, *, cut="passPreSel", year="RunII", weightRegion="SB", d
 
     cutDict = get_cut_dict(cut, cfg.cutList)
 
-    codes = cfg.plotConfig["codes"]
     year = sum if year == "RunII" else year
-    region_selection = sum if weightRegion in ["sum", sum] else hist.loc(codes["region"][weightRegion])
+    region_selection = sum if weightRegion in ["sum", sum] else weightRegion
 
     region_year_dict = {
         "year": year,
         "region": region_selection,
     }
 
-    fourTag_dict  = {"tag": hist.loc(codes["tag"]["fourTag"])}
-    threeTag_dict = {"tag": hist.loc(codes["tag"]["threeTag"])}
+    fourTag_dict  = {"tag": "fourTag"}
+    threeTag_dict = {"tag": "threeTag"}
 
     fourTag_data_dict  = {"process": data4bName} | fourTag_dict | region_year_dict | cutDict
     threeTag_data_dict = {"process": 'data'}     | threeTag_dict | region_year_dict | cutDict
