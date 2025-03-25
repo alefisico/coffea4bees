@@ -494,7 +494,7 @@ class analysis(processor.ProcessorABC):
 
 
 
-        selev["region"] = ["SR"]
+        selev["region"] = ak.zip({"SR": selev.fourTag})
 
         #
         # CutFlow
@@ -518,7 +518,7 @@ class analysis(processor.ProcessorABC):
         hist = Collection( process=[processName],
                            year=[year],
                            tag=["threeTag", "fourTag"],  # 3 / 4/ Other
-                           region=["SR"],  # SR / SB / Other
+                           region=['SR'],  # SR / SB / Other
                            **dict((s, ...) for s in self.histCuts)
                            )
 
