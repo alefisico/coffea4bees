@@ -280,8 +280,10 @@ def doPlots(year, debug=False):
     #
     splitting_config = {}
 
-    zA_mA_mB         = { "mA":("mA",    1),  "mB":("mB",    1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_vs_thetaA",   1), "rhoA": ("rhoA", 1), "rhoB": ("rhoB", 1)}
-    zA_l_mA_mB       = { "mA":("mA",    1),  "mB":("mB",    1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_l_vs_thetaA", 1), "rhoA": ("rhoA", 1), "rhoB": ("rhoB", 1)}
+    zA_mA_mB         = { "mA":("mA_r",    1),  "mB":("mB_r",    1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_vs_thetaA",   1), "rhoA": ("rhoA", 1), "rhoB": ("rhoB", 1)}
+    zA_l_mA_mB       = { "mA":("mA_r",    1),  "mB":("mB_r",    1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_l_vs_thetaA", 1), "rhoA": ("rhoA", 1), "rhoB": ("rhoB", 1)}
+    #zA_mA_mB         = { "mA":("mA",    1),  "mB":("mB",    1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_vs_thetaA",   1), "rhoA": ("rhoA", 1), "rhoB": ("rhoB", 1)}
+    #zA_l_mA_mB       = { "mA":("mA",    1),  "mB":("mB",    1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_l_vs_thetaA", 1), "rhoA": ("rhoA", 1), "rhoB": ("rhoB", 1)}
     zA_l_mA_l_mB     = { "mA":("mA_l",  1),  "mB":("mB",    1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_l_vs_thetaA", 1), "rhoA": ("rhoA", 1), "rhoB": ("rhoB", 1)}
     zA_mA_l_mB_l     = { "mA":("mA_l",  1),  "mB":("mB_l",  1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_vs_thetaA",   1), "rhoA": ("rhoA", 1), "rhoB": ("rhoB", 1)}
     zA_l_mA_l_mB_l   = { "mA":("mA_l",  1),  "mB":("mB_l",  1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_l_vs_thetaA", 1), "rhoA": ("rhoA", 1), "rhoB": ("rhoB", 1)}
