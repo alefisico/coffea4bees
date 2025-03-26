@@ -664,6 +664,8 @@ class analysis(processor.ProcessorABC):
                 self._cutFlow.fill("failSvB", selev[selev.failSvB])
                 self._cutFlow.fill("failSvB_woTrig", selev[selev.failSvB],
                                wOverride=selev['weight_woTrig'][selev.failSvB] )
+            if self.run_dilep_ttbar_crosscheck:
+                self._cutFlow.fill("passDilepTtbar", selev[selev.passDilepTtbar], allTag=True)
 
             self._cutFlow.addOutput(processOutput, event.metadata["dataset"])
 
