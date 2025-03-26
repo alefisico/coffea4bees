@@ -74,6 +74,27 @@ def load_config(metadata):
     """
     plotConfig = yaml.safe_load(open(metadata, 'r'))
 
+    # for backwards compatibility
+    if "codes" not in plotConfig:
+        plotConfig['codes'] = {
+            'region' : {
+                'SR': 2,
+                'SB': 1,
+                'other': 0,
+                2: 'SR',
+                1: 'SB',
+                0: 'other',
+            },
+            'tag' : {
+                'threeTag': 3,
+                'fourTag': 4,
+                'other': 0,
+                3: 'threeTag',
+                4: 'fourTag',
+                0: 'other',
+            },
+        }
+
     return plotConfig
 
 
@@ -134,12 +155,23 @@ def get_hist_data(this_process, cfg, config, var, region, cut, rebin, year, file
         print(f" hist process={this_process}, "
               f"tag={config['tag']}, year={year}, var={var}")
 
+    if isinstance(config["tag"], str): config["tag"] = hist.loc(cfg.plotConfig["codes"]["tag"][config["tag"]])
 
     hist_opts = {"process": this_process,
                  "year":  year,
                  "tag":   config["tag"],
                  "region": region
                  }
+
+    if isinstance(region, str): 
+
+        if (not region  == "sum") and (type(cfg.plotConfig["codes"]["region"][region]) is list):
+            hist_opts["region"] = [hist.loc(r) for r in cfg.plotConfig["codes"]["region"][region]]
+        else:
+            if region == "sum":
+                hist_opts["region"] = sum
+            else:
+                hist_opts["region"] = hist.loc(cfg.plotConfig["codes"]["region"][region])
 
     cut_dict = plot_helpers.get_cut_dict(cut, cfg.cutList)
 
@@ -817,14 +849,14 @@ def make_plot_from_dict(plot_data):
             tagName = "_vs_".join(plot_data["process"])
         else:
             tagName = plot_helpers.get_value_nested_dict(plot_data,"tag")
+            if isinstance(tagName, hist.loc):
+                tagName = str(tagName.value)
 
         # these get combined with "/"
         output_path = [kwargs.get("outputFolder"), kwargs.get("year","RunII"), plot_data["cut"], tagName, plot_data["region"], plot_data.get("process","")]
         file_name = plot_data.get("file_name",plot_data["var"])
-
         if kwargs.get("yscale", None) == "log":
             file_name += "_logy"
-
         plot_helpers.savefig(fig, file_name, *output_path)
 
         if kwargs.get("write_yaml", False):
@@ -1157,6 +1189,13 @@ def make2DPlot(cfg, process, var='selJets.pt',
                     "tag":     tagName,
                     "region":  region,
                     varName:   hist.rebin(kwargs.get("rebin", 1))}
+
+        ## for backwards compatibility
+        for axis in hist_to_plot.axes:
+            if (axis.name == "tag") and isinstance(axis, hist.axis.IntCategory):
+                hist_dict['tag'] = hist.loc(cfg.plotConfig["codes"]["tag"][tagName])
+            if (axis.name == "region") and isinstance(axis, hist.axis.IntCategory):
+                hist_dict['region'] = hist.loc(cfg.plotConfig["codes"]["region"][region])
 
         hist_dict = hist_dict | cut_dict
 
