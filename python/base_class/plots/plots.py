@@ -150,12 +150,9 @@ def get_hist_data(this_process, cfg, config, var, region, cut, rebin, year, file
     if year in  ["RunII", "Run2", "Run3", "RunIII"]:
         year     = sum
 
-
     if debug:
         print(f" hist process={this_process}, "
               f"tag={config['tag']}, year={year}, var={var}")
-
-    if isinstance(config["tag"], str): config["tag"] = hist.loc(cfg.plotConfig["codes"]["tag"][config["tag"]])
 
     hist_opts = {"process": this_process,
                  "year":  year,
@@ -163,15 +160,8 @@ def get_hist_data(this_process, cfg, config, var, region, cut, rebin, year, file
                  "region": region
                  }
 
-    if isinstance(region, str): 
-
-        if (not region  == "sum") and (type(cfg.plotConfig["codes"]["region"][region]) is list):
-            hist_opts["region"] = [hist.loc(r) for r in cfg.plotConfig["codes"]["region"][region]]
-        else:
-            if region == "sum":
-                hist_opts["region"] = sum
-            else:
-                hist_opts["region"] = hist.loc(cfg.plotConfig["codes"]["region"][region])
+    if region == "sum":
+        hist_opts["region"] = sum
 
     cut_dict = plot_helpers.get_cut_dict(cut, cfg.cutList)
 
@@ -198,6 +188,16 @@ def get_hist_data(this_process, cfg, config, var, region, cut, rebin, year, file
     if hist_obj is None:
         raise ValueError(f"ERROR did not find var {var} with process {this_process} in inputs")
 
+    ## for backwards compatibility
+    for axis in hist_obj.axes:
+        if (axis.name == "tag") and isinstance(axis, hist.axis.IntCategory):
+            hist_opts['tag'] = hist.loc(cfg.plotConfig["codes"]["tag"][config["tag"]])
+        if (axis.name == "region") and isinstance(axis, hist.axis.IntCategory):
+            if isinstance(hist_opts['region'], list):
+                hist_opts['region'] = [ hist.loc(cfg.plotConfig["codes"]["region"][i]) for i in hist_dict['region'] ]
+            elif region != "sum":
+                hist_opts['region'] = hist.loc(cfg.plotConfig["codes"]["region"][region])
+    
     #
     #  Add rebin Options
     #
