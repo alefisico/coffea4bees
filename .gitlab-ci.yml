@@ -78,7 +78,7 @@ pages:
 .base_classifier:
   needs:
     - voms_proxy
-  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:classifier_latest
+  image: registry.hub.docker.com/chuyuanliu/heptools:ml-cpu # TODO change to central repo
   before_script:
     - source /entrypoint.sh
   tags:
