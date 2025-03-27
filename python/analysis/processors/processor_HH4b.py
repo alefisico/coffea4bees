@@ -627,8 +627,6 @@ class analysis(processor.ProcessorABC):
                 self._cutFlow.fill( "blind_woTrig", event[selections.all(*allcuts)], allTag=True,
                                     wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[selections.all(*allcuts)] ))
 
-
-
             analysis_selections = selections.all(*allcuts)
             selev = selev[blind_flag]
 
@@ -665,7 +663,8 @@ class analysis(processor.ProcessorABC):
                 self._cutFlow.fill("failSvB_woTrig", selev[selev.failSvB],
                                wOverride=selev['weight_woTrig'][selev.failSvB] )
             if self.run_dilep_ttbar_crosscheck:
-                self._cutFlow.fill("passDilepTtbar", selev[selev.passDilepTtbar], allTag=True)
+                self._cutFlow.fill("passDilepTtbar", selev[selev.passDilepTtbar], allTag=True,
+                               wOverride=selev['weight_noJCM_noFvT'][selev.passDilepTtbar] )
 
             self._cutFlow.addOutput(processOutput, event.metadata["dataset"])
 

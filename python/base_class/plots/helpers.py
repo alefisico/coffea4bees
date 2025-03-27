@@ -195,3 +195,25 @@ def get_region_str(region):
         region_str = region
 
     return region_str
+
+def compare_dict_keys_with_list(dict1, list2):
+  """
+  Compares the keys of a dictionary with the elements of a list.
+
+  Args:
+    dict1: The dictionary.
+    list2: The list.
+
+  Returns:
+    A tuple containing two sets:
+      - common_keys: The set of keys from the dictionary that are present in the list.
+      - unique_to_dict1: The set of keys from the dictionary that are not in the list.
+  """
+
+  keys1 = set(dict1.keys())
+  list2_set = set(list2)
+
+  common_keys = keys1.intersection(list2_set)
+  unique_to_dict1 = keys1.difference(list2_set)
+
+  return common_keys, unique_to_dict1

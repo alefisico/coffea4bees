@@ -152,11 +152,11 @@ def get_hist_data(this_process, cfg, config, var, region, cut, rebin, year, file
 
     if debug:
         print(f" hist process={this_process}, "
-              f"tag={config['tag']}, year={year}, var={var}")
+              f"tag={config.get('tag', None)}, year={year}, var={var}")
 
     hist_opts = {"process": this_process,
                  "year":  year,
-                 "tag":   config["tag"],
+                 "tag":   config.get("tag", None),
                  "region": region
                  }
 
@@ -171,6 +171,13 @@ def get_hist_data(this_process, cfg, config, var, region, cut, rebin, year, file
     if len(cfg.hists) > 1 and not cfg.combine_input_files:
         if file_index is None:
             print("ERROR must give file_index if running with more than one input file without using the  --combine_input_files option")
+        
+        common, unique_to_dict = plot_helpers.compare_dict_keys_with_list(hist_opts, cfg.hists[file_index]['categories'])
+
+        if len(unique_to_dict) > 0:
+            for _key in unique_to_dict:
+                hist_opts.pop(_key)
+
         hist_obj = cfg.hists[file_index]['hists'][var]
 
         if "variation" in cfg.hists[file_index]["categories"]:
@@ -178,6 +185,13 @@ def get_hist_data(this_process, cfg, config, var, region, cut, rebin, year, file
 
     else:
         for _input_data in cfg.hists:
+
+            common, unique_to_dict = plot_helpers.compare_dict_keys_with_list(hist_opts, _input_data['categories'])
+
+            if len(unique_to_dict) > 0:
+                for _key in unique_to_dict:
+                    hist_opts.pop(_key)
+
             if var in _input_data['hists'] and this_process in _input_data['hists'][var].axes["process"]:
 
                 if "variation" in _input_data["categories"]:
@@ -848,12 +862,18 @@ def make_plot_from_dict(plot_data):
         if type(plot_data.get("process","")) is list:
             tagName = "_vs_".join(plot_data["process"])
         else:
-            tagName = plot_helpers.get_value_nested_dict(plot_data,"tag")
-            if isinstance(tagName, hist.loc):
-                tagName = str(tagName.value)
+            try:
+                tagName = plot_helpers.get_value_nested_dict(plot_data,"tag")
+                if isinstance(tagName, hist.loc):
+                    tagName = str(tagName.value)
+            except ValueError:
+                pass
 
         # these get combined with "/"
-        output_path = [kwargs.get("outputFolder"), kwargs.get("year","RunII"), plot_data["cut"], tagName, plot_data["region"], plot_data.get("process","")]
+        try:
+            output_path = [kwargs.get("outputFolder"), kwargs.get("year","RunII"), plot_data["cut"], tagName, plot_data["region"], plot_data.get("process","")]
+        except NameError:
+            output_path = [kwargs.get("outputFolder")]
         file_name = plot_data.get("file_name",plot_data["var"])
         if kwargs.get("yscale", None) == "log":
             file_name += "_logy"
@@ -1055,7 +1075,7 @@ def get_plot_dict_from_config(cfg, var='selJets.pt',
         #
         #  Add name to config
         #
-        proc_config["name"] = _proc_name
+        proc_config["name"] = _proc_name  ### REMOVE COMMENT
 
         var_to_plot = var_over_ride.get(_proc_name, var)
 
