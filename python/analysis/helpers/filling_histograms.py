@@ -153,12 +153,13 @@ def filling_nominal_histograms(selev, JCM,
     #
     # fill histograms
     #
+
     # fill.cache(selev)
     fill(selev, hist)
 
     if run_dilep_ttbar_crosscheck:
 
-        fill_ttbar = Fill(process=processName, year=year, weight="weight")
+        fill_ttbar = Fill(process=processName, year=year, weight="weight_noJCM_noFvT")
         hist_ttbar = Collection( process=[processName],
                             year=[year],
                             **dict((s, ...) for s in ['passDilepTtbar'])

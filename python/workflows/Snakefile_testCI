@@ -67,6 +67,7 @@ output_analysis = [
   f"{output_dir}/analysis_iplot_job.log",
   f"{output_dir}/baseclass_test_job/test_dumpPlotCounts.yml",
   f"{output_dir}/analysis_cutflow_job/test_dump_cutflow.yml",
+  f"{output_dir}/analysis_cutflow_dilepttbar_job/test_dump_cutflow.yml",
 ]
 # outputs.extend(output_analysis)
 
@@ -341,6 +342,13 @@ rule analysis_cutflow_job:
     log: f"{output_dir}/analysis_cutflow_job.log"
     container: analysis_container
     shell: "source scripts/analysis-cutflow-job.sh {output_dir}/ 2>&1 | tee -a {log}"
+
+rule analysis_cutflow_dilepttbar_job:    
+    input: f"{output_dir}/analysis_test_job/test_databkgs.coffea"
+    output: f"{output_dir}/analysis_cutflow_dilepttbar_job/test_dump_cutflow.yml"
+    log: f"{output_dir}/analysis_cutflow_dilepttbar_job.log"
+    container: analysis_container
+    shell: "source scripts/analysis-cutflow-dilepttbar-job.sh {output_dir}/ 2>&1 | tee -a {log}"
 
 rule analysis_mixed_cutflow_job:    
     input: f"{output_dir}/analysis_test_mixed_job/testMixedData.coffea"
