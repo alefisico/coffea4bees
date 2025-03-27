@@ -16,9 +16,12 @@ import base_class.plots.helpers as plot_helpers
 
 _phi = (1 + np.sqrt(5)) / 2
 _epsilon = 0.001
-_colors = ["xkcd:black", "xkcd:red", "xkcd:off green", "xkcd:blue",
-           "xkcd:orange", "xkcd:violet", "xkcd:grey",
-           "xkcd:pink" , "xkcd:pale blue"]
+_colors = ["xkcd:black",  "xkcd:red",    "xkcd:off green", "xkcd:blue",
+           "xkcd:orange", "xkcd:violet", "xkcd:grey",      "xkcd:pink" ,
+           "xkcd:pale blue",
+           "xkcd:black",  "xkcd:red",    "xkcd:off green", "xkcd:blue",
+           "xkcd:orange", "xkcd:violet", "xkcd:grey",      "xkcd:pink" ,
+           ]
 
 
 
@@ -84,6 +87,29 @@ def load_config(metadata):
         if type(v) is list:
             continue
         plotConfig["codes"]["region"][v] = k
+
+
+    #
+    # Expand
+    #
+    proc_templates = []
+    for _hist_proc, _hist_proc_config in plotConfig["hists"].items():
+        if not _hist_proc.find("XXX") == -1 and "nSamples" in _hist_proc_config:
+            proc_templates.append(_hist_proc)
+
+    for template in proc_templates:
+        _hist_proc_config = plotConfig["hists"][template]
+
+        for nS in range(_hist_proc_config["nSamples"]):
+            proc_name = _hist_proc.replace("XXX",str(nS))
+            plotConfig["hists"][proc_name] = copy.deepcopy(_hist_proc_config)
+            plotConfig["hists"][proc_name]["process"]  = proc_name
+            plotConfig["hists"][proc_name]["label"]  = plotConfig["hists"][proc_name]["label"].replace("XXX", str(nS))
+            plotConfig["hists"][proc_name]["fillcolor"]  = _colors[nS]
+            plotConfig["hists"][proc_name]["edgecolor"]  = _colors[nS]
+
+        plotConfig["hists"].pop(template)
+
 
     return plotConfig
 
@@ -188,6 +214,7 @@ def get_hist2d_data(this_process, cfg, config, var, region, cut, rebin, year, fi
 
     if hist_obj is None:
         raise ValueError(f"ERROR did not find var {var} with process {this_process} in inputs")
+
 
     #
     #  Add rebin Options
@@ -1221,47 +1248,11 @@ def get_plot_dict_from_config(cfg, var='selJets.pt',
 
 def get_plot2d_dict_from_config(cfg, var, cut, region, process, **kwargs):
 
-    #
-    #  Move to makePlot2D ???
-    #
-    if len(cfg.hists) > 1:
-        #
-        # Find which file has the process we are looking for
-        #
-        process_config = plot_helpers.get_value_nested_dict(cfg.plotConfig, process)
-        process_name = process_config["process"]
-        for _input_data in cfg.hists:
-            _hist_to_plot = _input_data['hists'][var]
-            if process_name in _hist_to_plot.axes["process"]:
-                hist_to_plot = _hist_to_plot
+    process_config = copy.deepcopy(plot_helpers.get_value_nested_dict(cfg.plotConfig, process))
 
-    else:
-        process_config = { 'process': "all"}
-        input_data = cfg.hists[0]
-        hist_to_plot = input_data['hists'][var]
-
-    #
-    #  Get the year
-    #    (Got to be a better way to do this....)
-    #
-    year = kwargs.get("year","RunII")
-
-    #
-    #  Unstacked hists
-    #
-    if cfg.plotConfig.get('hist_dict', None):
-
-        pass
-        # Why is this needed ?
-        # hist_dict = cfg.plotConfig["hist_dict"]
-
-    else:
-
-        process_config = copy.deepcopy(plot_helpers.get_value_nested_dict(cfg.plotConfig, process))
-
-        add_hist2d_data(cfg, process_config,
-                        var=var,   region=region, cut=cut, rebin=1, year=year,
-                        debug=kwargs.get("debug", False))
+    add_hist2d_data(cfg, process_config,
+                    var=var,   region=region, cut=cut, rebin=1, year=kwargs.get("year","RunII"),
+                    debug=kwargs.get("debug", False))
 
 
     plot_data = {}
@@ -1269,16 +1260,9 @@ def get_plot2d_dict_from_config(cfg, var, cut, region, process, **kwargs):
     plot_data["is_2d_hist"] = True
     plot_data["hist"] = process_config
     plot_data["kwargs"] = kwargs
-
-    if cfg.plotConfig.get('hist_dict', None):
-        plot_data["cut"] = cfg.plotConfig["hist_dict"]["selection"]
-        plot_data["region"] = ''
-        plot_data["process"] = ''
-    else:
-        plot_data["cut"] = cut
-        plot_data["region"] = region
-        plot_data["process"] = process
-
+    plot_data["cut"] = cut
+    plot_data["region"] = region
+    plot_data["process"] = process
 
     return plot_data
 
