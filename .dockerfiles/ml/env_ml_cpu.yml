@@ -1,0 +1,56 @@
+name: hep
+channels:
+  - conda-forge
+  - pytorch
+dependencies:
+  - python=3.11
+  - pip
+  - pycurl
+  - readchar
+  # numerical
+  - numpy
+  - scipy
+  - pandas
+  - pyarrow
+  - numba
+  - networkx
+  # visualization
+  - nodejs
+  - matplotlib
+  - bokeh
+  - graphviz
+  - pip:
+    - graphviz
+    - pyvis
+  - rich
+  # parallel
+  - dask
+  - dask-jobqueue
+  - dask-awkward
+  - dask-histogram
+  # benchmarks
+  - scalene
+  # Scikit-HEP
+  - coffea
+  - uproot
+  - awkward
+  - awkward-pandas
+  - hist
+  - particle
+  - correctionlib
+  # machine learning
+  - pytorch::pytorch
+  - pytorch::cpuonly 
+  # grid certificate
+  - ca-policy-lcg
+  # HTCondor
+  - htcondor
+  # XRootD
+  - xrootd
+  - fsspec-xrootd
+  # tini
+  - tini
+  # DB
+  - pip:
+    - dbs3-client
+    - rucio-clients
