@@ -46,7 +46,7 @@ dependencies:
   # HTCondor
   - htcondor
   # XRootD
-  - xrootd \
+  - xrootd
   - fsspec-xrootd
   # tini
   - tini
