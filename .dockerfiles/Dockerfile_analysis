@@ -1,13 +1,10 @@
 FROM coffeateam/coffea-base-almalinux8:0.7.23-py3.10
 
-RUN dnf update -y && dnf install -y poppler-utils 
-RUN mamba install -y conda-forge::nodejs
-RUN pip install --upgrade pip
-RUN pip install htcondor==24.2.1
-RUN pip install pycodestyle 
-RUN pip install memory-profiler
-RUN pip install fsspec-xrootd
-RUN pip install dbs3-client
+RUN dnf update -y && dnf install -y poppler-utils && \
+    dnf clean all && rm -rf /var/cache/dnf && \
+    mamba install -y conda-forge::nodejs && \
+    pip install --upgrade pip && \
+    pip install htcondor==24.2.1 pycodestyle memory-profiler fsspec-xrootd dbs3-client
 
 # RUN mkdir -p /home/user/coffea4bees/python/
 # COPY python/ /home/user/coffea4bees/python/
