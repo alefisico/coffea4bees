@@ -59,3 +59,4 @@ build_container_classifier:
     - if: $CI_COMMIT_BRANCH =~ /^container.*/ || $CI_PIPELINE_SOURCE == "merge_request_event"
       changes:
       - .dockerfiles/ml/Dockerfile_ml_cpu
+      - .dockerfiles/ml/env_ml_cpu.yml
