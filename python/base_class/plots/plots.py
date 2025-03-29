@@ -158,89 +158,6 @@ def print_list_debug_info(process, tag, cut, region):
           f"_reg={region}")
 
 
-#
-#  Get hist values
-#
-def get_hist2d_data(this_process, cfg, config, var, region, cut, rebin, year, file_index=None, debug=False):
-
-    codes = cfg.plotConfig["codes"]
-
-    tag_code = codes["tag"][config["tag"]]
-
-    cut_dict = plot_helpers.get_cut_dict(cut, cfg.cutList)
-
-    if year in  ["RunII", "Run2", "Run3", "RunIII"]:
-        year     = sum
-
-
-    if debug:
-        print(f" hist process={this_process}, "
-              f"tag={tag_code}, year={year}, var={var}")
-
-
-    hist_opts = {"process": this_process,
-                 "year":  year,
-                 "tag":   hist.loc(tag_code),
-                 }
-
-
-    if (not region  == "sum") and (type(codes["region"][region]) is list):
-        region_dict = {"region":  [hist.loc(r) for r in codes["region"][region]]}
-    else:
-        if region == "sum":
-            region_dict = {"region":  sum}
-        else:
-            region_dict = {"region":  hist.loc(codes["region"][region])}
-
-    hist_opts = hist_opts | region_dict | cut_dict
-
-    hist_obj = None
-    if len(cfg.hists) > 1 and not cfg.combine_input_files:
-        if file_index is None:
-            print("ERROR must give file_index if running with more than one input file without using the  --combine_input_files option")
-        hist_obj = cfg.hists[file_index]['hists'][var]
-
-        if "variation" in cfg.hists[file_index]["categories"]:
-            hist_opts = hist_opts | {"variation" : "nominal"}
-
-    else:
-        for _input_data in cfg.hists:
-            if var in _input_data['hists'] and this_process in _input_data['hists'][var].axes["process"]:
-
-                if "variation" in _input_data["categories"]:
-                    hist_opts = hist_opts | {"variation" : "nominal"}
-
-                hist_obj = _input_data['hists'][var]
-
-    if hist_obj is None:
-        raise ValueError(f"ERROR did not find var {var} with process {this_process} in inputs")
-
-
-    #
-    #  Add rebin Options
-    #
-    varName = hist_obj.axes[-1].name
-    #var_dict = {varName: rebin}
-    hist_opts = hist_opts# | var_dict
-
-    #
-    #  Do the hist selection/binngin
-    #
-    selected_hist = hist_obj[hist_opts]
-
-    #
-    # Catch list vs hist
-    #  Shape give (nregion, nBins)
-    #
-    if len(selected_hist.shape) == 3:  # for 2D plots
-        selected_hist = selected_hist[sum, :, :]
-
-    #
-    # Apply Scale factor
-    #
-    selected_hist *= config.get("scalefactor", 1.0)
-
-    return selected_hist
 
 
 
@@ -248,7 +165,7 @@ def get_hist2d_data(this_process, cfg, config, var, region, cut, rebin, year, fi
 #
 #  Get hist values
 #
-def get_hist_data(this_process, cfg, config, var, region, cut, rebin, year, file_index=None, debug=False):
+def get_hist_data(this_process, cfg, config, var, region, cut, rebin, year, do2d=False, file_index=None, debug=False):
 
     codes = cfg.plotConfig["codes"]
 
@@ -307,8 +224,9 @@ def get_hist_data(this_process, cfg, config, var, region, cut, rebin, year, file
     #  Add rebin Options
     #
     varName = hist_obj.axes[-1].name
-    var_dict = {varName: hist.rebin(rebin)}
-    hist_opts = hist_opts | var_dict
+    if not do2d:
+        var_dict = {varName: hist.rebin(rebin)}
+        hist_opts = hist_opts | var_dict
 
     #
     #  Do the hist selection/binngin
@@ -319,8 +237,12 @@ def get_hist_data(this_process, cfg, config, var, region, cut, rebin, year, file
     # Catch list vs hist
     #  Shape give (nregion, nBins)
     #
-    if len(selected_hist.shape) == 2:
-        selected_hist = selected_hist[sum, :]
+    if do2d:
+        if len(selected_hist.shape) == 3:  # for 2D plots
+            selected_hist = selected_hist[sum, :, :]
+    else:
+        if len(selected_hist.shape) == 2:
+            selected_hist = selected_hist[sum, :]
 
     #
     # Apply Scale factor
@@ -330,35 +252,15 @@ def get_hist_data(this_process, cfg, config, var, region, cut, rebin, year, file
     return selected_hist
 
 #
-def get_hist_data_list(proc_list, cfg, config, var, region, cut, rebin, year, file_index, debug):
+def get_hist_data_list(proc_list, cfg, config, var, region, cut, rebin, year, do2d, file_index, debug):
 
     selected_hist = None
     for _proc in proc_list:
 
         if type(_proc) is list:
-            _selected_hist =  get_hist_data_list(_proc, cfg, config, var, region, cut, rebin, year, file_index, debug)
+            _selected_hist =  get_hist_data_list(_proc, cfg, config, var, region, cut, rebin, year, do2d, file_index, debug)
         else:
-            _selected_hist = get_hist_data(_proc, cfg, config, var, region, cut, rebin, year, file_index, debug)
-
-        if selected_hist is None:
-            selected_hist = _selected_hist
-        else:
-            selected_hist += _selected_hist
-
-    return selected_hist
-
-
-
-#
-def get_hist2d_data_list(proc_list, cfg, config, var, region, cut, rebin, year, file_index, debug):
-
-    selected_hist = None
-    for _proc in proc_list:
-
-        if type(_proc) is list:
-            _selected_hist =  get_hist2d_data_list(_proc, cfg, config, var, region, cut, rebin, year, file_index, debug)
-        else:
-            _selected_hist = get_hist2d_data(_proc, cfg, config, var, region, cut, rebin, year, file_index, debug)
+            _selected_hist = get_hist_data(_proc, cfg, config, var, region, cut, rebin, year, do2d, file_index, debug)
 
         if selected_hist is None:
             selected_hist = _selected_hist
@@ -373,52 +275,40 @@ def get_hist2d_data_list(proc_list, cfg, config, var, region, cut, rebin, year, 
 #
 #  Get hist from input file(s)
 #
-def add_hist2d_data(cfg, config, var, region, cut, rebin, year, file_index=None, debug=False):
-
-    if debug:
-        print(f"In add_hist2d_data {config['process']} \n")
-
-    proc_list = config['process'] if type(config['process']) is list else [config['process']]
-
-    selected_hist = get_hist2d_data_list(proc_list, cfg, config, var, region, cut, rebin, year, file_index, debug)
-
-    # Extract counts and variances
-    try:
-        config["values"]    = selected_hist.view(flow=False)["value"].tolist()  # Bin counts (array)
-        config["variances"] = selected_hist.view(flow=False)["variance"].tolist()  # Bin variances (array)
-    except IndexError:
-        config["values"]    = selected_hist.values()  # Bin counts (array)
-        config["variances"] = selected_hist.variances()  # Bin variances (array)
-    if config["variances"] is None:
-        config["variances"] = np.zeros_like(config["values"])
-
-    config["x_edges"]   = selected_hist.axes[0].edges.tolist()  # X-axis edges
-    config["y_edges"]   = selected_hist.axes[1].edges.tolist()  # Y-axis edges
-    config["x_label"]   = selected_hist.axes[0].label  # X-axis label
-    config["y_label"]   = selected_hist.axes[1].label  # Y-axis label
-
-    return
-
-
-#
-#  Get hist from input file(s)
-#
-def add_hist_data(cfg, config, var, region, cut, rebin, year, file_index=None, debug=False):
+def add_hist_data(cfg, config, var, region, cut, rebin, year, do2d=False, file_index=None, debug=False):
 
     if debug:
         print(f"In add_hist_data {config['process']} \n")
 
     proc_list = config['process'] if type(config['process']) is list else [config['process']]
 
-    selected_hist = get_hist_data_list(proc_list, cfg, config, var, region, cut, rebin, year, file_index, debug)
+    selected_hist = get_hist_data_list(proc_list, cfg, config, var, region, cut, rebin, year, do2d, file_index, debug)
 
-    config["values"]     = selected_hist.values().tolist()
-    config["variances"]  = selected_hist.variances().tolist()
-    config["centers"]    = selected_hist.axes[0].centers.tolist()
-    config["edges"]      = selected_hist.axes[0].edges.tolist()
-    config["x_label"]    = selected_hist.axes[0].label
-    config["under_flow"] = float(selected_hist.view(flow=True)["value"][0])
-    config["over_flow"]  = float(selected_hist.view(flow=True)["value"][-1])
+    if do2d:
+
+        # Extract counts and variances
+        try:
+            config["values"]    = selected_hist.view(flow=False)["value"].tolist()  # Bin counts (array)
+            config["variances"] = selected_hist.view(flow=False)["variance"].tolist()  # Bin variances (array)
+        except IndexError:
+            config["values"]    = selected_hist.values()  # Bin counts (array)
+            config["variances"] = selected_hist.variances()  # Bin variances (array)
+        if config["variances"] is None:
+            config["variances"] = np.zeros_like(config["values"])
+
+        config["x_edges"]   = selected_hist.axes[0].edges.tolist()  # X-axis edges
+        config["y_edges"]   = selected_hist.axes[1].edges.tolist()  # Y-axis edges
+        config["x_label"]   = selected_hist.axes[0].label  # X-axis label
+        config["y_label"]   = selected_hist.axes[1].label  # Y-axis label
+
+    else:
+        config["values"]     = selected_hist.values().tolist()
+        config["variances"]  = selected_hist.variances().tolist()
+        config["centers"]    = selected_hist.axes[0].centers.tolist()
+        config["edges"]      = selected_hist.axes[0].edges.tolist()
+        config["x_label"]    = selected_hist.axes[0].label
+        config["under_flow"] = float(selected_hist.view(flow=True)["value"][0])
+        config["over_flow"]  = float(selected_hist.view(flow=True)["value"][-1])
 
     return
 
@@ -727,7 +617,14 @@ def _plot2d_from_dict(plot_data, **kwargs):
     if kwargs.get("debug", False):
         print(f'\t in plot ... kwargs = {kwargs}')
 
-    hist_data = plot_data["hist"]
+    #breakpoint()
+    process = kwargs.get("process")
+    if process in plot_data["hists"]:
+        hist_data = plot_data["hists"][process]
+    elif process in plot_data["stack"]:
+        hist_data = plot_data["stack"][process]
+    else:
+        raise ValueError(f"ERROR {process} not in plot_data")
 
     if kwargs.get("full", False):
         hist_obj_2d = plot_helpers.make_2d_hist(x_edges=hist_data["x_edges"], y_edges=hist_data["y_edges"],
@@ -783,6 +680,7 @@ def get_plot_dict_from_list(cfg, var, cut, region, process, **kwargs):
               f"cut={cut}")
 
     rebin = kwargs.get("rebin", 1)
+    do2d = kwargs.get("do2d", False)
     var_over_ride = kwargs.get("var_over_ride", {})
     label_override = kwargs.get("labels", None)
     year = kwargs.get("year", "RunII")
@@ -833,6 +731,7 @@ def get_plot_dict_from_list(cfg, var, cut, region, process, **kwargs):
 
             add_hist_data(cfg, _process_config,
                           var=var_to_plot, region=region, cut=_cut, rebin=rebin, year=year,
+                          do2d=do2d,
                           debug=kwargs.get("debug", False))
 
             plot_data["hists"][proc_id + _cut + str(ic)] = _process_config
@@ -853,6 +752,7 @@ def get_plot_dict_from_list(cfg, var, cut, region, process, **kwargs):
 
             add_hist_data(cfg, _process_config,
                           var=var_to_plot, region=_reg, cut=cut, rebin=rebin, year=year,
+                          do2d = do2d,
                           debug=kwargs.get("debug", False))
             plot_data["hists"][proc_id + _reg + str(ir)] = _process_config
 
@@ -882,7 +782,7 @@ def get_plot_dict_from_list(cfg, var, cut, region, process, **kwargs):
 
             add_hist_data(cfg, _process_config,
                           var=var_to_plot, region=region, cut=cut, rebin=rebin, year=year,
-                          file_index=iF,
+                          do2d=do2d, file_index=iF,
                           debug=kwargs.get("debug", False))
 
             plot_data["hists"][proc_id + "file" + str(iF)] = _process_config
@@ -906,7 +806,9 @@ def get_plot_dict_from_list(cfg, var, cut, region, process, **kwargs):
 
             add_hist_data(cfg, _process_config,
                           var=var_to_plot, region=region, cut=cut, rebin=rebin, year=year,
+                          do2d=do2d,
                           debug=kwargs.get("debug", False))
+
             plot_data["hists"][_proc_id + str(iP)] = _process_config
 
 
@@ -927,6 +829,7 @@ def get_plot_dict_from_list(cfg, var, cut, region, process, **kwargs):
 
             add_hist_data(cfg, _process_config,
                           var=_var, region=region, cut=cut, rebin=rebin, year=year,
+                          do2d=do2d,
                           debug=kwargs.get("debug", False))
             plot_data["hists"][proc_id + _var + str(iv)] = _process_config
 
@@ -947,6 +850,7 @@ def get_plot_dict_from_list(cfg, var, cut, region, process, **kwargs):
 
             add_hist_data(cfg, _process_config,
                           var=var, region=region, cut=cut, rebin=rebin, year=_year,
+                          do2d=do2d,
                           debug=kwargs.get("debug", False))
             plot_data["hists"][proc_id + _year + str(iy)] = _process_config
 
@@ -1051,6 +955,7 @@ def load_stack_config(stack_config, var, cut, region, **kwargs):
     rebin   = kwargs.get("rebin", 1)
     year    = kwargs.get("year", "RunII")
     debug   = kwargs.get("debug", False)
+    do2d    = kwargs.get("do2d", False)
 
     #
     #  Loop processes in the stack config
@@ -1075,6 +980,7 @@ def load_stack_config(stack_config, var, cut, region, **kwargs):
             #
             add_hist_data(cfg, proc_config,
                           var=var_to_plot, region=region, cut=cut, rebin=rebin, year=year,
+                          do2d=do2d,
                           debug=kwargs.get("debug", False))
 
             stack_dict[_proc_name] = proc_config
@@ -1095,6 +1001,7 @@ def load_stack_config(stack_config, var, cut, region, **kwargs):
                 #
                 add_hist_data(cfg, sum_proc_config,
                               var=var_to_plot, region=region, cut=cut, rebin=rebin, year=year,
+                              do2d=do2d,
                               debug=kwargs.get("debug", False))
 
 
@@ -1169,6 +1076,7 @@ def get_plot_dict_from_config(cfg, var='selJets.pt',
     process = kwargs.get("process", None)
     year    = kwargs.get("year", "RunII")
     rebin   = kwargs.get("rebin", 1)
+    do2d    = kwargs.get("do2d",  False)
     debug   = kwargs.get("debug", False)
 
     # Make process a list if it exits and isnt one already
@@ -1221,6 +1129,7 @@ def get_plot_dict_from_config(cfg, var='selJets.pt',
         #
         add_hist_data(cfg, proc_config,
                       var=var_to_plot, region=region, cut=cut, rebin=rebin, year=year,
+                      do2d=do2d,
                       debug=kwargs.get("debug", False))
         plot_data["hists"][_proc_name] = proc_config
 
@@ -1246,25 +1155,6 @@ def get_plot_dict_from_config(cfg, var='selJets.pt',
     return plot_data
 
 
-def get_plot2d_dict_from_config(cfg, var, cut, region, process, **kwargs):
-
-    process_config = copy.deepcopy(plot_helpers.get_value_nested_dict(cfg.plotConfig, process))
-
-    add_hist2d_data(cfg, process_config,
-                    var=var,   region=region, cut=cut, rebin=1, year=kwargs.get("year","RunII"),
-                    debug=kwargs.get("debug", False))
-
-
-    plot_data = {}
-    plot_data["var"] = var
-    plot_data["is_2d_hist"] = True
-    plot_data["hist"] = process_config
-    plot_data["kwargs"] = kwargs
-    plot_data["cut"] = cut
-    plot_data["region"] = region
-    plot_data["process"] = process
-
-    return plot_data
 
 
 
@@ -1315,7 +1205,19 @@ def make2DPlot(cfg, process, var='selJets.pt',
         'rebin'    : int (1),
     """
 
-    plot_data = get_plot2d_dict_from_config(cfg, var, cut, region, process, **kwargs)
+    year    = kwargs.get("year", "RunII")
+    debug   = kwargs.get("debug", False)
+    if debug: print(f"In make2DPlot kwargs={kwargs}")
+
+    if (type(cut) is list) or (type(region) is list) or (len(cfg.hists) > 1 and not cfg.combine_input_files) or (type(var) is list) or (type(process) is list) or (type(year) is list):
+        try:
+            plot_data =  get_plot_dict_from_list(cfg, var, cut, region, process, **kwargs)
+            return make_plot_2d_from_dict(plot_data)
+        except ValueError as e:
+            raise ValueError(e)
+
+
+    plot_data = get_plot_dict_from_config(cfg, var, cut, region, process=process, do2d=True, **kwargs)
 
     #
     # Make the plot
