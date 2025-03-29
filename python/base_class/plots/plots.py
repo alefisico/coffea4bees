@@ -617,50 +617,107 @@ def _plot2d_from_dict(plot_data, **kwargs):
     if kwargs.get("debug", False):
         print(f'\t in plot ... kwargs = {kwargs}')
 
-    #breakpoint()
-    process = kwargs.get("process")
-    if process in plot_data["hists"]:
-        hist_data = plot_data["hists"][process]
-    elif process in plot_data["stack"]:
-        hist_data = plot_data["stack"][process]
-    else:
-        raise ValueError(f"ERROR {process} not in plot_data")
 
-    if kwargs.get("full", False):
-        hist_obj_2d = plot_helpers.make_2d_hist(x_edges=hist_data["x_edges"], y_edges=hist_data["y_edges"],
-                                                values=hist_data["values"],   variances=hist_data["variances"],
-                                                x_label=hist_data["x_label"], y_label=hist_data["y_label"])
+    if len(plot_data["ratio"]):
 
-        fig = plt.figure()   # figsize=(size,size/_phi))
-        #fig.add_axes((0.1, 0.15, 0.85, 0.8))
+        #
+        # Plot ratios
+        #
+        key_iter = iter(plot_data["hists"])
+        num_key = next(key_iter)
+        num_hist_data = plot_data["hists"][num_key]
 
-        # https://github.com/scikit-hep/hist/blob/main/src/hist/plot.py
-        val = hist_obj_2d.plot2d_full(
-            main_cmap="jet",
-            #top_ls="--",
-            top_color="k",
-            top_lw=2,
-            #side_ls=":",
-            side_lw=2,
-            side_color="k",
-        )
-    else:
+        den_key = next(key_iter)
+        den_hist_data = plot_data["hists"][den_key]
+
+        ratio_key = next(iter(plot_data["ratio"]))
+
         # Mask 0s
-        hd = np.array(hist_data["values"])
+        hd = np.array(plot_data["ratio"][ratio_key]["ratio"])
         hd[hd < 0.001] = np.nan
 
-        hist_obj_2d = plot_helpers.make_2d_hist(x_edges=hist_data["x_edges"], y_edges=hist_data["y_edges"],
-                                                values=hd,   variances=hist_data["variances"],
-                                                x_label=hist_data["x_label"], y_label=hist_data["y_label"])
+        hist_obj_2d = plot_helpers.make_2d_hist(x_edges=num_hist_data["x_edges"], y_edges=num_hist_data["y_edges"],
+                                                values=hd,   variances=num_hist_data["variances"],
+                                                x_label=num_hist_data["x_label"], y_label=num_hist_data["y_label"])
+
+        scale = 2
+        fig = plt.figure(figsize=(10*scale, 6*scale))
+        gs = fig.add_gridspec(2, 2, width_ratios=[2, 1], height_ratios=[1, 1], wspace=0.3, hspace=0.4)
+        ax_big = fig.add_subplot(gs[:, 0])
+        #fig = plt.figure()   # figsize=(size,size/_phi))
+        #fig.add_axes((0.1, 0.15, 0.85, 0.8))
+        hist_obj_2d.plot2d(cmap="turbo", cmin=kwargs.get("rlim",[0,2])[0], cmax=kwargs.get("rlim",[0,2])[1])
 
 
-        fig = plt.figure()   # figsize=(size,size/_phi))
-        fig.add_axes((0.1, 0.15, 0.85, 0.8))
-        hist_obj_2d.plot2d(cmap="turbo")
+        ax_top_right = fig.add_subplot(gs[0, 1])
 
-    if kwargs.get("plot_contour", False): plot_border_SR()
-    if kwargs.get("plot_leadst_lines", False): plot_leadst_lines()
-    if kwargs.get("plot_sublst_lines", False): plot_sublst_lines()
+        num_hd = np.array(num_hist_data["values"])
+        num_hd[num_hd < 0.001] = np.nan
+
+        num_hist_obj_2d = plot_helpers.make_2d_hist(x_edges=num_hist_data["x_edges"], y_edges=num_hist_data["y_edges"],
+                                                    values=num_hd,   variances=num_hist_data["variances"],
+                                                    x_label=num_hist_data["x_label"], y_label=num_hist_data["y_label"],
+                                                    )
+
+        num_hist_obj_2d.plot2d(cmap="turbo")
+
+        ax_bottom_right = fig.add_subplot(gs[1, 1])
+        den_hd = np.array(den_hist_data["values"])
+        den_hd[den_hd < 0.001] = np.nan
+
+        den_hist_obj_2d = plot_helpers.make_2d_hist(x_edges=den_hist_data["x_edges"], y_edges=den_hist_data["y_edges"],
+                                                    values=den_hd,   variances=den_hist_data["variances"],
+                                                    x_label=den_hist_data["x_label"], y_label=den_hist_data["y_label"])
+
+        den_hist_obj_2d.plot2d(cmap="turbo")
+        #plt.tight_layout()
+
+    else:
+
+        if len(plot_data["hists"]):
+            key = next(iter(plot_data["hists"]))
+            hist_data = plot_data["hists"][key]
+        elif len(plot_data["stack"]):
+            key = next(iter(plot_data["stack"]))
+            hist_data = plot_data["stack"][key]
+        else:
+            raise ValueError(f"ERROR {process} not in plot_data")
+
+        if kwargs.get("full", False):
+            hist_obj_2d = plot_helpers.make_2d_hist(x_edges=hist_data["x_edges"], y_edges=hist_data["y_edges"],
+                                                    values=hist_data["values"],   variances=hist_data["variances"],
+                                                    x_label=hist_data["x_label"], y_label=hist_data["y_label"])
+
+            fig = plt.figure()   # figsize=(size,size/_phi))
+            #fig.add_axes((0.1, 0.15, 0.85, 0.8))
+
+            # https://github.com/scikit-hep/hist/blob/main/src/hist/plot.py
+            val = hist_obj_2d.plot2d_full(
+                main_cmap="jet",
+                #top_ls="--",
+                top_color="k",
+                top_lw=2,
+                #side_ls=":",
+                side_lw=2,
+                side_color="k",
+            )
+        else:
+            # Mask 0s
+            hd = np.array(hist_data["values"])
+            hd[hd < 0.001] = np.nan
+
+            hist_obj_2d = plot_helpers.make_2d_hist(x_edges=hist_data["x_edges"], y_edges=hist_data["y_edges"],
+                                                    values=hd,   variances=hist_data["variances"],
+                                                    x_label=hist_data["x_label"], y_label=hist_data["y_label"])
+
+
+            fig = plt.figure()   # figsize=(size,size/_phi))
+            fig.add_axes((0.1, 0.15, 0.85, 0.8))
+            hist_obj_2d.plot2d(cmap="turbo")
+
+        if kwargs.get("plot_contour", False): plot_border_SR()
+        if kwargs.get("plot_leadst_lines", False): plot_leadst_lines()
+        if kwargs.get("plot_sublst_lines", False): plot_sublst_lines()
 
     ax = fig.gca()
 
@@ -862,38 +919,62 @@ def get_plot_dict_from_list(cfg, var, cut, region, process, **kwargs):
 
     if kwargs.get("doRatio", kwargs.get("doratio", False)):
 
-        hist_keys = list(plot_data["hists"].keys())
-        den_key = hist_keys.pop(0)
+        if do2d:
+            hist_keys = list(plot_data["hists"].keys())
+            den_key = hist_keys.pop(0)
 
-        denValues  = np.array(plot_data["hists"][den_key]["values"])
-        denVars    = plot_data["hists"][den_key]["variances"]
-        denCenters = plot_data["hists"][den_key]["centers"]
+            denValues  = np.array(plot_data["hists"][den_key]["values"])
+            denVars    = plot_data["hists"][den_key]["variances"]
+            denValues[denValues == 0] = _epsilon
 
-        denValues[denValues == 0] = _epsilon
+            #
+            #  for 2d only do one ratio
+            #
+            num_key = hist_keys.pop(0)
+            numValues  = np.array(plot_data["hists"][num_key]["values"])
+            numVars    = plot_data["hists"][num_key]["variances"]
 
-        # Bkg error band
-
-        band_ratios = np.ones(len(denCenters))
-        band_uncert  = np.sqrt(denVars * np.power(denValues, -2.0))
-        band_config = {"color": "k",  "type": "band", "hatch": "\\\\",
-                       "ratio":band_ratios.tolist(),
-                       "error":band_uncert.tolist(),
-                       "centers": list(denCenters)}
-        plot_data["ratio"]["bkg_band"] = band_config
-
-        for iH, _num_key in enumerate(hist_keys):
-
-            numValues  = np.array(plot_data["hists"][_num_key]["values"])
-            numVars    = plot_data["hists"][_num_key]["variances"]
-
-            ratio_config = {"color": _colors[iH],
-                            "marker": "o",
-                            }
+            ratio_config = {}
             ratios, ratio_uncert = plot_helpers.makeRatio(numValues, numVars, denValues, denVars, **kwargs)
             ratio_config["ratio"] = ratios.tolist()
             ratio_config["error"] = ratio_uncert.tolist()
-            ratio_config["centers"] = denCenters
-            plot_data["ratio"][f"ratio_{_num_key}_to_{den_key}_{iH}"] = ratio_config
+            plot_data["ratio"][f"ratio_{num_key}_to_{den_key}"] = ratio_config
+
+
+        else:
+
+            hist_keys = list(plot_data["hists"].keys())
+            den_key = hist_keys.pop(0)
+
+            denValues  = np.array(plot_data["hists"][den_key]["values"])
+            denVars    = plot_data["hists"][den_key]["variances"]
+            denCenters = plot_data["hists"][den_key]["centers"]
+
+            denValues[denValues == 0] = _epsilon
+
+            # Bkg error band
+
+            band_ratios = np.ones(len(denCenters))
+            band_uncert  = np.sqrt(denVars * np.power(denValues, -2.0))
+            band_config = {"color": "k",  "type": "band", "hatch": "\\\\",
+                           "ratio":band_ratios.tolist(),
+                           "error":band_uncert.tolist(),
+                           "centers": list(denCenters)}
+            plot_data["ratio"]["bkg_band"] = band_config
+
+            for iH, _num_key in enumerate(hist_keys):
+
+                numValues  = np.array(plot_data["hists"][_num_key]["values"])
+                numVars    = plot_data["hists"][_num_key]["variances"]
+
+                ratio_config = {"color": _colors[iH],
+                                "marker": "o",
+                                }
+                ratios, ratio_uncert = plot_helpers.makeRatio(numValues, numVars, denValues, denVars, **kwargs)
+                ratio_config["ratio"] = ratios.tolist()
+                ratio_config["error"] = ratio_uncert.tolist()
+                ratio_config["centers"] = denCenters
+                plot_data["ratio"][f"ratio_{_num_key}_to_{den_key}_{iH}"] = ratio_config
 
     return plot_data
 
@@ -1101,6 +1182,7 @@ def get_plot_dict_from_config(cfg, var='selJets.pt',
     plot_data["var"] = var
     plot_data["cut"] = cut
     plot_data["region"] = region
+    plot_data["process"] = process
     plot_data["kwargs"] = kwargs
 
     #hists = []
@@ -1211,7 +1293,7 @@ def make2DPlot(cfg, process, var='selJets.pt',
 
     if (type(cut) is list) or (type(region) is list) or (len(cfg.hists) > 1 and not cfg.combine_input_files) or (type(var) is list) or (type(process) is list) or (type(year) is list):
         try:
-            plot_data =  get_plot_dict_from_list(cfg, var, cut, region, process, **kwargs)
+            plot_data =  get_plot_dict_from_list(cfg, var, cut, region, process, do2d=True, **kwargs)
             return make_plot_2d_from_dict(plot_data)
         except ValueError as e:
             raise ValueError(e)
