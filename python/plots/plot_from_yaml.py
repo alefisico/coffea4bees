@@ -2,7 +2,7 @@ import yaml
 import sys
 import os
 sys.path.insert(0, os.getcwd())
-from base_class.plots.plots import make_plot_from_dict
+from base_class.plots.helpers_make_plot import make_plot_from_dict
 import argparse
 
 parser = argparse.ArgumentParser(description='plots', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
