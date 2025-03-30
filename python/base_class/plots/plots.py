@@ -979,11 +979,13 @@ def get_plot_dict_from_list(cfg, var, cut, region, process, **kwargs):
     return plot_data
 
 
-def make_plot_from_dict(plot_data):
+def make_plot_from_dict(plot_data, *, do2d=False):
     kwargs = plot_data["kwargs"]
-
-    fig, main_ax, ratio_ax = _plot_from_dict(plot_data, **kwargs)
-    ax = (main_ax, ratio_ax)
+    if do2d:
+        fig, ax = _plot2d_from_dict(plot_data, **kwargs)
+    else:
+        fig, main_ax, ratio_ax = _plot_from_dict(plot_data, **kwargs)
+        ax = (main_ax, ratio_ax)
 
     if kwargs.get("outputFolder", None):
 
@@ -998,27 +1000,6 @@ def make_plot_from_dict(plot_data):
 
         if kwargs.get("yscale", None) == "log":
             file_name += "_logy"
-
-        plot_helpers.savefig(fig, file_name, *output_path)
-
-        if kwargs.get("write_yaml", False):
-            plot_helpers.save_yaml(plot_data, file_name, *output_path)
-
-    return fig, ax
-
-
-def make_plot_2d_from_dict(plot_data):
-    kwargs = plot_data["kwargs"]
-    fig, ax = _plot2d_from_dict(plot_data, **kwargs)
-
-    #
-    # Save Fig
-    #
-    if kwargs.get("outputFolder", None):
-
-        # these get combined with "/"
-        output_path = [kwargs.get("outputFolder"), kwargs.get("year","RunII"), plot_data["cut"], plot_data["tagName"], plot_data["region"], plot_data.get("process","")]
-        file_name = plot_data["var"]
 
         plot_helpers.savefig(fig, file_name, *output_path)
 
@@ -1182,7 +1163,7 @@ def get_plot_dict_from_config(cfg, var='selJets.pt',
     plot_data["var"] = var
     plot_data["cut"] = cut
     plot_data["region"] = region
-    plot_data["process"] = process
+    #plot_data["process"] = process
     plot_data["kwargs"] = kwargs
 
     #hists = []
@@ -1230,7 +1211,7 @@ def get_plot_dict_from_config(cfg, var='selJets.pt',
     #
     #  Config Ratios
     #
-    if kwargs.get("doRatio", kwargs.get("doratio", False)):
+    if kwargs.get("doRatio", kwargs.get("doratio", False)) and not do2d:
         ratio_config = cfg.plotConfig["ratios"]
         add_ratio_plots(ratio_config, plot_data, **kwargs)
 
@@ -1294,7 +1275,7 @@ def make2DPlot(cfg, process, var='selJets.pt',
     if (type(cut) is list) or (type(region) is list) or (len(cfg.hists) > 1 and not cfg.combine_input_files) or (type(var) is list) or (type(process) is list) or (type(year) is list):
         try:
             plot_data =  get_plot_dict_from_list(cfg, var, cut, region, process, do2d=True, **kwargs)
-            return make_plot_2d_from_dict(plot_data)
+            return make_plot_from_dict(plot_data, do2d=True)
         except ValueError as e:
             raise ValueError(e)
 
@@ -1304,7 +1285,7 @@ def make2DPlot(cfg, process, var='selJets.pt',
     #
     # Make the plot
     #
-    return make_plot_2d_from_dict(plot_data)
+    return make_plot_from_dict(plot_data, do2d=True)
 
 
 def load_hists(input_hists):
