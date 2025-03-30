@@ -1,11 +1,12 @@
 hists:
-        syn_v0:
-                process: syn_v0
+        syn_vXXX:
+                process: syn_vXXX
                 tag: fourTag
                 year: RunII
-                label: Synthetic Data (0)
+                label: Synthetic Data (XXX)
                 fillcolor: k
                 edgecolor: k
+                nSamples: 16
 
 #        syn_v1:
 #                process: syn_v1
