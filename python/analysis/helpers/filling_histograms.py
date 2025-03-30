@@ -28,13 +28,12 @@ def filling_nominal_histograms(selev, JCM,
                                ):
 
     fill = Fill(process=processName, year=year, weight="weight")
-
-    tag_list = [13, 14] if run_lowpt_selection else [3, 4]   # 3 / 4/ Other
-
+    
+    tag_list = [13, 14] if run_lowpt_selection else ["threeTag", "fourTag"]
     hist = Collection( process=[processName],
                         year=[year],
                         tag=tag_list,
-                        region=[2, 1],  # SR / SB / Other
+                        region=['SR', "SB"],
                         **dict((s, ...) for s in histCuts)
                         )
 
@@ -154,12 +153,13 @@ def filling_nominal_histograms(selev, JCM,
     #
     # fill histograms
     #
+
     # fill.cache(selev)
     fill(selev, hist)
 
     if run_dilep_ttbar_crosscheck:
 
-        fill_ttbar = Fill(process=processName, year=year, weight="weight")
+        fill_ttbar = Fill(process=processName, year=year, weight="weight_noJCM_noFvT")
         hist_ttbar = Collection( process=[processName],
                             year=[year],
                             **dict((s, ...) for s in ['passDilepTtbar'])
@@ -181,12 +181,12 @@ def filling_syst_histograms(selev, weights, analysis_selections,
                             histCuts: list = []
                             ):
 
-    shift_name = "nominal" if not shift_name else shift_name
+    shift_name = "nominal" if not shift_name else shift_name 
     hist_SvB = Collection( process=[processName],
                             year=[year],
                             variation=[shift_name],
-                            tag=[4],  # 3 / 4/ Other
-                            region=[2],  # SR / SB / Other
+                            tag=["threeTag", "fourTag"],
+                            region=['SR', "SB"],
                             **dict((s, ...) for s in histCuts),
                             )
 

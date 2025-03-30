@@ -77,16 +77,26 @@ def load_config(metadata):
     """
     plotConfig = yaml.safe_load(open(metadata, 'r'))
 
-    #
-    #  Make two way code mapping:
-    #    ie: 3 mapts to  "threeTag" and "threeTag" maps to 3
-    for k, v in plotConfig["codes"]["tag"].copy().items():
-        plotConfig["codes"]["tag"][v] = k
-
-    for k, v in plotConfig["codes"]["region"].copy().items():
-        if type(v) is list:
-            continue
-        plotConfig["codes"]["region"][v] = k
+    # for backwards compatibility
+    if "codes" not in plotConfig:
+        plotConfig['codes'] = {
+            'region' : {
+                'SR': 2,
+                'SB': 1,
+                'other': 0,
+                2: 'SR',
+                1: 'SB',
+                0: 'other',
+            },
+            'tag' : {
+                'threeTag': 3,
+                'fourTag': 4,
+                'other': 0,
+                3: 'threeTag',
+                4: 'fourTag',
+                0: 'other',
+            },
+        }
 
 
     #
@@ -167,42 +177,37 @@ def print_list_debug_info(process, tag, cut, region):
 #
 def get_hist_data(this_process, cfg, config, var, region, cut, rebin, year, do2d=False, file_index=None, debug=False):
 
-    codes = cfg.plotConfig["codes"]
-
-    tag_code = codes["tag"][config["tag"]]
-
     if year in  ["RunII", "Run2", "Run3", "RunIII"]:
         year     = sum
 
-
     if debug:
         print(f" hist process={this_process}, "
-              f"tag={tag_code}, year={year}, var={var}")
-
+              f"tag={config.get('tag', None)}, year={year}, var={var}")
 
     hist_opts = {"process": this_process,
                  "year":  year,
-                 "tag":   hist.loc(tag_code),
+                 "tag":   config.get("tag", None),
+                 "region": region
                  }
 
-
-    if (not region  == "sum") and (type(codes["region"][region]) is list):
-        region_dict = {"region":  [hist.loc(r) for r in codes["region"][region]]}
-    else:
-        if region == "sum":
-            region_dict = {"region":  sum}
-        else:
-            region_dict = {"region":  hist.loc(codes["region"][region])}
-
+    if region == "sum":
+        hist_opts["region"] = sum
 
     cut_dict = plot_helpers.get_cut_dict(cut, cfg.cutList)
 
-    hist_opts = hist_opts | region_dict | cut_dict
+    hist_opts = hist_opts | cut_dict
 
     hist_obj = None
     if len(cfg.hists) > 1 and not cfg.combine_input_files:
         if file_index is None:
             print("ERROR must give file_index if running with more than one input file without using the  --combine_input_files option")
+
+        common, unique_to_dict = plot_helpers.compare_dict_keys_with_list(hist_opts, cfg.hists[file_index]['categories'])
+
+        if len(unique_to_dict) > 0:
+            for _key in unique_to_dict:
+                hist_opts.pop(_key)
+
         hist_obj = cfg.hists[file_index]['hists'][var]
 
         if "variation" in cfg.hists[file_index]["categories"]:
@@ -210,6 +215,13 @@ def get_hist_data(this_process, cfg, config, var, region, cut, rebin, year, do2d
 
     else:
         for _input_data in cfg.hists:
+
+            common, unique_to_dict = plot_helpers.compare_dict_keys_with_list(hist_opts, _input_data['categories'])
+
+            if len(unique_to_dict) > 0:
+                for _key in unique_to_dict:
+                    hist_opts.pop(_key)
+
             if var in _input_data['hists'] and this_process in _input_data['hists'][var].axes["process"]:
 
                 if "variation" in _input_data["categories"]:
@@ -219,6 +231,16 @@ def get_hist_data(this_process, cfg, config, var, region, cut, rebin, year, do2d
 
     if hist_obj is None:
         raise ValueError(f"ERROR did not find var {var} with process {this_process} in inputs")
+
+    ## for backwards compatibility
+    for axis in hist_obj.axes:
+        if (axis.name == "tag") and isinstance(axis, hist.axis.IntCategory):
+            hist_opts['tag'] = hist.loc(cfg.plotConfig["codes"]["tag"][config["tag"]])
+        if (axis.name == "region") and isinstance(axis, hist.axis.IntCategory):
+            if isinstance(hist_opts['region'], list):
+                hist_opts['region'] = [ hist.loc(cfg.plotConfig["codes"]["region"][i]) for i in hist_dict['region'] ]
+            elif region != "sum":
+                hist_opts['region'] = hist.loc(cfg.plotConfig["codes"]["region"][region])
 
     #
     #  Add rebin Options
@@ -992,15 +1014,21 @@ def make_plot_from_dict(plot_data, *, do2d=False):
         if type(plot_data.get("process","")) is list:
             tagName = "_vs_".join(plot_data["process"])
         else:
-            tagName = plot_helpers.get_value_nested_dict(plot_data,"tag")
+            try:
+                tagName = plot_helpers.get_value_nested_dict(plot_data,"tag")
+                if isinstance(tagName, hist.loc):
+                    tagName = str(tagName.value)
+            except ValueError:
+                pass
 
         # these get combined with "/"
-        output_path = [kwargs.get("outputFolder"), kwargs.get("year","RunII"), plot_data["cut"], tagName, plot_data["region"], plot_data.get("process","")]
+        try:
+            output_path = [kwargs.get("outputFolder"), kwargs.get("year","RunII"), plot_data["cut"], tagName, plot_data["region"], plot_data.get("process","")]
+        except NameError:
+            output_path = [kwargs.get("outputFolder")]
         file_name = plot_data.get("file_name",plot_data["var"])
-
         if kwargs.get("yscale", None) == "log":
             file_name += "_logy"
-
         plot_helpers.savefig(fig, file_name, *output_path)
 
         if kwargs.get("write_yaml", False):
@@ -1150,7 +1178,7 @@ def get_plot_dict_from_config(cfg, var='selJets.pt',
     #
     var_over_ride = kwargs.get("var_over_ride", {})
 
-    if cut not in cfg.cutList:
+    if cut and cut not in cfg.cutList:
         raise AttributeError(f"{cut} not in cutList {cfg.cutList}")
 
     #
@@ -1185,7 +1213,7 @@ def get_plot_dict_from_config(cfg, var='selJets.pt',
         #
         #  Add name to config
         #
-        proc_config["name"] = _proc_name
+        proc_config["name"] = _proc_name  ### REMOVE COMMENT
 
         var_to_plot = var_over_ride.get(_proc_name, var)
 
@@ -1250,6 +1278,10 @@ def makePlot(cfg, var='selJets.pt',
         except ValueError as e:
             raise ValueError(e)
 
+    elif not cut:
+        plot_data = get_plot_dict_from_config(cfg, var, None, None, **kwargs)
+        return make_plot_from_dict(plot_data)
+
     plot_data = get_plot_dict_from_config(cfg, var, cut, region, **kwargs)
     return make_plot_from_dict(plot_data)
 
@@ -1274,6 +1306,7 @@ def make2DPlot(cfg, process, var='selJets.pt',
     debug   = kwargs.get("debug", False)
     if debug: print(f"In make2DPlot kwargs={kwargs}")
 
+
     if (type(cut) is list) or (type(region) is list) or (len(cfg.hists) > 1 and not cfg.combine_input_files) or (type(var) is list) or (type(process) is list) or (type(year) is list):
         try:
             plot_data =  get_plot_dict_from_list(cfg, var, cut, region, process, do2d=True, **kwargs)
@@ -1281,9 +1314,7 @@ def make2DPlot(cfg, process, var='selJets.pt',
         except ValueError as e:
             raise ValueError(e)
 
-
     plot_data = get_plot_dict_from_config(cfg, var, cut, region, process=process, do2d=True, **kwargs)
-
 
     #
     # Make the plot
@@ -1308,7 +1339,7 @@ def read_axes_and_cuts(hists, plotConfig):
     axisLabels["var"] = hists[0]['hists'].keys()
     var1 = list(hists[0]['hists'].keys())[0]
 
-    for a in hists[0]["hists"][var1].axes:
+    for a in hists[0]['hists'][var1].axes:
         axisName = a.name
         if axisName == var1:
             continue
@@ -1324,12 +1355,7 @@ def read_axes_and_cuts(hists, plotConfig):
 
         for iBin in range(a.extent):
 
-            if axisName in plotConfig["codes"]:
-                if a.value(iBin) not in plotConfig["codes"][axisName]:
-                    continue
-                value = plotConfig["codes"][axisName][a.value(iBin)]
-            else:
-                value = a.value(iBin)
+            value = a.value(iBin)
 
             axisLabels[axisName].append(value)
 

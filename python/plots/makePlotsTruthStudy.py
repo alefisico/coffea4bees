@@ -58,5 +58,5 @@ if __name__ == '__main__':
     cfg.fileLabels = args.fileLabels
     cfg.axisLabels, cfg.cutList = read_axes_and_cuts(cfg.hists, cfg.plotConfig)
 
-    #varList = [ h for h in cfg.hists[0]['hists'].keys() if not h in args.skip_hists ]
+    #varList = [ h for h in cfg.hists[0].keys() if not h in args.skip_hists ]
     doPlots(debug=args.debug)

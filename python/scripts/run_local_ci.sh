@@ -31,7 +31,7 @@ else
 fi
 
 # Search for the job name and assign the output list it belongs to a variable
-OUTPUT_LIST=$(awk -v job="/$JOB_NAME" '
+OUTPUT_LIST=$(awk -v job="$JOB_NAME" '
   BEGIN { found=0; }
   /^output_/ { in_list=1; output_list=$1; next; }
   in_list && /^\]/ { in_list=0; }
@@ -46,7 +46,8 @@ else
 
   sed -e "s/input: outputs/input: $OUTPUT_LIST/" "$SNAKEFILE" > /tmp/Snakefile_testCI
 
-  ./run_container snakemake --snakefile /tmp/Snakefile_testCI --use-apptainer --printshellcmds --keep-incomplete
+  pwd -LP
+  ./run_container snakemake --snakefile /tmp/Snakefile_testCI --use-apptainer --printshellcmds --keep-incomplete --until $JOB_NAME --cores 1
 
 fi
 

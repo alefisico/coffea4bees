@@ -1,7 +1,7 @@
 #!/bin/bash
 source scripts/set_initial_variables.sh --output ${1:-"output/"}
 
-INPUT_DIR="${DEFAULT_DIR}analysis_test_job"
+INPUT_DIR="${DEFAULT_DIR}analysis_merge_test_job"
 OUTPUT_DIR="${DEFAULT_DIR}baseclass_test_job"
 echo "############### Checking and creating output directory"
 if [ ! -d $OUTPUT_DIR ]; then

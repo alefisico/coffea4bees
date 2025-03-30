@@ -61,17 +61,6 @@ ratios:
                 color: k
                 marker: "o"
 
-codes:
-   region:
-      SR: 2
-      SB: 1
-      other: 0
-      sum: "sum"
-   tag:
-      threeTag: 3
-      fourTag: 4
-      other: 0
-
 doRatio:
     1
 
