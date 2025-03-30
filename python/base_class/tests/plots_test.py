@@ -4,7 +4,8 @@ import yaml
 import sys
 import os
 sys.path.insert(0, os.getcwd())
-from base_class.plots.plots import makePlot, load_config, load_hists, read_axes_and_cuts, get_values_variances_centers_from_dict
+from base_class.plots.plots import makePlot, load_config, load_hists, read_axes_and_cuts
+from base_class.plots.helpers_make_plot_dict import get_values_variances_centers_from_dict
 import base_class.plots.helpers as plot_helpers
 import sys
 import base_class.plots.iPlot_config as cfg
