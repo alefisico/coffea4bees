@@ -6,6 +6,7 @@ from hist.intervals import ratio_uncertainty
 from base_class.physics.di_higgs import Coupling, ggF
 
 epsilon = 0.001
+phi = (1 + np.sqrt(5)) / 2
 
 colors = ["xkcd:black",  "xkcd:red",    "xkcd:off green", "xkcd:blue",
           "xkcd:orange", "xkcd:violet", "xkcd:grey",      "xkcd:pink" ,
