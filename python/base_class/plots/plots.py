@@ -1163,7 +1163,9 @@ def get_plot_dict_from_config(cfg, var='selJets.pt',
     plot_data["var"] = var
     plot_data["cut"] = cut
     plot_data["region"] = region
-    #plot_data["process"] = process
+    if do2d:
+        plot_data["process"] = process[0]
+        plot_data["is_2d_hist"] = True
     plot_data["kwargs"] = kwargs
 
     #hists = []
@@ -1281,6 +1283,7 @@ def make2DPlot(cfg, process, var='selJets.pt',
 
 
     plot_data = get_plot_dict_from_config(cfg, var, cut, region, process=process, do2d=True, **kwargs)
+
 
     #
     # Make the plot
