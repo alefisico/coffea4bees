@@ -1317,7 +1317,7 @@ def make2DPlot(cfg, process, var='selJets.pt',
         except ValueError as e:
             raise ValueError(e)
 
-    plot_data = get_plot_dict_from_config(cfg, var, cut, region, process=process, do2d=True, **kwargs)
+    plot_data = get_plot_dict_from_config(cfg=cfg, var=var, cut=cut, region=region, process=process, do2d=True, **kwargs)
 
     #
     # Make the plot
