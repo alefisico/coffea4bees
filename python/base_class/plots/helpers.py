@@ -5,7 +5,14 @@ import yaml
 from hist.intervals import ratio_uncertainty
 from base_class.physics.di_higgs import Coupling, ggF
 
+epsilon = 0.001
 
+colors = ["xkcd:black",  "xkcd:red",    "xkcd:off green", "xkcd:blue",
+          "xkcd:orange", "xkcd:violet", "xkcd:grey",      "xkcd:pink" ,
+          "xkcd:pale blue",
+          "xkcd:black",  "xkcd:red",    "xkcd:off green", "xkcd:blue",
+          "xkcd:orange", "xkcd:violet", "xkcd:grey",      "xkcd:pink" ,
+          ]
 
 
 def get_value_nested_dict(nested_dict, target_key):
