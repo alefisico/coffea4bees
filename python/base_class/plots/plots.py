@@ -646,7 +646,7 @@ def _plot2d_from_dict(plot_data, **kwargs):
         ax_big = fig.add_subplot(gs[:, 0])
         #fig = plt.figure()   # figsize=(size,size/_phi))
         #fig.add_axes((0.1, 0.15, 0.85, 0.8))
-        hist_obj_2d.plot2d(cmap="turbo", cmin=kwargs.get("rlim",[0,2])[0], cmax=kwargs.get("rlim",[0,2])[1])
+        hist_obj_2d.plot2d(cmap="turbo", cmin=kwargs.get("rlim",[None,None])[0], cmax=kwargs.get("rlim",[None,None])[1])
 
 
         ax_top_right = fig.add_subplot(gs[0, 1])
