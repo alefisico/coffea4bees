@@ -169,7 +169,7 @@ def create_plot_dicts(counts_ave: np.ndarray, bin_edges: np.ndarray, bin_centers
     ave_dict_naive.update({
         "label": "Average (Naive Uncertainties)",
         "edgecolor": "k",
-        "fillcolor": "#FFDF7Fff",
+        "fillcolor": "k",
         "values": counts_ave,
         "variances": naive_error * naive_error
     })
