@@ -105,7 +105,7 @@ class iPlotTestCase(unittest.TestCase):
         args["var"] = "v4j.mass"
         invalid_region = {"region": "InvalidRegion"}
         print(f"plot with {args | invalid_region}")
-        self.assertRaises(KeyError, plot, **(args | invalid_region))
+        self.assertRaises(ValueError, plot, **(args | invalid_region))
 
         invalid_cut    = {"cut": "InvalidCut"}
         print(f"plot with {args | invalid_cut}")
