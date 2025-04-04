@@ -1,62 +1,135 @@
 import matplotlib.pyplot as plt
 import mplhep as hep  # HEP (CMS) extensions/styling on top of mpl
-plt.style.use([hep.style.CMS, {'font.size': 16}])
 import matplotlib.patches as mpatches
 import base_class.plots.helpers as plot_helpers
 import hist
 import numpy as np
+from typing import Dict, Any, Optional, Tuple, List
 
+# Plot styling configuration
+plt.style.use([hep.style.CMS, {'font.size': 16}])
 
+# Constants for plotting
+DEFAULT_FIGURE_SIZE = 7
+DEFAULT_LINEWIDTH = 2
+DEFAULT_MARKERSIZE = 12
+DEFAULT_COLOR = 'red'
+DEFAULT_LINESTYLE = '-'
 
-def plot_leadst_lines():
+# Constants for border plotting
+BORDER_COLOR = 'orangered'
+BORDER_LINESTYLE = 'dashed'
+BORDER_LINEWIDTH = 5
 
-    def func4(x):
+# Constants for ratio plot configuration
+RATIO_GRID_CONFIG = {
+    'hspace': 0.06,
+    'height_ratios': [3, 1],
+    'left': 0.1,
+    'right': 0.95,
+    'top': 0.95,
+    'bottom': 0.1
+}
+
+# Constants for standard plot configuration
+STANDARD_AXES_CONFIG = {
+    'left': 0.1,
+    'bottom': 0.15,
+    'width': 0.85,
+    'height': 0.8
+}
+
+def plot_leadst_lines() -> None:
+    """
+    Plot leading and subleading lines for visualization.
+    
+    This function plots two mathematical functions:
+    1. f(x) = (360/x) - 0.5
+    2. f(x) = max(1.5, (650/x) + 0.5)
+    
+    The lines are plotted in red with a solid line style and default linewidth.
+    """
+    def func4(x: float) -> float:
+        """Calculate the first function value."""
         return (360/x) - 0.5
 
-    def func6(x):
+    def func6(x: float) -> float:
+        """Calculate the second function value."""
         return max(1.5, (650/x) + 0.5)
 
     # Plot func4 as a line plot
     x_func4 = np.linspace(100, 1100, 50)
     y_func4 = func4(x_func4)
-    plt.plot(x_func4, y_func4, color='red', linestyle='-', linewidth=2)
+    plt.plot(x_func4, y_func4, 
+             color=DEFAULT_COLOR, 
+             linestyle=DEFAULT_LINESTYLE, 
+             linewidth=DEFAULT_LINEWIDTH)
 
     # Plot func6 as a line plot
     x_func6 = np.linspace(100, 1100, 50)
     y_func6 = [func6(x) for x in x_func6]
-    plt.plot(x_func6, y_func6, color='red', linestyle='-', linewidth=2)
+    plt.plot(x_func6, y_func6, 
+             color=DEFAULT_COLOR, 
+             linestyle=DEFAULT_LINESTYLE, 
+             linewidth=DEFAULT_LINEWIDTH)
 
-def plot_sublst_lines():
-
-    def func4(x):
+def plot_sublst_lines() -> None:
+    """
+    Plot subleading lines for visualization.
+    
+    This function plots two mathematical functions:
+    1. f(x) = (235/x)
+    2. f(x) = max(1.5, (650/x) + 0.7)
+    
+    The lines are plotted in red with a solid line style and default linewidth.
+    """
+    def func4(x: float) -> float:
+        """Calculate the first function value."""
         return (235/x)
 
-    def func6(x):
+    def func6(x: float) -> float:
+        """Calculate the second function value."""
         return max(1.5, (650/x) + 0.7)
 
     # Plot func4 as a line plot
     x_func4 = np.linspace(100, 1100, 50)
     y_func4 = func4(x_func4)
-    plt.plot(x_func4, y_func4, color='red', linestyle='-', linewidth=2)
+    plt.plot(x_func4, y_func4, 
+             color=DEFAULT_COLOR, 
+             linestyle=DEFAULT_LINESTYLE, 
+             linewidth=DEFAULT_LINEWIDTH)
 
     # Plot func6 as a line plot
     x_func6 = np.linspace(100, 1100, 50)
     y_func6 = [func6(x) for x in x_func6]
-    plt.plot(x_func6, y_func6, color='red', linestyle='-', linewidth=2)
+    plt.plot(x_func6, y_func6, 
+             color=DEFAULT_COLOR, 
+             linestyle=DEFAULT_LINESTYLE, 
+             linewidth=DEFAULT_LINEWIDTH)
 
 
-def plot_border_SR():
-    # Define the function
-    def func0(x, y):
+def plot_border_SR() -> None:
+    """
+    Plot the border of the signal region using contour plots.
+    
+    This function creates four contour plots representing the boundaries
+    of the signal region using mathematical functions. The contours are
+    plotted with a dashed orange-red line style.
+    """
+    def func0(x: float, y: float) -> float:
+        """Calculate the first boundary function value."""
         return (((x - 127.5) / (0.1 * x)) ** 2 + ((y - 122.5) / (0.1 * y)) ** 2)
 
-    def func1(x, y):
+    def func1(x: float, y: float) -> float:
+        """Calculate the second boundary function value."""
         return (((x - 127.5) / (0.1 * x)) ** 2 + ((y - 89.18) / (0.1 * y)) ** 2)
 
-    def func2(x, y):
+    def func2(x: float, y: float) -> float:
+        """Calculate the third boundary function value."""
         return (((x - 92.82) / (0.1 * x)) ** 2 + ((y - 122.5) / (0.1 * y)) ** 2)
 
-    def func3(x, y):
+    def func3(x: float, y: float) -> float:
+        """Calculate the fourth boundary function value."""
         return (((x - 92.82) / (0.1 * x)) ** 2 + ((y - 89.18) / (0.1 * y)) ** 2)
 
     # Create a grid of x and y values
@@ -71,10 +144,22 @@ def plot_border_SR():
     Z3 = func3(X, Y)
 
     # Create the plot
-    plt.contour(X, Y, Z0, levels=[1.90*1.90], colors='orangered', linestyles='dashed', linewidths=5)
-    plt.contour(X, Y, Z1, levels=[1.90*1.90], colors='orangered', linestyles='dashed', linewidths=5)
-    plt.contour(X, Y, Z2, levels=[1.90*1.90], colors='orangered', linestyles='dashed', linewidths=5)
-    plt.contour(X, Y, Z3, levels=[2.60*2.60], colors='orangered', linestyles='dashed', linewidths=5)
+    plt.contour(X, Y, Z0, levels=[1.90*1.90], 
+                colors=BORDER_COLOR, 
+                linestyles=BORDER_LINESTYLE, 
+                linewidths=BORDER_LINEWIDTH)
+    plt.contour(X, Y, Z1, levels=[1.90*1.90], 
+                colors=BORDER_COLOR, 
+                linestyles=BORDER_LINESTYLE, 
+                linewidths=BORDER_LINEWIDTH)
+    plt.contour(X, Y, Z2, levels=[1.90*1.90], 
+                colors=BORDER_COLOR, 
+                linestyles=BORDER_LINESTYLE, 
+                linewidths=BORDER_LINEWIDTH)
+    plt.contour(X, Y, Z3, levels=[2.60*2.60], 
+                colors=BORDER_COLOR, 
+                linestyles=BORDER_LINESTYLE, 
+                linewidths=BORDER_LINEWIDTH)
 
 
 def _draw_plot_from_dict(plot_data, **kwargs):
@@ -279,9 +364,10 @@ def _plot_from_dict(plot_data, **kwargs):
                     plt.fill_between([xi - bin_width/2, xi + bin_width/2], yi - err, yi + err,
                                      hatch=ratio_data.get("hatch", "/"),
                                      edgecolor=ratio_data.get("color", "black"),
-                                     facecolor='none',
+                                     facecolor=ratio_data.get("facecolor",'none'),
                                      linewidth=0.0,
-                                     zorder=1)
+                                     zorder=1
+                                     )
 
             else:
                 ratio_ax.errorbar(
