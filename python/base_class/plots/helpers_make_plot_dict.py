@@ -46,90 +46,114 @@ def get_hist_data(*, process: str, cfg: Any, config: Dict, var: str, region: str
         
     Raises:
         ValueError: If histogram data cannot be found
+        TypeError: If input parameters are of incorrect type
+        AttributeError: If required configuration attributes are missing
     """
+    # Input validation
+    if not isinstance(process, str):
+        raise TypeError(f"process must be a string, got {type(process)}")
+    if not isinstance(var, str):
+        raise TypeError(f"var must be a string, got {type(var)}")
+    if not isinstance(region, str):
+        raise TypeError(f"region must be a string, got {type(region)}")
+    if not isinstance(cut, str):
+        raise TypeError(f"cut must be a string, got {type(cut)}")
+    if not isinstance(rebin, int):
+        raise TypeError(f"rebin must be an integer, got {type(rebin)}")
+    if rebin < 1:
+        raise ValueError(f"rebin must be positive, got {rebin}")
 
-    if year in  ["RunII", "Run2", "Run3", "RunIII"]:
-        year     = sum
+    if year in ["RunII", "Run2", "Run3", "RunIII"]:
+        year = sum
 
     if debug:
         print(f" hist process={process}, "
               f"tag={config.get('tag', None)}, year={year}, var={var}")
 
-    hist_opts = {"process": process,
-                 "year":  year,
-                 "tag":   config.get("tag", None),
-                 "region": region
-                 }
+    hist_opts = {
+        "process": process,
+        "year": year,
+        "tag": config.get("tag", None),
+        "region": region
+    }
 
     if region == "sum":
         hist_opts["region"] = sum
 
-    cut_dict = plot_helpers.get_cut_dict(cut, cfg.cutList)
+    try:
+        cut_dict = plot_helpers.get_cut_dict(cut, cfg.cutList)
+    except (AttributeError, KeyError) as e:
+        raise AttributeError(f"Failed to get cut dictionary: {str(e)}")
 
     hist_opts = hist_opts | cut_dict
 
     hist_obj = None
     if len(cfg.hists) > 1 and not cfg.combine_input_files:
         if file_index is None:
-            print("ERROR must give file_index if running with more than one input file without using the  --combine_input_files option")
+            raise ValueError("Must provide file_index when using multiple input files without combine_input_files")
 
-        common, unique_to_dict = plot_helpers.compare_dict_keys_with_list(hist_opts, cfg.hists[file_index]['categories'])
+        try:
+            common, unique_to_dict = plot_helpers.compare_dict_keys_with_list(hist_opts, cfg.hists[file_index]['categories'])
+        except (KeyError, IndexError) as e:
+            raise ValueError(f"Failed to compare dictionary keys: {str(e)}")
 
         if len(unique_to_dict) > 0:
             for _key in unique_to_dict:
                 hist_opts.pop(_key)
 
-        hist_obj = cfg.hists[file_index]['hists'][var]
+        try:
+            hist_obj = cfg.hists[file_index]['hists'][var]
+        except (KeyError, IndexError) as e:
+            raise ValueError(f"Failed to get histogram for var {var}: {str(e)}")
 
         if "variation" in cfg.hists[file_index]["categories"]:
-            hist_opts = hist_opts | {"variation" : "nominal"}
+            hist_opts = hist_opts | {"variation": "nominal"}
 
     else:
         for _input_data in cfg.hists:
-
-            common, unique_to_dict = plot_helpers.compare_dict_keys_with_list(hist_opts, _input_data['categories'])
+            try:
+                common, unique_to_dict = plot_helpers.compare_dict_keys_with_list(hist_opts, _input_data['categories'])
+            except (KeyError, AttributeError) as e:
+                raise ValueError(f"Failed to compare dictionary keys: {str(e)}")
 
             if len(unique_to_dict) > 0:
                 for _key in unique_to_dict:
                     hist_opts.pop(_key)
 
             if var in _input_data['hists'] and process in _input_data['hists'][var].axes["process"]:
-
                 if "variation" in _input_data["categories"]:
-                    hist_opts = hist_opts | {"variation" : "nominal"}
-
+                    hist_opts = hist_opts | {"variation": "nominal"}
                 hist_obj = _input_data['hists'][var]
 
     if hist_obj is None:
-        raise ValueError(f"ERROR did not find var {var} with process {process} in inputs")
+        raise ValueError(f"Could not find histogram for var {var} with process {process} in inputs")
 
-    ## for backwards compatibility
-    for axis in hist_obj.axes:
-        if (axis.name == "tag") and isinstance(axis, hist.axis.IntCategory):
-            hist_opts['tag'] = hist.loc(cfg.plotConfig["codes"]["tag"][config["tag"]])
-        if (axis.name == "region") and isinstance(axis, hist.axis.IntCategory):
-            if isinstance(hist_opts['region'], list):
-                hist_opts['region'] = [ hist.loc(cfg.plotConfig["codes"]["region"][i]) for i in hist_dict['region'] ]
-            elif region != "sum":
-                hist_opts['region'] = hist.loc(cfg.plotConfig["codes"]["region"][region])
+    # Handle backwards compatibility
+    try:
+        for axis in hist_obj.axes:
+            if (axis.name == "tag") and isinstance(axis, hist.axis.IntCategory):
+                hist_opts['tag'] = hist.loc(cfg.plotConfig["codes"]["tag"][config["tag"]])
+            if (axis.name == "region") and isinstance(axis, hist.axis.IntCategory):
+                if isinstance(hist_opts['region'], list):
+                    hist_opts['region'] = [hist.loc(cfg.plotConfig["codes"]["region"][i]) for i in hist_opts['region']]
+                elif region != "sum":
+                    hist_opts['region'] = hist.loc(cfg.plotConfig["codes"]["region"][region])
+    except (KeyError, AttributeError) as e:
+        raise ValueError(f"Failed to handle axis compatibility: {str(e)}")
 
-    #
-    #  Add rebin Options
-    #
+    # Add rebin options
     varName = hist_obj.axes[-1].name
     if not do2d:
         var_dict = {varName: hist.rebin(rebin)}
         hist_opts = hist_opts | var_dict
 
-    #
-    #  Do the hist selection/binngin
-    #
-    selected_hist = hist_obj[hist_opts]
+    # Do the hist selection/binning
+    try:
+        selected_hist = hist_obj[hist_opts]
+    except Exception as e:
+        raise ValueError(f"Failed to select histogram: {str(e)}")
 
-    #
-    # Catch list vs hist
-    #  Shape give (nregion, nBins)
-    #
+    # Handle shape differences
     if do2d:
         if len(selected_hist.shape) == 3:  # for 2D plots
             selected_hist = selected_hist[sum, :, :]
@@ -137,17 +161,18 @@ def get_hist_data(*, process: str, cfg: Any, config: Dict, var: str, region: str
         if len(selected_hist.shape) == 2:
             selected_hist = selected_hist[sum, :]
 
-    #
-    # Apply Scale factor
-    #
-    selected_hist *= config.get("scalefactor", 1.0)
+    # Apply scale factor
+    try:
+        selected_hist *= config.get("scalefactor", 1.0)
+    except Exception as e:
+        raise ValueError(f"Failed to apply scale factor: {str(e)}")
 
     return selected_hist
 
 
 
 #
-def get_hist_data_list(*, proc_list: List[str], cfg: Any, config: Dict, var: str, region: str, cut: str, rebin: int, year: str, do2d: bool, file_index: Optional[int], debug: bool) -> hist.Hist:
+def get_hist_data_list(*, proc_list: List[str], cfg: Any, config: Dict, var: str, region: str, cut: str, rebin: int, year: str, do2d: bool, file_index: Optional[int], debug) -> hist.Hist:
     """
     Extract and combine histogram data for a list of processes.
     
@@ -672,59 +697,89 @@ def _handle_year_list(plot_data: Dict, process_config: Dict, cfg: Any, var: str,
         plot_data["hists"][f"{proc_id}{_year}{iy}"] = _process_config
 
 def _add_2d_ratio_plots(plot_data: Dict, **kwargs) -> None:
-    """Add 2D ratio plots."""
+    """
+    Add 2D ratio plots to the plot configuration.
+    
+    Args:
+        plot_data: Plot data dictionary containing histogram data
+        **kwargs: Additional plotting options
+        
+    Raises:
+        ValueError: If insufficient histograms for ratio calculation
+        KeyError: If required histogram data is missing
+    """
     hist_keys = list(plot_data["hists"].keys())
-    den_key = hist_keys.pop(0)
+    if len(hist_keys) < 2:
+        raise ValueError("Need at least two histograms for 2D ratio plot")
 
-    den_values = np.array(plot_data["hists"][den_key]["values"])
-    den_vars = plot_data["hists"][den_key]["variances"]
-    den_values[den_values == 0] = plot_helpers.epsilon
+    try:
+        den_key = hist_keys.pop(0)
+        den_values = np.array(plot_data["hists"][den_key]["values"])
+        den_vars = plot_data["hists"][den_key]["variances"]
+        den_values[den_values == 0] = plot_helpers.epsilon
 
-    num_key = hist_keys.pop(0)
-    num_values = np.array(plot_data["hists"][num_key]["values"])
-    num_vars = plot_data["hists"][num_key]["variances"]
+        num_key = hist_keys.pop(0)
+        num_values = np.array(plot_data["hists"][num_key]["values"])
+        num_vars = plot_data["hists"][num_key]["variances"]
 
-    ratio_config = {}
-    ratios, ratio_uncert = plot_helpers.makeRatio(num_values, num_vars, den_values, den_vars, **kwargs)
-    ratio_config["ratio"] = ratios.tolist()
-    ratio_config["error"] = ratio_uncert.tolist()
-    plot_data["ratio"][f"ratio_{num_key}_to_{den_key}"] = ratio_config
-
-def _add_1d_ratio_plots(plot_data: Dict, **kwargs) -> None:
-    """Add 1D ratio plots."""
-    hist_keys = list(plot_data["hists"].keys())
-    den_key = hist_keys.pop(0)
-
-    den_values = np.array(plot_data["hists"][den_key]["values"])
-    den_vars = plot_data["hists"][den_key]["variances"]
-    den_centers = plot_data["hists"][den_key]["centers"]
-
-    den_values[den_values == 0] = plot_helpers.epsilon
-
-    # Add background error band
-    band_ratios = np.ones(len(den_centers))
-    band_uncert = np.sqrt(den_vars * np.power(den_values, -2.0))
-    band_config = {
-        "color": "k",
-        "type": "band",
-        "hatch": "\\\\",
-        "ratio": band_ratios.tolist(),
-        "error": band_uncert.tolist(),
-        "centers": list(den_centers)
-    }
-    plot_data["ratio"]["bkg_band"] = band_config
-
-    # Add ratio plots for each histogram
-    for iH, _num_key in enumerate(hist_keys):
-        num_values = np.array(plot_data["hists"][_num_key]["values"])
-        num_vars = plot_data["hists"][_num_key]["variances"]
-
-        ratio_config = {
-            "color": plot_helpers.colors[iH],
-            "marker": "o"
-        }
+        ratio_config = {}
         ratios, ratio_uncert = plot_helpers.makeRatio(num_values, num_vars, den_values, den_vars, **kwargs)
         ratio_config["ratio"] = ratios.tolist()
         ratio_config["error"] = ratio_uncert.tolist()
-        ratio_config["centers"] = den_centers
-        plot_data["ratio"][f"ratio_{_num_key}_to_{den_key}_{iH}"] = ratio_config
+        plot_data["ratio"][f"ratio_{num_key}_to_{den_key}"] = ratio_config
+    except (KeyError, IndexError) as e:
+        raise ValueError(f"Failed to create 2D ratio plot: {str(e)}")
+
+def _add_1d_ratio_plots(plot_data: Dict, **kwargs) -> None:
+    """
+    Add 1D ratio plots to the plot configuration.
+    
+    Args:
+        plot_data: Plot data dictionary containing histogram data
+        **kwargs: Additional plotting options
+        
+    Raises:
+        ValueError: If insufficient histograms for ratio calculation
+        KeyError: If required histogram data is missing
+    """
+    hist_keys = list(plot_data["hists"].keys())
+    if len(hist_keys) < 1:
+        raise ValueError("Need at least one histogram for 1D ratio plot")
+
+    try:
+        den_key = hist_keys.pop(0)
+        den_values = np.array(plot_data["hists"][den_key]["values"])
+        den_vars = plot_data["hists"][den_key]["variances"]
+        den_centers = plot_data["hists"][den_key]["centers"]
+
+        den_values[den_values == 0] = plot_helpers.epsilon
+
+        # Add background error band
+        band_ratios = np.ones(len(den_centers))
+        band_uncert = np.sqrt(den_vars * np.power(den_values, -2.0))
+        band_config = {
+            "color": "k",
+            "type": "band",
+            "hatch": "\\\\",
+            "ratio": band_ratios.tolist(),
+            "error": band_uncert.tolist(),
+            "centers": list(den_centers)
+        }
+        plot_data["ratio"]["bkg_band"] = band_config
+
+        # Add ratio plots for each histogram
+        for iH, _num_key in enumerate(hist_keys):
+            num_values = np.array(plot_data["hists"][_num_key]["values"])
+            num_vars = plot_data["hists"][_num_key]["variances"]
+
+            ratio_config = {
+                "color": plot_helpers.colors[iH],
+                "marker": "o"
+            }
+            ratios, ratio_uncert = plot_helpers.makeRatio(num_values, num_vars, den_values, den_vars, **kwargs)
+            ratio_config["ratio"] = ratios.tolist()
+            ratio_config["error"] = ratio_uncert.tolist()
+            ratio_config["centers"] = den_centers
+            plot_data["ratio"][f"ratio_{_num_key}_to_{den_key}_{iH}"] = ratio_config
+    except (KeyError, IndexError) as e:
+        raise ValueError(f"Failed to create 1D ratio plot: {str(e)}")
