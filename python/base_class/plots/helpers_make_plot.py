@@ -279,9 +279,10 @@ def _plot_from_dict(plot_data, **kwargs):
                     plt.fill_between([xi - bin_width/2, xi + bin_width/2], yi - err, yi + err,
                                      hatch=ratio_data.get("hatch", "/"),
                                      edgecolor=ratio_data.get("color", "black"),
-                                     facecolor='none',
+                                     facecolor=ratio_data.get("facecolor",'none'),
                                      linewidth=0.0,
-                                     zorder=1)
+                                     zorder=1
+                                     )
 
             else:
                 ratio_ax.errorbar(
