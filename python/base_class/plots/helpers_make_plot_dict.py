@@ -277,7 +277,7 @@ def _handle_cut_list(plot_data: Dict, process_config: Dict, cfg: Any, var_to_plo
             print_list_debug_info(process_config["process"], process_config.get("tag"), _cut, region)
 
         _process_config = copy.deepcopy(process_config)
-        _process_config["fillcolor"] = plot_helpers.colors[ic]
+        _process_config["fillcolor"] = plot_helpers.COLORS[ic]
         _process_config["label"] = plot_helpers.get_label(f"{process_config['label']} {_cut}", label_override, ic)
         _process_config["histtype"] = "errorbar"
 
@@ -297,7 +297,7 @@ def _handle_region_list(plot_data: Dict, process_config: Dict, cfg: Any, var_to_
             print_list_debug_info(process_config["process"], process_config.get("tag"), cut, _reg)
 
         _process_config = copy.deepcopy(process_config)
-        _process_config["fillcolor"] = plot_helpers.colors[ir]
+        _process_config["fillcolor"] = plot_helpers.COLORS[ir]
         _process_config["label"] = plot_helpers.get_label(f"{process_config['label']} {_reg}", label_override, ir)
         _process_config["histtype"] = "errorbar"
 
@@ -507,7 +507,7 @@ def add_ratio_plots(ratio_config: Dict, plot_data: Dict, **kwargs) -> None:
             r_config["norm"] = True
 
         # Add ratio plot
-        ratios, ratio_uncert = plot_helpers.makeRatio(num_values, num_vars, den_values, den_vars, **r_config)
+        ratios, ratio_uncert = plot_helpers.make_ratio(num_values, num_vars, den_values, den_vars, **r_config)
         r_config["ratio"] = ratios.tolist()
         r_config["error"] = ratio_uncert.tolist()
         r_config["centers"] = num_centers
@@ -520,7 +520,7 @@ def add_ratio_plots(ratio_config: Dict, plot_data: Dict, **kwargs) -> None:
         if _band_config:
             band_config = copy.deepcopy(_band_config)
             band_config["ratio"] = np.ones(len(num_centers)).tolist()
-            den_values[den_values == 0] = plot_helpers.epsilon
+            den_values[den_values == 0] = plot_helpers.EPSILON
             band_config["error"] = np.sqrt(den_vars * np.power(den_values, -2.0)).tolist()
             band_config["centers"] = list(num_centers)
             plot_data["ratio"][f"band_{r_name}"] = band_config
@@ -616,7 +616,7 @@ def _handle_input_files(plot_data: Dict, process_config: Dict, cfg: Any, var_to_
 
     for iF, _input_file in enumerate(cfg.hists):
         _process_config = copy.deepcopy(process_config)
-        _process_config["fillcolor"] = plot_helpers.colors[iF]
+        _process_config["fillcolor"] = plot_helpers.COLORS[iF]
 
         if label_override:
             _process_config["label"] = label_override[iF]
@@ -665,7 +665,7 @@ def _handle_var_list(plot_data: Dict, process_config: Dict, cfg: Any, var_list: 
             print_list_debug_info(process_config["process"], process_config.get("tag"), cut, region)
 
         _process_config = copy.deepcopy(process_config)
-        _process_config["fillcolor"] = plot_helpers.colors[iv]
+        _process_config["fillcolor"] = plot_helpers.COLORS[iv]
         _process_config["label"] = plot_helpers.get_label(f"{process_config['label']} {_var}", label_override, iv)
         _process_config["histtype"] = "errorbar"
 
@@ -686,7 +686,7 @@ def _handle_year_list(plot_data: Dict, process_config: Dict, cfg: Any, var: str,
             print_list_debug_info(process_config["process"], process_config.get("tag"), cut, region)
 
         _process_config = copy.copy(process_config)
-        _process_config["fillcolor"] = plot_helpers.colors[iy]
+        _process_config["fillcolor"] = plot_helpers.COLORS[iy]
         _process_config["label"] = plot_helpers.get_label(f"{process_config['label']} {_year}", label_override, iy)
         _process_config["histtype"] = "errorbar"
 
@@ -716,14 +716,14 @@ def _add_2d_ratio_plots(plot_data: Dict, **kwargs) -> None:
         den_key = hist_keys.pop(0)
         den_values = np.array(plot_data["hists"][den_key]["values"])
         den_vars = plot_data["hists"][den_key]["variances"]
-        den_values[den_values == 0] = plot_helpers.epsilon
+        den_values[den_values == 0] = plot_helpers.EPSILON
 
         num_key = hist_keys.pop(0)
         num_values = np.array(plot_data["hists"][num_key]["values"])
         num_vars = plot_data["hists"][num_key]["variances"]
 
         ratio_config = {}
-        ratios, ratio_uncert = plot_helpers.makeRatio(num_values, num_vars, den_values, den_vars, **kwargs)
+        ratios, ratio_uncert = plot_helpers.make_ratio(num_values, num_vars, den_values, den_vars, **kwargs)
         ratio_config["ratio"] = ratios.tolist()
         ratio_config["error"] = ratio_uncert.tolist()
         plot_data["ratio"][f"ratio_{num_key}_to_{den_key}"] = ratio_config
@@ -752,7 +752,7 @@ def _add_1d_ratio_plots(plot_data: Dict, **kwargs) -> None:
         den_vars = plot_data["hists"][den_key]["variances"]
         den_centers = plot_data["hists"][den_key]["centers"]
 
-        den_values[den_values == 0] = plot_helpers.epsilon
+        den_values[den_values == 0] = plot_helpers.EPSILON
 
         # Add background error band
         band_ratios = np.ones(len(den_centers))
@@ -773,10 +773,10 @@ def _add_1d_ratio_plots(plot_data: Dict, **kwargs) -> None:
             num_vars = plot_data["hists"][_num_key]["variances"]
 
             ratio_config = {
-                "color": plot_helpers.colors[iH],
+                "color": plot_helpers.COLORS[iH],
                 "marker": "o"
             }
-            ratios, ratio_uncert = plot_helpers.makeRatio(num_values, num_vars, den_values, den_vars, **kwargs)
+            ratios, ratio_uncert = plot_helpers.make_ratio(num_values, num_vars, den_values, den_vars, **kwargs)
             ratio_config["ratio"] = ratios.tolist()
             ratio_config["error"] = ratio_uncert.tolist()
             ratio_config["centers"] = den_centers
