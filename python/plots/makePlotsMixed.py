@@ -12,21 +12,15 @@ from coffea.util import load
 import numpy as np
 
 sys.path.insert(0, os.getcwd())
-from base_class.plots.plots import makePlot, make2DPlot, load_config, load_hists, read_axes_and_cuts, parse_args, get_value_nested_dict, get_hist, _plot, _savefig, _colors, makeRatio, _plot_ratio
+from base_class.plots.plots import makePlot, make2DPlot, load_config, load_hists, read_axes_and_cuts, parse_args, get_value_nested_dict, get_hist, _plot, _savefig, _colors, _plot_ratio
 import base_class.plots.iPlot_config as cfg
 
 np.seterr(divide='ignore', invalid='ignore')
-_epsilon = 0.001
 
 def doPlots(debug=False):
-
-    #
-    #  Try to get averages
-    #
     region = "SR"
     cut = "passPreSel"
     rebin = 2
-
 
     var_to_plot = "SvB_MA_FvT_3bDvTMix4bDvT_vXXX_newSBDef.ps_hh"
     kfold = True
@@ -46,8 +40,6 @@ def doPlots(debug=False):
         else:
             hist_sum = _hist
 
-
-
     hist_ave = hist_sum * 1/15
 
     n_sub_samples = 8
@@ -62,13 +54,11 @@ def doPlots(debug=False):
 
         hists.append( (hist_objs[i], hist_config_vX) )
 
-
     hist_config_ave = copy.copy(get_value_nested_dict(cfg.plotConfig, "Multijet"))
     hist_config_ave["name"] = "bkg_ave"
     hist_config_ave["label"] = "bkg_ave"
     stack_dict = {}
     stack_dict["bkg_ave"] = ( (hist_ave, hist_config_ave) )
-
 
     kwargs = {"year" : "RunII",
               "outputFolder" : args.outputFolder,
@@ -77,14 +67,11 @@ def doPlots(debug=False):
               "rlim": [0.8,1.2],
               }
 
-
-
-
     ratio_plots = []
 
     denValues = hist_ave.values()
 
-    denValues[denValues == 0] = _epsilon
+    denValues[denValues == 0] = plot_helpers.EPSILON
     denCenters = hist_ave.axes[0].centers
 
     for iH, _h in enumerate(hists):
@@ -93,7 +80,7 @@ def doPlots(debug=False):
         ratio_config = {"color": _colors[iH],
                         "marker": "o",
                         }
-        ratios, ratio_uncert = makeRatio(numValues, denValues, **kwargs)
+        ratios, ratio_uncert = plot_helpers.make_ratio(numValues, denValues, **kwargs)
         ratio_plots.append((denCenters, ratios, ratio_uncert, ratio_config))
 
     fig, main_ax, ratio_ax = _plot_ratio(hists, stack_dict, ratio_plots, **kwargs)
@@ -101,11 +88,6 @@ def doPlots(debug=False):
 
     _savefig(fig, var_to_plot, kwargs.get("outputFolder"), kwargs["year"], cut, "threeTag", region)
 
-
-
-    #
-    #  SvB mixed v0 and v1 vs v2 bkg
-    #
     var_list = ["SvB_MA.ps_hh", "SvB_MA.ps_zh", "SvB_MA.ps_zz", "SvB_MA.ps_hh_fine", "SvB_MA.ps_zh_fine", "SvB_MA.ps_zz_fine", ]
     rebin_list = [20, 10, 8, 8, 10, 8]
 
@@ -125,11 +107,6 @@ def doPlots(debug=False):
 
         fig = makePlot(cfg, **plot_args)
         plt.close()
-
-
-
-
-
 
 if __name__ == '__main__':
 
