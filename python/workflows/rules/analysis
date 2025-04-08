@@ -1,29 +1,67 @@
-rule analysis:
+rule analysis_singlefile:
     output: "output/singlefiles/histNoJCM__{sample}-{year}.coffea"
     container: config["analysis_container"]
     params:
-        hash=config['hash'],
-        diff=config['diff'],
         isam="{sample}",
         iy="{year}",
         output="histNoJCM__{sample}-{year}.coffea",
         output_path="output/singlefiles/",
         logname="histNoJCM__{sample}-{year}",
         metadata="analysis/metadata/HH4b_noJCM.yml",
-        datasets=config['dataset_location']
+        datasets=config['dataset_location'],
+        user="username",
+        run_performance=True
+    log: "logs/analysis_singlefile_{sample}_{year}.log"
     shell:
         """
-        cd python/ 
+        mkdir -p /tmp/{params.user}/
         echo "Blinding SR region"
-        sed -i 's/blind.*/blind: true/' {params.metadata}
-        echo "Running with this metadata file"
-        cat {params.metadata}
-        echo "Running {params.isam} {params.iy} - output {output}"
-        mprof run -C -o mprofile_{params.logname}.dat python runner.py -d {params.isam} -p analysis/processors/processor_HH4b.py -y {params.iy} -o {params.output} -op ../{params.output_path} -m {params.datasets} --githash {params.hash} --gitdiff {params.diff} -c {params.metadata} 
-        cd ../
-        mkdir -p output/performance/
-        mprof plot -o output/performance/mprofile_{params.logname}.png python/mprofile_{params.logname}.dat
+        sed 's/blind.*/blind: false/' {params.metadata} > /tmp/{params.user}/HH4b_noJCM.yml 
+        echo "Running with this metadata file" 2>&1 | tee {log}
+        cat /tmp/{params.user}/HH4b_noJCM.yml 2>&1 | tee -a {log}
+        echo "Running {params.isam} {params.iy} - output {output}" 2>&1 | tee -a {log}
+        cmd=mprof run -C -o /tmp/{params.user}/mprofile_{params.logname}.dat python runner.py -d {params.isam} -p analysis/processors/processor_HH4b.py -y {params.iy} -o {params.output} -op {params.output_path} -m {params.datasets} -c /tmp/{params.user}/HH4b_noJCM.yml
+        echo $cmd 2>&1 | tee -a {log}
+        $cmd 2>&1 | tee -a {log}
+        if [ '{params.run_performance}' = "True" ]; then
+            echo "Running performance analysis" 2>&1 | tee -a {log}
+            mkdir -p {params.output_path}/performance/
+            mprof plot -o {params.output_path}/performance/mprofile_{params.logname}.png /tmp/{params.user}/mprofile_{params.logname}.dat 2>&1 | tee -a {log}
+        fi
         """
+
+rule analysis_all:
+    output: "output/histAll_NoJCM.coffea"
+    container: config["analysis_container"]
+    params:
+        isam=config['dataset'],
+        iy=config['year'],
+        output="histAll_NoJCM.coffea",
+        output_path="output/",
+        logname="histAll_NoJCM",
+        metadata="analysis/metadata/HH4b_noJCM.yml",
+        datasets=config['dataset_location'],
+        user=username,
+        run_performance=True
+    log: "logs/analysis_all.log"
+    shell:
+        """
+        mkdir -p /tmp/{params.user}/
+        echo "Blinding SR region"
+        sed 's/blind.*/blind: false/' {params.metadata} > /tmp/{params.user}/HH4b_noJCM.yml 
+        echo "Running with this metadata file" 2>&1 | tee {log}
+        cat /tmp/{params.user}/HH4b_noJCM.yml 2>&1 | tee -a {log}
+        echo "Running {params.isam} {params.iy} - output {output}" 2>&1 | tee -a {log}
+        cmd="mprof run -C -o /tmp/{params.user}/mprofile_{params.logname}.dat python runner.py -d {params.isam} -p analysis/processors/processor_HH4b.py -y {params.iy} -o {params.output} -op {params.output_path} -m {params.datasets} -c /tmp/{params.user}/HH4b_noJCM.yml"
+        echo $cmd 2>&1 | tee -a {log}
+        $cmd 2>&1 | tee -a {log}
+        if [ '{params.run_performance}' = "True" ]; then
+            echo "Running performance analysis" 2>&1 | tee -a {log}
+            mkdir -p {params.output_path}/performance/
+            mprof plot -o {params.output_path}/performance/mprofile_{params.logname}.png /tmp/{params.user}/mprofile_{params.logname}.dat 2>&1 | tee -a {log}
+        fi
+        """
+
 
 rule merging_coffea_files:
     input: expand([f"{config['output_path']}/singlefiles/histNoJCM__{{sample}}-{{year}}.coffea"], sample=config['dataset'], year=config['year']) 
@@ -34,14 +72,15 @@ rule merging_coffea_files:
         logname = "histNoJCM",
         output_path = config['output_path'],
         run_performance = True
+    log: "logs/merging_coffea_files.log"
     shell:
         """
-        echo "Merging all the coffea files"
+        echo "Merging all the coffea files" 2>&1 | tee -a {log}
         cmd="mprof run -C -o /tmp/mprofile_merge_{params.logname}.dat python analysis/tools/merge_coffea_files.py -f {input} -o {output}"
-        echo $cmd
-        $cmd 
+        echo $cmd 2>&1 | tee -a {log}
+        $cmd 2>&1 | tee -a {log}
         if [ "{params.run_performance}" = "True" ]; then
-            echo "Running performance analysis"
+            echo "Running performance analysis" 2>&1 | tee -a {log}
             mkdir -p {params.output_path}/performance/
             mprof plot -o {params.output_path}/performance/mprofile_merge_{params.logname}.png /tmp/mprofile_merge_{params.logname}.dat
         fi
@@ -51,19 +90,17 @@ rule make_JCM:
     input: "output/histNoJCM.coffea"
     output: "output/JCM/jetCombinatoricModel_SB_reana.yml"
     container: config["analysis_container"]
-    resources:
-        voms_proxy=True,
-        kerberos=True,
-        compute_backend="kubernetes",
+    params:
+        output_dir = "output/JCM/",
+    log: "logs/make_JCM.log"
     shell:
         """
-        cd python/
-        echo "Computing JCM"
-        python analysis/make_weights.py -o ../output/JCM/ -c passPreSel -r SB -i ../{input} -w reana
-        ls ../output/JCM/
-        echo "Modifying metadata file"
-        sed -i 's|JCM.*|JCM: ../output/JCM/jetCombinatoricModel_SB_reana.yml|' analysis/metadata/HH4b.yml
-        cat analysis/metadata/HH4b.yml
+        echo "Computing JCM" 2>&1 | tee -a {log}
+        python analysis/make_weights.py -o {params.output_dir} -c passPreSel -r SB -i {input} -w 2024_v2 2>&1 | tee -a {log}
+        ls {params.output_dir}
+        # echo "Modifying metadata file"
+        # sed -i 's|JCM.*|JCM: ../output/JCM/jetCombinatoricModel_SB_reana.yml|' analysis/metadata/HH4b.yml
+        # cat analysis/metadata/HH4b.yml
         """
 
 rule make_plots:
@@ -72,9 +109,10 @@ rule make_plots:
     container: config["analysis_container"]
     params:
         output_dir = "output/plots/"
+    log: "logs/make_plots.log"
     shell:
         """
-        echo "Making plots"
-        python plots/makePlots.py {input} -o {params.output_dir} -m plots/metadata/plotsAll.yml -s xW
+        echo "Making plots" 2>&1 | tee -a {log}
+        python plots/makePlots.py {input} -o {params.output_dir} -m plots/metadata/plotsAll.yml -s xW 2>&1 | tee -a {log}
         """
     
