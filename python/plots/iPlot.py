@@ -1,19 +1,29 @@
 import os
 import sys
-import yaml
+from typing import Optional, Union, List
+
+# Third-party imports
 import hist
 import matplotlib.pyplot as plt
-from hist.intervals import ratio_uncertainty
+
+# Local imports
 sys.path.insert(0, os.getcwd())
-from base_class.plots.plots import makePlot, make2DPlot, load_config, load_hists, read_axes_and_cuts, parse_args, print_cfg
+from base_class.plots.plots import (
+    makePlot, make2DPlot, load_config, load_hists, 
+    read_axes_and_cuts, parse_args, print_cfg
+)
 import base_class.plots.iPlot_config as cfg
 
-#
-# TO Add
-#     Variable Binning
+# Constants
+DEFAULT_OUTPUT_FILE = "test.pdf"
 
-
-def ls(option="var", var_match=None):
+def ls(option: str = "var", var_match: Optional[str] = None) -> None:
+    """List available variables in the configuration.
+    
+    Args:
+        option: The type of labels to list (default: "var")
+        var_match: Optional string to filter variables by
+    """
     for k in cfg.axisLabels[option]:
         if var_match:
             if k.find(var_match) != -1:
@@ -21,10 +31,12 @@ def ls(option="var", var_match=None):
         else:
             print(k)
 
-def info():
+def info() -> None:
+    """Print the current configuration."""
     print_cfg(cfg)
 
-def examples():
+def examples() -> None:
+    """Print example usage of the plotting functions."""
     print("examples:\n\n")
     print(
         '# Nominal plot of data and background in the a region passing a cut \n'
@@ -90,109 +102,112 @@ def examples():
 
     )
 
-
-def plot(var='selJets.pt', *, cut="passPreSel", region="SR", **kwargs):
-    r"""
-    Plot
-
-    Takes Options:
-
-       debug    : False,
-       var      : 'selJets.pt',
-       cut      : "passPreSel",
-       region   : "SR",
-
-       plotting opts
-        'doRatio'  : bool (False)
-        'rebin'    : int (1),
+def plot(var: Union[str, List[str]] = 'selJets.pt', *, 
+         cut: str = "passPreSel", 
+         region: str = "SR", 
+         output_file: str = DEFAULT_OUTPUT_FILE,
+         **kwargs) -> Optional[tuple]:
+    """Create a 1D plot of the specified variable.
+    
+    Args:
+        var: Variable(s) to plot. Can be a string or list of strings.
+        cut: Selection cut to apply (default: "passPreSel")
+        region: Region to plot (default: "SR")
+        output_file: Name of the output file (default: "test.pdf")
+        **kwargs: Additional plotting options
+        
+    Returns:
+        Optional tuple of (figure, axes) if debug mode is enabled
     """
-    print()
     if kwargs.get("debug", False):
         print(f'kwargs = {kwargs}')
 
-    if type(var) is not list and var.find("*") != -1:
+    # Handle wildcard matching
+    if isinstance(var, str) and "*" in var:
         ls(var_match=var.replace("*", ""))
         return
-
-    if type(var) is list and var[0].find("*") != -1:
+    if isinstance(var, list) and var[0].find("*") != -1:
         ls(var_match=var[0].replace("*", ""))
         return
 
-
-    if len(cfg.hists) > 1:
-        try:
+    try:
+        if len(cfg.hists) > 1:
             fig, ax = makePlot(cfg, var=var, cut=cut, region=region,
-                               outputFolder=cfg.outputFolder, fileLabels=cfg.fileLabels, **kwargs)
-        except ValueError as e:
-            print(e)
-            return
-    else:
-        fig, ax = makePlot(cfg, var=var, cut=cut, region=region,
-                           outputFolder=cfg.outputFolder, **kwargs)
+                             outputFolder=cfg.outputFolder, fileLabels=cfg.fileLabels, **kwargs)
+        else:
+            fig, ax = makePlot(cfg, var=var, cut=cut, region=region,
+                             outputFolder=cfg.outputFolder, **kwargs)
+    except ValueError as e:
+        print(f"Error creating plot: {e}")
+        return
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        return
 
-
-    fileName = "test.pdf"
-    fig.savefig(fileName)
-    plt.close()
-    os.system("open "+fileName)
-    print()
+    try:
+        fig.savefig(output_file)
+        plt.close()
+        os.system(f"open {output_file}")
+    except Exception as e:
+        print(f"Error saving plot: {e}")
+        return
 
     if kwargs.get("debug", False):
         return fig, ax
 
-
-def plot2d(var='quadJet_selected.lead_vs_subl_m', process="HH4b",
-           *, cut="passPreSel", region="SR", **kwargs):
-    r"""
-    Plot 2d
-
-    Call with:
-       plot2d("quadJet_selected.lead_vs_subl_m",process="data",region="SB",cut="passPreSel",tag="threeTag")
-       plot2d("quadJet_selected.lead_vs_subl_m",process="HH4b",region="SR",cut="passPreSel",tag="threeTag")
-
-
-    Takes Options:
-
-       debug    : False,
-       var      : 'quadJet_selected.lead_vs_subl_m',
-       process  : 'HH4b',
-       cut      : "passPreSel",
-       region   : "SR",
-
-       plotting opts
-        'doRatio'  : bool (False)
-        'rebin'    : int (1),
+def plot2d(var: str = 'quadJet_selected.lead_vs_subl_m', 
+           process: str = "HH4b",
+           *, 
+           cut: str = "passPreSel", 
+           region: str = "SR",
+           output_file: str = DEFAULT_OUTPUT_FILE,
+           **kwargs) -> Optional[tuple]:
+    """Create a 2D plot of the specified variable.
+    
+    Args:
+        var: Variable to plot
+        process: Process to plot (default: "HH4b")
+        cut: Selection cut to apply (default: "passPreSel")
+        region: Region to plot (default: "SR")
+        output_file: Name of the output file (default: "test.pdf")
+        **kwargs: Additional plotting options
+        
+    Returns:
+        Optional tuple of (figure, axes) if debug mode is enabled
     """
-
     if kwargs.get("debug", False):
         print(f'kwargs = {kwargs}')
 
-    if var.find("*") != -1:
+    if "*" in var:
         ls(var_match=var.replace("*", ""))
         return
 
+    try:
+        fig, ax = make2DPlot(cfg, process, var=var, cut=cut,
+                           region=region, outputFolder=cfg.outputFolder, **kwargs)
+    except Exception as e:
+        print(f"Error creating 2D plot: {e}")
+        return
 
-    fig, ax = make2DPlot(cfg, process, var=var, cut=cut,
-                         region=region, outputFolder=cfg.outputFolder, **kwargs)
-
-    fileName = "test.pdf"
-    fig.savefig(fileName)
-    plt.close()
-    os.system("open "+fileName)
+    try:
+        fig.savefig(output_file)
+        plt.close()
+        os.system(f"open {output_file}")
+    except Exception as e:
+        print(f"Error saving plot: {e}")
+        return
 
     if kwargs.get("debug", False):
         return fig, ax
-
-
 
 if __name__ == '__main__':
     args = parse_args()
     cfg.plotConfig = load_config(args.metadata)
     cfg.outputFolder = args.outputFolder
     cfg.combine_input_files = args.combine_input_files
-    if cfg.outputFolder:
-        if not os.path.exists(cfg.outputFolder):
-            os.makedirs(cfg.outputFolder)
+    
+    if cfg.outputFolder and not os.path.exists(cfg.outputFolder):
+        os.makedirs(cfg.outputFolder)
 
     cfg.hists = load_hists(args.inputFile)
     cfg.fileLabels = args.fileLabels

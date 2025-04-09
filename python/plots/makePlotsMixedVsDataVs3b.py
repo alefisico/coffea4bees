@@ -17,17 +17,13 @@ from base_class.plots.plots import parse_args, load_config, load_hists, read_axe
 import base_class.plots.iPlot_config as cfg
 
 np.seterr(divide='ignore', invalid='ignore')
-_epsilon = 0.001
-
 
 def get_average_over_mixed_data(plotConfig, **kwargs):
-
     rebin   = kwargs.get("rebin", 1)
     year    = kwargs.get("year", "RunII")
     debug   = kwargs.get("debug", False)
     region   = kwargs.get("region", "SR")
     var    = kwargs.get("var", None)
-
 
     process_config = plot_helpers.get_value_nested_dict(cfg.plotConfig, "mix_v0")
     hist_objs = []
@@ -44,7 +40,6 @@ def get_average_over_mixed_data(plotConfig, **kwargs):
             hist_sum = _hist
 
     hist_ave = hist_sum * 1/15
-
 
     return hist_ave
 
