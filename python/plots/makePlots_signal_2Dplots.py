@@ -72,7 +72,7 @@ if __name__ == '__main__':
     if args.list_of_hists:
         varList = args.list_of_hists
     else:
-        varList = [h for h in cfg.hists[0]['hists'].keys() if not any(skip in h for skip in args.skip_hists)]
+        varList = [h for h in cfg.hists[0].keys() if not any(skip in h for skip in args.skip_hists)]
 
     cutList = ['none', 'none_SBSR', 'none_SR', 'passDiJetMass', 'passDiJetMass_SBSR', 'passDiJetMass_SR', 'passDiJetMassOneMDR', 'passDiJetMassOneMDR_SBSR', 'passDiJetMassOneMDR_SR', 'passDiJetMassMDR', 'passDiJetMassMDR_SBSR', 'passDiJetMassMDR_SR', 'selected', 'selected_SBSR', 'selected_SR']
     # cutList = ['selected_SR']

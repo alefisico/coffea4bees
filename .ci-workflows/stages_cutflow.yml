@@ -3,7 +3,7 @@ analysis-cutflow-job:
   extends:
     - .base_analysis
   needs: 
-    - analysis-test-job
+    - analysis-merge-test-job
   script:
     - source scripts/analysis-cutflow-job.sh
   artifacts:
@@ -121,3 +121,15 @@ SvB-friendtree-cutflow-job:
   artifacts:
     paths:
       - python/output/SvB_friendtree_cutflow_job/test_dump_cutflow_SvB_friend.yml
+
+analysis-cutflow-dilepttbar-job:    
+  stage: cutflow
+  extends:
+    - .base_analysis
+  needs: 
+    - analysis-test-job
+  script:
+    - source scripts/analysis-cutflow-dilepttbar-job.sh
+  artifacts:
+    paths:
+      - python/output/analysis_cutflow_dilepttbar_job/test_dump_cutflow.yml

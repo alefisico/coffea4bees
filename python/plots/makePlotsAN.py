@@ -100,7 +100,7 @@ def doPlots(varList, debug=False):
 
     plot("SvB_MA.ps_zz",region="SR",yscale="linear",rebin=8,doratio=1)
     plot("SvB_MA.ps_zh",region="SR",yscale="linear",rebin=8,doratio=1)
-
+    plot("SvB_MA.ps_hh",region="SR",yscale="linear",rebin=5,doratio=1)
 
 
 
@@ -125,5 +125,5 @@ if __name__ == '__main__':
     if args.list_of_hists:
         varList = args.list_of_hists
     else:
-        varList = [h for h in cfg.hists[0]['hists'].keys() if not any(skip in h for skip in args.skip_hists)]
+        varList = [h for h in cfg.hists[0].keys() if not any(skip in h for skip in args.skip_hists)]
     doPlots(varList, debug=args.debug)

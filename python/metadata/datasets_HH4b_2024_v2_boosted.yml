@@ -1,0 +1,51 @@
+datasets:
+  data:
+    UL18:
+      lumi: 59.8e3
+      nanoAOD:
+        A: /JetHT/Run2018A-UL2018_MiniAODv2_NanoAODv9-v2/NANOAOD
+        B: /JetHT/Run2018B-UL2018_MiniAODv2_NanoAODv9-v1/NANOAOD
+        C: /JetHT/Run2018C-UL2018_MiniAODv2_NanoAODv9-v1/NANOAOD
+        D: /JetHT/Run2018D-UL2018_MiniAODv2_NanoAODv9-v2/NANOAOD
+      picoAOD:
+        A:
+          count: 171484635.0
+          files:
+          # - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL18A/picoAOD_boosted.root
+          - /home/export/tgomezes/files/data_UL18A_picoAOD_boosted.root
+          saved_events: 61756
+          sumw: 171484635
+          sumw2: 171484635
+          total_events: 171484635
+        B:
+          count: 78255208.0
+          files:
+          # - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL18B/picoAOD_boosted.root
+          - /home/export/tgomezes/files/data_UL18B_picoAOD_boosted.root
+          missing: {}
+          saved_events: 28791
+          sumw: 78255208
+          sumw2: 78255208
+          total_events: 78255208
+        C:
+          count: 70027804.0
+          files:
+          # - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL18C/picoAOD_boosted.root
+          - /home/export/tgomezes/files/data_UL18C_picoAOD_boosted.root
+          saved_events: 26699
+          sumw: 70027804
+          sumw2: 70027804
+          total_events: 70027804
+        D:
+          count: 356976276.0
+          files:
+          # - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL18D/picoAOD_boosted.chunk0.root
+          # - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL18D/picoAOD_boosted.chunk1.root
+          - /home/export/tgomezes/files/data_UL18D_picoAOD_boosted.chunk0.root
+          - /home/export/tgomezes/files/data_UL18D_picoAOD_boosted.chunk1.root
+          saved_events: 116737
+          sumw: 356976276
+          sumw2: 356976276
+          total_events: 356976276
+      trigger:
+      - PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepCSV_4p5

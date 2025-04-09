@@ -21,6 +21,9 @@ def doPlots(varList, debug=False):
     if args.doTest:
         varList = ["SvB_MA.ps_zz", "SvB_MA.ps_zh", "SvB_MA.ps_hh", "quadJet_selected.lead_vs_subl_m", "quadJet_min_dr.close_vs_other_m"]
 
+    cut = "passPreSel"
+    tag = "fourTag"
+
     #
     #  Nominal 1D Plots
     #
@@ -31,9 +34,6 @@ def doPlots(varList, debug=False):
         print(v, vDict, vDict.get("2d", False))
         if vDict.get("2d", False):
             continue
-
-        cut = "passPreSel"
-        tag = "fourTag"
 
         vDict["ylabel"] = "Entries"
         vDict["doRatio"] = cfg.plotConfig.get("doRatio", True)
@@ -174,4 +174,5 @@ if __name__ == '__main__':
         varList = args.list_of_hists
     else:
         varList = [h for h in cfg.hists[0]['hists'].keys() if not any(skip in h for skip in args.skip_hists)]
+    # print(len(cfg.hists))
     doPlots(varList, debug=args.debug)

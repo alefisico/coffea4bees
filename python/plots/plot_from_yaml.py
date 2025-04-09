@@ -2,7 +2,7 @@ import yaml
 import sys
 import os
 sys.path.insert(0, os.getcwd())
-from base_class.plots.plots import make_plot_from_dict, make_plot_2d_from_dict
+from base_class.plots.helpers_make_plot import make_plot_from_dict
 import argparse
 
 parser = argparse.ArgumentParser(description='plots', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -26,6 +26,6 @@ for input_yaml_file in args.input_yaml_files:
     loaded_data["kwargs"]["write_yaml"] = False
 
     if "is_2d_hist" in loaded_data:
-        make_plot_2d_from_dict(loaded_data)
+        make_plot_from_dict(loaded_data, do2d=True)
     else:
         make_plot_from_dict(loaded_data)

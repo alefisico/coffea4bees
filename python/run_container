@@ -25,178 +25,110 @@ show_help() {
 }
 
 # Define default paths
-COFFEA_IMAGE="gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
-COMBINE_IMAGE="gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0"
-SNAKEMAKE_IMAGE="gitlab-registry.cern.ch/cms-cmu/coffea4bees:reana_latest"
+COFFEA_IMAGE="docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:latest"
+COMBINE_IMAGE="docker://gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0"
+SNAKEMAKE_IMAGE="docker://gitlab-registry.cern.ch/cms-cmu/coffea4bees:reana_latest"
 
-if [ -d '/cvmfs' ]; then
-    COFFEA_IMAGE="/cvmfs/unpacked.cern.ch/${COFFEA_IMAGE}"
-    COMBINE_IMAGE="/cvmfs/unpacked.cern.ch/${COMBINE_IMAGE}"
-    SNAKEMAKE_IMAGE="/cvmfs/unpacked.cern.ch/${SNAKEMAKE_IMAGE}"
+if [ -d '/cvmfs/unpacked.cern.ch' ]; then
+    COFFEA_IMAGE="/cvmfs/unpacked.cern.ch/${COFFEA_IMAGE#docker://}"
+    COMBINE_IMAGE="/cvmfs/unpacked.cern.ch/${COMBINE_IMAGE#docker://}"
+    SNAKEMAKE_IMAGE="/cvmfs/unpacked.cern.ch/${SNAKEMAKE_IMAGE#docker://}"
 fi
 
-## Define paths for LPC CONDOR
-LPC_CONDOR_CONFIG=/etc/condor/config.d/01_cmslpc_interactive
-LPC_CONDOR_LOCAL=/usr/local/bin/cmslpc-local-conf.py
-
-
 # Set APPTAINER_BINDPATH dynamically
-if [ -z "$APPTAINER_BINDPATH" ]; then
-  if [[ $(hostname) == *"cmslpc"* ]]; then
-    export APPTAINER_BINDPATH=/uscms_data/,/uscmst1b_scratch,/cvmfs,/cvmfs/grid.cern.ch/etc/grid-security:/etc/grid-security,${LPC_CONDOR_CONFIG},${LPC_CONDOR_LOCAL}:${LPC_CONDOR_LOCAL}.orig,.cmslpc-local-conf:${LPC_CONDOR_LOCAL}
-  else
+if [[ $(hostname) == *"cmslpc"* ]]; then
+    export APPTAINER_BINDPATH=/uscms_data/,/uscmst1b_scratch,/cvmfs,/cvmfs/grid.cern.ch/etc/grid-security:/etc/grid-security
+elif [[ $(hostname) == *"rogue"* ]]; then
+    export APPTAINER_BINDPATH=/cvmfs,/cvmfs/grid.cern.ch/etc/grid-security:/etc/grid-security,/home/export/
+else
     export APPTAINER_BINDPATH=/cvmfs,/cvmfs/grid.cern.ch/etc/grid-security:/etc/grid-security
-  fi
 fi
 
 # Check if apptainer is installed
 command -v apptainer >/dev/null 2>&1 || { echo >&2 "Error: apptainer is not installed.  Aborting."; exit 1; }
 
-# Function to run the combine container
-run_combine() {
-  if [ -z "$APPTAINER_CACHEDIR" ]; then
-    export APPTAINER_CACHEDIR="/tmp/$(whoami)/apptainer_cache"
-  fi
-  if [ -z "$APPTAINER_TMPDIR" ]; then
-    export APPTAINER_TMPDIR="/tmp/.apptainer/"
-  fi
-  if [ -z "$MPLCONFIGDIR" ]; then
-    export MPLCONFIGDIR="/tmp/$(whoami)/.config/matplotlib"
-  fi
-
-  COMBINE_SETUP="source /cvmfs/cms.cern.ch/cmsset_default.sh && cd /home/cmsusr/CMSSW_11_3_4/ && cmsenv && cd /home/cmsusr/coffea4bees/"
-
-  if [ -z "$*" ]; then
-    # No further arguments, just open the container
-    APPTAINER_SHELL=$(which bash) apptainer exec -B ${PWD}:/home/cmsusr/coffea4bees --pwd /home/cmsusr/coffea4bees/ \
-      ${COMBINE_IMAGE} \
-      /bin/bash -i -c "$COMBINE_SETUP && bash"
-  else
-    # Arguments provided, run them inside the container
-    APPTAINER_SHELL=$(which bash) apptainer exec -B ${PWD}:/home/cmsusr/coffea4bees --pwd /home/cmsusr/coffea4bees/ \
-      ${COMBINE_IMAGE} \
-      /bin/bash -c "$COMBINE_SETUP && $*"
-  fi
-}
-
 # Function to run the coffea container
 run_coffea() {
 
-  if [[ $(hostname) == *"cmslpc"* ]]; then
-    if [ -z "$APPTAINER_BINDPATH" ]; then
-      export APPTAINER_BINDPATH=${APPTAINER_BINDPATH}${APPTAINER_BINDPATH:+,},${LPC_CONDOR_CONFIG},${LPC_CONDOR_LOCAL}:${LPC_CONDOR_LOCAL}.orig,.cmslpc-local-conf:${LPC_CONDOR_LOCAL}
+    if [ -z "$*" ]; then
+        if [[ $(hostname) == *"cmslpc"* ]]; then
+            if [[ ! -f ".bashrc" ]]; then
+                curl -OL https://raw.githubusercontent.com/CoffeaTeam/lpcjobqueue/main/bootstrap.sh
+                bash bootstrap.sh
+                rm bootstrap.sh
+                sed -i 's|/cvmfs/unpacked.cern.ch/registry.hub.docker.com/||g' shell
+                mv shell .shell
+            fi
+            ./.shell $COFFEA_IMAGE
+        else
+            # Arguments provided, run them inside the container
+            APPTAINER_SHELL=$(which bash) apptainer exec -B ${PWD}:/srv --pwd /srv \
+            "$COFFEA_IMAGE" \
+            /bin/bash 
+        fi
+    else
+        # Arguments provided, run them inside the container
+        APPTAINER_SHELL=$(which bash) apptainer exec -B ${PWD}:/srv --pwd /srv \
+        "$COFFEA_IMAGE" \
+        /bin/bash -c "$*"
     fi
-    load_bash="--rcfile /srv/.bashrc"
-  else
-    load_bash=""
-  fi
+}
 
-  if [ -z "$*" ]; then
-    # No further arguments, just open the container
-    APPTAINER_SHELL=$(which bash) apptainer exec -B ${PWD}:/srv --pwd /srv \
-      "$COFFEA_IMAGE" \
-      /bin/bash $load_bash
-  else
-    # Arguments provided, run them inside the container
-    APPTAINER_SHELL=$(which bash) apptainer exec -B ${PWD}:/srv --pwd /srv \
-      "$COFFEA_IMAGE" \
-      /bin/bash $load_bash -c "$*"
-  fi
+# Function to run the combine container
+run_combine() {
+  
+    export APPTAINER_CACHEDIR="/tmp/$(whoami)/apptainer_cache"
+    export APPTAINER_TMPDIR="/tmp/.apptainer/"
+    export MPLCONFIGDIR="/tmp/$(whoami)/.config/matplotlib"
+
+    COMBINE_SETUP="source /cvmfs/cms.cern.ch/cmsset_default.sh && cd /home/cmsusr/CMSSW_11_3_4/ && cmsenv && cd /home/cmsusr/coffea4bees/"
+
+    if [ -z "$*" ]; then
+        # No further arguments, just open the container
+        APPTAINER_SHELL=$(which bash) apptainer exec -B ${PWD}:/home/cmsusr/coffea4bees --pwd /home/cmsusr/coffea4bees/ \
+        ${COMBINE_IMAGE} \
+        /bin/bash -i -c "$COMBINE_SETUP && bash"
+    else
+        # Arguments provided, run them inside the container
+        APPTAINER_SHELL=$(which bash) apptainer exec -B ${PWD}:/home/cmsusr/coffea4bees --pwd /home/cmsusr/coffea4bees/ \
+        ${COMBINE_IMAGE} \
+        /bin/bash -c "$COMBINE_SETUP && $*"
+    fi
 }
 
 # Function to run snakemake
 run_snakemake() {
-  if [ -z "$1" ]; then
-    echo "Error: No argument supplied. Please provide the snakefile."
-    echo "Usage: $0 snakemake --snakefile <snakefile>"
-    echo "You can also provide additional snakemake arguments."
-    echo "Useful snakemake arguments: --cores, --use-singularity, --use-apptainer, --printshellcmds, --rerun-incomplete, --force"
-    exit 1
-  fi
+    if [ -z "$1" ]; then
+        echo "Error: No argument supplied. Please provide the snakefile."
+        echo "Usage: $0 snakemake --snakefile <snakefile>"
+        echo "You can also provide additional snakemake arguments."
+        echo "Useful snakemake arguments: --cores, --use-singularity, --use-apptainer, --printshellcmds, --rerun-incomplete, --force"
+        exit 1
+    fi
 
-  apptainer exec -B ${PWD}:/srv --pwd /srv ${SNAKEMAKE_IMAGE} snakemake "$@"
+    apptainer exec -B ${PWD}:/srv --pwd /srv ${SNAKEMAKE_IMAGE} snakemake "$@"
 }
-
-if [[ $(hostname) == *"cmslpc"* ]]; then
-
-  # Create .cmslpc-local-conf if it doesn't exist
-  if [ ! -f ".cmslpc-local-conf" ]; then
-    cat <<EOF > .cmslpc-local-conf
-#!/bin/bash
-python3 ${LPC_CONDOR_LOCAL}.orig | grep -v "LOCAL_CONFIG_FILE"
-EOF
-    chmod +x .cmslpc-local-conf
-  fi
-
-  # Create .bashrc if it doesn't exist or append if it does
-  if [ ! -f ".bashrc" ]; then
-    cat <<EOF > .bashrc
-LPCJQ_VERSION="0.4.1"
-install_env() {
-  set -e
-  echo "Installing shallow virtual environment in \$PWD/.env..."
-  python -m venv --without-pip --system-site-packages .env
-  unlink .env/lib64  # HTCondor can't transfer symlink to directory and it appears optional
-  # work around issues copying CVMFS xattr when copying to tmpdir
-  export TMPDIR=\$(mktemp -d -p .)
-  .env/bin/python -m ipykernel install --user
-  rm -rf \$TMPDIR && unset TMPDIR
-  .env/bin/python -m pip install -q git+https://github.com/CoffeaTeam/lpcjobqueue.git@v\${LPCJQ_VERSION}
-  echo "done."
-  set +e
-}
-
-export CONDOR_CONFIG=${LPC_CONDOR_CONFIG}
-export JUPYTER_PATH=/srv/.jupyter
-export JUPYTER_RUNTIME_DIR=/srv/.local/share/jupyter/runtime
-export JUPYTER_DATA_DIR=/srv/.local/share/jupyter
-export IPYTHONDIR=/srv/.ipython
-unset GREP_OPTIONS
-
-[[ -d .env ]] || install_env
-source .env/bin/activate
-alias pip="python -m pip"
-pip show lpcjobqueue 2>/dev/null | grep -q "Version: \${LPCJQ_VERSION}" || pip install -q git+https://github.com/CoffeaTeam/lpcjobqueue.git@v\${LPCJQ_VERSION}
-EOF
-  else
-    cat <<EOF >> .bashrc
-# Additions for coffea4bees container
-export CONDOR_CONFIG=${LPC_CONDOR_CONFIG}
-export JUPYTER_PATH=/srv/.jupyter
-export JUPYTER_RUNTIME_DIR=/srv/.local/share/jupyter/runtime
-export JUPYTER_DATA_DIR=/srv/.local/share/jupyter
-export IPYTHONDIR=/srv/.ipython
-unset GREP_OPTIONS
-
-[[ -d .env ]] || install_env
-source .env/bin/activate
-alias pip="python -m pip"
-pip show lpcjobqueue 2>/dev/null | grep -q "Version: \${LPCJQ_VERSION}" || pip install -q git+https://github.com/CoffeaTeam/lpcjobqueue.git@v\${LPCJQ_VERSION}
-EOF
-  fi
-
-fi
 
 # Main logic: check arguments and run the appropriate container
 if [ "$1" == "--help" ]; then
-  show_help
-  exit 0
+    show_help
+    exit 0
 fi
 
 if [ -z "$1" ]; then
-  # If no arguments, just run coffea with the default image
-  run_coffea
+    # If no arguments, just run coffea with the default image
+    run_coffea
 else
-  case "$1" in
-    "combine")
-      run_combine "${@:2}" # Run combine, passing along any remaining arguments
-      ;;
-    "snakemake")
-      run_snakemake "${@:2}" # Run snakemake, passing along any remaining arguments
-      ;;
-    *)
-      # If not combine or snakemake, assume the arguments are commands for coffea
-      run_coffea "$@"
-      ;;
-  esac
+    case "$1" in
+        "combine")
+        run_combine "${@:2}" # Run combine, passing along any remaining arguments
+        ;;
+        "snakemake")
+        run_snakemake "${@:2}" # Run snakemake, passing along any remaining arguments
+        ;;
+        *)
+        # If not combine or snakemake, assume the arguments are commands for coffea
+        run_coffea "$@"
+        ;;
+    esac
 fi

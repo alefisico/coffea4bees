@@ -2,6 +2,19 @@ import hist
 import numpy as np
 import os
 import yaml
+from hist.intervals import ratio_uncertainty
+from base_class.physics.di_higgs import Coupling, ggF
+
+epsilon = 0.001
+phi = (1 + np.sqrt(5)) / 2
+
+colors = ["xkcd:black",  "xkcd:red",    "xkcd:off green", "xkcd:blue",
+          "xkcd:orange", "xkcd:violet", "xkcd:grey",      "xkcd:pink" ,
+          "xkcd:pale blue",
+          "xkcd:black",  "xkcd:red",    "xkcd:off green", "xkcd:blue",
+          "xkcd:orange", "xkcd:violet", "xkcd:grey",      "xkcd:pink" ,
+          ]
+
 
 def get_value_nested_dict(nested_dict, target_key):
     """ Return the first value from mathching key from nested dict
@@ -51,6 +64,31 @@ def make_2d_hist(*, x_edges, y_edges, values, variances, x_label, y_label):
     ).reshape(len(x_edges) - 1, len(y_edges) - 1)
 
     return hist_obj
+
+
+def make_klambda_hist(kl_value, plot_data):
+
+    kl_target = float(kl_value.replace("HH4b_kl",""))
+
+    plot_data_0    = get_value_nested_dict(plot_data, "HH4b_kl0")
+    plot_data_1    = get_value_nested_dict(plot_data, "HH4b_kl1")
+    plot_data_2_45 = get_value_nested_dict(plot_data, "HH4b_kl2p45")
+    plot_data_5    = get_value_nested_dict(plot_data, "HH4b_kl5")
+
+    basis = ggF(Coupling(dict(kl=0.0), dict(kl=1.0),  dict(kl=2.45), dict(kl=5.0)))
+    target_weights = basis.weight(Coupling(kl=kl_target))[0]
+
+    w_0, w_1, w_2_45, w_5 = target_weights
+
+    plot_data_kl = {}
+    for _k in ["values", "variances", "under_flow", "over_flow"]:
+
+        plot_data_kl[_k] =  w_0    * np.array(plot_data_0[_k])
+        plot_data_kl[_k] += w_1    * np.array(plot_data_1[_k])
+        plot_data_kl[_k] += w_2_45 * np.array(plot_data_2_45[_k])
+        plot_data_kl[_k] += w_5    * np.array(plot_data_5[_k])
+
+    return plot_data_kl
 
 
 
@@ -138,11 +176,11 @@ def makeRatio(numValues, numVars, denValues, denVars, epsilon=0.001, **kwargs):
     ratio_uncert = np.abs(ratios) * np.sqrt(numVars * np.power(numValues, -2.0))
     ratio_uncert = np.nan_to_num(ratio_uncert,nan=1)
 
-    ## https://github.com/scikit-hep/hist/blob/main/src/hist/intervals.py
+    ### https://github.com/scikit-hep/hist/blob/main/src/hist/intervals.py
     #ratio_uncert = ratio_uncertainty(
     #    num=numValues,
     #    denom=denValues,
-    #    uncertainty_type=kwargs.get("uncertainty_type", "poisson"),
+    #    uncertainty_type=kwargs.get("uncertainty_type", "efficiency"),
     #)
 
     return ratios, ratio_uncert
@@ -165,3 +203,25 @@ def get_region_str(region):
         region_str = region
 
     return region_str
+
+def compare_dict_keys_with_list(dict1, list2):
+  """
+  Compares the keys of a dictionary with the elements of a list.
+
+  Args:
+    dict1: The dictionary.
+    list2: The list.
+
+  Returns:
+    A tuple containing two sets:
+      - common_keys: The set of keys from the dictionary that are present in the list.
+      - unique_to_dict1: The set of keys from the dictionary that are not in the list.
+  """
+
+  keys1 = set(dict1.keys())
+  list2_set = set(list2)
+
+  common_keys = keys1.intersection(list2_set)
+  unique_to_dict1 = keys1.difference(list2_set)
+
+  return common_keys, unique_to_dict1

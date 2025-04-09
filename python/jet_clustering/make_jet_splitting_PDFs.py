@@ -108,7 +108,7 @@ def make_PDFs_vs_Pt(config, output_file_name_vs_pT, year):
 
 
                     if is_1d_hist:
-                        _hist = cfg.hists[0]["hists"][_hist_name][plot_dict]
+                        _hist = cfg.hists[0]['hists'][_hist_name][plot_dict]
                         counts = _hist.view(flow=False)
                         bin_edges = _hist.axes[-1].edges
 
@@ -127,7 +127,7 @@ def make_PDFs_vs_Pt(config, output_file_name_vs_pT, year):
                         write_1D_pdf(output_file_vs_pT, _iPt, bin_centers, probs, total_counts, n_spaces=8)
                     else:
 
-                        hist_to_plot = cfg.hists[0]["hists"][f"{_hist_name}"]
+                        hist_to_plot = cfg.hists[0]['hists'][f"{_hist_name}"]
                         _hist = hist_to_plot[plot_dict]
 
                         write_2D_pdf(output_file_vs_pT, _iPt, _hist, n_spaces=8)
@@ -280,8 +280,10 @@ def doPlots(year, debug=False):
     #
     splitting_config = {}
 
-    zA_mA_mB         = { "mA":("mA",    1),  "mB":("mB",    1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_vs_thetaA",   1), "rhoA": ("rhoA", 1), "rhoB": ("rhoB", 1)}
-    zA_l_mA_mB       = { "mA":("mA",    1),  "mB":("mB",    1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_l_vs_thetaA", 1), "rhoA": ("rhoA", 1), "rhoB": ("rhoB", 1)}
+    zA_mA_mB         = { "mA":("mA_r",    1),  "mB":("mB_r",    1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_vs_thetaA",   1), "rhoA": ("rhoA", 1), "rhoB": ("rhoB", 1)}
+    zA_l_mA_mB       = { "mA":("mA_r",    1),  "mB":("mB_r",    1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_l_vs_thetaA", 1), "rhoA": ("rhoA", 1), "rhoB": ("rhoB", 1)}
+    #zA_mA_mB         = { "mA":("mA",    1),  "mB":("mB",    1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_vs_thetaA",   1), "rhoA": ("rhoA", 1), "rhoB": ("rhoB", 1)}
+    #zA_l_mA_mB       = { "mA":("mA",    1),  "mB":("mB",    1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_l_vs_thetaA", 1), "rhoA": ("rhoA", 1), "rhoB": ("rhoB", 1)}
     zA_l_mA_l_mB     = { "mA":("mA_l",  1),  "mB":("mB",    1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_l_vs_thetaA", 1), "rhoA": ("rhoA", 1), "rhoB": ("rhoB", 1)}
     zA_mA_l_mB_l     = { "mA":("mA_l",  1),  "mB":("mB_l",  1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_vs_thetaA",   1), "rhoA": ("rhoA", 1), "rhoB": ("rhoB", 1)}
     zA_l_mA_l_mB_l   = { "mA":("mA_l",  1),  "mB":("mB_l",  1), "decay_phi":("decay_phi", 4), "zA_vs_thetaA":("zA_l_vs_thetaA", 1), "rhoA": ("rhoA", 1), "rhoB": ("rhoB", 1)}
@@ -405,7 +407,7 @@ if __name__ == '__main__':
     cfg.fileLabels = args.fileLabels
     cfg.axisLabels, cfg.cutList = read_axes_and_cuts(cfg.hists, cfg.plotConfig)
 
-    #varList = [ h for h in cfg.hists[0]['hists'].keys() if not h in args.skip_hists ]
+    #varList = [ h for h in cfg.hists[0].keys() if not h in args.skip_hists ]
 
 
 

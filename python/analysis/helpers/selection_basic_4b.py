@@ -196,11 +196,6 @@ def apply_object_selection_4b(event, corrections_metadata, *,
     else:
         event['passPreSel'] = event.threeTag | event.fourTag
 
-    tagCode = np.zeros(len(event), dtype=int)
-    tagCode[event.fourTag]  = 4
-    tagCode[event.threeTag] = 3
-    tagCode[event.twoTag] = 2
-
     if dilep_ttbar_crosscheck:
         event['Muon', 'dimuon_selected'] = (event.Muon.pt > 10) & (abs(event.Muon.eta) < 2.4) & (event.Muon.tightId) & (event.Muon.pfRelIso04_all < 0.05)
         event['nMuon_dimuon_selected'] = ak.sum(event.Muon.dimuon_selected, axis=1)
@@ -248,8 +243,11 @@ def apply_object_selection_4b(event, corrections_metadata, *,
 
         event['passPreSel'] = event.lowpt_threeTag | event.lowpt_fourTag
 
-
-    event['tag'] = tagCode
+    event['tag'] = ak.zip( { 
+        "twoTag": event.twoTag,
+        "threeTag": event.threeTag,
+        "fourTag": event.fourTag,
+    })
 
     # Only need 30 GeV jets for signal systematics
     if loosePtForSkim:
@@ -537,11 +535,10 @@ def create_cand_jet_dijet_quadjet( selev,
                                     "subl_m": ak.where(~selev.quadJet_selected.ZZSR, -2, selev.sublStM_selected),
                                     } )
 
-    selev["region"] = ( selev["quadJet_selected"].SR * 0b10 + selev["quadJet_selected"].SB * 0b01 )
-    # selev["region"] = ak.zip({
-    #     "SR": selev["quadJet_selected"].SR,
-    #     "SB": selev["quadJet_selected"].SB
-    #     })
+    selev["region"] = ak.zip({
+        "SR": selev["quadJet_selected"].SR,
+        "SB": selev["quadJet_selected"].SB
+        })
 
     #
     # Debugging the skimmer
