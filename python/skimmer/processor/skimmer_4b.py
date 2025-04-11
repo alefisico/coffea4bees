@@ -68,44 +68,27 @@ class Skimmer(PicoAOD):
         selections.add( "lumimask", event.lumimask)
         selections.add( "passNoiseFilter", event.passNoiseFilter)
         selections.add( "passHLT", ( event.passHLT if config["cut_on_HLT_decision"] else np.full(len(event), True)  ) )
-        if self.loosePtForSkim:
-            selections.add( 'passJetMult_lowpt_forskim', event.passJetMult_lowpt_forskim )
+        selections.add( 'passJetMult_lowpt_forskim', event.passJetMult_lowpt_forskim )
         selections.add( 'passJetMult',   event.passJetMult )
-        if self.loosePtForSkim:
-            selections.add( "passPreSel_lowpt_forskim",  event.passPreSel_lowpt_forskim)
+        selections.add( "passPreSel_lowpt_forskim",  event.passPreSel_lowpt_forskim)
         selections.add( "passPreSel",    event.passPreSel)
-        if self.skim4b:
-            selections.add( "passFourTag",    event.fourTag)
+        selections.add( "passFourTag",    event.fourTag)
 
         event["weight"] = weights.weight()
 
-        cumulative_cuts = ["lumimask"]
-        self._cutFlow.fill( "all",             event[selections.all(*cumulative_cuts)], allTag=True )
-
-        if self.loosePtForSkim:
-            all_cuts = ["passNoiseFilter", "passHLT", "passJetMult_lowpt_forskim", "passJetMult", "passPreSel_lowpt_forskim", "passPreSel"]
-        else:
-            all_cuts = ["passNoiseFilter", "passHLT", "passJetMult", "passPreSel"]
-
-        if self.skim4b:
-            all_cuts.append("passFourTag")
-
-        for cut in all_cuts:
+        self._cutFlow.fill( "all",             event, allTag=True )
+        cumulative_cuts = []
+        for cut in selections.names:
             cumulative_cuts.append(cut)
             self._cutFlow.fill( cut, event[selections.all(*cumulative_cuts)], allTag=True )
 
         if self.loosePtForSkim:
-            selection = event.lumimask & event.passNoiseFilter & event.passJetMult_lowpt_forskim & event.passPreSel_lowpt_forskim
+            return selections.require( lumimask=True, passNoiseFilter=True, passHLT=True, passJetMult_lowpt_forskim=True, passPreSel_lowpt_forskim=True )
+        elif self.skim4b:
+            return selections.require( lumimask=True, passNoiseFilter=True, passHLT=True, passJetMult=True, passPreSel=True, passFourTag=True )
         else:
-            selection = event.lumimask & event.passNoiseFilter & event.passJetMult & event.passPreSel
+            return selections.require( lumimask=True, passNoiseFilter=True, passHLT=True, passJetMult=True, passPreSel=True )
 
-        if self.skim4b:
-            selection = selection * event.fourTag
-
-        if not config["isMC"]: selection = selection & event.passHLT
-
-
-        return selection
 
     def preselect(self, event):
         dataset = event.metadata['dataset']
