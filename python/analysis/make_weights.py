@@ -161,7 +161,7 @@ if __name__ == "__main__":
 
     if args.debug:
         for ibin, center in enumerate(bin_centers):
-            print(f"{ibin} {bin_values[ibin]} {bin_errors[ibin]} {center} {objective_constrained(bin_centers, *JCM_model.default_parameters)[ibin]}")
+            print(f"{ibin} {bin_values[ibin]} {bin_errors[ibin]} {center}") # {objective_constrained(bin_centers, *JCM_model.default_parameters)[ibin]}")
 
     #
     # Do the fit

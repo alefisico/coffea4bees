@@ -214,15 +214,52 @@ class jetCombinatoricModel:
 
         return output
 
-    def fit(self, bin_centers, bin_values, bin_errors):
+    def fit(self, bin_centers, bin_values, bin_errors, scipy_optimize=False):
 
         #
         # Do the fit
         #
-        popt, errs = curve_fit(self.bkgd_func_njet_constrained, bin_centers, bin_values, self.default_parameters, sigma=bin_errors,
-                               bounds=(self.parameters_lower_bounds, self.parameters_upper_bounds)
-                               )
-
+        if scipy_optimize:
+            
+            from scipy.optimize import minimize
+            
+            # Define the objective function (sum of squared residuals)
+            def objective_function(params):
+                model_values = self.bkgd_func_njet_constrained(bin_centers, *params)
+                residuals = (bin_values - model_values) / bin_errors
+                return np.sum(residuals**2)
+            
+            # Perform the minimization
+            result = minimize(
+                objective_function,
+                self.default_parameters,
+                bounds=list(zip(self.parameters_lower_bounds, self.parameters_upper_bounds)),
+                method='L-BFGS-B',  # Change to your desired minimizer (e.g., 'Nelder-Mead', 'Powell', etc.)
+                options={'maxiter': 5000}
+            )
+            
+            # Extract the optimized parameters
+            popt = result.x
+            # Extract the covariance matrix and compute errors
+            if hasattr(result, 'hess_inv'):
+                errs = result.hess_inv.todense()  # Convert to dense if needed
+            else:
+                errs = None  # Handle cases where the Hessian is not available
+                print("Hessian not available, errors cannot be computed.")
+            
+        else:
+            popt, errs = curve_fit(
+                self.bkgd_func_njet_constrained,
+                bin_centers,
+                bin_values,
+                self.default_parameters,
+                sigma=bin_errors,
+                bounds=(self.parameters_lower_bounds, self.parameters_upper_bounds),
+                # max_nfev=5000,
+                # method='dogbox',
+                # absolute_sigma=True,
+            )
+            
         self.fit_errs = errs
         sigma_p1 = [np.absolute(errs[i][i])**0.5 for i in range(len(popt))]
 

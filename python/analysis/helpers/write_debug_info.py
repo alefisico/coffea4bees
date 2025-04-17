@@ -4,18 +4,19 @@ def add_debug_info_to_output(event, processOutput, weights, list_weight_names, a
     # passSR = (selev["quadJet_selected"].SR)
     # passSR = (selev["SR"])
 
-
     out_data = {}
     # out_data["SvB"    ] = selev["SvB_MA"].ps[passSR]
     out_data["event"  ] = event["event"]#[passSR]
     out_data["run"    ] = event["run"]  #[passSR]
+    out_data["lumisection"] = event["luminosityBlock"]
     out_data["fourTag"    ] = event["fourTag"]  #[passSR]
 
-    out_data["passPreSel"    ] = event["passJetMult"]
+    out_data["passPreSel"    ] = event["passPreSel"]
     out_data["lumimask"    ] = event["lumimask"]
     out_data["passNoiseFilter"    ] = event["passNoiseFilter"]
     out_data["passHLT"    ] = event["passHLT"]
     out_data["passJetMult"    ] = event["passJetMult"]
+    # out_data["passSR"    ] = event["SR"]
 
     #debug_mask = ((event["event"] == 66688  ) |
     #              (event["event"] == 249987 ) |
@@ -27,7 +28,10 @@ def add_debug_info_to_output(event, processOutput, weights, list_weight_names, a
     #              (event["event"] == 150164 ) |
     #              (event["event"] == 262806 ) |
     #              (event["event"] == 281111 ) )
-
+    # debug_mask = ((event.event == 110614) & (event.run == 275890) & (event.luminosityBlock == 1))
+    # debug_event = event[debug_mask]
+    # print(f"debug {debug_event.fourTag} {debug_event.threeTag} {debug_event.nJet_tagged} {debug_event.nJet_tagged_loose} {debug_event.nJet_selected} {debug_event.Jet.tagged} {debug_event.Jet.selected} {debug_event.Jet.btagScore}")
+    # print(f"debug {debug_event.passHLT} {debug_event.passJetMult} {debug_event.passPreSel} {debug_event.Jet.pt} {debug_event.Jet.pt_raw} \n\n\n")
 
     #print(f"\n {event.Jet.pt[event.passJetMult].to_list()[0:5]} \n")
 

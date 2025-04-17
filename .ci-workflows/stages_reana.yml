@@ -4,8 +4,7 @@ reana-job:
   tags:
     - k8s-cvmfs
   script:
-    - cd python/
-    - source scripts/reana-job.sh $NAME
+    - source python/scripts/reana-job.sh $NAME
   rules:
     - if: $CI_PIPELINE_SOURCE == "web"
       variables:
