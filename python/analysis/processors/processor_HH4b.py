@@ -130,7 +130,7 @@ class analysis(processor.ProcessorABC):
         self.histCuts = hist_cuts
 
     def process(self, event):
-        logging.info(event.metadata)
+        logging.debug(event.metadata)
         fname   = event.metadata['filename']
         self.dataset = event.metadata['dataset']
         self.estart  = event.metadata['entrystart']
@@ -607,8 +607,8 @@ class analysis(processor.ProcessorABC):
         #
         # Example of how to write out event numbers
         #
-        #from analysis.helpers.write_debug_info import add_debug_Run3_data
-        #add_debug_Run3_data(selev, processOutput)
+        # from analysis.helpers.write_debug_info import add_debug_info_to_output
+        # add_debug_info_to_output(event, processOutput, weights, list_weight_names, analysis_selections)
 
 
         #

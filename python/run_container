@@ -37,7 +37,7 @@ fi
 
 # Set APPTAINER_BINDPATH dynamically
 if [[ $(hostname) == *"cmslpc"* ]]; then
-    export APPTAINER_BINDPATH=/uscms_data/,/uscmst1b_scratch,/cvmfs,/cvmfs/grid.cern.ch/etc/grid-security:/etc/grid-security
+    export APPTAINER_BINDPATH=/uscmst1b_scratch,/cvmfs,/cvmfs/grid.cern.ch/etc/grid-security:/etc/grid-security,/uscms_data/
 elif [[ $(hostname) == *"rogue"* ]]; then
     export APPTAINER_BINDPATH=/cvmfs,/cvmfs/grid.cern.ch/etc/grid-security:/etc/grid-security,/home/export/
 else
@@ -52,13 +52,14 @@ run_coffea() {
 
     if [ -z "$*" ]; then
         if [[ $(hostname) == *"cmslpc"* ]]; then
-            if [[ ! -f ".bashrc" ]]; then
+            if [[ ! -f ".shell" ]]; then
                 curl -OL https://raw.githubusercontent.com/CoffeaTeam/lpcjobqueue/main/bootstrap.sh
                 bash bootstrap.sh
                 rm bootstrap.sh
                 sed -i 's|/cvmfs/unpacked.cern.ch/registry.hub.docker.com/||g' shell
                 mv shell .shell
             fi
+            echo $COFFEA_IMAGE
             ./.shell $COFFEA_IMAGE
         else
             # Arguments provided, run them inside the container
