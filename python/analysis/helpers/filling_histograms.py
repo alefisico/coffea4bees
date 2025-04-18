@@ -29,7 +29,9 @@ def filling_nominal_histograms(selev, JCM,
 
     fill = Fill(process=processName, year=year, weight="weight")
     
-    tag_list = [13, 14] if run_lowpt_selection else ["threeTag", "fourTag"]
+    tag_list = ["threeTag", "fourTag"]
+    if run_lowpt_selection:
+        tag_list += ["lowpt_fourTag", "lowpt_threeTag"]
     hist = Collection( process=[processName],
                         year=[year],
                         tag=tag_list,
@@ -55,7 +57,7 @@ def filling_nominal_histograms(selev, JCM,
     fill += Jet.plot(("tagJets", "Tag Jets"),             "tagJet",           skip=skip_jet_list, bins={"mass": (50, 0, 100)})
     if run_lowpt_selection:
         fill += hist.add('lowpt_categories', (21, -0.5, 20.5, ('lowpt_categories', 'lowpt_categories')))
-        fill += Jet.plot(("lowptJet", "Selected lowpt Jets"), "lowptJet", skip=skip_jet_list, bins={"mass": (50, 0, 100)})
+        fill += Jet.plot(("lowptJet", "Selected lowpt Jets"), "selJet_lowpt", skip=skip_jet_list, bins={"mass": (50, 0, 100)})
         fill += Jet.plot(("tagJet_lowpt", "Selected lowpt Jets"), "tagJet_lowpt", skip=skip_jet_list, bins={"mass": (50, 0, 100)})
 
 
