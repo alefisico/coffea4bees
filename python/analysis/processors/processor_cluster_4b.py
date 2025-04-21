@@ -184,7 +184,6 @@ class analysis(processor.ProcessorABC):
                                            dataset=dataset,
                                            doLeptonRemoval=config["do_lepton_jet_cleaning"],
                                            override_selected_with_flavor_bit=config["override_selected_with_flavor_bit"],
-                                           run_lowpt_selection=False,
                                            do_jet_veto_maps=config["do_jet_veto_maps"],
                                            isRun3=config["isRun3"],
                                            isMC=config["isMC"], ### temporary
