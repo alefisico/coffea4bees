@@ -1,13 +1,10 @@
 # Coffea4bees
 
-
 [![pipeline status](https://gitlab.cern.ch/cms-cmu/coffea4bees/badges/master/pipeline.svg)](https://gitlab.cern.ch/cms-cmu/coffea4bees/-/commits/master)
 
+This is the repository for the 4b analyses at CMU based in coffea.
 
-This is the repository for the 4b analyses at CMU based in coffea. 
-
-The package has a python component, where most of the analysis is made, and a c++ component meant to be run inside CMSSW.
-
+There is a website dopcumenting what this package does on this link [https://coffea4bees.docs.cern.ch/].
 Information about the analysis steps can be found in the [README](python/analysis/README.md) of the analysis folder.
 
 ## Installation
@@ -16,116 +13,67 @@ Information about the analysis steps can be found in the [README](python/analysi
 
 This repository assumes that you are running in a machine that has access to [cvmfs](https://cernvm.cern.ch/fs/). Then you can clone this repository as:
 
-```
+```bash
 git clone ssh://git@gitlab.cern.ch:7999/cms-cmu/coffea4bees.git --recursive
 ```
 
-#### To run at the CMSLPC
-
-This code has been tested at the cmslpc, and to simplify the setup, it can be used with the container needed to run on lpc condor computers. To set this container:
-```
-curl -OL https://raw.githubusercontent.com/CoffeaTeam/lpcjobqueue/main/bootstrap.sh
-bash bootstrap.sh
-```
-This creates two new files in this directory: `shell` and `.bashrc`. _Additionally, this package contains a `set_shell.sh file`_ which runs the `./shell` executable with the coffea4bees container. This container is based on the `coffeateam/coffea-dask:latest` container including some additional python packages. 
-```
-source set_shell.sh
-```
-
-Remember to run this previous command (aka set your environment) *every time you want to run something*.
-
-To know more about the container, you can see the [Dockerfile](Dockerfile). To know more information about the lpcjobqueue package click [here](https://github.com/CoffeaTeam/lpcjobqueue).
-
+The software required to run this package is encapsulated within a container. A script located in the `python/` folder simplifies the process of running the container seamlessly. For more details, refer to the [python/README.md](python/README.md). Additional information about the container can be found in the [Dockerfile](Dockerfile).
 
 In addition, dont forget to run your voms-proxy to have access to remote files:
 
-```
+```bash
 voms-proxy-init -rfc -voms cms --valid 168:00
 ```
-
-#### To run on lxplus
-
-The script `lxplus_shell.sh` can be run to run the code on lxplus. This script contains two options `--coffea4bees` and `--combine`, each one will setup the dedicated container need, as:
-
-```
-source lxplus_shell.sh --coffea4bees
-```
-
 
 #### Conda environment
 
 In case you want to run the package using a conda environmnent, you can use the [environment.yml](environment.yml) file. Notice however that there are some libraries missing in case you want to run the full framework.
 
+## How to contribute
 
-### How to run the src files
+If you want to submit your changes to the code to the **main repository** (aka cms-cmu gitlab user), you can create a new branch in your local machine and then push to the main repository. For example:
 
-To be used inside CMSSW. More info later.
-
-
-## How to contribute 
-
-If you want to submit your changes to the code to the **main repository** (aka cms-cmu gitlab user) it is highly recommended to first fork this repository to your user. 
-Then, in your local machine you can add your own fork to your working directory:
+```bash
+git checkout -b my_branch
+git add file1 file2
+git commit -m 'new changes'
+git push origin my_branch
 ```
-git remote add myRepo ssh://git@gitlab.cern.ch:7999/USER/coffea4bees.git      ### change USER for your gitlab username
-```
-Then, if you want to push your changes to your own gitlab repository:
-```
-git add FILE1 FILE2 
-git commit -m "add a message"
-git push myRepo BRANCH        #### change BRANCH with the name of your branch
-```
-Once you are happy with your changes, you can make a merge request in the gitlab website to the main repository.
+
+The `master` branch is protected, ensuring that users cannot accidentally modify its content. Once you are satisfied with your changes, push them to your branch. After your branch successfully passes the pipeline tests, you can create a merge request on the GitLab website to merge your changes into the main repository.
 
 ## REANA
 
 [![Launch with Snakemake on REANA](https://www.reana.io/static/img/badges/launch-on-reana.svg)]($https://reana.cern.ch/launch?name=Coffea4bees&specification=reana.yml&url=https%3A%2F%2Fgitlab.cern.ch%2Fcms-cmu%2Fcoffea4bees)
 
-This package runs a workflow in [REANA](https://reana.cern.ch/) for every commit to the master. The output of the reana workflow can be found here:
+This package supports running workflows on [REANA](https://reana.cern.ch/). The REANA workflow is triggered manually via the GitLab CI pipeline or automatically every Saturday.
 
-Website with plots and output files are in [https://plotsalgomez.webtest.cern.ch/HH4b/reana/](https://plotsalgomez.webtest.cern.ch/HH4b/reana/)
+The output of the REANA workflow, including plots and files, is available at [https://plotsalgomez.webtest.cern.ch/HH4b/reana/](https://plotsalgomez.webtest.cern.ch/HH4b/reana/).
 
-The folders there should contain the date the reana job was launched and the git hash of the commit. 
-Differnt than before, the folders are copied to this folder only if the reana job sucessfully finished. 
+Each folder in this directory is named with the date the REANA job was executed and the corresponding Git commit hash. Unlike previous setups, folders are only copied to this location if the REANA job completes successfully.
 
 ## Information for continuos integration (CI)
 
-By default only the **master branch** runs the gitlab CI workflow. If you want to push incomplete or buggy code, without running the CI workflow, create a new branch. 
+The CI workflow is defined in the [gitlab-ci.yml](.gitlab-ci.yml) file. When you push your code to the main repository, the pipeline is triggered automatically.
 
-The workflow for the CI can be found in the [gitlab-ci.yml](.gitlab-ci.yml) file.
-
-The CI runs on remote files and therefore it needs your grid certificate. If you want to run the gitlab CI workflow in your private fork, you need first to create some variables to set up your voms-proxy. You can follow [these steps](https://awesome-workshop.github.io/gitlab-cms/03-vomsproxy/index.html) (except the last part, Using the grid proxy).
-
-If you did this step correctly, then you can check in your pipelines and see that the stage `build`, job `voms-proxy` ran succesfully.
+If you have forked the repository, the GitLab CI pipeline requires your grid certificate to function. To run the GitLab CI workflow in your private fork, you must first configure specific variables to set up your voms-proxy. Follow [these instructions](https://awesome-workshop.github.io/gitlab-cms/03-vomsproxy/index.html) (excluding the final section, "Using the grid proxy") to complete the setup.
 
 ### To run the ci workflow locally in your machine
 
-We are using [Snakemake](https://snakemake.readthedocs.io/en/stable/) to recreate the workflow run in the GitLab CI. Snakemake is the workflow management package that REANA uses to submit the jobs. 
+We use [Snakemake](https://snakemake.readthedocs.io/en/stable/) to replicate the workflow executed in the GitLab CI. Snakemake is the workflow management system utilized by REANA to submit jobs.
 
-Inside the [.ci-workflows](.ci-workflows) folder there are two files: `run_local_ci.sh` and `Snakefile_testCI`. The `run_local_ci.sh` file is a convenient way to run the part of the CI workflow that needs to be run locally, while the `Snakefile_testCI` defines the workflow. If you need to run the CI locally, you can just run **from the root folder coffea4bees/**:
+Within the [python/scripts/](python/scripts/) directory, there is a script named `run_local_ci.sh` that facilitates running a Snakemake workflow ([`Snakefile_testCI`](python/workflows/Snakefile_testCI)) locally, emulating the GitLab CI process. This script provides a convenient way to execute the CI workflow locally. To run it, navigate to the `python/` directory and execute:
 
+```bash
+source scripts/run_local_ci.sh NAME_OF_CI_JOB
 ```
-source .ci-workflows/run_local_ci.sh NAME_OF_CI_JOB
-```
-where `NAME_OF_CI_JOB` corresponds to the job's name in the GitLab CI workflow. This command will automatically run the part of the CI to which the job belongs. All the output files will be located inside the `python/output/` folder, and each step will create a separate folder with the job's name. 
 
-Remember, that is a **feature** of `Snakemake` to first check if the output files of each job exist. If the files exist, the job will be skipped to the next part of the workflow. Therefore, if you are debugging and need to rerun the workflow, remember to manually remove the folder containing the output files. 
+Here, `NAME_OF_CI_JOB` corresponds to the specific job name in the GitLab CI workflow. The script will automatically execute the relevant part of the CI workflow. All output files will be stored in the `CI_output/` directory, with each job creating a separate subdirectory named after the job.
 
-If you are interested in `Snakemake`, the file `Snakefile_testCI` defines a "rule" (job) similar to the job defined for gitlab CI. Also, the way of including rules in the workflow depends on the input to `rule all`. Rules can be defined anywhere after `rule all` but will only be run IF the output files are listed in `rule all`. Finally, unlike gitlab CI, where the output files **should** be listed, in snakemake, the output files need to define the subsequent rule to follow. 
+Keep in mind that Snakemake has a **feature** where it checks for the existence of output files before running a job. If the output files already exist, the job will be skipped, and the workflow will proceed to the next step. If you are debugging and need to rerun a specific job, you must manually delete the folder containing the existing output files.
 
+For those interested in Snakemake, the `Snakefile_testCI` defines "rules" (jobs) similar to those in the GitLab CI workflow. The inclusion of rules in the workflow depends on the inputs specified in `rule all`. Rules can be defined anywhere after `rule all`, but they will only execute if their output files are listed in `rule all`. Unlike GitLab CI, where output files **should** be listed, in Snakemake, the output files must define the subsequent rule to execute.
 
 ## Information about the container
 
-This packages uses its own container. It is based on `coffeateam/coffea-dask:latest` including some additional python packages. This container is created automatically in the gitlab CI step **IF** the name of the branch (and the merging branch in the case of a pull request to the master) starts with `container_`. Additionally, one can take a look at the file [.dockerfiles/Dockerfile_analysis](.dockerfiles/Dockerfile_analysis) which is the one used to create the container.
-
-## Python sytle tips:
-
-If you want to test your code against the PEP8 style, you can use this:
-
-```
-> pycodestyle  --show-source base_class/plots.py
-
-> pycodestyle --show-pep8 --show-source base_class/plots.py 
-
-> pycodestyle --ignore E501,E222,E241,E202,E221,E201     --show-source analysis/processors/processor_HH4b.py
-```
+This packages uses its own container. It is based on `coffeateam/coffea-base-almalinux8:0.7.23-py3.10` including some additional python packages. This container is created automatically in the gitlab CI step **IF** the name of the branch (and the merging branch in the case of a pull request to the master) starts with `container_`. Additionally, one can take a look at the file [.dockerfiles/Dockerfile_analysis](.dockerfiles/Dockerfile_analysis) which is the one used to create the container.
