@@ -1,6 +1,6 @@
 import yaml
 from skimmer.processor.picoaod import PicoAOD, fetch_metadata, resize
-from analysis.helpers.event_selection import apply_event_selection, apply_object_selection_4b
+from analysis.helpers.event_selection import apply_event_selection, apply_4b_selection
 from coffea.nanoevents import NanoEventsFactory
 
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
@@ -75,7 +75,7 @@ class SubSampler(PicoAOD):
         event = update_events(event, {"Jet": jets})
 
         # Apply object selection (function does not remove events, adds content to objects)
-        event = apply_object_selection_4b( event, self.corrections_metadata[year], doLeptonRemoval=config["do_lepton_jet_cleaning"]  )
+        event = apply_4b_selection( event, self.corrections_metadata[year], doLeptonRemoval=config["do_lepton_jet_cleaning"]  )
 
         selections = PackedSelection()
         selections.add( "lumimask", event.lumimask)

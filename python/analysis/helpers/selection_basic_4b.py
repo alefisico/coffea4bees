@@ -1,18 +1,13 @@
 import numpy as np
 import awkward as ak
+import logging
 from analysis.helpers.common import (
-    mask_event_decision,
     drClean,
     apply_jet_veto_maps,
     apply_jerc_corrections,
     compute_puid
 )
-from analysis.helpers.SvB_helpers import compute_SvB
-from coffea.lumi_tools import LumiMask
-from base_class.math.random import Squares
 from copy import copy
-import logging
-from coffea.nanoevents.methods.base import NanoEventsArray
 from typing import Dict, Any
 
 def muon_selection(muon: ak.Array, isRun3: bool = False) -> ak.Array:
@@ -107,7 +102,18 @@ def lepton_selection(event: ak.Array, isRun3: bool = False) -> ak.Array:
 
     return event
 
-def jet_selection(event: ak.Array, corrections_metadata: dict, isRun3: bool = False, isMC: bool = False, isSyntheticData: bool = False, isSyntheticMC: bool = False, dataset: str = '', doLeptonRemoval: bool = True, do_jet_veto_maps: bool = False, override_selected_with_flavor_bit: bool = False) -> ak.Array:
+def jet_selection(
+    event: ak.Array,
+    corrections_metadata: dict,
+    isRun3: bool = False,
+    isMC: bool = False,
+    isSyntheticData: bool = False,
+    isSyntheticMC: bool = False,
+    dataset: str = '',
+    doLeptonRemoval: bool = True,
+    do_jet_veto_maps: bool = False,
+    override_selected_with_flavor_bit: bool = False
+) -> ak.Array:
     """
     Applies jet selection criteria and creates new variables for the event data.
 
@@ -235,26 +241,51 @@ def jet_selection(event: ak.Array, corrections_metadata: dict, isRun3: bool = Fa
     return event
 
 
-def apply_bRegCorr( jet ):
-    '''
-    # Apply the bRegCorr to the tagged jets
-    '''
-    
-    bRegCorr_factor_flat = copy(ak.flatten(jet.bRegCorr).to_numpy())
-    tagged_flag_flat    = ak.flatten(jet.tagged)
-    bRegCorr_factor_flat[~tagged_flag_flat] = 1.0
-    bRegCorr_factor = ak.unflatten(bRegCorr_factor_flat, ak.num(jet.bRegCorr) )
-    selJet_pvec = jet[jet.selected]  * bRegCorr_factor[jet.selected]
-    selJet_pvec["tagged"] = jet[jet.selected].tagged
-    selJet_pvec["tagged_loose"] = jet[jet.selected].tagged_loose
-    selJet_pvec["btagScore"] = jet[jet.selected].btagScore
-    selJet_pvec["puId"] = jet[jet.selected].puId
-    selJet_pvec["jetId"] = jet[jet.selected].jetId
+def apply_bRegCorr(jet: ak.Array) -> ak.Array:
+    """
+    Applies the bRegCorr correction factor to tagged jets and updates their properties.
 
+    Parameters:
+    -----------
+    jet : ak.Array
+        The jet collection containing fields such as `bRegCorr`, `tagged`, `selected`, and other jet properties.
+
+    Returns:
+    --------
+    ak.Array
+        A collection of jets with the bRegCorr correction applied to selected and tagged jets. The updated properties include:
+        - `tagged`: Boolean mask for b-tagged jets.
+        - `tagged_loose`: Boolean mask for loosely b-tagged jets.
+        - `btagScore`: B-tagging score for jets.
+        - `puId`: Pileup ID for jets.
+        - `jetId`: Jet ID for jets.
+        - `hadronFlavour` (if available): Flavour information for jets.
+    """
+    # Flatten the bRegCorr factors and tagged flags for processing
+    bRegCorr_flat = copy(ak.flatten(jet.bRegCorr).to_numpy())
+    tagged_flags_flat = ak.flatten(jet.tagged)
+
+    # Set bRegCorr to 1.0 for non-tagged jets
+    bRegCorr_flat[~tagged_flags_flat] = 1.0
+
+    # Unflatten the bRegCorr factors to match the original structure
+    bRegCorr = ak.unflatten(bRegCorr_flat, ak.num(jet.bRegCorr))
+
+    # Apply the bRegCorr factor to selected jets
+    selected_jets = jet[jet.selected] * bRegCorr[jet.selected]
+
+    # Update properties of the selected jets
+    selected_jets["tagged"] = jet[jet.selected].tagged
+    selected_jets["tagged_loose"] = jet[jet.selected].tagged_loose
+    selected_jets["btagScore"] = jet[jet.selected].btagScore
+    selected_jets["puId"] = jet[jet.selected].puId
+    selected_jets["jetId"] = jet[jet.selected].jetId
+
+    # Include hadronFlavour if available
     if "hadronFlavour" in jet.fields:
-        selJet_pvec["hadronFlavour"] = jet[jet.selected].hadronFlavour
+        selected_jets["hadronFlavour"] = jet[jet.selected].hadronFlavour
 
-    return selJet_pvec
+    return selected_jets
 
 def lowpt_jet_selection(event, corrections_metadata):
 

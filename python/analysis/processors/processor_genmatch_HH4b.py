@@ -23,11 +23,7 @@ from analysis.helpers.FriendTreeSchema import FriendTreeSchema
 from analysis.helpers.common import apply_btag_sf, update_events
 from analysis.helpers.truth_tools import find_genpart
 
-from analysis.helpers.event_selection import apply_event_selection
-from analysis.helpers.selection_basic_4b import (
-    apply_object_selection_4b,
-    #apply_object_selection_boosted_4b
-)
+from analysis.helpers.event_selection import apply_event_selection, apply_4b_selection
 
 import logging
 
@@ -78,8 +74,7 @@ class analysis(processor.ProcessorABC):
         event = apply_event_selection( event, self.corrections_metadata[year], cut_on_lumimask=False)
 
         # Apply object selection (function does not remove events, adds content to objects)
-        event = apply_object_selection_4b( event, self.corrections_metadata[year] )
-        #event = apply_object_selection_boosted_4b( event )
+        event = apply_4b_selection( event, self.corrections_metadata[year] )
 
         # selections.add( 'passJetMult', event.passJetMult )
         # selections.add( "passPreSel", event.passPreSel )
