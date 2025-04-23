@@ -2,6 +2,11 @@ import numpy as np
 import awkward as ak
 from coffea.lumi_tools import LumiMask
 from analysis.helpers.common import mask_event_decision
+from analysis.helpers.selection_basic_4b import (
+    muon_selection,
+    electron_selection,
+    jet_selection
+)
 
 def apply_event_selection(
     event: ak.Array, 
@@ -75,30 +80,29 @@ def apply_dilep_ttbar_selection(event: ak.Array, isRun3: bool = False) -> ak.Arr
     ak.Array
         A boolean mask indicating events passing the dilepton ttbar selection criteria.
     """
-    # Ensure the 'charge' field exists in the Muon and Electron collections
-    if not hasattr(event.Muon, 'charge'):
-        raise AttributeError("The 'Muon' collection does not have a 'charge' field.")
-    if 'Electron' in event.fields and not hasattr(event.Electron, 'charge'):
-        raise AttributeError("The 'Electron' collection does not have a 'charge' field.")
-
     # Select muons and electrons
-    muon_mask = muon_selection(event.Muon, isRun3)
-    electron_mask = electron_selection(event.Electron, isRun3) if 'Electron' in event.fields else None
+    muons = event.selMuon
+    n_muons = ak.sum(muons.pt, axis=1)
 
-    # Count selected leptons
-    n_muons = ak.sum(muon_mask, axis=1)
-    n_electrons = ak.sum(electron_mask, axis=1) if electron_mask is not None else 0
-
-    # Require exactly two leptons (muons + electrons)
-    dilepton_mask = (n_muons + n_electrons) == 2
+    electrons = event.selElec 
+    if 'selElec' in event.fields:
+        electrons = event.selElec
+        n_electrons = ak.sum(electrons.pt, axis=1) 
+        # Require exactly two leptons (muons + electrons)
+        dilepton_mask = (n_muons + n_electrons) == 2
+    else:
+        dilepton_mask = n_muons == 2
 
     # Require opposite-sign leptons
-    muons = event.Muon[muon_mask]
-    electrons = event.Electron[electron_mask] if electron_mask is not None else None
-    os_muons = ak.any(muons.charge[:, None] + muons.charge == 0, axis=1)
-    os_electrons = ak.any(electrons.charge[:, None] + electrons.charge == 0, axis=1) if electrons is not None else False
-    os_muon_electron = ak.any(muons.charge[:, None] + electrons.charge == 0, axis=1) if electrons is not None else False
-    opposite_sign_mask = os_muons | os_electrons | os_muon_electron
+    if hasattr(muons, 'charge'):
+        os_muons = ak.any(muons.charge[:, None] + muons.charge == 0, axis=1)
+        opposite_sign_mask = os_muons         
+    elif hasattr(electrons, 'charge'):
+        os_electrons = ak.any(electrons.charge[:, None] + electrons.charge == 0, axis=1)
+        os_muon_electron = ak.any(muons.charge[:, None] + electrons.charge == 0, axis=1)
+        opposite_sign_mask = os_muons | os_electrons | os_muon_electron
+    else:
+        opposite_sign_mask = np.full(len(event), False)
 
     # Require MET > 40 GeV
     met_mask = event.MET.pt > 40
