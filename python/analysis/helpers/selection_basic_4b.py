@@ -219,12 +219,12 @@ def apply_object_selection_4b(event, corrections_metadata, *,
     # Combined RunII and 3 selection
     #
     event['Muon', 'selected'] = muon_selection(event.Muon, isRun3)
-    event['nMuon_selected'] = ak.sum(event.Muon.selected, axis=1)
+    # event['nMuon_selected'] = ak.sum(event.Muon.selected, axis=1)
     event['selMuon'] = event.Muon[event.Muon.selected]
 
     if 'Electron' in event.fields:
         event['Electron', 'selected'] = electron_selection(event.Electron, isRun3)   
-        event['nElectron_selected'] = ak.sum(event.Electron.selected, axis=1)
+        # event['nElectron_selected'] = ak.sum(event.Electron.selected, axis=1)
         event['selElec'] = event.Electron[event.Electron.selected]
         selLepton = ak.concatenate( [event.selElec, event.selMuon], axis=1 )
     else: selLepton = event.selMuon
