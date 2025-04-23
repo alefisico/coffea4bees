@@ -1,6 +1,6 @@
 import yaml
 from skimmer.processor.picoaod import PicoAOD, fetch_metadata, resize
-from analysis.helpers.selection_basic_4b import apply_event_selection_4b, apply_object_selection_4b
+from analysis.helpers.selection_basic_4b import apply_object_selection_4b
 from coffea.nanoevents import NanoEventsFactory
 
 from jet_clustering.clustering   import cluster_bs
@@ -10,6 +10,7 @@ from analysis.helpers.FriendTreeSchema import FriendTreeSchema
 from base_class.math.random import Squares
 from analysis.helpers.event_weights import add_weights, add_btagweights
 from analysis.helpers.processor_config import processor_config
+from analysis.helpers.event_selection import apply_event_selection
 
 from base_class.root import Chunk, TreeReader
 from analysis.helpers.load_friend import (
@@ -90,7 +91,7 @@ class DeClusterer(PicoAOD):
             # defining SvB_MA
             setSvBVars("SvB_MA", event)
 
-        event = apply_event_selection_4b( event, self.corrections_metadata[year], cut_on_lumimask=config["cut_on_lumimask"] )
+        event = apply_event_selection( event, self.corrections_metadata[year], cut_on_lumimask=config["cut_on_lumimask"] )
 
 
         ## adds all the event mc weights and 1 for data

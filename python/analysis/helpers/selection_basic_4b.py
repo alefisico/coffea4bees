@@ -12,56 +12,66 @@ from coffea.lumi_tools import LumiMask
 from base_class.math.random import Squares
 from copy import copy
 import logging
+from coffea.nanoevents.methods.base import NanoEventsArray
+from typing import Dict, Any
 
-def apply_event_selection_4b( event, corrections_metadata, *, cut_on_lumimask=True):
-
-    lumimask = LumiMask(corrections_metadata['goldenJSON'])
-    event['lumimask'] = np.array( lumimask(event.run, event.luminosityBlock) ) \
-            if cut_on_lumimask else np.full(len(event), True)
-
-    event['passHLT'] = np.full(len(event), True) \
-            if ('HLT' not in event.fields) else mask_event_decision( event,
-                    decision="OR", branch="HLT", list_to_mask=event.metadata['trigger']  )
-
-    event['passNoiseFilter'] = np.full(len(event), True) \
-            if 'Flag' not in event.fields else mask_event_decision( event,
-                    decision="AND", branch="Flag",
-                    list_to_mask=corrections_metadata['NoiseFilter'],
-                    list_to_skip=['BadPFMuonDzFilter', 'hfNoisyHitsFilter']  )
-
-    return event
-
-def muon_selection(event, isRun3: bool = False):
+def muon_selection(muon: ak.Array, isRun3: bool = False) -> ak.Array:
     """
-    Adding muons (loose muon id definition)
-    https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonIdRun2
+    Selects muons based on kinematic, isolation, and identification criteria.
+
+    Parameters:
+    -----------
+    muon : ak.Array
+        The muon collection containing fields such as `pt`, `eta`, `pfRelIso04_all`, `looseId`, `dz`, and `dxy`.
+    isRun3 : bool, optional
+        Whether to apply Run 3 selection criteria. Defaults to False.
+
+    Returns:
+    --------
+    ak.Array
+        A boolean mask indicating selected muons.
     """
-    
+    muon_kin = (muon.pt > 10) & (abs(muon.eta) < (2.4 if isRun3 else 2.5))
+    muon_iso_ID = (muon.pfRelIso04_all < 0.15) & muon.looseId
+
     if isRun3:
-        muon_kin        = (event.Muon.pt > 10) & (abs(event.Muon.eta) < 2.4)
-        muon_iso_ID     = (event.Muon.pfRelIso04_all < 0.15) & (event.Muon.looseId)
-        muon_IP_lowEta  = (abs(event.Muon.eta) < 1.479) & (abs(event.Muon.dz) < 0.1) & (abs(event.Muon.dxy) < 0.05)
-        muon_IP_highEta = (abs(event.Muon.eta) > 1.479) & (abs(event.Muon.dz) < 0.2) & (abs(event.Muon.dxy) < 0.1)
-        return muon_kin & muon_iso_ID & (muon_IP_lowEta | muon_IP_highEta)
-
+        muon_IP = (
+            ((abs(muon.eta) < 1.479) & (abs(muon.dz) < 0.1) & (abs(muon.dxy) < 0.05)) |
+            ((abs(muon.eta) >= 1.479) & (abs(muon.dz) < 0.2) & (abs(muon.dxy) < 0.1))
+        )
     else:
-        return (event.Muon.pt > 10) & (abs(event.Muon.eta) < 2.5) & (event.Muon.pfRelIso04_all < 0.15) & (event.Muon.looseId)
+        muon_IP = True
+
+    return muon_kin & muon_iso_ID & muon_IP
 
 
-def electron_selection(event, isRun3: bool = False):
+def electron_selection(electron: ak.Array, isRun3: bool = False) -> ak.Array:
     """
-    # Adding electrons (loose electron id)
-    # https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedElectronIdentificationRun2
+    Selects electrons based on kinematic, isolation, and identification criteria.
+
+    Parameters:
+    -----------
+    electron : ak.Array
+        The electron collection containing fields such as `pt`, `eta`, `pfRelIso03_all`, `mvaNoIso_WP90`, `mvaFall17V2Iso_WP90`, `dz`, and `dxy`.
+    isRun3 : bool, optional
+        Whether to apply Run 3 selection criteria. Defaults to False.
+
+    Returns:
+    --------
+    ak.Array
+        A boolean mask indicating selected electrons.
     """
-    
-    if isRun3:
-        electron_kin        = (event.Electron.pt > 15) & (abs(event.Electron.eta) < 2.5)
-        electron_iso_ID     = (event.Electron.pfRelIso03_all < 0.15) & getattr(event.Electron, 'mvaNoIso_WP90' )
-        electron_IP_lowEta  = (abs(event.Electron.eta) < 1.479) & (abs(event.Electron.dz) < 0.1) & (abs(event.Electron.dxy) < 0.05)
-        electron_IP_highEta = (abs(event.Electron.eta) > 1.479) & (abs(event.Electron.dz) < 0.2) & (abs(event.Electron.dxy) < 0.1)
-        return electron_kin & electron_iso_ID & (electron_IP_lowEta | electron_IP_highEta)
-    else:
-        return (event.Electron.pt > 15) & (abs(event.Electron.eta) < 2.5) & (event.Electron.pfRelIso03_all < 0.15) & getattr(event.Electron, 'mvaFall17V2Iso_WP90' )
+    electron_kin = (electron.pt > 15) & (abs(electron.eta) < 2.5)
+    electron_iso_ID = (electron.pfRelIso03_all < 0.15) & (
+        getattr(electron, 'mvaNoIso_WP90') if isRun3 else getattr(electron, 'mvaFall17V2Iso_WP90')
+    )
+
+    electron_IP = (
+        ((abs(electron.eta) < 1.479) & (abs(electron.dz) < 0.1) & (abs(electron.dxy) < 0.05)) |
+        ((abs(electron.eta) >= 1.479) & (abs(electron.dz) < 0.2) & (abs(electron.dxy) < 0.1))
+    ) if isRun3 else True
+
+    return electron_kin & electron_iso_ID & electron_IP
 
 def jet_selection(event, corrections_metadata, isRun3: bool = False, isMC: bool = False, isSyntheticData: bool = False, isSyntheticMC: bool = False, dataset: str = ''):
     """
@@ -113,6 +123,8 @@ def jet_selection(event, corrections_metadata, isRun3: bool = False, isMC: bool 
 
     event['Jet', 'tagged']       = event.Jet.selected & (event.Jet.btagScore >= corrections_metadata['btagWP']['M'])
     event['Jet', 'tagged_loose'] = event.Jet.selected & (event.Jet.btagScore >= corrections_metadata['btagWP']['L'])
+
+    return event
 
 
 def apply_bRegCorr( jet ):
@@ -172,7 +184,11 @@ def lowpt_jet_selection(event, corrections_metadata):
         )
     )   ### these is the category for the low pt selection
 
+    ## replacing jet variables to not modify the cand jets
     event['passPreSel'] = event.lowpt_threeTag | event.lowpt_fourTag
+    event['Jet', 'selected'] = event.Jet.selected | event.Jet.selected_lowpt
+
+    return event
 
 
 def apply_dilep_ttbar_selection(muon, nJet_tagged, MET):
@@ -189,7 +205,6 @@ def apply_object_selection_4b(event, corrections_metadata, *,
                                 doLeptonRemoval: bool = True,
                                 loosePtForSkim: bool = False,
                                 override_selected_with_flavor_bit: bool = False,
-                                dilep_ttbar_crosscheck: bool = False,
                                 do_jet_veto_maps: bool = False,
                                 isRun3: bool = False,
                                 isMC: bool = False,  ### temporary for Run3
@@ -203,44 +218,40 @@ def apply_object_selection_4b(event, corrections_metadata, *,
     #
     # Combined RunII and 3 selection
     #
-    event['Muon', 'selected'] = muon_selection(event, isRun3)
+    event['Muon', 'selected'] = muon_selection(event.Muon, isRun3)
     event['nMuon_selected'] = ak.sum(event.Muon.selected, axis=1)
     event['selMuon'] = event.Muon[event.Muon.selected]
 
     if 'Electron' in event.fields:
-        event['Electron', 'selected'] = electron_selection(event, isRun3)   
+        event['Electron', 'selected'] = electron_selection(event.Electron, isRun3)   
         event['nElectron_selected'] = ak.sum(event.Electron.selected, axis=1)
         event['selElec'] = event.Electron[event.Electron.selected]
         selLepton = ak.concatenate( [event.selElec, event.selMuon], axis=1 )
     else: selLepton = event.selMuon
 
-    if doLeptonRemoval:
-        event['Jet', 'lepton_cleaned'] = drClean( event.Jet, selLepton )[1]  ### 0 is the collection of jets, 1 is the flag
-    else:
-        event['Jet', 'lepton_cleaned'] = np.full(len(event), True)
+    event['Jet', 'lepton_cleaned'] = np.full(len(event), True) if not doLeptonRemoval else drClean( event.Jet, selLepton )[1]  ### 0 is the collection of jets, 1 is the flag
 
     if do_jet_veto_maps:
         event['Jet', 'jet_veto_maps'] = apply_jet_veto_maps( corrections_metadata['jet_veto_maps'], event.Jet )
         event['Jet'] = event['Jet'][event['Jet', 'jet_veto_maps']]
 
-    jet_selection(event, corrections_metadata, isRun3, isMC, isSyntheticData, isSyntheticMC, dataset)
+    event = jet_selection(event, corrections_metadata, isRun3, isMC, isSyntheticData, isSyntheticMC, dataset)
 
     if override_selected_with_flavor_bit and "jet_flavor_bit" in event.Jet.fields:
         event['Jet', 'selected'] = (event.Jet.selected) | (event.Jet.jet_flavor_bit == 1)
         event['Jet', 'selected_loose'] = True
 
     event['nJet_selected'] = ak.sum(event.Jet.selected, axis=1)
+    event['passJetMult'] = event['nJet_selected'] >= 4
 
     event['selJet_no_bRegCorr']  = event.Jet[event.Jet.selected]
     event['selJet'] = apply_bRegCorr(event.Jet)
 
-    event['passJetMult'] = event.nJet_selected >= 4
-
-    event['nJet_tagged']         = ak.num(event.Jet[event.Jet.tagged])
-    event['nJet_tagged_loose']   = ak.num(event.Jet[event.Jet.tagged_loose])
-
     event['tagJet']              = event.selJet[event.selJet.tagged]
-    event['tagJet_loose']        = event.Jet[event.Jet.tagged_loose]
+    event['tagJet_loose']        = event.selJet[event.selJet.tagged_loose]
+
+    event['nJet_tagged']         = ak.num(event.tagJet)
+    event['nJet_tagged_loose']   = ak.num(event.tagJet_loose)
 
     event['fourTag']  = (event['nJet_tagged'] >= 4)
     event['threeTag'] = (event['nJet_tagged_loose'] == 3) & (event['nJet_selected'] >= 4)

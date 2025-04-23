@@ -18,10 +18,10 @@ from analysis.helpers.filling_histograms import (
 from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
 from analysis.helpers.processor_config import processor_config
 from analysis.helpers.selection_basic_4b import (
-    apply_event_selection_4b,
     apply_object_selection_4b,
     create_cand_jet_dijet_quadjet,
 )
+from analysis.helpers.event_selection import apply_event_selection
 from base_class.hist import Fill
 from base_class.root import Chunk, TreeReader
 from coffea import processor
@@ -122,7 +122,7 @@ class analysis(processor.ProcessorABC):
         #
         # Event selection
         #
-        event = apply_event_selection_4b( event,
+        event = apply_event_selection( event,
                                         self.corrections_metadata[self.year],
                                         cut_on_lumimask=False
                                         )

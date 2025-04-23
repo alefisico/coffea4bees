@@ -16,6 +16,7 @@ from analysis.helpers.event_weights import (
     add_pseudotagweights,
     add_weights,
 )
+from analysis.helpers.event_selection import apply_event_selection
 from analysis.helpers.filling_histograms import (
     filling_nominal_histograms,
     filling_syst_histograms,
@@ -24,7 +25,6 @@ from analysis.helpers.FriendTreeSchema import FriendTreeSchema
 from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
 from analysis.helpers.processor_config import processor_config
 from analysis.helpers.selection_basic_4b import (
-    apply_event_selection_4b,
     apply_dilep_ttbar_selection,
     apply_object_selection_4b,
     create_cand_jet_dijet_quadjet,
@@ -284,7 +284,7 @@ class analysis(processor.ProcessorABC):
         #
         # Event selection
         #
-        event = apply_event_selection_4b( event,
+        event = apply_event_selection( event,
                                         self.corrections_metadata[self.year],
                                         cut_on_lumimask=self.config["cut_on_lumimask"]
                                         )
@@ -365,7 +365,6 @@ class analysis(processor.ProcessorABC):
                                             dataset=self.dataset,
                                             doLeptonRemoval=self.config["do_lepton_jet_cleaning"],
                                             override_selected_with_flavor_bit=self.config["override_selected_with_flavor_bit"],
-                                            dilep_ttbar_crosscheck=self.run_dilep_ttbar_crosscheck,
                                             do_jet_veto_maps=self.config["do_jet_veto_maps"],
                                             isRun3=self.config["isRun3"],
                                             isMC=self.config["isMC"], ### temporary

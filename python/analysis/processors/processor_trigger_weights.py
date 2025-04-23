@@ -5,8 +5,8 @@ import yaml
 import numpy as np
 from analysis.helpers.common import apply_jerc_corrections
 from base_class.trigger_emulator.TrigEmulatorTool   import TrigEmulatorTool
+from analysis.helpers.event_selection import apply_event_selection
 from analysis.helpers.selection_basic_4b import (
-    apply_event_selection_4b,
     apply_object_selection_4b,
     create_cand_jet_dijet_quadjet,
 )
@@ -60,7 +60,7 @@ class analysis(processor.ProcessorABC):
         #
         # Event selection
         #
-        event = apply_event_selection_4b( event, self.corrections_metadata[self.year], cut_on_lumimask=self.config["cut_on_lumimask"])
+        event = apply_event_selection( event, self.corrections_metadata[self.year], cut_on_lumimask=self.config["cut_on_lumimask"])
 
         #
         # Calculate and apply Jet Energy Calibration

@@ -1,6 +1,7 @@
 import yaml
 from skimmer.processor.picoaod import PicoAOD, fetch_metadata, resize
-from analysis.helpers.selection_basic_4b import apply_event_selection_4b, apply_object_selection_4b
+from analysis.helpers.event_selection import apply_event_selection
+from analysis.helpers.selection_basic_4b import apply_object_selection_4b
 from coffea.nanoevents import NanoEventsFactory
 
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
@@ -49,7 +50,7 @@ class SubSampler(PicoAOD):
         #
         # Event selection
         #
-        event = apply_event_selection_4b( event, self.corrections_metadata[year], cut_on_lumimask=config["cut_on_lumimask"] )
+        event = apply_event_selection( event, self.corrections_metadata[year], cut_on_lumimask=config["cut_on_lumimask"] )
 
         ## adds all the event mc weights and 1 for data
         weights, list_weight_names = add_weights( event, config["do_MC_weights"], dataset, year_label,

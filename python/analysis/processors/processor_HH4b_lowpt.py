@@ -24,8 +24,8 @@ from analysis.helpers.FriendTreeSchema import FriendTreeSchema
 from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
 from analysis.helpers.processor_config import processor_config
 from analysis.helpers.selection_basic_4b import (
-    apply_event_selection_4b,
     apply_object_selection_4b,
+    lowpt_jet_selection,
     create_cand_jet_dijet_quadjet,
 )
 from analysis.helpers.SvB_helpers import setSvBVars, subtract_ttbar_with_SvB
@@ -35,6 +35,7 @@ from analysis.helpers.topCandReconstruction import (
     find_tops,
     find_tops_slow,
 )
+from analysis.helpers.event_selection import apply_event_selection
 from base_class.hist import Fill
 from base_class.root import Chunk, TreeReader
 from coffea import processor
@@ -190,7 +191,7 @@ class analysis(processor.ProcessorABC):
         #
         # Event selection
         #
-        event = apply_event_selection_4b( event,
+        event = apply_event_selection( event,
                                         self.corrections_metadata[self.year],
                                         cut_on_lumimask=self.config["cut_on_lumimask"]
                                         )
@@ -247,15 +248,14 @@ class analysis(processor.ProcessorABC):
                                             dataset=self.dataset,
                                             doLeptonRemoval=self.config["do_lepton_jet_cleaning"],
                                             override_selected_with_flavor_bit=self.config["override_selected_with_flavor_bit"],
-                                            run_lowpt_selection=self.run_lowpt_selection,
-                                            dilep_ttbar_crosscheck=self.run_dilep_ttbar_crosscheck,
-                                            do_jet_veto_maps=self.config["do_jet_veto_maps"],
+                                            do_jet_veto_maps=True,
                                             isRun3=self.config["isRun3"],
                                             isMC=self.config["isMC"], ### temporary
                                             isSyntheticData=self.config["isSyntheticData"],
                                             isSyntheticMC=self.config["isSyntheticMC"],
                                             )
 
+        event = lowpt_jet_selection(event, self.corrections_metadata[self.year])
 
         selections = PackedSelection()
         selections.add( "lumimask", event.lumimask)
@@ -511,7 +511,7 @@ class analysis(processor.ProcessorABC):
                                                   run_dilep_ttbar_crosscheck=self.run_dilep_ttbar_crosscheck,
                                                   top_reconstruction=self.top_reconstruction,
                                                   isDataForMixed=self.config['isDataForMixed'],
-                                                  run_lowpt_selection=self.run_lowpt_selection,
+                                                  tag_list=["lowpt_fourTag", "lowpt_threeTag", "fourTag", "threeTag"],
                                                   event_metadata=event.metadata)
 
             #
