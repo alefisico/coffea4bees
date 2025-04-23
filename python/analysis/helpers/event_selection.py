@@ -125,8 +125,6 @@ def apply_boosted_4b_selection(event: ak.Array) -> ak.Array:
     --------
     ak.Array
         The input event data with additional fields:
-        - `FatJet['selected']`: Boolean mask for selected boosted jets.
-        - `nFatJet_selected`: Number of selected boosted jets.
         - `passBoostedKin`: Boolean mask for events passing boosted kinematic selection.
         - `passBoostedSel`: Boolean mask for events passing boosted selection criteria.
     """
@@ -134,11 +132,11 @@ def apply_boosted_4b_selection(event: ak.Array) -> ak.Array:
     event['FatJet'] = event.FatJet[ak.argsort(event.FatJet.particleNetMD_Xbb, axis=1, ascending=False)]
 
     # Apply kinematic selection to FatJets
-    event['FatJet', 'selected'] = (event.FatJet.pt > 300) & (np.abs(event.FatJet.eta) < 2.4)
-    event['nFatJet_selected'] = ak.sum(event.FatJet.selected, axis=1)
+    FatJet_selected = (event.FatJet.pt > 300) & (np.abs(event.FatJet.eta) < 2.4)
+    nFatJet_selected = ak.sum(FatJet_selected, axis=1)
 
     # Check if events pass boosted kinematic selection
-    event['passBoostedKin'] = event.nFatJet_selected >= 2
+    event['passBoostedKin'] = nFatJet_selected >= 2
 
     # Apply additional selection criteria to candidate jets
     tmp_selev = event[event.passBoostedKin]
@@ -156,5 +154,95 @@ def apply_boosted_4b_selection(event: ak.Array) -> ak.Array:
     passBoostedSel = np.full(len(event), False)
     passBoostedSel[event.passBoostedKin] = candJet1 & candJet2 & passBDT
     event['passBoostedSel'] = passBoostedSel
+
+    return event
+
+def apply_4b_selection(event, corrections_metadata, *,
+                                dataset: str = '',
+                                doLeptonRemoval: bool = True,
+                                loosePtForSkim: bool = False,
+                                override_selected_with_flavor_bit: bool = False,
+                                do_jet_veto_maps: bool = False,
+                                isRun3: bool = False,
+                                isMC: bool = False,  ### temporary for Run3
+                                isSyntheticData: bool = False,
+                                isSyntheticMC: bool = False,
+                            ):
+    """
+    Applies object selection criteria for 4b analysis.
+
+    Parameters:
+    -----------
+    event : ak.Array
+        The event data containing fields such as `Jet` and `Lepton`.
+    corrections_metadata : dict
+        Metadata containing corrections and configuration information.
+    dataset : str, optional
+        The dataset name. Defaults to an empty string.
+    doLeptonRemoval : bool, optional
+        Whether to perform lepton removal. Defaults to True.
+    loosePtForSkim : bool, optional
+        Whether to use loose pT cuts for skimming. Defaults to False.
+    override_selected_with_flavor_bit : bool, optional
+        Whether to override selected jets with flavor bit. Defaults to False.
+    do_jet_veto_maps : bool, optional
+        Whether to apply jet veto maps. Defaults to False.
+    isRun3 : bool, optional
+        Whether to apply Run 3-specific selection criteria. Defaults to False.
+    isMC : bool, optional
+        Whether the data is Monte Carlo simulation. Defaults to False.
+    isSyntheticData : bool, optional
+        Whether the data is synthetic. Defaults to False.
+    isSyntheticMC : bool, optional
+        Whether the Monte Carlo data is synthetic. Defaults to False.
+
+    Returns:
+    --------
+    ak.Array
+        The input event data with additional fields for object selection.
+    """
+    # Combined RunII and 3 selection
+    event = lepton_selection(event, isRun3)
+    
+    event = jet_selection(event, corrections_metadata, isRun3, isMC, isSyntheticData, isSyntheticMC, dataset, doLeptonRemoval, do_jet_veto_maps, override_selected_with_flavor_bit)
+
+    event['passJetMult'] = event['nJet_selected'] >= 4
+
+    event['fourTag'] = (event['nJet_tagged'] >= 4)
+    event['threeTag'] = (event['nJet_tagged_loose'] == 3) & (event['nJet_selected'] >= 4)
+    event['twoTag'] = (event['nJet_tagged_loose'] == 2) & (event['nJet_selected'] >= 4)
+
+    if isSyntheticData or isSyntheticMC:
+        event['threeTag'] = False
+        event['twoTag'] = False
+
+    if isRun3:
+        event['passPreSel'] = event.twoTag | event.threeTag | event.fourTag
+    else:
+        event['passPreSel'] = event.threeTag | event.fourTag
+
+    event['tag'] = ak.zip({
+        "twoTag": event.twoTag,
+        "threeTag": event.threeTag,
+        "fourTag": event.fourTag,
+    })
+
+    # For trigger emulation
+    event['Jet', 'muon_cleaned'] = drClean(event.Jet, event.selMuon)[1]
+    event['Jet', 'ht_selected'] = (event.Jet.pt >= 30) & (np.abs(event.Jet.eta) < 2.4) & event.Jet.muon_cleaned
+    #  Calculate hT
+    event["hT"] = ak.sum(event.Jet[event.Jet.selected_loose].pt, axis=1)
+    event["hT_selected"] = ak.sum(event.Jet[event.Jet.selected].pt, axis=1)
+    event["hT_trigger"] = ak.sum(event.Jet[event.Jet.ht_selected].pt, axis=1)
+
+    # Only need 30 GeV jets for signal systematics
+    if loosePtForSkim:
+        event['Jet', 'selected_lowpt_forskim'] = (event.Jet.pt >= 15) & (np.abs(event.Jet.eta) <= 2.4) & ~event.Jet.pileup & (event.Jet.jetId >= 2) & event.Jet.lepton_cleaned
+        event['nJet_selected_lowpt_forskim'] = ak.sum(event.Jet.selected_lowpt_forskim, axis=1)
+        event['Jet', 'tagged_lowpt_forskim'] = event.Jet.selected_lowpt_forskim & (event.Jet.btagScore >= corrections_metadata['btagWP']['M'])
+        event['passJetMult_lowpt_forskim'] = event.nJet_selected_lowpt_forskim >= 4
+        event['nJet_tagged_lowpt_forskim'] = ak.num(event.Jet[event.Jet.tagged_lowpt_forskim])
+        event["fourTag_lowpt_forskim"] = (event['nJet_tagged_lowpt_forskim'] >= 4)
+        event['passPreSel_lowpt_forskim'] = event.threeTag | event.fourTag_lowpt_forskim
 
     return event

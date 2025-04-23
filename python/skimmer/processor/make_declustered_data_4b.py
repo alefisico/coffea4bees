@@ -1,6 +1,6 @@
 import yaml
 from skimmer.processor.picoaod import PicoAOD, fetch_metadata, resize
-from analysis.helpers.selection_basic_4b import apply_object_selection_4b
+from analysis.helpers.event_selection import apply_4b_selection
 from coffea.nanoevents import NanoEventsFactory
 
 from jet_clustering.clustering   import cluster_bs
@@ -120,7 +120,7 @@ class DeClusterer(PicoAOD):
 
         event = update_events(event, {"Jet": jets})
 
-        event = apply_object_selection_4b( event, self.corrections_metadata[year],
+        event = apply_4b_selection( event, self.corrections_metadata[year],
                                            dataset=dataset,
                                            doLeptonRemoval=config["do_lepton_jet_cleaning"],
                                            override_selected_with_flavor_bit=config["override_selected_with_flavor_bit"],

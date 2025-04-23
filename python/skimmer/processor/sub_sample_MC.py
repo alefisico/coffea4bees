@@ -1,7 +1,6 @@
 import yaml
 from skimmer.processor.picoaod import PicoAOD, fetch_metadata, resize
-from analysis.helpers.event_selection import apply_event_selection
-from analysis.helpers.selection_basic_4b import apply_object_selection_4b
+from analysis.helpers.event_selection import apply_event_selection, apply_object_selection_4b
 from coffea.nanoevents import NanoEventsFactory
 
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema

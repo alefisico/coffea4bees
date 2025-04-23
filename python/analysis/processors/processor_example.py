@@ -19,8 +19,7 @@ from analysis.helpers.cutflow import cutFlow
 
 from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
 from analysis.helpers.common import apply_btag_sf
-from analysis.helpers.event_selection import apply_event_selection
-from analysis.helpers.selection_basic_4b import apply_object_selection_4b
+from analysis.helpers.event_selection import apply_event_selection, apply_4b_selection
 import logging
 
 
@@ -106,7 +105,7 @@ class analysis(processor.ProcessorABC):
         self._cutFlow.fill("passHLT",  event[ event.lumimask & event.passNoiseFilter & event.passHLT], allTag=True)
 
         # Apply object selection (function does not remove events, adds content to objects)
-        event = apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year]  )
+        event = apply_4b_selection( event, year, isMC, dataset, self.corrections_metadata[year] )
         self._cutFlow.fill("passJetMult",  event[ event.lumimask & event.passNoiseFilter & event.passHLT & event.passJetMult ], allTag=True)
 
         #
