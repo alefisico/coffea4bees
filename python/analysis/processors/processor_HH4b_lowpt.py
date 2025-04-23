@@ -26,8 +26,8 @@ from analysis.helpers.processor_config import processor_config
 from analysis.helpers.selection_basic_4b import (
     apply_object_selection_4b,
     lowpt_jet_selection,
-    create_cand_jet_dijet_quadjet,
 )
+from analysis.helpers.candidates_selection import create_cand_jet_dijet_quadjet
 from analysis.helpers.SvB_helpers import setSvBVars, subtract_ttbar_with_SvB
 from analysis.helpers.topCandReconstruction import (
     adding_top_reco_to_event,

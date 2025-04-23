@@ -19,7 +19,6 @@ from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
 from analysis.helpers.processor_config import processor_config
 from analysis.helpers.selection_basic_4b import (
     apply_object_selection_4b,
-    create_cand_jet_dijet_quadjet,
 )
 from analysis.helpers.event_selection import apply_event_selection
 from base_class.hist import Fill
@@ -38,6 +37,7 @@ from ..helpers.load_friend import (
     FriendTemplate,
     parse_friends,
 )
+from analysis.helpers.candidates_selection import create_cand_jet_dijet_quadjet
 #
 # Setup
 #

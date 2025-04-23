@@ -8,8 +8,8 @@ from base_class.trigger_emulator.TrigEmulatorTool   import TrigEmulatorTool
 from analysis.helpers.event_selection import apply_event_selection
 from analysis.helpers.selection_basic_4b import (
     apply_object_selection_4b,
-    create_cand_jet_dijet_quadjet,
 )
+from analysis.helpers.candidates_selection import create_cand_jet_dijet_quadjet
 from coffea import processor
 from coffea.analysis_tools import PackedSelection
 from coffea.nanoevents import NanoAODSchema
