@@ -83,7 +83,7 @@ def list_of_files(ifile,
         rucio_client = rucio_utils.get_rucio_client()
         outfiles, outsite, sites_counts = rucio_utils.get_dataset_files_replicas(
             ifile, client=rucio_client, regex_sites=fr"{rucio_regex_sites}", mode="first", allowlist_sites=allowlist_sites, blocklist_sites=blocklist_sites)
-        good_files = checking_input_files(outfiles) if check_input_files else outfiles    
+        good_files = checking_input_files(outfiles) if check_input_files else outfiles
         return good_files[:(test_files if test else None)]
 
 
@@ -206,6 +206,7 @@ if __name__ == '__main__':
 
     if 'all' in args.datasets:
         metadata['datasets'].pop("mixeddata")
+        metadata['datasets'].pop("datamixed")
         metadata['datasets'].pop("synthetic_data")
         metadata['datasets'].pop("data_3b_for_mixed")
         args.datasets = metadata['datasets'].keys()
@@ -225,7 +226,7 @@ if __name__ == '__main__':
                     f"{year} name not in metadatafile for {dataset}")
                 continue
 
-            if dataset in ['data', 'mixeddata', 'data_3b_for_mixed', 'synthetic_data'] or not ('xs' in metadata['datasets'][dataset].keys()):
+            if dataset in ['data', 'mixeddata', 'datamixed', 'data_3b_for_mixed', 'synthetic_data'] or not ('xs' in metadata['datasets'][dataset].keys()):
                 xsec = 1.
             elif isinstance(metadata['datasets'][dataset]['xs'], float):
                 xsec = metadata['datasets'][dataset]['xs']
@@ -247,11 +248,12 @@ if __name__ == '__main__':
                                          }
             isData = (dataset == 'data')
             isMixedData = (dataset == 'mixeddata')
+            isDataMixed = (dataset == 'datamixed')
             isSyntheticData = (dataset == 'synthetic_data')
             isDataForMix = (dataset == 'data_3b_for_mixed')
             isTTForMixed = (dataset in ['TTToHadronic_for_mixed', 'TTToSemiLeptonic_for_mixed', 'TTTo2L2Nu_for_mixed'])
 
-            if not ( isData or isSyntheticData or isMixedData or isDataForMix or isTTForMixed):
+            if not ( isData or isSyntheticData or isMixedData or isDataMixed or isDataForMix or isTTForMixed):
                 logging.info("Config MC")
                 if config_runner['data_tier'].startswith('pico'):
                     if 'data' not in dataset:
@@ -301,6 +303,31 @@ if __name__ == '__main__':
 
                     logging.info(
                         f'Dataset {idataset} with {len(fileset[idataset]["files"])} files')
+
+            elif isDataMixed:
+                logging.info("Config Data Mixed ")
+
+                nMixedSamples = metadata['datasets'][dataset]["nSamples"]
+                mixed_config = metadata['datasets'][dataset][year][config_runner['data_tier']]
+                logging.info(f"Number of mixed samples is {nMixedSamples}")
+                for v in range(nMixedSamples):
+
+                    mixed_name = f"mix_v{v}"
+                    idataset = f'{mixed_name}_{year}'
+
+                    metadata_dataset[idataset] = copy(metadata_dataset[dataset])
+                    metadata_dataset[idataset]['processName'] = mixed_name
+                    mixed_files = [f.replace("XXX",str(v)) for f in mixed_config['files_template']]
+                    fileset[idataset] = {'files': list_of_files(mixed_files,
+                                                                test=args.test, test_files=config_runner['test_files'],
+                                                                allowlist_sites=config_runner['allowlist_sites'],
+                                                                blocklist_sites=config_runner['blocklist_sites'],
+                                                                rucio_regex_sites=config_runner['rucio_regex_sites']),
+                                         'metadata': metadata_dataset[idataset]}
+
+                    logging.info(
+                        f'Dataset {idataset} with {len(fileset[idataset]["files"])} files')
+
 
             elif isSyntheticData:
                 logging.info("Config Synthetic Data ")
