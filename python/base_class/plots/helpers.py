@@ -22,14 +22,14 @@ COLORS = [
 # Dictionary and List Operations
 def get_value_nested_dict(nested_dict: Dict[str, Any], target_key: str) -> Any:
     """Return the first value matching the target key from a nested dictionary.
-    
+
     Args:
         nested_dict: The nested dictionary to search through
         target_key: The key to find in the dictionary
-        
+
     Returns:
         The value associated with the target key
-        
+
     Raises:
         ValueError: If the target key is not found in the dictionary
     """
@@ -47,11 +47,11 @@ def get_value_nested_dict(nested_dict: Dict[str, Any], target_key: str) -> Any:
 
 def compare_dict_keys_with_list(dict1: Dict[str, Any], list2: List[str]) -> Tuple[Set[str], Set[str]]:
     """Compare the keys of a dictionary with the elements of a list.
-    
+
     Args:
         dict1: The dictionary to compare
         list2: The list to compare against
-        
+
     Returns:
         A tuple containing:
             - common_keys: Set of keys present in both dictionary and list
@@ -67,7 +67,7 @@ def compare_dict_keys_with_list(dict1: Dict[str, Any], list2: List[str]) -> Tupl
 
 # Histogram Creation
 def make_hist(
-    *, 
+    *,
     edges: np.ndarray,
     values: np.ndarray,
     variances: np.ndarray,
@@ -77,7 +77,7 @@ def make_hist(
     add_flow: bool
 ) -> hist.Hist:
     """Create a 1D histogram with weighted storage.
-    
+
     Args:
         edges: Bin edges for the histogram
         values: Bin values
@@ -86,7 +86,7 @@ def make_hist(
         under_flow: Value for underflow bin
         over_flow: Value for overflow bin
         add_flow: Whether to add under/overflow values
-        
+
     Returns:
         A hist.Hist object with the specified configuration
     """
@@ -116,7 +116,7 @@ def make_2d_hist(
     y_label: str
 ) -> hist.Hist:
     """Create a 2D histogram with weighted storage.
-    
+
     Args:
         x_edges: Bin edges for the x-axis
         y_edges: Bin edges for the y-axis
@@ -124,7 +124,7 @@ def make_2d_hist(
         variances: Bin variances
         x_label: Label for the x-axis
         y_label: Label for the y-axis
-        
+
     Returns:
         A hist.Hist object with the specified configuration
     """
@@ -144,11 +144,11 @@ def make_2d_hist(
 # Physics-specific Functions
 def make_klambda_hist(kl_value: str, plot_data: Dict[str, Any]) -> Dict[str, np.ndarray]:
     """Create a k-lambda histogram from plot data.
-    
+
     Args:
         kl_value: The k-lambda value as a string (e.g., "HH4b_kl1")
         plot_data: Dictionary containing plot data for different k-lambda values
-        
+
     Returns:
         Dictionary containing weighted plot data for the specified k-lambda value
     """
@@ -178,7 +178,7 @@ def make_klambda_hist(kl_value: str, plot_data: Dict[str, Any]) -> Dict[str, np.
 # File Operations
 def savefig(fig: Any, file_name: Union[str, List[str]], *args: Any) -> None:
     """Save a figure to a PDF file.
-    
+
     Args:
         fig: The figure object to save
         file_name: Name of the output file (string or list of strings)
@@ -200,7 +200,7 @@ def savefig(fig: Any, file_name: Union[str, List[str]], *args: Any) -> None:
 
 def save_yaml(plot_data: Dict[str, Any], var: Union[str, List[str]], *args: Any) -> None:
     """Save plot data to a YAML file.
-    
+
     Args:
         plot_data: Data to save
         var: Variable name (string or list of strings)
@@ -225,11 +225,11 @@ def save_yaml(plot_data: Dict[str, Any], var: Union[str, List[str]], *args: Any)
 # Utility Functions
 def get_cut_dict(cut: str, cut_list: List[str]) -> Dict[str, Any]:
     """Create a dictionary of cuts with sum as default value.
-    
+
     Args:
         cut: The main cut to set as True
         cut_list: List of all cuts
-        
+
     Returns:
         Dictionary with cuts as keys and sum as default value
     """
@@ -239,12 +239,12 @@ def get_cut_dict(cut: str, cut_list: List[str]) -> Dict[str, Any]:
 
 def get_label(default_str: str, override_list: Optional[List[str]], i: int) -> str:
     """Get a label from override list or use default.
-    
+
     Args:
         default_str: Default label to use if override is not available
         override_list: Optional list of override labels
         i: Index of the label to get
-        
+
     Returns:
         The label to use
     """
@@ -259,7 +259,7 @@ def make_ratio(
     **kwargs: Any
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Calculate ratio and uncertainty between two histograms.
-    
+
     Args:
         num_values: Numerator values
         num_vars: Numerator variances
@@ -267,7 +267,7 @@ def make_ratio(
         den_vars: Denominator variances
         epsilon: Small value to avoid division by zero (defaults to EPSILON)
         **kwargs: Additional options (e.g., norm for normalization)
-        
+
     Returns:
         Tuple of (ratios, ratio_uncertainties)
     """
@@ -291,10 +291,10 @@ def make_ratio(
 
 def get_year_str(year: Union[str, List[str]]) -> str:
     """Convert year format to string.
-    
+
     Args:
         year: Year or list of years to convert
-        
+
     Returns:
         Formatted year string
     """
@@ -304,10 +304,10 @@ def get_year_str(year: Union[str, List[str]]) -> str:
 
 def get_region_str(region: Union[str, List[str]]) -> str:
     """Convert region format to string.
-    
+
     Args:
         region: Region or list of regions to convert
-        
+
     Returns:
         Formatted region string
     """
