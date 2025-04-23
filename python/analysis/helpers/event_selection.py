@@ -94,20 +94,24 @@ def apply_dilep_ttbar_selection(event: ak.Array, isRun3: bool = False) -> ak.Arr
 
     # Require opposite-sign leptons
     if hasattr(muons, 'charge'):
-        os_muons = ak.any(muons.charge[:, None] + muons.charge == 0, axis=1)
+        os_muons = ak.sum(muons.charge, axis=-1) == 0
         opposite_sign_mask = os_muons         
     elif hasattr(electrons, 'charge'):
-        os_electrons = ak.any(electrons.charge[:, None] + electrons.charge == 0, axis=1)
-        os_muon_electron = ak.any(muons.charge[:, None] + electrons.charge == 0, axis=1)
+        os_electrons = ak.sum(electrons.charge, axis=-1) == 0
+        os_muon_electron = ak.sum(ak.concatenate([muons.charge, electrons.charge], axis=-1), axis=-1) == 0
         opposite_sign_mask = os_muons | os_electrons | os_muon_electron
     else:
-        opposite_sign_mask = np.full(len(event), False)
+        opposite_sign_mask = np.full(len(event), True)
 
     # Require MET > 40 GeV
     met_mask = event.MET.pt > 40
 
     # Combine all selection criteria
     selection_mask = dilepton_mask & opposite_sign_mask & met_mask
+    logging.debug(f"dilepton_mask: {dilepton_mask}")
+    logging.debug(f"opposite_sign_mask: {opposite_sign_mask}")
+    logging.debug(f"MET mask: {met_mask}")
+    logging.debug(f"Selection mask: {selection_mask}\n\n")
 
     return selection_mask
 
