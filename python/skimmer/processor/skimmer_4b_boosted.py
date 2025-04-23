@@ -5,10 +5,8 @@ import yaml
 from analysis.helpers.common import apply_jerc_corrections
 from analysis.helpers.mc_weight_outliers import OutlierByMedian
 from analysis.helpers.processor_config import processor_config
-from analysis.helpers.event_selection import apply_event_selection
-from analysis.helpers.selection_basic_4b import (
-    apply_object_selection_boosted_4b
-)
+from analysis.helpers.event_selection import apply_event_selection, apply_boosted_4b_selection
+
 from coffea.analysis_tools import PackedSelection, Weights
 from skimmer.processor.picoaod import PicoAOD
 
@@ -51,7 +49,7 @@ class Skimmer(PicoAOD):
                                       )
             event["Jet"] = jets
 
-        event = apply_object_selection_boosted_4b( event )
+        event = apply_boosted_4b_selection(event)
 
         weights = Weights(len(event), storeIndividual=True)
 

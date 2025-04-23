@@ -58,3 +58,99 @@ def apply_event_selection(
     )
 
     return event
+
+def apply_dilep_ttbar_selection(event: ak.Array, isRun3: bool = False) -> ak.Array:
+    """
+    Applies dilepton ttbar selection criteria to the event data.
+
+    Parameters:
+    -----------
+    event : ak.Array
+        The event data containing fields such as `Muon`, `Electron`, and `MET`.
+    isRun3 : bool, optional
+        Whether to apply Run 3-specific selection criteria. Defaults to False.
+
+    Returns:
+    --------
+    ak.Array
+        A boolean mask indicating events passing the dilepton ttbar selection criteria.
+    """
+    # Ensure the 'charge' field exists in the Muon and Electron collections
+    if not hasattr(event.Muon, 'charge'):
+        raise AttributeError("The 'Muon' collection does not have a 'charge' field.")
+    if 'Electron' in event.fields and not hasattr(event.Electron, 'charge'):
+        raise AttributeError("The 'Electron' collection does not have a 'charge' field.")
+
+    # Select muons and electrons
+    muon_mask = muon_selection(event.Muon, isRun3)
+    electron_mask = electron_selection(event.Electron, isRun3) if 'Electron' in event.fields else None
+
+    # Count selected leptons
+    n_muons = ak.sum(muon_mask, axis=1)
+    n_electrons = ak.sum(electron_mask, axis=1) if electron_mask is not None else 0
+
+    # Require exactly two leptons (muons + electrons)
+    dilepton_mask = (n_muons + n_electrons) == 2
+
+    # Require opposite-sign leptons
+    muons = event.Muon[muon_mask]
+    electrons = event.Electron[electron_mask] if electron_mask is not None else None
+    os_muons = ak.any(muons.charge[:, None] + muons.charge == 0, axis=1)
+    os_electrons = ak.any(electrons.charge[:, None] + electrons.charge == 0, axis=1) if electrons is not None else False
+    os_muon_electron = ak.any(muons.charge[:, None] + electrons.charge == 0, axis=1) if electrons is not None else False
+    opposite_sign_mask = os_muons | os_electrons | os_muon_electron
+
+    # Require MET > 40 GeV
+    met_mask = event.MET.pt > 40
+
+    # Combine all selection criteria
+    selection_mask = dilepton_mask & opposite_sign_mask & met_mask
+
+    return selection_mask
+
+def apply_boosted_4b_selection(event: ak.Array) -> ak.Array:
+    """
+    Applies boosted object selection criteria for 4b analysis.
+
+    Parameters:
+    -----------
+    event : ak.Array
+        The event data containing fields such as `FatJet` and `bdt`.
+
+    Returns:
+    --------
+    ak.Array
+        The input event data with additional fields:
+        - `FatJet['selected']`: Boolean mask for selected boosted jets.
+        - `nFatJet_selected`: Number of selected boosted jets.
+        - `passBoostedKin`: Boolean mask for events passing boosted kinematic selection.
+        - `passBoostedSel`: Boolean mask for events passing boosted selection criteria.
+    """
+    # Sort FatJets by particleNetMD_Xbb in descending order
+    event['FatJet'] = event.FatJet[ak.argsort(event.FatJet.particleNetMD_Xbb, axis=1, ascending=False)]
+
+    # Apply kinematic selection to FatJets
+    event['FatJet', 'selected'] = (event.FatJet.pt > 300) & (np.abs(event.FatJet.eta) < 2.4)
+    event['nFatJet_selected'] = ak.sum(event.FatJet.selected, axis=1)
+
+    # Check if events pass boosted kinematic selection
+    event['passBoostedKin'] = event.nFatJet_selected >= 2
+
+    # Apply additional selection criteria to candidate jets
+    tmp_selev = event[event.passBoostedKin]
+    candJet1 = (tmp_selev.FatJet[:, 0].msoftdrop > 50) & (tmp_selev.FatJet[:, 0].particleNetMD_Xbb > 0.8)
+    candJet2 = (tmp_selev.FatJet[:, 1].particleNet_mass > 50)
+
+    # Apply BDT-based selection if available
+    if 'bdt' in tmp_selev.fields:
+        passBDT = (tmp_selev.FatJet[:, 1].particleNetMD_Xbb > 0.950) & (tmp_selev.bdt['score'] > 0.03)  ### bdt_score only in picoAOD.chunk.withBDT.root files
+        # passBDT = (tmp_selev.FatJet[:, 1].particleNetMD_Xbb > 0.980) & (tmp_selev.bdt['score'] > 0.43)  ### bdt_score only in picoAOD.chunk.withBDT.root files
+    else:
+        passBDT = np.full(len(tmp_selev), True)
+
+    # Combine all selection criteria
+    passBoostedSel = np.full(len(event), False)
+    passBoostedSel[event.passBoostedKin] = candJet1 & candJet2 & passBDT
+    event['passBoostedSel'] = passBoostedSel
+
+    return event

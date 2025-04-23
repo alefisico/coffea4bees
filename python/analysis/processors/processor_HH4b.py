@@ -16,7 +16,7 @@ from analysis.helpers.event_weights import (
     add_pseudotagweights,
     add_weights,
 )
-from analysis.helpers.event_selection import apply_event_selection
+from analysis.helpers.event_selection import apply_event_selection, apply_dilep_ttbar_selection
 from analysis.helpers.filling_histograms import (
     filling_nominal_histograms,
     filling_syst_histograms,
@@ -24,10 +24,7 @@ from analysis.helpers.filling_histograms import (
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
 from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
 from analysis.helpers.processor_config import processor_config
-from analysis.helpers.selection_basic_4b import (
-    apply_dilep_ttbar_selection,
-    apply_object_selection_4b,
-)
+from analysis.helpers.selection_basic_4b import apply_object_selection_4b
 from analysis.helpers.candidates_selection import create_cand_jet_dijet_quadjet
 from analysis.helpers.SvB_helpers import setSvBVars, subtract_ttbar_with_SvB
 from analysis.helpers.topCandReconstruction import (
