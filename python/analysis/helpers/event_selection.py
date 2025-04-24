@@ -80,38 +80,17 @@ def apply_dilep_ttbar_selection(event: ak.Array, isRun3: bool = False) -> ak.Arr
     ak.Array
         A boolean mask indicating events passing the dilepton ttbar selection criteria.
     """
-    # Select muons and electrons
-    muons = event.selMuon
-    n_muons = ak.sum(muons.pt, axis=1)
+    dimuon_selection = (event.Muon.pt > 10) & (abs(event.Muon.eta) < 2.4) & (event.Muon.tightId) & (event.Muon.pfRelIso04_all < 0.05)
+    nMuon_dimuon_selected = ak.sum(dimuon_selection, axis=1)
+    dilepton_mask = nMuon_dimuon_selected >= 2
 
-    electrons = event.selElec 
-    if 'selElec' in event.fields:
-        electrons = event.selElec
-        n_electrons = ak.sum(electrons.pt, axis=1) 
-        # Require exactly two leptons (muons + electrons)
-        dilepton_mask = (n_muons + n_electrons) == 2
-    else:
-        dilepton_mask = n_muons == 2
-
-    # Require opposite-sign leptons
-    if hasattr(muons, 'charge'):
-        os_muons = ak.sum(muons.charge, axis=-1) == 0
-        opposite_sign_mask = os_muons         
-    elif hasattr(electrons, 'charge'):
-        os_electrons = ak.sum(electrons.charge, axis=-1) == 0
-        os_muon_electron = ak.sum(ak.concatenate([muons.charge, electrons.charge], axis=-1), axis=-1) == 0
-        opposite_sign_mask = os_muons | os_electrons | os_muon_electron
-    else:
-        opposite_sign_mask = np.full(len(event), True)
+    jet_mask = event.nJet_tagged == 2
 
     # Require MET > 40 GeV
-    met_mask = event.MET.pt > 40
+    met_mask = event.MET.pt > 30
 
     # Combine all selection criteria
-    selection_mask = dilepton_mask & opposite_sign_mask & met_mask
-    logging.debug(f"dilepton_mask: {dilepton_mask}")
-    logging.debug(f"opposite_sign_mask: {opposite_sign_mask}")
-    logging.debug(f"MET mask: {met_mask}")
+    selection_mask = dilepton_mask & jet_mask & met_mask
     logging.debug(f"Selection mask: {selection_mask}\n\n")
 
     return selection_mask
