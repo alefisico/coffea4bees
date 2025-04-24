@@ -23,7 +23,6 @@ from analysis.helpers.filling_histograms import (
 from analysis.helpers.FriendTreeSchema import FriendTreeSchema
 from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
 from analysis.helpers.processor_config import processor_config
-from analysis.helpers.selection_basic_4b import lowpt_jet_selection
 from analysis.helpers.candidates_selection import create_cand_jet_dijet_quadjet
 from analysis.helpers.SvB_helpers import setSvBVars, subtract_ttbar_with_SvB
 from analysis.helpers.topCandReconstruction import (
@@ -32,7 +31,7 @@ from analysis.helpers.topCandReconstruction import (
     find_tops,
     find_tops_slow,
 )
-from analysis.helpers.event_selection import apply_event_selection, apply_4b_selection
+from analysis.helpers.event_selection import apply_event_selection, apply_4b_lowpt_selection
 from base_class.hist import Fill
 from base_class.root import Chunk, TreeReader
 from coffea import processor
@@ -241,18 +240,17 @@ class analysis(processor.ProcessorABC):
         weights = copy.copy(weights)
 
         # Apply object selection (function does not remove events, adds content to objects)
-        event = apply_4b_selection( event, self.corrections_metadata[self.year],
-                                            dataset=self.dataset,
-                                            doLeptonRemoval=self.config["do_lepton_jet_cleaning"],
-                                            override_selected_with_flavor_bit=self.config["override_selected_with_flavor_bit"],
-                                            do_jet_veto_maps=True,
-                                            isRun3=self.config["isRun3"],
-                                            isMC=self.config["isMC"], ### temporary
-                                            isSyntheticData=self.config["isSyntheticData"],
-                                            isSyntheticMC=self.config["isSyntheticMC"],
-                                            )
+        event = apply_4b_lowpt_selection( event, self.corrections_metadata[self.year],
+                                    dataset=self.dataset,
+                                    doLeptonRemoval=self.config["do_lepton_jet_cleaning"],
+                                    override_selected_with_flavor_bit=self.config["override_selected_with_flavor_bit"],
+                                    do_jet_veto_maps=self.config["do_jet_veto_maps"],
+                                    isRun3=self.config["isRun3"],
+                                    isMC=self.config["isMC"], ### temporary
+                                    isSyntheticData=self.config["isSyntheticData"],
+                                    isSyntheticMC=self.config["isSyntheticMC"],
+                                    )
 
-        event = lowpt_jet_selection(event, self.corrections_metadata[self.year])
 
         selections = PackedSelection()
         selections.add( "lumimask", event.lumimask)

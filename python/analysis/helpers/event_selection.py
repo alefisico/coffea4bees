@@ -3,9 +3,10 @@ import awkward as ak
 import logging
 from coffea.lumi_tools import LumiMask
 from analysis.helpers.common import mask_event_decision, drClean
-from analysis.helpers.selection_basic_4b import (
+from analysis.helpers.object_selection import (
     lepton_selection,
-    jet_selection
+    jet_selection,
+    lowpt_jet_selection
 )
 
 def apply_event_selection(
@@ -227,5 +228,119 @@ def apply_4b_selection(event, corrections_metadata, *,
         nJet_tagged_lowpt_forskim = ak.num(event.Jet[mask_tagjet_lowpt_forskim])
         event["fourTag_lowpt_forskim"] = (nJet_tagged_lowpt_forskim >= 4)
         event['passPreSel_lowpt_forskim'] = event.threeTag | event.fourTag_lowpt_forskim
+
+    return event
+
+def apply_4b_lowpt_selection(
+    event: ak.Array,
+    corrections_metadata: dict,
+    *,
+    dataset: str = '',
+    doLeptonRemoval: bool = True,
+    loosePtForSkim: bool = False,
+    override_selected_with_flavor_bit: bool = False,
+    do_jet_veto_maps: bool = False,
+    isRun3: bool = False,
+    isMC: bool = False,  # Temporary for Run3
+    isSyntheticData: bool = False,
+    isSyntheticMC: bool = False
+) -> ak.Array:
+    """
+    Applies low-pT jet selection and categorization for 4b analysis.
+
+    This function selects low-pT jets, categorizes events based on tagging criteria, and updates event-level variables
+    for further analysis.
+
+    Parameters:
+    -----------
+    event : ak.Array
+        The event data containing fields such as `Jet` and `Lepton`.
+    corrections_metadata : dict
+        Metadata containing corrections and configuration information, such as b-tagging working points.
+    dataset : str, optional
+        The dataset name. Defaults to an empty string.
+    doLeptonRemoval : bool, optional
+        Whether to perform lepton removal. Defaults to True.
+    loosePtForSkim : bool, optional
+        Whether to use loose pT cuts for skimming. Defaults to False.
+    override_selected_with_flavor_bit : bool, optional
+        Whether to override selected jets with flavor bit. Defaults to False.
+    do_jet_veto_maps : bool, optional
+        Whether to apply jet veto maps. Defaults to False.
+    isRun3 : bool, optional
+        Whether to apply Run 3-specific selection criteria. Defaults to False.
+    isMC : bool, optional
+        Whether the data is Monte Carlo simulation. Defaults to False.
+    isSyntheticData : bool, optional
+        Whether the data is synthetic. Defaults to False.
+    isSyntheticMC : bool, optional
+        Whether the Monte Carlo data is synthetic. Defaults to False.
+
+    Returns:
+    --------
+    ak.Array
+        The input event data with additional fields for low-pT jet selection and categorization:
+        - `passJetMult`: Boolean mask for events with at least 4 selected jets.
+        - `fourTag`: Boolean mask for events with at least 4 b-tagged jets.
+        - `threeTag`: Boolean mask for events with exactly 3 b-tagged jets.
+        - `lowpt_fourTag`: Boolean mask for events with 3 b-tagged jets and at least 1 low-pT b-tagged jet.
+        - `lowpt_threeTag`: Boolean mask for events with 3 loosely b-tagged jets and at least 1 low-pT jet.
+        - `tag`: Zipped object containing tagging information.
+        - `lowpt_categories`: Integer category for low-pT selection.
+        - `passPreSel`: Boolean mask for events passing preselection.
+        - `Jet['selected']`: Updated mask for selected jets, including low-pT jets.
+    """
+    # Apply lepton selection
+    event = lepton_selection(event, isRun3)
+
+    # Apply low-pT jet selection
+    event = lowpt_jet_selection(
+        event,
+        corrections_metadata,
+        isRun3=isRun3,
+        isMC=isMC,
+        isSyntheticData=isSyntheticData,
+        isSyntheticMC=isSyntheticMC,
+        dataset=dataset,
+        doLeptonRemoval=doLeptonRemoval,
+        do_jet_veto_maps=do_jet_veto_maps,
+        override_selected_with_flavor_bit=override_selected_with_flavor_bit
+    )
+
+    # Define tagging and categorization
+    event['passJetMult'] = event['nJet_selected'] >= 4
+    event['fourTag'] = event['nJet_tagged'] >= 4
+    event['threeTag'] = (event['nJet_tagged_loose'] == 3) & (event['nJet_selected'] >= 4)
+    event['lowpt_fourTag'] = (event['nJet_tagged'] == 3) & (event['nJet_tagged_lowpt'] > 0) & ~event['fourTag']
+    event['lowpt_threeTag'] = (
+        (event['nJet_tagged_loose'] == 3) &
+        (event['nJet_selected'] >= 4) &
+        (event['nJet_tagged_loose_lowpt'] == 0) &
+        (event['nJet_selected_lowpt'] > 0)
+    )
+
+    # Create tagging object
+    event['tag'] = ak.zip({
+        "threeTag": event['threeTag'],
+        "fourTag": event['fourTag'],
+        "lowpt_fourTag": event['lowpt_fourTag'],
+        "lowpt_threeTag": event['lowpt_threeTag']
+    })
+
+    # Define low-pT categories
+    event['lowpt_categories'] = np.where(
+        event['fourTag'], 0,
+        np.where(
+            event['lowpt_fourTag'], 5,
+            np.where(
+                event['lowpt_threeTag'], 7,
+                np.where(event['threeTag'], 3, 9)
+            )
+        )
+    )
+
+    # Update preselection and jet selection
+    event['passPreSel'] = event['lowpt_threeTag'] | event['lowpt_fourTag']
+    event['Jet', 'selected'] = event['Jet']['selected'] | event['Jet']['selected_lowpt']
 
     return event
