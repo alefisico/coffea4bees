@@ -19,10 +19,10 @@ if [ "$do_proxy" = true ]; then
     echo "############### Including proxy"
     if [ ! -f "${PWD}/proxy/x509_proxy" ]; then
         echo "Error: x509_proxy file not found!"
-        echo "Run:"
+        echo "Run manually:"
         echo "mkdir -p proxy && voms-proxy-init -voms cms -valid 192:00 -out ./proxy/x509_proxy"
         echo "and try again."
-        return 1
+        exit 1
     fi
     export X509_USER_PROXY=${PWD}/proxy/x509_proxy
     echo "############### Checking proxy"

@@ -4,7 +4,7 @@ import awkward as ak
 import numpy as np
 from coffea.util import load
 from skimmer.processor.picoaod import PicoAOD, fetch_metadata, resize
-from analysis.helpers.selection_basic_4b import apply_event_selection_4b, apply_object_selection_4b
+from analysis.helpers.event_selection import apply_event_selection
 
 
 class Skimmer(PicoAOD):

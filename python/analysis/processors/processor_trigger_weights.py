@@ -5,11 +5,8 @@ import yaml
 import numpy as np
 from analysis.helpers.common import apply_jerc_corrections
 from base_class.trigger_emulator.TrigEmulatorTool   import TrigEmulatorTool
-from analysis.helpers.selection_basic_4b import (
-    apply_event_selection_4b,
-    apply_object_selection_4b,
-    create_cand_jet_dijet_quadjet,
-)
+from analysis.helpers.event_selection import apply_event_selection, apply_4b_selection
+from analysis.helpers.candidates_selection import create_cand_jet_dijet_quadjet
 from coffea import processor
 from coffea.analysis_tools import PackedSelection
 from coffea.nanoevents import NanoAODSchema
@@ -60,7 +57,7 @@ class analysis(processor.ProcessorABC):
         #
         # Event selection
         #
-        event = apply_event_selection_4b( event, self.corrections_metadata[self.year], cut_on_lumimask=self.config["cut_on_lumimask"])
+        event = apply_event_selection( event, self.corrections_metadata[self.year], cut_on_lumimask=self.config["cut_on_lumimask"])
 
         #
         # Calculate and apply Jet Energy Calibration
@@ -74,7 +71,7 @@ class analysis(processor.ProcessorABC):
         event["Jet"] = jets
 
         # Apply object selection (function does not remove events, adds content to objects)
-        event = apply_object_selection_4b( event, self.corrections_metadata[self.year], dataset=self.dataset,
+        event = apply_4b_selection( event, self.corrections_metadata[self.year], dataset=self.dataset,
                                            doLeptonRemoval=self.config["do_lepton_jet_cleaning"] )
 
         create_cand_jet_dijet_quadjet( event,

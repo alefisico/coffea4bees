@@ -17,11 +17,7 @@ from analysis.helpers.filling_histograms import (
 )
 from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
 from analysis.helpers.processor_config import processor_config
-from analysis.helpers.selection_basic_4b import (
-    apply_event_selection_4b,
-    apply_object_selection_4b,
-    create_cand_jet_dijet_quadjet,
-)
+from analysis.helpers.event_selection import apply_event_selection, apply_4b_selection
 from base_class.hist import Fill
 from base_class.root import Chunk, TreeReader
 from coffea import processor
@@ -38,6 +34,7 @@ from ..helpers.load_friend import (
     FriendTemplate,
     parse_friends,
 )
+from analysis.helpers.candidates_selection import create_cand_jet_dijet_quadjet
 #
 # Setup
 #
@@ -122,7 +119,7 @@ class analysis(processor.ProcessorABC):
         #
         # Event selection
         #
-        event = apply_event_selection_4b( event,
+        event = apply_event_selection( event,
                                         self.corrections_metadata[self.year],
                                         cut_on_lumimask=False
                                         )
@@ -137,7 +134,7 @@ class analysis(processor.ProcessorABC):
                                         )
 
         # Apply object selection (function does not remove events, adds content to objects)
-        event = apply_object_selection_4b( event, self.corrections_metadata[self.year],
+        event = apply_4b_selection( event, self.corrections_metadata[self.year],
                                             dataset=self.dataset,
                                             doLeptonRemoval=True,
                                             override_selected_with_flavor_bit=False,

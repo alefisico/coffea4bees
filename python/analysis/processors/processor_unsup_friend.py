@@ -29,7 +29,7 @@ from multiprocessing import Pool
 
 from analysis.helpers.jetCombinatoricModel import jetCombinatoricModel
 from analysis.helpers.common import apply_btag_sf, update_events
-from analysis.helpers.selection_basic_4b import apply_event_selection_4b, apply_object_selection_4b
+from analysis.helpers.event_selection import apply_4b_selection, apply_event_selection
 import logging
 
 
@@ -166,14 +166,14 @@ class analysis(processor.ProcessorABC):
         logging.debug(f"event['weight'] = {event.weight}")
 
         ### Event selection (function only adds flags, not remove events)
-        event = apply_event_selection_4b( event, isMC, self.corrections_metadata[year])
+        event = apply_event_selection( event, isMC, self.corrections_metadata[year])
 
         self._cutFlow.fill("all",  event[event.lumimask], allTag=True)
         self._cutFlow.fill("passNoiseFilter",  event[ event.lumimask & event.passNoiseFilter], allTag=True)
         self._cutFlow.fill("passHLT",  event[ event.lumimask & event.passNoiseFilter & event.passHLT], allTag=True)
 
         ### Apply object selection (function does not remove events, adds content to objects)
-        event =  apply_object_selection_4b( event, year, isMC, dataset, self.corrections_metadata[year], isMixedData=isMixedData  )
+        event =  apply_4b_selection( event, year, isMC, dataset, self.corrections_metadata[year], isMixedData=isMixedData  )
         self._cutFlow.fill("passJetMult",  event[ event.lumimask & event.passNoiseFilter & event.passHLT & event.passJetMult ], allTag=True)
 
         selections = []
