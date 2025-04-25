@@ -293,7 +293,7 @@ def apply_4b_lowpt_selection(
     # Apply lepton selection
     event = lepton_selection(event, isRun3)
 
-    # Apply low-pT jet selection
+    # Apply low-pT and nominal jet selection
     event = lowpt_jet_selection(
         event,
         corrections_metadata,
@@ -310,7 +310,8 @@ def apply_4b_lowpt_selection(
     # Define tagging and categorization
     event['passJetMult'] = event['nJet_selected'] >= 4
     event['fourTag'] = event['nJet_tagged'] >= 4
-    event['threeTag'] = (event['nJet_tagged_loose'] == 3) & (event['nJet_selected'] >= 4)
+    event['threeTag'] = (event['nJet_tagged_loose'] == 3) & (
+        event['nJet_selected'] >= 4)
     event['lowpt_fourTag'] = (event['nJet_tagged'] == 3) & (event['nJet_tagged_lowpt'] > 0) & ~event['fourTag']
     event['lowpt_threeTag'] = (
         (event['nJet_tagged_loose'] == 3) &

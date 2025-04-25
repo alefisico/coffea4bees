@@ -7,7 +7,7 @@ show_help() {
   echo "Usage: $0 [command] [options]"
   echo ""
   echo "Commands:"
-  echo "  coffea [command...]   Run commands inside the coffea container."
+  echo "  [command...]          Run commands inside the coffea container."
   echo "                        Opens an interactive shell if no commands are given."
   echo "                        (Interactive shell is the only option to run on LPC HTCondor)."
   echo "  combine [command...]  Run commands inside the combine container."
@@ -17,9 +17,7 @@ show_help() {
   echo "  --help                Show this help message."
   echo ""
   echo "Examples:"
-  echo "  source $0              Open an interactive shell in the analysis container."
-  echo "                         This is the only option for HTCondor jobs."
-  echo "  $0                     Open an interactive shell in the analysis container."
+  echo "  $0                     Open an interactive shell in the analysis container. (This is the only option to run on LPC HTCondor)."
   echo "  $0 python --version    Run 'python --version' in the analysis container."
   echo "  $0 combine             Open an interactive shell in the combine container."
   echo "  $0 combine combine -M AsymptoticLimits  Run combine in the combine container."
@@ -58,11 +56,10 @@ run_coffea() {
                 curl -OL https://raw.githubusercontent.com/CoffeaTeam/lpcjobqueue/main/bootstrap.sh
                 bash bootstrap.sh
                 rm bootstrap.sh
-                sed -i 's|/cvmfs/unpacked.cern.ch/registry.hub.docker.com/||g' shell
                 mv shell .shell
             fi
-            echo $COFFEA_IMAGE
-            ./.shell $COFFEA_IMAGE
+            # For htcondor jobs
+            ./.shell ../${COFFEA_IMAGE#/cvmfs/unpacked.cern.ch/}
         else
             # Arguments provided, run them inside the container
             APPTAINER_SHELL=$(which bash) apptainer exec -B ${PWD}:/srv --pwd /srv \
