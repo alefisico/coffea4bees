@@ -342,3 +342,5 @@ def create_cand_jet_dijet_quadjet(
     if run_SvB:
         selev["passSvB"] = selev["SvB_MA"].ps > 0.80
         selev["failSvB"] = selev["SvB_MA"].ps < 0.05
+
+    return selev

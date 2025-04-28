@@ -575,15 +575,15 @@ class analysis(processor.ProcessorABC):
         #
         #  Build di-jets and Quad-jets
         #
-        create_cand_jet_dijet_quadjet( selev,
-                                       apply_FvT=self.apply_FvT,
-                                       run_SvB=self.run_SvB,
-                                       run_systematics=self.run_systematics,
-                                       classifier_SvB=self.classifier_SvB,
-                                       classifier_SvB_MA=self.classifier_SvB_MA,
-                                       processOutput = processOutput,
-                                       isRun3=self.config["isRun3"],
-                                      )
+        selev = create_cand_jet_dijet_quadjet( selev,
+                                               apply_FvT=self.apply_FvT,
+                                               run_SvB=self.run_SvB,
+                                               run_systematics=self.run_systematics,
+                                               classifier_SvB=self.classifier_SvB,
+                                               classifier_SvB_MA=self.classifier_SvB_MA,
+                                               processOutput = processOutput,
+                                               isRun3=self.config["isRun3"],
+                                              )
 
 
         weights, list_weight_names = add_pseudotagweights( selev, weights,

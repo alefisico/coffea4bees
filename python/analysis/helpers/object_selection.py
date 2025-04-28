@@ -374,10 +374,10 @@ def lowpt_jet_selection(
     )
 
     # Apply bRegCorr to low-pT selected jets
-    event['selJets_lowpt'] = event.Jet[event.Jet.selected_lowpt]
-    event['selJets_lowpt', 'selected'] = event.selJets_lowpt.selected_lowpt
-    event['selJets_lowpt'] = apply_bRegCorr(event.selJets_lowpt)
-    event['nJet_selected_lowpt'] = ak.num(event.selJets_lowpt, axis=1)
+    event['selJet_lowpt'] = event.Jet[event.Jet.selected_lowpt]
+    event['selJet_lowpt', 'selected'] = event.selJet_lowpt.selected_lowpt
+    event['selJet_lowpt'] = apply_bRegCorr(event.selJet_lowpt)
+    event['nJet_selected_lowpt'] = ak.num(event.selJet_lowpt, axis=1)
 
     # Define b-tagging for low-pT jets
     event['Jet', 'tagged_lowpt'] = event.Jet.selected_lowpt & (event.Jet.btagScore >= corrections_metadata['btagWP']['M'])
@@ -386,6 +386,6 @@ def lowpt_jet_selection(
     event['nJet_tagged_loose_lowpt'] = ak.num(event.Jet[event.Jet.tagged_loose_lowpt])
 
     # Collect low-pT tagged jets
-    event['tagJets_lowpt'] = event.Jet[event.Jet.tagged_lowpt]
+    event['tagJet_lowpt'] = event.Jet[event.Jet.tagged_lowpt]
 
     return event

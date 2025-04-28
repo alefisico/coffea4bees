@@ -312,7 +312,12 @@ def apply_4b_lowpt_selection(
     event['fourTag'] = event['nJet_tagged'] >= 4
     event['threeTag'] = (event['nJet_tagged_loose'] == 3) & (
         event['nJet_selected'] >= 4)
-    event['lowpt_fourTag'] = (event['nJet_tagged'] == 3) & (event['nJet_tagged_lowpt'] > 0) & ~event['fourTag']
+    event['lowpt_fourTag'] = (
+        (event['nJet_tagged'] == 3) & 
+        (event['nJet_selected'] >= 4) &
+        (event['nJet_tagged_lowpt'] > 0) & 
+        ~event['fourTag']
+    )
     event['lowpt_threeTag'] = (
         (event['nJet_tagged_loose'] == 3) &
         (event['nJet_selected'] >= 4) &
@@ -342,6 +347,5 @@ def apply_4b_lowpt_selection(
 
     # Update preselection and jet selection
     event['passPreSel'] = event['lowpt_threeTag'] | event['lowpt_fourTag']
-    event['Jet', 'selected'] = event['Jet']['selected'] | event['Jet']['selected_lowpt']
 
     return event
