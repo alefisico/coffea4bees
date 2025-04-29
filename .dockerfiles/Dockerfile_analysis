@@ -4,7 +4,7 @@ RUN dnf install -y poppler-utils && \
     dnf clean all && rm -rf /var/cache/dnf && \
     mamba install -y conda-forge::nodejs && \
     pip install --upgrade pip && \
-    pip install htcondor==24.3.0 pycodestyle memory-profiler fsspec-xrootd dbs3-client
+    pip install htcondor==24.0.7 pycodestyle memory-profiler fsspec-xrootd dbs3-client
 
 RUN mkdir -p /home/user/coffea4bees/python/
 COPY python/ /home/user/coffea4bees/python/
