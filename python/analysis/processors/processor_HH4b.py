@@ -515,6 +515,15 @@ class analysis(processor.ProcessorABC):
             self._cutFlow.fill( "passPreSel_allTag_woTrig", event[selections.all(*allcuts)], allTag=True,
                                 wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[selections.all(*allcuts)] ))
 
+        weights, list_weight_names = add_pseudotagweights( event, weights,
+                                                           JCM=self.apply_JCM,
+                                                           apply_FvT=self.apply_FvT,
+                                                           isDataForMixed=self.config["isDataForMixed"],
+                                                           list_weight_names=list_weight_names,
+                                                           event_metadata=event.metadata,
+                                                           year_label=self.year_label,
+                                                           len_event=len(event),
+                                                          )
 
         #
         # Example of how to write out event numbers
@@ -585,17 +594,6 @@ class analysis(processor.ProcessorABC):
                                                isRun3=self.config["isRun3"],
                                               )
 
-
-        weights, list_weight_names = add_pseudotagweights( selev, weights,
-                                                           analysis_selections,
-                                                           JCM=self.apply_JCM,
-                                                           apply_FvT=self.apply_FvT,
-                                                           isDataForMixed=self.config["isDataForMixed"],
-                                                           list_weight_names=list_weight_names,
-                                                           event_metadata=event.metadata,
-                                                           year_label=self.year_label,
-                                                           len_event=len(event),
-                                                          )
 
 
         #

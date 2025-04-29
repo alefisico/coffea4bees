@@ -132,9 +132,8 @@ def add_weights(event, do_MC_weights: bool = True,
 
 
 def add_pseudotagweights(
-    selev, 
+    event, 
     weights, 
-    analysis_selections, 
     JCM: callable = None, 
     apply_FvT: bool = False, 
     isDataForMixed: bool = False, 
@@ -148,9 +147,8 @@ def add_pseudotagweights(
     Add pseudo-tagging weights to the selected events and update the weights object.
 
     Args:
-        selev (awkward.Array): Selected events.
+        event (awkward.Array): Selected events.
         weights (Weights): Weights object to store the calculated weights.
-        analysis_selections (array-like): Boolean array for event selection.
         JCM (callable, optional): Jet Combinatoric Model function for pseudo-tagging. Defaults to None.
         apply_FvT (bool, optional): Whether to apply FvT weights. Defaults to False.
         isDataForMixed (bool, optional): Whether the data is for mixed events. Defaults to False.
@@ -166,59 +164,57 @@ def add_pseudotagweights(
 
     # Calculate weight without JCM and FvT
     all_weights = ['genweight', 'CMS_bbbb_resolved_ggf_triggerEffSF', f'CMS_pileup_{year_label}', 'CMS_btag']
-    logging.debug( f"noJCM_noFVT partial {weights.partial_weight(include=all_weights)[ analysis_selections ][:10]}" )
-    selev["weight_noJCM_noFvT"] = weights.partial_weight(include=all_weights)[analysis_selections]
+    logging.debug( f"noJCM_noFVT partial {weights.partial_weight(include=all_weights)[:10]}" )
+    event["weight_noJCM_noFvT"] = weights.partial_weight(include=all_weights)
 
     if JCM:
         # Calculate pseudo-tagging weights
-        selev["Jet_untagged_loose"] = selev.Jet[selev.Jet.selected & ~selev.Jet.tagged_loose]
-        pseudoTagWeight = np.full(len(selev), selev.weight)  # Initialize with existing weights
-        nJet_pseudotagged = np.zeros(len(selev), dtype=int)
+        event["Jet_untagged_loose"] = event.Jet[event.Jet.selected & ~event.Jet.tagged_loose]
+        pseudoTagWeight = np.full(len(event), event.weight)  # Initialize with existing weights
+        nJet_pseudotagged = np.zeros(len(event), dtype=int)
 
-        pseudoTagWeight[selev[label3b]], nJet_pseudotagged[selev[label3b]] = JCM(
-            selev[selev[label3b]]['Jet_untagged_loose'], 
-            selev.event[selev[label3b]]
+        pseudoTagWeight[event[label3b]], nJet_pseudotagged[event[label3b]] = JCM(
+            event[event[label3b]]['Jet_untagged_loose'], 
+            event.event[event[label3b]]
         )
-        selev["nJet_pseudotagged"] = nJet_pseudotagged
-        selev["pseudoTagWeight"] = pseudoTagWeight
-        logging.debug( f"pseudoTagWeight {selev.pseudoTagWeight[:10]}\n" )
-        logging.debug( f"nJet_pseudotagged {selev.nJet_pseudotagged[:10]}\n" )
+        event["nJet_pseudotagged"] = nJet_pseudotagged
+        event["pseudoTagWeight"] = pseudoTagWeight
+        logging.debug( f"pseudoTagWeight {event.pseudoTagWeight[:10]}\n" )
+        logging.debug( f"nJet_pseudotagged {event.nJet_pseudotagged[:10]}\n" )
 
         # Update number of tagged jets
-        nTagJets = ak.num(selev.tagJet, axis=1).to_numpy()
-        nTagJets[selev[label3b]] = ak.num(selev.tagJet_loose[selev[label3b]], axis=1)
-        selev["nJet_ps_and_tag"] = nJet_pseudotagged + nTagJets
+        nTagJets = ak.num(event.tagJet, axis=1).to_numpy()
+        nTagJets[event[label3b]] = ak.num(event.tagJet_loose[event[label3b]], axis=1)
+        event["nJet_ps_and_tag"] = nJet_pseudotagged + nTagJets
 
         # Calculate weight without FvT
-        weight_noFvT = selev.weight.copy()
-        weight_noFvT[selev[label3b]] *= selev.pseudoTagWeight[selev[label3b]]
-        selev["weight_noFvT"] = weight_noFvT
-        logging.debug( f"weight_noFvT {selev.weight_noFvT[:10]}\n" )
+        weight_noFvT = ak.where(event[label3b], event.weight * event.pseudoTagWeight, event.weight)
+
+        event["weight_noFvT"] = weight_noFvT
+        logging.debug( f"weight_noFvT {event.weight_noFvT[:10]}\n" )
 
         # Apply FvT weights if required
         if apply_FvT:
             if isDataForMixed:
                 for _JCM_load, _FvT_name in zip(event_metadata["JCM_loads"], event_metadata["FvT_names"]):
-                    selev[f"weight_{_FvT_name}"] = np.where(
-                        selev[label3b],
-                        selev.weight * getattr(selev, f"{_JCM_load}") * getattr(getattr(selev, _FvT_name), _FvT_name),
-                        selev.weight,
+                    event[f"weight_{_FvT_name}"] = np.where(
+                        event[label3b],
+                        event.weight * getattr(event, f"{_JCM_load}") * getattr(getattr(event, _FvT_name), _FvT_name),
+                        event.weight,
                     )
 
-                weight_JCM = selev.weight.copy()
-                weight_JCM[analysis_selections] = np.where(
-                    selev[label3b], 
-                    getattr(selev, f"{event_metadata['JCM_loads'][0]}"), 
+                weight_JCM = np.where(
+                    event[label3b], 
+                    getattr(event, f"{event_metadata['JCM_loads'][0]}"), 
                     1.0
                 )
                 weights.add("JCM", weight_JCM)
                 list_weight_names.append("JCM")
                 logging.debug( f"JCM {weights.partial_weight(include=['JCM'])[:10]}\n" )
 
-                weight_FvT = selev.weight.copy()
-                weight_FvT[analysis_selections] = np.where(
-                    selev[label3b], 
-                    selev.FvT.FvT, 
+                weight_FvT = np.where(
+                    event[label3b], 
+                    event.FvT.FvT, 
                     1.0
                 )
                 weights.add("FvT", weight_FvT)
@@ -226,20 +222,19 @@ def add_pseudotagweights(
                 logging.debug( f"FvT {weights.partial_weight(include=['FvT'])[:10]}\n" )
 
             else:
-                weight = selev.weight.copy()
-                weight[analysis_selections] = np.where(
-                    selev[label3b], 
-                    selev["pseudoTagWeight"] * selev.FvT.FvT, 
+                weight = np.where(
+                    event[label3b], 
+                    event["pseudoTagWeight"] * event.FvT.FvT, 
                     1.0
                 )
                 weights.add("FvT", weight)
                 list_weight_names.append("FvT")
                 logging.debug( f"FvT {weights.partial_weight(include=['FvT'])[:10]}\n" )
         else:
-            weight_noFvT = selev.weight.copy()
-            weight_noFvT[analysis_selections] = np.where(
-                selev[label3b], 
-                selev["pseudoTagWeight"], 
+            weight_noFvT = np.copy(event.weight)
+            weight_noFvT = np.where(
+                event[label3b], 
+                event["pseudoTagWeight"], 
                 1.0
             )
             weights.add("no_FvT", weight_noFvT)
