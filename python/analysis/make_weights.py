@@ -213,20 +213,27 @@ def setup_model(bin_data: Tuple, args: argparse.Namespace, logger: logging.Logge
     )
     
     # Log model setup
-    logger.debug(f"Initialized JCM_model with fit parameters names: {[p.name for p in JCM_model.fit_parameters]}")
+    logger.debug(f"Initialized JCM_model with fit parameters names: {[p['name'] for p in JCM_model.fit_parameters]}")
     logger.debug(f"Default parameters: {JCM_model.default_parameters}")
     logger.debug(f"Parameter bounds: {list(zip(JCM_model.parameters_lower_bounds, JCM_model.parameters_upper_bounds))}")
     
     # Set fixed parameters based on command-line options
     if args.fix_e:
         logger.info("Fixing pairEnhancement parameter to 0.0")
-        JCM_model.fixParameter_e_d_norm(threeTightTagFraction)
+        JCM_model.fixParameter_combination({"threeTightTagFraction": threeTightTagFraction})
     elif args.fix_d:
         logger.info("Fixing pairEnhancementDecay parameter to 1.0")
-        JCM_model.fixParameter_d_norm(threeTightTagFraction)
+        JCM_model.fixParameter_combination({
+            "threeTightTagFraction": threeTightTagFraction, 
+            "pairEnhancementDecay": 1.0
+        })
     else:
         logger.info(f"Fixing threeTightTagFraction to {threeTightTagFraction:.6f}")
-        JCM_model.fixParameter_norm(threeTightTagFraction)
+        JCM_model.fixParameter_combination({
+            "threeTightTagFraction": threeTightTagFraction,
+            "pairEnhancement": 0.0,
+            "pairEnhancementDecay": 1.0
+        })
         
     return JCM_model
 
@@ -300,20 +307,20 @@ def save_model_output(JCM_model: jetCombinatoricModel, bin_data: Tuple, args: ar
     logger.info(f"Writing model parameters to output files")
     for parameter in JCM_model.parameters:
         write_to_JCM_file(
-            parameter.name + "_" + args.cut,
-            parameter.value,
+            parameter["name"] + "_" + args.cut,
+            parameter["value"],
             jetCombinatoricModelFile, 
             jetCombinatoricModelFile_yml
         )
         write_to_JCM_file(
-            parameter.name + "_" + args.cut + "_err",
-            parameter.error,
+            parameter["name"] + "_" + args.cut + "_err",
+            parameter["error"],
             jetCombinatoricModelFile, 
             jetCombinatoricModelFile_yml
         )
         write_to_JCM_file(
-            parameter.name + "_" + args.cut + "_pererr",
-            parameter.percentError,
+            parameter["name"] + "_" + args.cut + "_pererr",
+            parameter["percentError"],
             jetCombinatoricModelFile, 
             jetCombinatoricModelFile_yml
         )
