@@ -265,17 +265,22 @@ class jetCombinatoricModel:
             self.parameters_lower_bounds.append(p.lowerLimit)
             self.parameters_upper_bounds.append(p.upperLimit)
 
-    def _nTagPred_values(self, par: List[float], n: np.ndarray) -> np.ndarray:
+    def nTagPred_values(self, n: np.ndarray, par: Optional[List[float]] = None) -> np.ndarray:
         """
-        Calculate predicted values for the number of tagged jets.
+        Get predicted values for the number of tagged jets using current fit parameters.
         
         Args:
-            par: List of parameters [f, e, d, norm]
             n: Array of number of tags
+            par: Optional parameter values
             
         Returns:
             Array of predicted values
         """
+        if par is None:
+            param_values = [p.value for p in self.fit_parameters]
+            fixed_val = [self.threeTightTagFraction.fix] if self.threeTightTagFraction.fix is not None else []
+            par = param_values + fixed_val
+
         output = np.zeros(len(n))
         output = copy(self.tt4b_nTagJets)
 
@@ -294,22 +299,6 @@ class jetCombinatoricModel:
                 output[ibin + 4] += nPseudoTagProb[this_nTag - 3] * self.qcd3b[nj]
 
         return np.array(output, float)
-
-    def nTagPred_values(self, n: np.ndarray) -> np.ndarray:
-        """
-        Get predicted values for the number of tagged jets using current fit parameters.
-        
-        Args:
-            n: Array of number of tags
-            
-        Returns:
-            Array of predicted values
-        """
-        # Extract parameter values instead of objects
-        param_values = [p.value for p in self.fit_parameters]
-        fixed_val = [self.threeTightTagFraction.fix] if self.threeTightTagFraction.fix is not None else []
-        
-        return self._nTagPred_values(param_values + fixed_val, n)
 
     def nJetPred_values(self, n: np.ndarray) -> np.ndarray:
         """
@@ -342,17 +331,21 @@ class jetCombinatoricModel:
             
         return output_weights
 
-    def _nTagPred_errors(self, par: List[float], n: np.ndarray) -> np.ndarray:
+    def nTagPred_errors(self, n: np.ndarray) -> np.ndarray:
         """
-        Calculate errors on predicted values for the number of tagged jets.
-        
+        Get errors on predicted values for the number of tagged jets.
+
         Args:
-            par: List of parameters [f, e, d, norm]
             n: Array of number of tags
-            
+
         Returns:
             Array of prediction errors
         """
+        # Extract parameter values instead of objects
+        param_values = [p.value for p in self.fit_parameters]
+        fixed_val = [self.threeTightTagFraction.fix] if self.threeTightTagFraction.fix is not None else []
+
+        par = param_values + fixed_val
         output = np.zeros(len(n))
         output = self.tt4b_nTagJets_errors**2
 
@@ -373,22 +366,6 @@ class jetCombinatoricModel:
         # Take the square root to get errors
         output = output**0.5
         return np.array(output, float)
-
-    def nTagPred_errors(self, n: np.ndarray) -> np.ndarray:
-        """
-        Get errors on predicted values for the number of tagged jets.
-        
-        Args:
-            n: Array of number of tags
-            
-        Returns:
-            Array of prediction errors
-        """
-        # Extract parameter values instead of objects
-        param_values = [p.value for p in self.fit_parameters]
-        fixed_val = [self.threeTightTagFraction.fix] if self.threeTightTagFraction.fix is not None else []
-        
-        return self._nTagPred_errors(param_values + fixed_val, n)
 
     def bkgd_func_njet(self, x: np.ndarray, f: float, e: float, d: float, 
                        norm: float, debug: bool = False) -> np.ndarray:
@@ -411,7 +388,7 @@ class jetCombinatoricModel:
 
         # Add the n-tag component
         nTags = nj + 4
-        nTags_pred_result = self._nTagPred_values([f, e, d, norm], nTags)
+        nTags_pred_result = self.nTagPred_values(nTags, [f, e, d, norm])
         output[0:4] = nTags_pred_result[4:8]
         
         if debug:
@@ -423,8 +400,7 @@ class jetCombinatoricModel:
                 continue
 
             w = getCombinatoricWeight(this_nj, f, e, d, norm)
-            output[this_nj] += w * self.qcd3b[this_nj]
-            output[this_nj] += self.tt4b[this_nj]
+            output[this_nj] += w * self.qcd3b[this_nj] + self.tt4b[this_nj]
 
         if debug:
             logger.debug(f"bkgd_func_njet output final: {output}")
