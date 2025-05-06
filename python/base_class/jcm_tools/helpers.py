@@ -60,48 +60,20 @@ def getCombinatoricWeight(nj: int, f: float, e: float = 0.0, d: float = 1.0,
     return np.sum(nPseudoTagProb[1:])
 
 
-def loadROOTHists(inputFile: str) -> Tuple:
+def loadHistograms(inputFile: str, format: str = 'coffea', cfg=None, cut: str = "passPreSel", year: str = "RunII", weightRegion: str = "SB", data4bName: str = 'data', logger=None) -> Tuple:
     """
-    Load histograms from a ROOT file converted to coffea format.
-    
+    Load histograms from either ROOT or coffea files.
+
     Args:
-        inputFile: Path to the input ROOT file
-        
-    Returns:
-        Tuple of histograms:
-        (data4b, data3b, tt4b, tt3b, qcd4b, qcd3b, 
-         data4b_nTagJets, tt4b_nTagJets, qcd3b_nTightTags)
-    """
-    logger.info(f"Loading histograms from ROOT file: {inputFile}")
-    
-    h = load(inputFile)["Hists"]
-
-    data4b = h["data4b"]
-    data3b = h["data3b"]
-    tt4b = h["tt4b"]
-    tt3b = h["tt3b"]
-    qcd4b = h["qcd4b"]
-    qcd3b = h["qcd3b"]
-    data4b_nTagJets = h["data4b_nTagJets"]
-    tt4b_nTagJets = h["tt4b_nTagJets"]
-    qcd3b_nTightTags = h["qcd3b_nTightTags"]
-
-    return data4b, data3b, tt4b, tt3b, qcd4b, qcd3b, data4b_nTagJets, tt4b_nTagJets, qcd3b_nTightTags
-
-
-def loadCoffeaHists(cfg, *, cut: str = "passPreSel", year: str = "RunII", 
-                   weightRegion: str = "SB", data4bName: str = 'data', logger=None) -> Tuple:
-    """
-    Load histograms from coffea files.
-    
-    Args:
-        cfg: Configuration object with histogram data
-        cut: Selection cut to apply
-        year: Data-taking year
-        weightRegion: Region for weight calculation (e.g., "SB" for sideband)
-        data4bName: Name of the 4b data process
+        inputFile: Path to the input file
+        format: Format of the input file ('ROOT' or 'coffea')
+        cfg: Configuration object (required for coffea format)
+        cut: Selection cut to apply (coffea only)
+        year: Data-taking year (coffea only)
+        weightRegion: Region for weight calculation (coffea only)
+        data4bName: Name of the 4b data process (coffea only)
         logger: Logger instance
-        
+
     Returns:
         Tuple of histograms:
         (data4b, data3b, tt4b, tt3b, qcd4b, qcd3b, 
@@ -111,73 +83,87 @@ def loadCoffeaHists(cfg, *, cut: str = "passPreSel", year: str = "RunII",
         import logging
         logger = logging.getLogger('JCM')
 
-    logger.info(f"Loading coffea histograms with cut={cut}, year={year}, weightRegion={weightRegion}")
-    
-    # Get dictionary of cuts
-    cutDict = get_cut_dict(cut, cfg.cutList)
+    if format == 'ROOT':
+        logger.info(f"Loading histograms from ROOT file: {inputFile}")
+        h = load(inputFile)["Hists"]
 
-    # Handle special cases for year and region
-    year_val = sum if year == "RunII" else year
-    region_selection = sum if weightRegion in ["sum", sum] else weightRegion
+        data4b = h["data4b"]
+        data3b = h["data3b"]
+        tt4b = h["tt4b"]
+        tt3b = h["tt3b"]
+        qcd4b = h["qcd4b"]
+        qcd3b = h["qcd3b"]
+        data4b_nTagJets = h["data4b_nTagJets"]
+        tt4b_nTagJets = h["tt4b_nTagJets"]
+        qcd3b_nTightTags = h["qcd3b_nTightTags"]
 
-    region_year_dict = {
-        "year": year_val,
-        "region": region_selection,
-    }
+        return data4b, data3b, tt4b, tt3b, qcd4b, qcd3b, data4b_nTagJets, tt4b_nTagJets, qcd3b_nTightTags
 
-    # Define dictionary keys for selections
-    fourTag_dict = {"tag": "fourTag"}
-    threeTag_dict = {"tag": "threeTag"}
+    elif format == 'coffea':
+        if cfg is None:
+            raise ValueError("Configuration object (cfg) is required for coffea format")
 
-    fourTag_data_dict = {"process": data4bName} | fourTag_dict | region_year_dict | cutDict
-    threeTag_data_dict = {"process": 'data'} | threeTag_dict | region_year_dict | cutDict
+        logger.info(f"Loading coffea histograms with cut={cut}, year={year}, weightRegion={weightRegion}")
+        cutDict = get_cut_dict(cut, cfg.cutList)
 
-    ttbar_list = ['TTTo2L2Nu', 'TTToSemiLeptonic', 'TTToHadronic']
-    fourTag_ttbar_dict = {"process": ttbar_list} | fourTag_dict | region_year_dict | cutDict
-    threeTag_ttbar_dict = {"process": ttbar_list} | threeTag_dict | region_year_dict | cutDict
+        year_val = sum if year == "RunII" else year
+        region_selection = sum if weightRegion in ["sum", sum] else weightRegion
 
-    # Find the right histograms
-    hists = cfg.hists[0]['hists']
-    hists_data_4b = None
-    
-    for _input_data in cfg.hists:
-        if ('selJets_noJCM.n' in _input_data['hists'] and 
-            data4bName in _input_data['hists']['selJets_noJCM.n'].axes["process"]):
-            hists_data_4b = _input_data['hists']
-            break
-    
-    if hists_data_4b is None:
-        raise ValueError(f"Could not find histograms for data4bName={data4bName}")
+        region_year_dict = {
+            "year": year_val,
+            "region": region_selection,
+        }
 
-    # Extract histograms
-    data4b = hists_data_4b['selJets_noJCM.n'][fourTag_data_dict]
-    data4b_nTagJets = hists_data_4b['tagJets_noJCM.n'][fourTag_data_dict]
+        fourTag_dict = {"tag": "fourTag"}
+        threeTag_dict = {"tag": "threeTag"}
 
-    data3b = hists['selJets_noJCM.n'][threeTag_data_dict]
-    data3b_nTagJets = hists['tagJets_loose_noJCM.n'][threeTag_data_dict]
-    data3b_nTagJets_tight = hists['tagJets_noJCM.n'][threeTag_data_dict]
+        fourTag_data_dict = {"process": data4bName} | fourTag_dict | region_year_dict | cutDict
+        threeTag_data_dict = {"process": 'data'} | threeTag_dict | region_year_dict | cutDict
 
-    tt4b = hists['selJets_noJCM.n'][fourTag_ttbar_dict][sum, :]
-    tt4b_nTagJets = hists['tagJets_noJCM.n'][fourTag_ttbar_dict][sum, :]
+        ttbar_list = ['TTTo2L2Nu', 'TTToSemiLeptonic', 'TTToHadronic']
+        fourTag_ttbar_dict = {"process": ttbar_list} | fourTag_dict | region_year_dict | cutDict
+        threeTag_ttbar_dict = {"process": ttbar_list} | threeTag_dict | region_year_dict | cutDict
 
-    tt3b = hists['selJets_noJCM.n'][threeTag_ttbar_dict][sum, :]
-    tt3b_nTagJets = hists['tagJets_loose_noJCM.n'][threeTag_ttbar_dict][sum, :]
-    tt3b_nTagJets_tight = hists['tagJets_noJCM.n'][threeTag_ttbar_dict][sum, :]
+        hists = cfg.hists[0]['hists']
+        hists_data_4b = None
 
-    # Calculate QCD (data - ttbar)
-    qcd4b = copy(data4b)
-    qcd4b.view().value = data4b.values() - tt4b.values()
-    qcd4b.view().variance = data4b.variances() + tt4b.variances()
+        for _input_data in cfg.hists:
+            if ('selJets_noJCM.n' in _input_data['hists'] and 
+                data4bName in _input_data['hists']['selJets_noJCM.n'].axes["process"]):
+                hists_data_4b = _input_data['hists']
+                break
 
-    qcd3b = copy(data3b)
-    qcd3b.view().value = data3b.values() - tt3b.values()
-    qcd3b.view().variance = data3b.variances() + tt3b.variances()
+        if hists_data_4b is None:
+            raise ValueError(f"Could not find histograms for data4bName={data4bName}")
 
-    qcd3b_nTightTags = copy(data3b_nTagJets_tight)
-    qcd3b_nTightTags.view().value = data3b_nTagJets_tight.values() - tt3b_nTagJets_tight.values()
-    qcd3b_nTightTags.view().variance = data3b_nTagJets_tight.variances() + tt3b_nTagJets_tight.variances()
+        data4b = hists_data_4b['selJets_noJCM.n'][fourTag_data_dict]
+        data4b_nTagJets = hists_data_4b['tagJets_noJCM.n'][fourTag_data_dict]
 
-    return data4b, data3b, tt4b, tt3b, qcd4b, qcd3b, data4b_nTagJets, tt4b_nTagJets, qcd3b_nTightTags
+        data3b = hists['selJets_noJCM.n'][threeTag_data_dict]
+        data3b_nTagJets_tight = hists['tagJets_noJCM.n'][threeTag_data_dict]
+
+        tt4b = hists['selJets_noJCM.n'][fourTag_ttbar_dict][sum, :]
+        tt4b_nTagJets = hists['tagJets_noJCM.n'][fourTag_ttbar_dict][sum, :]
+
+        tt3b = hists['selJets_noJCM.n'][threeTag_ttbar_dict][sum, :]
+        tt3b_nTagJets_tight = hists['tagJets_noJCM.n'][threeTag_ttbar_dict][sum, :]
+
+        qcd4b = copy(data4b)
+        qcd4b.view().value = data4b.values() - tt4b.values()
+        qcd4b.view().variance = data4b.variances() + tt4b.variances()
+
+        qcd3b = copy(data3b)
+        qcd3b.view().value = data3b.values() - tt3b.values()
+        qcd3b.view().variance = data3b.variances() + tt3b.variances()
+
+        qcd3b_nTightTags = copy(data3b_nTagJets_tight)
+        qcd3b_nTightTags.view().value = data3b_nTagJets_tight.values() - tt3b_nTagJets_tight.values()
+        qcd3b_nTightTags.view().variance = data3b_nTagJets_tight.variances() + tt3b_nTagJets_tight.variances()
+
+        return data4b, data3b, tt4b, tt3b, qcd4b, qcd3b, data4b_nTagJets, tt4b_nTagJets, qcd3b_nTightTags
+
+    else:
+        raise ValueError(f"Unsupported format: {format}")
 
 
 def data_from_Hist(inputHist, maxBin: int = 15) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:

@@ -26,7 +26,6 @@ from base_class.jcm_tools.helpers import getPseudoTagProbs, getCombinatoricWeigh
 # Set up module logger
 logger = logging.getLogger('JCMTools')
 
-
 class modelParameter:
     """
     A class to represent a parameter in the Jet Combinatoric Model.

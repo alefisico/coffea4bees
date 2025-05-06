@@ -24,15 +24,16 @@ from typing import Dict, Tuple, List, Optional, Union, Any
 sys.path.insert(0, os.getcwd())
 
 import base_class.plots.iPlot_config as cfg
-from base_class.JCMTools import (
-    getCombinatoricWeight, 
-    getPseudoTagProbs, 
-    loadROOTHists, 
-    loadCoffeaHists, 
-    data_from_Hist, 
-    prepHists, 
+from base_class.jcm_tools.jcm_model import ( 
     jetCombinatoricModel,
     modelParameter
+)
+from base_class.jcm_tools.helpers import (
+    getPseudoTagProbs, 
+    getCombinatoricWeight, 
+    loadHistograms, 
+    data_from_Hist, 
+    prepHists
 )
 from base_class.plots.plots import load_config, load_hists, read_axes_and_cuts, makePlot
 
@@ -113,39 +114,6 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument('--no-plots', dest="no_plots", action="store_true",
                         help='Skip creating plots')
     return parser
-
-
-def load_histograms(args: argparse.Namespace, logger: logging.Logger) -> Tuple:
-    """Load histogram data from either ROOT or coffea files
-    
-    Args:
-        args: Command line arguments
-        logger: Logger instance
-        
-    Returns:
-        Tuple of histograms: (data4b, data3b, tt4b, tt3b, qcd4b, qcd3b, 
-                             data4b_nTagJets, tt4b_nTagJets, qcd3b_nTightTags)
-    """
-    logger.info(f"Loading histograms from: {args.inputFile}")
-    
-    if args.ROOTInputs:
-        inputFile = args.inputFile[0]
-        logger.info(f"Loading ROOT histograms from {inputFile}")
-        return loadROOTHists(inputFile)
-    else:
-        cfg.plotConfig = load_config(args.metadata)
-        cfg.hists = load_hists(args.inputFile)
-        cfg.combine_input_files = args.combine_input_files
-        cfg.axisLabels, cfg.cutList = read_axes_and_cuts(cfg.hists, cfg.plotConfig)
-        
-        logger.info(f"Loading coffea histograms for cut={args.cut}, year={args.year}, region={args.weightRegion}")
-        return loadCoffeaHists(
-            cfg, 
-            cut=args.cut, 
-            year=args.year, 
-            weightRegion=args.weightRegion,
-            data4bName=args.data4bName
-        )
 
 
 def process_histograms(data4b, data3b, tt4b, tt3b, qcd4b, qcd3b, data4b_nTagJets, 
@@ -440,9 +408,6 @@ def create_plots(JCM_model: jetCombinatoricModel, bin_data: Tuple, args: argpars
         
         logger.debug(f"Histogram axes names: {axis_names}")
         
-        # Fill with dummy data to register the JCM process
-        cfg.hists[0]['hists']["selJets_noJCM.n"].fill(**dummy_data)
-        
         # Determine if we have SvB axes
         has_passSvB = 'passSvB' in axis_names
         has_failSvB = 'failSvB' in axis_names
@@ -453,6 +418,10 @@ def create_plots(JCM_model: jetCombinatoricModel, bin_data: Tuple, args: argpars
             logger.debug("SvB variables found in histogram")
         else:
             logger.debug("No SvB variables in histogram")
+        
+        # Fill with dummy data to register the JCM process
+        cfg.hists[0]['hists']["selJets_noJCM.n"].fill(**dummy_data)
+        
     except Exception as e:
         logger.warning(f"Error analyzing histogram structure: {e}")
         cfg.hists[0]['hists']["selJets_noJCM.n"].fill(**dummy_data)
@@ -629,8 +598,24 @@ def main():
     jetCombinatoricModelFile_yml = open(f'{jetCombinatoricModelName.replace(".txt",".yml")}', 'w')
     
     try:
+        if not args.ROOTInputs:
+            # Load configuration
+            cfg.plotConfig = load_config(args.metadata)
+            cfg.hists = load_hists(args.inputFile)
+            cfg.combine_input_files = args.combine_input_files
+            cfg.axisLabels, cfg.cutList = read_axes_and_cuts(cfg.hists, cfg.plotConfig)
+
         # Load histograms
-        histograms = load_histograms(args, logger)
+        histograms = loadHistograms(
+            inputFile=args.inputFile[0],
+            format='ROOT' if args.ROOTInputs else 'coffea',
+            cfg=cfg if not args.ROOTInputs else None,
+            cut=args.cut,
+            year=args.year,
+            weightRegion=args.weightRegion,
+            data4bName=args.data4bName,
+            logger=logger
+        )
         
         # Process histograms and prepare data for fitting
         bin_data = process_histograms(*histograms, logger)
