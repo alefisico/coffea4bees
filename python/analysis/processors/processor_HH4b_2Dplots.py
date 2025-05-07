@@ -165,7 +165,7 @@ class analysis(processor.ProcessorABC):
 
         selev = event[analysis_selections]
         selev["weight"] = weights.weight()[analysis_selections]
-        create_cand_jet_dijet_quadjet( selev )
+        selev = create_cand_jet_dijet_quadjet(selev)
 
         selection = {
             "none" : selev["quadJet"].rank > 0,

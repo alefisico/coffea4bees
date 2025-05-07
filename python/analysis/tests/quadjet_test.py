@@ -71,7 +71,7 @@ class quadJetTestCase(unittest.TestCase):
 
     def test_quadJets(self):
 
-        create_cand_jet_dijet_quadjet(self.event, isRun3=True)
+        self.event = create_cand_jet_dijet_quadjet(self.event, isRun3=True)
 
 #        top_cands = find_tops(self.input_jets)
 #

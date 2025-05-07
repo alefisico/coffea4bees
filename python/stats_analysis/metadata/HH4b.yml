@@ -1,17 +1,17 @@
 processes:
   signal:
     GluGluToHHTo4B_cHHH5:
-      label: ggHH_kl_5_kt_1_hbbhbb
+      label: ggHH_kl_5_kt_1_13p0TeV_hbbhbb
       process: -3
     GluGluToHHTo4B_cHHH2p45:
-      label: ggHH_kl_2p45_kt_1_hbbhbb
+      label: ggHH_kl_2p45_kt_1_13p0TeV_hbbhbb
       process: -2
     GluGluToHHTo4B_cHHH0:
-      label: ggHH_kl_0_kt_1_hbbhbb
+      label: ggHH_kl_0_kt_1_13p0TeV_hbbhbb
       process: -1
     GluGluToHHTo4B_cHHH1:
       # label: ggHH_hbbhbb
-      label: ggHH_kl_1_kt_1_hbbhbb
+      label: ggHH_kl_1_kt_1_13p0TeV_hbbhbb
       process: 0
   background:
     multijet:

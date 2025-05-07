@@ -96,7 +96,7 @@ rule make_JCM:
     shell:
         """
         echo "Computing JCM" 2>&1 | tee -a {log}
-        python analysis/make_weights.py -o {params.output_dir} -c passPreSel -r SB -i {input} -w 2024_v2 2>&1 | tee -a {log}
+        python analysis/make_jcm_weights.py -o {params.output_dir} -c passPreSel -r SB -i {input} -w 2024_v2 2>&1 | tee -a {log}
         ls {params.output_dir}
         # echo "Modifying metadata file"
         # sed -i 's|JCM.*|JCM: ../output/JCM/jetCombinatoricModel_SB_reana.yml|' analysis/metadata/HH4b.yml
@@ -115,4 +115,3 @@ rule make_plots:
         echo "Making plots" 2>&1 | tee -a {log}
         python plots/makePlots.py {input} -o {params.output_dir} -m plots/metadata/plotsAll.yml -s xW 2>&1 | tee -a {log}
         """
-    

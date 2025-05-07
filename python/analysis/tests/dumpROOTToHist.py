@@ -1,5 +1,5 @@
 #
-# python make_weights.py -o tmp/ -c passPreSel -r SB
+# python make_jcm_weights.py -o tmp/ -c passPreSel -r SB
 #
 from coffea.util import save
 

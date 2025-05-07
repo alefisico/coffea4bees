@@ -62,7 +62,7 @@ output_analysis = [
   f"{output_dir}/analysis_test_job/test_databkgs.coffea",
   f"{output_dir}/analysis_signals_test_job/test_signal.coffea",
   f"{output_dir}/analysis_merge_test_job/test.coffea",
-  f"{output_dir}/analysis_makeweights_job/testJCM_ROOT/jetCombinatoricModel_SB_.yml",
+  f"{output_dir}/analysis_make_jcm_weights_job/testJCM_ROOT/jetCombinatoricModel_SB_.yml",
   f"{output_dir}/analysis_plot_job/RunII/passPreSel/fourTag/SR/SvB_MA_ps_zz.pdf",
   f"{output_dir}/analysis_iplot_job.log",
   f"{output_dir}/baseclass_test_job/test_dumpPlotCounts.yml",
@@ -274,12 +274,12 @@ rule weights_trigger_analysis_job:
     container: analysis_container
     shell: "source scripts/weights-trigger-analysis-job.sh {output_dir}/ 2>&1 | tee -a {log}"
 
-rule analysis_makeweights_job:
+rule analysis_make_jcm_weights_job:
     input: f"{output_dir}/analysis_merge_test_job/test.coffea"
-    output: f"{output_dir}/analysis_makeweights_job/testJCM_ROOT/jetCombinatoricModel_SB_.yml"
-    log: f"{output_dir}/analysis_makeweights_job.log"
+    output: f"{output_dir}/analysis_make_jcm_weights_job/testJCM_ROOT/jetCombinatoricModel_SB_.yml"
+    log: f"{output_dir}/analysis_make_jcm_weights_job.log"
     container: analysis_container
-    shell: "source scripts/analysis-makeweights-job.sh {output_dir}/ 2>&1 | tee -a {log}"
+    shell: "source scripts/analysis-make-jcm-weights-job.sh {output_dir}/ 2>&1 | tee -a {log}"
 
 rule twoStageClosure_test_job:
     input: f"{output_dir}/analysis_test_mixed_job/testMixedData.json"

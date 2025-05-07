@@ -7,6 +7,7 @@
 config:
   blind: false
   apply_FvT: false
+  apply_JCM: false
   apply_trigWeight: true
   apply_btagSF: false
   apply_boosted_veto: false
