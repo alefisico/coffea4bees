@@ -1,14 +1,14 @@
-analysis-makeweights-job:    
+analysis-make-jcm-weights-job:    
   stage: fits
   extends:
     - .base_analysis
   needs: 
     - analysis-merge-test-job
   script:
-    - source scripts/analysis-makeweights-job.sh
+    - source scripts/analysis-make-jcm-weights-job.sh
   artifacts:
     paths:
-      - python/output/analysis_makeweights_job/testJCM_ROOT/jetCombinatoricModel_SB_.yml
+      - python/output/analysis_make_jcm_weights_job/testJCM_ROOT/jetCombinatoricModel_SB_.yml
 
 twoStageClosure-test-job:   
   stage: fits

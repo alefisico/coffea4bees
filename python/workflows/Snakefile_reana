@@ -95,7 +95,7 @@ rule make_JCM:
         """
         cd python/
         echo "Computing JCM"
-        python analysis/make_weights.py -o ../output/JCM/ -c passPreSel -r SB -i ../{input} -w reana
+        python analysis/make_jcm_weights.py -o ../output/JCM/ -c passPreSel -r SB -i ../{input} -w reana
         ls ../output/JCM/
         echo "Modifying metadata file"
         sed -i 's|JCM.*|JCM: ../output/JCM/jetCombinatoricModel_SB_reana.yml|' analysis/metadata/HH4b.yml

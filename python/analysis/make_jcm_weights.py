@@ -220,7 +220,11 @@ def setup_model(bin_data: Tuple, args: argparse.Namespace, logger: logging.Logge
     # Set fixed parameters based on command-line options
     if args.fix_e:
         logger.info("Fixing pairEnhancement parameter to 0.0")
-        JCM_model.fixParameter_combination({"threeTightTagFraction": threeTightTagFraction})
+        JCM_model.fixParameter_combination({
+            "threeTightTagFraction": threeTightTagFraction,
+            "pairEnhancement": 0.0,
+            "pairEnhancementDecay": 1.0
+        })
     elif args.fix_d:
         logger.info("Fixing pairEnhancementDecay parameter to 1.0")
         JCM_model.fixParameter_combination({
@@ -230,9 +234,7 @@ def setup_model(bin_data: Tuple, args: argparse.Namespace, logger: logging.Logge
     else:
         logger.info(f"Fixing threeTightTagFraction to {threeTightTagFraction:.6f}")
         JCM_model.fixParameter_combination({
-            "threeTightTagFraction": threeTightTagFraction,
-            "pairEnhancement": 0.0,
-            "pairEnhancementDecay": 1.0
+            "threeTightTagFraction": threeTightTagFraction
         })
         
     return JCM_model
@@ -494,9 +496,9 @@ def create_plots(JCM_model: jetCombinatoricModel, bin_data: Tuple, args: argpars
             "pairEnhancementDecay": "d"
         }
         for parameter in JCM_model.parameters:
-            if parameter.name == "threeTightTagFraction":
+            if parameter["name"] == "threeTightTagFraction":
                 continue
-            fit_text += f"  {plot_param_name[parameter.name]} = {round(parameter.value,2)} +/- {round(parameter.error,3)}  ({round(parameter.percentError,1)}%)\n"
+            fit_text += f"  {plot_param_name[parameter['name']]} = {round(parameter['value'],2)} +/- {round(parameter['error'],3)}  ({round(parameter['percentError'],1)}%)\n"
         
         fit_text += f"  $\chi^2$ / DoF = {round(JCM_model.fit_chi2,1)} / {JCM_model.fit_ndf} = {round(JCM_model.fit_chi2/JCM_model.fit_ndf,1)}\n"
         fit_text += f"  p-value: {round(100*JCM_model.fit_prob)}%\n"
