@@ -404,15 +404,15 @@ class analysis(processor.ProcessorABC):
         #
         #  Build di-jets and Quad-jets
         #
-        create_cand_jet_dijet_quadjet( selev,
-                                       apply_FvT=self.apply_FvT,
-                                       run_SvB=self.run_SvB,
-                                       run_systematics=self.run_systematics,
-                                       classifier_SvB=self.classifier_SvB,
-                                       classifier_SvB_MA=self.classifier_SvB_MA,
-                                       processOutput = processOutput,
-                                       isRun3=self.config["isRun3"],
-                                      )
+        selev = create_cand_jet_dijet_quadjet( selev,
+                                               apply_FvT=self.apply_FvT,
+                                               run_SvB=self.run_SvB,
+                                               run_systematics=self.run_systematics,
+                                               classifier_SvB=self.classifier_SvB,
+                                               classifier_SvB_MA=self.classifier_SvB_MA,
+                                               processOutput = processOutput,
+                                               isRun3=self.config["isRun3"],
+                                              )
 
 
         weights, list_weight_names = add_pseudotagweights( selev, weights,
@@ -437,21 +437,21 @@ class analysis(processor.ProcessorABC):
         #
         # Blind data in fourTag SR
         #
-        if not (self.config["isMC"] or "mix_v" in self.dataset) and self.blind:
-            # blind_flag = ~(selev["quadJet_selected"].SR & selev.fourTag)
-            blind_flag = ~( selev["quadJet_selected"].SR & (selev["SvB_MA"].ps_hh > 0.5) & selev.fourTag )
-            blind_sel = np.full( len(event), True)
-            blind_sel[ analysis_selections ] = blind_flag
-            selections.add( 'blind', blind_sel )
-            allcuts.append( 'blind' )
+        # if not (self.config["isMC"] or "mix_v" in self.dataset) and self.blind:
+        #     # blind_flag = ~(selev["quadJet_selected"].SR & selev.fourTag)
+        #     blind_flag = ~( selev["quadJet_selected"].SR & (selev["SvB_MA"].ps_hh > 0.5) & selev.fourTag )
+        #     blind_sel = np.full( len(event), True)
+        #     blind_sel[ analysis_selections ] = blind_flag
+        #     selections.add( 'blind', blind_sel )
+        #     allcuts.append( 'blind' )
 
-            if not shift_name:
-                self._cutFlow.fill( "blind", event[selections.all(*allcuts)], allTag=True )
-                self._cutFlow.fill( "blind_woTrig", event[selections.all(*allcuts)], allTag=True,
-                                    wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[selections.all(*allcuts)] ))
+        #     if not shift_name:
+        #         self._cutFlow.fill( "blind", event[selections.all(*allcuts)], allTag=True )
+        #         self._cutFlow.fill( "blind_woTrig", event[selections.all(*allcuts)], allTag=True,
+        #                             wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[selections.all(*allcuts)] ))
 
-            analysis_selections = selections.all(*allcuts)
-            selev = selev[blind_flag]
+        #     analysis_selections = selections.all(*allcuts)
+        #     selev = selev[blind_flag]
 
         #
         # CutFlow
@@ -506,7 +506,7 @@ class analysis(processor.ProcessorABC):
                                                   run_dilep_ttbar_crosscheck=self.run_dilep_ttbar_crosscheck,
                                                   top_reconstruction=self.top_reconstruction,
                                                   isDataForMixed=self.config['isDataForMixed'],
-                                                  tag_list=["lowpt_fourTag", "lowpt_threeTag", "fourTag", "threeTag"],
+                                                  tag_list=["lowpt_fourTag", "lowpt_threeTag"],
                                                   event_metadata=event.metadata)
 
             #
