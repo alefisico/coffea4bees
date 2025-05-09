@@ -525,6 +525,8 @@ class analysis(processor.ProcessorABC):
         #
         # Example of how to write out event numbers
         #
+        # from analysis.helpers.write_debug_info import add_debug_Run3_data_early
+        # add_debug_Run3_data_early(event, processOutput)
         #from analysis.helpers.write_debug_info import add_debug_Run3_data
         #add_debug_Run3_data(event, processOutput)
 

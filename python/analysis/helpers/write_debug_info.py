@@ -46,24 +46,152 @@ def add_debug_info_to_output(event, processOutput, weights, list_weight_names, a
         processOutput[out_k][event.metadata['dataset']] = list(out_v)
 
 
+def add_debug_Run3_data_early(event, processOutput):
+
+    out_data = {}
+
+
+    #debug_mask = (event.region.SB == True)
+    run_SB_mask = (event.run == 355921)
+
+    event_mask = ((event["event"] == 632465280) |
+                  (event["event"] == 109801856) |
+                  (event["event"] == 136082628) |
+                  (event["event"] == 187272057))
+
+    debug_mask = run_SB_mask & event_mask
+
+    print(debug_mask.to_list()[0:10])
+    print("Any Early", ak.any(debug_mask), "len", len(debug_mask[debug_mask == True]))
+
+    return
+
+
+
+def add_debug_Run3_data_skim(event, processOutput, selection):
+
+    out_data = {}
+
+
+    #debug_mask = (event.region.SB == True)
+    run_SB_mask = (event.run == 355921)
+
+    event_mask = ((event["event"] == 632465280) |
+                  (event["event"] == 109801856) |
+                  (event["event"] == 136082628) |
+                  (event["event"] == 187272057))
+
+
+    debug_mask = run_SB_mask & event_mask
+
+    #print(debug_mask.to_list()[0:10])
+    #print("Any Early", ak.any(debug_mask), "len", len(debug_mask[debug_mask == True]))
+
+
+    #print(debug_mask, ak.any(debug_mask))
+    out_data["event"  ]    = event["event"][debug_mask]
+    out_data["run"    ]    = event["run"][debug_mask]
+    out_data["fourTag"    ]    = event["fourTag"][debug_mask]
+    out_data["threeTag"    ]    = event["threeTag"][debug_mask]
+    out_data["passJetMult"    ]    = event["passJetMult"][debug_mask]
+    #out_data["passJetMult_lowpt_forskim"    ]    = event["passJetMult_lowpt_forskim"][debug_mask]
+    #out_data["passPreSel_lowpt_forskim"    ]    = event["passPreSel_lowpt_forskim"][debug_mask]
+    out_data["lumimask"    ]    = event["lumimask"][debug_mask]
+    out_data["passNoiseFilter"    ]    = event["passNoiseFilter"][debug_mask]
+    out_data["passPreSel"    ]    = event["passPreSel"][debug_mask]
+    out_data["passHLT"    ]    = event["passHLT"][debug_mask]
+    out_data["selection"    ]    = selection[debug_mask]
+
+
+    out_data["Jet_pt"    ]    = event.Jet.pt  [debug_mask].to_list()
+    out_data["Jet_eta"   ]    = event.Jet.eta [debug_mask].to_list()
+    out_data["Jet_phi"   ]    = event.Jet.phi [debug_mask].to_list()
+    out_data["Jet_mass"  ]    = event.Jet.mass[debug_mask].to_list()
+    out_data["Jet_bTagScore"] = event.Jet.btagScore[debug_mask].to_list()
+    out_data["Jet_selected"]  = event.Jet.selected[debug_mask].to_list()
+    #out_data["Jet_selected_lowpt_forskim"]  = event.Jet.selected_lowpt_forskim[debug_mask].to_list()
+    out_data["Jet_pileup"]    = event.Jet.pileup[debug_mask].to_list()
+    out_data["Jet_jetId"]     = event.Jet.jetId[debug_mask].to_list()
+    #out_data["Jet_lepton_cleaned"]     = event.Jet.lepton_cleaned[debug_mask].to_list()
+
+
+
+    for out_k, out_v in out_data.items():
+        processOutput[out_k] = {}
+        processOutput[out_k][event.metadata['dataset']] = list(out_v)
+
+
+    return
+
+
 
 
 def add_debug_Run3_data(event, processOutput):
 
     out_data = {}
 
-    debug_mask = (event.region == 1)
+
+    debug_mask = (event.region.SB == True)
+
+    # run_SB_mask = (event.run == 355921)
+    #
+    # event_mask = ((event["event"] == 632465280) |
+    #               (event["event"] == 109801856) |
+    #               (event["event"] == 136082628) |
+    #               (event["event"] == 187272057))
+    #
+    # debug_mask = run_SB_mask & event_mask
+    #
+    # print(debug_mask.to_list()[0:10])
+    # print("Any", ak.any(debug_mask), "len", len(debug_mask[debug_mask == True]))
+    # print("passJetMult", event["passJetMult"][debug_mask].to_list()[0:10])
+    # print("threeTag", event["threeTag"][debug_mask].to_list()[0:10])
+    # print("fourTag", event["fourTag"][debug_mask].to_list()[0:10])
+    # print("SB", event.region.SB[debug_mask].to_list()[0:10])
+    # print("event", event["event"][debug_mask].to_list()[0:10])
+    # print("quadJet rhh", event.quadJet_selected.rhh[debug_mask].to_list()[0:10])
+    # print("quadJet selected lead,mass", event.quadJet_selected.lead.mass[debug_mask].to_list()[0:10])
+    # print("quadJet selected subl mass", event.quadJet_selected.subl.mass[debug_mask].to_list()[0:10])
+    # print("quadJet selected lead,pt", event.quadJet_selected.lead.pt[debug_mask].to_list()[0:10])
+    # print("quadJet selected subl pt", event.quadJet_selected.subl.pt[debug_mask].to_list()[0:10])
+    # print("dhh", event.quadJet.dhh[debug_mask].to_list()[0:10])
+    # print("quadJet lead mass", event.quadJet.lead.mass[debug_mask].to_list()[0:10])
+    # print("quadJet subl mass", event.quadJet.subl.mass[debug_mask].to_list()[0:10])
+    # print("quadJet lead pt", event.quadJet.lead.pt[debug_mask].to_list()[0:10])
+    # print("quadJet subl pt", event.quadJet.subl.pt[debug_mask].to_list()[0:10])
+    # print("dhh selected", event.quadJet.selected[debug_mask].to_list()[0:10])
+    #
+    #
+    #
+    # print("Jets ",
+    #       event.quadJet_selected.lead.lead.pt[debug_mask].to_list()[0:10],
+    #       event.quadJet_selected.lead.subl.pt[debug_mask].to_list()[0:10],
+    #       event.quadJet_selected.subl.lead.pt[debug_mask].to_list()[0:10],
+    #       event.quadJet_selected.subl.subl.pt[debug_mask].to_list()[0:10])
+    # print("canJet pt", event.canJet.pt[debug_mask].to_list()[0:10])
+    # print("canJet eta", event.canJet.eta[debug_mask].to_list()[0:10])
+    # print("canJet phi", event.canJet.phi[debug_mask].to_list()[0:10])
+    # print("canJet mass", event.canJet.mass[debug_mask].to_list()[0:10])
+    # print("canJet bTagScore", event.canJet.btagScore[debug_mask].to_list()[0:10])
+
+
+
+
+
+    #print(debug_mask, ak.any(debug_mask))
     out_data["event"  ]    = event["event"][debug_mask]
     out_data["run"    ]    = event["run"][debug_mask]
+    out_data["fourTag"    ]    = event["fourTag"][debug_mask]
+    out_data["passJetMult"    ]    = event["passJetMult"][debug_mask]
+    out_data["passJetMult_event"    ]    = event["event"][event.passJetMult][debug_mask]
+    out_data["passJetMult_run"    ]    = event["run"][event.passJetMult][debug_mask]
+    out_data["passJetMult_passDiJetMass"    ]    = event["passDiJetMass"][event.passJetMult][debug_mask]
+
     out_data["canJet_pt"    ] = event.canJet.pt  [debug_mask].to_list()
     out_data["canJet_eta"   ] = event.canJet.eta [debug_mask].to_list()
     out_data["canJet_phi"   ] = event.canJet.phi [debug_mask].to_list()
     out_data["canJet_mass"  ] = event.canJet.mass[debug_mask].to_list()
     out_data["canJet_bTagScore"] = event.canJet.btagScore[debug_mask].to_list()
-    if "PNetRegPtRawCorr" in event.canJet.fields:
-        out_data["canJet_PNetRegPtRawCorr"] = event.canJet.PNetRegPtRawCorr[debug_mask].to_list()
-        out_data["canJet_PNetRegPtRawCorrNeutrino"] = event.canJet.PNetRegPtRawCorrNeutrino[debug_mask].to_list()
-        out_data["canJet_pt_raw"] = event.canJet.pt_raw[debug_mask].to_list()
 
     out_data["notCanJet_pt"    ]    = event.notCanJet_coffea.pt  [debug_mask].to_list()
     out_data["notCanJet_eta"   ]    = event.notCanJet_coffea.eta [debug_mask].to_list()
@@ -73,8 +201,8 @@ def add_debug_Run3_data(event, processOutput):
 
 
     for out_k, out_v in out_data.items():
-        processOutput[out_k] = {}
-        processOutput[out_k][event.metadata['dataset']] = list(out_v)
+            processOutput[out_k] = {}
+            processOutput[out_k][event.metadata['dataset']] = list(out_v)
 
 
 

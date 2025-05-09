@@ -265,10 +265,9 @@ class analysis(processor.ProcessorABC):
         sorted_idx = ak.argsort( selev.Jet.btagScore * selev.Jet.selected, axis=1, ascending=False )
         canJet_idx = sorted_idx[:, 0:4]
         notCanJet_idx = sorted_idx[:, 4:]
-        canJet = selev.Jet[canJet_idx]
 
         # apply bJES to canJets
-        canJet = canJet * canJet.bRegCorr
+        canJet = selev.Jet[canJet_idx] * selev.Jet[canJet_idx].bRegCorr
         canJet["bRegCorr"] = selev.Jet.bRegCorr[canJet_idx]
         canJet["btagScore"] = selev.Jet.btagScore[canJet_idx]
         canJet["puId"] = selev.Jet.puId[canJet_idx]
@@ -281,14 +280,9 @@ class analysis(processor.ProcessorABC):
         #
         canJet = canJet[ak.argsort(canJet.pt, axis=1, ascending=False)]
         selev["canJet"] = canJet
+        for i in range(4):
+            selev[f"canJet{i}"] = selev["canJet"][:, i]
 
-        #
-        #  Should be a better way to do this...
-        #
-        selev["canJet0"] = canJet[:, 0]
-        selev["canJet1"] = canJet[:, 1]
-        selev["canJet2"] = canJet[:, 2]
-        selev["canJet3"] = canJet[:, 3]
 
         # print(selev.v4j.n)
         # selev['Jet', 'canJet'] = False

@@ -12,6 +12,7 @@ from coffea.lumi_tools import LumiMask
 from base_class.math.random import Squares
 from copy import copy
 import logging
+from coffea.nanoevents.methods import vector
 
 def apply_event_selection_4b( event, corrections_metadata, *, cut_on_lumimask=True):
 
@@ -130,9 +131,9 @@ def apply_object_selection_4b(event, corrections_metadata, *,
             #logging.warning(f"For Run3 we are computing JECs after splitting the jets into btagged and non-btagged jets")
 
         event['Jet', 'puId']       = 10
-        event['Jet', 'pileup'] = ((event.Jet.puId < 7) & (event.Jet.pt < 50)) | ((np.abs(event.Jet.eta) > 2.4) & (event.Jet.pt < 40))
+        event['Jet', 'pileup'] = ((event.Jet.puId < 7) & (event.Jet.pt < 50)) | ((np.abs(event.Jet.eta) > 2.5) & (event.Jet.pt < 40))
         event['Jet', 'selected_loose']  = (event.Jet.pt >= 20) & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned & (np.abs(event.Jet.eta) <= 4.7)
-        event['Jet', 'selected']        = (event.Jet.pt >= 30) & (np.abs(event.Jet.eta) <= 2.4) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
+        event['Jet', 'selected']        = (event.Jet.pt >= 30) & (np.abs(event.Jet.eta) <= 2.5) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
     else:
         event['Jet', 'calibration'] = event.Jet.pt / ( event.Jet.pt_raw if 'pt_raw' in event.Jet.fields else ak.full_like(event.Jet.pt, 1) )
         event['Jet', 'btagScore']  = event.Jet.btagDeepFlavB
@@ -243,7 +244,7 @@ def apply_object_selection_4b(event, corrections_metadata, *,
 
         event['passPreSel'] = event.lowpt_threeTag | event.lowpt_fourTag
 
-    event['tag'] = ak.zip( { 
+    event['tag'] = ak.zip( {
         "twoTag": event.twoTag,
         "threeTag": event.threeTag,
         "fourTag": event.fourTag,
@@ -251,7 +252,7 @@ def apply_object_selection_4b(event, corrections_metadata, *,
 
     # Only need 30 GeV jets for signal systematics
     if loosePtForSkim:
-        event['Jet', 'selected_lowpt_forskim'] = (event.Jet.pt >= 15) & (np.abs(event.Jet.eta) <= 2.4) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
+        event['Jet', 'selected_lowpt_forskim'] = (event.Jet.pt >= 15) & (np.abs(event.Jet.eta) <= 2.5) & ~event.Jet.pileup & (event.Jet.jetId>=2) & event.Jet.lepton_cleaned
         event['nJet_selected_lowpt_forskim'] = ak.sum(event.Jet.selected_lowpt_forskim, axis=1)
         event['Jet', 'tagged_lowpt_forskim']     = event.Jet.selected_lowpt_forskim & (event.Jet.btagScore >= corrections_metadata['btagWP']['M'])
         event['passJetMult_lowpt_forskim'] = event.nJet_selected_lowpt_forskim >= 4
@@ -442,8 +443,39 @@ def create_cand_jet_dijet_quadjet( selev,
         #   https://gitlab.cern.ch/mkolosov/hh4b_run3/-/blob/run2/python/producers/hh4bTreeProducer.py#L3386
         diagonalXoYo = 1.04
         quadJet["dhh"] = (1.0/np.sqrt(1+pow(diagonalXoYo, 2)))*abs(quadJet["lead"].mass - ((diagonalXoYo)*quadJet["subl"].mass))
-        quadJet["selected"] = quadJet.dhh == np.min(quadJet.dhh, axis=1)
 
+
+        # If the difference of the minimum and second minimum distance from the diagonal is less than 30, choose the pair that has the
+        # maximum H1 pT in the 4-jet center-of-mass frame
+        dhh_sorted = np.sort(quadJet["dhh"], axis=1)
+        dhh_sorted_arg = np.argsort(quadJet["dhh"], axis=1)
+        delta_dhh = abs(dhh_sorted[:,1] - dhh_sorted[:,0])
+
+        # Get the two jets with the minimum and second minimum distance from the diagonal
+        quadJet_min_dhh_mask = dhh_sorted[:,0] == quadJet.dhh
+        quadJet_min_dhh = quadJet[quadJet_min_dhh_mask]
+
+        quadJet_min2_dhh_mask = dhh_sorted[:,1] == quadJet.dhh
+        quadJet_min2_dhh = quadJet[quadJet_min2_dhh_mask]
+
+        # Create a boost vector from the 4-momentum sum
+        boost_vec_v4j = ak.zip(
+            {
+                "x": selev.v4j.px / selev.v4j.energy,
+                "y": selev.v4j.py / selev.v4j.energy,
+                "z": selev.v4j.pz / selev.v4j.energy,
+            },
+            with_name="ThreeVector",
+            behavior=vector.behavior,
+        )
+
+        # Boost the jets into the center of mass frame
+        quadJet_min_dhh_lead_CM  = quadJet_min_dhh.lead[:,0].boost(-boost_vec_v4j)
+        quadJet_min2_dhh_lead_CM = quadJet_min2_dhh.lead[:,0].boost(-boost_vec_v4j)
+
+        use_dhh2_mask = (delta_dhh < 30) & (quadJet_min2_dhh_lead_CM.pt > quadJet_min_dhh_lead_CM.pt)
+
+        quadJet["selected"] = ak.where(use_dhh2_mask, quadJet_min2_dhh_mask, quadJet_min_dhh_mask)
 
         #
         #   For CR selection
@@ -452,12 +484,15 @@ def create_cand_jet_dijet_quadjet( selev,
         cSubl = 120
         SR_radius = 30
         CR_radius = 55
-        quadJet["selected"] = quadJet.dhh == np.min(quadJet.dhh, axis=1)
+
 
         quadJet["rhh"] = np.sqrt( (quadJet["lead"].mass - cLead)**2 + (quadJet["subl"].mass - cSubl)**2 )
         quadJet["SR"] = (quadJet.rhh < SR_radius)
         quadJet["SB"] =  (~quadJet.SR) & (quadJet.rhh < CR_radius)
         quadJet["passDiJetMass"] =  quadJet.SR | quadJet.SB
+
+
+
 
     else:
 

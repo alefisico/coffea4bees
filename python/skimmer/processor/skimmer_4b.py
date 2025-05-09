@@ -24,7 +24,6 @@ class Skimmer(PicoAOD):
         self.mc_outlier_threshold = mc_outlier_threshold
 
 
-
     def select(self, event):
 
         year    = event.metadata['year']
@@ -49,12 +48,12 @@ class Skimmer(PicoAOD):
             event["Jet"] = jets
 
         event = apply_object_selection_4b( event, self.corrections_metadata[year],
-            dataset=dataset,
-            doLeptonRemoval=config["do_lepton_jet_cleaning"],
-            loosePtForSkim=self.loosePtForSkim,
-            isRun3=config["isRun3"],
-            isMC=config["isMC"],
-            )
+                                           dataset=dataset,
+                                           doLeptonRemoval=config["do_lepton_jet_cleaning"],
+                                           loosePtForSkim=self.loosePtForSkim,
+                                           isRun3=config["isRun3"],
+                                           isMC=config["isMC"],
+                                          )
 
         weights = Weights(len(event), storeIndividual=True)
 
@@ -100,12 +99,18 @@ class Skimmer(PicoAOD):
             selection = event.lumimask & event.passNoiseFilter & event.passJetMult & event.passPreSel
 
         if self.skim4b:
-            selection = selection * event.fourTag
+            selection = selection & event.fourTag
 
-        if not config["isMC"]: selection = selection & event.passHLT
+        if not config["isMC"]:
+            selection = selection & event.passHLT
+
+        processOutput = {}
+        #from analysis.helpers.write_debug_info import add_debug_Run3_data_skim
+        #add_debug_Run3_data_skim(event, processOutput, selection)
+
+        return selection, None, processOutput
 
 
-        return selection
 
     def preselect(self, event):
         dataset = event.metadata['dataset']
