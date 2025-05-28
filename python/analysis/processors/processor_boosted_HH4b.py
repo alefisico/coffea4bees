@@ -9,11 +9,7 @@ from coffea import processor
 from coffea.analysis_tools import PackedSelection
 
 from analysis.helpers.cutflow import cutFlow
-from analysis.helpers.selection_basic_4b import (
-    apply_event_selection_4b,
-    apply_object_selection_4b,
-    apply_object_selection_boosted_4b
-)
+from analysis.helpers.event_selection import apply_event_selection, apply_boosted_4b_selection, apply_4b_selection
 
 import logging
 
@@ -54,11 +50,11 @@ class analysis(processor.ProcessorABC):
         #
         # Event selection
         #
-        event = apply_event_selection_4b( event, self.corrections_metadata[year], cut_on_lumimask=False)
+        event = apply_event_selection( event, self.corrections_metadata[year], cut_on_lumimask=False)
 
         # Apply object selection (function does not remove events, adds content to objects)
-        event = apply_object_selection_4b( event, self.corrections_metadata[year] )
-        event = apply_object_selection_boosted_4b( event )
+        event = apply_4b_selection( event, self.corrections_metadata[year] )
+        event = apply_boosted_4b_selection(event)
 
         selections = PackedSelection()
         selections.add( "lumimask", event.lumimask)

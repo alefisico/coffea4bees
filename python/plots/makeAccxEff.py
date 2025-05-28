@@ -249,6 +249,44 @@ def makeEffPlot(name, data_to_plot, cuts_flow, output_dir, **kwargs):
 
 
 
+def calculate_ratios(num_data, den_data, thisSF):
+    """Calculate ratios and uncertainties for efficiency plots.
+    
+    Args:
+        num_data: Numerator data
+        den_data: Denominator data
+        thisSF: Scale factor to apply
+        
+    Returns:
+        Tuple of (ratios, ratio_uncertainties)
+    """
+    ratios, ratio_uncert = plot_helpers.make_ratio(
+        np.array(num_data["values"]) * thisSF,
+        np.array(num_data["variances"]) * thisSF**2,
+        np.array(den_data["values"]),
+        np.array(den_data["variances"])
+    )
+    return ratios, ratio_uncert
+
+def calculate_total_ratios(num_data, den_data, thisSF):
+    """Calculate total ratios and uncertainties for efficiency plots.
+    
+    Args:
+        num_data: Numerator data
+        den_data: Denominator data
+        thisSF: Scale factor to apply
+        
+    Returns:
+        Tuple of (ratios, ratio_uncertainties)
+    """
+    ratios_tot, ratio_tot_uncert = plot_helpers.make_ratio(
+        np.array(num_data["values"]) * thisSF,
+        np.array(num_data["variances"]) * thisSF**2,
+        np.array(den_data["values"]),
+        np.array(den_data["variances"])
+    )
+    return ratios_tot, ratio_tot_uncert
+
 def makePlot(cfg, year, output_dir, debug=False):
 
 
@@ -299,10 +337,7 @@ def makePlot(cfg, year, output_dir, debug=False):
         if not den_file_idx == num_file_idx:
             thisSF = scalefactor
 
-        ratios, ratio_uncert = plot_helpers.makeRatio(np.array(num_data["values"])*thisSF,
-                                                      np.array(num_data["variances"]),
-                                                      np.array(den_data["values"]),
-                                                      np.array(den_data["variances"]))
+        ratios, ratio_uncert = calculate_ratios(num_data, den_data, thisSF)
         rel_eff[cuts_flow[ic][0]] = {"ratio":ratios, "error":ratio_uncert, "centers":num_data["centers"]}
 
         #
@@ -311,10 +346,7 @@ def makePlot(cfg, year, output_dir, debug=False):
         if not num_file_idx == 0:
             thisSF = scalefactor
 
-        ratios_tot, ratio_tot_uncert = plot_helpers.makeRatio(np.array(num_data["values"])*thisSF,
-                                                              np.array(num_data["variances"]),
-                                                              np.array(den_tot_data["values"]),
-                                                              np.array(den_tot_data["variances"]))
+        ratios_tot, ratio_tot_uncert = calculate_total_ratios(num_data, den_data, thisSF)
         tot_eff[cuts_flow[ic][0]] = {"ratio":ratios_tot, "error":ratio_tot_uncert, "centers":num_data["centers"]}
 
 

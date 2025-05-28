@@ -1,200 +1,258 @@
+"""
+Interactive plotting utility for HH4b analysis.
+
+This module provides functions for creating and customizing 1D and 2D plots
+from histogram data, with support for multiple variables, regions, and processes.
+"""
+
 import os
 import sys
-import yaml
+from typing import Optional, Union, List, Tuple, Dict, Any
+
+# Third-party imports
 import hist
 import matplotlib.pyplot as plt
-from hist.intervals import ratio_uncertainty
+
+# Local imports
 sys.path.insert(0, os.getcwd())
-from base_class.plots.plots import makePlot, make2DPlot, load_config, load_hists, read_axes_and_cuts, parse_args, print_cfg
+from base_class.plots.plots import (
+    makePlot, make2DPlot, load_config, load_hists, 
+    read_axes_and_cuts, parse_args, print_cfg
+)
 import base_class.plots.iPlot_config as cfg
 
-#
-# TO Add
-#     Variable Binning
+# Constants
+DEFAULT_OUTPUT_FILE = "test.pdf"
 
 
-def ls(option="var", var_match=None):
+def ls(option: str = "var", var_match: Optional[str] = None) -> None:
+    """List available variables in the configuration.
+    
+    Args:
+        option: The type of labels to list (default: "var")
+        var_match: Optional string to filter variables by
+    """
     for k in cfg.axisLabels[option]:
         if var_match:
-            if k.find(var_match) != -1:
+            if var_match in k:
                 print(k)
         else:
             print(k)
 
-def info():
+
+def info() -> None:
+    """Print the current configuration."""
     print_cfg(cfg)
 
-def examples():
-    print("examples:\n\n")
-    print(
-        '# Nominal plot of data and background in the a region passing a cut \n'
-        'plot("v4j.mass", region="SR", cut="passPreSel")\n\n'
 
-        '# Can get a print out of the varibales\n'
-        'ls()'
-        'plot("*", region="SR", cut="passPreSel")\n'
-        'plot("v4j*", region="SR", cut="passPreSel")\n\n'
+def examples() -> None:
+    """Print example usage of the plotting functions."""
+    examples_text = """
+examples:
 
-        '# Can add ratio\n'
-        'plot("v4j.mass", region="SR", cut="passPreSel", doRatio=1)\n\n'
+# Nominal plot of data and background in a region passing a cut
+plot("v4j.mass", region="SR", cut="passPreSel")
 
-        '# Can rebin\n'
-        'plot("v4j.mass", region="SR", cut="passPreSel", doRatio=1, rebin=4)\n\n'
+# Can get a print out of the variables
+ls()
+plot("*", region="SR", cut="passPreSel")
+plot("v4j*", region="SR", cut="passPreSel")
 
-        '# Can normalize\n'
-        'plot("v4j.mass", region="SR", cut="passPreSel", doRatio=1, rebin=4, norm=1)\n\n'
+# Can add ratio
+plot("v4j.mass", region="SR", cut="passPreSel", doRatio=1)
 
-        '# Can set logy\n'
-        'plot("v4j.mass", region="SR", cut="passPreSel", doRatio=1, rebin=4, norm=1, yscale="log")\n\n'
+# Can rebin
+plot("v4j.mass", region="SR", cut="passPreSel", doRatio=1, rebin=4)
 
-        '# Can set ranges\n'
-        'plot("v4j.mass", region="SR", cut="passPreSel", doRatio=1, rebin=4, norm=1, rlim=[0.5,1.5])\n'
-        'plot("v4j.mass", region="SR", cut="passPreSel", doRatio=1, rebin=4, norm=1, xlim=[0,1000])\n'
-        'plot("v4j.mass", region="SR", cut="passPreSel", doRatio=1, rebin=4, norm=1, ylim=[0,0.01])\n\n'
+# Can normalize
+plot("v4j.mass", region="SR", cut="passPreSel", doRatio=1, rebin=4, norm=1)
 
-        '# Can overlay different regions \n'
-        'plot("v4j.mass", region=["SR","SB"], cut="passPreSel", process="data", doRatio=1, rebin=4)\n'
-        'plot("v4j.mass", region=["SR","SB"], cut="passPreSel", process="HH4b", doRatio=1, rebin=4)\n'
-        'plot("v4j.mass", region=["SR","SB"], cut="passPreSel", process="Multijet", doRatio=1, rebin=4)\n'
-        'plot("v4j.mass", region=["SR","SB"], cut="passPreSel", process="TTToHadronic", doRatio=1, rebin=4)\n\n'
+# Can set logy
+plot("v4j.mass", region="SR", cut="passPreSel", doRatio=1, rebin=4, norm=1, yscale="log")
 
-        '# Can overlay different cuts \n'
-        'plot("v4j.mass", region="SR", cut=["passPreSel","passSvB","failSvB"], process="data", doRatio=1, rebin=4, norm=1)\n'
-        'plot("v4j.mass", region="SR", cut=["passPreSel","passSvB","failSvB"], process="HH4b", doRatio=1, rebin=4, norm=1)\n'
-        'plot("v4j.mass", region="SR", cut=["passPreSel","passSvB","failSvB"], process="Multijet", doRatio=1, rebin=4, norm=1)\n'
-        'plot("v4j.mass", region="SR", cut=["passPreSel","passSvB","failSvB"], process="TTToHadronic", doRatio=1, rebin=4, norm=1)\n\n'
+# Can set ranges
+plot("v4j.mass", region="SR", cut="passPreSel", doRatio=1, rebin=4, norm=1, rlim=[0.5,1.5])
+plot("v4j.mass", region="SR", cut="passPreSel", doRatio=1, rebin=4, norm=1, xlim=[0,1000])
+plot("v4j.mass", region="SR", cut="passPreSel", doRatio=1, rebin=4, norm=1, ylim=[0,0.01])
 
-        '# Can overlay different variables \n'
-        'plot(["canJet0.pt","canJet1.pt"], region="SR",cut="passPreSel",doRatio=1,process="Multijet")\n'
-        'plot(["canJet0.pt","canJet1.pt","canJet2.pt","canJet3.pt"], region="SR", cut="passPreSel",doRatio=1,process="Multijet")\n\n'
+# Can overlay different regions
+plot("v4j.mass", region=["SR","SB"], cut="passPreSel", process="data", doRatio=1, rebin=4)
+plot("v4j.mass", region=["SR","SB"], cut="passPreSel", process="HH4b", doRatio=1, rebin=4)
+plot("v4j.mass", region=["SR","SB"], cut="passPreSel", process="Multijet", doRatio=1, rebin=4)
+plot("v4j.mass", region=["SR","SB"], cut="passPreSel", process="TTToHadronic", doRatio=1, rebin=4)
 
-        '# Can plot a single process  \n'
-        'plot("v4j.mass", region="SR", cut="passPreSel",process="data")\n\n'
+# Can overlay different cuts
+plot("v4j.mass", region="SR", cut=["passPreSel","passSvB","failSvB"], process="data", doRatio=1, rebin=4, norm=1)
+plot("v4j.mass", region="SR", cut=["passPreSel","passSvB","failSvB"], process="HH4b", doRatio=1, rebin=4, norm=1)
+plot("v4j.mass", region="SR", cut=["passPreSel","passSvB","failSvB"], process="Multijet", doRatio=1, rebin=4, norm=1)
+plot("v4j.mass", region="SR", cut=["passPreSel","passSvB","failSvB"], process="TTToHadronic", doRatio=1, rebin=4, norm=1)
 
-        '# Can overlay processes  \n'
-        'plot("v4j.mass", region="SR", cut="passPreSel",norm=1,process=["data","TTTo2L2Nu","HH4b","Multijet"],doRatio=1)\n\n'
+# Can overlay different variables
+plot(["canJet0.pt","canJet1.pt"], region="SR", cut="passPreSel", doRatio=1, process="Multijet")
+plot(["canJet0.pt","canJet1.pt","canJet2.pt","canJet3.pt"], region="SR", cut="passPreSel", doRatio=1, process="Multijet")
 
-        '# Can overlay years\n'
-        'plot("canJet0.pt", region="SR",cut="passPreSel",doRatio=1,process="data", year=["UL16_preVFP","UL16_postVFP","UL17","UL18"])\n'
+# Can plot a single process
+plot("v4j.mass", region="SR", cut="passPreSel", process="data")
 
-        '# Plot 2d hists \n'
-        'plot2d("quadJet_min_dr.close_vs_other_m",process="Multijet",region="SR",cut="failSvB")\n'
-        'plot2d("quadJet_min_dr.close_vs_other_m",process="Multijet",region="SR",cut="failSvB",full=True)\n\n'
+# Can overlay processes
+plot("v4j.mass", region="SR", cut="passPreSel", norm=1, process=["data","TTTo2L2Nu","HH4b","Multijet"], doRatio=1)
 
-        '# Unsup4b plots with SB and SRSB as composite regions \n'
-        'plot("v4j.mass", region="SRSB", cut="passPreSel") \n'
-        'plot2d("quadJet_selected.lead_vs_subl_m",process="data3b",region="SRSB") \n'
-        'plot("leadStM_selected", region="SB", cut="passPreSel", process = ["data3b","mixeddata"]) \n'
-        'plot("v4j.mass", region=["SR", "SB"], cut="passPreSel", process = "data3b") \n\n'
+# Can overlay years
+plot("canJet0.pt", region="SR", cut="passPreSel", doRatio=1, process="data", year=["UL16_preVFP","UL16_postVFP","UL17","UL18"])
+
+# Plot 2d hists
+plot2d("quadJet_min_dr.close_vs_other_m", process="Multijet", region="SR", cut="failSvB")
+plot2d("quadJet_min_dr.close_vs_other_m", process="Multijet", region="SR", cut="failSvB", full=True)
+
+# Unsup4b plots with SB and SRSB as composite regions
+plot("v4j.mass", region="SRSB", cut="passPreSel")
+plot2d("quadJet_selected.lead_vs_subl_m", process="data3b", region="SRSB")
+plot("leadStM_selected", region="SB", cut="passPreSel", process=["data3b","mixeddata"])
+plot("v4j.mass", region=["SR", "SB"], cut="passPreSel", process="data3b")
+"""
+    print(examples_text)
 
 
-    )
-
-
-def plot(var='selJets.pt', *, cut="passPreSel", region="SR", **kwargs):
-    r"""
-    Plot
-
-    Takes Options:
-
-       debug    : False,
-       var      : 'selJets.pt',
-       cut      : "passPreSel",
-       region   : "SR",
-
-       plotting opts
-        'doRatio'  : bool (False)
-        'rebin'    : int (1),
+def save_and_open_plot(fig: plt.Figure, output_file: str) -> bool:
+    """Save the figure to a file and open it.
+    
+    Args:
+        fig: The matplotlib figure to save
+        output_file: Path where to save the figure
+        
+    Returns:
+        True if successful, False otherwise
     """
-    print()
-    if kwargs.get("debug", False):
-        print(f'kwargs = {kwargs}')
+    try:
+        fig.savefig(output_file)
+        plt.close()
+        os.system(f"open {output_file}")
+        return True
+    except Exception as e:
+        print(f"Error saving plot: {e}")
+        return False
 
-    if type(var) is not list and var.find("*") != -1:
+
+def handle_wildcards(var: Union[str, List[str]]) -> bool:
+    """Handle wildcard matching in variable names.
+    
+    Args:
+        var: Variable(s) to check for wildcards
+        
+    Returns:
+        True if wildcards were found and handled, False otherwise
+    """
+    if isinstance(var, str) and "*" in var:
         ls(var_match=var.replace("*", ""))
-        return
-
-    if type(var) is list and var[0].find("*") != -1:
+        return True
+    if isinstance(var, list) and var[0].find("*") != -1:
         ls(var_match=var[0].replace("*", ""))
-        return
+        return True
+    return False
 
 
-    if len(cfg.hists) > 1:
-        try:
-            fig, ax = makePlot(cfg, var=var, cut=cut, region=region,
-                               outputFolder=cfg.outputFolder, fileLabels=cfg.fileLabels, **kwargs)
-        except ValueError as e:
-            print(e)
-            return
-    else:
-        fig, ax = makePlot(cfg, var=var, cut=cut, region=region,
-                           outputFolder=cfg.outputFolder, **kwargs)
-
-
-    fileName = "test.pdf"
-    fig.savefig(fileName)
-    plt.close()
-    os.system("open "+fileName)
-    print()
-
-    if kwargs.get("debug", False):
-        return fig, ax
-
-
-def plot2d(var='quadJet_selected.lead_vs_subl_m', process="HH4b",
-           *, cut="passPreSel", region="SR", **kwargs):
-    r"""
-    Plot 2d
-
-    Call with:
-       plot2d("quadJet_selected.lead_vs_subl_m",process="data",region="SB",cut="passPreSel",tag="threeTag")
-       plot2d("quadJet_selected.lead_vs_subl_m",process="HH4b",region="SR",cut="passPreSel",tag="threeTag")
-
-
-    Takes Options:
-
-       debug    : False,
-       var      : 'quadJet_selected.lead_vs_subl_m',
-       process  : 'HH4b',
-       cut      : "passPreSel",
-       region   : "SR",
-
-       plotting opts
-        'doRatio'  : bool (False)
-        'rebin'    : int (1),
+def plot(var: Union[str, List[str]] = 'selJets.pt', *, 
+         cut: Union[str, List[str]] = "passPreSel", 
+         region: Union[str, List[str]] = "SR", 
+         output_file: str = DEFAULT_OUTPUT_FILE,
+         **kwargs) -> Optional[Tuple[plt.Figure, plt.Axes]]:
+    """Create a 1D plot of the specified variable.
+    
+    Args:
+        var: Variable(s) to plot. Can be a string or list of strings.
+        cut: Selection cut to apply (default: "passPreSel")
+        region: Region to plot (default: "SR")
+        output_file: Name of the output file (default: "test.pdf")
+        **kwargs: Additional plotting options
+        
+    Returns:
+        Optional tuple of (figure, axes) if debug mode is enabled
     """
-
     if kwargs.get("debug", False):
         print(f'kwargs = {kwargs}')
 
-    if var.find("*") != -1:
-        ls(var_match=var.replace("*", ""))
+    # Handle wildcard matching
+    if handle_wildcards(var):
         return
 
+    try:
+        # Create plot with appropriate parameters
+        if len(cfg.hists) > 1:
+            fig, ax = makePlot(cfg, var=var, cut=cut, region=region,
+                         outputFolder=cfg.outputFolder, fileLabels=cfg.fileLabels, **kwargs)
+        else:
+            fig, ax = makePlot(cfg, var=var, cut=cut, region=region,
+                         outputFolder=cfg.outputFolder, **kwargs)
+    except ValueError as e:
+        print(f"Error creating plot: {e}")
+        return
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        return
 
-    fig, ax = make2DPlot(cfg, process, var=var, cut=cut,
-                         region=region, outputFolder=cfg.outputFolder, **kwargs)
-
-    fileName = "test.pdf"
-    fig.savefig(fileName)
-    plt.close()
-    os.system("open "+fileName)
+    # Save and display the plot
+    if not save_and_open_plot(fig, output_file):
+        return
 
     if kwargs.get("debug", False):
         return fig, ax
 
 
+def plot2d(var: str = 'quadJet_selected.lead_vs_subl_m', 
+           process: Union[str, List[str]] = "HH4b",
+           *, 
+           cut: Union[str, List[str]] = "passPreSel", 
+           region: Union[str, List[str]] = "SR",
+           output_file: str = DEFAULT_OUTPUT_FILE,
+           **kwargs) -> Optional[Tuple[plt.Figure, plt.Axes]]:
+    """Create a 2D plot of the specified variable.
+    
+    Args:
+        var: Variable to plot
+        process: Process to plot (default: "HH4b")
+        cut: Selection cut to apply (default: "passPreSel")
+        region: Region to plot (default: "SR")
+        output_file: Name of the output file (default: "test.pdf")
+        **kwargs: Additional plotting options
+        
+    Returns:
+        Optional tuple of (figure, axes) if debug mode is enabled
+    """
+    if kwargs.get("debug", False):
+        print(f'kwargs = {kwargs}')
 
-if __name__ == '__main__':
+    if handle_wildcards(var):
+        return
+
+    try:
+        fig, ax = make2DPlot(cfg, process, var=var, cut=cut,
+                       region=region, outputFolder=cfg.outputFolder, **kwargs)
+    except Exception as e:
+        print(f"Error creating 2D plot: {e}")
+        return
+
+    if not save_and_open_plot(fig, output_file):
+        return
+
+    if kwargs.get("debug", False):
+        return fig, ax
+
+
+def initialize_config() -> None:
+    """Initialize the configuration from command line arguments."""
     args = parse_args()
     cfg.plotConfig = load_config(args.metadata)
     cfg.outputFolder = args.outputFolder
     cfg.combine_input_files = args.combine_input_files
-    if cfg.outputFolder:
-        if not os.path.exists(cfg.outputFolder):
-            os.makedirs(cfg.outputFolder)
+    
+    if cfg.outputFolder and not os.path.exists(cfg.outputFolder):
+        os.makedirs(cfg.outputFolder)
 
     cfg.hists = load_hists(args.inputFile)
     cfg.fileLabels = args.fileLabels
     cfg.axisLabels, cfg.cutList = read_axes_and_cuts(cfg.hists, cfg.plotConfig)
+
+
+if __name__ == '__main__':
+    initialize_config()
     print_cfg(cfg)

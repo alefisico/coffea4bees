@@ -9,7 +9,7 @@ from coffea import processor
 from coffea.analysis_tools import PackedSelection
 import hist
 
-from analysis.helpers.selection_basic_4b import apply_event_selection_4b
+from analysis.helpers.event_selection import apply_event_selection
 
 import logging
 
@@ -48,7 +48,7 @@ class analysis(processor.ProcessorABC):
         #
         # Event selection
         #
-        event = apply_event_selection_4b( event,
+        event = apply_event_selection( event,
                                         self.corrections_metadata[year],
                                         cut_on_lumimask=True
                                         )

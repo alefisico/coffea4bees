@@ -12,7 +12,8 @@ config:
   run_SvB: false
   run_systematics: false
   top_reconstruction_override: false
-  friend_trigWeight: 'metadata/datasets_HH4b_2024_v1_trigweights.json'
+  friends:
+    trigWeight: "metadata/datasets_HH4b_2024_v2_trigweights.json@@trigWeight"
   # friend_top_reconstruction: 'hists/local/top_reconstruction_friendtree.json'
 
   

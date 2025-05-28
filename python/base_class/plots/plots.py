@@ -11,6 +11,9 @@ import base_class.plots.helpers_make_plot_dict as plot_helpers_make_plot_dict
 import base_class.plots.helpers_make_plot as plot_helpers_make_plot
 
 
+
+
+
 def init_arg_parser():
 
     parser = argparse.ArgumentParser(description='plots', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -41,6 +44,7 @@ def init_arg_parser():
     parser.add_argument('-s', '--skip', dest="skip_hists",
                         default=[], nargs='+',
                         help='Name of hists to skip')
+
 
     parser.add_argument('--doTest', action="store_true", help='Metadata file.')
     parser.add_argument('--debug', action="store_true", help='')
@@ -102,8 +106,8 @@ def load_config(metadata):
             plotConfig["hists"][proc_name] = copy.deepcopy(_hist_proc_config)
             plotConfig["hists"][proc_name]["process"]  = proc_name
             plotConfig["hists"][proc_name]["label"]  = plotConfig["hists"][proc_name]["label"].replace("XXX", str(nS))
-            plotConfig["hists"][proc_name]["fillcolor"]  = plot_helpers.colors[nS]
-            plotConfig["hists"][proc_name]["edgecolor"]  = plot_helpers.colors[nS]
+            plotConfig["hists"][proc_name]["fillcolor"]  = plot_helpers.COLORS[nS]
+            plotConfig["hists"][proc_name]["edgecolor"]  = plot_helpers.COLORS[nS]
 
         plotConfig["hists"].pop(template)
 
@@ -169,6 +173,7 @@ def make2DPlot(cfg, process, var='selJets.pt',
     r"""
     Takes Options:
 
+       process  : str
        debug    : False,
        var      : 'selJets.pt',
        year     : "2017",

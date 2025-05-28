@@ -27,7 +27,7 @@ def print_list_debug_info(process, tag, cut, region):
 def get_hist_data(*, process: str, cfg: Any, config: Dict, var: str, region: str, cut: str, rebin: int, year: str, do2d: bool = False, file_index: Optional[int] = None, debug: bool = False) -> hist.Hist:
     """
     Extract histogram data for a given process and configuration.
-    
+
     Args:
         process: Name of the process to extract
         cfg: Configuration object containing histogram data
@@ -40,10 +40,10 @@ def get_hist_data(*, process: str, cfg: Any, config: Dict, var: str, region: str
         do2d: Whether to extract 2D histogram data
         file_index: Index of input file to use (if multiple files)
         debug: Enable debug output
-        
+
     Returns:
         hist.Hist: Extracted histogram data
-        
+
     Raises:
         ValueError: If histogram data cannot be found
         TypeError: If input parameters are of incorrect type
@@ -175,7 +175,7 @@ def get_hist_data(*, process: str, cfg: Any, config: Dict, var: str, region: str
 def get_hist_data_list(*, proc_list: List[str], cfg: Any, config: Dict, var: str, region: str, cut: str, rebin: int, year: str, do2d: bool, file_index: Optional[int], debug) -> hist.Hist:
     """
     Extract and combine histogram data for a list of processes.
-    
+
     Args:
         proc_list: List of process names to combine
         cfg: Configuration object containing histogram data
@@ -188,7 +188,7 @@ def get_hist_data_list(*, proc_list: List[str], cfg: Any, config: Dict, var: str
         do2d: Whether to extract 2D histogram data
         file_index: Index of input file to use (if multiple files)
         debug: Enable debug output
-        
+
     Returns:
         hist.Hist: Combined histogram data
     """
@@ -268,8 +268,8 @@ def _create_base_plot_dict(var: str, cut: str, region: str, process: Any, **kwar
     }
     return plot_data
 
-def _handle_cut_list(plot_data: Dict, process_config: Dict, cfg: Any, var_to_plot: str, 
-                    region: str, cut_list: List[str], rebin: int, year: str, do2d: bool, 
+def _handle_cut_list(plot_data: Dict, process_config: Dict, cfg: Any, var_to_plot: str,
+                    region: str, cut_list: List[str], rebin: int, year: str, do2d: bool,
                     label_override: Optional[List[str]] = None, debug: bool = False) -> None:
     """Handle plotting multiple cuts."""
     for ic, _cut in enumerate(cut_list):
@@ -277,7 +277,7 @@ def _handle_cut_list(plot_data: Dict, process_config: Dict, cfg: Any, var_to_plo
             print_list_debug_info(process_config["process"], process_config.get("tag"), _cut, region)
 
         _process_config = copy.deepcopy(process_config)
-        _process_config["fillcolor"] = plot_helpers.colors[ic]
+        _process_config["fillcolor"] = plot_helpers.COLORS[ic]
         _process_config["label"] = plot_helpers.get_label(f"{process_config['label']} {_cut}", label_override, ic)
         _process_config["histtype"] = "errorbar"
 
@@ -297,7 +297,7 @@ def _handle_region_list(plot_data: Dict, process_config: Dict, cfg: Any, var_to_
             print_list_debug_info(process_config["process"], process_config.get("tag"), cut, _reg)
 
         _process_config = copy.deepcopy(process_config)
-        _process_config["fillcolor"] = plot_helpers.colors[ir]
+        _process_config["fillcolor"] = plot_helpers.COLORS[ir]
         _process_config["label"] = plot_helpers.get_label(f"{process_config['label']} {_reg}", label_override, ir)
         _process_config["histtype"] = "errorbar"
 
@@ -311,7 +311,7 @@ def _handle_region_list(plot_data: Dict, process_config: Dict, cfg: Any, var_to_
 def _add_ratio_plots(plot_data: Dict, **kwargs) -> None:
     """
     Add ratio plots to the plot configuration.
-    
+
     Args:
         plot_data: Plot data dictionary
         **kwargs: Additional plotting options including do2d
@@ -325,7 +325,7 @@ def _add_ratio_plots(plot_data: Dict, **kwargs) -> None:
 def get_plot_dict_from_list(*, cfg: Any, var: str, cut: str, region: str, process: Any, **kwargs) -> Dict:
     """
     Create a plot dictionary from lists of processes, cuts, regions, etc.
-    
+
     Args:
         cfg: Configuration object
         var: Variable to plot
@@ -333,13 +333,13 @@ def get_plot_dict_from_list(*, cfg: Any, var: str, cut: str, region: str, proces
         region: Analysis region
         process: Process or list of processes
         **kwargs: Additional plotting options
-        
+
     Returns:
         Dict: Plot configuration dictionary
     """
     debug = kwargs.get("debug", False)
     if debug:
-        print(f"in _makeHistFromList hist process={process}, cut={cut}")
+        print(f"in get_plot_dict_from_list hist process={process}, cut={cut}")
 
     rebin = kwargs.get("rebin", 1)
     do2d = kwargs.get("do2d", False)
@@ -352,7 +352,23 @@ def get_plot_dict_from_list(*, cfg: Any, var: str, cut: str, region: str, proces
 
     # Parse process configuration
     if isinstance(process, list):
-        process_config = [plot_helpers.get_value_nested_dict(cfg.plotConfig, p) for p in process]
+        process_config = []
+        for p in process:
+            try:
+                _p_config = plot_helpers.get_value_nested_dict(cfg.plotConfig, p)
+                process_config.append( _p_config )
+            except ValueError:
+                if not p.find("HH4b") == -1:
+                    print(f"Trying HH4b {p}")
+                    _p_config = plot_helpers.make_klambda_hist(p, cfg.plotConfig)
+                    breakpoint()
+                    #print(f"Trying HH4b {p}")
+                    #kl_value = p.replace("HH4b_kl","")
+                    #_p_config = copy.deepcopy(plot_helpers.get_value_nested_dict(cfg.plotConfig, "HH4b_kl1"))
+                    #_p_config["label"] = f'HH4b (kl={kl_value})'
+                    #_p_config["process"] = f'HH4b (kl={kl_value})'
+                    process_config.append( _p_config )
+
     else:
         try:
             process_config = plot_helpers.get_value_nested_dict(cfg.plotConfig, process)
@@ -387,7 +403,7 @@ def get_plot_dict_from_list(*, cfg: Any, var: str, cut: str, region: str, proces
 def load_stack_config(*, cfg: Any, stack_config: Dict, var: str, cut: str, region: str, **kwargs) -> Dict:
     """
     Load and process stack configuration for plotting.
-    
+
     Args:
         cfg: Configuration object
         stack_config: Dictionary of stack configuration options
@@ -395,7 +411,7 @@ def load_stack_config(*, cfg: Any, stack_config: Dict, var: str, cut: str, regio
         cut: Selection cut
         region: Analysis region
         **kwargs: Additional plotting options
-        
+
     Returns:
         Dict: Processed stack configuration
     """
@@ -426,7 +442,7 @@ def load_stack_config(*, cfg: Any, stack_config: Dict, var: str, cut: str, regio
 
     return stack_dict
 
-def _handle_stack_sum(proc_config: Dict, cfg: Any, var_to_plot: str, region: str, 
+def _handle_stack_sum(proc_config: Dict, cfg: Any, var_to_plot: str, region: str,
                      cut: str, rebin: int, year: str, do2d: bool, debug: bool,
                      var_over_ride: Dict) -> None:
     """Handle stack components that are sums of processes."""
@@ -461,14 +477,14 @@ def _handle_stack_sum(proc_config: Dict, cfg: Any, var_to_plot: str, region: str
 def get_values_variances_centers_from_dict(hist_config: Dict, plot_data: Dict) -> Tuple[np.ndarray, np.ndarray, List[float]]:
     """
     Extract values, variances and centers from histogram configuration.
-    
+
     Args:
         hist_config: Histogram configuration dictionary
         plot_data: Plot data dictionary
-        
+
     Returns:
         Tuple containing values, variances and centers arrays
-        
+
     Raises:
         ValueError: If histogram type is invalid
     """
@@ -491,7 +507,7 @@ def get_values_variances_centers_from_dict(hist_config: Dict, plot_data: Dict) -
 def add_ratio_plots(ratio_config: Dict, plot_data: Dict, **kwargs) -> None:
     """
     Add ratio plots to the plot configuration.
-    
+
     Args:
         ratio_config: Ratio plot configuration
         plot_data: Plot data dictionary
@@ -507,7 +523,7 @@ def add_ratio_plots(ratio_config: Dict, plot_data: Dict, **kwargs) -> None:
             r_config["norm"] = True
 
         # Add ratio plot
-        ratios, ratio_uncert = plot_helpers.makeRatio(num_values, num_vars, den_values, den_vars, **r_config)
+        ratios, ratio_uncert = plot_helpers.make_ratio(num_values, num_vars, den_values, den_vars, **r_config)
         r_config["ratio"] = ratios.tolist()
         r_config["error"] = ratio_uncert.tolist()
         r_config["centers"] = num_centers
@@ -520,7 +536,7 @@ def add_ratio_plots(ratio_config: Dict, plot_data: Dict, **kwargs) -> None:
         if _band_config:
             band_config = copy.deepcopy(_band_config)
             band_config["ratio"] = np.ones(len(num_centers)).tolist()
-            den_values[den_values == 0] = plot_helpers.epsilon
+            den_values[den_values == 0] = plot_helpers.EPSILON
             band_config["error"] = np.sqrt(den_vars * np.power(den_values, -2.0)).tolist()
             band_config["centers"] = list(num_centers)
             plot_data["ratio"][f"band_{r_name}"] = band_config
@@ -529,17 +545,17 @@ def get_plot_dict_from_config(*, cfg: Any, var: str = 'selJets.pt',
                             cut: str = "passPreSel", region: str = "SR", **kwargs) -> Dict:
     """
     Create a plot dictionary from configuration.
-    
+
     Args:
         cfg: Configuration object
         var: Variable to plot
         cut: Selection cut
         region: Analysis region
         **kwargs: Additional plotting options
-        
+
     Returns:
         Dict: Plot configuration dictionary
-        
+
     Raises:
         AttributeError: If cut is not in cutList
     """
@@ -593,7 +609,7 @@ def get_plot_dict_from_config(*, cfg: Any, var: str = 'selJets.pt',
     if process is not None:
         stack_config = {key: stack_config[key] for key in process if key in stack_config}
 
-    plot_data["stack"] = load_stack_config(cfg=cfg, stack_config=stack_config, 
+    plot_data["stack"] = load_stack_config(cfg=cfg, stack_config=stack_config,
                                          var=var, cut=cut, region=region, **kwargs)
 
     # Add ratio plots if requested
@@ -616,7 +632,7 @@ def _handle_input_files(plot_data: Dict, process_config: Dict, cfg: Any, var_to_
 
     for iF, _input_file in enumerate(cfg.hists):
         _process_config = copy.deepcopy(process_config)
-        _process_config["fillcolor"] = plot_helpers.colors[iF]
+        _process_config["fillcolor"] = plot_helpers.COLORS[iF]
 
         if label_override:
             _process_config["label"] = label_override[iF]
@@ -665,7 +681,7 @@ def _handle_var_list(plot_data: Dict, process_config: Dict, cfg: Any, var_list: 
             print_list_debug_info(process_config["process"], process_config.get("tag"), cut, region)
 
         _process_config = copy.deepcopy(process_config)
-        _process_config["fillcolor"] = plot_helpers.colors[iv]
+        _process_config["fillcolor"] = plot_helpers.COLORS[iv]
         _process_config["label"] = plot_helpers.get_label(f"{process_config['label']} {_var}", label_override, iv)
         _process_config["histtype"] = "errorbar"
 
@@ -686,7 +702,7 @@ def _handle_year_list(plot_data: Dict, process_config: Dict, cfg: Any, var: str,
             print_list_debug_info(process_config["process"], process_config.get("tag"), cut, region)
 
         _process_config = copy.copy(process_config)
-        _process_config["fillcolor"] = plot_helpers.colors[iy]
+        _process_config["fillcolor"] = plot_helpers.COLORS[iy]
         _process_config["label"] = plot_helpers.get_label(f"{process_config['label']} {_year}", label_override, iy)
         _process_config["histtype"] = "errorbar"
 
@@ -699,11 +715,11 @@ def _handle_year_list(plot_data: Dict, process_config: Dict, cfg: Any, var: str,
 def _add_2d_ratio_plots(plot_data: Dict, **kwargs) -> None:
     """
     Add 2D ratio plots to the plot configuration.
-    
+
     Args:
         plot_data: Plot data dictionary containing histogram data
         **kwargs: Additional plotting options
-        
+
     Raises:
         ValueError: If insufficient histograms for ratio calculation
         KeyError: If required histogram data is missing
@@ -716,14 +732,14 @@ def _add_2d_ratio_plots(plot_data: Dict, **kwargs) -> None:
         den_key = hist_keys.pop(0)
         den_values = np.array(plot_data["hists"][den_key]["values"])
         den_vars = plot_data["hists"][den_key]["variances"]
-        den_values[den_values == 0] = plot_helpers.epsilon
+        den_values[den_values == 0] = plot_helpers.EPSILON
 
         num_key = hist_keys.pop(0)
         num_values = np.array(plot_data["hists"][num_key]["values"])
         num_vars = plot_data["hists"][num_key]["variances"]
 
         ratio_config = {}
-        ratios, ratio_uncert = plot_helpers.makeRatio(num_values, num_vars, den_values, den_vars, **kwargs)
+        ratios, ratio_uncert = plot_helpers.make_ratio(num_values, num_vars, den_values, den_vars, **kwargs)
         ratio_config["ratio"] = ratios.tolist()
         ratio_config["error"] = ratio_uncert.tolist()
         plot_data["ratio"][f"ratio_{num_key}_to_{den_key}"] = ratio_config
@@ -733,11 +749,11 @@ def _add_2d_ratio_plots(plot_data: Dict, **kwargs) -> None:
 def _add_1d_ratio_plots(plot_data: Dict, **kwargs) -> None:
     """
     Add 1D ratio plots to the plot configuration.
-    
+
     Args:
         plot_data: Plot data dictionary containing histogram data
         **kwargs: Additional plotting options
-        
+
     Raises:
         ValueError: If insufficient histograms for ratio calculation
         KeyError: If required histogram data is missing
@@ -752,7 +768,7 @@ def _add_1d_ratio_plots(plot_data: Dict, **kwargs) -> None:
         den_vars = plot_data["hists"][den_key]["variances"]
         den_centers = plot_data["hists"][den_key]["centers"]
 
-        den_values[den_values == 0] = plot_helpers.epsilon
+        den_values[den_values == 0] = plot_helpers.EPSILON
 
         # Add background error band
         band_ratios = np.ones(len(den_centers))
@@ -773,10 +789,10 @@ def _add_1d_ratio_plots(plot_data: Dict, **kwargs) -> None:
             num_vars = plot_data["hists"][_num_key]["variances"]
 
             ratio_config = {
-                "color": plot_helpers.colors[iH],
+                "color": plot_helpers.COLORS[iH],
                 "marker": "o"
             }
-            ratios, ratio_uncert = plot_helpers.makeRatio(num_values, num_vars, den_values, den_vars, **kwargs)
+            ratios, ratio_uncert = plot_helpers.make_ratio(num_values, num_vars, den_values, den_vars, **kwargs)
             ratio_config["ratio"] = ratios.tolist()
             ratio_config["error"] = ratio_uncert.tolist()
             ratio_config["centers"] = den_centers

@@ -22,14 +22,13 @@ def filling_nominal_histograms(selev, JCM,
                                run_SvB: bool = False,
                                top_reconstruction: bool = False,
                                isDataForMixed: bool = False,
-                               run_lowpt_selection: bool = False,
+                               tag_list: list = ["threeTag", "fourTag"],
                                run_dilep_ttbar_crosscheck: bool = False,
                                event_metadata: dict = {},
                                ):
 
     fill = Fill(process=processName, year=year, weight="weight")
     
-    tag_list = [13, 14] if run_lowpt_selection else ["threeTag", "fourTag"]
     hist = Collection( process=[processName],
                         year=[year],
                         tag=tag_list,
@@ -53,10 +52,11 @@ def filling_nominal_histograms(selev, JCM,
     fill += Jet.plot(("canJets", "Higgs Candidate Jets"), "canJet",           skip=skip_jet_list, bins={"mass": (50, 0, 100)})
     fill += Jet.plot(("othJets", "Other Jets"),           "notCanJet_coffea", skip=skip_jet_list, bins={"mass": (50, 0, 100)})
     fill += Jet.plot(("tagJets", "Tag Jets"),             "tagJet",           skip=skip_jet_list, bins={"mass": (50, 0, 100)})
-    if run_lowpt_selection:
+    
+    if any('lowpt' in tag for tag in tag_list):
         fill += hist.add('lowpt_categories', (21, -0.5, 20.5, ('lowpt_categories', 'lowpt_categories')))
-        fill += Jet.plot(("lowptJet", "Selected lowpt Jets"), "lowptJet", skip=skip_jet_list, bins={"mass": (50, 0, 100)})
-        fill += Jet.plot(("tagJet_lowpt", "Selected lowpt Jets"), "tagJet_lowpt", skip=skip_jet_list, bins={"mass": (50, 0, 100)})
+        fill += Jet.plot(("selJets_lowpt", "Selected lowpt Jets"), "selJet_lowpt", skip=skip_jet_list, bins={"mass": (50, 0, 100)})
+        fill += Jet.plot(("tagJets_lowpt", "Selected lowpt tagged Jets"), "tagJet_lowpt", skip=skip_jet_list, bins={"mass": (50, 0, 100)})
 
 
     #
