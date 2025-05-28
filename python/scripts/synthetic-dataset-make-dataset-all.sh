@@ -22,12 +22,13 @@ echo "############### Running test processor"
 #time python runner.py -s -p skimmer/processor/make_declustered_data_4b.py -c ${OUTPUT_DIR}/declustering_noTT_subtraction_seed_${new_seed}.yml -y 2022_EE 2022_preEE 2023_BPix 2023_preBPix -d data -op ${OUTPUT_DIR}/ -o picoaod_datasets_declustered_data_Run3_v9_seed${new_seed}.yml -m metadata/datasets_HH4b_Run3_fourTag_v3.yml --condor   # --dask
 
 
-for new_seed in {0..0}
+for new_seed in {1..1}
 do
   echo ${new_seed}
   sed -e "s/declustering_rand_seed:.*/declustering_rand_seed: $new_seed/" skimmer/metadata/declustering_noTT_subtraction.yml > ${OUTPUT_DIR}/declustering_noTT_subtraction_seed_${new_seed}.yml
   cat ${OUTPUT_DIR}/declustering_noTT_subtraction_seed_${new_seed}.yml
-  time python runner.py -s -p skimmer/processor/make_declustered_data_4b.py -c ${OUTPUT_DIR}/declustering_noTT_subtraction_seed_${new_seed}.yml -y 2022_EE 2022_preEE 2023_BPix 2023_preBPix -d data -op ${OUTPUT_DIR}/ -o picoaod_datasets_declustered_data_Run3_v10_seed${new_seed}.yml -m metadata/datasets_HH4b_Run3_fourTag_2025_skims.yml --condor   # --dask
+  #time python runner.py -s -p skimmer/processor/make_declustered_data_4b.py -c ${OUTPUT_DIR}/declustering_noTT_subtraction_seed_${new_seed}.yml -y 2022_EE 2022_preEE 2023_BPix 2023_preBPix -d data -op ${OUTPUT_DIR}/ -o picoaod_datasets_declustered_data_Run3_v10_seed${new_seed}.yml -m metadata/datasets_HH4b_Run3_fourTag_2025_skims.yml --condor   # --dask
+  time python runner.py -s -p skimmer/processor/make_declustered_data_4b.py -c ${OUTPUT_DIR}/declustering_noTT_subtraction_seed_${new_seed}.yml -y 2023_preBPix -d data -op ${OUTPUT_DIR}/ -o picoaod_datasets_declustered_data_Run3_v10_seed${new_seed}.yml -m metadata/datasets_HH4b_Run3_fourTag_2025_skims.yml --condor   # --dask
 done
 
 

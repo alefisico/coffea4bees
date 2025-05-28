@@ -920,4 +920,4 @@ datasets:
         - root://cmseos.fnal.gov//store/user/jda102/XX4b/2025_v2/data_2023_preBPixF/picoAOD_seedXXX.chunk3.root
         - root://cmseos.fnal.gov//store/user/jda102/XX4b/2025_v2/data_2023_preBPixF/picoAOD_seedXXX.chunk4.root
         - root://cmseos.fnal.gov//store/user/jda102/XX4b/2025_v2/data_2023_preBPixF/picoAOD_seedXXX.chunk5.root
-    nSamples: 1
+    nSamples: 2
