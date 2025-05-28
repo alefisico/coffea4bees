@@ -11,8 +11,8 @@ datasets:
         A:
           count: 171484635.0
           files:
-          - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL18A/picoAOD_boosted.root
-          # - /mnt/scratch/tgomezes/files/data_UL18A_picoAOD_boosted.root
+          # - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL18A/picoAOD_boosted.root
+          - /home/export/tgomezes/files/data_UL18A_picoAOD_boosted.root
           saved_events: 61756
           sumw: 171484635
           sumw2: 171484635
@@ -20,8 +20,8 @@ datasets:
         B:
           count: 78255208.0
           files:
-          - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL18B/picoAOD_boosted.root
-          # - /mnt/scratch/tgomezes/files/data_UL18B_picoAOD_boosted.root
+          # - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL18B/picoAOD_boosted.root
+          - /home/export/tgomezes/files/data_UL18B_picoAOD_boosted.root
           missing: {}
           saved_events: 28791
           sumw: 78255208
@@ -30,8 +30,8 @@ datasets:
         C:
           count: 70027804.0
           files:
-          - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL18C/picoAOD_boosted.root
-          # - /mnt/scratch/tgomezes/files/data_UL18C_picoAOD_boosted.root
+          # - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL18C/picoAOD_boosted.root
+          - /home/export/tgomezes/files/data_UL18C_picoAOD_boosted.root
           saved_events: 26699
           sumw: 70027804
           sumw2: 70027804
@@ -39,10 +39,10 @@ datasets:
         D:
           count: 356976276.0
           files:
-          - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL18D/picoAOD_boosted.chunk0.root
-          - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL18D/picoAOD_boosted.chunk1.root
-          # - /mnt/scratch/tgomezes/files/data_UL18D_picoAOD_boosted.chunk0.root
-          # - /mnt/scratch/tgomezes/files/data_UL18D_picoAOD_boosted.chunk1.root
+          # - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL18D/picoAOD_boosted.chunk0.root
+          # - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL18D/picoAOD_boosted.chunk1.root
+          - /home/export/tgomezes/files/data_UL18D_picoAOD_boosted.chunk0.root
+          - /home/export/tgomezes/files/data_UL18D_picoAOD_boosted.chunk1.root
           saved_events: 116737
           sumw: 356976276
           sumw2: 356976276

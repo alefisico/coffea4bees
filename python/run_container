@@ -7,7 +7,7 @@ show_help() {
   echo "Usage: $0 [command] [options]"
   echo ""
   echo "Commands:"
-  echo "  coffea [command...]   Run commands inside the coffea container."
+  echo "  [command...]          Run commands inside the coffea container."
   echo "                        Opens an interactive shell if no commands are given."
   echo "                        (Interactive shell is the only option to run on LPC HTCondor)."
   echo "  combine [command...]  Run commands inside the combine container."
@@ -17,8 +17,8 @@ show_help() {
   echo "  --help                Show this help message."
   echo ""
   echo "Examples:"
-  echo "  $0 coffea              Open an interactive shell in the coffea container."
-  echo "  $0 coffea python --version  Run 'python --version' in the coffea container."
+  echo "  $0                     Open an interactive shell in the analysis container. (This is the only option to run on LPC HTCondor)."
+  echo "  $0 python --version    Run 'python --version' in the analysis container."
   echo "  $0 combine             Open an interactive shell in the combine container."
   echo "  $0 combine combine -M AsymptoticLimits  Run combine in the combine container."
   echo "  $0 snakemake --snakefile Snakefile  Run snakemake with the specified Snakefile."
@@ -37,7 +37,9 @@ fi
 
 # Set APPTAINER_BINDPATH dynamically
 if [[ $(hostname) == *"cmslpc"* ]]; then
-    export APPTAINER_BINDPATH=/uscms_data/,/uscmst1b_scratch,/cvmfs,/cvmfs/grid.cern.ch/etc/grid-security:/etc/grid-security
+    export APPTAINER_BINDPATH=/uscmst1b_scratch,/cvmfs,/cvmfs/grid.cern.ch/etc/grid-security:/etc/grid-security,/uscms_data/
+elif [[ $(hostname) == *"rogue"* ]]; then
+    export APPTAINER_BINDPATH=/cvmfs,/cvmfs/grid.cern.ch/etc/grid-security:/etc/grid-security,/home/export/
 else
     export APPTAINER_BINDPATH=/cvmfs,/cvmfs/grid.cern.ch/etc/grid-security:/etc/grid-security
 fi
@@ -50,14 +52,14 @@ run_coffea() {
 
     if [ -z "$*" ]; then
         if [[ $(hostname) == *"cmslpc"* ]]; then
-            if [[ ! -f ".bashrc" ]]; then
+            if [[ ! -f ".shell" ]]; then
                 curl -OL https://raw.githubusercontent.com/CoffeaTeam/lpcjobqueue/main/bootstrap.sh
                 bash bootstrap.sh
                 rm bootstrap.sh
-                sed -i 's|/cvmfs/unpacked.cern.ch/registry.hub.docker.com/||g' shell
                 mv shell .shell
             fi
-            ./.shell $COFFEA_IMAGE
+            # For htcondor jobs
+            ./.shell ../${COFFEA_IMAGE#/cvmfs/unpacked.cern.ch/}
         else
             # Arguments provided, run them inside the container
             APPTAINER_SHELL=$(which bash) apptainer exec -B ${PWD}:/srv --pwd /srv \

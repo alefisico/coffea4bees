@@ -3,7 +3,8 @@ import numpy as np
 import os
 import yaml
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
-# from hist.intervals import ratio_uncertainty
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
+#from hist.intervals import ratio_uncertainty
 from base_class.physics.di_higgs import Coupling, ggF
 
 # Constants

@@ -16,7 +16,6 @@ from analysis.helpers.event_weights import (
     add_pseudotagweights,
     add_weights,
 )
-from analysis.helpers.event_selection import apply_event_selection, apply_dilep_ttbar_selection, apply_4b_selection
 from analysis.helpers.filling_histograms import (
     filling_nominal_histograms,
     filling_syst_histograms,
@@ -32,6 +31,7 @@ from analysis.helpers.topCandReconstruction import (
     find_tops,
     find_tops_slow,
 )
+from analysis.helpers.event_selection import apply_event_selection, apply_4b_lowpt_selection
 from base_class.hist import Fill
 from base_class.root import Chunk, TreeReader
 from coffea import processor
@@ -82,6 +82,7 @@ class analysis(processor.ProcessorABC):
         apply_btagSF: bool = True,
         apply_FvT: bool = True,
         apply_boosted_veto: bool = False,
+        run_lowpt_selection: bool = False,
         run_dilep_ttbar_crosscheck: bool = False,
         fill_histograms: bool = True,
         hist_cuts = ['passPreSel'],
@@ -104,6 +105,7 @@ class analysis(processor.ProcessorABC):
         self.apply_trigWeight = apply_trigWeight
         self.apply_btagSF = apply_btagSF
         self.apply_FvT = apply_FvT
+        self.run_lowpt_selection = run_lowpt_selection
         self.run_SvB = run_SvB
         self.fill_histograms = fill_histograms
         self.run_dilep_ttbar_crosscheck = run_dilep_ttbar_crosscheck
@@ -150,14 +152,6 @@ class analysis(processor.ProcessorABC):
         self.config = processor_config(self.processName, self.dataset, event)
         logging.debug(f'{self.chunk} config={self.config}, for file {fname}\n')
 
-
-        #
-        #  If doing RW
-        #
-        # if self.config["isSyntheticData"] and not self.config["isPSData"]:
-        #     with open(f"jet_clustering/jet-splitting-PDFs-00-08-00/hT-reweight-00-00-01/hT_weights_{self.year}.yml", "r") as f:
-        #         self.hT_weights= yaml.safe_load(f)
-
         #
         #  If applying Gaussian Kernal to signal
         #
@@ -175,67 +169,12 @@ class analysis(processor.ProcessorABC):
         #
         path = fname.replace(fname.split("/")[-1], "")
         if self.apply_FvT:
-            if "FvT" in self.friends:
                 event["FvT"] = rename_FvT_friend(target, self.friends["FvT"])
                 if self.config["isDataForMixed"] or self.config["isTTForMixed"]:
                     for _FvT_name in event.metadata["FvT_names"]:
                         event[_FvT_name] = rename_FvT_friend(target, self.friends[_FvT_name])
                         event[_FvT_name, _FvT_name] = event[_FvT_name].FvT
-            else:
-                # TODO: remove backward compatibility in the future
-                if self.config["isMixedData"]:
-
-                    FvT_name = event.metadata["FvT_name"]
-                    event["FvT"] = getattr( NanoEventsFactory.from_root( f'{event.metadata["FvT_file"]}', entry_start=self.estart, entry_stop=self.estop, schemaclass=FriendTreeSchema, ).events(),
-                                            FvT_name )
-
-                    event["FvT", "FvT"] = getattr(event["FvT"], FvT_name)
-
-                    #
-                    # Dummies
-                    #
-                    event["FvT", "q_1234"] = np.full(len(event), -1, dtype=int)
-                    event["FvT", "q_1324"] = np.full(len(event), -1, dtype=int)
-                    event["FvT", "q_1423"] = np.full(len(event), -1, dtype=int)
-
-                elif self.config["isDataForMixed"] or self.config["isTTForMixed"]:
-
-                    #
-                    # Use the first to define the FvT weights
-                    #
-                    event["FvT"] = getattr( NanoEventsFactory.from_root( f'{event.metadata["FvT_files"][0]}', entry_start=self.estart, entry_stop=self.estop, schemaclass=FriendTreeSchema, ).events(),
-                                            event.metadata["FvT_names"][0], )
-
-                    event["FvT", "FvT"] = getattr( event["FvT"], event.metadata["FvT_names"][0] )
-
-                    #
-                    # Dummies
-                    #
-                    event["FvT", "q_1234"] = np.full(len(event), -1, dtype=int)
-                    event["FvT", "q_1324"] = np.full(len(event), -1, dtype=int)
-                    event["FvT", "q_1423"] = np.full(len(event), -1, dtype=int)
-
-                    for _FvT_name, _FvT_file in zip( event.metadata["FvT_names"], event.metadata["FvT_files"] ):
-
-                        event[_FvT_name] = getattr( NanoEventsFactory.from_root( f"{_FvT_file}", entry_start=self.estart, entry_stop=self.estop, schemaclass=FriendTreeSchema, ).events(),
-                                                    _FvT_name, )
-
-                        event[_FvT_name, _FvT_name] = getattr(event[_FvT_name], _FvT_name)
-
-                else:
-                    event["FvT"] = ( NanoEventsFactory.from_root( f'{fname.replace("picoAOD", "FvT")}', entry_start=self.estart, entry_stop=self.estop, schemaclass=FriendTreeSchema).events().FvT )
-
-                if "std" not in event.FvT.fields:
-                    event["FvT", "std"] = np.ones(len(event))
-                    event["FvT", "pt4"] = np.ones(len(event))
-                    event["FvT", "pt3"] = np.ones(len(event))
-                    event["FvT", "pd4"] = np.ones(len(event))
-                    event["FvT", "pd3"] = np.ones(len(event))
-
-                event["FvT", "frac_err"] = event["FvT"].std / event["FvT"].FvT
-                if not ak.all(event.FvT.event == event.event):
-                    raise ValueError("ERROR: FvT events do not match events ttree")
-
+            
         if self.run_SvB:
             for k in self.friends:
                 if k.startswith("SvB"):
@@ -244,38 +183,6 @@ class analysis(processor.ProcessorABC):
                         setSvBVars(k, event)
                     except Exception as e:
                         event[k] = self.friends[k].arrays(target)
-
-            if "SvB" not in self.friends and self.classifier_SvB is None:
-                # SvB_file = f'{path}/SvB_newSBDef.root' if 'mix' in self.dataset else f'{fname.replace("picoAOD", "SvB")}'
-                SvB_file = f'{path}/SvB_ULHH.root' if 'mix' in self.dataset else f'{fname.replace("picoAOD", "SvB_ULHH")}'
-                event["SvB"] = ( NanoEventsFactory.from_root( SvB_file,
-                                                              entry_start=self.estart, entry_stop=self.estop, schemaclass=FriendTreeSchema).events().SvB )
-
-                if not ak.all(event.SvB.event == event.event):
-                    raise ValueError("ERROR: SvB events do not match events ttree")
-                # defining SvB for different SR
-                setSvBVars("SvB", event)
-
-            if "SvB_MA" not in self.friends and self.classifier_SvB_MA is None:
-                # SvB_MA_file = f'{path}/SvB_MA_newSBDef.root' if 'mix' in self.dataset else f'{fname.replace("picoAOD", "SvB_MA")}'
-                SvB_MA_file = f'{path}/SvB_MA_ULHH.root' if 'mix' in self.dataset else f'{fname.replace("picoAOD", "SvB_MA_ULHH")}'
-                event["SvB_MA"] = ( NanoEventsFactory.from_root( SvB_MA_file,
-                                                                 entry_start=self.estart, entry_stop=self.estop, schemaclass=FriendTreeSchema ).events().SvB_MA )
-
-                if not ak.all(event.SvB_MA.event == event.event):
-                    raise ValueError("ERROR: SvB_MA events do not match events ttree")
-                # defining SvB for different SR
-                setSvBVars("SvB_MA", event)
-
-        if self.config["isDataForMixed"]:
-
-            #
-            # Load the different JCMs
-            #
-            JCM_array = TreeReader( lambda x: [ s for s in x if s.startswith("pseudoTagWeight_3bDvTMix4bDvT_v") ] ).arrays(Chunk.from_coffea_events(event))
-
-            for _JCM_load in event.metadata["JCM_loads"]:
-                event[_JCM_load] = JCM_array[_JCM_load]
 
         #
         # Event selection
@@ -299,30 +206,6 @@ class analysis(processor.ProcessorABC):
             apply_trigWeight=self.apply_trigWeight,
             isTTForMixed=self.config["isTTForMixed"]
         )
-
-
-        #
-        # Checking boosted selection (should change in the future)
-        #
-        event['notInBoostedSel'] = np.full(len(event), True)
-        if self.apply_boosted_veto:
-
-            if self.dataset.startswith("GluGluToHHTo4B_cHHH1"):
-                boosted_file = load("metadata/boosted_overlap_signal.coffea")['boosted']
-                boosted_events = boosted_file.get(self.dataset, {}).get('event', event.event)
-                boosted_events_set = set(boosted_events)
-                event['notInBoostedSel'] = np.array([e not in boosted_events_set for e in event.event.to_numpy()])
-            elif self.dataset.startswith("data"):
-                boosted_file = load("metadata/boosted_overlap_data.coffea")
-                mask = np.array(boosted_file['BDTcat_index']) > 0  ### > 0 is all boosted categories, 1 is most sensitive
-                filtered_runs = np.array(boosted_file['run'])[mask]
-                filtered_lumis = np.array(boosted_file['luminosityBlock'])[mask]
-                filtered_events = np.array(boosted_file['event'])[mask]
-                boosted_events_set = set(zip(filtered_runs, filtered_lumis, filtered_events))
-                event_tuples = zip(event.run.to_numpy(), event.luminosityBlock.to_numpy(), event.event.to_numpy())
-                event['notInBoostedSel'] = np.array([t not in boosted_events_set for t in event_tuples])
-            else:
-                logging.info(f"Boosted veto not applied for dataset {self.dataset}")
 
         #
         # Calculate and apply Jet Energy Calibration
@@ -357,7 +240,7 @@ class analysis(processor.ProcessorABC):
         weights = copy.copy(weights)
 
         # Apply object selection (function does not remove events, adds content to objects)
-        event = apply_4b_selection( event, self.corrections_metadata[self.year],
+        event = apply_4b_lowpt_selection( event, self.corrections_metadata[self.year],
                                     dataset=self.dataset,
                                     doLeptonRemoval=self.config["do_lepton_jet_cleaning"],
                                     override_selected_with_flavor_bit=self.config["override_selected_with_flavor_bit"],
@@ -367,22 +250,6 @@ class analysis(processor.ProcessorABC):
                                     isSyntheticData=self.config["isSyntheticData"],
                                     isSyntheticMC=self.config["isSyntheticMC"],
                                     )
-
-        if self.run_dilep_ttbar_crosscheck:
-            event['passDilepTtbar'] = apply_dilep_ttbar_selection(event, isRun3=self.config["isRun3"])
-        #
-        #  Test hT reweighting the synthetic data
-        #
-        # if self.config["isSyntheticData"] and not self.config["isPSData"]:
-        #     hT_index = np.floor_divide(event.hT_selected,30).to_numpy()
-        #     hT_index[hT_index > 48] = 48
-        #
-        #     vectorized_hT = np.vectorize(lambda i: self.hT_weights["weights"][int(i)])
-        #     weights_hT = vectorized_hT(hT_index)
-        #
-        #     weights.add( "hT_reweight", weights_hT )
-        #     list_weight_names.append(f"hT_reweight")
-
 
 
         selections = PackedSelection()
@@ -406,25 +273,6 @@ class analysis(processor.ProcessorABC):
                 'genWeights': np.sum(event.genWeight) if self.config["isMC"] else self.nEvent
 
             }
-
-            #
-            # Check outliers
-            #
-            # Checking for outliners in weights
-            if self.config["isMC"]:
-                tmp_weights = weights.weight()
-                mean_weights = np.mean(tmp_weights)
-                std_weights = np.std(tmp_weights)
-                z_scores = np.abs((tmp_weights - mean_weights) / std_weights)
-                pass_outliers = z_scores < 30
-                event["passCleanGenWeight"] = pass_outliers
-                if np.any(~pass_outliers) and std_weights > 0:
-                    logging.warning(f"Outliers in weights:{tmp_weights[~pass_outliers]}, while mean is {mean_weights} and std is {std_weights} for event {event[~pass_outliers].event} in {self.dataset}\n")
-                selections.add( "passCleanGenWeight", event.passCleanGenWeight)
-                allcuts += ["passCleanGenWeight"]
-            else:
-                event['passCleanGenWeight'] = True
-                selections.add( "passCleanGenWeight", event.passCleanGenWeight)
 
             #
             # Get Truth m4j
@@ -462,7 +310,6 @@ class analysis(processor.ProcessorABC):
             else:
                 event['pass4GenBJets'] = True
 
-
             selections.add( "pass4GenBJets", event.pass4GenBJets)
 
             #
@@ -470,10 +317,9 @@ class analysis(processor.ProcessorABC):
             #
             sel_dict = OrderedDict({
                 'all'               : selections.require(lumimask=True),
-                'passCleanGenWeight': selections.require(lumimask=True, passCleanGenWeight=True),
-                'pass4GenBJets'     : selections.require(lumimask=True, passCleanGenWeight=True, pass4GenBJets=True),
-                'passNoiseFilter'   : selections.require(lumimask=True, passCleanGenWeight=True, passNoiseFilter=True),
-                'passHLT'           : selections.require(lumimask=True, passCleanGenWeight=True, passNoiseFilter=True, passHLT=True),
+                'pass4GenBJets'     : selections.require(lumimask=True, pass4GenBJets=True),
+                'passNoiseFilter'   : selections.require(lumimask=True, passNoiseFilter=True),
+                'passHLT'           : selections.require(lumimask=True, passNoiseFilter=True, passHLT=True),
             })
             sel_dict['passJetMult'] = selections.all(*allcuts)
 
@@ -515,15 +361,6 @@ class analysis(processor.ProcessorABC):
             self._cutFlow.fill( "passPreSel_allTag_woTrig", event[selections.all(*allcuts)], allTag=True,
                                 wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[selections.all(*allcuts)] ))
 
-        weights, list_weight_names = add_pseudotagweights( event, weights,
-                                                           JCM=self.apply_JCM,
-                                                           apply_FvT=self.apply_FvT,
-                                                           isDataForMixed=self.config["isDataForMixed"],
-                                                           list_weight_names=list_weight_names,
-                                                           event_metadata=event.metadata,
-                                                           year_label=self.year_label,
-                                                           len_event=len(event),
-                                                          )
 
         #
         # Example of how to write out event numbers
@@ -534,23 +371,6 @@ class analysis(processor.ProcessorABC):
         selev = event[analysis_selections]
         #selev["passFvT50" ] = selev["FvT"].FvT > 50
         #selev["passFvT100"] = selev["FvT"].FvT > 100
-
-        if self.subtract_ttbar_with_weights:
-
-            pass_ttbar_filter_selev = subtract_ttbar_with_SvB(selev, self.dataset, self.year)
-
-            pass_ttbar_filter = np.full( len(event), True)
-            pass_ttbar_filter[ selections.all(*allcuts) ] = pass_ttbar_filter_selev
-            selections.add( 'pass_ttbar_filter', pass_ttbar_filter )
-            allcuts.append("pass_ttbar_filter")
-            if not shift_name:
-                self._cutFlow.fill( "pass_ttbar_filter", event[selections.all(*allcuts)], allTag=True )
-                self._cutFlow.fill( "pass_ttbar_filter_woTrig", event[selections.all(*allcuts)], allTag=True,
-                                    wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[selections.all(*allcuts)] ))
-
-
-            analysis_selections = selections.all(*allcuts)
-            selev = selev[pass_ttbar_filter_selev]
 
         #
         #  Build the top Candiates
@@ -595,6 +415,17 @@ class analysis(processor.ProcessorABC):
                                               )
 
 
+        weights, list_weight_names = add_pseudotagweights( selev, weights,
+                                                           analysis_selections,
+                                                           JCM=self.apply_JCM,
+                                                           apply_FvT=self.apply_FvT,
+                                                           isDataForMixed=self.config["isDataForMixed"],
+                                                           list_weight_names=list_weight_names,
+                                                           event_metadata=event.metadata,
+                                                           year_label=self.year_label,
+                                                           len_event=len(event),
+                                                          )
+
 
         #
         # Example of how to write out event numbers
@@ -606,21 +437,21 @@ class analysis(processor.ProcessorABC):
         #
         # Blind data in fourTag SR
         #
-        if not (self.config["isMC"] or "mix_v" in self.dataset) and self.blind:
-            # blind_flag = ~(selev["quadJet_selected"].SR & selev.fourTag)
-            blind_flag = ~( selev["quadJet_selected"].SR & (selev["SvB_MA"].ps_hh > 0.5) & selev.fourTag )
-            blind_sel = np.full( len(event), True)
-            blind_sel[ analysis_selections ] = blind_flag
-            selections.add( 'blind', blind_sel )
-            allcuts.append( 'blind' )
+        # if not (self.config["isMC"] or "mix_v" in self.dataset) and self.blind:
+        #     # blind_flag = ~(selev["quadJet_selected"].SR & selev.fourTag)
+        #     blind_flag = ~( selev["quadJet_selected"].SR & (selev["SvB_MA"].ps_hh > 0.5) & selev.fourTag )
+        #     blind_sel = np.full( len(event), True)
+        #     blind_sel[ analysis_selections ] = blind_flag
+        #     selections.add( 'blind', blind_sel )
+        #     allcuts.append( 'blind' )
 
-            if not shift_name:
-                self._cutFlow.fill( "blind", event[selections.all(*allcuts)], allTag=True )
-                self._cutFlow.fill( "blind_woTrig", event[selections.all(*allcuts)], allTag=True,
-                                    wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[selections.all(*allcuts)] ))
+        #     if not shift_name:
+        #         self._cutFlow.fill( "blind", event[selections.all(*allcuts)], allTag=True )
+        #         self._cutFlow.fill( "blind_woTrig", event[selections.all(*allcuts)], allTag=True,
+        #                             wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[selections.all(*allcuts)] ))
 
-            analysis_selections = selections.all(*allcuts)
-            selev = selev[blind_flag]
+        #     analysis_selections = selections.all(*allcuts)
+        #     selev = selev[blind_flag]
 
         #
         # CutFlow
@@ -637,8 +468,6 @@ class analysis(processor.ProcessorABC):
             self._cutFlow.fill("passDiJetMass", selev[selev.passDiJetMass])
             self._cutFlow.fill("passDiJetMass_woTrig", selev[selev.passDiJetMass],
                                wOverride=selev['weight_woTrig'][selev.passDiJetMass] )
-            self._cutFlow.fill("boosted_veto_passPreSel", selev[selev.notInBoostedSel])
-            self._cutFlow.fill("boosted_veto_SR", selev[selev.notInBoostedSel & selev["quadJet_selected"].SR])
             selev['passSR'] = selev.passDiJetMass & selev["quadJet_selected"].SR
             self._cutFlow.fill( "SR", selev[selev.passSR] )
             self._cutFlow.fill( "SR_woTrig", selev[selev.passSR],
@@ -660,8 +489,6 @@ class analysis(processor.ProcessorABC):
 
             self._cutFlow.addOutput(processOutput, event.metadata["dataset"])
 
-
-
         #
         # Hists
         #
@@ -679,6 +506,7 @@ class analysis(processor.ProcessorABC):
                                                   run_dilep_ttbar_crosscheck=self.run_dilep_ttbar_crosscheck,
                                                   top_reconstruction=self.top_reconstruction,
                                                   isDataForMixed=self.config['isDataForMixed'],
+                                                  tag_list=["lowpt_fourTag", "lowpt_threeTag"],
                                                   event_metadata=event.metadata)
 
             #

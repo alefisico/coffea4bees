@@ -4,18 +4,19 @@ def add_debug_info_to_output(event, processOutput, weights, list_weight_names, a
     # passSR = (selev["quadJet_selected"].SR)
     # passSR = (selev["SR"])
 
-
     out_data = {}
     # out_data["SvB"    ] = selev["SvB_MA"].ps[passSR]
     out_data["event"  ] = event["event"]#[passSR]
     out_data["run"    ] = event["run"]  #[passSR]
+    out_data["lumisection"] = event["luminosityBlock"]
     out_data["fourTag"    ] = event["fourTag"]  #[passSR]
 
-    out_data["passPreSel"    ] = event["passJetMult"]
+    out_data["passPreSel"    ] = event["passPreSel"]
     out_data["lumimask"    ] = event["lumimask"]
     out_data["passNoiseFilter"    ] = event["passNoiseFilter"]
     out_data["passHLT"    ] = event["passHLT"]
     out_data["passJetMult"    ] = event["passJetMult"]
+    # out_data["passSR"    ] = event["SR"]
 
     #debug_mask = ((event["event"] == 66688  ) |
     #              (event["event"] == 249987 ) |
@@ -27,7 +28,10 @@ def add_debug_info_to_output(event, processOutput, weights, list_weight_names, a
     #              (event["event"] == 150164 ) |
     #              (event["event"] == 262806 ) |
     #              (event["event"] == 281111 ) )
-
+    # debug_mask = ((event.event == 110614) & (event.run == 275890) & (event.luminosityBlock == 1))
+    # debug_event = event[debug_mask]
+    # print(f"debug {debug_event.fourTag} {debug_event.threeTag} {debug_event.nJet_tagged} {debug_event.nJet_tagged_loose} {debug_event.nJet_selected} {debug_event.Jet.tagged} {debug_event.Jet.selected} {debug_event.Jet.btagScore}")
+    # print(f"debug {debug_event.passHLT} {debug_event.passJetMult} {debug_event.passPreSel} {debug_event.Jet.pt} {debug_event.Jet.pt_raw} \n\n\n")
 
     #print(f"\n {event.Jet.pt[event.passJetMult].to_list()[0:5]} \n")
 
@@ -267,3 +271,110 @@ def add_debug_info_for_Boosted_Synthetic(events, processOutput):
     for out_k, out_v in out_data.items():
         processOutput[out_k] = {}
         processOutput[out_k][events.metadata['dataset']] = list(out_v)
+
+
+
+def add_SvB_in_SR(event, processOutput):
+    # passSR = (selev["quadJet_selected"].SR)
+    passSR = (event["quadJet_selected"].SR & event.fourTag)
+
+
+    out_data = {}
+    # out_data["SvB"    ] = selev["SvB_MA"].ps[passSR]
+    out_data["event"  ] = event["event"][passSR]
+    out_data["run"    ] = event["run"]  [passSR]
+    out_data["luminosityBlock"    ] = event["luminosityBlock"]  [passSR]
+
+    out_data["SvB_MA_ps"] = event["SvB_MA"].ps[passSR]
+    #out_data["passPreSel"    ] = event["passJetMult"]
+    #out_data["lumimask"    ] = event["lumimask"]
+    #out_data["passNoiseFilter"    ] = event["passNoiseFilter"]
+    #out_data["passHLT"    ] = event["passHLT"]
+    #out_data["passJetMult"    ] = event["passJetMult"]
+
+    #debug_mask = ((event["event"] == 66688  ) |
+    #              (event["event"] == 249987 ) |
+    #              (event["event"] == 121603 ) |
+    #              (event["event"] == 7816   ) |
+    #              (event["event"] == 25353  ) |
+    #              (event["event"] == 165389 ) |
+    #              (event["event"] == 293138 ) |
+    #              (event["event"] == 150164 ) |
+    #              (event["event"] == 262806 ) |
+    #              (event["event"] == 281111 ) )
+
+
+    #print(f"\n {event.Jet.pt[event.passJetMult].to_list()[0:5]} \n")
+
+    #out_data["passJetMult_event"  ]    = event["event"][event.passJetMult]
+    #out_data["passJetMult_run"    ]    = event["run"][event.passJetMult]
+    #out_data["passJetMult_passDiJetMass"    ]    = event["passDiJetMass"][event.passJetMult]
+    #out_data["passJetMult_weight" ]    = event["weight"]
+    #
+    #for _w in list_weight_names:
+    #    print(f"adding {_w}\n")
+    #    out_data[f"passJetMult_weight_{_w}"] = weights.partial_weight(include=[_w])[analysis_selections]
+
+
+    for out_k, out_v in out_data.items():
+        processOutput[out_k] = {}
+        processOutput[out_k][event.metadata['dataset']] = list(out_v)
+
+
+
+def add_hemi_events(event, processOutput):
+    # passSR = (selev["quadJet_selected"].SR)
+    passSR = (event["quadJet_selected"].SR & event.fourTag)
+
+
+    out_data = {}
+    # out_data["SvB"    ] = selev["SvB_MA"].ps[passSR]
+    out_data["event"  ] = event["event"][passSR]
+    out_data["run"    ] = event["run"]  [passSR]
+    out_data["luminosityBlock"    ] = event["luminosityBlock"]  [passSR]
+
+    # print(event.h1.run,"\n")
+    # print(event.h1.event,"\n")
+    # print(event.h2.run,"\n")
+    # print(event.h2.event,"\n")
+
+    out_data["h1_run"]   = event.h1.run[passSR]
+    out_data["h1_event"] = event.h1.event[passSR]
+    out_data["h2_run"]   = event.h2.run[passSR]
+    out_data["h2_event"] = event.h2.event[passSR]
+
+
+
+    #out_data["passPreSel"    ] = event["passJetMult"]
+    #out_data["lumimask"    ] = event["lumimask"]
+    #out_data["passNoiseFilter"    ] = event["passNoiseFilter"]
+    #out_data["passHLT"    ] = event["passHLT"]
+    #out_data["passJetMult"    ] = event["passJetMult"]
+
+    #debug_mask = ((event["event"] == 66688  ) |
+    #              (event["event"] == 249987 ) |
+    #              (event["event"] == 121603 ) |
+    #              (event["event"] == 7816   ) |
+    #              (event["event"] == 25353  ) |
+    #              (event["event"] == 165389 ) |
+    #              (event["event"] == 293138 ) |
+    #              (event["event"] == 150164 ) |
+    #              (event["event"] == 262806 ) |
+    #              (event["event"] == 281111 ) )
+
+
+    #print(f"\n {event.Jet.pt[event.passJetMult].to_list()[0:5]} \n")
+
+    #out_data["passJetMult_event"  ]    = event["event"][event.passJetMult]
+    #out_data["passJetMult_run"    ]    = event["run"][event.passJetMult]
+    #out_data["passJetMult_passDiJetMass"    ]    = event["passDiJetMass"][event.passJetMult]
+    #out_data["passJetMult_weight" ]    = event["weight"]
+    #
+    #for _w in list_weight_names:
+    #    print(f"adding {_w}\n")
+    #    out_data[f"passJetMult_weight_{_w}"] = weights.partial_weight(include=[_w])[analysis_selections]
+
+
+    for out_k, out_v in out_data.items():
+        processOutput[out_k] = {}
+        processOutput[out_k][event.metadata['dataset']] = list(out_v)

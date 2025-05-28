@@ -77,6 +77,7 @@ target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+python/notebooks/
 
 # IPython
 profile_default/
@@ -138,6 +139,12 @@ venv.bak/
 # mkdocs documentation
 /site
 
+.git/
+.vscode/
+sync.sh
+*.code-workspace
+**/*.code-workspace
+
 # mypy
 .mypy_cache/
 .dmypy.json
@@ -195,7 +202,6 @@ python/stats_analysis/tests/test_dump_twoStageClosureInputsCounts.yml
 python/skimmer/*root
 
 python/analysis/tests/test_dump*.yml
-python/skimmer/test/
 python/stats_analysis/closureFitsNew/
 python/.sites_map.json
 .ci-workflows/debug-mixed-data.sh
