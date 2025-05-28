@@ -106,8 +106,8 @@ def load_config(metadata):
             plotConfig["hists"][proc_name] = copy.deepcopy(_hist_proc_config)
             plotConfig["hists"][proc_name]["process"]  = proc_name
             plotConfig["hists"][proc_name]["label"]  = plotConfig["hists"][proc_name]["label"].replace("XXX", str(nS))
-            plotConfig["hists"][proc_name]["fillcolor"]  = plot_helpers.colors[nS]
-            plotConfig["hists"][proc_name]["edgecolor"]  = plot_helpers.colors[nS]
+            plotConfig["hists"][proc_name]["fillcolor"]  = plot_helpers.COLORS[nS]
+            plotConfig["hists"][proc_name]["edgecolor"]  = plot_helpers.COLORS[nS]
 
         plotConfig["hists"].pop(template)
 

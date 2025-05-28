@@ -6,7 +6,7 @@ hists:
                 label: Synthetic Data (XXX)
                 fillcolor: k
                 edgecolor: k
-                nSamples: 16
+                nSamples: 2
 
 #        syn_v1:
 #                process: syn_v1
@@ -55,20 +55,20 @@ ratios:
                 marker: "o"
 
 
-#        dataToSyn1:
-#                numerator:
-#                        type: hists
-#                        key: syn_v1
-#                denominator:
-#                        type: stack
-#
-#
-#                uncertianty:
-#                        nominal
-#                color: r
-#                marker: "o"
-#
-#
+        dataToSyn1:
+                numerator:
+                        type: hists
+                        key: syn_v1
+                denominator:
+                        type: stack
+
+
+                uncertianty:
+                        nominal
+                color: r
+                marker: "o"
+
+
 #        dataToSyn2:
 #                numerator:
 #                        type: hists
