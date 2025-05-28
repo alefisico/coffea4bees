@@ -22,7 +22,6 @@ class Skimmer(PicoAOD):
         self.mc_outlier_threshold = mc_outlier_threshold
 
 
-
     def select(self, event):
 
         year    = event.metadata['year']
@@ -54,6 +53,7 @@ class Skimmer(PicoAOD):
             isMC=config["isMC"],
             )
 
+
         weights = Weights(len(event), storeIndividual=True)
 
         #
@@ -66,7 +66,7 @@ class Skimmer(PicoAOD):
         selections.add( "lumimask", event.lumimask)
         selections.add( "passNoiseFilter", event.passNoiseFilter)
         selections.add( "passHLT", ( event.passHLT if config["cut_on_HLT_decision"] else np.full(len(event), True)  ) )
-        
+
         if self.loosePtForSkim:
             selections.add( 'passJetMult_lowpt_forskim', event.passJetMult_lowpt_forskim )
             selections.add( "passPreSel_lowpt_forskim",  event.passPreSel_lowpt_forskim)
@@ -80,7 +80,7 @@ class Skimmer(PicoAOD):
             selections.add( 'passJetMult',   event.passJetMult )
             selections.add( "passPreSel",    event.passPreSel)
             final_selection = selections.require( lumimask=True, passNoiseFilter=True, passHLT=True, passJetMult=True, passPreSel=True )
-    
+
         event["weight"] = weights.weight()
 
         self._cutFlow.fill( "all",             event, allTag=True )
@@ -94,7 +94,12 @@ class Skimmer(PicoAOD):
         # print(f"debug {debug_event.fourTag} {debug_event.threeTag} {debug_event.nJet_tagged} {debug_event.nJet_tagged_loose} {debug_event.nJet_selected} {debug_event.Jet.tagged} {debug_event.Jet.selected} {debug_event.Jet.btagScore}")
         # print(f"debug {debug_event.passHLT} {debug_event.passJetMult} {debug_event.passPreSel} {debug_event.Jet.pt} {debug_event.Jet.pt_raw} \n\n\n")
 
-        return final_selection
+        processOutput = {}
+        #from analysis.helpers.write_debug_info import add_debug_Run3_data_skim
+        #add_debug_Run3_data_skim(event, processOutput, selection)
+
+        return final_selection, None, processOutput
+
 
     def preselect(self, event):
         dataset = event.metadata['dataset']

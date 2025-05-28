@@ -23,8 +23,9 @@ runner:
     - T3_US_NotreDame
 
 config:
-  base_path: root://cmseos.fnal.gov//store/user/jda102/XX4b/2024_v3
-  # base_path: /srv/python/skimmer/test/   ### local
+#  base_path: root://cmseos.fnal.gov//store/user/jda102/XX4b/2025_vDebug_v2/
+  base_path: root://cmseos.fnal.gov//store/user/jda102/XX4b/2025_Run3_skims/
+# base_path: /srv/python/skimmer/test/   ### local
   step: 100000
   loosePtForSkim: False
   skim4b: True
