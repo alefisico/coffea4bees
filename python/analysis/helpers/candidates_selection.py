@@ -2,7 +2,7 @@ import numpy as np
 import awkward as ak
 from base_class.math.random import Squares
 from analysis.helpers.SvB_helpers import compute_SvB
-
+from coffea.nanoevents.methods import vector
 
 def create_cand_jet_dijet_quadjet(
     selev,
