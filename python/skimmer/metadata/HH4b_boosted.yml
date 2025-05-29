@@ -34,14 +34,11 @@ config:
   pico_base_name: picoAOD_boosted
   skip_collections:
     - Photon
-    - LHEPart
     - LowPtElectron
     - Tau
     - L1
     - SoftActivityJet
     - IsoTrack
-    - boostedTau
-    - SubJet
     - GenDressedLepton
     - GenVtx
     - OtherPV
@@ -54,7 +51,6 @@ config:
     - L1simulation
     - L1Reco
     - TrigObj
-    - SV
     - HLTriggerFinalPath
     - Proton
     - HLTriggerFirstPath
