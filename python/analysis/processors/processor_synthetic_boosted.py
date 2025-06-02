@@ -15,6 +15,7 @@ from jet_clustering.clustering_hist_templates import ClusterHists
 from base_class.physics.object import Jet
 
 import logging
+import vector
 
 #
 # Setup
@@ -117,45 +118,44 @@ class analysis(processor.ProcessorABC):
 
         print( "v" , ak.Array([[v   for v in sublist] for sublist in selev.selFatJet[:,0].subjets[:,0]]) )
 
-        print( ak.Array([[v.pt   for v in sublist] for sublist in selev.selFatJet[:,0].subjets[:,0]]) )
 
 #        # Create the PtEtaPhiMLorentzVectorArray
-#        fat_jet_splittings_events = ak.zip(
-#            {
-#                "pt":   ak.Array([[v.pt   for v in sublist] for sublist in selev.selFatJet[:,0]]),
-#                "eta":  ak.Array([[v.eta  for v in sublist] for sublist in selev.selFatJet[:,0]]),
-#                "phi":  ak.Array([[v.phi  for v in sublist] for sublist in selev.selFatJet[:,0]]),
-#                "mass": ak.Array([[v.mass for v in sublist] for sublist in selev.selFatJet[:,0]]),
-#                #"jet_flavor": ak.Array([[v.jet_flavor for v in sublist] for sublist in splittings]),   # "bb"
-#                #"btag_string": ak.Array([[v.btag_string for v in sublist] for sublist in splittings]),  # str(particleNet_HbbvsQCD)
-#                "part_A": ak.zip(
-#                    {
-#                        "pt":         ak.Array([[v.pt   for v in sublist] for sublist in selev.selFatJet[:,0].subjets[:,0]]),
-#                        "eta":        ak.Array([[v.eta  for v in sublist] for sublist in selev.selFatJet[:,0].subjets[:,0]]),
-#                        "phi":        ak.Array([[v.phi  for v in sublist] for sublist in selev.selFatJet[:,0].subjets[:,0]]),
-#                        "mass":       ak.Array([[v.mass for v in sublist] for sublist in selev.selFatJet[:,0].subjets[:,0]]),
-#                        #"jet_flavor": ak.Array([[v.part_A.jet_flavor for v in sublist] for sublist in splittings]), # "b"
-#                        #"btag_string": ak.Array([[v.part_A.btag_string for v in sublist] for sublist in splittings]),  # str(btagDeepB)
-#                    },
-#                    with_name="PtEtaPhiMLorentzVector",
-#                    behavior=vector.behavior
-#                ),
-#                "part_B": ak.zip(
-#                    {
-#                        "pt":         ak.Array([[v.pt   for v in sublist] for sublist in selev.selFatJet[:,0].subjets[:,1]]),
-#                        "eta":        ak.Array([[v.eta  for v in sublist] for sublist in selev.selFatJet[:,0].subjets[:,1]]),
-#                        "phi":        ak.Array([[v.phi  for v in sublist] for sublist in selev.selFatJet[:,0].subjets[:,1]]),
-#                        "mass":       ak.Array([[v.mass for v in sublist] for sublist in selev.selFatJet[:,0].subjets[:,1]]),
-#                        #"jet_flavor": ak.Array([[v.part_B.jet_flavor for v in sublist] for sublist in splittings]),   # "b"
-#                        #"btag_string": ak.Array([[v.part_B.btag_string for v in sublist] for sublist in splittings]), # str(btagDeepB)
-#                    },
-#                    with_name="PtEtaPhiMLorentzVector",
-#                    behavior=vector.behavior
-#                ),
-#            },
-#            with_name="PtEtaPhiMLorentzVector",
-#            behavior=vector.behavior
-#        )
+        fat_jet_splittings_events = ak.zip(
+            {
+                "pt":   selev.selFatJet[:,0].pt,
+                "eta":  selev.selFatJet[:,0].eta,
+                "phi":  selev.selFatJet[:,0].phi,
+                "mass": selev.selFatJet[:,0].mass,
+                #"jet_flavor": ak.Array([[v.jet_flavor for v in sublist] for sublist in splittings]),   # "bb"
+                #"btag_string": ak.Array([[v.btag_string for v in sublist] for sublist in splittings]),  # str(particleNet_HbbvsQCD)
+                "part_A": ak.zip(
+                    {
+                        "pt":         selev.selFatJet[:,0].subjets[:,0].pt,
+                        "eta":        selev.selFatJet[:,0].subjets[:,0].eta,
+                        "phi":        selev.selFatJet[:,0].subjets[:,0].phi,
+                        "mass":       selev.selFatJet[:,0].subjets[:,0].mass,
+                        #"jet_flavor": ak.Array([[v.part_A.jet_flavor for v in sublist] for sublist in splittings]), # "b"
+                        #"btag_string": ak.Array([[v.part_A.btag_string for v in sublist] for sublist in splittings]),  # str(btagDeepB)
+                    },
+                    with_name="PtEtaPhiMLorentzVector",
+                    behavior=vector.backends.awkward.behavior
+                ),
+                "part_B": ak.zip(
+                    {
+                        "pt":         selev.selFatJet[:,0].subjets[:,1].pt,
+                        "eta":        selev.selFatJet[:,0].subjets[:,1].eta,
+                        "phi":        selev.selFatJet[:,0].subjets[:,1].phi,
+                        "mass":       selev.selFatJet[:,0].subjets[:,1].mass,
+                        #"jet_flavor": ak.Array([[v.part_B.jet_flavor for v in sublist] for sublist in splittings]),   # "b"
+                        #"btag_string": ak.Array([[v.part_B.btag_string for v in sublist] for sublist in splittings]), # str(btagDeepB)
+                    },
+                    with_name="PtEtaPhiMLorentzVector",
+                    behavior=vector.backends.awkward.behavior
+                ),
+            },
+            with_name="PtEtaPhiMLorentzVector",
+            behavior=vector.backends.awkward.behavior
+        )
 
 
 

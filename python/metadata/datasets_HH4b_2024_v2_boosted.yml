@@ -56,9 +56,9 @@ datasets:
       picoAOD:
         count: 1000000
         files:
-        - /home/export/jalison/files/2207F5D6-4518-F44A-8C92-68E712CAF67C.root
-        - /home/export/jalison/files/94DA5440-3B94-354B-A25B-78518A52D2D1.root
-        - /home/export/jalison/files/EE3712DC-9DAB-694E-A446-0B43C5590D58.root
+        - /home/export/tgomezes/files/2207F5D6-4518-F44A-8C92-68E712CAF67C.root
+        - /home/export/tgomezes/files/94DA5440-3B94-354B-A25B-78518A52D2D1.root
+        - /home/export/tgomezes/files/EE3712DC-9DAB-694E-A446-0B43C5590D58.root
         outliers:
         - 334929
         - 529954
