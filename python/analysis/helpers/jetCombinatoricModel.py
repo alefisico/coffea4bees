@@ -8,10 +8,21 @@ from scipy.special import comb
 
 
 class jetCombinatoricModel:
-    def __init__(self, filename, cut='passPreSel', zero_npt=False):
+    def __init__(self, filename, cut='passPreSel', zero_npt=False, nbt=3, maxPseudoTags=12):
+        """
+        Initialize the jet combinatoric model with parameters from a file.
+        :param filename: Path to the parameter file (txt or yaml format).
+        :param
+        cut: The cut to apply for the model (default is 'passPreSel').
+        :param zero_npt: If True, will return zero pseudo-tags for all events.
+        :param nbt: Number of required b-tags (default is 3).
+        :param maxPseudoTags: Maximum number of pseudo-tags (default is 12).
+        """
         self.filename = filename
         self.cut = cut
         self.zero_npt = zero_npt
+        self.nbt = nbt  # number of required b-tags
+        self.maxPseudoTags = maxPseudoTags
         self.read_parameter_file()
         self._rng = Squares(("JCM", "pseudo tag"))
 
@@ -49,12 +60,13 @@ class jetCombinatoricModel:
     def __call__(self, untagged_jets, event=None):
         
         nEvent = len(untagged_jets)
-        maxPseudoTags = 12
-        nbt = 3  # number of required b-tags
+        maxPseudoTags = self.maxPseudoTags
+        nbt = self.nbt  # number of required b-tags
         nlt = ak.to_numpy(ak.num(untagged_jets, axis=1))  # number of light jets
         
         # Pre-compute pseudo-tag probability table for all possible light jet counts
-        max_nlt = np.max(nlt)
+        # Use np.max with default value for empty arrays
+        max_nlt = np.max(nlt, initial=0) if nlt.size > 0 else 0
         
         # Arrays to hold probabilities and cumulative probabilities
         # shape: (max_nlt+1, maxPseudoTags+1)
