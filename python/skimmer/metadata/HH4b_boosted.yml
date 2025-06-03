@@ -9,7 +9,7 @@ runner:
   class_name: Skimmer
   data_tier: nanoAOD
   condor_cores: 1
-  condor_memory: 2GB
+  condor_memory: 3GB
   condor_transfer_input_files:
     - base_class
     - analysis
@@ -28,17 +28,20 @@ runner:
 
 
 config:
-  # base_path: root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/
-  base_path: /srv/output/skimmer/test/   ### local
+  # base_path: root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2_boosted/
+  base_path: /srv/python/output/skimmer/test/   ### local
   step: 100000
   pico_base_name: picoAOD_boosted
+  campaign: HH4b_boosted
   skip_collections:
     - Photon
+    - LHEPart
     - LowPtElectron
     - Tau
     - L1
     - SoftActivityJet
     - IsoTrack
+    - boostedTau
     - GenDressedLepton
     - GenVtx
     - OtherPV
@@ -51,6 +54,7 @@ config:
     - L1simulation
     - L1Reco
     - TrigObj
+    - SV
     - HLTriggerFinalPath
     - Proton
     - HLTriggerFirstPath
