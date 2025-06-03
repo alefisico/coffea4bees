@@ -40,17 +40,17 @@ uncertainty:
       *17: 1.006
       *18: 1.002
 
-  uncert_lumi_2016:
+  lumi_13TeV_2016:
     type: 'lnN'
     years:
       *16: 1.010
 
-  uncert_lumi_2017:
+  lumi_13TeV_2017:
     type: 'lnN'
     years:
       *17: 1.020
 
-  uncert_lumi_2018: 
+  lumi_13TeV_2018: 
     type: 'lnN'
     years:
       *18: 1.015
@@ -58,32 +58,27 @@ uncertainty:
   BR_hbb:
     type: 'lnN'
     years:
-      *16: 1.025
-      *17: 1.025
-      *18: 1.025
+      *16: [0.9748, 1.0248]
+      *17: [0.9748, 1.0248]
+      *18: [0.9748, 1.0248]
 
-  xs_hbbhbb:
-    type: 'lnN'
-    years:
-      *16: [0.942, 1.037]
-      *17: [0.942, 1.037]
-      *18: [0.942, 1.037]
+  # not recommended https://gitlab.cern.ch/hh/naming-conventions
+  # xs_hbbhbb:
+  #   type: 'lnN'
+  #   years:
+  #     *16: [0.942, 1.037]
+  #     *17: [0.942, 1.037]
+  #     *18: [0.942, 1.037]
   
-  uncert_pdf_HH:
+  pdf_Higgs_ggHH:
     type: 'lnN'
     years:
       *16: 1.030
       *17: 1.030
       *18: 1.030
 
-  uncert_pdf_HH:
-    type: 'lnN'
-    years:
-      *16: [0.95, 1.022]
-      *17: [0.95, 1.022]
-      *18: [0.95, 1.022]
 
-#   mtop_gHH:
+#   mtop_gHH:  #### mtop is included by default in inference
 #     type: 'lnN'
 #     years:
 #       *16: [0.82, 1.04]
