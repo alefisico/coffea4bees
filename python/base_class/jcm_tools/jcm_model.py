@@ -21,7 +21,6 @@ from copy import copy, deepcopy
 from scipy.optimize import curve_fit, minimize
 import scipy.stats
 from typing import List, Tuple, Dict, Optional, Union, Any
-from base_class.jcm_tools.helpers import getPseudoTagProbs, getCombinatoricWeight
 
 # Set up module logger
 logger = logging.getLogger('JCMTools')
@@ -124,113 +123,6 @@ class jetCombinatoricModel:
         # Function to use in fitting - will be set when fixing parameters
         self.bkgd_func_njet_constrained = None
 
-    def nTagPred_values(self, n: np.ndarray, par: Optional[List[float]] = None) -> np.ndarray:
-        """
-        Get predicted values for the number of tagged jets using current fit parameters.
-        
-        Args:
-            n: Array of number of tags
-            par: Optional parameter values
-            
-        Returns:
-            Array of predicted values
-        """
-        if par is None:
-            param_values = [p["value"] for p in self.fit_parameters if p["value"] is not None]
-            fixed_val = [self.threeTightTagFraction["fix"]] if self.threeTightTagFraction["fix"] is not None else []
-            par = param_values + fixed_val
-
-        output = np.zeros(len(n))
-        output = copy(self.tt4b_nTagJets)
-
-        for ibin, this_nTag in enumerate(n):
-            for nj in range(this_nTag, 14):
-                # Select the right calculation mode based on number of parameters
-                if len(par) == 3:
-                    # [f, e, norm] - d fixed to 1.0
-                    nPseudoTagProb = getPseudoTagProbs(nj, par[0], par[1], 1.0, par[2])
-                elif len(par) == 2:
-                    # [f, norm] - e fixed to 0.0, d fixed to 1.0
-                    nPseudoTagProb = getPseudoTagProbs(nj, par[0], 0.0, 1.0, par[1])
-                elif len(par) == 1:
-                    # [f] - e fixed to 0.0, d fixed to 1.0, norm from instance
-                    norm_value = self.threeTightTagFraction["fix"] if self.threeTightTagFraction["fix"] is not None else 1.0
-                    nPseudoTagProb = getPseudoTagProbs(nj, par[0], 0.0, 1.0, norm_value)
-                else:
-                    # Full parameter set [f, e, d, norm]
-                    nPseudoTagProb = getPseudoTagProbs(nj, par[0], par[1], par[2], par[3])
-                
-                output[ibin + 4] += nPseudoTagProb[this_nTag - 3] * self.qcd3b[nj]
-
-        return np.array(output, float)
-
-    def nTagPred_errors(self, n: np.ndarray) -> np.ndarray:
-        """
-        Get errors on predicted values for the number of tagged jets.
-
-        Args:
-            n: Array of number of tags
-
-        Returns:
-            Array of prediction errors
-        """
-        # Extract parameter values from the fit parameters
-        param_values = [p["value"] for p in self.fit_parameters if p["value"] is not None]
-        if None in param_values or not param_values:
-            raise ValueError("Parameters not set. Run fit() first.")
-            
-        fixed_val = [self.threeTightTagFraction["fix"]] if self.threeTightTagFraction["fix"] is not None else []
-        par = param_values + fixed_val
-        
-        output = np.zeros(len(n))
-        output = self.tt4b_nTagJets_errors**2
-
-        for ibin, this_nTag in enumerate(n):
-            for nj in range(this_nTag, 14):
-                # Select the right calculation mode based on number of parameters
-                if len(par) == 3:
-                    # [f, e, norm] - d fixed to 1.0
-                    nPseudoTagProb = getPseudoTagProbs(nj, par[0], par[1], 1.0, par[2])
-                elif len(par) == 2:
-                    # [f, norm] - e fixed to 0.0, d fixed to 1.0
-                    nPseudoTagProb = getPseudoTagProbs(nj, par[0], 0.0, 1.0, par[1])
-                elif len(par) == 1:
-                    # [f] - e fixed to 0.0, d fixed to 1.0, norm from instance
-                    norm_value = self.threeTightTagFraction["fix"] if self.threeTightTagFraction["fix"] is not None else 1.0
-                    nPseudoTagProb = getPseudoTagProbs(nj, par[0], 0.0, 1.0, norm_value)
-                else:
-                    # Full parameter set [f, e, d, norm]
-                    nPseudoTagProb = getPseudoTagProbs(nj, par[0], par[1], par[2], par[3])
-
-                output[ibin + 4] += (nPseudoTagProb[this_nTag - 3] * self.qcd3b_errors[nj])**2
-
-        # Take the square root to get errors
-        output = output**0.5
-        return np.array(output, float)
-
-    def getCombinatoricWeightList(self) -> List[float]:
-        """
-        Get the list of combinatoric weights for jet multiplicities 4-15.
-        
-        Returns:
-            List of weights to apply to 3-tag events for each jet multiplicity
-        """
-        output_weights = []
-        
-        # Verify parameters have been set
-        param_values = [p["value"] for p in self.fit_parameters]
-        if None in param_values:
-            raise ValueError("One or more parameters have no value. Run fit() first.")
-            
-        fixed_val = [self.threeTightTagFraction["fix"]] if self.threeTightTagFraction["fix"] is not None else []
-        params = param_values + fixed_val
-        
-        # Calculate weights for jet multiplicity 4 through 15
-        for nj in range(4, 16):
-            output_weights.append(getCombinatoricWeight(nj, *params))
-            
-        return output_weights
-
     def dump(self) -> None:
         """Print all parameter values and their status."""
         for parameter in self.parameters:
@@ -257,6 +149,21 @@ class jetCombinatoricModel:
                     p["fix"] = values[_iname]
                     p["value"] = values[_iname] # Also set the value when fixing
                     p["error"] = 0 # Error is 0 for fixed parameters
+
+    def _reset_fit_parameters(self) -> None:
+        """Reset the fit parameters after fixing some parameters."""
+        self.fit_parameters = []
+        self.default_parameters = []
+        self.parameters_lower_bounds = []
+        self.parameters_upper_bounds = []
+
+        for p in self.parameters:
+            if p["fix"] is not None:
+                continue
+            self.fit_parameters.append(p)
+            self.default_parameters.append(p["default"])
+            self.parameters_lower_bounds.append(p["lowerLimit"])
+            self.parameters_upper_bounds.append(p["upperLimit"])
 
     def fixParameter_combination(self, params_to_fix: Dict[str, float]) -> None:
         """
@@ -329,39 +236,6 @@ class jetCombinatoricModel:
         logger.info(f"Fixed parameters: {', '.join([f'{n}={v}' for n, v in params_to_fix.items()])}")
         logger.info(f"Free parameters: {', '.join([p['name'] for p in free_params])}")
 
-    def _reset_fit_parameters(self) -> None:
-        """Reset the fit parameters after fixing some parameters."""
-        self.fit_parameters = []
-        self.default_parameters = []
-        self.parameters_lower_bounds = []
-        self.parameters_upper_bounds = []
-
-        for p in self.parameters:
-            if p["fix"] is not None:
-                continue
-            self.fit_parameters.append(p)
-            self.default_parameters.append(p["default"])
-            self.parameters_lower_bounds.append(p["lowerLimit"])
-            self.parameters_upper_bounds.append(p["upperLimit"])
-
-    def nJetPred_values(self, n: np.ndarray) -> np.ndarray:
-        """
-        Get predicted values for jet multiplicity using current fit parameters.
-        
-        Args:
-            n: Array of jet multiplicities
-            
-        Returns:
-            Array of predicted values
-        """
-        if self.bkgd_func_njet_constrained is None:
-            raise ValueError("Constrained function is not set. Call fixParameter_* first.")
-            
-        param_values = [p["value"] for p in self.fit_parameters]
-        if None in param_values:
-            raise ValueError("One or more parameters have no value. Run fit() first.")
-            
-        return self.bkgd_func_njet_constrained(n, *param_values)
 
     def bkgd_func_njet(self, x: np.ndarray, f: float, e: float, d: float, 
                        norm: float, debug: bool = False) -> np.ndarray:
@@ -384,7 +258,7 @@ class jetCombinatoricModel:
 
         # Add the n-tag component
         nTags = nj + 4
-        nTags_pred_result = self.nTagPred_values(nTags, [f, e, d, norm])
+        nTags_pred_result = self.nTagPred(nTags, [f, e, d, norm])["values"]
         output[0:4] = nTags_pred_result[4:8]
         
         if debug:
@@ -395,13 +269,48 @@ class jetCombinatoricModel:
             if this_nj < 4:
                 continue
 
-            w = getCombinatoricWeight(this_nj, f, e, d, norm)
+            w = np.sum(self.getPseudoTagProbs(this_nj, f, e, d, norm)[1:])
             output[this_nj] += w * self.qcd3b[this_nj] + self.tt4b[this_nj]
 
         if debug:
             logger.debug(f"bkgd_func_njet output final: {output}")
             
         return output
+
+    def getPseudoTagProbs(self, nj: int, f: float, e: float = 0.0, d: float = 1.0, 
+                        norm: float = 1.0) -> np.ndarray:
+        """
+        Calculate the pseudo-tag probabilities for a given jet multiplicity.
+        
+        Args:
+            nj: Number of jets
+            f: Pseudo-tag probability 
+            e: Pair enhancement factor
+            d: Pair enhancement decay parameter
+            norm: Normalization factor
+            
+        Returns:
+            Array of probabilities for each number of pseudo-tags
+        """
+        nbt = 3  # Number of required b-tags
+        nlt = nj - nbt  # Number of selected untagged jets ("light" jets)
+        nPseudoTagProb = np.zeros(nlt + 1)
+
+        for npt in range(0, nlt + 1):   # npt is the number of pseudoTags in this combination
+            nt = nbt + npt
+            nnt = nlt - npt  # Number of not tagged
+
+            # (ways to choose npt pseudoTags from nlt light jets) * pseudoTagProb^nlt * (1-pseudoTagProb)^{nlt-npt}
+            w_npt = norm * comb(nlt, npt, exact=True) * f**npt * (1 - f)**nnt
+
+            # Apply pair enhancement for even number of tags
+            if (nt % 2) == 0:
+                w_npt *= 1 + e / nlt**d
+
+            logger.debug(f"npt: {npt}, w_npt: {w_npt}, nt: {nt}, nlt: {nlt}")
+            nPseudoTagProb[npt] += w_npt
+            
+        return nPseudoTagProb
 
     def fit(self, bin_centers: np.ndarray, bin_values: np.ndarray, 
             bin_errors: np.ndarray, scipy_optimize: bool = False) -> Tuple[np.ndarray, np.ndarray]:
@@ -518,3 +427,93 @@ class jetCombinatoricModel:
                    f"{self.fit_chi2/self.fit_ndf:.2f}, p-value = {self.fit_prob:.6f}")
         
         return residuals, pulls
+
+    def nJetPred_values(self, n: np.ndarray) -> np.ndarray:
+        """
+        Get predicted values for jet multiplicity using current fit parameters.
+        
+        Args:
+            n: Array of jet multiplicities
+            
+        Returns:
+            Array of predicted values
+        """
+        if self.bkgd_func_njet_constrained is None:
+            raise ValueError("Constrained function is not set. Call fixParameter_* first.")
+            
+        param_values = [p["value"] for p in self.fit_parameters]
+        if None in param_values:
+            raise ValueError("One or more parameters have no value. Run fit() first.")
+            
+        return self.bkgd_func_njet_constrained(n, *param_values)
+    
+    def nTagPred(self, n: np.ndarray, par: Optional[List[float]] = None) -> np.ndarray:
+        """
+        Get predicted values for the number of tagged jets using current fit parameters.
+        
+        Args:
+            n: Array of number of tags
+            par: Optional parameter values
+            
+        Returns:
+            Dictionary of arrays of predicted values and errors
+        """
+        if par is None:
+            param_values = [p["value"] for p in self.fit_parameters if p["value"] is not None]
+            fixed_val = [self.threeTightTagFraction["fix"]] if self.threeTightTagFraction["fix"] is not None else []
+            par = param_values + fixed_val
+            logger.info(f"Using parameters: {par}")
+
+        output = np.zeros(len(n))
+        output = copy(self.tt4b_nTagJets)
+
+        for ibin, this_nTag in enumerate(n):
+            for nj in range(this_nTag, 14):
+                # Select the right calculation mode based on number of parameters
+                if len(par) == 3:
+                    # [f, e, norm] - d fixed to 1.0
+                    nPseudoTagProb = self.getPseudoTagProbs(nj, par[0], par[1], 1.0, par[2])
+                elif len(par) == 2:
+                    # [f, norm] - e fixed to 0.0, d fixed to 1.0
+                    nPseudoTagProb = self.getPseudoTagProbs(nj, par[0], 0.0, 1.0, par[1])
+                elif len(par) == 1:
+                    # [f] - e fixed to 0.0, d fixed to 1.0, norm from instance
+                    norm_value = self.threeTightTagFraction["fix"] if self.threeTightTagFraction["fix"] is not None else 1.0
+                    nPseudoTagProb = self.getPseudoTagProbs(nj, par[0], 0.0, 1.0, norm_value)
+                else:
+                    # Full parameter set [f, e, d, norm]
+                    nPseudoTagProb = self.getPseudoTagProbs(nj, par[0], par[1], par[2], par[3])
+                
+                logger.debug(f"nj: {nj}, this_nTag: {this_nTag}, nPseudoTagProb: {nPseudoTagProb}")
+                output[ibin + 4] += nPseudoTagProb[this_nTag - 3] * self.qcd3b[nj]
+                output[3] += nPseudoTagProb[0] * self.qcd3b[nj]
+        
+        logger.debug(f"output: {output}")
+        return { "values": np.array(output, float), "errors": np.array(output**0.5, float) }
+
+    def getCombinatoricWeightList(self) -> List[float]:
+        """
+        Get the list of combinatoric weights for jet multiplicities 4-15.
+        
+        Returns:
+            List of weights to apply to 3-tag events for each jet multiplicity
+        """
+        output_weights, zerotag_output_weights = [], []
+        
+        # Verify parameters have been set
+        param_values = [p["value"] for p in self.fit_parameters]
+        if None in param_values:
+            raise ValueError("One or more parameters have no value. Run fit() first.")
+            
+        fixed_val = [self.threeTightTagFraction["fix"]] if self.threeTightTagFraction["fix"] is not None else []
+        params = param_values + fixed_val
+        
+        # Calculate weights for jet multiplicity 4 through 15
+        for nj in range(4, 16):
+            nj_pseudoTagProbs = self.getPseudoTagProbs(nj, *params)
+            zerotag_output_weights.append( nj_pseudoTagProbs[0] )
+            output_weights.append( np.sum(nj_pseudoTagProbs[1:]) )
+        logger.info(f"Output weights: {output_weights}")
+
+        return output_weights, zerotag_output_weights
+

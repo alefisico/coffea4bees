@@ -6,61 +6,9 @@ from copy import copy
 from typing import Tuple
 from base_class.plots.helpers import get_cut_dict
 
-def getPseudoTagProbs(nj: int, f: float, e: float = 0.0, d: float = 1.0, 
-                     norm: float = 1.0) -> np.ndarray:
-    """
-    Calculate the pseudo-tag probabilities for a given jet multiplicity.
-    
-    Args:
-        nj: Number of jets
-        f: Pseudo-tag probability 
-        e: Pair enhancement factor
-        d: Pair enhancement decay parameter
-        norm: Normalization factor
-        
-    Returns:
-        Array of probabilities for each number of pseudo-tags
-    """
-    nbt = 3  # Number of required b-tags
-    nlt = nj - nbt  # Number of selected untagged jets ("light" jets)
-    nPseudoTagProb = np.zeros(nlt + 1)
+logger = logging.getLogger('JCMHelpers')
 
-    for npt in range(0, nlt + 1):   # npt is the number of pseudoTags in this combination
-        nt = nbt + npt
-        nnt = nlt - npt  # Number of not tagged
-
-        # (ways to choose npt pseudoTags from nlt light jets) * pseudoTagProb^nlt * (1-pseudoTagProb)^{nlt-npt}
-        w_npt = norm * comb(nlt, npt, exact=True) * f**npt * (1 - f)**nnt
-
-        # Apply pair enhancement for even number of tags
-        if (nt % 2) == 0:
-            w_npt *= 1 + e / nlt**d
-
-        nPseudoTagProb[npt] += w_npt
-        
-    return nPseudoTagProb
-
-
-def getCombinatoricWeight(nj: int, f: float, e: float = 0.0, d: float = 1.0, 
-                         norm: float = 1.0) -> float:
-    """
-    Calculate the combinatoric weight for a given jet multiplicity.
-    
-    Args:
-        nj: Number of jets
-        f: Pseudo-tag probability 
-        e: Pair enhancement factor
-        d: Pair enhancement decay parameter
-        norm: Normalization factor
-        
-    Returns:
-        The combinatoric weight
-    """
-    nPseudoTagProb = getPseudoTagProbs(nj, f, e, d, norm)
-    return np.sum(nPseudoTagProb[1:])
-
-
-def loadHistograms(inputFile: str, format: str = 'coffea', cfg=None, cut: str = "passPreSel", year: str = "RunII", weightRegion: str = "SB", data4bName: str = 'data', logger=None) -> Tuple:
+def loadHistograms(inputFile: str, format: str = 'coffea', cfg=None, cut: str = "passPreSel", year: str = "RunII", weightRegion: str = "SB", data4bName: str = 'data', taglabel4b: str = 'fourTag', taglabel3b: str = 'threeTag', selJets: str = 'selJets_noJCM.n', tagJets: str = 'tagJets_noJCM.n') -> Tuple:
     """
     Load histograms from either ROOT or coffea files.
 
@@ -72,16 +20,15 @@ def loadHistograms(inputFile: str, format: str = 'coffea', cfg=None, cut: str = 
         year: Data-taking year (coffea only)
         weightRegion: Region for weight calculation (coffea only)
         data4bName: Name of the 4b data process (coffea only)
+        taglabel4b: Tag label for 4b (coffea only)
+        taglabel3b: Tag label for 3b (coffea only)
         logger: Logger instance
 
     Returns:
         Tuple of histograms:
         (data4b, data3b, tt4b, tt3b, qcd4b, qcd3b, 
-         data4b_nTagJets, tt4b_nTagJets, qcd3b_nTightTags)
+        data4b_nTagJets, tt4b_nTagJets, qcd3b_nTightTags)
     """
-    if logger is None:
-        import logging
-        logger = logging.getLogger('JCM')
 
     if format == 'ROOT':
         logger.info(f"Loading histograms from ROOT file: {inputFile}")
@@ -114,8 +61,8 @@ def loadHistograms(inputFile: str, format: str = 'coffea', cfg=None, cut: str = 
             "region": region_selection,
         }
 
-        fourTag_dict = {"tag": "fourTag"}
-        threeTag_dict = {"tag": "threeTag"}
+        fourTag_dict = {"tag": taglabel4b}
+        threeTag_dict = {"tag": taglabel3b}
 
         fourTag_data_dict = {"process": data4bName} | fourTag_dict | region_year_dict | cutDict
         threeTag_data_dict = {"process": 'data'} | threeTag_dict | region_year_dict | cutDict
@@ -128,25 +75,25 @@ def loadHistograms(inputFile: str, format: str = 'coffea', cfg=None, cut: str = 
         hists_data_4b = None
 
         for _input_data in cfg.hists:
-            if ('selJets_noJCM.n' in _input_data['hists'] and 
-                data4bName in _input_data['hists']['selJets_noJCM.n'].axes["process"]):
+            if (selJets in _input_data['hists'] and 
+                data4bName in _input_data['hists'][selJets].axes["process"]):
                 hists_data_4b = _input_data['hists']
                 break
 
         if hists_data_4b is None:
             raise ValueError(f"Could not find histograms for data4bName={data4bName}")
 
-        data4b = hists_data_4b['selJets_noJCM.n'][fourTag_data_dict]
-        data4b_nTagJets = hists_data_4b['tagJets_noJCM.n'][fourTag_data_dict]
+        data4b = hists_data_4b[selJets][fourTag_data_dict]
+        data4b_nTagJets = hists_data_4b[tagJets][fourTag_data_dict]
 
-        data3b = hists['selJets_noJCM.n'][threeTag_data_dict]
-        data3b_nTagJets_tight = hists['tagJets_noJCM.n'][threeTag_data_dict]
+        data3b = hists[selJets][threeTag_data_dict]
+        data3b_nTagJets_tight = hists[tagJets][threeTag_data_dict]
 
-        tt4b = hists['selJets_noJCM.n'][fourTag_ttbar_dict][sum, :]
-        tt4b_nTagJets = hists['tagJets_noJCM.n'][fourTag_ttbar_dict][sum, :]
+        tt4b = hists[selJets][fourTag_ttbar_dict][sum, :]
+        tt4b_nTagJets = hists[tagJets][fourTag_ttbar_dict][sum, :]
 
-        tt3b = hists['selJets_noJCM.n'][threeTag_ttbar_dict][sum, :]
-        tt3b_nTagJets_tight = hists['tagJets_noJCM.n'][threeTag_ttbar_dict][sum, :]
+        tt3b = hists[selJets][threeTag_ttbar_dict][sum, :]
+        tt3b_nTagJets_tight = hists[tagJets][threeTag_ttbar_dict][sum, :]
 
         qcd4b = copy(data4b)
         qcd4b.view().value = data4b.values() - tt4b.values()
@@ -188,7 +135,7 @@ def data_from_Hist(inputHist, maxBin: int = 15) -> Tuple[np.ndarray, np.ndarray,
     return x_centers[0:maxBin], values[0:maxBin], errors[0:maxBin]
 
 
-def prepHists(data4b, qcd3b, tt4b, data4b_nTagJets, tt4b_nTagJets) -> None:
+def prepHists(data4b, qcd3b, tt4b, data4b_nTagJets, tt4b_nTagJets, lowpt: bool = False) -> None:
     """
     Prepare histograms for the JCM fit by combining different components.
     
@@ -202,18 +149,49 @@ def prepHists(data4b, qcd3b, tt4b, data4b_nTagJets, tt4b_nTagJets) -> None:
         data4b_nTagJets: Data 4-tag tagged jets histogram
         tt4b_nTagJets: tt 4-tag tagged jets histogram
     """
-    # Put the number of additional tag jets in the first 4 bins of data4b
-    data4b_new_values = data4b.values()
-    data4b_new_variances = data4b.variances()
-    data4b_new_values[0:4] = data4b_nTagJets.values()[4:8]
-    data4b_new_variances[0:4] = data4b_nTagJets.variances()[4:8]
+    
+    if lowpt:
+        
+        # Put the number of additional tag jets in the first 4 bins of data4b
+        data4b_new_values = np.zeros(len(data4b.values()))
+        data4b_new_variances = np.zeros(len(data4b.variances()))
+        data4b_new_values[0:4] = data4b_nTagJets.values()[1:5]
+        data4b_new_values[4:14] = data4b.values()[1:11]
+        data4b_new_variances[0:4] = data4b_nTagJets.variances()[1:5]
+        data4b_new_variances[4:14] = data4b.variances()[1:11]
+
+        # Do the same for tt4b
+        tt4b_new_values = np.zeros(len(tt4b.values()))
+        tt4b_new_variances = np.zeros(len(tt4b.variances()))
+        tt4b_new_values[0:4] = tt4b_nTagJets.values()[1:5]
+        tt4b_new_values[4:14] = tt4b.values()[1:11]
+        tt4b_new_variances[0:4] = tt4b_nTagJets.variances()[1:5]
+        tt4b_new_variances[4:14] = tt4b.variances()[1:11]
+
+        qcd3b_new_values = np.zeros(len(qcd3b.values()))
+        qcd3b_new_variances = np.zeros(len(qcd3b.variances()))
+        qcd3b_new_values[4:14] = qcd3b.values()[1:11]
+        qcd3b_new_variances[4:14] = qcd3b.variances()[1:11]
+        qcd3b.view().value = qcd3b_new_values
+        qcd3b.view().variance = qcd3b_new_variances
+
+    else:
+
+        # Put the number of additional tag jets in the first 4 bins of data4b
+        data4b_new_values = data4b.values()
+        data4b_new_variances = data4b.variances()
+
+        tt4b_new_values = tt4b.values()
+        tt4b_new_variances = tt4b.variances()
+
+        data4b_new_values[0:4] = data4b_nTagJets.values()[4:8]
+        data4b_new_variances[0:4] = data4b_nTagJets.variances()[4:8]
+        # Do the same for tt4b
+        tt4b_new_values[0:4] = tt4b_nTagJets.values()[4:8]
+        tt4b_new_variances[0:4] = tt4b_nTagJets.variances()[4:8]
+
     data4b.view().value = data4b_new_values
     data4b.view().variance = data4b_new_variances
 
-    # Do the same for tt4b
-    tt4b_new_values = tt4b.values()
-    tt4b_new_variances = tt4b.variances()
-    tt4b_new_values[0:4] = tt4b_nTagJets.values()[4:8]
-    tt4b_new_variances[0:4] = tt4b_nTagJets.variances()[4:8]
     tt4b.view().value = tt4b_new_values
     tt4b.view().variance = tt4b_new_variances
