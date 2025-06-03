@@ -56,13 +56,14 @@ run_coffea() {
                 curl -OL https://raw.githubusercontent.com/CoffeaTeam/lpcjobqueue/main/bootstrap.sh
                 bash bootstrap.sh
                 rm bootstrap.sh
+                sed -i -e 's|APPTAINER_SHELL.*|APPTAINER_SHELL=$(which bash) apptainer exec -B "$(dirname "$PWD")":/srv --pwd /srv/python/ \\|' -e 's|/srv/.bashrc|/srv/python/.bashrc|' shell
                 mv shell .shell
             fi
             # For htcondor jobs
             ./.shell ../${COFFEA_IMAGE#/cvmfs/unpacked.cern.ch/}
         else
             # Arguments provided, run them inside the container
-            APPTAINER_SHELL=$(which bash) apptainer exec -B ${PWD}:/srv --pwd /srv \
+            APPTAINER_SHELL=$(which bash) apptainer exec -B "$(dirname "$PWD")":/srv --pwd /srv/python/ \
             "$COFFEA_IMAGE" \
             /bin/bash 
         fi
