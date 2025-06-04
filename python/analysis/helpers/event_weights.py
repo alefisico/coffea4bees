@@ -85,42 +85,43 @@ def add_weights(event, do_MC_weights: bool = True,
             list_weight_names.append(f"ps_isr")
             list_weight_names.append(f"ps_fsr")
 
-        if "LHEPdfWeight" in event.fields:
+        # pdf_Higgs_ggHH, alpha_s, PDFaS weights are included in datacards through the inference tool. Kept this code for reference.
+        # if "LHEPdfWeight" in event.fields:
 
-            # https://github.com/nsmith-/boostedhiggs/blob/a33dca8464018936fbe27e86d52c700115343542/boostedhiggs/corrections.py#L53
-            nom  = np.ones(len(weights.weight()))
-            up   = np.ones(len(weights.weight()))
-            down = np.ones(len(weights.weight()))
+        #     # https://github.com/nsmith-/boostedhiggs/blob/a33dca8464018936fbe27e86d52c700115343542/boostedhiggs/corrections.py#L53
+        #     nom  = np.ones(len(weights.weight()))
+        #     up   = np.ones(len(weights.weight()))
+        #     down = np.ones(len(weights.weight()))
 
-            # NNPDF31_nnlo_hessian_pdfas
-            # https://lhapdfsets.web.cern.ch/current/NNPDF31_nnlo_hessian_pdfas/NNPDF31_nnlo_hessian_pdfas.info
-            if "306000 - 306102" in event.LHEPdfWeight.__doc__:
-                # Hessian PDF weights
-                # Eq. 21 of https://arxiv.org/pdf/1510.03865v1.pdf
-                arg = event.LHEPdfWeight[:, 1:-2] - np.ones( (len(weights.weight()), 100) )
+        #     # NNPDF31_nnlo_hessian_pdfas
+        #     # https://lhapdfsets.web.cern.ch/current/NNPDF31_nnlo_hessian_pdfas/NNPDF31_nnlo_hessian_pdfas.info
+        #     if "306000 - 306102" in event.LHEPdfWeight.__doc__:
+        #         # Hessian PDF weights
+        #         # Eq. 21 of https://arxiv.org/pdf/1510.03865v1.pdf
+        #         arg = event.LHEPdfWeight[:, 1:-2] - np.ones( (len(weights.weight()), 100) )
 
-                summed = ak.sum(np.square(arg), axis=1)
-                pdf_unc = np.sqrt((1.0 / 99.0) * summed)
-                weights.add("pdf_Higgs_ggHH", nom, pdf_unc + nom)
+        #         summed = ak.sum(np.square(arg), axis=1)
+        #         pdf_unc = np.sqrt((1.0 / 99.0) * summed)
+        #         weights.add("pdf_Higgs_ggHH", nom, pdf_unc + nom)
 
-                # alpha_S weights
-                # Eq. 27 of same ref
-                as_unc = 0.5 * ( event.LHEPdfWeight[:, 102] - event.LHEPdfWeight[:, 101] )
+        #         # alpha_S weights
+        #         # Eq. 27 of same ref
+        #         as_unc = 0.5 * ( event.LHEPdfWeight[:, 102] - event.LHEPdfWeight[:, 101] )
 
-                weights.add("alpha_s", nom, as_unc + nom)
+        #         weights.add("alpha_s", nom, as_unc + nom)
 
-                # PDF + alpha_S weights
-                # Eq. 28 of same ref
-                pdfas_unc = np.sqrt(np.square(pdf_unc) + np.square(as_unc))
-                weights.add("PDFaS", nom, pdfas_unc + nom)
+        #         # PDF + alpha_S weights
+        #         # Eq. 28 of same ref
+        #         pdfas_unc = np.sqrt(np.square(pdf_unc) + np.square(as_unc))
+        #         weights.add("PDFaS", nom, pdfas_unc + nom)
 
-            else:
-                weights.add("alpha_s", nom, up, down)
-                weights.add("pdf_Higgs_ggHH", nom, up, down)
-                weights.add("PDFaS", nom, up, down)
-            list_weight_names.append(f"alpha_s")
-            list_weight_names.append(f"pdf_Higgs_ggHH")
-            list_weight_names.append(f"PDFaS")
+        #     else:
+        #         weights.add("alpha_s", nom, up, down)
+        #         weights.add("pdf_Higgs_ggHH", nom, up, down)
+        #         weights.add("PDFaS", nom, up, down)
+        #     list_weight_names.append(f"alpha_s")
+        #     list_weight_names.append(f"pdf_Higgs_ggHH")
+        #     list_weight_names.append(f"PDFaS")
     else:
         weights.add("data", np.ones(len(event)))
         list_weight_names.append(f"data")
@@ -134,7 +135,8 @@ def add_weights(event, do_MC_weights: bool = True,
 def add_pseudotagweights(
     event, 
     weights, 
-    JCM: callable = None, 
+    JCM: callable = None,
+    JCM_lowpt: callable = None, 
     apply_FvT: bool = False, 
     isDataForMixed: bool = False, 
     list_weight_names: list = [], 
@@ -187,8 +189,32 @@ def add_pseudotagweights(
         nTagJets[event[label3b]] = ak.num(event.tagJet_loose[event[label3b]], axis=1)
         event["nJet_ps_and_tag"] = nJet_pseudotagged + nTagJets
 
+        event["pseudoTagWeight_lowpt"] = np.ones(len(event), dtype=float)  # Initialize dummy lowpt pseudoTagWeight
+
+        if 'lowpt' in label3b:
+            event["weight_noJCM_lowpt_noFvT"] = event.weight_noJCM_noFvT * event.pseudoTagWeight
+
+            if JCM_lowpt:
+                event["Jet_untagged_loose_lowpt"] = event.Jet[event.Jet.selected_lowpt & ~event.Jet.tagged_loose_lowpt]
+                pseudoTagWeight_lowpt = np.full(len(event), event.weight)  # Initialize with existing weights
+                nJet_pseudotagged_lowpt = np.zeros(len(event), dtype=int)
+
+                pseudoTagWeight_lowpt[event[label3b]], nJet_pseudotagged_lowpt[event[label3b]] = JCM_lowpt(
+                    event[event[label3b]]['Jet_untagged_loose_lowpt'], 
+                    event.event[event[label3b]]
+                )
+                event["nJet_pseudotagged_lowpt"] = nJet_pseudotagged_lowpt
+                event["pseudoTagWeight_lowpt"] = pseudoTagWeight_lowpt
+                logging.debug( f"pseudoTagWeight_lowpt {event.pseudoTagWeight_lowpt[:10]}\n" )
+                logging.debug( f"nJet_pseudotagged_lowpt {event.nJet_pseudotagged_lowpt[:10]}\n" )
+
+                # Update number of tagged jets
+                nTagJets_lowpt = ak.num(event.tagJet_lowpt, axis=1).to_numpy()
+                nTagJets_lowpt[event[label3b]] = ak.num(event.tagJet_loose_lowpt[event[label3b]], axis=1)
+                event["nJet_ps_and_tag_lowpt"] = nJet_pseudotagged_lowpt + nTagJets_lowpt
+
         # Calculate weight without FvT
-        weight_noFvT = ak.where(event[label3b], event.weight * event.pseudoTagWeight, event.weight)
+        weight_noFvT = ak.where(event[label3b], event.weight * event.pseudoTagWeight * event.pseudoTagWeight_lowpt, event.weight)
 
         event["weight_noFvT"] = weight_noFvT
         logging.debug( f"weight_noFvT {event.weight_noFvT[:10]}\n" )
@@ -224,7 +250,7 @@ def add_pseudotagweights(
             else:
                 weight = np.where(
                     event[label3b], 
-                    event["pseudoTagWeight"] * event.FvT.FvT, 
+                    event["pseudoTagWeight"] * event["pseudoTagWeight_lowpt"] * event.FvT.FvT, 
                     1.0
                 )
                 weights.add("FvT", weight)
@@ -234,7 +260,7 @@ def add_pseudotagweights(
             weight_noFvT = np.copy(event.weight)
             weight_noFvT = np.where(
                 event[label3b], 
-                event["pseudoTagWeight"], 
+                event["pseudoTagWeight"] * event["pseudoTagWeight_lowpt"], 
                 1.0
             )
             weights.add("no_FvT", weight_noFvT)

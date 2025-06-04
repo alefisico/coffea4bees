@@ -2,7 +2,7 @@ import numpy as np
 import awkward as ak
 from base_class.math.random import Squares
 from analysis.helpers.SvB_helpers import compute_SvB
-
+from coffea.nanoevents.methods import vector
 
 def create_cand_jet_dijet_quadjet(
     selev,
@@ -183,7 +183,39 @@ def create_cand_jet_dijet_quadjet(
         #   https://gitlab.cern.ch/mkolosov/hh4b_run3/-/blob/run2/python/producers/hh4bTreeProducer.py#L3386
         diagonalXoYo = 1.04
         quadJet["dhh"] = (1.0/np.sqrt(1+pow(diagonalXoYo, 2)))*abs(quadJet["lead"].mass - ((diagonalXoYo)*quadJet["subl"].mass))
-        quadJet["selected"] = quadJet.dhh == np.min(quadJet.dhh, axis=1)
+
+        # If the difference of the minimum and second minimum distance from the diagonal is less than 30, choose the pair that has the
+        # maximum H1 pT in the 4-jet center-of-mass frame
+        dhh_sorted = np.sort(quadJet["dhh"], axis=1)
+        dhh_sorted_arg = np.argsort(quadJet["dhh"], axis=1)
+        delta_dhh = abs(dhh_sorted[:,1] - dhh_sorted[:,0])
+
+
+        # Get the two jets with the minimum and second minimum distance from the diagonal
+        quadJet_min_dhh_mask = dhh_sorted[:,0] == quadJet.dhh
+        quadJet_min_dhh = quadJet[quadJet_min_dhh_mask]
+
+        quadJet_min2_dhh_mask = dhh_sorted[:,1] == quadJet.dhh
+        quadJet_min2_dhh = quadJet[quadJet_min2_dhh_mask]
+
+        # Create a boost vector from the 4-momentum sum
+        boost_vec_v4j = ak.zip(
+            {
+                "x": selev.v4j.px / selev.v4j.energy,
+                "y": selev.v4j.py / selev.v4j.energy,
+                "z": selev.v4j.pz / selev.v4j.energy,
+            },
+            with_name="ThreeVector",
+            behavior=vector.behavior,
+        )
+
+        # Boost the jets into the center of mass frame
+        quadJet_min_dhh_lead_CM  = quadJet_min_dhh.lead[:,0].boost(-boost_vec_v4j)
+        quadJet_min2_dhh_lead_CM = quadJet_min2_dhh.lead[:,0].boost(-boost_vec_v4j)
+
+        use_dhh2_mask = (delta_dhh < 30) & (quadJet_min2_dhh_lead_CM.pt > quadJet_min_dhh_lead_CM.pt)
+
+        quadJet["selected"] = ak.where(use_dhh2_mask, quadJet_min2_dhh_mask, quadJet_min_dhh_mask)
 
 
         #
@@ -193,7 +225,6 @@ def create_cand_jet_dijet_quadjet(
         cSubl = 120
         SR_radius = 30
         CR_radius = 55
-        quadJet["selected"] = quadJet.dhh == np.min(quadJet.dhh, axis=1)
 
         quadJet["rhh"] = np.sqrt( (quadJet["lead"].mass - cLead)**2 + (quadJet["subl"].mass - cSubl)**2 )
         quadJet["SR"] = (quadJet.rhh < SR_radius)

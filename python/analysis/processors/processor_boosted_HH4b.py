@@ -107,6 +107,11 @@ class analysis(processor.ProcessorABC):
         # from analysis.helpers.write_debug_info import add_debug_info_for_Boosted_Synthetic
         # add_debug_info_for_Boosted_Synthetic(boosted_events, processOutput)
 
+        # print("\n")
+        # print("Event fields", event.fields, "\n")
+        # print("SubJet field", event.FatJet.subjets.fields, "\n")
+
+
         #
         # Preselection: keep only three or four tag events
         #
