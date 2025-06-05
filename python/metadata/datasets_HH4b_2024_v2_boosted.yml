@@ -11,42 +11,65 @@ datasets:
         A:
           count: 171484635.0
           files:
-          # - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL18A/picoAOD_boosted.root
-          - /home/export/tgomezes/files/data_UL18A_picoAOD_boosted.root
-          saved_events: 61756
-          sumw: 171484635
-          sumw2: 171484635
-          total_events: 171484635
+          - /home/export/tgomezes/files/data_UL18A/picoAOD_boosted.chunk0.root
+          - /home/export/tgomezes/files/data_UL18A/picoAOD_boosted.chunk1.root
+          - /home/export/tgomezes/files/data_UL18A/picoAOD_boosted.chunk2.root
+          - /home/export/tgomezes/files/data_UL18A/picoAOD_boosted.chunk3.root
+          - /home/export/tgomezes/files/data_UL18A/picoAOD_boosted.chunk4.root
+          - /home/export/tgomezes/files/data_UL18A/picoAOD_boosted.chunk5.root
+          - /home/export/tgomezes/files/data_UL18A/picoAOD_boosted.chunk6.root
+          - /home/export/tgomezes/files/data_UL18A/picoAOD_boosted.chunk7.root
+          saved_events: 794878
+          sumw: 170869254
+          sumw2: 170869254
+          total_events: 170869254
         B:
           count: 78255208.0
           files:
           # - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL18B/picoAOD_boosted.root
-          - /home/export/tgomezes/files/data_UL18B_picoAOD_boosted.root
-          missing: {}
-          saved_events: 28791
-          sumw: 78255208
-          sumw2: 78255208
-          total_events: 78255208
+          - /home/export/tgomezes/files/data_UL18B/picoAOD_boosted.chunk0.root
+          - /home/export/tgomezes/files/data_UL18B/picoAOD_boosted.chunk1.root
+          - /home/export/tgomezes/files/data_UL18B/picoAOD_boosted.chunk2.root
+          - /home/export/tgomezes/files/data_UL18B/picoAOD_boosted.chunk3.root
+          saved_events: 379209
+          sumw: 77260188
+          sumw2: 77260188
+          total_events: 77260188
         C:
           count: 70027804.0
           files:
-          # - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL18C/picoAOD_boosted.root
-          - /home/export/tgomezes/files/data_UL18C_picoAOD_boosted.root
-          saved_events: 26699
-          sumw: 70027804
-          sumw2: 70027804
-          total_events: 70027804
+          - /home/export/tgomezes/files/data_UL18C/picoAOD_boosted.chunk0.root
+          - /home/export/tgomezes/files/data_UL18C/picoAOD_boosted.chunk1.root
+          - /home/export/tgomezes/files/data_UL18C/picoAOD_boosted.chunk2.root
+          - /home/export/tgomezes/files/data_UL18C/picoAOD_boosted.chunk3.root
+          saved_events: 353460
+          sumw: 69135730
+          sumw2: 69135730
+          total_events: 69135730
         D:
           count: 356976276.0
           files:
-          # - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL18D/picoAOD_boosted.chunk0.root
-          # - root://cmseos.fnal.gov//store/user/algomez/XX4b/2024_v2/data_UL18D/picoAOD_boosted.chunk1.root
-          - /home/export/tgomezes/files/data_UL18D_picoAOD_boosted.chunk0.root
-          - /home/export/tgomezes/files/data_UL18D_picoAOD_boosted.chunk1.root
-          saved_events: 116737
-          sumw: 356976276
-          sumw2: 356976276
-          total_events: 356976276
+          - /home/export/tgomezes/files/data_UL18D/picoAOD_boosted.chunk0.root
+          - /home/export/tgomezes/files/data_UL18D/picoAOD_boosted.chunk1.root
+          - /home/export/tgomezes/files/data_UL18D/picoAOD_boosted.chunk2.root
+          - /home/export/tgomezes/files/data_UL18D/picoAOD_boosted.chunk3.root
+          - /home/export/tgomezes/files/data_UL18D/picoAOD_boosted.chunk4.root
+          - /home/export/tgomezes/files/data_UL18D/picoAOD_boosted.chunk5.root
+          - /home/export/tgomezes/files/data_UL18D/picoAOD_boosted.chunk6.root
+          - /home/export/tgomezes/files/data_UL18D/picoAOD_boosted.chunk7.root
+          - /home/export/tgomezes/files/data_UL18D/picoAOD_boosted.chunk8.root
+          - /home/export/tgomezes/files/data_UL18D/picoAOD_boosted.chunk9.root
+          - /home/export/tgomezes/files/data_UL18D/picoAOD_boosted.chunk10.root
+          - /home/export/tgomezes/files/data_UL18D/picoAOD_boosted.chunk11.root
+          - /home/export/tgomezes/files/data_UL18D/picoAOD_boosted.chunk12.root
+          - /home/export/tgomezes/files/data_UL18D/picoAOD_boosted.chunk13.root
+          - /home/export/tgomezes/files/data_UL18D/picoAOD_boosted.chunk14.root
+          - /home/export/tgomezes/files/data_UL18D/picoAOD_boosted.chunk15.root
+          - /home/export/tgomezes/files/data_UL18D/picoAOD_boosted.chunk16.root
+          saved_events: 1636250
+          sumw: 355391030
+          sumw2: 355391030
+          total_events: 355391030
       trigger:
       - PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepCSV_4p5
 
