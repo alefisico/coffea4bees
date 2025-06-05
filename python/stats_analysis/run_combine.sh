@@ -56,7 +56,7 @@ parse_arguments "$@"
 echo "Running combine script with arguments: $@"
 
 currentDir=$PWD
-signallabel="ggHH_kl_1_kt_1_hbbhbb"
+signallabel="ggHH_kl_1_kt_1_13p0TeV_hbbhbb"
 # signallabel="ZZ4b"
 # signallabel="ZH4b"
 
@@ -85,24 +85,24 @@ run_limits() {
     text2workspace.py ${datacard}.txt \
         -P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel --PO verbose \
         --PO "map=.*/${signallabel}:r${signallabel}[1,-10,10]" \
-        --PO "map=.*/ggHH_kl_0_kt_1_hbbhbb:rggHH_kl_0_kt_1_hbbhbb[1,-10,10]" \
-        --PO "map=.*/ggHH_kl_2p45_kt_1_hbbhbb:rggHH_kl_2p45_kt_1_hbbhbb[1,-10,10]" \
-        --PO "map=.*/ggHH_kl_5_kt_1_hbbhbb:rggHH_kl_5_kt_1_hbbhbb[1,-10,10]" \
+        --PO "map=.*/ggHH_kl_0_kt_1_13p0TeV_hbbhbb:rggHH_kl_0_kt_1_13p0TeV_hbbhbb[1,-10,10]" \
+        --PO "map=.*/ggHH_kl_2p45_kt_1_13p0TeV_hbbhbb:rggHH_kl_2p45_kt_1_13p0TeV_hbbhbb[1,-10,10]" \
+        --PO "map=.*/ggHH_kl_5_kt_1_13p0TeV_hbbhbb:rggHH_kl_5_kt_1_13p0TeV_hbbhbb[1,-10,10]" \
         # --PO 'map=.*/ZZ4b:rZZ4b[1,-10,10]' \
         # --PO 'map=.*/ZH4b:rZH4b[1,-10,10]' 
         
     combine -M AsymptoticLimits ${datacard}.root --redefineSignalPOIs r${signallabel} \
         -n _${iclass}${blind_label} ${limit_blind} \
-        --setParameters rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0 \
-        --freezeParameters rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb \
+        --setParameters rggHH_kl_0_kt_1_13p0TeV_hbbhbb=0,rggHH_kl_2p45_kt_1_13p0TeV_hbbhbb=0,rggHH_kl_5_kt_1_13p0TeV_hbbhbb=0 \
+        --freezeParameters rggHH_kl_0_kt_1_13p0TeV_hbbhbb,rggHH_kl_2p45_kt_1_13p0TeV_hbbhbb,rggHH_kl_5_kt_1_13p0TeV_hbbhbb \
         > limits_${datacard}_${iclass}${blind_label}.txt
     cat limits_${datacard}_${iclass}${blind_label}.txt
     combineTool.py -M CollectLimits higgsCombine_${iclass}${blind_label}.AsymptoticLimits.mH120.root -o limits_${datacard}_${iclass}${blind_label}.json
 
     combine -M Significance ${datacard}.root --redefineSignalPOIs r${signallabel} \
         -n _${iclass}${blind_label} ${asymov_data} \
-        --setParameters rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0,rZZ4b=0,rZH4b=0 \
-        --freezeParameters rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb,rZZ4b,rZH4b \
+        --setParameters rggHH_kl_0_kt_1_13p0TeV_hbbhbb=0,rggHH_kl_2p45_kt_1_13p0TeV_hbbhbb=0,rggHH_kl_5_kt_1_13p0TeV_hbbhbb=0,rZZ4b=0,rZH4b=0 \
+        --freezeParameters rggHH_kl_0_kt_1_13p0TeV_hbbhbb,rggHH_kl_2p45_kt_1_13p0TeV_hbbhbb,rggHH_kl_5_kt_1_13p0TeV_hbbhbb,rZZ4b,rZH4b \
         > significance_${datacard}_${iclass}${blind_label}.txt
     cat significance_${datacard}_${iclass}${blind_label}.txt
 
@@ -137,13 +137,13 @@ do
 
                 combineTool.py -M Impacts -d ${datacard}.root --doInitialFit \
                 --robustFit 1 -n ${iclass} -m 125 ${asymov_data} \
-                --setParameterRanges r${signallabel}=-10,10:rggHH_kl_0_kt_1_hbbhbb=0,0:rggHH_kl_2p45_kt_1_hbbhbb=0,0:rggHH_kl_5_kt_1_hbbhbb=0,0 \
-                --setParameters ${signal_parameter}rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0 \
+                --setParameterRanges r${signallabel}=-10,10:rggHH_kl_0_kt_1_13p0TeV_hbbhbb=0,0:rggHH_kl_2p45_kt_1_13p0TeV_hbbhbb=0,0:rggHH_kl_5_kt_1_13p0TeV_hbbhbb=0,0 \
+                --setParameters ${signal_parameter}rggHH_kl_0_kt_1_13p0TeV_hbbhbb=0,rggHH_kl_2p45_kt_1_13p0TeV_hbbhbb=0,rggHH_kl_5_kt_1_13p0TeV_hbbhbb=0 \
 
                 combineTool.py -M Impacts -d ${datacard}.root --doFits \
                 --robustFit 1 -m 125 --parallel 4 -n ${iclass} ${asymov_data} \
-                --setParameterRanges r${signallabel}=-10,10:rggHH_kl_0_kt_1_hbbhbb=0,0:rggHH_kl_2p45_kt_1_hbbhbb=0,0:rggHH_kl_5_kt_1_hbbhbb=0,0 \
-                --setParameters ${signal_parameter}rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0 \
+                --setParameterRanges r${signallabel}=-10,10:rggHH_kl_0_kt_1_13p0TeV_hbbhbb=0,0:rggHH_kl_2p45_kt_1_13p0TeV_hbbhbb=0,0:rggHH_kl_5_kt_1_13p0TeV_hbbhbb=0,0 \
+                --setParameters ${signal_parameter}rggHH_kl_0_kt_1_13p0TeV_hbbhbb=0,rggHH_kl_2p45_kt_1_13p0TeV_hbbhbb=0,rggHH_kl_5_kt_1_13p0TeV_hbbhbb=0 \
 
                 combineTool.py -M Impacts -d ${datacard}.root -o impacts_combine_${iclass}_exp.json -m 125 -n ${iclass}
 
@@ -170,16 +170,16 @@ do
                 --setParameters ${signal_parameter} \
                 > gof_data_${datacard}_${iclass}${blind_label}.txt
             cat gof_data_${datacard}_${iclass}${blind_label}.txt
-                # --freezeParameters rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb \
-                # --setParameters rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0 \
+                # --freezeParameters rggHH_kl_0_kt_1_13p0TeV_hbbhbb,rggHH_kl_2p45_kt_1_13p0TeV_hbbhbb,rggHH_kl_5_kt_1_13p0TeV_hbbhbb \
+                # --setParameters rggHH_kl_0_kt_1_13p0TeV_hbbhbb=0,rggHH_kl_2p45_kt_1_13p0TeV_hbbhbb=0,rggHH_kl_5_kt_1_13p0TeV_hbbhbb=0 \
             
             # echo "Running goodness of fit test on toys"
             combine -M GoodnessOfFit ${datacard}.root --algo saturated  \
                 -n _${iclass}${blind_label}_gof_toys --toysFrequentist -t 1000 \
                 > gof_toys_${datacard}_${iclass}${blind_label}.txt
             cat gof_toys_${datacard}_${iclass}${blind_label}.txt
-            #     --setParameters ${signal_parameter}rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0 \
-            #     --freezeParameters ${freeze_parameters}rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb \
+            #     --setParameters ${signal_parameter}rggHH_kl_0_kt_1_13p0TeV_hbbhbb=0,rggHH_kl_2p45_kt_1_13p0TeV_hbbhbb=0,rggHH_kl_5_kt_1_13p0TeV_hbbhbb=0 \
+            #     --freezeParameters ${freeze_parameters}rggHH_kl_0_kt_1_13p0TeV_hbbhbb,rggHH_kl_2p45_kt_1_13p0TeV_hbbhbb,rggHH_kl_5_kt_1_13p0TeV_hbbhbb \
 
             combineTool.py -M CollectGoodnessOfFit \
                 --input higgsCombine_${iclass}${blind_label}_gof_data.GoodnessOfFit.mH120.root \
@@ -201,8 +201,8 @@ do
             echo "Running postfit b-only"
             combine -M FitDiagnostics ${datacard}.root --redefineSignalPOIs r${signallabel} \
                 -n _${iclass}${blind_label}_prefit_bonly ${asymov_data} \
-                --setParameters r${signallabel}=0,rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0,rZZ4b=0,rZH4b=0 \
-                --freezeParameters rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb,rZZ4b,rZH4b \
+                --setParameters r${signallabel}=0,rggHH_kl_0_kt_1_13p0TeV_hbbhbb=0,rggHH_kl_2p45_kt_1_13p0TeV_hbbhbb=0,rggHH_kl_5_kt_1_13p0TeV_hbbhbb=0,rZZ4b=0,rZH4b=0 \
+                --freezeParameters rggHH_kl_0_kt_1_13p0TeV_hbbhbb,rggHH_kl_2p45_kt_1_13p0TeV_hbbhbb,rggHH_kl_5_kt_1_13p0TeV_hbbhbb,rZZ4b,rZH4b \
                 > fitDiagnostics_${datacard}_${iclass}${blind_label}_prefit_bonly.txt
             cat fitDiagnostics_${datacard}_${iclass}${blind_label}_prefit_bonly.txt
 
@@ -214,8 +214,8 @@ do
             echo "Running postfit s+b"
             combine -M FitDiagnostics ${datacard}.root --redefineSignalPOIs r${signallabel} \
                 -n _${iclass}${blind_label}_prefit_sb ${asymov_data} --saveShapes --saveWithUncertainties --plots \
-                --setParameters ${signal_parameter}rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0,rZZ4b=0,rZH4b=0 \
-                --freezeParameters rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb,rZZ4b,rZH4b \
+                --setParameters ${signal_parameter}rggHH_kl_0_kt_1_13p0TeV_hbbhbb=0,rggHH_kl_2p45_kt_1_13p0TeV_hbbhbb=0,rggHH_kl_5_kt_1_13p0TeV_hbbhbb=0,rZZ4b=0,rZH4b=0 \
+                --freezeParameters rggHH_kl_0_kt_1_13p0TeV_hbbhbb,rggHH_kl_2p45_kt_1_13p0TeV_hbbhbb,rggHH_kl_5_kt_1_13p0TeV_hbbhbb,rZZ4b,rZH4b \
                 > fitDiagnostics_${datacard}_${iclass}${blind_label}_prefit_sb.txt
             cat fitDiagnostics_${datacard}_${iclass}${blind_label}_prefit_sb.txt
             mkdir -p fitDiagnostics_sb/
@@ -242,21 +242,21 @@ do
 
             combine -M MultiDimFit -n _${iclass}_systbreakdown_postfit \
                 --saveWorkspace -d ${datacard}.root --robustFit 1 ${asymov_data} \
-                --setParameters ${signal_parameter}rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0,rZZ4b=0,rZH4b=0 \
-                --freezeParameters  ${freeze_parameters}rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb,rZZ4b,rZH4b
+                --setParameters ${signal_parameter}rggHH_kl_0_kt_1_13p0TeV_hbbhbb=0,rggHH_kl_2p45_kt_1_13p0TeV_hbbhbb=0,rggHH_kl_5_kt_1_13p0TeV_hbbhbb=0,rZZ4b=0,rZH4b=0 \
+                --freezeParameters  ${freeze_parameters}rggHH_kl_0_kt_1_13p0TeV_hbbhbb,rggHH_kl_2p45_kt_1_13p0TeV_hbbhbb,rggHH_kl_5_kt_1_13p0TeV_hbbhbb,rZZ4b,rZH4b
 
             combine -M MultiDimFit -n _${iclass}_systbreakdown_freeze_all \
                 -P r${signallabel} ${asymov_data} --snapshotName MultiDimFit \
                 --rMin ${rMin} --rMax ${rMax} --algo grid --points ${points} --alignEdges 1 \
-                --setParameters ${signal_parameter}rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0,rZZ4b=0,rZH4b=0 \
-                --freezeParameters ${freeze_parameters}rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb,rZZ4b,rZH4b,allConstrainedNuisances \
+                --setParameters ${signal_parameter}rggHH_kl_0_kt_1_13p0TeV_hbbhbb=0,rggHH_kl_2p45_kt_1_13p0TeV_hbbhbb=0,rggHH_kl_5_kt_1_13p0TeV_hbbhbb=0,rZZ4b=0,rZH4b=0 \
+                --freezeParameters ${freeze_parameters}rggHH_kl_0_kt_1_13p0TeV_hbbhbb,rggHH_kl_2p45_kt_1_13p0TeV_hbbhbb,rggHH_kl_5_kt_1_13p0TeV_hbbhbb,rZZ4b,rZH4b,allConstrainedNuisances \
                 -d higgsCombine_${iclass}_systbreakdown_postfit.MultiDimFit.mH120.root
 
             scan_cmd="combine -M MultiDimFit \
                 -P r${signallabel} ${asymov_data} --snapshotName MultiDimFit \
                 --rMin ${rMin} --rMax ${rMax} --algo grid --points ${points} --alignEdges 1 \
-                --setParameters ${signal_parameter}rggHH_kl_0_kt_1_hbbhbb=0,rggHH_kl_2p45_kt_1_hbbhbb=0,rggHH_kl_5_kt_1_hbbhbb=0,rZZ4b=0,rZH4b=0 \
-                --freezeParameters ${freeze_parameters}rggHH_kl_0_kt_1_hbbhbb,rggHH_kl_2p45_kt_1_hbbhbb,rggHH_kl_5_kt_1_hbbhbb,rZZ4b,rZH4b \
+                --setParameters ${signal_parameter}rggHH_kl_0_kt_1_13p0TeV_hbbhbb=0,rggHH_kl_2p45_kt_1_13p0TeV_hbbhbb=0,rggHH_kl_5_kt_1_13p0TeV_hbbhbb=0,rZZ4b=0,rZH4b=0 \
+                --freezeParameters ${freeze_parameters}rggHH_kl_0_kt_1_13p0TeV_hbbhbb,rggHH_kl_2p45_kt_1_13p0TeV_hbbhbb,rggHH_kl_5_kt_1_13p0TeV_hbbhbb,rZZ4b,rZH4b \
                 -d higgsCombine_${iclass}_systbreakdown_postfit.MultiDimFit.mH120.root"
 
             ${scan_cmd} -n _${iclass}_systbreakdown_total
