@@ -98,42 +98,76 @@ class analysis(processor.ProcessorABC):
         #
         # Event selection
         #
-        #event["selFatJet"] = event.FatJet[event.FatJet. > 1]
 
         print(f"Number of selected Fat Jets: {ak.num(selev.selFatJet)}")
-        print(f" Any passNFatJets: {ak.any(selev.passNFatJets)}")
-        print(f" Any passHLT: {ak.any(selev.passHLT)}")
+        #print(f" Any passNFatJets: {ak.any(selev.passNFatJets)}")
+        #print(f" Any passHLT: {ak.any(selev.passHLT)}")
+        #print(f" FatJet pt: {selev.selFatJet.pt}")
+        #
+        #print(f" nSubJets: {ak.num(selev.selFatJet.subjets, axis=2)}")
+        #print(f" subjet pt: {selev.selFatJet.pt[0:10]}")
+
         print(f" FatJet pt: {selev.selFatJet.pt}")
-
-        print(f" nSubJets: {ak.num(selev.selFatJet.subjets, axis=2)}")
-        print(f" subjet pt: {selev.selFatJet.pt[0:10]}")
-
-        print(f" FatJet subjet pt: {selev.selFatJet.subjets.pt[0]}")
-        print(f" FatJet subjet0 pt: {selev.selFatJet[:,0].subjets.pt}")
-        print(f" FatJet subjet0_0 pt: {selev.selFatJet[:,0].subjets[:,0].pt}")
-        print(f" FatJet subjet0_1 pt: {selev.selFatJet[:,0].subjets[:,1].pt}")
-        print(f" FatJet subjet1 pt: {selev.selFatJet[:,1].subjets.pt}")
+        print(f" FatJet Subjet pt pt: {selev.selFatJet.subjets.pt}")
+        print(f" FatJet subjet pt A: {selev.selFatJet.subjets[:,:,0].pt}")
+        print(f" FatJet subjet pt B: {selev.selFatJet.subjets[:,:,1].pt}")
+        print(f" FatJet subjet len(: {len(selev.selFatJet.subjets[:,:,0].pt)}")
+        print(f" SubJets fields: {selev.selFatJet.subjets.fields}")
+        #
+        # btagDeepB
+        #
+        #print(f" FatJet subjet0 pt: {selev.selFatJet[:,0].subjets.pt}")
+        #print(f" FatJet subjet0_0 pt: {selev.selFatJet[:,0].subjets[:,0].pt}")
+        #print(f" FatJet subjet0_1 pt: {selev.selFatJet[:,0].subjets[:,1].pt}")
+        #print(f" FatJet subjet1 pt: {selev.selFatJet[:,1].subjets.pt}")
         #print("SubJet 0",ak.Array([[v.pt   for v in sublist] for sublist in selev.selFatJet.subjets[:,0]]))
         #print("SubJet 1",ak.Array([[v.pt   for v in sublist] for sublist in selev.selFatJet.subjets[:,1]]))
+        #str(round(v,3))
+        #print("btag1",selev.selFatJet.subjets.btagDeepB,"\n")
+        #print(selev.selFatJet.particleNet_HbbvsQCD)
+        #print(ak.unflatten(particleNet_HbbvsQCD_flat_str, ak.num(selev.selFatJet.subjets)))
+        #print(selev.selFatJet.btag_string)
 
-        print( "v" , ak.Array([[v   for v in sublist] for sublist in selev.selFatJet[:,0].subjets[:,0]]) )
 
+
+        #
+        # Adding btag and jet flavor to fat jets
+        #
+        particleNet_HbbvsQCD_flat = ak.flatten(selev.selFatJet.particleNet_HbbvsQCD)
+        particleNet_HbbvsQCD_flat_str = [ str(round(v,3)) for v in particleNet_HbbvsQCD_flat ]
+        selev["selFatJet", "btag_string"] = ak.unflatten(particleNet_HbbvsQCD_flat_str, ak.num(selev.selFatJet))
+
+        fatjet_flavor_flat = np.array(['b'] * len(particleNet_HbbvsQCD_flat))
+        selev["selFatJet", "jet_flavor"] = ak.unflatten(fatjet_flavor_flat, ak.num(selev.selFatJet))
+        print(selev.selFatJet.fields)
+
+        #
+        # Adding btag and jet flavor to subjets
+        #
+        subjet_btagDeepB_flat = ak.flatten(selev.selFatJet.subjets.btagDeepB)
+        subjet_btagDeepB_flat_str = [ str(round(v,3)) for v in subjet_btagDeepB_flat ]
+        print(len(selFatJet.subjets))
+        print(len(subjet_btagDeepB_flat))
+        #selFatJet["btag_string"] = ak.unflatten(particleNet_HbbvsQCD_flat_str, ak.num(selFatJet))
+
+
+        print("\n")
 
 #        # Create the PtEtaPhiMLorentzVectorArray
         fat_jet_splittings_events = ak.zip(
             {
-                "pt":   selev.selFatJet[:,0].pt,
-                "eta":  selev.selFatJet[:,0].eta,
-                "phi":  selev.selFatJet[:,0].phi,
-                "mass": selev.selFatJet[:,0].mass,
-                #"jet_flavor": ak.Array([[v.jet_flavor for v in sublist] for sublist in splittings]),   # "bb"
-                #"btag_string": ak.Array([[v.btag_string for v in sublist] for sublist in splittings]),  # str(particleNet_HbbvsQCD)
+                "pt":   selev.selFatJet.pt,
+                "eta":  selev.selFatJet.eta,
+                "phi":  selev.selFatJet.phi,
+                "mass": selev.selFatJet.mass,
+                "jet_flavor": selev.selFatJet.jet_flavor,
+                "btag_string": selev.selFatJet.btag_string,
                 "part_A": ak.zip(
                     {
-                        "pt":         selev.selFatJet[:,0].subjets[:,0].pt,
-                        "eta":        selev.selFatJet[:,0].subjets[:,0].eta,
-                        "phi":        selev.selFatJet[:,0].subjets[:,0].phi,
-                        "mass":       selev.selFatJet[:,0].subjets[:,0].mass,
+                        "pt":         selev.selFatJet.subjets[:, :, 0].pt,
+                        "eta":        selev.selFatJet.subjets[:, :, 0].eta,
+                        "phi":        selev.selFatJet.subjets[:, :, 0].phi,
+                        "mass":       selev.selFatJet.subjets[:, :, 0].mass,
                         #"jet_flavor": ak.Array([[v.part_A.jet_flavor for v in sublist] for sublist in splittings]), # "b"
                         #"btag_string": ak.Array([[v.part_A.btag_string for v in sublist] for sublist in splittings]),  # str(btagDeepB)
                     },
@@ -142,10 +176,10 @@ class analysis(processor.ProcessorABC):
                 ),
                 "part_B": ak.zip(
                     {
-                        "pt":         selev.selFatJet[:,0].subjets[:,1].pt,
-                        "eta":        selev.selFatJet[:,0].subjets[:,1].eta,
-                        "phi":        selev.selFatJet[:,0].subjets[:,1].phi,
-                        "mass":       selev.selFatJet[:,0].subjets[:,1].mass,
+                        "pt":         selev.selFatJet.subjets[:, :, 1].pt,
+                        "eta":        selev.selFatJet.subjets[:, :, 1].eta,
+                        "phi":        selev.selFatJet.subjets[:, :, 1].phi,
+                        "mass":       selev.selFatJet.subjets[:, :, 1].mass,
                         #"jet_flavor": ak.Array([[v.part_B.jet_flavor for v in sublist] for sublist in splittings]),   # "b"
                         #"btag_string": ak.Array([[v.part_B.btag_string for v in sublist] for sublist in splittings]), # str(btagDeepB)
                     },
