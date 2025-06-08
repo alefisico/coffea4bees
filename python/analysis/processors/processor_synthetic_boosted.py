@@ -128,8 +128,6 @@ class analysis(processor.ProcessorABC):
         #print(ak.unflatten(particleNet_HbbvsQCD_flat_str, ak.num(selev.selFatJet.subjets)))
         #print(selev.selFatJet.btag_string)
 
-
-
         #
         # Adding btag and jet flavor to fat jets
         #
@@ -139,19 +137,41 @@ class analysis(processor.ProcessorABC):
 
         fatjet_flavor_flat = np.array(['b'] * len(particleNet_HbbvsQCD_flat))
         selev["selFatJet", "jet_flavor"] = ak.unflatten(fatjet_flavor_flat, ak.num(selev.selFatJet))
-        print(selev.selFatJet.fields)
+
+        # ───────────── build per-sub-jet helper arrays ─────────────
+        subj            = selev.selFatJet.subjets            # (evt,fj,sj)
+
+        # 1) numeric scores  → fill None, round, stringify
+        btag_num        = ak.fill_none(subj.btagDeepB, -2.0)
+        flat_all        = ak.flatten(btag_num, axis=None)    # 1-D
+        flat_all_str    = ak.Array(np.char.mod('%.3f',
+                                               np.round(ak.to_numpy(flat_all), 3)))
+
+        # 2) unflatten back to (evt,fj,sj)
+        counts_sj       = ak.flatten(ak.num(subj, axis=2))
+        lvl2            = ak.unflatten(flat_all_str, counts_sj)        # (evt*fj ,sj)
+        counts_fj       = ak.num(selev.selFatJet)
+        btag_string     = ak.unflatten(lvl2, counts_fj)                # (evt,fj,sj)
+
+        # 3) dummy jet-flavor (same ragged shape, constant "b")
+        jet_flavor      = ak.full_like(btag_string, "b")
+
+        # ───────────── expose them in the event record ──────────────
+        #    They sit alongside selFatJet so later code can do e.g.
+        #    selev.subjet_btag_string[:, :, 1]   (same indices)
+        selev["subjet_btag_string"] = btag_string
+        selev["subjet_jet_flavor"]  = jet_flavor
+
+        # Adding btag and jet flavor to subjets
 
         #
-        # Adding btag and jet flavor to subjets
-        #
-        subjet_btagDeepB_flat = ak.flatten(selev.selFatJet.subjets.btagDeepB)
-        subjet_btagDeepB_flat_str = [ str(round(v,3)) for v in subjet_btagDeepB_flat ]
-        print(len(selFatJet.subjets))
-        print(len(subjet_btagDeepB_flat))
+#        subjet_btagDeepB_flat = ak.flatten(selev.selFatJet.subjets.btagDeepB)
+#        subjet_btagDeepB_flat_str = [ str(round(v,3)) for v in subjet_btagDeepB_flat ]
+#        print(len(selFatJet.subjets))
+#        print(len(subjet_btagDeepB_flat))
         #selFatJet["btag_string"] = ak.unflatten(particleNet_HbbvsQCD_flat_str, ak.num(selFatJet))
 
 
-        print("\n")
 
 #        # Create the PtEtaPhiMLorentzVectorArray
         fat_jet_splittings_events = ak.zip(
@@ -164,24 +184,24 @@ class analysis(processor.ProcessorABC):
                 "btag_string": selev.selFatJet.btag_string,
                 "part_A": ak.zip(
                     {
-                        "pt":         selev.selFatJet.subjets[:, :, 0].pt,
-                        "eta":        selev.selFatJet.subjets[:, :, 0].eta,
-                        "phi":        selev.selFatJet.subjets[:, :, 0].phi,
-                        "mass":       selev.selFatJet.subjets[:, :, 0].mass,
-                        #"jet_flavor": ak.Array([[v.part_A.jet_flavor for v in sublist] for sublist in splittings]), # "b"
-                        #"btag_string": ak.Array([[v.part_A.btag_string for v in sublist] for sublist in splittings]),  # str(btagDeepB)
+                        "pt":          selev.selFatJet.subjets[:, :, 0].pt,
+                        "eta":         selev.selFatJet.subjets[:, :, 0].eta,
+                        "phi":         selev.selFatJet.subjets[:, :, 0].phi,
+                        "mass":        selev.selFatJet.subjets[:, :, 0].mass,
+                        "jet_flavor": selev.subjet_jet_flavor[:, :, 0], # "b"
+                        "btag_string": selev.subjet_btag_string[:, :, 0],
                     },
                     with_name="PtEtaPhiMLorentzVector",
                     behavior=vector.backends.awkward.behavior
                 ),
                 "part_B": ak.zip(
                     {
-                        "pt":         selev.selFatJet.subjets[:, :, 1].pt,
-                        "eta":        selev.selFatJet.subjets[:, :, 1].eta,
-                        "phi":        selev.selFatJet.subjets[:, :, 1].phi,
-                        "mass":       selev.selFatJet.subjets[:, :, 1].mass,
-                        #"jet_flavor": ak.Array([[v.part_B.jet_flavor for v in sublist] for sublist in splittings]),   # "b"
-                        #"btag_string": ak.Array([[v.part_B.btag_string for v in sublist] for sublist in splittings]), # str(btagDeepB)
+                        "pt":          selev.selFatJet.subjets[:, :, 1].pt,
+                        "eta":         selev.selFatJet.subjets[:, :, 1].eta,
+                        "phi":         selev.selFatJet.subjets[:, :, 1].phi,
+                        "mass":        selev.selFatJet.subjets[:, :, 1].mass,
+                        "jet_flavor": selev.subjet_jet_flavor[:, :, 1],
+                        "btag_string": selev.subjet_btag_string[:, :, 1],
                     },
                     with_name="PtEtaPhiMLorentzVector",
                     behavior=vector.backends.awkward.behavior
@@ -192,6 +212,29 @@ class analysis(processor.ProcessorABC):
         )
 
 
+#        # ------------------------------------------------------------
+#        # ❶  Grab the two part-level Lorentz‐vector branches
+#        # ------------------------------------------------------------
+#        vec_A = fat_jet_splittings_events.part_A      # (evt , fj , sj=0)
+#        vec_B = fat_jet_splittings_events.part_B      # (evt , fj , sj=1)
+#
+#        # ------------------------------------------------------------
+#        # ❷  Print their field lists – jet_flavor & btag_string
+#        #     must be present here
+#        # ------------------------------------------------------------
+#        print("\n══ VECTOR BRANCH FIELD LISTS ══")
+#        print("part_A fields :", vec_A.fields)
+#        print("part_B fields :", vec_B.fields)
+#
+#        # ------------------------------------------------------------
+#        # ❸  Peek at the first two fat-jets worth of strings
+#        #     to eyeball that the values look right
+#        # ------------------------------------------------------------
+#        print("\n══ FIRST TWO FJ – STRING CHECK ══")
+#        print("part_A.btag_string :", vec_A.btag_string[:2].to_list())
+#        print("part_B.btag_string :", vec_B.btag_string[:2].to_list())
+#        print("part_A.jet_flavor  :", vec_A.jet_flavor[:2].to_list())
+#        print("part_B.jet_flavor  :", vec_B.jet_flavor[:2].to_list())
 
         #
         # Better Hists
