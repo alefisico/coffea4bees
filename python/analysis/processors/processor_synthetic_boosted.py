@@ -14,6 +14,8 @@ from base_class.hist import Collection, Fill
 from jet_clustering.clustering_hist_templates import ClusterHists
 from base_class.physics.object import Jet
 
+from jet_clustering.declustering import compute_decluster_variables
+
 import logging
 import vector
 
@@ -171,9 +173,29 @@ class analysis(processor.ProcessorABC):
 #        print(len(subjet_btagDeepB_flat))
         #selFatJet["btag_string"] = ak.unflatten(particleNet_HbbvsQCD_flat_str, ak.num(selFatJet))
 
+        #has_nan = np.any(np.isnan(selev.selFatJet.subjets[:, :, 0].pt.to_numpy()))
+        #print("pt has_nan", has_nan, "\n")
+        #print("is None loop",   np.any([ v == None for v in rotated_pt_A_pos_dphi.tolist()]), "\n")
+
+        print("fat jet pt0",    np.any([ v == None for v in selev.selFatJet.pt.to_numpy().tolist()]), "\n")
+        print("fat jet eta0",   np.any([ v == None for v in selev.selFatJet.eta.to_numpy().tolist()]), "\n")
+        print("fat jet phi0",   np.any([ v == None for v in selev.selFatJet.phi.to_numpy().tolist()]), "\n")
+        print("fat jet mass0",  np.any([ v == None for v in selev.selFatJet.mass.to_numpy().tolist()]), "\n")
 
 
-#        # Create the PtEtaPhiMLorentzVectorArray
+        print("pt0",    np.any([ v == None for v in selev.selFatJet.subjets[:, :, 0].pt.to_numpy().tolist()]), "\n")
+        print("eta0",   np.any([ v == None for v in selev.selFatJet.subjets[:, :, 0].eta.to_numpy().tolist()]), "\n")
+        print("phi0",   np.any([ v == None for v in selev.selFatJet.subjets[:, :, 0].phi.to_numpy().tolist()]), "\n")
+        print("mass0",  np.any([ v == None for v in selev.selFatJet.subjets[:, :, 0].mass.to_numpy().tolist()]), "\n")
+
+        print("pt0",    np.any([ v == None for v in selev.selFatJet.subjets[:, :, 1].pt.to_numpy().tolist()]), "\n")
+        print("eta0",   np.any([ v == None for v in selev.selFatJet.subjets[:, :, 1].eta.to_numpy().tolist()]), "\n")
+        print("phi0",   np.any([ v == None for v in selev.selFatJet.subjets[:, :, 1].phi.to_numpy().tolist()]), "\n")
+        print("mass0",  np.any([ v == None for v in selev.selFatJet.subjets[:, :, 1].mass.to_numpy().tolist()]), "\n")
+
+
+
+        # Create the PtEtaPhiMLorentzVectorArray
         fat_jet_splittings_events = ak.zip(
             {
                 "pt":   selev.selFatJet.pt,
@@ -210,6 +232,16 @@ class analysis(processor.ProcessorABC):
             with_name="PtEtaPhiMLorentzVector",
             behavior=vector.backends.awkward.behavior
         )
+
+        # Look at this function
+        compute_decluster_variables(fat_jet_splittings_events)
+        fat_jet_splittings_events["splitting_name"] = "bb"
+
+        #
+        # Sort clusterings by type
+        #
+        selev["splitting_bb"]   = fat_jet_splittings_events
+
 
 
 #        # ------------------------------------------------------------
@@ -282,7 +314,7 @@ class analysis(processor.ProcessorABC):
         # fill += Jet.plot(("subJets", "Selected Fat Jet SubJet"),   "selFatJet_subjets",  skip=["deepjet_c","deepjet_b","id_pileup","id_jet","n"], bins={"pt": (50, 0, 1000)})
 
 #        for _s_type in cleaned_splitting_name:
-#            fill += ClusterHists( (f"splitting_{_s_type}", f"{_s_type} Splitting"), f"splitting_{_s_type}" )
+        fill += ClusterHists( ("splitting_bb", "bb Splitting"), "splitting_bb" )
 
         #
         # fill histograms

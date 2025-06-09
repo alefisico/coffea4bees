@@ -225,6 +225,9 @@ def compute_decluster_variables(clustered_splittings):
 
     clustered_splittings["thetaA"]    = np.arccos(clustered_splittings_pz0.unit.dot(clustered_splittings_part_A_pz0.unit))
     clustered_splittings["tan_thetaA"]    = np.tan(np.arccos(clustered_splittings_pz0.unit.dot(clustered_splittings_part_A_pz0.unit)))
+    print("is None comb_z_plane_hat",   np.any([ v == None for v in ak.flatten(comb_z_plane_hat).tolist()]), "\n")
+    print("is None decay plane hat ",   np.any([ v == None for v in ak.flatten(decay_plane_hat).tolist()]), "\n")
+    print("is None dot prod ",   np.any([ v == None for v in ak.flatten(decay_plane_hat.dot(comb_z_plane_hat)).tolist()]), "\n")
     clustered_splittings["decay_phi"] = np.arccos(decay_plane_hat.dot(comb_z_plane_hat))
     clustered_splittings["dr_AB"]     = clustered_splittings.part_A.delta_r(clustered_splittings.part_B)
     clustered_splittings["dpt_AB"]    = clustered_splittings.part_A.pt - (clustered_splittings.pt * clustered_splittings.zA)
@@ -242,7 +245,11 @@ def compute_decluster_variables(clustered_splittings):
     #
     #    we either need to rotate back by + or - decay phi, figure out which one
     #
+
+    print("is None pz0",   np.any([ v == None for v in ak.flatten(clustered_splittings_part_A_pz0_phi0.pt).tolist()]), "\n")
     clustered_splittings_part_A_pz0_phi0_dphi0  = rotateX(clustered_splittings_part_A_pz0_phi0, -clustered_splittings.decay_phi)
+    print("is None decay_ohi",   np.any([ v == None for v in ak.flatten(clustered_splittings.decay_phi).tolist()]), "\n")
+    print("is None pz0_phi0_dphi0",   np.any([ v == None for v in ak.flatten(clustered_splittings_part_A_pz0_phi0_dphi0.pt).tolist()]), "\n")
     clustered_splittings_part_B_pz0_phi0_dphi0  = rotateX(clustered_splittings_part_B_pz0_phi0, -clustered_splittings.decay_phi)
     decay_plane_dphi0 = clustered_splittings_part_A_pz0_phi0_dphi0.cross(clustered_splittings_part_B_pz0_phi0_dphi0).unit
 
@@ -258,6 +265,12 @@ def compute_decluster_variables(clustered_splittings):
     #
     rotated_pt_A_flat = ak.flatten(clustered_splittings_part_A_pz0_phi0_dphi0.pt).to_numpy()
     rotated_pt_A_pos_dphi = ak.flatten(clustered_splittings_part_A_pz0_phi0_pdphi0.pt)
+
+
+    print("len(rotated_pt_A_flat)",   len(rotated_pt_A_pos_dphi), "\n")
+
+    print("is None loop",   np.any([ v == None for v in rotated_pt_A_pos_dphi.tolist()]), "\n")
+    print("mask", np.any(np.isnan(pos_decay_phi_mask_flat)), "\n")
     rotated_pt_A_flat[pos_decay_phi_mask_flat] = rotated_pt_A_pos_dphi[pos_decay_phi_mask_flat]
     rotated_pt_A = ak.unflatten(rotated_pt_A_flat, ak.num(clustered_splittings))
 
