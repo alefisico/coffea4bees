@@ -13,7 +13,10 @@ import numpy as np
 
 sys.path.insert(0, os.getcwd())
 import base_class.plots.helpers as plot_helpers
-from base_class.plots.plots import parse_args, load_config, load_hists, read_axes_and_cuts, makePlot, get_hist_data, load_stack_config, add_hist_data, make_plot_from_dict, add_ratio_plots
+import base_class.plots.helpers_make_plot_dict as plot_helpers_make_plot_dict
+import base_class.plots.helpers_make_plot as plot_helpers_make_plot
+
+from base_class.plots.plots import parse_args, load_config, load_hists, read_axes_and_cuts
 import base_class.plots.iPlot_config as cfg
 
 np.seterr(divide='ignore', invalid='ignore')
@@ -31,7 +34,7 @@ def get_average_over_mixed_data(plotConfig, **kwargs):
     for sub_sample in range(15):
         _proc_config_sub = copy.copy(process_config)
         _proc_config_sub["process"] = f"mix_v{sub_sample}"
-        _hist = get_hist_data(_proc_config_sub["process"], cfg, _proc_config_sub, var=var, region=region, rebin=rebin, year=year, cut="passPreSel")
+        _hist = plot_helpers_make_plot_dict.get_hist_data(process=_proc_config_sub["process"], cfg=cfg, config=_proc_config_sub, var=var, region=region, rebin=rebin, year=year, cut="passPreSel")
         hist_objs.append( copy.copy(_hist))
 
         if hist_sum:
@@ -68,16 +71,16 @@ def plotVar(var, region, year, rebin, yscale, **kwargs):
     plot_data_ave["var"] = var
     plot_data_ave["cut"] = cut
     plot_data_ave["region"] = region
-    plot_data_ave["kwargs"] = kwargs | {"outputFolder" : args.outputFolder}
+    plot_data_ave["kwargs"] = kwargs | {"outputFolder" : args.outputFolder} | {"yscale": yscale}
 
 
     #
     # Add data
     #
     hist_config_data = copy.copy(plot_helpers.get_value_nested_dict(cfg.plotConfig, "data"))
-    add_hist_data(cfg, hist_config_data,
-                  var=var, region=region, cut=cut, rebin=rebin, year=year,
-                  debug=False)
+    plot_helpers_make_plot_dict.add_hist_data(cfg=cfg, config=hist_config_data,
+                                              var=var, region=region, cut=cut, rebin=rebin, year=year,
+                                              debug=False)
 
     plot_data_ave["hists"]["data"] = hist_config_data
 
@@ -107,16 +110,16 @@ def plotVar(var, region, year, rebin, yscale, **kwargs):
     # Get all the stacks and add to stack_dict
     #
     stack_config = cfg.plotConfig.get("stack", {})
-    plot_data_ave["stack"] = load_stack_config(stack_config, var, cut, region, rebin=rebin, **kwargs)
+    plot_data_ave["stack"] = plot_helpers_make_plot_dict.load_stack_config(cfg=cfg, stack_config=stack_config, var=var, cut=cut, region=region, rebin=rebin,  **kwargs)
 
     #
     #  Config Ratios
     #
     ratio_config = copy.deepcopy(cfg.plotConfig["ratios"])
     ratio_config["mixToBkg"]["denominator"]["key"] = "mix_vAve"
-    add_ratio_plots(ratio_config, plot_data_ave, **kwargs)
+    plot_helpers_make_plot_dict.add_ratio_plots(ratio_config, plot_data_ave, **kwargs)
 
-    make_plot_from_dict(plot_data_ave)
+    plot_helpers_make_plot.make_plot_from_dict(plot_data_ave, **kwargs)
     plt.close()
 
 
@@ -125,16 +128,17 @@ def doPlots(debug=False):
     #
     # A single Mixed model vs 3b vs data
     #
-    var_list = ["SvB_MA.ps_hh", "SvB_MA.ps_zh", "SvB_MA.ps_zz", "SvB_MA.ps_hh_fine", "SvB_MA.ps_zh_fine", "SvB_MA.ps_zz_fine", ]
-    rebin_list = [8, 8, 8, 8, 8, 8]
+    var_list =  ["SvB_MA_noFvT.ps_hh", "SvB_MA_noFvT.ps_zh", "SvB_MA_noFvT.ps_zz", "SvB_MA_noFvT.ps_hh_fine", "SvB_MA_noFvT.ps_zh_fine", "SvB_MA_noFvT.ps_zz_fine", ]
+    rebin_list = [1, 1, 1, 8, 8, 8]
 
-    var_list += ["SvB.ps_hh", "SvB.ps_zh", "SvB.ps_zz", "SvB.ps_hh_fine", "SvB.ps_zh_fine", "SvB.ps_zz_fine", ]
-    rebin_list += [8, 8, 8, 8, 8, 8]
+    var_list += ["SvB_noFvT.ps_hh", "SvB_noFvT.ps_zh", "SvB_noFvT.ps_zz", "SvB_noFvT.ps_hh_fine", "SvB_noFvT.ps_zh_fine", "SvB_noFvT.ps_zz_fine", ]
+    rebin_list += [1, 1, 1, 8, 8, 8]
 
     region = "SR"
     year   = "RunII"
 
-    for region_data in [("SB","log"),("SR","linear")]:
+    for region_data in [("SB","log"),("SB","linear"),
+                        ("SR","log"),("SR","linear")]:
         region = region_data[0]
         yscale = region_data[1]
         for var, rebin in zip(var_list, rebin_list):

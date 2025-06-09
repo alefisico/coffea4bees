@@ -3,7 +3,7 @@ import logging
 import awkward as ak
 import numpy as np
 from coffea.util import load
-from skimmer.processor.picoaod import PicoAOD, fetch_metadata, resize
+from skimmer.processor.picoaod import PicoAOD #, fetch_metadata, resize
 from analysis.helpers.event_selection import apply_event_selection
 
 
@@ -23,4 +23,3 @@ class Skimmer(PicoAOD):
         resolved_selection_SR = np.isin( events.event.to_numpy(), resolved_events )
 
         return resolved_selection_SR
-
