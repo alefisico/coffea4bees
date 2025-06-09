@@ -71,7 +71,19 @@ def plotVar(var, region, year, rebin, yscale, **kwargs):
     plot_data_ave["var"] = var
     plot_data_ave["cut"] = cut
     plot_data_ave["region"] = region
-    plot_data_ave["kwargs"] = kwargs | {"outputFolder" : args.outputFolder} | {"yscale": yscale}
+
+    #if region == "SR":
+    #    ylim = [10, 2_000] if yscale == "log" else [0, 1_250]
+    #else:
+    #    ylim = [1e-1, 8_000] if yscale == "log" else [0, 3_250]
+
+    plot_data_ave["kwargs"] = kwargs | {"outputFolder" : args.outputFolder} | {"yscale": yscale,
+                                                                               "xlim": [0, 1],
+                                                                               "rlabel" : 'Data / Model',
+                                                                               "ylabel" : 'Events / bin',
+                                                                               #"ylim" : ylim,
+                                                                               "write_yaml" : True,
+                                                                               }
 
 
     #
@@ -100,7 +112,9 @@ def plotVar(var, region, year, rebin, yscale, **kwargs):
     hist_config_ave["variances"]  = hist_ave.variances().tolist()
     hist_config_ave["centers"]    = hist_ave.axes[0].centers.tolist()
     hist_config_ave["edges"]      = hist_ave.axes[0].edges.tolist()
-    hist_config_ave["x_label"]    = hist_ave.axes[0].label
+    hist_config_ave["x_label"]    = '$P_{HH}$'
+    hist_config_ave["xlim"]    = [0, 1]
+    hist_config_ave["rlabel"]    = 'Data / Model'
     hist_config_ave["under_flow"] = float(hist_ave.view(flow=True)["value"][0])
     hist_config_ave["over_flow"]  = float(hist_ave.view(flow=True)["value"][-1])
     plot_data_ave["hists"]["mix_vAve"] = hist_config_ave
