@@ -2463,4 +2463,12 @@ kwargs:
   rlabel: Data / Model
   ylabel: Events / bin
   write_yaml: true
+  year_str: 133 $fb^{-1}$
+  do_title: False
+  text:
+    region_text:
+       text: Sideband
+       xpos: 0.5
+       ypos: 0.95
+
 file_name: SvB_MA_noFvT.ps_hh_ave

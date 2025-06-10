@@ -885,3 +885,15 @@ kwargs:
   ylabel: Events / bin
   rlabel: Data / bkg. 
   write_yaml: false
+  year_str: 133 $fb^{-1}$
+  do_title: False
+  text:
+    region_text:
+       text: Sideband
+       xpos: 0.5
+       ypos: 0.95
+    reweight_text:
+       text: Before FvT reweighting
+       xpos: 0.775
+       ypos: 0.725
+       fontsize: 20

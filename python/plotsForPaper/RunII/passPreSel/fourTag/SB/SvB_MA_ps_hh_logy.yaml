@@ -408,6 +408,8 @@ hists:
 #    under_flow: 126.77483322530011
 #    over_flow: 0.0
 stack:
+
+
   TTbar:
     process:
     - TTToHadronic
@@ -613,6 +615,7 @@ stack:
     x_label: '$P_{HH}$'
     under_flow: 2887.9754554903543
     over_flow: 0.0
+
   Multijet:
     process: data
     tag: threeTag
@@ -815,6 +818,8 @@ stack:
     x_label: '$P_{HH}$'
     under_flow: 76107.70347966917
     over_flow: 0.0
+
+
 ratio:
   ratio_dataToBkg:
     numerator:
@@ -1088,3 +1093,15 @@ kwargs:
   ylabel: Events / bin
   rlabel: Data / bkg. 
   write_yaml: false
+  year_str: 133 $fb^{-1}$
+  do_title: False
+  text:
+    region_text:
+       text: Sideband
+       xpos: 0.5
+       ypos: 0.95
+    reweight_text:
+       text: Including FvT reweighting
+       xpos: 0.775
+       ypos: 0.725
+       fontsize: 20
