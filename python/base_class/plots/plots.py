@@ -10,10 +10,6 @@ import base_class.plots.helpers as plot_helpers
 import base_class.plots.helpers_make_plot_dict as plot_helpers_make_plot_dict
 import base_class.plots.helpers_make_plot as plot_helpers_make_plot
 
-
-
-
-
 def init_arg_parser():
 
     parser = argparse.ArgumentParser(description='plots', formatter_class=argparse.ArgumentDefaultsHelpFormatter)

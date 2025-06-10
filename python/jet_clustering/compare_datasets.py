@@ -144,7 +144,7 @@ def doPlots(year, doSignal=False, debug=False):
 
     #for _cut in ["passPreSel", "pass0OthJets", "pass1OthJets"]:
     for _cut in ["passPreSel"]: #, "pass0OthJets", "pass1OthJets"]:
-        for _reg in ["SB","notSR","sum"]:
+        for _reg in ["SB","SR","sum"]:
             args["cut"] = _cut
             args["region"] = _reg
             print(f"plotting {_cut} in {_reg}")

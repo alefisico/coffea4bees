@@ -2,7 +2,7 @@ hists:
         data:
                 process: data
                 tag: fourTag
-                label: Four-tag Data
+                label: Four-tag data
                 edgecolor: k
                 fillcolor: k            
 
@@ -40,14 +40,14 @@ stack:
                 tag: fourTag
                 fillcolor: "#85D1FBff"
                 edgecolor: k
-                label: TTbar
+                label: $t\bar{t}$
 
         Multijet:
                 process: data
                 tag: threeTag
                 fillcolor: "#FFDF7Fff"
                 edgecolor: k
-                label: Multijet
+                label: QCD multijet
 
 ratios:
         dataToBkg:
