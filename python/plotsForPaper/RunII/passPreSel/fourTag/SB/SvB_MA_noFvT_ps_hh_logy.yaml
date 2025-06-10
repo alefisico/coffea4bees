@@ -2,7 +2,7 @@ hists:
   data:
     process: data
     tag: fourTag
-    label: Four-tag Data
+    label: Four-tag data
     edgecolor: k
     fillcolor: k
     name: data
@@ -213,7 +213,7 @@ stack:
     tag: fourTag
     fillcolor: '#85D1FBff'
     edgecolor: k
-    label: TTbar
+    label: $t\bar{t}$
     values:
     - 326.41128789358066
     - 55.69836227835719
@@ -415,7 +415,7 @@ stack:
     tag: threeTag
     fillcolor: '#FFDF7Fff'
     edgecolor: k
-    label: Multijet
+    label: QCD multijet
     values:
     - 9996.145452231083
     - 1284.621594906436

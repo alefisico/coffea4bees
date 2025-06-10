@@ -3,7 +3,7 @@ hists:
     process: data
     tag: fourTag
     year: RunII
-    label: Four-tag Data
+    label: Four-tag data
     edgecolor: k
     fillcolor: k
     values:
@@ -199,14 +199,14 @@ hists:
     - 0.97275653
     - 0.98
     - 1.0
-    x_label: 'SvB MA Classifier Regressed P(Signal) $|$ P(HH) is largest '
+    x_label: $P_{HH}$
     under_flow: 39899.0
     over_flow: 0.0
   mix_vAve:
     process: mix_v0
     tag: fourTag
     year: RunII
-    label: Average of mixes
+    label: Mixed model
     edgecolor: r
     fillcolor: r
     linewidth: 2
@@ -613,7 +613,7 @@ stack:
     - 0.97275653
     - 0.98
     - 1.0
-    x_label: 'SvB MA Classifier Regressed P(Signal) $|$ P(HH) is largest '
+    x_label: $P_{HH}$
     under_flow: 85.75130972529277
     over_flow: 0.0
   TTToSemiLeptonic:
@@ -816,7 +816,7 @@ stack:
     - 0.97275653
     - 0.98
     - 1.0
-    x_label: 'SvB MA Classifier Regressed P(Signal) $|$ P(HH) is largest '
+    x_label: $P_{HH}$
     under_flow: 589.0589643014937
     over_flow: 0.0
   TTToHadronic:
@@ -825,7 +825,7 @@ stack:
     year: RunII
     fillcolor: '#85D1FBff'
     edgecolor: k
-    label: TTbar
+    label: $t\bar{t}$
     values:
     - 162.74155282389324
     - 75.3991520857391
@@ -1019,14 +1019,14 @@ stack:
     - 0.97275653
     - 0.98
     - 1.0
-    x_label: 'SvB MA Classifier Regressed P(Signal) $|$ P(HH) is largest '
+    x_label: $P_{HH}$
     under_flow: 1148.2743241712046
     over_flow: 0.0
   MultiJet:
     year: RunII
     fillcolor: '#FFDF7Fff'
     edgecolor: k
-    label: Multijet
+    label: QCD multijet
     sum:
       data_3tag:
         process: data
@@ -1226,7 +1226,7 @@ stack:
         - 0.97275653
         - 0.98
         - 1.0
-        x_label: 'SvB MA Classifier Regressed P(Signal) $|$ P(HH) is largest '
+        x_label: $P_{HH}$
         under_flow: 45702.79103133805
         over_flow: 0.0
       TTTo2L2Nu_3tag:
@@ -1427,7 +1427,7 @@ stack:
         - 0.97275653
         - 0.98
         - 1.0
-        x_label: 'SvB MA Classifier Regressed P(Signal) $|$ P(HH) is largest '
+        x_label: $P_{HH}$
         under_flow: -116.53179872127464
         over_flow: -0.0
       TTToSemiLeptonic_3tag:
@@ -1628,7 +1628,7 @@ stack:
         - 0.97275653
         - 0.98
         - 1.0
-        x_label: 'SvB MA Classifier Regressed P(Signal) $|$ P(HH) is largest '
+        x_label: $P_{HH}$
         under_flow: -2080.0553154969143
         over_flow: -0.0
       TTToHadronic_3tag:
@@ -1829,7 +1829,7 @@ stack:
         - 0.97275653
         - 0.98
         - 1.0
-        x_label: 'SvB MA Classifier Regressed P(Signal) $|$ P(HH) is largest '
+        x_label: $P_{HH}$
         under_flow: -7022.207156109713
         over_flow: -0.0
     values:
@@ -1930,7 +1930,7 @@ stack:
     - 0.14864725765265868
     centers: *id001
     edges: *id002
-    x_label: 'SvB MA Classifier Regressed P(Signal) $|$ P(HH) is largest '
+    x_label: $P_{HH}$
     under_flow: 36483.996761010145
     over_flow: 0.0
 ratio:
@@ -2463,4 +2463,5 @@ kwargs:
   rlabel: Data / Model
   ylabel: Events / bin
   write_yaml: true
+  ylim: [0.1,10_000]
 file_name: SvB_MA_noFvT.ps_hh_ave
