@@ -152,7 +152,7 @@ do
                 else
                     tmpDir=${currentDir}/stats_analysis
                 fi
-                plotImpacts.py -i impacts_combine_${iclass}_exp.json -o impacts_combine_${iclass}_exp_HH --POI r${signallabel} --per-page 20 --left-margin 0.3 --height 400 --label-size 0.04 --translate ${tmpDir}/nuisance_names.json
+                plotImpacts.py -i impacts_combine_${iclass}_exp.json -o impacts_combine_${iclass}_exp_HH --POI r${signallabel} --per-page 20 --left-margin 0.3 --height 400 --label-size 0.04 --translate ${tmpDir}/nuisance_names.json --blind
                 mkdir -p impacts/
                 mv higgsCombine*Fit* impacts/
             # done
@@ -167,11 +167,9 @@ do
             echo "Running goodness of fit test on data"
             combine -M GoodnessOfFit ${datacard}.root --algo saturated  \
                 -n _${iclass}${blind_label}_gof_data \
-                --setParameters ${signal_parameter} \
+                --setParameters ${signal_parameter},rggHH_kl_0_kt_1_13p0TeV_hbbhbb=0,rggHH_kl_2p45_kt_1_13p0TeV_hbbhbb=0,rggHH_kl_5_kt_1_13p0TeV_hbbhbb=0 \
                 > gof_data_${datacard}_${iclass}${blind_label}.txt
             cat gof_data_${datacard}_${iclass}${blind_label}.txt
-                # --freezeParameters rggHH_kl_0_kt_1_13p0TeV_hbbhbb,rggHH_kl_2p45_kt_1_13p0TeV_hbbhbb,rggHH_kl_5_kt_1_13p0TeV_hbbhbb \
-                # --setParameters rggHH_kl_0_kt_1_13p0TeV_hbbhbb=0,rggHH_kl_2p45_kt_1_13p0TeV_hbbhbb=0,rggHH_kl_5_kt_1_13p0TeV_hbbhbb=0 \
             
             # echo "Running goodness of fit test on toys"
             combine -M GoodnessOfFit ${datacard}.root --algo saturated  \
