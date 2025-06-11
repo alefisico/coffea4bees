@@ -5,6 +5,7 @@ hists:
 stack:
   TTbar: tt_stack_1
   Multijet: multijet_stack_2
+  HH4b: multijet_stack_2  
 
 ratio:
   ratio_dataToBkg: histdataHHbb_2016__10

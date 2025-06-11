@@ -48,6 +48,16 @@ stack:
     under_flow: 0
     over_flow: 0
 
+  HH4b:
+    process: HH4b
+    fillcolor: "#e42536"            
+    edgecolor: k
+    label: HH4b ($\times \mu_{fit}$ stacked) 
+    x_label: '$P_{HH}$'
+    under_flow: 0
+    over_flow: 0
+
+
 
 ratio:
   ratio_dataToBkg:
