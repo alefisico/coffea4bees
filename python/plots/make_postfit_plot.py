@@ -118,7 +118,10 @@ if __name__ == '__main__':
         CMS.SetAlternative2DColor(new_cov, CMS.cmsStyle)
         # Allow to adjust palette position
         CMS.UpdatePalettePosition(new_cov, canv)
-        CMS.SaveCanvas(canv, f"{args.output}/bkg_covariance.pdf")
+        output_file = f"{args.output}/bkg_covariance"
+        CMS.SaveCanvas(canv, f"{output_file}.pdf", close=False)
+        CMS.SaveCanvas(canv, f"{output_file}.png", close=False)
+        CMS.SaveCanvas(canv, f"{output_file}.C")
 
 
     for i, ichannel in enumerate(channels):
@@ -147,10 +150,10 @@ if __name__ == '__main__':
     print(f"NUmber of bkg events in last bin: {hists['TotalBkg'].GetBinContent(hists['TotalBkg'].GetNbinsX())}")
     
     # Remove data points in hists['data'] that are higher than 0.5 in X
-    for bin_idx in range(1, hists['data'].GetNbinsX() + 1):
-        if hists['data'].GetBinCenter(bin_idx) > 0.12:
-            hists['data'].SetBinContent(bin_idx, 0)
-            hists['data'].SetBinError(bin_idx, 0)
+    # for bin_idx in range(1, hists['data'].GetNbinsX() + 1):
+    #     if hists['data'].GetBinCenter(bin_idx) > 0.12:
+    #         hists['data'].SetBinContent(bin_idx, 0)
+    #         hists['data'].SetBinError(bin_idx, 0)
     
     xmax = hists['TotalBkg'].GetXaxis().GetXmax()
     ymax = hists['TotalBkg'].GetMaximum()*1.2
@@ -160,7 +163,7 @@ if __name__ == '__main__':
     CMS.SetLumi("")
     CMS.SetEnergy("13")
     CMS.ResetAdditionalInfo()
-    nominal_can = CMS.cmsDiCanvas('nominal_can',0,xmax,0.1,ymax,0.8,1.2,
+    nominal_can = CMS.cmsDiCanvas('nominal_can',0,xmax,0.1,ymax,0.5,1.5,
                                   "SvB MA Classifier Regressed P(Signal) | P(HH) is largest",
                                   "Events", 'Data/Pred.',
                                   square=CMS.kSquare, extraSpace=0.05, iPos=iPos)
@@ -168,14 +171,20 @@ if __name__ == '__main__':
     leg = CMS.cmsLeg(0.70, 0.89 - 0.05 * 4, 0.99, 0.89, textSize=0.04)
 
     stack = ROOT.THStack()
-    CMS.cmsDrawStack(stack, leg, {'ttbar': hists[tt].Clone(), 'Multijet': hists[mj].Clone() }, data= hists['data'], palette=['#85D1FBff', '#FFDF7Fff'] )
+    CMS.cmsDrawStack(stack, leg, {'ttbar': hists[tt], 'Multijet': hists[mj] }, data= hists['data'], palette=['#85D1FBff', '#FFDF7Fff'] )
+    if 'mixed' in args.input_file: 
+        leg.Clear()
+        leg.AddEntry( hists[mj], 'Multijet', 'f' )
+        leg.AddEntry( hists[tt], 'ttbar', 'f' )
+        leg.AddEntry( hists['data'], 'Mixed-Data', 'lp' )
     CMS.GetcmsCanvasHist(nominal_can.cd(1)).GetYaxis().SetTitleOffset(1.5)
     CMS.GetcmsCanvasHist(nominal_can.cd(1)).GetYaxis().SetTitleSize(0.05)
     CMS.GetcmsCanvasHist(nominal_can.cd(1)).Draw('AXISSAME')
 
-    hists[signal].Scale( 100 )
-    leg.AddEntry( hists[signal], 'HH4b (x100)', 'lp' )
-    CMS.cmsDraw( hists[signal], 'histsame', fstyle=0, marker=1, alpha=1, lcolor=ROOT.TColor.GetColor("#e42536" ), fcolor=ROOT.TColor.GetColor("#e42536"))
+    hsignal = hists[signal].Clone("hsignal")
+    hsignal.Scale( 100 )
+    leg.AddEntry( hsignal, 'HH4b (x100)', 'lp' )
+    CMS.cmsDraw( hsignal, 'histsame', fstyle=0, marker=1, alpha=1, lcolor=ROOT.TColor.GetColor("#e42536" ), fcolor=ROOT.TColor.GetColor("#e42536"))
     nominal_can.cd(1).SetLogy(True)
 
     nominal_can.cd(2)
@@ -187,8 +196,12 @@ if __name__ == '__main__':
         bkg_syst.SetBinError(ibin, np.sqrt(hists['cov_matrix'].GetBinContent(ibin, ibin)) / hists['TotalBkg'].GetBinContent(ibin))
     CMS.cmsDraw( bkg_syst, 'E2', fstyle=3004, fcolor=ROOT.kBlack, marker=0 )
 
+    # print(hists[signal].GetBinContent(hists[signal].GetNbinsX()), hists['TotalBkg'].GetBinContent(hists['TotalBkg'].GetNbinsX()))
     ratio = hists['data'].Clone()
-    ratio.Divide( hists['TotalBkg'].Clone() )
+    denom = hists['TotalBkg'].Clone("denom")
+    if args.type_of_fit == 'fit_s': denom.Add(hists[signal].Clone("signal"))
+    # print(f"Ratio: {ratio.GetBinContent(ratio.GetNbinsX())}, denom: {denom.GetBinContent(denom.GetNbinsX())}")
+    ratio.Divide( denom )
     # CMS.cmsDraw( ratio, 'PE same', mcolor=ROOT.kBlack )
     ratio.Draw("PE same")
     oldSize = ratio.GetMarkerSize()
@@ -205,4 +218,7 @@ if __name__ == '__main__':
     CMS.GetcmsCanvasHist(nominal_can.cd(2)).GetXaxis().SetTitleOffset(1.5)
     CMS.GetcmsCanvasHist(nominal_can.cd(2)).GetYaxis().SetTitleOffset(0.8)
 
-    CMS.SaveCanvas( nominal_can, f"{args.output}/SvB_MA_postfitplots_{args.type_of_fit}.pdf" )
+    output_file = f"{args.output}/SvB_MA_postfitplots_{args.type_of_fit}"
+    CMS.SaveCanvas(nominal_can, f"{output_file}.pdf", close=False )
+    CMS.SaveCanvas(nominal_can, f"{output_file}.png", close=False )
+    CMS.SaveCanvas(nominal_can, f"{output_file}.C" )

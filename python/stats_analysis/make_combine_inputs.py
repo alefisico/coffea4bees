@@ -334,6 +334,9 @@ def create_combine_root_file( file_to_convert,
                                             )
             cb.SetGroup("mtop", mtopSysts)
             cb.SetGroup("others", othersSysts)
+            cb.SetGroup("signal_norm_xsbr", [
+                'pdf_Higgs_ggHH', 'BR_hbb', 'THU_HH'])
+            cb.SetGroup("signal_norm_xs", ['THU_HH', 'pdf_Higgs_ggHH'])
 
             cb.cp().backgrounds().ExtractShapes(
                 output, '$BIN/$PROCESS', '$BIN/$PROCESS_$SYSTEMATIC')
