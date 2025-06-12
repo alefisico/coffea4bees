@@ -530,6 +530,35 @@ def _plot_from_dict(plot_data: Dict[str, Any], **kwargs) -> Tuple[plt.Figure, pl
                                 linewidth=0.0,
                                 zorder=1
                             )
+                    elif error_bar_type == "step":
+
+                        hist_obj = plot_helpers.make_hist(
+                            edges=ratio_data["edges"],
+                            values=ratio_data["ratio"],
+                            variances=ratio_data["variances"],
+                            x_label=ratio_data.get("x_label",""),
+                            under_flow=ratio_data.get("under_flow",0),
+                            over_flow=ratio_data.get("over_flow", 0),
+                            add_flow=kwargs.get("add_flow", False)
+                        )
+
+                        _plot_options = {
+                            "density": False,
+                            "label": ratio_data.get("label", ""),
+                            "color": ratio_data.get('fillcolor', 'k'),
+                            "histtype": kwargs.get("histtype", ratio_data.get("type", "errorbar")),
+                            "linewidth": kwargs.get("linewidth", ratio_data.get("linewidth", 2)),
+                            "yerr": False,
+                        }
+
+                        #if kwargs.get("histtype", hist_data.get("histtype", "errorbar")) in ["errorbar"]:
+                        #    _plot_options["markersize"] = 12
+                        #    _plot_options["yerr"] = True
+
+                        hist_obj.plot(**_plot_options)[0]
+
+
+
                     else:
                         ratio_ax.errorbar(
                             ratio_data["centers"],
