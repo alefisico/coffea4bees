@@ -64,9 +64,9 @@ class analysis(processor.ProcessorABC):
         selFatJet = event.FatJet[event.FatJet.pt > 300]
         selFatJet = selFatJet[ak.num(selFatJet.subjets, axis=2) > 1]
 
-        print(f" fields FatJets: {selFatJet.fields}")
-        print(f" fields nSubJets: {selFatJet.subjets.fields}")
-        print(f" nSubJets: {ak.num(selFatJet.subjets, axis=1)}")
+        #print(f" fields FatJets: {selFatJet.fields}")
+        #print(f" fields nSubJets: {selFatJet.subjets.fields}")
+        #print(f" nSubJets: {ak.num(selFatJet.subjets, axis=1)}")
 
         #selFatJet = selFatJet[ak.num(selFatJet.subjets) > 1]
         event["selFatJet"] = selFatJet
@@ -101,7 +101,7 @@ class analysis(processor.ProcessorABC):
         # Event selection
         #
 
-        print(f"Number of selected Fat Jets: {ak.num(selev.selFatJet)}")
+        #print(f"Number of selected Fat Jets: {ak.num(selev.selFatJet)}")
         #print(f" Any passNFatJets: {ak.any(selev.passNFatJets)}")
         #print(f" Any passHLT: {ak.any(selev.passHLT)}")
         #print(f" FatJet pt: {selev.selFatJet.pt}")
@@ -109,12 +109,12 @@ class analysis(processor.ProcessorABC):
         #print(f" nSubJets: {ak.num(selev.selFatJet.subjets, axis=2)}")
         #print(f" subjet pt: {selev.selFatJet.pt[0:10]}")
 
-        print(f" FatJet pt: {selev.selFatJet.pt}")
-        print(f" FatJet Subjet pt pt: {selev.selFatJet.subjets.pt}")
-        print(f" FatJet subjet pt A: {selev.selFatJet.subjets[:,:,0].pt}")
-        print(f" FatJet subjet pt B: {selev.selFatJet.subjets[:,:,1].pt}")
-        print(f" FatJet subjet len(: {len(selev.selFatJet.subjets[:,:,0].pt)}")
-        print(f" SubJets fields: {selev.selFatJet.subjets.fields}")
+        #print(f" FatJet pt: {selev.selFatJet.pt}")
+        #print(f" FatJet Subjet pt pt: {selev.selFatJet.subjets.pt}")
+        #print(f" FatJet subjet pt A: {selev.selFatJet.subjets[:,:,0].pt}")
+        #print(f" FatJet subjet pt B: {selev.selFatJet.subjets[:,:,1].pt}")
+        #print(f" FatJet subjet len(: {len(selev.selFatJet.subjets[:,:,0].pt)}")
+        #print(f" SubJets fields: {selev.selFatJet.subjets.fields}")
         #
         # btagDeepB
         #
@@ -177,21 +177,21 @@ class analysis(processor.ProcessorABC):
         #print("pt has_nan", has_nan, "\n")
         #print("is None loop",   np.any([ v == None for v in rotated_pt_A_pos_dphi.tolist()]), "\n")
 
-        print("fat jet pt0",    np.any([ v == None for v in selev.selFatJet.pt.to_numpy().tolist()]), "\n")
-        print("fat jet eta0",   np.any([ v == None for v in selev.selFatJet.eta.to_numpy().tolist()]), "\n")
-        print("fat jet phi0",   np.any([ v == None for v in selev.selFatJet.phi.to_numpy().tolist()]), "\n")
-        print("fat jet mass0",  np.any([ v == None for v in selev.selFatJet.mass.to_numpy().tolist()]), "\n")
-
-
-        print("pt0",    np.any([ v == None for v in selev.selFatJet.subjets[:, :, 0].pt.to_numpy().tolist()]), "\n")
-        print("eta0",   np.any([ v == None for v in selev.selFatJet.subjets[:, :, 0].eta.to_numpy().tolist()]), "\n")
-        print("phi0",   np.any([ v == None for v in selev.selFatJet.subjets[:, :, 0].phi.to_numpy().tolist()]), "\n")
-        print("mass0",  np.any([ v == None for v in selev.selFatJet.subjets[:, :, 0].mass.to_numpy().tolist()]), "\n")
-
-        print("pt0",    np.any([ v == None for v in selev.selFatJet.subjets[:, :, 1].pt.to_numpy().tolist()]), "\n")
-        print("eta0",   np.any([ v == None for v in selev.selFatJet.subjets[:, :, 1].eta.to_numpy().tolist()]), "\n")
-        print("phi0",   np.any([ v == None for v in selev.selFatJet.subjets[:, :, 1].phi.to_numpy().tolist()]), "\n")
-        print("mass0",  np.any([ v == None for v in selev.selFatJet.subjets[:, :, 1].mass.to_numpy().tolist()]), "\n")
+#        print("fat jet pt0",    np.any([ v == None for v in selev.selFatJet.pt.to_numpy().tolist()]), "\n")
+#        print("fat jet eta0",   np.any([ v == None for v in selev.selFatJet.eta.to_numpy().tolist()]), "\n")
+#        print("fat jet phi0",   np.any([ v == None for v in selev.selFatJet.phi.to_numpy().tolist()]), "\n")
+#        print("fat jet mass0",  np.any([ v == None for v in selev.selFatJet.mass.to_numpy().tolist()]), "\n")
+#
+#
+#        print("pt0",    np.any([ v == None for v in selev.selFatJet.subjets[:, :, 0].pt.to_numpy().tolist()]), "\n")
+#        print("eta0",   np.any([ v == None for v in selev.selFatJet.subjets[:, :, 0].eta.to_numpy().tolist()]), "\n")
+#        print("phi0",   np.any([ v == None for v in selev.selFatJet.subjets[:, :, 0].phi.to_numpy().tolist()]), "\n")
+#        print("mass0",  np.any([ v == None for v in selev.selFatJet.subjets[:, :, 0].mass.to_numpy().tolist()]), "\n")
+#
+#        print("pt0",    np.any([ v == None for v in selev.selFatJet.subjets[:, :, 1].pt.to_numpy().tolist()]), "\n")
+#        print("eta0",   np.any([ v == None for v in selev.selFatJet.subjets[:, :, 1].eta.to_numpy().tolist()]), "\n")
+#        print("phi0",   np.any([ v == None for v in selev.selFatJet.subjets[:, :, 1].phi.to_numpy().tolist()]), "\n")
+#        print("mass0",  np.any([ v == None for v in selev.selFatJet.subjets[:, :, 1].mass.to_numpy().tolist()]), "\n")
 
 
 
@@ -300,9 +300,9 @@ class analysis(processor.ProcessorABC):
                            )
 
 
-        print(f" SubJets: {selev.selFatJet.subjets}")
-        print(f" SubJets fields: {selev.selFatJet.subjets.fields}")
-        selev["selFatJet_subjets"] = selev.selFatJet.subjets
+        #print(f" SubJets: {selev.selFatJet.subjets}")
+        #print(f" SubJets fields: {selev.selFatJet.subjets.fields}")
+        #selev["selFatJet_subjets"] = selev.selFatJet.subjets
         #print(f" SubJets pt: {selev.selFatJet_subjets.pt}")
 
         #
