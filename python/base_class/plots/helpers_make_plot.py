@@ -331,8 +331,7 @@ def _draw_plot_from_dict(plot_data: Dict[str, Any], **kwargs) -> None:
             ))
 
         # Draw the hists
-        hist_artists = []
-        hist_objs = []
+        hist_artists = {}
         for hist_proc_name, hist_data in plot_data.get("hists", {}).items():
             try:
                 hist_obj = plot_helpers.make_hist(
@@ -358,11 +357,13 @@ def _draw_plot_from_dict(plot_data: Dict[str, Any], **kwargs) -> None:
                     _plot_options["markersize"] = 12
                     _plot_options["yerr"] = True
 
-                hist_artists.append(hist_obj.plot(**_plot_options)[0])
+                hist_artists[hist_data.get("label")] = hist_obj.plot(**_plot_options)[0]
 
             except KeyError as e:
                 logger.error(f"Missing required key in histogram data: {e}")
                 raise
+
+
 
         # Set labels
         if kwargs.get("xlabel", None):
@@ -395,14 +396,35 @@ def _draw_plot_from_dict(plot_data: Dict[str, Any], **kwargs) -> None:
                 handles.append(h)
                 labels.append(l)
 
+            #
+            legend_reverse = True
+            if kwargs.get("legend_order", None):
+                legend_reverse = False
+                # Sort handles and labels based on legend_order
+                sorted_labels =  []
+                sorted_handles =  []
+                for i in kwargs.get("legend_order"):
+                    print(i)
+                    sorted_labels.append(i)
+                    sorted_handles.append(handles[labels.index(i)])
+
+
+                handles = sorted_handles
+                labels = sorted_labels
+
+
+
             plt.legend(
                 handles=handles,
                 labels=labels,
                 loc='best',
                 frameon=False,
-                reverse=True,
+                reverse=legend_reverse,
                 fontsize=kwargs.get('legend_fontsize', 22),
             )
+
+
+
 
         # Set limits
         if kwargs.get('ylim', False):
