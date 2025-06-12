@@ -3,7 +3,7 @@ hists:
                 process: data
                 tag: fourTag
                 year: RunII
-                label: Four-tag Data
+                label: Four-tag data
                 edgecolor: k
                 fillcolor: k            
 
@@ -44,7 +44,7 @@ stack:
                 tag: fourTag
                 fillcolor: "#85D1FBff"
                 edgecolor: k
-                label: TTbar
+                label: $t\bar{t}$
 
 
         MultiJet:

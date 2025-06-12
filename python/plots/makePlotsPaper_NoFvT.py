@@ -24,7 +24,7 @@ def plot(var, **kwargs):
 def doPlots(varList, debug=False):
 
 
-    plot("SvB_MA.ps_hh",      region="SB",yscale="log",norm=0,rebin=1,doratio=1,rlim=[0.5,1.5], write_yaml=True)
+    plot("SvB_MA_noFvT.ps_hh",region="SB",yscale="log",norm=0,rebin=1,doratio=1,rlim=[0.5,1.5], write_yaml=True)
 
 
 
