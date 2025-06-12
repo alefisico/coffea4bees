@@ -257,6 +257,8 @@ def compute_decluster_variables(clustered_splittings):
     clustered_splittings            = clustered_splittings[good_mask]
     # ------------------------------------------------------------
 
+    #print("events surviving good_mask:", ak.sum(good_mask))
+
     comb_z_plane_hat = z_axis.cross(clustered_splittings_pz0).unit
     decay_plane_hat = clustered_splittings_part_A_pz0.cross(clustered_splittings_part_B_pz0).unit
 
@@ -333,7 +335,7 @@ def compute_decluster_variables(clustered_splittings):
     clustered_splittings["mA_rotated"]        = clustered_splittings.rhoA * rotated_pt_A
     clustered_splittings["mB_rotated"]        = clustered_splittings.rhoB * rotated_pt_B
 
-    return
+    return clustered_splittings
 
 
 def rotateZ(particles, angle):

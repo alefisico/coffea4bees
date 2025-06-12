@@ -234,7 +234,9 @@ class analysis(processor.ProcessorABC):
         )
 
         # Look at this function
-        compute_decluster_variables(fat_jet_splittings_events)
+        fat_jet_splittings_events = compute_decluster_variables(fat_jet_splittings_events)
+#        print("new fields:", fat_jet_splittings_events.fields)
+
         fat_jet_splittings_events["splitting_name"] = "bb"
 
         #
@@ -312,6 +314,9 @@ class analysis(processor.ProcessorABC):
 
         # print(f" SubJets pt {selev.selFatJet_subjets.pt[0:5]}\n")
         # fill += Jet.plot(("subJets", "Selected Fat Jet SubJet"),   "selFatJet_subjets",  skip=["deepjet_c","deepjet_b","id_pileup","id_jet","n"], bins={"pt": (50, 0, 1000)})
+
+#        print("filling splitting_bb for", len(fat_jet_splittings_events), "events")
+
 
 #        for _s_type in cleaned_splitting_name:
         fill += ClusterHists( ("splitting_bb", "bb Splitting"), "splitting_bb" )
