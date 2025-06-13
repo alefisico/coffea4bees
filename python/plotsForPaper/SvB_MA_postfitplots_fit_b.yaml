@@ -765,6 +765,7 @@ ratio:
     - 0.9680851063829786
     - 0.9893617021276595
   band_dataToBkg:
+    label: Bkgd. Uncertainty  
     color: k
     type: band
     hatch: \\\
@@ -932,6 +933,8 @@ kwargs:
   write_yaml: false
   year_str: 133 $fb^{-1}$
   do_title: false
+  ratio_legend_order:
+   - Bkgd. Uncertainty
   text:
     region_text:
       text: Signal Region

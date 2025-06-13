@@ -70,6 +70,7 @@ ratio:
     color: k
     marker: o
   band_dataToBkg:
+    label: Bkgd. Uncertainty  
     color: k
     type: band
     hatch: \\\
@@ -94,6 +95,8 @@ kwargs:
   write_yaml: false
   year_str: 133 $fb^{-1}$
   do_title: False
+  ratio_legend_order:
+   - Bkgd. Uncertainty
   legend_order: ["Four-tag data", "HH4b ($\\times \\mu_{fit}$ stacked)", "QCD multijet", "$t\\bar{t}$", "HH4b (x100)"]
   text:
     region_text:

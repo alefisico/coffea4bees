@@ -60,6 +60,7 @@ ratio:
     color: k
     marker: o
   band_dataToBkg:
+    label: Bkgd. Uncertainty  
     color: k
     type: band
     hatch: \\\

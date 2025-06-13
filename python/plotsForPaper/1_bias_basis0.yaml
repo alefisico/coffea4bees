@@ -816,6 +816,7 @@ stack:
     - 1.0
 ratio:
   ratio_prefit:
+    label: Pre-fit  
     fillcolor: k
     type: step
     ratio:
@@ -1066,6 +1067,7 @@ ratio:
     - 0.9680851063829786
     - 0.9893617021276595
   ratio_postfit:
+    label: Post-fit  
     fillcolor: r
     type: step
     ratio:
@@ -1341,6 +1343,9 @@ kwargs:
   - Average QCD multijet
   - $t\bar{t}$
   - Fit (1 free parameter)
+  ratio_legend_order:
+   - Pre-fit
+   - Post-fit  
   text:
     region_text:
       text: Signal Region
