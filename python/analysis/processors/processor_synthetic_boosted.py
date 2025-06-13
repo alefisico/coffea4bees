@@ -11,7 +11,7 @@ import hist
 
 from analysis.helpers.event_selection import apply_event_selection
 from base_class.hist import Collection, Fill
-from jet_clustering.clustering_hist_templates import ClusterHists
+from jet_clustering.clustering_hist_templates import ClusterHistsBoosted
 from base_class.physics.object import Jet
 
 from jet_clustering.declustering import compute_decluster_variables
@@ -319,7 +319,7 @@ class analysis(processor.ProcessorABC):
 
 
 #        for _s_type in cleaned_splitting_name:
-        fill += ClusterHists( ("splitting_bb", "bb Splitting"), "splitting_bb" )
+        fill += ClusterHistsBoosted( ("splitting_bb", "bb Splitting"), "splitting_bb" )
 
         #
         # fill histograms

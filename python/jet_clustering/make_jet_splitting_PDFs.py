@@ -65,7 +65,8 @@ def make_PDFs_vs_Pt(config, output_file_name_vs_pT, year):
     varNames   = list(config[splittings[0]].keys())
 
 
-    pt_bins = [0, 140, 230, 320, 410, np.inf]
+    #pt_bins = [0, 140, 230, 320, 410, np.inf]
+    pt_bins = [300, 533, 766, np.inf]
 
     with open(output_file_name_vs_pT, 'w') as output_file_vs_pT:
 
@@ -102,8 +103,9 @@ def make_PDFs_vs_Pt(config, output_file_name_vs_pT, year):
 
                 for _iPt in range(len(pt_bins) - 1):
 
-                    cut_dict = plot_helpers.get_cut_dict("passPreSel", cfg.cutList)
-                    plot_dict = {"process":"data", "year":year, "tag":1,"region":sum, "pt":_iPt}
+                    cut_dict = plot_helpers.get_cut_dict("passNFatJets", cfg.cutList)
+                    #cut_dict = plot_helpers.get_cut_dict("passPreSel", cfg.cutList)
+                    plot_dict = {"process":"data", "year":year, "tag":sum,"region":sum, "pt":_iPt}
                     plot_dict = plot_dict | cut_dict
 
 
@@ -325,6 +327,8 @@ def doPlots(year, debug=False):
                  "X/2" : zA_l_mA_vl_mB_vl,
                  "3/2" : zA_l_mA_vl_mB_vl,
                  "X/X" : zA_l_mA_vl_mB_vl,
+
+                 "bb" : zA_mA_l_mB_l,
 
                 }
 

@@ -243,6 +243,7 @@ def compute_decluster_variables(clustered_splittings):
     print("  |A| = 0:     ", ak.sum(zero_A & ~bad_A))
     print("  |B| = 0:     ", ak.sum(zero_B & ~bad_B))
     print("  colinear AB: ", ak.sum(colinear))
+    print("\n")
     # -----------------------------------
 
    # ------------------------------------------------------------
