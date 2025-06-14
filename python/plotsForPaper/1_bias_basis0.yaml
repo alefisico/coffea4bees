@@ -205,7 +205,7 @@ hists:
   fit:
     process: fit
     tag: fourTag
-    label: Fit (1 free parameter)
+    label: "Fit (1 free parameter) "
     edgecolor: r
     fillcolor: r
     name: data
@@ -1342,7 +1342,7 @@ kwargs:
   - Average mixed models
   - Average QCD multijet
   - $t\bar{t}$
-  - Fit (1 free parameter)
+  - "Fit (1 free parameter) "
   ratio_legend_order:
    - Pre-fit
    - Post-fit  

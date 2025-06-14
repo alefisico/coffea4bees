@@ -13,3 +13,9 @@ python plots/plot_from_yaml.py --input_yaml_files plotsForPaper/Mixeddata_SvB_MA
 python plots/plot_from_yaml.py --input_yaml_files plotsForPaper/Mixeddata_SvB_MA_postfitplots_prefit.yaml   -o plotsForPaper/
 python plots/plot_from_yaml.py --input_yaml_files plotsForPaper/Mixeddata_SvB_MA_postfitplots_fit_s.yaml   -o plotsForPaper/
 
+
+
+python plots/variance_plot_from_yaml.py --input_yaml_files plotsForPaper/0_variance_multijet_ensemble_basis5.yaml   -o plotsForPaper/
+
+python plots/plot_from_yaml.py --input_yaml_files plotsForPaper/1_bias_basis0.yaml    -o plotsForPaper/
+

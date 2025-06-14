@@ -78,6 +78,7 @@ kwargs:
   ylabel: Events / bin
   rlabel: Pulls
   write_yaml: false
+  ratio_line_value: 0    
   year_str: 133 $fb^{-1}$
   do_title: False
   legend_order: ["Average mixed models", "Average QCD multijet", "$t\\bar{t}$", "Fit"]  

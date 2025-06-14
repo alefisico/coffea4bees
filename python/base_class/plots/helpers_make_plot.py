@@ -417,7 +417,7 @@ def _draw_plot_from_dict(plot_data: Dict[str, Any], **kwargs) -> None:
             plt.legend(
                 handles=handles,
                 labels=labels,
-                loc='best',
+                loc=kwargs.get("legend_loc",'best'),
                 frameon=False,
                 reverse=legend_reverse,
                 fontsize=kwargs.get('legend_fontsize', 22),
@@ -435,10 +435,11 @@ def _draw_plot_from_dict(plot_data: Dict[str, Any], **kwargs) -> None:
         # Add text annotations
         for _, _text_info in kwargs.get("text", {}).items():
             plt.text(_text_info["xpos"], _text_info["ypos"], _text_info["text"],
-                     horizontalalignment='center',
+                     horizontalalignment=_text_info.get("horizontalalignment",'center'),
                      verticalalignment='top',
                      transform=plt.gca().transAxes,
                      fontsize=_text_info.get("fontsize", 22),
+                     weight = _text_info.get("weight", 'normal'),
                      )
 
 
@@ -480,7 +481,7 @@ def _plot_from_dict(plot_data: Dict[str, Any], **kwargs) -> Tuple[plt.Figure, pl
 
         do_ratio = len(plot_data.get("ratio", {}))
         if do_ratio:
-            grid = fig.add_gridspec(2, 1, **RATIO_GRID_CONFIG)
+            grid = fig.add_gridspec(2, 1, **kwargs.get("ratio_grid_config",RATIO_GRID_CONFIG))
             main_ax = fig.add_subplot(grid[0])
         else:
             fig.add_axes((0.1, 0.15, 0.85, 0.8))
@@ -545,7 +546,7 @@ def _plot_from_dict(plot_data: Dict[str, Any], **kwargs) -> Tuple[plt.Figure, pl
                         legend_handles[label]  = proxy
 
 
-                    elif error_bar_type == "step":
+                    elif error_bar_type in ["step","fill"]:
 
                         hist_obj = plot_helpers.make_hist(
                             edges=ratio_data["edges"],
@@ -561,7 +562,7 @@ def _plot_from_dict(plot_data: Dict[str, Any], **kwargs) -> Tuple[plt.Figure, pl
                             "density": False,
                             "label": ratio_data.get("label", ""),
                             "color": ratio_data.get('fillcolor', 'k'),
-                            "histtype": kwargs.get("histtype", ratio_data.get("type", "errorbar")),
+                            "histtype": ratio_data.get("type", "errorbar"),
                             "linewidth": kwargs.get("linewidth", ratio_data.get("linewidth", 2)),
                             "yerr": False,
                         }
@@ -577,6 +578,24 @@ def _plot_from_dict(plot_data: Dict[str, Any], **kwargs) -> Tuple[plt.Figure, pl
                             # Extract the actual stairs object for the legend
                             if hasattr(stairs_artist, 'stairs') and stairs_artist.stairs is not None:
                                 legend_handles[label] = stairs_artist.stairs
+
+                        if ratio_data.get("type") == "fill":
+                            _plot_options_edge = {
+                                "density": False,
+                                "label": ratio_data.get("label", ""),
+                                "color": ratio_data.get('edgecolor', 'k'),
+                                "histtype": "step",
+                                "linewidth": kwargs.get("linewidth", ratio_data.get("linewidth", 2)),
+                                "yerr": False,
+                            }
+
+                            #if kwargs.get("histtype", hist_data.get("histtype", "errorbar")) in ["errorbar"]:
+                            #    _plot_options["markersize"] = 12
+                            #    _plot_options["yerr"] = True
+
+                            # Capture the plot handle - extract the stairs from StairsArtists
+                            plot_result = hist_obj.plot(**_plot_options_edge)
+
 
 
                     else:
