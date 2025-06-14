@@ -3,7 +3,7 @@ hists:
   data:
     process: data
     tag: fourTag
-    label: Four-tag data
+    label: Average mixed models
     edgecolor: k
     fillcolor: k
     name: data
@@ -11,17 +11,17 @@ hists:
     under_flow: 0
     over_flow: 0
 
-  HH4b:
-    process: GluGluToHHTo4B_cHHH1
+  fit:
+    process: fit
     tag: fourTag
-    label: HH4b (x100)
-    edgecolor: "#e42536"
-    fillcolor: "#e42536"            
-    histtype: step
+    label: Fit
+    edgecolor: r
+    fillcolor: r
+    name: data
     x_label: '$P_{HH}$'
     under_flow: 0
     over_flow: 0
-
+    histtype: step
 
 stack:
 
@@ -43,27 +43,22 @@ stack:
     tag: threeTag
     fillcolor: '#FFDF7Fff'
     edgecolor: k
-    label: QCD multijet
+    label: Average QCD multijet
     x_label: '$P_{HH}$'
     under_flow: 0
     over_flow: 0
 
 
 ratio:
-  ratio_dataToBkg:
-    numerator:
-      type: hists
-      key: data
-    denominator:
-      type: stack
-    uncertianty: nominal
-    color: k
-    marker: o
-  band_dataToBkg:
-    label: Bkgd. Uncertainty  
-    color: k
-    type: band
-    hatch: \\\
+  ratio_prefit:
+    fillcolor: k
+    type: step
+    
+  ratio_postfit:
+    fillcolor: r
+    type: step
+
+
 
 var: SvB_MA.ps_hh
 cut: passPreSel
@@ -75,24 +70,32 @@ kwargs:
   rebin: 1
   doratio: 1
   rlim:
-  - 0.5
-  - 1.5
+  - -5
+  - 5
   xlim:
   - 0
   - 1.0
   ylabel: Events / bin
-  rlabel: Data / bkg. 
+  rlabel: Pulls
   write_yaml: false
+  ratio_line_value: 0    
   year_str: 133 $fb^{-1}$
   do_title: False
+  legend_order: ["Average mixed models", "Average QCD multijet", "$t\\bar{t}$", "Fit"]  
   text:
     region_text:
        text: Signal Region
-       xpos: 0.5
+       xpos: 0.35
        ypos: 0.95
-#    reweight_text:
-#       text: Including FvT reweighting
-#       xpos: 0.775
-#       ypos: 0.725
-#       fontsize: 20
+    chi2_header:
+       text: $\chi^2$/dof = 1.6
+       xpos: 0.775
+       ypos: 0.725
+       fontsize: 20
+    pvalue_header:
+       text: p-value = 0%
+       xpos: 0.775
+       ypos: 0.665
+       fontsize: 20
+       
 file_name: SvB_MA_from_dot_C       

@@ -417,7 +417,7 @@ def _draw_plot_from_dict(plot_data: Dict[str, Any], **kwargs) -> None:
             plt.legend(
                 handles=handles,
                 labels=labels,
-                loc='best',
+                loc=kwargs.get("legend_loc",'best'),
                 frameon=False,
                 reverse=legend_reverse,
                 fontsize=kwargs.get('legend_fontsize', 22),
@@ -435,10 +435,11 @@ def _draw_plot_from_dict(plot_data: Dict[str, Any], **kwargs) -> None:
         # Add text annotations
         for _, _text_info in kwargs.get("text", {}).items():
             plt.text(_text_info["xpos"], _text_info["ypos"], _text_info["text"],
-                     horizontalalignment='center',
+                     horizontalalignment=_text_info.get("horizontalalignment",'center'),
                      verticalalignment='top',
                      transform=plt.gca().transAxes,
                      fontsize=_text_info.get("fontsize", 22),
+                     weight = _text_info.get("weight", 'normal'),
                      )
 
 
@@ -480,7 +481,7 @@ def _plot_from_dict(plot_data: Dict[str, Any], **kwargs) -> Tuple[plt.Figure, pl
 
         do_ratio = len(plot_data.get("ratio", {}))
         if do_ratio:
-            grid = fig.add_gridspec(2, 1, **RATIO_GRID_CONFIG)
+            grid = fig.add_gridspec(2, 1, **kwargs.get("ratio_grid_config",RATIO_GRID_CONFIG))
             main_ax = fig.add_subplot(grid[0])
         else:
             fig.add_axes((0.1, 0.15, 0.85, 0.8))
@@ -511,9 +512,13 @@ def _plot_from_dict(plot_data: Dict[str, Any], **kwargs) -> Tuple[plt.Figure, pl
                 linewidth=2.0
             )
 
+            legend_handles = {}  # Store handles for legend
+
             for ratio_name, ratio_data in plot_data["ratio"].items():
                 try:
                     error_bar_type = ratio_data.get("type", "bar")
+                    label = ratio_data.get("label", ratio_name)  # Use ratio_name as fallback
+
                     if error_bar_type == "band":
                         # Only works for constant bin size
                         bin_width = (ratio_data["centers"][1] - ratio_data["centers"][0])
@@ -530,8 +535,71 @@ def _plot_from_dict(plot_data: Dict[str, Any], **kwargs) -> Tuple[plt.Figure, pl
                                 linewidth=0.0,
                                 zorder=1
                             )
+
+                        # Create a proxy artist for the legend
+                        from matplotlib.patches import Rectangle
+                        proxy = Rectangle((0, 0), 1, 1,
+                                          hatch=ratio_data.get("hatch", "/"),
+                                          edgecolor=ratio_data.get("color", "black"),
+                                          facecolor=ratio_data.get("facecolor", 'none'),
+                                          linewidth=0.0)
+                        legend_handles[label]  = proxy
+
+
+                    elif error_bar_type in ["step","fill"]:
+
+                        hist_obj = plot_helpers.make_hist(
+                            edges=ratio_data["edges"],
+                            values=ratio_data["ratio"],
+                            variances=ratio_data["variances"],
+                            x_label=ratio_data.get("x_label",""),
+                            under_flow=ratio_data.get("under_flow",0),
+                            over_flow=ratio_data.get("over_flow", 0),
+                            add_flow=kwargs.get("add_flow", False)
+                        )
+
+                        _plot_options = {
+                            "density": False,
+                            "label": ratio_data.get("label", ""),
+                            "color": ratio_data.get('fillcolor', 'k'),
+                            "histtype": ratio_data.get("type", "errorbar"),
+                            "linewidth": kwargs.get("linewidth", ratio_data.get("linewidth", 2)),
+                            "yerr": False,
+                        }
+
+                        #if kwargs.get("histtype", hist_data.get("histtype", "errorbar")) in ["errorbar"]:
+                        #    _plot_options["markersize"] = 12
+                        #    _plot_options["yerr"] = True
+
+                        # Capture the plot handle - extract the stairs from StairsArtists
+                        plot_result = hist_obj.plot(**_plot_options)
+                        if plot_result and len(plot_result) > 0:
+                            stairs_artist = plot_result[0]
+                            # Extract the actual stairs object for the legend
+                            if hasattr(stairs_artist, 'stairs') and stairs_artist.stairs is not None:
+                                legend_handles[label] = stairs_artist.stairs
+
+                        if ratio_data.get("type") == "fill":
+                            _plot_options_edge = {
+                                "density": False,
+                                "label": ratio_data.get("label", ""),
+                                "color": ratio_data.get('edgecolor', 'k'),
+                                "histtype": "step",
+                                "linewidth": kwargs.get("linewidth", ratio_data.get("linewidth", 2)),
+                                "yerr": False,
+                            }
+
+                            #if kwargs.get("histtype", hist_data.get("histtype", "errorbar")) in ["errorbar"]:
+                            #    _plot_options["markersize"] = 12
+                            #    _plot_options["yerr"] = True
+
+                            # Capture the plot handle - extract the stairs from StairsArtists
+                            plot_result = hist_obj.plot(**_plot_options_edge)
+
+
+
                     else:
-                        ratio_ax.errorbar(
+                        handle = ratio_ax.errorbar(
                             ratio_data["centers"],
                             ratio_data["ratio"],
                             yerr=ratio_data["error"],
@@ -540,6 +608,9 @@ def _plot_from_dict(plot_data: Dict[str, Any], **kwargs) -> Tuple[plt.Figure, pl
                             linestyle=ratio_data.get("linestyle", "none"),
                             markersize=ratio_data.get("markersize", 4),
                         )
+                        legend_handles[label] = handle
+
+
                 except KeyError as e:
                     logger.error(f"Missing required key in ratio data: {e}")
                     raise
@@ -549,6 +620,17 @@ def _plot_from_dict(plot_data: Dict[str, Any], **kwargs) -> Tuple[plt.Figure, pl
             plt.ylabel(plt.gca().get_ylabel(), loc='center', fontsize=kwargs.get('rlabel_fontsize', 22))
             plt.xlabel(kwargs.get("xlabel", top_xlabel), loc='right', fontsize=kwargs.get('xlabel_fontsize', 22))
             plt.ylim(*kwargs.get('rlim', [0, 2]))
+
+            if kwargs.get("ratio_legend_order", {}):
+                handles = []
+                labels = []
+                for _r_label in kwargs.get("ratio_legend_order", {}):
+                    if _r_label in legend_handles:
+                        labels.append(_r_label)
+                        handles.append(legend_handles[_r_label])
+
+                print(handles, labels)
+                ratio_ax.legend(handles, labels, ncol=2, loc=kwargs.get("ratio_legend_loc",'upper left'))  # or specify location like loc='upper right'
 
         return fig, main_ax, ratio_ax
 
