@@ -324,7 +324,7 @@ stack:
     year: RunII
     fillcolor: '#FFDF7Fff'
     edgecolor: k
-    label: Multijet
+    label: QCD multijet
     sum:
       data_3tag:
         process: data
@@ -966,6 +966,7 @@ ratio:
     - 1.0
     centers: *id001
   band_dataToBkg:
+    label: Stat. Uncertainty  
     color: k
     type: band
     hatch: \\\
@@ -1082,11 +1083,16 @@ kwargs:
   xlim:
   - 0
   - 1.0
+  ylim:
+  - 0.002
+  - 15000
   ylabel: Events / bin
   rlabel: Data / bkg. 
   write_yaml: false
   year_str: 133 $fb^{-1}$
   do_title: False
+  ratio_legend_order:
+   - Stat. Uncertainty
   text:
     region_text:
        text: Sideband
