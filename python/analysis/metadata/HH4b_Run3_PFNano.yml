@@ -1,0 +1,6 @@
+runner:
+  schema: PFNanoAODSchema
+  data_tier: nanoAOD
+
+config:
+  corrections_metadata: "analysis/metadata/corrections.yml"
