@@ -32,7 +32,7 @@ stack:
                 tag: fourTag
                 year: RunII
                 label: Data
-                fillcolor: xkcd:bright yellow
+                fillcolor: "#FFDF7Fff"
                 edgecolor: k
 
 ratios:

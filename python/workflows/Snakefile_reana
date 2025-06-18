@@ -48,12 +48,11 @@ rule analysis:
         unpacked_img=True,
         compute_backend="kubernetes",
         kubernetes_memory_limit="9.5Gi"
-        # compute_backend="htcondorcern",
     shell:
         """
         cd python/ 
-        echo "Blinding SR region"
-        sed -i 's/blind.*/blind: true/' {params.metadata}
+        #echo "Blinding SR region"
+        #sed -i 's/blind.*/blind: true/' {params.metadata}
         echo "Running with this metadata file"
         cat {params.metadata}
         echo "Running {params.isam} {params.iy} - output {output}"
@@ -356,7 +355,7 @@ rule make_combine_inputs:
             --syst_file {input.injsonsyst} \
             --bkg_syst_file {input.bkgsyst} \
             --output_dir output/datacards/ \
-            --rebin {params.rebin} --variable_binning \
+            --rebin {params.rebin} \
             --metadata python/stats_analysis/metadata/HH4b.yml
         echo "Making combine inputs stat only"
         python3 python/stats_analysis/make_combine_inputs.py \
@@ -365,7 +364,7 @@ rule make_combine_inputs:
             --syst_file {input.injsonsyst} \
             --bkg_syst_file {input.bkgsyst} \
             --output_dir output/datacards/stat_only/ \
-            --rebin {params.rebin} --variable_binning \
+            --rebin {params.rebin} \
             --metadata python/stats_analysis/metadata/HH4b.yml \
             --stat_only
         """
@@ -485,19 +484,19 @@ rule make_syst_breakdown:
         source stats_analysis/run_combine.sh ../output/datacards/ --systbreakdown
         """
 
-rule kappa_scan:
-    input: "output/datacards/datacard.root"
-    output: "output/datacards/kappa_scan.pdf"
-    container: "docker://docker.io/cmssw/el7:aarch64"
-    resources:
-        voms_proxy=True,
-        kerberos=True,
-        unpacked_img=True,
-        compute_backend="kubernetes"
-    shell:
-        """
-        cd python/stats_analysis/inference/
-        bash setup.sh
-        law run PlotUpperLimits --version dev --datacards output/datacards/datacard.txt --xsec fb --y-log --scan-parameters kl,20,20,5
-        cp data/store/PlotUpperLimits/hh_model__model_default/datacards_716fa319cb/m125.0/poi_r/dev/limits__poi_r__scan_kl_20.0_20.0_n5__params_r_gghh1.0_r_qqhh1.0_kt1.0_CV1.0_C2V1.0__fb_log.pdf ../../../output/datacards/kappa_scan.pdf
-        """
+# rule kappa_scan:
+#     input: "output/datacards/datacard.root"
+#     output: "output/datacards/kappa_scan.pdf"
+#     container: "docker://docker.io/cmssw/el7:aarch64"
+#     resources:
+#         voms_proxy=True,
+#         kerberos=True,
+#         unpacked_img=True,
+#         compute_backend="kubernetes"
+#     shell:
+#         """
+#         cd python/stats_analysis/inference/
+#         bash setup.sh
+#         law run PlotUpperLimits --version dev --datacards output/datacards/datacard.txt --xsec fb --y-log --scan-parameters kl,20,20,5
+#         cp data/store/PlotUpperLimits/hh_model__model_default/datacards_716fa319cb/m125.0/poi_r/dev/limits__poi_r__scan_kl_20.0_20.0_n5__params_r_gghh1.0_r_qqhh1.0_kt1.0_CV1.0_C2V1.0__fb_log.pdf ../../../output/datacards/kappa_scan.pdf
+#         """

@@ -23,6 +23,11 @@ outputs.extend(output_skimmer)
 
 # outputs.append()
 
+output_skimmer_boosted = [
+  f"{output_dir}/skimmer_boosted_job.log",
+]
+# outputs.extend(output_skimmer_boosted)
+
 output_synthetic_dataset_make = [
   f"{output_dir}/synthetic_dataset_make_dataset/picoaod_datasets_declustered_test_UL18.yml",
   f"{output_dir}/synthetic_dataset_analyze/test_synthetic_datasets.coffea",
@@ -163,6 +168,11 @@ rule skimmer_basic_test_job:
     container: analysis_container
     log: f"{output_dir}/skimmer_basic_test_job.log"
     shell: "source scripts/skimmer-basic-test-job.sh {output_dir}/ 2>&1 | tee -a {log}"  
+
+rule skimmer_boosted_job:
+    container: analysis_container
+    log: f"{output_dir}/skimmer_boosted_job.log"
+    shell: "source scripts/skimmer-boosted-job.sh {output_dir}/ 2>&1 | tee -a {log}"  
 
 rule synthetic_dataset_make_dataset:
     container: analysis_container

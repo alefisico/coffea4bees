@@ -47,23 +47,23 @@ STANDARD_AXES_CONFIG = {
 def plot_leadst_lines() -> None:
     """
     Plot leading and subleading lines for visualization.
-    
+
     This function plots two mathematical functions:
     1. f(x) = (360/x) - 0.5
     2. f(x) = max(1.5, (650/x) + 0.5)
-    
+
     The lines are plotted in red with a solid line style and default linewidth.
-    
+
     Raises:
         ValueError: If the plotting operation fails
     """
     try:
         def func4(x: float) -> float:
             """Calculate the first function value.
-            
+
             Args:
                 x: Input value
-                
+
             Returns:
                 float: Function value at x
             """
@@ -71,10 +71,10 @@ def plot_leadst_lines() -> None:
 
         def func6(x: float) -> float:
             """Calculate the second function value.
-            
+
             Args:
                 x: Input value
-                
+
             Returns:
                 float: Function value at x
             """
@@ -83,19 +83,19 @@ def plot_leadst_lines() -> None:
         # Plot func4 as a line plot
         x_func4 = np.linspace(100, 1100, 50)
         y_func4 = func4(x_func4)
-        plt.plot(x_func4, y_func4, 
-                 color=DEFAULT_COLOR, 
-                 linestyle=DEFAULT_LINESTYLE, 
+        plt.plot(x_func4, y_func4,
+                 color=DEFAULT_COLOR,
+                 linestyle=DEFAULT_LINESTYLE,
                  linewidth=DEFAULT_LINEWIDTH)
 
         # Plot func6 as a line plot
         x_func6 = np.linspace(100, 1100, 50)
         y_func6 = [func6(x) for x in x_func6]
-        plt.plot(x_func6, y_func6, 
-                 color=DEFAULT_COLOR, 
-                 linestyle=DEFAULT_LINESTYLE, 
+        plt.plot(x_func6, y_func6,
+                 color=DEFAULT_COLOR,
+                 linestyle=DEFAULT_LINESTYLE,
                  linewidth=DEFAULT_LINEWIDTH)
-                 
+
     except Exception as e:
         logger.error(f"Error in plot_leadst_lines: {str(e)}")
         raise ValueError(f"Failed to plot leading and subleading lines: {str(e)}")
@@ -103,23 +103,23 @@ def plot_leadst_lines() -> None:
 def plot_sublst_lines() -> None:
     """
     Plot subleading lines for visualization.
-    
+
     This function plots two mathematical functions:
     1. f(x) = (235/x)
     2. f(x) = max(1.5, (650/x) + 0.7)
-    
+
     The lines are plotted in red with a solid line style and default linewidth.
-    
+
     Raises:
         ValueError: If the plotting operation fails
     """
     try:
         def func4(x: float) -> float:
             """Calculate the first function value.
-            
+
             Args:
                 x: Input value
-                
+
             Returns:
                 float: Function value at x
             """
@@ -127,10 +127,10 @@ def plot_sublst_lines() -> None:
 
         def func6(x: float) -> float:
             """Calculate the second function value.
-            
+
             Args:
                 x: Input value
-                
+
             Returns:
                 float: Function value at x
             """
@@ -139,19 +139,19 @@ def plot_sublst_lines() -> None:
         # Plot func4 as a line plot
         x_func4 = np.linspace(100, 1100, 50)
         y_func4 = func4(x_func4)
-        plt.plot(x_func4, y_func4, 
-                 color=DEFAULT_COLOR, 
-                 linestyle=DEFAULT_LINESTYLE, 
+        plt.plot(x_func4, y_func4,
+                 color=DEFAULT_COLOR,
+                 linestyle=DEFAULT_LINESTYLE,
                  linewidth=DEFAULT_LINEWIDTH)
 
         # Plot func6 as a line plot
         x_func6 = np.linspace(100, 1100, 50)
         y_func6 = [func6(x) for x in x_func6]
-        plt.plot(x_func6, y_func6, 
-                 color=DEFAULT_COLOR, 
-                 linestyle=DEFAULT_LINESTYLE, 
+        plt.plot(x_func6, y_func6,
+                 color=DEFAULT_COLOR,
+                 linestyle=DEFAULT_LINESTYLE,
                  linewidth=DEFAULT_LINEWIDTH)
-                 
+
     except Exception as e:
         logger.error(f"Error in plot_sublst_lines: {str(e)}")
         raise ValueError(f"Failed to plot subleading lines: {str(e)}")
@@ -160,22 +160,22 @@ def plot_sublst_lines() -> None:
 def plot_border_SR() -> None:
     """
     Plot the border of the signal region using contour plots.
-    
+
     This function creates four contour plots representing the boundaries
     of the signal region using mathematical functions. The contours are
     plotted with a dashed orange-red line style.
-    
+
     Raises:
         ValueError: If the plotting operation fails
     """
     try:
         def func0(x: float, y: float) -> float:
             """Calculate the first boundary function value.
-            
+
             Args:
                 x: x-coordinate
                 y: y-coordinate
-                
+
             Returns:
                 float: Function value at (x,y)
             """
@@ -183,11 +183,11 @@ def plot_border_SR() -> None:
 
         def func1(x: float, y: float) -> float:
             """Calculate the second boundary function value.
-            
+
             Args:
                 x: x-coordinate
                 y: y-coordinate
-                
+
             Returns:
                 float: Function value at (x,y)
             """
@@ -195,11 +195,11 @@ def plot_border_SR() -> None:
 
         def func2(x: float, y: float) -> float:
             """Calculate the third boundary function value.
-            
+
             Args:
                 x: x-coordinate
                 y: y-coordinate
-                
+
             Returns:
                 float: Function value at (x,y)
             """
@@ -207,11 +207,11 @@ def plot_border_SR() -> None:
 
         def func3(x: float, y: float) -> float:
             """Calculate the fourth boundary function value.
-            
+
             Args:
                 x: x-coordinate
                 y: y-coordinate
-                
+
             Returns:
                 float: Function value at (x,y)
             """
@@ -229,23 +229,23 @@ def plot_border_SR() -> None:
         Z3 = func3(X, Y)
 
         # Create the plot
-        plt.contour(X, Y, Z0, levels=[1.90*1.90], 
-                    colors=BORDER_COLOR, 
-                    linestyles=BORDER_LINESTYLE, 
+        plt.contour(X, Y, Z0, levels=[1.90*1.90],
+                    colors=BORDER_COLOR,
+                    linestyles=BORDER_LINESTYLE,
                     linewidths=BORDER_LINEWIDTH)
-        plt.contour(X, Y, Z1, levels=[1.90*1.90], 
-                    colors=BORDER_COLOR, 
-                    linestyles=BORDER_LINESTYLE, 
+        plt.contour(X, Y, Z1, levels=[1.90*1.90],
+                    colors=BORDER_COLOR,
+                    linestyles=BORDER_LINESTYLE,
                     linewidths=BORDER_LINEWIDTH)
-        plt.contour(X, Y, Z2, levels=[1.90*1.90], 
-                    colors=BORDER_COLOR, 
-                    linestyles=BORDER_LINESTYLE, 
+        plt.contour(X, Y, Z2, levels=[1.90*1.90],
+                    colors=BORDER_COLOR,
+                    linestyles=BORDER_LINESTYLE,
                     linewidths=BORDER_LINEWIDTH)
-        plt.contour(X, Y, Z3, levels=[2.60*2.60], 
-                    colors=BORDER_COLOR, 
-                    linestyles=BORDER_LINESTYLE, 
+        plt.contour(X, Y, Z3, levels=[2.60*2.60],
+                    colors=BORDER_COLOR,
+                    linestyles=BORDER_LINESTYLE,
                     linewidths=BORDER_LINEWIDTH)
-                    
+
     except Exception as e:
         logger.error(f"Error in plot_border_SR: {str(e)}")
         raise ValueError(f"Failed to plot signal region border: {str(e)}")
@@ -254,7 +254,7 @@ def plot_border_SR() -> None:
 def _draw_plot_from_dict(plot_data: Dict[str, Any], **kwargs) -> None:
     """
     Draw a plot from a dictionary of plot data.
-    
+
     Args:
         plot_data: Dictionary containing plot data including stack and histograms
         **kwargs: Additional plotting options:
@@ -268,7 +268,7 @@ def _draw_plot_from_dict(plot_data: Dict[str, Any], **kwargs) -> None:
             - ylim: List[float] - Y-axis limits [min, max]
             - xlim: List[float] - X-axis limits [min, max]
             - add_flow: bool - Whether to add under/overflow bins
-            
+
     Raises:
         ValueError: If the plotting operation fails
         KeyError: If required data is missing from plot_data
@@ -331,8 +331,7 @@ def _draw_plot_from_dict(plot_data: Dict[str, Any], **kwargs) -> None:
             ))
 
         # Draw the hists
-        hist_artists = []
-        hist_objs = []
+        hist_artists = {}
         for hist_proc_name, hist_data in plot_data.get("hists", {}).items():
             try:
                 hist_obj = plot_helpers.make_hist(
@@ -357,23 +356,25 @@ def _draw_plot_from_dict(plot_data: Dict[str, Any], **kwargs) -> None:
                 if kwargs.get("histtype", hist_data.get("histtype", "errorbar")) in ["errorbar"]:
                     _plot_options["markersize"] = 12
                     _plot_options["yerr"] = True
-                    
-                hist_artists.append(hist_obj.plot(**_plot_options)[0])
-                
+
+                hist_artists[hist_data.get("label")] = hist_obj.plot(**_plot_options)[0]
+
             except KeyError as e:
                 logger.error(f"Missing required key in histogram data: {e}")
                 raise
 
+
+
         # Set labels
         if kwargs.get("xlabel", None):
             plt.xlabel(kwargs.get("xlabel"))
-        plt.xlabel(plt.gca().get_xlabel(), loc='right')
+        plt.xlabel(plt.gca().get_xlabel(), loc='right', fontsize=kwargs.get('xlabel_fontsize', 22))
 
         if kwargs.get("ylabel", None):
             plt.ylabel(kwargs.get("ylabel"))
         if norm:
             plt.ylabel(plt.gca().get_ylabel() + " (normalized)")
-        plt.ylabel(plt.gca().get_ylabel(), loc='top')
+        plt.ylabel(plt.gca().get_ylabel(), loc='top', fontsize=kwargs.get('ylabel_fontsize', 22))
 
         # Set scales
         if kwargs.get("yscale", None):
@@ -383,26 +384,65 @@ def _draw_plot_from_dict(plot_data: Dict[str, Any], **kwargs) -> None:
 
         # Add legend
         if kwargs.get('legend', True):
-            handles, labels = plt.gca().get_legend_handles_labels()
+            handles = []
+            labels = []
 
             for s in stack_patches:
                 handles.append(s)
                 labels.append(s.get_label())
 
+            data_handles, data_labels = plt.gca().get_legend_handles_labels()
+            for h, l in zip(data_handles, data_labels):
+                handles.append(h)
+                labels.append(l)
+
+            #
+            legend_reverse = True
+            if kwargs.get("legend_order", None):
+                legend_reverse = False
+                # Sort handles and labels based on legend_order
+                sorted_labels =  []
+                sorted_handles =  []
+                for i in kwargs.get("legend_order"):
+                    print(i)
+                    sorted_labels.append(i)
+                    sorted_handles.append(handles[labels.index(i)])
+
+
+                handles = sorted_handles
+                labels = sorted_labels
+
+
+
             plt.legend(
                 handles=handles,
                 labels=labels,
-                loc='best',
+                loc=kwargs.get("legend_loc",'best'),
                 frameon=False,
-                reverse=True,
+                reverse=legend_reverse,
+                fontsize=kwargs.get('legend_fontsize', 22),
             )
+
+
+
 
         # Set limits
         if kwargs.get('ylim', False):
             plt.ylim(*kwargs.get('ylim'))
         if kwargs.get('xlim', False):
             plt.xlim(*kwargs.get('xlim'))
-            
+
+        # Add text annotations
+        for _, _text_info in kwargs.get("text", {}).items():
+            plt.text(_text_info["xpos"], _text_info["ypos"], _text_info["text"],
+                     horizontalalignment=_text_info.get("horizontalalignment",'center'),
+                     verticalalignment='top',
+                     transform=plt.gca().transAxes,
+                     fontsize=_text_info.get("fontsize", 22),
+                     weight = _text_info.get("weight", 'normal'),
+                     )
+
+
     except Exception as e:
         logger.error(f"Error in _draw_plot_from_dict: {str(e)}")
         raise ValueError(f"Failed to draw plot from dictionary: {str(e)}")
@@ -411,7 +451,7 @@ def _draw_plot_from_dict(plot_data: Dict[str, Any], **kwargs) -> None:
 def _plot_from_dict(plot_data: Dict[str, Any], **kwargs) -> Tuple[plt.Figure, plt.Axes, Optional[plt.Axes]]:
     """
     Create a plot from a dictionary of plot data.
-    
+
     Args:
         plot_data: Dictionary containing plot data including stack, histograms, and ratio
         **kwargs: Additional plotting options:
@@ -421,13 +461,13 @@ def _plot_from_dict(plot_data: Dict[str, Any], **kwargs) -> Tuple[plt.Figure, pl
             - rlabel: str - Label for ratio plot
             - rlim: List[float] - Limits for ratio plot
             - xlabel: str - X-axis label
-            
+
     Returns:
         Tuple containing:
             - Figure object
             - Main axes object
             - Ratio axes object (if ratio plot is created, otherwise None)
-            
+
     Raises:
         ValueError: If the plotting operation fails
         KeyError: If required data is missing from plot_data
@@ -441,19 +481,20 @@ def _plot_from_dict(plot_data: Dict[str, Any], **kwargs) -> Tuple[plt.Figure, pl
 
         do_ratio = len(plot_data.get("ratio", {}))
         if do_ratio:
-            grid = fig.add_gridspec(2, 1, **RATIO_GRID_CONFIG)
+            grid = fig.add_gridspec(2, 1, **kwargs.get("ratio_grid_config",RATIO_GRID_CONFIG))
             main_ax = fig.add_subplot(grid[0])
         else:
             fig.add_axes((0.1, 0.15, 0.85, 0.8))
             main_ax = fig.gca()
             ratio_ax = None
 
-        year_str = plot_helpers.get_year_str(year=kwargs.get('year', "RunII"))
+        year_str = plot_helpers.get_year_str(year=kwargs.get("year_str",kwargs.get('year', "RunII")))
 
         hep.cms.label("Internal", data=True,
                       year=year_str, loc=0, ax=main_ax)
 
-        main_ax.set_title(f"{plot_helpers.get_region_str(plot_data['region'])}")
+        if kwargs.get("do_title", True):
+            main_ax.set_title(f"{plot_helpers.get_region_str(plot_data['region'])}")
 
         _draw_plot_from_dict(plot_data, **kwargs)
 
@@ -471,9 +512,13 @@ def _plot_from_dict(plot_data: Dict[str, Any], **kwargs) -> Tuple[plt.Figure, pl
                 linewidth=2.0
             )
 
+            legend_handles = {}  # Store handles for legend
+
             for ratio_name, ratio_data in plot_data["ratio"].items():
                 try:
                     error_bar_type = ratio_data.get("type", "bar")
+                    label = ratio_data.get("label", ratio_name)  # Use ratio_name as fallback
+
                     if error_bar_type == "band":
                         # Only works for constant bin size
                         bin_width = (ratio_data["centers"][1] - ratio_data["centers"][0])
@@ -490,8 +535,71 @@ def _plot_from_dict(plot_data: Dict[str, Any], **kwargs) -> Tuple[plt.Figure, pl
                                 linewidth=0.0,
                                 zorder=1
                             )
+
+                        # Create a proxy artist for the legend
+                        from matplotlib.patches import Rectangle
+                        proxy = Rectangle((0, 0), 1, 1,
+                                          hatch=ratio_data.get("hatch", "/"),
+                                          edgecolor=ratio_data.get("color", "black"),
+                                          facecolor=ratio_data.get("facecolor", 'none'),
+                                          linewidth=0.0)
+                        legend_handles[label]  = proxy
+
+
+                    elif error_bar_type in ["step","fill"]:
+
+                        hist_obj = plot_helpers.make_hist(
+                            edges=ratio_data["edges"],
+                            values=ratio_data["ratio"],
+                            variances=ratio_data["variances"],
+                            x_label=ratio_data.get("x_label",""),
+                            under_flow=ratio_data.get("under_flow",0),
+                            over_flow=ratio_data.get("over_flow", 0),
+                            add_flow=kwargs.get("add_flow", False)
+                        )
+
+                        _plot_options = {
+                            "density": False,
+                            "label": ratio_data.get("label", ""),
+                            "color": ratio_data.get('fillcolor', 'k'),
+                            "histtype": ratio_data.get("type", "errorbar"),
+                            "linewidth": kwargs.get("linewidth", ratio_data.get("linewidth", 2)),
+                            "yerr": False,
+                        }
+
+                        #if kwargs.get("histtype", hist_data.get("histtype", "errorbar")) in ["errorbar"]:
+                        #    _plot_options["markersize"] = 12
+                        #    _plot_options["yerr"] = True
+
+                        # Capture the plot handle - extract the stairs from StairsArtists
+                        plot_result = hist_obj.plot(**_plot_options)
+                        if plot_result and len(plot_result) > 0:
+                            stairs_artist = plot_result[0]
+                            # Extract the actual stairs object for the legend
+                            if hasattr(stairs_artist, 'stairs') and stairs_artist.stairs is not None:
+                                legend_handles[label] = stairs_artist.stairs
+
+                        if ratio_data.get("type") == "fill":
+                            _plot_options_edge = {
+                                "density": False,
+                                "label": ratio_data.get("label", ""),
+                                "color": ratio_data.get('edgecolor', 'k'),
+                                "histtype": "step",
+                                "linewidth": kwargs.get("linewidth", ratio_data.get("linewidth", 2)),
+                                "yerr": False,
+                            }
+
+                            #if kwargs.get("histtype", hist_data.get("histtype", "errorbar")) in ["errorbar"]:
+                            #    _plot_options["markersize"] = 12
+                            #    _plot_options["yerr"] = True
+
+                            # Capture the plot handle - extract the stairs from StairsArtists
+                            plot_result = hist_obj.plot(**_plot_options_edge)
+
+
+
                     else:
-                        ratio_ax.errorbar(
+                        handle = ratio_ax.errorbar(
                             ratio_data["centers"],
                             ratio_data["ratio"],
                             yerr=ratio_data["error"],
@@ -500,18 +608,32 @@ def _plot_from_dict(plot_data: Dict[str, Any], **kwargs) -> Tuple[plt.Figure, pl
                             linestyle=ratio_data.get("linestyle", "none"),
                             markersize=ratio_data.get("markersize", 4),
                         )
+                        legend_handles[label] = handle
+
+
                 except KeyError as e:
                     logger.error(f"Missing required key in ratio data: {e}")
                     raise
 
             # Set ratio plot labels and limits
             plt.ylabel(kwargs.get("rlabel", "Ratio"))
-            plt.ylabel(plt.gca().get_ylabel(), loc='center')
-            plt.xlabel(kwargs.get("xlabel", top_xlabel), loc='right')
+            plt.ylabel(plt.gca().get_ylabel(), loc='center', fontsize=kwargs.get('rlabel_fontsize', 22))
+            plt.xlabel(kwargs.get("xlabel", top_xlabel), loc='right', fontsize=kwargs.get('xlabel_fontsize', 22))
             plt.ylim(*kwargs.get('rlim', [0, 2]))
 
+            if kwargs.get("ratio_legend_order", {}):
+                handles = []
+                labels = []
+                for _r_label in kwargs.get("ratio_legend_order", {}):
+                    if _r_label in legend_handles:
+                        labels.append(_r_label)
+                        handles.append(legend_handles[_r_label])
+
+                print(handles, labels)
+                ratio_ax.legend(handles, labels, ncol=2, loc=kwargs.get("ratio_legend_loc",'upper left'))  # or specify location like loc='upper right'
+
         return fig, main_ax, ratio_ax
-        
+
     except Exception as e:
         logger.error(f"Error in _plot_from_dict: {str(e)}")
         raise ValueError(f"Failed to create plot from dictionary: {str(e)}")
@@ -520,16 +642,16 @@ def _plot_from_dict(plot_data: Dict[str, Any], **kwargs) -> Tuple[plt.Figure, pl
 def make_plot_from_dict(plot_data: Dict[str, Any], *, do2d: bool = False) -> Tuple[plt.Figure, Union[plt.Axes, Tuple[plt.Axes, plt.Axes]]]:
     """
     Create a plot from a dictionary of plot data.
-    
+
     Args:
         plot_data: Dictionary containing plot data and configuration
         do2d: Whether to create a 2D plot
-        
+
     Returns:
         Tuple containing:
             - Figure object
             - Axes object or tuple of axes objects (main and ratio)
-            
+
     Raises:
         ValueError: If the plotting operation fails
         KeyError: If required data is missing from plot_data
@@ -585,7 +707,7 @@ def make_plot_from_dict(plot_data: Dict[str, Any], *, do2d: bool = False) -> Tup
                 raise ValueError(f"Failed to save plot: {str(e)}")
 
         return fig, ax
-        
+
     except Exception as e:
         logger.error(f"Error in make_plot_from_dict: {str(e)}")
         raise ValueError(f"Failed to create plot: {str(e)}")
@@ -594,7 +716,7 @@ def make_plot_from_dict(plot_data: Dict[str, Any], *, do2d: bool = False) -> Tup
 def _plot2d_from_dict(plot_data: Dict[str, Any], **kwargs) -> Tuple[plt.Figure, plt.Axes]:
     """
     Create a 2D plot from a dictionary of plot data.
-    
+
     Args:
         plot_data: Dictionary containing plot data and configuration
         **kwargs: Additional plotting options:
@@ -605,12 +727,12 @@ def _plot2d_from_dict(plot_data: Dict[str, Any], **kwargs) -> Tuple[plt.Figure, 
             - plot_contour: bool - Whether to plot contour
             - plot_leadst_lines: bool - Whether to plot leading lines
             - plot_sublst_lines: bool - Whether to plot subleading lines
-            
+
     Returns:
         Tuple containing:
             - Figure object
             - Axes object
-            
+
     Raises:
         ValueError: If the plotting operation fails
         KeyError: If required data is missing from plot_data
@@ -647,7 +769,7 @@ def _plot2d_from_dict(plot_data: Dict[str, Any], **kwargs) -> Tuple[plt.Figure, 
             fig = plt.figure(figsize=(10*scale, 6*scale))
             gs = fig.add_gridspec(2, 2, width_ratios=[2, 1], height_ratios=[1, 1], wspace=0.3, hspace=0.4)
             ax_big = fig.add_subplot(gs[:, 0])
-            
+
             hist_obj_2d.plot2d(
                 cmap="turbo",
                 cmin=kwargs.get("rlim", [None, None])[0],
@@ -746,7 +868,7 @@ def _plot2d_from_dict(plot_data: Dict[str, Any], **kwargs) -> Tuple[plt.Figure, 
         ax.set_title(f"{plot_data['region']}  ({plot_data['cut']})", fontsize=16)
 
         return fig, ax
-        
+
     except Exception as e:
         logger.error(f"Error in _plot2d_from_dict: {str(e)}")
         raise ValueError(f"Failed to create 2D plot: {str(e)}")
