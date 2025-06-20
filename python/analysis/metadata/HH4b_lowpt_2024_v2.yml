@@ -7,7 +7,10 @@
 config:
   blind: false
   apply_FvT: false
-  apply_JCM: false
+  apply_JCM: true
+  apply_JCM_lowpt: true
+  JCM_file: "analysis/weights/JCM/2024_v2/jetCombinatoricModel_SB_2024_v2.yml"
+  JCM_lowpt_file: "analysis/weights/JCM/2024_v2/jetCombinatoricModel_SB_2024_v2_lowpt.yml"
   apply_trigWeight: true
   apply_btagSF: false
   apply_boosted_veto: false
