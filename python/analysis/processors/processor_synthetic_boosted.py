@@ -237,12 +237,12 @@ class analysis(processor.ProcessorABC):
         fat_jet_splittings_events = compute_decluster_variables(fat_jet_splittings_events)
 #        print("new fields:", fat_jet_splittings_events.fields)
 
-        fat_jet_splittings_events["splitting_name"] = "bb"
+        fat_jet_splittings_events["splitting_name"] = "1b0j/1b0j"
 
         #
         # Sort clusterings by type
         #
-        selev["splitting_bb"]   = fat_jet_splittings_events
+        selev["splitting_1b0j/1b0j"]   = fat_jet_splittings_events
 
 
 
@@ -319,7 +319,7 @@ class analysis(processor.ProcessorABC):
 
 
 #        for _s_type in cleaned_splitting_name:
-        fill += ClusterHistsBoosted( ("splitting_bb", "bb Splitting"), "splitting_bb" )
+        fill += ClusterHistsBoosted( ("splitting_1b0j/1b0j", "1b0j/1b0j Splitting"), "splitting_1b0j/1b0j" )
 
         #
         # fill histograms

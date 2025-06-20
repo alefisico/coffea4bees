@@ -328,9 +328,13 @@ def doPlots(year, debug=False):
                  "3/2" : zA_l_mA_vl_mB_vl,
                  "X/X" : zA_l_mA_vl_mB_vl,
 
-                 "bb" : zA_mA_l_mB_l,
-
                 }
+
+    # If doing boosted
+    # if doBoosted:
+    #     patterns["1b0j/1b0j"] = zA_mA_l_mB_l
+
+
 
     #
     #  Get All splittings

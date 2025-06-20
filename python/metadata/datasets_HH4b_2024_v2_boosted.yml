@@ -73,6 +73,17 @@ datasets:
       trigger:
       - PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepCSV_4p5
 
+  synthetic_data:
+    UL18:  
+      picoAOD:
+        files_template:
+        - /mnt/scratch/jalison/files/data_UL18A/picoAOD_seedXXX.root
+        - /mnt/scratch/jalison/files/data_UL18B/picoAOD_seedXXX.root
+        - /mnt/scratch/jalison/files/data_UL18C/picoAOD_seedXXX.root
+        - /mnt/scratch/jalison/files/data_UL18D/picoAOD_seedXXX.chunk0.root
+        - /mnt/scratch/jalison/files/data_UL18D/picoAOD_seedXXX.chunk1.root     
+    nSamples: 1
+    
   GluGluToHHTo4B_cHHH1:
     UL18:
       nanoAOD: /GluGluToHHTo4B_cHHH1_TuneCP5_PSWeights_13TeV-powheg-pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v1/NANOAODSIM
