@@ -144,7 +144,7 @@ class analysis(processor.ProcessorABC):
         subj            = selev.selFatJet.subjets            # (evt,fj,sj)
 
         # 1) numeric scores  → fill None, round, stringify
-        btag_num        = ak.fill_none(subj.btagDeepB, -2.0)
+        btag_num        = ak.fill_none(subj.pt, -2.0)
         flat_all        = ak.flatten(btag_num, axis=None)    # 1-D
         flat_all_str    = ak.Array(np.char.mod('%.3f',
                                                np.round(ak.to_numpy(flat_all), 3)))
