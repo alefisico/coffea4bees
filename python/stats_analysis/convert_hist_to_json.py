@@ -78,9 +78,9 @@ if __name__ == '__main__':
                 json_dict[ih][iprocess] = {}
                 for iy in coffea_hists[ih].axes[1]:
                     json_dict[ih][iprocess][iy] = {}
-                    for itag in range(len(coffea_hists[ih].axes[2])):
-                        json_dict[ih][iprocess][iy][codes['tag'][itag]] = {}
-                        for iregion in range(len(coffea_hists[ih].axes[3])):
+                    for itag in coffea_hists[ih].axes[2]:
+                        json_dict[ih][iprocess][iy][itag] = {}
+                        for iregion in coffea_hists[ih].axes[3]:
                             this_hist = {
                                 'process' : iprocess,
                                 'year' : iy,
@@ -93,7 +93,8 @@ if __name__ == '__main__':
                                     this_hist[iaxis.name] = sum
                                     
                             logging.info(f"Converting hist {ih} {this_hist}")
-                            json_dict[ih][iprocess][iy][codes['tag'][itag]][codes['region'][iregion]] = hist_to_json( coffea_hists[ih][this_hist] )
+                            json_dict[ih][iprocess][iy][itag][iregion] = hist_to_json( coffea_hists[ih][this_hist] )
+                            
     else:
         codes = {
             'region' : {
@@ -114,9 +115,9 @@ if __name__ == '__main__':
                     json_dict[ih][iprocess][iy] = {}
                     for ivar in coffea_hists[ih].axes[2]:
                         json_dict[ih][iprocess][iy][ivar] = {}
-                        for itag in range(len(coffea_hists[ih].axes[3])):
-                            json_dict[ih][iprocess][iy][ivar][codes['tag'][itag]] = {}
-                            for iregion in range(len(coffea_hists[ih].axes[4])):
+                        for itag in coffea_hists[ih].axes[3]:
+                            json_dict[ih][iprocess][iy][ivar][itag] = {}
+                            for iregion in coffea_hists[ih].axes[4]:
                                 this_hist = {
                                     'process' : iprocess,
                                     'year' : iy,
@@ -128,7 +129,7 @@ if __name__ == '__main__':
                                     # 'failSvB' : sum
                                 }
                                 logging.info(f"Converting hist {ih} {this_hist}")
-                                json_dict[ih][iprocess][iy][ivar][codes['tag'][itag]][codes['region'][iregion]] = hist_to_json( coffea_hists[ih][this_hist] )
+                                json_dict[ih][iprocess][iy][ivar][itag][iregion] = hist_to_json( coffea_hists[ih][this_hist] )
 
     logging.info(f"Saving histos in json format in {args.output}")
     output_dir = '/'.join( args.output.split('/')[:-1] )
