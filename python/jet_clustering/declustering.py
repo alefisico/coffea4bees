@@ -174,6 +174,7 @@ def get_list_of_ISR_splittings(splitting_types):
         #
         if (child_A_nBs > 0) and (child_B_nBs > 0):
             continue
+
         ISR_splittings.append(_s)
     ISR_splittings.sort()
     return ISR_splittings
@@ -201,64 +202,12 @@ def compute_decluster_variables(clustered_splittings):
     z_axis      = ak.zip({"x": 0, "y": 0, "z": 1}, with_name="ThreeVector", behavior=vector.behavior,)
     boost_vec_z = ak.zip({"x": 0, "y": 0, "z": clustered_splittings.boostvec.z}, with_name="ThreeVector", behavior=vector.behavior,)
 
-
     #
     #  Boost to pz0
     #
     clustered_splittings_pz0        = clustered_splittings.boost(-boost_vec_z)
     clustered_splittings_part_A_pz0 = clustered_splittings.part_A.boost(-boost_vec_z)
     clustered_splittings_part_B_pz0 = clustered_splittings.part_B.boost(-boost_vec_z)
-
-    # -------------------------------
-    # Diagnostics for None entries in
-    #   decay_plane_hat =
-    #       (A × B).unit
-    # -------------------------------
-    # If .unit() returns None, either:
-    #   • A or B is missing (None)
-    #   • |A| or |B| is 0 after the boost
-    #   • A and B are parallel → cross-product = 0
-    # This block counts how many times each case happens
-    # so you can decide whether to mask or investigate.
-    # -------------------------------
-
-    # Short aliases for readability
-    A = clustered_splittings_part_A_pz0
-    B = clustered_splittings_part_B_pz0
-    cross = A.cross(B)                     # vector cross-product A × B
-
-    # --------- boolean masks ----------
-    bad_A    = ak.is_none(A)               # A is totally missing
-    bad_B    = ak.is_none(B)               # B is totally missing
-    zero_A = ak.fill_none(A.rho2, 0) == 0   # |⃗A|²  (works for 4-vectors)
-    zero_B = ak.fill_none(B.rho2, 0) == 0
-    cross_mag2 = cross.x**2 + cross.y**2 + cross.z**2
-    colinear = (cross_mag2 == 0) & ~(bad_A | bad_B)
-                                            # neither A nor B is None
-
-    # ------- print a quick summary -----
-    print("entries:", len(A))
-    print("  missing A:   ", ak.sum(bad_A))
-    print("  missing B:   ", ak.sum(bad_B))
-    print("  |A| = 0:     ", ak.sum(zero_A & ~bad_A))
-    print("  |B| = 0:     ", ak.sum(zero_B & ~bad_B))
-    print("  colinear AB: ", ak.sum(colinear))
-    print("\n")
-    # -----------------------------------
-
-   # ------------------------------------------------------------
-    # guard-mask: drop any splitting where |p⃗_A| == 0 or |p⃗_B| == 0
-    # (avoids .unit() → None downstream)
-    # ------------------------------------------------------------
-    good_mask = ~(zero_A | zero_B)          # both subjets have non-zero |⃗p|
-
-    clustered_splittings_pz0        = clustered_splittings_pz0[good_mask]
-    clustered_splittings_part_A_pz0 = clustered_splittings_part_A_pz0[good_mask]
-    clustered_splittings_part_B_pz0 = clustered_splittings_part_B_pz0[good_mask]
-    clustered_splittings            = clustered_splittings[good_mask]
-    # ------------------------------------------------------------
-
-    #print("events surviving good_mask:", ak.sum(good_mask))
 
     comb_z_plane_hat = z_axis.cross(clustered_splittings_pz0).unit
     decay_plane_hat = clustered_splittings_part_A_pz0.cross(clustered_splittings_part_B_pz0).unit
@@ -276,9 +225,6 @@ def compute_decluster_variables(clustered_splittings):
 
     clustered_splittings["thetaA"]    = np.arccos(clustered_splittings_pz0.unit.dot(clustered_splittings_part_A_pz0.unit))
     clustered_splittings["tan_thetaA"]    = np.tan(np.arccos(clustered_splittings_pz0.unit.dot(clustered_splittings_part_A_pz0.unit)))
-#   print("is None comb_z_plane_hat",   np.any([ v == None for v in ak.flatten(comb_z_plane_hat).tolist()]), "\n")
-#   print("is None decay plane hat ",   np.any([ v == None for v in ak.flatten(decay_plane_hat).tolist()]), "\n")
-#   print("is None dot prod ",   np.any([ v == None for v in ak.flatten(decay_plane_hat.dot(comb_z_plane_hat)).tolist()]), "\n")
     clustered_splittings["decay_phi"] = np.arccos(decay_plane_hat.dot(comb_z_plane_hat))
     clustered_splittings["dr_AB"]     = clustered_splittings.part_A.delta_r(clustered_splittings.part_B)
     clustered_splittings["dpt_AB"]    = clustered_splittings.part_A.pt - (clustered_splittings.pt * clustered_splittings.zA)
@@ -296,11 +242,7 @@ def compute_decluster_variables(clustered_splittings):
     #
     #    we either need to rotate back by + or - decay phi, figure out which one
     #
-
-#   print("is None pz0",   np.any([ v == None for v in ak.flatten(clustered_splittings_part_A_pz0_phi0.pt).tolist()]), "\n")
     clustered_splittings_part_A_pz0_phi0_dphi0  = rotateX(clustered_splittings_part_A_pz0_phi0, -clustered_splittings.decay_phi)
-#   print("is None decay_ohi",   np.any([ v == None for v in ak.flatten(clustered_splittings.decay_phi).tolist()]), "\n")
-#   print("is None pz0_phi0_dphi0",   np.any([ v == None for v in ak.flatten(clustered_splittings_part_A_pz0_phi0_dphi0.pt).tolist()]), "\n")
     clustered_splittings_part_B_pz0_phi0_dphi0  = rotateX(clustered_splittings_part_B_pz0_phi0, -clustered_splittings.decay_phi)
     decay_plane_dphi0 = clustered_splittings_part_A_pz0_phi0_dphi0.cross(clustered_splittings_part_B_pz0_phi0_dphi0).unit
 
@@ -316,12 +258,6 @@ def compute_decluster_variables(clustered_splittings):
     #
     rotated_pt_A_flat = ak.flatten(clustered_splittings_part_A_pz0_phi0_dphi0.pt).to_numpy()
     rotated_pt_A_pos_dphi = ak.flatten(clustered_splittings_part_A_pz0_phi0_pdphi0.pt)
-
-
-#   print("len(rotated_pt_A_flat)",   len(rotated_pt_A_pos_dphi), "\n")
-
-#   print("is None loop",   np.any([ v == None for v in rotated_pt_A_pos_dphi.tolist()]), "\n")
-#   print("mask", np.any(np.isnan(pos_decay_phi_mask_flat)), "\n")
     rotated_pt_A_flat[pos_decay_phi_mask_flat] = rotated_pt_A_pos_dphi[pos_decay_phi_mask_flat]
     rotated_pt_A = ak.unflatten(rotated_pt_A_flat, ak.num(clustered_splittings))
 
@@ -336,7 +272,7 @@ def compute_decluster_variables(clustered_splittings):
     clustered_splittings["mA_rotated"]        = clustered_splittings.rhoA * rotated_pt_A
     clustered_splittings["mB_rotated"]        = clustered_splittings.rhoB * rotated_pt_B
 
-    return clustered_splittings
+    return
 
 
 def rotateZ(particles, angle):

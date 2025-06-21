@@ -62,25 +62,19 @@ class analysis(processor.ProcessorABC):
 
 
         selFatJet = event.FatJet[event.FatJet.pt > 300]
-        selFatJet = selFatJet[ak.num(selFatJet.subjets, axis=2) > 1]
+        selFatJet = selFatJet[selFatJet.subJetIdx1 >= 0]
+        selFatJet = selFatJet[selFatJet.subJetIdx2 >= 0]
+
 
         #print(f" fields FatJets: {selFatJet.fields}")
         #print(f" fields nSubJets: {selFatJet.subjets.fields}")
-        #print(f" nSubJets: {ak.num(selFatJet.subjets, axis=1)}")
 
         #selFatJet = selFatJet[ak.num(selFatJet.subjets) > 1]
         event["selFatJet"] = selFatJet
 
 
-        #  Cehck How often do we have >=2 Fat Jets?
+        #  Check How often do we have >=2 Fat Jets?
         event["passNFatJets"]  = (ak.num(event.selFatJet) == 2)
-
-
-
-
-
-
-
 
         # Apply object selection (function does not remove events, adds content to objects)
 
@@ -114,7 +108,7 @@ class analysis(processor.ProcessorABC):
         #print(f" FatJet subjet pt A: {selev.selFatJet.subjets[:,:,0].pt}")
         #print(f" FatJet subjet pt B: {selev.selFatJet.subjets[:,:,1].pt}")
         #print(f" FatJet subjet len(: {len(selev.selFatJet.subjets[:,:,0].pt)}")
-        #print(f" SubJets fields: {selev.selFatJet.subjets.fields}")
+
         #
         # btagDeepB
         #
@@ -194,7 +188,6 @@ class analysis(processor.ProcessorABC):
 #        print("mass0",  np.any([ v == None for v in selev.selFatJet.subjets[:, :, 1].mass.to_numpy().tolist()]), "\n")
 
 
-
         # Create the PtEtaPhiMLorentzVectorArray
         fat_jet_splittings_events = ak.zip(
             {
@@ -234,7 +227,7 @@ class analysis(processor.ProcessorABC):
         )
 
         # Look at this function
-        fat_jet_splittings_events = compute_decluster_variables(fat_jet_splittings_events)
+        compute_decluster_variables(fat_jet_splittings_events)
 #        print("new fields:", fat_jet_splittings_events.fields)
 
         fat_jet_splittings_events["splitting_name"] = "1b0j/1b0j"
