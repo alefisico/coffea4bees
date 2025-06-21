@@ -77,6 +77,80 @@ class ClusterHists(Template):
                 (50, 0, 0.5,  ('rhoB', 'rhoB (mass/pt)')))
 
 
+class ClusterHistsBoosted(Template):
+    pt_l      = H((100,  0, 1000, ('pt',    "pt [GeV]")))
+
+    mA        = H((100, 0, 100,  ('mA', "mA [GeV]")))
+    mA_l      = H((100, 0, 400,  ('mA', "mA [GeV]")))
+    mA_vl     = H((100, 0, 1000, ('mA', "mA [GeV]")))
+
+    mB        = H((100, 0,  60,  ('mB', "mB [GeV]")))
+    mB_l      = H((100, 0, 400,  ('mB', "mB [GeV]")))
+    mB_vl     = H((100, 0, 600,  ('mB', "mB [GeV]")))
+
+    zA        = H((100,  0.5, 1.3, ('zA', "z fraction")))
+    zA_l      = H((100,  0, 1.5, ('zA', "z fraction")))
+    zA_vl      = H((100,  -3, 3, ('zA', "z fraction")))
+
+    decay_phi = H((100, -0.1, 3.2, ('decay_phi', "decay angle")))
+    thetaA    = H((100,  0, 1.5, ('thetaA',    "theta angle")))
+
+    n         = H((0, 3,             ('n', 'Number')), n=ak.num)
+
+    mA_rot    = H((100, 0, 100,  ('mA_rotated', "mA [GeV]")))
+    mB_rot    = H((100, 0, 60,   ('mB_rotated', "mB [GeV]")))
+
+
+    #
+    #  For the PDFS
+    #
+
+    mA_pT = H((3, 300, 1000, ("pt", "pT")),
+              (100, 0, 100,  ('mA', 'mA [GeV]')))
+
+    mB_pT = H((3, 300, 1000, ("pt", "pT")),
+              (100, 0, 60,  ('mB', 'mB [GeV]')))
+
+    mA_r_pT = H((3, 300, 1000, ("pt", "pT")),
+                (100, 0, 100,  ('mA_rotated', 'mA [GeV]')))
+
+    mB_r_pT = H((3, 300, 1000, ("pt", "pT")),
+                (100, 0, 60,  ('mB_rotated', 'mB [GeV]')))
+
+
+    mA_l_pT = H((3, 300, 1000, ("pt", "pT")),
+                (100, 0, 400,  ('mA', 'mA [GeV]')))
+
+    mB_l_pT = H((3, 300, 1000, ("pt", "pT")),
+                (100, 0, 400,  ('mB', 'mB [GeV]')))
+
+
+    mA_vl_pT = H((3, 300, 1000, ("pt", "pT")),
+                (100, 0, 1000,  ('mA', 'mA [GeV]')))
+
+    mB_vl_pT = H((3, 300, 1000, ("pt", "pT")),
+                (100, 0, 600,  ('mB', 'mB [GeV]')))
+
+
+    decay_phi_pT = H((3, 300, 1000, ("pt", "pT")),
+                     (50 , -0.1, 3.2, ('decay_phi', "decay angle")))
+
+    zA_vs_thetaA_pT = H((3, 300, 1000, ("pt", "pT")),
+                        (50,  0.5, 1.3, ('zA', "z fraction")),
+                        (50,  0, 1.5, ('thetaA',    "theta angle")))
+
+    zA_l_vs_thetaA_pT = H((3, 300, 1000, ("pt", "pT")),
+                          (50,  0, 1.5, ('zA', "z fraction")),
+                          (50,  0, 1.5, ('thetaA',    "theta angle")))
+
+
+    rhoA_pT = H((3, 300, 1000, ("pt", "pT")),
+              (50, 0, 0.5,  ('rhoA', 'rhoA (mass/pt)')))
+
+    rhoB_pT = H((3, 300, 1000, ("pt", "pT")),
+                (50, 0, 0.5,  ('rhoB', 'rhoB (mass/pt)')))
+
+
 
 
 

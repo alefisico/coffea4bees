@@ -62,19 +62,25 @@ class analysis(processor.ProcessorABC):
 
 
         selFatJet = event.FatJet[event.FatJet.pt > 300]
-        selFatJet = selFatJet[selFatJet.subJetIdx1 >= 0]
-        selFatJet = selFatJet[selFatJet.subJetIdx2 >= 0]
-
+        selFatJet = selFatJet[ak.num(selFatJet.subjets, axis=2) > 1]
 
         #print(f" fields FatJets: {selFatJet.fields}")
         #print(f" fields nSubJets: {selFatJet.subjets.fields}")
+        #print(f" nSubJets: {ak.num(selFatJet.subjets, axis=1)}")
 
         #selFatJet = selFatJet[ak.num(selFatJet.subjets) > 1]
         event["selFatJet"] = selFatJet
 
 
-        #  Check How often do we have >=2 Fat Jets?
+        #  Cehck How often do we have >=2 Fat Jets?
         event["passNFatJets"]  = (ak.num(event.selFatJet) == 2)
+
+
+
+
+
+
+
 
         # Apply object selection (function does not remove events, adds content to objects)
 
@@ -94,6 +100,9 @@ class analysis(processor.ProcessorABC):
         #
         # Event selection
         #
+        print(f"Number of FatJet PFCands: {ak.num(selev.FatJetPFCands)}")
+        print(f"FatJet PFCands fields: {selev.FatJetPFCands.fields}")
+
 
         #print(f"Number of selected Fat Jets: {ak.num(selev.selFatJet)}")
         #print(f" Any passNFatJets: {ak.any(selev.passNFatJets)}")
@@ -108,7 +117,7 @@ class analysis(processor.ProcessorABC):
         #print(f" FatJet subjet pt A: {selev.selFatJet.subjets[:,:,0].pt}")
         #print(f" FatJet subjet pt B: {selev.selFatJet.subjets[:,:,1].pt}")
         #print(f" FatJet subjet len(: {len(selev.selFatJet.subjets[:,:,0].pt)}")
-
+        #print(f" SubJets fields: {selev.selFatJet.subjets.fields}")
         #
         # btagDeepB
         #
@@ -127,18 +136,18 @@ class analysis(processor.ProcessorABC):
         #
         # Adding btag and jet flavor to fat jets
         #
-        particleNet_HbbvsQCD_flat = ak.flatten(selev.selFatJet.particleNet_HbbvsQCD)
-        particleNet_HbbvsQCD_flat_str = [ str(round(v,3)) for v in particleNet_HbbvsQCD_flat ]
-        selev["selFatJet", "btag_string"] = ak.unflatten(particleNet_HbbvsQCD_flat_str, ak.num(selev.selFatJet))
+        # particleNet_HbbvsQCD_flat = ak.flatten(selev.selFatJet.particleNet_HbbvsQCD)
+        # particleNet_HbbvsQCD_flat_str = [ str(round(v,3)) for v in particleNet_HbbvsQCD_flat ]
+        # selev["selFatJet", "btag_string"] = ak.unflatten(particleNet_HbbvsQCD_flat_str, ak.num(selev.selFatJet))
 
-        fatjet_flavor_flat = np.array(['b'] * len(particleNet_HbbvsQCD_flat))
-        selev["selFatJet", "jet_flavor"] = ak.unflatten(fatjet_flavor_flat, ak.num(selev.selFatJet))
+        # fatjet_flavor_flat = np.array(['b'] * len(particleNet_HbbvsQCD_flat))
+        # selev["selFatJet", "jet_flavor"] = ak.unflatten(fatjet_flavor_flat, ak.num(selev.selFatJet))
 
         # ───────────── build per-sub-jet helper arrays ─────────────
         subj            = selev.selFatJet.subjets            # (evt,fj,sj)
 
         # 1) numeric scores  → fill None, round, stringify
-        btag_num        = ak.fill_none(subj.pt, -2.0)
+        btag_num        = ak.fill_none(subj.btagDeepB, -2.0)
         flat_all        = ak.flatten(btag_num, axis=None)    # 1-D
         flat_all_str    = ak.Array(np.char.mod('%.3f',
                                                np.round(ak.to_numpy(flat_all), 3)))
@@ -147,16 +156,16 @@ class analysis(processor.ProcessorABC):
         counts_sj       = ak.flatten(ak.num(subj, axis=2))
         lvl2            = ak.unflatten(flat_all_str, counts_sj)        # (evt*fj ,sj)
         counts_fj       = ak.num(selev.selFatJet)
-        btag_string     = ak.unflatten(lvl2, counts_fj)                # (evt,fj,sj)
+        # btag_string     = ak.unflatten(lvl2, counts_fj)                # (evt,fj,sj)
 
         # 3) dummy jet-flavor (same ragged shape, constant "b")
-        jet_flavor      = ak.full_like(btag_string, "b")
+        # jet_flavor      = ak.full_like(btag_string, "b")
 
         # ───────────── expose them in the event record ──────────────
         #    They sit alongside selFatJet so later code can do e.g.
         #    selev.subjet_btag_string[:, :, 1]   (same indices)
-        selev["subjet_btag_string"] = btag_string
-        selev["subjet_jet_flavor"]  = jet_flavor
+        # selev["subjet_btag_string"] = btag_string
+        # selev["subjet_jet_flavor"]  = jet_flavor
 
         # Adding btag and jet flavor to subjets
 
@@ -188,6 +197,7 @@ class analysis(processor.ProcessorABC):
 #        print("mass0",  np.any([ v == None for v in selev.selFatJet.subjets[:, :, 1].mass.to_numpy().tolist()]), "\n")
 
 
+
         # Create the PtEtaPhiMLorentzVectorArray
         fat_jet_splittings_events = ak.zip(
             {
@@ -195,16 +205,16 @@ class analysis(processor.ProcessorABC):
                 "eta":  selev.selFatJet.eta,
                 "phi":  selev.selFatJet.phi,
                 "mass": selev.selFatJet.mass,
-                "jet_flavor": selev.selFatJet.jet_flavor,
-                "btag_string": selev.selFatJet.btag_string,
+                # "jet_flavor": selev.selFatJet.jet_flavor,
+                # "btag_string": selev.selFatJet.btag_string,
                 "part_A": ak.zip(
                     {
                         "pt":          selev.selFatJet.subjets[:, :, 0].pt,
                         "eta":         selev.selFatJet.subjets[:, :, 0].eta,
                         "phi":         selev.selFatJet.subjets[:, :, 0].phi,
                         "mass":        selev.selFatJet.subjets[:, :, 0].mass,
-                        "jet_flavor": selev.subjet_jet_flavor[:, :, 0], # "b"
-                        "btag_string": selev.subjet_btag_string[:, :, 0],
+                        # "jet_flavor": selev.subjet_jet_flavor[:, :, 0], # "b"
+                        # "btag_string": selev.subjet_btag_string[:, :, 0],
                     },
                     with_name="PtEtaPhiMLorentzVector",
                     behavior=vector.backends.awkward.behavior
@@ -215,8 +225,8 @@ class analysis(processor.ProcessorABC):
                         "eta":         selev.selFatJet.subjets[:, :, 1].eta,
                         "phi":         selev.selFatJet.subjets[:, :, 1].phi,
                         "mass":        selev.selFatJet.subjets[:, :, 1].mass,
-                        "jet_flavor": selev.subjet_jet_flavor[:, :, 1],
-                        "btag_string": selev.subjet_btag_string[:, :, 1],
+                        # "jet_flavor": selev.subjet_jet_flavor[:, :, 1],
+                        # "btag_string": selev.subjet_btag_string[:, :, 1],
                     },
                     with_name="PtEtaPhiMLorentzVector",
                     behavior=vector.backends.awkward.behavior
@@ -227,15 +237,15 @@ class analysis(processor.ProcessorABC):
         )
 
         # Look at this function
-        compute_decluster_variables(fat_jet_splittings_events)
+        fat_jet_splittings_events = compute_decluster_variables(fat_jet_splittings_events)
 #        print("new fields:", fat_jet_splittings_events.fields)
 
-        fat_jet_splittings_events["splitting_name"] = "1b0j/1b0j"
+        fat_jet_splittings_events["splitting_name"] = "bb"
 
         #
         # Sort clusterings by type
         #
-        selev["splitting_1b0j/1b0j"]   = fat_jet_splittings_events
+        selev["splitting_bb"]   = fat_jet_splittings_events
 
 
 
@@ -312,7 +322,7 @@ class analysis(processor.ProcessorABC):
 
 
 #        for _s_type in cleaned_splitting_name:
-        fill += ClusterHistsBoosted( ("splitting_1b0j/1b0j", "1b0j/1b0j Splitting"), "splitting_1b0j/1b0j" )
+        fill += ClusterHistsBoosted( ("splitting_bb", "bb Splitting"), "splitting_bb" )
 
         #
         # fill histograms
