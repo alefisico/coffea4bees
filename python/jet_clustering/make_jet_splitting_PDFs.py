@@ -59,14 +59,16 @@ def write_2D_pdf(output_file, varName, hist, n_spaces=4):
     output_file.write(f"{spaces}    probabilities_flat:  {probabilities_flat.tolist()}\n")
 
 
-def make_PDFs_vs_Pt(config, output_file_name_vs_pT, year):
+def make_PDFs_vs_Pt(config, output_file_name_vs_pT, year, doBoosted=False):
 
     splittings = list(config.keys())
     varNames   = list(config[splittings[0]].keys())
 
 
-    #pt_bins = [0, 140, 230, 320, 410, np.inf]
-    pt_bins = [300, 533, 766, np.inf]
+    if doBoosted:
+        pt_bins = [300, 533, 766, np.inf]
+    else:
+        pt_bins = [0, 140, 230, 320, 410, np.inf]
 
     with open(output_file_name_vs_pT, 'w') as output_file_vs_pT:
 
@@ -103,8 +105,11 @@ def make_PDFs_vs_Pt(config, output_file_name_vs_pT, year):
 
                 for _iPt in range(len(pt_bins) - 1):
 
-                    cut_dict = plot_helpers.get_cut_dict("passNFatJets", cfg.cutList)
-                    #cut_dict = plot_helpers.get_cut_dict("passPreSel", cfg.cutList)
+                    if doBoosted:
+                        cut_dict = plot_helpers.get_cut_dict("passNFatJets", cfg.cutList)
+                    else:
+                        cut_dict = plot_helpers.get_cut_dict("passPreSel", cfg.cutList)
+
                     plot_dict = {"process":"data", "year":year, "tag":sum,"region":sum, "pt":_iPt}
                     plot_dict = plot_dict | cut_dict
 
@@ -275,7 +280,7 @@ def test_PDFs_vs_Pt(config, output_file_name, year):
 
 
 
-def doPlots(year, debug=False):
+def doPlots(year, doBoosted=False, debug=False):
 
     #
     #  config Setup
@@ -331,8 +336,8 @@ def doPlots(year, debug=False):
                 }
 
     # If doing boosted
-    # if doBoosted:
-    #     patterns["1b0j/1b0j"] = zA_mA_l_mB_l
+    if doBoosted:
+         patterns["1b0j/1b0j"] = zA_mA_l_mB_l
 
 
 
@@ -388,7 +393,7 @@ def doPlots(year, debug=False):
             splitting_out_file.write(f"{_s}\n")
 
     output_file_name_vs_pT = args.outputFolder+f"/clustering_pdfs_vs_pT_{year_str}.yml"
-    make_PDFs_vs_Pt(splitting_config, output_file_name_vs_pT, year)
+    make_PDFs_vs_Pt(splitting_config, output_file_name_vs_pT, year, doBoosted=doBoosted)
     test_PDFs_vs_Pt(splitting_config, output_file_name_vs_pT, year)
 
 
@@ -398,6 +403,7 @@ if __name__ == '__main__':
 
     parser = init_arg_parser()
     parser.add_argument('--years', default=["RunII"], nargs="+",help='years to process.')
+    parser.add_argument('--doBoosted', action="store_true", help='If set, will do the boosted declustering PDFs.')
 
     args = parser.parse_args()
     print(f" Doing years {args.years}")
@@ -432,4 +438,4 @@ if __name__ == '__main__':
         years = [sum]
 
     for y in years:
-        doPlots(year=y, debug=args.debug)
+        doPlots(year=y, doBoosted=args.doBoosted, debug=args.debug)
