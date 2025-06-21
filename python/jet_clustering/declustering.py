@@ -679,7 +679,7 @@ def make_synthetic_event(input_jets, input_pdfs, declustering_rand_seed=66, b_pt
 
         to_decluster_indicies = np.where(events_to_decluster_mask)[0]
 
-        declustered_events = make_synthetic_event_core(input_jets[to_decluster_indicies], input_pdfs, 7 * num_trys + declustering_rand_seed, b_pt_threshold=b_pt_threshold, chunk=chunk)
+        declustered_events = make_synthetic_event_core(input_jets[to_decluster_indicies], input_pdfs, 7 * num_trys + declustering_rand_seed, b_pt_threshold=b_pt_threshold, chunk=chunk, debug=debug)
 
         #
         #  Check the min dr

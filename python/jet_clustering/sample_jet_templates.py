@@ -1,5 +1,6 @@
 import numpy as np
 import awkward as ak
+import sys
 try:
     from base_class.math.random import Squares
 except:
@@ -54,9 +55,12 @@ except:
 #            input_jets_decluster["thetaA"]     = ak.unflatten(_sampled_data_y,    ak.num(input_jets_decluster))
 
 
-def sample_PDFs_vs_pT(input_jets_decluster, input_pdfs, rand_seed, splittings, chunk=None):
+def sample_PDFs_vs_pT(input_jets_decluster, input_pdfs, rand_seed, splittings, chunk=None, debug=False):
 
     n_jets   = np.sum(ak.num(input_jets_decluster))
+
+    if debug:
+        print(f"{chunk} sample_PDFs_vs_pT n_jets {n_jets}\n")
 
     n_pt_bins = len(input_pdfs["pt_bins"]) - 1
     pt_masks = []
@@ -68,6 +72,9 @@ def sample_PDFs_vs_pT(input_jets_decluster, input_pdfs, rand_seed, splittings, c
 
         _this_mask = (input_jets_decluster.pt > _min_pt) & (input_jets_decluster.pt < _max_pt)
         pt_masks.append(_this_mask)
+
+    if debug:
+        print(f"{chunk} len pt_masks  {len(pt_masks)}\n")
 
     #
     #  Sample the PDFs for the jets we will uncluster
@@ -94,12 +101,18 @@ def sample_PDFs_vs_pT(input_jets_decluster, input_pdfs, rand_seed, splittings, c
 
         # Sample the pdfs from the different splitting options
         for _splitting_name, _num_samples, _indicies_tuple in splittings:
-
+            if debug:
+                print(f"{chunk} sample_PDFs_vs_pT {_iVar} {_var_name} {_splitting_name} {_num_samples} {len(_indicies_tuple)}\n")
+                print(f"{chunk} len jets {np.sum(ak.num(input_jets_decluster))}\n")
+                print(f"{chunk} pt: {len(input_jets_decluster.pt)}\n")
+                print(f"{chunk} pt_flat: {len(ak.flatten(input_jets_decluster.pt))}\n")
+                print(input_jets_decluster.pt)
             # For random number seeding
             #split_name_hash = len(_splitting_name) + 3 * _splitting_name.count("b") + 5 * _splitting_name.count("j") * 7 * _splitting_name.count("(")
             pts  = ak.flatten(input_jets_decluster.pt)[_indicies_tuple]
             etas = ak.flatten(input_jets_decluster.eta)[_indicies_tuple]
             phis = ak.flatten(input_jets_decluster.phi)[_indicies_tuple]
+
 
             # _num_samples
             counter = np.zeros((_num_samples, 3), dtype=np.uint64)  # split_name_hash_, pt, var_name
