@@ -98,7 +98,7 @@ def load_config(metadata):
         _hist_proc_config = plotConfig["hists"][template]
 
         for nS in range(_hist_proc_config["nSamples"]):
-            proc_name = _hist_proc.replace("XXX",str(nS))
+            proc_name = template.replace("XXX",str(nS))
             plotConfig["hists"][proc_name] = copy.deepcopy(_hist_proc_config)
             plotConfig["hists"][proc_name]["process"]  = proc_name
             plotConfig["hists"][proc_name]["label"]  = plotConfig["hists"][proc_name]["label"].replace("XXX", str(nS))
