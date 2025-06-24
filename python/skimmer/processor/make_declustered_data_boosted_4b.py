@@ -70,7 +70,7 @@ class DeClustererBoosted(PicoAOD):
         # Event Selection
         #
         event = apply_event_selection( event, self.corrections_metadata[year],
-                                       cut_on_lumimask = True,
+                                       cut_on_lumimask = (not isMC),
                                       )
 
         selFatJet = event.FatJet[event.FatJet.pt > 300]

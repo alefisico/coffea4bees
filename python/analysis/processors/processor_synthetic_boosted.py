@@ -58,7 +58,7 @@ class analysis(processor.ProcessorABC):
         #
         event = apply_event_selection( event,
                                         self.corrections_metadata[year],
-                                        cut_on_lumimask=True
+                                        cut_on_lumimask=(not isMC),
                                         )
 
         selFatJet = event.FatJet[event.FatJet.pt > 300]
@@ -119,12 +119,12 @@ class analysis(processor.ProcessorABC):
         #
         # Event selection
         #
-
+        #
         #print(f"Number of selected Fat Jets: {ak.num(selev.selFatJet)}")
         #print(f" Any passNFatJets: {ak.any(selev.passNFatJets)}")
         #print(f" Any passHLT: {ak.any(selev.passHLT)}")
         #print(f" FatJet pt: {selev.selFatJet.pt}")
-        #
+
         #print(f" nSubJets: {ak.num(selev.selFatJet.subjets, axis=2)}")
         #print(f" subjet pt: {selev.selFatJet.pt[0:10]}")
 
@@ -253,7 +253,6 @@ class analysis(processor.ProcessorABC):
 
         # Look at this function
         compute_decluster_variables(fat_jet_splittings_events)
-#        print("new fields:", fat_jet_splittings_events.fields)
 
         fat_jet_splittings_events["splitting_name"] = "1b0j/1b0j"
 
@@ -336,7 +335,7 @@ class analysis(processor.ProcessorABC):
 #        print("filling splitting_bb for", len(fat_jet_splittings_events), "events")
 
 
-#        for _s_type in cleaned_splitting_name:
+
         fill += ClusterHistsBoosted( ("splitting_1b0j/1b0j", "1b0j/1b0j Splitting"), "splitting_1b0j/1b0j" )
 
         #

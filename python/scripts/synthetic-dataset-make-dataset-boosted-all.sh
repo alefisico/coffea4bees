@@ -25,7 +25,7 @@ echo ${new_seed}
 sed -e "s/declustering_rand_seed:.*/declustering_rand_seed: $new_seed/" ${OUTPUT_DIR}/declustering_boosted_for_all.yml > ${OUTPUT_DIR}/declustering_boosted_seed_${new_seed}.yml
 
 echo "############### Running test processor"
-time python runner.py -s -p skimmer/processor/make_declustered_data_boosted_4b.py -c ${OUTPUT_DIR}/declustering_boosted_seed_${new_seed}.yml -y UL18  -d data   -op $OUTPUT_DIR -o picoaod_datasets_declustered_boosted_test_UL18.yml -m metadata/datasets_HH4b_2024_v2_boosted.yml  --debug
+time python runner.py -s -p skimmer/processor/make_declustered_data_boosted_4b.py -c ${OUTPUT_DIR}/declustering_boosted_seed_${new_seed}.yml -y UL18  -d data GluGluToHHTo4B_cHHH1   -op $OUTPUT_DIR -o picoaod_datasets_declustered_boosted_test_UL18.yml -m metadata/datasets_HH4b_2024_v2_boosted.yml
 
 
 

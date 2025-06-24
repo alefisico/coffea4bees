@@ -1124,7 +1124,21 @@ datasets:
         - /mnt/scratch/jalison/files/data_UL18D/picoAOD_seedXXX.chunk1.root     
     nSamples: 1
     
-
+  synthetic_GluGluToHHTo4B_cHHH1:
+    UL18:  
+      picoAOD:
+        files:
+        - /mnt/scratch/jalison/files/GluGluToHHTo4B_cHHH1_UL18/picoAOD_seed0.root
+        saved_events: 199653
+        sumw_raw: 28210.3267947
+        sumw2_raw: 1193909.4220537543
+        sumw2_diff: 1192990.2674102783
+        sumw2: 919.0958442687988
+        sumw_diff: 1453.1521577835083
+        sumw: 26757.179077148438
+        total_events: 1000000
+    top_reconstruction: slow
+    xs: 0.03077*0.5824**2
 
 
   GluGluToHHTo4B_cHHH1:
