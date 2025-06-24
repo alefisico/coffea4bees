@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 # Local imports
 sys.path.insert(0, os.getcwd())
 from base_class.plots.plots import (
-    makePlot, make2DPlot, load_config, load_hists, 
+    makePlot, make2DPlot, load_config, load_hists,
     read_axes_and_cuts, parse_args, print_cfg
 )
 import base_class.plots.iPlot_config as cfg
@@ -27,7 +27,7 @@ DEFAULT_OUTPUT_FILE = "test.pdf"
 
 def ls(option: str = "var", var_match: Optional[str] = None) -> None:
     """List available variables in the configuration.
-    
+
     Args:
         option: The type of labels to list (default: "var")
         var_match: Optional string to filter variables by
@@ -115,11 +115,11 @@ plot("v4j.mass", region=["SR", "SB"], cut="passPreSel", process="data3b")
 
 def save_and_open_plot(fig: plt.Figure, output_file: str) -> bool:
     """Save the figure to a file and open it.
-    
+
     Args:
         fig: The matplotlib figure to save
         output_file: Path where to save the figure
-        
+
     Returns:
         True if successful, False otherwise
     """
@@ -135,10 +135,10 @@ def save_and_open_plot(fig: plt.Figure, output_file: str) -> bool:
 
 def handle_wildcards(var: Union[str, List[str]]) -> bool:
     """Handle wildcard matching in variable names.
-    
+
     Args:
         var: Variable(s) to check for wildcards
-        
+
     Returns:
         True if wildcards were found and handled, False otherwise
     """
@@ -151,20 +151,20 @@ def handle_wildcards(var: Union[str, List[str]]) -> bool:
     return False
 
 
-def plot(var: Union[str, List[str]] = 'selJets.pt', *, 
-         cut: Union[str, List[str]] = "passPreSel", 
-         region: Union[str, List[str]] = "SR", 
+def plot(var: Union[str, List[str]] = 'selJets.pt', *,
+         cut: Union[str, List[str]] = "passPreSel",
+         region: Union[str, List[str]] = "SR",
          output_file: str = DEFAULT_OUTPUT_FILE,
          **kwargs) -> Optional[Tuple[plt.Figure, plt.Axes]]:
     """Create a 1D plot of the specified variable.
-    
+
     Args:
         var: Variable(s) to plot. Can be a string or list of strings.
         cut: Selection cut to apply (default: "passPreSel")
         region: Region to plot (default: "SR")
         output_file: Name of the output file (default: "test.pdf")
         **kwargs: Additional plotting options
-        
+
     Returns:
         Optional tuple of (figure, axes) if debug mode is enabled
     """
@@ -198,15 +198,15 @@ def plot(var: Union[str, List[str]] = 'selJets.pt', *,
         return fig, ax
 
 
-def plot2d(var: str = 'quadJet_selected.lead_vs_subl_m', 
+def plot2d(var: str = 'quadJet_selected.lead_vs_subl_m',
            process: Union[str, List[str]] = "HH4b",
-           *, 
-           cut: Union[str, List[str]] = "passPreSel", 
+           *,
+           cut: Union[str, List[str]] = "passPreSel",
            region: Union[str, List[str]] = "SR",
            output_file: str = DEFAULT_OUTPUT_FILE,
            **kwargs) -> Optional[Tuple[plt.Figure, plt.Axes]]:
     """Create a 2D plot of the specified variable.
-    
+
     Args:
         var: Variable to plot
         process: Process to plot (default: "HH4b")
@@ -214,7 +214,7 @@ def plot2d(var: str = 'quadJet_selected.lead_vs_subl_m',
         region: Region to plot (default: "SR")
         output_file: Name of the output file (default: "test.pdf")
         **kwargs: Additional plotting options
-        
+
     Returns:
         Optional tuple of (figure, axes) if debug mode is enabled
     """
@@ -244,7 +244,7 @@ def initialize_config() -> None:
     cfg.plotConfig = load_config(args.metadata)
     cfg.outputFolder = args.outputFolder
     cfg.combine_input_files = args.combine_input_files
-    
+
     if cfg.outputFolder and not os.path.exists(cfg.outputFolder):
         os.makedirs(cfg.outputFolder)
 
