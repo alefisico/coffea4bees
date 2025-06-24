@@ -3,11 +3,13 @@ import awkward as ak
 import numpy as np
 import yaml
 import warnings
+from collections import OrderedDict
 
 from coffea.nanoevents import NanoAODSchema
 from coffea import processor
 from coffea.analysis_tools import PackedSelection
 import hist
+from analysis.helpers.cutflow import cutFlow
 
 from analysis.helpers.event_selection import apply_event_selection
 from base_class.hist import Collection, Fill
@@ -59,15 +61,18 @@ class analysis(processor.ProcessorABC):
                                         cut_on_lumimask=True
                                         )
 
-
-
         selFatJet = event.FatJet[event.FatJet.pt > 300]
         selFatJet = selFatJet[selFatJet.subJetIdx1 >= 0]
         selFatJet = selFatJet[selFatJet.subJetIdx2 >= 0]
 
+        # Hack for synthetic data
+        selFatJet = selFatJet[selFatJet.subJetIdx1 < 4]
+        selFatJet = selFatJet[selFatJet.subJetIdx2 < 4]
+
 
         #print(f" fields FatJets: {selFatJet.fields}")
         #print(f" fields nSubJets: {selFatJet.subjets.fields}")
+        #print(f" fields nSubJets: {ak.num(selFatJet.subjets)},\n")
 
         #selFatJet = selFatJet[ak.num(selFatJet.subjets) > 1]
         event["selFatJet"] = selFatJet
@@ -85,9 +90,29 @@ class analysis(processor.ProcessorABC):
         selections.add( "passNFatJets",  event.passNFatJets )
         ### add more selections, this can be useful
 
+        event["weight"] = 1.0
 
-        #list_of_cuts = [ "lumimask", "passNoiseFilter", "passHLT", "passNFatJets" ]
-        list_of_cuts = [ "passNFatJets" ]
+        #
+        # Do the cutflow
+        #
+        sel_dict = OrderedDict({
+            'all'               : selections.require(lumimask=True),
+            'passNoiseFilter'   : selections.require(lumimask=True, passNoiseFilter=True),
+            'passHLT'           : selections.require(lumimask=True, passNoiseFilter=True, passHLT=True),
+            'passNFatJets'      : selections.require(lumimask=True, passNoiseFilter=True, passHLT=True, passNFatJets=True),
+        })
+        #sel_dict['passJetMult'] = selections.all(*allcuts)
+
+        self.cutFlow = cutFlow()
+        for cut, sel in sel_dict.items():
+            self.cutFlow.fill( cut, event[sel], allTag=True )
+
+
+
+
+
+
+        list_of_cuts = [ "lumimask", "passNoiseFilter", "passHLT", "passNFatJets" ]
         analysis_selections = selections.all(*list_of_cuts)
         selev = event[analysis_selections]
 
@@ -280,7 +305,7 @@ class analysis(processor.ProcessorABC):
             "SR": selev.SR,
         })
 
-        selev["weight"] = 1.0
+
 
 
 
@@ -320,6 +345,7 @@ class analysis(processor.ProcessorABC):
         fill(selev, hist)
 
         processOutput = {}
+        self.cutFlow.addOutput(processOutput, event.metadata["dataset"])
 
         output = hist.output | processOutput
 

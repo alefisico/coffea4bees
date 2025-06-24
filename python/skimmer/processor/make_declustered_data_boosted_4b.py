@@ -1,6 +1,8 @@
 import yaml
 from skimmer.processor.picoaod import PicoAOD, fetch_metadata, resize
 from coffea.nanoevents import NanoEventsFactory
+from collections import OrderedDict
+from analysis.helpers.cutflow import cutFlow
 
 from jet_clustering.declustering import make_synthetic_event
 
@@ -72,7 +74,9 @@ class DeClustererBoosted(PicoAOD):
                                       )
 
         selFatJet = event.FatJet[event.FatJet.pt > 300]
-        selFatJet = selFatJet[ak.num(selFatJet.subjets, axis=2) > 1]
+        selFatJet = selFatJet[selFatJet.subJetIdx1 >= 0]
+        selFatJet = selFatJet[selFatJet.subJetIdx2 >= 0]
+
 
         event["selFatJet"] = selFatJet
 
@@ -90,8 +94,26 @@ class DeClustererBoosted(PicoAOD):
 
         event["weight"] = 1.0
 
-        #list_of_cuts = [ "lumimask", "passNoiseFilter", "passHLT", "passNFatJets" ]
-        list_of_cuts = [ "passNFatJets" ]
+
+
+        #
+        # Do the cutflow
+        #
+        sel_dict = OrderedDict({
+            'all'               : selections.require(lumimask=True),
+            'passNoiseFilter'   : selections.require(lumimask=True, passNoiseFilter=True),
+            'passHLT'           : selections.require(lumimask=True, passNoiseFilter=True, passHLT=True),
+            'passNFatJets'      : selections.require(lumimask=True, passNoiseFilter=True, passHLT=True, passNFatJets=True),
+        })
+        #sel_dict['passJetMult'] = selections.all(*allcuts)
+
+        self.cutFlow = cutFlow()
+        for cut, sel in sel_dict.items():
+            self.cutFlow.fill( cut, event[sel], allTag=True )
+
+
+        list_of_cuts = [ "lumimask", "passNoiseFilter", "passHLT", "passNFatJets" ]
+        #list_of_cuts = [ "passNFatJets" ]
         analysis_selections = selections.all(*list_of_cuts)
         selev = event[analysis_selections]
         selection = selections.all(*list_of_cuts)
@@ -200,6 +222,7 @@ class DeClustererBoosted(PicoAOD):
         branches = ak.Array(out_branches)
 
         processOutput = {}
+        self.cutFlow.addOutput(processOutput, event.metadata["dataset"])
         processOutput["total_jet"] = total_jet
 
         return (selection,
