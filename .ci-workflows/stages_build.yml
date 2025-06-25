@@ -1,19 +1,41 @@
-include:
-  - project: 'ci-tools/container-image-ci-templates'
-    file:
-      - 'kaniko-image.gitlab-ci.yml'
+# include:
+#   - project: 'ci-tools/container-image-ci-templates'
+#     file:
+#       - 'kaniko-image.gitlab-ci.yml'
+
+.buildah:
+  stage: build
+  image: quay.io/buildah/stable
+  variables:
+    DOCKER_FILE_NAME: "Dockerfile"
+    REGISTRY_IMAGE_PATH: ${CI_REGISTRY_IMAGE}:test
+    EXTRA_TAGS: ""
+  script:
+    - echo "$CI_REGISTRY_PASSWORD" | buildah login -u "$CI_REGISTRY_USER" --password-stdin $CI_REGISTRY
+    - export BUILDAH_FORMAT=docker
+    - export STORAGE_DRIVER=vfs
+    - buildah images
+    - |
+      if [ -n "$EXTRA_TAGS" ]; then
+        buildah build -i $DOCKER_FILE_NAME -t $REGISTRY_IMAGE_PATH -t $EXTRA_TAGS
+      else
+        buildah build -i $DOCKER_FILE_NAME -t $REGISTRY_IMAGE_PATH
+      fi
+    - buildah images
+    - buildah push $REGISTRY_IMAGE_PATH
+    - |
+      if [ -n "$EXTRA_TAGS" ]; then
+        buildah push $EXTRA_TAGS
+      fi
 
 build_container:
   extends:
-    - .build_kaniko
+    - .buildah
   before_script:
     - export EXTRA_TAGS="$(date +%Y%m%d)_$CI_COMMIT_SHORT_SHA"
     - echo $EXTRA_TAGS
   variables:
-    CONTEXT_DIR: ""
     DOCKER_FILE_NAME: ".dockerfiles/Dockerfile_analysis"
-    GIT_SUBMODULE_STRATEGY: recursive
-    PUSH_IMAGE: "true"
     REGISTRY_IMAGE_PATH: ${CI_REGISTRY_IMAGE}:latest
   rules:
     - if: $RECREATE_CONTAINERS == "true"
