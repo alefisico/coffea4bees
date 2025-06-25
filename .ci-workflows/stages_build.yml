@@ -1,8 +1,3 @@
-# include:
-#   - project: 'ci-tools/container-image-ci-templates'
-#     file:
-#       - 'kaniko-image.gitlab-ci.yml'
-
 .buildah:
   stage: build
   image: quay.io/buildah/stable
@@ -32,7 +27,7 @@ build_container:
   extends:
     - .buildah
   before_script:
-    - export EXTRA_TAGS="$(date +%Y%m%d)_$CI_COMMIT_SHORT_SHA"
+    - export EXTRA_TAGS="${CI_REGISTRY_IMAGE}:$(date +%Y%m%d)_$CI_COMMIT_SHORT_SHA"
     - echo $EXTRA_TAGS
   variables:
     DOCKER_FILE_NAME: ".dockerfiles/Dockerfile_analysis"
@@ -49,13 +44,10 @@ build_container_reana:
   extends:
     - .buildah
   before_script:
-    - export EXTRA_TAGS="reana_$(date +%Y%m%d)_$CI_COMMIT_SHORT_SHA"
+    - export EXTRA_TAGS="${CI_REGISTRY_IMAGE}:reana_$(date +%Y%m%d)_$CI_COMMIT_SHORT_SHA"
     - echo $EXTRA_TAGS
   variables:
-    CONTEXT_DIR: ""
     DOCKER_FILE_NAME: ".dockerfiles/Dockerfile_analysis_reana"
-    GIT_SUBMODULE_STRATEGY: recursive
-    PUSH_IMAGE: "true"
     REGISTRY_IMAGE_PATH: ${CI_REGISTRY_IMAGE}:reana_latest
   rules:
     - if: $RECREATE_CONTAINERS == "true"
@@ -68,13 +60,10 @@ build_container_classifier:
   extends:
     - .buildah
   before_script:
-    - export EXTRA_TAGS="classifier_$(date +%Y%m%d)_$CI_COMMIT_SHORT_SHA"
+    - export EXTRA_TAGS="${CI_REGISTRY_IMAGE}:classifier_$(date +%Y%m%d)_$CI_COMMIT_SHORT_SHA"
     - echo $EXTRA_TAGS
   variables:
-    CONTEXT_DIR: ".dockerfiles/ml"
-    DOCKER_FILE_NAME: "Dockerfile_ml_cpu"
-    GIT_SUBMODULE_STRATEGY: recursive
-    PUSH_IMAGE: "true"
+    DOCKER_FILE_NAME: ".dockerfiles/ml/Dockerfile_ml_cpu"
     REGISTRY_IMAGE_PATH: ${CI_REGISTRY_IMAGE}:classifier_latest
   rules:
     - if: $RECREATE_CONTAINERS == "true"
