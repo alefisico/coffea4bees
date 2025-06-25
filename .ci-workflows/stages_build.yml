@@ -17,9 +17,9 @@
     - buildah images
     - |
       if [ -n "$EXTRA_TAGS" ]; then
-        buildah build -i $DOCKER_FILE_NAME -t $REGISTRY_IMAGE_PATH -t $EXTRA_TAGS
+        buildah build -f $DOCKER_FILE_NAME -t $REGISTRY_IMAGE_PATH -t $EXTRA_TAGS
       else
-        buildah build -i $DOCKER_FILE_NAME -t $REGISTRY_IMAGE_PATH
+        buildah build -f $DOCKER_FILE_NAME -t $REGISTRY_IMAGE_PATH
       fi
     - buildah images
     - buildah push $REGISTRY_IMAGE_PATH
