@@ -47,7 +47,7 @@ build_container:
 
 build_container_reana:
   extends:
-    - .build_kaniko
+    - .buildah
   before_script:
     - export EXTRA_TAGS="reana_$(date +%Y%m%d)_$CI_COMMIT_SHORT_SHA"
     - echo $EXTRA_TAGS
