@@ -21,7 +21,7 @@ import yaml
 from base_class.addhash import get_git_diff, get_git_revision_hash
 from coffea import processor
 from coffea.dataset_tools import rucio_utils
-from coffea.nanoevents import NanoAODSchema
+from coffea.nanoevents import NanoAODSchema, PFNanoAODSchema
 from coffea.util import save
 from dask.distributed import performance_report
 from distributed.diagnostics.plugin import WorkerPlugin
@@ -137,8 +137,6 @@ if __name__ == '__main__':
                         'HH4b', 'ZZ4b', 'ZH4b'], help="Name of dataset to run. Example if more than one: -d HH4b ZZ4b")
     parser.add_argument('-e', '--era', nargs='+', dest='era', default=['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
                         help="For data only. To run only on one data era.")
-    parser.add_argument('--systematics', dest="systematics", action="store_true",
-                        default=False, help='Run Systematics for analysis processor')
     parser.add_argument('-s', '--skimming', dest="skimming", action="store_true",
                         default=False, help='Run skimming instead of analysis')
     parser.add_argument('--dask', dest="run_dask",
@@ -200,9 +198,13 @@ if __name__ == '__main__':
     config_runner.setdefault('override_top_reconstruction', None)
     config_runner.setdefault('uproot_xrootd_retry_delays', [5, 15, 45])
 
-    if args.systematics:
-        logging.info("Running with systematics")
-        configs['config']['run_systematics'] = True
+    if isinstance(config_runner['schema'], str):
+        if config_runner['schema'] == "NanoAODSchema":
+            config_runner['schema'] = NanoAODSchema
+        elif config_runner['schema'] == "PFNanoAODSchema":
+            config_runner['schema'] = PFNanoAODSchema
+        else:
+            raise ValueError(f"Unknown schema: {config_runner['schema']}")
 
     if 'all' in args.datasets:
         metadata['datasets'].pop("mixeddata")
