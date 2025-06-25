@@ -656,6 +656,7 @@ datasets:
         E: /BTagCSV/Run2017E-UL2017_MiniAODv2_NanoAODv9-v1/NANOAOD
         F: /BTagCSV/Run2017F-UL2017_MiniAODv2_NanoAODv9-v1/NANOAOD
       picoAOD:
+        # B: This has to be run directly from nanoAOD
         C:
           files:
           - root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/data2017C/picoAOD.root
@@ -669,6 +670,8 @@ datasets:
           files:
           - root://cmseos.fnal.gov//store/user/algomez/XX4b/20231115/data2017F/picoAOD.root
       trigger:
+      - HT300PT30_QuadJet_75_60_45_40_TripleCSV_p07
+      - HT300PT30_QuadJet_75_60_45_40_TripeCSV_p07
       - PFHT300PT30_QuadPFJet_75_60_45_40_TriplePFBTagCSV_3p0
     UL18:
       lumi: 59.8e3
