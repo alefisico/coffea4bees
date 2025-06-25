@@ -69,7 +69,7 @@ run_coffea() {
         fi
     else
         # Arguments provided, run them inside the container
-        APPTAINER_SHELL=$(which bash) apptainer exec -B ${PWD}:/srv --pwd /srv \
+        APPTAINER_SHELL=$(which bash) apptainer exec -B "$(dirname "$PWD")":/srv --pwd /srv/python/ \
         "$COFFEA_IMAGE" \
         /bin/bash -c "$*"
     fi

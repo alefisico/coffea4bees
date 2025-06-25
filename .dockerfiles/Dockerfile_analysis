@@ -1,4 +1,4 @@
-FROM coffeateam/coffea-base-almalinux8:0.7.23-py3.10
+FROM docker.io/coffeateam/coffea-base-almalinux8:0.7.23-py3.10
 
 RUN dnf install -y poppler-utils && \
     dnf clean all && rm -rf /var/cache/dnf && \
@@ -6,5 +6,5 @@ RUN dnf install -y poppler-utils && \
     pip install --upgrade pip && \
     pip install htcondor==24.0.7 pycodestyle memory-profiler fsspec-xrootd dbs3-client
 
-RUN mkdir -p /home/user/coffea4bees/python/
-COPY python/ /home/user/coffea4bees/python/
+# RUN mkdir -p /home/user/coffea4bees/python/
+# COPY python/ /home/user/coffea4bees/python/
