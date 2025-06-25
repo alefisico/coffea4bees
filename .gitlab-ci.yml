@@ -44,8 +44,15 @@ stages:
   - validation
   - pages
 
+validation:
+  rules:
+    - changes:
+      - docs/**
+
 pages:
   rules:
+    - changes:
+      - docs/**
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
 .base_analysis:
