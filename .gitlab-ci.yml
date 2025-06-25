@@ -43,6 +43,7 @@ stages:
   - cutflow
   - classifier
   - reana
+  - deploy
   - validation
   - pages
 
@@ -53,7 +54,7 @@ pages:
 .base_analysis:
   needs:
     - voms_proxy
-  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:latest
+  image: gitlab-registry.cern.ch/$CONTAINER_HOST/coffea4bees:test
   tags:
     - k8s-cvmfs
   artifacts: 
