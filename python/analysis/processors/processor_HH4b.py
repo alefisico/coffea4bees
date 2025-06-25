@@ -671,28 +671,34 @@ class analysis(processor.ProcessorABC):
         if self.fill_histograms:
             if not self.run_systematics:
                 ## this can be simplified
-                hist = filling_nominal_histograms(selev, self.apply_JCM,
-                                                  processName=self.processName,
-                                                  year=self.year,
-                                                  isMC=self.config["isMC"],
-                                                  histCuts=self.histCuts,
-                                                  apply_FvT=self.apply_FvT,
-                                                  run_SvB=self.run_SvB,
-                                                  run_dilep_ttbar_crosscheck=self.run_dilep_ttbar_crosscheck,
-                                                  top_reconstruction=self.top_reconstruction,
-                                                  isDataForMixed=self.config['isDataForMixed'],
-                                                  event_metadata=event.metadata)
+                hist = filling_nominal_histograms(
+                    selev, 
+                    self.apply_JCM,
+                    processName=self.processName,
+                    year=self.year,
+                    isMC=self.config["isMC"],
+                    histCuts=self.histCuts,
+                    apply_FvT=self.apply_FvT,
+                    run_SvB=self.run_SvB,
+                    run_dilep_ttbar_crosscheck=self.run_dilep_ttbar_crosscheck,
+                    top_reconstruction=self.top_reconstruction,
+                    isDataForMixed=self.config['isDataForMixed'],
+                    event_metadata=event.metadata
+                    )
 
             #
             # Run systematics
             #
             else:
-                hist = filling_syst_histograms(selev, weights,
-                                               analysis_selections,
-                                               shift_name=shift_name,
-                                               processName=self.processName,
-                                               year=self.year,
-                                               histCuts=self.histCuts)
+                hist = filling_syst_histograms(
+                    selev, 
+                    weights,
+                    analysis_selections,
+                    shift_name=shift_name,
+                    processName=self.processName,
+                    year=self.year,
+                    histCuts=self.histCuts
+                    )
 
         friends = { 'friends': {} }
         if self.make_top_reconstruction is not None:

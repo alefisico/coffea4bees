@@ -123,7 +123,7 @@ if __name__ == '__main__':
         CMS.SaveCanvas(canv, f"{output_file}.png", close=False)
         CMS.SaveCanvas(canv, f"{output_file}.C")
 
-
+    # channels = [ 'HHbb_2018' ]
     for i, ichannel in enumerate(channels):
         tmp_folder = f'shapes_{args.type_of_fit}/{ichannel}'
         if i==0:
@@ -148,6 +148,8 @@ if __name__ == '__main__':
         ax.Set( ax.GetNbins(), 0, 1.0 )
         ih.ResetStats()
     print(f"NUmber of bkg events in last bin: {hists['TotalBkg'].GetBinContent(hists['TotalBkg'].GetNbinsX())}")
+    #print(hists['TotalBkg'].GetNbinsX())
+    sys.exit(0)
     
     # Remove data points in hists['data'] that are higher than 0.5 in X
     # for bin_idx in range(1, hists['data'].GetNbinsX() + 1):
@@ -219,6 +221,7 @@ if __name__ == '__main__':
     CMS.GetcmsCanvasHist(nominal_can.cd(2)).GetXaxis().SetTitleOffset(1.5)
     CMS.GetcmsCanvasHist(nominal_can.cd(2)).GetYaxis().SetTitleOffset(0.8)
 
+    # output_file = f"{args.output}/SvB_MA_postfitplots_{channels[0]}_{args.type_of_fit}"
     output_file = f"{args.output}/SvB_MA_postfitplots_{args.type_of_fit}"
     CMS.SaveCanvas(nominal_can, f"{output_file}.pdf", close=False )
     CMS.SaveCanvas(nominal_can, f"{output_file}.png", close=False )

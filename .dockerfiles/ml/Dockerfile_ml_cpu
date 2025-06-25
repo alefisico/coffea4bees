@@ -1,4 +1,4 @@
-FROM condaforge/mambaforge:22.11.1-4
+FROM docker.io/condaforge/mambaforge:22.11.1-4
 
 # python
 # TODO the env.yml files should be copied to somewhere in this repo

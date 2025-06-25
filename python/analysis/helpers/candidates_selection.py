@@ -1,5 +1,6 @@
 import numpy as np
 import awkward as ak
+import logging
 from base_class.math.random import Squares
 from analysis.helpers.SvB_helpers import compute_SvB
 from coffea.nanoevents.methods import vector
@@ -13,6 +14,7 @@ def create_cand_jet_dijet_quadjet(
     classifier_SvB_MA=None,
     processOutput=None,
     isRun3=False,
+    include_lowptjets=False,
 ):
     """
     Creates candidate jets, dijets, and quadjets for event selection.
@@ -51,8 +53,22 @@ def create_cand_jet_dijet_quadjet(
     # Build and select boson candidate jets with bRegCorr applied
     #
     sorted_idx = ak.argsort( selev.Jet.btagScore * selev.Jet.selected, axis=1, ascending=False )
-    canJet_idx = sorted_idx[:, 0:4]
-    notCanJet_idx = sorted_idx[:, 4:]
+    if include_lowptjets:
+        sorted_idx_lowpt = ak.argsort( selev.Jet.btagScore * selev.Jet.selected_lowpt, axis=1, ascending=False )
+        canJet_idx = ak.concatenate([sorted_idx[:, 0:3], sorted_idx_lowpt[:, :1]], axis=1)
+        logging.debug(f"lowpt selected {(selev.Jet.selected_lowpt)[:1]}")
+        logging.debug(f"both lowpt {(selev.Jet.btagScore * selev.Jet.selected_lowpt)[:1]}")
+        logging.debug(f"sorted_idx_lowpt {sorted_idx_lowpt[:1]}")
+
+    else:
+        canJet_idx = sorted_idx[:, 0:4]
+    # Exclude canJet_idx from sorted_idx
+    mask = ~ak.any(canJet_idx[:, :, np.newaxis] == sorted_idx[:, np.newaxis, :], axis=1)
+    notCanJet_idx = sorted_idx[mask]
+    
+    logging.debug(f"canJet_idx {canJet_idx[:1]}")
+    logging.debug(f"notCanJet_idx {notCanJet_idx[:1]}\n\n")
+    
 
     # # apply bJES to canJets
     canJet = selev.Jet[canJet_idx] * selev.Jet[canJet_idx].bRegCorr

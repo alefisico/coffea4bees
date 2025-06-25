@@ -1,7 +1,14 @@
 runner:
-  workers: 4
-  condor_memory: 4GB
+  workers: 100
+  condor_memory: 2GB
   chunksize: 10000
+  condor_transfer_input_files:
+    - 'analysis/'
+    - 'base_class/'
+    - 'classifier/'
+    - 'data/'
+    - 'skimmer/'
+    - 'metadata/'
 
 config:
   corrections_metadata: 'analysis/metadata/corrections.yml'
