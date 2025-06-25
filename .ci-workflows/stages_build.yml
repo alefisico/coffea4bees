@@ -66,7 +66,7 @@ build_container_reana:
 
 build_container_classifier:
   extends:
-    - .build_kaniko
+    - .buildah
   before_script:
     - export EXTRA_TAGS="classifier_$(date +%Y%m%d)_$CI_COMMIT_SHORT_SHA"
     - echo $EXTRA_TAGS
