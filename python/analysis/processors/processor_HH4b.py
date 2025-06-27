@@ -182,7 +182,7 @@ class analysis(processor.ProcessorABC):
         # Reading SvB friend trees
         #
         path = fname.replace(fname.split("/")[-1], "")
-        if self.apply_FvT and not self.classifier_FvT:
+        if self.apply_FvT and self.classifier_FvT is None:
             if "FvT" in self.friends:
                 event["FvT"] = rename_FvT_friend(target, self.friends["FvT"])
                 if self.config["isDataForMixed"] or self.config["isTTForMixed"]:
