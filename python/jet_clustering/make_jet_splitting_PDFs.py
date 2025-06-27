@@ -337,8 +337,7 @@ def doPlots(year, doBoosted=False, debug=False):
 
     # If doing boosted
     if doBoosted:
-         patterns["1b0j/1b0j"] = zA_mA_l_mB_l
-
+         patterns["1b0j/1b0j"] = zA_l_mA_l_mB_l
 
 
     #

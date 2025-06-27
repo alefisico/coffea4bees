@@ -164,8 +164,9 @@ class DeClustererBoosted(PicoAOD):
         #
         # Declustering
         #
-        b_pt_threshold = 30 # Min pt of subjets ?
-        declustered_jets = make_synthetic_event(clustered_jets, clustering_pdfs, declustering_rand_seed=self.declustering_rand_seed, b_pt_threshold=b_pt_threshold, chunk=chunk, debug=False)
+        b_pt_threshold = 20 # Min pt of subjets ?
+        declustered_jets = make_synthetic_event(clustered_jets, clustering_pdfs, declustering_rand_seed=self.declustering_rand_seed,
+                                                b_pt_threshold=b_pt_threshold, dr_threshold=0, chunk=chunk, debug=False)
 
         declustered_jets = declustered_jets[ak.argsort(declustered_jets.btagScore, axis=1, ascending=True)]
 
@@ -182,7 +183,8 @@ class DeClustererBoosted(PicoAOD):
         n_jet = ak.num(declustered_jets)
         total_jet = int(ak.sum(n_jet))
 
-
+        print(f"Declustered jets: {declustered_jets.btagScore}\n")
+        print(f"Declustered jets: {declustered_.btagScore}\n")
 
         # These need to change
         out_branches = {

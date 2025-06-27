@@ -215,6 +215,12 @@ def compute_decluster_variables(clustered_splittings):
     #
     #  Clustering (calc variables to histogram)
     #
+    print("pz0 dot partA_pz",clustered_splittings_pz0.dot(clustered_splittings_part_A_pz0)[11:16])
+    print("splitting pz0\n\t pt:",clustered_splittings_pz0.pt[11:16], "\n\t eta:", clustered_splittings_pz0.eta[11:16], "\n\t phi:", clustered_splittings_pz0.phi[11:16],"\n")
+    print("part A pz0\n\t pt:",clustered_splittings_part_A_pz0.pt[11:16], "\n\t eta:", clustered_splittings_part_A_pz0.eta[11:16], "\n\t phi:", clustered_splittings_part_A_pz0.phi[11:16],"\n", clustered_splittings.part_A.btag_string[11:16], "\n")
+    print("part B pz0\n\t pt:",clustered_splittings_part_B_pz0.pt[11:16], "\n\t eta:", clustered_splittings_part_B_pz0.eta[11:16], "\n\t phi:", clustered_splittings_part_B_pz0.phi[11:16],"\n")
+
+    clustered_splittings["zA_num"]        = clustered_splittings_pz0.dot(clustered_splittings_part_A_pz0)
     clustered_splittings["zA"]        = clustered_splittings_pz0.dot(clustered_splittings_part_A_pz0) / (clustered_splittings_pz0.pt**2)
     clustered_splittings["mA"]        = clustered_splittings.part_A.mass
     clustered_splittings["rhoA"]      = clustered_splittings.part_A.mass / clustered_splittings.part_A.pt
@@ -499,7 +505,7 @@ def decluster_combined_jets(input_jet, debug=False):
     return pA, pB
 
 
-def decluster_splitting_types(input_jets, splitting_types, input_pdfs, rand_seed, b_pt_threshold=40, chunk=None, debug=False):
+def decluster_splitting_types(input_jets, splitting_types, input_pdfs, rand_seed, *, b_pt_threshold=40, dr_threshold=0.4, chunk=None, debug=False):
 
     if debug:
         print(f"{chunk} decluster_splitting_types input rand_seed {rand_seed}\n")
@@ -589,7 +595,7 @@ def decluster_splitting_types(input_jets, splitting_types, input_pdfs, rand_seed
         fail_pt_b_mask  = (A_is_b_mask & (declustered_jets_A.pt < b_pt_threshold) )          | (B_is_b_mask & (declustered_jets_B.pt < b_pt_threshold))
         fail_eta_b_mask = (A_is_b_mask & (np.abs(declustered_jets_A.eta) > 2.5)) | (B_is_b_mask & (np.abs(declustered_jets_B.eta) > 2.5))
 
-        fail_dr_mask  = declustered_jets_A.delta_r(declustered_jets_B) < 0.4
+        fail_dr_mask  = declustered_jets_A.delta_r(declustered_jets_B) < dr_threshold
         clustering_fail = fail_pt_mask | fail_pt_b_mask | fail_eta_b_mask | fail_dr_mask
 
         if num_trys > _MAX_NUM_JET_RETRY:
@@ -612,7 +618,7 @@ def decluster_splitting_types(input_jets, splitting_types, input_pdfs, rand_seed
     return unclustered_jets
 
 
-def make_synthetic_event_core(input_jets, input_pdfs, rand_seed, b_pt_threshold, chunk=None, debug=False):
+def make_synthetic_event_core(input_jets, input_pdfs, rand_seed, *, b_pt_threshold=40, dr_threshold=0.4, chunk=None, debug=False):
 
     if debug:
         print(f"{chunk} make_synthetic_event_core rand_seed {rand_seed}\n")
@@ -630,7 +636,7 @@ def make_synthetic_event_core(input_jets, input_pdfs, rand_seed, b_pt_threshold,
         if debug:
             print(f"(make_synthetic_event_core) splitting_types was {splitting_types}")
 
-        input_jets = decluster_splitting_types(input_jets, splitting_types, input_pdfs, rand_seed, b_pt_threshold=b_pt_threshold, chunk=chunk, debug=debug)
+        input_jets = decluster_splitting_types(input_jets, splitting_types, input_pdfs, rand_seed, b_pt_threshold=b_pt_threshold, dr_threshold=dr_threshold, chunk=chunk, debug=debug)
 
         splitting_types = get_list_of_combined_jet_types(input_jets)
 
@@ -647,7 +653,7 @@ def make_synthetic_event_core(input_jets, input_pdfs, rand_seed, b_pt_threshold,
 #   return make_synthetic_event_core(input_jets, input_pdfs, debug=debug)
 
 
-def make_synthetic_event(input_jets, input_pdfs, declustering_rand_seed=66, b_pt_threshold=40, chunk=None, debug=False):
+def make_synthetic_event(input_jets, input_pdfs, declustering_rand_seed=66, *, b_pt_threshold=40, dr_threshold=0.4, chunk=None, debug=False):
 
     if debug:
         print(f"{chunk} make_synthetic_event rand_seed {declustering_rand_seed}\n")
@@ -679,7 +685,8 @@ def make_synthetic_event(input_jets, input_pdfs, declustering_rand_seed=66, b_pt
 
         to_decluster_indicies = np.where(events_to_decluster_mask)[0]
 
-        declustered_events = make_synthetic_event_core(input_jets[to_decluster_indicies], input_pdfs, 7 * num_trys + declustering_rand_seed, b_pt_threshold=b_pt_threshold, chunk=chunk, debug=debug)
+        declustered_events = make_synthetic_event_core(input_jets[to_decluster_indicies], input_pdfs, 7 * num_trys + declustering_rand_seed,
+                                                       b_pt_threshold=b_pt_threshold, dr_threshold=dr_threshold, chunk=chunk, debug=debug)
 
         #
         #  Check the min dr
@@ -693,7 +700,7 @@ def make_synthetic_event(input_jets, input_pdfs, declustering_rand_seed=66, b_pt
 
         min_dr2 = ak.min(ak.min(delta_r2_matrix_masked, axis=1), axis=1)
 
-        pass_dr2_mask_local = min_dr2 > 0.16    # 0.4**2
+        pass_dr2_mask_local = min_dr2 > (dr_threshold * dr_threshold)
 
         if num_trys > _MAX_NUM_EVENT_RETRY:
             print(f"Bailing on dR check with {np.sum(events_to_decluster_mask == True)}\n")

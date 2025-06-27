@@ -13,7 +13,7 @@ from analysis.helpers.cutflow import cutFlow
 
 from analysis.helpers.event_selection import apply_event_selection
 from base_class.hist import Collection, Fill
-from jet_clustering.clustering_hist_templates import ClusterHistsBoosted
+from jet_clustering.clustering_hist_templates import ClusterHistsBoosted, ClusterHistsDetailed
 from base_class.physics.object import Jet
 
 from jet_clustering.declustering import compute_decluster_variables
@@ -109,9 +109,6 @@ class analysis(processor.ProcessorABC):
 
 
 
-
-
-
         list_of_cuts = [ "lumimask", "passNoiseFilter", "passHLT", "passNFatJets" ]
         analysis_selections = selections.all(*list_of_cuts)
         selev = event[analysis_selections]
@@ -150,11 +147,36 @@ class analysis(processor.ProcessorABC):
         #print(selev.selFatJet.btag_string)
 
         #
+        #  Compute Soft drop
+        #
+        selev["selFatJet","subjetmass"] = (selev.selFatJet.subjets[:,:,0] + selev.selFatJet.subjets[:,:,1]).mass
+
+        selev["selFatJet","subjetdr"]    = (selev.selFatJet.subjets[:,:,0].delta_r(selev.selFatJet.subjets[:,:,1]))
+        selev["selFatJet","subjetpt0"]   = (selev.selFatJet.subjets[:,:,0].pt)
+        selev["selFatJet","subjetpt1"]   = (selev.selFatJet.subjets[:,:,1].pt)
+
+
+        # print( "softdrop mass",selev[0:5].selFatJet.msoftdrop.tolist(),"\n")
+        # print( "subjet mass",selev[0:5].selFatJet.subjetmass.tolist(),"\n")
+        #print( "subjet pt0",selev[0:5].selFatJet.subjets[:,:,0].pt.tolist(),"\n")
+        #print( "subjet pt1",selev[0:5].selFatJet.subjets[:,:,1].pt.tolist(),"\n")
+
+        #
         # Adding btag and jet flavor to fat jets
         #
         particleNet_HbbvsQCD_flat = ak.flatten(selev.selFatJet.particleNet_HbbvsQCD)
         particleNet_HbbvsQCD_flat_str = [ str(round(v,3)) for v in particleNet_HbbvsQCD_flat ]
-        selev["selFatJet", "btag_string"] = ak.unflatten(particleNet_HbbvsQCD_flat_str, ak.num(selev.selFatJet))
+        #selev["selFatJet", "btag_string"] = ak.unflatten(particleNet_HbbvsQCD_flat_str, ak.num(selev.selFatJet))
+
+
+        indices = []
+        indices_str = []
+        for arr in selev.selFatJet.pt:
+            indices_str.append( [f"({i},{i})" for i in range(len(arr))] )
+            indices.append(list(range(len(arr))))
+
+        selev["selFatJet", "btag_string"] = indices_str
+
 
         fatjet_flavor_flat = np.array(['b'] * len(particleNet_HbbvsQCD_flat))
         selev["selFatJet", "jet_flavor"] = ak.unflatten(fatjet_flavor_flat, ak.num(selev.selFatJet))
@@ -261,6 +283,10 @@ class analysis(processor.ProcessorABC):
         #
         selev["splitting_1b0j/1b0j"]   = fat_jet_splittings_events
 
+        print("zA",selev["splitting_1b0j/1b0j"].zA[11:16].tolist(),"\n")
+        print("zA_num",selev["splitting_1b0j/1b0j"].zA_num[11:16].tolist(),"\n")
+        print("part A\n\t pt:",selev["splitting_1b0j/1b0j"].part_A[11:16].pt, "\n\t eta:", selev["splitting_1b0j/1b0j"].part_A[11:16].eta, "\n\t phi:", selev["splitting_1b0j/1b0j"].part_A[11:16].phi,"\n")
+        print("part B\n\t pt:",selev["splitting_1b0j/1b0j"].part_B[11:16].pt, "\n\t eta:", selev["splitting_1b0j/1b0j"].part_B[11:16].eta, "\n\t phi:", selev["splitting_1b0j/1b0j"].part_B[11:16].phi,"\n")
 
 
 #        # ------------------------------------------------------------
@@ -304,7 +330,7 @@ class analysis(processor.ProcessorABC):
             "SR": selev.SR,
         })
 
-
+        #selev.sel
 
 
 
@@ -329,6 +355,14 @@ class analysis(processor.ProcessorABC):
         #
         fill += Jet.plot(("fatJets", "Selected Fat Jets"),        "selFatJet",           skip=["deepjet_c"], bins={"pt": (50, 0, 1000)})
 
+        #                 "Histogram Name", (nBins, min, max, (variable (selev.variable), title) )
+        fill += hist.add( "msoftdrop",  (100, 0, 200, ("selFatJet.msoftdrop",   'Soft Drop Mass')))
+
+        fill += hist.add( "msubjet",    (100, 0, 200, ("selFatJet.subjetmass",  'Sub Jet Mass')))
+        fill += hist.add( "subjetdr",   (100, 0, 1.0, ("selFatJet.subjetdr",    'Sub Jet Delta R')))
+        fill += hist.add( "subjetpt0",  (100, 0, 400, ("selFatJet.subjetpt0",   'Sub Jet0 Pt')))
+        fill += hist.add( "subjetpt1",  (100, 0, 400, ("selFatJet.subjetpt1",   'Sub Jet1 Pt')))
+
         # print(f" SubJets pt {selev.selFatJet_subjets.pt[0:5]}\n")
         # fill += Jet.plot(("subJets", "Selected Fat Jet SubJet"),   "selFatJet_subjets",  skip=["deepjet_c","deepjet_b","id_pileup","id_jet","n"], bins={"pt": (50, 0, 1000)})
 
@@ -337,7 +371,7 @@ class analysis(processor.ProcessorABC):
 
 
         fill += ClusterHistsBoosted( ("splitting_1b0j/1b0j", "1b0j/1b0j Splitting"), "splitting_1b0j/1b0j" )
-
+        fill += ClusterHistsDetailed( ("detail_splitting_1b0j/1b0j", "1b0j/1b0j Splitting"), "splitting_1b0j/1b0j" )
         #
         # fill histograms
         #
