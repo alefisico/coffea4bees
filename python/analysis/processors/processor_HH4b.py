@@ -50,6 +50,7 @@ from ..helpers.load_friend import (
 if TYPE_CHECKING:
     from ..helpers.classifier.HCR import HCRModelMetadata
 from analysis.helpers.truth_tools import find_genpart
+from ..helpers.classifier.HCR import Legacy_HCREnsemble_FvT
 
 #
 # Setup
@@ -68,6 +69,11 @@ def _init_classfier(path: str | list[HCRModelMetadata]):
         from ..helpers.classifier.HCR import HCREnsemble
         return HCREnsemble(path)
 
+def _init_classfier_FvT(path: str | list[HCRModelMetadata]):
+    if path is None:
+        return None
+    from ..helpers.classifier.HCR import Legacy_HCREnsemble_FvT
+    return Legacy_HCREnsemble_FvT(path)
 
 class analysis(processor.ProcessorABC):
     def __init__(
@@ -75,6 +81,7 @@ class analysis(processor.ProcessorABC):
         *,
         SvB: str|list[HCRModelMetadata] = None,
         SvB_MA: str|list[HCRModelMetadata] = None,
+        FvT: str|list[HCRModelMetadata] = None,
         blind: bool = False,
         apply_JCM: bool = True,
         JCM_file: str = "analysis/weights/JCM/AN_24_089_v3/jetCombinatoricModel_SB_6771c35.yml",
@@ -110,6 +117,7 @@ class analysis(processor.ProcessorABC):
         self.apply_boosted_veto = apply_boosted_veto
         self.classifier_SvB = _init_classfier(SvB)
         self.classifier_SvB_MA = _init_classfier(SvB_MA)
+        self.classifier_FvT = _init_classfier_FvT(FvT)
         with open(corrections_metadata, "r") as f:
             self.corrections_metadata = yaml.safe_load(f)
 
@@ -174,13 +182,14 @@ class analysis(processor.ProcessorABC):
         # Reading SvB friend trees
         #
         path = fname.replace(fname.split("/")[-1], "")
-        if self.apply_FvT:
+        if self.apply_FvT and not self.classifier_FvT:
             if "FvT" in self.friends:
                 event["FvT"] = rename_FvT_friend(target, self.friends["FvT"])
                 if self.config["isDataForMixed"] or self.config["isTTForMixed"]:
                     for _FvT_name in event.metadata["FvT_names"]:
                         event[_FvT_name] = rename_FvT_friend(target, self.friends[_FvT_name])
                         event[_FvT_name, _FvT_name] = event[_FvT_name].FvT
+
             else:
                 # TODO: remove backward compatibility in the future
                 if self.config["isMixedData"]:
@@ -515,15 +524,17 @@ class analysis(processor.ProcessorABC):
             self._cutFlow.fill( "passPreSel_allTag_woTrig", event[selections.all(*allcuts)], allTag=True,
                                 wOverride=np.sum(weights.partial_weight(exclude=['CMS_bbbb_resolved_ggf_triggerEffSF'])[selections.all(*allcuts)] ))
 
-        weights, list_weight_names = add_pseudotagweights( event, weights,
-                                                           JCM=self.apply_JCM,
-                                                           apply_FvT=self.apply_FvT,
-                                                           isDataForMixed=self.config["isDataForMixed"],
-                                                           list_weight_names=list_weight_names,
-                                                           event_metadata=event.metadata,
-                                                           year_label=self.year_label,
-                                                           len_event=len(event),
-                                                          )
+        weights, list_weight_names = add_pseudotagweights( 
+            event, 
+            weights,
+            JCM=self.apply_JCM,
+            apply_FvT=self.apply_FvT,
+            isDataForMixed=self.config["isDataForMixed"],
+            list_weight_names=list_weight_names,
+            event_metadata=event.metadata,
+            year_label=self.year_label,
+            len_event=len(event),
+            )
 
         #
         # Example of how to write out event numbers
@@ -586,15 +597,20 @@ class analysis(processor.ProcessorABC):
         #
         #  Build di-jets and Quad-jets
         #
-        selev = create_cand_jet_dijet_quadjet( selev,
-                                               apply_FvT=self.apply_FvT,
-                                               run_SvB=self.run_SvB,
-                                               run_systematics=self.run_systematics,
-                                               classifier_SvB=self.classifier_SvB,
-                                               classifier_SvB_MA=self.classifier_SvB_MA,
-                                               processOutput = processOutput,
-                                               isRun3=self.config["isRun3"],
-                                              )
+        selev = create_cand_jet_dijet_quadjet( 
+            selev,
+            apply_FvT=self.apply_FvT,
+            classifier_FvT=self.classifier_FvT,
+            run_SvB=self.run_SvB,
+            run_systematics=self.run_systematics,
+            classifier_SvB=self.classifier_SvB,
+            classifier_SvB_MA=self.classifier_SvB_MA,
+            processOutput = processOutput,
+            isRun3=self.config["isRun3"],
+            weights=weights,
+            list_weight_names=list_weight_names,
+            analysis_selections=analysis_selections,
+            )
 
 
 

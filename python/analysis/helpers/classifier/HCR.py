@@ -55,6 +55,11 @@ class Legacy_HCREnsemble(networks.HCREnsemble):
         return F.softmax(c_logits, dim=-1).numpy(), F.softmax(q_logits, dim=-1).numpy()
 
 
+class Legacy_HCREnsemble_FvT(Legacy_HCREnsemble):
+    classes = ["d4", "d3", "t4", "t3"]
+
+
+
 class _HCRKFoldModel:
     def __init__(self, model: str, splitter: Splitter, **_):
         self.splitter = splitter

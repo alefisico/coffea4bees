@@ -3,11 +3,14 @@ import awkward as ak
 import logging
 from base_class.math.random import Squares
 from analysis.helpers.SvB_helpers import compute_SvB
+from analysis.helpers.FvT_helpers import compute_FvT
 from coffea.nanoevents.methods import vector
+from coffea.analysis_tools import Weights
 
 def create_cand_jet_dijet_quadjet(
     selev,
     apply_FvT: bool = False,
+    classifier_FvT=None,
     run_SvB: bool = False,
     run_systematics: bool = False,
     classifier_SvB=None,
@@ -15,6 +18,10 @@ def create_cand_jet_dijet_quadjet(
     processOutput=None,
     isRun3=False,
     include_lowptjets=False,
+    label3b: str = "threeTag",
+    weights: Weights = None,
+    list_weight_names: list[str] = None,
+    analysis_selections: ak.Array = None,
 ):
     """
     Creates candidate jets, dijets, and quadjets for event selection.
@@ -258,8 +265,20 @@ def create_cand_jet_dijet_quadjet(
         quadJet["rank"] = ( 10 * quadJet.passDiJetMass + quadJet.lead.passMDR + quadJet.subl.passMDR + quadJet.random )
         quadJet["selected"] = quadJet.rank == np.max(quadJet.rank, axis=1)
 
+    if classifier_FvT is not None:
+        logging.info("Computing FvT scores with classifier")
 
-    if apply_FvT:
+        mask_selev_3b = selev[label3b]
+        compute_FvT(selev, mask_selev_3b, FvT=classifier_FvT)
+
+        weight_FvT = np.copy(weights.partial_weight(include=['no_FvT']))
+        weight_FvT[analysis_selections] *= ak.to_numpy(selev.FvT.FvT)
+        weights.add("FvT", weight_FvT)
+        list_weight_names.remove("no_FvT")
+        list_weight_names.append("FvT")
+        logging.debug( f"FvT {weights.partial_weight(include=['FvT'])[:10]}\n" )
+
+    if apply_FvT or classifier_FvT is not None:
         quadJet["FvT_q_score"] = np.concatenate( [
             selev.FvT.q_1234[:, np.newaxis],
             selev.FvT.q_1324[:, np.newaxis],

@@ -13,12 +13,9 @@ config:
   run_systematics: false
   run_dilep_ttbar_crosscheck: true
   hist_cuts: [ passPreSel ]
-  # hist_cuts: [ passPreSel, passSvB, failSvB ]
   SvB: "analysis/weights/pytorch_models/2024_HHUL/SvB_HCR_8_np753_seed13_lr0.01_epochs20_offset*_epoch20.pkl"
   SvB_MA: "analysis/weights/pytorch_models/2024_HHUL/SvB_MA_HCR+attention_8_np1061_seed13_lr0.01_epochs20_offset*_epoch20.pkl"
+  FvT: "analysis/weights/pytorch_models/2023/FvT_HCR+attention_8_np1052_seed0_lr0.01_epochs20_offset*_epoch20.pkl"
   top_reconstruction_override: fast
-  friends:
-    trigWeight: "metadata/datasets_HH4b_2024_v1p1_trigweights.json@@trigWeight"
-    # SvB: "metadata/datasets_HH4b_2024_v1p1_friend_SvB.json@@SvB"
-    # SvB_MA: "metadata/datasets_HH4b_2024_v1p1_friend_SvB.json@@SvB_MA"
-    # top_reconstruction: "hists/local/top_reconstruction_friendtree.json"
+  # friends:
+  #   trigWeight: "metadata/datasets_HH4b_2024_v1p1_trigweights.json@@trigWeight"

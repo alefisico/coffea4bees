@@ -1654,13 +1654,17 @@ class HCREnsemble(nn.Module):
             architecture = 'HCR'
             useOthJets = ''
             features_index = 2
-            if '_MA' in pkl:
+            if 'attention' in pkl:
                 architecture += '_MA'
                 useOthJets = 'attention'
-                features_index = 3
+                features_index = 3 if '_MA_' in pkl else 2
             features = int(pkl.split('_')[features_index])
             ancillaryFeatures = ['year', 'nSelJets', 'xW', 'xbW']
-            self.HCRs.append( HCR(features, features, ancillaryFeatures, useOthJets=useOthJets, device='cpu', nClasses=5, architecture=architecture) )
+            state_dict = torch.load(path, map_location=torch.device('cpu'))
+            nClasses = state_dict['model']['out.conv.module.weight'].shape[0]
+            self.HCRs.append(
+                HCR(features, features, ancillaryFeatures, useOthJets=useOthJets, device='cpu', nClasses=nClasses, architecture=architecture)
+            )
             self.HCRs[-1].load_state_dict(torch.load(path, map_location=torch.device('cpu'))['model'])
             self.HCRs[-1].eval()
 

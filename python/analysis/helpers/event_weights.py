@@ -153,6 +153,7 @@ def add_pseudotagweights(
         weights (Weights): Weights object to store the calculated weights.
         JCM (callable, optional): Jet Combinatoric Model function for pseudo-tagging. Defaults to None.
         apply_FvT (bool, optional): Whether to apply FvT weights. Defaults to False.
+        JCM_lowpt (callable, optional): Jet Combinatoric Model function for low-pt jets. Defaults to None.
         isDataForMixed (bool, optional): Whether the data is for mixed events. Defaults to False.
         list_weight_names (list, optional): List to store the names of added weights. Defaults to an empty list.
         event_metadata (dict, optional): Metadata for the event. Defaults to an empty dictionary.
