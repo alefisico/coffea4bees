@@ -1,20 +1,18 @@
 workflow:
   rules:
-    # Do not run for tags
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'    
+    # Do not run if only markdown files changed
+    - changes:
+        - "**/*.md"
+      when: never
+      # Do not run for tags
     - if: $CI_COMMIT_TAG
       when: never
     # Do not run for branches with 'test' in the name
     - if: $CI_COMMIT_BRANCH =~ /test/
       when: never
-    # Do not run if only markdown files changed
-    - changes:
-        - "**/*.md"
-      when: never
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
     # Run for all other branch pushes (including after MR is accepted)
     - if: $CI_COMMIT_BRANCH
-    # Run for manual pipeline triggers
-    - if: $CI_PIPELINE_SOURCE == "web"
 
 variables:
   CONTAINER_HOST: cms-cmu
