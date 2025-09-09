@@ -115,8 +115,12 @@ setup_workspace:
     - cd /home/cmsusr/CMSSW_11_3_4/
     - cmsenv || true
     - cd -
+    - cd barista_framework/
+    - pwd && ls -la
+    - ls -la coffea4bees/
   tags:
     - k8s-cvmfs
+  retry: 2
 
 .base_classifier:
   needs:

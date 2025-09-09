@@ -10,7 +10,7 @@ sys.path.insert(0, os.getcwd())
 
 from coffea4bees.plots.iPlot import plot, plot2d
 import src.plotting.iPlot_config as cfg
-from src.plotting.plots import load_config, load_hists, read_axes_and_cuts
+from src.plotting.plots import load_config_4b, load_hists, read_axes_and_cuts
 from coffea4bees.analysis.tests.parser import wrapper
 
 

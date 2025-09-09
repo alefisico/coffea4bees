@@ -30,7 +30,7 @@ from coffea4bees.analysis.jcm_tools.helpers import (
     data_from_Hist, 
     prepHists
 )
-from src.plotting.plots import load_config, load_hists, read_axes_and_cuts, makePlot
+from src.plotting.plots import load_config_4b, load_hists, read_axes_and_cuts, makePlot
 
 
 def write_to_JCM_file(text: str, value: Any, jetCombinatoricModelFile, jetCombinatoricModelFile_yml) -> None:

@@ -29,7 +29,7 @@ from base_class.jcm_tools.helpers import (
     data_from_Hist, 
     prepHists
 )
-from base_class.plots.plots import load_config, load_hists, read_axes_and_cuts, makePlot
+from base_class.plots.plots import load_config_4b, load_hists, read_axes_and_cuts, makePlot
 
 
 def write_to_JCM_file(text: str, value: Any, jetCombinatoricModelFile, jetCombinatoricModelFile_yml) -> None:

@@ -19,7 +19,7 @@ from scipy.optimize import curve_fit
 from hist import Hist
 
 sys.path.insert(0, os.getcwd())
-from src.plotting.plots import load_config, load_hists, read_axes_and_cuts
+from src.plotting.plots import load_config_4b, load_hists, read_axes_and_cuts
 import src.plotting.iPlot_config as cfg
 
 from src.JCMTools import getCombinatoricWeight, getPseudoTagProbs
