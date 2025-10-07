@@ -1,1 +1,0 @@
-# Dihiggs physics module

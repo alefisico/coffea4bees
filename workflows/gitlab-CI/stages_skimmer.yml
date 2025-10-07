@@ -1,0 +1,53 @@
+skimmer_test_coffea4bees:
+  stage: skimmer   
+  extends:
+    - .base_analysis
+  script:
+    - source coffea4bees/scripts/skimmer-test.sh --output-base /builds/$CI_PROJECT_PATH/output
+  artifacts: 
+    paths:
+      - output/skimmer_test/picoaod_datasets_GluGluToHHTo4B_cHHH0_UL18.yml
+      - output/skimmer_test/GluGluToHHTo4B_cHHH0_UL18/picoAOD.chunk0.root
+      - output/skimmer_test/GluGluToHHTo4B_cHHH0_UL18/picoAOD.chunk1.root
+      - output/skimmer_test/datasets_HH4b.yml
+
+skimmer_boosted_coffea4bees:
+  stage: skimmer
+  extends:
+    - .base_analysis
+  script:
+    - source coffea4bees/scripts/skimmer-boosted.sh --output-base /builds/$CI_PROJECT_PATH/output
+  artifacts: 
+    paths:
+      - output/skimmer_boosted/picoaod_datasets_GluGluToHHTo4B_cHHH0_UL18.yml
+      - output/skimmer_boosted/GluGluToHHTo4B_cHHH0_UL18/picoAOD.chunk0.root
+      - output/skimmer_boosted/GluGluToHHTo4B_cHHH0_UL18/picoAOD.chunk1.root
+      - output/skimmer_boosted/datasets_HH4b.yml
+
+synthetic_dataset_make_dataset_coffea4bees:
+  stage: skimmer
+  extends:
+    - .base_analysis
+  script:
+    - source coffea4bees/scripts/synthetic-dataset-make-dataset.sh --output-base /builds/$CI_PROJECT_PATH/output
+  artifacts:
+    paths:
+      - output/synthetic_dataset_make_dataset/picoaod_datasets_declustered_test_UL18.yml
+      - output/synthetic_dataset_make_dataset/data_UL18A/picoAOD_seed5.root
+      - output/synthetic_dataset_make_dataset/data_UL18B/picoAOD_seed5.root
+      - output/synthetic_dataset_make_dataset/data_UL18C/picoAOD_seed5.root
+      - output/synthetic_dataset_make_dataset/data_UL18D/picoAOD_seed5.root
+      - output/synthetic_dataset_make_dataset/GluGluToHHTo4B_cHHH1_UL18/picoAOD_seed5.root
+
+
+synthetic_dataset_make_dataset_Run3_coffea4bees:
+  stage: skimmer
+  extends:
+    - .base_analysis
+  script:
+    - source coffea4bees/scripts/synthetic-dataset-make-dataset-Run3.sh --output-base /builds/$CI_PROJECT_PATH/output
+  artifacts:
+    paths:
+      - output/synthetic_dataset_make_dataset_Run3/picoaod_datasets_declustered_test_2023_BPix.yml
+      - output/synthetic_dataset_make_dataset_Run3/data_2023_BPixD/picoAOD_seed5.root
+      - output/synthetic_dataset_make_dataset_Run3/data_2023_BPixE/picoAOD_seed5.root

@@ -1,0 +1,67 @@
+tools_merge_test_coffea4bees:
+  stage: tools
+  extends:
+    - .base_analysis
+  needs:
+    - setup_workspace
+    - analysis_test_coffea4bees
+    - analysis_signals_test_coffea4bees
+  script:
+    - source coffea4bees/scripts/tools-merge-test.sh --output-base /builds/$CI_PROJECT_PATH/output
+  artifacts: 
+    paths:
+      - output/tools_merge_test/test.coffea
+
+tools_memory_test_coffea4bees:
+  stage: tools
+  needs:
+    - setup_workspace
+    - analysis_systematics_test_coffea4bees
+  extends:
+    - .base_analysis
+  script:
+    - source coffea4bees/scripts/tools-memory-test.sh
+  allow_failure: true
+  artifacts:
+    paths:
+      - output/tools_memory_test/mprofile_ci_test.png
+
+tools_make_jcm_weights_coffea4bees:    
+  stage: tools
+  extends:
+    - .base_analysis
+  needs: 
+    - setup_workspace
+    - tools_merge_test_coffea4bees
+  script:
+    - source coffea4bees/scripts/tools-make-jcm-weights.sh --output-base /builds/$CI_PROJECT_PATH/output
+  artifacts:
+    paths:
+      - output/tools_make_jcm_weights/testJCM_ROOT/jetCombinatoricModel_SB_.yml
+
+tools_twostageclosure_mixed_coffea4bees:
+  stage: tools
+  extends:
+    - .base_combine
+  needs: 
+    - setup_workspace
+    - analysis_test_mixed_coffea4bees
+  script:
+    - source coffea4bees/scripts/tools-twostageclosure-mixed.sh --output-base /builds/$CI_PROJECT_PATH/output
+  artifacts:
+    paths:
+      - output/tools_twostageclosure_mixed/test_dump_twoStageClosureInputsCounts.yml
+
+# Needs review
+# histtojson-test-job:   
+#   stage: tools
+#   extends:
+#     - .base_analysis
+#   needs: 
+#     - tools_merge_test_coffea4bees
+#   script:
+#     - cd stats_analysis/
+#     - python convert_hist_to_json.py -o hists/histAll.json -i ../analysis/hists/test.coffea
+#   artifacts: 
+#     paths:
+#       - stats_analysis/hists/histAll.json

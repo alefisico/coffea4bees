@@ -1,0 +1,313 @@
+analysis_container = "/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-cmu/barista:latest"
+combine_container = "/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0"
+
+output_dir = "CI_output"
+
+## since we are not going to run the entire workflow, we only need some outputs
+outputs = [ 
+    f"{output_dir}/code_analysis_helpers.log",
+    f"{output_dir}/jet_clustering.log",
+    f"{output_dir}/trig_emulator.log",
+    f"{output_dir}/memory_test.log"
+]
+
+rule all:
+    input: outputs
+
+
+###### THIS IS WHERE THE RULES START ######
+
+rule code_analysis_helpers:
+    container: analysis_container
+    log: f"{output_dir}/code_analysis_helpers.log"
+    shell: "source coffea4bees/scripts/code-analysis-helpers.sh 2>&1 | tee -a {log}"
+
+rule code_jet_clustering:
+    container: analysis_container
+    log: f"{output_dir}/code_jet_clustering.log"
+    shell: "source coffea4bees/scripts/code-jet-clustering.sh 2>&1 | tee -a {log}"
+
+rule code_trig_emulator:
+    container: analysis_container
+    log: f"{output_dir}/code_trig_emulator.log"
+    shell: "source coffea4bees/scripts/code-trig-emulator.sh 2>&1 | tee -a {log}"
+
+rule tools_memory_test:
+    container: analysis_container
+    log: f"{output_dir}/tools_memory_test.log"
+    shell: "source coffea4bees/scripts/tools-memory-test.sh --output-base {output_dir} 2>&1 | tee -a {log}"
+
+rule skimmer_test:
+    container: analysis_container
+    log: f"{output_dir}/skimmer_test.log"
+    output: f"{output_dir}/skimmer_test/picoaod_datasets_GluGluToHHTo4B_cHHH0_UL18.yml"
+    shell: "source coffea4bees/scripts/skimmer-test.sh --output-base {output_dir} 2>&1 | tee -a {log}"
+
+rule skimmer_boosted:
+    container: analysis_container
+    log: f"{output_dir}/skimmer_boosted.log"
+    shell: "source coffea4bees/scripts/skimmer-boosted.sh --output-base {output_dir} 2>&1 | tee -a {log}"
+
+rule synthetic_dataset_make_dataset:
+    container: analysis_container
+    log: f"{output_dir}/synthetic_dataset_make_dataset.log"
+    output: f"{output_dir}/synthetic_dataset_make_dataset/picoaod_datasets_declustered_test_UL18.yml"
+    shell: "source coffea4bees/scripts/synthetic-dataset-make-dataset.sh --output-base {output_dir} 2>&1 | tee -a {log}"
+
+rule weights_trigger_friendtree:
+    container: analysis_container
+    log: f"{output_dir}/weights_trigger_friendtree.log"
+    output: [f"{output_dir}/weights_trigger_friendtree/trigger_weights_friends.json", f"{output_dir}/weights_trigger_friendtree/GluGluToHHTo4B_cHHH1_UL18/trigWeight.chunk1.root"]
+    shell: "source coffea4bees/scripts/weights-trigger-friendtree.sh --output-base {output_dir} 2>&1 | tee -a {log}"
+
+
+rule topreco_friendtree:
+    container: analysis_container
+    log: f"{output_dir}/topreco_friendtree.log"
+    output: f"{output_dir}/topreco_friendtree/top_reconstruction_friendtree.json"
+    shell: "source coffea4bees/scripts/topreco-friendtree.sh --output-base {output_dir} 2>&1 | tee -a {log}"
+
+
+rule analysis_test:
+    output: f"{output_dir}/analysis_test/test_databkgs.coffea" 
+    log: f"{output_dir}/analysis_test.log"
+    container: analysis_container
+    shell: "source coffea4bees/scripts/analysis-test.sh --output-base {output_dir} 2>&1 | tee -a {log}"
+
+rule analysis_signals_test:
+    output: f"{output_dir}/analysis_signals_test/test_signal.coffea" 
+    log: f"{output_dir}/analysis_signals_test.log"
+    container: analysis_container
+    shell: "source coffea4bees/scripts/analysis-signals-test.sh --output-base {output_dir} 2>&1 | tee -a {log}"
+
+rule tools_merge_test:
+    input: [f"{output_dir}/analysis_test/test_databkgs.coffea", f"{output_dir}/analysis_signals_test/test_signal.coffea"]
+    output: f"{output_dir}/tools_merge_test/test.coffea" 
+    log: f"{output_dir}/tools_merge_test.log"
+    container: analysis_container
+    shell: "source coffea4bees/scripts/tools-merge-test.sh --output-base {output_dir} 2>&1 | tee -a {log}"
+
+rule analysis_truthStudy_test:
+    output: f"{output_dir}/analysis_truthStudy_test/testTruth.coffea" 
+    log: f"{output_dir}/analysis_truthStudy_test.log"
+    container: analysis_container
+    shell: "source coffea4bees/scripts/analysis-truthStudy-test.sh --output-base  {output_dir} 2>&1 | tee -a {log}"
+
+rule analysis_truthStudy_plot:
+    input: f"{output_dir}/analysis_truthStudy_test/testTruth.coffea"
+    output: f"{output_dir}/analysis_truthStudy_plot/RunII/pass4GenBJets00/fourTag/SR/otherGenJet00_pt.pdf"
+    log: f"{output_dir}/analysis_truthStudy_plot.log"
+    container: analysis_container
+    shell: "source coffea4bees/scripts/analysis-truthStudy-plot.sh --output-base  {output_dir} 2>&1 | tee -a {log}"
+
+rule synthetic_dataset_cluster:
+    output: f"{output_dir}/synthetic_dataset_cluster/test_synthetic_datasets.coffea" 
+    log: f"{output_dir}/synthetic_dataset_cluster.log"
+    container: analysis_container
+    shell: "source coffea4bees/scripts/synthetic-dataset-cluster.sh --output-base  {output_dir} 2>&1 | tee -a {log}"
+
+
+rule analysis_unsup_test:
+    output: f"{output_dir}/analysis_unsup_test/test_unsup.coffea" 
+    log: f"{output_dir}/analysis_unsup_test.log"
+    container: analysis_container
+    shell: "source coffea4bees/scripts/analysis-unsup-test.sh --output-base  {output_dir} 2>&1 | tee -a {log}"
+
+rule analysis_test_mixed_job:
+    output: [f"{output_dir}/analysis_test_mixed_job/testMixedData.json", f"{output_dir}/analysis_test_mixed_job/testMixedData.coffea"]
+    log: f"{output_dir}/analysis_test_mixed_job.log"
+    container: analysis_container
+    shell: "source coffea4bees/scripts/analysis-test-mixed.sh --output-base  {output_dir} 2>&1 | tee -a {log}"
+
+rule analysis_systematics_test_job:
+    output: f"{output_dir}/analysis_systematics_test_job/test_systematics.coffea" 
+    log: f"{output_dir}/analysis_systematics_test_job.log"
+    container: analysis_container
+    shell: "source coffea4bees/scripts/analysis-systematics-test.sh --output-base {output_dir} 2>&1 | tee -a {log}"
+
+rule skimmer_analysis_test:
+    input: f"{output_dir}/skimmer_test/picoaod_datasets_GluGluToHHTo4B_cHHH0_UL18.yml"
+    output: f"{output_dir}/skimmer_analysis_test/test_skimmer.coffea"
+    log: f"{output_dir}/skimmer_analysis_test.log"
+    container: analysis_container
+    shell: "source coffea4bees/scripts/skimmer-analysis-test.sh --output-base  {output_dir} 2>&1 | tee -a {log}"
+
+rule synthetic_dataset_analyze:
+    input: f"{output_dir}/synthetic_dataset_make_dataset/picoaod_datasets_declustered_test_UL18.yml"
+    output: f"{output_dir}/synthetic_dataset_analyze/test_synthetic_datasets.coffea" 
+    log: f"{output_dir}/synthetic_dataset_analyze.log"
+    container: analysis_container
+    shell: "source coffea4bees/scripts/synthetic-dataset-analyze.sh --output-base  {output_dir} 2>&1 | tee -a {log}"
+
+rule synthetic_dataset_analyze_Run3:
+    input: f"{output_dir}/synthetic_dataset_make_dataset_Run3/picoaod_datasets_declustered_test_2023_BPix.yml"
+    output: f"{output_dir}/synthetic_dataset_analyze_Run3/test_synthetic_datasets.coffea" 
+    log: f"{output_dir}/synthetic_dataset_analyze_Run3.log"
+    container: analysis_container
+    shell: "source coffea4bees/scripts/synthetic-dataset-analyze-Run3.sh --output-base {output_dir} 2>&1 | tee -a {log}"
+
+
+rule weights_trigger_analysis_job:
+    input: f"{output_dir}/weights_trigger_friendtree/trigger_weights_friends.json"
+    output: f"{output_dir}/weights_trigger_analysis_job/test_trigWeight.coffea"
+    log: f"{output_dir}/weights_trigger_analysis_job.log"
+    container: analysis_container
+    shell: "source coffea4bees/scripts/weights-trigger-analysis.sh --output-base  {output_dir} 2>&1 | tee -a {log}"
+
+
+rule tools_make_jcm_weights:
+    input: f"{output_dir}/tools_merge_test/test.coffea"
+    output: f"{output_dir}/tools_make_jcm_weights/testJCM_ROOT/jetCombinatoricModel_SB_.yml"
+    log: f"{output_dir}/tools_make_jcm_weights.log"
+    container: analysis_container
+    shell: "source coffea4bees/scripts/tools-make-jcm-weights.sh --output-base  {output_dir} 2>&1 | tee -a {log}"
+
+rule twoStageClosure_test_job:
+    input: f"{output_dir}/analysis_test_mixed_job/testMixedData.json"
+    output: f"{output_dir}/twoStageClosure_test_job/test_dump_twoStageClosureInputsCounts.yml"
+    log: f"{output_dir}/twoStageClosure_test_job.log"
+    shell: "./run_container combine source coffea4bees/scripts/tools-twostageclosure-mixed.sh --output-base  {output_dir} 2>&1 | tee -a {log}"
+
+rule analysis_plot:
+    input: f"{output_dir}/tools_merge_test/test.coffea"
+    output: f"{output_dir}/analysis_plot/RunII/passPreSel/fourTag/SR/SvB_MA_ps_zz.pdf"
+    log: f"{output_dir}/analysis_plot.log"
+    container: analysis_container
+    shell: "source coffea4bees/scripts/analysis-plot.sh --output-base  {output_dir} 2>&1 | tee -a {log}"
+
+rule analysis_unsup_plot:
+    input: f"{output_dir}/analysis_unsup_test/test_unsup.coffea"
+    output: f"{output_dir}/analysis_unsup_plot/RunII/passPreSel/fourTag/SR/mix_v0/v4j_mass.pdf"
+    log: f"{output_dir}/analysis_unsup_plot.log"
+    container: analysis_container
+    shell: "source coffea4bees/scripts/analysis-unsup-plot.sh --output-base  {output_dir} 2>&1 | tee -a {log}"
+
+rule analysis_iplot:
+    input: f"{output_dir}/tools_merge_test/test.coffea"
+    log: f"{output_dir}/analysis_iplot.log"
+    container: analysis_container
+    shell: "source coffea4bees/scripts/analysis-iplot.sh --output-base  {output_dir} 2>&1 | tee -a {log}"
+
+rule code_plot_test:
+    input: f"{output_dir}/tools_merge_test/test.coffea"
+    output: f"{output_dir}/code_plot_test/test_dumpPlotCounts.yml"
+    log: f"{output_dir}/code_plot_test.log"
+    container: analysis_container
+    shell: "source coffea4bees/scripts/code-plot-test.sh --output-base  {output_dir} 2>&1 | tee -a {log}"
+
+rule synthetic_dataset_plot:
+    input: f"{output_dir}/synthetic_dataset_cluster/test_synthetic_datasets.coffea"
+    output: f"{output_dir}/synthetic_dataset_plot/jet-splitting-PDFs-test/clustering_pdfs_vs_pT_RunII.yml"
+    log: f"{output_dir}/synthetic_dataset_plot.log"
+    container: analysis_container
+    shell: "source coffea4bees/scripts/synthetic-dataset-plot.sh --output-base  {output_dir} 2>&1 | tee -a {log}"
+
+
+rule analysis_cutflow:    
+    input: f"{output_dir}/tools_merge_test/test.coffea"
+    output: f"{output_dir}/analysis_cutflow/test_dump_cutflow.yml"
+    log: f"{output_dir}/analysis_cutflow.log"
+    container: analysis_container
+    shell: "source coffea4bees/scripts/analysis-cutflow.sh --output-base  {output_dir} 2>&1 | tee -a {log}"
+
+rule analysis_dilepttbar_cutflow:    
+    input: f"{output_dir}/analysis_test/test_databkgs.coffea"
+    output: f"{output_dir}/analysis_dilepttbar_cutflow/test_dump_cutflow.yml"
+    log: f"{output_dir}/analysis_dilepttbar_cutflow.log"
+    container: analysis_container
+    shell: "source coffea4bees/scripts/analysis-dilepttbar-cutflow.sh --output-base  {output_dir} 2>&1 | tee -a {log}"
+
+rule analysis_mixed_cutflow:    
+    input: f"{output_dir}/analysis_test_mixed_job/testMixedData.coffea"
+    output: f"{output_dir}/analysis_mixed_cutflow/test_dump_MixedData.yml"
+    log: f"{output_dir}/analysis_mixed_cutflow.log"
+    container: analysis_container
+    shell: "source coffea4bees/scripts/analysis-mixed-cutflow.sh --output-base  {output_dir} 2>&1 | tee -a {log}"
+
+rule skimmer_analysis_cutflow:    
+    input: f"{output_dir}/skimmer_analysis_test/test_skimmer.coffea"
+    output: f"{output_dir}/skimmer_analysis_cutflow/test_dump_skimmer_cutflow.yml"
+    log: f"{output_dir}/skimmer_analysis_cutflow.log"
+    container: analysis_container
+    shell: "source coffea4bees/scripts/skimmer-analysis-cutflow.sh --output-base  {output_dir} 2>&1 | tee -a {log}"
+
+rule analysis_systematics_cutflow:    
+    input: f"{output_dir}/analysis_systematics_test_job/test_systematics.coffea"
+    output: f"{output_dir}/analysis_systematics_cutflow/test_dump_systematics_cutflow.yml"
+    log: f"{output_dir}/analysis_systematics_cutflow.log"
+    container: analysis_container
+    shell: "source coffea4bees/scripts/analysis-systematics-cutflow.sh --output-base  {output_dir} 2>&1 | tee -a {log}"
+
+rule analysis_unsup_cutflow:    
+    input: f"{output_dir}/analysis_unsup_test/test_unsup.coffea"
+    output: f"{output_dir}/analysis_unsup_cutflow/test_dump_cutflow_unsup.yml"
+    log: f"{output_dir}/analysis_unsup_cutflow.log"
+    container: analysis_container
+    shell: "source coffea4bees/scripts/analysis-unsup-cutflow.sh --output-base  {output_dir} 2>&1 | tee -a {log}"
+
+rule synthetic_dataset_analyze_cutflow:
+    input: f"{output_dir}/synthetic_dataset_analyze/test_synthetic_datasets.coffea"
+    output: f"{output_dir}/synthetic_dataset_analyze_cutflow/test_dump_cutflow_synthetic_datasets.yml"
+    log: f"{output_dir}/synthetic_dataset_analyze_cutflow.log"
+    container: analysis_container
+    shell: "source coffea4bees/scripts/synthetic-dataset-analyze-cutflow.sh --output-base  {output_dir} 2>&1 | tee -a {log}"
+
+rule synthetic_dataset_analyze_cutflow_Run3:
+    input: f"{output_dir}/synthetic_dataset_analyze_Run3/test_synthetic_datasets.coffea"
+    output: f"{output_dir}/synthetic_dataset_analyze_cutflow_Run3/test_dump_cutflow_synthetic_datasets.yml"
+    log: f"{output_dir}/synthetic_dataset_analyze_cutflow_Run3.log"
+    container: analysis_container
+    shell: "source coffea4bees/scripts/synthetic-dataset-analyze-cutflow-Run3.sh --output-base  {output_dir} 2>&1 | tee -a {log}"
+
+
+rule weights_trigger_analysis_cutflow:
+    input: f"{output_dir}/weights_trigger_analysis_job/test_trigWeight.coffea"
+    output: f"{output_dir}/weights_trigger_cutflow/test_dump_cutflow_trigWeight.yml"
+    log: f"{output_dir}/weights_trigger_cutflow.log"
+    container: analysis_container
+    shell: "source coffea4bees/scripts/weights-trigger-cutflow.sh --output-base  {output_dir} 2>&1 | tee -a {log}"
+
+rule analysis_test_Run3:
+    output: f"{output_dir}/analysis_test_Run3/test.coffea"
+    log: f"{output_dir}/analysis_test_Run3.log"
+    container: analysis_container
+    shell: "source coffea4bees/scripts/analysis-test-Run3.sh --output-base  {output_dir} 2>&1 | tee -a {log}"
+
+rule analysis_cutflow_Run3:
+    input: f"{output_dir}/analysis_test_Run3/test.coffea"
+    output: f"{output_dir}/analysis_cutflow_Run3/test_dump_cutflow.yml"
+    log: f"{output_dir}/analysis_cutflow_Run3.log"
+    container: analysis_container
+    shell: "source coffea4bees/scripts/analysis-cutflow-Run3.sh --output-base  {output_dir} 2>&1 | tee -a {log}"
+
+rule synthetic_dataset_make_dataset_Run3:
+    output: f"{output_dir}/synthetic_dataset_make_dataset_Run3/picoaod_datasets_declustered_test_2023_BPix.yml"
+    log: f"{output_dir}/synthetic_dataset_make_dataset_Run3.log"
+    container: analysis_container
+    shell: "source coffea4bees/scripts/synthetic-dataset-make-dataset-Run3.sh --output-base {output_dir} 2>&1 | tee -a {log}"
+
+
+rule SvB_friendtree:
+    container: analysis_container
+    log: f"{output_dir}/SvB_friendtree.log"
+    output: f"{output_dir}/SvB_friendtree/make_friend_SvB.json"
+    shell: "source coffea4bees/scripts/SvB-friendtree.sh --output-base  {output_dir} 2>&1 | tee -a {log}"
+
+rule SvB_friendtree_analysis:
+    input: f"{output_dir}/SvB_friendtree/make_friend_SvB.json"
+    output: f"{output_dir}/SvB_friendtree_analysis/test_SvB_friend.coffea"
+    log: f"{output_dir}/SvB_friendtree_analysis.log"
+    container: analysis_container
+    shell: "source coffea4bees/scripts/SvB-friendtree-analysis.sh --output-base  {output_dir} 2>&1 | tee -a {log}"
+
+rule SvB_friendtree_cutflow:
+    input: f"{output_dir}/SvB_friendtree_analysis/test_SvB_friend.coffea"
+    output: f"{output_dir}/SvB_friendtree_cutflow/test_dump_cutflow_SvB_friend.yml"
+    log: f"{output_dir}/SvB_friendtree_cutflow.log"
+    container: analysis_container
+    shell: "source coffea4bees/scripts/SvB-friendtree-cutflow.sh --output-base  {output_dir} 2>&1 | tee -a {log}"
+
+rule check_configs:
+    log: f"{output_dir}/check_configs.log"
+    container: analysis_container
+    shell: "source coffea4bees/scripts/check-configs.sh --output-base  {output_dir} 2>&1 | tee -a {log}"

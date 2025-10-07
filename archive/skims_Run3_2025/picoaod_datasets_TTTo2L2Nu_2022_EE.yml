@@ -1,0 +1,94 @@
+TTTo2L2Nu_2022_EE:
+  count: 84809345
+  cutFlowFourTag:
+    all: 6822815301.989365
+    lumimask: 6822815301.989365
+    passHLT: 6819035941.488647
+    passJetMult_lowpt_forskim: 2777165970.4216003
+    passNoiseFilter: 6819035941.488647
+    passPreSel_lowpt_forskim: 363282360.1524353
+  cutFlowFourTagUnitWeight:
+    all: 84809345
+    lumimask: 84809345
+    passHLT: 84761942
+    passJetMult_lowpt_forskim: 34502496
+    passNoiseFilter: 84761942
+    passPreSel_lowpt_forskim: 4513588
+  cutFlowThreeTag:
+    all: 6822815301.989365
+    lumimask: 6822815301.989365
+    passHLT: 6819035941.488647
+    passJetMult_lowpt_forskim: 2777165970.4216003
+    passNoiseFilter: 6819035941.488647
+    passPreSel_lowpt_forskim: 363282360.1524353
+  cutFlowThreeTagUnitWeight:
+    all: 84809345
+    lumimask: 84809345
+    passHLT: 84761942
+    passJetMult_lowpt_forskim: 34502496
+    passNoiseFilter: 84761942
+    passPreSel_lowpt_forskim: 4513588
+  files:
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk0.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk1.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk2.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk3.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk4.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk5.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk6.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk7.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk8.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk9.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk10.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk11.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk12.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk13.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk14.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk15.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk16.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk17.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk18.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk19.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk20.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk21.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk22.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk23.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk24.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk25.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk26.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk27.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk28.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk29.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk30.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk31.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk32.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk33.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk34.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk35.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk36.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk37.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk38.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk39.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk40.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk41.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk42.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk43.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk44.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2022_EE/picoAOD.chunk45.root
+  missing: {}
+  reproducible:
+    args: Namespace(processor='python/skimmer/processor/skimmer_4b.py', configs='python/skimmer/metadata/HH4b_run3.yml',
+      metadata='python/metadata/datasets_HH4b_Run3.yml', triggers='python/metadata/triggers_HH4b.yml',
+      luminosities='python/metadata/luminosities_HH4b.yml', output_file='picoaod_datasets_ttbar_TTTo2L2Nu_2022_EE.yml',
+      output_path='python/skimmer/', years=['2022_EE'], datasets=['TTTo2L2Nu'], era=['A',
+      'B', 'C', 'D', 'E', 'F', 'G', 'H'], skimming=True, test=False, run_dask=False,
+      condor=False, debug=False, check_input_files=False, githash='', gitdiff='')
+    date: '2025-08-28 22:51:58'
+    diff: ''
+    hash: 5cb949b5c6948c4659fcff16263ea7cf51c767ed
+  saved_events: 4513588
+  sumw: 6822814570.246094
+  sumw2: 557862566465.0
+  sumw2_raw: 557862522012.8606
+  sumw_raw: 6822815546.393703
+  total_events: 84809345

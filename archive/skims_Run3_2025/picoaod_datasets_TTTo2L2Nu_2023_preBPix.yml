@@ -1,0 +1,77 @@
+TTTo2L2Nu_2023_preBPix:
+  count: 48203000
+  cutFlowFourTag:
+    all: 3877699138.152313
+    lumimask: 3877699138.152313
+    passHLT: 3875369023.1887817
+    passJetMult_lowpt_forskim: 1587930605.8929443
+    passNoiseFilter: 3875369023.1887817
+    passPreSel_lowpt_forskim: 231088279.64134216
+  cutFlowFourTagUnitWeight:
+    all: 48203000
+    lumimask: 48203000
+    passHLT: 48173850
+    passJetMult_lowpt_forskim: 19727948
+    passNoiseFilter: 48173850
+    passPreSel_lowpt_forskim: 2871321
+  cutFlowThreeTag:
+    all: 3877699138.152313
+    lumimask: 3877699138.152313
+    passHLT: 3875369023.1887817
+    passJetMult_lowpt_forskim: 1587930605.8929443
+    passNoiseFilter: 3875369023.1887817
+    passPreSel_lowpt_forskim: 231088279.64134216
+  cutFlowThreeTagUnitWeight:
+    all: 48203000
+    lumimask: 48203000
+    passHLT: 48173850
+    passJetMult_lowpt_forskim: 19727948
+    passNoiseFilter: 48173850
+    passPreSel_lowpt_forskim: 2871321
+  files:
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2023_preBPix/picoAOD.chunk0.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2023_preBPix/picoAOD.chunk1.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2023_preBPix/picoAOD.chunk2.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2023_preBPix/picoAOD.chunk3.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2023_preBPix/picoAOD.chunk4.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2023_preBPix/picoAOD.chunk5.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2023_preBPix/picoAOD.chunk6.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2023_preBPix/picoAOD.chunk7.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2023_preBPix/picoAOD.chunk8.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2023_preBPix/picoAOD.chunk9.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2023_preBPix/picoAOD.chunk10.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2023_preBPix/picoAOD.chunk11.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2023_preBPix/picoAOD.chunk12.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2023_preBPix/picoAOD.chunk13.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2023_preBPix/picoAOD.chunk14.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2023_preBPix/picoAOD.chunk15.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2023_preBPix/picoAOD.chunk16.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2023_preBPix/picoAOD.chunk17.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2023_preBPix/picoAOD.chunk18.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2023_preBPix/picoAOD.chunk19.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2023_preBPix/picoAOD.chunk20.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2023_preBPix/picoAOD.chunk21.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2023_preBPix/picoAOD.chunk22.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2023_preBPix/picoAOD.chunk23.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2023_preBPix/picoAOD.chunk24.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2023_preBPix/picoAOD.chunk25.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2023_preBPix/picoAOD.chunk26.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2023_preBPix/picoAOD.chunk27.root
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run3_skims/TTTo2L2Nu_2023_preBPix/picoAOD.chunk28.root
+  missing: {}
+  reproducible:
+    args: Namespace(processor='python/skimmer/processor/skimmer_4b.py', configs='python/skimmer/metadata/HH4b_run3.yml',
+      metadata='python/metadata/datasets_HH4b_Run3.yml', triggers='python/metadata/triggers_HH4b.yml',
+      luminosities='python/metadata/luminosities_HH4b.yml', output_file='picoaod_datasets_ttbar_TTTo2L2Nu_2023_preBPix.yml',
+      output_path='python/skimmer/', years=['2023_preBPix'], datasets=['TTTo2L2Nu'],
+      era=['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], skimming=True, test=False, run_dask=True,
+      condor=True, debug=False, check_input_files=False, githash='', gitdiff='')
+    date: '2025-08-22 10:00:05'
+    diff: ''
+    hash: 4a3272d02ee5c97c1bbf09a9434c98541b66f447
+  saved_events: 2871321
+  sumw: 3877698719.15625
+  sumw2: 317071767884.0
+  sumw2_raw: 317071746616.9077
+  sumw_raw: 3877699277.0577993
+  total_events: 48203000

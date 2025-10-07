@@ -1,0 +1,49 @@
+GluGluToBulkGravitonToHHTo4B_UL18:
+  count: 278000
+  cutFlowFourTag:
+    all: 278000.0
+    lumimask: 278000.0
+    passHLT: 277812.0
+    passJetMult_lowpt_forskim: 244236.0
+    passNoiseFilter: 277812.0
+    passPreSel_lowpt_forskim: 98546.0
+  cutFlowFourTagUnitWeight:
+    all: 278000
+    lumimask: 278000
+    passHLT: 277812
+    passJetMult_lowpt_forskim: 244236
+    passNoiseFilter: 277812
+    passPreSel_lowpt_forskim: 98546
+  cutFlowThreeTag:
+    all: 278000.0
+    lumimask: 278000.0
+    passHLT: 277812.0
+    passJetMult_lowpt_forskim: 244236.0
+    passNoiseFilter: 277812.0
+    passPreSel_lowpt_forskim: 98546.0
+  cutFlowThreeTagUnitWeight:
+    all: 278000
+    lumimask: 278000
+    passHLT: 277812
+    passJetMult_lowpt_forskim: 244236
+    passNoiseFilter: 277812
+    passPreSel_lowpt_forskim: 98546
+  files:
+  - root://cmseos.fnal.gov//store/user/smurthy/XX4b/2025_Run2_skims/GluGluToBulkGravitonToHHTo4B_UL18/picoAOD.root
+  missing: {}
+  reproducible:
+    args: Namespace(test=False, output_file='picoaod_datasets_GluGluToBulkGravitonToHHTo4B_UL18.yml',
+      processor='skimmer/processor/skimmer_4b.py', configs='skimmer/metadata/HH4b.yml',
+      metadata='metadata/datasets_HH4b.yml', output_path='skimmer/', years=['UL18'],
+      datasets=['GluGluToBulkGravitonToHHTo4B'], era=['A', 'B', 'C', 'D', 'E', 'F',
+      'G', 'H'], skimming=True, run_dask=False, condor=False, debug=False, githash='',
+      gitdiff='', check_input_files=False)
+    date: '2025-08-13 14:25:36'
+    diff: Not run locally
+    hash: Not run locally.
+  saved_events: 98546
+  sumw: 278000.0
+  sumw2: 278000.0
+  sumw2_raw: 278000.0
+  sumw_raw: 278000.0
+  total_events: 278000

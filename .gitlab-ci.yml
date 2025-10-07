@@ -17,99 +17,132 @@ workflow:
     # Run for pushes to branches WITHOUT open merge requests
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_OPEN_MERGE_REQUESTS == null'
       when: always
-     # Run for web-triggered pipelines
+    # Run for scheduled pipelines
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+      when: always
+    # Run for web-triggered pipelines
     - if: '$CI_PIPELINE_SOURCE == "web"'
       when: always
 
 variables:
-  CONTAINER_HOST: cms-cmu
-  RECREATE_CONTAINERS: "false"
-  GIT_SUBMODULE_STRATEGY: recursive
-  GIT_SUBMODULE_DEPTH: 1
-  GIT_SUBMODULE_FORCE_HTTPS: "true"
-  MKDOCS_VERSION: '1.5.3'
-  MATERIAL_VERSION: '9.5.3'
-  DATASET: python/metadata/datasets_HH4b_v1p1.yml
-  DATASET_RUN3: python/metadata/datasets_synthetic_test_Run3.yml
+  BARISTA_REPO: 'https://${DEPLOY_TOKEN_USERNAME}:${DEPLOY_TOKEN_PASSWORD}@gitlab.cern.ch/cms-cmu/barista.git'
+  BARISTA_BRANCH: '$CI_COMMIT_REF_NAME'
+  DATASET: coffea4bees/metadata/datasets_HH4b_v1p1.yml
+  DATASET_RUN3: coffea4bees/metadata/datasets_synthetic_test_Run3.yml
   # DATASET: metadata/datasets_HH4b_cernbox.yml
   # DATASET_RUN3: metadata/datasets_HH4b_Run3_cernbox.yml
+  RUN_REANA: "false"
 
 include:
-  - local: 'software/dockerfiles/stages_build.yml'
-  - local: 'python/workflows/gitlab-CI/stages_*.yml'
-  - project: 'authoring/documentation/mkdocs-ci'
-    file: 'mkdocs-gitlab-pages.gitlab-ci.yml'
+  - local: workflows/gitlab-CI/stages_code.yml
+  - local: workflows/gitlab-CI/stages_skimmer.yml
+  - local: workflows/gitlab-CI/stages_analysis.yml
+  # - local: workflows/gitlab-CI/stages_classifier.yml
+  - local: workflows/gitlab-CI/stages_cutflow.yml
+  - local: workflows/gitlab-CI/stages_tools.yml
+  - local: workflows/gitlab-CI/stages_friendtree.yml
+  - local: workflows/gitlab-CI/stages_plots.yml
+  - local: workflows/gitlab-CI/stages_reana.yml
+  - project: 'cms-cmu/barista'
+    ref: 'master'
+    file: 'src/workflows/gitlab-CI/stages_proxy.yml'
 
 stages:  
-  - build
-  - proxy
+  - setup
   - code 
-  - skimmer-test
-  - friendtree-test
-  - analysis-test
-  - fits
+  - skimmer
+  - friendtree
+  - analysis
+  - tools
   - plot
   - cutflow
-  - classifier  ### needs to be fixed
+  # - classifier
   - reana
-  - deploy
-  - validation
-  - pages
 
-validation:
-  before_script:
-    - bash docs/sync_readmes.sh
-    - bash docs/update_mkdocs_nav.sh
-    - cp docs/mkdocs.yml .
-    - cp docs/requirements.txt .
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-      when: always
-    - when: never
 
-pages:
-  before_script:
-    - bash docs/sync_readmes.sh
-    - bash docs/update_mkdocs_nav.sh
-    - cp docs/mkdocs.yml .
-    - cp docs/requirements.txt .
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "master")'
-      when: always
-    - when: never
+# Setup job that clones barista once
+setup_workspace:
+  stage: setup
+  image: alpine/git:latest
+  needs:
+    - voms_proxy
+  script:
+    - echo "Setting up barista workspace"
+    # --- Add fallback logic for cloning barista ---
+    - BARISTA_DEFAULT_BRANCH="master" 
+    - echo "Checking for branch '$BARISTA_BRANCH' in barista repository..."
+    # Check if the feature branch exists in barista. If not, use the default branch.
+    - git ls-remote --exit-code --heads "$BARISTA_REPO" "$BARISTA_BRANCH" || BARISTA_BRANCH="$BARISTA_DEFAULT_BRANCH"
+    
+    - echo "Cloning barista from branch '$BARISTA_BRANCH'"
+    - git clone --recursive --depth=1 --branch=$BARISTA_BRANCH $BARISTA_REPO barista_framework
+    - cd barista_framework
+
+    # Create the subdirectory for the current project and copy its content
+    # For coffea4bees repository, use 'coffea4bees'. For coffea4bees, use 'coffea4bees'.
+    - mkdir -p coffea4bees 
+    - echo "Copying content of $CI_PROJECT_NAME into barista_framework/coffea4bees/"
+    - cp -r $CI_PROJECT_DIR/* coffea4bees/ 2>/dev/null || true
+    - ls -la coffea4bees/
+
+    # Copy the proxy if it exists
+    - echo "Checking for proxy directory in $CI_PROJECT_DIR/proxy"
+    - if [ -d "$CI_PROJECT_DIR/proxy" ]; then cp -r $CI_PROJECT_DIR/proxy/ .; fi
+  artifacts:
+    paths:
+      - barista_framework/
+    expire_in: 8 hours
+  tags:
+    - k8s-cvmfs
 
 .base_analysis:
   needs:
-    - voms_proxy
-  image: ${CI_REGISTRY_IMAGE}:test
+    - setup_workspace
+  image: gitlab-registry.cern.ch/cms-cmu/barista:latest
   tags:
     - k8s-cvmfs
-  artifacts: 
-    expire_in: 1 day
-    paths:
-      - 'template'
+  before_script:
+    - echo "Checking output directory"
+    - ls $CI_PROJECT_PATH/output/ || true
+    - echo "Setting analysis framework"
+    - cd barista_framework/
+    - pwd && ls -la
+    - ls -la coffea4bees/
   retry: 2
 
 .base_combine:
   image: gitlab-registry.cern.ch/cms-analysis/general/combine-container:CMSSW_11_3_4-combine_v9.1.0-harvester_v2.1.0
+  needs:
+    - setup_workspace
   before_script:
+    - echo "Checking output directory"
+    - ls $CI_PROJECT_DIR/output/ || true
+    - echo "Setting combine framework"
     - source /cvmfs/cms.cern.ch/cmsset_default.sh
     - cd /home/cmsusr/CMSSW_11_3_4/
     - cmsenv || true
-    - cd -
+    - cd $CI_PROJECT_DIR/
+    - pwd && ls -la
+    - cd barista_framework/
+    - pwd && ls -la
+    - ls -la coffea4bees/
   tags:
     - k8s-cvmfs
+  retry: 2
 
-.base_classifier:
-  needs:
-    - voms_proxy
-  image: registry.hub.docker.com/chuyuanliu/heptools:ml-cpu # TODO change to central repo
-  before_script:
-    - source /entrypoint.sh
-  tags:
-    - k8s-cvmfs
-  artifacts:
-    expire_in: 1 day
-
-
-
+# .base_classifier:
+#   needs:
+#     - voms_proxy
+#     - setup_workspace
+#   image: registry.hub.docker.com/chuyuanliu/heptools:ml-cpu # TODO change to central repo
+#   before_script:
+#     - source /entrypoint.sh
+#     - cd $CI_PROJECT_DIR/
+#     - pwd && ls -la
+#     - cd barista_framework/
+#     - pwd && ls -la
+#     - ls -la coffea4bees/
+#   tags:
+#     - k8s-cvmfs
+#   artifacts:
+#     expire_in: 1 day
