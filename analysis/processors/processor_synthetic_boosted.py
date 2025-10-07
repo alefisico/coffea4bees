@@ -4,7 +4,7 @@ import numpy as np
 import yaml
 import warnings
 from collections import OrderedDict
-from src.hist import Template
+from src.hist_tools import Template
 
 from coffea.nanoevents import NanoAODSchema
 from coffea import processor
@@ -113,7 +113,7 @@ class analysis(processor.ProcessorABC):
         })
         #sel_dict['passJetMult'] = selections.all(*allcuts)
 
-        self.cutFlow = cutFlow()
+        self.cutFlow = cutflow_4b()
         for cut, sel in sel_dict.items():
             self.cutFlow.fill( cut, event[sel], allTag=True )
 
