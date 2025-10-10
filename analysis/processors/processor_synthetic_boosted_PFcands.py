@@ -1,3 +1,4 @@
+
 import time
 import awkward as ak
 import numpy as np
@@ -151,6 +152,77 @@ class analysis(processor.ProcessorABC):
                           },
                          depth_limit=1,
                          )
+        # Assign PF candidates to subjets by ΔR
+
+        sj0 = sorted_sub_jets[:, :, 0]
+        sj1 = sorted_sub_jets[:, :, 1]
+        pf = fatjets.PFCands
+
+        def _wrap_phi(phi):
+            return (phi + np.pi) % (2*np.pi) - np.pi
+
+        # ΔR² to subjet0 and subjet1
+        deta0 = pf.eta - sj0.eta
+        dphi0 = _wrap_phi(pf.phi - sj0.phi)
+        dr2_0 = deta0**2 + dphi0**2
+
+        deta1 = pf.eta - sj1.eta
+        dphi1 = _wrap_phi(pf.phi - sj1.phi)
+        dr2_1 = deta1**2 + dphi1**2
+
+        # Choose the closest subjet (0 if tie)
+        choice = ak.where(dr2_0 <= dr2_1, 0, 1)
+
+        # Split PF candidates by subjet
+        pf_s0 = pf[choice == 0]
+        pf_s1 = pf[choice == 1]
+
+        # Attach results to fatjets
+        pf_by_subjet = ak.zip({
+            "subjet0": pf_s0,
+            "subjet1": pf_s1,
+        }, depth_limit=1)
+
+        fatjets = ak.with_field(fatjets, pf_by_subjet, "PFCands_by_subjet")
+        fatjets = ak.with_field(fatjets, choice, "pf_assignment")  # keep assignment for debug
+
+
+        # --- Helpers ---
+        def _wrap_phi(phi):
+            return (phi + np.pi) % (2*np.pi) - np.pi
+
+        def _delta_phi(a, b):
+            return _wrap_phi(a - b)
+
+        # Old fatjet (from NanoAOD) and new fatjet (subjet sum)
+        old_fj = selev.selFatJet
+        new_fj = fatjets.p
+
+        def movePFCands_ratio(pf, old_fj, new_fj):
+            # relative offsets wrt old fatjet
+            dEta = pf.eta - old_fj.eta
+            dPhi = _delta_phi(pf.phi, old_fj.phi)
+
+            # broadcast to PF candidate shape
+            pf_pt_b, old_pt_b, new_pt_b, dEta_b, dPhi_b, new_eta_b, new_phi_b = ak.broadcast_arrays(
+                pf.pt, old_fj.pt, new_fj.pt, dEta, dPhi, new_fj.eta, new_fj.phi
+            )
+
+            # pt ratio wrt old fatjet, then scale by new fatjet pt
+            rPt = ak.where(old_pt_b > 0, pf_pt_b / old_pt_b, 0.0)
+            new_pt = rPt * new_pt_b
+
+            # eta/phi offsets applied additively
+            new_eta = new_eta_b + dEta_b
+            new_phi = _wrap_phi(new_phi_b + dPhi_b)
+
+            out = ak.with_field(pf, new_pt,  "pt")
+            out = ak.with_field(out, new_eta, "eta")
+            out = ak.with_field(out, new_phi, "phi")
+            return out
+        # Apply and attach moved PF candidates
+        movedPFCands = movePFCands_ratio(fatjets.PFCands, old_fj, new_fj)
+        fatjets = ak.with_field(fatjets, movedPFCands, "PFCands_moved")
 
         # Calculate di-jet variables
         fatjets["p", "st"]   = fatjets.i0.pt + fatjets.i1.pt
@@ -283,6 +355,9 @@ class analysis(processor.ProcessorABC):
             pf = PFCand.plot(('...', R'PFCands in selected fat jet'), "PFCands",   skip=[],
                              bins={"pt":   (50, 0, 10), "mass": (50, 0, 0.2)}
                              )
+            pf_moved = PFCand.plot(('...', R'Moved PFCands in selected fat jet'),
+                                   "PFCands_moved", skip=[],
+                                   bins={"pt": (50, 0, 10), "mass": (50, 0, 0.2)})
 
 
 
