@@ -1,0 +1,12 @@
+detail/1b1j/1b1j
+detail/1b1j/1b0j
+detail/1b0j/1b0j/midMass
+detail/1b0j/1b0j/lowMass
+detail/1b0j/1b0j/highMass
+detail/1b0j/1b0j
+1b1j/1b1j
+1b1j/1b0j
+1b0j/1b0j/midMass
+1b0j/1b0j/lowMass
+1b0j/1b0j/highMass
+1b0j/1b0j

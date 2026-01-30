@@ -18,29 +18,37 @@ from coffea4bees.jet_clustering.clustering_hist_templates import ClusterHistsBoo
 from src.hist_tools.object import LorentzVector, Jet
 
 from coffea4bees.jet_clustering.declustering import compute_decluster_variables, get_splitting_name, get_list_of_combined_jet_types, get_list_of_all_sub_splittings
+from coffea4bees.jet_clustering.declustering import make_synthetic_event
 from coffea4bees.jet_clustering.clustering import comb_jet_flavor
 
 
 import logging
 import vector
+from coffea.nanoevents.methods import vector as coffea_vector
 
 #
 # Setup
 #
 NanoAODSchema.warn_missing_crossrefs = False
 warnings.filterwarnings("ignore")
-
-
 class analysis(processor.ProcessorABC):
     def __init__(
             self,
             *,
             corrections_metadata: dict = None,
+            clustering_pdfs_file: str = "coffea4bees/jet_clustering/jet-splitting-PDFs-boosted-00-03-00/clustering_pdfs_vs_pT_XXX.yml",
+            declustering_rand_seed: int = 5,
+            declustering_config: str = "coffea4bees/skimmer/metadata/declustering_boosted.yml",
             **kwargs
     ):
-
         logging.debug("\nInitialize Analysis Processor")
         self.corrections_metadata = corrections_metadata
+
+        # declustering inputs (same meaning as skimmer)
+        self.clustering_pdfs_file = clustering_pdfs_file
+        self.declustering_rand_seed = declustering_rand_seed
+        self.declustering_config = declustering_config
+
 
     def process(self, event):
 
@@ -58,6 +66,15 @@ class analysis(processor.ProcessorABC):
 
         logging.info(fname)
         logging.info(f'Process {nEvent} Events')
+
+        clustering_pdfs_file = self.clustering_pdfs_file.replace("XXX", year)
+
+        if clustering_pdfs_file not in [None, "None", ""]:
+            clustering_pdfs = yaml.safe_load(open(clustering_pdfs_file, "r"))
+            logging.info(f"Loaded {len(clustering_pdfs.keys())} PDFs from {clustering_pdfs_file}")
+        else:
+            clustering_pdfs = None
+
 
         #
         # Event selection
@@ -122,6 +139,7 @@ class analysis(processor.ProcessorABC):
         list_of_cuts = [ "lumimask", "passNoiseFilter", "passHLT", "passNFatJets" ]
         analysis_selections = selections.all(*list_of_cuts)
         selev = event[analysis_selections]
+
 
         #
         # Event selection
@@ -255,6 +273,59 @@ class analysis(processor.ProcessorABC):
         #
         compute_decluster_variables(fat_jet_splittings_events)
 
+
+
+
+       # build clustered_jets#
+
+        clustered_jets = ak.zip(
+            {
+                "pt":   ak.values_astype((selev.selFatJet.subjets[:, :, 0] + selev.selFatJet.subjets[:, :, 1]).pt,   np.float64),
+                "eta":  ak.values_astype((selev.selFatJet.subjets[:, :, 0] + selev.selFatJet.subjets[:, :, 1]).eta,  np.float64),
+                "phi":  ak.values_astype((selev.selFatJet.subjets[:, :, 0] + selev.selFatJet.subjets[:, :, 1]).phi,  np.float64),
+                "mass": ak.values_astype((selev.selFatJet.subjets[:, :, 0] + selev.selFatJet.subjets[:, :, 1]).mass, np.float64),
+
+                # placeholders for now; next step we ensure these exist before this block
+                "jet_flavor": selev.selFatJet.jet_flavor,
+                "btag_string": selev.selFatJet.btag_string,
+            },
+            with_name="PtEtaPhiMLorentzVector",
+            behavior=coffea_vector.behavior
+        )
+        
+        #
+        # Fake-on-real declustering (skimmer-style)
+        #
+        b_pt_threshold = 20
+        declustered_jets = make_synthetic_event(
+            clustered_jets,
+            clustering_pdfs,
+            declustering_rand_seed=self.declustering_rand_seed,
+            b_pt_threshold=b_pt_threshold,
+            dr_threshold=0,
+            chunk=chunk,
+            debug=False,
+            splitting_types_to_ignore=[('bj', 'b')],
+        )
+
+        declustered_jets = declustered_jets[ak.argsort(declustered_jets.btagScore, axis=1, ascending=True)]
+
+        # Filter 2*nFatJet
+        mask = (ak.num(declustered_jets) == 2 * ak.num(selev.selFatJet))
+        selev, declustered_jets, subjets = selev[mask], declustered_jets[mask], subjets[mask]
+        fat_jet_splittings_events = fat_jet_splittings_events[mask]
+
+        declustered_pairs = ak.unflatten(declustered_jets, 2, axis=1)
+
+
+        i0_new = declustered_pairs[:, :, 0]
+        i1_new = declustered_pairs[:, :, 1]
+
+        subjets["i0_new"] = i0_new
+        subjets["i1_new"] = i1_new
+        subjets["p_new"]  = i0_new + i1_new
+        selev["subjets"]  = subjets
+
         #
         # Assign the splitting names
         #
@@ -376,6 +447,10 @@ class analysis(processor.ProcessorABC):
 
             i0 = Jet.plot(('...', R'subjet 0'), 'i0',     skip=['deepjet_c','n'], bins={"mass": (100, 0, 200), "pt": (50, 100, 1000)})
             i1 = Jet.plot(('...', R'subjet 1'), 'i1',     skip=['deepjet_c','n'], bins={"mass": (50, 0, 100)})
+            p_new  = Jet.plot(('...', R'declustered fatjet'),  'p_new',  skip=['deepjet_c','n'], bins={"mass": (100, 40, 300), "pt": (60, 250, 1000)})
+            i0_new = Jet.plot(('...', R'declustered subjet 0'),'i0_new', skip=['deepjet_c','n'], bins={"mass": (100, 0, 200),  "pt": (50, 100, 1000)})
+            i1_new = Jet.plot(('...', R'declustered subjet 1'),'i1_new', skip=['deepjet_c','n'], bins={"mass": (50, 0, 100),   "pt": (50, 100, 1000)})
+
 
         fill += FatJetHists(('fatJets', R''), 'subjets')
 
